@@ -1,0 +1,19 @@
+﻿[
+  {
+      "Author": "Ottermandias",
+      "Name": "Glamourer",
+      "Description": "Adds functionality to change appearance of actors. Requires Penumbra to be installed and activated to work.",
+      "InternalName": "Glamourer",
+      "AssemblyVersion": "0.0.1.0",
+      "TestingAssemblyVersion": "0.0.1.0",
+      "RepoUrl": "https://github.com/Ottermandias/Glamourer",
+      "ApplicableVersion": "any",
+      "DalamudApiLevel": 3,
+      "IsHide": "False",
+      "IsTestingExclusive": "false",
+      "DownloadCount": 1,
+      "LastUpdate": 1618608322,
+      "DownloadLinkTesting": "https://github.com/Ottermandias/Glamourer/raw/main/GatherBuddy.zip",
+      "DownloadLinkUpdate": "https://github.com/Ottermandias/Glamourer/raw/main/GatherBuddy.zip",
+  }
+]

@@ -1,0 +1,98 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+		<TargetFramework>net472</TargetFramework>
+		<LangVersion>preview</LangVersion>
+		<RootNamespace>Glamourer</RootNamespace>
+		<AssemblyName>Glamourer</AssemblyName>
+		<FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<Company>SoftOtter</Company>
+    <Product>Glamourer</Product>
+    <Copyright>Copyright © 2020</Copyright>
+		<Deterministic>true</Deterministic>
+		<OutputType>Library</OutputType>
+		<WarningLevel>4</WarningLevel>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<Nullable>enable</Nullable>
+		<OutputPath>bin\$(Configuration)\</OutputPath>
+		<MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>full</DebugType>
+		<Optimize>false</Optimize>
+		<DefineConstants>DEBUG;TRACE</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+		<DebugType>pdbonly</DebugType>
+		<Optimize>true</Optimize>
+		<DefineConstants>TRACE</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<Reference Include="Dalamud">
+			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
+		</Reference>
+		<Reference Include="ImGui.NET">
+			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\ImGui.NET.dll</HintPath>
+		</Reference>
+		<Reference Include="ImGuiScene">
+			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
+		</Reference>
+		<Reference Include="SDL2-CS">
+			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\SDL2-CS.dll</HintPath>
+		</Reference>
+    <Reference Include="Lumina">
+			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Lumina.dll</HintPath>
+		</Reference>
+    <Reference Include="Lumina.Excel">
+			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
+		</Reference>
+    <Reference Include="Penumbra.GameData">
+      <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\net472\Penumbra.GameData.dll</HintPath>
+    </Reference>
+    <Reference Include="Penumbra.Api">
+      <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\net472\Penumbra.Api.dll</HintPath>
+    </Reference>
+    <Reference Include="Penumbra.PlayerWatch">
+      <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\net472\Penumbra.PlayerWatch.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+		<Reference Include="System.Core" />		
+		<Reference Include="System.Numerics" />
+		<Reference Include="System.Windows.Forms" />
+		<Reference Include="System.Xml.Linq" />
+		<Reference Include="System.Data.DataSetExtensions" />
+		<Reference Include="Microsoft.CSharp" />
+		<Reference Include="System.Data" />
+		<Reference Include="System.Net.Http" />
+		<Reference Include="System.Xml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json">
+			<Version>12.0.3</Version>
+		</PackageReference>
+    <PackageReference Include="System.Memory" Version="4.5.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="Glamourer.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Glamourer.GameData\Glamourer.GameData.csproj" />
+	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	  <Exec Command="if $(Configuration) == Release powershell Compress-Archive -Force $(TargetPath), $(TargetDir)$(SolutionName).json, $(TargetDir)$(SolutionName).GameData.dll $(SolutionDir)$(SolutionName).zip" />
+	  <Exec Command="if $(Configuration) == Release powershell Copy-Item -Force $(TargetDir)$(SolutionName).json -Destination $(SolutionDir)" />
+	</Target>
+</Project>
