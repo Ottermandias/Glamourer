@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Data.LuminaExtensions;
 using Dalamud.Game.ClientState.Actors;
 using Dalamud.Game.ClientState.Actors.Types;
+using Dalamud.Plugin;
 using Glamourer.Customization;
 using ImGuiNET;
 using Penumbra.Api;
@@ -12,17 +12,17 @@ using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.PlayerWatch;
-using SDL2;
 
 namespace Glamourer.Gui
 {
-    internal class Interface : IDisposable
+    internal partial class Interface : IDisposable
     {
         public const     int    GPoseActorId = 201;
         private const    string PluginName   = "Glamourer";
         private readonly string _glamourerHeader;
 
-        private const int ColorButtonWidth = 140;
+        private const float ColorButtonWidth = 22.5f;
+        private const float ColorComboWidth  = 140f;
 
         private readonly IReadOnlyDictionary<byte, Stain>                                       _stains;
         private readonly IReadOnlyDictionary<EquipSlot, List<Item>>                             _equip;
@@ -35,7 +35,11 @@ namespace Glamourer.Gui
 
         private Actor? _player;
 
-        private static readonly Vector2 FeatureIconSize = new(80, 80);
+        private static readonly Vector2 FeatureIconSizeIntern =
+            Vector2.One * ImGui.GetTextLineHeightWithSpacing() * 2 / ImGui.GetIO().FontGlobalScale;
+
+        public static Vector2 FeatureIconSize
+            => FeatureIconSizeIntern * ImGui.GetIO().FontGlobalScale;
 
 
         public Interface()
@@ -52,7 +56,7 @@ namespace Glamourer.Gui
             _actors        = GlamourerPlugin.PluginInterface.ClientState.Actors;
             _playerWatcher = PlayerWatchFactory.Create(GlamourerPlugin.PluginInterface);
 
-            var stainCombo = new ComboWithFilter<Stain>("##StainCombo", ColorButtonWidth, _stains.Values.ToArray(),
+            var stainCombo = new ComboWithFilter<Stain>("##StainCombo", ColorComboWidth, ColorButtonWidth, _stains.Values.ToArray(),
                 s => s.Name.ToString())
             {
                 Flags = ImGuiComboFlags.NoArrowButton | ImGuiComboFlags.HeightLarge,
@@ -67,7 +71,7 @@ namespace Glamourer.Gui
                 {
                     var push = PushColor(s);
                     var ret = ImGui.Button($"{s.Name}##Stain{(byte) s.RowIndex}",
-                        Vector2.UnitX * (ColorButtonWidth - ImGui.GetStyle().ScrollbarSize));
+                        Vector2.UnitX * (ColorComboWidth - ImGui.GetStyle().ScrollbarSize));
                     ImGui.PopStyleColor(push);
                     return ret;
                 },
@@ -75,7 +79,7 @@ namespace Glamourer.Gui
             };
 
             _combos = _equip.ToDictionary(kvp => kvp.Key,
-                kvp => (new ComboWithFilter<Item>($"{kvp.Key}##Equip", 300, kvp.Value, i => i.Name) { Flags = ImGuiComboFlags.HeightLarge }
+                kvp => (new ComboWithFilter<Item>($"{kvp.Key}##Equip", 300, 300, kvp.Value, i => i.Name) { Flags = ImGuiComboFlags.HeightLarge }
                     , new ComboWithFilter<Stain>($"##{kvp.Key}Stain", stainCombo))
             );
         }
@@ -115,7 +119,7 @@ namespace Glamourer.Gui
                 stainCombo.PostPreview = () => ImGui.PopStyleColor(previewPush);
             }
 
-            if (stainCombo.Draw(name, out var newStain) && _player != null)
+            if (stainCombo.Draw(string.Empty, out var newStain) && _player != null)
             {
                 newStain.Write(_player.Address, slot);
                 return true;
@@ -176,101 +180,424 @@ namespace Glamourer.Gui
 
         private SubRace         _currentSubRace       = SubRace.Midlander;
         private Gender          _currentGender        = Gender.Male;
-        private CustomizationId _currentCustomization = CustomizationId.Hairstyle;
 
         private static readonly string[]
             SubRaceNames = ((SubRace[]) Enum.GetValues(typeof(SubRace))).Skip(1).Select(s => s.ToName()).ToArray();
 
-
-        private void DrawStuff()
+        private static bool DrawColorPickerPopup(string label, CustomizationSet set, CustomizationId id, out Customization.Customization value)
         {
-            if (ImGui.BeginCombo("SubRace", _currentSubRace.ToString()))
+            value = default;
+            if (!ImGui.BeginPopup(label, ImGuiWindowFlags.AlwaysAutoResize))
+                return false;
+
+            var ret   = false;
+            var count = set.Count(id);
+            using var raii = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
+                .PushStyle(ImGuiStyleVar.FrameRounding, 0);
+            for (var i = 0; i < count; ++i)
+            {
+                var custom = set.Data(id, i);
+                if (ImGui.ColorButton($"{i}", ImGui.ColorConvertU32ToFloat4(custom.Color)))
+                {
+                    value = custom;
+                    ret   = true;
+                    ImGui.CloseCurrentPopup();
+                }
+
+                if (i % 8 != 7)
+                    ImGui.SameLine();
+            }
+
+            ImGui.EndPopup();
+            return ret;
+        }
+
+        private static void FixUpAttributes(CustomizationStruct customization)
+        {
+            var set = GlamourerPlugin.Customization.GetList(customization.Clan, customization.Gender);
+            foreach (CustomizationId id in Enum.GetValues(typeof(CustomizationId)))
+            {
+                switch (id)
+                {
+                    case CustomizationId.Race:                  break;
+                    case CustomizationId.Clan:                  break;
+                    case CustomizationId.BodyType:              break;
+                    case CustomizationId.Gender:                break;
+                    case CustomizationId.FacialFeaturesTattoos: break;
+                    case CustomizationId.Face:
+                        if (customization.Race != Race.Hrothgar)
+                            goto default;
+                        break;
+                    default:
+                        var count = set.Count(id);
+                        if (customization[id] >= count)
+                            customization[id] = set.Data(id, 0).Value;
+                        break;
+                }
+            }
+        }
+
+        private static bool ChangeRace(CustomizationStruct customization, SubRace clan)
+        {
+            if (clan == customization.Clan)
+                return false;
+
+            var race = clan.ToRace();
+            customization.Race = race;
+            customization.Clan = clan;
+
+            customization.Gender = race switch
+            {
+                Race.Hrothgar => Gender.Male,
+                Race.Viera    => Gender.Female,
+                _             => customization.Gender,
+            };
+
+            FixUpAttributes(customization);
+
+            return true;
+        }
+
+        private static bool ChangeGender(CustomizationStruct customization, Gender gender)
+        {
+            if (gender == customization.Gender)
+                return false;
+
+            customization.Gender = gender;
+            FixUpAttributes(customization);
+
+            return true;
+        }
+
+        private static bool DrawColorPicker(string label, string tooltip, CustomizationStruct customization, CustomizationId id,
+            CustomizationSet set)
+        {
+            var ret   = false;
+            var count = set.Count(id);
+
+            var current = set.DataByValue(id, customization[id], out var custom);
+            if (current < 0)
+            {
+                PluginLog.Warning($"Read invalid customization value {customization[id]} for {id}.");
+                current = 0;
+                custom  = set.Data(id, 0);
+            }
+
+            var popupName = $"Color Picker##{id}";
+            if (ImGui.ColorButton($"{current}##color_{id}", ImGui.ColorConvertU32ToFloat4(custom!.Value.Color)))
+                ImGui.OpenPopup(popupName);
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(50 + 2 * 22.5f * ImGui.GetIO().FontGlobalScale);
+            if (ImGui.InputInt($"##text_{id}", ref current, 1) && current != customization[id] && current >= 0 && current < count)
+            {
+                customization[id] = set.Data(id, current).Value;
+                ret               = true;
+            }
+
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip($"Input Range: [0, {count - 1}]");
+
+            ImGui.SameLine();
+            ImGui.Text(label);
+            if (tooltip.Any() && ImGui.IsItemHovered())
+                ImGui.SetTooltip(tooltip);
+
+            if (!DrawColorPickerPopup(popupName, set, id, out var newCustom))
+                return ret;
+
+            customization[id] = newCustom.Value;
+            ret               = true;
+
+            return ret;
+        }
+
+        private static bool DrawListSelector(string label, string tooltip, CustomizationStruct customization, CustomizationId id,
+            CustomizationSet set)
+        {
+            var ret     = false;
+            int current = customization[id];
+            var count   = set.Count(id);
+
+            ImGui.SetNextItemWidth(150 * ImGui.GetIO().FontGlobalScale);
+            if (ImGui.BeginCombo($"##combo_{id}", $"{id} #{current + 1}"))
+            {
+                for (var i = 0; i < count; ++i)
+                {
+                    if (ImGui.Selectable($"{id} #{i + 1}##combo", i == current) && i != current)
+                    {
+                        customization[id] = (byte) i;
+                        ret               = true;
+                    }
+                }
+
+                ImGui.EndCombo();
+            }
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(50 + 2 * 22.5f * ImGui.GetIO().FontGlobalScale);
+            if (ImGui.InputInt($"##text_{id}", ref current, 1) && current != customization[id] && current >= 0 && current < count)
+            {
+                customization[id] = set.Data(id, current).Value;
+                ret               = true;
+            }
+
+            ImGui.SameLine();
+            ImGui.Text(label);
+            if (tooltip.Any() && ImGui.IsItemHovered())
+                ImGui.SetTooltip(tooltip);
+
+            return ret;
+        }
+
+        private static readonly Vector4 NoColor  = new(1f, 1f, 1f, 1f);
+        private static readonly Vector4 RedColor = new(0.6f, 0.3f, 0.3f, 1f);
+
+        private static bool DrawMultiSelector(CustomizationStruct customization, CustomizationSet set)
+        {
+            var       ret   = false;
+            var       count = set.Count(CustomizationId.FacialFeaturesTattoos);
+            using var raii  = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing / 2);
+            for (var i = 0; i < count; ++i)
+            {
+                var enabled = customization.FacialFeature(i);
+                var feature = set.FacialFeature(set.Race == Race.Hrothgar ? customization.Hairstyle : customization.Face, i);
+                var icon    = GlamourerPlugin.Customization.GetIcon(feature.IconId);
+                if (ImGui.ImageButton(icon.ImGuiHandle, FeatureIconSize, Vector2.Zero, Vector2.One, (int) ImGui.GetStyle().FramePadding.X,
+                    Vector4.Zero,
+                    enabled ? NoColor : RedColor))
+                {
+                    ret = true;
+                    customization.FacialFeature(i, !enabled);
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    using var tt = ImGuiRaii.NewTooltip();
+                    ImGui.Image(icon.ImGuiHandle, new Vector2(icon.Width, icon.Height));
+                }
+
+                ImGui.SameLine();
+            }
+
+            raii.PopStyles();
+            raii.Group();
+            int value = customization[CustomizationId.FacialFeaturesTattoos];
+            ImGui.SetNextItemWidth(50 + 2 * 22.5f * ImGui.GetIO().FontGlobalScale);
+            if (ImGui.InputInt($"##{CustomizationId.FacialFeaturesTattoos}", ref value, 1)
+             && value != customization[CustomizationId.FacialFeaturesTattoos]
+             && value > 0
+             && value < 256)
+            {
+                customization[CustomizationId.FacialFeaturesTattoos] = (byte) value;
+                ret                                                  = true;
+            }
+
+            ImGui.Text("Facial Features & Tattoos");
+
+
+            return ret;
+        }
+
+        private static bool DrawIconPickerPopup(string label, CustomizationSet set, CustomizationId id, out Customization.Customization value)
+        {
+            value = default;
+            if (!ImGui.BeginPopup(label, ImGuiWindowFlags.AlwaysAutoResize))
+                return false;
+
+            var ret   = false;
+            var count = set.Count(id);
+            using var raii = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
+                .PushStyle(ImGuiStyleVar.FrameRounding, 0);
+            for (var i = 0; i < count; ++i)
+            {
+                var custom = set.Data(id, i);
+                var icon   = GlamourerPlugin.Customization.GetIcon(custom.IconId);
+                if (ImGui.ImageButton(icon.ImGuiHandle, FeatureIconSize))
+                {
+                    value = custom;
+                    ret   = true;
+                    ImGui.CloseCurrentPopup();
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    using var tt = ImGuiRaii.NewTooltip();
+                    ImGui.Image(icon.ImGuiHandle, new Vector2(icon.Width, icon.Height));
+                }
+
+                if (i % 8 != 7)
+                    ImGui.SameLine();
+            }
+
+            ImGui.EndPopup();
+            return ret;
+        }
+
+        private static bool DrawIconSelector(string label, string tooltip, CustomizationStruct customization, CustomizationId id,
+            CustomizationSet set)
+        {
+            var ret   = false;
+            var count = set.Count(id);
+
+            var current = set.DataByValue(id, customization[id], out var custom);
+            if (current < 0)
+            {
+                PluginLog.Warning($"Read invalid customization value {customization[id]} for {id}.");
+                current = 0;
+                custom  = set.Data(id, 0);
+            }
+
+            var popupName = $"Style Picker##{id}";
+            var icon      = GlamourerPlugin.Customization.GetIcon(custom!.Value.IconId);
+            if (ImGui.ImageButton(icon.ImGuiHandle, FeatureIconSize))
+                ImGui.OpenPopup(popupName);
+
+            if (ImGui.IsItemHovered())
+            {
+                using var tt = ImGuiRaii.NewTooltip();
+                ImGui.Image(icon.ImGuiHandle, new Vector2(icon.Width, icon.Height));
+            }
+
+            ImGui.SameLine();
+            using var group = ImGuiRaii.NewGroup();
+            ImGui.SetNextItemWidth(50 + 2 * 22.5f * ImGui.GetIO().FontGlobalScale);
+            var oldIdx = current;
+            if (ImGui.InputInt($"##text_{id}", ref current, 1) && current != oldIdx && current >= 0 && current < count)
+            {
+                customization[id] = set.Data(id, current).Value;
+                ret               = true;
+            }
+
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip($"Input Range: [0, {count - 1}]");
+
+            if (DrawIconPickerPopup(popupName, set, id, out var newCustom))
+            {
+                customization[id] = newCustom.Value;
+                ret               = true;
+            }
+
+            ImGui.Text(label);
+            if (tooltip.Any() && ImGui.IsItemHovered())
+                ImGui.SetTooltip(tooltip);
+
+            return ret;
+        }
+
+
+        private static bool DrawPercentageSelector(string label, string tooltip, CustomizationStruct customization, CustomizationId id,
+            CustomizationSet set)
+        {
+            var ret   = false;
+            int value = customization[id];
+            var count = set.Count(id);
+            ImGui.SetNextItemWidth(150 * ImGui.GetIO().FontGlobalScale);
+            if (ImGui.SliderInt($"##slider_{id}", ref value, 0, count - 1, "") && value != customization[id])
+            {
+                customization[id] = (byte) value;
+                ret               = true;
+            }
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(50 + 2 * 22.5f * ImGui.GetIO().FontGlobalScale);
+            if (ImGui.InputInt($"##input_{id}", ref value, 1) && value != customization[id] && value >= 0 && value < count)
+            {
+                customization[id] = (byte) value;
+                ret               = true;
+            }
+
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip($"Input Range: [0, {count - 1}]");
+
+            ImGui.SameLine();
+            ImGui.Text(label);
+            if (tooltip.Any() && ImGui.IsItemHovered())
+                ImGui.SetTooltip(tooltip);
+
+            return ret;
+        }
+
+        private bool DrawStuff()
+        {
+            var ret = false;
+            var x   = new CustomizationStruct(_player!.Address + 0x1898);
+            _currentSubRace = x.Clan;
+            ImGui.SetNextItemWidth(150 * ImGui.GetIO().FontGlobalScale);
+            if (ImGui.BeginCombo("SubRace", SubRaceNames[(int) _currentSubRace - 1]))
             {
                 for (var i = 0; i < SubRaceNames.Length; ++i)
                 {
                     if (ImGui.Selectable(SubRaceNames[i], (int) _currentSubRace == i + 1))
-                        _currentSubRace = (SubRace) (i + 1);
+                    {
+                        _currentSubRace =  (SubRace) i + 1;
+                        ret             |= ChangeRace(x, _currentSubRace);
+                    }
                 }
 
                 ImGui.EndCombo();
             }
 
+            _currentGender = x.Gender;
+            ImGui.SetNextItemWidth(150 * ImGui.GetIO().FontGlobalScale);
             if (ImGui.BeginCombo("Gender", _currentGender.ToName()))
             {
-                if (ImGui.Selectable(Gender.Male.ToName(), _currentGender == Gender.Male))
+                if (_currentSubRace.ToRace() != Race.Viera
+                 && ImGui.Selectable(Gender.Male.ToName(), _currentGender == Gender.Male)
+                 && _currentGender != Gender.Male)
+                {
                     _currentGender = Gender.Male;
-                if (ImGui.Selectable(Gender.Female.ToName(), _currentGender == Gender.Female))
+                    ret            = ChangeGender(x, _currentGender);
+                }
+
+                if (_currentSubRace.ToRace() != Race.Hrothgar
+                 && ImGui.Selectable(Gender.Female.ToName(), _currentGender == Gender.Female)
+                 && _currentGender != Gender.Female)
+                {
                     _currentGender = Gender.Female;
+                    ret            = ChangeGender(x, _currentGender);
+                }
+
                 ImGui.EndCombo();
             }
-
 
             var set = GlamourerPlugin.Customization.GetList(_currentSubRace, _currentGender);
-            if (ImGui.BeginCombo("Customization", _currentCustomization.ToString()))
+
+
+            foreach (CustomizationId customizationId in Enum.GetValues(typeof(CustomizationId)))
             {
-                foreach (CustomizationId customizationId in Enum.GetValues(typeof(CustomizationId)))
+                if (!set.IsAvailable(customizationId))
+                    continue;
+
+                switch (customizationId.ToType(_currentSubRace.ToRace() == Race.Hrothgar))
                 {
-                    if (!set.IsAvailable(customizationId))
-                        continue;
-
-                    if (ImGui.Selectable(customizationId.ToString(), customizationId == _currentCustomization))
-                        _currentCustomization = customizationId;
+                    case CharaMakeParams.MenuType.ColorPicker:
+                        ret |= DrawColorPicker(customizationId.ToString(), "", x,
+                            customizationId,                               set);
+                        break;
+                    case CharaMakeParams.MenuType.ListSelector:
+                        ret |= DrawListSelector(customizationId.ToString(), "", x,
+                            customizationId,                                set);
+                        break;
+                    case CharaMakeParams.MenuType.IconSelector:
+                        ret |= DrawIconSelector(customizationId.ToString(), "", x, customizationId, set);
+                        break;
+                    case CharaMakeParams.MenuType.MultiIconSelector:
+                        ret |= DrawMultiSelector(x, set);
+                        break;
+                    case CharaMakeParams.MenuType.Percentage:
+                        ret |= DrawPercentageSelector(customizationId.ToString(), "", x, customizationId, set);
+                        break;
                 }
-
-                ImGui.EndCombo();
             }
 
-            var count = set.Count(_currentCustomization);
-            var tmp   = 0;
-            switch (_currentCustomization.ToType(_currentSubRace.ToRace() == Race.Hrothgar))
-            {
-                case CharaMakeParams.MenuType.ColorPicker:
-                {
-                    using var raii = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
-                        .PushStyle(ImGuiStyleVar.FrameRounding, 0f);
-                    for (var i = 0; i < count; ++i)
-                    {
-                        var data = set.Data(_currentCustomization, i);
-                        ImGui.ColorButton($"{data.Value}", ImGui.ColorConvertU32ToFloat4(data.Color));
-                        if (i % 8 != 7)
-                            ImGui.SameLine();
-                    }
-                }
-                    break;
-                case CharaMakeParams.MenuType.Percentage:
-                    ImGui.SliderInt("Percentage", ref tmp, 0, 100);
-                    break;
-                case CharaMakeParams.MenuType.ListSelector:
-                    ImGui.Combo("List", ref tmp, Enumerable.Range(0, count).Select(i => $"{_currentCustomization} #{i}").ToArray(), count);
-                    break;
-                case CharaMakeParams.MenuType.IconSelector:
-                case CharaMakeParams.MenuType.MultiIconSelector:
-                {
-                    using var raii = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
-                        .PushStyle(ImGuiStyleVar.FrameRounding, 0f);
-                    for (var i = 0; i < count; ++i)
-                    {
-                        var data    = set.Data(_currentCustomization, i);
-                        var texture = GlamourerPlugin.Customization.GetIcon(data.IconId);
-                        ImGui.ImageButton(texture.ImGuiHandle, FeatureIconSize * ImGui.GetIO().FontGlobalScale);
-                        if (ImGui.IsItemHovered())
-                        {
-                            using var tooltip = ImGuiRaii.NewTooltip();
-                            ImGui.Image(texture.ImGuiHandle, new Vector2(texture.Width, texture.Height));
-                        }
-
-                        if (i % 4 != 3)
-                            ImGui.SameLine();
-                    }
-                }
-                    break;
-            }
+            return ret;
         }
 
         private void Draw()
         {
             ImGui.SetNextWindowSizeConstraints(Vector2.One * 600, Vector2.One * 5000);
-            if (!_visible || !ImGui.Begin(_glamourerHeader))
+            if (!_visible || !ImGui.Begin(_glamourerHeader, ref _visible))
                 return;
 
             try
@@ -311,11 +638,11 @@ namespace Glamourer.Gui
                     changes |= DrawEquip(EquipSlot.RFinger, equip.RFinger);
                     changes |= DrawEquip(EquipSlot.LFinger, equip.LFinger);
 
+                    changes |= DrawStuff();
+
                     if (changes)
                         UpdateActors(_player);
                 }
-
-                DrawStuff();
             }
             finally
             {

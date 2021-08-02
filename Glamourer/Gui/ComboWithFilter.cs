@@ -15,6 +15,7 @@ namespace Glamourer.Gui
         private          string                _currentFilterLower = string.Empty;
         private          bool                  _focus;
         private readonly float                 _size;
+        private readonly float                 _previewSize;
         private readonly IReadOnlyList<T>      _items;
         private readonly IReadOnlyList<string> _itemNamesLower;
         private readonly Func<T, string>       _itemToName;
@@ -31,7 +32,7 @@ namespace Glamourer.Gui
         public ImGuiComboFlags Flags       { get; set; } = ImGuiComboFlags.None;
         public int             ItemsAtOnce { get; set; } = 12;
 
-        public ComboWithFilter(string label, float size, IReadOnlyList<T> items, Func<T, string> itemToName)
+        public ComboWithFilter(string label, float size, float previewSize, IReadOnlyList<T> items, Func<T, string> itemToName)
         {
             _label       = label;
             _filterLabel = $"##_{label}_filter";
@@ -39,6 +40,7 @@ namespace Glamourer.Gui
             _itemToName  = itemToName;
             _items       = items;
             _size        = size;
+            _previewSize = previewSize;
 
             _itemNamesLower = _items.Select(i => _itemToName(i).ToLowerInvariant()).ToList();
         }
@@ -52,6 +54,7 @@ namespace Glamourer.Gui
             _items           = other._items;
             _itemNamesLower  = other._itemNamesLower;
             _size            = other._size;
+            _previewSize     = other._previewSize;
             PrePreview       = other.PrePreview;
             PostPreview      = other.PostPreview;
             CreateSelectable = other.CreateSelectable;
@@ -130,7 +133,7 @@ namespace Glamourer.Gui
         public bool Draw(string currentName, out T? value)
         {
             value = default;
-            ImGui.SetNextItemWidth(_size);
+            ImGui.SetNextItemWidth(_previewSize);
             PrePreview?.Invoke();
             if (!ImGui.BeginCombo(_label, currentName, Flags))
             {

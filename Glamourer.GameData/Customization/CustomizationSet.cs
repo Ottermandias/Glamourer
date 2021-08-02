@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using ImGuiScene;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Customization
@@ -37,7 +39,7 @@ namespace Glamourer.Customization
         public Race Race
             => Clan.ToRace();
 
-        private int _settingAvailable = DefaultAvailable;
+        private int _settingAvailable;
 
         internal void SetAvailable(CustomizationId id)
             => _settingAvailable |= 1 << (int) id;
@@ -71,7 +73,52 @@ namespace Glamourer.Customization
         public IReadOnlyDictionary<CustomizationId, string> OptionName { get; internal set; } = null!;
 
         public Customization FacialFeature(int faceIdx, int idx)
-            => FeaturesTattoos[faceIdx][idx];
+            => FeaturesTattoos[faceIdx - 1][idx];
+
+        public int DataByValue(CustomizationId id, byte value, out Customization? custom)
+        {
+            var type = id.ToType();
+            custom = null;
+            if (type == CharaMakeParams.MenuType.Percentage || type == CharaMakeParams.MenuType.ListSelector)
+            {
+                if (value < Count(id))
+                {
+                    custom = new Customization(id, value, 0, value);
+                    return value;
+                }
+
+                return -1;
+            }
+
+            int Get(IEnumerable<Customization> list, ref Customization? output)
+            {
+                var (val, idx) = list.Cast<Customization?>().Select((c, i) => (c, i)).FirstOrDefault(c => c.c!.Value.Value == value);
+                if (val == null)
+                    return -1;
+
+                output = val;
+                return idx;
+            }
+
+            return id switch
+            {
+                CustomizationId.SkinColor      => Get(SkinColors,                                       ref custom),
+                CustomizationId.EyeColorL      => Get(EyeColors,                                        ref custom),
+                CustomizationId.EyeColorR      => Get(EyeColors,                                        ref custom),
+                CustomizationId.HairColor      => Get(HairColors,                                       ref custom),
+                CustomizationId.HighlightColor => Get(HighlightColors,                                  ref custom),
+                CustomizationId.TattooColor    => Get(TattooColors,                                     ref custom),
+                CustomizationId.LipColor       => Get(LipColorsDark.Concat(LipColorsLight),             ref custom),
+                CustomizationId.FacePaintColor => Get(FacePaintColorsDark.Concat(FacePaintColorsLight), ref custom),
+
+                CustomizationId.Face                  => Get(Faces,              ref custom),
+                CustomizationId.Hairstyle             => Get(HairStyles,         ref custom),
+                CustomizationId.TailEarShape          => Get(TailEarShapes,      ref custom),
+                CustomizationId.FacePaint             => Get(FacePaints,         ref custom),
+                CustomizationId.FacialFeaturesTattoos => Get(FeaturesTattoos[0], ref custom),
+                _                                     => throw new ArgumentOutOfRangeException(nameof(id), id, null),
+            };
+        }
 
         public Customization Data(CustomizationId id, int idx)
         {

@@ -106,7 +106,7 @@ namespace Glamourer.Customization
         {
             var row = _customizeSheet.GetRow(value);
             return row == null
-                ? new Customization(id, (byte) index,  value,    0)
+                ? new Customization(id, (byte) (index + 1),  value,    0)
                 : new Customization(id, row.FeatureID, row.Icon, (ushort) row.RowId);
         }
 
@@ -191,8 +191,6 @@ namespace Glamourer.Customization
                 set.SetAvailable(CustomizationId.TailEarShape);
             if (set.Faces.Count > 0)
                 set.SetAvailable(CustomizationId.Face);
-
-
 
             var count       = race.ToRace() == Race.Hrothgar ? set.HairStyles.Count : set.Faces.Count;
             var featureDict = new List<IReadOnlyList<Customization>>(count);
