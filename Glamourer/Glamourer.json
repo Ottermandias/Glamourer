@@ -3,7 +3,7 @@
   "Name": "Glamourer",
   "Description": "Adds functionality to change appearance of actors. Requires Penumbra to be installed and activated to work.",
   "InternalName": "Glamourer",
-  "AssemblyVersion": "0.0.1.1",
+  "AssemblyVersion": "0.0.2.0",
   "RepoUrl": "https://github.com/Ottermandias/Glamourer",
   "ApplicableVersion": "any",
   "DalamudApiLevel": 3,
