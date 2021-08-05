@@ -31,5 +31,8 @@ namespace Glamourer.Customization
 
         public ImGuiScene.TextureWrap GetIcon(uint iconId)
             => _options!.GetIcon(iconId);
+
+        public string GetName(CustomName name)
+            => _options!.GetName(name);
     }
 }

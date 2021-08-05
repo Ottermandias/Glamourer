@@ -12,5 +12,6 @@ namespace Glamourer.Customization
         public CustomizationSet GetList(SubRace race, Gender gender);
 
         public ImGuiScene.TextureWrap GetIcon(uint iconId);
+        public string                 GetName(CustomName name);
     }
 }

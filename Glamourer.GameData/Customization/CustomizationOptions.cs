@@ -13,7 +13,7 @@ using Race = Penumbra.GameData.Enums.Race;
 
 namespace Glamourer.Customization
 {
-    public class CustomizationOptions
+    public partial class CustomizationOptions
     {
         internal static readonly Race[]    Races = ((Race[]) Enum.GetValues(typeof(Race))).Skip(1).ToArray();
         internal static readonly SubRace[] Clans = ((SubRace[]) Enum.GetValues(typeof(SubRace))).Skip(1).ToArray();
@@ -82,7 +82,7 @@ namespace Glamourer.Customization
                 SubRace.Midlander       => gender == Gender.Male ? (0x1200, 0x1300) : (0x0D00, 0x0E00),
                 SubRace.Highlander      => gender == Gender.Male ? (0x1C00, 0x1D00) : (0x1700, 0x1800),
                 SubRace.Wildwood        => gender == Gender.Male ? (0x2600, 0x2700) : (0x2100, 0x2200),
-                SubRace.Duskwright      => gender == Gender.Male ? (0x3000, 0x3100) : (0x2B00, 0x2C00),
+                SubRace.Duskwight       => gender == Gender.Male ? (0x3000, 0x3100) : (0x2B00, 0x2C00),
                 SubRace.Plainsfolk      => gender == Gender.Male ? (0x3A00, 0x3B00) : (0x3500, 0x3600),
                 SubRace.Dunesfolk       => gender == Gender.Male ? (0x4400, 0x4500) : (0x3F00, 0x4000),
                 SubRace.SeekerOfTheSun  => gender == Gender.Male ? (0x4E00, 0x4F00) : (0x4900, 0x4A00),
@@ -91,7 +91,7 @@ namespace Glamourer.Customization
                 SubRace.Hellsguard      => gender == Gender.Male ? (0x6C00, 0x6D00) : (0x6700, 0x6800),
                 SubRace.Raen            => gender == Gender.Male ? (0x7100, 0x7700) : (0x7600, 0x7200),
                 SubRace.Xaela           => gender == Gender.Male ? (0x7B00, 0x8100) : (0x8000, 0x7C00),
-                SubRace.Hellion         => gender == Gender.Male ? (0x8500, 0x8600) : (0x0000, 0x0000),
+                SubRace.Helion          => gender == Gender.Male ? (0x8500, 0x8600) : (0x0000, 0x0000),
                 SubRace.Lost            => gender == Gender.Male ? (0x8C00, 0x8F00) : (0x0000, 0x0000),
                 SubRace.Rava            => gender == Gender.Male ? (0x0000, 0x0000) : (0x9E00, 0x9F00),
                 SubRace.Veena           => gender == Gender.Male ? (0x0000, 0x0000) : (0xA800, 0xA900),
@@ -106,11 +106,11 @@ namespace Glamourer.Customization
         {
             var row = _customizeSheet.GetRow(value);
             return row == null
-                ? new Customization(id, (byte) (index + 1),  value,    0)
-                : new Customization(id, row.FeatureID, row.Icon, (ushort) row.RowId);
+                ? new Customization(id, (byte) (index + 1), value,    0)
+                : new Customization(id, row.FeatureID,      row.Icon, (ushort) row.RowId);
         }
 
-        private int GetListSize(CharaMakeParams row, CustomizationId id)
+        private static int GetListSize(CharaMakeParams row, CustomizationId id)
         {
             var menu = row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customization == id);
             return menu?.Size ?? 0;
@@ -187,6 +187,7 @@ namespace Glamourer.Customization
                 set.SetAvailable(CustomizationId.FacePaint);
                 set.SetAvailable(CustomizationId.FacePaintColor);
             }
+
             if (set.TailEarShapes.Count > 0)
                 set.SetAvailable(CustomizationId.TailEarShape);
             if (set.Faces.Count > 0)
@@ -204,12 +205,48 @@ namespace Glamourer.Customization
 
             set.FeaturesTattoos = featureDict;
 
+            set.OptionName = ((CustomizationId[]) Enum.GetValues(typeof(CustomizationId))).Select(c =>
+            {
+                var menu = row.Menus
+                    .Cast<CharaMakeParams.Menu?>()
+                    .FirstOrDefault(m => m!.Value.Customization == c);
+                if (menu == null)
+                {
+                    if (c == CustomizationId.HighlightsOnFlag)
+                        return _lobby.GetRow(237)?.Text.ToString() ?? "Highlights";
+
+                    return c.ToDefaultName();
+                }
+
+                if (c == CustomizationId.FacialFeaturesTattoos)
+                    return
+                        $"{_lobby.GetRow(1741)?.Text.ToString() ?? "Facial Features"} & {_lobby.GetRow(1742)?.Text.ToString() ?? "Tattoos"}";
+
+                var textRow = _lobby.GetRow(menu.Value.Id);
+                return textRow?.Text.ToString() ?? c.ToDefaultName();
+            }).ToArray();
+
+            set._types = ((CustomizationId[]) Enum.GetValues(typeof(CustomizationId))).Select(c =>
+            {
+                if (c == CustomizationId.HighlightColor)
+                    return CharaMakeParams.MenuType.ColorPicker;
+
+                if (c == CustomizationId.EyeColorL)
+                    return CharaMakeParams.MenuType.ColorPicker;
+
+                var menu = row.Menus
+                    .Cast<CharaMakeParams.Menu?>()
+                    .FirstOrDefault(m => m!.Value.Customization == c);
+                return menu?.Type ?? CharaMakeParams.MenuType.ListSelector;
+            }).ToArray();
+
             return set;
         }
 
         private readonly ExcelSheet<CharaMakeCustomize> _customizeSheet;
         private readonly ExcelSheet<CharaMakeParams>    _listSheet;
         private readonly ExcelSheet<HairMakeType>       _hairSheet;
+        private readonly ExcelSheet<Lobby>              _lobby;
         private readonly CmpFile                        _cmpFile;
         private readonly Customization[]                _highlightPicker;
         private readonly Customization[]                _eyeColorPicker;
@@ -218,6 +255,10 @@ namespace Glamourer.Customization
         private readonly Customization[]                _lipColorPickerDark;
         private readonly Customization[]                _lipColorPickerLight;
         private readonly Customization[]                _tattooColorPicker;
+        private readonly string[]                       _names = new string[(int) CustomName.Num];
+
+        public string GetName(CustomName name)
+            => _names[(int) name];
 
         private static Language FromClientLanguage(ClientLanguage language)
             => language switch
@@ -233,6 +274,7 @@ namespace Glamourer.Customization
         {
             _cmpFile        = new CmpFile(pi);
             _customizeSheet = pi.Data.GetExcelSheet<CharaMakeCustomize>();
+            _lobby          = pi.Data.GetExcelSheet<Lobby>();
             var tmp = pi.Data.Excel.GetType()!.GetMethod("GetSheet", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .MakeGenericMethod(typeof(CharaMakeParams))!.Invoke(pi.Data.Excel, new object?[]
             {
@@ -242,6 +284,7 @@ namespace Glamourer.Customization
             }) as ExcelSheet<CharaMakeParams>;
             _listSheet = tmp!;
             _hairSheet = pi.Data.GetExcelSheet<HairMakeType>();
+            SetNames(pi);
 
             _highlightPicker           = CreateColorPicker(CustomizationId.HighlightColor, 256,  192);
             _lipColorPickerDark        = CreateColorPicker(CustomizationId.LipColor,       512,  96);
@@ -257,6 +300,56 @@ namespace Glamourer.Customization
                 foreach (var gender in Genders)
                     _list[ToIndex(race, gender)] = GetSet(race, gender);
             }
+        }
+
+        public void SetNames(DalamudPluginInterface pi)
+        {
+            var subRace = pi.Data.GetExcelSheet<Tribe>();
+            _names[(int) CustomName.Clan]       = _lobby.GetRow(102)?.Text ?? "Clan";
+            _names[(int) CustomName.Gender]     = _lobby.GetRow(103)?.Text ?? "Gender";
+            _names[(int) CustomName.Reverse]    = _lobby.GetRow(2135)?.Text ?? "Reverse";
+            _names[(int) CustomName.OddEyes]    = _lobby.GetRow(2125)?.Text ?? "Odd Eyes";
+            _names[(int) CustomName.IrisSmall]    = _lobby.GetRow(1076)?.Text ?? "Small";
+            _names[(int) CustomName.IrisLarge]    = _lobby.GetRow(1075)?.Text ?? "Large";
+            _names[(int) CustomName.MidlanderM] = subRace.GetRow((int) SubRace.Midlander)?.Masculine.ToString() ?? SubRace.Midlander.ToName();
+            _names[(int) CustomName.MidlanderF] = subRace.GetRow((int) SubRace.Midlander)?.Feminine.ToString() ?? SubRace.Midlander.ToName();
+            _names[(int) CustomName.HighlanderM] =
+                subRace.GetRow((int) SubRace.Highlander)?.Masculine.ToString() ?? SubRace.Highlander.ToName();
+            _names[(int) CustomName.HighlanderF] = subRace.GetRow((int) SubRace.Highlander)?.Feminine.ToString() ?? SubRace.Highlander.ToName();
+            _names[(int) CustomName.WildwoodM]   = subRace.GetRow((int) SubRace.Wildwood)?.Masculine.ToString() ?? SubRace.Wildwood.ToName();
+            _names[(int) CustomName.WildwoodF]   = subRace.GetRow((int) SubRace.Wildwood)?.Feminine.ToString() ?? SubRace.Wildwood.ToName();
+            _names[(int) CustomName.DuskwightM]  = subRace.GetRow((int) SubRace.Duskwight)?.Masculine.ToString() ?? SubRace.Duskwight.ToName();
+            _names[(int) CustomName.DuskwightF]  = subRace.GetRow((int) SubRace.Duskwight)?.Feminine.ToString() ?? SubRace.Duskwight.ToName();
+            _names[(int) CustomName.PlainsfolkM] =
+                subRace.GetRow((int) SubRace.Plainsfolk)?.Masculine.ToString() ?? SubRace.Plainsfolk.ToName();
+            _names[(int) CustomName.PlainsfolkF] = subRace.GetRow((int) SubRace.Plainsfolk)?.Feminine.ToString() ?? SubRace.Plainsfolk.ToName();
+            _names[(int) CustomName.DunesfolkM]  = subRace.GetRow((int) SubRace.Dunesfolk)?.Masculine.ToString() ?? SubRace.Dunesfolk.ToName();
+            _names[(int) CustomName.DunesfolkF]  = subRace.GetRow((int) SubRace.Dunesfolk)?.Feminine.ToString() ?? SubRace.Dunesfolk.ToName();
+            _names[(int) CustomName.SeekerOfTheSunM] =
+                subRace.GetRow((int) SubRace.SeekerOfTheSun)?.Masculine.ToString() ?? SubRace.SeekerOfTheSun.ToName();
+            _names[(int) CustomName.SeekerOfTheSunF] =
+                subRace.GetRow((int) SubRace.SeekerOfTheSun)?.Feminine.ToString() ?? SubRace.SeekerOfTheSun.ToName();
+            _names[(int) CustomName.KeeperOfTheMoonM] =
+                subRace.GetRow((int) SubRace.KeeperOfTheMoon)?.Masculine.ToString() ?? SubRace.KeeperOfTheMoon.ToName();
+            _names[(int) CustomName.KeeperOfTheMoonF] =
+                subRace.GetRow((int) SubRace.KeeperOfTheMoon)?.Feminine.ToString() ?? SubRace.KeeperOfTheMoon.ToName();
+            _names[(int) CustomName.SeawolfM] = subRace.GetRow((int) SubRace.Seawolf)?.Masculine.ToString() ?? SubRace.Seawolf.ToName();
+            _names[(int) CustomName.SeawolfF] = subRace.GetRow((int) SubRace.Seawolf)?.Feminine.ToString() ?? SubRace.Seawolf.ToName();
+            _names[(int) CustomName.HellsguardM] =
+                subRace.GetRow((int) SubRace.Hellsguard)?.Masculine.ToString() ?? SubRace.Hellsguard.ToName();
+            _names[(int) CustomName.HellsguardF] = subRace.GetRow((int) SubRace.Hellsguard)?.Feminine.ToString() ?? SubRace.Hellsguard.ToName();
+            _names[(int) CustomName.RaenM]       = subRace.GetRow((int) SubRace.Raen)?.Masculine.ToString() ?? SubRace.Raen.ToName();
+            _names[(int) CustomName.RaenF]       = subRace.GetRow((int) SubRace.Raen)?.Feminine.ToString() ?? SubRace.Raen.ToName();
+            _names[(int) CustomName.XaelaM]      = subRace.GetRow((int) SubRace.Xaela)?.Masculine.ToString() ?? SubRace.Xaela.ToName();
+            _names[(int) CustomName.XaelaF]      = subRace.GetRow((int) SubRace.Xaela)?.Feminine.ToString() ?? SubRace.Xaela.ToName();
+            _names[(int) CustomName.HelionM]     = subRace.GetRow((int) SubRace.Helion)?.Masculine.ToString() ?? SubRace.Helion.ToName();
+            _names[(int) CustomName.HelionF]     = subRace.GetRow((int) SubRace.Helion)?.Feminine.ToString() ?? SubRace.Helion.ToName();
+            _names[(int) CustomName.LostM]       = subRace.GetRow((int) SubRace.Lost)?.Masculine.ToString() ?? SubRace.Lost.ToName();
+            _names[(int) CustomName.LostF]       = subRace.GetRow((int) SubRace.Lost)?.Feminine.ToString() ?? SubRace.Lost.ToName();
+            _names[(int) CustomName.RavaM]       = subRace.GetRow((int) SubRace.Rava)?.Masculine.ToString() ?? SubRace.Rava.ToName();
+            _names[(int) CustomName.RavaF]       = subRace.GetRow((int) SubRace.Rava)?.Feminine.ToString() ?? SubRace.Rava.ToName();
+            _names[(int) CustomName.VeenaM]      = subRace.GetRow((int) SubRace.Veena)?.Masculine.ToString() ?? SubRace.Veena.ToName();
+            _names[(int) CustomName.VeenaF]      = subRace.GetRow((int) SubRace.Veena)?.Feminine.ToString() ?? SubRace.Veena.ToName();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Customization
 {
@@ -34,7 +35,40 @@ namespace Glamourer.Customization
 
     public static class CustomizationExtensions
     {
-        public static CharaMakeParams.MenuType ToType(this CustomizationId customizationId, bool isHrothgar = false)
+        public static string ToDefaultName(this CustomizationId customizationId)
+            => customizationId switch
+            {
+                CustomizationId.Race                      => "Race",
+                CustomizationId.Gender                    => "Gender",
+                CustomizationId.BodyType                  => "Body Type",
+                CustomizationId.Height                    => "Height",
+                CustomizationId.Clan                      => "Clan",
+                CustomizationId.Face                      => "Head Style",
+                CustomizationId.Hairstyle                 => "Hair Style",
+                CustomizationId.HighlightsOnFlag          => "Highlights",
+                CustomizationId.SkinColor                 => "Skin Color",
+                CustomizationId.EyeColorR                 => "Right Eye Color",
+                CustomizationId.HairColor                 => "Hair Color",
+                CustomizationId.HighlightColor            => "Highlights Color",
+                CustomizationId.FacialFeaturesTattoos     => "Facial Features",
+                CustomizationId.TattooColor               => "Tattoo Color",
+                CustomizationId.Eyebrows                  => "Eyebrow Style",
+                CustomizationId.EyeColorL                 => "Left Eye Color",
+                CustomizationId.EyeShape                  => "Eye Shape",
+                CustomizationId.Nose                      => "Nose Style",
+                CustomizationId.Jaw                       => "Jaw Style",
+                CustomizationId.Mouth                     => "Mouth Style",
+                CustomizationId.MuscleToneOrTailEarLength => "Muscle Tone",
+                CustomizationId.TailEarShape              => "Tail Shape",
+                CustomizationId.BustSize                  => "Bust Size",
+                CustomizationId.FacePaint                 => "Face Paint",
+                CustomizationId.FacePaintColor            => "Face Paint Color",
+                CustomizationId.LipColor                  => "Lip Color",
+
+                _ => throw new ArgumentOutOfRangeException(nameof(customizationId), customizationId, null),
+            };
+
+        public static CharaMakeParams.MenuType ToType(this CustomizationId customizationId, Race race = Race.Midlander)
             => customizationId switch
             {
                 CustomizationId.Race                      => CharaMakeParams.MenuType.IconSelector,
@@ -58,13 +92,17 @@ namespace Glamourer.Customization
                 CustomizationId.Jaw                       => CharaMakeParams.MenuType.ListSelector,
                 CustomizationId.Mouth                     => CharaMakeParams.MenuType.ListSelector,
                 CustomizationId.MuscleToneOrTailEarLength => CharaMakeParams.MenuType.Percentage,
-                CustomizationId.TailEarShape              => CharaMakeParams.MenuType.IconSelector,
                 CustomizationId.BustSize                  => CharaMakeParams.MenuType.Percentage,
                 CustomizationId.FacePaint                 => CharaMakeParams.MenuType.IconSelector,
                 CustomizationId.FacePaintColor            => CharaMakeParams.MenuType.ColorPicker,
 
-                CustomizationId.LipColor => isHrothgar ? CharaMakeParams.MenuType.IconSelector : CharaMakeParams.MenuType.ColorPicker,
-                _                        => throw new ArgumentOutOfRangeException(nameof(customizationId), customizationId, null),
+                CustomizationId.TailEarShape => race == Race.Elezen || race == Race.Lalafell
+                    ? CharaMakeParams.MenuType.ListSelector
+                    : CharaMakeParams.MenuType.IconSelector,
+                CustomizationId.LipColor => race == Race.Hrothgar
+                    ? CharaMakeParams.MenuType.IconSelector
+                    : CharaMakeParams.MenuType.ColorPicker,
+                _ => throw new ArgumentOutOfRangeException(nameof(customizationId), customizationId, null),
             };
     }
 }

@@ -1,16 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using Glamourer.Customization;
 using Glamourer.Gui;
 using ImGuiNET;
 using Penumbra.Api;
+using Penumbra.GameData.Structs;
 using CommandManager = Glamourer.Managers.CommandManager;
 
 namespace Glamourer
 {
+    public class CharacterSave
+    {
+        public string             Name           { get; set; }         = string.Empty;
+        public ActorCustomization Customizations { get; private set; }
+        public ActorEquipment     Equipment      { get; private set; } = null!;
+
+        public ActorEquipMask WriteEquipment      { get; set; } = ActorEquipMask.None;
+        public bool           WriteCustomizations { get; set; } = false;
+    }
+
     internal class Glamourer
     {
         private readonly DalamudPluginInterface _pluginInterface;

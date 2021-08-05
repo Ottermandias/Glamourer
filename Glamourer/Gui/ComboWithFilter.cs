@@ -15,7 +15,7 @@ namespace Glamourer.Gui
         private          string                _currentFilterLower = string.Empty;
         private          bool                  _focus;
         private readonly float                 _size;
-        private readonly float                 _previewSize;
+        private          float                 _previewSize;
         private readonly IReadOnlyList<T>      _items;
         private readonly IReadOnlyList<string> _itemNamesLower;
         private readonly Func<T, string>       _itemToName;
@@ -130,8 +130,11 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        public bool Draw(string currentName, out T? value)
+        public bool Draw(string currentName, out T? value, float? size = null)
         {
+            if (size.HasValue)
+                _previewSize = size.Value;
+
             value = default;
             ImGui.SetNextItemWidth(_previewSize);
             PrePreview?.Invoke();

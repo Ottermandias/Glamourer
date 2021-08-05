@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ImGuiScene;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Customization
@@ -11,7 +10,6 @@ namespace Glamourer.Customization
         public const int DefaultAvailable =
             (1 << (int) CustomizationId.Height)
           | (1 << (int) CustomizationId.Hairstyle)
-          | (1 << (int) CustomizationId.HighlightsOnFlag)
           | (1 << (int) CustomizationId.SkinColor)
           | (1 << (int) CustomizationId.EyeColorR)
           | (1 << (int) CustomizationId.EyeColorL)
@@ -54,6 +52,7 @@ namespace Glamourer.Customization
         public int NumMouthShapes { get; internal set; }
 
 
+        public IReadOnlyList<string>                       OptionName      { get; internal set; } = null!;
         public IReadOnlyList<Customization>                Faces           { get; internal set; } = null!;
         public IReadOnlyList<Customization>                HairStyles      { get; internal set; } = null!;
         public IReadOnlyList<Customization>                TailEarShapes   { get; internal set; } = null!;
@@ -70,7 +69,10 @@ namespace Glamourer.Customization
         public IReadOnlyList<Customization> LipColorsLight       { get; internal set; } = null!;
         public IReadOnlyList<Customization> LipColorsDark        { get; internal set; } = null!;
 
-        public IReadOnlyDictionary<CustomizationId, string> OptionName { get; internal set; } = null!;
+        public IReadOnlyList<CharaMakeParams.MenuType> _types { get; internal set; } = null!;
+
+        public string Option(CustomizationId id)
+            => OptionName[(int) id];
 
         public Customization FacialFeature(int faceIdx, int idx)
             => FeaturesTattoos[faceIdx - 1][idx];
@@ -150,6 +152,10 @@ namespace Glamourer.Customization
                 _                              => new Customization(0, 0),
             };
         }
+
+        public CharaMakeParams.MenuType Type(CustomizationId id)
+            => _types[(int) id];
+
 
         public int Count(CustomizationId id)
         {

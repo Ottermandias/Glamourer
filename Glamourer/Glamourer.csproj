@@ -36,6 +36,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="LegacyTattoo.raw" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="LegacyTattoo.raw" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Reference Include="Dalamud">
 			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
 		</Reference>
