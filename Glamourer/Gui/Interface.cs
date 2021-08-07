@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Windows.Forms;
 using Dalamud.Game.ClientState.Actors;
 using Dalamud.Game.ClientState.Actors.Types;
 using Dalamud.Interface;
@@ -735,9 +736,8 @@ namespace Glamourer.Gui
 
         private static readonly CustomizationId[] AllCustomizations = (CustomizationId[]) Enum.GetValues(typeof(CustomizationId));
 
-        private bool DrawStuff()
+        private bool DrawStuff(LazyCustomization x)
         {
-            var x = new LazyCustomization(_player!.Address);
             _currentSubRace = x.Value.Clan;
             _currentGender  = x.Value.Gender;
             var ret = DrawGenderSelector(x);
@@ -885,8 +885,37 @@ namespace Glamourer.Gui
                         changes |= DrawEquip(EquipSlot.LFinger, equip.LFinger);
                     }
 
+                    var x = new LazyCustomization(_player!.Address);
                     if (ImGui.CollapsingHeader("Character Customization"))
-                        changes |= DrawStuff();
+                        changes |= DrawStuff(x);
+
+                    if (ImGui.Button("Copy to Clipboard"))
+                    {
+                        var save = new CharacterSave();
+                        save.Load(x.Value);
+                        save.Load(equip);
+                        Clipboard.SetText(save.ToBase64());
+                    }
+
+                    ImGui.SameLine();
+                    if (ImGui.Button("Apply from Clipboard"))
+                    {
+                        var text = Clipboard.GetText();
+                        if (text.Any())
+                        {
+                            try
+                            {
+                                var save   = CharacterSave.FromString(text);
+                                save.Customizations.Write(_player.Address);
+                                save.Equipment.Write(_player.Address);
+                                changes = true;
+                            }
+                            catch (Exception e)
+                            {
+                                PluginLog.Information($"{e}");
+                            }
+                        }
+                    }
 
                     if (changes)
                         UpdateActors(_player);

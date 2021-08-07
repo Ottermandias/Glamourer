@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using Glamourer.Customization;
@@ -15,12 +17,103 @@ namespace Glamourer
 {
     public class CharacterSave
     {
-        public string             Name           { get; set; }         = string.Empty;
-        public ActorCustomization Customizations { get; private set; }
-        public ActorEquipment     Equipment      { get; private set; } = null!;
+        public const byte CurrentVersion    = 1;
+        public const byte TotalSizeVersion1 = 1 + 1 + 2 + 56 + ActorCustomization.CustomizationBytes;
 
-        public ActorEquipMask WriteEquipment      { get; set; } = ActorEquipMask.None;
-        public bool           WriteCustomizations { get; set; } = false;
+        public const byte TotalSize = TotalSizeVersion1;
+
+        private readonly byte[] _bytes = new byte[TotalSize];
+
+        public CharacterSave()
+            => _bytes[0] = CurrentVersion;
+
+        public byte Version
+            => _bytes[0];
+
+        public bool WriteCustomizations
+        {
+            get => _bytes[1] != 0;
+            set => _bytes[1] = (byte) (value ? 1 : 0);
+        }
+
+        public ActorEquipMask WriteEquipment
+        {
+            get => (ActorEquipMask) ((ushort) _bytes[2] | ((ushort) _bytes[3] << 8));
+            set
+            {
+                _bytes[2] = (byte) (((ushort) value) & 0xFF);
+                _bytes[3] = (byte) (((ushort) value) >> 8);
+            }
+        }
+
+        public void Load(ActorCustomization customization)
+        {
+            WriteCustomizations = true;
+            customization.WriteBytes(_bytes, 4);
+        }
+
+        public void Load(ActorEquipment equipment, ActorEquipMask mask = ActorEquipMask.All)
+        {
+            WriteEquipment = mask;
+            equipment.WriteBytes(_bytes, 4 + ActorCustomization.CustomizationBytes);
+        }
+
+        public string ToBase64()
+            => System.Convert.ToBase64String(_bytes);
+
+        public void Load(string base64)
+        {
+            var bytes = System.Convert.FromBase64String(base64);
+            switch (bytes[0])
+            {
+                case 1:
+                    if (bytes.Length != TotalSizeVersion1)
+                        throw new Exception(
+                            $"Can not parse Base64 string into CharacterSave:\n\tInvalid size {bytes.Length} instead of {TotalSizeVersion1}.");
+                    if (bytes[1] != 0 && bytes[1] != 1)
+                        throw new Exception(
+                            $"Can not parse Base64 string into CharacterSave:\n\tInvalid value {bytes[1]} in byte 2, should be either 0 or 1.");
+
+                    var mask = (ActorEquipMask) ((ushort) bytes[2] | ((ushort) bytes[3] << 8));
+                    if (!Enum.IsDefined(typeof(ActorEquipMask), mask))
+                        throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid value {mask} in byte 3 and 4.");
+                    bytes.CopyTo(_bytes, 0);
+                    break;
+                default:
+                    throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid Version {bytes[0]}.");
+            }
+        }
+
+        public static CharacterSave FromString(string base64)
+        {
+            var ret = new CharacterSave();
+            ret.Load(base64);
+            return ret;
+        }
+
+        public unsafe ActorCustomization Customizations
+        {
+            get
+            {
+                var ret = new ActorCustomization();
+                fixed (byte* ptr = _bytes)
+                {
+                    ret.Read(new IntPtr(ptr) + 4);
+                }
+
+                return ret;
+            }
+        }
+
+        public ActorEquipment Equipment
+        {
+            get
+            {
+                var ret = new ActorEquipment();
+                ret.FromBytes(_bytes, 4 + ActorCustomization.CustomizationBytes);
+                return ret;
+            }
+        }
     }
 
     internal class Glamourer

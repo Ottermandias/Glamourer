@@ -250,14 +250,18 @@ namespace Glamourer.Customization
             }
         }
 
-        public unsafe byte[] ToBytes()
+        public unsafe void WriteBytes(byte[] array, int offset = 0)
         {
-            var ret = new byte[CustomizationBytes];
             fixed (byte* ptr = &_race)
             {
-                Marshal.Copy(new IntPtr(ptr), ret, 0, CustomizationBytes);
+                Marshal.Copy(new IntPtr(ptr), array, offset, CustomizationBytes);
             }
+        }
 
+        public byte[] ToBytes()
+        {
+            var ret = new byte[CustomizationBytes];
+            WriteBytes(ret);
             return ret;
         }
     }
