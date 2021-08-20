@@ -1,144 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
+using System.Windows.Forms;
+using Dalamud.Game.ClientState.Actors.Types;
 using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using Glamourer.Customization;
+using Glamourer.Designs;
+using Glamourer.FileSystem;
 using Glamourer.Gui;
 using ImGuiNET;
+using Lumina.Data;
 using Penumbra.Api;
-using Penumbra.GameData.Structs;
-using CommandManager = Glamourer.Managers.CommandManager;
+using Penumbra.PlayerWatch;
 
 namespace Glamourer
 {
-    public class CharacterSave
-    {
-        public const byte CurrentVersion    = 1;
-        public const byte TotalSizeVersion1 = 1 + 1 + 2 + 56 + ActorCustomization.CustomizationBytes;
-
-        public const byte TotalSize = TotalSizeVersion1;
-
-        private readonly byte[] _bytes = new byte[TotalSize];
-
-        public CharacterSave()
-            => _bytes[0] = CurrentVersion;
-
-        public byte Version
-            => _bytes[0];
-
-        public bool WriteCustomizations
-        {
-            get => _bytes[1] != 0;
-            set => _bytes[1] = (byte) (value ? 1 : 0);
-        }
-
-        public ActorEquipMask WriteEquipment
-        {
-            get => (ActorEquipMask) ((ushort) _bytes[2] | ((ushort) _bytes[3] << 8));
-            set
-            {
-                _bytes[2] = (byte) (((ushort) value) & 0xFF);
-                _bytes[3] = (byte) (((ushort) value) >> 8);
-            }
-        }
-
-        public void Load(ActorCustomization customization)
-        {
-            WriteCustomizations = true;
-            customization.WriteBytes(_bytes, 4);
-        }
-
-        public void Load(ActorEquipment equipment, ActorEquipMask mask = ActorEquipMask.All)
-        {
-            WriteEquipment = mask;
-            equipment.WriteBytes(_bytes, 4 + ActorCustomization.CustomizationBytes);
-        }
-
-        public string ToBase64()
-            => System.Convert.ToBase64String(_bytes);
-
-        public void Load(string base64)
-        {
-            var bytes = System.Convert.FromBase64String(base64);
-            switch (bytes[0])
-            {
-                case 1:
-                    if (bytes.Length != TotalSizeVersion1)
-                        throw new Exception(
-                            $"Can not parse Base64 string into CharacterSave:\n\tInvalid size {bytes.Length} instead of {TotalSizeVersion1}.");
-                    if (bytes[1] != 0 && bytes[1] != 1)
-                        throw new Exception(
-                            $"Can not parse Base64 string into CharacterSave:\n\tInvalid value {bytes[1]} in byte 2, should be either 0 or 1.");
-
-                    var mask = (ActorEquipMask) ((ushort) bytes[2] | ((ushort) bytes[3] << 8));
-                    if (!Enum.IsDefined(typeof(ActorEquipMask), mask))
-                        throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid value {mask} in byte 3 and 4.");
-                    bytes.CopyTo(_bytes, 0);
-                    break;
-                default:
-                    throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid Version {bytes[0]}.");
-            }
-        }
-
-        public static CharacterSave FromString(string base64)
-        {
-            var ret = new CharacterSave();
-            ret.Load(base64);
-            return ret;
-        }
-
-        public unsafe ActorCustomization Customizations
-        {
-            get
-            {
-                var ret = new ActorCustomization();
-                fixed (byte* ptr = _bytes)
-                {
-                    ret.Read(new IntPtr(ptr) + 4);
-                }
-
-                return ret;
-            }
-        }
-
-        public ActorEquipment Equipment
-        {
-            get
-            {
-                var ret = new ActorEquipment();
-                ret.FromBytes(_bytes, 4 + ActorCustomization.CustomizationBytes);
-                return ret;
-            }
-        }
-    }
-
-    internal class Glamourer
-    {
-        private readonly DalamudPluginInterface _pluginInterface;
-        private readonly CommandManager         _commands;
-
-        public Glamourer(DalamudPluginInterface pi)
-        {
-            _pluginInterface = pi;
-            _commands        = new CommandManager(_pluginInterface);
-        }
-    }
-
     public class GlamourerPlugin : IDalamudPlugin
     {
         public const int RequiredPenumbraShareVersion = 1;
+
+        private const string HelpString = "[Copy|Apply|Save],[Name or PlaceHolder],<Name for Save>";
 
         public string Name
             => "Glamourer";
 
         public static DalamudPluginInterface PluginInterface = null!;
-        private       Glamourer              _glamourer      = null!;
         private       Interface              _interface      = null!;
         public static ICustomizationManager  Customization   = null!;
+        public        DesignManager          Designs         = null!;
+        public        IPlayerWatcher         PlayerWatcher   = null!;
 
         public static string Version = string.Empty;
 
@@ -166,13 +58,19 @@ namespace Glamourer
         {
             if (button == MouseButton.Right && it is Lumina.Excel.GeneratedSheets.Item item)
             {
-                var actors = PluginInterface.ClientState.Actors;
-                var player = actors[Interface.GPoseActorId] ?? actors[0];
-                if (player != null)
+                var actors    = PluginInterface.ClientState.Actors;
+                var gPose     = actors[Interface.GPoseActorId];
+                var player    = actors[0];
+                var writeItem = new Item(item, string.Empty);
+                if (gPose != null)
                 {
-                    var writeItem = new Item(item, string.Empty);
+                    writeItem.Write(gPose.Address);
+                    UpdateActors(gPose, player);
+                }
+                else if (player != null)
+                {
                     writeItem.Write(player.Address);
-                    _interface.UpdateActors(player);
+                    UpdateActors(player);
                 }
             }
         }
@@ -244,32 +142,187 @@ namespace Glamourer
             Customization   = CustomizationManager.Create(PluginInterface);
             SetDalamud(PluginInterface);
             SetPlugins(PluginInterface);
+            Designs = new DesignManager(PluginInterface);
             GetPenumbra();
+            PlayerWatcher = PlayerWatchFactory.Create(PluginInterface);
 
-            PluginInterface.CommandManager.AddHandler("/glamour", new CommandInfo(OnCommand)
+            PluginInterface.CommandManager.AddHandler("/glamourer", new CommandInfo(OnGlamourer)
             {
-                HelpMessage = "/penumbra - toggle ui\n/penumbra reload - reload mod file lists & discover any new mods",
+                HelpMessage = "Open or close the Glamourer window.",
+            });
+            PluginInterface.CommandManager.AddHandler("/glamour", new CommandInfo(OnGlamour)
+            {
+                HelpMessage = $"Use Glamourer Functions: {HelpString}",
             });
 
-            _glamourer = new Glamourer(PluginInterface);
-            _interface = new Interface();
+            _interface = new Interface(this);
         }
 
-        public void OnCommand(string command, string arguments)
+        public void OnGlamourer(string command, string arguments)
+            => _interface?.ToggleVisibility(null!, null!);
+
+        private Actor? GetActor(string name)
         {
-            if (GetPenumbra())
-                Penumbra!.RedrawAll(RedrawType.WithSettings);
-            else
-                PluginLog.Information("Could not get Penumbra.");
+            var lowerName = name.ToLowerInvariant();
+            return lowerName switch
+            {
+                ""          => null,
+                "<me>"      => PluginInterface.ClientState.Actors[Interface.GPoseActorId] ?? PluginInterface.ClientState.LocalPlayer,
+                "self"      => PluginInterface.ClientState.Actors[Interface.GPoseActorId] ?? PluginInterface.ClientState.LocalPlayer,
+                "<t>"       => PluginInterface.ClientState.Targets.CurrentTarget,
+                "target"    => PluginInterface.ClientState.Targets.CurrentTarget,
+                "<f>"       => PluginInterface.ClientState.Targets.FocusTarget,
+                "focus"     => PluginInterface.ClientState.Targets.FocusTarget,
+                "<mo>"      => PluginInterface.ClientState.Targets.MouseOverTarget,
+                "mouseover" => PluginInterface.ClientState.Targets.MouseOverTarget,
+                _ => PluginInterface.ClientState.Actors.LastOrDefault(
+                    a => string.Equals(a.Name, lowerName, StringComparison.InvariantCultureIgnoreCase)),
+            };
         }
 
+
+        public void CopyToClipboard(Actor actor)
+        {
+            var save = new CharacterSave();
+            save.LoadActor(actor);
+            Clipboard.SetText(save.ToBase64());
+        }
+
+        public void ApplyCommand(Actor actor, string target)
+        {
+            CharacterSave? save = null;
+            if (target.ToLowerInvariant() == "clipboard")
+            {
+                try
+                {
+                    save = CharacterSave.FromString(Clipboard.GetText());
+                }
+                catch (Exception)
+                {
+                    PluginInterface.Framework.Gui.Chat.PrintError("Clipboard does not contain a valid customization string.");
+                }
+            }
+            else if (!Designs.FileSystem.Find(target, out var child) || child is not Design d)
+            {
+                PluginInterface.Framework.Gui.Chat.PrintError("The given path to a saved design does not exist or does not point to a design.");
+            }
+            else
+            {
+                save = d.Data;
+            }
+
+            save?.Apply(actor);
+            UpdateActors(actor);
+        }
+
+        public void SaveCommand(Actor actor, string path)
+        {
+            var save = new CharacterSave();
+            save.LoadActor(actor);
+            try
+            {
+                var (folder, name) = Designs.FileSystem.CreateAllFolders(path);
+                var design = new Design(folder, name) { Data = save };
+                folder.FindOrAddChild(design);
+                Designs.Designs.Add(design.FullName(), design.Data);
+                Designs.SaveToFile();
+            }
+            catch (Exception e)
+            {
+                PluginInterface.Framework.Gui.Chat.PrintError("Could not save file:");
+                PluginInterface.Framework.Gui.Chat.PrintError($"    {e.Message}");
+            }
+        }
+
+        public void OnGlamour(string command, string arguments)
+        {
+            static void PrintHelp()
+            {
+                PluginInterface.Framework.Gui.Chat.Print("Usage:");
+                PluginInterface.Framework.Gui.Chat.Print($"    {HelpString}");
+            }
+
+            arguments = arguments.Trim();
+            if (!arguments.Any())
+            {
+                PrintHelp();
+                return;
+            }
+
+            var split = arguments.Split(new[]
+            {
+                ',',
+            }, 3, StringSplitOptions.RemoveEmptyEntries);
+
+            if (split.Length < 2)
+            {
+                PrintHelp();
+                return;
+            }
+
+            var actor = GetActor(split[1]);
+            if (actor == null)
+            {
+                PluginInterface.Framework.Gui.Chat.Print($"Could not find actor for {split[1]}.");
+                return;
+            }
+
+            switch (split[0].ToLowerInvariant())
+            {
+                case "copy":
+                    CopyToClipboard(actor);
+                    return;
+                case "apply":
+                {
+                    if (split.Length < 3)
+                    {
+                        PluginInterface.Framework.Gui.Chat.Print("Applying requires a name for the save to be applied or 'clipboard'.");
+                        return;
+                    }
+                    ApplyCommand(actor, split[2]);
+                    
+                    return;
+                }
+                case "save":
+                {
+                    if (split.Length < 3)
+                    {
+                        PluginInterface.Framework.Gui.Chat.Print("Saving requires a name for the save.");
+                        return;
+                    }
+                    SaveCommand(actor, split[2]);
+                    return;
+                }
+                default:
+                    PrintHelp();
+                    return;
+            }
+        }
 
         public void Dispose()
         {
+            PlayerWatcher?.Dispose();
             UnregisterFunctions();
             _interface?.Dispose();
             PluginInterface.CommandManager.RemoveHandler("/glamour");
+            PluginInterface.CommandManager.RemoveHandler("/glamourer");
             PluginInterface.Dispose();
+        }
+
+        // Update actors without triggering PlayerWatcher Events,
+        // then manually redraw using Penumbra.
+        public void UpdateActors(Actor actor, Actor? gPoseOriginalActor = null)
+        {
+            var newEquip = PlayerWatcher.UpdateActorWithoutEvent(actor);
+            Penumbra?.RedrawActor(actor, RedrawType.WithSettings);
+
+            // Special case for carrying over changes to the gPose actor to the regular player actor, too.
+            if (gPoseOriginalActor != null)
+            {
+                newEquip.Write(gPoseOriginalActor.Address);
+                PlayerWatcher.UpdateActorWithoutEvent(gPoseOriginalActor);
+                Penumbra?.RedrawActor(gPoseOriginalActor, RedrawType.AfterGPoseWithSettings);
+            }
         }
     }
 }

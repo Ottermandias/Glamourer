@@ -4,8 +4,8 @@
 		<LangVersion>preview</LangVersion>
 		<RootNamespace>Glamourer</RootNamespace>
 		<AssemblyName>Glamourer</AssemblyName>
-		<FileVersion>0.0.2.0</FileVersion>
-    <AssemblyVersion>0.0.2.0</AssemblyVersion>
+		<FileVersion>0.0.3.0</FileVersion>
+    <AssemblyVersion>0.0.3.0</AssemblyVersion>
 		<Company>SoftOtter</Company>
     <Product>Glamourer</Product>
     <Copyright>Copyright © 2020</Copyright>
@@ -91,13 +91,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="Glamourer.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+	  <ProjectReference Include="..\Glamourer.GameData\Glamourer.GameData.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Glamourer.GameData\Glamourer.GameData.csproj" />
+	  <None Update="Glamourer.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 	  <Exec Command="if $(Configuration) == Release powershell Compress-Archive -Force $(TargetPath), $(TargetDir)$(SolutionName).json, $(TargetDir)$(SolutionName).GameData.dll, $(TargetDir)Penumbra.GameData.dll, $(TargetDir)Penumbra.Api.dll, $(TargetDir)Penumbra.PlayerWatch.dll $(SolutionDir)$(SolutionName).zip" />

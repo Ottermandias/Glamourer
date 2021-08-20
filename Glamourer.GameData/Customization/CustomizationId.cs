@@ -68,7 +68,7 @@ namespace Glamourer.Customization
                 _ => throw new ArgumentOutOfRangeException(nameof(customizationId), customizationId, null),
             };
 
-        public static CharaMakeParams.MenuType ToType(this CustomizationId customizationId, Race race = Race.Midlander)
+        public static CharaMakeParams.MenuType ToType(this CustomizationId customizationId, Race race = Race.Hyur)
             => customizationId switch
             {
                 CustomizationId.Race                      => CharaMakeParams.MenuType.IconSelector,
