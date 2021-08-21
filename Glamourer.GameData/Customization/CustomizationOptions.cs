@@ -77,29 +77,14 @@ namespace Glamourer.Customization
 
         private (Customization[], Customization[]) GetColors(SubRace race, Gender gender)
         {
-            var (skinOffset, hairOffset) = race switch
-            {
-                SubRace.Midlander       => gender == Gender.Male ? (0x1200, 0x1300) : (0x0D00, 0x0E00),
-                SubRace.Highlander      => gender == Gender.Male ? (0x1C00, 0x1D00) : (0x1700, 0x1800),
-                SubRace.Wildwood        => gender == Gender.Male ? (0x2600, 0x2700) : (0x2100, 0x2200),
-                SubRace.Duskwight       => gender == Gender.Male ? (0x3000, 0x3100) : (0x2B00, 0x2C00),
-                SubRace.Plainsfolk      => gender == Gender.Male ? (0x3A00, 0x3B00) : (0x3500, 0x3600),
-                SubRace.Dunesfolk       => gender == Gender.Male ? (0x4400, 0x4500) : (0x3F00, 0x4000),
-                SubRace.SeekerOfTheSun  => gender == Gender.Male ? (0x4E00, 0x4F00) : (0x4900, 0x4A00),
-                SubRace.KeeperOfTheMoon => gender == Gender.Male ? (0x5800, 0x5900) : (0x5300, 0x5400),
-                SubRace.Seawolf         => gender == Gender.Male ? (0x6200, 0x6300) : (0x5D00, 0x5E00),
-                SubRace.Hellsguard      => gender == Gender.Male ? (0x6C00, 0x6D00) : (0x6700, 0x6800),
-                SubRace.Raen            => gender == Gender.Male ? (0x7100, 0x7700) : (0x7600, 0x7200),
-                SubRace.Xaela           => gender == Gender.Male ? (0x7B00, 0x8100) : (0x8000, 0x7C00),
-                SubRace.Helion          => gender == Gender.Male ? (0x8500, 0x8600) : (0x0000, 0x0000),
-                SubRace.Lost            => gender == Gender.Male ? (0x8C00, 0x8F00) : (0x0000, 0x0000),
-                SubRace.Rava            => gender == Gender.Male ? (0x0000, 0x0000) : (0x9E00, 0x9F00),
-                SubRace.Veena           => gender == Gender.Male ? (0x0000, 0x0000) : (0xA800, 0xA900),
-                _                       => throw new ArgumentOutOfRangeException(nameof(race), race, null),
-            };
+            if (race > SubRace.Veena || race == SubRace.Unknown)
+                throw new ArgumentOutOfRangeException(nameof(race), race, null);
 
-            return (CreateColorPicker(CustomizationId.SkinColor, skinOffset, 192),
-                CreateColorPicker(CustomizationId.HairColor,     hairOffset, 192));
+            var gv  = gender == Gender.Male ? 0 : 1;
+            var idx = ((int) race * 2 + gv) * 5 + 3;
+
+            return (CreateColorPicker(CustomizationId.SkinColor, idx << 8,       192),
+                CreateColorPicker(CustomizationId.HairColor,     (idx + 1) << 8, 192));
         }
 
         private Customization FromValueAndIndex(CustomizationId id, uint value, int index)
@@ -309,8 +294,8 @@ namespace Glamourer.Customization
             _names[(int) CustomName.Gender]     = _lobby.GetRow(103)?.Text ?? "Gender";
             _names[(int) CustomName.Reverse]    = _lobby.GetRow(2135)?.Text ?? "Reverse";
             _names[(int) CustomName.OddEyes]    = _lobby.GetRow(2125)?.Text ?? "Odd Eyes";
-            _names[(int) CustomName.IrisSmall]    = _lobby.GetRow(1076)?.Text ?? "Small";
-            _names[(int) CustomName.IrisLarge]    = _lobby.GetRow(1075)?.Text ?? "Large";
+            _names[(int) CustomName.IrisSmall]  = _lobby.GetRow(1076)?.Text ?? "Small";
+            _names[(int) CustomName.IrisLarge]  = _lobby.GetRow(1075)?.Text ?? "Large";
             _names[(int) CustomName.MidlanderM] = subRace.GetRow((int) SubRace.Midlander)?.Masculine.ToString() ?? SubRace.Midlander.ToName();
             _names[(int) CustomName.MidlanderF] = subRace.GetRow((int) SubRace.Midlander)?.Feminine.ToString() ?? SubRace.Midlander.ToName();
             _names[(int) CustomName.HighlanderM] =
