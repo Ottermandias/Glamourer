@@ -75,7 +75,7 @@ namespace Glamourer
             }
         }
 
-        private void RegisterFunctions()
+        public void RegisterFunctions()
         {
             if (Penumbra == null || !Penumbra.Valid)
                 return;
@@ -84,7 +84,7 @@ namespace Glamourer
             Penumbra!.ChangedItemClicked += PenumbraRightClick;
         }
 
-        private void UnregisterFunctions()
+        public void UnregisterFunctions()
         {
             if (Penumbra == null || !Penumbra.Valid)
                 return;
@@ -111,7 +111,7 @@ namespace Glamourer
             _plugins = pluginsList ?? throw new Exception("Could not obtain Dalamud.");
         }
 
-        private bool GetPenumbra()
+        public bool GetPenumbra()
         {
             if (Penumbra?.Valid ?? false)
                 return true;
@@ -123,14 +123,9 @@ namespace Glamourer
             var penumbra = (IPenumbraApiBase?) plugin?.GetType().GetProperty("Api", BindingFlags.Instance | BindingFlags.Public)
                 ?.GetValue(plugin);
             if (penumbra != null && penumbra.Valid && penumbra.ApiVersion >= RequiredPenumbraShareVersion)
-            {
                 Penumbra = (IPenumbraApi) penumbra!;
-                RegisterFunctions();
-            }
             else
-            {
                 Penumbra = null;
-            }
 
             return Penumbra != null;
         }
@@ -144,7 +139,8 @@ namespace Glamourer
             SetDalamud(PluginInterface);
             SetPlugins(PluginInterface);
             Designs = new DesignManager(PluginInterface);
-            GetPenumbra();
+            if (GetPenumbra() && Config.AttachToPenumbra)
+                RegisterFunctions();
             PlayerWatcher = PlayerWatchFactory.Create(PluginInterface);
 
             PluginInterface.CommandManager.AddHandler("/glamourer", new CommandInfo(OnGlamourer)
@@ -181,7 +177,6 @@ namespace Glamourer
             };
         }
 
-
         public void CopyToClipboard(Actor actor)
         {
             var save = new CharacterSave();
@@ -193,7 +188,6 @@ namespace Glamourer
         {
             CharacterSave? save = null;
             if (target.ToLowerInvariant() == "clipboard")
-            {
                 try
                 {
                     save = CharacterSave.FromString(Clipboard.GetText());
@@ -202,15 +196,10 @@ namespace Glamourer
                 {
                     PluginInterface.Framework.Gui.Chat.PrintError("Clipboard does not contain a valid customization string.");
                 }
-            }
             else if (!Designs.FileSystem.Find(target, out var child) || child is not Design d)
-            {
                 PluginInterface.Framework.Gui.Chat.PrintError("The given path to a saved design does not exist or does not point to a design.");
-            }
             else
-            {
                 save = d.Data;
-            }
 
             save?.Apply(actor);
             UpdateActors(actor);
@@ -280,8 +269,9 @@ namespace Glamourer
                         PluginInterface.Framework.Gui.Chat.Print("Applying requires a name for the save to be applied or 'clipboard'.");
                         return;
                     }
+
                     ApplyCommand(actor, split[2]);
-                    
+
                     return;
                 }
                 case "save":
@@ -291,6 +281,7 @@ namespace Glamourer
                         PluginInterface.Framework.Gui.Chat.Print("Saving requires a name for the save.");
                         return;
                     }
+
                     SaveCommand(actor, split[2]);
                     return;
                 }

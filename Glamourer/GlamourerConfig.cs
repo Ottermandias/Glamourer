@@ -10,9 +10,10 @@ namespace Glamourer
         public const uint DefaultStateColor         = 0xFF00C0C0;
         public const uint DefaultEquipmentColor     = 0xFF00C000;
 
-        public bool FoldersFirst { get; set; } = false;
-        public bool ColorDesigns { get; set; } = true;
-        public bool ShowLocks    { get; set; } = true;
+        public bool FoldersFirst     { get; set; } = false;
+        public bool ColorDesigns     { get; set; } = true;
+        public bool ShowLocks        { get; set; } = true;
+        public bool AttachToPenumbra { get; set; } = true;
 
         public uint CustomizationColor { get; set; } = DefaultCustomizationColor;
         public uint StateColor         { get; set; } = DefaultStateColor;

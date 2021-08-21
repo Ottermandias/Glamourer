@@ -98,7 +98,7 @@ namespace Glamourer.Gui
                 if (InputInt($"##text_{id}", ref current, 1, count))
                 {
                     customization[id] = set.Data(id, current - 1).Value;
-                    ret                     = true;
+                    ret               = true;
                 }
 
 
@@ -111,7 +111,7 @@ namespace Glamourer.Gui
                 return ret;
 
             customization[id] = newCustom.Value;
-            ret                     = true;
+            ret               = true;
 
             return ret;
         }
@@ -132,7 +132,7 @@ namespace Glamourer.Gui
                     if (ImGui.Selectable($"{set.Option(id)} #{i + 1}##combo", i == current) && i != current)
                     {
                         customization[id] = (byte) i;
-                        ret                     = true;
+                        ret               = true;
                     }
                 }
 
@@ -143,7 +143,7 @@ namespace Glamourer.Gui
             if (InputInt($"##text_{id}", ref current, 1, count))
             {
                 customization[id] = set.Data(id, current).Value;
-                ret                     = true;
+                ret               = true;
             }
 
             ImGui.SameLine();
@@ -198,7 +198,7 @@ namespace Glamourer.Gui
             if (InputInt($"##{CustomizationId.FacialFeaturesTattoos}", ref value, 1, 256))
             {
                 customization[CustomizationId.FacialFeaturesTattoos] = (byte) value;
-                ret                                                        = true;
+                ret                                                  = true;
             }
 
             ImGui.Text(set.Option(CustomizationId.FacialFeaturesTattoos));
@@ -273,13 +273,13 @@ namespace Glamourer.Gui
             if (InputInt($"##text_{id}", ref current, 1, count))
             {
                 customization[id] = set.Data(id, current).Value;
-                ret                     = true;
+                ret               = true;
             }
 
             if (DrawIconPickerPopup(popupName, set, id, out var newCustom))
             {
                 customization[id] = newCustom.Value;
-                ret                     = true;
+                ret               = true;
             }
 
             ImGui.Text(label);
@@ -301,7 +301,7 @@ namespace Glamourer.Gui
             if (ImGui.SliderInt($"##slider_{id}", ref value, 0, count - 1, "") && value != customization[id])
             {
                 customization[id] = (byte) value;
-                ret                     = true;
+                ret               = true;
             }
 
             ImGui.SameLine();
@@ -309,7 +309,7 @@ namespace Glamourer.Gui
             if (InputInt($"##input_{id}", ref value, 0, count - 1))
             {
                 customization[id] = (byte) (value + 1);
-                ret                     = true;
+                ret               = true;
             }
 
             ImGui.SameLine();
@@ -323,15 +323,15 @@ namespace Glamourer.Gui
         private bool DrawRaceSelector(ref ActorCustomization customization)
         {
             using var group = ImGuiRaii.NewGroup();
-            var ret = false;
+            var       ret   = false;
             ImGui.SetNextItemWidth(_raceSelectorWidth);
             if (ImGui.BeginCombo("##subRaceCombo", ClanName(customization.Clan, customization.Gender)))
             {
-                for (var i = 0; i < (int)SubRace.Veena; ++i)
+                for (var i = 0; i < (int) SubRace.Veena; ++i)
                 {
-                    if (ImGui.Selectable(ClanName((SubRace)i + 1, customization.Gender), (int)customization.Clan == i + 1))
+                    if (ImGui.Selectable(ClanName((SubRace) i + 1, customization.Gender), (int) customization.Clan == i + 1))
                     {
-                        var race = (SubRace)i + 1;
+                        var race = (SubRace) i + 1;
                         ret |= ChangeRace(ref customization, race);
                     }
                 }
@@ -349,18 +349,18 @@ namespace Glamourer.Gui
         {
             var ret = false;
             ImGui.PushFont(UiBuilder.IconFont);
-            var icon = customization.Gender == Gender.Male ? FontAwesomeIcon.Mars : FontAwesomeIcon.Venus;
+            var icon       = customization.Gender == Gender.Male ? FontAwesomeIcon.Mars : FontAwesomeIcon.Venus;
             var restricted = false;
             if (customization.Race == Race.Viera)
             {
                 ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.25f);
-                icon = FontAwesomeIcon.VenusDouble;
+                icon       = FontAwesomeIcon.VenusDouble;
                 restricted = true;
             }
             else if (customization.Race == Race.Hrothgar)
             {
                 ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.25f);
-                icon = FontAwesomeIcon.MarsDouble;
+                icon       = FontAwesomeIcon.MarsDouble;
                 restricted = true;
             }
 
@@ -383,17 +383,19 @@ namespace Glamourer.Gui
 
             switch (set.Type(id))
             {
-                case CharaMakeParams.MenuType.ColorPicker: return DrawColorPicker(set.OptionName[(int)id], "", ref customization, id, set);
-                case CharaMakeParams.MenuType.ListSelector: return DrawListSelector(set.OptionName[(int)id], "", ref customization, id, set);
-                case CharaMakeParams.MenuType.IconSelector: return DrawIconSelector(set.OptionName[(int)id], "", ref customization, id, set);
+                case CharaMakeParams.MenuType.ColorPicker: return DrawColorPicker(set.OptionName[(int) id], "", ref customization, id, set);
+                case CharaMakeParams.MenuType.ListSelector: return DrawListSelector(set.OptionName[(int) id], "", ref customization, id, set);
+                case CharaMakeParams.MenuType.IconSelector: return DrawIconSelector(set.OptionName[(int) id], "", ref customization, id, set);
                 case CharaMakeParams.MenuType.MultiIconSelector: return DrawMultiSelector(ref customization, set);
-                case CharaMakeParams.MenuType.Percentage: return DrawPercentageSelector(set.OptionName[(int)id], "", ref customization, id, set);
+                case CharaMakeParams.MenuType.Percentage:
+                    return DrawPercentageSelector(set.OptionName[(int) id], "", ref customization, id, set);
             }
 
             return false;
         }
 
-        private static readonly CustomizationId[] AllCustomizations = (CustomizationId[])Enum.GetValues(typeof(CustomizationId));
+        private static readonly CustomizationId[] AllCustomizations = (CustomizationId[]) Enum.GetValues(typeof(CustomizationId));
+
         private bool DrawCustomization(ref ActorCustomization custom)
         {
             if (!ImGui.CollapsingHeader("Character Customization"))
@@ -441,7 +443,7 @@ namespace Glamourer.Gui
             if (ImGui.Checkbox(set.Option(CustomizationId.HighlightsOnFlag), ref tmp) && tmp != custom.HighlightsOn)
             {
                 custom.HighlightsOn = tmp;
-                ret = true;
+                ret                 = true;
             }
 
             var xPos = _inputIntSize + _actualIconSize.X + 3 * ImGui.GetStyle().ItemSpacing.X;
@@ -451,7 +453,7 @@ namespace Glamourer.Gui
              && tmp != custom.FacePaintReversed)
             {
                 custom.FacePaintReversed = tmp;
-                ret = true;
+                ret                      = true;
             }
 
             tmp = custom.SmallIris;
@@ -460,7 +462,7 @@ namespace Glamourer.Gui
              && tmp != custom.SmallIris)
             {
                 custom.SmallIris = tmp;
-                ret = true;
+                ret              = true;
             }
 
             if (custom.Race != Race.Hrothgar)
@@ -470,7 +472,7 @@ namespace Glamourer.Gui
                 if (ImGui.Checkbox(set.Option(CustomizationId.LipColor), ref tmp) && tmp != custom.Lipstick)
                 {
                     custom.Lipstick = tmp;
-                    ret = true;
+                    ret             = true;
                 }
             }
 

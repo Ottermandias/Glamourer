@@ -43,6 +43,27 @@ namespace Glamourer.Gui
                 ImGui.SetTooltip(tooltip);
         }
 
+        private void DrawRestorePenumbraButton()
+        {
+            const string buttonLabel = "Re-Register Penumbra";
+            if (!Glamourer.Config.AttachToPenumbra)
+            {
+                using var raii = new ImGuiRaii().PushStyle(ImGuiStyleVar.Alpha, 0.5f);
+                ImGui.Button(buttonLabel);
+                return;
+            }
+
+            if (ImGui.Button(buttonLabel) && _plugin.GetPenumbra())
+            {
+                _plugin.UnregisterFunctions();
+                _plugin.RegisterFunctions();
+            }
+
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip(
+                    "If Penumbra did not register the functions for some reason, pressing this button might help restore functionality.");
+        }
+
         private void DrawConfigTab()
         {
             using var raii = new ImGuiRaii();
@@ -59,6 +80,24 @@ namespace Glamourer.Gui
                 v => cfg.ColorDesigns = v);
             DrawConfigCheckMark("Show Locks", "Write-protected Designs show a lock besides their name in the selector.", cfg.ShowLocks,
                 v => cfg.ShowLocks = v);
+            DrawConfigCheckMark("Attach to Penumbra",
+                "Allows you to right-click items in the Changed Items tab of a mod in Penumbra to apply them to your player character.",
+                cfg.AttachToPenumbra,
+                v =>
+                {
+                    cfg.AttachToPenumbra = v;
+                    if (v)
+                    {
+                        if (_plugin.GetPenumbra())
+                            _plugin.RegisterFunctions();
+                    }
+                    else
+                    {
+                        _plugin.UnregisterFunctions();
+                    }
+                });
+            ImGui.SameLine();
+            DrawRestorePenumbraButton();
 
             ImGui.Dummy(Vector2.UnitY * ImGui.GetTextLineHeightWithSpacing() / 2);
 
