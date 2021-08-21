@@ -74,25 +74,25 @@ namespace Glamourer
         public bool SetHatState
         {
             get => (_bytes[1] & 0x04) != 0;
-            set => _bytes[1] = (byte)(value ? _bytes[1] | 0x04 : _bytes[1] & ~0x04);
+            set => _bytes[1] = (byte) (value ? _bytes[1] | 0x04 : _bytes[1] & ~0x04);
         }
 
         public bool SetWeaponState
         {
             get => (_bytes[1] & 0x08) != 0;
-            set => _bytes[1] = (byte)(value ? _bytes[1] | 0x08 : _bytes[1] & ~0x08);
+            set => _bytes[1] = (byte) (value ? _bytes[1] | 0x08 : _bytes[1] & ~0x08);
         }
 
         public bool SetVisorState
         {
             get => (_bytes[1] & 0x10) != 0;
-            set => _bytes[1] = (byte)(value ? _bytes[1] | 0x10 : _bytes[1] & ~0x10);
+            set => _bytes[1] = (byte) (value ? _bytes[1] | 0x10 : _bytes[1] & ~0x10);
         }
 
         public bool WriteProtected
         {
             get => (_bytes[1] & 0x20) != 0;
-            set => _bytes[1] = (byte)(value ? _bytes[1] | 0x20 : _bytes[1] & ~0x20);
+            set => _bytes[1] = (byte) (value ? _bytes[1] | 0x20 : _bytes[1] & ~0x20);
         }
 
         public byte StateFlags
@@ -110,13 +110,13 @@ namespace Glamourer
         public bool VisorState
         {
             get => (StateFlags & 0x10) != 0;
-            set => StateFlags = (byte)(value ? StateFlags | 0x10 : StateFlags & ~0x10);
+            set => StateFlags = (byte) (value ? StateFlags | 0x10 : StateFlags & ~0x10);
         }
 
         public bool WeaponState
         {
             get => (StateFlags & 0x02) == 0;
-            set => StateFlags = (byte)(value ? StateFlags & ~0x02 : StateFlags | 0x02);
+            set => StateFlags = (byte) (value ? StateFlags & ~0x02 : StateFlags | 0x02);
         }
 
         public ActorEquipMask WriteEquipment
@@ -181,7 +181,7 @@ namespace Glamourer
 
         private static void CheckActorMask(byte val1, byte val2)
         {
-            var mask = (ActorEquipMask)((ushort)val1 | ((ushort)val2 << 8));
+            var mask = (ActorEquipMask) ((ushort) val1 | ((ushort) val2 << 8));
             if (mask > ActorEquipMask.All)
                 throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid value {mask} in byte 3 and 4.");
         }
@@ -193,13 +193,13 @@ namespace Glamourer
 
             Load(new ActorEquipment(a), ActorEquipMask.All);
 
-            SetHatState         = true;
-            SetVisorState       = true;
-            SetWeaponState      = true;
-            StateFlags          = a.StateFlags();
+            SetHatState    = true;
+            SetVisorState  = true;
+            SetWeaponState = true;
+            StateFlags     = a.StateFlags();
 
-            IsWet               = a.IsWet();
-            Alpha               = a.Alpha();
+            IsWet = a.IsWet();
+            Alpha = a.Alpha();
         }
 
         public void Apply(Actor a)
@@ -211,7 +211,9 @@ namespace Glamourer
             a.SetWetness(IsWet);
             a.Alpha() = Alpha;
             if ((_bytes[1] & 0b11100) == 0b11100)
+            {
                 a.StateFlags() = StateFlags;
+            }
             else
             {
                 if (SetHatState)
@@ -240,6 +242,7 @@ namespace Glamourer
                     break;
                 default: throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid Version {bytes[0]}.");
             }
+
             CheckActorMask(bytes[2], bytes[3]);
             bytes.CopyTo(_bytes, 0);
         }
@@ -257,7 +260,7 @@ namespace Glamourer
             {
                 fixed (byte* ptr = _bytes)
                 {
-                    return ref *((ActorCustomization*) (ptr + 4));
+                    return ref *(ActorCustomization*) (ptr + 4);
                 }
             }
         }

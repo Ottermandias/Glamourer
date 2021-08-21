@@ -25,31 +25,31 @@ namespace Glamourer.Gui
         private readonly ImGuiScene.TextureWrap?                                                _legacyTattooIcon;
         private readonly Dictionary<EquipSlot, string>                                          _equipSlotNames;
         private readonly DesignManager                                                          _designs;
-        private readonly GlamourerPlugin                                                        _plugin;
+        private readonly Glamourer                                                              _plugin;
 
         private bool _visible = false;
         private bool _inGPose = false;
 
-        public Interface(GlamourerPlugin plugin)
+        public Interface(Glamourer plugin)
         {
             _plugin  = plugin;
             _designs = plugin.Designs;
-            _glamourerHeader = GlamourerPlugin.Version.Length > 0
-                ? $"{PluginName} v{GlamourerPlugin.Version}###{PluginName}Main"
+            _glamourerHeader = Glamourer.Version.Length > 0
+                ? $"{PluginName} v{Glamourer.Version}###{PluginName}Main"
                 : $"{PluginName}###{PluginName}Main";
-            GlamourerPlugin.PluginInterface.UiBuilder.DisableGposeUiHide =  true;
-            GlamourerPlugin.PluginInterface.UiBuilder.OnBuildUi          += Draw;
-            GlamourerPlugin.PluginInterface.UiBuilder.OnOpenConfigUi     += ToggleVisibility;
+            Glamourer.PluginInterface.UiBuilder.DisableGposeUiHide =  true;
+            Glamourer.PluginInterface.UiBuilder.OnBuildUi          += Draw;
+            Glamourer.PluginInterface.UiBuilder.OnOpenConfigUi     += ToggleVisibility;
 
             _equipSlotNames = GetEquipSlotNames();
 
-            _stains     = GameData.Stains(GlamourerPlugin.PluginInterface);
-            _identifier = Penumbra.GameData.GameData.GetIdentifier(GlamourerPlugin.PluginInterface);
-            _actors     = GlamourerPlugin.PluginInterface.ClientState.Actors;
+            _stains     = GameData.Stains(Glamourer.PluginInterface);
+            _identifier = Penumbra.GameData.GameData.GetIdentifier(Glamourer.PluginInterface);
+            _actors     = Glamourer.PluginInterface.ClientState.Actors;
 
             var stainCombo = CreateDefaultStainCombo(_stains.Values.ToArray());
 
-            var equip = GameData.ItemsBySlot(GlamourerPlugin.PluginInterface);
+            var equip = GameData.ItemsBySlot(Glamourer.PluginInterface);
             _combos           = equip.ToDictionary(kvp => kvp.Key, kvp => CreateCombos(kvp.Key, kvp.Value, stainCombo));
             _legacyTattooIcon = GetLegacyTattooIcon();
         }
@@ -60,8 +60,8 @@ namespace Glamourer.Gui
         public void Dispose()
         {
             _legacyTattooIcon?.Dispose();
-            GlamourerPlugin.PluginInterface.UiBuilder.OnBuildUi      -= Draw;
-            GlamourerPlugin.PluginInterface.UiBuilder.OnOpenConfigUi -= ToggleVisibility;
+            Glamourer.PluginInterface.UiBuilder.OnBuildUi      -= Draw;
+            Glamourer.PluginInterface.UiBuilder.OnOpenConfigUi -= ToggleVisibility;
         }
 
         private void Draw()
@@ -91,6 +91,7 @@ namespace Glamourer.Gui
 
                 DrawActorTab();
                 DrawSaves();
+                DrawConfigTab();
             }
             finally
             {

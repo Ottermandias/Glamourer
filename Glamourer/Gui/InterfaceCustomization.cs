@@ -170,8 +170,8 @@ namespace Glamourer.Gui
                     var enabled = customization.FacialFeature(i);
                     var feature = set.FacialFeature(set.Race == Race.Hrothgar ? customization.Hairstyle : customization.Face, i);
                     var icon = i == count - 1
-                        ? _legacyTattooIcon ?? GlamourerPlugin.Customization.GetIcon(feature.IconId)
-                        : GlamourerPlugin.Customization.GetIcon(feature.IconId);
+                        ? _legacyTattooIcon ?? Glamourer.Customization.GetIcon(feature.IconId)
+                        : Glamourer.Customization.GetIcon(feature.IconId);
                     if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize, Vector2.Zero, Vector2.One, (int) ImGui.GetStyle().FramePadding.X,
                         Vector4.Zero,
                         enabled ? NoColor : RedColor))
@@ -220,7 +220,7 @@ namespace Glamourer.Gui
             for (var i = 0; i < count; ++i)
             {
                 var custom = set.Data(id, i);
-                var icon   = GlamourerPlugin.Customization.GetIcon(custom.IconId);
+                var icon   = Glamourer.Customization.GetIcon(custom.IconId);
                 if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
                 {
                     value = custom;
@@ -258,7 +258,7 @@ namespace Glamourer.Gui
             }
 
             var popupName = $"Style Picker##{id}";
-            var icon      = GlamourerPlugin.Customization.GetIcon(custom!.Value.IconId);
+            var icon      = Glamourer.Customization.GetIcon(custom!.Value.IconId);
             if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
                 ImGui.OpenPopup(popupName);
 
@@ -340,7 +340,7 @@ namespace Glamourer.Gui
             }
 
             ImGui.Text(
-                $"{GlamourerPlugin.Customization.GetName(CustomName.Gender)} & {GlamourerPlugin.Customization.GetName(CustomName.Clan)}");
+                $"{Glamourer.Customization.GetName(CustomName.Gender)} & {Glamourer.Customization.GetName(CustomName.Clan)}");
 
             return ret;
         }
@@ -403,7 +403,7 @@ namespace Glamourer.Gui
             ImGui.SameLine();
             ret |= DrawRaceSelector(ref custom);
 
-            var set = GlamourerPlugin.Customization.GetList(custom.Clan, custom.Gender);
+            var set = Glamourer.Customization.GetList(custom.Clan, custom.Gender);
 
             foreach (var id in AllCustomizations.Where(c => set.Type(c) == CharaMakeParams.MenuType.Percentage))
                 ret |= DrawPicker(set, id, ref custom);
@@ -447,7 +447,7 @@ namespace Glamourer.Gui
             var xPos = _inputIntSize + _actualIconSize.X + 3 * ImGui.GetStyle().ItemSpacing.X;
             ImGui.SameLine(xPos);
             tmp = custom.FacePaintReversed;
-            if (ImGui.Checkbox($"{GlamourerPlugin.Customization.GetName(CustomName.Reverse)} {set.Option(CustomizationId.FacePaint)}", ref tmp)
+            if (ImGui.Checkbox($"{Glamourer.Customization.GetName(CustomName.Reverse)} {set.Option(CustomizationId.FacePaint)}", ref tmp)
              && tmp != custom.FacePaintReversed)
             {
                 custom.FacePaintReversed = tmp;
@@ -455,7 +455,7 @@ namespace Glamourer.Gui
             }
 
             tmp = custom.SmallIris;
-            if (ImGui.Checkbox($"{GlamourerPlugin.Customization.GetName(CustomName.IrisSmall)} {set.Option(CustomizationId.EyeColorL)}",
+            if (ImGui.Checkbox($"{Glamourer.Customization.GetName(CustomName.IrisSmall)} {set.Option(CustomizationId.EyeColorL)}",
                     ref tmp)
              && tmp != custom.SmallIris)
             {

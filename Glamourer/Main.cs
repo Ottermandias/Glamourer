@@ -11,13 +11,12 @@ using Glamourer.Designs;
 using Glamourer.FileSystem;
 using Glamourer.Gui;
 using ImGuiNET;
-using Lumina.Data;
 using Penumbra.Api;
 using Penumbra.PlayerWatch;
 
 namespace Glamourer
 {
-    public class GlamourerPlugin : IDalamudPlugin
+    public class Glamourer : IDalamudPlugin
     {
         public const int RequiredPenumbraShareVersion = 1;
 
@@ -27,6 +26,7 @@ namespace Glamourer
             => "Glamourer";
 
         public static DalamudPluginInterface PluginInterface = null!;
+        public static GlamourerConfig        Config          = null!;
         private       Interface              _interface      = null!;
         public static ICustomizationManager  Customization   = null!;
         public        DesignManager          Designs         = null!;
@@ -48,7 +48,7 @@ namespace Glamourer
             _dalamud = dalamud ?? throw new Exception("Could not obtain Dalamud.");
         }
 
-        private void PenumbraTooltip(object? it)
+        private static void PenumbraTooltip(object? it)
         {
             if (it is Lumina.Excel.GeneratedSheets.Item)
                 ImGui.Text("Right click to apply to current Glamourer Set. [Glamourer]");
@@ -139,6 +139,7 @@ namespace Glamourer
         {
             Version         = Assembly.GetExecutingAssembly()?.GetName().Version.ToString() ?? "";
             PluginInterface = pluginInterface;
+            Config          = GlamourerConfig.Create();
             Customization   = CustomizationManager.Create(PluginInterface);
             SetDalamud(PluginInterface);
             SetPlugins(PluginInterface);

@@ -29,7 +29,7 @@ namespace Glamourer.Gui
         // Go through a whole customization struct and fix up all settings that need fixing.
         private static void FixUpAttributes(ref ActorCustomization customization)
         {
-            var set = GlamourerPlugin.Customization.GetList(customization.Clan, customization.Gender);
+            var set = Glamourer.Customization.GetList(customization.Clan, customization.Gender);
             foreach (CustomizationId id in Enum.GetValues(typeof(CustomizationId)))
             {
                 switch (id)
@@ -95,43 +95,43 @@ namespace Glamourer.Gui
             if (gender == Gender.Female)
                 return race switch
                 {
-                    SubRace.Midlander       => GlamourerPlugin.Customization.GetName(CustomName.MidlanderM),
-                    SubRace.Highlander      => GlamourerPlugin.Customization.GetName(CustomName.HighlanderM),
-                    SubRace.Wildwood        => GlamourerPlugin.Customization.GetName(CustomName.WildwoodM),
-                    SubRace.Duskwight       => GlamourerPlugin.Customization.GetName(CustomName.DuskwightM),
-                    SubRace.Plainsfolk      => GlamourerPlugin.Customization.GetName(CustomName.PlainsfolkM),
-                    SubRace.Dunesfolk       => GlamourerPlugin.Customization.GetName(CustomName.DunesfolkM),
-                    SubRace.SeekerOfTheSun  => GlamourerPlugin.Customization.GetName(CustomName.SeekerOfTheSunM),
-                    SubRace.KeeperOfTheMoon => GlamourerPlugin.Customization.GetName(CustomName.KeeperOfTheMoonM),
-                    SubRace.Seawolf         => GlamourerPlugin.Customization.GetName(CustomName.SeawolfM),
-                    SubRace.Hellsguard      => GlamourerPlugin.Customization.GetName(CustomName.HellsguardM),
-                    SubRace.Raen            => GlamourerPlugin.Customization.GetName(CustomName.RaenM),
-                    SubRace.Xaela           => GlamourerPlugin.Customization.GetName(CustomName.XaelaM),
-                    SubRace.Helion          => GlamourerPlugin.Customization.GetName(CustomName.HelionM),
-                    SubRace.Lost            => GlamourerPlugin.Customization.GetName(CustomName.LostM),
-                    SubRace.Rava            => GlamourerPlugin.Customization.GetName(CustomName.RavaF),
-                    SubRace.Veena           => GlamourerPlugin.Customization.GetName(CustomName.VeenaF),
+                    SubRace.Midlander       => Glamourer.Customization.GetName(CustomName.MidlanderM),
+                    SubRace.Highlander      => Glamourer.Customization.GetName(CustomName.HighlanderM),
+                    SubRace.Wildwood        => Glamourer.Customization.GetName(CustomName.WildwoodM),
+                    SubRace.Duskwight       => Glamourer.Customization.GetName(CustomName.DuskwightM),
+                    SubRace.Plainsfolk      => Glamourer.Customization.GetName(CustomName.PlainsfolkM),
+                    SubRace.Dunesfolk       => Glamourer.Customization.GetName(CustomName.DunesfolkM),
+                    SubRace.SeekerOfTheSun  => Glamourer.Customization.GetName(CustomName.SeekerOfTheSunM),
+                    SubRace.KeeperOfTheMoon => Glamourer.Customization.GetName(CustomName.KeeperOfTheMoonM),
+                    SubRace.Seawolf         => Glamourer.Customization.GetName(CustomName.SeawolfM),
+                    SubRace.Hellsguard      => Glamourer.Customization.GetName(CustomName.HellsguardM),
+                    SubRace.Raen            => Glamourer.Customization.GetName(CustomName.RaenM),
+                    SubRace.Xaela           => Glamourer.Customization.GetName(CustomName.XaelaM),
+                    SubRace.Helion          => Glamourer.Customization.GetName(CustomName.HelionM),
+                    SubRace.Lost            => Glamourer.Customization.GetName(CustomName.LostM),
+                    SubRace.Rava            => Glamourer.Customization.GetName(CustomName.RavaF),
+                    SubRace.Veena           => Glamourer.Customization.GetName(CustomName.VeenaF),
                     _                       => throw new ArgumentOutOfRangeException(nameof(race), race, null),
                 };
 
             return race switch
             {
-                SubRace.Midlander       => GlamourerPlugin.Customization.GetName(CustomName.MidlanderF),
-                SubRace.Highlander      => GlamourerPlugin.Customization.GetName(CustomName.HighlanderF),
-                SubRace.Wildwood        => GlamourerPlugin.Customization.GetName(CustomName.WildwoodF),
-                SubRace.Duskwight       => GlamourerPlugin.Customization.GetName(CustomName.DuskwightF),
-                SubRace.Plainsfolk      => GlamourerPlugin.Customization.GetName(CustomName.PlainsfolkF),
-                SubRace.Dunesfolk       => GlamourerPlugin.Customization.GetName(CustomName.DunesfolkF),
-                SubRace.SeekerOfTheSun  => GlamourerPlugin.Customization.GetName(CustomName.SeekerOfTheSunF),
-                SubRace.KeeperOfTheMoon => GlamourerPlugin.Customization.GetName(CustomName.KeeperOfTheMoonF),
-                SubRace.Seawolf         => GlamourerPlugin.Customization.GetName(CustomName.SeawolfF),
-                SubRace.Hellsguard      => GlamourerPlugin.Customization.GetName(CustomName.HellsguardF),
-                SubRace.Raen            => GlamourerPlugin.Customization.GetName(CustomName.RaenF),
-                SubRace.Xaela           => GlamourerPlugin.Customization.GetName(CustomName.XaelaF),
-                SubRace.Helion          => GlamourerPlugin.Customization.GetName(CustomName.HelionM),
-                SubRace.Lost            => GlamourerPlugin.Customization.GetName(CustomName.LostM),
-                SubRace.Rava            => GlamourerPlugin.Customization.GetName(CustomName.RavaF),
-                SubRace.Veena           => GlamourerPlugin.Customization.GetName(CustomName.VeenaF),
+                SubRace.Midlander       => Glamourer.Customization.GetName(CustomName.MidlanderF),
+                SubRace.Highlander      => Glamourer.Customization.GetName(CustomName.HighlanderF),
+                SubRace.Wildwood        => Glamourer.Customization.GetName(CustomName.WildwoodF),
+                SubRace.Duskwight       => Glamourer.Customization.GetName(CustomName.DuskwightF),
+                SubRace.Plainsfolk      => Glamourer.Customization.GetName(CustomName.PlainsfolkF),
+                SubRace.Dunesfolk       => Glamourer.Customization.GetName(CustomName.DunesfolkF),
+                SubRace.SeekerOfTheSun  => Glamourer.Customization.GetName(CustomName.SeekerOfTheSunF),
+                SubRace.KeeperOfTheMoon => Glamourer.Customization.GetName(CustomName.KeeperOfTheMoonF),
+                SubRace.Seawolf         => Glamourer.Customization.GetName(CustomName.SeawolfF),
+                SubRace.Hellsguard      => Glamourer.Customization.GetName(CustomName.HellsguardF),
+                SubRace.Raen            => Glamourer.Customization.GetName(CustomName.RaenF),
+                SubRace.Xaela           => Glamourer.Customization.GetName(CustomName.XaelaF),
+                SubRace.Helion          => Glamourer.Customization.GetName(CustomName.HelionM),
+                SubRace.Lost            => Glamourer.Customization.GetName(CustomName.LostM),
+                SubRace.Rava            => Glamourer.Customization.GetName(CustomName.RavaF),
+                SubRace.Veena           => Glamourer.Customization.GetName(CustomName.VeenaF),
                 _                       => throw new ArgumentOutOfRangeException(nameof(race), race, null),
             };
         }
@@ -155,7 +155,7 @@ namespace Glamourer.Gui
                     switch (use)
                     {
                         case DesignNameUse.SaveCurrent:
-                            SaveNewDesign(_currentSave);
+                            SaveNewDesign(_currentSave.Copy());
                             break;
                         case DesignNameUse.NewDesign:
                             var empty = new CharacterSave();
@@ -167,7 +167,8 @@ namespace Glamourer.Gui
                             SaveNewDesign(_selection!.Data.Copy());
                             break;
                         case DesignNameUse.NewFolder:
-                            _designs.FileSystem.CreateAllFolders($"{_newDesignName}/a"); // Filename is just ignored, but all folders are created.
+                            _designs.FileSystem
+                                .CreateAllFolders($"{_newDesignName}/a"); // Filename is just ignored, but all folders are created.
                             break;
                         case DesignNameUse.FromClipboard:
                             try

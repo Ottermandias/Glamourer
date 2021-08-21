@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Dalamud.Plugin;
@@ -84,10 +83,8 @@ namespace Glamourer.Designs
         public void DeleteAllChildren(IFileSystemBase root, bool deleteEmpty)
         {
             if (root is Folder f)
-            {
                 foreach (var child in f.AllLeaves(SortMode.Lexicographical))
                     Designs.Remove(child.FullName());
-            }
             var fullPath = root.FullName();
             root.Parent.RemoveChild(root, deleteEmpty);
             Designs.Remove(fullPath);

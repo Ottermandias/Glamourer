@@ -21,13 +21,14 @@ namespace Glamourer.Gui
         {
             _totalObject = 0;
             ImGui.BeginGroup();
-            if (ImGui.BeginChild("##selector", new Vector2(SelectorWidth * ImGui.GetIO().FontGlobalScale, - ImGui.GetFrameHeight() - 1) , true))
+            if (ImGui.BeginChild("##selector", new Vector2(SelectorWidth * ImGui.GetIO().FontGlobalScale, -ImGui.GetFrameHeight() - 1), true))
             {
-                DrawFolderContent(_designs.FileSystem.Root, SortMode.FoldersFirst);
+                DrawFolderContent(_designs.FileSystem.Root, Glamourer.Config.FoldersFirst ? SortMode.FoldersFirst : SortMode.Lexicographical);
                 ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
                 ImGui.EndChild();
                 ImGui.PopStyleVar();
             }
+
             DrawDesignSelectorButtons();
             ImGui.EndGroup();
         }
@@ -138,10 +139,10 @@ namespace Glamourer.Gui
         private void DrawDesignSelectorButtons()
         {
             using var raii = new ImGuiRaii()
-                .PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
+                .PushStyle(ImGuiStyleVar.ItemSpacing,   Vector2.Zero)
                 .PushStyle(ImGuiStyleVar.FrameRounding, 0f);
 
-            DrawNewFolderButton(); 
+            DrawNewFolderButton();
             ImGui.SameLine();
             DrawNewDesignButton();
             ImGui.SameLine();
@@ -206,7 +207,7 @@ namespace Glamourer.Gui
         private void DrawSaves()
         {
             using var raii = new ImGuiRaii();
-            raii.PushStyle(ImGuiStyleVar.IndentSpacing, 25f);
+            raii.PushStyle(ImGuiStyleVar.IndentSpacing, 12.5f * ImGui.GetIO().FontGlobalScale);
             if (!raii.Begin(() => ImGui.BeginTabItem("Saves"), ImGui.EndTabItem))
                 return;
 
@@ -300,6 +301,26 @@ namespace Glamourer.Gui
             }
         }
 
+        private static uint GetDesignColor(CharacterSave save)
+        {
+            const uint white = 0xFFFFFFFF;
+            const uint grey  = 0xFF808080;
+            if (!Glamourer.Config.ColorDesigns)
+                return white;
+
+            var changesStates = save.SetHatState || save.SetVisorState || save.SetWeaponState || save.IsWet || save.Alpha != 1.0f;
+            if (save.WriteCustomizations)
+                if (save.WriteEquipment != ActorEquipMask.None)
+                    return white;
+                else
+                    return changesStates ? white : Glamourer.Config.CustomizationColor;
+
+            if (save.WriteEquipment != ActorEquipMask.None)
+                return changesStates ? white : Glamourer.Config.EquipmentColor;
+
+            return changesStates ? Glamourer.Config.StateColor : grey;
+        }
+
         private void DrawFolderContent(Folder folder, SortMode mode)
         {
             foreach (var child in folder.AllChildren(mode).ToArray())
@@ -321,13 +342,28 @@ namespace Glamourer.Gui
                 }
                 else
                 {
+                    if (child is not Design d)
+                        continue;
+
                     ++_totalObject;
+                    var color = GetDesignColor(d.Data);
+                    using var raii = new ImGuiRaii()
+                        .PushColor(ImGuiCol.Text, color);
+
                     var selected = ImGui.Selectable($"{child.Name}##{_totalObject}", ReferenceEquals(child, _selection));
+                    raii.PopColors();
                     DrawOrnaments(child);
 
+                    if (Glamourer.Config.ShowLocks && d.Data.WriteProtected)
+                    {
+                        ImGui.SameLine();
+                        raii.PushFont(UiBuilder.IconFont)
+                            .PushColor(ImGuiCol.Text, color);
+                        ImGui.Text(FontAwesomeIcon.Lock.ToIconString());
+                    }
+
                     if (selected)
-                        if (child is Design d)
-                            _selection = d;
+                        _selection = d;
                 }
             }
         }

@@ -67,7 +67,7 @@ namespace Glamourer
                 *((byte*) a.Address + WeaponHiddenOffset) = (byte) (val | WeaponHiddenFlag);
             else
                 *((byte*) a.Address + WeaponHiddenOffset) = (byte) (val & ~WeaponHiddenFlag);
-            return ret || ((val & WeaponHiddenFlag) != 0) != value;
+            return ret || (val & WeaponHiddenFlag) != 0 != value;
         }
 
         public static bool SetVisorToggled(this Actor a, bool value)

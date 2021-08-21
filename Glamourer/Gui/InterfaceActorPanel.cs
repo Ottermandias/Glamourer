@@ -88,7 +88,7 @@ namespace Glamourer.Gui
         private void DrawTargetPlayerButton()
         {
             if (ImGui.Button("Target Player"))
-                GlamourerPlugin.PluginInterface.ClientState.Targets.SetCurrentTarget(_player);
+                Glamourer.PluginInterface.ClientState.Targets.SetCurrentTarget(_player);
         }
 
         private void DrawApplyToPlayerButton(CharacterSave save)
@@ -96,9 +96,9 @@ namespace Glamourer.Gui
             if (ImGui.Button("Apply to Self"))
             {
                 var player = _inGPose
-                    ? GlamourerPlugin.PluginInterface.ClientState.Actors[GPoseActorId]
-                    : GlamourerPlugin.PluginInterface.ClientState.LocalPlayer;
-                var fallback = _inGPose ? GlamourerPlugin.PluginInterface.ClientState.LocalPlayer : null;
+                    ? Glamourer.PluginInterface.ClientState.Actors[GPoseActorId]
+                    : Glamourer.PluginInterface.ClientState.LocalPlayer;
+                var fallback = _inGPose ? Glamourer.PluginInterface.ClientState.LocalPlayer : null;
                 if (player != null)
                 {
                     save.Apply(player);
@@ -113,7 +113,7 @@ namespace Glamourer.Gui
         {
             if (ImGui.Button("Apply to Target"))
             {
-                var player = GlamourerPlugin.PluginInterface.ClientState.Targets.CurrentTarget;
+                var player = Glamourer.PluginInterface.ClientState.Targets.CurrentTarget;
                 if (player != null)
                 {
                     var fallBackActor = _playerNames[player.Name];

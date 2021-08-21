@@ -66,7 +66,7 @@ namespace Glamourer.Gui
             Actor? select      = null;
             var    buttonWidth = Vector2.UnitX * SelectorWidth / 2;
             if (ImGui.Button(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth))
-                select = GlamourerPlugin.PluginInterface.ClientState.LocalPlayer;
+                select = Glamourer.PluginInterface.ClientState.LocalPlayer;
             raii.PopFonts();
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip("Select the local player character.");
@@ -81,7 +81,7 @@ namespace Glamourer.Gui
             else
             {
                 if (ImGui.Button(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth))
-                    select = GlamourerPlugin.PluginInterface.ClientState.Targets.CurrentTarget;
+                    select = Glamourer.PluginInterface.ClientState.Targets.CurrentTarget;
             }
 
             raii.PopFonts();

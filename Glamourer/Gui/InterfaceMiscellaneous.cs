@@ -51,9 +51,9 @@ namespace Glamourer.Gui
             var alpha = save.Alpha;
             if (ImGui.DragFloat("Alpha", ref alpha, 0.01f, 0f, 1f, "%.2f") && alpha != save.Alpha)
             {
-                alpha           = (float) Math.Round(alpha > 1 ? 1 : alpha < 0 ? 0 : alpha, 2);
-                save.Alpha      = alpha;
-                ret             = true;
+                alpha      = (float) Math.Round(alpha > 1 ? 1 : alpha < 0 ? 0 : alpha, 2);
+                save.Alpha = alpha;
+                ret        = true;
                 if (player != null)
                     player.Alpha() = alpha;
             }
