@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Windows.Forms;
-using Dalamud.Game.ClientState.Actors.Types;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -18,35 +17,22 @@ namespace Glamourer
 {
     public class Glamourer : IDalamudPlugin
     {
-        public const int RequiredPenumbraShareVersion = 1;
+        public const int RequiredPenumbraShareVersion = 3;
 
         private const string HelpString = "[Copy|Apply|Save],[Name or PlaceHolder],<Name for Save>";
 
         public string Name
             => "Glamourer";
 
-        public static DalamudPluginInterface PluginInterface = null!;
-        public static GlamourerConfig        Config          = null!;
-        private       Interface              _interface      = null!;
-        public static ICustomizationManager  Customization   = null!;
-        public        DesignManager          Designs         = null!;
-        public        IPlayerWatcher         PlayerWatcher   = null!;
+        public static GlamourerConfig       Config        = null!;
+        private       Interface             _interface    = null!;
+        public static ICustomizationManager Customization = null!;
+        public        DesignManager         Designs       = null!;
+        public        IPlayerWatcher        PlayerWatcher = null!;
 
         public static string Version = string.Empty;
 
         public static IPenumbraApi? Penumbra;
-
-        private Dalamud.Dalamud                                                                                                _dalamud = null!;
-        private List<(IDalamudPlugin Plugin, PluginDefinition Definition, DalamudPluginInterface PluginInterface, bool IsRaw)> _plugins = null!;
-
-        private void SetDalamud(DalamudPluginInterface pi)
-        {
-            var dalamud = (Dalamud.Dalamud?) pi.GetType()
-                ?.GetField("dalamud", BindingFlags.NonPublic | BindingFlags.Instance)
-                ?.GetValue(pi);
-
-            _dalamud = dalamud ?? throw new Exception("Could not obtain Dalamud.");
-        }
 
         private static void PenumbraTooltip(object? it)
         {
@@ -56,22 +42,21 @@ namespace Glamourer
 
         private void PenumbraRightClick(MouseButton button, object? it)
         {
-            if (button == MouseButton.Right && it is Lumina.Excel.GeneratedSheets.Item item)
+            if (button != MouseButton.Right || it is not Lumina.Excel.GeneratedSheets.Item item)
+                return;
+
+            var gPose     = Dalamud.Objects[Interface.GPoseActorId] as Character;
+            var player    = Dalamud.Objects[0] as Character;
+            var writeItem = new Item(item, string.Empty);
+            if (gPose != null)
             {
-                var actors    = PluginInterface.ClientState.Actors;
-                var gPose     = actors[Interface.GPoseActorId];
-                var player    = actors[0];
-                var writeItem = new Item(item, string.Empty);
-                if (gPose != null)
-                {
-                    writeItem.Write(gPose.Address);
-                    UpdateActors(gPose, player);
-                }
-                else if (player != null)
-                {
-                    writeItem.Write(player.Address);
-                    UpdateActors(player);
-                }
+                writeItem.Write(gPose.Address);
+                UpdateActors(gPose, player);
+            }
+            else if (player != null)
+            {
+                writeItem.Write(player.Address);
+                UpdateActors(player);
             }
         }
 
@@ -93,61 +78,51 @@ namespace Glamourer
             Penumbra!.ChangedItemClicked -= PenumbraRightClick;
         }
 
-        private void SetPlugins(DalamudPluginInterface pi)
+        internal static bool GetPenumbra()
         {
-            var pluginManager = _dalamud?.GetType()
-                ?.GetProperty("PluginManager", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(_dalamud);
+            try
+            {
+                var subscriber      = Dalamud.PluginInterface.GetIpcSubscriber<IPenumbraApiBase>("Penumbra.Api");
+                var penumbraApiBase = subscriber.InvokeFunc();
+                if (penumbraApiBase.ApiVersion != RequiredPenumbraShareVersion)
+                {
+                    PluginLog.Debug("Could not get Penumbra because API version {penumbraApiBase.ApiVersion} does not equal the required version {RequiredPenumbraShareVersion}.");
+                    Penumbra = null;
+                    return false;
+                }
 
-            if (pluginManager == null)
-                throw new Exception("Could not obtain plugin manager.");
-
-            var pluginsList =
-                (List<(IDalamudPlugin Plugin, PluginDefinition Definition, DalamudPluginInterface PluginInterface, bool IsRaw)>?) pluginManager
-                    ?.GetType()
-                    ?.GetProperty("Plugins", BindingFlags.Instance | BindingFlags.Public)
-                    ?.GetValue(pluginManager);
-
-            _plugins = pluginsList ?? throw new Exception("Could not obtain Dalamud.");
-        }
-
-        public bool GetPenumbra()
-        {
-            if (Penumbra?.Valid ?? false)
-                return true;
-
-            var plugin = _plugins.Find(p
-                => p.Definition.InternalName == "Penumbra"
-             && string.Compare(p.Definition.AssemblyVersion, "0.4.0.3", StringComparison.Ordinal) >= 0).Plugin;
-
-            var penumbra = (IPenumbraApiBase?) plugin?.GetType().GetProperty("Api", BindingFlags.Instance | BindingFlags.Public)
-                ?.GetValue(plugin);
-            if (penumbra != null && penumbra.Valid && penumbra.ApiVersion >= RequiredPenumbraShareVersion)
-                Penumbra = (IPenumbraApi) penumbra!;
-            else
+                Penumbra = penumbraApiBase as IPenumbraApi;
+            }
+            catch (IpcNotReadyError ipc)
+            {
                 Penumbra = null;
+                PluginLog.Debug($"Could not get Penumbra because IPC not registered:\n{ipc}");
+            }
+            catch (Exception e)
+            {
+                Penumbra = null;
+                PluginLog.Debug($"Could not get Penumbra for unknown reason:\n{e}");
+            }
 
             return Penumbra != null;
         }
 
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public Glamourer(DalamudPluginInterface pluginInterface)
         {
-            Version         = Assembly.GetExecutingAssembly()?.GetName().Version.ToString() ?? "";
-            PluginInterface = pluginInterface;
-            Config          = GlamourerConfig.Create();
-            Customization   = CustomizationManager.Create(PluginInterface);
-            SetDalamud(PluginInterface);
-            SetPlugins(PluginInterface);
-            Designs = new DesignManager(PluginInterface);
+            Dalamud.Initialize(pluginInterface);
+            Version       = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "";
+            Config        = GlamourerConfig.Load();
+            Customization = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
+            Designs       = new DesignManager();
             if (GetPenumbra() && Config.AttachToPenumbra)
                 RegisterFunctions();
-            PlayerWatcher = PlayerWatchFactory.Create(PluginInterface);
+            PlayerWatcher = PlayerWatchFactory.Create(Dalamud.Framework, Dalamud.ClientState, Dalamud.Objects);
 
-            PluginInterface.CommandManager.AddHandler("/glamourer", new CommandInfo(OnGlamourer)
+            Dalamud.Commands.AddHandler("/glamourer", new CommandInfo(OnGlamourer)
             {
                 HelpMessage = "Open or close the Glamourer window.",
             });
-            PluginInterface.CommandManager.AddHandler("/glamour", new CommandInfo(OnGlamour)
+            Dalamud.Commands.AddHandler("/glamour", new CommandInfo(OnGlamour)
             {
                 HelpMessage = $"Use Glamourer Functions: {HelpString}",
             });
@@ -156,48 +131,48 @@ namespace Glamourer
         }
 
         public void OnGlamourer(string command, string arguments)
-            => _interface?.ToggleVisibility(null!, null!);
+            => _interface.ToggleVisibility();
 
-        private Actor? GetActor(string name)
+        private static GameObject? GetActor(string name)
         {
             var lowerName = name.ToLowerInvariant();
             return lowerName switch
             {
                 ""          => null,
-                "<me>"      => PluginInterface.ClientState.Actors[Interface.GPoseActorId] ?? PluginInterface.ClientState.LocalPlayer,
-                "self"      => PluginInterface.ClientState.Actors[Interface.GPoseActorId] ?? PluginInterface.ClientState.LocalPlayer,
-                "<t>"       => PluginInterface.ClientState.Targets.CurrentTarget,
-                "target"    => PluginInterface.ClientState.Targets.CurrentTarget,
-                "<f>"       => PluginInterface.ClientState.Targets.FocusTarget,
-                "focus"     => PluginInterface.ClientState.Targets.FocusTarget,
-                "<mo>"      => PluginInterface.ClientState.Targets.MouseOverTarget,
-                "mouseover" => PluginInterface.ClientState.Targets.MouseOverTarget,
-                _ => PluginInterface.ClientState.Actors.LastOrDefault(
-                    a => string.Equals(a.Name, lowerName, StringComparison.InvariantCultureIgnoreCase)),
+                "<me>"      => Dalamud.Objects[Interface.GPoseActorId] ?? Dalamud.ClientState.LocalPlayer,
+                "self"      => Dalamud.Objects[Interface.GPoseActorId] ?? Dalamud.ClientState.LocalPlayer,
+                "<t>"       => Dalamud.Targets.Target,
+                "target"    => Dalamud.Targets.Target,
+                "<f>"       => Dalamud.Targets.FocusTarget,
+                "focus"     => Dalamud.Targets.FocusTarget,
+                "<mo>"      => Dalamud.Targets.MouseOverTarget,
+                "mouseover" => Dalamud.Targets.MouseOverTarget,
+                _ => Dalamud.Objects.LastOrDefault(
+                    a => string.Equals(a.Name.ToString(), lowerName, StringComparison.InvariantCultureIgnoreCase)),
             };
         }
 
-        public void CopyToClipboard(Actor actor)
+        public void CopyToClipboard(Character actor)
         {
             var save = new CharacterSave();
             save.LoadActor(actor);
-            Clipboard.SetText(save.ToBase64());
+            ImGui.SetClipboardText(save.ToBase64());
         }
 
-        public void ApplyCommand(Actor actor, string target)
+        public void ApplyCommand(Character actor, string target)
         {
             CharacterSave? save = null;
             if (target.ToLowerInvariant() == "clipboard")
                 try
                 {
-                    save = CharacterSave.FromString(Clipboard.GetText());
+                    save = CharacterSave.FromString(ImGui.GetClipboardText());
                 }
                 catch (Exception)
                 {
-                    PluginInterface.Framework.Gui.Chat.PrintError("Clipboard does not contain a valid customization string.");
+                    Dalamud.Chat.PrintError("Clipboard does not contain a valid customization string.");
                 }
             else if (!Designs.FileSystem.Find(target, out var child) || child is not Design d)
-                PluginInterface.Framework.Gui.Chat.PrintError("The given path to a saved design does not exist or does not point to a design.");
+                Dalamud.Chat.PrintError("The given path to a saved design does not exist or does not point to a design.");
             else
                 save = d.Data;
 
@@ -205,7 +180,7 @@ namespace Glamourer
             UpdateActors(actor);
         }
 
-        public void SaveCommand(Actor actor, string path)
+        public void SaveCommand(Character actor, string path)
         {
             var save = new CharacterSave();
             save.LoadActor(actor);
@@ -219,8 +194,8 @@ namespace Glamourer
             }
             catch (Exception e)
             {
-                PluginInterface.Framework.Gui.Chat.PrintError("Could not save file:");
-                PluginInterface.Framework.Gui.Chat.PrintError($"    {e.Message}");
+                Dalamud.Chat.PrintError("Could not save file:");
+                Dalamud.Chat.PrintError($"    {e.Message}");
             }
         }
 
@@ -228,8 +203,8 @@ namespace Glamourer
         {
             static void PrintHelp()
             {
-                PluginInterface.Framework.Gui.Chat.Print("Usage:");
-                PluginInterface.Framework.Gui.Chat.Print($"    {HelpString}");
+                Dalamud.Chat.Print("Usage:");
+                Dalamud.Chat.Print($"    {HelpString}");
             }
 
             arguments = arguments.Trim();
@@ -250,10 +225,10 @@ namespace Glamourer
                 return;
             }
 
-            var actor = GetActor(split[1]);
+            var actor = GetActor(split[1]) as Character;
             if (actor == null)
             {
-                PluginInterface.Framework.Gui.Chat.Print($"Could not find actor for {split[1]}.");
+                Dalamud.Chat.Print($"Could not find actor for {split[1]} or it was not a Character.");
                 return;
             }
 
@@ -266,7 +241,7 @@ namespace Glamourer
                 {
                     if (split.Length < 3)
                     {
-                        PluginInterface.Framework.Gui.Chat.Print("Applying requires a name for the save to be applied or 'clipboard'.");
+                        Dalamud.Chat.Print("Applying requires a name for the save to be applied or 'clipboard'.");
                         return;
                     }
 
@@ -278,7 +253,7 @@ namespace Glamourer
                 {
                     if (split.Length < 3)
                     {
-                        PluginInterface.Framework.Gui.Chat.Print("Saving requires a name for the save.");
+                        Dalamud.Chat.Print("Saving requires a name for the save.");
                         return;
                     }
 
@@ -296,25 +271,24 @@ namespace Glamourer
             PlayerWatcher?.Dispose();
             UnregisterFunctions();
             _interface?.Dispose();
-            PluginInterface.CommandManager.RemoveHandler("/glamour");
-            PluginInterface.CommandManager.RemoveHandler("/glamourer");
-            PluginInterface.Dispose();
+            Dalamud.Commands.RemoveHandler("/glamour");
+            Dalamud.Commands.RemoveHandler("/glamourer");
         }
 
         // Update actors without triggering PlayerWatcher Events,
         // then manually redraw using Penumbra.
-        public void UpdateActors(Actor actor, Actor? gPoseOriginalActor = null)
+        public void UpdateActors(Character actor, Character? gPoseOriginalActor = null)
         {
             var newEquip = PlayerWatcher.UpdateActorWithoutEvent(actor);
-            Penumbra?.RedrawActor(actor, RedrawType.WithSettings);
+            Penumbra?.RedrawObject(actor, RedrawType.WithSettings);
 
             // Special case for carrying over changes to the gPose actor to the regular player actor, too.
-            if (gPoseOriginalActor != null)
-            {
-                newEquip.Write(gPoseOriginalActor.Address);
-                PlayerWatcher.UpdateActorWithoutEvent(gPoseOriginalActor);
-                Penumbra?.RedrawActor(gPoseOriginalActor, RedrawType.AfterGPoseWithSettings);
-            }
+            if (gPoseOriginalActor == null)
+                return;
+
+            newEquip.Write(gPoseOriginalActor.Address);
+            PlayerWatcher.UpdateActorWithoutEvent(gPoseOriginalActor);
+            Penumbra?.RedrawObject(gPoseOriginalActor, RedrawType.AfterGPoseWithSettings);
         }
     }
 }

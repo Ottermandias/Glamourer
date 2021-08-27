@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Dalamud.Plugin;
+using Dalamud.Data;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer
@@ -11,22 +11,22 @@ namespace Glamourer
         private static Dictionary<byte, Stain>?           _stains;
         private static Dictionary<EquipSlot, List<Item>>? _itemsBySlot;
 
-        public static IReadOnlyDictionary<byte, Stain> Stains(DalamudPluginInterface pi)
+        public static IReadOnlyDictionary<byte, Stain> Stains(DataManager dataManager)
         {
             if (_stains != null)
                 return _stains;
 
-            var sheet = pi.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Stain>();
+            var sheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Stain>()!;
             _stains = sheet.Where(s => s.Color != 0).ToDictionary(s => (byte) s.RowId, s => new Stain((byte) s.RowId, s));
             return _stains;
         }
 
-        public static IReadOnlyDictionary<EquipSlot, List<Item>> ItemsBySlot(DalamudPluginInterface pi)
+        public static IReadOnlyDictionary<EquipSlot, List<Item>> ItemsBySlot(DataManager dataManager)
         {
             if (_itemsBySlot != null)
                 return _itemsBySlot;
 
-            var sheet = pi.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>();
+            var sheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;
 
             Item EmptySlot(EquipSlot slot)
                 => new(sheet.First(), "Nothing", slot);

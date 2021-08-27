@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Windows.Forms;
-using Dalamud.Game.ClientState.Actors.Types;
-using Dalamud.Plugin;
+using Dalamud.Logging;
 using Glamourer.Customization;
 using ImGuiNET;
-using Penumbra.Api;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui
@@ -46,7 +43,7 @@ namespace Glamourer.Gui
                         break;
                     default:
                         var count = set.Count(id);
-                        if (set.DataByValue(id, customization[id], out var value) < 0)
+                        if (set.DataByValue(id, customization[id], out _) < 0)
                             if (count == 0)
                                 customization[id] = 0;
                             else
@@ -173,7 +170,7 @@ namespace Glamourer.Gui
                         case DesignNameUse.FromClipboard:
                             try
                             {
-                                var text = Clipboard.GetText();
+                                var text = ImGui.GetClipboardText();
                                 var save = CharacterSave.FromString(text);
                                 SaveNewDesign(save);
                             }

@@ -1,5 +1,5 @@
 ﻿using System;
-using Dalamud.Game.ClientState.Actors.Types;
+using Dalamud.Game.ClientState.Objects.Types;
 using ImGuiNET;
 
 namespace Glamourer.Gui
@@ -18,7 +18,7 @@ namespace Glamourer.Gui
             return false;
         }
 
-        private static bool DrawMiscellaneous(CharacterSave save, Actor? player)
+        private static bool DrawMiscellaneous(CharacterSave save, Character? player)
         {
             var ret = false;
             if (!ImGui.CollapsingHeader("Miscellaneous"))

@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Game.ClientState.Actors;
-using Dalamud.Game.ClientState.Actors.Types;
+using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
 using ImGuiNET;
 
@@ -10,11 +10,11 @@ namespace Glamourer.Gui
 {
     internal partial class Interface
     {
-        private          Actor?                     _player;
+        private          Character?                 _player;
         private          string                     _currentActorName = string.Empty;
         private          string                     _actorFilter      = string.Empty;
         private          string                     _actorFilterLower = string.Empty;
-        private readonly Dictionary<string, Actor?> _playerNames      = new(400);
+        private readonly Dictionary<string, Character?> _playerNames      = new(400);
 
         private void DrawActorFilter()
         {
@@ -26,9 +26,9 @@ namespace Glamourer.Gui
                 _actorFilterLower = _actorFilter.ToLowerInvariant();
         }
 
-        private void DrawActorSelectable(Actor actor, bool gPose)
+        private void DrawActorSelectable(Character actor, bool gPose)
         {
-            var actorName = actor.Name;
+            var actorName = actor.Name.ToString();
             if (!actorName.Any())
                 return;
 
@@ -50,7 +50,7 @@ namespace Glamourer.Gui
                     return;
                 }
 
-            if (_currentActorName == actor.Name)
+            if (_currentActorName == actorName)
             {
                 _currentSave.LoadActor(actor);
                 _player = actor;
@@ -63,10 +63,10 @@ namespace Glamourer.Gui
                 .PushStyle(ImGuiStyleVar.ItemSpacing,   Vector2.Zero)
                 .PushStyle(ImGuiStyleVar.FrameRounding, 0)
                 .PushFont(UiBuilder.IconFont);
-            Actor? select      = null;
+            Character? select      = null;
             var    buttonWidth = Vector2.UnitX * SelectorWidth / 2;
             if (ImGui.Button(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth))
-                select = Glamourer.PluginInterface.ClientState.LocalPlayer;
+                select = Dalamud.ClientState.LocalPlayer;
             raii.PopFonts();
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip("Select the local player character.");
@@ -81,7 +81,7 @@ namespace Glamourer.Gui
             else
             {
                 if (ImGui.Button(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth))
-                    select = Glamourer.PluginInterface.ClientState.Targets.CurrentTarget;
+                    select = Dalamud.Targets.Target as Character;
             }
 
             raii.PopFonts();
@@ -92,7 +92,7 @@ namespace Glamourer.Gui
                 return;
 
             _player           = select;
-            _currentActorName = _player.Name;
+            _currentActorName = _player.Name.ToString();
             _currentSave.LoadActor(_player);
         }
 
@@ -107,7 +107,7 @@ namespace Glamourer.Gui
             _playerNames.Clear();
             for (var i = GPoseActorId; i < GPoseActorId + 48; ++i)
             {
-                var actor = _actors[i];
+                var actor = Dalamud.Objects[i] as Character;
                 if (actor == null)
                     break;
 
@@ -117,13 +117,13 @@ namespace Glamourer.Gui
 
             for (var i = 0; i < GPoseActorId; i += 2)
             {
-                var actor = _actors[i];
+                var actor = Dalamud.Objects[i] as Character;
                 if (actor != null && actor.ObjectKind == ObjectKind.Player)
                     DrawActorSelectable(actor, false);
             }
 
 
-            using (var raii = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
+            using (var _ = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
             {
                 ImGui.EndChild();
             }

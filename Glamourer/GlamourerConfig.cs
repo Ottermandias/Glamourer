@@ -20,17 +20,15 @@ namespace Glamourer
         public uint EquipmentColor     { get; set; } = DefaultEquipmentColor;
 
         public void Save()
-            => Glamourer.PluginInterface.SavePluginConfig(this);
+            => Dalamud.PluginInterface.SavePluginConfig(this);
 
-        public static GlamourerConfig Create()
+        public static GlamourerConfig Load()
         {
-            var config = Glamourer.PluginInterface.GetPluginConfig() as GlamourerConfig;
-            if (config == null)
-            {
-                config = new GlamourerConfig();
-                Glamourer.PluginInterface.SavePluginConfig(config);
-            }
+            if (Dalamud.PluginInterface.GetPluginConfig() is GlamourerConfig config)
+                return config;
 
+            config = new GlamourerConfig();
+            config.Save();
             return config;
         }
     }

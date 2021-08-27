@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
-using Dalamud.Plugin;
+using Dalamud.Logging;
 using Glamourer.Customization;
 using ImGuiNET;
 using Penumbra.GameData.Enums;
@@ -39,13 +39,13 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private Vector2 _iconSize          = Vector2.Zero;
-        private Vector2 _actualIconSize    = Vector2.Zero;
-        private float   _raceSelectorWidth = 0;
-        private float   _inputIntSize      = 0;
-        private float   _comboSelectorSize = 0;
-        private float   _percentageSize    = 0;
-        private float   _itemComboWidth    = 0;
+        private Vector2 _iconSize       = Vector2.Zero;
+        private Vector2 _actualIconSize = Vector2.Zero;
+        private float   _raceSelectorWidth;
+        private float   _inputIntSize;
+        private float   _comboSelectorSize;
+        private float   _percentageSize;
+        private float   _itemComboWidth;
 
         private bool InputInt(string label, ref int value, int minValue, int maxValue)
         {
@@ -93,7 +93,7 @@ namespace Glamourer.Gui
 
             ImGui.SameLine();
 
-            using (var group = ImGuiRaii.NewGroup())
+            using (var _ = ImGuiRaii.NewGroup())
             {
                 if (InputInt($"##text_{id}", ref current, 1, count))
                 {

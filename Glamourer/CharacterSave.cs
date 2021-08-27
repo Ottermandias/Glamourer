@@ -1,5 +1,5 @@
 ﻿using System;
-using Dalamud.Game.ClientState.Actors.Types;
+using Dalamud.Game.ClientState.Objects.Types;
 using Glamourer.Customization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -121,7 +121,7 @@ namespace Glamourer
 
         public ActorEquipMask WriteEquipment
         {
-            get => (ActorEquipMask) ((ushort) _bytes[2] | ((ushort) _bytes[3] << 8));
+            get => (ActorEquipMask) (_bytes[2] | (_bytes[3] << 8));
             set
             {
                 _bytes[2] = (byte) ((ushort) value & 0xFF);
@@ -181,17 +181,17 @@ namespace Glamourer
 
         private static void CheckActorMask(byte val1, byte val2)
         {
-            var mask = (ActorEquipMask) ((ushort) val1 | ((ushort) val2 << 8));
+            var mask = (ActorEquipMask) (val1 | (val2 << 8));
             if (mask > ActorEquipMask.All)
                 throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid value {mask} in byte 3 and 4.");
         }
 
-        public void LoadActor(Actor a)
+        public void LoadActor(Character a)
         {
             WriteCustomizations = true;
             Load(new ActorCustomization(a));
 
-            Load(new ActorEquipment(a), ActorEquipMask.All);
+            Load(new ActorEquipment(a));
 
             SetHatState    = true;
             SetVisorState  = true;
@@ -202,7 +202,7 @@ namespace Glamourer
             Alpha = a.Alpha();
         }
 
-        public void Apply(Actor a)
+        public void Apply(Character a)
         {
             if (WriteCustomizations)
                 Customizations.Write(a.Address);

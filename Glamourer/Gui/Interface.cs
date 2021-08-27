@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Game.ClientState.Actors;
 using Glamourer.Designs;
 using ImGuiNET;
 using Penumbra.GameData;
@@ -19,7 +18,6 @@ namespace Glamourer.Gui
         private readonly string _glamourerHeader;
 
         private readonly IReadOnlyDictionary<byte, Stain>                                       _stains;
-        private readonly ActorTable                                                             _actors;
         private readonly IObjectIdentifier                                                      _identifier;
         private readonly Dictionary<EquipSlot, (ComboWithFilter<Item>, ComboWithFilter<Stain>)> _combos;
         private readonly ImGuiScene.TextureWrap?                                                _legacyTattooIcon;
@@ -27,8 +25,8 @@ namespace Glamourer.Gui
         private readonly DesignManager                                                          _designs;
         private readonly Glamourer                                                              _plugin;
 
-        private bool _visible = false;
-        private bool _inGPose = false;
+        private bool _visible;
+        private bool _inGPose;
 
         public Interface(Glamourer plugin)
         {
@@ -37,31 +35,30 @@ namespace Glamourer.Gui
             _glamourerHeader = Glamourer.Version.Length > 0
                 ? $"{PluginName} v{Glamourer.Version}###{PluginName}Main"
                 : $"{PluginName}###{PluginName}Main";
-            Glamourer.PluginInterface.UiBuilder.DisableGposeUiHide =  true;
-            Glamourer.PluginInterface.UiBuilder.OnBuildUi          += Draw;
-            Glamourer.PluginInterface.UiBuilder.OnOpenConfigUi     += ToggleVisibility;
+            Dalamud.PluginInterface.UiBuilder.DisableGposeUiHide =  true;
+            Dalamud.PluginInterface.UiBuilder.Draw               += Draw;
+            Dalamud.PluginInterface.UiBuilder.OpenConfigUi       += ToggleVisibility;
 
             _equipSlotNames = GetEquipSlotNames();
 
-            _stains     = GameData.Stains(Glamourer.PluginInterface);
-            _identifier = Penumbra.GameData.GameData.GetIdentifier(Glamourer.PluginInterface);
-            _actors     = Glamourer.PluginInterface.ClientState.Actors;
+            _stains     = GameData.Stains(Dalamud.GameData);
+            _identifier = Penumbra.GameData.GameData.GetIdentifier(Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
 
             var stainCombo = CreateDefaultStainCombo(_stains.Values.ToArray());
 
-            var equip = GameData.ItemsBySlot(Glamourer.PluginInterface);
+            var equip = GameData.ItemsBySlot(Dalamud.GameData);
             _combos           = equip.ToDictionary(kvp => kvp.Key, kvp => CreateCombos(kvp.Key, kvp.Value, stainCombo));
             _legacyTattooIcon = GetLegacyTattooIcon();
         }
 
-        public void ToggleVisibility(object _, object _2)
+        public void ToggleVisibility()
             => _visible = !_visible;
 
         public void Dispose()
         {
             _legacyTattooIcon?.Dispose();
-            Glamourer.PluginInterface.UiBuilder.OnBuildUi      -= Draw;
-            Glamourer.PluginInterface.UiBuilder.OnOpenConfigUi -= ToggleVisibility;
+            Dalamud.PluginInterface.UiBuilder.Draw         -= Draw;
+            Dalamud.PluginInterface.UiBuilder.OpenConfigUi -= ToggleVisibility;
         }
 
         private void Draw()
@@ -80,7 +77,7 @@ namespace Glamourer.Gui
                 if (!raii.Begin(() => ImGui.BeginTabBar("##tabBar"), ImGui.EndTabBar))
                     return;
 
-                _inGPose           = _actors[GPoseActorId] != null;
+                _inGPose           = Dalamud.Objects[GPoseActorId] != null;
                 _iconSize          = Vector2.One * ImGui.GetTextLineHeightWithSpacing() * 2;
                 _actualIconSize    = _iconSize + 2 * ImGui.GetStyle().FramePadding;
                 _comboSelectorSize = 4 * _actualIconSize.X + 3 * ImGui.GetStyle().ItemSpacing.X;

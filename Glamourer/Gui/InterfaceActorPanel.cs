@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using System.Windows.Forms;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
-using Dalamud.Plugin;
+using Dalamud.Logging;
 using Glamourer.Designs;
 using Glamourer.FileSystem;
 using ImGuiNET;
@@ -12,9 +12,9 @@ namespace Glamourer.Gui
 {
     internal partial class Interface
     {
-        private readonly CharacterSave _currentSave         = new();
-        private          string        _newDesignName       = string.Empty;
-        private          bool          _keyboardFocus       = false;
+        private readonly CharacterSave _currentSave   = new();
+        private          string        _newDesignName = string.Empty;
+        private          bool          _keyboardFocus;
         private const    string        DesignNamePopupLabel = "Save Design As...";
         private const    uint          RedHeaderColor       = 0xFF1818C0;
         private const    uint          GreenHeaderColor     = 0xFF18C018;
@@ -37,7 +37,7 @@ namespace Glamourer.Gui
         {
             ImGui.PushFont(UiBuilder.IconFont);
             if (ImGui.Button(FontAwesomeIcon.Clipboard.ToIconString()))
-                Clipboard.SetText(save.ToBase64());
+                ImGui.SetClipboardText(save.ToBase64());
             ImGui.PopFont();
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip("Copy customization code to clipboard.");
@@ -54,7 +54,7 @@ namespace Glamourer.Gui
             if (!applyButton)
                 return false;
 
-            var text = Clipboard.GetText();
+            var text = ImGui.GetClipboardText();
             if (!text.Any())
                 return false;
 
@@ -88,41 +88,41 @@ namespace Glamourer.Gui
         private void DrawTargetPlayerButton()
         {
             if (ImGui.Button("Target Player"))
-                Glamourer.PluginInterface.ClientState.Targets.SetCurrentTarget(_player);
+                Dalamud.Targets.SetTarget(_player);
         }
 
         private void DrawApplyToPlayerButton(CharacterSave save)
         {
-            if (ImGui.Button("Apply to Self"))
-            {
-                var player = _inGPose
-                    ? Glamourer.PluginInterface.ClientState.Actors[GPoseActorId]
-                    : Glamourer.PluginInterface.ClientState.LocalPlayer;
-                var fallback = _inGPose ? Glamourer.PluginInterface.ClientState.LocalPlayer : null;
-                if (player != null)
-                {
-                    save.Apply(player);
-                    if (_inGPose)
-                        save.Apply(fallback!);
-                    _plugin.UpdateActors(player, fallback);
-                }
-            }
+            if (!ImGui.Button("Apply to Self"))
+                return;
+
+            var player = _inGPose
+                ? (Character?) Dalamud.Objects[GPoseActorId]
+                : Dalamud.ClientState.LocalPlayer;
+            var fallback = _inGPose ? Dalamud.ClientState.LocalPlayer : null;
+            if (player == null)
+                return;
+
+            save.Apply(player);
+            if (_inGPose)
+                save.Apply(fallback!);
+            _plugin.UpdateActors(player, fallback);
         }
 
         private void DrawApplyToTargetButton(CharacterSave save)
         {
-            if (ImGui.Button("Apply to Target"))
-            {
-                var player = Glamourer.PluginInterface.ClientState.Targets.CurrentTarget;
-                if (player != null)
-                {
-                    var fallBackActor = _playerNames[player.Name];
-                    save.Apply(player);
-                    if (fallBackActor != null)
-                        save.Apply(fallBackActor);
-                    _plugin.UpdateActors(player, fallBackActor);
-                }
-            }
+            if (!ImGui.Button("Apply to Target"))
+                return;
+
+            var player = Dalamud.Targets.Target as Character;
+            if (player == null)
+                return;
+
+            var fallBackActor = _playerNames[player.Name.ToString()];
+            save.Apply(player);
+            if (fallBackActor != null)
+                save.Apply(fallBackActor);
+            _plugin.UpdateActors(player, fallBackActor);
         }
 
         private void SaveNewDesign(CharacterSave save)
@@ -130,13 +130,13 @@ namespace Glamourer.Gui
             try
             {
                 var (folder, name) = _designs.FileSystem.CreateAllFolders(_newDesignName);
-                if (name.Any())
-                {
-                    var newDesign = new Design(folder, name) { Data = save };
-                    folder.AddChild(newDesign);
-                    _designs.Designs[newDesign.FullName()] = save;
-                    _designs.SaveToFile();
-                }
+                if (!name.Any())
+                    return;
+
+                var newDesign = new Design(folder, name) { Data = save };
+                folder.AddChild(newDesign);
+                _designs.Designs[newDesign.FullName()] = save;
+                _designs.SaveToFile();
             }
             catch (Exception e)
             {

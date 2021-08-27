@@ -69,7 +69,7 @@ namespace Glamourer.Customization
         public IReadOnlyList<Customization> LipColorsLight       { get; internal set; } = null!;
         public IReadOnlyList<Customization> LipColorsDark        { get; internal set; } = null!;
 
-        public IReadOnlyList<CharaMakeParams.MenuType> _types { get; internal set; } = null!;
+        public IReadOnlyList<CharaMakeParams.MenuType> Types { get; internal set; } = null!;
 
         public string Option(CustomizationId id)
             => OptionName[(int) id];
@@ -154,7 +154,7 @@ namespace Glamourer.Customization
         }
 
         public CharaMakeParams.MenuType Type(CustomizationId id)
-            => _types[(int) id];
+            => Types[(int) id];
 
 
         public int Count(CustomizationId id)

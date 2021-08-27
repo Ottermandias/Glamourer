@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Glamourer.Designs;
 
 namespace Glamourer.FileSystem
 {
     internal class FolderStructureComparer : IComparer<IFileSystemBase>
     {
         // Compare only the direct folder names since this is only used inside an enumeration of children of one folder.
-        public static int Cmp(IFileSystemBase x, IFileSystemBase y)
-            => ReferenceEquals(x, y) ? 0 : string.Compare(x.Name, y.Name, StringComparison.InvariantCultureIgnoreCase);
+        public static int Cmp(IFileSystemBase? x, IFileSystemBase? y)
+            => ReferenceEquals(x, y) ? 0 : string.Compare(x?.Name, y?.Name, StringComparison.InvariantCultureIgnoreCase);
 
-        public int Compare(IFileSystemBase x, IFileSystemBase y)
+        public int Compare(IFileSystemBase? x, IFileSystemBase? y)
             => Cmp(x, y);
 
         internal static readonly FolderStructureComparer Default = new();

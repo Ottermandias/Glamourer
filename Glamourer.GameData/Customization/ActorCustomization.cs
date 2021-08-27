@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using Dalamud.Game.ClientState.Actors.Types;
+using Dalamud.Game.ClientState.Objects.Types;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Customization
@@ -150,10 +150,10 @@ namespace Glamourer.Customization
             }
         }
 
-        public void Read(Actor actor)
+        public void Read(Character actor)
             => Read(actor.Address + CustomizationOffset);
 
-        public ActorCustomization(Actor actor)
+        public ActorCustomization(Character actor)
             : this()
         {
             Read(actor.Address + CustomizationOffset);

@@ -53,7 +53,7 @@ namespace Glamourer.Gui
                 return;
             }
 
-            if (ImGui.Button(buttonLabel) && _plugin.GetPenumbra())
+            if (ImGui.Button(buttonLabel) && Glamourer.GetPenumbra())
             {
                 _plugin.UnregisterFunctions();
                 _plugin.RegisterFunctions();
@@ -88,7 +88,7 @@ namespace Glamourer.Gui
                     cfg.AttachToPenumbra = v;
                     if (v)
                     {
-                        if (_plugin.GetPenumbra())
+                        if (Glamourer.GetPenumbra())
                             _plugin.RegisterFunctions();
                     }
                     else

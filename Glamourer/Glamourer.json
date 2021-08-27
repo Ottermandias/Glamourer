@@ -6,6 +6,6 @@
   "AssemblyVersion": "0.0.3.0",
   "RepoUrl": "https://github.com/Ottermandias/Glamourer",
   "ApplicableVersion": "any",
-  "DalamudApiLevel": 3,
+  "DalamudApiLevel": 4,
   "LoadPriority": -100
 }

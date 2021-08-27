@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Linq;
-using Dalamud.Plugin;
+using Dalamud.Logging;
 using ImGuiNET;
 
 namespace Glamourer.FileSystem
@@ -12,7 +11,7 @@ namespace Glamourer.FileSystem
         private static unsafe bool IsDropping(string name)
             => ImGui.AcceptDragDropPayload(name).NativePtr != null;
 
-        private static IFileSystemBase? _draggedObject  = null;
+        private static IFileSystemBase? _draggedObject;
 
         public static bool DragDropTarget(FileSystem fs, IFileSystemBase child, out string oldPath, out IFileSystemBase? draggedChild)
         {
