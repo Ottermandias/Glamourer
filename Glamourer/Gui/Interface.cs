@@ -13,7 +13,7 @@ namespace Glamourer.Gui
     {
         public const     float  SelectorWidth  = 200;
         public const     float  MinWindowWidth = 675;
-        public const     int    GPoseActorId   = 201;
+        public const     int    GPoseObjectId   = 201;
         private const    string PluginName     = "Glamourer";
         private readonly string _glamourerHeader;
 
@@ -77,7 +77,7 @@ namespace Glamourer.Gui
                 if (!raii.Begin(() => ImGui.BeginTabBar("##tabBar"), ImGui.EndTabBar))
                     return;
 
-                _inGPose           = Dalamud.Objects[GPoseActorId] != null;
+                _inGPose           = Dalamud.Objects[GPoseObjectId] != null;
                 _iconSize          = Vector2.One * ImGui.GetTextLineHeightWithSpacing() * 2;
                 _actualIconSize    = _iconSize + 2 * ImGui.GetStyle().FramePadding;
                 _comboSelectorSize = 4 * _actualIconSize.X + 3 * ImGui.GetStyle().ItemSpacing.X;
@@ -86,7 +86,7 @@ namespace Glamourer.Gui
                 _raceSelectorWidth = _inputIntSize + _percentageSize - _actualIconSize.X;
                 _itemComboWidth    = 6 * _actualIconSize.X + 4 * ImGui.GetStyle().ItemSpacing.X - ColorButtonWidth + 1;
 
-                DrawActorTab();
+                DrawPlayerTab();
                 DrawSaves();
                 DrawConfigTab();
             }

@@ -19,7 +19,7 @@ namespace Glamourer.Gui
         private const    uint          RedHeaderColor       = 0xFF1818C0;
         private const    uint          GreenHeaderColor     = 0xFF18C018;
 
-        private void DrawActorHeader()
+        private void DrawPlayerHeader()
         {
             var color       = _player == null ? RedHeaderColor : GreenHeaderColor;
             var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
@@ -30,7 +30,7 @@ namespace Glamourer.Gui
                 .PushColor(ImGuiCol.ButtonActive,  buttonColor)
                 .PushStyle(ImGuiStyleVar.ItemSpacing,   Vector2.Zero)
                 .PushStyle(ImGuiStyleVar.FrameRounding, 0);
-            ImGui.Button($"{_currentActorName}##actorHeader", -Vector2.UnitX * 0.0001f);
+            ImGui.Button($"{_currentPlayerName}##playerHeader", -Vector2.UnitX * 0.0001f);
         }
 
         private static void DrawCopyClipboardButton(CharacterSave save)
@@ -97,7 +97,7 @@ namespace Glamourer.Gui
                 return;
 
             var player = _inGPose
-                ? (Character?) Dalamud.Objects[GPoseActorId]
+                ? (Character?) Dalamud.Objects[GPoseObjectId]
                 : Dalamud.ClientState.LocalPlayer;
             var fallback = _inGPose ? Dalamud.ClientState.LocalPlayer : null;
             if (player == null)
@@ -106,7 +106,7 @@ namespace Glamourer.Gui
             save.Apply(player);
             if (_inGPose)
                 save.Apply(fallback!);
-            Glamourer.Penumbra.UpdateActors(player, fallback);
+            Glamourer.Penumbra.UpdateCharacters(player, fallback);
         }
 
         private void DrawApplyToTargetButton(CharacterSave save)
@@ -118,11 +118,11 @@ namespace Glamourer.Gui
             if (player == null)
                 return;
 
-            var fallBackActor = _playerNames[player.Name.ToString()];
+            var fallBackCharacter = _playerNames[player.Name.ToString()];
             save.Apply(player);
-            if (fallBackActor != null)
-                save.Apply(fallBackActor);
-            Glamourer.Penumbra.UpdateActors(player, fallBackActor);
+            if (fallBackCharacter != null)
+                save.Apply(fallBackCharacter);
+            Glamourer.Penumbra.UpdateCharacters(player, fallBackCharacter);
         }
 
         private void SaveNewDesign(CharacterSave save)
@@ -144,11 +144,11 @@ namespace Glamourer.Gui
             }
         }
 
-        private void DrawActorPanel()
+        private void DrawPlayerPanel()
         {
             ImGui.BeginGroup();
-            DrawActorHeader();
-            if (!ImGui.BeginChild("##actorData", -Vector2.One, true))
+            DrawPlayerHeader();
+            if (!ImGui.BeginChild("##playerData", -Vector2.One, true))
                 return;
 
             DrawCopyClipboardButton(_currentSave);
@@ -180,7 +180,7 @@ namespace Glamourer.Gui
             changes |= DrawMiscellaneous(_currentSave, _player);
 
             if (_player != null && changes)
-                Glamourer.Penumbra.UpdateActors(_player);
+                Glamourer.Penumbra.UpdateCharacters(_player);
             ImGui.EndChild();
             ImGui.EndGroup();
         }

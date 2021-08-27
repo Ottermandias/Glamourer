@@ -36,8 +36,8 @@ namespace Glamourer
     public class CharacterSave
     {
         public const byte CurrentVersion    = 2;
-        public const byte TotalSizeVersion1 = 1 + 1 + 2 + 56 + ActorCustomization.CustomizationBytes;
-        public const byte TotalSizeVersion2 = 1 + 1 + 2 + 56 + ActorCustomization.CustomizationBytes + 4 + 1;
+        public const byte TotalSizeVersion1 = 1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes;
+        public const byte TotalSizeVersion2 = 1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 1;
 
         public const byte TotalSize = TotalSizeVersion2;
 
@@ -97,8 +97,8 @@ namespace Glamourer
 
         public byte StateFlags
         {
-            get => _bytes[64 + ActorCustomization.CustomizationBytes];
-            set => _bytes[64 + ActorCustomization.CustomizationBytes] = value;
+            get => _bytes[64 + CharacterCustomization.CustomizationBytes];
+            set => _bytes[64 + CharacterCustomization.CustomizationBytes] = value;
         }
 
         public bool HatState
@@ -119,9 +119,9 @@ namespace Glamourer
             set => StateFlags = (byte) (value ? StateFlags & ~0x02 : StateFlags | 0x02);
         }
 
-        public ActorEquipMask WriteEquipment
+        public CharacterEquipMask WriteEquipment
         {
-            get => (ActorEquipMask) (_bytes[2] | (_bytes[3] << 8));
+            get => (CharacterEquipMask) (_bytes[2] | (_bytes[3] << 8));
             set
             {
                 _bytes[2] = (byte) ((ushort) value & 0xFF);
@@ -133,7 +133,7 @@ namespace Glamourer
         {
             get
             {
-                fixed (byte* ptr = &_bytes[60 + ActorCustomization.CustomizationBytes])
+                fixed (byte* ptr = &_bytes[60 + CharacterCustomization.CustomizationBytes])
                 {
                     return *(float*) ptr;
                 }
@@ -142,24 +142,24 @@ namespace Glamourer
             {
                 fixed (byte* ptr = _bytes)
                 {
-                    *(ptr + 60 + ActorCustomization.CustomizationBytes + 0) = *((byte*) &value + 0);
-                    *(ptr + 60 + ActorCustomization.CustomizationBytes + 1) = *((byte*) &value + 1);
-                    *(ptr + 60 + ActorCustomization.CustomizationBytes + 2) = *((byte*) &value + 2);
-                    *(ptr + 60 + ActorCustomization.CustomizationBytes + 3) = *((byte*) &value + 3);
+                    *(ptr + 60 + CharacterCustomization.CustomizationBytes + 0) = *((byte*) &value + 0);
+                    *(ptr + 60 + CharacterCustomization.CustomizationBytes + 1) = *((byte*) &value + 1);
+                    *(ptr + 60 + CharacterCustomization.CustomizationBytes + 2) = *((byte*) &value + 2);
+                    *(ptr + 60 + CharacterCustomization.CustomizationBytes + 3) = *((byte*) &value + 3);
                 }
             }
         }
 
-        public void Load(ActorCustomization customization)
+        public void Load(CharacterCustomization customization)
         {
             WriteCustomizations = true;
             customization.WriteBytes(_bytes, 4);
         }
 
-        public void Load(ActorEquipment equipment, ActorEquipMask mask = ActorEquipMask.All)
+        public void Load(CharacterEquipment equipment, CharacterEquipMask mask = CharacterEquipMask.All)
         {
             WriteEquipment = mask;
-            equipment.WriteBytes(_bytes, 4 + ActorCustomization.CustomizationBytes);
+            equipment.WriteBytes(_bytes, 4 + CharacterCustomization.CustomizationBytes);
         }
 
         public string ToBase64()
@@ -179,19 +179,19 @@ namespace Glamourer
                     $"Can not parse Base64 string into CharacterSave:\n\tInvalid value {value} in byte {idx}, should be in [{min},{max}].");
         }
 
-        private static void CheckActorMask(byte val1, byte val2)
+        private static void CheckCharacterMask(byte val1, byte val2)
         {
-            var mask = (ActorEquipMask) (val1 | (val2 << 8));
-            if (mask > ActorEquipMask.All)
+            var mask = (CharacterEquipMask) (val1 | (val2 << 8));
+            if (mask > CharacterEquipMask.All)
                 throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid value {mask} in byte 3 and 4.");
         }
 
-        public void LoadActor(Character a)
+        public void LoadCharacter(Character a)
         {
             WriteCustomizations = true;
-            Load(new ActorCustomization(a));
+            Load(new CharacterCustomization(a));
 
-            Load(new ActorEquipment(a));
+            Load(new CharacterEquipment(a));
 
             SetHatState    = true;
             SetVisorState  = true;
@@ -206,7 +206,7 @@ namespace Glamourer
         {
             if (WriteCustomizations)
                 Customizations.Write(a.Address);
-            if (WriteEquipment != ActorEquipMask.None)
+            if (WriteEquipment != CharacterEquipMask.None)
                 Equipment.Write(a.Address, WriteEquipment, WriteEquipment);
             a.SetWetness(IsWet);
             a.Alpha() = Alpha;
@@ -243,7 +243,7 @@ namespace Glamourer
                 default: throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid Version {bytes[0]}.");
             }
 
-            CheckActorMask(bytes[2], bytes[3]);
+            CheckCharacterMask(bytes[2], bytes[3]);
             bytes.CopyTo(_bytes, 0);
         }
 
@@ -254,23 +254,23 @@ namespace Glamourer
             return ret;
         }
 
-        public unsafe ref ActorCustomization Customizations
+        public unsafe ref CharacterCustomization Customizations
         {
             get
             {
                 fixed (byte* ptr = _bytes)
                 {
-                    return ref *(ActorCustomization*) (ptr + 4);
+                    return ref *(CharacterCustomization*) (ptr + 4);
                 }
             }
         }
 
-        public ActorEquipment Equipment
+        public CharacterEquipment Equipment
         {
             get
             {
-                var ret = new ActorEquipment();
-                ret.FromBytes(_bytes, 4 + ActorCustomization.CustomizationBytes);
+                var ret = new CharacterEquipment();
+                ret.FromBytes(_bytes, 4 + CharacterCustomization.CustomizationBytes);
                 return ret;
             }
         }

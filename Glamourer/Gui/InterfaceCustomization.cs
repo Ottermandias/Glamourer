@@ -64,7 +64,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private static (int, Customization.Customization) GetCurrentCustomization(ref ActorCustomization customization, CustomizationId id,
+        private static (int, Customization.Customization) GetCurrentCustomization(ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
             var current = set.DataByValue(id, customization[id], out var custom);
@@ -78,7 +78,7 @@ namespace Glamourer.Gui
             return (current, custom!.Value);
         }
 
-        private bool DrawColorPicker(string label, string tooltip, ref ActorCustomization customization, CustomizationId id,
+        private bool DrawColorPicker(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
             var ret   = false;
@@ -116,7 +116,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawListSelector(string label, string tooltip, ref ActorCustomization customization, CustomizationId id,
+        private bool DrawListSelector(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
             using var bigGroup = ImGuiRaii.NewGroup();
@@ -158,7 +158,7 @@ namespace Glamourer.Gui
         private static readonly Vector4 NoColor  = new(1f, 1f, 1f, 1f);
         private static readonly Vector4 RedColor = new(0.6f, 0.3f, 0.3f, 1f);
 
-        private bool DrawMultiSelector(ref ActorCustomization customization, CustomizationSet set)
+        private bool DrawMultiSelector(ref CharacterCustomization customization, CustomizationSet set)
         {
             using var bigGroup = ImGuiRaii.NewGroup();
             var       ret      = false;
@@ -242,7 +242,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawIconSelector(string label, string tooltip, ref ActorCustomization customization, CustomizationId id,
+        private bool DrawIconSelector(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
             using var bigGroup = ImGuiRaii.NewGroup();
@@ -290,7 +290,7 @@ namespace Glamourer.Gui
         }
 
 
-        private bool DrawPercentageSelector(string label, string tooltip, ref ActorCustomization customization, CustomizationId id,
+        private bool DrawPercentageSelector(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
             using var bigGroup = ImGuiRaii.NewGroup();
@@ -320,7 +320,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawRaceSelector(ref ActorCustomization customization)
+        private bool DrawRaceSelector(ref CharacterCustomization customization)
         {
             using var group = ImGuiRaii.NewGroup();
             var       ret   = false;
@@ -345,7 +345,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawGenderSelector(ref ActorCustomization customization)
+        private bool DrawGenderSelector(ref CharacterCustomization customization)
         {
             var ret = false;
             ImGui.PushFont(UiBuilder.IconFont);
@@ -376,7 +376,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawPicker(CustomizationSet set, CustomizationId id, ref ActorCustomization customization)
+        private bool DrawPicker(CustomizationSet set, CustomizationId id, ref CharacterCustomization customization)
         {
             if (!set.IsAvailable(id))
                 return false;
@@ -396,7 +396,7 @@ namespace Glamourer.Gui
 
         private static readonly CustomizationId[] AllCustomizations = (CustomizationId[]) Enum.GetValues(typeof(CustomizationId));
 
-        private bool DrawCustomization(ref ActorCustomization custom)
+        private bool DrawCustomization(ref CharacterCustomization custom)
         {
             if (!ImGui.CollapsingHeader("Character Customization"))
                 return false;

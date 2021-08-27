@@ -56,7 +56,7 @@
             <Private>False</Private>
         </Reference>
         <Reference Include="Penumbra.GameData">
-            <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\net472\Penumbra.GameData.dll</HintPath>
+            <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\$(TargetFramework)\Penumbra.GameData.dll</HintPath>
         </Reference>
     </ItemGroup>
 </Project>

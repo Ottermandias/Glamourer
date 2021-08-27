@@ -1,11 +1,26 @@
-﻿{
+{
+  "Disabled": false,
+  "Testing": false,
+  "InstalledFromUrl": null,
   "Author": "Ottermandias",
   "Name": "Glamourer",
-  "Description": "Adds functionality to change appearance of actors. Requires Penumbra to be installed and activated to work.",
+  "Punchline": "Change and save appearance of players.",
+  "Description": "Adds functionality to change and store appearance of players, customization and equip. Requires Penumbra to be installed and activated to work. Can also add preview options to the Changed Items tab for Penumbra.",
+  "Tags": null,
+  "IsHide": false,
   "InternalName": "Glamourer",
-  "AssemblyVersion": "0.0.3.0",
+  "AssemblyVersion": "0.0.4.0",
+  "TestingAssemblyVersion": null,
+  "IsTestingExclusive": false,
   "RepoUrl": "https://github.com/Ottermandias/Glamourer",
   "ApplicableVersion": "any",
   "DalamudApiLevel": 4,
-  "LoadPriority": -100
+  "DownloadCount": 0,
+  "LastUpdate": 0,
+  "DownloadLinkInstall": null,
+  "DownloadLinkUpdate": null,
+  "DownloadLinkTesting": "https://github.com/Ottermandias/Glamourer/raw/main/Glamourer.zip",
+  "LoadPriority": -100,
+  "ImageUrls": null,
+  "IconUrl": null
 }

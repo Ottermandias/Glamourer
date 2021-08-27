@@ -55,14 +55,14 @@ namespace Glamourer
         public void OnGlamourer(string command, string arguments)
             => _interface.ToggleVisibility();
 
-        private static GameObject? GetActor(string name)
+        private static GameObject? GetPlayer(string name)
         {
             var lowerName = name.ToLowerInvariant();
             return lowerName switch
             {
                 ""          => null,
-                "<me>"      => Dalamud.Objects[Interface.GPoseActorId] ?? Dalamud.ClientState.LocalPlayer,
-                "self"      => Dalamud.Objects[Interface.GPoseActorId] ?? Dalamud.ClientState.LocalPlayer,
+                "<me>"      => Dalamud.Objects[Interface.GPoseObjectId] ?? Dalamud.ClientState.LocalPlayer,
+                "self"      => Dalamud.Objects[Interface.GPoseObjectId] ?? Dalamud.ClientState.LocalPlayer,
                 "<t>"       => Dalamud.Targets.Target,
                 "target"    => Dalamud.Targets.Target,
                 "<f>"       => Dalamud.Targets.FocusTarget,
@@ -74,14 +74,14 @@ namespace Glamourer
             };
         }
 
-        public void CopyToClipboard(Character actor)
+        public void CopyToClipboard(Character player)
         {
             var save = new CharacterSave();
-            save.LoadActor(actor);
+            save.LoadCharacter(player);
             ImGui.SetClipboardText(save.ToBase64());
         }
 
-        public void ApplyCommand(Character actor, string target)
+        public void ApplyCommand(Character player, string target)
         {
             CharacterSave? save = null;
             if (target.ToLowerInvariant() == "clipboard")
@@ -98,14 +98,14 @@ namespace Glamourer
             else
                 save = d.Data;
 
-            save?.Apply(actor);
-            Penumbra.UpdateActors(actor);
+            save?.Apply(player);
+            Penumbra.UpdateCharacters(player);
         }
 
-        public void SaveCommand(Character actor, string path)
+        public void SaveCommand(Character player, string path)
         {
             var save = new CharacterSave();
-            save.LoadActor(actor);
+            save.LoadCharacter(player);
             try
             {
                 var (folder, name) = Designs.FileSystem.CreateAllFolders(path);
@@ -147,17 +147,17 @@ namespace Glamourer
                 return;
             }
 
-            var actor = GetActor(split[1]) as Character;
-            if (actor == null)
+            var player = GetPlayer(split[1]) as Character;
+            if (player == null)
             {
-                Dalamud.Chat.Print($"Could not find actor for {split[1]} or it was not a Character.");
+                Dalamud.Chat.Print($"Could not find object for {split[1]} or it was not a Character.");
                 return;
             }
 
             switch (split[0].ToLowerInvariant())
             {
                 case "copy":
-                    CopyToClipboard(actor);
+                    CopyToClipboard(player);
                     return;
                 case "apply":
                 {
@@ -167,7 +167,7 @@ namespace Glamourer
                         return;
                     }
 
-                    ApplyCommand(actor, split[2]);
+                    ApplyCommand(player, split[2]);
 
                     return;
                 }
@@ -179,7 +179,7 @@ namespace Glamourer
                         return;
                     }
 
-                    SaveCommand(actor, split[2]);
+                    SaveCommand(player, split[2]);
                     return;
                 }
                 default:

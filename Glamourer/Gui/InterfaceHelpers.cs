@@ -24,7 +24,7 @@ namespace Glamourer.Gui
         }
 
         // Go through a whole customization struct and fix up all settings that need fixing.
-        private static void FixUpAttributes(ref ActorCustomization customization)
+        private static void FixUpAttributes(ref CharacterCustomization customization)
         {
             var set = Glamourer.Customization.GetList(customization.Clan, customization.Gender);
             foreach (CustomizationId id in Enum.GetValues(typeof(CustomizationId)))
@@ -54,7 +54,7 @@ namespace Glamourer.Gui
         }
 
         // Change a race and fix up all required customizations afterwards.
-        private static bool ChangeRace(ref ActorCustomization customization, SubRace clan)
+        private static bool ChangeRace(ref CharacterCustomization customization, SubRace clan)
         {
             if (clan == customization.Clan)
                 return false;
@@ -76,7 +76,7 @@ namespace Glamourer.Gui
         }
 
         // Change a gender and fix up all required customizations afterwards.
-        private static bool ChangeGender(ref ActorCustomization customization, Gender gender)
+        private static bool ChangeGender(ref CharacterCustomization customization, Gender gender)
         {
             if (gender == customization.Gender)
                 return false;
@@ -156,7 +156,7 @@ namespace Glamourer.Gui
                             break;
                         case DesignNameUse.NewDesign:
                             var empty = new CharacterSave();
-                            empty.Load(ActorCustomization.Default);
+                            empty.Load(CharacterCustomization.Default);
                             empty.WriteCustomizations = false;
                             SaveNewDesign(empty);
                             break;

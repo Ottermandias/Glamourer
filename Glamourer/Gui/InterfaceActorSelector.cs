@@ -11,49 +11,49 @@ namespace Glamourer.Gui
     internal partial class Interface
     {
         private          Character?                 _player;
-        private          string                     _currentActorName = string.Empty;
-        private          string                     _actorFilter      = string.Empty;
-        private          string                     _actorFilterLower = string.Empty;
+        private          string                     _currentPlayerName = string.Empty;
+        private          string                     _playerFilter      = string.Empty;
+        private          string                     _playerFilterLower = string.Empty;
         private readonly Dictionary<string, Character?> _playerNames      = new(400);
 
-        private void DrawActorFilter()
+        private void DrawPlayerFilter()
         {
             using var raii = new ImGuiRaii()
                 .PushStyle(ImGuiStyleVar.ItemSpacing,   Vector2.Zero)
                 .PushStyle(ImGuiStyleVar.FrameRounding, 0);
             ImGui.SetNextItemWidth(SelectorWidth * ImGui.GetIO().FontGlobalScale);
-            if (ImGui.InputTextWithHint("##actorFilter", "Filter Players...", ref _actorFilter, 32))
-                _actorFilterLower = _actorFilter.ToLowerInvariant();
+            if (ImGui.InputTextWithHint("##playerFilter", "Filter Players...", ref _playerFilter, 32))
+                _playerFilterLower = _playerFilter.ToLowerInvariant();
         }
 
-        private void DrawActorSelectable(Character actor, bool gPose)
+        private void DrawPlayerSelectable(Character player, bool gPose)
         {
-            var actorName = actor.Name.ToString();
-            if (!actorName.Any())
+            var playerName = player.Name.ToString();
+            if (!playerName.Any())
                 return;
 
-            if (_playerNames.ContainsKey(actorName))
+            if (_playerNames.ContainsKey(playerName))
             {
-                _playerNames[actorName] = actor;
+                _playerNames[playerName] = player;
                 return;
             }
 
-            _playerNames.Add(actorName, null);
+            _playerNames.Add(playerName, null);
 
-            var label = gPose ? $"{actorName} (GPose)" : actorName;
-            if (!_actorFilterLower.Any() || actorName.ToLowerInvariant().Contains(_actorFilterLower))
-                if (ImGui.Selectable(label, _currentActorName == actorName))
+            var label = gPose ? $"{playerName} (GPose)" : playerName;
+            if (!_playerFilterLower.Any() || playerName.ToLowerInvariant().Contains(_playerFilterLower))
+                if (ImGui.Selectable(label, _currentPlayerName == playerName))
                 {
-                    _currentActorName = actorName;
-                    _currentSave.LoadActor(actor);
-                    _player = actor;
+                    _currentPlayerName = playerName;
+                    _currentSave.LoadCharacter(player);
+                    _player = player;
                     return;
                 }
 
-            if (_currentActorName == actorName)
+            if (_currentPlayerName == playerName)
             {
-                _currentSave.LoadActor(actor);
-                _player = actor;
+                _currentSave.LoadCharacter(player);
+                _player = player;
             }
         }
 
@@ -86,40 +86,40 @@ namespace Glamourer.Gui
 
             raii.PopFonts();
             if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Select the current target, if it is a player actor.");
+                ImGui.SetTooltip("Select the current target, if it is a player object.");
 
             if (select == null || select.ObjectKind != ObjectKind.Player)
                 return;
 
             _player           = select;
-            _currentActorName = _player.Name.ToString();
-            _currentSave.LoadActor(_player);
+            _currentPlayerName = _player.Name.ToString();
+            _currentSave.LoadCharacter(_player);
         }
 
-        private void DrawActorSelector()
+        private void DrawPlayerSelector()
         {
             ImGui.BeginGroup();
-            DrawActorFilter();
-            if (!ImGui.BeginChild("##actorSelector",
+            DrawPlayerFilter();
+            if (!ImGui.BeginChild("##playerSelector",
                 new Vector2(SelectorWidth * ImGui.GetIO().FontGlobalScale, -ImGui.GetFrameHeight() - 1), true))
                 return;
 
             _playerNames.Clear();
-            for (var i = GPoseActorId; i < GPoseActorId + 48; ++i)
+            for (var i = GPoseObjectId; i < GPoseObjectId + 48; ++i)
             {
-                var actor = Dalamud.Objects[i] as Character;
-                if (actor == null)
+                var player = Dalamud.Objects[i] as Character;
+                if (player == null)
                     break;
 
-                if (actor.ObjectKind == ObjectKind.Player)
-                    DrawActorSelectable(actor, true);
+                if (player.ObjectKind == ObjectKind.Player)
+                    DrawPlayerSelectable(player, true);
             }
 
-            for (var i = 0; i < GPoseActorId; i += 2)
+            for (var i = 0; i < GPoseObjectId; i += 2)
             {
-                var actor = Dalamud.Objects[i] as Character;
-                if (actor != null && actor.ObjectKind == ObjectKind.Player)
-                    DrawActorSelectable(actor, false);
+                var player = Dalamud.Objects[i] as Character;
+                if (player != null && player.ObjectKind == ObjectKind.Player)
+                    DrawPlayerSelectable(player, false);
             }
 
 
@@ -132,20 +132,20 @@ namespace Glamourer.Gui
             ImGui.EndGroup();
         }
 
-        private void DrawActorTab()
+        private void DrawPlayerTab()
         {
             using var raii = new ImGuiRaii();
             if (!raii.Begin(() => ImGui.BeginTabItem("Current Players"), ImGui.EndTabItem))
                 return;
 
             _player = null;
-            DrawActorSelector();
+            DrawPlayerSelector();
 
-            if (!_currentActorName.Any())
+            if (!_currentPlayerName.Any())
                 return;
 
             ImGui.SameLine();
-            DrawActorPanel();
+            DrawPlayerPanel();
         }
     }
 }

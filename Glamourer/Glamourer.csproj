@@ -66,9 +66,6 @@
     <Reference Include="Penumbra.GameData">
       <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\$(TargetFramework)\Penumbra.GameData.dll</HintPath>
     </Reference>
-    <Reference Include="Penumbra.Api">
-      <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\$(TargetFramework)\Penumbra.Api.dll</HintPath>
-    </Reference>
     <Reference Include="Penumbra.PlayerWatch">
       <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\$(TargetFramework)\Penumbra.PlayerWatch.dll</HintPath>
     </Reference>

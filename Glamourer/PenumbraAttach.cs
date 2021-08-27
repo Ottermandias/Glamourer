@@ -4,8 +4,7 @@ using Dalamud.Logging;
 using Dalamud.Plugin;
 using Glamourer.Gui;
 using ImGuiNET;
-using Penumbra.Api;
-using Penumbra.PlayerWatch;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer
 {
@@ -73,18 +72,18 @@ namespace Glamourer
             if (button != MouseButton.Right || it is not Lumina.Excel.GeneratedSheets.Item item)
                 return;
 
-            var gPose     = Dalamud.Objects[Interface.GPoseActorId] as Character;
+            var gPose     = Dalamud.Objects[Interface.GPoseObjectId] as Character;
             var player    = Dalamud.Objects[0] as Character;
             var writeItem = new Item(item, string.Empty);
             if (gPose != null)
             {
                 writeItem.Write(gPose.Address);
-                UpdateActors(gPose, player);
+                UpdateCharacters(gPose, player);
             }
             else if (player != null)
             {
                 writeItem.Write(player.Address);
-                UpdateActors(player);
+                UpdateCharacters(player);
             }
         }
 
@@ -108,7 +107,7 @@ namespace Glamourer
                     }
                     else
                     {
-                        PluginLog.Debug($"Failure redrawing actor:\n{e}");
+                        PluginLog.Debug($"Failure redrawing object:\n{e}");
                     }
                 }
             }
@@ -118,23 +117,23 @@ namespace Glamourer
                 RedrawObject(actor, settings, false);
             }
             else
-                PluginLog.Debug("Trying to redraw actor, but not attached to Penumbra.");
+                PluginLog.Debug("Trying to redraw object, but not attached to Penumbra.");
         }
 
-        // Update actors without triggering PlayerWatcher Events,
+        // Update objects without triggering PlayerWatcher Events,
         // then manually redraw using Penumbra.
-        public void UpdateActors(Character actor, Character? gPoseOriginalActor = null)
+        public void UpdateCharacters(Character character, Character? gPoseOriginalCharacter = null)
         {
-            var newEquip = Glamourer.PlayerWatcher.UpdateActorWithoutEvent(actor);
-            RedrawObject(actor, RedrawType.WithSettings, true);
+            var newEquip = Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(character);
+            RedrawObject(character, RedrawType.WithSettings, true);
 
-            // Special case for carrying over changes to the gPose actor to the regular player actor, too.
-            if (gPoseOriginalActor == null)
+            // Special case for carrying over changes to the gPose player to the regular player, too.
+            if (gPoseOriginalCharacter == null)
                 return;
 
-            newEquip.Write(gPoseOriginalActor.Address);
-            Glamourer.PlayerWatcher.UpdateActorWithoutEvent(gPoseOriginalActor);
-            RedrawObject(gPoseOriginalActor, RedrawType.AfterGPoseWithSettings, false);
+            newEquip.Write(gPoseOriginalCharacter.Address);
+            Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(gPoseOriginalCharacter);
+            RedrawObject(gPoseOriginalCharacter, RedrawType.AfterGPoseWithSettings, false);
         }
     }
 }

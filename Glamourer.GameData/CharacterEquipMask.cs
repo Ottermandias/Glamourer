@@ -3,7 +3,7 @@ using System;
 namespace Glamourer
 {
     [Flags]
-    public enum ActorEquipMask : ushort
+    public enum CharacterEquipMask : ushort
     {
         None     = 0,
         MainHand = 0b000000000001,

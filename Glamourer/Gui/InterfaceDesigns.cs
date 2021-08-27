@@ -308,12 +308,12 @@ namespace Glamourer.Gui
 
             var changesStates = save.SetHatState || save.SetVisorState || save.SetWeaponState || save.IsWet || save.Alpha != 1.0f;
             if (save.WriteCustomizations)
-                if (save.WriteEquipment != ActorEquipMask.None)
+                if (save.WriteEquipment != CharacterEquipMask.None)
                     return white;
                 else
                     return changesStates ? white : Glamourer.Config.CustomizationColor;
 
-            if (save.WriteEquipment != ActorEquipMask.None)
+            if (save.WriteEquipment != CharacterEquipMask.None)
                 return changesStates ? white : Glamourer.Config.EquipmentColor;
 
             return changesStates ? Glamourer.Config.StateColor : grey;
