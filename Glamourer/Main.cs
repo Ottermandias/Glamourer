@@ -3,109 +3,32 @@ using System.Linq;
 using System.Reflection;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
-using Dalamud.Logging;
 using Dalamud.Plugin;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.FileSystem;
 using Glamourer.Gui;
 using ImGuiNET;
-using Penumbra.Api;
 using Penumbra.PlayerWatch;
 
 namespace Glamourer
 {
     public class Glamourer : IDalamudPlugin
     {
-        public const int RequiredPenumbraShareVersion = 3;
-
         private const string HelpString = "[Copy|Apply|Save],[Name or PlaceHolder],<Name for Save>";
 
         public string Name
             => "Glamourer";
 
-        public static GlamourerConfig       Config        = null!;
-        private       Interface             _interface    = null!;
-        public static ICustomizationManager Customization = null!;
-        public        DesignManager         Designs       = null!;
-        public        IPlayerWatcher        PlayerWatcher = null!;
+        public static    GlamourerConfig       Config        = null!;
+        public static    IPlayerWatcher        PlayerWatcher = null!;
+        public static    ICustomizationManager Customization = null!;
+        private readonly Interface             _interface;
+        public           DesignManager         Designs;
 
-        public static string Version = string.Empty;
 
-        public static IPenumbraApi? Penumbra;
-
-        private static void PenumbraTooltip(object? it)
-        {
-            if (it is Lumina.Excel.GeneratedSheets.Item)
-                ImGui.Text("Right click to apply to current Glamourer Set. [Glamourer]");
-        }
-
-        private void PenumbraRightClick(MouseButton button, object? it)
-        {
-            if (button != MouseButton.Right || it is not Lumina.Excel.GeneratedSheets.Item item)
-                return;
-
-            var gPose     = Dalamud.Objects[Interface.GPoseActorId] as Character;
-            var player    = Dalamud.Objects[0] as Character;
-            var writeItem = new Item(item, string.Empty);
-            if (gPose != null)
-            {
-                writeItem.Write(gPose.Address);
-                UpdateActors(gPose, player);
-            }
-            else if (player != null)
-            {
-                writeItem.Write(player.Address);
-                UpdateActors(player);
-            }
-        }
-
-        public void RegisterFunctions()
-        {
-            if (Penumbra == null || !Penumbra.Valid)
-                return;
-
-            Penumbra!.ChangedItemTooltip += PenumbraTooltip;
-            Penumbra!.ChangedItemClicked += PenumbraRightClick;
-        }
-
-        public void UnregisterFunctions()
-        {
-            if (Penumbra == null || !Penumbra.Valid)
-                return;
-
-            Penumbra!.ChangedItemTooltip -= PenumbraTooltip;
-            Penumbra!.ChangedItemClicked -= PenumbraRightClick;
-        }
-
-        internal static bool GetPenumbra()
-        {
-            try
-            {
-                var subscriber      = Dalamud.PluginInterface.GetIpcSubscriber<IPenumbraApiBase>("Penumbra.Api");
-                var penumbraApiBase = subscriber.InvokeFunc();
-                if (penumbraApiBase.ApiVersion != RequiredPenumbraShareVersion)
-                {
-                    PluginLog.Debug("Could not get Penumbra because API version {penumbraApiBase.ApiVersion} does not equal the required version {RequiredPenumbraShareVersion}.");
-                    Penumbra = null;
-                    return false;
-                }
-
-                Penumbra = penumbraApiBase as IPenumbraApi;
-            }
-            catch (IpcNotReadyError ipc)
-            {
-                Penumbra = null;
-                PluginLog.Debug($"Could not get Penumbra because IPC not registered:\n{ipc}");
-            }
-            catch (Exception e)
-            {
-                Penumbra = null;
-                PluginLog.Debug($"Could not get Penumbra for unknown reason:\n{e}");
-            }
-
-            return Penumbra != null;
-        }
+        public static string         Version  = string.Empty;
+        public static PenumbraAttach Penumbra = null!;
 
         public Glamourer(DalamudPluginInterface pluginInterface)
         {
@@ -114,8 +37,7 @@ namespace Glamourer
             Config        = GlamourerConfig.Load();
             Customization = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
             Designs       = new DesignManager();
-            if (GetPenumbra() && Config.AttachToPenumbra)
-                RegisterFunctions();
+            Penumbra      = new PenumbraAttach(Config.AttachToPenumbra);
             PlayerWatcher = PlayerWatchFactory.Create(Dalamud.Framework, Dalamud.ClientState, Dalamud.Objects);
 
             Dalamud.Commands.AddHandler("/glamourer", new CommandInfo(OnGlamourer)
@@ -177,7 +99,7 @@ namespace Glamourer
                 save = d.Data;
 
             save?.Apply(actor);
-            UpdateActors(actor);
+            Penumbra.UpdateActors(actor);
         }
 
         public void SaveCommand(Character actor, string path)
@@ -268,27 +190,11 @@ namespace Glamourer
 
         public void Dispose()
         {
-            PlayerWatcher?.Dispose();
-            UnregisterFunctions();
-            _interface?.Dispose();
+            Penumbra.Dispose();
+            PlayerWatcher.Dispose();
+            _interface.Dispose();
             Dalamud.Commands.RemoveHandler("/glamour");
             Dalamud.Commands.RemoveHandler("/glamourer");
-        }
-
-        // Update actors without triggering PlayerWatcher Events,
-        // then manually redraw using Penumbra.
-        public void UpdateActors(Character actor, Character? gPoseOriginalActor = null)
-        {
-            var newEquip = PlayerWatcher.UpdateActorWithoutEvent(actor);
-            Penumbra?.RedrawObject(actor, RedrawType.WithSettings);
-
-            // Special case for carrying over changes to the gPose actor to the regular player actor, too.
-            if (gPoseOriginalActor == null)
-                return;
-
-            newEquip.Write(gPoseOriginalActor.Address);
-            PlayerWatcher.UpdateActorWithoutEvent(gPoseOriginalActor);
-            Penumbra?.RedrawObject(gPoseOriginalActor, RedrawType.AfterGPoseWithSettings);
         }
     }
 }

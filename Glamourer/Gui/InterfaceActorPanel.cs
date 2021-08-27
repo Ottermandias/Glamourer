@@ -106,7 +106,7 @@ namespace Glamourer.Gui
             save.Apply(player);
             if (_inGPose)
                 save.Apply(fallback!);
-            _plugin.UpdateActors(player, fallback);
+            Glamourer.Penumbra.UpdateActors(player, fallback);
         }
 
         private void DrawApplyToTargetButton(CharacterSave save)
@@ -122,7 +122,7 @@ namespace Glamourer.Gui
             save.Apply(player);
             if (fallBackActor != null)
                 save.Apply(fallBackActor);
-            _plugin.UpdateActors(player, fallBackActor);
+            Glamourer.Penumbra.UpdateActors(player, fallBackActor);
         }
 
         private void SaveNewDesign(CharacterSave save)
@@ -180,7 +180,7 @@ namespace Glamourer.Gui
             changes |= DrawMiscellaneous(_currentSave, _player);
 
             if (_player != null && changes)
-                _plugin.UpdateActors(_player);
+                Glamourer.Penumbra.UpdateActors(_player);
             ImGui.EndChild();
             ImGui.EndGroup();
         }
