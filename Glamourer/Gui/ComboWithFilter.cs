@@ -69,7 +69,10 @@ namespace Glamourer.Gui
             numItems = ItemsAtOnce;
             nodeIdx  = -1;
             if (!ImGui.BeginChild(_listLabel, new Vector2(_size, ItemsAtOnce * _heightPerItem)))
+            {
+                ImGui.EndChild();
                 return false;
+            }
 
             var ret = false;
             try
