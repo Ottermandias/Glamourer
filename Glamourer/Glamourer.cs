@@ -24,7 +24,8 @@ namespace Glamourer
         public static    IPlayerWatcher        PlayerWatcher = null!;
         public static    ICustomizationManager Customization = null!;
         private readonly Interface             _interface;
-        public           DesignManager         Designs;
+        public readonly  DesignManager         Designs;
+        public readonly  FixedDesigns          FixedDesigns;
 
 
         public static string         Version  = string.Empty;
@@ -39,6 +40,10 @@ namespace Glamourer
             Designs       = new DesignManager();
             Penumbra      = new PenumbraAttach(Config.AttachToPenumbra);
             PlayerWatcher = PlayerWatchFactory.Create(Dalamud.Framework, Dalamud.ClientState, Dalamud.Objects);
+            FixedDesigns  = new FixedDesigns(Designs);
+            
+            if (Config.ApplyFixedDesigns)
+                PlayerWatcher.Enable();
 
             Dalamud.Commands.AddHandler("/glamourer", new CommandInfo(OnGlamourer)
             {
@@ -190,6 +195,7 @@ namespace Glamourer
 
         public void Dispose()
         {
+            FixedDesigns.Dispose();
             Penumbra.Dispose();
             PlayerWatcher.Dispose();
             _interface.Dispose();

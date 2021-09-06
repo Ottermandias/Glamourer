@@ -54,9 +54,7 @@ namespace Glamourer.Gui
             }
 
             if (ImGui.Button(buttonLabel))
-            {
                 Glamourer.Penumbra.Reattach(true);
-            }
 
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip(
@@ -86,16 +84,24 @@ namespace Glamourer.Gui
                 {
                     cfg.AttachToPenumbra = v;
                     if (v)
-                    {
                         Glamourer.Penumbra.Reattach(true);
-                    }
                     else
-                    {
                         Glamourer.Penumbra.Unattach();
-                    }
                 });
             ImGui.SameLine();
             DrawRestorePenumbraButton();
+
+            DrawConfigCheckMark("Apply Fixed Designs",
+                "Automatically apply fixed designs to characters and redraw them when anything changes.",
+                cfg.ApplyFixedDesigns,
+                v =>
+                {
+                    cfg.ApplyFixedDesigns = v;
+                    if (v)
+                        Glamourer.PlayerWatcher.Enable();
+                    else
+                        Glamourer.PlayerWatcher.Disable();
+                });
 
             ImGui.Dummy(Vector2.UnitY * ImGui.GetTextLineHeightWithSpacing() / 2);
 

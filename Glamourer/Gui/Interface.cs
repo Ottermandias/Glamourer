@@ -88,6 +88,7 @@ namespace Glamourer.Gui
 
                 DrawPlayerTab();
                 DrawSaves();
+                DrawFixedDesignsTab();
                 DrawConfigTab();
             }
             finally
