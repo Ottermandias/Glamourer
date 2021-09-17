@@ -191,7 +191,7 @@ namespace Glamourer.Customization
 
             set.FeaturesTattoos = featureDict;
 
-            set.OptionName = ((CustomizationId[]) Enum.GetValues(typeof(CustomizationId))).Select(c =>
+            var nameArray = ((CustomizationId[]) Enum.GetValues(typeof(CustomizationId))).Select(c =>
             {
                 var menu = row.Menus
                     .Cast<CharaMakeParams.Menu?>()
@@ -211,14 +211,19 @@ namespace Glamourer.Customization
                 var textRow = _lobby.GetRow(menu.Value.Id);
                 return textRow?.Text.ToString() ?? c.ToDefaultName();
             }).ToArray();
+            nameArray[(int) CustomizationId.EyeColorL] = nameArray[(int) CustomizationId.EyeColorR];
+            nameArray[(int) CustomizationId.EyeColorR] = GetName(CustomName.OddEyes);
+            set.OptionName                             = nameArray;
 
             set.Types = ((CustomizationId[]) Enum.GetValues(typeof(CustomizationId))).Select(c =>
             {
-                if (c == CustomizationId.HighlightColor)
-                    return CharaMakeParams.MenuType.ColorPicker;
-
-                if (c == CustomizationId.EyeColorL)
-                    return CharaMakeParams.MenuType.ColorPicker;
+                switch (c)
+                {
+                    case CustomizationId.HighlightColor:
+                    case CustomizationId.EyeColorL:
+                    case CustomizationId.EyeColorR:
+                        return CharaMakeParams.MenuType.ColorPicker;
+                }
 
                 var menu = row.Menus
                     .Cast<CharaMakeParams.Menu?>()
@@ -297,6 +302,7 @@ namespace Glamourer.Customization
             _names[(int) CustomName.OddEyes]    = _lobby.GetRow(2125)?.Text ?? "Odd Eyes";
             _names[(int) CustomName.IrisSmall]  = _lobby.GetRow(1076)?.Text ?? "Small";
             _names[(int) CustomName.IrisLarge]  = _lobby.GetRow(1075)?.Text ?? "Large";
+            _names[(int) CustomName.IrisSize]   = _lobby.GetRow(244)?.Text ?? "Iris Size";
             _names[(int) CustomName.MidlanderM] = subRace.GetRow((int) SubRace.Midlander)?.Masculine.ToString() ?? SubRace.Midlander.ToName();
             _names[(int) CustomName.MidlanderF] = subRace.GetRow((int) SubRace.Midlander)?.Feminine.ToString() ?? SubRace.Midlander.ToName();
             _names[(int) CustomName.HighlanderM] =

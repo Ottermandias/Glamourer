@@ -52,7 +52,7 @@ namespace Glamourer.Gui
             var ret = false;
             var tmp = value + 1;
             ImGui.SetNextItemWidth(_inputIntSize);
-            if (ImGui.InputInt(label, ref tmp, 1) && tmp != value + 1 && tmp >= minValue && tmp <= maxValue)
+            if (ImGui.InputInt(label, ref tmp, 1, 1, ImGuiInputTextFlags.EnterReturnsTrue) && tmp != value + 1 && tmp >= minValue && tmp <= maxValue)
             {
                 value = tmp - 1;
                 ret   = true;
@@ -97,7 +97,7 @@ namespace Glamourer.Gui
             {
                 if (InputInt($"##text_{id}", ref current, 1, count))
                 {
-                    customization[id] = set.Data(id, current - 1).Value;
+                    customization[id] = set.Data(id, current).Value;
                     ret               = true;
                 }
 
@@ -394,7 +394,16 @@ namespace Glamourer.Gui
             return false;
         }
 
-        private static readonly CustomizationId[] AllCustomizations = (CustomizationId[]) Enum.GetValues(typeof(CustomizationId));
+        private static CustomizationId[] GetCustomizationOrder()
+        {
+            var ret = (CustomizationId[])Enum.GetValues(typeof(CustomizationId));
+            ret[(int) CustomizationId.TattooColor] = CustomizationId.EyeColorL;
+            ret[(int) CustomizationId.EyeColorL] = CustomizationId.EyeColorR;
+            ret[(int) CustomizationId.EyeColorR] = CustomizationId.TattooColor;
+            return ret;
+        }
+
+        private static readonly CustomizationId[] AllCustomizations = GetCustomizationOrder();
 
         private bool DrawCustomization(ref CharacterCustomization custom)
         {
@@ -457,7 +466,7 @@ namespace Glamourer.Gui
             }
 
             tmp = custom.SmallIris;
-            if (ImGui.Checkbox($"{Glamourer.Customization.GetName(CustomName.IrisSmall)} {set.Option(CustomizationId.EyeColorL)}",
+            if (ImGui.Checkbox($"{Glamourer.Customization.GetName(CustomName.IrisSmall)} {Glamourer.Customization.GetName(CustomName.IrisSize)}",
                     ref tmp)
              && tmp != custom.SmallIris)
             {

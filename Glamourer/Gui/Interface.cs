@@ -69,7 +69,10 @@ namespace Glamourer.Gui
             ImGui.SetNextWindowSizeConstraints(Vector2.One * MinWindowWidth * ImGui.GetIO().FontGlobalScale,
                 Vector2.One * 5000 * ImGui.GetIO().FontGlobalScale);
             if (!ImGui.Begin(_glamourerHeader, ref _visible))
+            {
+                ImGui.End();
                 return;
+            }
 
             try
             {
