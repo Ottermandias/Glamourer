@@ -5,7 +5,7 @@
   "Description": "Adds functionality to change and store appearance of players, customization and equip. Requires Penumbra to be installed and activated to work. Can also add preview options to the Changed Items tab for Penumbra.",
   "Tags": ["Appearance", "Glamour", "Race", "Outfit", "Armor", "Clothes", "Skins", "Customization", "Design", "Character"],
   "InternalName": "Glamourer",
-  "AssemblyVersion": "0.0.5.1",
+  "AssemblyVersion": "0.0.5.2",
   "RepoUrl": "https://github.com/Ottermandias/Glamourer",
   "ApplicableVersion": "any",
   "DalamudApiLevel": 4,
