@@ -10,11 +10,12 @@ namespace Glamourer.Gui
 {
     internal partial class Interface
     {
-        private          Character?                 _player;
-        private          string                     _currentPlayerName = string.Empty;
-        private          string                     _playerFilter      = string.Empty;
-        private          string                     _playerFilterLower = string.Empty;
-        private readonly Dictionary<string, Character?> _playerNames      = new(400);
+        private          Character?                     _player;
+        private          string                         _currentLabel      = string.Empty;
+        private          string                         _playerFilter      = string.Empty;
+        private          string                         _playerFilterLower = string.Empty;
+        private readonly Dictionary<string, int>        _playerNames       = new(100);
+        private readonly Dictionary<string, Character?> _gPoseActors       = new(48);
 
         private void DrawPlayerFilter()
         {
@@ -26,35 +27,66 @@ namespace Glamourer.Gui
                 _playerFilterLower = _playerFilter.ToLowerInvariant();
         }
 
-        private void DrawPlayerSelectable(Character player, bool gPose)
+        private void DrawGPoseSelectable(Character player)
         {
             var playerName = player.Name.ToString();
             if (!playerName.Any())
                 return;
 
-            if (_playerNames.ContainsKey(playerName))
+            _gPoseActors[playerName] = null;
+
+            DrawSelectable(player, $"{playerName} (GPose)");
+        }
+
+        private static string GetLabel(Character player, string playerName, int num)
+        {
+            if (player.ObjectKind == ObjectKind.Player)
+                return num == 1 ? playerName : $"{playerName} #{num}";
+
+            if (ModelType(player) == 0)
+                return num == 1 ? $"{playerName} (NPC)" : $"{playerName} #{num} (NPC)";
+
+            return num == 1 ? $"{playerName} (Monster)" : $"{playerName} #{num} (Monster)";
+        }
+
+        private void DrawPlayerSelectable(Character player)
+        {
+            var playerName = player.Name.ToString();
+            if (!playerName.Any())
+                return;
+
+            if (_playerNames.TryGetValue(playerName, out var num))
+                _playerNames[playerName] = ++num;
+            else
+                _playerNames[playerName] = num = 1;
+
+            if (_gPoseActors.ContainsKey(playerName))
             {
-                _playerNames[playerName] = player;
+                _gPoseActors[playerName] = player;
                 return;
             }
 
-            _playerNames.Add(playerName, null);
+            var label = GetLabel(player, playerName, num);
+            DrawSelectable(player, label);
+        }
 
-            var label = gPose ? $"{playerName} (GPose)" : playerName;
-            if (!_playerFilterLower.Any() || playerName.ToLowerInvariant().Contains(_playerFilterLower))
-                if (ImGui.Selectable(label, _currentPlayerName == playerName))
+
+        private void DrawSelectable(Character player, string label)
+        {
+            if (!_playerFilterLower.Any() || label.ToLowerInvariant().Contains(_playerFilterLower))
+                if (ImGui.Selectable(label, _currentLabel == label))
                 {
-                    _currentPlayerName = playerName;
+                    _currentLabel = label;
                     _currentSave.LoadCharacter(player);
                     _player = player;
                     return;
                 }
 
-            if (_currentPlayerName == playerName)
-            {
-                _currentSave.LoadCharacter(player);
-                _player = player;
-            }
+            if (_currentLabel != label)
+                return;
+
+            _currentSave.LoadCharacter(player);
+            _player = player;
         }
 
         private void DrawSelectionButtons()
@@ -64,7 +96,7 @@ namespace Glamourer.Gui
                 .PushStyle(ImGuiStyleVar.FrameRounding, 0)
                 .PushFont(UiBuilder.IconFont);
             Character? select      = null;
-            var    buttonWidth = Vector2.UnitX * SelectorWidth / 2;
+            var        buttonWidth = Vector2.UnitX * SelectorWidth / 2;
             if (ImGui.Button(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth))
                 select = Dalamud.ClientState.LocalPlayer;
             raii.PopFonts();
@@ -81,18 +113,18 @@ namespace Glamourer.Gui
             else
             {
                 if (ImGui.Button(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth))
-                    select = Dalamud.Targets.Target as Character;
+                    select = CreateCharacter(Dalamud.Targets.Target);
             }
 
             raii.PopFonts();
             if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Select the current target, if it is a player object.");
+                ImGui.SetTooltip("Select the current target, if it is in the list.");
 
-            if (select == null || select.ObjectKind != ObjectKind.Player)
+            if (select == null)
                 return;
 
-            _player           = select;
-            _currentPlayerName = _player.Name.ToString();
+            _player       = select;
+            _currentLabel = _player.Name.ToString();
             _currentSave.LoadCharacter(_player);
         }
 
@@ -102,24 +134,35 @@ namespace Glamourer.Gui
             DrawPlayerFilter();
             if (!ImGui.BeginChild("##playerSelector",
                 new Vector2(SelectorWidth * ImGui.GetIO().FontGlobalScale, -ImGui.GetFrameHeight() - 1), true))
+            {
+                ImGui.EndChild();
+                ImGui.EndGroup();
                 return;
+            }
 
             _playerNames.Clear();
+            _gPoseActors.Clear();
             for (var i = GPoseObjectId; i < GPoseObjectId + 48; ++i)
             {
-                var player = Dalamud.Objects[i] as Character;
+                var player = CreateCharacter(Dalamud.Objects[i]);
                 if (player == null)
                     break;
 
-                if (player.ObjectKind == ObjectKind.Player)
-                    DrawPlayerSelectable(player, true);
+                DrawGPoseSelectable(player);
             }
 
-            for (var i = 0; i < GPoseObjectId; i += 2)
+            for (var i = 0; i < GPoseObjectId; ++i)
             {
-                var player = Dalamud.Objects[i] as Character;
-                if (player != null && player.ObjectKind == ObjectKind.Player)
-                    DrawPlayerSelectable(player, false);
+                var player = CreateCharacter(Dalamud.Objects[i])!;
+                if (player != null)
+                    DrawPlayerSelectable(player);
+            }
+
+            for (var i = GPoseObjectId + 48; i < Dalamud.Objects.Length; ++i)
+            {
+                var player = CreateCharacter(Dalamud.Objects[i])!;
+                if (player != null)
+                    DrawPlayerSelectable(player);
             }
 
 
@@ -135,17 +178,17 @@ namespace Glamourer.Gui
         private void DrawPlayerTab()
         {
             using var raii = new ImGuiRaii();
+            _player = null;
             if (!raii.Begin(() => ImGui.BeginTabItem("Current Players"), ImGui.EndTabItem))
                 return;
 
-            _player = null;
             DrawPlayerSelector();
 
-            if (!_currentPlayerName.Any())
+            if (!_currentLabel.Any())
                 return;
 
             ImGui.SameLine();
-            DrawPlayerPanel();
+            DrawActorPanel();
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Data;
+using Lumina.Excel.GeneratedSheets;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer
@@ -10,6 +11,20 @@ namespace Glamourer
     {
         private static Dictionary<byte, Stain>?           _stains;
         private static Dictionary<EquipSlot, List<Item>>? _itemsBySlot;
+        private static SortedList<uint, ModelChara>?      _models;
+
+        public static IReadOnlyDictionary<uint, ModelChara> Models(DataManager dataManager)
+        {
+            if (_models != null)
+                return _models;
+
+            var sheet = dataManager.GetExcelSheet<ModelChara>()!;
+
+            _models = new SortedList<uint, ModelChara>((int) sheet.RowCount);
+            foreach (var model in sheet.Where(m => m.Type != 0))
+                _models.Add(model.RowId, model);
+            return _models;
+        }
 
         public static IReadOnlyDictionary<byte, Stain> Stains(DataManager dataManager)
         {
@@ -40,7 +55,7 @@ namespace Glamourer
                 [EquipSlot.Feet]     = new(200) { EmptySlot(EquipSlot.Feet) },
                 [EquipSlot.RFinger]  = new(200) { EmptySlot(EquipSlot.RFinger) },
                 [EquipSlot.Neck]     = new(200) { EmptySlot(EquipSlot.Neck) },
-                [EquipSlot.MainHand] = new(200) { EmptySlot(EquipSlot.MainHand) },
+                [EquipSlot.MainHand] = new(1000) { EmptySlot(EquipSlot.MainHand) },
                 [EquipSlot.OffHand]  = new(200) { EmptySlot(EquipSlot.OffHand) },
                 [EquipSlot.Wrists]   = new(200) { EmptySlot(EquipSlot.Wrists) },
                 [EquipSlot.Ears]     = new(200) { EmptySlot(EquipSlot.Ears) },

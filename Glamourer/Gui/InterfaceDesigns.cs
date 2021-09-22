@@ -13,6 +13,7 @@ namespace Glamourer.Gui
     {
         private int _totalObject;
 
+        private bool    _inDesignMode;
         private Design? _selection;
         private string  _newChildName = string.Empty;
 
@@ -207,7 +208,8 @@ namespace Glamourer.Gui
         {
             using var raii = new ImGuiRaii();
             raii.PushStyle(ImGuiStyleVar.IndentSpacing, 12.5f * ImGui.GetIO().FontGlobalScale);
-            if (!raii.Begin(() => ImGui.BeginTabItem("Saves"), ImGui.EndTabItem))
+            _inDesignMode = raii.Begin(() => ImGui.BeginTabItem("Designs"), ImGui.EndTabItem);
+            if (!_inDesignMode)
                 return;
 
             DrawDesignSelector();
@@ -278,7 +280,7 @@ namespace Glamourer.Gui
 
         private void ContextMenu(IFileSystemBase child)
         {
-            var label       = $"##fsPopup{child.FullName()}";
+            var label = $"##fsPopup{child.FullName()}";
             if (ImGui.BeginPopup(label))
             {
                 if (ImGui.MenuItem("Delete"))

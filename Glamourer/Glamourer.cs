@@ -26,6 +26,7 @@ namespace Glamourer
         private readonly Interface             _interface;
         public readonly  DesignManager         Designs;
         public readonly  FixedDesigns          FixedDesigns;
+        public static    RevertableDesigns     RevertableDesigns = new();
 
 
         public static string         Version  = string.Empty;
@@ -41,7 +42,7 @@ namespace Glamourer
             Penumbra      = new PenumbraAttach(Config.AttachToPenumbra);
             PlayerWatcher = PlayerWatchFactory.Create(Dalamud.Framework, Dalamud.ClientState, Dalamud.Objects);
             FixedDesigns  = new FixedDesigns(Designs);
-            
+
             if (Config.ApplyFixedDesigns)
                 PlayerWatcher.Enable();
 

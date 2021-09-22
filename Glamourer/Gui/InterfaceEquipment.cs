@@ -15,10 +15,17 @@ namespace Glamourer.Gui
                 stainCombo.PostPreview = () => ImGui.PopStyleColor(previewPush);
             }
 
-            if (stainCombo.Draw(string.Empty, out var newStain) && _player != null && !newStain.RowIndex.Equals(stainIdx))
+            if (stainCombo.Draw(string.Empty, out var newStain) && !newStain.RowIndex.Equals(stainIdx))
             {
-                newStain.Write(_player.Address, slot);
-                return true;
+                if (_player != null)
+                {
+                    Glamourer.RevertableDesigns.Add(_player);
+                    newStain.Write(_player.Address, slot);
+                    return true;
+                }
+
+                if (_inDesignMode && (_selection?.Data.WriteStain(slot, newStain.RowIndex) ?? false))
+                    return true;
             }
 
             return false;
@@ -27,10 +34,17 @@ namespace Glamourer.Gui
         private bool DrawItemSelector(ComboWithFilter<Item> equipCombo, Lumina.Excel.GeneratedSheets.Item? item)
         {
             var currentName = item?.Name.ToString() ?? "Nothing";
-            if (equipCombo.Draw(currentName, out var newItem, _itemComboWidth) && _player != null && newItem.Base.RowId != item?.RowId)
+            if (equipCombo.Draw(currentName, out var newItem, _itemComboWidth) && newItem.Base.RowId != item?.RowId)
             {
-                newItem.Write(_player.Address);
-                return true;
+                if (_player != null)
+                {
+                    Glamourer.RevertableDesigns.Add(_player);
+                    newItem.Write(_player.Address);
+                    return true;
+                }
+
+                if (_inDesignMode && (_selection?.Data.WriteItem(newItem) ?? false))
+                    return true;
             }
 
             return false;

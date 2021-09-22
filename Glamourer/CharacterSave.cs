@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Dalamud.Game.ClientState.Objects.Types;
 using Glamourer.Customization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer
@@ -129,6 +132,99 @@ namespace Glamourer
             }
         }
 
+        private static Dictionary<EquipSlot, (int, int, bool)> Offsets()
+        {
+            var stainOffsetWeapon = (int) Marshal.OffsetOf<CharacterWeapon>("Stain");
+            var stainOffsetEquip  = (int) Marshal.OffsetOf<CharacterArmor>("Stain");
+
+            (int, int, bool) ToOffsets(IntPtr offset, bool weapon)
+            {
+                var off = 4 + CharacterCustomization.CustomizationBytes + (int) offset;
+                return weapon ? (off, off + stainOffsetWeapon, weapon) : (off, off + stainOffsetEquip, weapon);
+            }
+
+            return new Dictionary<EquipSlot, (int, int, bool)>(12)
+            {
+                [EquipSlot.MainHand] = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("MainHand"), true),
+                [EquipSlot.OffHand]  = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("OffHand"),  true),
+                [EquipSlot.Head]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Head"),     false),
+                [EquipSlot.Body]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Body"),     false),
+                [EquipSlot.Hands]    = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Hands"),    false),
+                [EquipSlot.Legs]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Legs"),     false),
+                [EquipSlot.Feet]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Feet"),     false),
+                [EquipSlot.Ears]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Ears"),     false),
+                [EquipSlot.Neck]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Neck"),     false),
+                [EquipSlot.Wrists]   = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Wrists"),   false),
+                [EquipSlot.RFinger]  = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("RFinger"),  false),
+                [EquipSlot.LFinger]  = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("LFinger"),  false),
+            };
+        }
+
+        private static readonly IReadOnlyDictionary<EquipSlot, (int, int, bool)> FieldOffsets = Offsets();
+
+        public bool WriteStain(EquipSlot slot, StainId stainId)
+        {
+            if (WriteProtected)
+                return false;
+
+            var (_, stainOffset, _) = FieldOffsets[slot];
+            if (_bytes[stainOffset] == (byte) stainId)
+                return false;
+
+            _bytes[stainOffset] = stainId.Value;
+            return true;
+        }
+
+        private bool WriteItem(int offset, SetId id, WeaponType type, ushort variant, bool weapon)
+        {
+            var idBytes = BitConverter.GetBytes(id.Value);
+
+            static bool WriteIfDifferent(ref byte x, byte y)
+            {
+                if (x == y)
+                    return false;
+
+                x = y;
+                return true;
+            }
+
+            var ret = WriteIfDifferent(ref _bytes[offset], idBytes[0]);
+            ret |= WriteIfDifferent(ref _bytes[offset + 1], idBytes[1]);
+            if (weapon)
+            {
+                var typeBytes    = BitConverter.GetBytes(type.Value);
+                var variantBytes = BitConverter.GetBytes(variant);
+                ret |= WriteIfDifferent(ref _bytes[offset + 2], typeBytes[0]);
+                ret |= WriteIfDifferent(ref _bytes[offset + 3], typeBytes[1]);
+                ret |= WriteIfDifferent(ref _bytes[offset + 4], variantBytes[0]);
+                ret |= WriteIfDifferent(ref _bytes[offset + 5], variantBytes[1]);
+            }
+            else
+            {
+                ret |= WriteIfDifferent(ref _bytes[offset + 2], (byte) variant);
+            }
+
+            return ret;
+        }
+
+        public bool WriteItem(Item item)
+        {
+            if (WriteProtected)
+                return false;
+
+            var (itemOffset, _, isWeapon) = FieldOffsets[item.EquippableTo];
+            var (id, type, variant)       = item.MainModel;
+            var ret = WriteItem(itemOffset, id, type, variant, isWeapon);
+            if (item.EquippableTo == EquipSlot.MainHand && item.HasSubModel)
+            {
+                var (subOffset, _, _)            =  FieldOffsets[EquipSlot.OffHand];
+                var (subId, subType, subVariant) =  item.SubModel;
+                ret                              |= WriteItem(subOffset, subId, subType, subVariant, true);
+            }
+
+            return ret;
+        }
+
         public unsafe float Alpha
         {
             get
@@ -204,6 +300,8 @@ namespace Glamourer
 
         public void Apply(Character a)
         {
+            Glamourer.RevertableDesigns.Add(a);
+
             if (WriteCustomizations)
                 Customizations.Write(a.Address);
             if (WriteEquipment != CharacterEquipMask.None)

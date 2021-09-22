@@ -18,6 +18,17 @@ namespace Glamourer.Gui
             return false;
         }
 
+        private static bool DrawDisableButton(string label, bool disabled)
+        {
+            if (!disabled)
+                return ImGui.Button(label);
+
+            using var raii = new ImGuiRaii();
+            raii.PushStyle(ImGuiStyleVar.Alpha, 0.5f);
+            ImGui.Button(label);
+            return false;
+        }
+
         private static bool DrawMiscellaneous(CharacterSave save, Character? player)
         {
             var ret = false;

@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
+using Dalamud.Game.ClientState.Objects.Types;
 using Glamourer.Designs;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 
@@ -13,11 +16,12 @@ namespace Glamourer.Gui
     {
         public const     float  SelectorWidth  = 200;
         public const     float  MinWindowWidth = 675;
-        public const     int    GPoseObjectId   = 201;
+        public const     int    GPoseObjectId  = 201;
         private const    string PluginName     = "Glamourer";
         private readonly string _glamourerHeader;
 
         private readonly IReadOnlyDictionary<byte, Stain>                                       _stains;
+        private readonly IReadOnlyDictionary<uint, ModelChara>                                  _models;
         private readonly IObjectIdentifier                                                      _identifier;
         private readonly Dictionary<EquipSlot, (ComboWithFilter<Item>, ComboWithFilter<Stain>)> _combos;
         private readonly ImGuiScene.TextureWrap?                                                _legacyTattooIcon;
@@ -39,10 +43,17 @@ namespace Glamourer.Gui
             Dalamud.PluginInterface.UiBuilder.Draw               += Draw;
             Dalamud.PluginInterface.UiBuilder.OpenConfigUi       += ToggleVisibility;
 
+            _characterConstructor = typeof(Character).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[]
+            {
+                typeof(IntPtr),
+            }, null)!;
+
             _equipSlotNames = GetEquipSlotNames();
 
             _stains     = GameData.Stains(Dalamud.GameData);
+            _models     = GameData.Models(Dalamud.GameData);
             _identifier = Penumbra.GameData.GameData.GetIdentifier(Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
+
 
             var stainCombo = CreateDefaultStainCombo(_stains.Values.ToArray());
 
@@ -93,6 +104,7 @@ namespace Glamourer.Gui
                 DrawSaves();
                 DrawFixedDesignsTab();
                 DrawConfigTab();
+                DrawRevertablesTab();
             }
             finally
             {
