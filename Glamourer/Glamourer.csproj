@@ -5,8 +5,8 @@
     <PlatformTarget>x64</PlatformTarget>
 		<RootNamespace>Glamourer</RootNamespace>
 		<AssemblyName>Glamourer</AssemblyName>
-		<FileVersion>0.0.5.2</FileVersion>
-    <AssemblyVersion>0.0.5.2</AssemblyVersion>
+		<FileVersion>0.0.5.3</FileVersion>
+    <AssemblyVersion>0.0.5.3</AssemblyVersion>
 		<Company>SoftOtter</Company>
     <Product>Glamourer</Product>
     <Copyright>Copyright © 2020</Copyright>
@@ -47,34 +47,40 @@
 	<ItemGroup>
 		<Reference Include="Dalamud">
 			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
+      <Private>False</Private>
 		</Reference>
 		<Reference Include="ImGui.NET">
 			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\ImGui.NET.dll</HintPath>
+      <Private>False</Private>
 		</Reference>
 		<Reference Include="ImGuiScene">
 			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
+      <Private>False</Private>
 		</Reference>
 		<Reference Include="SDL2-CS">
 			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\SDL2-CS.dll</HintPath>
+      <Private>False</Private>
 		</Reference>
     <Reference Include="Lumina">
 			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Lumina.dll</HintPath>
+      <Private>False</Private>
 		</Reference>
     <Reference Include="Lumina.Excel">
 			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
+      <Private>False</Private>
 		</Reference>
     <Reference Include="Penumbra.GameData">
       <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\$(TargetFramework)\Penumbra.GameData.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Penumbra.PlayerWatch">
       <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\$(TargetFramework)\Penumbra.PlayerWatch.dll</HintPath>
+      <Private>True</Private>
     </Reference>
   </ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Newtonsoft.Json">
-			<Version>12.0.3</Version>
-		</PackageReference>
+		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
 	</ItemGroup>
 

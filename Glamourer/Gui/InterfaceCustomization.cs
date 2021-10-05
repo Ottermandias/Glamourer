@@ -282,6 +282,9 @@ namespace Glamourer.Gui
                 ret               = true;
             }
 
+            if (id == CustomizationId.Hairstyle && customization.Race == Race.Hrothgar)
+                customization[CustomizationId.Face] = (byte) ((customization[CustomizationId.Hairstyle] + 1) / 2);
+
             ImGui.Text(label);
             if (tooltip.Any() && ImGui.IsItemHovered())
                 ImGui.SetTooltip(tooltip);
