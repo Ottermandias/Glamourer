@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Dalamud.Plugin;
+using Dalamud.Logging;
 using Glamourer.FileSystem;
 using Newtonsoft.Json;
 
@@ -16,9 +16,9 @@ namespace Glamourer.Designs
         public SortedList<string, CharacterSave> Designs = null!;
         public FileSystem.FileSystem             FileSystem { get; } = new();
 
-        public DesignManager(DalamudPluginInterface pi)
+        public DesignManager()
         {
-            var saveFolder = new DirectoryInfo(pi.GetPluginConfigDirectory());
+            var saveFolder = new DirectoryInfo(Dalamud.PluginInterface.GetPluginConfigDirectory());
             if (!saveFolder.Exists)
                 Directory.CreateDirectory(saveFolder.FullName);
 
@@ -31,24 +31,21 @@ namespace Glamourer.Designs
         {
             FileSystem.Clear();
             var anyChanges = false;
-            foreach (var kvp in Designs.ToArray())
+            foreach (var (path, save) in Designs.ToArray())
             {
-                var path = kvp.Key;
-                var save = kvp.Value;
-
                 try
                 {
                     var (folder, name) = FileSystem.CreateAllFolders(path);
                     var design = new Design(folder, name) { Data = save };
                     folder.FindOrAddChild(design);
                     var fixedPath = design.FullName();
-                    if (!string.Equals(fixedPath, path, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        Designs.Remove(path);
-                        Designs[fixedPath] = save;
-                        anyChanges         = true;
-                        PluginLog.Debug($"Problem loading saved designs, {path} was renamed to {fixedPath}.");
-                    }
+                    if (string.Equals(fixedPath, path, StringComparison.InvariantCultureIgnoreCase))
+                        continue;
+
+                    Designs.Remove(path);
+                    Designs[fixedPath] = save;
+                    anyChanges         = true;
+                    PluginLog.Debug($"Problem loading saved designs, {path} was renamed to {fixedPath}.");
                 }
                 catch (Exception e)
                 {

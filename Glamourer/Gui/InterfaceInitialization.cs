@@ -53,7 +53,7 @@ namespace Glamourer.Gui
             {
                 var rawImage = new byte[resource.Length];
                 resource.Read(rawImage, 0, (int) resource.Length);
-                return Glamourer.PluginInterface.UiBuilder.LoadImageRaw(rawImage, 192, 192, 4);
+                return Dalamud.PluginInterface.UiBuilder.LoadImageRaw(rawImage, 192, 192, 4);
             }
 
             return null;
@@ -61,7 +61,7 @@ namespace Glamourer.Gui
 
         private static Dictionary<EquipSlot, string> GetEquipSlotNames()
         {
-            var sheet = Glamourer.PluginInterface.Data.GetExcelSheet<Addon>();
+            var sheet = Dalamud.GameData.GetExcelSheet<Addon>()!;
             var ret = new Dictionary<EquipSlot, string>(12)
             {
                 [EquipSlot.MainHand] = sheet.GetRow(738)?.Text.ToString() ?? "Main Hand",

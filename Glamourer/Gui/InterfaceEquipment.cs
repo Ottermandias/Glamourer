@@ -15,10 +15,17 @@ namespace Glamourer.Gui
                 stainCombo.PostPreview = () => ImGui.PopStyleColor(previewPush);
             }
 
-            if (stainCombo.Draw(string.Empty, out var newStain) && _player != null && !newStain.RowIndex.Equals(stainIdx))
+            if (stainCombo.Draw(string.Empty, out var newStain) && !newStain.RowIndex.Equals(stainIdx))
             {
-                newStain.Write(_player.Address, slot);
-                return true;
+                if (_player != null)
+                {
+                    Glamourer.RevertableDesigns.Add(_player);
+                    newStain.Write(_player.Address, slot);
+                    return true;
+                }
+
+                if (_inDesignMode && (_selection?.Data.WriteStain(slot, newStain.RowIndex) ?? false))
+                    return true;
             }
 
             return false;
@@ -27,22 +34,29 @@ namespace Glamourer.Gui
         private bool DrawItemSelector(ComboWithFilter<Item> equipCombo, Lumina.Excel.GeneratedSheets.Item? item)
         {
             var currentName = item?.Name.ToString() ?? "Nothing";
-            if (equipCombo.Draw(currentName, out var newItem, _itemComboWidth) && _player != null && newItem.Base.RowId != item?.RowId)
+            if (equipCombo.Draw(currentName, out var newItem, _itemComboWidth) && newItem.Base.RowId != item?.RowId)
             {
-                newItem.Write(_player.Address);
-                return true;
+                if (_player != null)
+                {
+                    Glamourer.RevertableDesigns.Add(_player);
+                    newItem.Write(_player.Address);
+                    return true;
+                }
+
+                if (_inDesignMode && (_selection?.Data.WriteItem(newItem) ?? false))
+                    return true;
             }
 
             return false;
         }
 
-        private static bool DrawCheckbox(ActorEquipMask flag, ref ActorEquipMask mask)
+        private static bool DrawCheckbox(CharacterEquipMask flag, ref CharacterEquipMask mask)
         {
             var tmp = (uint) mask;
             var ret = false;
             if (ImGui.CheckboxFlags($"##flag_{(uint) flag}", ref tmp, (uint) flag) && tmp != (uint) mask)
             {
-                mask = (ActorEquipMask) tmp;
+                mask = (CharacterEquipMask) tmp;
                 ret  = true;
             }
 
@@ -51,7 +65,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawEquipSlot(EquipSlot slot, ActorArmor equip)
+        private bool DrawEquipSlot(EquipSlot slot, CharacterArmor equip)
         {
             var (equipCombo, stainCombo) = _combos[slot];
 
@@ -63,7 +77,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawEquipSlotWithCheck(EquipSlot slot, ActorArmor equip, ActorEquipMask flag, ref ActorEquipMask mask)
+        private bool DrawEquipSlotWithCheck(EquipSlot slot, CharacterArmor equip, CharacterEquipMask flag, ref CharacterEquipMask mask)
         {
             var ret = DrawCheckbox(flag, ref mask);
             ImGui.SameLine();
@@ -71,7 +85,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawWeapon(EquipSlot slot, ActorWeapon weapon)
+        private bool DrawWeapon(EquipSlot slot, CharacterWeapon weapon)
         {
             var (equipCombo, stainCombo) = _combos[slot];
 
@@ -83,7 +97,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawWeaponWithCheck(EquipSlot slot, ActorWeapon weapon, ActorEquipMask flag, ref ActorEquipMask mask)
+        private bool DrawWeaponWithCheck(EquipSlot slot, CharacterWeapon weapon, CharacterEquipMask flag, ref CharacterEquipMask mask)
         {
             var ret = DrawCheckbox(flag, ref mask);
             ImGui.SameLine();
@@ -91,7 +105,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawEquip(ActorEquipment equip)
+        private bool DrawEquip(CharacterEquipment equip)
         {
             var ret = false;
             if (ImGui.CollapsingHeader("Character Equipment"))
@@ -113,23 +127,23 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawEquip(ActorEquipment equip, ref ActorEquipMask mask)
+        private bool DrawEquip(CharacterEquipment equip, ref CharacterEquipMask mask)
         {
             var ret = false;
             if (ImGui.CollapsingHeader("Character Equipment"))
             {
-                ret |= DrawWeaponWithCheck(EquipSlot.MainHand, equip.MainHand, ActorEquipMask.MainHand, ref mask);
-                ret |= DrawWeaponWithCheck(EquipSlot.OffHand,  equip.OffHand,  ActorEquipMask.OffHand,  ref mask);
-                ret |= DrawEquipSlotWithCheck(EquipSlot.Head,    equip.Head,    ActorEquipMask.Head,    ref mask);
-                ret |= DrawEquipSlotWithCheck(EquipSlot.Body,    equip.Body,    ActorEquipMask.Body,    ref mask);
-                ret |= DrawEquipSlotWithCheck(EquipSlot.Hands,   equip.Hands,   ActorEquipMask.Hands,   ref mask);
-                ret |= DrawEquipSlotWithCheck(EquipSlot.Legs,    equip.Legs,    ActorEquipMask.Legs,    ref mask);
-                ret |= DrawEquipSlotWithCheck(EquipSlot.Feet,    equip.Feet,    ActorEquipMask.Feet,    ref mask);
-                ret |= DrawEquipSlotWithCheck(EquipSlot.Ears,    equip.Ears,    ActorEquipMask.Ears,    ref mask);
-                ret |= DrawEquipSlotWithCheck(EquipSlot.Neck,    equip.Neck,    ActorEquipMask.Neck,    ref mask);
-                ret |= DrawEquipSlotWithCheck(EquipSlot.Wrists,  equip.Wrists,  ActorEquipMask.Wrists,  ref mask);
-                ret |= DrawEquipSlotWithCheck(EquipSlot.RFinger, equip.RFinger, ActorEquipMask.RFinger, ref mask);
-                ret |= DrawEquipSlotWithCheck(EquipSlot.LFinger, equip.LFinger, ActorEquipMask.LFinger, ref mask);
+                ret |= DrawWeaponWithCheck(EquipSlot.MainHand, equip.MainHand, CharacterEquipMask.MainHand, ref mask);
+                ret |= DrawWeaponWithCheck(EquipSlot.OffHand,  equip.OffHand,  CharacterEquipMask.OffHand,  ref mask);
+                ret |= DrawEquipSlotWithCheck(EquipSlot.Head,    equip.Head,    CharacterEquipMask.Head,    ref mask);
+                ret |= DrawEquipSlotWithCheck(EquipSlot.Body,    equip.Body,    CharacterEquipMask.Body,    ref mask);
+                ret |= DrawEquipSlotWithCheck(EquipSlot.Hands,   equip.Hands,   CharacterEquipMask.Hands,   ref mask);
+                ret |= DrawEquipSlotWithCheck(EquipSlot.Legs,    equip.Legs,    CharacterEquipMask.Legs,    ref mask);
+                ret |= DrawEquipSlotWithCheck(EquipSlot.Feet,    equip.Feet,    CharacterEquipMask.Feet,    ref mask);
+                ret |= DrawEquipSlotWithCheck(EquipSlot.Ears,    equip.Ears,    CharacterEquipMask.Ears,    ref mask);
+                ret |= DrawEquipSlotWithCheck(EquipSlot.Neck,    equip.Neck,    CharacterEquipMask.Neck,    ref mask);
+                ret |= DrawEquipSlotWithCheck(EquipSlot.Wrists,  equip.Wrists,  CharacterEquipMask.Wrists,  ref mask);
+                ret |= DrawEquipSlotWithCheck(EquipSlot.RFinger, equip.RFinger, CharacterEquipMask.RFinger, ref mask);
+                ret |= DrawEquipSlotWithCheck(EquipSlot.LFinger, equip.LFinger, CharacterEquipMask.LFinger, ref mask);
             }
 
             return ret;

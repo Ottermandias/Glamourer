@@ -53,11 +53,8 @@ namespace Glamourer.Gui
                 return;
             }
 
-            if (ImGui.Button(buttonLabel) && _plugin.GetPenumbra())
-            {
-                _plugin.UnregisterFunctions();
-                _plugin.RegisterFunctions();
-            }
+            if (ImGui.Button(buttonLabel))
+                Glamourer.Penumbra.Reattach(true);
 
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip(
@@ -87,17 +84,24 @@ namespace Glamourer.Gui
                 {
                     cfg.AttachToPenumbra = v;
                     if (v)
-                    {
-                        if (_plugin.GetPenumbra())
-                            _plugin.RegisterFunctions();
-                    }
+                        Glamourer.Penumbra.Reattach(true);
                     else
-                    {
-                        _plugin.UnregisterFunctions();
-                    }
+                        Glamourer.Penumbra.Unattach();
                 });
             ImGui.SameLine();
             DrawRestorePenumbraButton();
+
+            DrawConfigCheckMark("Apply Fixed Designs",
+                "Automatically apply fixed designs to characters and redraw them when anything changes.",
+                cfg.ApplyFixedDesigns,
+                v =>
+                {
+                    cfg.ApplyFixedDesigns = v;
+                    if (v)
+                        Glamourer.PlayerWatcher.Enable();
+                    else
+                        Glamourer.PlayerWatcher.Disable();
+                });
 
             ImGui.Dummy(Vector2.UnitY * ImGui.GetTextLineHeightWithSpacing() / 2);
 

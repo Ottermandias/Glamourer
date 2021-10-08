@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Dalamud;
+using Dalamud.Data;
 using Dalamud.Plugin;
 using Glamourer.Util;
 using Lumina.Data;
@@ -50,7 +51,7 @@ namespace Glamourer.Customization
 
         private Customization[] GetHairStyles(SubRace race, Gender gender)
         {
-            var row      = _hairSheet.GetRow(((uint) race - 1) * 2 - 1 + (uint) gender);
+            var row      = _hairSheet.GetRow(((uint) race - 1) * 2 - 1 + (uint) gender)!;
             var hairList = new List<Customization>(row.Unknown30);
             for (var i = 0; i < row.Unknown30; ++i)
             {
@@ -129,7 +130,7 @@ namespace Glamourer.Customization
         private CustomizationSet GetSet(SubRace race, Gender gender)
         {
             var (skin, hair) = GetColors(race, gender);
-            var row = _listSheet.GetRow(((uint) race - 1) * 2 - 1 + (uint) gender);
+            var row = _listSheet.GetRow(((uint) race - 1) * 2 - 1 + (uint) gender)!;
             var set = new CustomizationSet(race, gender)
             {
                 HairStyles           = race.ToRace() == Race.Hrothgar ? HrothgarFaces(row) : GetHairStyles(race, gender),
@@ -190,7 +191,7 @@ namespace Glamourer.Customization
 
             set.FeaturesTattoos = featureDict;
 
-            set.OptionName = ((CustomizationId[]) Enum.GetValues(typeof(CustomizationId))).Select(c =>
+            var nameArray = ((CustomizationId[]) Enum.GetValues(typeof(CustomizationId))).Select(c =>
             {
                 var menu = row.Menus
                     .Cast<CharaMakeParams.Menu?>()
@@ -210,14 +211,19 @@ namespace Glamourer.Customization
                 var textRow = _lobby.GetRow(menu.Value.Id);
                 return textRow?.Text.ToString() ?? c.ToDefaultName();
             }).ToArray();
+            nameArray[(int) CustomizationId.EyeColorL] = nameArray[(int) CustomizationId.EyeColorR];
+            nameArray[(int) CustomizationId.EyeColorR] = GetName(CustomName.OddEyes);
+            set.OptionName                             = nameArray;
 
-            set._types = ((CustomizationId[]) Enum.GetValues(typeof(CustomizationId))).Select(c =>
+            set.Types = ((CustomizationId[]) Enum.GetValues(typeof(CustomizationId))).Select(c =>
             {
-                if (c == CustomizationId.HighlightColor)
-                    return CharaMakeParams.MenuType.ColorPicker;
-
-                if (c == CustomizationId.EyeColorL)
-                    return CharaMakeParams.MenuType.ColorPicker;
+                switch (c)
+                {
+                    case CustomizationId.HighlightColor:
+                    case CustomizationId.EyeColorL:
+                    case CustomizationId.EyeColorR:
+                        return CharaMakeParams.MenuType.ColorPicker;
+                }
 
                 var menu = row.Menus
                     .Cast<CharaMakeParams.Menu?>()
@@ -255,21 +261,21 @@ namespace Glamourer.Customization
                 _                       => Language.English,
             };
 
-        internal CustomizationOptions(DalamudPluginInterface pi)
+        internal CustomizationOptions(DalamudPluginInterface pi, DataManager gameData, ClientLanguage language)
         {
-            _cmpFile        = new CmpFile(pi);
-            _customizeSheet = pi.Data.GetExcelSheet<CharaMakeCustomize>();
-            _lobby          = pi.Data.GetExcelSheet<Lobby>();
-            var tmp = pi.Data.Excel.GetType()!.GetMethod("GetSheet", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .MakeGenericMethod(typeof(CharaMakeParams))!.Invoke(pi.Data.Excel, new object?[]
+            _cmpFile        = new CmpFile(gameData);
+            _customizeSheet = gameData.GetExcelSheet<CharaMakeCustomize>()!;
+            _lobby          = gameData.GetExcelSheet<Lobby>()!;
+            var tmp = gameData.Excel.GetType()!.GetMethod("GetSheet", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .MakeGenericMethod(typeof(CharaMakeParams))!.Invoke(gameData.Excel, new object?[]
             {
                 "charamaketype",
-                FromClientLanguage(pi.ClientState.ClientLanguage),
+                FromClientLanguage(language),
                 null,
             }) as ExcelSheet<CharaMakeParams>;
             _listSheet = tmp!;
-            _hairSheet = pi.Data.GetExcelSheet<HairMakeType>();
-            SetNames(pi);
+            _hairSheet = gameData.GetExcelSheet<HairMakeType>()!;
+            SetNames(gameData);
 
             _highlightPicker           = CreateColorPicker(CustomizationId.HighlightColor, 256,  192);
             _lipColorPickerDark        = CreateColorPicker(CustomizationId.LipColor,       512,  96);
@@ -279,7 +285,7 @@ namespace Glamourer.Customization
             _facePaintColorPickerLight = CreateColorPicker(CustomizationId.FacePaintColor, 1152, 96, true);
             _tattooColorPicker         = CreateColorPicker(CustomizationId.TattooColor,    0,    192);
 
-            _icons = new IconStorage(pi, _list.Length * 50);
+            _icons = new IconStorage(pi, gameData, _list.Length * 50);
             foreach (var race in Clans)
             {
                 foreach (var gender in Genders)
@@ -287,15 +293,16 @@ namespace Glamourer.Customization
             }
         }
 
-        public void SetNames(DalamudPluginInterface pi)
+        private void SetNames(DataManager gameData)
         {
-            var subRace = pi.Data.GetExcelSheet<Tribe>();
+            var subRace = gameData.GetExcelSheet<Tribe>()!;
             _names[(int) CustomName.Clan]       = _lobby.GetRow(102)?.Text ?? "Clan";
             _names[(int) CustomName.Gender]     = _lobby.GetRow(103)?.Text ?? "Gender";
             _names[(int) CustomName.Reverse]    = _lobby.GetRow(2135)?.Text ?? "Reverse";
             _names[(int) CustomName.OddEyes]    = _lobby.GetRow(2125)?.Text ?? "Odd Eyes";
             _names[(int) CustomName.IrisSmall]  = _lobby.GetRow(1076)?.Text ?? "Small";
             _names[(int) CustomName.IrisLarge]  = _lobby.GetRow(1075)?.Text ?? "Large";
+            _names[(int) CustomName.IrisSize]   = _lobby.GetRow(244)?.Text ?? "Iris Size";
             _names[(int) CustomName.MidlanderM] = subRace.GetRow((int) SubRace.Midlander)?.Masculine.ToString() ?? SubRace.Midlander.ToName();
             _names[(int) CustomName.MidlanderF] = subRace.GetRow((int) SubRace.Midlander)?.Feminine.ToString() ?? SubRace.Midlander.ToName();
             _names[(int) CustomName.HighlanderM] =

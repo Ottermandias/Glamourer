@@ -1,32 +1,32 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using Dalamud.Game.ClientState.Actors.Types;
+using Dalamud.Game.ClientState.Objects.Types;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Customization
 {
     public unsafe struct LazyCustomization
     {
-        public ActorCustomization* Address;
+        public CharacterCustomization* Address;
 
-        public LazyCustomization(IntPtr actorPtr)
-            => Address = (ActorCustomization*) (actorPtr + ActorCustomization.CustomizationOffset);
+        public LazyCustomization(IntPtr characterPtr)
+            => Address = (CharacterCustomization*) (characterPtr + CharacterCustomization.CustomizationOffset);
 
-        public ref ActorCustomization Value
+        public ref CharacterCustomization Value
             => ref *Address;
 
-        public LazyCustomization(ActorCustomization data)
+        public LazyCustomization(CharacterCustomization data)
             => Address = &data;
     }
 
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct ActorCustomization
+    public struct CharacterCustomization
     {
         public const int CustomizationOffset = 0x1898;
         public const int CustomizationBytes  = 26;
 
-        public static ActorCustomization Default = new()
+        public static CharacterCustomization Default = new()
         {
             Race            = Race.Hyur,
             Gender          = Gender.Male,
@@ -150,13 +150,13 @@ namespace Glamourer.Customization
             }
         }
 
-        public void Read(Actor actor)
-            => Read(actor.Address + CustomizationOffset);
+        public void Read(Character character)
+            => Read(character.Address + CustomizationOffset);
 
-        public ActorCustomization(Actor actor)
+        public CharacterCustomization(Character character)
             : this()
         {
-            Read(actor.Address + CustomizationOffset);
+            Read(character.Address + CustomizationOffset);
         }
 
         public byte this[CustomizationId id]
@@ -278,11 +278,11 @@ namespace Glamourer.Customization
             }
         }
 
-        public unsafe void Write(IntPtr actorAddress)
+        public unsafe void Write(IntPtr characterAddress)
         {
             fixed (Race* ptr = &Race)
             {
-                Buffer.MemoryCopy(ptr, (byte*) actorAddress + CustomizationOffset, CustomizationBytes, CustomizationBytes);
+                Buffer.MemoryCopy(ptr, (byte*) characterAddress + CustomizationOffset, CustomizationBytes, CustomizationBytes);
             }
         }
 

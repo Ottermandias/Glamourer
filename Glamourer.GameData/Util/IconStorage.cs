@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Dalamud.Data.LuminaExtensions;
+using Dalamud.Data;
 using Dalamud.Plugin;
+using Dalamud.Utility;
 using ImGuiScene;
 using Lumina.Data.Files;
 
@@ -9,33 +10,35 @@ namespace Glamourer.Util
 {
     public class IconStorage : IDisposable
     {
-        private readonly DalamudPluginInterface       _pi;
-        private readonly Dictionary<int, TextureWrap> _icons;
+        private readonly DalamudPluginInterface        _pi;
+        private readonly DataManager                   _gameData;
+        private readonly Dictionary<uint, TextureWrap> _icons;
 
-        public IconStorage(DalamudPluginInterface pi, int size = 0)
+        public IconStorage(DalamudPluginInterface pi, DataManager gameData, int size = 0)
         {
-            _pi    = pi;
-            _icons = new Dictionary<int, TextureWrap>(size);
+            _pi       = pi;
+            _gameData = gameData;
+            _icons    = new Dictionary<uint, TextureWrap>(size);
         }
 
         public TextureWrap this[int id]
             => LoadIcon(id);
 
-        private TexFile? LoadIconHq(int id)
+        private TexFile? LoadIconHq(uint id)
         {
             var path = $"ui/icon/{id / 1000 * 1000:000000}/{id:000000}_hr1.tex";
-            return _pi.Data.GetFile<TexFile>(path);
+            return _gameData.GetFile<TexFile>(path);
         }
 
-        public TextureWrap LoadIcon(uint id)
-            => LoadIcon((int) id);
-
         public TextureWrap LoadIcon(int id)
+            => LoadIcon((uint) id);
+
+        public TextureWrap LoadIcon(uint id)
         {
             if (_icons.TryGetValue(id, out var ret))
                 return ret;
 
-            var icon     = LoadIconHq(id) ?? _pi.Data.GetIcon(id);
+            var icon     = LoadIconHq(id) ?? _gameData.GetIcon(id)!;
             var iconData = icon.GetRgbaImageData();
 
             ret        = _pi.UiBuilder.LoadImageRaw(iconData, icon.Header.Width, icon.Header.Height, 4);

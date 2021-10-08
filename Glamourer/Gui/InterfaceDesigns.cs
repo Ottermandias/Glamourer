@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using System.Windows.Forms;
 using Dalamud.Interface;
-using Dalamud.Plugin;
+using Dalamud.Logging;
 using Glamourer.Designs;
 using Glamourer.FileSystem;
 using ImGuiNET;
@@ -12,9 +11,10 @@ namespace Glamourer.Gui
 {
     internal partial class Interface
     {
-        private int _totalObject = 0;
+        private int _totalObject;
 
-        private Design? _selection    = null;
+        private bool    _inDesignMode;
+        private Design? _selection;
         private string  _newChildName = string.Empty;
 
         private void DrawDesignSelector()
@@ -50,7 +50,7 @@ namespace Glamourer.Gui
             if (_selection!.Data.WriteProtected || !applyButton)
                 return;
 
-            var text = Clipboard.GetText();
+            var text = ImGui.GetClipboardText();
             if (!text.Any())
                 return;
 
@@ -208,7 +208,8 @@ namespace Glamourer.Gui
         {
             using var raii = new ImGuiRaii();
             raii.PushStyle(ImGuiStyleVar.IndentSpacing, 12.5f * ImGui.GetIO().FontGlobalScale);
-            if (!raii.Begin(() => ImGui.BeginTabItem("Saves"), ImGui.EndTabItem))
+            _inDesignMode = raii.Begin(() => ImGui.BeginTabItem("Designs"), ImGui.EndTabItem);
+            if (!_inDesignMode)
                 return;
 
             DrawDesignSelector();
@@ -279,8 +280,7 @@ namespace Glamourer.Gui
 
         private void ContextMenu(IFileSystemBase child)
         {
-            var label       = $"##fsPopup{child.FullName()}";
-            var renameLabel = $"{label}_rename";
+            var label = $"##fsPopup{child.FullName()}";
             if (ImGui.BeginPopup(label))
             {
                 if (ImGui.MenuItem("Delete"))
@@ -289,7 +289,7 @@ namespace Glamourer.Gui
                 RenameChildInput(child);
 
                 if (child is Design d && ImGui.MenuItem("Copy to Clipboard"))
-                    Clipboard.SetText(d.Data.ToBase64());
+                    ImGui.SetClipboardText(d.Data.ToBase64());
 
                 ImGui.EndPopup();
             }
@@ -310,12 +310,12 @@ namespace Glamourer.Gui
 
             var changesStates = save.SetHatState || save.SetVisorState || save.SetWeaponState || save.IsWet || save.Alpha != 1.0f;
             if (save.WriteCustomizations)
-                if (save.WriteEquipment != ActorEquipMask.None)
+                if (save.WriteEquipment != CharacterEquipMask.None)
                     return white;
                 else
                     return changesStates ? white : Glamourer.Config.CustomizationColor;
 
-            if (save.WriteEquipment != ActorEquipMask.None)
+            if (save.WriteEquipment != CharacterEquipMask.None)
                 return changesStates ? white : Glamourer.Config.EquipmentColor;
 
             return changesStates ? Glamourer.Config.StateColor : grey;

@@ -1,4 +1,5 @@
-﻿using Dalamud.Plugin;
+﻿using Dalamud.Data;
+using Dalamud.Plugin;
 
 namespace Glamourer
 {
@@ -7,9 +8,9 @@ namespace Glamourer
         public readonly Lumina.Data.FileResource File;
         public readonly uint[]                   RgbaColors;
 
-        public CmpFile(DalamudPluginInterface pi)
+        public CmpFile(DataManager gameData)
         {
-            File       = pi.Data.GetFile("chara/xls/charamake/human.cmp");
+            File       = gameData.GetFile("chara/xls/charamake/human.cmp")!;
             RgbaColors = new uint[File.Data.Length >> 2];
             for (var i = 0; i < File.Data.Length; i += 4)
             {

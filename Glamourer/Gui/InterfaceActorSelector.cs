@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Game.ClientState.Actors;
-using Dalamud.Game.ClientState.Actors.Types;
+using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
 using ImGuiNET;
 
@@ -10,51 +10,83 @@ namespace Glamourer.Gui
 {
     internal partial class Interface
     {
-        private          Actor?                     _player;
-        private          string                     _currentActorName = string.Empty;
-        private          string                     _actorFilter      = string.Empty;
-        private          string                     _actorFilterLower = string.Empty;
-        private readonly Dictionary<string, Actor?> _playerNames      = new(400);
+        private          Character?                     _player;
+        private          string                         _currentLabel      = string.Empty;
+        private          string                         _playerFilter      = string.Empty;
+        private          string                         _playerFilterLower = string.Empty;
+        private readonly Dictionary<string, int>        _playerNames       = new(100);
+        private readonly Dictionary<string, Character?> _gPoseActors       = new(48);
 
-        private void DrawActorFilter()
+        private void DrawPlayerFilter()
         {
             using var raii = new ImGuiRaii()
                 .PushStyle(ImGuiStyleVar.ItemSpacing,   Vector2.Zero)
                 .PushStyle(ImGuiStyleVar.FrameRounding, 0);
             ImGui.SetNextItemWidth(SelectorWidth * ImGui.GetIO().FontGlobalScale);
-            if (ImGui.InputTextWithHint("##actorFilter", "Filter Players...", ref _actorFilter, 32))
-                _actorFilterLower = _actorFilter.ToLowerInvariant();
+            if (ImGui.InputTextWithHint("##playerFilter", "Filter Players...", ref _playerFilter, 32))
+                _playerFilterLower = _playerFilter.ToLowerInvariant();
         }
 
-        private void DrawActorSelectable(Actor actor, bool gPose)
+        private void DrawGPoseSelectable(Character player)
         {
-            var actorName = actor.Name;
-            if (!actorName.Any())
+            var playerName = player.Name.ToString();
+            if (!playerName.Any())
                 return;
 
-            if (_playerNames.ContainsKey(actorName))
+            _gPoseActors[playerName] = null;
+
+            DrawSelectable(player, $"{playerName} (GPose)");
+        }
+
+        private static string GetLabel(Character player, string playerName, int num)
+        {
+            if (player.ObjectKind == ObjectKind.Player)
+                return num == 1 ? playerName : $"{playerName} #{num}";
+
+            if (ModelType(player) == 0)
+                return num == 1 ? $"{playerName} (NPC)" : $"{playerName} #{num} (NPC)";
+
+            return num == 1 ? $"{playerName} (Monster)" : $"{playerName} #{num} (Monster)";
+        }
+
+        private void DrawPlayerSelectable(Character player)
+        {
+            var playerName = player.Name.ToString();
+            if (!playerName.Any())
+                return;
+
+            if (_playerNames.TryGetValue(playerName, out var num))
+                _playerNames[playerName] = ++num;
+            else
+                _playerNames[playerName] = num = 1;
+
+            if (_gPoseActors.ContainsKey(playerName))
             {
-                _playerNames[actorName] = actor;
+                _gPoseActors[playerName] = player;
                 return;
             }
 
-            _playerNames.Add(actorName, null);
+            var label = GetLabel(player, playerName, num);
+            DrawSelectable(player, label);
+        }
 
-            var label = gPose ? $"{actorName} (GPose)" : actorName;
-            if (!_actorFilterLower.Any() || actorName.ToLowerInvariant().Contains(_actorFilterLower))
-                if (ImGui.Selectable(label, _currentActorName == actorName))
+
+        private void DrawSelectable(Character player, string label)
+        {
+            if (!_playerFilterLower.Any() || label.ToLowerInvariant().Contains(_playerFilterLower))
+                if (ImGui.Selectable(label, _currentLabel == label))
                 {
-                    _currentActorName = actorName;
-                    _currentSave.LoadActor(actor);
-                    _player = actor;
+                    _currentLabel = label;
+                    _currentSave.LoadCharacter(player);
+                    _player = player;
                     return;
                 }
 
-            if (_currentActorName == actor.Name)
-            {
-                _currentSave.LoadActor(actor);
-                _player = actor;
-            }
+            if (_currentLabel != label)
+                return;
+
+            _currentSave.LoadCharacter(player);
+            _player = player;
         }
 
         private void DrawSelectionButtons()
@@ -63,10 +95,10 @@ namespace Glamourer.Gui
                 .PushStyle(ImGuiStyleVar.ItemSpacing,   Vector2.Zero)
                 .PushStyle(ImGuiStyleVar.FrameRounding, 0)
                 .PushFont(UiBuilder.IconFont);
-            Actor? select      = null;
-            var    buttonWidth = Vector2.UnitX * SelectorWidth / 2;
+            Character? select      = null;
+            var        buttonWidth = Vector2.UnitX * SelectorWidth / 2;
             if (ImGui.Button(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth))
-                select = Glamourer.PluginInterface.ClientState.LocalPlayer;
+                select = Dalamud.ClientState.LocalPlayer;
             raii.PopFonts();
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip("Select the local player character.");
@@ -81,49 +113,60 @@ namespace Glamourer.Gui
             else
             {
                 if (ImGui.Button(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth))
-                    select = Glamourer.PluginInterface.ClientState.Targets.CurrentTarget;
+                    select = CreateCharacter(Dalamud.Targets.Target);
             }
 
             raii.PopFonts();
             if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Select the current target, if it is a player actor.");
+                ImGui.SetTooltip("Select the current target, if it is in the list.");
 
-            if (select == null || select.ObjectKind != ObjectKind.Player)
+            if (select == null)
                 return;
 
-            _player           = select;
-            _currentActorName = _player.Name;
-            _currentSave.LoadActor(_player);
+            _player       = select;
+            _currentLabel = _player.Name.ToString();
+            _currentSave.LoadCharacter(_player);
         }
 
-        private void DrawActorSelector()
+        private void DrawPlayerSelector()
         {
             ImGui.BeginGroup();
-            DrawActorFilter();
-            if (!ImGui.BeginChild("##actorSelector",
+            DrawPlayerFilter();
+            if (!ImGui.BeginChild("##playerSelector",
                 new Vector2(SelectorWidth * ImGui.GetIO().FontGlobalScale, -ImGui.GetFrameHeight() - 1), true))
+            {
+                ImGui.EndChild();
+                ImGui.EndGroup();
                 return;
+            }
 
             _playerNames.Clear();
-            for (var i = GPoseActorId; i < GPoseActorId + 48; ++i)
+            _gPoseActors.Clear();
+            for (var i = GPoseObjectId; i < GPoseObjectId + 48; ++i)
             {
-                var actor = _actors[i];
-                if (actor == null)
+                var player = CreateCharacter(Dalamud.Objects[i]);
+                if (player == null)
                     break;
 
-                if (actor.ObjectKind == ObjectKind.Player)
-                    DrawActorSelectable(actor, true);
+                DrawGPoseSelectable(player);
             }
 
-            for (var i = 0; i < GPoseActorId; i += 2)
+            for (var i = 0; i < GPoseObjectId; ++i)
             {
-                var actor = _actors[i];
-                if (actor != null && actor.ObjectKind == ObjectKind.Player)
-                    DrawActorSelectable(actor, false);
+                var player = CreateCharacter(Dalamud.Objects[i])!;
+                if (player != null)
+                    DrawPlayerSelectable(player);
+            }
+
+            for (var i = GPoseObjectId + 48; i < Dalamud.Objects.Length; ++i)
+            {
+                var player = CreateCharacter(Dalamud.Objects[i])!;
+                if (player != null)
+                    DrawPlayerSelectable(player);
             }
 
 
-            using (var raii = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
+            using (var _ = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
             {
                 ImGui.EndChild();
             }
@@ -132,16 +175,16 @@ namespace Glamourer.Gui
             ImGui.EndGroup();
         }
 
-        private void DrawActorTab()
+        private void DrawPlayerTab()
         {
             using var raii = new ImGuiRaii();
+            _player = null;
             if (!raii.Begin(() => ImGui.BeginTabItem("Current Players"), ImGui.EndTabItem))
                 return;
 
-            _player = null;
-            DrawActorSelector();
+            DrawPlayerSelector();
 
-            if (!_currentActorName.Any())
+            if (!_currentLabel.Any())
                 return;
 
             ImGui.SameLine();

@@ -1,8 +1,8 @@
-﻿using Dalamud.Game.ClientState.Actors.Types;
+﻿using Dalamud.Game.ClientState.Objects.Types;
 
 namespace Glamourer
 {
-    public static class ActorExtensions
+    public static class CharacterExtensions
     {
         public const int  WetnessOffset      = 0x19A5;
         public const byte WetnessFlag        = 0x10;
@@ -13,10 +13,10 @@ namespace Glamourer
         public const int  WeaponHiddenOffset = 0xF64;
         public const byte WeaponHiddenFlag   = 0x02;
 
-        public static unsafe bool IsWet(this Actor a)
+        public static unsafe bool IsWet(this Character a)
             => (*((byte*) a.Address + WetnessOffset) & WetnessFlag) != 0;
 
-        public static unsafe bool SetWetness(this Actor a, bool value)
+        public static unsafe bool SetWetness(this Character a, bool value)
         {
             var current = a.IsWet();
             if (current == value)
@@ -29,10 +29,10 @@ namespace Glamourer
             return true;
         }
 
-        public static unsafe ref byte StateFlags(this Actor a)
+        public static unsafe ref byte StateFlags(this Character a)
             => ref *((byte*) a.Address + StateFlagsOffset);
 
-        public static bool SetStateFlag(this Actor a, bool value, byte flag)
+        public static bool SetStateFlag(this Character a, bool value, byte flag)
         {
             var current       = a.StateFlags();
             var previousValue = (current & flag) != 0;
@@ -46,20 +46,20 @@ namespace Glamourer
             return true;
         }
 
-        public static bool IsHatHidden(this Actor a)
+        public static bool IsHatHidden(this Character a)
             => (a.StateFlags() & HatHiddenFlag) != 0;
 
-        public static unsafe bool IsWeaponHidden(this Actor a)
+        public static unsafe bool IsWeaponHidden(this Character a)
             => (a.StateFlags() & WeaponHiddenFlag) != 0
              && (*((byte*) a.Address + WeaponHiddenOffset) & WeaponHiddenFlag) != 0;
 
-        public static bool IsVisorToggled(this Actor a)
+        public static bool IsVisorToggled(this Character a)
             => (a.StateFlags() & VisorToggledFlag) != 0;
 
-        public static bool SetHatHidden(this Actor a, bool value)
+        public static bool SetHatHidden(this Character a, bool value)
             => SetStateFlag(a, value, HatHiddenFlag);
 
-        public static unsafe bool SetWeaponHidden(this Actor a, bool value)
+        public static unsafe bool SetWeaponHidden(this Character a, bool value)
         {
             var ret = SetStateFlag(a, value, WeaponHiddenFlag);
             var val = *((byte*) a.Address + WeaponHiddenOffset);
@@ -70,10 +70,10 @@ namespace Glamourer
             return ret || (val & WeaponHiddenFlag) != 0 != value;
         }
 
-        public static bool SetVisorToggled(this Actor a, bool value)
+        public static bool SetVisorToggled(this Character a, bool value)
             => SetStateFlag(a, value, VisorToggledFlag);
 
-        public static unsafe ref float Alpha(this Actor a)
+        public static unsafe ref float Alpha(this Character a)
             => ref *(float*) ((byte*) a.Address + AlphaOffset);
     }
 }

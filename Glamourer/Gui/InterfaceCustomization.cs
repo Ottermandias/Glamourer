@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
-using Dalamud.Plugin;
+using Dalamud.Logging;
 using Glamourer.Customization;
 using ImGuiNET;
 using Penumbra.GameData.Enums;
@@ -39,20 +39,20 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private Vector2 _iconSize          = Vector2.Zero;
-        private Vector2 _actualIconSize    = Vector2.Zero;
-        private float   _raceSelectorWidth = 0;
-        private float   _inputIntSize      = 0;
-        private float   _comboSelectorSize = 0;
-        private float   _percentageSize    = 0;
-        private float   _itemComboWidth    = 0;
+        private Vector2 _iconSize       = Vector2.Zero;
+        private Vector2 _actualIconSize = Vector2.Zero;
+        private float   _raceSelectorWidth;
+        private float   _inputIntSize;
+        private float   _comboSelectorSize;
+        private float   _percentageSize;
+        private float   _itemComboWidth;
 
         private bool InputInt(string label, ref int value, int minValue, int maxValue)
         {
             var ret = false;
             var tmp = value + 1;
             ImGui.SetNextItemWidth(_inputIntSize);
-            if (ImGui.InputInt(label, ref tmp, 1) && tmp != value + 1 && tmp >= minValue && tmp <= maxValue)
+            if (ImGui.InputInt(label, ref tmp, 1, 1, ImGuiInputTextFlags.EnterReturnsTrue) && tmp != value + 1 && tmp >= minValue && tmp <= maxValue)
             {
                 value = tmp - 1;
                 ret   = true;
@@ -64,7 +64,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private static (int, Customization.Customization) GetCurrentCustomization(ref ActorCustomization customization, CustomizationId id,
+        private static (int, Customization.Customization) GetCurrentCustomization(ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
             var current = set.DataByValue(id, customization[id], out var custom);
@@ -78,7 +78,7 @@ namespace Glamourer.Gui
             return (current, custom!.Value);
         }
 
-        private bool DrawColorPicker(string label, string tooltip, ref ActorCustomization customization, CustomizationId id,
+        private bool DrawColorPicker(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
             var ret   = false;
@@ -93,11 +93,11 @@ namespace Glamourer.Gui
 
             ImGui.SameLine();
 
-            using (var group = ImGuiRaii.NewGroup())
+            using (var _ = ImGuiRaii.NewGroup())
             {
                 if (InputInt($"##text_{id}", ref current, 1, count))
                 {
-                    customization[id] = set.Data(id, current - 1).Value;
+                    customization[id] = set.Data(id, current).Value;
                     ret               = true;
                 }
 
@@ -116,7 +116,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawListSelector(string label, string tooltip, ref ActorCustomization customization, CustomizationId id,
+        private bool DrawListSelector(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
             using var bigGroup = ImGuiRaii.NewGroup();
@@ -158,7 +158,7 @@ namespace Glamourer.Gui
         private static readonly Vector4 NoColor  = new(1f, 1f, 1f, 1f);
         private static readonly Vector4 RedColor = new(0.6f, 0.3f, 0.3f, 1f);
 
-        private bool DrawMultiSelector(ref ActorCustomization customization, CustomizationSet set)
+        private bool DrawMultiSelector(ref CharacterCustomization customization, CustomizationSet set)
         {
             using var bigGroup = ImGuiRaii.NewGroup();
             var       ret      = false;
@@ -242,7 +242,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawIconSelector(string label, string tooltip, ref ActorCustomization customization, CustomizationId id,
+        private bool DrawIconSelector(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
             using var bigGroup = ImGuiRaii.NewGroup();
@@ -282,6 +282,9 @@ namespace Glamourer.Gui
                 ret               = true;
             }
 
+            if (id == CustomizationId.Hairstyle && customization.Race == Race.Hrothgar)
+                customization[CustomizationId.Face] = (byte) ((customization[CustomizationId.Hairstyle] + 1) / 2);
+
             ImGui.Text(label);
             if (tooltip.Any() && ImGui.IsItemHovered())
                 ImGui.SetTooltip(tooltip);
@@ -290,7 +293,7 @@ namespace Glamourer.Gui
         }
 
 
-        private bool DrawPercentageSelector(string label, string tooltip, ref ActorCustomization customization, CustomizationId id,
+        private bool DrawPercentageSelector(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
             using var bigGroup = ImGuiRaii.NewGroup();
@@ -320,7 +323,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawRaceSelector(ref ActorCustomization customization)
+        private bool DrawRaceSelector(ref CharacterCustomization customization)
         {
             using var group = ImGuiRaii.NewGroup();
             var       ret   = false;
@@ -345,7 +348,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawGenderSelector(ref ActorCustomization customization)
+        private bool DrawGenderSelector(ref CharacterCustomization customization)
         {
             var ret = false;
             ImGui.PushFont(UiBuilder.IconFont);
@@ -376,7 +379,7 @@ namespace Glamourer.Gui
             return ret;
         }
 
-        private bool DrawPicker(CustomizationSet set, CustomizationId id, ref ActorCustomization customization)
+        private bool DrawPicker(CustomizationSet set, CustomizationId id, ref CharacterCustomization customization)
         {
             if (!set.IsAvailable(id))
                 return false;
@@ -394,9 +397,18 @@ namespace Glamourer.Gui
             return false;
         }
 
-        private static readonly CustomizationId[] AllCustomizations = (CustomizationId[]) Enum.GetValues(typeof(CustomizationId));
+        private static CustomizationId[] GetCustomizationOrder()
+        {
+            var ret = (CustomizationId[])Enum.GetValues(typeof(CustomizationId));
+            ret[(int) CustomizationId.TattooColor] = CustomizationId.EyeColorL;
+            ret[(int) CustomizationId.EyeColorL] = CustomizationId.EyeColorR;
+            ret[(int) CustomizationId.EyeColorR] = CustomizationId.TattooColor;
+            return ret;
+        }
 
-        private bool DrawCustomization(ref ActorCustomization custom)
+        private static readonly CustomizationId[] AllCustomizations = GetCustomizationOrder();
+
+        private bool DrawCustomization(ref CharacterCustomization custom)
         {
             if (!ImGui.CollapsingHeader("Character Customization"))
                 return false;
@@ -457,7 +469,7 @@ namespace Glamourer.Gui
             }
 
             tmp = custom.SmallIris;
-            if (ImGui.Checkbox($"{Glamourer.Customization.GetName(CustomName.IrisSmall)} {set.Option(CustomizationId.EyeColorL)}",
+            if (ImGui.Checkbox($"{Glamourer.Customization.GetName(CustomName.IrisSmall)} {Glamourer.Customization.GetName(CustomName.IrisSize)}",
                     ref tmp)
              && tmp != custom.SmallIris)
             {

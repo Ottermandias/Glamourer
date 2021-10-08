@@ -1,8 +1,11 @@
 ﻿using System;
-using Dalamud.Game.ClientState.Actors.Types;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Dalamud.Game.ClientState.Objects.Types;
 using Glamourer.Customization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer
@@ -36,8 +39,8 @@ namespace Glamourer
     public class CharacterSave
     {
         public const byte CurrentVersion    = 2;
-        public const byte TotalSizeVersion1 = 1 + 1 + 2 + 56 + ActorCustomization.CustomizationBytes;
-        public const byte TotalSizeVersion2 = 1 + 1 + 2 + 56 + ActorCustomization.CustomizationBytes + 4 + 1;
+        public const byte TotalSizeVersion1 = 1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes;
+        public const byte TotalSizeVersion2 = 1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 1;
 
         public const byte TotalSize = TotalSizeVersion2;
 
@@ -97,8 +100,8 @@ namespace Glamourer
 
         public byte StateFlags
         {
-            get => _bytes[64 + ActorCustomization.CustomizationBytes];
-            set => _bytes[64 + ActorCustomization.CustomizationBytes] = value;
+            get => _bytes[64 + CharacterCustomization.CustomizationBytes];
+            set => _bytes[64 + CharacterCustomization.CustomizationBytes] = value;
         }
 
         public bool HatState
@@ -119,9 +122,9 @@ namespace Glamourer
             set => StateFlags = (byte) (value ? StateFlags & ~0x02 : StateFlags | 0x02);
         }
 
-        public ActorEquipMask WriteEquipment
+        public CharacterEquipMask WriteEquipment
         {
-            get => (ActorEquipMask) ((ushort) _bytes[2] | ((ushort) _bytes[3] << 8));
+            get => (CharacterEquipMask) (_bytes[2] | (_bytes[3] << 8));
             set
             {
                 _bytes[2] = (byte) ((ushort) value & 0xFF);
@@ -129,11 +132,104 @@ namespace Glamourer
             }
         }
 
+        private static Dictionary<EquipSlot, (int, int, bool)> Offsets()
+        {
+            var stainOffsetWeapon = (int) Marshal.OffsetOf<CharacterWeapon>("Stain");
+            var stainOffsetEquip  = (int) Marshal.OffsetOf<CharacterArmor>("Stain");
+
+            (int, int, bool) ToOffsets(IntPtr offset, bool weapon)
+            {
+                var off = 4 + CharacterCustomization.CustomizationBytes + (int) offset;
+                return weapon ? (off, off + stainOffsetWeapon, weapon) : (off, off + stainOffsetEquip, weapon);
+            }
+
+            return new Dictionary<EquipSlot, (int, int, bool)>(12)
+            {
+                [EquipSlot.MainHand] = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("MainHand"), true),
+                [EquipSlot.OffHand]  = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("OffHand"),  true),
+                [EquipSlot.Head]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Head"),     false),
+                [EquipSlot.Body]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Body"),     false),
+                [EquipSlot.Hands]    = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Hands"),    false),
+                [EquipSlot.Legs]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Legs"),     false),
+                [EquipSlot.Feet]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Feet"),     false),
+                [EquipSlot.Ears]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Ears"),     false),
+                [EquipSlot.Neck]     = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Neck"),     false),
+                [EquipSlot.Wrists]   = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("Wrists"),   false),
+                [EquipSlot.RFinger]  = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("RFinger"),  false),
+                [EquipSlot.LFinger]  = ToOffsets(Marshal.OffsetOf<CharacterEquipment>("LFinger"),  false),
+            };
+        }
+
+        private static readonly IReadOnlyDictionary<EquipSlot, (int, int, bool)> FieldOffsets = Offsets();
+
+        public bool WriteStain(EquipSlot slot, StainId stainId)
+        {
+            if (WriteProtected)
+                return false;
+
+            var (_, stainOffset, _) = FieldOffsets[slot];
+            if (_bytes[stainOffset] == (byte) stainId)
+                return false;
+
+            _bytes[stainOffset] = stainId.Value;
+            return true;
+        }
+
+        private bool WriteItem(int offset, SetId id, WeaponType type, ushort variant, bool weapon)
+        {
+            var idBytes = BitConverter.GetBytes(id.Value);
+
+            static bool WriteIfDifferent(ref byte x, byte y)
+            {
+                if (x == y)
+                    return false;
+
+                x = y;
+                return true;
+            }
+
+            var ret = WriteIfDifferent(ref _bytes[offset], idBytes[0]);
+            ret |= WriteIfDifferent(ref _bytes[offset + 1], idBytes[1]);
+            if (weapon)
+            {
+                var typeBytes    = BitConverter.GetBytes(type.Value);
+                var variantBytes = BitConverter.GetBytes(variant);
+                ret |= WriteIfDifferent(ref _bytes[offset + 2], typeBytes[0]);
+                ret |= WriteIfDifferent(ref _bytes[offset + 3], typeBytes[1]);
+                ret |= WriteIfDifferent(ref _bytes[offset + 4], variantBytes[0]);
+                ret |= WriteIfDifferent(ref _bytes[offset + 5], variantBytes[1]);
+            }
+            else
+            {
+                ret |= WriteIfDifferent(ref _bytes[offset + 2], (byte) variant);
+            }
+
+            return ret;
+        }
+
+        public bool WriteItem(Item item)
+        {
+            if (WriteProtected)
+                return false;
+
+            var (itemOffset, _, isWeapon) = FieldOffsets[item.EquippableTo];
+            var (id, type, variant)       = item.MainModel;
+            var ret = WriteItem(itemOffset, id, type, variant, isWeapon);
+            if (item.EquippableTo == EquipSlot.MainHand && item.HasSubModel)
+            {
+                var (subOffset, _, _)            =  FieldOffsets[EquipSlot.OffHand];
+                var (subId, subType, subVariant) =  item.SubModel;
+                ret                              |= WriteItem(subOffset, subId, subType, subVariant, true);
+            }
+
+            return ret;
+        }
+
         public unsafe float Alpha
         {
             get
             {
-                fixed (byte* ptr = &_bytes[60 + ActorCustomization.CustomizationBytes])
+                fixed (byte* ptr = &_bytes[60 + CharacterCustomization.CustomizationBytes])
                 {
                     return *(float*) ptr;
                 }
@@ -142,24 +238,24 @@ namespace Glamourer
             {
                 fixed (byte* ptr = _bytes)
                 {
-                    *(ptr + 60 + ActorCustomization.CustomizationBytes + 0) = *((byte*) &value + 0);
-                    *(ptr + 60 + ActorCustomization.CustomizationBytes + 1) = *((byte*) &value + 1);
-                    *(ptr + 60 + ActorCustomization.CustomizationBytes + 2) = *((byte*) &value + 2);
-                    *(ptr + 60 + ActorCustomization.CustomizationBytes + 3) = *((byte*) &value + 3);
+                    *(ptr + 60 + CharacterCustomization.CustomizationBytes + 0) = *((byte*) &value + 0);
+                    *(ptr + 60 + CharacterCustomization.CustomizationBytes + 1) = *((byte*) &value + 1);
+                    *(ptr + 60 + CharacterCustomization.CustomizationBytes + 2) = *((byte*) &value + 2);
+                    *(ptr + 60 + CharacterCustomization.CustomizationBytes + 3) = *((byte*) &value + 3);
                 }
             }
         }
 
-        public void Load(ActorCustomization customization)
+        public void Load(CharacterCustomization customization)
         {
             WriteCustomizations = true;
             customization.WriteBytes(_bytes, 4);
         }
 
-        public void Load(ActorEquipment equipment, ActorEquipMask mask = ActorEquipMask.All)
+        public void Load(CharacterEquipment equipment, CharacterEquipMask mask = CharacterEquipMask.All)
         {
             WriteEquipment = mask;
-            equipment.WriteBytes(_bytes, 4 + ActorCustomization.CustomizationBytes);
+            equipment.WriteBytes(_bytes, 4 + CharacterCustomization.CustomizationBytes);
         }
 
         public string ToBase64()
@@ -179,19 +275,19 @@ namespace Glamourer
                     $"Can not parse Base64 string into CharacterSave:\n\tInvalid value {value} in byte {idx}, should be in [{min},{max}].");
         }
 
-        private static void CheckActorMask(byte val1, byte val2)
+        private static void CheckCharacterMask(byte val1, byte val2)
         {
-            var mask = (ActorEquipMask) ((ushort) val1 | ((ushort) val2 << 8));
-            if (mask > ActorEquipMask.All)
+            var mask = (CharacterEquipMask) (val1 | (val2 << 8));
+            if (mask > CharacterEquipMask.All)
                 throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid value {mask} in byte 3 and 4.");
         }
 
-        public void LoadActor(Actor a)
+        public void LoadCharacter(Character a)
         {
             WriteCustomizations = true;
-            Load(new ActorCustomization(a));
+            Load(new CharacterCustomization(a));
 
-            Load(new ActorEquipment(a), ActorEquipMask.All);
+            Load(new CharacterEquipment(a));
 
             SetHatState    = true;
             SetVisorState  = true;
@@ -202,11 +298,13 @@ namespace Glamourer
             Alpha = a.Alpha();
         }
 
-        public void Apply(Actor a)
+        public void Apply(Character a)
         {
+            Glamourer.RevertableDesigns.Add(a);
+
             if (WriteCustomizations)
                 Customizations.Write(a.Address);
-            if (WriteEquipment != ActorEquipMask.None)
+            if (WriteEquipment != CharacterEquipMask.None)
                 Equipment.Write(a.Address, WriteEquipment, WriteEquipment);
             a.SetWetness(IsWet);
             a.Alpha() = Alpha;
@@ -243,7 +341,7 @@ namespace Glamourer
                 default: throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid Version {bytes[0]}.");
             }
 
-            CheckActorMask(bytes[2], bytes[3]);
+            CheckCharacterMask(bytes[2], bytes[3]);
             bytes.CopyTo(_bytes, 0);
         }
 
@@ -254,23 +352,23 @@ namespace Glamourer
             return ret;
         }
 
-        public unsafe ref ActorCustomization Customizations
+        public unsafe ref CharacterCustomization Customizations
         {
             get
             {
                 fixed (byte* ptr = _bytes)
                 {
-                    return ref *(ActorCustomization*) (ptr + 4);
+                    return ref *(CharacterCustomization*) (ptr + 4);
                 }
             }
         }
 
-        public ActorEquipment Equipment
+        public CharacterEquipment Equipment
         {
             get
             {
-                var ret = new ActorEquipment();
-                ret.FromBytes(_bytes, 4 + ActorCustomization.CustomizationBytes);
+                var ret = new CharacterEquipment();
+                ret.FromBytes(_bytes, 4 + CharacterCustomization.CustomizationBytes);
                 return ret;
             }
         }

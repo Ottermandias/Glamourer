@@ -8,6 +8,7 @@
         OddEyes,
         IrisSmall,
         IrisLarge,
+        IrisSize,
         MidlanderM,
         HighlanderM,
         WildwoodM,

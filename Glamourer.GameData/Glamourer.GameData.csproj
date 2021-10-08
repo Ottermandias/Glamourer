@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-		<TargetFramework>net472</TargetFramework>
-		<LangVersion>preview</LangVersion>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <PlatformTarget>x64</PlatformTarget>
 		<RootNamespace>Glamourer</RootNamespace>
 		<AssemblyName>Glamourer.GameData</AssemblyName>
 		<FileVersion>1.0.0.0</FileVersion>
@@ -55,7 +56,7 @@
             <Private>False</Private>
         </Reference>
         <Reference Include="Penumbra.GameData">
-            <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\net472\Penumbra.GameData.dll</HintPath>
+            <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\$(TargetFramework)\Penumbra.GameData.dll</HintPath>
         </Reference>
     </ItemGroup>
 </Project>
