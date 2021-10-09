@@ -9,6 +9,7 @@ namespace Glamourer
         {
             public string Name;
             public string Path;
+            public uint   JobGroups;
             public bool   Enabled;
         }
 

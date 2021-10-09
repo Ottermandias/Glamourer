@@ -11,6 +11,8 @@ namespace Glamourer
     {
         private static Dictionary<byte, Stain>?           _stains;
         private static Dictionary<EquipSlot, List<Item>>? _itemsBySlot;
+        private static Dictionary<byte, Job>?             _jobs;
+        private static Dictionary<ushort, JobGroup>?        _jobGroups;
         private static SortedList<uint, ModelChara>?      _models;
 
         public static IReadOnlyDictionary<uint, ModelChara> Models(DataManager dataManager)
@@ -83,6 +85,54 @@ namespace Glamourer
 
             _itemsBySlot[EquipSlot.LFinger] = _itemsBySlot[EquipSlot.RFinger];
             return _itemsBySlot;
+        }
+
+        public static IReadOnlyDictionary<byte, Job> Jobs(DataManager dataManager)
+        {
+            if (_jobs != null)
+                return _jobs;
+
+            var sheet = dataManager.GetExcelSheet<ClassJob>()!;
+            _jobs = sheet.ToDictionary(j => (byte)j.RowId, j => new Job(j));
+            return _jobs;
+        }
+
+        public static IReadOnlyDictionary<ushort, JobGroup> JobGroups(DataManager dataManager)
+        {
+            if (_jobGroups != null)
+                return _jobGroups;
+
+            var sheet = dataManager.GetExcelSheet<ClassJobCategory>()!;
+            var jobs = dataManager.GetExcelSheet<ClassJob>()!;
+
+            static bool ValidIndex(uint idx)
+            {
+                if (idx > 0 && idx < 36)
+                    return true;
+
+                return idx switch
+                {
+                    91  => true,
+                    92  => true,
+                    96  => true,
+                    98  => true,
+                    99  => true,
+                    111 => true,
+                    112 => true,
+                    129 => true,
+                    149 => true,
+                    150 => true,
+                    156 => true,
+                    157 => true,
+                    158 => true,
+                    159 => true,
+                    _   => false,
+                };
+            }
+
+            _jobGroups = sheet.Where(j => ValidIndex(j.RowId))
+                .ToDictionary(j => (ushort) j.RowId, j => new JobGroup(j, jobs));
+            return _jobGroups;
         }
     }
 }

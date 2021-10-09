@@ -16,6 +16,7 @@ namespace Glamourer.Gui
         private List<string>? _fullPathCache;
         private string        _newFixCharacterName = string.Empty;
         private string        _newFixDesignPath    = string.Empty;
+        private JobGroup?     _newFixDesignGroup;
         private Design?       _newFixDesign;
         private int           _fixDragDropIdx = -1;
 
@@ -24,24 +25,28 @@ namespace Glamourer.Gui
 
         private void DrawFixedDesignsTab()
         {
+            _newFixDesignGroup ??= _plugin.FixedDesigns.JobGroups[1];
+
             using var raii = new ImGuiRaii();
             if (!raii.Begin(() => ImGui.BeginTabItem("Fixed Designs"), ImGui.EndTabItem))
             {
-                _fullPathCache    = null;
-                _newFixDesign     = null;
-                _newFixDesignPath = string.Empty;
+                _fullPathCache     = null;
+                _newFixDesign      = null;
+                _newFixDesignPath  = string.Empty;
+                _newFixDesignGroup = _plugin.FixedDesigns.JobGroups[1];
                 return;
             }
 
             _fullPathCache ??= _plugin.FixedDesigns.Data.Select(d => d.Design.FullName()).ToList();
 
-            raii.Begin(() => ImGui.BeginTable("##FixedTable", 3), ImGui.EndTable);
+            raii.Begin(() => ImGui.BeginTable("##FixedTable", 4), ImGui.EndTable);
 
             var buttonWidth = 23.5f * ImGuiHelpers.GlobalScale;
 
 
             ImGui.TableSetupColumn("##DeleteColumn", ImGuiTableColumnFlags.WidthFixed, 2 * buttonWidth);
             ImGui.TableSetupColumn("Character",      ImGuiTableColumnFlags.WidthFixed, 200 * ImGuiHelpers.GlobalScale);
+            ImGui.TableSetupColumn("Jobs",           ImGuiTableColumnFlags.WidthFixed, 175 * ImGuiHelpers.GlobalScale);
             ImGui.TableSetupColumn("Design",         ImGuiTableColumnFlags.WidthStretch);
             ImGui.TableHeadersRow();
             var xPos = 0f;
@@ -93,6 +98,8 @@ namespace Glamourer.Gui
                 }
 
                 ImGui.TableNextColumn();
+                ImGui.Text(_plugin.FixedDesigns.Data[i].Jobs.Name);
+                ImGui.TableNextColumn();
                 ImGui.Text(path);
             }
 
@@ -110,16 +117,30 @@ namespace Glamourer.Gui
             else if (ImGui.Button($"{FontAwesomeIcon.Plus.ToIconChar()}##NewFix"))
             {
                 _fullPathCache.Add(_newFixDesignPath);
-                _plugin.FixedDesigns.Add(_newFixCharacterName, _newFixDesign, false);
+                _plugin.FixedDesigns.Add(_newFixCharacterName, _newFixDesign, _newFixDesignGroup.Value, false);
                 _newFixCharacterName = string.Empty;
                 _newFixDesignPath    = string.Empty;
                 _newFixDesign        = null;
+                _newFixDesignGroup   = _plugin.FixedDesigns.JobGroups[1];
             }
 
             raii.PopFonts();
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
             ImGui.InputTextWithHint("##NewFix", "Enter new Character", ref _newFixCharacterName, 32);
+            ImGui.TableNextColumn();
+            ImGui.SetNextItemWidth(-1);
+            if (raii.Begin(() => ImGui.BeginCombo("##NewFixDesignGroup", _newFixDesignGroup.Value.Name), ImGui.EndCombo))
+            {
+                foreach (var (id, group) in _plugin.FixedDesigns.JobGroups)
+                {
+                    ImGui.SetNextItemWidth(-1);
+                    if (ImGui.Selectable($"{group.Name}##NewFixDesignGroup", group.Name == _newFixDesignGroup.Value.Name))
+                        _newFixDesignGroup = group;
+                }
+                raii.End();
+            }
+
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(-1);
             if (!raii.Begin(() => ImGui.BeginCombo("##NewFixPath", _newFixDesignPath), ImGui.EndCombo))

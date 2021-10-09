@@ -13,44 +13,50 @@ namespace Glamourer.Designs
     {
         public class FixedDesign
         {
-            public string Name;
-            public Design Design;
-            public bool   Enabled;
+            public string   Name;
+            public JobGroup Jobs;
+            public Design   Design;
+            public bool     Enabled;
 
             public GlamourerConfig.FixedDesign ToSave()
                 => new()
                 {
-                    Name    = Name,
-                    Path    = Design.FullName(),
-                    Enabled = Enabled,
+                    Name      = Name,
+                    Path      = Design.FullName(),
+                    Enabled   = Enabled,
+                    JobGroups = Jobs.Id,
                 };
 
-            public FixedDesign(string name, Design design, bool enabled)
+            public FixedDesign(string name, Design design, bool enabled, JobGroup jobs)
             {
                 Name    = name;
                 Design  = design;
                 Enabled = enabled;
+                Jobs    = jobs;
             }
         }
 
-        public List<FixedDesign>               Data;
-        public Dictionary<string, FixedDesign> EnabledDesigns;
+        public          List<FixedDesign>                     Data;
+        public          Dictionary<string, List<FixedDesign>> EnabledDesigns;
+        public readonly IReadOnlyDictionary<ushort, JobGroup> JobGroups;
 
         public bool EnableDesign(FixedDesign design)
         {
             var changes = !design.Enabled;
-            if (EnabledDesigns.TryGetValue(design.Name, out var oldDesign))
+
+            if (!EnabledDesigns.TryGetValue(design.Name, out var designs))
             {
-                oldDesign.Enabled = false;
-                changes           = true;
-            }
-            else
-            {
+                EnabledDesigns[design.Name] = new List<FixedDesign> { design };
                 Glamourer.PlayerWatcher.AddPlayerToWatch(design.Name);
+                changes = true;
+            }
+            else if (!designs.Contains(design))
+            {
+                designs.Add(design);
+                changes = true;
             }
 
-            EnabledDesigns[design.Name] = design;
-            design.Enabled              = true;
+            design.Enabled = true;
             if (Dalamud.Objects.FirstOrDefault(o => o.ObjectKind == ObjectKind.Player && o.Name.ToString() == design.Name)
                 is Character character)
                 OnPlayerChange(character);
@@ -63,15 +69,25 @@ namespace Glamourer.Designs
                 return false;
 
             design.Enabled = false;
-            EnabledDesigns.Remove(design.Name);
-            Glamourer.PlayerWatcher.RemovePlayerFromWatch(design.Name);
+            if (!EnabledDesigns.TryGetValue(design.Name, out var designs))
+                return false;
+            if (!designs.Remove(design))
+                return false;
+
+            if (designs.Count == 0)
+            {
+                EnabledDesigns.Remove(design.Name);
+                Glamourer.PlayerWatcher.RemovePlayerFromWatch(design.Name);
+            }
+
             return true;
         }
 
         public FixedDesigns(DesignManager designs)
         {
+            JobGroups                             =  GameData.JobGroups(Dalamud.GameData);
             Data                                  =  new List<FixedDesign>(Glamourer.Config.FixedDesigns.Count);
-            EnabledDesigns                        =  new Dictionary<string, FixedDesign>(Glamourer.Config.FixedDesigns.Count);
+            EnabledDesigns                        =  new Dictionary<string, List<FixedDesign>>(Glamourer.Config.FixedDesigns.Count);
             Glamourer.PlayerWatcher.PlayerChanged += OnPlayerChange;
             var changes = false;
             for (var i = 0; i < Glamourer.Config.FixedDesigns.Count; ++i)
@@ -79,7 +95,9 @@ namespace Glamourer.Designs
                 var save = Glamourer.Config.FixedDesigns[i];
                 if (designs.FileSystem.Find(save.Path, out var d) && d is Design design)
                 {
-                    Data.Add(new FixedDesign(save.Name, design, save.Enabled));
+                    if (!JobGroups.TryGetValue((ushort) save.JobGroups, out var jobGroup))
+                        jobGroup = JobGroups[1];
+                    Data.Add(new FixedDesign(save.Name, design, save.Enabled, jobGroup));
                     if (save.Enabled)
                         changes |= EnableDesign(Data.Last());
                 }
@@ -98,18 +116,23 @@ namespace Glamourer.Designs
         private void OnPlayerChange(Character character)
         {
             var name = character.Name.ToString();
-            if (EnabledDesigns.TryGetValue(name, out var design))
-            {
-                PluginLog.Debug("Redrawing {CharacterName} with {DesignName}.", name, design.Design.FullName());
-                design.Design.Data.Apply(character);
-                Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(character);
-                Glamourer.Penumbra.RedrawObject(character, RedrawType.WithSettings, false);
-            }
+            if (!EnabledDesigns.TryGetValue(name, out var designs))
+                return;
+
+            var design = designs.OrderBy(d => d.Jobs.Count).FirstOrDefault(d => d.Jobs.Fits(character.ClassJob.Id));
+            if (design == null)
+                return;
+
+            PluginLog.Debug("Redrawing {CharacterName} with {DesignName} for job {JobGroup}.", name, design.Design.FullName(),
+                design.Jobs.Name);
+            design.Design.Data.Apply(character);
+            Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(character);
+            Glamourer.Penumbra.RedrawObject(character, RedrawType.WithSettings, false);
         }
 
-        public void Add(string name, Design design, bool enabled = false)
+        public void Add(string name, Design design, JobGroup group, bool enabled = false)
         {
-            Data.Add(new FixedDesign(name, design, enabled));
+            Data.Add(new FixedDesign(name, design, enabled, group));
             Glamourer.Config.FixedDesigns.Add(Data.Last().ToSave());
 
             if (enabled)
