@@ -11,8 +11,7 @@ namespace Glamourer.Gui
             if (DrawCheckMark(label, value, setter))
                 Glamourer.Config.Save();
 
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip(tooltip);
+            ImGuiCustom.HoverTooltip(tooltip);
         }
 
         private static void ChangeAndSave<T>(T value, T currentValue, Action<T> setter) where T : IEquatable<T>
@@ -34,13 +33,11 @@ namespace Glamourer.Gui
             ImGui.SameLine();
             if (ImGui.Button($"Default##{name}"))
                 ChangeAndSave(defaultValue, value, setter);
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip(
-                    $"Reset to default: #{defaultValue & 0xFF:X2}{(defaultValue >> 8) & 0xFF:X2}{(defaultValue >> 16) & 0xFF:X2}{defaultValue >> 24:X2}");
+            ImGuiCustom.HoverTooltip(
+                $"Reset to default: #{defaultValue & 0xFF:X2}{(defaultValue >> 8) & 0xFF:X2}{(defaultValue >> 16) & 0xFF:X2}{defaultValue >> 24:X2}");
             ImGui.SameLine();
             ImGui.Text(name);
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip(tooltip);
+            ImGuiCustom.HoverTooltip(tooltip);
         }
 
         private void DrawRestorePenumbraButton()
@@ -56,8 +53,7 @@ namespace Glamourer.Gui
             if (ImGui.Button(buttonLabel))
                 Glamourer.Penumbra.Reattach(true);
 
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip(
+            ImGuiCustom.HoverTooltip(
                     "If Penumbra did not register the functions for some reason, pressing this button might help restore functionality.");
         }
 

@@ -58,8 +58,7 @@ namespace Glamourer.Gui
                 ret   = true;
             }
 
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip($"Input Range: [{minValue}, {maxValue}]");
+            ImGuiCustom.HoverTooltip($"Input Range: [{minValue}, {maxValue}]");
 
             return ret;
         }
@@ -103,8 +102,7 @@ namespace Glamourer.Gui
 
 
                 ImGui.Text(label);
-                if (tooltip.Any() && ImGui.IsItemHovered())
-                    ImGui.SetTooltip(tooltip);
+                ImGuiCustom.HoverTooltip(tooltip);
             }
 
             if (!DrawColorPickerPopup(popupName, set, id, out var newCustom))
@@ -148,8 +146,7 @@ namespace Glamourer.Gui
 
             ImGui.SameLine();
             ImGui.Text(label);
-            if (tooltip.Any() && ImGui.IsItemHovered())
-                ImGui.SetTooltip(tooltip);
+            ImGuiCustom.HoverTooltip(tooltip);
 
             return ret;
         }
@@ -286,8 +283,7 @@ namespace Glamourer.Gui
                 customization[CustomizationId.Face] = (byte) ((customization[CustomizationId.Hairstyle] + 1) / 2);
 
             ImGui.Text(label);
-            if (tooltip.Any() && ImGui.IsItemHovered())
-                ImGui.SetTooltip(tooltip);
+            ImGuiCustom.HoverTooltip(tooltip);
 
             return ret;
         }
@@ -317,8 +313,7 @@ namespace Glamourer.Gui
 
             ImGui.SameLine();
             ImGui.Text(label);
-            if (tooltip.Any() && ImGui.IsItemHovered())
-                ImGui.SetTooltip(tooltip);
+            ImGuiCustom.HoverTooltip(tooltip);
 
             return ret;
         }

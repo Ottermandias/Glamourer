@@ -37,5 +37,14 @@ namespace Glamourer
             _seColorId = stain.Color | ((uint) index << 24);
             RgbaColor  = SeColorToRgba(stain.Color);
         }
+
+        public static readonly Stain None = new("None");
+
+        private Stain(string name)
+        {
+            Name       = name;
+            _seColorId = 0;
+            RgbaColor  = 0;
+        }
     }
 }

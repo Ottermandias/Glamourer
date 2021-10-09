@@ -41,5 +41,15 @@ namespace Glamourer
             Name         = name;
             EquippableTo = slot == EquipSlot.Unknown ? ((EquipSlot) item.EquipSlotCategory.Row).ToSlot() : slot;
         }
+
+        public static Item Nothing(EquipSlot slot)
+            => new("Nothing", slot);
+
+        private Item(string name, EquipSlot slot)
+        {
+            Name         = name;
+            Base         = new Lumina.Excel.GeneratedSheets.Item();
+            EquippableTo = slot;
+        }
     }
 }

@@ -44,8 +44,7 @@ namespace Glamourer.Gui
             if (_selection!.Data.WriteProtected)
                 ImGui.PopStyleVar();
 
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Overwrite with customization code from clipboard.");
+            ImGuiCustom.HoverTooltip("Overwrite with customization code from clipboard.");
 
             if (_selection!.Data.WriteProtected || !applyButton)
                 return;
@@ -71,8 +70,7 @@ namespace Glamourer.Gui
             if (ImGui.Button(FontAwesomeIcon.FolderPlus.ToIconString(), Vector2.UnitX * SelectorWidth / 5))
                 OpenDesignNamePopup(DesignNameUse.NewFolder);
             ImGui.PopFont();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Create a new, empty Folder.");
+            ImGuiCustom.HoverTooltip("Create a new, empty Folder.");
 
             DrawDesignNamePopup(DesignNameUse.NewFolder);
         }
@@ -83,8 +81,7 @@ namespace Glamourer.Gui
             if (ImGui.Button(FontAwesomeIcon.Plus.ToIconString(), Vector2.UnitX * SelectorWidth / 5))
                 OpenDesignNamePopup(DesignNameUse.NewDesign);
             ImGui.PopFont();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Create a new, empty Design.");
+            ImGuiCustom.HoverTooltip("Create a new, empty Design.");
 
             DrawDesignNamePopup(DesignNameUse.NewDesign);
         }
@@ -95,8 +92,7 @@ namespace Glamourer.Gui
             if (ImGui.Button(FontAwesomeIcon.Paste.ToIconString(), Vector2.UnitX * SelectorWidth / 5))
                 OpenDesignNamePopup(DesignNameUse.FromClipboard);
             ImGui.PopFont();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Create a new design from the customization string in your clipboard.");
+            ImGuiCustom.HoverTooltip("Create a new design from the customization string in your clipboard.");
 
             DrawDesignNamePopup(DesignNameUse.FromClipboard);
         }
@@ -116,8 +112,7 @@ namespace Glamourer.Gui
             ImGui.PopFont();
             if (style)
                 ImGui.PopStyleVar();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Delete the currently selected Design.");
+            ImGuiCustom.HoverTooltip("Delete the currently selected Design.");
         }
 
         private void DrawDuplicateDesignButton()
@@ -130,8 +125,7 @@ namespace Glamourer.Gui
             ImGui.PopFont();
             if (_selection == null)
                 ImGui.PopStyleVar();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Clone the currently selected Design.");
+            ImGuiCustom.HoverTooltip("Clone the currently selected Design.");
 
             DrawDesignNamePopup(DesignNameUse.DuplicateDesign);
         }

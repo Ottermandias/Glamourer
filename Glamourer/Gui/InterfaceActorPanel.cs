@@ -44,8 +44,7 @@ namespace Glamourer.Gui
             if (ImGui.Button(FontAwesomeIcon.Clipboard.ToIconString()))
                 ImGui.SetClipboardText(save.ToBase64());
             ImGui.PopFont();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Copy customization code to clipboard.");
+            ImGuiCustom.HoverTooltip("Copy customization code to clipboard.");
         }
 
         private bool DrawApplyClipboardButton()
@@ -53,8 +52,7 @@ namespace Glamourer.Gui
             ImGui.PushFont(UiBuilder.IconFont);
             var applyButton = ImGui.Button(FontAwesomeIcon.Paste.ToIconString()) && _player != null;
             ImGui.PopFont();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Apply customization code from clipboard.");
+            ImGuiCustom.HoverTooltip("Apply customization code from clipboard.");
 
             if (!applyButton)
                 return false;
@@ -84,8 +82,7 @@ namespace Glamourer.Gui
                 OpenDesignNamePopup(DesignNameUse.SaveCurrent);
 
             ImGui.PopFont();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Save the current design.");
+            ImGuiCustom.HoverTooltip("Save the current design.");
 
             DrawDesignNamePopup(DesignNameUse.SaveCurrent);
         }

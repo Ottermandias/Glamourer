@@ -100,8 +100,7 @@ namespace Glamourer.Gui
             if (ImGui.Button(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth))
                 select = Dalamud.ClientState.LocalPlayer;
             raii.PopFonts();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Select the local player character.");
+            ImGuiCustom.HoverTooltip("Select the local player character.");
             ImGui.SameLine();
             raii.PushFont(UiBuilder.IconFont);
             if (_inGPose)
@@ -117,8 +116,7 @@ namespace Glamourer.Gui
             }
 
             raii.PopFonts();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Select the current target, if it is in the list.");
+            ImGuiCustom.HoverTooltip("Select the current target, if it is in the list.");
 
             if (select == null)
                 return;

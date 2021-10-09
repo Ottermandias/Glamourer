@@ -1,4 +1,5 @@
-﻿using ImGuiNET;
+﻿using Dalamud.Interface;
+using ImGuiNET;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -15,39 +16,53 @@ namespace Glamourer.Gui
                 stainCombo.PostPreview = () => ImGui.PopStyleColor(previewPush);
             }
 
-            if (stainCombo.Draw(string.Empty, out var newStain) && !newStain.RowIndex.Equals(stainIdx))
+            var change = stainCombo.Draw(string.Empty, out var newStain) && !newStain.RowIndex.Equals(stainIdx);
+            if (!change && (byte) stainIdx != 0)
             {
-                if (_player != null)
+                ImGuiCustom.HoverTooltip("Right-click to clear.");
+                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                 {
-                    Glamourer.RevertableDesigns.Add(_player);
-                    newStain.Write(_player.Address, slot);
-                    return true;
+                    change   = true;
+                    newStain = Stain.None;
                 }
-
-                if (_inDesignMode && (_selection?.Data.WriteStain(slot, newStain.RowIndex) ?? false))
-                    return true;
             }
 
-            return false;
+            if (!change)
+                return false;
+
+            if (_player == null)
+                return _inDesignMode && (_selection?.Data.WriteStain(slot, newStain.RowIndex) ?? false);
+
+            Glamourer.RevertableDesigns.Add(_player);
+            newStain.Write(_player.Address, slot);
+            return true;
+
         }
 
-        private bool DrawItemSelector(ComboWithFilter<Item> equipCombo, Lumina.Excel.GeneratedSheets.Item? item)
+        private bool DrawItemSelector(ComboWithFilter<Item> equipCombo, Lumina.Excel.GeneratedSheets.Item? item, EquipSlot slot = EquipSlot.Unknown)
         {
-            var currentName = item?.Name.ToString() ?? "Nothing";
-            if (equipCombo.Draw(currentName, out var newItem, _itemComboWidth) && newItem.Base.RowId != item?.RowId)
+            var currentName = item?.Name.ToString() ?? Item.Nothing(slot).Name;
+            var change      = equipCombo.Draw(currentName, out var newItem, _itemComboWidth) && newItem.Base.RowId != item?.RowId;
+            if (!change && item != null)
             {
-                if (_player != null)
+                ImGuiCustom.HoverTooltip("Right-click to clear.");
+                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                 {
-                    Glamourer.RevertableDesigns.Add(_player);
-                    newItem.Write(_player.Address);
-                    return true;
+                    change  = true;
+                    newItem = Item.Nothing(slot);
                 }
-
-                if (_inDesignMode && (_selection?.Data.WriteItem(newItem) ?? false))
-                    return true;
             }
 
-            return false;
+            if (!change)
+                return false;
+
+            if (_player == null)
+                return _inDesignMode && (_selection?.Data.WriteItem(newItem) ?? false);
+
+            Glamourer.RevertableDesigns.Add(_player);
+            newItem.Write(_player.Address);
+            return true;
+
         }
 
         private static bool DrawCheckbox(CharacterEquipMask flag, ref CharacterEquipMask mask)
@@ -72,7 +87,7 @@ namespace Glamourer.Gui
             var ret = DrawStainSelector(stainCombo, slot, equip.Stain);
             ImGui.SameLine();
             var item = _identifier.Identify(equip.Set, new WeaponType(), equip.Variant, slot);
-            ret |= DrawItemSelector(equipCombo, item);
+            ret |= DrawItemSelector(equipCombo, item, slot);
 
             return ret;
         }
@@ -92,7 +107,7 @@ namespace Glamourer.Gui
             var ret = DrawStainSelector(stainCombo, slot, weapon.Stain);
             ImGui.SameLine();
             var item = _identifier.Identify(weapon.Set, weapon.Type, weapon.Variant, slot);
-            ret |= DrawItemSelector(equipCombo, item);
+            ret |= DrawItemSelector(equipCombo, item, slot);
 
             return ret;
         }
