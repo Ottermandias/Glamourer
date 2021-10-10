@@ -11,6 +11,7 @@ using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.FileSystem;
 using ImGuiNET;
+using Penumbra.PlayerWatch;
 
 namespace Glamourer.Gui
 {
@@ -22,7 +23,6 @@ namespace Glamourer.Gui
         private const    string          DesignNamePopupLabel = "Save Design As...";
         private const    uint            RedHeaderColor       = 0xFF1818C0;
         private const    uint            GreenHeaderColor     = 0xFF18C018;
-        private readonly ConstructorInfo _characterConstructor;
 
         private void DrawPlayerHeader()
         {
@@ -111,49 +111,16 @@ namespace Glamourer.Gui
             Glamourer.Penumbra.UpdateCharacters(player, fallback);
         }
 
-        private const int ModelTypeOffset = 0x01B4;
-
-        private static unsafe int ModelType(GameObject actor)
-            => *(int*) (actor.Address + ModelTypeOffset);
-
-        private static unsafe void SetModelType(GameObject actor, int value)
-            => *(int*) (actor.Address + ModelTypeOffset) = value;
-
-        private Character Character(IntPtr address)
-            => (Character) _characterConstructor.Invoke(new object[]
-            {
-                address,
-            });
-
-        private Character? CreateCharacter(GameObject? actor)
-        {
-            if (actor == null)
-                return null;
-
-            return actor switch
-            {
-                PlayerCharacter p => p,
-                BattleChara b     => b,
-                _ => actor.ObjectKind switch
-                {
-                    ObjectKind.BattleNpc => Character(actor.Address),
-                    ObjectKind.Companion => Character(actor.Address),
-                    ObjectKind.EventNpc  => Character(actor.Address),
-                    _                    => null,
-                },
-            };
-        }
-
-
+        
         private static Character? TransformToCustomizable(Character? actor)
         {
             if (actor == null)
                 return null;
 
-            if (ModelType(actor) == 0)
+            if (actor.ModelType() == 0)
                 return actor;
 
-            SetModelType(actor, 0);
+            actor.SetModelType(0);
             CharacterCustomization.Default.Write(actor.Address);
             return actor;
         }
@@ -163,7 +130,7 @@ namespace Glamourer.Gui
             if (!ImGui.Button("Apply to Target"))
                 return;
 
-            var player = TransformToCustomizable(CreateCharacter(Dalamud.Targets.Target));
+            var player = TransformToCustomizable(CharacterFactory.Convert(Dalamud.Targets.Target));
             if (player == null)
                 return;
 
@@ -224,7 +191,7 @@ namespace Glamourer.Gui
                 DrawTargetPlayerButton();
             }
 
-            var       currentModel = ModelType(_player!);
+            var       currentModel = _player!.ModelType();
             using var raii         = new ImGuiRaii();
             if (!raii.Begin(() => ImGui.BeginCombo("Model Id", currentModel.ToString()), ImGui.EndCombo))
                 return;
@@ -234,7 +201,7 @@ namespace Glamourer.Gui
                 if (!ImGui.Selectable($"{id:D6}##models", id == currentModel) || id == currentModel)
                     continue;
 
-                SetModelType(_player!, (int) id);
+                _player!.SetModelType((int) id);
                 Glamourer.Penumbra.UpdateCharacters(_player!);
             }
         }
@@ -286,7 +253,7 @@ namespace Glamourer.Gui
                 return;
             }
 
-            if (_player == null || ModelType(_player) == 0)
+            if (_player == null || _player.ModelType() == 0)
                 DrawPlayerPanel();
             else
                 DrawMonsterPanel();

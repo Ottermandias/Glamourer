@@ -43,11 +43,6 @@ namespace Glamourer.Gui
             Dalamud.PluginInterface.UiBuilder.Draw               += Draw;
             Dalamud.PluginInterface.UiBuilder.OpenConfigUi       += ToggleVisibility;
 
-            _characterConstructor = typeof(Character).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[]
-            {
-                typeof(IntPtr),
-            }, null)!;
-
             _equipSlotNames = GetEquipSlotNames();
 
             _stains     = GameData.Stains(Dalamud.GameData);

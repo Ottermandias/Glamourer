@@ -5,6 +5,7 @@ using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
 using ImGuiNET;
+using Penumbra.PlayerWatch;
 
 namespace Glamourer.Gui
 {
@@ -43,7 +44,7 @@ namespace Glamourer.Gui
             if (player.ObjectKind == ObjectKind.Player)
                 return num == 1 ? playerName : $"{playerName} #{num}";
 
-            if (ModelType(player) == 0)
+            if (player.ModelType() == 0)
                 return num == 1 ? $"{playerName} (NPC)" : $"{playerName} #{num} (NPC)";
 
             return num == 1 ? $"{playerName} (Monster)" : $"{playerName} #{num} (Monster)";
@@ -112,7 +113,7 @@ namespace Glamourer.Gui
             else
             {
                 if (ImGui.Button(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth))
-                    select = CreateCharacter(Dalamud.Targets.Target);
+                    select = CharacterFactory.Convert(Dalamud.Targets.Target);
             }
 
             raii.PopFonts();
@@ -142,7 +143,7 @@ namespace Glamourer.Gui
             _gPoseActors.Clear();
             for (var i = GPoseObjectId; i < GPoseObjectId + 48; ++i)
             {
-                var player = CreateCharacter(Dalamud.Objects[i]);
+                var player = CharacterFactory.Convert(Dalamud.Objects[i]);
                 if (player == null)
                     break;
 
@@ -151,14 +152,14 @@ namespace Glamourer.Gui
 
             for (var i = 0; i < GPoseObjectId; ++i)
             {
-                var player = CreateCharacter(Dalamud.Objects[i])!;
+                var player = CharacterFactory.Convert(Dalamud.Objects[i])!;
                 if (player != null)
                     DrawPlayerSelectable(player);
             }
 
             for (var i = GPoseObjectId + 48; i < Dalamud.Objects.Length; ++i)
             {
-                var player = CreateCharacter(Dalamud.Objects[i])!;
+                var player = CharacterFactory.Convert(Dalamud.Objects[i])!;
                 if (player != null)
                     DrawPlayerSelectable(player);
             }
