@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Dalamud;
 using Dalamud.Data;
 using Lumina.Excel.GeneratedSheets;
 using Penumbra.GameData.Enums;
@@ -103,7 +104,7 @@ namespace Glamourer
                 return _jobGroups;
 
             var sheet = dataManager.GetExcelSheet<ClassJobCategory>()!;
-            var jobs = dataManager.GetExcelSheet<ClassJob>()!;
+            var jobs = dataManager.GetExcelSheet<ClassJob>(ClientLanguage.English)!;
 
             static bool ValidIndex(uint idx)
             {
