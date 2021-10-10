@@ -61,8 +61,9 @@ namespace Glamourer.Gui
                 raii.PushFont(UiBuilder.IconFont);
                 if (ImGui.Button($"{FontAwesomeIcon.Trash.ToIconChar()}##{i}"))
                 {
-                    _fullPathCache.RemoveAt(i);
+                    _fullPathCache.RemoveAt(i--);
                     _plugin.FixedDesigns.Remove(name);
+                    continue;
                 }
 
                 var tmp = name.Enabled;
