@@ -11,7 +11,9 @@ namespace Glamourer.Gui
     {
         private const float ColorButtonWidth = 22.5f;
         private const float ColorComboWidth  = 140f;
-        private const float ItemComboWidth   = 300f;
+        private const float ItemComboWidth   = 350f;
+
+        private static readonly Vector4 GreyVector = new(0.5f, 0.5f, 0.5f, 1);
 
         private static ComboWithFilter<Stain> CreateDefaultStainCombo(IReadOnlyList<Stain> stains)
             => new("##StainCombo", ColorComboWidth, ColorButtonWidth, stains,
@@ -40,6 +42,15 @@ namespace Glamourer.Gui
             => new($"{_equipSlotNames[slot]}##Equip", ItemComboWidth, ItemComboWidth, items, i => i.Name)
             {
                 Flags = ImGuiComboFlags.HeightLarge,
+                CreateSelectable = i =>
+                {
+                    var ret   = ImGui.Selectable(i.Name);
+                    var setId = $"({(int) i.MainModel.id})";
+                    var size  = ImGui.CalcTextSize(setId).X;
+                    ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - size - ImGui.GetStyle().ItemInnerSpacing.X);
+                    ImGui.TextColored(GreyVector, setId);
+                    return ret;
+                },
             };
 
         private (ComboWithFilter<Item>, ComboWithFilter<Stain>) CreateCombos(EquipSlot slot, IReadOnlyList<Item> items,

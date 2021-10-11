@@ -49,19 +49,22 @@ namespace Glamourer
             Item EmptySlot(EquipSlot slot)
                 => new(sheet.First(), "Nothing", slot);
 
+            static Item EmptyNpc(EquipSlot slot)
+                => new(new Lumina.Excel.GeneratedSheets.Item() { ModelMain = 9903 }, "Smallclothes (NPC)", slot);
+
             _itemsBySlot = new Dictionary<EquipSlot, List<Item>>()
             {
-                [EquipSlot.Head]     = new(200) { EmptySlot(EquipSlot.Head) },
-                [EquipSlot.Body]     = new(200) { EmptySlot(EquipSlot.Body) },
-                [EquipSlot.Hands]    = new(200) { EmptySlot(EquipSlot.Hands) },
-                [EquipSlot.Legs]     = new(200) { EmptySlot(EquipSlot.Legs) },
-                [EquipSlot.Feet]     = new(200) { EmptySlot(EquipSlot.Feet) },
-                [EquipSlot.RFinger]  = new(200) { EmptySlot(EquipSlot.RFinger) },
-                [EquipSlot.Neck]     = new(200) { EmptySlot(EquipSlot.Neck) },
+                [EquipSlot.Head]     = new(200) { EmptySlot(EquipSlot.Head), EmptyNpc(EquipSlot.Head) },
+                [EquipSlot.Body]     = new(200) { EmptySlot(EquipSlot.Body), EmptyNpc(EquipSlot.Body) },
+                [EquipSlot.Hands]    = new(200) { EmptySlot(EquipSlot.Hands), EmptyNpc(EquipSlot.Hands) },
+                [EquipSlot.Legs]     = new(200) { EmptySlot(EquipSlot.Legs), EmptyNpc(EquipSlot.Legs) },
+                [EquipSlot.Feet]     = new(200) { EmptySlot(EquipSlot.Feet), EmptyNpc(EquipSlot.Feet) },
+                [EquipSlot.RFinger]  = new(200) { EmptySlot(EquipSlot.RFinger), EmptyNpc(EquipSlot.RFinger) },
+                [EquipSlot.Neck]     = new(200) { EmptySlot(EquipSlot.Neck), EmptyNpc(EquipSlot.Neck) },
                 [EquipSlot.MainHand] = new(1000) { EmptySlot(EquipSlot.MainHand) },
                 [EquipSlot.OffHand]  = new(200) { EmptySlot(EquipSlot.OffHand) },
-                [EquipSlot.Wrists]   = new(200) { EmptySlot(EquipSlot.Wrists) },
-                [EquipSlot.Ears]     = new(200) { EmptySlot(EquipSlot.Ears) },
+                [EquipSlot.Wrists]   = new(200) { EmptySlot(EquipSlot.Wrists), EmptyNpc(EquipSlot.Wrists) },
+                [EquipSlot.Ears]     = new(200) { EmptySlot(EquipSlot.Ears), EmptyNpc(EquipSlot.Ears) },
             };
 
             foreach (var item in sheet)

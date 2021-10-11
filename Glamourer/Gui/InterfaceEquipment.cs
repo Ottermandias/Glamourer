@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using ImGuiNET;
+using Lumina.Text;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -39,11 +40,11 @@ namespace Glamourer.Gui
 
         }
 
-        private bool DrawItemSelector(ComboWithFilter<Item> equipCombo, Lumina.Excel.GeneratedSheets.Item? item, EquipSlot slot = EquipSlot.Unknown)
+        private bool DrawItemSelector(ComboWithFilter<Item> equipCombo, Lumina.Excel.GeneratedSheets.Item item, EquipSlot slot = EquipSlot.Unknown)
         {
-            var currentName = item?.Name.ToString() ?? Item.Nothing(slot).Name;
-            var change      = equipCombo.Draw(currentName, out var newItem, _itemComboWidth) && newItem.Base.RowId != item?.RowId;
-            if (!change && item != null)
+            var currentName = item.Name.ToString();
+            var change      = equipCombo.Draw(currentName, out var newItem, _itemComboWidth) && newItem.Base.RowId != item.RowId;
+            if (!change && !ReferenceEquals(item, SmallClothes))
             {
                 ImGuiCustom.HoverTooltip("Right-click to clear.");
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
@@ -80,13 +81,27 @@ namespace Glamourer.Gui
             return ret;
         }
 
+        private static readonly Lumina.Excel.GeneratedSheets.Item SmallClothes = new(){ Name = new SeString("Nothing"), RowId = 0 };
+        private static readonly Lumina.Excel.GeneratedSheets.Item SmallClothesNpc = new(){ Name = new SeString("Smallclothes (NPC)"), RowId = 1 };
+        private static readonly Lumina.Excel.GeneratedSheets.Item Unknown = new(){ Name = new SeString("Unknown"), RowId = 2 };
+
+        private Lumina.Excel.GeneratedSheets.Item Identify(SetId set, WeaponType weapon, ushort variant, EquipSlot slot)
+        {
+            return (uint) set switch
+            {
+                0    => SmallClothes,
+                9903 => SmallClothesNpc,
+                _    => _identifier.Identify(set, weapon, variant, slot) ?? Unknown,
+            };
+        }
+
         private bool DrawEquipSlot(EquipSlot slot, CharacterArmor equip)
         {
             var (equipCombo, stainCombo) = _combos[slot];
 
             var ret = DrawStainSelector(stainCombo, slot, equip.Stain);
             ImGui.SameLine();
-            var item = _identifier.Identify(equip.Set, new WeaponType(), equip.Variant, slot);
+            var item = Identify(equip.Set, new WeaponType(), equip.Variant, slot);
             ret |= DrawItemSelector(equipCombo, item, slot);
 
             return ret;
@@ -106,7 +121,7 @@ namespace Glamourer.Gui
 
             var ret = DrawStainSelector(stainCombo, slot, weapon.Stain);
             ImGui.SameLine();
-            var item = _identifier.Identify(weapon.Set, weapon.Type, weapon.Variant, slot);
+            var item = Identify(weapon.Set, weapon.Type, weapon.Variant, slot);
             ret |= DrawItemSelector(equipCombo, item, slot);
 
             return ret;
