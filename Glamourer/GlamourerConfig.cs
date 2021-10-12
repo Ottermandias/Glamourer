@@ -5,12 +5,12 @@ namespace Glamourer
 {
     public class GlamourerConfig : IPluginConfiguration
     {
-        public struct FixedDesign
+        public class FixedDesign
         {
-            public string Name;
-            public string Path;
+            public string Name = string.Empty;
+            public string Path = string.Empty;
             public uint   JobGroups;
-            public bool   Enabled;
+            public bool Enabled;
         }
 
         public int Version { get; set; } = 1;

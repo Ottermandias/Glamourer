@@ -72,7 +72,11 @@ namespace Glamourer.Gui
                 if (ImGui.Checkbox($"##Enabled{i}", ref tmp))
                     if (tmp && _plugin.FixedDesigns.EnableDesign(name)
                      || !tmp && _plugin.FixedDesigns.DisableDesign(name))
+                    {
+                        Glamourer.Config.FixedDesigns[i].Enabled = tmp;
                         Glamourer.Config.Save();
+                    }
+
                 raii.PopStyles();
                 raii.PopFonts();
                 ImGui.TableNextColumn();
