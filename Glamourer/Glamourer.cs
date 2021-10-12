@@ -41,10 +41,10 @@ namespace Glamourer
             Designs       = new DesignManager();
             Penumbra      = new PenumbraAttach(Config.AttachToPenumbra);
             PlayerWatcher = PlayerWatchFactory.Create(Dalamud.Framework, Dalamud.ClientState, Dalamud.Objects);
-            FixedDesigns  = new FixedDesigns(Designs);
+            if (!Config.ApplyFixedDesigns)
+                PlayerWatcher.Disable();
 
-            if (Config.ApplyFixedDesigns)
-                PlayerWatcher.Enable();
+            FixedDesigns  = new FixedDesigns(Designs);
 
             Dalamud.Commands.AddHandler("/glamourer", new CommandInfo(OnGlamourer)
             {

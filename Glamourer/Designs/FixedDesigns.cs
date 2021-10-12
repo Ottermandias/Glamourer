@@ -6,6 +6,7 @@ using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using Glamourer.FileSystem;
 using Penumbra.GameData.Enums;
+using Penumbra.PlayerWatch;
 
 namespace Glamourer.Designs
 {
@@ -57,9 +58,15 @@ namespace Glamourer.Designs
             }
 
             design.Enabled = true;
-            if (Dalamud.Objects.FirstOrDefault(o => o.ObjectKind == ObjectKind.Player && o.Name.ToString() == design.Name)
-                is Character character)
-                OnPlayerChange(character);
+            if (Glamourer.Config.ApplyFixedDesigns)
+            {
+                var character =
+                    CharacterFactory.Convert(Dalamud.Objects.FirstOrDefault(o
+                        => o.ObjectKind == ObjectKind.Player && o.Name.ToString() == design.Name));
+                if (character != null)
+                    OnPlayerChange(character);
+            }
+
             return changes;
         }
 
