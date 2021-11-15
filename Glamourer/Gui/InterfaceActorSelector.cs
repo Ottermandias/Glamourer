@@ -11,12 +11,17 @@ namespace Glamourer.Gui
 {
     internal partial class Interface
     {
+        public const int CharacterScreenIndex = 240;
+        public const int ExamineScreenIndex   = 241;
+        public const int FittingRoomIndex     = 242;
+        public const int DyePreviewIndex      = 243;
+
         private          Character?                     _player;
         private          string                         _currentLabel      = string.Empty;
         private          string                         _playerFilter      = string.Empty;
         private          string                         _playerFilterLower = string.Empty;
         private readonly Dictionary<string, int>        _playerNames       = new(100);
-        private readonly Dictionary<string, Character?> _gPoseActors       = new(48);
+        private readonly Dictionary<string, Character?> _gPoseActors       = new(CharacterScreenIndex - GPoseObjectId);
 
         private void DrawPlayerFilter()
         {
@@ -36,7 +41,7 @@ namespace Glamourer.Gui
 
             _gPoseActors[playerName] = null;
 
-            DrawSelectable(player, $"{playerName} (GPose)");
+            DrawSelectable(player, $"{playerName} (GPose)", true);
         }
 
         private static string GetLabel(Character player, string playerName, int num)
@@ -50,9 +55,16 @@ namespace Glamourer.Gui
             return num == 1 ? $"{playerName} (Monster)" : $"{playerName} #{num} (Monster)";
         }
 
-        private void DrawPlayerSelectable(Character player)
+        private void DrawPlayerSelectable(Character player, int idx = 0)
         {
-            var playerName = player.Name.ToString();
+            var (playerName, modifiable) = idx switch
+            {
+                CharacterScreenIndex => ("Character Screen Actor", false),
+                ExamineScreenIndex   => ("Examine Screen Actor", false),
+                FittingRoomIndex     => ("Fitting Room Actor", false),
+                DyePreviewIndex      => ("Dye Preview Actor", false),
+                _                    => (player.Name.ToString(), true),
+            };
             if (!playerName.Any())
                 return;
 
@@ -68,18 +80,19 @@ namespace Glamourer.Gui
             }
 
             var label = GetLabel(player, playerName, num);
-            DrawSelectable(player, label);
+            DrawSelectable(player, label, modifiable);
         }
 
 
-        private void DrawSelectable(Character player, string label)
+        private void DrawSelectable(Character player, string label, bool modifiable)
         {
             if (!_playerFilterLower.Any() || label.ToLowerInvariant().Contains(_playerFilterLower))
                 if (ImGui.Selectable(label, _currentLabel == label))
                 {
                     _currentLabel = label;
                     _currentSave.LoadCharacter(player);
-                    _player = player;
+                    _player     = player;
+                    _currentSave.WriteProtected = !modifiable;
                     return;
                 }
 
@@ -87,7 +100,8 @@ namespace Glamourer.Gui
                 return;
 
             _currentSave.LoadCharacter(player);
-            _player = player;
+            _player                     = player;
+            _currentSave.WriteProtected = !modifiable;
         }
 
         private void DrawSelectionButtons()
@@ -125,6 +139,7 @@ namespace Glamourer.Gui
             _player       = select;
             _currentLabel = _player.Name.ToString();
             _currentSave.LoadCharacter(_player);
+            _currentSave.WriteProtected = false;
         }
 
         private void DrawPlayerSelector()
@@ -152,16 +167,16 @@ namespace Glamourer.Gui
 
             for (var i = 0; i < GPoseObjectId; ++i)
             {
-                var player = CharacterFactory.Convert(Dalamud.Objects[i])!;
+                var player = CharacterFactory.Convert(Dalamud.Objects[i]);
                 if (player != null)
                     DrawPlayerSelectable(player);
             }
 
-            for (var i = GPoseObjectId + 48; i < Dalamud.Objects.Length; ++i)
+            for (var i = CharacterScreenIndex; i < Dalamud.Objects.Length; ++i)
             {
-                var player = CharacterFactory.Convert(Dalamud.Objects[i])!;
+                var player = CharacterFactory.Convert(Dalamud.Objects[i]);
                 if (player != null)
-                    DrawPlayerSelectable(player);
+                    DrawPlayerSelectable(player, i);
             }
 
 

@@ -298,6 +298,7 @@ namespace Glamourer
             Alpha = a.Alpha();
         }
 
+
         public void Apply(Character a)
         {
             Glamourer.RevertableDesigns.Add(a);
@@ -321,6 +322,30 @@ namespace Glamourer
                 if (SetWeaponState)
                     a.SetWeaponHidden(WeaponState);
             }
+        }
+
+        public void ApplyOnlyEquipment(Character a)
+        {
+            var oldState = _bytes[1];
+            WriteCustomizations = false;
+            SetHatState         = false;
+            SetVisorState       = false;
+            SetWeaponState      = false;
+            Apply(a);
+            _bytes[1] = oldState;
+        }
+
+        public void ApplyOnlyCustomizations(Character a)
+        {
+            var oldState = _bytes[1];
+            SetHatState    = false;
+            SetVisorState  = false;
+            SetWeaponState = false;
+            var oldEquip = WriteEquipment;
+            WriteEquipment = CharacterEquipMask.None;
+            Apply(a);
+            _bytes[1]      = oldState;
+            WriteEquipment = oldEquip;
         }
 
         public void Load(string base64)

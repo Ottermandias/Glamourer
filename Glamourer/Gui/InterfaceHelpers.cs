@@ -152,7 +152,7 @@ namespace Glamourer.Gui
                     switch (use)
                     {
                         case DesignNameUse.SaveCurrent:
-                            SaveNewDesign(_currentSave.Copy());
+                            SaveNewDesign(ConditionalCopy(_currentSave));
                             break;
                         case DesignNameUse.NewDesign:
                             var empty = new CharacterSave();
@@ -161,7 +161,7 @@ namespace Glamourer.Gui
                             SaveNewDesign(empty);
                             break;
                         case DesignNameUse.DuplicateDesign:
-                            SaveNewDesign(_selection!.Data.Copy());
+                            SaveNewDesign(ConditionalCopy(_selection!.Data));
                             break;
                         case DesignNameUse.NewFolder:
                             _designs.FileSystem

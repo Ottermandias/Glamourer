@@ -125,7 +125,7 @@ namespace Glamourer.Gui
             ImGui.PopFont();
             if (_selection == null)
                 ImGui.PopStyleVar();
-            ImGuiCustom.HoverTooltip("Clone the currently selected Design.");
+            ImGuiCustom.HoverTooltip("Clone the currently selected Design.\nHold Shift to only clone the customizations.\nHold Control to only clone the equipment.");
 
             DrawDesignNamePopup(DesignNameUse.DuplicateDesign);
         }
