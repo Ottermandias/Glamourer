@@ -162,10 +162,13 @@ namespace Glamourer.Gui
             var       count    = set.Count(CustomizationId.FacialFeaturesTattoos);
             using (var _ = ImGuiRaii.NewGroup())
             {
+                var face = set.Race == Race.Hrothgar ? customization.Hairstyle : customization.Face;
+                if (set.Faces.Count <= face)
+                    face = 1;
                 for (var i = 0; i < count; ++i)
                 {
                     var enabled = customization.FacialFeature(i);
-                    var feature = set.FacialFeature(set.Race == Race.Hrothgar ? customization.Hairstyle : customization.Face, i);
+                    var feature = set.FacialFeature(face, i);
                     var icon = i == count - 1
                         ? _legacyTattooIcon ?? Glamourer.Customization.GetIcon(feature.IconId)
                         : Glamourer.Customization.GetIcon(feature.IconId);
@@ -249,7 +252,7 @@ namespace Glamourer.Gui
             var current = set.DataByValue(id, customization[id], out var custom);
             if (current < 0)
             {
-                PluginLog.Warning($"Read invalid customization value {customization[id]} for {id}.");
+                label   = $"{label} (Custom #{customization[id]})";
                 current = 0;
                 custom  = set.Data(id, 0);
             }
