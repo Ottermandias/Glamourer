@@ -352,13 +352,7 @@ namespace Glamourer.Gui
             ImGui.PushFont(UiBuilder.IconFont);
             var icon       = customization.Gender == Gender.Male ? FontAwesomeIcon.Mars : FontAwesomeIcon.Venus;
             var restricted = false;
-            if (customization.Race == Race.Viera)
-            {
-                ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.25f);
-                icon       = FontAwesomeIcon.VenusDouble;
-                restricted = true;
-            }
-            else if (customization.Race == Race.Hrothgar)
+            if (customization.Race == Race.Hrothgar)
             {
                 ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.25f);
                 icon       = FontAwesomeIcon.MarsDouble;

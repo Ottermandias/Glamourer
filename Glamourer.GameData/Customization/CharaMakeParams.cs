@@ -51,12 +51,12 @@ namespace Glamourer.Customization
         public Menu[]                              Menus               { get; set; } = new Menu[NumMenus];
         public byte[]                              Voices              { get; set; } = new byte[NumVoices];
         public FacialFeatures[]                    FacialFeatureByFace { get; set; } = new FacialFeatures[NumFaces];
-        public CharaMakeType.UnkStruct3347Struct[] Equip               { get; set; } = new CharaMakeType.UnkStruct3347Struct[NumEquip];
+        public CharaMakeType.CharaMakeTypeUnkData3347Obj[] Equip               { get; set; } = new CharaMakeType.CharaMakeTypeUnkData3347Obj[NumEquip];
 
         public override void PopulateData(RowParser parser, Lumina.GameData gameData, Language language)
         {
-            RowId    = parser.Row;
-            SubRowId = parser.SubRow;
+            RowId    = parser.RowId;
+            SubRowId = parser.SubRowId;
             Race     = new LazyRow<Race>(gameData, parser.ReadColumn<uint>(0), language);
             Tribe    = new LazyRow<Tribe>(gameData, parser.ReadColumn<uint>(1), language);
             Gender   = parser.ReadColumn<sbyte>(2);
@@ -101,7 +101,7 @@ namespace Glamourer.Customization
 
             for (var i = 0; i < NumEquip; ++i)
             {
-                Equip[i] = new CharaMakeType.UnkStruct3347Struct
+                Equip[i] = new CharaMakeType.CharaMakeTypeUnkData3347Obj()
                 {
                     Helmet = parser.ReadColumn<ulong>(
                         3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + NumFaces * NumFeatures + i * 7 + 0),

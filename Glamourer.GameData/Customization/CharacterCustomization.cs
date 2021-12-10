@@ -23,7 +23,7 @@ namespace Glamourer.Customization
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct CharacterCustomization
     {
-        public const int CustomizationOffset = 0x1898;
+        public const int CustomizationOffset = 0xDD8;
         public const int CustomizationBytes  = 26;
 
         public static CharacterCustomization Default = new()

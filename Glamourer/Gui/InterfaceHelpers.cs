@@ -63,12 +63,8 @@ namespace Glamourer.Gui
             customization.Race = race;
             customization.Clan = clan;
 
-            customization.Gender = race switch
-            {
-                Race.Hrothgar => Gender.Male,
-                Race.Viera    => Gender.Female,
-                _             => customization.Gender,
-            };
+            if (race == Race.Hrothgar)
+                customization.Gender = Gender.Male;
 
             FixUpAttributes(ref customization);
 
