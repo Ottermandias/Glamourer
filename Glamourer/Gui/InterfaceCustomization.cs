@@ -163,7 +163,7 @@ namespace Glamourer.Gui
             using (var _ = ImGuiRaii.NewGroup())
             {
                 var face = set.Race == Race.Hrothgar ? customization.Hairstyle : customization.Face;
-                if (set.Faces.Count <= face)
+                if (set.Faces.Count < face)
                     face = 1;
                 for (var i = 0; i < count; ++i)
                 {
