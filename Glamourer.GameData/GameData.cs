@@ -130,6 +130,8 @@ namespace Glamourer
                     157 => true,
                     158 => true,
                     159 => true,
+                    180 => true,
+                    181 => true,
                     _   => false,
                 };
             }
