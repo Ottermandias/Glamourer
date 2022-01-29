@@ -102,10 +102,27 @@ namespace Glamourer.Customization
             return menu?.Size ?? 0;
         }
 
-        private Customization[] GetFacePaints(CharaMakeParams row)
-            => row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customization == CustomizationId.FacePaint)?.Values
-                    .Select((v, i) => FromValueAndIndex(CustomizationId.FacePaint, v, i)).ToArray()
-             ?? Array.Empty<Customization>();
+        private Customization[] GetFacePaints(SubRace race, Gender gender)
+        {
+            var row      = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
+            var paintList = new List<Customization>(row.Unknown37);
+            for (var i = 0; i < row.Unknown37; ++i)
+            {
+                var name = $"Unknown{73 + i * 9}";
+                var customizeIdx =
+                    (uint?)row.GetType().GetProperty(name, BindingFlags.Public | BindingFlags.Instance)?.GetValue(row)
+                 ?? uint.MaxValue;
+                if (customizeIdx == uint.MaxValue)
+                    continue;
+
+                var paintRow = _customizeSheet.GetRow(customizeIdx);
+                paintList.Add(paintRow != null
+                    ? new Customization(CustomizationId.FacePaint, paintRow.FeatureID, paintRow.Icon, (ushort)paintRow.RowId)
+                    : new Customization(CustomizationId.FacePaint, (byte)i,           customizeIdx, 0));
+            }
+
+            return paintList.ToArray();
+        }
 
         private Customization[] GetTailEarShapes(CharaMakeParams row)
             => row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customization == CustomizationId.TailEarShape)?.Values
@@ -149,7 +166,7 @@ namespace Glamourer.Customization
                 NumNoseShapes        = GetListSize(row, CustomizationId.Nose),
                 NumJawShapes         = GetListSize(row, CustomizationId.Jaw),
                 NumMouthShapes       = GetListSize(row, CustomizationId.Mouth),
-                FacePaints           = GetFacePaints(row),
+                FacePaints           = GetFacePaints(race, gender),
                 TailEarShapes        = GetTailEarShapes(row),
             };
 
