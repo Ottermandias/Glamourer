@@ -91,12 +91,11 @@ namespace Glamourer.Gui
             if (!applyButton)
                 return false;
 
-            var text = ImGui.GetClipboardText();
-            if (!text.Any())
-                return false;
-
             try
             {
+                var text = ImGui.GetClipboardText();
+                if (!text.Any())
+                    return false;
                 var save = CharacterSave.FromString(text);
                 ConditionalApply(save, _player!);
             }

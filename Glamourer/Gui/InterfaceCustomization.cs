@@ -221,6 +221,7 @@ namespace Glamourer.Gui
             {
                 var custom = set.Data(id, i);
                 var icon   = Glamourer.Customization.GetIcon(custom.IconId);
+                ImGui.BeginGroup();
                 if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
                 {
                     value = custom;
@@ -234,6 +235,11 @@ namespace Glamourer.Gui
                     ImGui.Image(icon.ImGuiHandle, new Vector2(icon.Width, icon.Height));
                 }
 
+                var text = custom.Value.ToString();
+                var textWidth = ImGui.CalcTextSize(text).X;
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (_iconSize.X - textWidth + 2 * ImGui.GetStyle().FramePadding.X)/2);
+                ImGui.Text(text);
+                ImGui.EndGroup();
                 if (i % 8 != 7)
                     ImGui.SameLine();
             }
@@ -285,7 +291,7 @@ namespace Glamourer.Gui
             if (id == CustomizationId.Hairstyle && customization.Race == Race.Hrothgar)
                 customization[CustomizationId.Face] = (byte) ((customization[CustomizationId.Hairstyle] + 1) / 2);
 
-            ImGui.Text(label);
+            ImGui.Text($"{label} ({custom.Value.Value})");
             ImGuiCustom.HoverTooltip(tooltip);
 
             return ret;

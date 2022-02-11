@@ -280,9 +280,19 @@ namespace Glamourer.Customization
 
         internal CustomizationOptions(DalamudPluginInterface pi, DataManager gameData, ClientLanguage language)
         {
-            _cmpFile        = new CmpFile(gameData);
+            try
+            {
+                _cmpFile = new CmpFile(gameData);
+            }
+            catch (Exception e)
+            {
+                throw new Exception("READ THIS\n======== Could not obtain the human.cmp file which is necessary for color sets.\n"
+                  + "======== This usually indicates an error with your index files caused by TexTools modifications.\n"
+                  + "======== If you have used TexTools before, you will probably need to start over in it to use Glamourer.", e);
+            }
+
             _customizeSheet = gameData.GetExcelSheet<CharaMakeCustomize>()!;
-            _lobby          = gameData.GetExcelSheet<Lobby>()!;
+                _lobby          = gameData.GetExcelSheet<Lobby>()!;
             var tmp = gameData.Excel.GetType()!.GetMethod("GetSheet", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .MakeGenericMethod(typeof(CharaMakeParams))!.Invoke(gameData.Excel, new object?[]
             {
