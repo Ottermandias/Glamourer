@@ -38,7 +38,7 @@ namespace Glamourer.Gui
             ret |= DrawCheckMark("Hat Visible", save.HatState, v =>
             {
                 save.HatState = v;
-                player?.SetHatHidden(!v);
+                player?.SetHatVisible(v);
             });
 
             ret |= DrawCheckMark("Weapon Visible", save.WeaponState, v =>

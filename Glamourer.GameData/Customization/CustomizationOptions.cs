@@ -196,7 +196,7 @@ namespace Glamourer.Customization
             if (set.Faces.Count > 0)
                 set.SetAvailable(CustomizationId.Face);
 
-            var count       = race.ToRace() == Race.Hrothgar ? set.HairStyles.Count : set.Faces.Count;
+            var count       = set.Faces.Count;
             var featureDict = new List<IReadOnlyList<Customization>>(count);
             for (var i = 0; i < count; ++i)
             {

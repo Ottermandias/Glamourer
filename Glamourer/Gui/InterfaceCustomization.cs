@@ -140,7 +140,7 @@ namespace Glamourer.Gui
             ImGui.SameLine();
             if (InputInt($"##text_{id}", ref current, 1, count))
             {
-                customization[id] = set.Data(id, current).Value;
+                customization[id] = (byte) current;
                 ret               = true;
             }
 

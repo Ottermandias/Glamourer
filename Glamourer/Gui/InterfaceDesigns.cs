@@ -277,8 +277,9 @@ namespace Glamourer.Gui
             var label = $"##fsPopup{child.FullName()}";
             if (ImGui.BeginPopup(label))
             {
-                if (ImGui.MenuItem("Delete"))
+                if (ImGui.MenuItem("Delete") && ImGui.GetIO().KeyCtrl && ImGui.GetIO().KeyShift)
                     _designs.DeleteAllChildren(child, false);
+                ImGuiCustom.HoverTooltip("Hold Control and Shift to delete.");
 
                 RenameChildInput(child);
 
