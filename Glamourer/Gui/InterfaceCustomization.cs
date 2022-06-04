@@ -162,7 +162,7 @@ namespace Glamourer.Gui
             var       count    = set.Count(CustomizationId.FacialFeaturesTattoos);
             using (var _ = ImGuiRaii.NewGroup())
             {
-                var face = set.Race == Race.Hrothgar ? customization.Hairstyle : customization.Face;
+                var face = customization.Face;
                 if (set.Faces.Count < face)
                     face = 1;
                 for (var i = 0; i < count; ++i)
@@ -287,9 +287,6 @@ namespace Glamourer.Gui
                 customization[id] = newCustom.Value;
                 ret               = true;
             }
-
-            if (id == CustomizationId.Hairstyle && customization.Race == Race.Hrothgar)
-                customization[CustomizationId.Face] = (byte) ((customization[CustomizationId.Hairstyle] + 1) / 2);
 
             ImGui.Text($"{label} ({custom.Value.Value})");
             ImGuiCustom.HoverTooltip(tooltip);

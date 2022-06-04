@@ -37,10 +37,7 @@ namespace Glamourer.Gui
                     case CustomizationId.Gender:                break;
                     case CustomizationId.FacialFeaturesTattoos: break;
                     case CustomizationId.HighlightsOnFlag:      break;
-                    case CustomizationId.Face:
-                        if (customization.Race != Race.Hrothgar)
-                            goto default;
-                        break;
+                    case CustomizationId.Face:                  break;
                     default:
                         var count = set.Count(id);
                         if (set.DataByValue(id, customization[id], out _) < 0)
@@ -148,7 +145,7 @@ namespace Glamourer.Gui
                     switch (use)
                     {
                         case DesignNameUse.SaveCurrent:
-                            SaveNewDesign(ConditionalCopy(_currentSave));
+                            SaveNewDesign(ConditionalCopy(_currentSave, _holdShift, _holdCtrl));
                             break;
                         case DesignNameUse.NewDesign:
                             var empty = new CharacterSave();
@@ -157,7 +154,7 @@ namespace Glamourer.Gui
                             SaveNewDesign(empty);
                             break;
                         case DesignNameUse.DuplicateDesign:
-                            SaveNewDesign(ConditionalCopy(_selection!.Data));
+                            SaveNewDesign(ConditionalCopy(_selection!.Data, _holdShift, _holdCtrl));
                             break;
                         case DesignNameUse.NewFolder:
                             _designs.FileSystem
@@ -196,6 +193,8 @@ namespace Glamourer.Gui
         {
             _newDesignName = string.Empty;
             _keyboardFocus = true;
+            _holdCtrl      = ImGui.GetIO().KeyCtrl;
+            _holdShift     = ImGui.GetIO().KeyShift;
             ImGui.OpenPopup($"{DesignNamePopupLabel}{use}");
         }
     }

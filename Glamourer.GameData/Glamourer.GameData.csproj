@@ -55,8 +55,9 @@
             <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Penumbra.GameData">
-            <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\$(TargetFramework)\Penumbra.GameData.dll</HintPath>
-        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Penumbra\Penumbra.GameData\Penumbra.GameData.csproj" />
     </ItemGroup>
 </Project>

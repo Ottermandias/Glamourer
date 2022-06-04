@@ -134,7 +134,7 @@ namespace Glamourer.Designs
                 design.Jobs.Name);
             design.Design.Data.Apply(character);
             Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(character);
-            Glamourer.Penumbra.RedrawObject(character, RedrawType.WithSettings, false);
+            Glamourer.Penumbra.RedrawObject(character, RedrawType.Redraw, false);
         }
 
         public void Add(string name, Design design, JobGroup group, bool enabled = false)

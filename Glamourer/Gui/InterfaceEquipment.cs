@@ -57,6 +57,7 @@ namespace Glamourer.Gui
             if (!change)
                 return false;
 
+            newItem = new Item(newItem.Base, newItem.Name, slot);
             if (_player == null)
                 return _inDesignMode && (_selection?.Data.WriteItem(newItem) ?? false);
 

@@ -4,20 +4,8 @@ namespace Glamourer;
 
 public static class CharacterExtensions
 {
-    public const int  WetnessOffset       = 0x1ADA;
-    public const byte WetnessFlag         = 0x80;
-    public const int  HatVisibleOffset    = 0x84E;
-    public const int  VisorToggledOffset  = 0x84F;
-    public const byte HatHiddenFlag       = 0x01;
-    public const byte VisorToggledFlag    = 0x08;
-    public const int  AlphaOffset         = 0x19E0;
-    public const int  WeaponHiddenOffset1 = 0x84F;
-    public const int  WeaponHiddenOffset2 = 0x72C; // maybe
-    public const byte WeaponHiddenFlag1   = 0x01;
-    public const byte WeaponHiddenFlag2   = 0x02;
-
     public static unsafe bool IsWet(this Character a)
-        => (*((byte*)a.Address + WetnessOffset) & WetnessFlag) != 0;
+        => (*((byte*)a.Address + Offsets.Character.Wetness) & Offsets.Character.Flags.IsWet) != 0;
 
     public static unsafe bool SetWetness(this Character a, bool value)
     {
@@ -26,14 +14,16 @@ public static class CharacterExtensions
             return false;
 
         if (value)
-            *((byte*)a.Address + WetnessOffset) = (byte)(*((byte*)a.Address + WetnessOffset) | WetnessFlag);
+            *((byte*)a.Address + Offsets.Character.Wetness) =
+                (byte)(*((byte*)a.Address + Offsets.Character.Wetness) | Offsets.Character.Flags.IsWet);
         else
-            *((byte*)a.Address + WetnessOffset) = (byte)(*((byte*)a.Address + WetnessOffset) & ~WetnessFlag);
+            *((byte*)a.Address + Offsets.Character.Wetness) =
+                (byte)(*((byte*)a.Address + Offsets.Character.Wetness) & ~Offsets.Character.Flags.IsWet);
         return true;
     }
 
     public static unsafe bool IsHatVisible(this Character a)
-        => (*((byte*)a.Address + HatVisibleOffset) & HatHiddenFlag) == 0;
+        => (*((byte*)a.Address + Offsets.Character.HatVisible) & Offsets.Character.Flags.IsHatHidden) == 0;
 
     public static unsafe bool SetHatVisible(this Character a, bool visible)
     {
@@ -42,14 +32,17 @@ public static class CharacterExtensions
             return false;
 
         if (visible)
-            *((byte*)a.Address + HatVisibleOffset) = (byte)(*((byte*)a.Address + HatVisibleOffset) & ~HatHiddenFlag);
+            *((byte*)a.Address + Offsets.Character.HatVisible) =
+                (byte)(*((byte*)a.Address + Offsets.Character.HatVisible) & ~Offsets.Character.Flags.IsHatHidden);
         else
-            *((byte*)a.Address + HatVisibleOffset) = (byte)(*((byte*)a.Address + HatVisibleOffset) | HatHiddenFlag);
+            *((byte*)a.Address + Offsets.Character.HatVisible) =
+                (byte)(*((byte*)a.Address + Offsets.Character.HatVisible) | Offsets.Character.Flags.IsHatHidden);
         return true;
     }
 
     public static unsafe bool IsVisorToggled(this Character a)
-        => (*((byte*)a.Address + VisorToggledOffset) & VisorToggledFlag) == VisorToggledFlag;
+        => (*((byte*)a.Address + Offsets.Character.VisorToggled) & Offsets.Character.Flags.IsVisorToggled)
+         == Offsets.Character.Flags.IsVisorToggled;
 
     public static unsafe bool SetVisorToggled(this Character a, bool toggled)
     {
@@ -58,15 +51,19 @@ public static class CharacterExtensions
             return false;
 
         if (toggled)
-            *((byte*)a.Address + VisorToggledOffset) = (byte)(*((byte*)a.Address + VisorToggledOffset) | VisorToggledFlag);
+            *((byte*)a.Address + Offsets.Character.VisorToggled) =
+                (byte)(*((byte*)a.Address + Offsets.Character.VisorToggled) | Offsets.Character.Flags.IsVisorToggled);
         else
-            *((byte*)a.Address + VisorToggledOffset) = (byte)(*((byte*)a.Address + VisorToggledOffset) & ~VisorToggledFlag);
+            *((byte*)a.Address + Offsets.Character.VisorToggled) =
+                (byte)(*((byte*)a.Address + Offsets.Character.VisorToggled) & ~Offsets.Character.Flags.IsVisorToggled);
         return true;
     }
 
     public static unsafe bool IsWeaponHidden(this Character a)
-        => (*((byte*)a.Address + WeaponHiddenOffset1) & WeaponHiddenFlag1) == WeaponHiddenFlag1
-         && (*((byte*)a.Address + WeaponHiddenOffset2) & WeaponHiddenFlag2) == WeaponHiddenFlag2;
+        => (*((byte*)a.Address + Offsets.Character.WeaponHidden1) & Offsets.Character.Flags.IsWeaponHidden1)
+         == Offsets.Character.Flags.IsWeaponHidden1
+         && (*((byte*)a.Address + Offsets.Character.WeaponHidden2) & Offsets.Character.Flags.IsWeaponHidden2)
+         == Offsets.Character.Flags.IsWeaponHidden2;
 
     public static unsafe bool SetWeaponHidden(this Character a, bool value)
     {
@@ -74,21 +71,22 @@ public static class CharacterExtensions
         if (hidden == value)
             return false;
 
-        var val1 = *((byte*)a.Address + WeaponHiddenOffset1);
-        var val2 = *((byte*)a.Address + WeaponHiddenOffset2);
+        var val1 = *((byte*)a.Address + Offsets.Character.WeaponHidden1);
+        var val2 = *((byte*)a.Address + Offsets.Character.WeaponHidden2);
         if (value)
         {
-            *((byte*)a.Address + WeaponHiddenOffset1) = (byte)(val1 | WeaponHiddenFlag1);
-            *((byte*)a.Address + WeaponHiddenOffset2) = (byte)(val2 | WeaponHiddenFlag2);
+            *((byte*)a.Address + Offsets.Character.WeaponHidden1) = (byte)(val1 | Offsets.Character.Flags.IsWeaponHidden1);
+            *((byte*)a.Address + Offsets.Character.WeaponHidden2) = (byte)(val2 | Offsets.Character.Flags.IsWeaponHidden2);
         }
         else
         {
-            *((byte*)a.Address + WeaponHiddenOffset1) = (byte)(val1 & ~WeaponHiddenFlag1);
-            *((byte*)a.Address + WeaponHiddenOffset2) = (byte)(val2 & ~WeaponHiddenFlag2);
+            *((byte*)a.Address + Offsets.Character.WeaponHidden1) = (byte)(val1 & ~Offsets.Character.Flags.IsWeaponHidden1);
+            *((byte*)a.Address + Offsets.Character.WeaponHidden2) = (byte)(val2 & ~Offsets.Character.Flags.IsWeaponHidden2);
         }
+
         return true;
     }
 
     public static unsafe ref float Alpha(this Character a)
-        => ref *(float*)((byte*)a.Address + AlphaOffset);
+        => ref *(float*)((byte*)a.Address + Offsets.Character.Alpha);
 }

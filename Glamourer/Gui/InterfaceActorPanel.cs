@@ -18,12 +18,14 @@ namespace Glamourer.Gui
 {
     internal partial class Interface
     {
-        private readonly CharacterSave   _currentSave   = new();
-        private          string          _newDesignName = string.Empty;
-        private          bool            _keyboardFocus;
-        private const    string          DesignNamePopupLabel = "Save Design As...";
-        private const    uint            RedHeaderColor       = 0xFF1818C0;
-        private const    uint            GreenHeaderColor     = 0xFF18C018;
+        private readonly CharacterSave _currentSave   = new();
+        private          string        _newDesignName = string.Empty;
+        private          bool          _keyboardFocus;
+        private          bool          _holdShift;
+        private          bool          _holdCtrl;
+        private const    string        DesignNamePopupLabel = "Save Design As...";
+        private const    uint          RedHeaderColor       = 0xFF1818C0;
+        private const    uint          GreenHeaderColor     = 0xFF18C018;
 
         private void DrawPlayerHeader()
         {
@@ -58,10 +60,10 @@ namespace Glamourer.Gui
                 save.Apply(player);
         }
 
-        private CharacterSave ConditionalCopy(CharacterSave save)
+        private static CharacterSave ConditionalCopy(CharacterSave save, bool shift, bool ctrl)
         {
             var copy = save.Copy();
-            if (ImGui.GetIO().KeyShift)
+            if (shift)
             {
                 copy.Load(new CharacterEquipment());
                 copy.SetHatState    = false;
@@ -69,7 +71,7 @@ namespace Glamourer.Gui
                 copy.SetWeaponState = false;
                 copy.WriteEquipment = CharacterEquipMask.None;
             }
-            else if (ImGui.GetIO().KeyCtrl)
+            else if (ctrl)
             {
                 copy.Load(CharacterCustomization.Default);
                 copy.SetHatState         = false;
@@ -77,8 +79,8 @@ namespace Glamourer.Gui
                 copy.SetWeaponState      = false;
                 copy.WriteCustomizations = false;
             }
-                
-            return save.Copy();
+
+            return copy;
         }
 
         private bool DrawApplyClipboardButton()

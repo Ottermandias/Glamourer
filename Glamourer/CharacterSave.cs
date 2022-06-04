@@ -310,11 +310,11 @@ public class CharacterSave
         a.SetWetness(IsWet);
         a.Alpha() = Alpha;
         if (SetHatState)
-            a.SetHatVisible(!HatState);
+            a.SetHatVisible(HatState);
         if (SetVisorState)
             a.SetVisorToggled(VisorState);
         if (SetWeaponState)
-            a.SetWeaponHidden(WeaponState);
+            a.SetWeaponHidden(!WeaponState);
     }
 
     public void ApplyOnlyEquipment(Character a)

@@ -17,6 +17,7 @@
 		<Nullable>enable</Nullable>
 		<OutputPath>bin\$(Configuration)\</OutputPath>
 		<MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -69,23 +70,35 @@
 			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
       <Private>False</Private>
 		</Reference>
-    <Reference Include="Penumbra.GameData">
-      <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\$(TargetFramework)\Penumbra.GameData.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Penumbra.PlayerWatch">
-      <HintPath>..\..\Penumbra\Penumbra\bin\$(Configuration)\$(TargetFramework)\Penumbra.PlayerWatch.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
   </ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+		<PackageReference Include="Newtonsoft.Json" Version="12.0.3">
+      <Private>false</Private>
+    </PackageReference>
+
     <PackageReference Include="System.Memory" Version="4.5.3" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Glamourer.GameData\Glamourer.GameData.csproj" />
+	  <ProjectReference Include="..\..\Penumbra\Penumbra.GameData\Penumbra.GameData.csproj" />
+	  <ProjectReference Include="..\..\Penumbra\Penumbra.PlayerWatch\Penumbra.PlayerWatch.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Properties\Resources.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>Resources.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Properties\Resources.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
 	</ItemGroup>
 
 	<ItemGroup>

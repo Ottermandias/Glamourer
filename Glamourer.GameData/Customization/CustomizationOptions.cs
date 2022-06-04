@@ -150,7 +150,7 @@ namespace Glamourer.Customization
             var row = _listSheet.GetRow(((uint) race - 1) * 2 - 1 + (uint) gender)!;
             var set = new CustomizationSet(race, gender)
             {
-                HairStyles           = race.ToRace() == Race.Hrothgar ? HrothgarFaces(row) : GetHairStyles(race, gender),
+                HairStyles           = GetHairStyles(race, gender),
                 HairColors           = hair,
                 SkinColors           = skin,
                 EyeColors            = _eyeColorPicker,
