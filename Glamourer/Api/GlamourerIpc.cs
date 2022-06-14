@@ -5,10 +5,6 @@ using Dalamud.Logging;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Glamourer.Api
 {
@@ -18,16 +14,16 @@ namespace Glamourer.Api
         public const string LabelProviderApplyCharacterCustomization = "Glamourer.ApplyCharacterCustomization";
         private readonly ClientState clientState;
         private readonly ObjectTable objectTable;
-        private readonly DalamudPluginInterface pi;
+        private readonly DalamudPluginInterface pluginInterface;
 
         internal ICallGateProvider<string>? ProviderGetCharacterCustomization;
         internal ICallGateProvider<string, string, object>? ProviderApplyCharacterCustomization;
 
-        public GlamourerIpc(ClientState clientState, ObjectTable objectTable, DalamudPluginInterface pi)
+        public GlamourerIpc(ClientState clientState, ObjectTable objectTable, DalamudPluginInterface pluginInterface)
         {
             this.clientState = clientState;
             this.objectTable = objectTable;
-            this.pi = pi;
+            this.pluginInterface = pluginInterface;
 
             InitializeProviders();
         }
@@ -47,7 +43,7 @@ namespace Glamourer.Api
         {
             try
             {
-                ProviderGetCharacterCustomization = pi.GetIpcProvider<string>(LabelProviderGetCharacterCustomization);
+                ProviderGetCharacterCustomization = pluginInterface.GetIpcProvider<string>(LabelProviderGetCharacterCustomization);
                 ProviderGetCharacterCustomization.RegisterFunc(GetCharacterCustomization);
             }
             catch (Exception ex)
@@ -57,7 +53,7 @@ namespace Glamourer.Api
 
             try
             {
-                ProviderApplyCharacterCustomization = pi.GetIpcProvider<string, string, object>(LabelProviderApplyCharacterCustomization);
+                ProviderApplyCharacterCustomization = pluginInterface.GetIpcProvider<string, string, object>(LabelProviderApplyCharacterCustomization);
                 ProviderApplyCharacterCustomization.RegisterAction((customization, characterName) => ApplyCharacterCustomization(customization, characterName));
             }
             catch (Exception ex)

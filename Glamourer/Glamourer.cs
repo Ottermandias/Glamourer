@@ -203,6 +203,7 @@ namespace Glamourer
             Penumbra.Dispose();
             PlayerWatcher.Dispose();
             _interface.Dispose();
+            GlamourerIpc.Dispose();
             Dalamud.Commands.RemoveHandler("/glamour");
             Dalamud.Commands.RemoveHandler("/glamourer");
         }
