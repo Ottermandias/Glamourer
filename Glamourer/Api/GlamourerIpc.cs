@@ -16,15 +16,16 @@ namespace Glamourer.Api
     {
         public const string LabelProviderGetCharacterCustomization = "Glamourer.GetCharacterCustomization";
         public const string LabelProviderApplyCharacterCustomization = "Glamourer.ApplyCharacterCustomization";
-
+        private readonly ClientState clientState;
         private readonly ObjectTable objectTable;
         private readonly DalamudPluginInterface pi;
 
         internal ICallGateProvider<string>? ProviderGetCharacterCustomization;
         internal ICallGateProvider<string, string, object>? ProviderApplyCharacterCustomization;
 
-        public GlamourerIpc(ObjectTable objectTable, DalamudPluginInterface pi)
+        public GlamourerIpc(ClientState clientState, ObjectTable objectTable, DalamudPluginInterface pi)
         {
+            this.clientState = clientState;
             this.objectTable = objectTable;
             this.pi = pi;
 
@@ -82,7 +83,7 @@ namespace Glamourer.Api
         private string GetCharacterCustomization()
         {
             CharacterSave save = new CharacterSave();
-            save.LoadCharacter((Character)Glamourer.GetPlayer("self")!);
+            save.LoadCharacter(clientState.LocalPlayer!);
             return save.ToBase64();
         }
     }

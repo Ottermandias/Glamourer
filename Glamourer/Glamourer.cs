@@ -43,7 +43,7 @@ namespace Glamourer
             Designs       = new DesignManager();
             Penumbra      = new PenumbraAttach(Config.AttachToPenumbra);
             PlayerWatcher = PlayerWatchFactory.Create(Dalamud.Framework, Dalamud.ClientState, Dalamud.Objects);
-            GlamourerIpc  = new(Dalamud.Objects, pluginInterface);
+            GlamourerIpc  = new GlamourerIpc(Dalamud.ClientState, Dalamud.Objects, Dalamud.PluginInterface);
             if (!Config.ApplyFixedDesigns)
                 PlayerWatcher.Disable();
 
@@ -64,7 +64,7 @@ namespace Glamourer
         public void OnGlamourer(string command, string arguments)
             => _interface.ToggleVisibility();
 
-        public static GameObject? GetPlayer(string name)
+        private static GameObject? GetPlayer(string name)
         {
             var lowerName = name.ToLowerInvariant();
             return lowerName switch
