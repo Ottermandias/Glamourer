@@ -10,6 +10,7 @@ namespace Glamourer.Api
 {
     public class GlamourerIpc : IDisposable
     {
+        public const string LabelProviderApiVersion = "Glamourer.ApiVersion";
         public const string LabelProviderGetCharacterCustomization = "Glamourer.GetCharacterCustomization";
         public const string LabelProviderApplyCharacterCustomization = "Glamourer.ApplyCharacterCustomization";
         private readonly ClientState clientState;
@@ -18,6 +19,7 @@ namespace Glamourer.Api
 
         internal ICallGateProvider<string>? ProviderGetCharacterCustomization;
         internal ICallGateProvider<string, string, object>? ProviderApplyCharacterCustomization;
+        internal ICallGateProvider<int>? ProviderGetApiVersion;
 
         public GlamourerIpc(ClientState clientState, ObjectTable objectTable, DalamudPluginInterface pluginInterface)
         {
@@ -37,10 +39,21 @@ namespace Glamourer.Api
         {
             ProviderApplyCharacterCustomization?.UnregisterFunc();
             ProviderGetCharacterCustomization?.UnregisterAction();
+            ProviderGetApiVersion?.UnregisterFunc();
         }
 
         private void InitializeProviders()
         {
+            try
+            {
+                ProviderGetApiVersion = pluginInterface.GetIpcProvider<int>(LabelProviderApiVersion);
+                ProviderGetApiVersion.RegisterFunc(GetApiVersion);
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderApiVersion}.");
+            }
+
             try
             {
                 ProviderGetCharacterCustomization = pluginInterface.GetIpcProvider<string>(LabelProviderGetCharacterCustomization);
@@ -61,6 +74,8 @@ namespace Glamourer.Api
                 PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderApplyCharacterCustomization}.");
             }
         }
+
+        private int GetApiVersion() => 0;
 
         private void ApplyCharacterCustomization(string customization, string characterName)
         {
