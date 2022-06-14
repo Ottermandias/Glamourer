@@ -4,6 +4,7 @@ using System.Reflection;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
 using Dalamud.Plugin;
+using Glamourer.Api;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.FileSystem;
@@ -27,6 +28,7 @@ namespace Glamourer
         public readonly  DesignManager         Designs;
         public readonly  FixedDesigns          FixedDesigns;
         public static    RevertableDesigns     RevertableDesigns = new();
+        public readonly  GlamourerIpc          GlamourerIpc;
 
 
         public static string         Version  = string.Empty;
@@ -41,6 +43,7 @@ namespace Glamourer
             Designs       = new DesignManager();
             Penumbra      = new PenumbraAttach(Config.AttachToPenumbra);
             PlayerWatcher = PlayerWatchFactory.Create(Dalamud.Framework, Dalamud.ClientState, Dalamud.Objects);
+            GlamourerIpc  = new GlamourerIpc(Dalamud.ClientState, Dalamud.Objects, Dalamud.PluginInterface);
             if (!Config.ApplyFixedDesigns)
                 PlayerWatcher.Disable();
 
@@ -200,6 +203,7 @@ namespace Glamourer
             Penumbra.Dispose();
             PlayerWatcher.Dispose();
             _interface.Dispose();
+            GlamourerIpc.Dispose();
             Dalamud.Commands.RemoveHandler("/glamour");
             Dalamud.Commands.RemoveHandler("/glamourer");
         }
