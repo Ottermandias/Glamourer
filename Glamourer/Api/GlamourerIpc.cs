@@ -72,7 +72,9 @@ namespace Glamourer.Api
             {
                 if (gameObject.Name.ToString() == characterName)
                 {
-                    save.Apply((Character)gameObject);
+                    var player = (Character)gameObject;
+                    save.Apply(player);
+                    Glamourer.Penumbra.UpdateCharacters(player, null);
                 }
             }
         }
