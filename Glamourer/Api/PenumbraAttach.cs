@@ -6,16 +6,16 @@ using Glamourer.Gui;
 using ImGuiNET;
 using Penumbra.GameData.Enums;
 
-namespace Glamourer;
+namespace Glamourer.Api;
 
 public class PenumbraAttach : IDisposable
 {
     public const int RequiredPenumbraShareVersion = 4;
 
-    private ICallGateSubscriber<ChangedItemType, uint, object>?              _tooltipSubscriber;
+    private ICallGateSubscriber<ChangedItemType, uint, object>? _tooltipSubscriber;
     private ICallGateSubscriber<MouseButton, ChangedItemType, uint, object>? _clickSubscriber;
-    private ICallGateSubscriber<string, int, object>?                        _redrawSubscriberName;
-    private ICallGateSubscriber<GameObject, int, object>?                    _redrawSubscriberObject;
+    private ICallGateSubscriber<string, int, object>? _redrawSubscriberName;
+    private ICallGateSubscriber<GameObject, int, object>? _redrawSubscriberObject;
 
     private readonly ICallGateSubscriber<object?> _initializedEvent;
     private readonly ICallGateSubscriber<object?> _disposedEvent;
@@ -23,7 +23,7 @@ public class PenumbraAttach : IDisposable
     public PenumbraAttach(bool attach)
     {
         _initializedEvent = Dalamud.PluginInterface.GetIpcSubscriber<object?>("Penumbra.Initialized");
-        _disposedEvent    = Dalamud.PluginInterface.GetIpcSubscriber<object?>("Penumbra.Disposed");
+        _disposedEvent = Dalamud.PluginInterface.GetIpcSubscriber<object?>("Penumbra.Disposed");
         _initializedEvent.Subscribe(Reattach);
         _disposedEvent.Subscribe(Unattach);
         Reattach(attach);
@@ -39,11 +39,11 @@ public class PenumbraAttach : IDisposable
             Unattach();
 
             var versionSubscriber = Dalamud.PluginInterface.GetIpcSubscriber<int>("Penumbra.ApiVersion");
-            var version           = versionSubscriber.InvokeFunc();
-            if (version != RequiredPenumbraShareVersion)
+            var version = versionSubscriber.InvokeFunc();
+            if (version < RequiredPenumbraShareVersion)
                 throw new Exception($"Invalid Version {version}, required Version {RequiredPenumbraShareVersion}.");
 
-            _redrawSubscriberName   = Dalamud.PluginInterface.GetIpcSubscriber<string, int, object>("Penumbra.RedrawObjectByName");
+            _redrawSubscriberName = Dalamud.PluginInterface.GetIpcSubscriber<string, int, object>("Penumbra.RedrawObjectByName");
             _redrawSubscriberObject = Dalamud.PluginInterface.GetIpcSubscriber<GameObject, int, object>("Penumbra.RedrawObject");
 
             if (!attach)
@@ -66,9 +66,9 @@ public class PenumbraAttach : IDisposable
     {
         _tooltipSubscriber?.Unsubscribe(PenumbraTooltip);
         _clickSubscriber?.Unsubscribe(PenumbraRightClick);
-        _tooltipSubscriber      = null;
-        _clickSubscriber        = null;
-        _redrawSubscriberName   = null;
+        _tooltipSubscriber = null;
+        _clickSubscriber = null;
+        _redrawSubscriberName = null;
         if (_redrawSubscriberObject != null)
         {
             PluginLog.Debug("Glamourer detached from Penumbra.");
@@ -94,9 +94,9 @@ public class PenumbraAttach : IDisposable
         if (button != MouseButton.Right || type != ChangedItemType.Item)
             return;
 
-        var gPose     = Dalamud.Objects[Interface.GPoseObjectId] as Character;
-        var player    = Dalamud.Objects[0] as Character;
-        var item      = (Lumina.Excel.GeneratedSheets.Item)type.GetObject(id)!;
+        var gPose = Dalamud.Objects[Interface.GPoseObjectId] as Character;
+        var player = Dalamud.Objects[0] as Character;
+        var item = (Lumina.Excel.GeneratedSheets.Item)type.GetObject(id)!;
         var writeItem = new Item(item, string.Empty);
         if (gPose != null)
         {
