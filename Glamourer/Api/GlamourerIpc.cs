@@ -20,7 +20,7 @@ public class GlamourerIpc : IDisposable
     private readonly ObjectTable            _objectTable;
     private readonly DalamudPluginInterface _pluginInterface;
 
-    internal ICallGateProvider<string>?                 ProviderGetCharacterCustomization;
+    internal ICallGateProvider<string, string>?         ProviderGetCharacterCustomization;
     internal ICallGateProvider<string, string, object>? ProviderApplyCharacterCustomization;
     internal ICallGateProvider<string, object>?         ProviderRevertCharacterCustomization;
     internal ICallGateProvider<int>?                    ProviderGetApiVersion;
@@ -59,7 +59,7 @@ public class GlamourerIpc : IDisposable
 
         try
         {
-            ProviderGetCharacterCustomization = _pluginInterface.GetIpcProvider<string>(LabelProviderGetCharacterCustomization);
+            ProviderGetCharacterCustomization = _pluginInterface.GetIpcProvider<string, string>(LabelProviderGetCharacterCustomization);
             ProviderGetCharacterCustomization.RegisterFunc(GetCharacterCustomization);
         }
         catch (Exception ex)
@@ -124,10 +124,19 @@ public class GlamourerIpc : IDisposable
         }
     }
 
-    private string GetCharacterCustomization()
+    private string GetCharacterCustomization(string characterName)
     {
         var save = new CharacterSave();
-        save.LoadCharacter(_clientState.LocalPlayer!);
+        foreach (var gameObject in _objectTable)
+        {
+            if (gameObject.Name.ToString() != characterName)
+                continue;
+
+            var player = (Character)gameObject;
+            save.LoadCharacter(player);
+            break;
+        }
+
         return save.ToBase64();
     }
 }
