@@ -19,12 +19,22 @@ namespace Glamourer.Designs
             return true;
         }
 
+        public bool RevertByNameWithoutApplication(string actorName)
+        {
+            if (!Saves.ContainsKey(actorName))
+                return false;
+
+            Saves.Remove(actorName);
+            return true;
+        }
+
         public bool Revert(Character actor)
         {
             if (!Saves.TryGetValue(actor.Name.ToString(), out var save))
                 return false;
 
             save.Apply(actor);
+            Saves.Remove(actor.Name.ToString());
             return true;
         }
     }

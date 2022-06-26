@@ -10,19 +10,23 @@ namespace Glamourer.Api;
 
 public class GlamourerIpc : IDisposable
 {
-    public const int    CurrentApiVersion                         = 0;
-    public const string LabelProviderApiVersion                   = "Glamourer.ApiVersion";
-    public const string LabelProviderGetCharacterCustomization    = "Glamourer.GetCharacterCustomization";
-    public const string LabelProviderApplyCharacterCustomization  = "Glamourer.ApplyCharacterCustomization";
-    public const string LabelProviderRevertCharacterCustomization = "Glamourer.RevertCharacterCustomization";
+    public const int    CurrentApiVersion                   = 0;
+    public const string LabelProviderApiVersion             = "Glamourer.ApiVersion";
+    public const string LabelProviderGetAllCustomization    = "Glamourer.GetAllCustomization";
+    public const string LabelProviderApplyAll               = "Glamourer.ApplyAll";
+    public const string LabelProviderApplyOnlyEquipment     = "Glamourer.ApplyOnlyEquipment";
+    public const string LabelProviderApplyOnlyCustomization = "Glamourer.ApplyOnlyCustomization";
+    public const string LabelProviderRevert                 = "Glamourer.Revert";
 
     private readonly ClientState            _clientState;
     private readonly ObjectTable            _objectTable;
     private readonly DalamudPluginInterface _pluginInterface;
 
-    internal ICallGateProvider<string, string>?         ProviderGetCharacterCustomization;
-    internal ICallGateProvider<string, string, object>? ProviderApplyCharacterCustomization;
-    internal ICallGateProvider<string, object>?         ProviderRevertCharacterCustomization;
+    internal ICallGateProvider<string, string?>?        ProviderGetAllCustomization;
+    internal ICallGateProvider<string, string, object>? ProviderApplyAll;
+    internal ICallGateProvider<string, string, object>? ProviderApplyOnlyCustomization;
+    internal ICallGateProvider<string, string, object>? ProviderApplyOnlyEquipment;
+    internal ICallGateProvider<string, object>?         ProviderRevert;
     internal ICallGateProvider<int>?                    ProviderGetApiVersion;
 
     public GlamourerIpc(ClientState clientState, ObjectTable objectTable, DalamudPluginInterface pluginInterface)
@@ -39,10 +43,13 @@ public class GlamourerIpc : IDisposable
 
     private void DisposeProviders()
     {
-        ProviderApplyCharacterCustomization?.UnregisterFunc();
-        ProviderGetCharacterCustomization?.UnregisterAction();
-        ProviderRevertCharacterCustomization?.UnregisterAction();
+        ProviderGetAllCustomization?.UnregisterFunc();
+        ProviderApplyAll?.UnregisterAction();
+        ProviderApplyOnlyCustomization?.UnregisterAction();
+        ProviderApplyOnlyEquipment?.UnregisterAction();
+        ProviderRevert?.UnregisterAction();
         ProviderGetApiVersion?.UnregisterFunc();
+        
     }
 
     private void InitializeProviders()
@@ -59,41 +66,63 @@ public class GlamourerIpc : IDisposable
 
         try
         {
-            ProviderGetCharacterCustomization = _pluginInterface.GetIpcProvider<string, string>(LabelProviderGetCharacterCustomization);
-            ProviderGetCharacterCustomization.RegisterFunc(GetCharacterCustomization);
+            ProviderGetAllCustomization = _pluginInterface.GetIpcProvider<string, string?>(LabelProviderGetAllCustomization);
+            ProviderGetAllCustomization.RegisterFunc(GetAllCustomization);
         }
         catch (Exception ex)
         {
-            PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderApplyCharacterCustomization}.");
+            PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderApplyOnlyEquipment}.");
         }
 
         try
         {
-            ProviderApplyCharacterCustomization =
-                _pluginInterface.GetIpcProvider<string, string, object>(LabelProviderApplyCharacterCustomization);
-            ProviderApplyCharacterCustomization.RegisterAction(ApplyCharacterCustomization);
+            ProviderApplyAll =
+                _pluginInterface.GetIpcProvider<string, string, object>(LabelProviderApplyAll);
+            ProviderApplyAll.RegisterAction(ApplyAll);
         }
         catch (Exception ex)
         {
-            PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderApplyCharacterCustomization}.");
+            PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderApplyAll}.");
         }
 
         try
         {
-            ProviderRevertCharacterCustomization =
-                _pluginInterface.GetIpcProvider<string, object>(LabelProviderRevertCharacterCustomization);
-            ProviderRevertCharacterCustomization.RegisterAction(RevertCharacterCustomization);
+            ProviderApplyOnlyCustomization =
+                _pluginInterface.GetIpcProvider<string, string, object>(LabelProviderApplyOnlyCustomization);
+            ProviderApplyOnlyCustomization.RegisterAction(ApplyOnlyCustomization);
         }
         catch (Exception ex)
         {
-            PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderRevertCharacterCustomization}.");
+            PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderApplyOnlyCustomization}.");
+        }
+
+        try
+        {
+            ProviderApplyOnlyEquipment =
+                _pluginInterface.GetIpcProvider<string, string, object>(LabelProviderApplyOnlyEquipment);
+            ProviderApplyOnlyEquipment.RegisterAction(ApplyOnlyEquipment);
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderApplyOnlyEquipment}.");
+        }
+
+        try
+        {
+            ProviderRevert =
+                _pluginInterface.GetIpcProvider<string, object>(LabelProviderRevert);
+            ProviderRevert.RegisterAction(Revert);
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderRevert}.");
         }
     }
 
     private static int GetApiVersion()
         => CurrentApiVersion;
 
-    private void ApplyCharacterCustomization(string customization, string characterName)
+    private void ApplyAll(string customization, string characterName)
     {
         var save = CharacterSave.FromString(customization);
         foreach (var gameObject in _objectTable)
@@ -103,14 +132,45 @@ public class GlamourerIpc : IDisposable
 
             var player = (Character)gameObject;
             Glamourer.RevertableDesigns.Revert(player);
-            Glamourer.RevertableDesigns.Add(player);
             save.Apply(player);
             Glamourer.Penumbra.UpdateCharacters(player, null);
             break;
         }
     }
 
-    private void RevertCharacterCustomization(string characterName)
+    private void ApplyOnlyCustomization(string customization, string characterName)
+    {
+        var save = CharacterSave.FromString(customization);
+        foreach (var gameObject in _objectTable)
+        {
+            if (gameObject.Name.ToString() != characterName)
+                continue;
+
+            var player = (Character)gameObject;
+            Glamourer.RevertableDesigns.Revert(player);
+            save.ApplyOnlyCustomizations(player);
+            Glamourer.Penumbra.UpdateCharacters(player, null);
+            break;
+        }
+    }
+
+    private void ApplyOnlyEquipment(string customization, string characterName)
+    {
+        var save = CharacterSave.FromString(customization);
+        foreach (var gameObject in _objectTable)
+        {
+            if (gameObject.Name.ToString() != characterName)
+                continue;
+
+            var player = (Character)gameObject;
+            Glamourer.RevertableDesigns.Revert(player);
+            save.ApplyOnlyEquipment(player);
+            Glamourer.Penumbra.UpdateCharacters(player, null);
+            break;
+        }
+    }
+
+    private void Revert(string characterName)
     {
         foreach (var gameObject in _objectTable)
         {
@@ -120,23 +180,26 @@ public class GlamourerIpc : IDisposable
             var player = (Character)gameObject;
             Glamourer.RevertableDesigns.Revert(player);
             Glamourer.Penumbra.UpdateCharacters(player, null);
-            break;
+            return;
         }
+
+        Glamourer.RevertableDesigns.RevertByNameWithoutApplication(characterName);
     }
 
-    private string GetCharacterCustomization(string characterName)
+    private string? GetAllCustomization(string characterName)
     {
-        var save = new CharacterSave();
+        CharacterSave save = null!;
         foreach (var gameObject in _objectTable)
         {
             if (gameObject.Name.ToString() != characterName)
                 continue;
 
             var player = (Character)gameObject;
+            save = new CharacterSave();
             save.LoadCharacter(player);
             break;
         }
 
-        return save.ToBase64();
+        return save?.ToBase64() ?? null;
     }
 }
