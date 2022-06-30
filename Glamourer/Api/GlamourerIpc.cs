@@ -10,34 +10,34 @@ namespace Glamourer.Api;
 
 public class GlamourerIpc : IDisposable
 {
-    public const int CurrentApiVersion = 0;
-    public const string LabelProviderApiVersion = "Glamourer.ApiVersion";
-    public const string LabelProviderGetAllCustomization = "Glamourer.GetAllCustomization";
-    public const string LabelProviderGetAllCustomizationFromCharacter = "Glamourer.GetAllCustomizationFromCharacter";
-    public const string LabelProviderApplyAll = "Glamourer.ApplyAll";
-    public const string LabelProviderApplyAllToCharacter = "Glamourer.ApplyAllToCharacter";
-    public const string LabelProviderApplyOnlyEquipment = "Glamourer.ApplyOnlyEquipment";
-    public const string LabelProviderApplyOnlyEquipmentToCharacter = "Glamourer.ApplyOnlyEquipmentToCharacter";
-    public const string LabelProviderApplyOnlyCustomization = "Glamourer.ApplyOnlyCustomization";
+    public const int    CurrentApiVersion                              = 0;
+    public const string LabelProviderApiVersion                        = "Glamourer.ApiVersion";
+    public const string LabelProviderGetAllCustomization               = "Glamourer.GetAllCustomization";
+    public const string LabelProviderGetAllCustomizationFromCharacter  = "Glamourer.GetAllCustomizationFromCharacter";
+    public const string LabelProviderApplyAll                          = "Glamourer.ApplyAll";
+    public const string LabelProviderApplyAllToCharacter               = "Glamourer.ApplyAllToCharacter";
+    public const string LabelProviderApplyOnlyEquipment                = "Glamourer.ApplyOnlyEquipment";
+    public const string LabelProviderApplyOnlyEquipmentToCharacter     = "Glamourer.ApplyOnlyEquipmentToCharacter";
+    public const string LabelProviderApplyOnlyCustomization            = "Glamourer.ApplyOnlyCustomization";
     public const string LabelProviderApplyOnlyCustomizationToCharacter = "Glamourer.ApplyOnlyCustomizationToCharacter";
-    public const string LabelProviderRevert = "Glamourer.Revert";
-    public const string LabelProviderRevertCharacter = "Glamourer.RevertCharacter";
+    public const string LabelProviderRevert                            = "Glamourer.Revert";
+    public const string LabelProviderRevertCharacter                   = "Glamourer.RevertCharacter";
 
-    private readonly ClientState _clientState;
-    private readonly ObjectTable _objectTable;
+    private readonly ClientState            _clientState;
+    private readonly ObjectTable            _objectTable;
     private readonly DalamudPluginInterface _pluginInterface;
 
-    internal ICallGateProvider<string, string?>? ProviderGetAllCustomization;
-    internal ICallGateProvider<Character?, string?>? ProviderGetAllCustomizationFromCharacter;
-    internal ICallGateProvider<string, string, object>? ProviderApplyAll;
+    internal ICallGateProvider<string, string?>?            ProviderGetAllCustomization;
+    internal ICallGateProvider<Character?, string?>?        ProviderGetAllCustomizationFromCharacter;
+    internal ICallGateProvider<string, string, object>?     ProviderApplyAll;
     internal ICallGateProvider<string, Character?, object>? ProviderApplyAllToCharacter;
-    internal ICallGateProvider<string, string, object>? ProviderApplyOnlyCustomization;
+    internal ICallGateProvider<string, string, object>?     ProviderApplyOnlyCustomization;
     internal ICallGateProvider<string, Character?, object>? ProviderApplyOnlyCustomizationToCharacter;
-    internal ICallGateProvider<string, string, object>? ProviderApplyOnlyEquipment;
+    internal ICallGateProvider<string, string, object>?     ProviderApplyOnlyEquipment;
     internal ICallGateProvider<string, Character?, object>? ProviderApplyOnlyEquipmentToCharacter;
-    internal ICallGateProvider<string, object>? ProviderRevert;
-    internal ICallGateProvider<Character?, object>? ProviderRevertCharacter;
-    internal ICallGateProvider<int>? ProviderGetApiVersion;
+    internal ICallGateProvider<string, object>?             ProviderRevert;
+    internal ICallGateProvider<Character?, object>?         ProviderRevertCharacter;
+    internal ICallGateProvider<int>?                        ProviderGetApiVersion;
 
     public GlamourerIpc(ClientState clientState, ObjectTable objectTable, DalamudPluginInterface pluginInterface)
     {
