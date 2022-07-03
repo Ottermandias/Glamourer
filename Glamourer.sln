@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penumbra.GameData", "..\Pen
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penumbra.PlayerWatch", "..\Penumbra\Penumbra.PlayerWatch\Penumbra.PlayerWatch.csproj", "{FECEDB39-C103-4333-82A6-A422BDC51EEE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OtterGui", "..\Penumbra\OtterGui\OtterGui.csproj", "{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +77,18 @@ Global
 		{FECEDB39-C103-4333-82A6-A422BDC51EEE}.Release|x64.Build.0 = Release|Any CPU
 		{FECEDB39-C103-4333-82A6-A422BDC51EEE}.Release|x86.ActiveCfg = Release|Any CPU
 		{FECEDB39-C103-4333-82A6-A422BDC51EEE}.Release|x86.Build.0 = Release|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Debug|x64.Build.0 = Debug|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Debug|x86.Build.0 = Debug|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Release|x64.ActiveCfg = Release|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Release|x64.Build.0 = Release|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Release|x86.ActiveCfg = Release|Any CPU
+		{6A4F7788-DB91-41B6-A264-7FD9CCACD7AA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

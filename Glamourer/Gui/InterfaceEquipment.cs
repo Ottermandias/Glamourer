@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using ImGuiNET;
 using Lumina.Text;
+using OtterGui;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -20,7 +21,7 @@ namespace Glamourer.Gui
             var change = stainCombo.Draw(string.Empty, out var newStain) && !newStain.RowIndex.Equals(stainIdx);
             if (!change && (byte) stainIdx != 0)
             {
-                ImGuiCustom.HoverTooltip("Right-click to clear.");
+                ImGuiUtil.HoverTooltip("Right-click to clear.");
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                 {
                     change   = true;
@@ -46,7 +47,7 @@ namespace Glamourer.Gui
             var change      = equipCombo.Draw(currentName, out var newItem, _itemComboWidth) && newItem.Base.RowId != item.RowId;
             if (!change && !ReferenceEquals(item, SmallClothes))
             {
-                ImGuiCustom.HoverTooltip("Right-click to clear.");
+                ImGuiUtil.HoverTooltip("Right-click to clear.");
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                 {
                     change  = true;

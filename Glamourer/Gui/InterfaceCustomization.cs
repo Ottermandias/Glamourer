@@ -5,6 +5,8 @@ using Dalamud.Interface;
 using Dalamud.Logging;
 using Glamourer.Customization;
 using ImGuiNET;
+using OtterGui;
+using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui
@@ -14,13 +16,14 @@ namespace Glamourer.Gui
         private static bool DrawColorPickerPopup(string label, CustomizationSet set, CustomizationId id, out Customization.Customization value)
         {
             value = default;
-            if (!ImGui.BeginPopup(label, ImGuiWindowFlags.AlwaysAutoResize))
+            using var popup = ImRaii.Popup(label, ImGuiWindowFlags.AlwaysAutoResize);
+            if (!popup)
                 return false;
 
             var ret   = false;
             var count = set.Count(id);
-            using var raii = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
-                .PushStyle(ImGuiStyleVar.FrameRounding, 0);
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
+                .Push(ImGuiStyleVar.FrameRounding, 0);
             for (var i = 0; i < count; ++i)
             {
                 var custom = set.Data(id, i);
@@ -35,7 +38,6 @@ namespace Glamourer.Gui
                     ImGui.SameLine();
             }
 
-            ImGui.EndPopup();
             return ret;
         }
 
@@ -58,7 +60,7 @@ namespace Glamourer.Gui
                 ret   = true;
             }
 
-            ImGuiCustom.HoverTooltip($"Input Range: [{minValue}, {maxValue}]");
+            ImGuiUtil.HoverTooltip($"Input Range: [{minValue}, {maxValue}]");
 
             return ret;
         }
@@ -92,7 +94,7 @@ namespace Glamourer.Gui
 
             ImGui.SameLine();
 
-            using (var _ = ImGuiRaii.NewGroup())
+            using (var _ = ImRaii.Group())
             {
                 if (InputInt($"##text_{id}", ref current, 1, count))
                 {
@@ -102,7 +104,7 @@ namespace Glamourer.Gui
 
 
                 ImGui.Text(label);
-                ImGuiCustom.HoverTooltip(tooltip);
+                ImGuiUtil.HoverTooltip(tooltip);
             }
 
             if (!DrawColorPickerPopup(popupName, set, id, out var newCustom))
@@ -117,7 +119,7 @@ namespace Glamourer.Gui
         private bool DrawListSelector(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
-            using var bigGroup = ImGuiRaii.NewGroup();
+            using var bigGroup = ImRaii.Group();
             var       ret      = false;
             int       current  = customization[id];
             var       count    = set.Count(id);
@@ -146,7 +148,7 @@ namespace Glamourer.Gui
 
             ImGui.SameLine();
             ImGui.Text(label);
-            ImGuiCustom.HoverTooltip(tooltip);
+            ImGuiUtil.HoverTooltip(tooltip);
 
             return ret;
         }
@@ -157,10 +159,10 @@ namespace Glamourer.Gui
 
         private bool DrawMultiSelector(ref CharacterCustomization customization, CustomizationSet set)
         {
-            using var bigGroup = ImGuiRaii.NewGroup();
+            using var bigGroup = ImRaii.Group();
             var       ret      = false;
             var       count    = set.Count(CustomizationId.FacialFeaturesTattoos);
-            using (var _ = ImGuiRaii.NewGroup())
+            using (var _ = ImRaii.Group())
             {
                 var face = customization.Face;
                 if (set.Faces.Count < face)
@@ -180,11 +182,7 @@ namespace Glamourer.Gui
                         customization.FacialFeature(i, !enabled);
                     }
 
-                    if (ImGui.IsItemHovered())
-                    {
-                        using var tt = ImGuiRaii.NewTooltip();
-                        ImGui.Image(icon.ImGuiHandle, new Vector2(icon.Width, icon.Height));
-                    }
+                    ImGuiUtil.HoverIconTooltip(icon, _iconSize);
 
                     if (i % 4 != 3)
                         ImGui.SameLine();
@@ -192,7 +190,7 @@ namespace Glamourer.Gui
             }
 
             ImGui.SameLine();
-            using var group = ImGuiRaii.NewGroup();
+            using var group = ImRaii.Group();
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetTextLineHeightWithSpacing() + 3 * ImGui.GetStyle().ItemSpacing.Y / 2);
             int value = customization[CustomizationId.FacialFeaturesTattoos];
             if (InputInt($"##{CustomizationId.FacialFeaturesTattoos}", ref value, 1, 256))
@@ -201,7 +199,7 @@ namespace Glamourer.Gui
                 ret                                                  = true;
             }
 
-            ImGui.Text(set.Option(CustomizationId.FacialFeaturesTattoos));
+            ImGui.TextUnformatted(set.Option(CustomizationId.FacialFeaturesTattoos));
 
             return ret;
         }
@@ -210,13 +208,14 @@ namespace Glamourer.Gui
         private bool DrawIconPickerPopup(string label, CustomizationSet set, CustomizationId id, out Customization.Customization value)
         {
             value = default;
-            if (!ImGui.BeginPopup(label, ImGuiWindowFlags.AlwaysAutoResize))
+            using var popup = ImRaii.Popup(label, ImGuiWindowFlags.AlwaysAutoResize);
+            if (!popup)
                 return false;
 
             var ret   = false;
             var count = set.Count(id);
-            using var raii = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
-                .PushStyle(ImGuiStyleVar.FrameRounding, 0);
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
+                .Push(ImGuiStyleVar.FrameRounding, 0);
             for (var i = 0; i < count; ++i)
             {
                 var custom = set.Data(id, i);
@@ -229,11 +228,7 @@ namespace Glamourer.Gui
                     ImGui.CloseCurrentPopup();
                 }
 
-                if (ImGui.IsItemHovered())
-                {
-                    using var tt = ImGuiRaii.NewTooltip();
-                    ImGui.Image(icon.ImGuiHandle, new Vector2(icon.Width, icon.Height));
-                }
+                ImGuiUtil.HoverIconTooltip(icon, _iconSize);
 
                 var text = custom.Value.ToString();
                 var textWidth = ImGui.CalcTextSize(text).X;
@@ -244,14 +239,13 @@ namespace Glamourer.Gui
                     ImGui.SameLine();
             }
 
-            ImGui.EndPopup();
             return ret;
         }
 
         private bool DrawIconSelector(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
-            using var bigGroup = ImGuiRaii.NewGroup();
+            using var bigGroup = ImRaii.Group();
             var       ret      = false;
             var       count    = set.Count(id);
 
@@ -268,14 +262,10 @@ namespace Glamourer.Gui
             if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
                 ImGui.OpenPopup(popupName);
 
-            if (ImGui.IsItemHovered())
-            {
-                using var tt = ImGuiRaii.NewTooltip();
-                ImGui.Image(icon.ImGuiHandle, new Vector2(icon.Width, icon.Height));
-            }
+            ImGuiUtil.HoverIconTooltip(icon, _iconSize);
 
             ImGui.SameLine();
-            using var group = ImGuiRaii.NewGroup();
+            using var group = ImRaii.Group();
             if (InputInt($"##text_{id}", ref current, 1, count))
             {
                 customization[id] = set.Data(id, current).Value;
@@ -288,8 +278,8 @@ namespace Glamourer.Gui
                 ret               = true;
             }
 
-            ImGui.Text($"{label} ({custom.Value.Value})");
-            ImGuiCustom.HoverTooltip(tooltip);
+            ImGui.TextUnformatted($"{label} ({custom.Value.Value})");
+            ImGuiUtil.HoverTooltip(tooltip);
 
             return ret;
         }
@@ -298,7 +288,7 @@ namespace Glamourer.Gui
         private bool DrawPercentageSelector(string label, string tooltip, ref CharacterCustomization customization, CustomizationId id,
             CustomizationSet set)
         {
-            using var bigGroup = ImGuiRaii.NewGroup();
+            using var bigGroup = ImRaii.Group();
             var       ret      = false;
             int       value    = customization[id];
             var       count    = set.Count(id);
@@ -318,15 +308,15 @@ namespace Glamourer.Gui
             }
 
             ImGui.SameLine();
-            ImGui.Text(label);
-            ImGuiCustom.HoverTooltip(tooltip);
+            ImGui.TextUnformatted(label);
+            ImGuiUtil.HoverTooltip(tooltip);
 
             return ret;
         }
 
         private bool DrawRaceSelector(ref CharacterCustomization customization)
         {
-            using var group = ImGuiRaii.NewGroup();
+            using var group = ImRaii.Group();
             var       ret   = false;
             ImGui.SetNextItemWidth(_raceSelectorWidth);
             if (ImGui.BeginCombo("##subRaceCombo", ClanName(customization.Clan, customization.Gender)))
@@ -343,7 +333,7 @@ namespace Glamourer.Gui
                 ImGui.EndCombo();
             }
 
-            ImGui.Text(
+            ImGui.TextUnformatted(
                 $"{Glamourer.Customization.GetName(CustomName.Gender)} & {Glamourer.Customization.GetName(CustomName.Clan)}");
 
             return ret;
@@ -352,7 +342,7 @@ namespace Glamourer.Gui
         private bool DrawGenderSelector(ref CharacterCustomization customization)
         {
             var ret = false;
-            ImGui.PushFont(UiBuilder.IconFont);
+            using var font = ImRaii.PushFont(UiBuilder.IconFont);
             var icon       = customization.Gender == Gender.Male ? FontAwesomeIcon.Mars : FontAwesomeIcon.Venus;
             var restricted = false;
             if (customization.Race == Race.Hrothgar)
@@ -370,7 +360,6 @@ namespace Glamourer.Gui
 
             if (restricted)
                 ImGui.PopStyleVar();
-            ImGui.PopFont();
             return ret;
         }
 

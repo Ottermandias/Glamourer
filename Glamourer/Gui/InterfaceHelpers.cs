@@ -2,6 +2,7 @@
 using System.Linq;
 using Dalamud.Logging;
 using Glamourer.Customization;
+using Glamourer.Structs;
 using ImGuiNET;
 using Penumbra.GameData.Enums;
 

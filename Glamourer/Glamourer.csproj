@@ -50,6 +50,10 @@
 			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
       <Private>False</Private>
 		</Reference>
+    <Reference Include="FFXIVClientStructs">
+      <HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
 		<Reference Include="ImGui.NET">
 			<HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\ImGui.NET.dll</HintPath>
       <Private>False</Private>

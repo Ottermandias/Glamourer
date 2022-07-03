@@ -5,6 +5,7 @@ using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using Glamourer.FileSystem;
+using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.PlayerWatch;
 
@@ -122,19 +123,19 @@ namespace Glamourer.Designs
 
         private void OnPlayerChange(Character character)
         {
-            var name = character.Name.ToString();
-            if (!EnabledDesigns.TryGetValue(name, out var designs))
-                return;
-
-            var design = designs.OrderBy(d => d.Jobs.Count).FirstOrDefault(d => d.Jobs.Fits(character.ClassJob.Id));
-            if (design == null)
-                return;
-
-            PluginLog.Debug("Redrawing {CharacterName} with {DesignName} for job {JobGroup}.", name, design.Design.FullName(),
-                design.Jobs.Name);
-            design.Design.Data.Apply(character);
-            Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(character);
-            Glamourer.Penumbra.RedrawObject(character, RedrawType.Redraw, false);
+            //var name = character.Name.ToString();
+            //if (!EnabledDesigns.TryGetValue(name, out var designs))
+            //    return;
+            //
+            //var design = designs.OrderBy(d => d.Jobs.Count).FirstOrDefault(d => d.Jobs.Fits(character.ClassJob.Id));
+            //if (design == null)
+            //    return;
+            //
+            //PluginLog.Debug("Redrawing {CharacterName} with {DesignName} for job {JobGroup}.", name, design.Design.FullName(),
+            //    design.Jobs.Name);
+            //design.Design.Data.Apply(character);
+            //Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(character);
+            //Glamourer.Penumbra.RedrawObject(character, RedrawType.Redraw, false);
         }
 
         public void Add(string name, Design design, JobGroup group, bool enabled = false)

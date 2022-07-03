@@ -2,6 +2,7 @@
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using Dalamud.Plugin.Ipc;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Gui;
 using ImGuiNET;
 using Penumbra.GameData.Enums;
@@ -17,9 +18,13 @@ public class PenumbraAttach : IDisposable
     private ICallGateSubscriber<MouseButton, ChangedItemType, uint, object>? _clickSubscriber;
     private ICallGateSubscriber<string, int, object>?                        _redrawSubscriberName;
     private ICallGateSubscriber<GameObject, int, object>?                    _redrawSubscriberObject;
+    private ICallGateSubscriber<IntPtr, (IntPtr, string)>?                   _drawObjectInfo;
+    private ICallGateSubscriber<IntPtr, string, IntPtr, IntPtr, object?>?    _creatingCharacterBase;
 
     private readonly ICallGateSubscriber<object?> _initializedEvent;
     private readonly ICallGateSubscriber<object?> _disposedEvent;
+
+    public event Action<IntPtr, IntPtr, IntPtr>? CreatingCharacterBase;
 
     public PenumbraAttach(bool attach)
     {
@@ -47,6 +52,7 @@ public class PenumbraAttach : IDisposable
 
             _redrawSubscriberName   = Dalamud.PluginInterface.GetIpcSubscriber<string, int, object>("Penumbra.RedrawObjectByName");
             _redrawSubscriberObject = Dalamud.PluginInterface.GetIpcSubscriber<GameObject, int, object>("Penumbra.RedrawObject");
+            _drawObjectInfo         = Dalamud.PluginInterface.GetIpcSubscriber<IntPtr, (IntPtr, string)>("Penumbra.GetDrawObjectInfo");
 
             if (!attach)
                 return;
@@ -54,8 +60,11 @@ public class PenumbraAttach : IDisposable
             _tooltipSubscriber = Dalamud.PluginInterface.GetIpcSubscriber<ChangedItemType, uint, object>("Penumbra.ChangedItemTooltip");
             _clickSubscriber =
                 Dalamud.PluginInterface.GetIpcSubscriber<MouseButton, ChangedItemType, uint, object>("Penumbra.ChangedItemClick");
+            _creatingCharacterBase =
+                Dalamud.PluginInterface.GetIpcSubscriber<IntPtr, string, IntPtr, IntPtr, object?>("Penumbra.CreatingCharacterBase");
             _tooltipSubscriber.Subscribe(PenumbraTooltip);
             _clickSubscriber.Subscribe(PenumbraRightClick);
+            _creatingCharacterBase.Subscribe(SubscribeCharacterBase);
             PluginLog.Debug("Glamourer attached to Penumbra.");
         }
         catch (Exception e)
@@ -64,13 +73,19 @@ public class PenumbraAttach : IDisposable
         }
     }
 
+    private void SubscribeCharacterBase(IntPtr gameObject, string _, IntPtr customize, IntPtr equipment)
+        => CreatingCharacterBase?.Invoke(gameObject, customize, equipment);
+
     public void Unattach()
     {
         _tooltipSubscriber?.Unsubscribe(PenumbraTooltip);
         _clickSubscriber?.Unsubscribe(PenumbraRightClick);
-        _tooltipSubscriber    = null;
-        _clickSubscriber      = null;
-        _redrawSubscriberName = null;
+        _creatingCharacterBase?.Unsubscribe(SubscribeCharacterBase);
+        _tooltipSubscriber     = null;
+        _clickSubscriber       = null;
+        _creatingCharacterBase = null;
+        _redrawSubscriberName  = null;
+        _drawObjectInfo        = null;
         if (_redrawSubscriberObject != null)
         {
             PluginLog.Debug("Glamourer detached from Penumbra.");
@@ -111,6 +126,9 @@ public class PenumbraAttach : IDisposable
             UpdateCharacters(player);
         }
     }
+
+    public unsafe FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject* GameObjectFromDrawObject(IntPtr drawObject)
+        => (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(_drawObjectInfo?.InvokeFunc(drawObject).Item1 ?? IntPtr.Zero);
 
     public void RedrawObject(GameObject actor, RedrawType settings, bool repeat)
     {

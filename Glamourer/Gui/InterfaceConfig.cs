@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Numerics;
 using ImGuiNET;
+using OtterGui;
+using OtterGui.Raii;
 
 namespace Glamourer.Gui
 {
@@ -11,7 +13,7 @@ namespace Glamourer.Gui
             if (DrawCheckMark(label, value, setter))
                 Glamourer.Config.Save();
 
-            ImGuiCustom.HoverTooltip(tooltip);
+            ImGuiUtil.HoverTooltip(tooltip);
         }
 
         private static void ChangeAndSave<T>(T value, T currentValue, Action<T> setter) where T : IEquatable<T>
@@ -33,19 +35,19 @@ namespace Glamourer.Gui
             ImGui.SameLine();
             if (ImGui.Button($"Default##{name}"))
                 ChangeAndSave(defaultValue, value, setter);
-            ImGuiCustom.HoverTooltip(
+            ImGuiUtil.HoverTooltip(
                 $"Reset to default: #{defaultValue & 0xFF:X2}{(defaultValue >> 8) & 0xFF:X2}{(defaultValue >> 16) & 0xFF:X2}{defaultValue >> 24:X2}");
             ImGui.SameLine();
             ImGui.Text(name);
-            ImGuiCustom.HoverTooltip(tooltip);
+            ImGuiUtil.HoverTooltip(tooltip);
         }
 
-        private void DrawRestorePenumbraButton()
+        private static void DrawRestorePenumbraButton()
         {
             const string buttonLabel = "Re-Register Penumbra";
             if (!Glamourer.Config.AttachToPenumbra)
             {
-                using var raii = new ImGuiRaii().PushStyle(ImGuiStyleVar.Alpha, 0.5f);
+                using var style = ImRaii.PushStyle(ImGuiStyleVar.Alpha, 0.5f);
                 ImGui.Button(buttonLabel);
                 return;
             }
@@ -53,14 +55,14 @@ namespace Glamourer.Gui
             if (ImGui.Button(buttonLabel))
                 Glamourer.Penumbra.Reattach(true);
 
-            ImGuiCustom.HoverTooltip(
+            ImGuiUtil.HoverTooltip(
                     "If Penumbra did not register the functions for some reason, pressing this button might help restore functionality.");
         }
 
-        private void DrawConfigTab()
+        private static void DrawConfigTab()
         {
-            using var raii = new ImGuiRaii();
-            if (!raii.Begin(() => ImGui.BeginTabItem("Config"), ImGui.EndTabItem))
+            using var tab = ImRaii.TabItem("Config");
+            if (!tab)
                 return;
 
             var cfg = Glamourer.Config;

@@ -7,6 +7,8 @@ using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
 using Dalamud.Logging;
 using ImGuiNET;
+using OtterGui;
+using OtterGui.Raii;
 using Penumbra.PlayerWatch;
 
 namespace Glamourer.Gui;
@@ -27,9 +29,8 @@ internal partial class Interface
 
     private void DrawPlayerFilter()
     {
-        using var raii = new ImGuiRaii()
-            .PushStyle(ImGuiStyleVar.ItemSpacing,   Vector2.Zero)
-            .PushStyle(ImGuiStyleVar.FrameRounding, 0);
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
+            .Push(ImGuiStyleVar.FrameRounding, 0);
         ImGui.SetNextItemWidth(SelectorWidth * ImGui.GetIO().FontGlobalScale);
         if (ImGui.InputTextWithHint("##playerFilter", "Filter Players...", ref _playerFilter, 32))
             _playerFilterLower = _playerFilter.ToLowerInvariant();
@@ -115,23 +116,22 @@ internal partial class Interface
 
     private void DrawSelectionButtons()
     {
-        using var raii = new ImGuiRaii()
-            .PushStyle(ImGuiStyleVar.ItemSpacing,   Vector2.Zero)
-            .PushStyle(ImGuiStyleVar.FrameRounding, 0)
-            .PushFont(UiBuilder.IconFont);
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
+            .Push(ImGuiStyleVar.FrameRounding, 0);
+        using var  font        = ImRaii.PushFont(UiBuilder.IconFont);
         Character? select      = null;
         var        buttonWidth = Vector2.UnitX * SelectorWidth / 2;
         if (ImGui.Button(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth))
             select = Dalamud.ClientState.LocalPlayer;
-        raii.PopFonts();
-        ImGuiCustom.HoverTooltip("Select the local player character.");
+        font.Pop();
+        ImGuiUtil.HoverTooltip("Select the local player character.");
         ImGui.SameLine();
-        raii.PushFont(UiBuilder.IconFont);
+        font.Push(UiBuilder.IconFont);
         if (_inGPose)
         {
-            raii.PushStyle(ImGuiStyleVar.Alpha, 0.5f);
+            style.Push(ImGuiStyleVar.Alpha, 0.5f);
             ImGui.Button(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth);
-            raii.PopStyles();
+            style.Pop();
         }
         else
         {
@@ -139,8 +139,8 @@ internal partial class Interface
                 select = CharacterFactory.Convert(Dalamud.Targets.Target);
         }
 
-        raii.PopFonts();
-        ImGuiCustom.HoverTooltip("Select the current target, if it is in the list.");
+        font.Pop();
+        ImGuiUtil.HoverTooltip("Select the current target, if it is in the list.");
 
         if (select == null)
             return;
@@ -196,7 +196,7 @@ internal partial class Interface
         }
 
 
-        using (var _ = new ImGuiRaii().PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
+        using (var _ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
         {
             ImGui.EndChild();
         }
@@ -207,14 +207,14 @@ internal partial class Interface
 
     private void DrawPlayerTab()
     {
-        using var raii = new ImGuiRaii();
+        using var tab = ImRaii.TabItem("Current Players");
         _player = null;
-        if (!raii.Begin(() => ImGui.BeginTabItem("Current Players"), ImGui.EndTabItem))
+        if (!tab)
             return;
 
         DrawPlayerSelector();
 
-        if (!_currentLabel.Any())
+        if (_currentLabel.Length == 0)
             return;
 
         ImGui.SameLine();

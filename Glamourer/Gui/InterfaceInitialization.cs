@@ -4,6 +4,7 @@ using System.Reflection;
 using ImGuiNET;
 using Penumbra.GameData.Enums;
 using Lumina.Excel.GeneratedSheets;
+using Glamourer.Structs;
 
 namespace Glamourer.Gui
 {
