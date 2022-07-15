@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 

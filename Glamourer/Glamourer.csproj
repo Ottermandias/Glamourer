@@ -77,17 +77,12 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Newtonsoft.Json" Version="12.0.3">
-      <Private>false</Private>
-    </PackageReference>
-
-    <PackageReference Include="System.Memory" Version="4.5.3" />
+		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Glamourer.GameData\Glamourer.GameData.csproj" />
 	  <ProjectReference Include="..\..\Penumbra\Penumbra.GameData\Penumbra.GameData.csproj" />
-	  <ProjectReference Include="..\..\Penumbra\Penumbra.PlayerWatch\Penumbra.PlayerWatch.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -105,7 +100,17 @@
 	  </EmbeddedResource>
 	</ItemGroup>
 
-	<ItemGroup>
+  <Target Name="GetGitHash" BeforeTargets="GetAssemblyVersion" Returns="InformationalVersion">
+    <Exec Command="git rev-parse --short HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
+    </Exec>
+
+    <PropertyGroup>
+      <InformationalVersion>$(GitCommitHash)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
+
+  <ItemGroup>
 	  <None Update="Glamourer.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

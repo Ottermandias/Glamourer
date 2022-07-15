@@ -1,29 +1,31 @@
 ﻿using System.Diagnostics;
-using System.Linq;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 
 namespace Glamourer.Structs;
 
+// The game specifies different job groups that can contain specific jobs or not.
 public readonly struct JobGroup
 {
-    public readonly string Name;
-    private readonly ulong _flags;
-    public readonly int Count;
-    public readonly uint Id;
+    public readonly  string Name;
+    public readonly  int    Count;
+    public readonly  uint   Id;
+    private readonly ulong  _flags;
 
+    // Create a job group from a given category and the ClassJob sheet.
+    // It looks up the different jobs contained in the category and sets the flags appropriately.
     public JobGroup(ClassJobCategory group, ExcelSheet<ClassJob> jobs)
     {
-        Count = 0;
+        Count  = 0;
         _flags = 0ul;
-        Id = group.RowId;
-        Name = group.Name.ToString();
+        Id     = group.RowId;
+        Name   = group.Name.ToString();
 
         Debug.Assert(jobs.RowCount < 64);
         foreach (var job in jobs)
         {
             var abbr = job.Abbreviation.ToString();
-            if (!abbr.Any())
+            if (abbr.Length == 0)
                 continue;
 
             var prop = group.GetType().GetProperty(abbr);
@@ -37,9 +39,11 @@ public readonly struct JobGroup
         }
     }
 
+    // Check if a job is contained inside this group.
     public bool Fits(Job job)
         => Fits(job.Id);
 
+    // Check if a job is contained inside this group.
     public bool Fits(uint jobId)
     {
         var flag = 1ul << (int)jobId;

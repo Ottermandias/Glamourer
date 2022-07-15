@@ -1,22 +1,16 @@
-﻿using Glamourer.FileSystem;
+﻿using System;
 
-namespace Glamourer.Designs
+namespace Glamourer.Designs;
+
+public class Design
 {
-    public class Design : IFileSystemBase
-    {
-        public Folder Parent { get; set; }
-        public string Name   { get; set; }
+    public string Name { get; }
+    public bool   ReadOnly;
 
-        public CharacterSave Data { get; set; }
+    public DateTimeOffset CreationDate   { get; }
+    public DateTimeOffset LastUpdateDate { get; }
+    public CharacterSave  Data           { get; }
 
-        internal Design(Folder parent, string name)
-        {
-            Parent = parent;
-            Name   = name;
-            Data   = new CharacterSave();
-        }
-
-        public override string ToString()
-            => Name;
-    }
+    public override string ToString()
+        => Name;
 }

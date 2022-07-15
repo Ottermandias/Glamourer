@@ -3,8 +3,37 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Structs;
 
+// An Item wrapper struct that contains the item table, a precomputed name and the associated equip slot.
 public readonly struct Item
 {
+    public readonly Lumina.Excel.GeneratedSheets.Item Base;
+    public readonly string                            Name;
+    public readonly EquipSlot                         EquippableTo;
+
+    // Obtain the main model info used by the item.
+    public (SetId id, WeaponType type, ushort variant) MainModel
+        => ParseModel(EquippableTo, Base.ModelMain);
+
+    // Obtain the sub model info used by the item. Will be 0 if the item has no sub model.
+    public (SetId id, WeaponType type, ushort variant) SubModel
+        => ParseModel(EquippableTo, Base.ModelSub);
+
+    public bool HasSubModel
+        => Base.ModelSub != 0;
+
+    // Create a new item from its sheet list with the given name and either the inferred equip slot or the given one.
+    public Item(Lumina.Excel.GeneratedSheets.Item item, string name, EquipSlot slot = EquipSlot.Unknown)
+    {
+        Base         = item;
+        Name         = name;
+        EquippableTo = slot == EquipSlot.Unknown ? ((EquipSlot)item.EquipSlotCategory.Row).ToSlot() : slot;
+    }
+
+    // Create empty Nothing items.
+    public static Item Nothing(EquipSlot slot)
+        => new("Nothing", slot);
+
+    // Produce the relevant model information for a given item and equip slot.
     private static (SetId id, WeaponType type, ushort variant) ParseModel(EquipSlot slot, ulong data)
     {
         if (slot is EquipSlot.MainHand or EquipSlot.OffHand)
@@ -22,33 +51,14 @@ public readonly struct Item
         }
     }
 
-    public readonly Lumina.Excel.GeneratedSheets.Item Base;
-    public readonly string                            Name;
-    public readonly EquipSlot                         EquippableTo;
-
-    public (SetId id, WeaponType type, ushort variant) MainModel
-        => ParseModel(EquippableTo, Base.ModelMain);
-
-    public bool HasSubModel
-        => Base.ModelSub != 0;
-
-    public (SetId id, WeaponType type, ushort variant) SubModel
-        => ParseModel(EquippableTo, Base.ModelSub);
-
-    public Item(Lumina.Excel.GeneratedSheets.Item item, string name, EquipSlot slot = EquipSlot.Unknown)
-    {
-        Base         = item;
-        Name         = name;
-        EquippableTo = slot == EquipSlot.Unknown ? ((EquipSlot)item.EquipSlotCategory.Row).ToSlot() : slot;
-    }
-
-    public static Item Nothing(EquipSlot slot)
-        => new("Nothing", slot);
-
+    // Used for 'Nothing' items.
     private Item(string name, EquipSlot slot)
     {
         Name         = name;
         Base         = new Lumina.Excel.GeneratedSheets.Item();
         EquippableTo = slot;
     }
+
+    public override string ToString()
+        => Name;
 }

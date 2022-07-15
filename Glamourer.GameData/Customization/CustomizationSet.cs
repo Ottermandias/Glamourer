@@ -1,31 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Customization;
 
+// Each Subrace and Gender combo has a customization set.
+// This describes the available customizations, their types and their names.
 public class CustomizationSet
 {
-    public const int DefaultAvailable =
-        (1 << (int)CustomizationId.Height)
-      | (1 << (int)CustomizationId.Hairstyle)
-      | (1 << (int)CustomizationId.SkinColor)
-      | (1 << (int)CustomizationId.EyeColorR)
-      | (1 << (int)CustomizationId.EyeColorL)
-      | (1 << (int)CustomizationId.HairColor)
-      | (1 << (int)CustomizationId.HighlightColor)
-      | (1 << (int)CustomizationId.FacialFeaturesTattoos)
-      | (1 << (int)CustomizationId.TattooColor)
-      | (1 << (int)CustomizationId.LipColor)
-      | (1 << (int)CustomizationId.Height);
-
     internal CustomizationSet(SubRace clan, Gender gender)
     {
         Gender = gender;
         Clan   = clan;
         _settingAvailable = clan.ToRace() == Race.Hrothgar && gender == Gender.Female
-            ? 0
+            ? 0u
             : DefaultAvailable;
     }
 
@@ -35,39 +25,50 @@ public class CustomizationSet
     public Race Race
         => Clan.ToRace();
 
-    private int _settingAvailable;
+    private uint _settingAvailable;
 
     internal void SetAvailable(CustomizationId id)
-        => _settingAvailable |= 1 << (int)id;
+        => _settingAvailable |= 1u << (int)id;
 
     public bool IsAvailable(CustomizationId id)
-        => (_settingAvailable & (1 << (int)id)) != 0;
+        => (_settingAvailable & (1u << (int)id)) != 0;
 
-    public int NumEyebrows    { get; internal set; }
-    public int NumEyeShapes   { get; internal set; }
-    public int NumNoseShapes  { get; internal set; }
-    public int NumJawShapes   { get; internal set; }
-    public int NumMouthShapes { get; internal set; }
+    public int NumEyebrows    { get; internal init; }
+    public int NumEyeShapes   { get; internal init; }
+    public int NumNoseShapes  { get; internal init; }
+    public int NumJawShapes   { get; internal init; }
+    public int NumMouthShapes { get; internal init; }
+
+    public string ToHumanReadable(CustomizationData customizationData)
+    {
+        var sb = new StringBuilder();
+        foreach (var id in Enum.GetValues<CustomizationId>().Where(IsAvailable))
+            sb.AppendFormat("{0,-20}", Option(id)).Append(customizationData[id]);
+
+        return sb.ToString();
+    }
 
 
-    public IReadOnlyList<string>                       OptionName      { get; internal set; } = null!;
-    public IReadOnlyList<Customization>                Faces           { get; internal set; } = null!;
-    public IReadOnlyList<Customization>                HairStyles      { get; internal set; } = null!;
-    public IReadOnlyList<Customization>                TailEarShapes   { get; internal set; } = null!;
-    public IReadOnlyList<IReadOnlyList<Customization>> FeaturesTattoos { get; internal set; } = null!;
-    public IReadOnlyList<Customization>                FacePaints      { get; internal set; } = null!;
+    public IReadOnlyList<string>                       OptionName      { get; internal set; }  = null!;
+    public IReadOnlyList<Customization>                Faces           { get; internal init; } = null!;
+    public IReadOnlyList<Customization>                HairStyles      { get; internal init; } = null!;
+    public IReadOnlyList<Customization>                TailEarShapes   { get; internal init; } = null!;
+    public IReadOnlyList<IReadOnlyList<Customization>> FeaturesTattoos { get; internal set; }  = null!;
+    public IReadOnlyList<Customization>                FacePaints      { get; internal init; } = null!;
 
-    public IReadOnlyList<Customization> SkinColors           { get; internal set; } = null!;
-    public IReadOnlyList<Customization> HairColors           { get; internal set; } = null!;
-    public IReadOnlyList<Customization> HighlightColors      { get; internal set; } = null!;
-    public IReadOnlyList<Customization> EyeColors            { get; internal set; } = null!;
-    public IReadOnlyList<Customization> TattooColors         { get; internal set; } = null!;
-    public IReadOnlyList<Customization> FacePaintColorsLight { get; internal set; } = null!;
-    public IReadOnlyList<Customization> FacePaintColorsDark  { get; internal set; } = null!;
-    public IReadOnlyList<Customization> LipColorsLight       { get; internal set; } = null!;
-    public IReadOnlyList<Customization> LipColorsDark        { get; internal set; } = null!;
+    public IReadOnlyList<Customization> SkinColors           { get; internal init; } = null!;
+    public IReadOnlyList<Customization> HairColors           { get; internal init; } = null!;
+    public IReadOnlyList<Customization> HighlightColors      { get; internal init; } = null!;
+    public IReadOnlyList<Customization> EyeColors            { get; internal init; } = null!;
+    public IReadOnlyList<Customization> TattooColors         { get; internal init; } = null!;
+    public IReadOnlyList<Customization> FacePaintColorsLight { get; internal init; } = null!;
+    public IReadOnlyList<Customization> FacePaintColorsDark  { get; internal init; } = null!;
+    public IReadOnlyList<Customization> LipColorsLight       { get; internal init; } = null!;
+    public IReadOnlyList<Customization> LipColorsDark        { get; internal init; } = null!;
 
-    public IReadOnlyList<CharaMakeParams.MenuType> Types { get; internal set; } = null!;
+    public IReadOnlyList<CharaMakeParams.MenuType>                          Types { get; internal set; } = null!;
+    public IReadOnlyDictionary<CharaMakeParams.MenuType, CustomizationId[]> Order { get; internal set; } = null!;
+
 
     public string Option(CustomizationId id)
         => OptionName[(int)id];
@@ -154,6 +155,15 @@ public class CustomizationSet
     public CharaMakeParams.MenuType Type(CustomizationId id)
         => Types[(int)id];
 
+    internal static IReadOnlyDictionary<CharaMakeParams.MenuType, CustomizationId[]> ComputeOrder(CustomizationSet set)
+    {
+        var ret = (CustomizationId[])Enum.GetValues(typeof(CustomizationId));
+        ret[(int)CustomizationId.TattooColor] = CustomizationId.EyeColorL;
+        ret[(int)CustomizationId.EyeColorL]   = CustomizationId.EyeColorR;
+        ret[(int)CustomizationId.EyeColorR]   = CustomizationId.TattooColor;
+
+        return ret.Skip(2).Where(set.IsAvailable).GroupBy(set.Type).ToDictionary(k => k.Key, k => k.ToArray());
+    }
 
     public int Count(CustomizationId id)
     {
@@ -187,4 +197,17 @@ public class CustomizationSet
             _                                     => throw new ArgumentOutOfRangeException(nameof(id), id, null),
         };
     }
+
+    private const uint DefaultAvailable =
+        (1u << (int)CustomizationId.Height)
+      | (1u << (int)CustomizationId.Hairstyle)
+      | (1u << (int)CustomizationId.SkinColor)
+      | (1u << (int)CustomizationId.EyeColorR)
+      | (1u << (int)CustomizationId.EyeColorL)
+      | (1u << (int)CustomizationId.HairColor)
+      | (1u << (int)CustomizationId.HighlightColor)
+      | (1u << (int)CustomizationId.FacialFeaturesTattoos)
+      | (1u << (int)CustomizationId.TattooColor)
+      | (1u << (int)CustomizationId.LipColor)
+      | (1u << (int)CustomizationId.Height);
 }

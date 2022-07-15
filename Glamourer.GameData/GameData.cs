@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Dalamud;
 using Dalamud.Data;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Glamourer.Structs;
 using Lumina.Excel.GeneratedSheets;
 using Penumbra.GameData.Enums;
@@ -17,20 +20,14 @@ public static class GameData
     private static Dictionary<EquipSlot, List<Item>>? _itemsBySlot;
     private static Dictionary<byte, Job>?             _jobs;
     private static Dictionary<ushort, JobGroup>?      _jobGroups;
-    private static SortedList<uint, ModelChara>?      _models;
+    private static ModelData?                         _models;
+    private static RestrictedGear?                    _restrictedGear;
 
-    public static IReadOnlyDictionary<uint, ModelChara> Models(DataManager dataManager)
-    {
-        if (_models != null)
-            return _models;
+    public static RestrictedGear RestrictedGear(DataManager dataManager)
+        => _restrictedGear ??= new RestrictedGear(dataManager);
 
-        var sheet = dataManager.GetExcelSheet<ModelChara>()!;
-
-        _models = new SortedList<uint, ModelChara>((int)sheet.RowCount);
-        foreach (var model in sheet.Where(m => m.Type != 0))
-            _models.Add(model.RowId, model);
-        return _models;
-    }
+    public static ModelData Models(DataManager dataManager)
+        => _models ??= new ModelData(dataManager);
 
     public static IReadOnlyDictionary<byte, Stain> Stains(DataManager dataManager)
     {

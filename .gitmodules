@@ -1,4 +1,0 @@
-[submodule "OtterGui"]
-	path = OtterGui
-	url = git@github.com:Ottermandias/OtterGui.git
-	branch = main

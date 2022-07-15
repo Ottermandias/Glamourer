@@ -2,8 +2,7 @@
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using Dalamud.Plugin.Ipc;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using Glamourer.Gui;
+using Glamourer.Structs;
 using ImGuiNET;
 using Penumbra.GameData.Enums;
 
@@ -14,17 +13,17 @@ public class PenumbraAttach : IDisposable
     public const int RequiredPenumbraBreakingVersion = 4;
     public const int RequiredPenumbraFeatureVersion  = 0;
 
-    private ICallGateSubscriber<ChangedItemType, uint, object>?              _tooltipSubscriber;
-    private ICallGateSubscriber<MouseButton, ChangedItemType, uint, object>? _clickSubscriber;
-    private ICallGateSubscriber<string, int, object>?                        _redrawSubscriberName;
-    private ICallGateSubscriber<GameObject, int, object>?                    _redrawSubscriberObject;
-    private ICallGateSubscriber<IntPtr, (IntPtr, string)>?                   _drawObjectInfo;
-    private ICallGateSubscriber<IntPtr, string, IntPtr, IntPtr, object?>?    _creatingCharacterBase;
+    private ICallGateSubscriber<ChangedItemType, uint, object>?                   _tooltipSubscriber;
+    private ICallGateSubscriber<MouseButton, ChangedItemType, uint, object>?      _clickSubscriber;
+    private ICallGateSubscriber<string, int, object>?                             _redrawSubscriberName;
+    private ICallGateSubscriber<GameObject, int, object>?                         _redrawSubscriberObject;
+    private ICallGateSubscriber<IntPtr, (IntPtr, string)>?                        _drawObjectInfo;
+    private ICallGateSubscriber<IntPtr, string, IntPtr, IntPtr, IntPtr, object?>? _creatingCharacterBase;
 
     private readonly ICallGateSubscriber<object?> _initializedEvent;
     private readonly ICallGateSubscriber<object?> _disposedEvent;
 
-    public event Action<IntPtr, IntPtr, IntPtr>? CreatingCharacterBase;
+    public event Action<IntPtr, IntPtr, IntPtr, IntPtr>? CreatingCharacterBase;
 
     public PenumbraAttach(bool attach)
     {
@@ -61,7 +60,7 @@ public class PenumbraAttach : IDisposable
             _clickSubscriber =
                 Dalamud.PluginInterface.GetIpcSubscriber<MouseButton, ChangedItemType, uint, object>("Penumbra.ChangedItemClick");
             _creatingCharacterBase =
-                Dalamud.PluginInterface.GetIpcSubscriber<IntPtr, string, IntPtr, IntPtr, object?>("Penumbra.CreatingCharacterBase");
+                Dalamud.PluginInterface.GetIpcSubscriber<IntPtr, string, IntPtr, IntPtr, IntPtr, object?>("Penumbra.CreatingCharacterBase");
             _tooltipSubscriber.Subscribe(PenumbraTooltip);
             _clickSubscriber.Subscribe(PenumbraRightClick);
             _creatingCharacterBase.Subscribe(SubscribeCharacterBase);
@@ -73,8 +72,8 @@ public class PenumbraAttach : IDisposable
         }
     }
 
-    private void SubscribeCharacterBase(IntPtr gameObject, string _, IntPtr customize, IntPtr equipment)
-        => CreatingCharacterBase?.Invoke(gameObject, customize, equipment);
+    private void SubscribeCharacterBase(IntPtr gameObject, string _, IntPtr modelId, IntPtr customize, IntPtr equipment)
+        => CreatingCharacterBase?.Invoke(gameObject, modelId, customize, equipment);
 
     public void Unattach()
     {
@@ -111,27 +110,30 @@ public class PenumbraAttach : IDisposable
         if (button != MouseButton.Right || type != ChangedItemType.Item)
             return;
 
-        var gPose     = Dalamud.Objects[Interface.GPoseObjectId] as Character;
-        var player    = Dalamud.Objects[0] as Character;
-        var item      = (Lumina.Excel.GeneratedSheets.Item)type.GetObject(id)!;
-        var writeItem = new Item(item, string.Empty);
-        if (gPose != null)
-        {
-            writeItem.Write(gPose.Address);
-            UpdateCharacters(gPose, player);
-        }
-        else if (player != null)
-        {
-            writeItem.Write(player.Address);
-            UpdateCharacters(player);
-        }
+        //var gPose     = ObjectManager.GPosePlayer;
+        //var player    = ObjectManager.Player;
+        //var item      = (Lumina.Excel.GeneratedSheets.Item)type.GetObject(id)!;
+        //var writeItem = new Item(item, string.Empty);
+        //if (gPose != null)
+        //{
+        //    writeItem.Write(gPose.Address);
+        //    UpdateCharacters(gPose, player);
+        //}
+        //else if (player != null)
+        //{
+        //    writeItem.Write(player.Address);
+        //    UpdateCharacters(player);
+        //}
     }
 
     public unsafe FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject* GameObjectFromDrawObject(IntPtr drawObject)
         => (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(_drawObjectInfo?.InvokeFunc(drawObject).Item1 ?? IntPtr.Zero);
 
-    public void RedrawObject(GameObject actor, RedrawType settings, bool repeat)
+    public void RedrawObject(GameObject? actor, RedrawType settings, bool repeat)
     {
+        if (actor == null)
+            return;
+
         if (_redrawSubscriberObject != null)
         {
             try
@@ -166,15 +168,13 @@ public class PenumbraAttach : IDisposable
     // then manually redraw using Penumbra.
     public void UpdateCharacters(Character character, Character? gPoseOriginalCharacter = null)
     {
-        var newEquip = Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(character);
-        RedrawObject(character, RedrawType.Redraw, true);
-
-        // Special case for carrying over changes to the gPose player to the regular player, too.
-        if (gPoseOriginalCharacter == null)
-            return;
-
-        newEquip.Write(gPoseOriginalCharacter.Address);
-        Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(gPoseOriginalCharacter);
-        RedrawObject(gPoseOriginalCharacter, RedrawType.AfterGPose, false);
+        //RedrawObject(character, RedrawType.Redraw, true);
+        //
+        //// Special case for carrying over changes to the gPose player to the regular player, too.
+        //if (gPoseOriginalCharacter == null)
+        //    return;
+        //
+        //newEquip.Write(gPoseOriginalCharacter.Address);
+        //RedrawObject(gPoseOriginalCharacter, RedrawType.AfterGPose, false);
     }
 }

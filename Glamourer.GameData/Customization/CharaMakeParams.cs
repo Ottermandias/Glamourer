@@ -4,6 +4,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace Glamourer.Customization;
 
+// A custom version of CharaMakeParams that is easier to parse.
 [Sheet("CharaMakeParams")]
 public class CharaMakeParams : ExcelRow
 {
@@ -43,10 +44,9 @@ public class CharaMakeParams : ExcelRow
         public uint[] Icons;
     }
 
-    public LazyRow<Race>  Race  { get; set; } = null!;
-    public LazyRow<Tribe> Tribe { get; set; } = null!;
-
-    public sbyte Gender { get; set; }
+    public LazyRow<Race>  Race   { get; set; } = null!;
+    public LazyRow<Tribe> Tribe  { get; set; } = null!;
+    public sbyte          Gender { get; set; }
 
     public Menu[]                         Menus               { get; set; } = new Menu[NumMenus];
     public byte[]                         Voices              { get; set; } = new byte[NumVoices];
@@ -60,15 +60,17 @@ public class CharaMakeParams : ExcelRow
         Race     = new LazyRow<Race>(gameData, parser.ReadColumn<uint>(0), language);
         Tribe    = new LazyRow<Tribe>(gameData, parser.ReadColumn<uint>(1), language);
         Gender   = parser.ReadColumn<sbyte>(2);
+        var currentOffset = 0;
         for (var i = 0; i < NumMenus; ++i)
         {
-            Menus[i].Id            = parser.ReadColumn<uint>(3 + 0 * NumMenus + i);
-            Menus[i].InitVal       = parser.ReadColumn<byte>(3 + 1 * NumMenus + i);
-            Menus[i].Type          = (MenuType)parser.ReadColumn<byte>(3 + 2 * NumMenus + i);
-            Menus[i].Size          = parser.ReadColumn<byte>(3 + 3 * NumMenus + i);
-            Menus[i].LookAt        = parser.ReadColumn<byte>(3 + 4 * NumMenus + i);
-            Menus[i].Mask          = parser.ReadColumn<uint>(3 + 5 * NumMenus + i);
-            Menus[i].Customization = (CustomizationId)parser.ReadColumn<uint>(3 + 6 * NumMenus + i);
+            currentOffset          = 3 + i;
+            Menus[i].Id            = parser.ReadColumn<uint>(0 * NumMenus + currentOffset);
+            Menus[i].InitVal       = parser.ReadColumn<byte>(1 * NumMenus + currentOffset);
+            Menus[i].Type          = (MenuType)parser.ReadColumn<byte>(2 * NumMenus + currentOffset);
+            Menus[i].Size          = parser.ReadColumn<byte>(3 * NumMenus + currentOffset);
+            Menus[i].LookAt        = parser.ReadColumn<byte>(4 * NumMenus + currentOffset);
+            Menus[i].Mask          = parser.ReadColumn<uint>(5 * NumMenus + currentOffset);
+            Menus[i].Customization = (CustomizationId)parser.ReadColumn<uint>(6 * NumMenus + currentOffset);
             Menus[i].Values        = new uint[Menus[i].Size];
 
             switch (Menus[i].Type)
@@ -78,47 +80,42 @@ public class CharaMakeParams : ExcelRow
                 case MenuType.Percentage:
                     break;
                 default:
+                    currentOffset += 7 * NumMenus;
                     for (var j = 0; j < Menus[i].Size; ++j)
-                        Menus[i].Values[j] = parser.ReadColumn<uint>(3 + (7 + j) * NumMenus + i);
+                        Menus[i].Values[j] = parser.ReadColumn<uint>(j * NumMenus + currentOffset);
                     break;
             }
 
             Menus[i].Graphic = new byte[NumGraphics];
+            currentOffset    = 3 + (MaxNumValues + 7) * NumMenus + i;
             for (var j = 0; j < NumGraphics; ++j)
-                Menus[i].Graphic[j] = parser.ReadColumn<byte>(3 + (MaxNumValues + 7 + j) * NumMenus + i);
+                Menus[i].Graphic[j] = parser.ReadColumn<byte>(j * NumMenus + currentOffset);
         }
 
+        currentOffset = 3 + (MaxNumValues + 7 + NumGraphics) * NumMenus;
         for (var i = 0; i < NumVoices; ++i)
-            Voices[i] = parser.ReadColumn<byte>(3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + i);
+            Voices[i] = parser.ReadColumn<byte>(currentOffset++);
 
         for (var i = 0; i < NumFaces; ++i)
         {
+            currentOffset                = 3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + i;
             FacialFeatureByFace[i].Icons = new uint[NumFeatures];
             for (var j = 0; j < NumFeatures; ++j)
-            {
-                FacialFeatureByFace[i].Icons[j] =
-                    (uint)parser.ReadColumn<int>(3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + j * NumFaces + i);
-            }
+                FacialFeatureByFace[i].Icons[j] = (uint)parser.ReadColumn<int>(j * NumFaces + currentOffset);
         }
 
         for (var i = 0; i < NumEquip; ++i)
         {
+            currentOffset = 3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + NumFaces * NumFeatures + i * 7;
             Equip[i] = new CharaMakeType.UnkData3347Obj()
             {
-                Helmet = parser.ReadColumn<ulong>(
-                    3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + NumFaces * NumFeatures + i * 7 + 0),
-                Top = parser.ReadColumn<ulong>(
-                    3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + NumFaces * NumFeatures + i * 7 + 1),
-                Gloves = parser.ReadColumn<ulong>(
-                    3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + NumFaces * NumFeatures + i * 7 + 2),
-                Legs = parser.ReadColumn<ulong>(
-                    3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + NumFaces * NumFeatures + i * 7 + 3),
-                Shoes = parser.ReadColumn<ulong>(
-                    3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + NumFaces * NumFeatures + i * 7 + 4),
-                Weapon = parser.ReadColumn<ulong>(
-                    3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + NumFaces * NumFeatures + i * 7 + 5),
-                SubWeapon = parser.ReadColumn<ulong>(
-                    3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + NumFaces * NumFeatures + i * 7 + 6),
+                Helmet    = parser.ReadColumn<ulong>(currentOffset + 0),
+                Top       = parser.ReadColumn<ulong>(currentOffset + 1),
+                Gloves    = parser.ReadColumn<ulong>(currentOffset + 2),
+                Legs      = parser.ReadColumn<ulong>(currentOffset + 3),
+                Shoes     = parser.ReadColumn<ulong>(currentOffset + 4),
+                Weapon    = parser.ReadColumn<ulong>(currentOffset + 5),
+                SubWeapon = parser.ReadColumn<ulong>(currentOffset + 6),
             };
         }
     }

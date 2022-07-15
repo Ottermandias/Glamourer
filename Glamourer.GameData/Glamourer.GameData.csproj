@@ -39,6 +39,10 @@
             <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
             <Private>False</Private>
         </Reference>
+      <Reference Include="FFXIVClientStructs">
+        <HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
         <Reference Include="ImGuiScene">
             <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
             <Private>False</Private>
