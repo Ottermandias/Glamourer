@@ -80,7 +80,7 @@ internal partial class Interface
             return false;
 
         var gender = customize.Gender == Gender.Male ? Gender.Female : Gender.Male;
-        return customize.ChangeGender(gender, locked ? CharacterEquip.Null : equip);
+        return false; //customize.ChangeGender(gender, locked ? CharacterEquip.Null : equip);
     }
 
     private static bool DrawRaceCombo(CharacterCustomization customize, CharacterEquip equip, bool locked)
@@ -98,7 +98,7 @@ internal partial class Interface
         foreach (var subRace in Enum.GetValues<SubRace>().Skip(1)) // Skip Unknown
         {
             if (ImGui.Selectable(CustomizeExtensions.ClanName(subRace, customize.Gender), subRace == customize.Clan))
-                ret |= customize.ChangeRace(subRace, equip);
+                ret |= false; //customize.ChangeRace(subRace, equip);
         }
 
         return ret;

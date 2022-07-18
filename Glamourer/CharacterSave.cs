@@ -13,13 +13,13 @@ namespace Glamourer;
 
 public class CharacterSaveConverter : JsonConverter<CharacterSave>
 {
-    public override void WriteJson(JsonWriter writer, CharacterSave value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, CharacterSave? value, JsonSerializer serializer)
     {
-        var s = value.ToBase64();
+        var s = value?.ToBase64() ?? string.Empty;
         serializer.Serialize(writer, s);
     }
 
-    public override CharacterSave ReadJson(JsonReader reader, Type objectType, CharacterSave existingValue, bool hasExistingValue,
+    public override CharacterSave ReadJson(JsonReader reader, Type objectType, CharacterSave? existingValue, bool hasExistingValue,
         JsonSerializer serializer)
     {
         var token = JToken.Load(reader);
@@ -28,9 +28,8 @@ public class CharacterSaveConverter : JsonConverter<CharacterSave>
     }
 }
 
-[JsonConverter(typeof(CharacterSaveConverter))]
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public unsafe struct CharacterSave
+public unsafe struct CharacterData
 {
     [Flags]
     public enum SaveFlags : byte
@@ -47,42 +46,27 @@ public unsafe struct CharacterSave
 
     public const byte TotalSizeVersion1 = 1 + 1 + 2 + 56 + CustomizationData.CustomizationBytes;
     public const byte TotalSizeVersion2 = 1 + 1 + 2 + 56 + CustomizationData.CustomizationBytes + 4 + 1;
+    public const byte TotalSizeVersion3 = 1 + 1 + 2 + 7 + 7 + 2 + 40 + CustomizationData.CustomizationBytes + 4;
+    public const byte CurrentVersion    = 3;
 
-    public const byte               CurrentVersion    = 3;
-    public       byte               Version           = CurrentVersion;
-    public       SaveFlags          Flags             = 0;
-    public       CharacterEquipMask Equip             = 0;
-    public       CharacterWeapon    MainHand          = default;
-    public       CharacterWeapon    OffHand           = default;
-    public       ushort             Padding           = 0;
-    public       CharacterArmor     Head              = default;
-    public       CharacterArmor     Body              = default;
-    public       CharacterArmor     Hands             = default;
-    public       CharacterArmor     Legs              = default;
-    public       CharacterArmor     Feet              = default;
-    public       CharacterArmor     Ears              = default;
-    public       CharacterArmor     Neck              = default;
-    public       CharacterArmor     Wrist             = default;
-    public       CharacterArmor     RFinger           = default;
-    public       CharacterArmor     LFinger           = default;
-    private      CustomizationData  CustomizationData = CustomizationData.Default;
-    public       float              Alpha             = 1f;
-
-    public CharacterSave()
-    { }
-
-    public void Load(Actor actor)
-    {
-        if (!actor.IsHuman || actor.Pointer->GameObject.DrawObject == null)
-            return;
-
-        var human = (Human*)actor.Pointer->GameObject.DrawObject;
-        CustomizationData = *(CustomizationData*)human->CustomizeData;
-        fixed (void* equip = &Head)
-        {
-            Functions.MemCpyUnchecked(equip, human->EquipSlotData, sizeof(CharacterArmor) * 10);
-        }
-    }
+    public  byte               Version;
+    public  SaveFlags          Flags;
+    public  CharacterEquipMask Equip;
+    public  CharacterWeapon    MainHand;
+    public  CharacterWeapon    OffHand;
+    public  ushort             Padding;
+    public  CharacterArmor     Head;
+    public  CharacterArmor     Body;
+    public  CharacterArmor     Hands;
+    public  CharacterArmor     Legs;
+    public  CharacterArmor     Feet;
+    public  CharacterArmor     Ears;
+    public  CharacterArmor     Neck;
+    public  CharacterArmor     Wrist;
+    public  CharacterArmor     RFinger;
+    public  CharacterArmor     LFinger;
+    private CustomizationData  CustomizationData;
+    public  float              Alpha;
 
     public CharacterCustomization Customize
     {
@@ -106,11 +90,47 @@ public unsafe struct CharacterSave
         }
     }
 
+    public static readonly CharacterData Default
+        = new()
+        {
+            Version           = CurrentVersion,
+            Flags             = SaveFlags.WriteCustomizations,
+            Equip             = CharacterEquipMask.All,
+            MainHand          = CharacterWeapon.Empty,
+            OffHand           = CharacterWeapon.Empty,
+            Padding           = 0,
+            Head              = CharacterArmor.Empty,
+            Body              = CharacterArmor.Empty,
+            Hands             = CharacterArmor.Empty,
+            Legs              = CharacterArmor.Empty,
+            Feet              = CharacterArmor.Empty,
+            Ears              = CharacterArmor.Empty,
+            Neck              = CharacterArmor.Empty,
+            Wrist             = CharacterArmor.Empty,
+            RFinger           = CharacterArmor.Empty,
+            LFinger           = CharacterArmor.Empty,
+            CustomizationData = CustomizationData.Default,
+            Alpha             = 1f,
+        };
+
+    public void Load(Actor actor)
+    {
+        if (!actor.IsHuman || actor.Pointer->GameObject.DrawObject == null)
+            return;
+
+        var human = (Human*)actor.Pointer->GameObject.DrawObject;
+        CustomizationData = *(CustomizationData*)human->CustomizeData;
+        fixed (void* equip = &Head)
+        {
+            Functions.MemCpyUnchecked(equip, human->EquipSlotData, sizeof(CharacterArmor) * 10);
+        }
+    }
+
     public string ToBase64()
     {
         fixed (void* ptr = &this)
         {
-            return Convert.ToBase64String(new ReadOnlySpan<byte>(ptr, sizeof(CharacterSave)));
+            return Convert.ToBase64String(new ReadOnlySpan<byte>(ptr, sizeof(CharacterData)));
         }
     }
 
@@ -128,10 +148,10 @@ public unsafe struct CharacterSave
                 $"Can not parse Base64 string into CharacterSave:\n\tInvalid value {value} in byte {idx}, should be in [{min},{max}].");
     }
 
-    public static CharacterSave FromString(string data)
+    public static CharacterData FromString(string data)
     {
         var bytes = Convert.FromBase64String(data);
-        var ret   = new CharacterSave();
+        var ret   = new CharacterData();
         fixed (byte* ptr = bytes)
         {
             switch (bytes[0])
@@ -156,8 +176,8 @@ public unsafe struct CharacterSave
                         ret.Flags |= SaveFlags.VisorState;
                     break;
                 case 3:
-                    CheckSize(bytes.Length, sizeof(CharacterSave));
-                    Functions.MemCpyUnchecked(&ret, ptr, sizeof(CharacterSave));
+                    CheckSize(bytes.Length, TotalSizeVersion3);
+                    Functions.MemCpyUnchecked(&ret, ptr, TotalSizeVersion3);
                     break;
                 default: throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid Version {bytes[0]}.");
             }
@@ -165,4 +185,37 @@ public unsafe struct CharacterSave
 
         return ret;
     }
+}
+
+[JsonConverter(typeof(CharacterSaveConverter))]
+public class CharacterSave
+{
+    private CharacterData _data;
+
+    public CharacterSave()
+        => _data = CharacterData.Default;
+
+    public CharacterSave(Actor actor)
+        => _data.Load(actor);
+
+    public void Load(Actor actor)
+        => _data.Load(actor);
+
+    public string ToBase64()
+        => _data.ToBase64();
+
+    public CharacterCustomization Customization
+        => _data.Customize;
+
+    public CharacterEquip Equipment
+        => _data.Equipment;
+
+    public ref CharacterWeapon MainHand
+        => ref _data.MainHand;
+
+    public ref CharacterWeapon OffHand
+        => ref _data.OffHand;
+
+    public static CharacterSave FromString(string data)
+        => new() { _data = CharacterData.FromString(data) };
 }

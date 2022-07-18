@@ -5,6 +5,7 @@ using Dalamud.Logging;
 using Dalamud.Utility;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Race = Penumbra.GameData.Enums.Race;
@@ -20,9 +21,9 @@ public class RestrictedGear
     private readonly ExcelSheet<Item>              _items;
     private readonly ExcelSheet<EquipRaceCategory> _categories;
 
-    private readonly HashSet<uint>                 _raceGenderSet = RaceGenderGroup.Where(c => c != 0).ToHashSet();
-    private readonly Dictionary<uint, uint>        _maleToFemale  = new();
-    private readonly Dictionary<uint, uint>        _femaleToMale  = new();
+    private readonly HashSet<uint>          _raceGenderSet = RaceGenderGroup.Where(c => c != 0).ToHashSet();
+    private readonly Dictionary<uint, uint> _maleToFemale  = new();
+    private readonly Dictionary<uint, uint> _femaleToMale  = new();
 
     internal RestrictedGear(DataManager gameData)
     {
@@ -33,16 +34,15 @@ public class RestrictedGear
     }
 
     // Resolve a model given by its model id, variant and slot for your current race and gender.
-    public (bool Replaced, SetId ModelId, byte Variant) ResolveRestricted(SetId modelId, byte variant, EquipSlot slot, Race race,
-        Gender gender)
+    public (bool Replaced, CharacterArmor Armor) ResolveRestricted(CharacterArmor armor, EquipSlot slot, Race race, Gender gender)
     {
-        var quad = modelId.Value | ((uint)variant << 16);
+        var quad = armor.Set.Value | ((uint)armor.Variant << 16);
         // Check racial gear, this does not need slots.
         if (RaceGenderGroup.Contains(quad))
         {
             var idx   = ((int)race - 1) * 2 + (gender is Gender.Female or Gender.FemaleNpc ? 1 : 0);
             var value = RaceGenderGroup[idx];
-            return (value != quad, (ushort)value, (byte)(value >> 16));
+            return (value != quad, new CharacterArmor((ushort)value, (byte)(value >> 16), armor.Stain));
         }
 
         // Check gender slots. If current gender is female, check if anything needs to be changed from male to female,
@@ -52,10 +52,10 @@ public class RestrictedGear
         var needle = quad | ((uint)slot.ToSlot() << 24);
         if (gender is Gender.Female or Gender.FemaleNpc && _maleToFemale.TryGetValue(needle, out var newValue)
          || gender is Gender.Male or Gender.MaleNpc && _femaleToMale.TryGetValue(needle, out newValue))
-            return (quad != newValue, (ushort)newValue, (byte)(newValue >> 16));
+            return (quad != newValue, new CharacterArmor((ushort)newValue, (byte)(newValue >> 16), armor.Stain));
 
         // The gear is not restricted.
-        return (false, modelId, variant);
+        return (false, armor);
     }
 
     // Add all unknown restricted gear and pair it with emperor's new gear on start up.

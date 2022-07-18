@@ -126,8 +126,8 @@ public class PenumbraAttach : IDisposable
         //}
     }
 
-    public unsafe FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject* GameObjectFromDrawObject(IntPtr drawObject)
-        => (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(_drawObjectInfo?.InvokeFunc(drawObject).Item1 ?? IntPtr.Zero);
+    public Actor GameObjectFromDrawObject(IntPtr drawObject)
+        => _drawObjectInfo?.InvokeFunc(drawObject).Item1 ?? IntPtr.Zero;
 
     public void RedrawObject(GameObject? actor, RedrawType settings, bool repeat)
     {

@@ -48,7 +48,6 @@ public class Glamourer : IDalamudPlugin
 
     public static    ICustomizationManager Customization  = null!;
     public static    RedrawManager         RedrawManager  = null!;
-    public static    RestrictedGear        RestrictedGear = null!;
     private readonly WindowSystem          _windowSystem  = new("Glamourer");
 
     private readonly Interface _interface;
@@ -61,8 +60,6 @@ public class Glamourer : IDalamudPlugin
     {
         Dalamud.Initialize(pluginInterface);
         Customization  = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
-        RestrictedGear = GameData.RestrictedGear(Dalamud.GameData);
-        var m = global::Penumbra.GameData.GameData.GetIdentifier(Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
         Config         = GlamourerConfig.Load();
         Penumbra       = new PenumbraAttach(Config.AttachToPenumbra);
 
@@ -83,7 +80,6 @@ public class Glamourer : IDalamudPlugin
         _interface = new Interface(this);
         _windowSystem.AddWindow(_interface);
         Dalamud.PluginInterface.UiBuilder.Draw += _windowSystem.Draw;
-        var x = 0x00011000u;
         //FixedDesignManager.Flag((Human*)((Actor)Dalamud.ClientState.LocalPlayer?.Address).Pointer->GameObject.DrawObject, 0, &x);
     }
 

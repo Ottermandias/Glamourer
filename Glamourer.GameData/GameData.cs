@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Dalamud;
 using Dalamud.Data;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Glamourer.Structs;
 using Lumina.Excel.GeneratedSheets;
 using Penumbra.GameData.Enums;

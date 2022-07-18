@@ -1,16 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
-using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
-using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using Glamourer.Customization;
-using Glamourer.Designs;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -24,8 +14,7 @@ internal partial class Interface
 {
     private class ActorTab
     {
-        private ObjectManager.ActorData _data       = new(string.Empty, string.Empty, Actor.Null, false, Actor.Null);
-        private CharacterSave           _character  = new();
+        private ObjectManager.ActorData _data       = new(string.Empty, new Actor.Identifier(), Actor.Null, false, Actor.Null);
         private Actor                   _nextSelect = Actor.Null;
 
         public void Draw()
@@ -49,15 +38,23 @@ internal partial class Interface
         private void DrawActorPanel()
         {
             using var group = ImRaii.Group();
-            if (DrawCustomization(_character.Customize, _character.Equipment, !_data.Modifiable))
+            if (!Glamourer.RedrawManager.CurrentManipulations.GetSave(_data.Actor, out var save))
+                return;
+
+            if (DrawCustomization(save.Customization, save.Equipment, !_data.Modifiable))
             {
-                Glamourer.RedrawManager.Set(_data.Actor.Address, _character);
+                //Glamourer.RedrawManager.Set(_data.Actor.Address, _character);
                 Glamourer.Penumbra.RedrawObject(_data.Actor.Character, RedrawType.Redraw, true);
             }
 
             if (ImGui.Button("Set Machinist Goggles"))
             {
                 Glamourer.RedrawManager.ChangeEquip(_data.Actor.Address, EquipSlot.Head, new CharacterArmor(265, 1, 0));
+            }
+
+            if (ImGui.Button("Set Weapon"))
+            {
+                Glamourer.RedrawManager.LoadWeapon(_data.Actor.Address, new CharacterWeapon(0x00C9, 0x004E, 0x0001, 0x00), new CharacterWeapon(0x0065, 0x003D, 0x0001, 0x00));
             }
         }
 
@@ -115,7 +112,7 @@ internal partial class Interface
         private void UpdateSelection(ObjectManager.ActorData data)
         {
             _data = data;
-            _character.Load(_data.Actor);
+            //_character.Load(_data.Actor);
         }
 
         private bool CheckFilter(ObjectManager.ActorData data)

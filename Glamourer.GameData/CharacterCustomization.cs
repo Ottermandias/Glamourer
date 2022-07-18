@@ -16,6 +16,9 @@ public readonly unsafe struct CharacterCustomization
     public CharacterCustomization(CustomizationData* data)
         => _data = data;
 
+    public void Load(CharacterCustomization other)
+        => *_data = *other._data;
+
     public ref Race Race
         => ref _data->Race;
 
