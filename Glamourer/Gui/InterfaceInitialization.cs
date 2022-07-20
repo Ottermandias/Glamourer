@@ -47,7 +47,7 @@ namespace Glamourer.Gui
                     var ret   = ImGui.Selectable(i.Name);
                     var setId = $"({(int) i.MainModel.id})";
                     var size  = ImGui.CalcTextSize(setId).X;
-                    ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - size - ImGui.GetStyle().ItemInnerSpacing.X);
+                    ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X - size - ImGui.GetStyle().ItemInnerSpacing.X);
                     ImGui.TextColored(GreyVector, setId);
                     return ret;
                 },
