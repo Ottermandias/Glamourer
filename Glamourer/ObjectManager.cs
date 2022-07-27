@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Game.ClientState.Objects.Types;
 using Penumbra.GameData.ByteString;
 
 namespace Glamourer;
