@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Dalamud.Game.ClientState.Objects.Types;
 
 namespace Glamourer.Designs
 {
     public class RevertableDesigns
     {
-        public readonly Dictionary<string, CharacterSave> Saves = new();
+        public readonly ConcurrentDictionary<string, CharacterSave> Saves = new();
 
         public bool Add(Character actor)
         {
@@ -24,7 +25,7 @@ namespace Glamourer.Designs
             if (!Saves.ContainsKey(actorName))
                 return false;
 
-            Saves.Remove(actorName);
+            Saves.Remove(actorName, out _);
             return true;
         }
 
@@ -34,7 +35,7 @@ namespace Glamourer.Designs
                 return false;
 
             save.Apply(actor);
-            Saves.Remove(actor.Name.ToString());
+            Saves.Remove(actor.Name.ToString(), out _);
             return true;
         }
     }
