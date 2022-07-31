@@ -13,7 +13,7 @@ public static class ObjectManager
     private const int DyePreviewIndex      = 243;
 
     private static readonly Dictionary<Utf8String, int>         NameCounters = new();
-    private static readonly Dictionary<Actor.Identifier, Actor> GPoseActors  = new(CharacterScreenIndex - GPosePlayerIndex);
+    private static readonly Dictionary<Actor.IIdentifier, Actor> GPoseActors  = new(CharacterScreenIndex - GPosePlayerIndex);
 
     public static bool IsInGPose()
         => Dalamud.Objects[GPosePlayerIndex] != null;
@@ -24,7 +24,7 @@ public static class ObjectManager
     public static Actor Player
         => Dalamud.ClientState.LocalPlayer?.Address;
 
-    public record struct ActorData(string Label, Actor.Identifier Identifier, Actor Actor, bool Modifiable, Actor GPose);
+    public record struct ActorData(string Label, Actor.IIdentifier Identifier, Actor Actor, bool Modifiable, Actor GPose);
 
     public static IEnumerable<ActorData> GetEnumerator()
     {
@@ -38,7 +38,7 @@ public static class ObjectManager
 
             var identifier = character.GetIdentifier();
             GPoseActors[identifier] = character.Address;
-            yield return new ActorData(GetLabel(character, identifier.Name.ToString(), 0, true), identifier, character.Address, true,
+            yield return new ActorData(GetLabel(character, character.Utf8Name.ToString(), 0, true), identifier, character.Address, true,
                 Actor.Null);
         }
 
@@ -67,7 +67,7 @@ public static class ObjectManager
                 continue;
 
             var identifier = actor.GetIdentifier();
-            if (identifier.Name.Length == 0)
+            if (actor.Utf8Name.Length == 0)
                 continue;
 
             if (NameCounters.TryGetValue(identifier.Name, out var num))

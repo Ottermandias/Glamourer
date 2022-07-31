@@ -116,7 +116,7 @@
 	  </None>
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-	  <Exec Command="if $(Configuration) == Release powershell Compress-Archive -Force $(TargetPath), $(TargetDir)$(SolutionName).json, $(TargetDir)$(SolutionName).GameData.dll, $(TargetDir)Penumbra.GameData.dll, $(TargetDir)Penumbra.PlayerWatch.dll $(SolutionDir)$(SolutionName).zip" />
+	  <Exec Command="if $(Configuration) == Release powershell Compress-Archive -Force $(TargetPath), $(TargetDir)$(SolutionName).json, $(TargetDir)$(SolutionName).GameData.dll, $(TargetDir)Penumbra.GameData.dll $(SolutionDir)$(SolutionName).zip" />
 	  <Exec Command="if $(Configuration) == Release powershell Copy-Item -Force $(TargetDir)$(SolutionName).json -Destination $(SolutionDir)" />
 	</Target>
 </Project>

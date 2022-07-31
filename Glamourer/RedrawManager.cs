@@ -14,16 +14,16 @@ namespace Glamourer;
 public class CurrentManipulations
 {
     private readonly RestrictedGear                              _restrictedGear = GameData.RestrictedGear(Dalamud.GameData);
-    private readonly Dictionary<Actor.Identifier, CharacterSave> _characterSaves = new();
+    private readonly Dictionary<Actor.IIdentifier, CharacterSave> _characterSaves = new();
 
     public CharacterSave CreateSave(Actor actor)
     {
         var id = actor.GetIdentifier();
-        if (_characterSaves.TryGetValue(actor.GetIdentifier(), out var save))
+        if (_characterSaves.TryGetValue(id, out var save))
             return save;
 
         save = new CharacterSave(actor);
-        _characterSaves.Add(id with { Name = id.Name.Clone() }, save);
+        _characterSaves.Add(id.CreatePermanent(), save);
         return save;
     }
 
@@ -33,13 +33,13 @@ public class CurrentManipulations
         return actor && _characterSaves.TryGetValue(actor.GetIdentifier(), out save);
     }
 
-    public bool GetSave(Actor.Identifier identifier, [NotNullWhen(true)] out CharacterSave? save)
+    public bool GetSave(Actor.IIdentifier identifier, [NotNullWhen(true)] out CharacterSave? save)
         => _characterSaves.TryGetValue(identifier, out save);
 
     public CharacterArmor? ChangeEquip(Actor actor, EquipSlot slot, CharacterArmor data)
     {
         var save = CreateSave(actor);
-        (_, data) = _restrictedGear.ResolveRestricted(data, slot, save.Customization.Race, save.Customization.Gender);
+        (_, data) = _restrictedGear.ResolveRestricted(data, slot, save.Customize.Race, save.Customize.Gender);
         if (save.Equipment[slot] == data)
             return null;
 
@@ -68,11 +68,11 @@ public class CurrentManipulations
         return true;
     }
 
-    public void ChangeCustomization(Actor actor, CharacterCustomization customize)
+    public void ChangeCustomization(Actor actor, Customize customize)
     {
         var save = CreateSave(actor);
         FixRestrictedGear(save, customize.Gender, customize.Race);
-        save.Customization.Load(customize);
+        save.Customize.Load(customize);
     }
 
     public bool ChangeCustomization(Actor actor, CustomizationId id, byte value)
@@ -83,7 +83,7 @@ public class CurrentManipulations
             return ChangeGender(actor, (Gender)value);
 
         var save      = CreateSave(actor);
-        var customize = save.Customization;
+        var customize = save.Customize;
         if (customize[id] != value)
             return false;
 
@@ -95,10 +95,10 @@ public class CurrentManipulations
     public bool ChangeGender(Actor actor, Gender gender)
     {
         var save = CreateSave(actor);
-        if (save.Customization.Gender == gender)
+        if (save.Customize.Gender == gender)
             return false;
 
-        var customize = save.Customization;
+        var customize = save.Customize;
         FixRestrictedGear(save, gender, customize.Race);
         FixUpAttributes(customize);
         return true;
@@ -108,10 +108,10 @@ public class CurrentManipulations
     public bool ChangeRace(Actor actor, SubRace clan)
     {
         var save = CreateSave(actor);
-        if (save.Customization.Clan == clan)
+        if (save.Customize.Clan == clan)
             return false;
 
-        var customize = save.Customization;
+        var customize = save.Customize;
         var race      = clan.ToRace();
         var gender    = race == Race.Hrothgar ? Gender.Male : customize.Gender; // TODO Female Hrothgar
         FixRestrictedGear(save, gender, race);
@@ -124,7 +124,7 @@ public class CurrentManipulations
     }
 
     // Go through a whole customization struct and fix up all settings that need fixing.
-    private void FixUpAttributes(CharacterCustomization customize)
+    private void FixUpAttributes(Customize customize)
     {
         var set = Glamourer.Customization.GetList(customize.Clan, customize.Gender);
         foreach (CustomizationId id in Enum.GetValues(typeof(CustomizationId)))
@@ -149,7 +149,7 @@ public class CurrentManipulations
 
     private void FixRestrictedGear(CharacterSave save, Gender gender, Race race)
     {
-        if (race == save.Customization.Race && gender == save.Customization.Gender)
+        if (race == save.Customize.Race && gender == save.Customize.Gender)
             return;
 
         var equip = save.Equipment;

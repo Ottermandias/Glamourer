@@ -8,6 +8,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 using Race = Penumbra.GameData.Enums.Race;
 
 namespace Glamourer.Gui;
@@ -17,7 +18,7 @@ internal partial class Interface
     private static byte            _tempStorage;
     private static CustomizationId _tempType;
 
-    private static bool DrawCustomization(CharacterCustomization customize, CharacterEquip equip, bool locked)
+    private static bool DrawCustomization(Customize customize, CharacterEquip equip, bool locked)
     {
         if (!ImGui.CollapsingHeader("Character Customization"))
             return false;
@@ -56,7 +57,7 @@ internal partial class Interface
         return ret;
     }
 
-    private static bool DrawRaceGenderSelector(CharacterCustomization customize, CharacterEquip equip, bool locked)
+    private static bool DrawRaceGenderSelector(Customize customize, CharacterEquip equip, bool locked)
     {
         var ret = DrawGenderSelector(customize, equip, locked);
         ImGui.SameLine();
@@ -68,7 +69,7 @@ internal partial class Interface
         return ret;
     }
 
-    private static bool DrawGenderSelector(CharacterCustomization customize, CharacterEquip equip, bool locked)
+    private static bool DrawGenderSelector(Customize customize, CharacterEquip equip, bool locked)
     {
         using var font       = ImRaii.PushFont(UiBuilder.IconFont);
         var       icon       = customize.Gender == Gender.Male ? FontAwesomeIcon.Mars : FontAwesomeIcon.Venus;
@@ -83,7 +84,7 @@ internal partial class Interface
         return false; //customize.ChangeGender(gender, locked ? CharacterEquip.Null : equip);
     }
 
-    private static bool DrawRaceCombo(CharacterCustomization customize, CharacterEquip equip, bool locked)
+    private static bool DrawRaceCombo(Customize customize, CharacterEquip equip, bool locked)
     {
         using var alpha = ImRaii.PushStyle(ImGuiStyleVar.Alpha, 0.5f, locked);
         ImGui.SetNextItemWidth(_raceSelectorWidth);
@@ -123,7 +124,7 @@ internal partial class Interface
         return ret;
     }
 
-    private static bool PercentageSelector(CustomizationSet set, CustomizationId id, CharacterCustomization customization, bool locked)
+    private static bool PercentageSelector(CustomizationSet set, CustomizationId id, Customize customization, bool locked)
     {
         using var bigGroup = ImRaii.Group();
         using var _        = ImRaii.PushId((int)id);
@@ -175,7 +176,7 @@ internal partial class Interface
         return ret;
     }
 
-    private static bool DrawIconSelector(CustomizationSet set, CustomizationId id, CharacterCustomization customize, bool locked)
+    private static bool DrawIconSelector(CustomizationSet set, CustomizationId id, Customize customize, bool locked)
     {
         const string popupName = "Style Picker";
 
@@ -213,7 +214,7 @@ internal partial class Interface
         return ret;
     }
 
-    private static bool DrawIconPickerPopup(string label, CustomizationSet set, CustomizationId id, CharacterCustomization customize)
+    private static bool DrawIconPickerPopup(string label, CustomizationSet set, CustomizationId id, Customize customize)
     {
         using var popup = ImRaii.Popup(label, ImGuiWindowFlags.AlwaysAutoResize);
         if (!popup)
@@ -250,7 +251,7 @@ internal partial class Interface
         return ret;
     }
 
-    private static bool DrawColorPicker(CustomizationSet set, CustomizationId id, CharacterCustomization customize, bool locked)
+    private static bool DrawColorPicker(CustomizationSet set, CustomizationId id, Customize customize, bool locked)
     {
         const string popupName = "Color Picker";
         using var    _         = ImRaii.PushId((int)id);
@@ -282,7 +283,7 @@ internal partial class Interface
     }
 
     private static (int, Customization.Customization) GetCurrentCustomization(CustomizationSet set, CustomizationId id,
-        CharacterCustomization customize)
+        Customize customize)
     {
         var current = set.DataByValue(id, customize[id], out var custom);
         if (set.IsAvailable(id) && current < 0)
@@ -295,7 +296,7 @@ internal partial class Interface
         return (current, custom!.Value);
     }
 
-    private static bool DrawColorPickerPopup(string label, CustomizationSet set, CustomizationId id, CharacterCustomization customize)
+    private static bool DrawColorPickerPopup(string label, CustomizationSet set, CustomizationId id, Customize customize)
     {
         using var popup = ImRaii.Popup(label, ImGuiWindowFlags.AlwaysAutoResize);
         if (!popup)
@@ -322,7 +323,7 @@ internal partial class Interface
         return ret;
     }
 
-    private static bool DrawMultiIconSelector(CustomizationSet set, CharacterCustomization customize, bool locked)
+    private static bool DrawMultiIconSelector(CustomizationSet set, Customize customize, bool locked)
     {
         using var bigGroup = ImRaii.Group();
         using var _        = ImRaii.PushId((int)CustomizationId.FacialFeaturesTattoos);
@@ -344,7 +345,7 @@ internal partial class Interface
         return ret;
     }
 
-    private static bool DrawMultiIcons(CustomizationSet set, CharacterCustomization customize, bool locked)
+    private static bool DrawMultiIcons(CustomizationSet set, Customize customize, bool locked)
     {
         using var _    = ImRaii.Group();
         var       face = customize.Face;
@@ -355,7 +356,7 @@ internal partial class Interface
         var count = set.Count(CustomizationId.FacialFeaturesTattoos);
         for (var i = 0; i < count; ++i)
         {
-            var enabled = customize.FacialFeature(i);
+            var enabled = customize.FacialFeatures[i];
             var feature = set.FacialFeature(face, i);
             var icon = i == count - 1
                 ? LegacyTattoo ?? Glamourer.Customization.GetIcon(feature.IconId)
@@ -364,7 +365,7 @@ internal partial class Interface
                     Vector4.Zero, enabled ? Vector4.One : RedTint)
              && !locked)
             {
-                customize.FacialFeature(i, !enabled);
+                customize.FacialFeatures.Set(i, !enabled);
                 ret = true;
             }
 
@@ -378,7 +379,7 @@ internal partial class Interface
         return ret;
     }
 
-    private static bool DrawListSelector(CustomizationSet set, CustomizationId id, CharacterCustomization customize, bool locked)
+    private static bool DrawListSelector(CustomizationSet set, CustomizationId id, Customize customize, bool locked)
     {
         using var _        = ImRaii.PushId((int)id);
         using var bigGroup = ImRaii.Group();

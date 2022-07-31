@@ -52,6 +52,6 @@ public static unsafe class CustomizeExtensions
         };
     }
 
-    public static string ClanName(this CharacterCustomization customize)
+    public static string ClanName(this Customize customize)
         => ClanName(customize.Clan, customize.Gender);
 }

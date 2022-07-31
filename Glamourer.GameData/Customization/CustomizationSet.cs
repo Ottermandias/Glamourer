@@ -39,7 +39,7 @@ public class CustomizationSet
     public int NumJawShapes   { get; internal init; }
     public int NumMouthShapes { get; internal init; }
 
-    public string ToHumanReadable(CustomizationData customizationData)
+    public string ToHumanReadable(Customize customizationData)
     {
         var sb = new StringBuilder();
         foreach (var id in Enum.GetValues<CustomizationId>().Where(IsAvailable))

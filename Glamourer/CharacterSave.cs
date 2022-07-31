@@ -44,9 +44,9 @@ public unsafe struct CharacterData
         VisorState          = 0x80,
     }
 
-    public const byte TotalSizeVersion1 = 1 + 1 + 2 + 56 + CustomizationData.CustomizationBytes;
-    public const byte TotalSizeVersion2 = 1 + 1 + 2 + 56 + CustomizationData.CustomizationBytes + 4 + 1;
-    public const byte TotalSizeVersion3 = 1 + 1 + 2 + 7 + 7 + 2 + 40 + CustomizationData.CustomizationBytes + 4;
+    public const byte TotalSizeVersion1 = 1 + 1 + 2 + 56 + CustomizeData.Size;
+    public const byte TotalSizeVersion2 = 1 + 1 + 2 + 56 + CustomizeData.Size + 4 + 1;
+    public const byte TotalSizeVersion3 = 1 + 1 + 2 + 7 + 7 + 2 + 40 + CustomizeData.Size + 4;
     public const byte CurrentVersion    = 3;
 
     public  byte               Version;
@@ -65,16 +65,16 @@ public unsafe struct CharacterData
     public  CharacterArmor     Wrist;
     public  CharacterArmor     RFinger;
     public  CharacterArmor     LFinger;
-    private CustomizationData  CustomizationData;
+    private CustomizeData      _customizeData;
     public  float              Alpha;
 
-    public CharacterCustomization Customize
+    public Customize Customize
     {
         get
         {
-            fixed (CustomizationData* ptr = &CustomizationData)
+            fixed (CustomizeData* ptr = &_customizeData)
             {
-                return new CharacterCustomization(ptr);
+                return new Customize(ptr);
             }
         }
     }
@@ -93,24 +93,24 @@ public unsafe struct CharacterData
     public static readonly CharacterData Default
         = new()
         {
-            Version           = CurrentVersion,
-            Flags             = SaveFlags.WriteCustomizations,
-            Equip             = CharacterEquipMask.All,
-            MainHand          = CharacterWeapon.Empty,
-            OffHand           = CharacterWeapon.Empty,
-            Padding           = 0,
-            Head              = CharacterArmor.Empty,
-            Body              = CharacterArmor.Empty,
-            Hands             = CharacterArmor.Empty,
-            Legs              = CharacterArmor.Empty,
-            Feet              = CharacterArmor.Empty,
-            Ears              = CharacterArmor.Empty,
-            Neck              = CharacterArmor.Empty,
-            Wrist             = CharacterArmor.Empty,
-            RFinger           = CharacterArmor.Empty,
-            LFinger           = CharacterArmor.Empty,
-            CustomizationData = CustomizationData.Default,
-            Alpha             = 1f,
+            Version        = CurrentVersion,
+            Flags          = SaveFlags.WriteCustomizations,
+            Equip          = CharacterEquipMask.All,
+            MainHand       = CharacterWeapon.Empty,
+            OffHand        = CharacterWeapon.Empty,
+            Padding        = 0,
+            Head           = CharacterArmor.Empty,
+            Body           = CharacterArmor.Empty,
+            Hands          = CharacterArmor.Empty,
+            Legs           = CharacterArmor.Empty,
+            Feet           = CharacterArmor.Empty,
+            Ears           = CharacterArmor.Empty,
+            Neck           = CharacterArmor.Empty,
+            Wrist          = CharacterArmor.Empty,
+            RFinger        = CharacterArmor.Empty,
+            LFinger        = CharacterArmor.Empty,
+            _customizeData = Customize.Default,
+            Alpha          = 1f,
         };
 
     public void Load(Actor actor)
@@ -119,7 +119,7 @@ public unsafe struct CharacterData
             return;
 
         var human = (Human*)actor.Pointer->GameObject.DrawObject;
-        CustomizationData = *(CustomizationData*)human->CustomizeData;
+        _customizeData.Read(human->CustomizeData);
         fixed (void* equip = &Head)
         {
             Functions.MemCpyUnchecked(equip, human->EquipSlotData, sizeof(CharacterArmor) * 10);
@@ -204,7 +204,7 @@ public class CharacterSave
     public string ToBase64()
         => _data.ToBase64();
 
-    public CharacterCustomization Customization
+    public Customize Customize
         => _data.Customize;
 
     public CharacterEquip Equipment

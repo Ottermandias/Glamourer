@@ -14,7 +14,7 @@ internal partial class Interface
 {
     private class ActorTab
     {
-        private ObjectManager.ActorData _data       = new(string.Empty, new Actor.Identifier(), Actor.Null, false, Actor.Null);
+        private ObjectManager.ActorData _data       = new(string.Empty, new Actor.InvalidIdentifier(), Actor.Null, false, Actor.Null);
         private Actor                   _nextSelect = Actor.Null;
 
         public void Draw()
@@ -41,7 +41,7 @@ internal partial class Interface
             if (!Glamourer.RedrawManager.CurrentManipulations.GetSave(_data.Actor, out var save))
                 return;
 
-            if (DrawCustomization(save.Customization, save.Equipment, !_data.Modifiable))
+            if (DrawCustomization(save.Customize, save.Equipment, !_data.Modifiable))
             {
                 //Glamourer.RedrawManager.Set(_data.Actor.Address, _character);
                 Glamourer.Penumbra.RedrawObject(_data.Actor.Character, RedrawType.Redraw, true);
@@ -70,9 +70,10 @@ internal partial class Interface
 
             foreach (var (id, data) in models.Models)
             {
-                if (ImGui.Selectable(data.FirstName, id == currentModel) || id == currentModel)
+                if (ImGui.Selectable(data.FirstName, id == currentModel) && id != currentModel)
                 {
                     _data.Actor.SetModelId((int)id);
+                    _data.Actor.ObjectKind = 
                     Glamourer.Penumbra.RedrawObject(_data.Actor.Character, RedrawType.Redraw, true);
                 }
                 ImGuiUtil.HoverTooltip(data.AllNames);

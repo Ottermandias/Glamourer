@@ -2,7 +2,6 @@
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using Dalamud.Plugin.Ipc;
-using Glamourer.Structs;
 using ImGuiNET;
 using Penumbra.GameData.Enums;
 

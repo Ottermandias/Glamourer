@@ -4,11 +4,11 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Customization;
 
-public unsafe ref struct Customize
+public unsafe struct Customize
 {
     private readonly CustomizeData* _data;
 
-    private Customize(CustomizeData* data)
+    public Customize(CustomizeData* data)
         => _data = data;
 
     public Race Race
@@ -70,7 +70,7 @@ public unsafe ref struct Customize
         public bool this[int idx]
         {
             get => (*_bitfield & (1 << idx)) != 0;
-            set => *_bitfield = (byte)(value ? *_bitfield | (1 << idx) : *_bitfield & ~(1 << idx));
+            set => Set(idx, value);
         }
 
         public void Clear()
@@ -78,6 +78,9 @@ public unsafe ref struct Customize
 
         public void All()
             => *_bitfield = 0xFF;
+
+        public void Set(int idx, bool value)
+            => *_bitfield = (byte)(value ? *_bitfield | (1 << idx) : *_bitfield & ~(1 << idx));
     }
 
     public FacialFeatureStruct FacialFeatures
@@ -149,8 +152,8 @@ public unsafe ref struct Customize
     public ref byte FacePaintColor
         => ref _data->Data[25];
 
-    internal static readonly CustomizeData Default = GenerateDefault();
-    internal static readonly CustomizeData Empty   = new();
+    public static readonly CustomizeData Default = GenerateDefault();
+    public static readonly CustomizeData Empty   = new();
 
     public byte Get(CustomizationId id)
         => id switch
@@ -263,4 +266,7 @@ public unsafe ref struct Customize
 
         return ret;
     }
+
+    public void Load(Customize other)
+        => _data->Read(other._data);
 }
