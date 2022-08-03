@@ -1,29 +1,10 @@
-﻿using System.Collections;
-using System.ComponentModel.Design;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Runtime.InteropServices.ComTypes;
-using Dalamud.Data;
-using Dalamud.Game.ClientState.JobGauge.Enums;
+﻿using System.Reflection;
 using Dalamud.Game.Command;
-using Dalamud.Hooking;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
-using FFXIVClientStructs.Attributes;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Component.Excel;
 using Glamourer.Api;
 using Glamourer.Customization;
 using Glamourer.Gui;
-using Lumina.Data.Parsing;
-using Microsoft.VisualBasic.CompilerServices;
-using OtterGui.Table;
-using Penumbra.GameData.Enums;
-using Penumbra.GameData.Structs;
-using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureMacroModule;
-using static System.Collections.Specialized.BitVector32;
-using static System.Reflection.Metadata.BlobBuilder;
-using Race = Lumina.Excel.GeneratedSheets.Race;
 
 namespace Glamourer;
 
@@ -44,11 +25,12 @@ public class Glamourer : IDalamudPlugin
 
     public static GlamourerConfig Config = null!;
 
-    public static PenumbraAttach Penumbra = null!;
-
-    public static    ICustomizationManager Customization  = null!;
-    public static    RedrawManager         RedrawManager  = null!;
-    private readonly WindowSystem          _windowSystem  = new("Glamourer");
+    public static    PenumbraAttach        Penumbra      = null!;
+    public static    ICustomizationManager Customization = null!;
+    public static    RedrawManager         RedrawManager = null!;
+    private readonly WindowSystem          _windowSystem = new("Glamourer");
+    private readonly FixedDesigns          _fixedDesigns;
+    private readonly CurrentManipulations  _currentManipulations;
 
     private readonly Interface _interface;
     //public readonly  DesignManager         Designs;
@@ -59,14 +41,15 @@ public class Glamourer : IDalamudPlugin
     public unsafe Glamourer(DalamudPluginInterface pluginInterface)
     {
         Dalamud.Initialize(pluginInterface);
-        Customization  = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
-        Config         = GlamourerConfig.Load();
-        Penumbra       = new PenumbraAttach(Config.AttachToPenumbra);
+        Customization = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
+        Config        = GlamourerConfig.Load();
+        Penumbra      = new PenumbraAttach(Config.AttachToPenumbra);
+        _fixedDesigns = new FixedDesigns();
 
         //Designs            = new DesignManager();
 
         //GlamourerIpc       = new GlamourerIpc(Dalamud.ClientState, Dalamud.Objects, Dalamud.PluginInterface);
-        RedrawManager = new RedrawManager();
+        RedrawManager = new RedrawManager(_fixedDesigns, _currentManipulations);
 
         Dalamud.Commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer)
         {
