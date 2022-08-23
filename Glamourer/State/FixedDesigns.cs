@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Glamourer.Interop;
 
-namespace Glamourer;
+namespace Glamourer.State;
 
 public class FixedDesigns
 {

@@ -5,7 +5,6 @@ using Dalamud.Logging;
 using Dalamud.Utility;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Race = Penumbra.GameData.Enums.Race;
@@ -356,16 +355,6 @@ public class RestrictedGear
         AddItem(37474, 37479);              // Common Makai Harbinger's Fingerless Gloves <-> Common Makai Harrower's Fingerless Gloves
         AddItem(37475, 37480);              // Common Makai Harbinger's Leggings          <-> Common Makai Harrower's Quartertights
         AddItem(37476, 37481);              // Common Makai Harbinger's Boots             <-> Common Makai Harrower's Longboots
-        AddItem(23003, 23008);              // Mun'gaek Hat                               <-> Eastern Socialite's Hat
-        AddItem(23004, 23009);              // Mun'gaek Uibok                             <-> Eastern Socialite's Cheongsam
-        AddItem(23005, 23010);              // Mun'gaek Cuffs                             <-> Eastern Socialite's Gloves
-        AddItem(23006, 23011);              // Mun'gaek Trousers                          <-> Eastern Socialite's Skirt
-        AddItem(23007, 23012);              // Mun'gaek Boots                             <-> Eastern Socialite's Boots
-        AddItem(24148, 24153);              // Far Eastern Officer's Hat                  <-> Far Eastern Maiden's Hat
-        AddItem(24149, 24154);              // Far Eastern Officer's Robe                 <-> Far Eastern Maiden's Tunic
-        AddItem(24150, 24155);              // Far Eastern Officer's Armband              <-> Far Eastern Maiden's Armband
-        AddItem(24151, 24156);              // Far Eastern Officer's Bottoms              <-> Far Eastern Maiden's Bottoms
-        AddItem(24152, 24157);              // Far Eastern Officer's Boots                <-> Far Eastern Maiden's Boots
         AddItem(13323, 13322);              // Scion Thief's Tunic                        <-> Scion Conjurer's Dalmatica
         AddItem(13693, 10034, true, false); // Scion Thief's Halfgloves                    -> The Emperor's New Gloves
         AddItem(13694, 13691);              // Scion Thief's Gaskins                      <-> Scion Conjurer's Chausses

@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Reflection;
 using Dalamud.Interface;
 using Glamourer.Customization;
+using Glamourer.Interop;
 using ImGuiNET;
 
 namespace Glamourer.Gui;
@@ -20,13 +21,11 @@ internal partial class Interface
     private static float   _inputIntSize;
     private static float   _comboSelectorSize;
     private static float   _raceSelectorWidth;
-    private static bool    _inGPose;
 
 
     private static void UpdateState()
     {
         // General
-        _inGPose            = ObjectManager.IsInGPose();
         _spacing            = _spacing with { Y = ImGui.GetTextLineHeightWithSpacing() / 2 };
         _actorSelectorWidth = 200 * ImGuiHelpers.GlobalScale;
 

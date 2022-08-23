@@ -6,59 +6,59 @@ namespace Glamourer.Customization;
 
 public unsafe struct Customize
 {
-    private readonly CustomizeData* _data;
+    public readonly CustomizeData* Data;
 
     public Customize(CustomizeData* data)
-        => _data = data;
+        => Data = data;
 
     public Race Race
     {
-        get => (Race)_data->Data[0];
-        set => _data->Data[0] = (byte)value;
+        get => (Race)Data->Data[0];
+        set => Data->Data[0] = (byte)value;
     }
 
     // Skip Unknown Gender
     public Gender Gender
     {
-        get => (Gender)(_data->Data[1] + 1);
-        set => _data->Data[1] = (byte)(value - 1);
+        get => (Gender)(Data->Data[1] + 1);
+        set => Data->Data[1] = (byte)(value - 1);
     }
 
     public ref byte BodyType
-        => ref _data->Data[2];
+        => ref Data->Data[2];
 
     public ref byte Height
-        => ref _data->Data[3];
+        => ref Data->Data[3];
 
     public SubRace Clan
     {
-        get => (SubRace)_data->Data[4];
-        set => _data->Data[4] = (byte)value;
+        get => (SubRace)Data->Data[4];
+        set => Data->Data[4] = (byte)value;
     }
 
     public ref byte Face
-        => ref _data->Data[5];
+        => ref Data->Data[5];
 
     public ref byte Hairstyle
-        => ref _data->Data[6];
+        => ref Data->Data[6];
 
     public bool HighlightsOn
     {
-        get => _data->Data[7] >> 7 == 1;
-        set => _data->Data[7] = (byte)(value ? _data->Data[7] | 0x80 : _data->Data[7] & 0x7F);
+        get => Data->Data[7] >> 7 == 1;
+        set => Data->Data[7] = (byte)(value ? Data->Data[7] | 0x80 : Data->Data[7] & 0x7F);
     }
 
     public ref byte SkinColor
-        => ref _data->Data[8];
+        => ref Data->Data[8];
 
     public ref byte EyeColorRight
-        => ref _data->Data[9];
+        => ref Data->Data[9];
 
     public ref byte HairColor
-        => ref _data->Data[10];
+        => ref Data->Data[10];
 
     public ref byte HighlightsColor
-        => ref _data->Data[11];
+        => ref Data->Data[11];
 
     public readonly ref struct FacialFeatureStruct
     {
@@ -84,73 +84,73 @@ public unsafe struct Customize
     }
 
     public FacialFeatureStruct FacialFeatures
-        => new(_data->Data + 12);
+        => new(Data->Data + 12);
 
     public ref byte TattooColor
-        => ref _data->Data[13];
+        => ref Data->Data[13];
 
     public ref byte Eyebrows
-        => ref _data->Data[14];
+        => ref Data->Data[14];
 
     public ref byte EyeColorLeft
-        => ref _data->Data[15];
+        => ref Data->Data[15];
 
     public byte EyeShape
     {
-        get => (byte)(_data->Data[16] & 0x7F);
-        set => _data->Data[16] = (byte)((value & 0x7F) | (_data->Data[16] & 0x80));
+        get => (byte)(Data->Data[16] & 0x7F);
+        set => Data->Data[16] = (byte)((value & 0x7F) | (Data->Data[16] & 0x80));
     }
 
     public bool SmallIris
     {
-        get => _data->Data[16] >> 7 == 1;
-        set => _data->Data[16] = (byte)(value ? _data->Data[16] | 0x80 : _data->Data[16] & 0x7F);
+        get => Data->Data[16] >> 7 == 1;
+        set => Data->Data[16] = (byte)(value ? Data->Data[16] | 0x80 : Data->Data[16] & 0x7F);
     }
 
     public ref byte Nose
-        => ref _data->Data[17];
+        => ref Data->Data[17];
 
     public ref byte Jaw
-        => ref _data->Data[18];
+        => ref Data->Data[18];
 
     public byte Mouth
     {
-        get => (byte)(_data->Data[19] & 0x7F);
-        set => _data->Data[19] = (byte)((value & 0x7F) | (_data->Data[19] & 0x80));
+        get => (byte)(Data->Data[19] & 0x7F);
+        set => Data->Data[19] = (byte)((value & 0x7F) | (Data->Data[19] & 0x80));
     }
 
     public bool Lipstick
     {
-        get => _data->Data[19] >> 7 == 1;
-        set => _data->Data[19] = (byte)(value ? _data->Data[19] | 0x80 : _data->Data[19] & 0x7F);
+        get => Data->Data[19] >> 7 == 1;
+        set => Data->Data[19] = (byte)(value ? Data->Data[19] | 0x80 : Data->Data[19] & 0x7F);
     }
 
     public ref byte LipColor
-        => ref _data->Data[20];
+        => ref Data->Data[20];
 
     public ref byte MuscleMass
-        => ref _data->Data[21];
+        => ref Data->Data[21];
 
     public ref byte TailShape
-        => ref _data->Data[22];
+        => ref Data->Data[22];
 
     public ref byte BustSize
-        => ref _data->Data[23];
+        => ref Data->Data[23];
 
     public byte FacePaint
     {
-        get => (byte)(_data->Data[24] & 0x7F);
-        set => _data->Data[24] = (byte)((value & 0x7F) | (_data->Data[24] & 0x80));
+        get => (byte)(Data->Data[24] & 0x7F);
+        set => Data->Data[24] = (byte)((value & 0x7F) | (Data->Data[24] & 0x80));
     }
 
     public bool FacePaintReversed
     {
-        get => _data->Data[24] >> 7 == 1;
-        set => _data->Data[24] = (byte)(value ? _data->Data[24] | 0x80 : _data->Data[24] & 0x7F);
+        get => Data->Data[24] >> 7 == 1;
+        set => Data->Data[24] = (byte)(value ? Data->Data[24] | 0x80 : Data->Data[24] & 0x7F);
     }
 
     public ref byte FacePaintColor
-        => ref _data->Data[25];
+        => ref Data->Data[25];
 
     public static readonly CustomizeData Default = GenerateDefault();
     public static readonly CustomizeData Empty   = new();
@@ -165,12 +165,12 @@ public unsafe struct Customize
             CustomizationId.Clan                      => (byte)Clan,
             CustomizationId.Face                      => Face,
             CustomizationId.Hairstyle                 => Hairstyle,
-            CustomizationId.HighlightsOnFlag          => _data->Data[7],
+            CustomizationId.HighlightsOnFlag          => Data->Data[7],
             CustomizationId.SkinColor                 => SkinColor,
             CustomizationId.EyeColorR                 => EyeColorRight,
             CustomizationId.HairColor                 => HairColor,
             CustomizationId.HighlightColor            => HighlightsColor,
-            CustomizationId.FacialFeaturesTattoos     => _data->Data[12],
+            CustomizationId.FacialFeaturesTattoos     => Data->Data[12],
             CustomizationId.TattooColor               => TattooColor,
             CustomizationId.Eyebrows                  => Eyebrows,
             CustomizationId.EyeColorL                 => EyeColorLeft,
@@ -204,7 +204,7 @@ public unsafe struct Customize
             case CustomizationId.EyeColorR:                 EyeColorRight    = value;                break;
             case CustomizationId.HairColor:                 HairColor        = value;                break;
             case CustomizationId.HighlightColor:            HighlightsColor  = value;                break;
-            case CustomizationId.FacialFeaturesTattoos:     _data->Data[12] = value;                break;
+            case CustomizationId.FacialFeaturesTattoos:     Data->Data[12] = value;                break;
             case CustomizationId.TattooColor:               TattooColor      = value;                break;
             case CustomizationId.Eyebrows:                  Eyebrows         = value;                break;
             case CustomizationId.EyeColorL:                 EyeColorLeft     = value;                break;
@@ -224,7 +224,7 @@ public unsafe struct Customize
     }
 
     public bool Equals(Customize other)
-        => throw new NotImplementedException();
+        => CustomizeData.Equals(Data, other.Data);
 
     public byte this[CustomizationId id]
     {
@@ -268,5 +268,8 @@ public unsafe struct Customize
     }
 
     public void Load(Customize other)
-        => _data->Read(other._data);
+        => Data->Read(other.Data);
+
+    public void Write(IntPtr target)
+        => Data->Write((void*)target);
 }

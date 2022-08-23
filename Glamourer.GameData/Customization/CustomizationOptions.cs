@@ -137,8 +137,8 @@ public partial class CustomizationOptions
         public CustomizationSet GetSet(SubRace race, Gender gender)
         {
             var (skin, hair) = GetColors(race, gender);
-            var row = _listSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
-
+            var row      = _listSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
+            var hrothgar = race.ToRace() == Race.Hrothgar;
             // Create the initial set with all the easily accessible parameters available for anyone.
             var set = new CustomizationSet(race, gender)
             {
@@ -148,8 +148,8 @@ public partial class CustomizationOptions
                 EyeColors            = _eyeColorPicker,
                 HighlightColors      = _highlightPicker,
                 TattooColors         = _tattooColorPicker,
-                LipColorsDark        = race.ToRace() == Race.Hrothgar ? HrothgarFurPattern(row) : _lipColorPickerDark,
-                LipColorsLight       = race.ToRace() == Race.Hrothgar ? Array.Empty<Customization>() : _lipColorPickerLight,
+                LipColorsDark        = hrothgar ? HrothgarFurPattern(row) : _lipColorPickerDark,
+                LipColorsLight       = hrothgar ? Array.Empty<Customization>() : _lipColorPickerLight,
                 FacePaintColorsDark  = _facePaintColorPickerDark,
                 FacePaintColorsLight = _facePaintColorPickerLight,
                 Faces                = GetFaces(row),
@@ -164,9 +164,9 @@ public partial class CustomizationOptions
 
             SetAvailability(set, row);
             SetFacialFeatures(set, row);
+            SetHairByFace(set);
             SetMenuTypes(set, row);
             SetNames(set, row);
-            
 
             return set;
         }
@@ -217,6 +217,32 @@ public partial class CustomizationOptions
             => _cmpFile.GetSlice(offset, num)
                 .Select((c, i) => new Customization(id, (byte)(light ? 128 + i : 0 + i), c, (ushort)(offset + i)))
                 .ToArray();
+
+
+        private void SetHairByFace(CustomizationSet set)
+        {
+            if (set.Race != Race.Hrothgar)
+            {
+                set.HairByFace = Enumerable.Repeat(set.HairStyles, set.Faces.Count + 1).ToArray();
+                return;
+            }
+
+            var tmp = new IReadOnlyList<Customization>[set.Faces.Count + 1];
+            tmp[0] = set.HairStyles;
+
+            for (var i = 1; i <= set.Faces.Count; ++i)
+            {
+                bool Valid(Customization c)
+                {
+                    var data = _customizeSheet.GetRow(c.CustomizeId)?.Unknown6 ?? 0;
+                    return data == 0 || data == i + set.Faces.Count;
+                }
+
+                tmp[i] = set.HairStyles.Where(Valid).ToArray();
+            }
+
+            set.HairByFace = tmp;
+        }
 
         private static void SetMenuTypes(CustomizationSet set, CharaMakeParams row)
         {
@@ -270,6 +296,7 @@ public partial class CustomizationOptions
         {
             var count       = set.Faces.Count;
             var featureDict = new List<IReadOnlyList<Customization>>(count);
+
             for (var i = 0; i < count; ++i)
             {
                 var legacyTattoo = new Customization(CustomizationId.FacialFeaturesTattoos, 1 << 7, 137905, (ushort)((i + 1) * 8));

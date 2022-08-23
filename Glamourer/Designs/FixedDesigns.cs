@@ -1,6 +1,171 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Reflection.Metadata.Ecma335;
+using Dalamud.Logging;
+using System.Runtime;
+using System.Text;
+using Dalamud.Utility;
+using Glamourer.Interop;
+using Glamourer.Structs;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
+
+public struct FixedCondition
+{
+    private const ulong _territoryFlag = 1ul << 32;
+    private const ulong _jobFlag       = 1ul << 33;
+    private       ulong _data;
+
+    public static FixedCondition TerritoryCondition(ushort territoryType)
+        => new() { _data = territoryType | _territoryFlag };
+
+    public static FixedCondition JobCondition(JobGroup group)
+        => new() { _data = group.Id | _jobFlag };
+
+    public bool Check(Actor actor)
+    {
+        if ((_data & (_territoryFlag | _jobFlag)) == 0)
+            return true;
+
+        if ((_data & _territoryFlag) != 0)
+            return Dalamud.ClientState.TerritoryType == (ushort)_data;
+
+        if (actor && GameData.JobGroups(Dalamud.GameData).TryGetValue((ushort)_data, out var group) && group.Fits(actor.Job))
+            return true;
+
+        return true;
+    }
+
+    public override string ToString()
+        => _data.ToString();
+}
+
+public class FixedDesign
+{
+    public const int CurrentVersion = 0;
+
+    public string                         Name    { get; private set; }
+    public bool                           Enabled;
+    public List<Actor.IIdentifier>        Actors;
+    public List<(FixedCondition, Design)> Customization;
+    public List<(FixedCondition, Design)> Equipment;
+    public List<(FixedCondition, Design)> Weapons;
+
+    public FixedDesign(string name)
+    {
+        Name          = name;
+        Actors        = new List<Actor.IIdentifier>();
+        Customization = new List<(FixedCondition, Design)>();
+        Equipment     = new List<(FixedCondition, Design)>();
+        Weapons       = new List<(FixedCondition, Design)>();
+    }
+
+    public static FixedDesign? Load(JObject j)
+    {
+        try
+        {
+            var name = j[nameof(Name)]?.Value<string>();
+            if (name.IsNullOrEmpty())
+                return null;
+
+            var version = j["Version"]?.Value<int>();
+            if (version == null)
+                return null;
+
+            return version switch
+            {
+                CurrentVersion => LoadCurrentVersion(j, name),
+                _              => null,
+            };
+        }
+        catch (Exception e)
+        {
+            PluginLog.Error($"Error loading fixed design:\n{e}");
+            return null;
+        }
+    }
+
+    private static FixedDesign? LoadCurrentVersion(JObject j, string name)
+    {
+        var enabled = j[nameof(Enabled)]?.Value<bool>() ?? false;
+        var ret = new FixedDesign(name)
+        {
+            Enabled = enabled,
+        };
+
+        var actors  = j[nameof(Actors)];
+        //foreach(var pair in actors?.Children().)
+        return null;
+    }
+
+
+    public void Save(FileInfo file)
+    {
+        try
+        {
+            using var s = file.Exists ? file.Open(FileMode.Truncate) : file.Open(FileMode.CreateNew);
+            using var w = new StreamWriter(s, Encoding.UTF8);
+            using var j = new JsonTextWriter(w)
+            {
+                Formatting = Formatting.Indented,
+            };
+            j.WriteStartObject();
+            j.WritePropertyName(nameof(Name));
+            j.WriteValue(Name);
+            j.WritePropertyName("Version");
+            j.WriteValue(CurrentVersion);
+            j.WritePropertyName(nameof(Enabled));
+            j.WriteValue(Enabled);
+            j.WritePropertyName(nameof(Actors));
+            j.WriteStartArray();
+            foreach (var actor in Actors)
+                actor.ToJson(j);
+            j.WriteEndArray();
+            j.WritePropertyName(nameof(Customization));
+            j.WriteStartArray();
+            foreach (var (condition, design) in Customization)
+            {
+                j.WritePropertyName(condition.ToString());
+                j.WriteValue(design.Name);
+            }
+
+            j.WriteEndArray();
+            j.WritePropertyName(nameof(Equipment));
+            j.WriteStartArray();
+            foreach (var (condition, design) in Equipment)
+            {
+                j.WritePropertyName(condition.ToString());
+                j.WriteValue(design.Name);
+            }
+
+            j.WriteEndArray();
+            j.WritePropertyName(nameof(Weapons));
+            j.WriteStartArray();
+            foreach (var (condition, design) in Weapons)
+            {
+                j.WritePropertyName(condition.ToString());
+                j.WriteValue(design.Name);
+            }
+
+            j.WriteEndArray();
+        }
+        catch (Exception e)
+        {
+            PluginLog.Error($"Could not save collection {Name}:\n{e}");
+        }
+    }
+
+    public static bool Load(FileInfo path, [NotNullWhen(true)] out FixedDesign? result)
+    {
+        result = null;
+        return true;
+    }
+}
 
 public class FixedDesigns : IDisposable
 {

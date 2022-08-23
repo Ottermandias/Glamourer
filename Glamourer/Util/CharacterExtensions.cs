@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
+using Glamourer.Interop;
 
-namespace Glamourer;
+namespace Glamourer.Util;
 
 public static class CharacterExtensions
 {
@@ -27,7 +28,7 @@ public static class CharacterExtensions
 
     public static unsafe bool SetHatVisible(this Character a, bool visible)
     {
-        var current = IsHatVisible(a);
+        var current = a.IsHatVisible();
         if (current == visible)
             return false;
 
@@ -46,7 +47,7 @@ public static class CharacterExtensions
 
     public static unsafe bool SetVisorToggled(this Character a, bool toggled)
     {
-        var current = IsVisorToggled(a);
+        var current = a.IsVisorToggled();
         if (current == toggled)
             return false;
 
@@ -67,7 +68,7 @@ public static class CharacterExtensions
 
     public static unsafe bool SetWeaponHidden(this Character a, bool value)
     {
-        var hidden = IsWeaponHidden(a);
+        var hidden = a.IsWeaponHidden();
         if (hidden == value)
             return false;
 

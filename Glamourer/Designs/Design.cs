@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Runtime.InteropServices;
+using Glamourer.State;
+using Glamourer.Structs;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
@@ -13,4 +17,10 @@ public class Design
 
     public override string ToString()
         => Name;
+}
+
+public struct ArmorData
+{
+    public CharacterArmor Model;
+    public bool           Ignore;
 }

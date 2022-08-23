@@ -27,17 +27,17 @@ public class GlamourerIpc : IDisposable
     private readonly ObjectTable            _objectTable;
     private readonly DalamudPluginInterface _pluginInterface;
 
-    internal ICallGateProvider<string, string?>?            ProviderGetAllCustomization;
-    internal ICallGateProvider<Character?, string?>?        ProviderGetAllCustomizationFromCharacter;
-    internal ICallGateProvider<string, string, object>?     ProviderApplyAll;
-    internal ICallGateProvider<string, Character?, object>? ProviderApplyAllToCharacter;
-    internal ICallGateProvider<string, string, object>?     ProviderApplyOnlyCustomization;
-    internal ICallGateProvider<string, Character?, object>? ProviderApplyOnlyCustomizationToCharacter;
-    internal ICallGateProvider<string, string, object>?     ProviderApplyOnlyEquipment;
-    internal ICallGateProvider<string, Character?, object>? ProviderApplyOnlyEquipmentToCharacter;
-    internal ICallGateProvider<string, object>?             ProviderRevert;
-    internal ICallGateProvider<Character?, object>?         ProviderRevertCharacter;
-    internal ICallGateProvider<int>?                        ProviderGetApiVersion;
+    //internal ICallGateProvider<string, string?>?            ProviderGetAllCustomization;
+    //internal ICallGateProvider<Character?, string?>?        ProviderGetAllCustomizationFromCharacter;
+    //internal ICallGateProvider<string, string, object>?     ProviderApplyAll;
+    //internal ICallGateProvider<string, Character?, object>? ProviderApplyAllToCharacter;
+    //internal ICallGateProvider<string, string, object>?     ProviderApplyOnlyCustomization;
+    //internal ICallGateProvider<string, Character?, object>? ProviderApplyOnlyCustomizationToCharacter;
+    //internal ICallGateProvider<string, string, object>?     ProviderApplyOnlyEquipment;
+    //internal ICallGateProvider<string, Character?, object>? ProviderApplyOnlyEquipmentToCharacter;
+    //internal ICallGateProvider<string, object>?             ProviderRevert;
+    //internal ICallGateProvider<Character?, object>?         ProviderRevertCharacter;
+    //internal ICallGateProvider<int>?                        ProviderGetApiVersion;
 
     public GlamourerIpc(ClientState clientState, ObjectTable objectTable, DalamudPluginInterface pluginInterface)
     {

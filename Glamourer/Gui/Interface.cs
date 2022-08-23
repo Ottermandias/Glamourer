@@ -1,16 +1,107 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
+using Glamourer.Interop;
+using Glamourer.State;
 using ImGuiNET;
+using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
-using OtterGui.Widgets;
 
 namespace Glamourer.Gui;
 
 internal partial class Interface : Window, IDisposable
 {
+    private class DebugStateTab
+    {
+        private readonly CurrentManipulations _currentManipulations;
+
+        private LowerString       _manipulationFilter = LowerString.Empty;
+        private Actor.IIdentifier _selection          = Actor.IIdentifier.Invalid;
+        private CurrentDesign?    _save               = null;
+        private bool              _delete             = false;
+
+        public DebugStateTab(CurrentManipulations currentManipulations)
+            => _currentManipulations = currentManipulations;
+
+        public void Draw()
+        {
+            using var tab = ImRaii.TabItem("Current Manipulations");
+            if (!tab)
+                return;
+
+            DrawManipulationSelector();
+            if (_save == null)
+                return;
+
+            ImGui.SameLine();
+            DrawActorPanel();
+            if (_delete)
+            {
+                _delete = false;
+                _currentManipulations.DeleteSave(_selection);
+                _selection = Actor.IIdentifier.Invalid;
+            }
+        }
+
+        private void DrawSelector(Vector2 oldSpacing)
+        {
+            using var child = ImRaii.Child("##actorSelector", new Vector2(_actorSelectorWidth, -1), true);
+            if (!child)
+                return;
+
+            using var style     = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, oldSpacing);
+            var       skips     = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
+            var       remainder = ImGuiClip.FilteredClippedDraw(_currentManipulations, skips, CheckFilter, DrawSelectable);
+            ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
+        }
+
+        private void DrawManipulationSelector()
+        {
+            using var group      = ImRaii.Group();
+            var       oldSpacing = ImGui.GetStyle().ItemSpacing;
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
+                .Push(ImGuiStyleVar.FrameRounding, 0);
+            ImGui.SetNextItemWidth(_actorSelectorWidth);
+            LowerString.InputWithHint("##actorFilter", "Filter...", ref _manipulationFilter, 64);
+
+            _save = null;
+            DrawSelector(oldSpacing);
+        }
+
+        private bool CheckFilter(KeyValuePair<Actor.IIdentifier, CurrentDesign> data)
+        {
+            if (data.Key.Equals(_selection))
+                _save = data.Value;
+            return _manipulationFilter.Length == 0 || _manipulationFilter.IsContained(data.Key.ToString()!);
+        }
+
+        private void DrawSelectable(KeyValuePair<Actor.IIdentifier, CurrentDesign> data)
+        {
+            var equal = data.Key.Equals(_selection);
+            if (ImGui.Selectable(data.Key.ToString(), equal))
+            {
+                _selection = data.Key;
+                _save      = data.Value;
+            }
+        }
+
+        private void DrawActorPanel()
+        {
+            using var group = ImRaii.Group();
+            if (ImGui.Button("Delete"))
+                _delete = true;
+            CustomizationDrawer.Draw(_save!.Data.Customize, _save.Data.Equipment, Array.Empty<Actor>(), false);
+        }
+    }
+
     private readonly Glamourer _plugin;
+
+    private readonly ActorTab      _actorTab;
+    private readonly DebugStateTab _debugStateTab;
 
     public Interface(Glamourer plugin)
         : base(GetLabel())
@@ -23,6 +114,8 @@ internal partial class Interface : Window, IDisposable
             MinimumSize = new Vector2(675, 675),
             MaximumSize = ImGui.GetIO().DisplaySize,
         };
+        _actorTab      = new ActorTab(_plugin.CurrentManipulations);
+        _debugStateTab = new DebugStateTab(_plugin.CurrentManipulations);
     }
 
     public override void Draw()
@@ -31,13 +124,21 @@ internal partial class Interface : Window, IDisposable
         if (!tabBar)
             return;
 
-        UpdateState();
+        try
+        {
+            UpdateState();
 
-        _actorTab.Draw();
-        DrawSettingsTab();
-        //        DrawSaves();
-        //        DrawFixedDesignsTab();
-        //        DrawRevertablesTab();
+            _actorTab.Draw();
+            DrawSettingsTab();
+            _debugStateTab.Draw();
+            //        DrawSaves();
+            //        DrawFixedDesignsTab();
+            //        DrawRevertablesTab();
+        }
+        catch (Exception e)
+        {
+            PluginLog.Error($"Unexpected Error during Draw:\n{e}");
+        }
     }
 
     public void Dispose()

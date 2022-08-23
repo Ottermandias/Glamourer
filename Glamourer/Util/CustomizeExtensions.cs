@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Net.Http;
 using Glamourer.Customization;
+using Glamourer.State;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
-namespace Glamourer;
+namespace Glamourer.Util;
 
 public static unsafe class CustomizeExtensions
 {
@@ -54,4 +56,87 @@ public static unsafe class CustomizeExtensions
 
     public static string ClanName(this Customize customize)
         => ClanName(customize.Clan, customize.Gender);
+
+
+    // Change a gender and fix up all required customizations afterwards.
+    public static bool ChangeGender(this Customize customize, CharacterEquip equip, Gender gender)
+    {
+        if (customize.Gender == gender)
+            return false;
+
+        FixRestrictedGear(customize, equip, gender, customize.Race);
+        customize.Gender = gender;
+        FixUpAttributes(customize);
+        return true;
+    }
+
+    // Change a race and fix up all required customizations afterwards.
+    public static bool ChangeRace(this Customize customize, CharacterEquip equip, SubRace clan)
+    {
+        if (customize.Clan == clan)
+            return false;
+
+        var race   = clan.ToRace();
+        var gender = race == Race.Hrothgar ? Gender.Male : customize.Gender; // TODO Female Hrothgar
+        FixRestrictedGear(customize, equip, gender, race);
+        customize.Gender = gender;
+        customize.Race   = race;
+        customize.Clan   = clan;
+        FixUpAttributes(customize);
+        return true;
+    }
+
+    public static void ChangeCustomization(this Customize customize, CharacterEquip equip, Customize newCustomize)
+    {
+        FixRestrictedGear(customize, equip, newCustomize.Gender, newCustomize.Race);
+        customize.Load(newCustomize);
+    }
+
+    public static bool ChangeCustomization(this Customize customize, CharacterEquip equip, CustomizationId id, byte value)
+    {
+        switch (id)
+        {
+            case CustomizationId.Race:   return customize.ChangeRace(equip, (SubRace)value);
+            case CustomizationId.Gender: return customize.ChangeGender(equip, (Gender)value);
+        }
+
+        if (customize[id] == value)
+            return false;
+
+        customize[id] = value;
+        return true;
+    }
+
+    // Go through a whole customization struct and fix up all settings that need fixing.
+    private static void FixUpAttributes(Customize customize)
+    {
+        var set = Glamourer.Customization.GetList(customize.Clan, customize.Gender);
+        foreach (CustomizationId id in Enum.GetValues(typeof(CustomizationId)))
+        {
+            switch (id)
+            {
+                case CustomizationId.Race:                  break;
+                case CustomizationId.Clan:                  break;
+                case CustomizationId.BodyType:              break;
+                case CustomizationId.Gender:                break;
+                case CustomizationId.FacialFeaturesTattoos: break;
+                case CustomizationId.HighlightsOnFlag:      break;
+                case CustomizationId.Face:                  break;
+                default:
+                    var count = set.Count(id);
+                    if (set.DataByValue(id, customize[id], out _) < 0)
+                        customize[id] = count == 0 ? (byte)0 : set.Data(id, 0).Value;
+                    break;
+            }
+        }
+    }
+
+    private static void FixRestrictedGear(Customize customize, CharacterEquip equip, Gender gender, Race race)
+    {
+        if (race == customize.Race && gender == customize.Gender)
+            return;
+
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+            (_, equip[slot]) = Glamourer.RestrictedGear.ResolveRestricted(equip[slot], slot, race, gender);
+    }
 }

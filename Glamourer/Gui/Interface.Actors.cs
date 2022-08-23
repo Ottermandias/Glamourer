@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using Glamourer.Interop;
+using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
-using Penumbra.GameData.Enums;
-using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui;
 
@@ -14,8 +16,15 @@ internal partial class Interface
 {
     private class ActorTab
     {
-        private ObjectManager.ActorData _data       = new(string.Empty, new Actor.InvalidIdentifier(), Actor.Null, false, Actor.Null);
-        private Actor                   _nextSelect = Actor.Null;
+        private readonly CurrentManipulations _manipulations;
+
+        public ActorTab(CurrentManipulations manipulations)
+            => _manipulations = manipulations;
+
+        private Actor.IIdentifier       _identifier   = Actor.IIdentifier.Invalid;
+        private ObjectManager.ActorData _currentData  = ObjectManager.ActorData.Invalid;
+        private string                  _currentLabel = string.Empty;
+        private CurrentDesign?          _currentSave;
 
         public void Draw()
         {
@@ -24,61 +33,106 @@ internal partial class Interface
                 return;
 
             DrawActorSelector();
-            if (_data.Label.Length == 0)
-                return;
+            if (!ObjectManager.Actors.TryGetValue(_identifier, out _currentData))
+                _currentData = ObjectManager.ActorData.Invalid;
+            else
+                _currentLabel = _currentData.Label;
 
             ImGui.SameLine();
 
-            if (_data.Actor.IsHuman)
-                DrawActorPanel();
-            else
-                DrawMonsterPanel();
+            DrawPanel();
         }
 
-        private void DrawActorPanel()
+        private unsafe void DrawPanel()
         {
+            if (_identifier == Actor.IIdentifier.Invalid)
+                return;
+
+
             using var group = ImRaii.Group();
-            if (!Glamourer.RedrawManager.CurrentManipulations.GetSave(_data.Actor, out var save))
+            DrawPanelHeader();
+            using var child = ImRaii.Child("##ActorPanel", -Vector2.One, true);
+            if (!child || _currentSave == null)
                 return;
 
-            if (DrawCustomization(save.Customize, save.Equipment, !_data.Modifiable))
-            {
-                //Glamourer.RedrawManager.Set(_data.Actor.Address, _character);
-                Glamourer.Penumbra.RedrawObject(_data.Actor.Character, RedrawType.Redraw, true);
-            }
+            if (_currentData.Valid)
+                _currentSave.Update(_currentData.Objects[0]);
 
-            if (ImGui.Button("Set Machinist Goggles"))
-            {
-                Glamourer.RedrawManager.ChangeEquip(_data.Actor.Address, EquipSlot.Head, new CharacterArmor(265, 1, 0));
-            }
-
-            if (ImGui.Button("Set Weapon"))
-            {
-                Glamourer.RedrawManager.LoadWeapon(_data.Actor.Address, new CharacterWeapon(0x00C9, 0x004E, 0x0001, 0x00), new CharacterWeapon(0x0065, 0x003D, 0x0001, 0x00));
-            }
+            var d = _currentData.Objects[0].DrawObject.Pointer;
+            var x = (*(delegate* unmanaged<Human*, byte>**)d)[50](d);
+            ImGui.Text($"{x} {_currentData.Objects[0].ModelId}");
+            if (x == 1)
+                CustomizationDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, _currentData.Objects,
+                    _identifier is Actor.SpecialIdentifier);
         }
 
-        private void DrawMonsterPanel()
+        private const uint RedHeaderColor   = 0xFF1818C0;
+        private const uint GreenHeaderColor = 0xFF18C018;
+
+        private void DrawPanelHeader()
         {
-            using var group        = ImRaii.Group();
-            var       currentModel = (uint)_data.Actor.ModelId;
-            var       models       = GameData.Models(Dalamud.GameData);
-            var       currentData  = models.Models.TryGetValue(currentModel, out var c) ? c.FirstName : $"#{currentModel}";
-            using var combo        = ImRaii.Combo("Model Id", currentData);
-            if (!combo)
-                return;
-
-            foreach (var (id, data) in models.Models)
-            {
-                if (ImGui.Selectable(data.FirstName, id == currentModel) && id != currentModel)
-                {
-                    _data.Actor.SetModelId((int)id);
-                    _data.Actor.ObjectKind = 
-                    Glamourer.Penumbra.RedrawObject(_data.Actor.Character, RedrawType.Redraw, true);
-                }
-                ImGuiUtil.HoverTooltip(data.AllNames);
-            }
+            var color       = _currentData.Valid ? GreenHeaderColor : RedHeaderColor;
+            var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
+            using var c = ImRaii.PushColor(ImGuiCol.Text, color)
+                .Push(ImGuiCol.Button,        buttonColor)
+                .Push(ImGuiCol.ButtonHovered, buttonColor)
+                .Push(ImGuiCol.ButtonActive,  buttonColor);
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
+                .Push(ImGuiStyleVar.FrameRounding, 0);
+            ImGui.Button($"{_currentLabel}##playerHeader", -Vector2.UnitX);
         }
+
+        //private void DrawActorPanel()
+        //{
+        //    using var group = ImRaii.Group();
+        //    if (!_data.Identifier.IsValid)
+        //        return;
+        //
+        //    if (DrawCustomization(_currentSave.Customize, _currentSave.Equipment, !_data.Modifiable))
+        //        //Glamourer.RedrawManager.Set(_data.Actor.Address, _character);
+        //        Glamourer.Penumbra.RedrawObject(_data.Actor.Character, RedrawType.Redraw, true);
+        //
+        //    if (ImGui.Button("Set Machinist Goggles"))
+        //        Glamourer.RedrawManager.ChangeEquip(_data.Actor, EquipSlot.Head, new CharacterArmor(265, 1, 0));
+        //
+        //    if (ImGui.Button("Set Weapon"))
+        //        Glamourer.RedrawManager.LoadWeapon(_data.Actor.Address, new CharacterWeapon(0x00C9, 0x004E, 0x0001, 0x00),
+        //            new CharacterWeapon(0x0065,                                                     0x003D, 0x0001, 0x00));
+        //
+        //    if (ImGui.Button("Set Customize"))
+        //    {
+        //        unsafe
+        //        {
+        //            var data = _data.Actor.Customize.Data->Clone();
+        //            Glamourer.RedrawManager.UpdateCustomize(_data.Actor.DrawObject, new Customize(&data)
+        //            {
+        //                SkinColor = 154,
+        //            });
+        //        }
+        //    }
+        //}
+        //
+        //private void DrawMonsterPanel()
+        //{
+        //    using var group        = ImRaii.Group();
+        //    var       currentModel = (uint)_data.Actor.ModelId;
+        //    var       models       = GameData.Models(Dalamud.GameData);
+        //    var       currentData  = models.Models.TryGetValue(currentModel, out var c) ? c.FirstName : $"#{currentModel}";
+        //    using var combo        = ImRaii.Combo("Model Id", currentData);
+        //    if (!combo)
+        //        return;
+        //
+        //    foreach (var (id, data) in models.Models)
+        //    {
+        //        if (ImGui.Selectable(data.FirstName, id == currentModel) && id != currentModel)
+        //        {
+        //            _data.Actor.SetModelId((int)id);
+        //            Glamourer.Penumbra.RedrawObject(_data.Actor.Character, RedrawType.Redraw, true);
+        //        }
+        //
+        //        ImGuiUtil.HoverTooltip(data.AllNames);
+        //    }
+        //}
 
 
         private LowerString _actorFilter = LowerString.Empty;
@@ -91,63 +145,55 @@ internal partial class Interface
                 .Push(ImGuiStyleVar.FrameRounding, 0);
             ImGui.SetNextItemWidth(_actorSelectorWidth);
             LowerString.InputWithHint("##actorFilter", "Filter...", ref _actorFilter, 64);
-            using (var child = ImRaii.Child("##actorSelector", new Vector2(_actorSelectorWidth, -ImGui.GetFrameHeight()), true))
-            {
-                if (!child)
-                    return;
 
-                _data.Actor      = Actor.Null;
-                _data.GPose      = Actor.Null;
-                _data.Modifiable = false;
-
-                style.Push(ImGuiStyleVar.ItemSpacing, oldSpacing);
-                var skips     = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
-                var remainder = ImGuiClip.FilteredClippedDraw(ObjectManager.GetEnumerator(), skips, CheckFilter, DrawSelectable);
-                ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
-                style.Pop();
-            }
-
+            DrawSelector(oldSpacing);
             DrawSelectionButtons();
         }
 
-        private void UpdateSelection(ObjectManager.ActorData data)
+        private void DrawSelector(Vector2 oldSpacing)
         {
-            _data = data;
-            //_character.Load(_data.Actor);
+            using var child = ImRaii.Child("##actorSelector", new Vector2(_actorSelectorWidth, -ImGui.GetFrameHeight()), true);
+            if (!child)
+                return;
+
+            ObjectManager.Update();
+            using var style     = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, oldSpacing);
+            var       skips     = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
+            var       remainder = ImGuiClip.FilteredClippedDraw(ObjectManager.List, skips, CheckFilter, DrawSelectable);
+            ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
         }
 
-        private bool CheckFilter(ObjectManager.ActorData data)
-        {
-            if (_nextSelect && _nextSelect == data.Actor || data.Label == _data.Label)
-                UpdateSelection(data);
-            return data.Label.Contains(_actorFilter.Lower, StringComparison.OrdinalIgnoreCase);
-        }
+        private bool CheckFilter((Actor.IIdentifier, ObjectManager.ActorData) pair)
+            => _actorFilter.IsEmpty || pair.Item2.Label.Contains(_actorFilter.Lower, StringComparison.OrdinalIgnoreCase);
 
-        private void DrawSelectable(ObjectManager.ActorData data)
+        private void DrawSelectable((Actor.IIdentifier, ObjectManager.ActorData) pair)
         {
-            var equal = data.Label == _data.Label;
-            if (ImGui.Selectable(data.Label, equal) && !equal)
-                UpdateSelection(data);
+            var equal = pair.Item1.Equals(_identifier);
+            if (ImGui.Selectable(pair.Item2.Label, equal) && !equal)
+            {
+                _identifier  = pair.Item1.CreatePermanent();
+                _currentData = pair.Item2;
+                _currentSave = _currentData.Valid ? _manipulations.GetOrCreateSave(_currentData.Objects[0]) : null;
+            }
         }
 
         private void DrawSelectionButtons()
         {
-            _nextSelect = Actor.Null;
             using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
                 .Push(ImGuiStyleVar.FrameRounding, 0);
             var buttonWidth = new Vector2(_actorSelectorWidth / 2, 0);
+
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth
                     , "Select the local player character.", !ObjectManager.Player, true))
-                _nextSelect = _inGPose ? ObjectManager.GPosePlayer : ObjectManager.Player;
+                _identifier = ObjectManager.Player.GetIdentifier();
+
             ImGui.SameLine();
             Actor targetActor = Dalamud.Targets.Target?.Address;
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth,
-                    "Select the current target, if it is in the list.", _inGPose || !targetActor, true))
-                _nextSelect = targetActor;
+                    "Select the current target, if it is in the list.", ObjectManager.IsInGPose || !targetActor, true))
+                _identifier = targetActor.GetIdentifier();
         }
     }
-
-    private readonly ActorTab _actorTab = new();
 }
 
 //internal partial class Interface

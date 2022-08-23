@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Dalamud.Game.ClientState.Objects.Types;
+using Glamourer.State;
 
 namespace Glamourer.Designs;
 

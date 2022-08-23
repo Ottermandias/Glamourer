@@ -9,8 +9,7 @@ internal partial class Interface
     //private          bool          _holdShift;
     //private          bool          _holdCtrl;
     //private const    string        DesignNamePopupLabel = "Save Design As...";
-    //private const    uint          RedHeaderColor       = 0xFF1818C0;
-    //private const    uint          GreenHeaderColor     = 0xFF18C018;
+
     //
     //private void DrawPlayerHeader()
     //{
