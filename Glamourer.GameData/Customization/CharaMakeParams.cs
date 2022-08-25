@@ -48,10 +48,11 @@ public class CharaMakeParams : ExcelRow
     public LazyRow<Tribe> Tribe  { get; set; } = null!;
     public sbyte          Gender { get; set; }
 
-    public Menu[]                         Menus               { get; set; } = new Menu[NumMenus];
-    public byte[]                         Voices              { get; set; } = new byte[NumVoices];
-    public FacialFeatures[]               FacialFeatureByFace { get; set; } = new FacialFeatures[NumFaces];
-    public CharaMakeType.UnkData3347Obj[] Equip               { get; set; } = new CharaMakeType.UnkData3347Obj[NumEquip];
+    public Menu[]           Menus               { get; set; } = new Menu[NumMenus];
+    public byte[]           Voices              { get; set; } = new byte[NumVoices];
+    public FacialFeatures[] FacialFeatureByFace { get; set; } = new FacialFeatures[NumFaces];
+	
+    public CharaMakeType.CharaMakeTypeUnkData3347Obj[] Equip { get; set; } = new CharaMakeType.CharaMakeTypeUnkData3347Obj[NumEquip];
 
     public override void PopulateData(RowParser parser, Lumina.GameData gameData, Language language)
     {
@@ -107,7 +108,7 @@ public class CharaMakeParams : ExcelRow
         for (var i = 0; i < NumEquip; ++i)
         {
             currentOffset = 3 + (MaxNumValues + 7 + NumGraphics) * NumMenus + NumVoices + NumFaces * NumFeatures + i * 7;
-            Equip[i] = new CharaMakeType.UnkData3347Obj()
+            Equip[i] = new CharaMakeType.CharaMakeTypeUnkData3347Obj()
             {
                 Helmet    = parser.ReadColumn<ulong>(currentOffset + 0),
                 Top       = parser.ReadColumn<ulong>(currentOffset + 1),
