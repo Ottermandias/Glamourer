@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud;
 using Dalamud.Data;
+using Dalamud.Logging;
 using Lumina.Excel.GeneratedSheets;
 using Penumbra.GameData.Enums;
 
@@ -76,7 +77,6 @@ namespace Glamourer
                 var slot = (EquipSlot) item.EquipSlotCategory.Row;
                 if (slot == EquipSlot.Unknown)
                     continue;
-
                 slot = slot.ToSlot();
                 if (!_itemsBySlot.TryGetValue(slot, out var list))
                     continue;

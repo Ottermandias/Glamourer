@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Glamourer.GameData", "Glamo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penumbra.GameData", "..\Penumbra\Penumbra.GameData\Penumbra.GameData.csproj", "{9BEE2336-AA93-4669-8EEA-4756B3B2D024}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penumbra.PlayerWatch", "..\Penumbra\Penumbra.PlayerWatch\Penumbra.PlayerWatch.csproj", "{FECEDB39-C103-4333-82A6-A422BDC51EEE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penumbra.PlayerWatch", "Penumbra.PlayerWatch\Penumbra.PlayerWatch.csproj", "{FECEDB39-C103-4333-82A6-A422BDC51EEE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

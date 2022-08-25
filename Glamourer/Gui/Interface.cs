@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
-using Dalamud.Game.ClientState.Objects.Types;
 using Glamourer.Designs;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -47,7 +45,7 @@ namespace Glamourer.Gui
 
             _stains     = GameData.Stains(Dalamud.GameData);
             _models     = GameData.Models(Dalamud.GameData);
-            _identifier = Penumbra.GameData.GameData.GetIdentifier(Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
+            _identifier = Penumbra.GameData.GameData.GetIdentifier(Dalamud.GameData);
 
 
             var stainCombo = CreateDefaultStainCombo(_stains.Values.ToArray());

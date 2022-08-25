@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Penumbra.PlayerWatch;
 
 namespace Glamourer
 {

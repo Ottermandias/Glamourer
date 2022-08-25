@@ -3,6 +3,8 @@ using System.Linq;
 using System.Reflection;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using Glamourer.Api;
 using Glamourer.Customization;
