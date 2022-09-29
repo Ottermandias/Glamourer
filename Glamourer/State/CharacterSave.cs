@@ -159,7 +159,7 @@ public struct CharacterData
 
 public interface ICharacterData
 {
-    public CharacterData Data { get; }
+    public ref CharacterData Data { get; }
 
     //public        bool ApplyModel();
     //public        bool ApplyCustomize(Customize target);

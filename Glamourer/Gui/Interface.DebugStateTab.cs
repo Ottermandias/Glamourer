@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
+using Glamourer.Gui.Customization;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;

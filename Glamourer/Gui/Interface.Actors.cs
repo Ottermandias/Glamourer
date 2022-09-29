@@ -2,6 +2,7 @@
 using System.Numerics;
 using Dalamud.Interface;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using Glamourer.Gui.Customization;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
@@ -57,12 +58,8 @@ internal partial class Interface
             if (_currentData.Valid)
                 _currentSave.Update(_currentData.Objects[0]);
 
-            var d = _currentData.Objects[0].DrawObject.Pointer;
-            var x = (*(delegate* unmanaged<Human*, byte>**)d)[50](d);
-            ImGui.Text($"{x} {_currentData.Objects[0].ModelId}");
-            if (x == 1)
-                CustomizationDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, _currentData.Objects,
-                    _identifier is Actor.SpecialIdentifier);
+            CustomizationDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, _currentData.Objects,
+                _identifier is Actor.SpecialIdentifier);
         }
 
         private const uint RedHeaderColor   = 0xFF1818C0;

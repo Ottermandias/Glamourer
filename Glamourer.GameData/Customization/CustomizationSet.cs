@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.VisualBasic;
+using OtterGui;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Customization;
@@ -15,16 +15,15 @@ public class CustomizationSet
     {
         Gender = gender;
         Clan   = clan;
-        _settingAvailable = clan.ToRace() == Race.Hrothgar && gender == Gender.Female
+        Race   = clan.ToRace();
+        _settingAvailable = Race == Race.Hrothgar && gender == Gender.Female
             ? 0u
             : DefaultAvailable;
     }
 
     public Gender  Gender { get; }
     public SubRace Clan   { get; }
-
-    public Race Race
-        => Clan.ToRace();
+    public Race    Race   { get; }
 
     private uint _settingAvailable;
 
@@ -34,11 +33,18 @@ public class CustomizationSet
     public bool IsAvailable(CustomizationId id)
         => (_settingAvailable & (1u << (int)id)) != 0;
 
-    public int NumEyebrows    { get; internal init; }
-    public int NumEyeShapes   { get; internal init; }
-    public int NumNoseShapes  { get; internal init; }
-    public int NumJawShapes   { get; internal init; }
-    public int NumMouthShapes { get; internal init; }
+    private const uint DefaultAvailable =
+        (1u << (int)CustomizationId.Height)
+      | (1u << (int)CustomizationId.Hairstyle)
+      | (1u << (int)CustomizationId.SkinColor)
+      | (1u << (int)CustomizationId.EyeColorR)
+      | (1u << (int)CustomizationId.EyeColorL)
+      | (1u << (int)CustomizationId.HairColor)
+      | (1u << (int)CustomizationId.HighlightColor)
+      | (1u << (int)CustomizationId.FacialFeaturesTattoos)
+      | (1u << (int)CustomizationId.TattooColor)
+      | (1u << (int)CustomizationId.LipColor)
+      | (1u << (int)CustomizationId.Height);
 
     public string ToHumanReadable(Customize customizationData)
     {
@@ -49,45 +55,53 @@ public class CustomizationSet
         return sb.ToString();
     }
 
+    // Meta
+    public IReadOnlyList<string> OptionName { get; internal set; } = null!;
 
-    public IReadOnlyList<string>                       OptionName      { get; internal set; }  = null!;
-    public IReadOnlyList<Customization>                Faces           { get; internal init; } = null!;
-    public IReadOnlyList<Customization>                HairStyles      { get; internal init; } = null!;
-    public IReadOnlyList<IReadOnlyList<Customization>> HairByFace      { get; internal set; }  = null!;
-    public IReadOnlyList<Customization>                TailEarShapes   { get; internal init; } = null!;
-    public IReadOnlyList<IReadOnlyList<Customization>> FeaturesTattoos { get; internal set; }  = null!;
-    public IReadOnlyList<Customization>                FacePaints      { get; internal init; } = null!;
-
-    public IReadOnlyList<Customization> SkinColors           { get; internal init; } = null!;
-    public IReadOnlyList<Customization> HairColors           { get; internal init; } = null!;
-    public IReadOnlyList<Customization> HighlightColors      { get; internal init; } = null!;
-    public IReadOnlyList<Customization> EyeColors            { get; internal init; } = null!;
-    public IReadOnlyList<Customization> TattooColors         { get; internal init; } = null!;
-    public IReadOnlyList<Customization> FacePaintColorsLight { get; internal init; } = null!;
-    public IReadOnlyList<Customization> FacePaintColorsDark  { get; internal init; } = null!;
-    public IReadOnlyList<Customization> LipColorsLight       { get; internal init; } = null!;
-    public IReadOnlyList<Customization> LipColorsDark        { get; internal init; } = null!;
+    public string Option(CustomizationId id)
+        => OptionName[(int)id];
 
     public IReadOnlyList<CharaMakeParams.MenuType>                          Types { get; internal set; } = null!;
     public IReadOnlyDictionary<CharaMakeParams.MenuType, CustomizationId[]> Order { get; internal set; } = null!;
 
 
-    public string Option(CustomizationId id)
-        => OptionName[(int)id];
+    // Always list selector.
+    public int NumEyebrows    { get; internal init; }
+    public int NumEyeShapes   { get; internal init; }
+    public int NumNoseShapes  { get; internal init; }
+    public int NumJawShapes   { get; internal init; }
+    public int NumMouthShapes { get; internal init; }
 
-    public Customization FacialFeature(int faceIdx, int idx)
+
+    // Always Icon Selector
+    public IReadOnlyList<CustomizationData>                Faces           { get; internal init; } = null!;
+    public IReadOnlyList<CustomizationData>                HairStyles      { get; internal init; } = null!;
+    public IReadOnlyList<IReadOnlyList<CustomizationData>> HairByFace      { get; internal set; }  = null!;
+    public IReadOnlyList<CustomizationData>                TailEarShapes   { get; internal init; } = null!;
+    public IReadOnlyList<IReadOnlyList<CustomizationData>> FeaturesTattoos { get; internal set; }  = null!;
+    public IReadOnlyList<CustomizationData>                FacePaints      { get; internal init; } = null!;
+
+    public CustomizationData FacialFeature(CustomizationByteValue face, int idx)
     {
-        faceIdx = HrothgarFaceHack((byte) faceIdx) - 1;
-        if (faceIdx < FeaturesTattoos.Count)
-            return FeaturesTattoos[HrothgarFaceHack((byte)faceIdx)][idx];
-
-        return FeaturesTattoos[0][idx];
+        face = HrothgarFaceHack(face);
+        var faceIdx = Faces.IndexOf(p => p.Value == face);
+        return FeaturesTattoos[faceIdx != -1 ? faceIdx : 0][idx];
     }
 
-    private byte HrothgarFaceHack(byte value)
-        => value is > 4 and < 9 && Clan.ToRace() == Race.Hrothgar ? (byte)(value - 4) : value;
 
-    public int DataByValue(CustomizationId id, byte value, out Customization? custom)
+    // Always Color Selector
+    public IReadOnlyList<CustomizationData> SkinColors           { get; internal init; } = null!;
+    public IReadOnlyList<CustomizationData> HairColors           { get; internal init; } = null!;
+    public IReadOnlyList<CustomizationData> HighlightColors      { get; internal init; } = null!;
+    public IReadOnlyList<CustomizationData> EyeColors            { get; internal init; } = null!;
+    public IReadOnlyList<CustomizationData> TattooColors         { get; internal init; } = null!;
+    public IReadOnlyList<CustomizationData> FacePaintColorsLight { get; internal init; } = null!;
+    public IReadOnlyList<CustomizationData> FacePaintColorsDark  { get; internal init; } = null!;
+    public IReadOnlyList<CustomizationData> LipColorsLight       { get; internal init; } = null!;
+    public IReadOnlyList<CustomizationData> LipColorsDark        { get; internal init; } = null!;
+
+
+    public int DataByValue(CustomizationId id, CustomizationByteValue value, out CustomizationData? custom)
     {
         var type = id.ToType();
         custom = null;
@@ -95,16 +109,16 @@ public class CustomizationSet
         {
             if (value < Count(id))
             {
-                custom = new Customization(id, value, 0, value);
-                return value;
+                custom = new CustomizationData(id, value, 0, value.Value);
+                return value.Value;
             }
 
             return -1;
         }
 
-        int Get(IEnumerable<Customization> list, byte v, ref Customization? output)
+        int Get(IEnumerable<CustomizationData> list, CustomizationByteValue v, ref CustomizationData? output)
         {
-            var (val, idx) = list.Cast<Customization?>().Select((c, i) => (c, i)).FirstOrDefault(c => c.c!.Value.Value == v);
+            var (val, idx) = list.Cast<CustomizationData?>().WithIndex().FirstOrDefault(p => p.Item1!.Value.Value == v);
             if (val == null)
                 return -1;
 
@@ -132,21 +146,24 @@ public class CustomizationSet
         };
     }
 
-    public Customization Data(CustomizationId id, int idx, byte face = 0)
+    public CustomizationData Data(CustomizationId id, int idx)
+        => Data(id, idx, CustomizationByteValue.Zero);
+
+    public CustomizationData Data(CustomizationId id, int idx, CustomizationByteValue face)
     {
-        if (idx > Count(id, face = HrothgarFaceHack(face)))
+        if (idx >= Count(id, face = HrothgarFaceHack(face)))
             throw new IndexOutOfRangeException();
 
         switch (id.ToType())
         {
-            case CharaMakeParams.MenuType.Percentage:   return new Customization(id, (byte)idx, 0, (ushort)idx);
-            case CharaMakeParams.MenuType.ListSelector: return new Customization(id, (byte)idx, 0, (ushort)idx);
+            case CharaMakeParams.MenuType.Percentage:   return new CustomizationData(id, (CustomizationByteValue)idx, 0, (ushort)idx);
+            case CharaMakeParams.MenuType.ListSelector: return new CustomizationData(id, (CustomizationByteValue)idx, 0, (ushort)idx);
         }
 
         return id switch
         {
             CustomizationId.Face                  => Faces[idx],
-            CustomizationId.Hairstyle             => face < HairByFace.Count ? HairByFace[face][idx] : HairStyles[idx],
+            CustomizationId.Hairstyle             => face < HairByFace.Count ? HairByFace[face.Value][idx] : HairStyles[idx],
             CustomizationId.TailEarShape          => TailEarShapes[idx],
             CustomizationId.FacePaint             => FacePaints[idx],
             CustomizationId.FacialFeaturesTattoos => FeaturesTattoos[0][idx],
@@ -159,7 +176,7 @@ public class CustomizationSet
             CustomizationId.TattooColor    => TattooColors[idx],
             CustomizationId.LipColor       => idx < 96 ? LipColorsDark[idx] : LipColorsLight[idx - 96],
             CustomizationId.FacePaintColor => idx < 96 ? FacePaintColorsDark[idx] : FacePaintColorsLight[idx - 96],
-            _                              => new Customization(0, 0),
+            _                              => new CustomizationData(0, CustomizationByteValue.Zero),
         };
     }
 
@@ -179,7 +196,10 @@ public class CustomizationSet
         return dict;
     }
 
-    public int Count(CustomizationId id, byte face = 0)
+    public int Count(CustomizationId id)
+        => Count(id, CustomizationByteValue.Zero);
+
+    public int Count(CustomizationId id, CustomizationByteValue face)
     {
         if (!IsAvailable(id))
             return 0;
@@ -190,7 +210,7 @@ public class CustomizationSet
         return id switch
         {
             CustomizationId.Face                  => Faces.Count,
-            CustomizationId.Hairstyle             => (face = HrothgarFaceHack(face)) < HairByFace.Count ? HairByFace[face].Count : 0,
+            CustomizationId.Hairstyle             => (face = HrothgarFaceHack(face)) < HairByFace.Count ? HairByFace[face.Value].Count : 0,
             CustomizationId.HighlightsOnFlag      => 2,
             CustomizationId.SkinColor             => SkinColors.Count,
             CustomizationId.EyeColorR             => EyeColors.Count,
@@ -212,16 +232,6 @@ public class CustomizationSet
         };
     }
 
-    private const uint DefaultAvailable =
-        (1u << (int)CustomizationId.Height)
-      | (1u << (int)CustomizationId.Hairstyle)
-      | (1u << (int)CustomizationId.SkinColor)
-      | (1u << (int)CustomizationId.EyeColorR)
-      | (1u << (int)CustomizationId.EyeColorL)
-      | (1u << (int)CustomizationId.HairColor)
-      | (1u << (int)CustomizationId.HighlightColor)
-      | (1u << (int)CustomizationId.FacialFeaturesTattoos)
-      | (1u << (int)CustomizationId.TattooColor)
-      | (1u << (int)CustomizationId.LipColor)
-      | (1u << (int)CustomizationId.Height);
+    private CustomizationByteValue HrothgarFaceHack(CustomizationByteValue value)
+        => Race == Race.Hrothgar && value.Value is > 4 and < 9 ? value - 4 : value;
 }

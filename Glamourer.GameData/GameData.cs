@@ -6,6 +6,7 @@ using Dalamud.Data;
 using Glamourer.Structs;
 using Lumina.Excel.GeneratedSheets;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 using Item = Glamourer.Structs.Item;
 using Stain = Glamourer.Structs.Stain;
 
@@ -13,7 +14,7 @@ namespace Glamourer;
 
 public static class GameData
 {
-    private static Dictionary<byte, Stain>?           _stains;
+    private static Dictionary<StainId, Stain>?        _stains;
     private static Dictionary<EquipSlot, List<Item>>? _itemsBySlot;
     private static Dictionary<byte, Job>?             _jobs;
     private static Dictionary<ushort, JobGroup>?      _jobGroups;
@@ -26,13 +27,13 @@ public static class GameData
     public static ModelData Models(DataManager dataManager)
         => _models ??= new ModelData(dataManager);
 
-    public static IReadOnlyDictionary<byte, Stain> Stains(DataManager dataManager)
+    public static IReadOnlyDictionary<StainId, Stain> Stains(DataManager dataManager)
     {
         if (_stains != null)
             return _stains;
 
         var sheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Stain>()!;
-        _stains = sheet.Where(s => s.Color != 0).ToDictionary(s => (byte)s.RowId, s => new Stain((byte)s.RowId, s));
+        _stains = sheet.Where(s => s.Color != 0).ToDictionary(s => (StainId)s.RowId, s => new Stain((byte)s.RowId, s));
         return _stains;
     }
 

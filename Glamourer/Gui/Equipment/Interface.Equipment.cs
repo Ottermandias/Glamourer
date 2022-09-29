@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Dalamud.Interface;
 using Glamourer.Customization;
 using Glamourer.Interop;
 using Glamourer.Structs;
@@ -10,8 +9,6 @@ using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using static Glamourer.Interop.Actor;
-using static Lumina.Data.Parsing.Layer.LayerCommon;
 
 namespace Glamourer.Gui;
 
@@ -19,12 +16,15 @@ internal partial class Interface
 {
     //public class EquipmentDrawer
     //{
-    //    private static 
+    //    private static readonly IReadOnlyDictionary<StainId, Stain> Stains;
     //
     //    private Race                       _race;
     //    private Gender                     _gender;
     //    private CharacterEquip             _equip;
     //    private IReadOnlyCollection<Actor> _actors = Array.Empty<Actor>();
+    //
+    //    static EquipmentDrawer()
+    //        => Stains = GameData.Stains(Dalamud.GameData);
     //
     //    public static void Draw(Customize customize, CharacterEquip equip, IReadOnlyCollection<Actor> actors, bool locked)
     //    {
@@ -44,13 +44,10 @@ internal partial class Interface
     //    private bool DrawStainSelector(ComboWithFilter<Stain> stainCombo, EquipSlot slot, StainId stainIdx)
     //    {
     //        stainCombo.PostPreview = null;
-    //        if (_stains.TryGetValue((byte)stainIdx, out var stain))
-    //        {
-    //            var previewPush = PushColor(stain, ImGuiCol.FrameBg);
-    //            stainCombo.PostPreview = () => ImGui.PopStyleColor(previewPush);
-    //        }
-    //
+    //        var       found = Stains.TryGetValue(stainIdx, out var stain);
+    //        using var color = ImRaii.PushColor(ImGuiCol.FrameBg, stain.RgbaColor, found);
     //        var change = stainCombo.Draw(string.Empty, out var newStain) && !newStain.RowIndex.Equals(stainIdx);
+    //        if ()
     //        if (!change && (byte)stainIdx != 0)
     //        {
     //            ImGuiUtil.HoverTooltip("Right-click to clear.");

@@ -1,17 +1,13 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 using Dalamud.Game.Command;
-using Dalamud.Hooking;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using Dalamud.Plugin;
-using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Api;
 using Glamourer.Customization;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.State;
+using OtterGui.Log;
 using Penumbra.GameData;
 
 namespace Glamourer;
@@ -32,6 +28,7 @@ public class Glamourer : IDalamudPlugin
 
 
     public static GlamourerConfig Config = null!;
+    public static Logger          Log    = null!;
 
     public static   IObjectIdentifier     Identifier     = null!;
     public static   PenumbraAttach        Penumbra       = null!;
@@ -55,6 +52,7 @@ public class Glamourer : IDalamudPlugin
         try
         {
             Dalamud.Initialize(pluginInterface);
+            Log = new Logger();
 
             Customization  = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
             RestrictedGear = GameData.RestrictedGear(Dalamud.GameData);

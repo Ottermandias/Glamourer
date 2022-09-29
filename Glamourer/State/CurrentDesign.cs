@@ -8,8 +8,8 @@ namespace Glamourer.State;
 
 public unsafe class CurrentDesign : ICharacterData
 {
-    public CharacterData Data
-        => _drawData;
+    public ref CharacterData Data
+        => ref _drawData;
 
     private CharacterData _drawData;
     private CharacterData _initialData;

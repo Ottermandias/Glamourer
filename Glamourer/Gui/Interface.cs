@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
+using Glamourer.Gui.Customization;
 using ImGuiNET;
 using OtterGui.Raii;
 
@@ -56,6 +57,7 @@ internal partial class Interface : Window, IDisposable
     public void Dispose()
     {
         Dalamud.PluginInterface.UiBuilder.OpenConfigUi -= Toggle;
+        CustomizationDrawer.Dispose();
     }
 
     private static string GetLabel()

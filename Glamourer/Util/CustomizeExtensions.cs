@@ -90,12 +90,12 @@ public static unsafe class CustomizeExtensions
         customize.Load(newCustomize);
     }
 
-    public static bool ChangeCustomization(this Customize customize, CharacterEquip equip, CustomizationId id, byte value)
+    public static bool ChangeCustomization(this Customize customize, CharacterEquip equip, CustomizationId id, CustomizationByteValue value)
     {
         switch (id)
         {
-            case CustomizationId.Race:   return customize.ChangeRace(equip, (SubRace)value);
-            case CustomizationId.Gender: return customize.ChangeGender(equip, (Gender)value);
+            case CustomizationId.Race:   return customize.ChangeRace(equip, (SubRace)value.Value);
+            case CustomizationId.Gender: return customize.ChangeGender(equip, (Gender)value.Value);
         }
 
         if (customize[id] == value)
@@ -113,17 +113,17 @@ public static unsafe class CustomizeExtensions
         {
             switch (id)
             {
-                case CustomizationId.Race:                  break;
-                case CustomizationId.Clan:                  break;
-                case CustomizationId.BodyType:              break;
-                case CustomizationId.Gender:                break;
-                case CustomizationId.FacialFeaturesTattoos: break;
-                case CustomizationId.HighlightsOnFlag:      break;
-                case CustomizationId.Face:                  break;
+                case CustomizationId.Race:                                           break;
+                case CustomizationId.Clan:                                           break;
+                case CustomizationId.BodyType:                                       break;
+                case CustomizationId.Gender:                                         break;
+                case CustomizationId.FacialFeaturesTattoos:                          break;
+                case CustomizationId.HighlightsOnFlag:                               break;
+                case CustomizationId.Face:                                           break;
                 default:
                     var count = set.Count(id);
                     if (set.DataByValue(id, customize[id], out _) < 0)
-                        customize[id] = count == 0 ? (byte)0 : set.Data(id, 0).Value;
+                        customize[id] = count == 0 ? CustomizationByteValue.Zero : set.Data(id, 0).Value;
                     break;
             }
         }
@@ -131,7 +131,7 @@ public static unsafe class CustomizeExtensions
 
     private static void FixRestrictedGear(Customize customize, CharacterEquip equip, Gender gender, Race race)
     {
-        if (race == customize.Race && gender == customize.Gender)
+        if (!equip || race == customize.Race && gender == customize.Gender)
             return;
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)

@@ -149,7 +149,7 @@ public partial class CustomizationOptions
                 HighlightColors      = _highlightPicker,
                 TattooColors         = _tattooColorPicker,
                 LipColorsDark        = hrothgar ? HrothgarFurPattern(row) : _lipColorPickerDark,
-                LipColorsLight       = hrothgar ? Array.Empty<Customization>() : _lipColorPickerLight,
+                LipColorsLight       = hrothgar ? Array.Empty<CustomizationData>() : _lipColorPickerLight,
                 FacePaintColorsDark  = _facePaintColorPickerDark,
                 FacePaintColorsLight = _facePaintColorPickerLight,
                 Faces                = GetFaces(row),
@@ -203,19 +203,19 @@ public partial class CustomizationOptions
         private readonly CmpFile                        _cmpFile;
 
         // Those values are shared between all races.
-        private readonly Customization[] _highlightPicker;
-        private readonly Customization[] _eyeColorPicker;
-        private readonly Customization[] _facePaintColorPickerDark;
-        private readonly Customization[] _facePaintColorPickerLight;
-        private readonly Customization[] _lipColorPickerDark;
-        private readonly Customization[] _lipColorPickerLight;
-        private readonly Customization[] _tattooColorPicker;
+        private readonly CustomizationData[] _highlightPicker;
+        private readonly CustomizationData[] _eyeColorPicker;
+        private readonly CustomizationData[] _facePaintColorPickerDark;
+        private readonly CustomizationData[] _facePaintColorPickerLight;
+        private readonly CustomizationData[] _lipColorPickerDark;
+        private readonly CustomizationData[] _lipColorPickerLight;
+        private readonly CustomizationData[] _tattooColorPicker;
 
         private readonly CustomizationOptions _options;
 
-        private Customization[] CreateColorPicker(CustomizationId id, int offset, int num, bool light = false)
+        private CustomizationData[] CreateColorPicker(CustomizationId id, int offset, int num, bool light = false)
             => _cmpFile.GetSlice(offset, num)
-                .Select((c, i) => new Customization(id, (byte)(light ? 128 + i : 0 + i), c, (ushort)(offset + i)))
+                .Select((c, i) => new CustomizationData(id, (CustomizationByteValue)(light ? 128 + i : 0 + i), c, (ushort)(offset + i)))
                 .ToArray();
 
 
@@ -227,12 +227,12 @@ public partial class CustomizationOptions
                 return;
             }
 
-            var tmp = new IReadOnlyList<Customization>[set.Faces.Count + 1];
+            var tmp = new IReadOnlyList<CustomizationData>[set.Faces.Count + 1];
             tmp[0] = set.HairStyles;
 
             for (var i = 1; i <= set.Faces.Count; ++i)
             {
-                bool Valid(Customization c)
+                bool Valid(CustomizationData c)
                 {
                     var data = _customizeSheet.GetRow(c.CustomizeId)?.Unknown6 ?? 0;
                     return data == 0 || data == i + set.Faces.Count;
@@ -295,13 +295,15 @@ public partial class CustomizationOptions
         private static void SetFacialFeatures(CustomizationSet set, CharaMakeParams row)
         {
             var count       = set.Faces.Count;
-            var featureDict = new List<IReadOnlyList<Customization>>(count);
+            var featureDict = new List<IReadOnlyList<CustomizationData>>(count);
 
             for (var i = 0; i < count; ++i)
             {
-                var legacyTattoo = new Customization(CustomizationId.FacialFeaturesTattoos, 1 << 7, 137905, (ushort)((i + 1) * 8));
+                var legacyTattoo = new CustomizationData(CustomizationId.FacialFeaturesTattoos, (CustomizationByteValue)(1 << 7), 137905,
+                    (ushort)((i + 1) * 8));
                 featureDict.Add(row.FacialFeatureByFace[i].Icons.Select((val, idx)
-                        => new Customization(CustomizationId.FacialFeaturesTattoos, (byte)(1 << idx), val, (ushort)(i * 8 + idx)))
+                        => new CustomizationData(CustomizationId.FacialFeaturesTattoos, (CustomizationByteValue)(1 << idx), val,
+                            (ushort)(i * 8 + idx)))
                     .Append(legacyTattoo)
                     .ToArray());
             }
@@ -346,7 +348,7 @@ public partial class CustomizationOptions
         }
 
         // Obtain available skin and hair colors for the given subrace and gender.
-        private (Customization[], Customization[]) GetColors(SubRace race, Gender gender)
+        private (CustomizationData[], CustomizationData[]) GetColors(SubRace race, Gender gender)
         {
             if (race is > SubRace.Veena or SubRace.Unknown)
                 throw new ArgumentOutOfRangeException(nameof(race), race, null);
@@ -359,11 +361,11 @@ public partial class CustomizationOptions
         }
 
         // Obtain available hairstyles via reflection from the Hair sheet for the given subrace and gender.
-        private Customization[] GetHairStyles(SubRace race, Gender gender)
+        private CustomizationData[] GetHairStyles(SubRace race, Gender gender)
         {
             var row = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
             // Unknown30 is the number of available hairstyles.
-            var hairList = new List<Customization>(row.Unknown30);
+            var hairList = new List<CustomizationData>(row.Unknown30);
             // Hairstyles can be found starting at Unknown66.
             for (var i = 0; i < row.Unknown30; ++i)
             {
@@ -376,20 +378,21 @@ public partial class CustomizationOptions
                 // Hair Row from CustomizeSheet might not be set in case of unlockable hair.
                 var hairRow = _customizeSheet.GetRow(customizeIdx);
                 hairList.Add(hairRow != null
-                    ? new Customization(CustomizationId.Hairstyle, hairRow.FeatureID, hairRow.Icon, (ushort)hairRow.RowId)
-                    : new Customization(CustomizationId.Hairstyle, (byte)i,           customizeIdx));
+                    ? new CustomizationData(CustomizationId.Hairstyle, (CustomizationByteValue)hairRow.FeatureID, hairRow.Icon,
+                        (ushort)hairRow.RowId)
+                    : new CustomizationData(CustomizationId.Hairstyle, (CustomizationByteValue)i, customizeIdx));
             }
 
             return hairList.ToArray();
         }
 
         // Get Features.
-        private Customization FromValueAndIndex(CustomizationId id, uint value, int index)
+        private CustomizationData FromValueAndIndex(CustomizationId id, uint value, int index)
         {
             var row = _customizeSheet.GetRow(value);
             return row == null
-                ? new Customization(id, (byte)(index + 1), value)
-                : new Customization(id, row.FeatureID,     row.Icon, (ushort)row.RowId);
+                ? new CustomizationData(id, (CustomizationByteValue)(index + 1),   value)
+                : new CustomizationData(id, (CustomizationByteValue)row.FeatureID, row.Icon, (ushort)row.RowId);
         }
 
         // Get List sizes.
@@ -400,10 +403,10 @@ public partial class CustomizationOptions
         }
 
         // Get face paints from the hair sheet via reflection.
-        private Customization[] GetFacePaints(SubRace race, Gender gender)
+        private CustomizationData[] GetFacePaints(SubRace race, Gender gender)
         {
             var row       = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
-            var paintList = new List<Customization>(row.Unknown37);
+            var paintList = new List<CustomizationData>(row.Unknown37);
 
             // Number of available face paints is at Unknown37.
             for (var i = 0; i < row.Unknown37; ++i)
@@ -419,29 +422,30 @@ public partial class CustomizationOptions
                 var paintRow = _customizeSheet.GetRow(customizeIdx);
                 // Facepaint Row from CustomizeSheet might not be set in case of unlockable facepaints.
                 paintList.Add(paintRow != null
-                    ? new Customization(CustomizationId.FacePaint, paintRow.FeatureID, paintRow.Icon, (ushort)paintRow.RowId)
-                    : new Customization(CustomizationId.FacePaint, (byte)i,            customizeIdx));
+                    ? new CustomizationData(CustomizationId.FacePaint, (CustomizationByteValue)paintRow.FeatureID, paintRow.Icon,
+                        (ushort)paintRow.RowId)
+                    : new CustomizationData(CustomizationId.FacePaint, (CustomizationByteValue)i, customizeIdx));
             }
 
             return paintList.ToArray();
         }
 
         // Specific icons for tails or ears.
-        private Customization[] GetTailEarShapes(CharaMakeParams row)
+        private CustomizationData[] GetTailEarShapes(CharaMakeParams row)
             => row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customization == CustomizationId.TailEarShape)?.Values
                     .Select((v, i) => FromValueAndIndex(CustomizationId.TailEarShape, v, i)).ToArray()
-             ?? Array.Empty<Customization>();
+             ?? Array.Empty<CustomizationData>();
 
         // Specific icons for faces.
-        private Customization[] GetFaces(CharaMakeParams row)
+        private CustomizationData[] GetFaces(CharaMakeParams row)
             => row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customization == CustomizationId.Face)?.Values
                     .Select((v, i) => FromValueAndIndex(CustomizationId.Face, v, i)).ToArray()
-             ?? Array.Empty<Customization>();
+             ?? Array.Empty<CustomizationData>();
 
         // Specific icons for Hrothgar patterns.
-        private Customization[] HrothgarFurPattern(CharaMakeParams row)
+        private CustomizationData[] HrothgarFurPattern(CharaMakeParams row)
             => row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customization == CustomizationId.LipColor)?.Values
                     .Select((v, i) => FromValueAndIndex(CustomizationId.LipColor, v, i)).ToArray()
-             ?? Array.Empty<Customization>();
+             ?? Array.Empty<CustomizationData>();
     }
 }
