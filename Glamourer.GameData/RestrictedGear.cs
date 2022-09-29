@@ -29,7 +29,7 @@ public class RestrictedGear
         _items      = gameData.GetExcelSheet<Item>()!;
         _categories = gameData.GetExcelSheet<EquipRaceCategory>()!;
         AddKnown();
-        UnhandledRestrictedGear(false); // Set this to true to create a print of unassigned gear on launch.
+        UnhandledRestrictedGear(true); // Set this to true to create a print of unassigned gear on launch.
     }
 
     // Resolve a model given by its model id, variant and slot for your current race and gender.
@@ -392,11 +392,11 @@ public class RestrictedGear
         AddItem(23015, 21304);              // Doman Liege's Kyakui                       <-> Scion Liberator's Pantalettes
         AddItem(23016, 21305);              // Doman Liege's Kyahan                       <-> Scion Liberator's Sabatons
         AddItem(09293, 21306, false);       // The Emperor's New Earrings                 <-  Scion Liberator's Earrings
-        AddItem(24158, 23008);              // Leal Samurai's Kasa                        <-> Eastern Socialite's Hat
-        AddItem(24159, 23009);              // Leal Samurai's Dogi                        <-> Eastern Socialite's Cheongsam
-        AddItem(24160, 23010);              // Leal Samurai's Tekko                       <-> Eastern Socialite's Gloves
-        AddItem(24161, 23011);              // Leal Samurai's Tsutsu-hakama               <-> Eastern Socialite's Skirt
-        AddItem(24162, 23012);              // Leal Samurai's Geta                        <-> Eastern Socialite's Boots
+        AddItem(24158, 23008, true, false); // Leal Samurai's Kasa                         -> Eastern Socialite's Hat
+        AddItem(24159, 23009, true, false); // Leal Samurai's Dogi                         -> Eastern Socialite's Cheongsam
+        AddItem(24160, 23010, true, false); // Leal Samurai's Tekko                        -> Eastern Socialite's Gloves
+        AddItem(24161, 23011, true, false); // Leal Samurai's Tsutsu-hakama                -> Eastern Socialite's Skirt
+        AddItem(24162, 23012, true, false); // Leal Samurai's Geta                         -> Eastern Socialite's Boots
         AddItem(02966, 13321, false);       // Reindeer Suit                              <-  Antecedent's Attire
         AddItem(15479, 36843, false);       // Swine Body                                 <-  Lyse's Leadership Attire
         AddItem(21941, 24999, false);       // Ala Mhigan Gown                            <-  Gown of Light
@@ -404,6 +404,10 @@ public class RestrictedGear
         AddItem(36821, 27933, false);       // Archfiend Helm                             <-  Scion Hearer's Hood
         AddItem(36822, 27934, false);       // Archfiend Armor                            <-  Scion Hearer's Coat
         AddItem(36825, 27935, false);       // Archfiend Sabatons                         <-  Scion Hearer's Shoes
+        AddItem(38253, 38257);              // Valentione Emissary's Hat                  <-> Valentione Emissary's Dress Hat
+        AddItem(38254, 38258);              // Valentione Emissary's Jacket               <-> Valentione Emissary's Ruffled Dress
+        AddItem(38255, 38259);              // Valentione Emissary's Bottoms              <-> Valentione Emissary's Culottes
+        AddItem(38256, 38260);              // Valentione Emissary's Boots                <-> Valentione Emissary's Boots
     }
 
     // The racial starter sets are available for all 4 slots each,
