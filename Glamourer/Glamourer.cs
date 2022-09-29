@@ -52,42 +52,54 @@ public class Glamourer : IDalamudPlugin
 
     public unsafe Glamourer(DalamudPluginInterface pluginInterface)
     {
-        Dalamud.Initialize(pluginInterface);
-        Customization        = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
-        RestrictedGear       = GameData.RestrictedGear(Dalamud.GameData);
-        Models               = GameData.Models(Dalamud.GameData);
-        Identifier           = global::Penumbra.GameData.GameData.GetIdentifier(Dalamud.GameData);
-        Config               = GlamourerConfig.Load();
-        Penumbra             = new PenumbraAttach(Config.AttachToPenumbra);
-        FixedDesigns         = new FixedDesigns();
-        CurrentManipulations = new CurrentManipulations();
-        //Designs            = new DesignManager();
-
-        //GlamourerIpc       = new GlamourerIpc(Dalamud.ClientState, Dalamud.Objects, Dalamud.PluginInterface);
-        RedrawManager = new RedrawManager(FixedDesigns, CurrentManipulations);
-
-        Dalamud.Commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer)
+        try
         {
-            HelpMessage = "Open or close the Glamourer window.",
-        });
-        Dalamud.Commands.AddHandler(ApplyCommandString, new CommandInfo(OnGlamour)
-        {
-            HelpMessage = $"Use Glamourer Functions: {HelpString}",
-        });
+            Dalamud.Initialize(pluginInterface);
 
-        _interface = new Interface(this);
-        _windowSystem.AddWindow(_interface);
-        Dalamud.PluginInterface.UiBuilder.Draw += _windowSystem.Draw;
-        //FixedDesignManager.Flag((Human*)((Actor)Dalamud.ClientState.LocalPlayer?.Address).Pointer->GameObject.DrawObject, 0, &x);
+            Customization  = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
+            RestrictedGear = GameData.RestrictedGear(Dalamud.GameData);
+            Models         = GameData.Models(Dalamud.GameData);
+
+            Config = GlamourerConfig.Load();
+
+            Identifier           = global::Penumbra.GameData.GameData.GetIdentifier(Dalamud.GameData);
+            Penumbra             = new PenumbraAttach(Config.AttachToPenumbra);
+            FixedDesigns         = new FixedDesigns();
+            CurrentManipulations = new CurrentManipulations();
+            //Designs            = new DesignManager();
+
+            //GlamourerIpc       = new GlamourerIpc(Dalamud.ClientState, Dalamud.Objects, Dalamud.PluginInterface);
+            RedrawManager = new RedrawManager(FixedDesigns, CurrentManipulations);
+
+            Dalamud.Commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer)
+            {
+                HelpMessage = "Open or close the Glamourer window.",
+            });
+            Dalamud.Commands.AddHandler(ApplyCommandString, new CommandInfo(OnGlamour)
+            {
+                HelpMessage = $"Use Glamourer Functions: {HelpString}",
+            });
+
+            _interface = new Interface(this);
+            _windowSystem.AddWindow(_interface);
+            Dalamud.PluginInterface.UiBuilder.Draw += _windowSystem.Draw;
+            //FixedDesignManager.Flag((Human*)((Actor)Dalamud.ClientState.LocalPlayer?.Address).Pointer->GameObject.DrawObject, 0, &x);
+        }
+        catch
+        {
+            Dispose();
+            throw;
+        }
     }
 
 
     public void Dispose()
     {
-        RedrawManager.Dispose();
-        Penumbra.Dispose();
-        Dalamud.PluginInterface.UiBuilder.Draw -= _windowSystem.Draw;
-        _interface.Dispose();
+        RedrawManager?.Dispose();
+        Penumbra?.Dispose();
+        if (_windowSystem != null)
+            Dalamud.PluginInterface.UiBuilder.Draw -= _windowSystem.Draw;
+        _interface?.Dispose();
         //GlamourerIpc.Dispose();
         Dalamud.Commands.RemoveHandler(ApplyCommandString);
         Dalamud.Commands.RemoveHandler(MainCommandString);

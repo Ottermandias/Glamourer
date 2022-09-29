@@ -54,7 +54,7 @@ public unsafe partial class RedrawManager
             {
                 PluginLog.Information($"Updated {slot} from current designs for {identifier}.");
                 (var replaced, *data) =
-                    Glamourer.RestrictedGear.ResolveRestricted(*data, slot, (Race)drawObject->Race, (Gender)drawObject->Sex);
+                    Glamourer.RestrictedGear.ResolveRestricted(*data, slot, (Race)drawObject->Race, (Gender)(drawObject->Sex + 1));
                 save2.Data.Equipment[slot] = *data;
             }
         }
@@ -214,25 +214,24 @@ public unsafe partial class RedrawManager : IDisposable
         if (!(_currentManipulations.TryGetDesign(identifier, out var save) || _fixedDesigns.TryGetDesign(identifier, out var save2)))
             return;
 
-
         // Compare game object customize data against draw object customize data for transformations.
         // Apply customization if they correspond and there is customization to apply.
-        //var gameObjectCustomize = new Customize((CustomizeData*)actor.Pointer->CustomizeData);
-        //if (gameObjectCustomize.Equals(customize))
-        //    customize.Load(save.Customize);
-        //
-        //// Compare game object equip data against draw object equip data for transformations.
-        //// Apply each piece of equip that should be applied if they correspond.
-        //var gameObjectEquip = new CharacterEquip((CharacterArmor*)actor.Pointer->EquipSlotData);
-        //if (gameObjectEquip.Equals(equip))
-        //{
-        //    var saveEquip = save.Equipment;
-        //    foreach (var slot in EquipSlotExtensions.EqdpSlots)
-        //    {
-        //        (var _, equip[slot]) =
-        //            Glamourer.RestrictedGear.ResolveRestricted(true ? equip[slot] : saveEquip[slot], slot, customize.Race, customize.Gender);
-        //    }
-        //}
+        var gameObjectCustomize = new Customize((CustomizeData*)actor.Pointer->CustomizeData);
+        if (gameObjectCustomize.Equals(customize))
+            customize.Load(save.Data.Customize);
+        
+        // Compare game object equip data against draw object equip data for transformations.
+        // Apply each piece of equip that should be applied if they correspond.
+        var gameObjectEquip = new CharacterEquip((CharacterArmor*)actor.Pointer->EquipSlotData);
+        if (gameObjectEquip.Equals(equip))
+        {
+            var saveEquip = save.Data.Equipment;
+            foreach (var slot in EquipSlotExtensions.EqdpSlots)
+            {
+                (var _, equip[slot]) =
+                    Glamourer.RestrictedGear.ResolveRestricted(true ? equip[slot] : saveEquip[slot], slot, customize.Race, customize.Gender);
+            }
+        }
     }
 
     private void OnCharacterRedraw(IntPtr gameObject, IntPtr modelId, IntPtr customize, IntPtr equipData)
@@ -267,7 +266,7 @@ public unsafe partial class RedrawManager : IDisposable
     {
         if (!drawObject.Valid)
             return false;
-
+        
         return _changeCustomize(drawObject.Pointer, (byte*)customize.Data, 1);
     }
 

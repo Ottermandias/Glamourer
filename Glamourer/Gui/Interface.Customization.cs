@@ -33,7 +33,7 @@ internal partial class Interface
                 _equip     = equip,
                 _actors    = actors,
             };
-            
+
 
             if (!ImGui.CollapsingHeader("Character Customization"))
                 return;

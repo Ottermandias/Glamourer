@@ -24,11 +24,17 @@ public unsafe struct Customize
         set => Data->Data[1] = (byte)(value - 1);
     }
 
-    public ref byte BodyType
-        => ref Data->Data[2];
+    public byte BodyType
+    {
+        get => Data->Data[2];
+        set => Data->Data[2] = value;
+    }
 
-    public ref byte Height
-        => ref Data->Data[3];
+    public byte Height
+    {
+        get => Data->Data[3];
+        set => Data->Data[3] = value;
+    }
 
     public SubRace Clan
     {
@@ -36,11 +42,17 @@ public unsafe struct Customize
         set => Data->Data[4] = (byte)value;
     }
 
-    public ref byte Face
-        => ref Data->Data[5];
+    public byte Face
+    {
+        get => Data->Data[5];
+        set => Data->Data[5] = value;
+    }
 
-    public ref byte Hairstyle
-        => ref Data->Data[6];
+    public byte Hairstyle
+    {
+        get => Data->Data[6];
+        set => Data->Data[6] = value;
+    }
 
     public bool HighlightsOn
     {
@@ -48,17 +60,29 @@ public unsafe struct Customize
         set => Data->Data[7] = (byte)(value ? Data->Data[7] | 0x80 : Data->Data[7] & 0x7F);
     }
 
-    public ref byte SkinColor
-        => ref Data->Data[8];
+    public byte SkinColor
+    {
+        get => Data->Data[8];
+        set => Data->Data[8] = value;
+    }
 
-    public ref byte EyeColorRight
-        => ref Data->Data[9];
+    public byte EyeColorRight
+    {
+        get => Data->Data[9];
+        set => Data->Data[9] = value;
+    }
 
-    public ref byte HairColor
-        => ref Data->Data[10];
+    public byte HairColor
+    {
+        get => Data->Data[10];
+        set => Data->Data[10] = value;
+    }
 
-    public ref byte HighlightsColor
-        => ref Data->Data[11];
+    public byte HighlightsColor
+    {
+        get => Data->Data[11];
+        set => Data->Data[11] = value;
+    }
 
     public readonly ref struct FacialFeatureStruct
     {
@@ -86,14 +110,23 @@ public unsafe struct Customize
     public FacialFeatureStruct FacialFeatures
         => new(Data->Data + 12);
 
-    public ref byte TattooColor
-        => ref Data->Data[13];
+    public byte TattooColor
+    {
+        get => Data->Data[13];
+        set => Data->Data[13] = value;
+    }
 
-    public ref byte Eyebrows
-        => ref Data->Data[14];
+    public byte Eyebrows
+    {
+        get => Data->Data[14];
+        set => Data->Data[14] = value;
+    }
 
-    public ref byte EyeColorLeft
-        => ref Data->Data[15];
+    public byte EyeColorLeft
+    {
+        get => Data->Data[15];
+        set => Data->Data[15] = value;
+    }
 
     public byte EyeShape
     {
@@ -107,11 +140,17 @@ public unsafe struct Customize
         set => Data->Data[16] = (byte)(value ? Data->Data[16] | 0x80 : Data->Data[16] & 0x7F);
     }
 
-    public ref byte Nose
-        => ref Data->Data[17];
+    public byte Nose
+    {
+        get => Data->Data[17];
+        set => Data->Data[17] = value;
+    }
 
-    public ref byte Jaw
-        => ref Data->Data[18];
+    public byte Jaw
+    {
+        get => Data->Data[18];
+        set => Data->Data[18] = value;
+    }
 
     public byte Mouth
     {

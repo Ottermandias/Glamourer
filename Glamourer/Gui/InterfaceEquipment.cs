@@ -5,7 +5,6 @@ using Lumina.Text;
 using OtterGui;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using Penumbra.PlayerWatch;
 
 namespace Glamourer.Gui;
 

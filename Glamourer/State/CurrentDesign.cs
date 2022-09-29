@@ -1,4 +1,7 @@
-﻿using Glamourer.Interop;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Glamourer.Customization;
+using Glamourer.Interop;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.State;
@@ -23,6 +26,13 @@ public unsafe class CurrentDesign : ICharacterData
             _drawData.Load(drawObject);
         else
             _drawData = _initialData.Clone();
+    }
+
+    public void SaveCustomization(Customize customize, IReadOnlyCollection<Actor> actors)
+    {
+        _drawData.Customize.Load(customize);
+        foreach (var actor in actors.Where(a => a && a.DrawObject))
+            Glamourer.RedrawManager.UpdateCustomize(actor.DrawObject, _drawData.Customize);
     }
 
     public void Update(Actor actor)

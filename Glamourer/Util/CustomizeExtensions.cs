@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Net.Http;
 using Glamourer.Customization;
-using Glamourer.State;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
