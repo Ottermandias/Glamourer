@@ -10,19 +10,6 @@ namespace Glamourer.Gui;
 
 //internal partial class Interface
 //{
-//    // Push the stain color to type and if it is too bright, turn the text color black.
-//    // Return number of pushed styles.
-//    private static int PushColor(Stain stain, ImGuiCol type = ImGuiCol.Button)
-//    {
-//        ImGui.PushStyleColor(type, stain.RgbaColor);
-//        if (stain.Intensity > 127)
-//        {
-//            ImGui.PushStyleColor(ImGuiCol.Text, 0xFF101010);
-//            return 2;
-//        }
-//
-//        return 1;
-//    }
 //
 
 //

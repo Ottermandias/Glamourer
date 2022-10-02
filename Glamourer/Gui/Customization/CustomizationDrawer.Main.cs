@@ -142,7 +142,7 @@ internal partial class CustomizationDrawer
     // Update all relevant Actors by calling the UpdateCustomize game function.
     private void UpdateActors()
     {
-        foreach (var actor in _actors.Where(a => a && a.DrawObject))
-            Glamourer.RedrawManager.UpdateCustomize(actor.DrawObject, _customize);
+        foreach (var actor in _actors)
+            Glamourer.RedrawManager.UpdateCustomize(actor, _customize);
     }
 }

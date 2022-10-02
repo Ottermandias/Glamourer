@@ -3,6 +3,7 @@ using System.Numerics;
 using Dalamud.Interface;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Gui.Customization;
+using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
@@ -60,6 +61,8 @@ internal partial class Interface
 
             CustomizationDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, _currentData.Objects,
                 _identifier is Actor.SpecialIdentifier);
+
+            EquipmentDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, ref _currentSave.Data.MainHand, ref _currentSave.Data.OffHand, _currentData.Objects, _identifier is Actor.SpecialIdentifier);
         }
 
         private const uint RedHeaderColor   = 0xFF1818C0;

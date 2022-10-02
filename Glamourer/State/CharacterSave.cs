@@ -57,6 +57,53 @@ public enum ApplicationFlags : uint
     Wet            = 0x040000,
 }
 
+public static class ApplicationFlagExtensions
+{
+    public static ApplicationFlags ToApplicationFlag(this EquipSlot slot)
+        => slot switch
+        {
+            EquipSlot.MainHand          => ApplicationFlags.MainHand,
+            EquipSlot.OffHand           => ApplicationFlags.OffHand,
+            EquipSlot.Head              => ApplicationFlags.Head,
+            EquipSlot.Body              => ApplicationFlags.Body,
+            EquipSlot.Hands             => ApplicationFlags.Hands,
+            EquipSlot.Legs              => ApplicationFlags.Legs,
+            EquipSlot.Feet              => ApplicationFlags.Feet,
+            EquipSlot.Ears              => ApplicationFlags.Ears,
+            EquipSlot.Neck              => ApplicationFlags.Neck,
+            EquipSlot.Wrists            => ApplicationFlags.Wrist,
+            EquipSlot.RFinger           => ApplicationFlags.RFinger,
+            EquipSlot.BothHand          => ApplicationFlags.MainHand | ApplicationFlags.OffHand,
+            EquipSlot.LFinger           => ApplicationFlags.LFinger,
+            EquipSlot.HeadBody          => ApplicationFlags.Body,
+            EquipSlot.BodyHandsLegsFeet => ApplicationFlags.Body,
+            EquipSlot.LegsFeet          => ApplicationFlags.Legs,
+            EquipSlot.FullBody          => ApplicationFlags.Body,
+            EquipSlot.BodyHands         => ApplicationFlags.Body,
+            EquipSlot.BodyLegsFeet      => ApplicationFlags.Body,
+            EquipSlot.ChestHands        => ApplicationFlags.Body,
+            _                           => 0,
+        };
+
+    public static EquipSlot ToSlot(this ApplicationFlags flags)
+        => flags switch
+        {
+            ApplicationFlags.MainHand => EquipSlot.MainHand,
+            ApplicationFlags.OffHand  => EquipSlot.OffHand,
+            ApplicationFlags.Head     => EquipSlot.Head,
+            ApplicationFlags.Body     => EquipSlot.Body,
+            ApplicationFlags.Hands    => EquipSlot.Hands,
+            ApplicationFlags.Legs     => EquipSlot.Legs,
+            ApplicationFlags.Feet     => EquipSlot.Feet,
+            ApplicationFlags.Ears     => EquipSlot.Ears,
+            ApplicationFlags.Neck     => EquipSlot.Neck,
+            ApplicationFlags.Wrist    => EquipSlot.Wrists,
+            ApplicationFlags.RFinger  => EquipSlot.RFinger,
+            ApplicationFlags.LFinger  => EquipSlot.LFinger,
+            _                         => EquipSlot.Unknown,
+        };
+}
+
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct CharacterData
 {
@@ -153,6 +200,8 @@ public struct CharacterData
         ModelId = designable.ModelId;
         Customize.Load(designable.Customize);
         Equipment.Load(designable.Equip);
+        MainHand = designable.MainHand;
+        OffHand = designable.OffHand;
         Flags = SaveFlags | (designable.VisorEnabled ? ApplicationFlags.Visor : 0) | (designable.WeaponEnabled ? ApplicationFlags.Weapon : 0);
     }
 }

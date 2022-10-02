@@ -24,6 +24,9 @@ public readonly struct Item
     public bool IsBothHand
         => (EquipSlot)Base.EquipSlotCategory.Row == EquipSlot.BothHand;
 
+    public WeaponCategory WeaponCategory
+        => (WeaponCategory?) Base.ItemUICategory?.Row ?? WeaponCategory.Unknown;
+
     // Create a new item from its sheet list with the given name and either the inferred equip slot or the given one.
     public Item(Lumina.Excel.GeneratedSheets.Item item, string name, EquipSlot slot = EquipSlot.Unknown)
     {

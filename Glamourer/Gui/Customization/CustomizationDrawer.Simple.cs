@@ -25,7 +25,7 @@ internal partial class CustomizationDrawer
     private void ListCombo()
     {
         ImGui.SetNextItemWidth(_comboSelectorSize * ImGui.GetIO().FontGlobalScale);
-        using var combo  = ImRaii.Combo("##combo", $"{_currentOption} #{_currentByte.Value + 1}");
+        using var combo = ImRaii.Combo("##combo", $"{_currentOption} #{_currentByte.Value + 1}");
 
         if (!combo)
             return;
@@ -83,8 +83,7 @@ internal partial class CustomizationDrawer
         if (ImGui.Checkbox(label, ref tmp) && tmp != current)
         {
             setter(tmp);
-            foreach (var actor in _actors.Where(a => a && a.DrawObject))
-                Glamourer.RedrawManager.UpdateCustomize(actor.DrawObject, _customize);
+            UpdateActors();
         }
     }
 
@@ -99,6 +98,7 @@ internal partial class CustomizationDrawer
             var data = _set.Data(_currentId, currentIndex, _customize.Face);
             UpdateValue(data.Value);
         }
+
         ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]");
     }
 }

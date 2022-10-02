@@ -77,6 +77,7 @@ public static class GameData
                 EmptySlot(EquipSlot.Feet),
                 EmptyNpc(EquipSlot.Feet),
             },
+            [EquipSlot.MainHand] = new(2000),
             [EquipSlot.RFinger] = new(200)
             {
                 EmptySlot(EquipSlot.RFinger),
@@ -87,8 +88,6 @@ public static class GameData
                 EmptySlot(EquipSlot.Neck),
                 EmptyNpc(EquipSlot.Neck),
             },
-            [EquipSlot.MainHand] = new(1000) { EmptySlot(EquipSlot.MainHand) },
-            [EquipSlot.OffHand]  = new(200) { EmptySlot(EquipSlot.OffHand) },
             [EquipSlot.Wrists] = new(200)
             {
                 EmptySlot(EquipSlot.Wrists),
@@ -112,10 +111,10 @@ public static class GameData
                 continue;
 
             slot = slot.ToSlot();
-            if (!_itemsBySlot.TryGetValue(slot, out var list))
-                continue;
-
-            list.Add(new Item(item, name, slot));
+            if (slot == EquipSlot.OffHand)
+                slot = EquipSlot.MainHand;
+            if (_itemsBySlot.TryGetValue(slot, out var list))
+                list.Add(new Item(item, name, slot));
         }
 
         foreach (var list in _itemsBySlot.Values)

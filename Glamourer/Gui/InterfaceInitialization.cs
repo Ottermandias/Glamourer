@@ -17,28 +17,28 @@ namespace Glamourer.Gui;
 //
 //    private static readonly Vector4 GreyVector = new(0.5f, 0.5f, 0.5f, 1);
 //
-//    private static ComboWithFilter<Stain> CreateDefaultStainCombo(IReadOnlyList<Stain> stains)
-//        => new("##StainCombo", ColorComboWidth, ColorButtonWidth, stains,
-//            s => s.Name.ToString())
-//        {
-//            Flags = ImGuiComboFlags.NoArrowButton | ImGuiComboFlags.HeightLarge,
-//            PreList = () =>
-//            {
-//                ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing,   Vector2.Zero);
-//                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
-//                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0);
-//            },
-//            PostList = () => { ImGui.PopStyleVar(3); },
-//            CreateSelectable = s =>
-//            {
-//                var push = PushColor(s);
-//                var ret = ImGui.Button($"{s.Name}##Stain{(byte)s.RowIndex}",
-//                    Vector2.UnitX * (ColorComboWidth - ImGui.GetStyle().ScrollbarSize));
-//                ImGui.PopStyleColor(push);
-//                return ret;
-//            },
-//            ItemsAtOnce = 12,
-//        };
+// private static ComboWithFilter<Stain> CreateDefaultStainCombo(IReadOnlyList<Stain> stains)
+//     => new("##StainCombo", ColorComboWidth, ColorButtonWidth, stains,
+//         s => s.Name.ToString())
+//     {
+//         Flags = ImGuiComboFlags.NoArrowButton | ImGuiComboFlags.HeightLarge,
+//         PreList = () =>
+//         {
+//             ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing,   Vector2.Zero);
+//             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+//             ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0);
+//         },
+//         PostList = () => { ImGui.PopStyleVar(3); },
+//         CreateSelectable = s =>
+//         {
+//             var push = PushColor(s);
+//             var ret = ImGui.Button($"{s.Name}##Stain{(byte)s.RowIndex}",
+//                 Vector2.UnitX * (ColorComboWidth - ImGui.GetStyle().ScrollbarSize));
+//             ImGui.PopStyleColor(push);
+//             return ret;
+//         },
+//         ItemsAtOnce = 12,
+//     };
 //
 //    private ComboWithFilter<Item> CreateItemCombo(EquipSlot slot, IReadOnlyList<Item> items)
 //        => new($"{_equipSlotNames[slot]}##Equip", ItemComboWidth, ItemComboWidth, items, i => i.Name)

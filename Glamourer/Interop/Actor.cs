@@ -48,11 +48,33 @@ public unsafe partial struct DrawObject : IEquatable<DrawObject>, IDesignable
     public CharacterEquip Equip
         => new((CharacterArmor*)Pointer->EquipSlotData);
 
-    public unsafe CharacterWeapon MainHand
-        => CharacterWeapon.Empty;
+    public  CharacterWeapon MainHand
+    {
+        get
+        {
+            var child = (byte*)Pointer->CharacterBase.DrawObject.Object.ChildObject;
+            if (child == null)
+                return CharacterWeapon.Empty;
+
+            return *(CharacterWeapon*)(child + 0x8F0);
+        }
+    }
 
     public unsafe CharacterWeapon OffHand
-        => CharacterWeapon.Empty;
+    {
+        get
+        {
+            var child = Pointer->CharacterBase.DrawObject.Object.ChildObject;
+            if (child == null)
+                return CharacterWeapon.Empty;
+
+            var sibling = (byte*) child->NextSiblingObject;
+            if (sibling == null)
+                return CharacterWeapon.Empty;
+
+            return *(CharacterWeapon*)(child + 0x8F0);
+        }
+    }
 
     public unsafe bool VisorEnabled
         => (*(byte*)(Address + 0x90) & 0x40) != 0;
@@ -113,6 +135,7 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
             ident = GetIdentifier();
             return true;
         }
+
         ident = IIdentifier.Invalid;
         return false;
     }
@@ -156,16 +179,16 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
     public CharacterEquip Equip
         => new((CharacterArmor*)Pointer->EquipSlotData);
 
-    public unsafe CharacterWeapon MainHand
+    public CharacterWeapon MainHand
     {
-        get => *(CharacterWeapon*)(Address + 0x06C0 + 0x10);
-        set => *(CharacterWeapon*)(Address + 0x06C0 + 0x10) = value;
+        get => *(CharacterWeapon*)&Pointer->DrawData.MainHandModel;
+        set => *(CharacterWeapon*)&Pointer->DrawData.MainHandModel = value;
     }
 
-    public unsafe CharacterWeapon OffHand
+    public CharacterWeapon OffHand
     {
-        get => *(CharacterWeapon*)(Address + 0x06C0 + 0x10 + 0x68);
-        set => *(CharacterWeapon*)(Address + 0x06C0 + 0x10 + 0x68) = value;
+        get => *(CharacterWeapon*)&Pointer->DrawData.OffHandModel;
+        set => *(CharacterWeapon*)&Pointer->DrawData.OffHandModel = value;
     }
 
     public unsafe bool VisorEnabled

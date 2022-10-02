@@ -1,13 +1,17 @@
 ﻿using System;
+using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
 using Dalamud.Hooking;
 using Dalamud.Logging;
 using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Customization;
 using Glamourer.State;
 using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
 using Race = Penumbra.GameData.Enums.Race;
 
 namespace Glamourer.Interop;
@@ -66,27 +70,30 @@ public unsafe partial class RedrawManager
         return _flagSlotForUpdateHook.Original(drawObject, slotIdx, data);
     }
 
-
-    public bool ChangeEquip(DrawObject drawObject, EquipSlot slot, CharacterArmor data)
+    public bool ChangeEquip(DrawObject drawObject, uint slotIdx, CharacterArmor data)
     {
         if (!drawObject)
             return false;
 
-        var slotIndex = slot.ToIndex();
-        if (slotIndex > 9)
+        if (slotIdx > 9)
             return false;
 
-        return FlagSlotForUpdateDetour(drawObject.Pointer, slotIndex, &data) != 0;
+        return FlagSlotForUpdateDetour(drawObject.Pointer, slotIdx, &data) != 0;
     }
 
     public bool ChangeEquip(Actor actor, EquipSlot slot, CharacterArmor data)
-        => actor && ChangeEquip(actor.DrawObject, slot, data);
+        => actor && ChangeEquip(actor.DrawObject, slot.ToIndex(), data);
+
+    public bool ChangeEquip(DrawObject drawObject, EquipSlot slot, CharacterArmor data)
+        => ChangeEquip(drawObject, slot.ToIndex(), data);
+
+    public bool ChangeEquip(Actor actor, uint slotIdx, CharacterArmor data)
+        => actor && ChangeEquip(actor.DrawObject, slotIdx, data);
 }
 
 public unsafe partial class RedrawManager
 {
-    // The character weapon object manipulated is inside the actual character.
-    public const int CharacterWeaponOffset = 0x6C0;
+    public static readonly int CharacterWeaponOffset = (int) Marshal.OffsetOf<Character>("DrawData");
 
     public delegate void LoadWeaponDelegate(IntPtr offsetCharacter, uint slot, ulong weapon, byte redrawOnEquality, byte unk2,
         byte skipGameObject,
@@ -219,7 +226,7 @@ public unsafe partial class RedrawManager : IDisposable
         var gameObjectCustomize = new Customize((CustomizeData*)actor.Pointer->CustomizeData);
         if (gameObjectCustomize.Equals(customize))
             customize.Load(save.Data.Customize);
-        
+
         // Compare game object equip data against draw object equip data for transformations.
         // Apply each piece of equip that should be applied if they correspond.
         var gameObjectEquip = new CharacterEquip((CharacterArmor*)actor.Pointer->EquipSlotData);
@@ -262,13 +269,23 @@ public unsafe partial class RedrawManager : IDisposable
     [Signature("E8 ?? ?? ?? ?? 41 0F B6 C5 66 41 89 86")]
     private readonly ChangeCustomizeDelegate _changeCustomize = null!;
 
-    public bool UpdateCustomize(DrawObject drawObject, Customize customize)
+    public bool UpdateCustomize(Actor actor, Customize customize)
     {
-        if (!drawObject.Valid)
+        if (!actor.Valid || !actor.DrawObject.Valid)
             return false;
-        
-        return _changeCustomize(drawObject.Pointer, (byte*)customize.Data, 1);
+
+        var d = actor.DrawObject;
+        if (NeedsRedraw(d.Customize, customize))
+        {
+            Glamourer.Penumbra.RedrawObject(actor.Character, RedrawType.Redraw, true);
+            return true;
+        }
+
+        return _changeCustomize(d.Pointer, (byte*)customize.Data, 1);
     }
+
+    public static bool NeedsRedraw(Customize lhs, Customize rhs)
+        => lhs.Race != rhs.Race || lhs.Gender != rhs.Gender || lhs.Face != rhs.Face || lhs.Race == Race.Hyur && lhs.Clan != rhs.Clan;
 
 
     public static void SetVisor(Human* data, bool on)
