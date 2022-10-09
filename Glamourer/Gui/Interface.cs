@@ -22,6 +22,7 @@ namespace Glamourer.Gui
         private readonly IReadOnlyDictionary<uint, ModelChara>                                  _models;
         private readonly IObjectIdentifier                                                      _identifier;
         private readonly Dictionary<EquipSlot, (ComboWithFilter<Item>, ComboWithFilter<Stain>)> _combos;
+        private readonly ComboWithFilter<Stain>                                                 _globalStainCombo;
         private readonly ImGuiScene.TextureWrap?                                                _legacyTattooIcon;
         private readonly Dictionary<EquipSlot, string>                                          _equipSlotNames;
         private readonly DesignManager                                                          _designs;
@@ -52,6 +53,7 @@ namespace Glamourer.Gui
 
             var equip = GameData.ItemsBySlot(Dalamud.GameData);
             _combos           = equip.ToDictionary(kvp => kvp.Key, kvp => CreateCombos(kvp.Key, kvp.Value, stainCombo));
+            _globalStainCombo = new ComboWithFilter<Stain>("Dye All Slots", stainCombo);
             _legacyTattooIcon = GetLegacyTattooIcon();
         }
 
