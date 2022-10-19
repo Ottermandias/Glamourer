@@ -12,6 +12,7 @@ using Glamourer.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Structs;
+using Glamourer.Saves;
 
 namespace Glamourer.Designs;
 

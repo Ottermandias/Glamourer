@@ -22,21 +22,23 @@ public class CharaMakeParams : ExcelRow
         IconSelector      = 1,
         ColorPicker       = 2,
         DoubleColorPicker = 3,
-        MultiIconSelector = 4,
+        IconCheckmark     = 4,
         Percentage        = 5,
+        Checkmark         = 6, // custom
+        Nothing           = 7, // custom
     }
 
     public struct Menu
     {
-        public uint            Id;
-        public byte            InitVal;
-        public MenuType        Type;
-        public byte            Size;
-        public byte            LookAt;
-        public uint            Mask;
-        public CustomizationId Customization;
-        public uint[]          Values;
-        public byte[]          Graphic;
+        public uint     Id;
+        public byte     InitVal;
+        public MenuType Type;
+        public byte     Size;
+        public byte     LookAt;
+        public uint     Mask;
+        public uint     Customize;
+        public uint[]   Values;
+        public byte[]   Graphic;
     }
 
     public struct FacialFeatures
@@ -51,7 +53,7 @@ public class CharaMakeParams : ExcelRow
     public Menu[]           Menus               { get; set; } = new Menu[NumMenus];
     public byte[]           Voices              { get; set; } = new byte[NumVoices];
     public FacialFeatures[] FacialFeatureByFace { get; set; } = new FacialFeatures[NumFaces];
-	
+
     public CharaMakeType.CharaMakeTypeUnkData3347Obj[] Equip { get; set; } = new CharaMakeType.CharaMakeTypeUnkData3347Obj[NumEquip];
 
     public override void PopulateData(RowParser parser, Lumina.GameData gameData, Language language)
@@ -64,15 +66,15 @@ public class CharaMakeParams : ExcelRow
         var currentOffset = 0;
         for (var i = 0; i < NumMenus; ++i)
         {
-            currentOffset          = 3 + i;
-            Menus[i].Id            = parser.ReadColumn<uint>(0 * NumMenus + currentOffset);
-            Menus[i].InitVal       = parser.ReadColumn<byte>(1 * NumMenus + currentOffset);
-            Menus[i].Type          = (MenuType)parser.ReadColumn<byte>(2 * NumMenus + currentOffset);
-            Menus[i].Size          = parser.ReadColumn<byte>(3 * NumMenus + currentOffset);
-            Menus[i].LookAt        = parser.ReadColumn<byte>(4 * NumMenus + currentOffset);
-            Menus[i].Mask          = parser.ReadColumn<uint>(5 * NumMenus + currentOffset);
-            Menus[i].Customization = (CustomizationId)parser.ReadColumn<uint>(6 * NumMenus + currentOffset);
-            Menus[i].Values        = new uint[Menus[i].Size];
+            currentOffset      = 3 + i;
+            Menus[i].Id        = parser.ReadColumn<uint>(0 * NumMenus + currentOffset);
+            Menus[i].InitVal   = parser.ReadColumn<byte>(1 * NumMenus + currentOffset);
+            Menus[i].Type      = (MenuType)parser.ReadColumn<byte>(2 * NumMenus + currentOffset);
+            Menus[i].Size      = parser.ReadColumn<byte>(3 * NumMenus + currentOffset);
+            Menus[i].LookAt    = parser.ReadColumn<byte>(4 * NumMenus + currentOffset);
+            Menus[i].Mask      = parser.ReadColumn<uint>(5 * NumMenus + currentOffset);
+            Menus[i].Customize = parser.ReadColumn<uint>(6 * NumMenus + currentOffset);
+            Menus[i].Values    = new uint[Menus[i].Size];
 
             switch (Menus[i].Type)
             {

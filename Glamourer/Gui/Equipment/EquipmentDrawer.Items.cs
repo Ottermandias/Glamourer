@@ -6,6 +6,7 @@ using Lumina.Excel.GeneratedSheets;
 using Lumina.Text;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
@@ -140,6 +141,12 @@ public partial class EquipmentDrawer
             newIdx = _lastIndex;
             return Draw(Label, _lastPreview, ref newIdx, ItemComboWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeight());
         }
+
+        //protected override bool DrawSelectable(int globalIdx, bool selected)
+        //{
+        //    using var _ = ImRaii.Group();
+        //    
+        //}
 
         protected override bool IsVisible(int globalIndex, LowerString filter)
         {

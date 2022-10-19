@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Numerics;
+﻿using System.Numerics;
 using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui;
@@ -12,9 +11,7 @@ internal partial class CustomizationDrawer
     // Only used for facial features, so fixed ID.
     private void DrawMultiIconSelector()
     {
-        using var _       = SetId(CustomizationId.FacialFeaturesTattoos);
         using var bigGroup = ImRaii.Group();
-
         DrawMultiIcons();
         ImGui.SameLine();
         using var group = ImRaii.Group();
@@ -23,28 +20,30 @@ internal partial class CustomizationDrawer
         _currentCount = 256;
         PercentageInputInt();
 
-        ImGui.TextUnformatted(_set.Option(CustomizationId.FacialFeaturesTattoos));
+        ImGui.TextUnformatted(_set.Option(CustomizeIndex.LegacyTattoo));
     }
 
     private void DrawMultiIcons()
     {
-        using var _    = ImRaii.Group();
-        for (var i = 0; i < _currentCount; ++i)
+        var       options = _set.Order[CharaMakeParams.MenuType.IconCheckmark];
+        using var _       = ImRaii.Group();
+        foreach (var (featureIdx, idx) in options.WithIndex())
         {
-            var enabled = _customize.FacialFeatures[i];
-            var feature = _set.FacialFeature(_customize.Face, i);
-            var icon = i == _currentCount - 1
+            using var id      = SetId(featureIdx);
+            var       enabled = _customize.Get(featureIdx) != CustomizeValue.Zero;
+            var       feature = _set.Data(featureIdx, 0, _customize.Face);
+            var icon = featureIdx == CustomizeIndex.LegacyTattoo
                 ? LegacyTattoo ?? Glamourer.Customization.GetIcon(feature.IconId)
                 : Glamourer.Customization.GetIcon(feature.IconId);
             if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize, Vector2.Zero, Vector2.One, (int)ImGui.GetStyle().FramePadding.X,
                     Vector4.Zero, enabled ? Vector4.One : RedTint))
             {
-                _customize.FacialFeatures.Set(i, !enabled);
+                _customize.Set(featureIdx, enabled ? CustomizeValue.Zero : CustomizeValue.Max);
                 UpdateActors();
             }
 
             ImGuiUtil.HoverIconTooltip(icon, _iconSize);
-            if (i % 4 != 3)
+            if (idx % 4 != 3)
                 ImGui.SameLine();
         }
     }

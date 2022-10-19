@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
@@ -10,6 +12,8 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
+using Penumbra.GameData.Enums;
+using ImGui = ImGuiNET.ImGui;
 
 namespace Glamourer.Gui;
 
@@ -59,6 +63,7 @@ internal partial class Interface
             if (_currentData.Valid)
                 _currentSave.Update(_currentData.Objects[0]);
 
+            RevertButton();
             CustomizationDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, _currentData.Objects,
                 _identifier is Actor.SpecialIdentifier);
 
@@ -67,6 +72,52 @@ internal partial class Interface
 
         private const uint RedHeaderColor   = 0xFF1818C0;
         private const uint GreenHeaderColor = 0xFF18C018;
+
+        private void RevertButton()
+        {
+            if (ImGui.Button("Revert"))
+            {
+                _manipulations.DeleteSave(_identifier);
+
+                foreach (var actor in _currentData.Objects)
+                    _currentSave!.ApplyToActor(actor);
+
+                if (_currentData.Objects.Count > 0)
+                    _currentSave = _manipulations.GetOrCreateSave(_currentData.Objects[0]);
+             
+                _currentSave!.Reset();
+            }
+
+            VisorBox();
+        }
+
+        private unsafe void VisorBox()
+        {
+            var (flags, mask) = (_currentSave!.Data.Flags & (ApplicationFlags.SetVisor | ApplicationFlags.Visor)) switch
+                {
+                    ApplicationFlags.SetVisor                          => (0u, 3u),
+                    ApplicationFlags.Visor                             => (1u, 3u),
+                    ApplicationFlags.SetVisor | ApplicationFlags.Visor => (3u, 3u),
+                    _                                                  => (2u, 3u),
+                };
+            var tmp = flags;
+            if (ImGui.CheckboxFlags("Visor Toggled", ref tmp, mask))
+            {
+                _currentSave.Data.Flags = flags switch
+                {
+                    0 => (_currentSave.Data.Flags | ApplicationFlags.Visor) & ~ApplicationFlags.SetVisor,
+                    1 => _currentSave.Data.Flags | ApplicationFlags.SetVisor,
+                    2 => _currentSave.Data.Flags | ApplicationFlags.SetVisor,
+                    _ => _currentSave.Data.Flags & ~(ApplicationFlags.SetVisor | ApplicationFlags.Visor),
+                };
+                if (_currentSave.Data.Flags.HasFlag(ApplicationFlags.SetVisor))
+                {
+                    var on = _currentSave.Data.Flags.HasFlag(ApplicationFlags.Visor);
+                    foreach (var actor in _currentData.Objects.Where(a => a.IsHuman && a.DrawObject))
+                        RedrawManager.SetVisor(actor.DrawObject.Pointer, on);
+                }
+            }
+        }
 
         private void DrawPanelHeader()
         {

@@ -6,6 +6,7 @@ using Glamourer.Util;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Customization;
@@ -39,7 +40,7 @@ internal partial class CustomizationDrawer
             return;
 
         foreach (var actor in _actors.Where(a => a))
-            Glamourer.Penumbra.RedrawObject(actor.Character, RedrawType.Redraw, false);
+            Glamourer.Penumbra.RedrawObject(actor.Character, RedrawType.Redraw);
     }
 
     private void DrawRaceCombo()
@@ -56,7 +57,7 @@ internal partial class CustomizationDrawer
                 continue;
 
             foreach (var actor in _actors.Where(a => a && a.DrawObject))
-                Glamourer.Penumbra.RedrawObject(actor.Character, RedrawType.Redraw, false);
+                Glamourer.Penumbra.RedrawObject(actor.Character, RedrawType.Redraw);
         }
     }
 }

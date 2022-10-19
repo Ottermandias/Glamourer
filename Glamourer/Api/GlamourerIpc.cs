@@ -27,17 +27,17 @@ public class GlamourerIpc : IDisposable
     private readonly ObjectTable            _objectTable;
     private readonly DalamudPluginInterface _pluginInterface;
 
-    //internal ICallGateProvider<string, string?>?            ProviderGetAllCustomization;
-    //internal ICallGateProvider<Character?, string?>?        ProviderGetAllCustomizationFromCharacter;
-    //internal ICallGateProvider<string, string, object>?     ProviderApplyAll;
-    //internal ICallGateProvider<string, Character?, object>? ProviderApplyAllToCharacter;
-    //internal ICallGateProvider<string, string, object>?     ProviderApplyOnlyCustomization;
-    //internal ICallGateProvider<string, Character?, object>? ProviderApplyOnlyCustomizationToCharacter;
-    //internal ICallGateProvider<string, string, object>?     ProviderApplyOnlyEquipment;
-    //internal ICallGateProvider<string, Character?, object>? ProviderApplyOnlyEquipmentToCharacter;
-    //internal ICallGateProvider<string, object>?             ProviderRevert;
-    //internal ICallGateProvider<Character?, object>?         ProviderRevertCharacter;
-    //internal ICallGateProvider<int>?                        ProviderGetApiVersion;
+    internal ICallGateProvider<string, string?>?            ProviderGetAllCustomization;
+    internal ICallGateProvider<Character?, string?>?        ProviderGetAllCustomizationFromCharacter;
+    internal ICallGateProvider<string, string, object>?     ProviderApplyAll;
+    internal ICallGateProvider<string, Character?, object>? ProviderApplyAllToCharacter;
+    internal ICallGateProvider<string, string, object>?     ProviderApplyOnlyCustomization;
+    internal ICallGateProvider<string, Character?, object>? ProviderApplyOnlyCustomizationToCharacter;
+    internal ICallGateProvider<string, string, object>?     ProviderApplyOnlyEquipment;
+    internal ICallGateProvider<string, Character?, object>? ProviderApplyOnlyEquipmentToCharacter;
+    internal ICallGateProvider<string, object>?             ProviderRevert;
+    internal ICallGateProvider<Character?, object>?         ProviderRevertCharacter;
+    internal ICallGateProvider<int>?                        ProviderGetApiVersion;
 
     public GlamourerIpc(ClientState clientState, ObjectTable objectTable, DalamudPluginInterface pluginInterface)
     {
@@ -53,31 +53,31 @@ public class GlamourerIpc : IDisposable
 
     private void DisposeProviders()
     {
-        // ProviderGetAllCustomization?.UnregisterFunc();
-        // ProviderGetAllCustomizationFromCharacter?.UnregisterFunc();
-        // ProviderApplyAll?.UnregisterAction();
-        // ProviderApplyAllToCharacter?.UnregisterAction();
-        // ProviderApplyOnlyCustomization?.UnregisterAction();
-        // ProviderApplyOnlyCustomizationToCharacter?.UnregisterAction();
-        // ProviderApplyOnlyEquipment?.UnregisterAction();
-        // ProviderApplyOnlyEquipmentToCharacter?.UnregisterAction();
-        // ProviderRevert?.UnregisterAction();
-        // ProviderRevertCharacter?.UnregisterAction();
-        // ProviderGetApiVersion?.UnregisterFunc();
+        ProviderGetAllCustomization?.UnregisterFunc();
+        ProviderGetAllCustomizationFromCharacter?.UnregisterFunc();
+        ProviderApplyAll?.UnregisterAction();
+        ProviderApplyAllToCharacter?.UnregisterAction();
+        ProviderApplyOnlyCustomization?.UnregisterAction();
+        ProviderApplyOnlyCustomizationToCharacter?.UnregisterAction();
+        ProviderApplyOnlyEquipment?.UnregisterAction();
+        ProviderApplyOnlyEquipmentToCharacter?.UnregisterAction();
+        ProviderRevert?.UnregisterAction();
+        ProviderRevertCharacter?.UnregisterAction();
+        ProviderGetApiVersion?.UnregisterFunc();
     }
 
     private void InitializeProviders()
     {
-        //try
-        //{
-        //    ProviderGetApiVersion = _pluginInterface.GetIpcProvider<int>(LabelProviderApiVersion);
-        //    ProviderGetApiVersion.RegisterFunc(GetApiVersion);
-        //}
-        //catch (Exception ex)
-        //{
-        //    PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderApiVersion}.");
-        //}
-        //
+        try
+        {
+            ProviderGetApiVersion = _pluginInterface.GetIpcProvider<int>(LabelProviderApiVersion);
+            ProviderGetApiVersion.RegisterFunc(GetApiVersion);
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error(ex, $"Error registering IPC provider for {LabelProviderApiVersion}.");
+        }
+        
         //try
         //{
         //    ProviderGetAllCustomization = _pluginInterface.GetIpcProvider<string, string?>(LabelProviderGetAllCustomization);
@@ -187,8 +187,8 @@ public class GlamourerIpc : IDisposable
         //}
     }
 
-    //private static int GetApiVersion()
-    //    => CurrentApiVersion;
+    private static int GetApiVersion()
+        => CurrentApiVersion;
     //
     //private void ApplyAll(string customization, string characterName)
     //{

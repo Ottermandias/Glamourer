@@ -47,14 +47,14 @@ public class Glamourer : IDalamudPlugin
     //public static   RevertableDesigns RevertableDesigns = new();
     //public readonly GlamourerIpc      GlamourerIpc;
 
-    public unsafe Glamourer(DalamudPluginInterface pluginInterface)
+    public Glamourer(DalamudPluginInterface pluginInterface)
     {
         try
         {
             Dalamud.Initialize(pluginInterface);
             Log = new Logger();
 
-            Customization  = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.ClientState.ClientLanguage);
+            Customization  = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData);
             RestrictedGear = GameData.RestrictedGear(Dalamud.GameData);
             Models         = GameData.Models(Dalamud.GameData);
 

@@ -9,10 +9,10 @@ internal partial class CustomizationDrawer
 {
     private const string ColorPickerPopupName = "ColorPicker";
 
-    private void DrawColorPicker(CustomizationId id)
+    private void DrawColorPicker(CustomizeIndex index)
     {
-        using var _ = SetId(id);
-        var (current, custom) = GetCurrentCustomization(id);
+        using var _ = SetId(index);
+        var (current, custom) = GetCurrentCustomization(index);
         var color = ImGui.ColorConvertU32ToFloat4(custom.Color);
 
         // Print 1-based index instead of 0.
@@ -40,7 +40,7 @@ internal partial class CustomizationDrawer
             .Push(ImGuiStyleVar.FrameRounding, 0);
         for (var i = 0; i < _currentCount; ++i)
         {
-            var custom = _set.Data(_currentId, i, _customize[CustomizationId.Face]);
+            var custom = _set.Data(_currentIndex, i, _customize[CustomizeIndex.Face]);
             if (ImGui.ColorButton((i + 1).ToString(), ImGui.ColorConvertU32ToFloat4(custom.Color)))
             {
                 UpdateValue(custom.Value);
@@ -53,13 +53,13 @@ internal partial class CustomizationDrawer
     }
 
     // Obtain the current customization and print a warning if it is not known.
-    private (int, CustomizationData) GetCurrentCustomization(CustomizationId id)
+    private (int, CustomizeData) GetCurrentCustomization(CustomizeIndex index)
     {
-        var current = _set.DataByValue(id, _customize[id], out var custom);
-        if (!_set.IsAvailable(id) || current >= 0)
+        var current = _set.DataByValue(index, _customize[index], out var custom, _customize.Face);
+        if (!_set.IsAvailable(index) || current >= 0)
             return (current, custom!.Value);
 
-        Glamourer.Log.Warning($"Read invalid customization value {_customize[id]} for {id}.");
-        return (0, _set.Data(id, 0));
+        Glamourer.Log.Warning($"Read invalid customization value {_customize[index]} for {index}.");
+        return (0, _set.Data(index, 0));
     }
 }

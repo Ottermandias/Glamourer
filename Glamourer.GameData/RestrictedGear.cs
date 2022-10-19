@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using Dalamud.Data;
 using Dalamud.Logging;
 using Dalamud.Utility;
@@ -187,6 +188,7 @@ public class RestrictedGear
             _femaleToMale.TryAdd(fModelIdSlot, mModelIdSlot);
     }
 
+    // @formatter:off
     // Add all currently existing and known gender restricted items.
     private void AddKnown()
     {
@@ -431,4 +433,5 @@ public class RestrictedGear
         0x0102E8,
         0x010245,
     };
+    // @Formatter:on
 }

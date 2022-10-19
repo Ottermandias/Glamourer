@@ -1,41 +1,42 @@
 ﻿using System;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
-using Dalamud.Plugin.Ipc;
 using Glamourer.Interop;
 using Glamourer.Structs;
 using ImGuiNET;
+using Penumbra.Api;
+using Penumbra.Api.Enums;
+using Penumbra.Api.Helpers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Api;
 
-public class PenumbraAttach : IDisposable
+public unsafe class PenumbraAttach : IDisposable
 {
     public const int RequiredPenumbraBreakingVersion = 4;
-    public const int RequiredPenumbraFeatureVersion  = 12;
+    public const int RequiredPenumbraFeatureVersion  = 15;
 
-    private ICallGateSubscriber<ChangedItemType, uint, object>?                   _tooltipSubscriber;
-    private ICallGateSubscriber<MouseButton, ChangedItemType, uint, object>?      _clickSubscriber;
-    private ICallGateSubscriber<string, int, object>?                             _redrawSubscriberName;
-    private ICallGateSubscriber<GameObject, int, object>?                         _redrawSubscriberObject;
-    private ICallGateSubscriber<IntPtr, (IntPtr, string)>?                        _drawObjectInfo;
-    private ICallGateSubscriber<IntPtr, string, IntPtr, IntPtr, IntPtr, object?>? _creatingCharacterBase;
-    private ICallGateSubscriber<IntPtr, string, IntPtr, object?>?                 _createdCharacterBase;
-    private ICallGateSubscriber<int, int>?                                        _cutsceneParent;
+    private EventSubscriber<ChangedItemType, uint>              _tooltipSubscriber;
+    private EventSubscriber<MouseButton, ChangedItemType, uint> _clickSubscriber;
+    private ActionSubscriber<GameObject, RedrawType>            _redrawSubscriber;
+    private FuncSubscriber<nint, (nint, string)>                _drawObjectInfo;
+    public  EventSubscriber<nint, string, nint, nint, nint>     CreatingCharacterBase;
+    public  EventSubscriber<nint, string, nint>                 CreatedCharacterBase;
+    private FuncSubscriber<int, int>                            _cutsceneParent;
 
-    private readonly ICallGateSubscriber<object?> _initializedEvent;
-    private readonly ICallGateSubscriber<object?> _disposedEvent;
-
-    public event Action<IntPtr, IntPtr, IntPtr, IntPtr>? CreatingCharacterBase;
-    public event Action<IntPtr, IntPtr>?                 CreatedCharacterBase;
+    private readonly EventSubscriber _initializedEvent;
+    private readonly EventSubscriber _disposedEvent;
+    public           bool            Available { get; private set; }
 
     public PenumbraAttach(bool attach)
     {
-        _initializedEvent = Dalamud.PluginInterface.GetIpcSubscriber<object?>("Penumbra.Initialized");
-        _disposedEvent    = Dalamud.PluginInterface.GetIpcSubscriber<object?>("Penumbra.Disposed");
-        _initializedEvent.Subscribe(Reattach);
-        _disposedEvent.Subscribe(Unattach);
+        _initializedEvent    = Ipc.Initialized.Subscriber(Dalamud.PluginInterface, Reattach);
+        _disposedEvent       = Ipc.Disposed.Subscriber(Dalamud.PluginInterface, Unattach);
+        _tooltipSubscriber   = Ipc.ChangedItemTooltip.Subscriber(Dalamud.PluginInterface, PenumbraTooltip);
+        _clickSubscriber     = Ipc.ChangedItemClick.Subscriber(Dalamud.PluginInterface, PenumbraRightClick);
+        CreatedCharacterBase = Ipc.CreatedCharacterBase.Subscriber(Dalamud.PluginInterface);
+        CreatingCharacterBase = Ipc.CreatingCharacterBase.Subscriber(Dalamud.PluginInterface);
         Reattach(attach);
     }
 
@@ -48,31 +49,22 @@ public class PenumbraAttach : IDisposable
         {
             Unattach();
 
-            var versionSubscriber = Dalamud.PluginInterface.GetIpcSubscriber<(int, int)>("Penumbra.ApiVersions");
-            var (breaking, feature) = versionSubscriber.InvokeFunc();
+            var (breaking, feature) = Ipc.ApiVersions.Subscriber(Dalamud.PluginInterface).Invoke();
             if (breaking != RequiredPenumbraBreakingVersion || feature < RequiredPenumbraFeatureVersion)
                 throw new Exception(
                     $"Invalid Version {breaking}.{feature:D4}, required major Version {RequiredPenumbraBreakingVersion} with feature greater or equal to {RequiredPenumbraFeatureVersion}.");
 
-            _redrawSubscriberName   = Dalamud.PluginInterface.GetIpcSubscriber<string, int, object>("Penumbra.RedrawObjectByName");
-            _redrawSubscriberObject = Dalamud.PluginInterface.GetIpcSubscriber<GameObject, int, object>("Penumbra.RedrawObject");
-            _drawObjectInfo         = Dalamud.PluginInterface.GetIpcSubscriber<IntPtr, (IntPtr, string)>("Penumbra.GetDrawObjectInfo");
-            _cutsceneParent         = Dalamud.PluginInterface.GetIpcSubscriber<int, int>("Penumbra.GetCutsceneParentIndex");
-
             if (!attach)
                 return;
 
-            _tooltipSubscriber = Dalamud.PluginInterface.GetIpcSubscriber<ChangedItemType, uint, object>("Penumbra.ChangedItemTooltip");
-            _clickSubscriber =
-                Dalamud.PluginInterface.GetIpcSubscriber<MouseButton, ChangedItemType, uint, object>("Penumbra.ChangedItemClick");
-            _creatingCharacterBase =
-                Dalamud.PluginInterface.GetIpcSubscriber<IntPtr, string, IntPtr, IntPtr, IntPtr, object?>("Penumbra.CreatingCharacterBase");
-            _createdCharacterBase =
-                Dalamud.PluginInterface.GetIpcSubscriber<IntPtr, string, IntPtr, object?>("Penumbra.CreatedCharacterBase");
-            _tooltipSubscriber.Subscribe(PenumbraTooltip);
-            _clickSubscriber.Subscribe(PenumbraRightClick);
-            _creatingCharacterBase.Subscribe(SubscribeCreatingCharacterBase);
-            _createdCharacterBase.Subscribe(SubscribeCreatedCharacterBase);
+            _tooltipSubscriber.Enable();
+            _clickSubscriber.Enable();
+            CreatingCharacterBase.Enable();
+            CreatedCharacterBase.Enable();
+            _drawObjectInfo   = Ipc.GetDrawObjectInfo.Subscriber(Dalamud.PluginInterface);
+            _cutsceneParent   = Ipc.GetCutsceneParentIndex.Subscriber(Dalamud.PluginInterface);
+            _redrawSubscriber = Ipc.RedrawObject.Subscriber(Dalamud.PluginInterface);
+            Available         = true;
             PluginLog.Debug("Glamourer attached to Penumbra.");
         }
         catch (Exception e)
@@ -81,35 +73,28 @@ public class PenumbraAttach : IDisposable
         }
     }
 
-    private void SubscribeCreatingCharacterBase(IntPtr gameObject, string _, IntPtr modelId, IntPtr customize, IntPtr equipment)
-        => CreatingCharacterBase?.Invoke(gameObject, modelId, customize, equipment);
-
-    private void SubscribeCreatedCharacterBase(IntPtr gameObject, string _, IntPtr drawObject)
-        => CreatedCharacterBase?.Invoke(gameObject, drawObject);
-
     public void Unattach()
     {
-        _tooltipSubscriber?.Unsubscribe(PenumbraTooltip);
-        _clickSubscriber?.Unsubscribe(PenumbraRightClick);
-        _creatingCharacterBase?.Unsubscribe(SubscribeCreatingCharacterBase);
-        _createdCharacterBase?.Unsubscribe(SubscribeCreatedCharacterBase);
-        _tooltipSubscriber     = null;
-        _clickSubscriber       = null;
-        _creatingCharacterBase = null;
-        _redrawSubscriberName  = null;
-        _drawObjectInfo        = null;
-        if (_redrawSubscriberObject != null)
+        _tooltipSubscriber.Disable();
+        _clickSubscriber.Disable();
+        CreatingCharacterBase.Disable();
+        CreatedCharacterBase.Disable();
+        if (Available)
         {
-            PluginLog.Debug("Glamourer detached from Penumbra.");
-            _redrawSubscriberObject = null;
+            Available = false;
+            Glamourer.Log.Debug("Glamourer detached from Penumbra.");
         }
     }
 
     public void Dispose()
     {
-        _initializedEvent.Unsubscribe(Reattach);
-        _disposedEvent.Unsubscribe(Unattach);
         Unattach();
+        _tooltipSubscriber.Dispose();
+        _clickSubscriber.Dispose();
+        CreatingCharacterBase.Dispose();
+        CreatedCharacterBase.Dispose();
+        _initializedEvent.Dispose();
+        _disposedEvent.Dispose();
     }
 
     private static void PenumbraTooltip(ChangedItemType type, uint _)
@@ -118,7 +103,7 @@ public class PenumbraAttach : IDisposable
             ImGui.Text("Right click to apply to current Glamourer Set. [Glamourer]");
     }
 
-    private void PenumbraRightClick(MouseButton button, ChangedItemType type, uint id)
+    private static void PenumbraRightClick(MouseButton button, ChangedItemType type, uint id)
     {
         if (button != MouseButton.Right || type != ChangedItemType.Item)
             return;
@@ -166,43 +151,23 @@ public class PenumbraAttach : IDisposable
     }
 
     public Actor GameObjectFromDrawObject(IntPtr drawObject)
-        => _drawObjectInfo?.InvokeFunc(drawObject).Item1 ?? IntPtr.Zero;
+        => Available ? _drawObjectInfo.Invoke(drawObject).Item1 : IntPtr.Zero;
 
     public int CutsceneParent(int idx)
-        => _cutsceneParent?.InvokeFunc(idx) ?? -1;
+        => Available ? _cutsceneParent.Invoke(idx) : -1;
 
-    public void RedrawObject(GameObject? actor, RedrawType settings, bool repeat)
+    public void RedrawObject(GameObject? actor, RedrawType settings)
     {
-        if (actor == null)
+        if (actor == null || !Available)
             return;
 
-        if (_redrawSubscriberObject != null)
+        try
         {
-            try
-            {
-                _redrawSubscriberObject.InvokeAction(actor, (int)settings);
-            }
-            catch (Exception e)
-            {
-                if (repeat)
-                {
-                    Reattach(Glamourer.Config.AttachToPenumbra);
-                    RedrawObject(actor, settings, false);
-                }
-                else
-                {
-                    PluginLog.Debug($"Failure redrawing object:\n{e}");
-                }
-            }
+            _redrawSubscriber.Invoke(actor, settings);
         }
-        else if (repeat)
+        catch (Exception e)
         {
-            Reattach(Glamourer.Config.AttachToPenumbra);
-            RedrawObject(actor, settings, false);
-        }
-        else
-        {
-            PluginLog.Debug("Trying to redraw object, but not attached to Penumbra.");
+            PluginLog.Debug($"Failure redrawing object:\n{e}");
         }
     }
 

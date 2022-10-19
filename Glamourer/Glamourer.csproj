@@ -84,6 +84,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Glamourer.GameData\Glamourer.GameData.csproj" />
+    <ProjectReference Include="..\..\Penumbra\Penumbra.Api\Penumbra.Api.csproj" />
     <ProjectReference Include="..\..\Penumbra\Penumbra.GameData\Penumbra.GameData.csproj" />
   </ItemGroup>
 
@@ -118,7 +119,7 @@
     </None>
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="if $(Configuration) == Release powershell Compress-Archive -Force $(TargetPath), $(TargetDir)$(SolutionName).json, $(TargetDir)$(SolutionName).GameData.dll, $(TargetDir)Penumbra.GameData.dll $(SolutionDir)$(SolutionName).zip" />
+    <Exec Command="if $(Configuration) == Release powershell Compress-Archive -Force $(TargetPath), $(TargetDir)$(SolutionName).json, $(TargetDir)$(SolutionName).GameData.dll, $(TargetDir)Penumbra.GameData.dll, $(TargetDir)Penumbra.Api.dll $(SolutionDir)$(SolutionName).zip" />
     <Exec Command="if $(Configuration) == Release powershell Copy-Item -Force $(TargetDir)$(SolutionName).json -Destination $(SolutionDir)" />
   </Target>
 </Project>

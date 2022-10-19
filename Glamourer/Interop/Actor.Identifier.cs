@@ -1,6 +1,7 @@
 ﻿using System;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Utility;
+using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.ByteString;
@@ -187,13 +188,26 @@ public unsafe partial struct Actor
         public bool IsValid
             => true;
 
-        public OwnedIdentifier(Utf8String name, Utf8String ownerName, ushort ownerHomeWorld, uint dataId, ObjectKind kind)
+        public OwnedIdentifier(Utf8String actorName, Utf8String ownerName, ushort ownerHomeWorld, uint dataId, ObjectKind kind)
         {
-            Name           = name;
             OwnerName      = ownerName;
             OwnerHomeWorld = ownerHomeWorld;
             DataId         = dataId;
             Kind           = kind;
+            Name           = actorName;
+            switch (Kind)
+            {
+                case ObjectKind.MountType:
+                    var mount = Dalamud.GameData.GetExcelSheet<Mount>()!.GetRow(dataId);
+                    if (mount != null)
+                        Name = Utf8String.FromSpanUnsafe(mount.Singular.RawData, false).AsciiToMixed();
+                    break;
+                case ObjectKind.Companion:
+                    var companion = Dalamud.GameData.GetExcelSheet<Companion>()!.GetRow(dataId);
+                    if (companion != null)
+                        Name = Utf8String.FromSpanUnsafe(companion.Singular.RawData, false).AsciiToMixed();
+                    break;
+            }
         }
 
         public bool Equals(IIdentifier? other)
@@ -341,8 +355,19 @@ public unsafe partial struct Actor
                 if (!owner)
                     return new InvalidIdentifier();
 
-                return new OwnedIdentifier(actor.Utf8Name, owner.Utf8Name, owner.Pointer->HomeWorld,
-                    actor.Pointer->GameObject.DataID, actor.ObjectKind);
+                var dataId = actor.ObjectKind switch
+                {
+                    ObjectKind.MountType => owner.UsedMountId,
+                    ObjectKind.Companion => actor.CompanionId,
+                    _                    => actor.Pointer->GameObject.DataID,
+                };
+
+                var name = actor.Utf8Name;
+                if (name.IsEmpty && dataId == 0)
+                    return new InvalidIdentifier();
+
+                return new OwnedIdentifier(name, owner.Utf8Name, owner.Pointer->HomeWorld,
+                    dataId, actor.ObjectKind);
             }
             default: return new InvalidIdentifier();
         }

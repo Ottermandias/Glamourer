@@ -15,6 +15,7 @@ internal partial class Interface : Window, IDisposable
 
     private readonly ActorTab      _actorTab;
     private readonly DebugStateTab _debugStateTab;
+    private readonly DebugDataTab  _debugDataTab;
 
     public Interface(Glamourer plugin)
         : base(GetLabel())
@@ -29,6 +30,7 @@ internal partial class Interface : Window, IDisposable
         };
         _actorTab      = new ActorTab(_plugin.CurrentManipulations);
         _debugStateTab = new DebugStateTab(_plugin.CurrentManipulations);
+        _debugDataTab  = new DebugDataTab(Glamourer.Customization);
     }
 
     public override void Draw()
@@ -44,6 +46,7 @@ internal partial class Interface : Window, IDisposable
             _actorTab.Draw();
             DrawSettingsTab();
             _debugStateTab.Draw();
+            _debugDataTab.Draw();
             //        DrawSaves();
             //        DrawFixedDesignsTab();
             //        DrawRevertablesTab();

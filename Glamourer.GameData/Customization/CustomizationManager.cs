@@ -13,9 +13,9 @@ namespace Glamourer.Customization
         private CustomizationManager()
         { }
 
-        public static ICustomizationManager Create(DalamudPluginInterface pi, DataManager gameData, ClientLanguage language)
+        public static ICustomizationManager Create(DalamudPluginInterface pi, DataManager gameData)
         {
-            _options ??= new CustomizationOptions(pi, gameData, language);
+            _options ??= new CustomizationOptions(pi, gameData);
             return new CustomizationManager();
         }
 

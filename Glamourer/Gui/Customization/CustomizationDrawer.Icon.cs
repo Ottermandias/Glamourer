@@ -5,6 +5,7 @@ using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Customization;
@@ -13,18 +14,18 @@ internal partial class CustomizationDrawer
 {
     private const string IconSelectorPopup = "Style Picker";
 
-    private void DrawIconSelector(CustomizationId id)
+    private void DrawIconSelector(CustomizeIndex index)
     {
-        using var _        = SetId(id);
+        using var _        = SetId(index);
         using var bigGroup = ImRaii.Group();
         var       label    = _currentOption;
 
-        var current = _set.DataByValue(id, _currentByte, out var custom);
+        var current = _set.DataByValue(index, _currentByte, out var custom, _customize.Face);
         if (current < 0)
         {
-            label   = $"{_currentOption} (Custom #{_customize[id]})";
+            label   = $"{_currentOption} (Custom #{_customize[index]})";
             current = 0;
-            custom  = _set.Data(id, 0);
+            custom  = _set.Data(index, 0);
         }
 
         var icon = Glamourer.Customization.GetIcon(custom!.Value.IconId);
@@ -35,7 +36,7 @@ internal partial class CustomizationDrawer
         ImGui.SameLine();
         using (var group = ImRaii.Group())
         {
-            if (_currentId == CustomizationId.Face)
+            if (_currentIndex == CustomizeIndex.Face)
                 FaceInputInt(current);
             else
                 DataInputInt(current);
@@ -45,7 +46,7 @@ internal partial class CustomizationDrawer
         DrawIconPickerPopup();
     }
 
-    private void UpdateFace(CustomizationData data)
+    private void UpdateFace(CustomizeData data)
     {
         // Hrothgar Hack
         var value = _set.Race == Race.Hrothgar ? data.Value + 4 : data.Value;
@@ -54,7 +55,7 @@ internal partial class CustomizationDrawer
 
         _customize.Face = value;
         foreach (var actor in _actors)
-            Glamourer.Penumbra.RedrawObject(actor.Character, RedrawType.Redraw, false);
+            Glamourer.Penumbra.RedrawObject(actor.Character, RedrawType.Redraw);
     }
 
     private void FaceInputInt(int currentIndex)
@@ -64,7 +65,7 @@ internal partial class CustomizationDrawer
         if (ImGui.InputInt("##text", ref currentIndex, 1, 1))
         {
             currentIndex = Math.Clamp(currentIndex - 1, 0, _currentCount - 1);
-            var data = _set.Data(_currentId, currentIndex, _customize.Face);
+            var data = _set.Data(_currentIndex, currentIndex, _customize.Face);
             UpdateFace(data);
         }
 
@@ -81,13 +82,13 @@ internal partial class CustomizationDrawer
             .Push(ImGuiStyleVar.FrameRounding, 0);
         for (var i = 0; i < _currentCount; ++i)
         {
-            var custom = _set.Data(_currentId, i, _customize.Face);
+            var custom = _set.Data(_currentIndex, i, _customize.Face);
             var icon   = Glamourer.Customization.GetIcon(custom.IconId);
             using (var _ = ImRaii.Group())
             {
                 if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
                 {
-                    if (_currentId == CustomizationId.Face)
+                    if (_currentIndex == CustomizeIndex.Face)
                         UpdateFace(custom);
                     else
                         UpdateValue(custom.Value);

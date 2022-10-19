@@ -64,9 +64,9 @@ public partial class CustomizationOptions
     public string GetName(CustomName name)
         => _names[(int)name];
 
-    internal CustomizationOptions(DalamudPluginInterface pi, DataManager gameData, ClientLanguage language)
+    internal CustomizationOptions(DalamudPluginInterface pi, DataManager gameData)
     {
-        var tmp = new TemporaryData(gameData, this, language);
+        var tmp = new TemporaryData(gameData, this);
         _icons = new IconStorage(pi, gameData, _customizationSets.Length * 50);
         Valid  = tmp.Valid;
         SetNames(gameData, tmp);
@@ -149,15 +149,15 @@ public partial class CustomizationOptions
                 HighlightColors      = _highlightPicker,
                 TattooColors         = _tattooColorPicker,
                 LipColorsDark        = hrothgar ? HrothgarFurPattern(row) : _lipColorPickerDark,
-                LipColorsLight       = hrothgar ? Array.Empty<CustomizationData>() : _lipColorPickerLight,
+                LipColorsLight       = hrothgar ? Array.Empty<CustomizeData>() : _lipColorPickerLight,
                 FacePaintColorsDark  = _facePaintColorPickerDark,
                 FacePaintColorsLight = _facePaintColorPickerLight,
                 Faces                = GetFaces(row),
-                NumEyebrows          = GetListSize(row, CustomizationId.Eyebrows),
-                NumEyeShapes         = GetListSize(row, CustomizationId.EyeShape),
-                NumNoseShapes        = GetListSize(row, CustomizationId.Nose),
-                NumJawShapes         = GetListSize(row, CustomizationId.Jaw),
-                NumMouthShapes       = GetListSize(row, CustomizationId.Mouth),
+                NumEyebrows          = GetListSize(row, CustomizeIndex.Eyebrows),
+                NumEyeShapes         = GetListSize(row, CustomizeIndex.EyeShape),
+                NumNoseShapes        = GetListSize(row, CustomizeIndex.Nose),
+                NumJawShapes         = GetListSize(row, CustomizeIndex.Jaw),
+                NumMouthShapes       = GetListSize(row, CustomizeIndex.Mouth),
                 FacePaints           = GetFacePaints(race, gender),
                 TailEarShapes        = GetTailEarShapes(row),
             };
@@ -171,7 +171,7 @@ public partial class CustomizationOptions
             return set;
         }
 
-        public TemporaryData(DataManager gameData, CustomizationOptions options, ClientLanguage language)
+        public TemporaryData(DataManager gameData, CustomizationOptions options)
         {
             _options        = options;
             _cmpFile        = new CmpFile(gameData);
@@ -181,18 +181,18 @@ public partial class CustomizationOptions
                 .MakeGenericMethod(typeof(CharaMakeParams)).Invoke(gameData.Excel, new object?[]
                 {
                     "charamaketype",
-                    language.ToLumina(),
+                    gameData.Language.ToLumina(),
                     null,
                 }) as ExcelSheet<CharaMakeParams>;
             _listSheet                 = tmp!;
             _hairSheet                 = gameData.GetExcelSheet<HairMakeType>()!;
-            _highlightPicker           = CreateColorPicker(CustomizationId.HighlightColor, 256,  192);
-            _lipColorPickerDark        = CreateColorPicker(CustomizationId.LipColor,       512,  96);
-            _lipColorPickerLight       = CreateColorPicker(CustomizationId.LipColor,       1024, 96, true);
-            _eyeColorPicker            = CreateColorPicker(CustomizationId.EyeColorL,      0,    192);
-            _facePaintColorPickerDark  = CreateColorPicker(CustomizationId.FacePaintColor, 640,  96);
-            _facePaintColorPickerLight = CreateColorPicker(CustomizationId.FacePaintColor, 1152, 96, true);
-            _tattooColorPicker         = CreateColorPicker(CustomizationId.TattooColor,    0,    192);
+            _highlightPicker           = CreateColorPicker(CustomizeIndex.HighlightsColor, 256,  192);
+            _lipColorPickerDark        = CreateColorPicker(CustomizeIndex.LipColor,        512,  96);
+            _lipColorPickerLight       = CreateColorPicker(CustomizeIndex.LipColor,        1024, 96, true);
+            _eyeColorPicker            = CreateColorPicker(CustomizeIndex.EyeColorLeft,    0,    192);
+            _facePaintColorPickerDark  = CreateColorPicker(CustomizeIndex.FacePaintColor,  640,  96);
+            _facePaintColorPickerLight = CreateColorPicker(CustomizeIndex.FacePaintColor,  1152, 96, true);
+            _tattooColorPicker         = CreateColorPicker(CustomizeIndex.TattooColor,     0,    192);
         }
 
         // Required sheets.
@@ -203,19 +203,19 @@ public partial class CustomizationOptions
         private readonly CmpFile                        _cmpFile;
 
         // Those values are shared between all races.
-        private readonly CustomizationData[] _highlightPicker;
-        private readonly CustomizationData[] _eyeColorPicker;
-        private readonly CustomizationData[] _facePaintColorPickerDark;
-        private readonly CustomizationData[] _facePaintColorPickerLight;
-        private readonly CustomizationData[] _lipColorPickerDark;
-        private readonly CustomizationData[] _lipColorPickerLight;
-        private readonly CustomizationData[] _tattooColorPicker;
+        private readonly CustomizeData[] _highlightPicker;
+        private readonly CustomizeData[] _eyeColorPicker;
+        private readonly CustomizeData[] _facePaintColorPickerDark;
+        private readonly CustomizeData[] _facePaintColorPickerLight;
+        private readonly CustomizeData[] _lipColorPickerDark;
+        private readonly CustomizeData[] _lipColorPickerLight;
+        private readonly CustomizeData[] _tattooColorPicker;
 
         private readonly CustomizationOptions _options;
 
-        private CustomizationData[] CreateColorPicker(CustomizationId id, int offset, int num, bool light = false)
+        private CustomizeData[] CreateColorPicker(CustomizeIndex index, int offset, int num, bool light = false)
             => _cmpFile.GetSlice(offset, num)
-                .Select((c, i) => new CustomizationData(id, (CustomizationByteValue)(light ? 128 + i : 0 + i), c, (ushort)(offset + i)))
+                .Select((c, i) => new CustomizeData(index, (CustomizeValue)(light ? 128 + i : 0 + i), c, (ushort)(offset + i)))
                 .ToArray();
 
 
@@ -227,12 +227,12 @@ public partial class CustomizationOptions
                 return;
             }
 
-            var tmp = new IReadOnlyList<CustomizationData>[set.Faces.Count + 1];
+            var tmp = new IReadOnlyList<CustomizeData>[set.Faces.Count + 1];
             tmp[0] = set.HairStyles;
 
             for (var i = 1; i <= set.Faces.Count; ++i)
             {
-                bool Valid(CustomizationData c)
+                bool Valid(CustomizeData c)
                 {
                     var data = _customizeSheet.GetRow(c.CustomizeId)?.Unknown6 ?? 0;
                     return data == 0 || data == i + set.Faces.Count;
@@ -247,22 +247,38 @@ public partial class CustomizationOptions
         private static void SetMenuTypes(CustomizationSet set, CharaMakeParams row)
         {
             // Set up the menu types for all customizations.
-            set.Types = ((CustomizationId[])Enum.GetValues(typeof(CustomizationId))).Select(c =>
+            set.Types = Enum.GetValues<CustomizeIndex>().Select(c =>
             {
                 // Those types are not correctly given in the menu, so special case them to color pickers.
                 switch (c)
                 {
-                    case CustomizationId.HighlightColor:
-                    case CustomizationId.EyeColorL:
-                    case CustomizationId.EyeColorR:
+                    case CustomizeIndex.HighlightsColor:
+                    case CustomizeIndex.EyeColorLeft:
+                    case CustomizeIndex.EyeColorRight:
                         return CharaMakeParams.MenuType.ColorPicker;
+                    case CustomizeIndex.BodyType: return CharaMakeParams.MenuType.Nothing;
+                    case CustomizeIndex.FacePaintReversed:
+                    case CustomizeIndex.Highlights:
+                    case CustomizeIndex.SmallIris:
+                    case CustomizeIndex.Lipstick:
+                        return CharaMakeParams.MenuType.Checkmark;
+                    case CustomizeIndex.FacialFeature1:
+                    case CustomizeIndex.FacialFeature2:
+                    case CustomizeIndex.FacialFeature3:
+                    case CustomizeIndex.FacialFeature4:
+                    case CustomizeIndex.FacialFeature5:
+                    case CustomizeIndex.FacialFeature6:
+                    case CustomizeIndex.FacialFeature7:
+                    case CustomizeIndex.LegacyTattoo:
+                        return CharaMakeParams.MenuType.IconCheckmark;
                 }
 
+                var gameId = c.ToByteAndMask().ByteIdx;
                 // Otherwise find the first menu corresponding to the id.
                 // If there is none, assume a list.
                 var menu = row.Menus
                     .Cast<CharaMakeParams.Menu?>()
-                    .FirstOrDefault(m => m!.Value.Customization == c);
+                    .FirstOrDefault(m => m!.Value.Customize == gameId);
                 return menu?.Type ?? CharaMakeParams.MenuType.ListSelector;
             }).ToArray();
             set.Order = CustomizationSet.ComputeOrder(set);
@@ -271,59 +287,96 @@ public partial class CustomizationOptions
         // Set customizations available if they have any options.
         private static void SetAvailability(CustomizationSet set, CharaMakeParams row)
         {
-            void Set(bool available, CustomizationId flag)
+            if (set.Race == Race.Hrothgar && set.Gender == Gender.Female)
+                return;
+
+            void Set(bool available, CustomizeIndex flag)
             {
                 if (available)
                     set.SetAvailable(flag);
             }
 
-            // Both are percentages that are either unavailable or 0-100.
-            Set(GetListSize(row, CustomizationId.BustSize) > 0,                  CustomizationId.BustSize);
-            Set(GetListSize(row, CustomizationId.MuscleToneOrTailEarLength) > 0, CustomizationId.MuscleToneOrTailEarLength);
-            Set(set.NumEyebrows > 0,                                             CustomizationId.Eyebrows);
-            Set(set.NumEyeShapes > 0,                                            CustomizationId.EyeShape);
-            Set(set.NumNoseShapes > 0,                                           CustomizationId.Nose);
-            Set(set.NumJawShapes > 0,                                            CustomizationId.Jaw);
-            Set(set.NumMouthShapes > 0,                                          CustomizationId.Mouth);
-            Set(set.TailEarShapes.Count > 0,                                     CustomizationId.TailEarShape);
-            Set(set.Faces.Count > 0,                                             CustomizationId.Face);
-            Set(set.FacePaints.Count > 0,                                        CustomizationId.FacePaint);
-            Set(set.FacePaints.Count > 0,                                        CustomizationId.FacePaintColor);
+            Set(true,                                            CustomizeIndex.Height);
+            Set(set.Faces.Count > 0,                             CustomizeIndex.Face);
+            Set(true,                                            CustomizeIndex.Hairstyle);
+            Set(true,                                            CustomizeIndex.Highlights);
+            Set(true,                                            CustomizeIndex.SkinColor);
+            Set(true,                                            CustomizeIndex.EyeColorRight);
+            Set(true,                                            CustomizeIndex.HairColor);
+            Set(true,                                            CustomizeIndex.HighlightsColor);
+            Set(true,                                            CustomizeIndex.TattooColor);
+            Set(set.NumEyebrows > 0,                             CustomizeIndex.Eyebrows);
+            Set(true,                                            CustomizeIndex.EyeColorLeft);
+            Set(set.NumEyeShapes > 0,                            CustomizeIndex.EyeShape);
+            Set(set.NumNoseShapes > 0,                           CustomizeIndex.Nose);
+            Set(set.NumJawShapes > 0,                            CustomizeIndex.Jaw);
+            Set(set.NumMouthShapes > 0,                          CustomizeIndex.Mouth);
+            Set(set.LipColorsDark.Count > 0,                     CustomizeIndex.LipColor);
+            Set(GetListSize(row, CustomizeIndex.MuscleMass) > 0, CustomizeIndex.MuscleMass);
+            Set(set.TailEarShapes.Count > 0,                     CustomizeIndex.TailShape);
+            Set(GetListSize(row, CustomizeIndex.BustSize) > 0,   CustomizeIndex.BustSize);
+            Set(set.FacePaints.Count > 0,                        CustomizeIndex.FacePaint);
+            Set(set.FacePaints.Count > 0,                        CustomizeIndex.FacePaintColor);
+            Set(true,                                            CustomizeIndex.FacialFeature1);
+            Set(true,                                            CustomizeIndex.FacialFeature2);
+            Set(true,                                            CustomizeIndex.FacialFeature3);
+            Set(true,                                            CustomizeIndex.FacialFeature4);
+            Set(true,                                            CustomizeIndex.FacialFeature5);
+            Set(true,                                            CustomizeIndex.FacialFeature6);
+            Set(true,                                            CustomizeIndex.FacialFeature7);
+            Set(true,                                            CustomizeIndex.LegacyTattoo);
+            Set(true,                                            CustomizeIndex.SmallIris);
+            Set(set.Race != Race.Hrothgar,                       CustomizeIndex.Lipstick);
+            Set(set.FacePaints.Count > 0,                        CustomizeIndex.FacePaintReversed);
         }
 
         // Create a list of lists of facial features and the legacy tattoo.
         private static void SetFacialFeatures(CustomizationSet set, CharaMakeParams row)
         {
-            var count       = set.Faces.Count;
-            var featureDict = new List<IReadOnlyList<CustomizationData>>(count);
+            var count = set.Faces.Count;
+            set.FacialFeature1 = new List<(CustomizeData, CustomizeData)>(count);
 
+            static (CustomizeData, CustomizeData) Create(CustomizeIndex i, uint data)
+                => (new CustomizeData(i, CustomizeValue.Zero, data, 0), new CustomizeData(i, CustomizeValue.Max, data, 1));
+
+            set.LegacyTattoo = Create(CustomizeIndex.LegacyTattoo, 137905);
+
+            var tmp = Enumerable.Repeat(0, 7).Select(_ => new (CustomizeData, CustomizeData)[count + 1]).ToArray();
             for (var i = 0; i < count; ++i)
             {
-                var legacyTattoo = new CustomizationData(CustomizationId.FacialFeaturesTattoos, (CustomizationByteValue)(1 << 7), 137905,
-                    (ushort)((i + 1) * 8));
-                featureDict.Add(row.FacialFeatureByFace[i].Icons.Select((val, idx)
-                        => new CustomizationData(CustomizationId.FacialFeaturesTattoos, (CustomizationByteValue)(1 << idx), val,
-                            (ushort)(i * 8 + idx)))
-                    .Append(legacyTattoo)
-                    .ToArray());
+                var data = row.FacialFeatureByFace[i].Icons;
+                tmp[0][i + 1] = Create(CustomizeIndex.FacialFeature1, data[0]);
+                tmp[1][i + 1] = Create(CustomizeIndex.FacialFeature2, data[1]);
+                tmp[2][i + 1] = Create(CustomizeIndex.FacialFeature3, data[2]);
+                tmp[3][i + 1] = Create(CustomizeIndex.FacialFeature4, data[3]);
+                tmp[4][i + 1] = Create(CustomizeIndex.FacialFeature5, data[4]);
+                tmp[5][i + 1] = Create(CustomizeIndex.FacialFeature6, data[5]);
+                tmp[6][i + 1] = Create(CustomizeIndex.FacialFeature7, data[6]);
             }
 
-            set.FeaturesTattoos = featureDict.ToArray();
+            set.FacialFeature1 = tmp[0];
+            set.FacialFeature2 = tmp[1];
+            set.FacialFeature3 = tmp[2];
+            set.FacialFeature4 = tmp[3];
+            set.FacialFeature5 = tmp[4];
+            set.FacialFeature6 = tmp[5];
+            set.FacialFeature7 = tmp[6];
         }
 
         // Set the names for the given set of parameters.
         private void SetNames(CustomizationSet set, CharaMakeParams row)
         {
-            var nameArray = ((CustomizationId[])Enum.GetValues(typeof(CustomizationId))).Select(c =>
+            var nameArray = Enum.GetValues<CustomizeIndex>().Select(c =>
             {
                 // Find the first menu that corresponds to the Id.
+                var byteId = c.ToByteAndMask().ByteIdx;
                 var menu = row.Menus
                     .Cast<CharaMakeParams.Menu?>()
-                    .FirstOrDefault(m => m!.Value.Customization == c);
+                    .FirstOrDefault(m => m!.Value.Customize == byteId);
                 if (menu == null)
                 {
                     // If none exists and the id corresponds to highlights, set the Highlights name.
-                    if (c == CustomizationId.HighlightsOnFlag)
+                    if (c == CustomizeIndex.Highlights)
                         return Lobby.GetRow(237)?.Text.ToDalamudString().ToString() ?? "Highlights";
 
                     // Otherwise there is an error and we use the default name.
@@ -331,7 +384,7 @@ public partial class CustomizationOptions
                 }
 
                 // Facial Features and Tattoos is created by combining two strings.
-                if (c == CustomizationId.FacialFeaturesTattoos)
+                if (c is >= CustomizeIndex.FacialFeature1 and <= CustomizeIndex.LegacyTattoo)
                     return
                         $"{Lobby.GetRow(1741)?.Text.ToDalamudString().ToString() ?? "Facial Features"} & {Lobby.GetRow(1742)?.Text.ToDalamudString().ToString() ?? "Tattoos"}";
 
@@ -341,14 +394,14 @@ public partial class CustomizationOptions
             }).ToArray();
 
             // Add names for both eye colors.
-            nameArray[(int)CustomizationId.EyeColorL] = nameArray[(int)CustomizationId.EyeColorR];
-            nameArray[(int)CustomizationId.EyeColorR] = _options.GetName(CustomName.OddEyes);
+            nameArray[(int)CustomizeIndex.EyeColorLeft]  = nameArray[(int)CustomizeIndex.EyeColorRight];
+            nameArray[(int)CustomizeIndex.EyeColorRight] = _options.GetName(CustomName.OddEyes);
 
             set.OptionName = nameArray;
         }
 
         // Obtain available skin and hair colors for the given subrace and gender.
-        private (CustomizationData[], CustomizationData[]) GetColors(SubRace race, Gender gender)
+        private (CustomizeData[], CustomizeData[]) GetColors(SubRace race, Gender gender)
         {
             if (race is > SubRace.Veena or SubRace.Unknown)
                 throw new ArgumentOutOfRangeException(nameof(race), race, null);
@@ -356,16 +409,16 @@ public partial class CustomizationOptions
             var gv  = gender == Gender.Male ? 0 : 1;
             var idx = ((int)race * 2 + gv) * 5 + 3;
 
-            return (CreateColorPicker(CustomizationId.SkinColor, idx << 8,       192),
-                CreateColorPicker(CustomizationId.HairColor,     (idx + 1) << 8, 192));
+            return (CreateColorPicker(CustomizeIndex.SkinColor, idx << 8,       192),
+                CreateColorPicker(CustomizeIndex.HairColor,     (idx + 1) << 8, 192));
         }
 
         // Obtain available hairstyles via reflection from the Hair sheet for the given subrace and gender.
-        private CustomizationData[] GetHairStyles(SubRace race, Gender gender)
+        private CustomizeData[] GetHairStyles(SubRace race, Gender gender)
         {
             var row = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
             // Unknown30 is the number of available hairstyles.
-            var hairList = new List<CustomizationData>(row.Unknown30);
+            var hairList = new List<CustomizeData>(row.Unknown30);
             // Hairstyles can be found starting at Unknown66.
             for (var i = 0; i < row.Unknown30; ++i)
             {
@@ -378,35 +431,36 @@ public partial class CustomizationOptions
                 // Hair Row from CustomizeSheet might not be set in case of unlockable hair.
                 var hairRow = _customizeSheet.GetRow(customizeIdx);
                 hairList.Add(hairRow != null
-                    ? new CustomizationData(CustomizationId.Hairstyle, (CustomizationByteValue)hairRow.FeatureID, hairRow.Icon,
+                    ? new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)hairRow.FeatureID, hairRow.Icon,
                         (ushort)hairRow.RowId)
-                    : new CustomizationData(CustomizationId.Hairstyle, (CustomizationByteValue)i, customizeIdx));
+                    : new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)i, customizeIdx));
             }
 
             return hairList.ToArray();
         }
 
         // Get Features.
-        private CustomizationData FromValueAndIndex(CustomizationId id, uint value, int index)
+        private CustomizeData FromValueAndIndex(CustomizeIndex id, uint value, int index)
         {
             var row = _customizeSheet.GetRow(value);
             return row == null
-                ? new CustomizationData(id, (CustomizationByteValue)(index + 1),   value)
-                : new CustomizationData(id, (CustomizationByteValue)row.FeatureID, row.Icon, (ushort)row.RowId);
+                ? new CustomizeData(id, (CustomizeValue)(index + 1),   value)
+                : new CustomizeData(id, (CustomizeValue)row.FeatureID, row.Icon, (ushort)row.RowId);
         }
 
         // Get List sizes.
-        private static int GetListSize(CharaMakeParams row, CustomizationId id)
+        private static int GetListSize(CharaMakeParams row, CustomizeIndex index)
         {
-            var menu = row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customization == id);
+            var gameId = index.ToByteAndMask().ByteIdx;
+            var menu   = row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customize == gameId);
             return menu?.Size ?? 0;
         }
 
         // Get face paints from the hair sheet via reflection.
-        private CustomizationData[] GetFacePaints(SubRace race, Gender gender)
+        private CustomizeData[] GetFacePaints(SubRace race, Gender gender)
         {
             var row       = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
-            var paintList = new List<CustomizationData>(row.Unknown37);
+            var paintList = new List<CustomizeData>(row.Unknown37);
 
             // Number of available face paints is at Unknown37.
             for (var i = 0; i < row.Unknown37; ++i)
@@ -422,30 +476,33 @@ public partial class CustomizationOptions
                 var paintRow = _customizeSheet.GetRow(customizeIdx);
                 // Facepaint Row from CustomizeSheet might not be set in case of unlockable facepaints.
                 paintList.Add(paintRow != null
-                    ? new CustomizationData(CustomizationId.FacePaint, (CustomizationByteValue)paintRow.FeatureID, paintRow.Icon,
+                    ? new CustomizeData(CustomizeIndex.FacePaint, (CustomizeValue)paintRow.FeatureID, paintRow.Icon,
                         (ushort)paintRow.RowId)
-                    : new CustomizationData(CustomizationId.FacePaint, (CustomizationByteValue)i, customizeIdx));
+                    : new CustomizeData(CustomizeIndex.FacePaint, (CustomizeValue)i, customizeIdx));
             }
 
             return paintList.ToArray();
         }
 
         // Specific icons for tails or ears.
-        private CustomizationData[] GetTailEarShapes(CharaMakeParams row)
-            => row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customization == CustomizationId.TailEarShape)?.Values
-                    .Select((v, i) => FromValueAndIndex(CustomizationId.TailEarShape, v, i)).ToArray()
-             ?? Array.Empty<CustomizationData>();
+        private CustomizeData[] GetTailEarShapes(CharaMakeParams row)
+            => row.Menus.Cast<CharaMakeParams.Menu?>()
+                    .FirstOrDefault(m => m!.Value.Customize == CustomizeIndex.TailShape.ToByteAndMask().ByteIdx)?.Values
+                    .Select((v, i) => FromValueAndIndex(CustomizeIndex.TailShape, v, i)).ToArray()
+             ?? Array.Empty<CustomizeData>();
 
         // Specific icons for faces.
-        private CustomizationData[] GetFaces(CharaMakeParams row)
-            => row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customization == CustomizationId.Face)?.Values
-                    .Select((v, i) => FromValueAndIndex(CustomizationId.Face, v, i)).ToArray()
-             ?? Array.Empty<CustomizationData>();
+        private CustomizeData[] GetFaces(CharaMakeParams row)
+            => row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customize == CustomizeIndex.Face.ToByteAndMask().ByteIdx)
+                    ?.Values
+                    .Select((v, i) => FromValueAndIndex(CustomizeIndex.Face, v, i)).ToArray()
+             ?? Array.Empty<CustomizeData>();
 
         // Specific icons for Hrothgar patterns.
-        private CustomizationData[] HrothgarFurPattern(CharaMakeParams row)
-            => row.Menus.Cast<CharaMakeParams.Menu?>().FirstOrDefault(m => m!.Value.Customization == CustomizationId.LipColor)?.Values
-                    .Select((v, i) => FromValueAndIndex(CustomizationId.LipColor, v, i)).ToArray()
-             ?? Array.Empty<CustomizationData>();
+        private CustomizeData[] HrothgarFurPattern(CharaMakeParams row)
+            => row.Menus.Cast<CharaMakeParams.Menu?>()
+                    .FirstOrDefault(m => m!.Value.Customize == CustomizeIndex.LipColor.ToByteAndMask().ByteIdx)?.Values
+                    .Select((v, i) => FromValueAndIndex(CustomizeIndex.LipColor, v, i)).ToArray()
+             ?? Array.Empty<CustomizeData>();
     }
 }

@@ -90,18 +90,18 @@ public static unsafe class CustomizeExtensions
         customize.Load(newCustomize);
     }
 
-    public static bool ChangeCustomization(this Customize customize, CharacterEquip equip, CustomizationId id, CustomizationByteValue value)
+    public static bool ChangeCustomization(this Customize customize, CharacterEquip equip, CustomizeIndex index, CustomizeValue value)
     {
-        switch (id)
+        switch (index)
         {
-            case CustomizationId.Race:   return customize.ChangeRace(equip, (SubRace)value.Value);
-            case CustomizationId.Gender: return customize.ChangeGender(equip, (Gender)value.Value);
+            case CustomizeIndex.Race:   return customize.ChangeRace(equip, (SubRace)value.Value);
+            case CustomizeIndex.Gender: return customize.ChangeGender(equip, (Gender)value.Value);
         }
 
-        if (customize[id] == value)
+        if (customize[index] == value)
             return false;
 
-        customize[id] = value;
+        customize[index] = value;
         return true;
     }
 
@@ -109,21 +109,20 @@ public static unsafe class CustomizeExtensions
     private static void FixUpAttributes(Customize customize)
     {
         var set = Glamourer.Customization.GetList(customize.Clan, customize.Gender);
-        foreach (CustomizationId id in Enum.GetValues(typeof(CustomizationId)))
+        foreach (CustomizeIndex id in Enum.GetValues(typeof(CustomizeIndex)))
         {
             switch (id)
             {
-                case CustomizationId.Race:                                           break;
-                case CustomizationId.Clan:                                           break;
-                case CustomizationId.BodyType:                                       break;
-                case CustomizationId.Gender:                                         break;
-                case CustomizationId.FacialFeaturesTattoos:                          break;
-                case CustomizationId.HighlightsOnFlag:                               break;
-                case CustomizationId.Face:                                           break;
+                case CustomizeIndex.Race:       break;
+                case CustomizeIndex.Clan:       break;
+                case CustomizeIndex.BodyType:   break;
+                case CustomizeIndex.Gender:     break;
+                case CustomizeIndex.Highlights: break;
+                case CustomizeIndex.Face:       break;
                 default:
                     var count = set.Count(id);
-                    if (set.DataByValue(id, customize[id], out _) < 0)
-                        customize[id] = count == 0 ? CustomizationByteValue.Zero : set.Data(id, 0).Value;
+                    if (set.DataByValue(id, customize[id], out _, customize.Face) < 0)
+                        customize[id] = count == 0 ? CustomizeValue.Zero : set.Data(id, 0).Value;
                     break;
             }
         }

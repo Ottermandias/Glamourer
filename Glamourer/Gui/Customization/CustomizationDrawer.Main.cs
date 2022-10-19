@@ -88,19 +88,8 @@ internal partial class CustomizationDrawer
 
         Functions.IteratePairwise(d._set.Order[CharaMakeParams.MenuType.ColorPicker], d.DrawColorPicker, ImGui.SameLine);
 
-        d.Checkbox(d._set.Option(CustomizationId.HighlightsOnFlag), customize.HighlightsOn, b => customize.HighlightsOn = b);
-        var xPos = d._inputIntSize + d._framedIconSize.X + 3 * ImGui.GetStyle().ItemSpacing.X;
-        ImGui.SameLine(xPos);
-        d.Checkbox($"{Glamourer.Customization.GetName(CustomName.Reverse)} {d._set.Option(CustomizationId.FacePaint)}",
-            customize.FacePaintReversed, b => customize.FacePaintReversed = b);
-        d.Checkbox($"{Glamourer.Customization.GetName(CustomName.IrisSmall)} {Glamourer.Customization.GetName(CustomName.IrisSize)}",
-            customize.SmallIris, b => customize.SmallIris = b);
-
-        if (customize.Race != Race.Hrothgar)
-        {
-            ImGui.SameLine(xPos);
-            d.Checkbox(d._set.Option(CustomizationId.LipColor), customize.Lipstick, b => customize.Lipstick = b);
-        }
+        Functions.IteratePairwise(d._set.Order[CharaMakeParams.MenuType.Checkmark], d.DrawCheckbox,
+            () => ImGui.SameLine(d._inputIntSize + d._framedIconSize.X + 3 * ImGui.GetStyle().ItemSpacing.X));
     }
 
     public static void Draw(Customize customize, IReadOnlyCollection<Actor> actors, bool locked = false)
@@ -113,29 +102,29 @@ internal partial class CustomizationDrawer
         => Draw(customize, CharacterEquip.Null, Array.Empty<Actor>(), locked);
 
     // Set state for drawing of current customization.
-    private CustomizationId        _currentId;
-    private CustomizationByteValue _currentByte = CustomizationByteValue.Zero;
-    private int                    _currentCount;
-    private string                 _currentOption = string.Empty;
+    private CustomizeIndex _currentIndex;
+    private CustomizeValue _currentByte = CustomizeValue.Zero;
+    private int            _currentCount;
+    private string         _currentOption = string.Empty;
 
     // Prepare a new customization option.
-    private ImRaii.Id SetId(CustomizationId id)
+    private ImRaii.Id SetId(CustomizeIndex index)
     {
-        _currentId     = id;
-        _currentByte   = _customize[id];
-        _currentCount  = _set.Count(id, _customize.Face);
-        _currentOption = _set.Option(id);
-        return ImRaii.PushId((int)id);
+        _currentIndex  = index;
+        _currentByte   = _customize[index];
+        _currentCount  = _set.Count(index, _customize.Face);
+        _currentOption = _set.Option(index);
+        return ImRaii.PushId((int)index);
     }
 
     // Update the current id with a value,
     // also update actors if any.
-    private void UpdateValue(CustomizationByteValue value)
+    private void UpdateValue(CustomizeValue value)
     {
-        if (_customize[_currentId] == value)
+        if (_customize[_currentIndex] == value)
             return;
 
-        _customize[_currentId] = value;
+        _customize[_currentIndex] = value;
         UpdateActors();
     }
 
