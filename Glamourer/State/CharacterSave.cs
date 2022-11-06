@@ -2,12 +2,12 @@
 using System.Runtime.InteropServices;
 using Glamourer.Customization;
 using Glamourer.Interop;
+using ImGuiScene;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Penumbra.String.Functions;
 using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
-using Functions = Penumbra.GameData.Util.Functions;
 
 namespace Glamourer.State;
 
@@ -36,7 +36,6 @@ public struct CharacterData
     public const byte CurrentVersion = 3;
 
     public uint             ModelId;
-    public ApplicationFlags Flags;
     public CustomizeData    CustomizeData;
     public CharacterWeapon  MainHand;
     public CharacterWeapon  OffHand;
@@ -77,7 +76,6 @@ public struct CharacterData
         = new()
         {
             ModelId       = 0,
-            Flags         = 0,
             CustomizeData = Customize.Default,
             MainHand      = CharacterWeapon.Empty,
             OffHand       = CharacterWeapon.Empty,
@@ -98,28 +96,12 @@ public struct CharacterData
         var data = new CharacterData();
         fixed (void* ptr = &this)
         {
-            Functions.MemCpyUnchecked(&data, ptr, sizeof(CharacterData));
+            MemoryUtility.MemCpyUnchecked(&data, ptr, sizeof(CharacterData));
         }
 
         return data;
     }
-
-    private const ApplicationFlags SaveFlags = ApplicationFlags.Customizations
-      | ApplicationFlags.Head
-      | ApplicationFlags.Body
-      | ApplicationFlags.Hands
-      | ApplicationFlags.Legs
-      | ApplicationFlags.Feet
-      | ApplicationFlags.Ears
-      | ApplicationFlags.Neck
-      | ApplicationFlags.Wrist
-      | ApplicationFlags.RFinger
-      | ApplicationFlags.LFinger
-      | ApplicationFlags.MainHand
-      | ApplicationFlags.OffHand
-      | ApplicationFlags.SetVisor
-      | ApplicationFlags.SetWeapon;
-
+    
 
     public void Load(IDesignable designable)
     {
@@ -128,7 +110,6 @@ public struct CharacterData
         Equipment.Load(designable.Equip);
         MainHand = designable.MainHand;
         OffHand = designable.OffHand;
-        Flags = SaveFlags | (designable.VisorEnabled ? ApplicationFlags.Visor : 0) | (designable.WeaponEnabled ? ApplicationFlags.Weapon : 0);
     }
 }
 

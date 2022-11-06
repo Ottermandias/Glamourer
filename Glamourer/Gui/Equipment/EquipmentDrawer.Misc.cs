@@ -20,15 +20,20 @@ public partial class EquipmentDrawer
 
     private sealed class FilterStainCombo : FilterComboBase<Stain>
     {
-        private readonly float   _comboWidth;
-        private          Vector2 _buttonSize;
+        private readonly float        _comboWidth;
+        private          Vector2      _buttonSize;
+        public           ImRaii.Color Color = new();
 
         public FilterStainCombo(float comboWidth)
             : base(Stains.Values.ToArray(), false)
             => _comboWidth = comboWidth;
 
         protected override float GetFilterWidth()
-            => _buttonSize.X + ImGui.GetStyle().ScrollbarSize;
+        {
+            // Hack to not color the filter frame.
+            Color.Pop();
+            return _buttonSize.X + ImGui.GetStyle().ScrollbarSize;
+        }
 
         protected override void DrawList(float width, float itemHeight)
         {
@@ -58,11 +63,12 @@ public partial class EquipmentDrawer
 
     private void DrawStainSelector()
     {
-        var       foundIdx = StainCombo.Items.IndexOf(s => s.RowIndex.Equals(_currentArmor.Stain));
-        var       stain    = foundIdx >= 0 ? StainCombo.Items[foundIdx] : default;
-        using var color    = ImRaii.PushColor(ImGuiCol.FrameBg, stain.RgbaColor, foundIdx >= 0);
+        var foundIdx = StainCombo.Items.IndexOf(s => s.RowIndex.Equals(_currentArmor.Stain));
+        var stain    = foundIdx >= 0 ? StainCombo.Items[foundIdx] : default;
+        StainCombo.Color.Push(ImGuiCol.FrameBg, stain.RgbaColor, foundIdx >= 0);
         var change = StainCombo.Draw("##stainSelector", string.Empty, ref foundIdx, ImGui.GetFrameHeight(), ImGui.GetFrameHeight(),
             ImGuiComboFlags.NoArrowButton);
+        StainCombo.Color.Pop();
         if (!change && (byte)_currentArmor.Stain != 0)
         {
             ImGuiUtil.HoverTooltip($"{stain.Name}\nRight-click to clear.");
@@ -82,7 +88,7 @@ public partial class EquipmentDrawer
     }
 
     private void DrawCheckbox(ref ApplicationFlags flags)
-        => DrawCheckbox("##checkbox", "Enable writing this slot in this save.", ref flags, _currentSlot.ToApplicationFlag());
+        => DrawCheckbox("##checkbox", "Enable writing this slot in this save.", ref flags, 0);
 
     private static void DrawCheckbox(string label, string tooltip, ref ApplicationFlags flags, ApplicationFlags flag)
     {

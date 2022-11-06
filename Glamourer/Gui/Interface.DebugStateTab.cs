@@ -9,6 +9,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
+using Penumbra.GameData.Actors;
 
 namespace Glamourer.Gui;
 
@@ -18,10 +19,10 @@ internal partial class Interface
     {
         private readonly CurrentManipulations _currentManipulations;
 
-        private LowerString       _manipulationFilter = LowerString.Empty;
-        private Actor.IIdentifier _selection          = Actor.IIdentifier.Invalid;
-        private CurrentDesign?    _save               = null;
-        private bool              _delete             = false;
+        private LowerString     _manipulationFilter = LowerString.Empty;
+        private ActorIdentifier _selection          = ActorIdentifier.Invalid;
+        private CurrentDesign?  _save               = null;
+        private bool            _delete             = false;
 
         public DebugStateTab(CurrentManipulations currentManipulations)
             => _currentManipulations = currentManipulations;
@@ -43,7 +44,7 @@ internal partial class Interface
             {
                 _delete = false;
                 _currentManipulations.DeleteSave(_selection);
-                _selection = Actor.IIdentifier.Invalid;
+                _selection = ActorIdentifier.Invalid;
             }
         }
 
@@ -72,14 +73,14 @@ internal partial class Interface
             DrawSelector(oldSpacing);
         }
 
-        private bool CheckFilter(KeyValuePair<Actor.IIdentifier, CurrentDesign> data)
+        private bool CheckFilter(KeyValuePair<ActorIdentifier, CurrentDesign> data)
         {
             if (data.Key.Equals(_selection))
                 _save = data.Value;
             return _manipulationFilter.Length == 0 || _manipulationFilter.IsContained(data.Key.ToString()!);
         }
 
-        private void DrawSelectable(KeyValuePair<Actor.IIdentifier, CurrentDesign> data)
+        private void DrawSelectable(KeyValuePair<ActorIdentifier, CurrentDesign> data)
         {
             var equal = data.Key.Equals(_selection);
             if (ImGui.Selectable(data.Key.ToString(), equal))

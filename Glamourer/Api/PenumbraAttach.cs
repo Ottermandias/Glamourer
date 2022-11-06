@@ -108,7 +108,7 @@ public unsafe class PenumbraAttach : IDisposable
         if (button != MouseButton.Right || type != ChangedItemType.Item)
             return;
 
-        var item      = (Lumina.Excel.GeneratedSheets.Item)type.GetObject(id)!;
+        var item      = (Lumina.Excel.GeneratedSheets.Item)type.GetObject(Dalamud.GameData, id)!;
         var writeItem = new Item(item, string.Empty);
 
         UpdateItem(ObjectManager.GPosePlayer, writeItem);

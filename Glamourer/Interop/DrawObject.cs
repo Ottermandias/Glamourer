@@ -25,6 +25,9 @@ public unsafe partial struct DrawObject : IEquatable<DrawObject>, IDesignable
     public uint ModelId
         => 0;
 
+    public bool IsWet
+        => false;
+
     public uint Type
         => (*(delegate* unmanaged<Human*, uint>**)Pointer)[50](Pointer);
 

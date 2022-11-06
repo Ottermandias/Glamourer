@@ -9,6 +9,7 @@ using Glamourer.Interop;
 using Glamourer.State;
 using OtterGui.Log;
 using Penumbra.GameData;
+using Penumbra.GameData.Actors;
 
 namespace Glamourer;
 
@@ -31,6 +32,7 @@ public class Glamourer : IDalamudPlugin
     public static Logger          Log    = null!;
 
     public static   IObjectIdentifier     Identifier     = null!;
+    public static   ActorManager          Actors         = null!;
     public static   PenumbraAttach        Penumbra       = null!;
     public static   ICustomizationManager Customization  = null!;
     public static   RestrictedGear        RestrictedGear = null!;
@@ -60,8 +62,10 @@ public class Glamourer : IDalamudPlugin
 
             Config = GlamourerConfig.Load();
 
-            Identifier           = global::Penumbra.GameData.GameData.GetIdentifier(Dalamud.GameData);
+            Identifier           = global::Penumbra.GameData.GameData.GetIdentifier(Dalamud.PluginInterface, Dalamud.GameData);
             Penumbra             = new PenumbraAttach(Config.AttachToPenumbra);
+            Actors = new ActorManager(Dalamud.PluginInterface, Dalamud.Objects, Dalamud.ClientState, Dalamud.GameData,
+                i => (short)Penumbra.CutsceneParent(i));
             FixedDesigns         = new FixedDesigns();
             CurrentManipulations = new CurrentManipulations();
             //Designs            = new DesignManager();
@@ -93,6 +97,8 @@ public class Glamourer : IDalamudPlugin
 
     public void Dispose()
     {
+
+        Dalamud.PluginInterface.RelinquishData("test1");
         RedrawManager?.Dispose();
         Penumbra?.Dispose();
         if (_windowSystem != null)

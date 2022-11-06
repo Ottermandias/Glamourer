@@ -14,23 +14,23 @@ public class CustomizationSet
 {
     internal CustomizationSet(SubRace clan, Gender gender)
     {
-        Gender            = gender;
-        Clan              = clan;
-        Race              = clan.ToRace();
-        _settingAvailable = 0;
+        Gender           = gender;
+        Clan             = clan;
+        Race             = clan.ToRace();
+        SettingAvailable = 0;
     }
 
     public Gender  Gender { get; }
     public SubRace Clan   { get; }
     public Race    Race   { get; }
 
-    private CustomizeFlag _settingAvailable;
+    public CustomizeFlag SettingAvailable { get; internal set; }
 
     internal void SetAvailable(CustomizeIndex index)
-        => _settingAvailable |= index.ToFlag();
+        => SettingAvailable |= index.ToFlag();
 
     public bool IsAvailable(CustomizeIndex index)
-        => _settingAvailable.HasFlag(index.ToFlag());
+        => SettingAvailable.HasFlag(index.ToFlag());
 
     // Meta
     public IReadOnlyList<string> OptionName { get; internal set; } = null!;
@@ -138,10 +138,11 @@ public class CustomizationSet
             CharaMakeParams.MenuType.ListSelector => GetInteger(out custom),
             CharaMakeParams.MenuType.IconSelector => index switch
             {
-                CustomizeIndex.Face      => Get(Faces, HrothgarFaceHack(value), out custom),
-                CustomizeIndex.Hairstyle => Get((face = HrothgarFaceHack(face)).Value < HairByFace.Count ? HairByFace[face.Value] : HairStyles, value, out custom),
+                CustomizeIndex.Face => Get(Faces, HrothgarFaceHack(value), out custom),
+                CustomizeIndex.Hairstyle => Get((face = HrothgarFaceHack(face)).Value < HairByFace.Count ? HairByFace[face.Value] : HairStyles,
+                    value, out custom),
                 CustomizeIndex.TailShape => Get(TailEarShapes, value, out custom),
-                CustomizeIndex.FacePaint => Get(FacePaints, value, out custom),
+                CustomizeIndex.FacePaint => Get(FacePaints,    value, out custom),
                 CustomizeIndex.LipColor  => Get(LipColorsDark, value, out custom),
                 _                        => Invalid(out custom),
             },

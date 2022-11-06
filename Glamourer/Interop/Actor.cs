@@ -1,9 +1,11 @@
 ﻿using System;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
+using FFXIVClientStructs.FFXIV.Client.System.String;
 using Glamourer.Customization;
-using Penumbra.GameData.ByteString;
+using Penumbra.GameData.Actors;
 using Penumbra.GameData.Structs;
+using Penumbra.String;
 using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
 
 namespace Glamourer.Interop;
@@ -23,10 +25,10 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
     public static implicit operator IntPtr(Actor actor)
         => actor.Pointer == null ? IntPtr.Zero : (IntPtr)actor.Pointer;
 
-    public IIdentifier GetIdentifier()
-        => CreateIdentifier(this);
+    public ActorIdentifier GetIdentifier()
+        => Glamourer.Actors.FromObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)Pointer);
 
-    public bool Identifier(out IIdentifier ident)
+    public bool Identifier(out ActorIdentifier ident)
     {
         if (Valid)
         {
@@ -34,7 +36,7 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
             return true;
         }
 
-        ident = IIdentifier.Invalid;
+        ident = ActorIdentifier.Invalid;
         return false;
     }
 
@@ -53,7 +55,7 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
         set => Pointer->GameObject.ObjectKind = (byte)value;
     }
 
-    public Utf8String Utf8Name
+    public ByteString Utf8Name
         => new(Pointer->GameObject.Name);
 
     public byte Job
@@ -122,6 +124,8 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
             }
         }
     }
+
+    public bool IsWet { get; set; }
 
 
     public void SetModelId(int value)

@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Structs;
 using Glamourer.Saves;
+using Penumbra.GameData.Actors;
 
 namespace Glamourer.Designs;
 
@@ -52,7 +53,7 @@ public class FixedDesign
 
     public string                         Name    { get; private set; }
     public bool                           Enabled;
-    public List<Actor.IIdentifier>        Actors;
+    public List<ActorIdentifier>        Actors;
     public List<(FixedCondition, Design)> Customization;
     public List<(FixedCondition, Design)> Equipment;
     public List<(FixedCondition, Design)> Weapons;
@@ -60,7 +61,7 @@ public class FixedDesign
     public FixedDesign(string name)
     {
         Name          = name;
-        Actors        = new List<Actor.IIdentifier>();
+        Actors        = new List<ActorIdentifier>();
         Customization = new List<(FixedCondition, Design)>();
         Equipment     = new List<(FixedCondition, Design)>();
         Weapons       = new List<(FixedCondition, Design)>();
@@ -125,7 +126,7 @@ public class FixedDesign
             j.WritePropertyName(nameof(Actors));
             j.WriteStartArray();
             foreach (var actor in Actors)
-                actor.ToJson(j);
+                actor.ToJson().WriteTo(j);
             j.WriteEndArray();
             j.WritePropertyName(nameof(Customization));
             j.WriteStartArray();

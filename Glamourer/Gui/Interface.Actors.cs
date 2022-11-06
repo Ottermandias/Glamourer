@@ -12,6 +12,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
+using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using ImGui = ImGuiNET.ImGui;
 
@@ -26,7 +27,7 @@ internal partial class Interface
         public ActorTab(CurrentManipulations manipulations)
             => _manipulations = manipulations;
 
-        private Actor.IIdentifier       _identifier   = Actor.IIdentifier.Invalid;
+        private ActorIdentifier         _identifier   = ActorIdentifier.Invalid;
         private ObjectManager.ActorData _currentData  = ObjectManager.ActorData.Invalid;
         private string                  _currentLabel = string.Empty;
         private CurrentDesign?          _currentSave;
@@ -50,7 +51,7 @@ internal partial class Interface
 
         private unsafe void DrawPanel()
         {
-            if (_identifier == Actor.IIdentifier.Invalid)
+            if (_identifier == ActorIdentifier.Invalid)
                 return;
 
 
@@ -65,15 +66,16 @@ internal partial class Interface
 
             RevertButton();
             CustomizationDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, _currentData.Objects,
-                _identifier is Actor.SpecialIdentifier);
+                _identifier.Type == IdentifierType.Special);
 
-            EquipmentDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, ref _currentSave.Data.MainHand, ref _currentSave.Data.OffHand, _currentData.Objects, _identifier is Actor.SpecialIdentifier);
+            EquipmentDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, ref _currentSave.Data.MainHand,
+                ref _currentSave.Data.OffHand, _currentData.Objects, _identifier.Type == IdentifierType.Special);
         }
 
         private const uint RedHeaderColor   = 0xFF1818C0;
         private const uint GreenHeaderColor = 0xFF18C018;
 
-        private void RevertButton()
+        private unsafe void RevertButton()
         {
             if (ImGui.Button("Revert"))
             {
@@ -84,40 +86,42 @@ internal partial class Interface
 
                 if (_currentData.Objects.Count > 0)
                     _currentSave = _manipulations.GetOrCreateSave(_currentData.Objects[0]);
-             
+
                 _currentSave!.Reset();
             }
 
-            VisorBox();
+            if (_currentData.Objects.Count > 0)
+                ImGui.TextUnformatted(_currentData.Objects[0].Pointer->GameObject.DataID.ToString());
+            //VisorBox();
         }
 
-        private unsafe void VisorBox()
-        {
-            var (flags, mask) = (_currentSave!.Data.Flags & (ApplicationFlags.SetVisor | ApplicationFlags.Visor)) switch
-                {
-                    ApplicationFlags.SetVisor                          => (0u, 3u),
-                    ApplicationFlags.Visor                             => (1u, 3u),
-                    ApplicationFlags.SetVisor | ApplicationFlags.Visor => (3u, 3u),
-                    _                                                  => (2u, 3u),
-                };
-            var tmp = flags;
-            if (ImGui.CheckboxFlags("Visor Toggled", ref tmp, mask))
-            {
-                _currentSave.Data.Flags = flags switch
-                {
-                    0 => (_currentSave.Data.Flags | ApplicationFlags.Visor) & ~ApplicationFlags.SetVisor,
-                    1 => _currentSave.Data.Flags | ApplicationFlags.SetVisor,
-                    2 => _currentSave.Data.Flags | ApplicationFlags.SetVisor,
-                    _ => _currentSave.Data.Flags & ~(ApplicationFlags.SetVisor | ApplicationFlags.Visor),
-                };
-                if (_currentSave.Data.Flags.HasFlag(ApplicationFlags.SetVisor))
-                {
-                    var on = _currentSave.Data.Flags.HasFlag(ApplicationFlags.Visor);
-                    foreach (var actor in _currentData.Objects.Where(a => a.IsHuman && a.DrawObject))
-                        RedrawManager.SetVisor(actor.DrawObject.Pointer, on);
-                }
-            }
-        }
+        //private unsafe void VisorBox()
+        //{
+        //    var (flags, mask) = (_currentSave!.Data.Flags & (ApplicationFlags.SetVisor | ApplicationFlags.Visor)) switch
+        //        {
+        //            ApplicationFlags.SetVisor                          => (0u, 3u),
+        //            ApplicationFlags.Visor                             => (1u, 3u),
+        //            ApplicationFlags.SetVisor | ApplicationFlags.Visor => (3u, 3u),
+        //            _                                                  => (2u, 3u),
+        //        };
+        //    var tmp = flags;
+        //    if (ImGui.CheckboxFlags("Visor Toggled", ref tmp, mask))
+        //    {
+        //        _currentSave.Data.Flags = flags switch
+        //        {
+        //            0 => (_currentSave.Data.Flags | ApplicationFlags.Visor) & ~ApplicationFlags.SetVisor,
+        //            1 => _currentSave.Data.Flags | ApplicationFlags.SetVisor,
+        //            2 => _currentSave.Data.Flags | ApplicationFlags.SetVisor,
+        //            _ => _currentSave.Data.Flags & ~(ApplicationFlags.SetVisor | ApplicationFlags.Visor),
+        //        };
+        //        if (_currentSave.Data.Flags.HasFlag(ApplicationFlags.SetVisor))
+        //        {
+        //            var on = _currentSave.Data.Flags.HasFlag(ApplicationFlags.Visor);
+        //            foreach (var actor in _currentData.Objects.Where(a => a.IsHuman && a.DrawObject))
+        //                RedrawManager.SetVisor(actor.DrawObject.Pointer, on);
+        //        }
+        //    }
+        //}
 
         private void DrawPanelHeader()
         {
@@ -213,10 +217,10 @@ internal partial class Interface
             ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
         }
 
-        private bool CheckFilter((Actor.IIdentifier, ObjectManager.ActorData) pair)
+        private bool CheckFilter((ActorIdentifier, ObjectManager.ActorData) pair)
             => _actorFilter.IsEmpty || pair.Item2.Label.Contains(_actorFilter.Lower, StringComparison.OrdinalIgnoreCase);
 
-        private void DrawSelectable((Actor.IIdentifier, ObjectManager.ActorData) pair)
+        private void DrawSelectable((ActorIdentifier, ObjectManager.ActorData) pair)
         {
             var equal = pair.Item1.Equals(_identifier);
             if (ImGui.Selectable(pair.Item2.Label, equal) && !equal)

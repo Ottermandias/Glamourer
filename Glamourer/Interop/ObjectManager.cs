@@ -2,6 +2,7 @@
 using System.Text;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Lumina.Excel.GeneratedSheets;
+using Penumbra.GameData.Actors;
 using static Glamourer.Interop.Actor;
 
 namespace Glamourer.Interop;
@@ -42,67 +43,29 @@ public static class ObjectManager
     public static bool   IsInGPose { get; private set; }
     public static ushort World     { get; private set; }
 
-    public static IReadOnlyDictionary<IIdentifier, ActorData> Actors
+    public static IReadOnlyDictionary<ActorIdentifier, ActorData> Actors
         => Identifiers;
 
-    public static IReadOnlyList<(IIdentifier, ActorData)> List
+    public static IReadOnlyList<(ActorIdentifier, ActorData)> List
         => ListData;
 
-    private static readonly Dictionary<IIdentifier, ActorData> Identifiers = new(200);
-    private static readonly List<(IIdentifier, ActorData)>     ListData    = new(Dalamud.Objects.Length);
+    private static readonly Dictionary<ActorIdentifier, ActorData> Identifiers = new(200);
+    private static readonly List<(ActorIdentifier, ActorData)>     ListData    = new(Dalamud.Objects.Length);
 
-    private static void HandleIdentifier(IIdentifier identifier, Actor character)
+    private static void HandleIdentifier(ActorIdentifier identifier, Actor character)
     {
-        if (!character.DrawObject)
+        if (!character.DrawObject || !identifier.IsValid)
             return;
 
-        switch (identifier)
+        if (!Identifiers.TryGetValue(identifier, out var data))
         {
-            case PlayerIdentifier p:
-                if (!Identifiers.TryGetValue(p, out var data))
-                {
-                    data = new ActorData(character,
-                        World != p.HomeWorld
-                            ? $"{p.Name} ({Dalamud.GameData.GetExcelSheet<World>()!.GetRow(p.HomeWorld)!.Name})"
-                            : p.Name.ToString());
-                    Identifiers[p] = data;
-                    ListData.Add((p, data));
-                }
-                else
-                {
-                    data.Objects.Add(character);
-                }
-
-                break;
-            case NpcIdentifier n when !n.Name.IsEmpty:
-                if (!Identifiers.TryGetValue(n, out data))
-                {
-                    data           = new ActorData(character, $"{n.Name} (at {n.ObjectIndex})");
-                    Identifiers[n] = data;
-                    ListData.Add((n, data));
-                }
-                else
-                {
-                    data.Objects.Add(character);
-                }
-
-                break;
-            case OwnedIdentifier o:
-                if (!Identifiers.TryGetValue(o, out data))
-                {
-                    data = new ActorData(character,
-                        World != o.OwnerHomeWorld
-                            ? $"{o.OwnerName}s {o.Name} ({Dalamud.GameData.GetExcelSheet<World>()!.GetRow(o.OwnerHomeWorld)!.Name})"
-                            : $"{o.OwnerName}s {o.Name}");
-                    Identifiers[o] = data;
-                    ListData.Add((o, data));
-                }
-                else
-                {
-                    data.Objects.Add(character);
-                }
-
-                break;
+            data = new ActorData(character, identifier.ToString());
+            Identifiers[identifier] = data;
+            ListData.Add((identifier, data));
+        }
+        else
+        {
+            data.Objects.Add(character);
         }
     }
 

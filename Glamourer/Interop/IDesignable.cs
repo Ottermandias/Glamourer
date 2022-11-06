@@ -13,4 +13,5 @@ public interface IDesignable
     public CharacterWeapon OffHand       { get; }
     public bool            VisorEnabled  { get; }
     public bool            WeaponEnabled { get; }
+    public bool            IsWet         { get; }
 }

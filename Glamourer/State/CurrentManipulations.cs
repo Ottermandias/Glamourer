@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Glamourer.Interop;
+using Penumbra.GameData.Actors;
 
 namespace Glamourer.State;
 
-public class CurrentManipulations : IReadOnlyCollection<KeyValuePair<Actor.IIdentifier, CurrentDesign>>
+public class CurrentManipulations : IReadOnlyCollection<KeyValuePair<ActorIdentifier, CurrentDesign>>
 {
-    private readonly Dictionary<Actor.IIdentifier, CurrentDesign> _characterSaves = new();
+    private readonly Dictionary<ActorIdentifier, CurrentDesign> _characterSaves = new();
 
-    public IEnumerator<KeyValuePair<Actor.IIdentifier, CurrentDesign>> GetEnumerator()
+    public IEnumerator<KeyValuePair<ActorIdentifier, CurrentDesign>> GetEnumerator()
         => _characterSaves.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -32,10 +33,10 @@ public class CurrentManipulations : IReadOnlyCollection<KeyValuePair<Actor.IIden
         return save;
     }
 
-    public void DeleteSave(Actor.IIdentifier identifier)
+    public void DeleteSave(ActorIdentifier identifier)
         => _characterSaves.Remove(identifier);
 
-    public bool TryGetDesign(Actor.IIdentifier identifier, [NotNullWhen(true)] out CurrentDesign? save)
+    public bool TryGetDesign(ActorIdentifier identifier, [NotNullWhen(true)] out CurrentDesign? save)
         => _characterSaves.TryGetValue(identifier, out save);
 
     //public CharacterArmor? ChangeEquip(Actor actor, EquipSlot slot, CharacterArmor data)

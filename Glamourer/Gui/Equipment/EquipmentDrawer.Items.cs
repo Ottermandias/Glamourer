@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Dalamud.Interface;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -354,7 +355,7 @@ public partial class EquipmentDrawer
         {
             0    => SmallClothes,
             9903 => SmallClothesNpc,
-            _    => Identifier.Identify(set, weapon, variant, slot) ?? Unknown,
+            _    => Identifier.Identify(set, weapon, variant, slot).FirstOrDefault(Unknown),
         };
     }
 }

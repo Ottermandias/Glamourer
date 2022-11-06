@@ -3,13 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using Glamourer.Customization;
 using Glamourer.Interop;
-using Glamourer.State;
 using ImGuiNET;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
+
+public enum ApplicationFlags
+{
+
+}
 
 public partial class EquipmentDrawer
 {
@@ -26,7 +30,7 @@ public partial class EquipmentDrawer
     {
         Stains        = GameData.Stains(Dalamud.GameData);
         StainCombo    = new FilterStainCombo(140);
-        Identifier    = Penumbra.GameData.GameData.GetIdentifier(Dalamud.GameData);
+        Identifier    = Glamourer.Identifier;
         ItemCombos    = EquipSlotExtensions.EqdpSlots.Select(s => new ItemCombo(s)).ToArray();
         MainHandCombo = new WeaponCombo(EquipSlot.MainHand);
         OffHandCombo  = new WeaponCombo(EquipSlot.OffHand);
