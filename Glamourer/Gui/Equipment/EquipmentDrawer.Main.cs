@@ -5,18 +5,21 @@ using Glamourer.Customization;
 using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui.Raii;
+using OtterGui.Widgets;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
 public enum ApplicationFlags
-{
-
-}
+{ }
 
 public partial class EquipmentDrawer
 {
+    private static readonly FilterComboColors _stainCombo;
+    private static readonly StainData         _stainData;
+
     private Race                       _race;
     private Gender                     _gender;
     private CharacterEquip             _equip;
@@ -28,8 +31,9 @@ public partial class EquipmentDrawer
 
     static EquipmentDrawer()
     {
-        Stains        = GameData.Stains(Dalamud.GameData);
-        StainCombo    = new FilterStainCombo(140);
+        _stainData = new StainData(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.GameData.Language);
+        _stainCombo = new FilterComboColors(140,
+            _stainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))));
         Identifier    = Glamourer.Identifier;
         ItemCombos    = EquipSlotExtensions.EqdpSlots.Select(s => new ItemCombo(s)).ToArray();
         MainHandCombo = new WeaponCombo(EquipSlot.MainHand);
@@ -76,25 +80,31 @@ public partial class EquipmentDrawer
         d.DrawInternal(ref mainHand, ref offHand, ref flags);
     }
 
+    private void DrawStainCombo()
+    {
+        var found = _stainData.TryGetValue(_currentArmor.Stain, out var stain);
+        _stainCombo.Draw("##stain", stain.RgbaColor, found);
+    }
+
     private void DrawInternal(ref CharacterWeapon mainHand, ref CharacterWeapon offHand)
     {
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             using var id = SetSlot(slot);
-            DrawStainSelector();
+            DrawStainCombo();
             ImGui.SameLine();
             DrawItemSelector();
         }
 
         _currentSlot = EquipSlot.MainHand;
-        DrawStainSelector();
+        DrawStainCombo();
         ImGui.SameLine();
         DrawMainHandSelector(ref mainHand);
         var offhand = MainHandCombo.LastCategory.AllowsOffHand();
         if (offhand != WeaponCategory.Unknown)
         {
             _currentSlot = EquipSlot.OffHand;
-            DrawStainSelector();
+            DrawStainCombo();
             ImGui.SameLine();
             DrawOffHandSelector(ref offHand, offhand);
         }
@@ -107,7 +117,7 @@ public partial class EquipmentDrawer
             using var id = SetSlot(slot);
             DrawCheckbox(ref flags);
             ImGui.SameLine();
-            DrawStainSelector();
+            DrawStainCombo();
             ImGui.SameLine();
             DrawItemSelector();
         }
@@ -115,7 +125,7 @@ public partial class EquipmentDrawer
         _currentSlot = EquipSlot.MainHand;
         DrawCheckbox(ref flags);
         ImGui.SameLine();
-        DrawStainSelector();
+        DrawStainCombo();
         ImGui.SameLine();
         DrawMainHandSelector(ref mainHand);
         var offhand = MainHandCombo.LastCategory.AllowsOffHand();
@@ -124,7 +134,7 @@ public partial class EquipmentDrawer
             _currentSlot = EquipSlot.OffHand;
             DrawCheckbox(ref flags);
             ImGui.SameLine();
-            DrawStainSelector();
+            DrawStainCombo();
             ImGui.SameLine();
             DrawOffHandSelector(ref offHand, offhand);
         }

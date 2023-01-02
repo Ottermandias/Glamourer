@@ -21,6 +21,7 @@ public class Dalamud
     [PluginService][RequiredVersion("1.0")] public static CommandManager Commands { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public static DataManager GameData { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public static ClientState ClientState { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public static GameGui GameGui { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public static ChatGui Chat { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public static Framework Framework { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public static TargetManager Targets { get; private set; } = null!;

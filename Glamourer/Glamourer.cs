@@ -36,7 +36,6 @@ public class Glamourer : IDalamudPlugin
     public static   PenumbraAttach        Penumbra       = null!;
     public static   ICustomizationManager Customization  = null!;
     public static   RestrictedGear        RestrictedGear = null!;
-    public static   ModelData             Models         = null!;
     public static   RedrawManager         RedrawManager  = null!;
     public readonly FixedDesigns          FixedDesigns;
     public readonly CurrentManipulations  CurrentManipulations;
@@ -57,14 +56,12 @@ public class Glamourer : IDalamudPlugin
             Log = new Logger();
 
             Customization  = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData);
-            RestrictedGear = GameData.RestrictedGear(Dalamud.GameData);
-            Models         = GameData.Models(Dalamud.GameData);
 
             Config = GlamourerConfig.Load();
 
             Identifier           = global::Penumbra.GameData.GameData.GetIdentifier(Dalamud.PluginInterface, Dalamud.GameData);
             Penumbra             = new PenumbraAttach(Config.AttachToPenumbra);
-            Actors = new ActorManager(Dalamud.PluginInterface, Dalamud.Objects, Dalamud.ClientState, Dalamud.GameData,
+            Actors = new ActorManager(Dalamud.PluginInterface, Dalamud.Objects, Dalamud.ClientState, Dalamud.GameData, Dalamud.GameGui,
                 i => (short)Penumbra.CutsceneParent(i));
             FixedDesigns         = new FixedDesigns();
             CurrentManipulations = new CurrentManipulations();

@@ -5,7 +5,6 @@ using ImGuiNET;
 using Penumbra.GameData.Enums;
 using Lumina.Excel.GeneratedSheets;
 using Item = Glamourer.Structs.Item;
-using Stain = Glamourer.Structs.Stain;
 
 namespace Glamourer.Gui;
 
