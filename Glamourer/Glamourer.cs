@@ -10,6 +10,7 @@ using Glamourer.State;
 using OtterGui.Log;
 using Penumbra.GameData;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Data;
 
 namespace Glamourer;
 
