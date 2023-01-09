@@ -55,7 +55,7 @@ namespace Glamourer.Gui
 
             try
             {
-                _selection!.Data = CharacterSave.FromString(text);
+                _selection!.Data.Load(text, out _);
                 _designs.SaveToFile();
             }
             catch (Exception e)

@@ -342,7 +342,7 @@ public class CharacterSave
         WriteEquipment = oldEquip;
     }
 
-    public void Load(string base64)
+    public void Load(string base64, out bool oldVersion)
     {
         var bytes = Convert.FromBase64String(base64);
         switch (bytes[0])
@@ -350,12 +350,14 @@ public class CharacterSave
             case 1:
                 CheckSize(bytes.Length, TotalSizeVersion1);
                 CheckRange(2, bytes[1], 0, 1);
-                Alpha    = 1.0f;
-                bytes[0] = CurrentVersion;
+                Alpha      = 1.0f;
+                bytes[0]   = CurrentVersion;
+                oldVersion = true;
                 break;
             case 2:
                 CheckSize(bytes.Length, TotalSizeVersion2);
                 CheckRange(2, bytes[1], 0, 0x3F);
+                oldVersion = false;
                 break;
             default: throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid Version {bytes[0]}.");
         }
@@ -364,12 +366,15 @@ public class CharacterSave
         bytes.CopyTo(_bytes, 0);
     }
 
-    public static CharacterSave FromString(string base64)
+    public static CharacterSave FromString(string base64, out bool oldVersion)
     {
         var ret = new CharacterSave();
-        ret.Load(base64);
+        ret.Load(base64, out oldVersion);
         return ret;
     }
+
+    public static CharacterSave FromString(string base64)
+        => FromString(base64, out _);
 
     public unsafe ref CharacterCustomization Customizations
     {

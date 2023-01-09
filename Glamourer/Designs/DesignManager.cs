@@ -5,155 +5,172 @@ using System.Linq;
 using Dalamud.Logging;
 using Glamourer.FileSystem;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
-namespace Glamourer.Designs
+namespace Glamourer.Designs;
+
+public class DesignManager
 {
-    public class DesignManager
+    public const     string   FileName = "Designs.json";
+    private readonly FileInfo _saveFile;
+
+    public SortedList<string, CharacterSave> Designs = null!;
+    public FileSystem.FileSystem             FileSystem { get; } = new();
+
+    public DesignManager()
     {
-        public const     string   FileName = "Designs.json";
-        private readonly FileInfo _saveFile;
+        var saveFolder = new DirectoryInfo(Dalamud.PluginInterface.GetPluginConfigDirectory());
+        if (!saveFolder.Exists)
+            Directory.CreateDirectory(saveFolder.FullName);
 
-        public SortedList<string, CharacterSave> Designs = null!;
-        public FileSystem.FileSystem             FileSystem { get; } = new();
+        _saveFile = new FileInfo(Path.Combine(saveFolder.FullName, FileName));
 
-        public DesignManager()
-        {
-            var saveFolder = new DirectoryInfo(Dalamud.PluginInterface.GetPluginConfigDirectory());
-            if (!saveFolder.Exists)
-                Directory.CreateDirectory(saveFolder.FullName);
+        LoadFromFile();
+    }
 
-            _saveFile = new FileInfo(Path.Combine(saveFolder.FullName, FileName));
-
-            LoadFromFile();
-        }
-
-        private void BuildStructure()
-        {
-            FileSystem.Clear();
-            var anyChanges = false;
-            foreach (var (path, save) in Designs.ToArray())
-            {
-                try
-                {
-                    var (folder, name) = FileSystem.CreateAllFolders(path);
-                    var design = new Design(folder, name) { Data = save };
-                    folder.FindOrAddChild(design);
-                    var fixedPath = design.FullName();
-                    if (string.Equals(fixedPath, path, StringComparison.InvariantCultureIgnoreCase))
-                        continue;
-
-                    Designs.Remove(path);
-                    Designs[fixedPath] = save;
-                    anyChanges         = true;
-                    PluginLog.Debug($"Problem loading saved designs, {path} was renamed to {fixedPath}.");
-                }
-                catch (Exception e)
-                {
-                    PluginLog.Error($"Problem loading saved designs, {path} was removed because:\n{e}");
-                    Designs.Remove(path);
-                }
-            }
-
-            if (anyChanges)
-                SaveToFile();
-        }
-
-        private bool UpdateRoot(string oldPath, Design child)
-        {
-            var newPath = child.FullName();
-            if (string.Equals(newPath, oldPath, StringComparison.InvariantCultureIgnoreCase))
-                return false;
-
-            Designs.Remove(oldPath);
-            Designs[child.FullName()] = child.Data;
-            return true;
-        }
-
-        private void UpdateChild(string oldRootPath, string newRootPath, Design child)
-        {
-            var newPath = child.FullName();
-            var oldPath = $"{oldRootPath}{newPath.Remove(0, newRootPath.Length)}";
-            Designs.Remove(oldPath);
-            Designs[newPath] = child.Data;
-        }
-
-        public void DeleteAllChildren(IFileSystemBase root, bool deleteEmpty)
-        {
-            if (root is Folder f)
-                foreach (var child in f.AllLeaves(SortMode.Lexicographical))
-                    Designs.Remove(child.FullName());
-            var fullPath = root.FullName();
-            root.Parent.RemoveChild(root, deleteEmpty);
-            Designs.Remove(fullPath);
-
-            SaveToFile();
-        }
-
-        public void UpdateAllChildren(string oldPath, IFileSystemBase root)
-        {
-            var changes = false;
-            switch (root)
-            {
-                case Design d:
-                    changes |= UpdateRoot(oldPath, d);
-                    break;
-                case Folder f:
-                {
-                    var newRootPath = root.FullName();
-                    if (!string.Equals(oldPath, newRootPath, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        changes = true;
-                        foreach (var descendant in f.AllLeaves(SortMode.Lexicographical).Where(l => l is Design).Cast<Design>())
-                            UpdateChild(oldPath, newRootPath, descendant);
-                    }
-
-                    break;
-                }
-            }
-
-            if (changes)
-                SaveToFile();
-        }
-
-        public void SaveToFile()
+    private void BuildStructure()
+    {
+        FileSystem.Clear();
+        var anyChanges = false;
+        foreach (var (path, save) in Designs.ToArray())
         {
             try
             {
-                var data = JsonConvert.SerializeObject(Designs, Formatting.Indented);
-                File.WriteAllText(_saveFile.FullName, data);
+                var (folder, name) = FileSystem.CreateAllFolders(path);
+                var design = new Design(folder, name) { Data = save };
+                folder.FindOrAddChild(design);
+                var fixedPath = design.FullName();
+                if (string.Equals(fixedPath, path, StringComparison.InvariantCultureIgnoreCase))
+                    continue;
+
+                Designs.Remove(path);
+                Designs[fixedPath] = save;
+                anyChanges         = true;
+                PluginLog.Debug($"Problem loading saved designs, {path} was renamed to {fixedPath}.");
             }
             catch (Exception e)
             {
-                PluginLog.Error($"Could not write to save file {_saveFile.FullName}:\n{e}");
+                PluginLog.Error($"Problem loading saved designs, {path} was removed because:\n{e}");
+                Designs.Remove(path);
             }
         }
 
-        public void LoadFromFile()
+        if (anyChanges)
+            SaveToFile();
+    }
+
+    private bool UpdateRoot(string oldPath, Design child)
+    {
+        var newPath = child.FullName();
+        if (string.Equals(newPath, oldPath, StringComparison.InvariantCultureIgnoreCase))
+            return false;
+
+        Designs.Remove(oldPath);
+        Designs[child.FullName()] = child.Data;
+        return true;
+    }
+
+    private void UpdateChild(string oldRootPath, string newRootPath, Design child)
+    {
+        var newPath = child.FullName();
+        var oldPath = $"{oldRootPath}{newPath.Remove(0, newRootPath.Length)}";
+        Designs.Remove(oldPath);
+        Designs[newPath] = child.Data;
+    }
+
+    public void DeleteAllChildren(IFileSystemBase root, bool deleteEmpty)
+    {
+        if (root is Folder f)
+            foreach (var child in f.AllLeaves(SortMode.Lexicographical))
+                Designs.Remove(child.FullName());
+        var fullPath = root.FullName();
+        root.Parent.RemoveChild(root, deleteEmpty);
+        Designs.Remove(fullPath);
+
+        SaveToFile();
+    }
+
+    public void UpdateAllChildren(string oldPath, IFileSystemBase root)
+    {
+        var changes = false;
+        switch (root)
         {
-            _saveFile.Refresh();
-            SortedList<string, CharacterSave>? designs = null;
-            if (_saveFile.Exists)
-                try
+            case Design d:
+                changes |= UpdateRoot(oldPath, d);
+                break;
+            case Folder f:
+            {
+                var newRootPath = root.FullName();
+                if (!string.Equals(oldPath, newRootPath, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    var data = File.ReadAllText(_saveFile.FullName);
-                    designs = JsonConvert.DeserializeObject<SortedList<string, CharacterSave>>(data);
-                }
-                catch (Exception e)
-                {
-                    PluginLog.Error($"Could not load save file {_saveFile.FullName}:\n{e}");
+                    changes = true;
+                    foreach (var descendant in f.AllLeaves(SortMode.Lexicographical).Where(l => l is Design).Cast<Design>())
+                        UpdateChild(oldPath, newRootPath, descendant);
                 }
 
-            if (designs == null)
-            {
-                Designs = new SortedList<string, CharacterSave>();
-                SaveToFile();
+                break;
             }
-            else
-            {
-                Designs = designs;
-            }
-
-            BuildStructure();
         }
+
+        if (changes)
+            SaveToFile();
+    }
+
+    public void SaveToFile()
+    {
+        try
+        {
+            var data = JsonConvert.SerializeObject(Designs, Formatting.Indented);
+            File.WriteAllText(_saveFile.FullName, data);
+        }
+        catch (Exception e)
+        {
+            PluginLog.Error($"Could not write to save file {_saveFile.FullName}:\n{e}");
+        }
+    }
+
+    public void LoadFromFile()
+    {
+        _saveFile.Refresh();
+        Designs = new SortedList<string, CharacterSave>();
+        var changes = false;
+        if (_saveFile.Exists)
+            try
+            {
+                var data = File.ReadAllText(_saveFile.FullName);
+                var json = JsonConvert.DeserializeObject<Dictionary<string, string>>(data);
+                if (json == null)
+                {
+                    PluginLog.Error($"Save file {_saveFile.FullName} corrupted.");
+                    json = new Dictionary<string, string>();
+                }
+
+                foreach (var (name, saveString) in json)
+                {
+                    try
+                    {
+                        var save = CharacterSave.FromString(saveString, out var oldVersion);
+                        changes |= oldVersion;
+                        changes |= !Designs.TryAdd(name, save);
+                    }
+                    catch (Exception e)
+                    {
+                        PluginLog.Error($"Character Save for {name} is invalid:\n{e}");
+                        changes = true;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                PluginLog.Error($"Could not load save file {_saveFile.FullName}:\n{e}");
+                changes = true;
+            }
+        else
+            changes = true;
+
+        if (changes)
+            SaveToFile();
+
+        BuildStructure();
     }
 }
