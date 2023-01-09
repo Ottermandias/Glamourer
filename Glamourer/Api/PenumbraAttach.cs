@@ -4,6 +4,7 @@ using Dalamud.Logging;
 using Dalamud.Plugin.Ipc;
 using Glamourer.Gui;
 using ImGuiNET;
+using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Api;
@@ -98,7 +99,7 @@ public class PenumbraAttach : IDisposable
 
         var gPose     = Dalamud.Objects[Interface.GPoseObjectId] as Character;
         var player    = Dalamud.Objects[0] as Character;
-        var item      = (Lumina.Excel.GeneratedSheets.Item)type.GetObject(id)!;
+        var item      = (Lumina.Excel.GeneratedSheets.Item)type.GetObject(Dalamud.GameData, id)!;
         var writeItem = new Item(item, string.Empty);
         if (gPose != null)
         {

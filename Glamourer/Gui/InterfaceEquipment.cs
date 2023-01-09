@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface;
+﻿using System.Linq;
+using Dalamud.Interface;
 using ImGuiNET;
 using Lumina.Text;
 using Penumbra.GameData.Enums;
@@ -93,7 +94,7 @@ namespace Glamourer.Gui
             {
                 0    => SmallClothes,
                 9903 => SmallClothesNpc,
-                _    => _identifier.Identify(set, weapon, variant, slot) ?? Unknown,
+                _    => _identifier.Identify(set, weapon, variant, slot).FirstOrDefault() ?? Unknown,
             };
         }
 

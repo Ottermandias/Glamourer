@@ -45,7 +45,7 @@ namespace Glamourer.Gui
 
             _stains     = GameData.Stains(Dalamud.GameData);
             _models     = GameData.Models(Dalamud.GameData);
-            _identifier = Penumbra.GameData.GameData.GetIdentifier(Dalamud.GameData);
+            _identifier = Penumbra.GameData.GameData.GetIdentifier(Dalamud.PluginInterface, Dalamud.GameData);
 
 
             var stainCombo = CreateDefaultStainCombo(_stains.Values.ToArray());

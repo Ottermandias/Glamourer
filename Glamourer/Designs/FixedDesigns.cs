@@ -5,6 +5,7 @@ using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using Glamourer.FileSystem;
+using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 using Penumbra.PlayerWatch;
 
