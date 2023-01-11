@@ -4,12 +4,12 @@ public static class Offsets
 {
     public static class Character
     {
-        public const int Wetness       = 0x1AF3;
+        public const int Wetness       = 0x1B1F;
         public const int HatVisible    = 0x85E;
         public const int VisorToggled  = 0x85F;
         public const int WeaponHidden1 = 0x85F;
         public const int WeaponHidden2 = 0x73C;
-        public const int Alpha         = 0x19F8;
+        public const int Alpha         = 0x1A18;
 
         public static class Flags
         {
