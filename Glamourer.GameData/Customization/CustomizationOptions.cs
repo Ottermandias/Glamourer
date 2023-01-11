@@ -63,9 +63,14 @@ namespace Glamourer.Customization
                     continue;
 
                 var hairRow = _customizeSheet.GetRow(customizeIdx);
-                hairList.Add(hairRow != null
-                    ? new Customization(CustomizationId.Hairstyle, hairRow.FeatureID, hairRow.Icon, (ushort) hairRow.RowId)
-                    : new Customization(CustomizationId.Hairstyle, (byte) i,          customizeIdx, 0));
+                if (hairRow == null)
+                {
+                    hairList.Add(new Customization(CustomizationId.Hairstyle, (byte)i, customizeIdx));
+                }
+                else if (_icons.IconExists(hairRow.Icon))
+                {
+                    hairList.Add(new Customization(CustomizationId.Hairstyle, hairRow.FeatureID, hairRow.Icon, (ushort)hairRow.RowId));
+                }
             }
 
             return hairList.ToArray();
