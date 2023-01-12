@@ -130,28 +130,45 @@ public class DesignManager
     //public void LoadFromFile()
     //{
     //    _saveFile.Refresh();
-    //    SortedList<string, CharacterSave>? designs = null;
+    //    Designs = new SortedList<string, CharacterSave>();
+    //    var changes = false;
     //    if (_saveFile.Exists)
     //        try
     //        {
     //            var data = File.ReadAllText(_saveFile.FullName);
-    //            designs = JsonConvert.DeserializeObject<SortedList<string, CharacterSave>>(data);
+    //            var json = JsonConvert.DeserializeObject<Dictionary<string, string>>(data);
+    //            if (json == null)
+    //            {
+    //                PluginLog.Error($"Save file {_saveFile.FullName} corrupted.");
+    //                json = new Dictionary<string, string>();
+    //            }
+
+    //            foreach (var (name, saveString) in json)
+    //            {
+    //                try
+    //                {
+    //                    var save = CharacterSave.FromString(saveString, out var oldVersion);
+    //                    changes |= oldVersion;
+    //                    changes |= !Designs.TryAdd(name, save);
+    //                }
+    //                catch (Exception e)
+    //                {
+    //                    PluginLog.Error($"Character Save for {name} is invalid:\n{e}");
+    //                    changes = true;
+    //                }
+    //            }
     //        }
     //        catch (Exception e)
     //        {
     //            PluginLog.Error($"Could not load save file {_saveFile.FullName}:\n{e}");
+    //            changes = true;
     //        }
-    //
-    //    if (designs == null)
-    //    {
-    //        Designs = new SortedList<string, CharacterSave>();
-    //        SaveToFile();
-    //    }
     //    else
-    //    {
-    //        Designs = designs;
-    //    }
-    //
+    //        changes = true;
+
+    //    if (changes)
+    //        SaveToFile();
+
     //    BuildStructure();
     //}
 }
