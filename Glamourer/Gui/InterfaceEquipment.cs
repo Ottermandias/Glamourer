@@ -94,7 +94,7 @@ namespace Glamourer.Gui
             {
                 0    => SmallClothes,
                 9903 => SmallClothesNpc,
-                _    => _identifier.Identify(set, weapon, variant, slot).FirstOrDefault() ?? Unknown,
+                _    => _identifier.Identify(set, weapon, variant, slot.ToSlot()).FirstOrDefault() ?? Unknown,
             };
         }
 
