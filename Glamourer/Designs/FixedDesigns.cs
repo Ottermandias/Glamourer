@@ -127,15 +127,20 @@ namespace Glamourer.Designs
             if (!EnabledDesigns.TryGetValue(name, out var designs))
                 return;
 
-            var design = designs.OrderBy(d => d.Jobs.Count).FirstOrDefault(d => d.Jobs.Fits(character.ClassJob.Id));
-            if (design == null)
-                return;
+            var applicableDesigns = designs.OrderBy(d => d.Jobs.Count).Where(d => d.Jobs.Fits(character.ClassJob.Id));
 
-            PluginLog.Debug("Redrawing {CharacterName} with {DesignName} for job {JobGroup}.", name, design.Design.FullName(),
-                design.Jobs.Name);
-            design.Design.Data.Apply(character);
-            Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(character);
-            Glamourer.Penumbra.RedrawObject(character, RedrawType.Redraw, false);
+            bool designApplied = false;
+            foreach (var design in applicableDesigns) {
+                PluginLog.Debug("Redrawing {CharacterName} with {DesignName} for job {JobGroup}.", name, design.Design.FullName(),
+                    design.Jobs.Name);
+                design.Design.Data.Apply(character);
+                Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(character);
+                designApplied = true;
+            }
+
+            if (designApplied) {
+                Glamourer.Penumbra.RedrawObject(character, RedrawType.Redraw, false);
+            }
         }
 
         public void Add(string name, Design design, JobGroup group, bool enabled = false)
