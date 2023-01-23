@@ -42,6 +42,42 @@ namespace Glamourer.Gui
 
         }
 
+        private bool DrawGlobalStainSelector(ComboWithFilter<Stain> stainCombo)
+        {
+            stainCombo.PostPreview = null;
+
+            var change = stainCombo.Draw(string.Empty, out var newStain);
+            if (!change)
+            {
+                ImGuiCustom.HoverTooltip("Right-click to clear.");
+                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                {
+                    change = true;
+                    newStain = Stain.None;
+                }
+            }
+
+            if (!change)
+                return false;
+
+            if (_player == null)
+            {
+                foreach (var key in GetEquipSlotNames().Keys)
+                {
+                    _selection?.Data.WriteStain(key, newStain.RowIndex);
+                }
+                return _inDesignMode;
+            }
+
+            Glamourer.RevertableDesigns.Add(_player);
+            foreach (var key in GetEquipSlotNames().Keys)
+            {
+                newStain.Write(_player.Address, key);
+            }
+            
+            return true;
+        }
+
         private bool DrawItemSelector(ComboWithFilter<Item> equipCombo, Lumina.Excel.GeneratedSheets.Item item, EquipSlot slot = EquipSlot.Unknown)
         {
             var currentName = item.Name.ToString();
@@ -143,6 +179,7 @@ namespace Glamourer.Gui
             var ret = false;
             if (ImGui.CollapsingHeader("Character Equipment"))
             {
+                ret |= DrawGlobalStainSelector(_globalStainCombo);
                 ret |= DrawWeapon(EquipSlot.MainHand, equip.MainHand);
                 ret |= DrawWeapon(EquipSlot.OffHand,  equip.OffHand);
                 ret |= DrawEquipSlot(EquipSlot.Head,    equip.Head);
@@ -165,6 +202,7 @@ namespace Glamourer.Gui
             var ret = false;
             if (ImGui.CollapsingHeader("Character Equipment"))
             {
+                ret |= DrawGlobalStainSelector(_globalStainCombo);
                 ret |= DrawWeaponWithCheck(EquipSlot.MainHand, equip.MainHand, CharacterEquipMask.MainHand, ref mask);
                 ret |= DrawWeaponWithCheck(EquipSlot.OffHand,  equip.OffHand,  CharacterEquipMask.OffHand,  ref mask);
                 ret |= DrawEquipSlotWithCheck(EquipSlot.Head,    equip.Head,    CharacterEquipMask.Head,    ref mask);
