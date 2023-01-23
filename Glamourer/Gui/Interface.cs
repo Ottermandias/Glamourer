@@ -53,7 +53,7 @@ namespace Glamourer.Gui
 
             var equip = GameData.ItemsBySlot(Dalamud.GameData);
             _combos           = equip.ToDictionary(kvp => kvp.Key, kvp => CreateCombos(kvp.Key, kvp.Value, stainCombo));
-            _globalStainCombo = new ComboWithFilter<Stain>("Dye All Slots", stainCombo);
+            _globalStainCombo = new ComboWithFilter<Stain>("##GlobalStain", stainCombo);
             _legacyTattooIcon = GetLegacyTattooIcon();
         }
 

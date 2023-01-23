@@ -129,9 +129,9 @@ namespace Glamourer.Designs
 
             var applicableDesigns = designs.OrderBy(d => d.Jobs.Count).Where(d => d.Jobs.Fits(character.ClassJob.Id));
 
-            bool designApplied = false;
+            var designApplied = false;
             foreach (var design in applicableDesigns) {
-                PluginLog.Debug("Redrawing {CharacterName} with {DesignName} for job {JobGroup}.", name, design.Design.FullName(),
+                PluginLog.Debug("Applying {DesignName} on {CharacterName} for job {JobGroup}.", design.Design.FullName(), name,
                     design.Jobs.Name);
                 design.Design.Data.Apply(character);
                 Glamourer.PlayerWatcher.UpdatePlayerWithoutEvent(character);

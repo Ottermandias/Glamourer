@@ -22,7 +22,9 @@ namespace Glamourer
                 if (variant.HasValue)
                     *(ushort*) (address + 4) = variant.Value;
 
-                if (stain.HasValue)
+                if (*(ushort*) address == 0)
+                    *(address + 6) = 0;
+                else if (stain.HasValue)
                     *(address + 6) = (byte) stain.Value;
             }
 

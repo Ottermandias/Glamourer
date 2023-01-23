@@ -132,7 +132,7 @@ namespace Glamourer.Gui
             raii.PopFonts();
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
-            ImGui.InputTextWithHint("##NewFix", "Enter new Character", ref _newFixCharacterName, 32);
+            ImGui.InputTextWithHint("##NewFix", "Enter new Character", ref _newFixCharacterName, 64);
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(-1);
             if (raii.Begin(() => ImGui.BeginCombo("##NewFixDesignGroup", _newFixDesignGroup.Value.Name), ImGui.EndCombo))

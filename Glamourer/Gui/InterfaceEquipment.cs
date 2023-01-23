@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Dalamud.Interface;
 using ImGuiNET;
 using Lumina.Text;
 using Penumbra.GameData.Enums;
@@ -47,6 +46,8 @@ namespace Glamourer.Gui
             stainCombo.PostPreview = null;
 
             var change = stainCombo.Draw(string.Empty, out var newStain);
+            ImGui.SameLine();
+            ImGui.TextUnformatted("Dye All Slots");
             if (!change)
             {
                 ImGuiCustom.HoverTooltip("Right-click to clear.");
@@ -64,6 +65,8 @@ namespace Glamourer.Gui
             {
                 foreach (var key in GetEquipSlotNames().Keys)
                 {
+                    if (key is EquipSlot.OffHand && _selection?.Data.Equipment.OffHand.Set.Value == 0)
+                        continue;
                     _selection?.Data.WriteStain(key, newStain.RowIndex);
                 }
                 return _inDesignMode;
