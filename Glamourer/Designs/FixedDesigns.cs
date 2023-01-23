@@ -127,7 +127,7 @@ namespace Glamourer.Designs
             if (!EnabledDesigns.TryGetValue(name, out var designs))
                 return;
 
-            var applicableDesigns = designs.OrderBy(d => d.Jobs.Count).Where(d => d.Jobs.Fits(character.ClassJob.Id));
+            var applicableDesigns = designs.OrderByDescending(d => d.Jobs.Count).Where(d => d.Jobs.Fits(character.ClassJob.Id));
 
             var designApplied = false;
             foreach (var design in applicableDesigns) {
