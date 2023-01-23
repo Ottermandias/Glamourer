@@ -24,7 +24,7 @@ public unsafe partial class RedrawManager
     // redrawOnEquality controls whether the game does anything if the new weapon is identical to the old one.
     // skipGameObject seems to control whether the new weapons are written to the game object or just influence the draw object. (1 = skip, 0 = change)
     // unk4 seemed to be the same as unk1.
-    [Signature("E8 ?? ?? ?? ?? 44 8B 9F", DetourName = nameof(LoadWeaponDetour))]
+    [Signature(Penumbra.GameData.Sigs.WeaponReload, DetourName = nameof(LoadWeaponDetour))]
     private readonly Hook<LoadWeaponDelegate> _loadWeaponHook = null!;
 
     private void LoadWeaponDetour(IntPtr characterOffset, uint slot, ulong weapon, byte redrawOnEquality, byte unk2, byte skipGameObject,

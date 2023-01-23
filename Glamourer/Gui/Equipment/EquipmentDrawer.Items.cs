@@ -91,7 +91,7 @@ public partial class EquipmentDrawer
         private CharacterWeapon                    _lastWeapon  = new(ulong.MaxValue);
         private string                             _lastPreview = string.Empty;
         private int                                _lastIndex;
-        public  WeaponCategory                     LastCategory { get; private set; }
+        public  FullEquipType                      LastCategory { get; private set; }
         private bool                               _drawAll;
 
         public WeaponCombo(EquipSlot slot)
@@ -124,12 +124,12 @@ public partial class EquipmentDrawer
             }
 
             UpdateItem(weapon);
-            UpdateCategory((WeaponCategory?)LastItem!.ItemUICategory?.Row ?? WeaponCategory.Unknown);
+            UpdateCategory(((WeaponCategory) (LastItem!.ItemUICategory?.Row ?? 0)).ToEquipType());
             newIdx = _lastIndex;
             return Draw(Label, _lastPreview, ref newIdx, ItemComboWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeight());
         }
 
-        public bool Draw(CharacterWeapon weapon, WeaponCategory category, out int newIdx)
+        public bool Draw(CharacterWeapon weapon, FullEquipType category, out int newIdx)
         {
             if (_drawAll)
             {
@@ -166,7 +166,7 @@ public partial class EquipmentDrawer
             _lastPreview = _lastIndex >= 0 ? Items[_lastIndex].Name : LastItem.Name.ToString();
         }
 
-        private void UpdateCategory(WeaponCategory category)
+        private void UpdateCategory(FullEquipType category)
         {
             if (category == LastCategory)
                 return;
@@ -225,7 +225,7 @@ public partial class EquipmentDrawer
             Glamourer.RedrawManager.LoadWeapon(actor, _currentSlot, mainHand);
     }
 
-    private void DrawOffHandSelector(ref CharacterWeapon offHand, WeaponCategory category)
+    private void DrawOffHandSelector(ref CharacterWeapon offHand, FullEquipType category)
     {
         var change    = OffHandCombo.Draw(offHand, category, out var newIdx);
         var newWeapon = change ? ToWeapon(OffHandCombo.Items[newIdx], offHand.Stain) : CharacterWeapon.Empty;

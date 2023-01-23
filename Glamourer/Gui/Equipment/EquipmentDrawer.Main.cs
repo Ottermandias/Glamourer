@@ -100,8 +100,8 @@ public partial class EquipmentDrawer
         DrawStainCombo();
         ImGui.SameLine();
         DrawMainHandSelector(ref mainHand);
-        var offhand = MainHandCombo.LastCategory.AllowsOffHand();
-        if (offhand != WeaponCategory.Unknown)
+        var offhand = MainHandCombo.LastCategory.Offhand();
+        if (offhand != FullEquipType.Unknown)
         {
             _currentSlot = EquipSlot.OffHand;
             DrawStainCombo();
@@ -128,8 +128,8 @@ public partial class EquipmentDrawer
         DrawStainCombo();
         ImGui.SameLine();
         DrawMainHandSelector(ref mainHand);
-        var offhand = MainHandCombo.LastCategory.AllowsOffHand();
-        if (offhand != WeaponCategory.Unknown)
+        var offhand = MainHandCombo.LastCategory.Offhand();
+        if (offhand != FullEquipType.Unknown)
         {
             _currentSlot = EquipSlot.OffHand;
             DrawCheckbox(ref flags);

@@ -1,15 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Numerics;
-using Dalamud.Interface;
-using Dalamud.Logging;
-using Glamourer.Designs;
-using Glamourer.Structs;
-using ImGuiNET;
-using OtterGui;
-using OtterGui.Raii;
+﻿namespace Glamourer.Gui.Designs;
 
-namespace Glamourer.Gui;
+
 
 //internal partial class Interface
 //{

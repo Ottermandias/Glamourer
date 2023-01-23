@@ -96,7 +96,6 @@ public class Glamourer : IDalamudPlugin
     public void Dispose()
     {
 
-        Dalamud.PluginInterface.RelinquishData("test1");
         RedrawManager?.Dispose();
         Penumbra?.Dispose();
         if (_windowSystem != null)

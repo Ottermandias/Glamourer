@@ -26,7 +26,7 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
         => actor.Pointer == null ? IntPtr.Zero : (IntPtr)actor.Pointer;
 
     public ActorIdentifier GetIdentifier()
-        => Glamourer.Actors.FromObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)Pointer);
+        => Glamourer.Actors.FromObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)Pointer, out _, true, true);
 
     public bool Identifier(out ActorIdentifier ident)
     {

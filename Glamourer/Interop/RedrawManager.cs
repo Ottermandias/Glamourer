@@ -102,9 +102,5 @@ public unsafe partial class RedrawManager : IDisposable
     private static void OnCharacterRedrawFinished(IntPtr gameObject, string collection, IntPtr drawObject)
     {
         //SetVisor((Human*)drawObject, true);
-        if (Glamourer.Models.FromCharacterBase((CharacterBase*)drawObject, out var data))
-            PluginLog.Information($"Name: {data.FirstName} ({data.Id})");
-        else
-            PluginLog.Information($"Key: {Glamourer.Models.KeyFromCharacterBase((CharacterBase*)drawObject):X16}");
     }
 }
