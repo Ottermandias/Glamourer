@@ -156,14 +156,24 @@ namespace Glamourer
 
             if (models.HasFlag(CharacterEquipMask.Ears))
                 Write(characterAddress, EquipSlot.Ears, equip.Ears.Set, null, equip.Ears.Variant, null);
+            if (stains.HasFlag(CharacterEquipMask.Ears))
+                Write(characterAddress, EquipSlot.Ears, null, null, null, equip.Ears.Stain);
             if (models.HasFlag(CharacterEquipMask.Neck))
                 Write(characterAddress, EquipSlot.Neck, equip.Neck.Set, null, equip.Neck.Variant, null);
+            if (stains.HasFlag(CharacterEquipMask.Neck))
+                Write(characterAddress, EquipSlot.Neck, null, null, null, equip.Neck.Stain);
             if (models.HasFlag(CharacterEquipMask.Wrists))
                 Write(characterAddress, EquipSlot.Wrists, equip.Wrists.Set, null, equip.Wrists.Variant, null);
+            if (stains.HasFlag(CharacterEquipMask.Wrists))
+                Write(characterAddress, EquipSlot.Wrists, null, null, null, equip.Wrists.Stain);
             if (models.HasFlag(CharacterEquipMask.LFinger))
                 Write(characterAddress, EquipSlot.LFinger, equip.LFinger.Set, null, equip.LFinger.Variant, null);
+            if (stains.HasFlag(CharacterEquipMask.LFinger))
+                Write(characterAddress, EquipSlot.LFinger, null, null, null, equip.LFinger.Stain);
             if (models.HasFlag(CharacterEquipMask.RFinger))
                 Write(characterAddress, EquipSlot.RFinger, equip.RFinger.Set, null, equip.RFinger.Variant, null);
+            if (stains.HasFlag(CharacterEquipMask.RFinger))
+                Write(characterAddress, EquipSlot.RFinger, null, null, null, equip.RFinger.Stain);
         }
     }
 }
