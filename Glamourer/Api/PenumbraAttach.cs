@@ -144,7 +144,7 @@ public unsafe class PenumbraAttach : IDisposable
             {
                 var current = actor.DrawObject.Equip[item2.EquippableTo];
                 var armor   = new CharacterArmor(item2.MainModel.id, (byte)item2.MainModel.variant, current.Stain);
-                Glamourer.RedrawManager.ChangeEquip(actor.DrawObject, item2.EquippableTo, armor);
+                Glamourer.RedrawManager.UpdateSlot(actor.DrawObject, item2.EquippableTo, armor);
                 return;
             }
         }

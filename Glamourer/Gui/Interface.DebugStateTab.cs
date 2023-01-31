@@ -95,7 +95,6 @@ internal partial class Interface
             using var group = ImRaii.Group();
             if (ImGui.Button("Delete"))
                 _delete = true;
-            CustomizationDrawer.Draw(_save!.Data.Customize, _save.Data.Equipment, Array.Empty<Actor>(), false);
         }
     }
 }

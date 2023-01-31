@@ -1,106 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Dalamud;
 using Dalamud.Data;
 using Glamourer.Structs;
 using Lumina.Excel.GeneratedSheets;
-using Penumbra.GameData.Enums;
 
 namespace Glamourer;
 
 public static class GameData
 {
-    private static Dictionary<EquipSlot, List<Item2>>? _itemsBySlot;
     private static Dictionary<byte, Job>?             _jobs;
     private static Dictionary<ushort, JobGroup>?      _jobGroups;
-
-    public static IReadOnlyDictionary<EquipSlot, List<Item2>> ItemsBySlot(DataManager dataManager)
-    {
-        if (_itemsBySlot != null)
-            return _itemsBySlot;
-
-        var sheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;
-
-        Item2 EmptySlot(EquipSlot slot)
-            => new(sheet.First(), "Nothing", slot);
-
-        static Item2 EmptyNpc(EquipSlot slot)
-            => new(new Lumina.Excel.GeneratedSheets.Item() { ModelMain = 9903 }, "Smallclothes (NPC)", slot);
-
-        _itemsBySlot = new Dictionary<EquipSlot, List<Item2>>()
-        {
-            [EquipSlot.Head] = new(200)
-            {
-                EmptySlot(EquipSlot.Head),
-                EmptyNpc(EquipSlot.Head),
-            },
-            [EquipSlot.Body] = new(200)
-            {
-                EmptySlot(EquipSlot.Body),
-                EmptyNpc(EquipSlot.Body),
-            },
-            [EquipSlot.Hands] = new(200)
-            {
-                EmptySlot(EquipSlot.Hands),
-                EmptyNpc(EquipSlot.Hands),
-            },
-            [EquipSlot.Legs] = new(200)
-            {
-                EmptySlot(EquipSlot.Legs),
-                EmptyNpc(EquipSlot.Legs),
-            },
-            [EquipSlot.Feet] = new(200)
-            {
-                EmptySlot(EquipSlot.Feet),
-                EmptyNpc(EquipSlot.Feet),
-            },
-            [EquipSlot.MainHand] = new(2000),
-            [EquipSlot.RFinger] = new(200)
-            {
-                EmptySlot(EquipSlot.RFinger),
-                EmptyNpc(EquipSlot.RFinger),
-            },
-            [EquipSlot.Neck] = new(200)
-            {
-                EmptySlot(EquipSlot.Neck),
-                EmptyNpc(EquipSlot.Neck),
-            },
-            [EquipSlot.Wrists] = new(200)
-            {
-                EmptySlot(EquipSlot.Wrists),
-                EmptyNpc(EquipSlot.Wrists),
-            },
-            [EquipSlot.Ears] = new(200)
-            {
-                EmptySlot(EquipSlot.Ears),
-                EmptyNpc(EquipSlot.Ears),
-            },
-        };
-
-        foreach (var item in sheet)
-        {
-            var name = item.Name.ToString();
-            if (!name.Any())
-                continue;
-
-            var slot = (EquipSlot)item.EquipSlotCategory.Row;
-            if (slot == EquipSlot.Unknown)
-                continue;
-
-            slot = slot.ToSlot();
-            if (slot == EquipSlot.OffHand)
-                slot = EquipSlot.MainHand;
-            if (_itemsBySlot.TryGetValue(slot, out var list))
-                list.Add(new Item2(item, name, slot));
-        }
-
-        foreach (var list in _itemsBySlot.Values)
-            list.Sort((i1, i2) => string.Compare(i1.Name, i2.Name, StringComparison.InvariantCulture));
-
-        _itemsBySlot[EquipSlot.LFinger] = _itemsBySlot[EquipSlot.RFinger];
-        return _itemsBySlot;
-    }
 
     public static IReadOnlyDictionary<byte, Job> Jobs(DataManager dataManager)
     {

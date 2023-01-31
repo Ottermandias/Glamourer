@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using Dalamud.Data;
 using Dalamud.Plugin;
@@ -52,6 +53,18 @@ public class ItemManager : IDisposable
 
     public static uint NothingId(FullEquipType type)
         => uint.MaxValue - 384 - (uint)type;
+
+    public static Designs.Item NothingItem(EquipSlot slot)
+    {
+        Debug.Assert(slot.IsEquipment() || slot.IsAccessory());
+        return new Designs.Item(Nothing, NothingId(slot), CharacterArmor.Empty);
+    }
+
+    public static Designs.Item SmallClothesItem(EquipSlot slot)
+    {
+        Debug.Assert(slot.IsEquipment());
+        return new Designs.Item(SmallClothesNpc, SmallclothesId(slot), new CharacterArmor(SmallClothesNpcModel, 1, 0));
+    }
 
     public (bool Valid, SetId Id, byte Variant, string ItemName) Resolve(EquipSlot slot, uint itemId, Item? item = null)
     {

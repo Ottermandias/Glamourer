@@ -5,22 +5,28 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Glamourer.Designs;
 using Glamourer.Gui.Customization;
+using Glamourer.Gui.Equipment;
 using Glamourer.State;
+using Glamourer.Util;
 using ImGuiNET;
 using OtterGui.Raii;
+using Penumbra.GameData.Data;
 
 namespace Glamourer.Gui;
 
 internal partial class Interface : Window, IDisposable
 {
+    private readonly EquipmentDrawer _equipmentDrawer;
+
     private readonly ActorTab      _actorTab;
     private readonly DesignTab     _designTab;
     private readonly DebugStateTab _debugStateTab;
     private readonly DebugDataTab  _debugDataTab;
 
-    public Interface(CurrentManipulations manipulations, Design.Manager manager, DesignFileSystem fileSystem)
+    public Interface(ItemManager items, CurrentManipulations manipulations, Design.Manager manager, DesignFileSystem fileSystem)
         : base(GetLabel())
     {
+        _equipmentDrawer                                     =  new EquipmentDrawer(items);
         Dalamud.PluginInterface.UiBuilder.DisableGposeUiHide =  true;
         Dalamud.PluginInterface.UiBuilder.OpenConfigUi       += Toggle;
         SizeConstraints = new WindowSizeConstraints()
@@ -28,10 +34,10 @@ internal partial class Interface : Window, IDisposable
             MinimumSize = new Vector2(675, 675),
             MaximumSize = ImGui.GetIO().DisplaySize,
         };
-        _actorTab      = new ActorTab(manipulations);
+        _actorTab      = new ActorTab(this, manipulations);
         _debugStateTab = new DebugStateTab(manipulations);
         _debugDataTab  = new DebugDataTab(Glamourer.Customization);
-        _designTab     = new DesignTab(manager, fileSystem);
+        _designTab     = new DesignTab(this, manager, fileSystem);
     }
 
     public override void Draw()

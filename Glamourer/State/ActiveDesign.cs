@@ -24,6 +24,11 @@ public sealed partial class ActiveDesign : DesignBase
     private ActiveDesign()
     { }
 
+    public ActiveDesign(Actor actor)
+    {
+        Update(actor);
+    }
+
     //public void ApplyToActor(Actor actor)
     //{
     //    if (!actor)

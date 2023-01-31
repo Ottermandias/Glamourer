@@ -1,4 +1,6 @@
-﻿using Penumbra.GameData.Enums;
+﻿using Dalamud.Utility;
+using Glamourer.Util;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
@@ -18,6 +20,8 @@ public readonly struct Item
     public StainId Stain
         => Model.Stain;
 
+    public Item WithStain(StainId id)
+        => new(Name, ItemId, Model with { Stain = id });
 
     public Item(string name, uint itemId, CharacterArmor armor)
     {
@@ -26,6 +30,14 @@ public readonly struct Item
         Model.Set     = armor.Set;
         Model.Variant = armor.Variant;
         Model.Stain   = armor.Stain;
+    }
+
+    public Item(Lumina.Excel.GeneratedSheets.Item item)
+    {
+        Name          = string.Intern(item.Name.ToDalamudString().TextValue);
+        ItemId        = item.RowId;
+        Model.Set     = (SetId)item.ModelMain;
+        Model.Variant = (byte)(item.ModelMain >> 16);
     }
 }
 

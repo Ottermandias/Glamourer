@@ -10,6 +10,7 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
 using ImGui = ImGuiNET.ImGui;
 
 namespace Glamourer.Gui;
@@ -18,10 +19,14 @@ internal partial class Interface
 {
     private class ActorTab
     {
+        private readonly Interface            _main;
         private readonly CurrentManipulations _manipulations;
 
-        public ActorTab(CurrentManipulations manipulations)
-            => _manipulations = manipulations;
+        public ActorTab(Interface main, CurrentManipulations manipulations)
+        {
+            _main          = main;
+            _manipulations = manipulations;
+        }
 
         private ActorIdentifier         _identifier   = ActorIdentifier.Invalid;
         private ObjectManager.ActorData _currentData  = ObjectManager.ActorData.Invalid;
@@ -61,11 +66,15 @@ internal partial class Interface
                 _currentSave.Update(_currentData.Objects[0]);
 
             RevertButton();
-            CustomizationDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, _currentData.Objects,
+            CustomizationDrawer.Draw(_currentSave.Customize(), _currentSave.Equipment(), _currentData.Objects,
                 _identifier.Type == IdentifierType.Special);
 
-            EquipmentDrawer.Draw(_currentSave.Data.Customize, _currentSave.Data.Equipment, ref _currentSave.Data.MainHand,
-                ref _currentSave.Data.OffHand, _currentData.Objects, _identifier.Type == IdentifierType.Special);
+            foreach (var slot in EquipSlotExtensions.EqdpSlots)
+            {
+                _main._equipmentDrawer.DrawStain(_currentSave, slot, out var stain);
+                ImGui.SameLine();
+                _main._equipmentDrawer.DrawArmor(_currentSave, slot, out var armor);
+            }
         }
 
         private const uint RedHeaderColor   = 0xFF1818C0;
@@ -77,13 +86,13 @@ internal partial class Interface
             {
                 _manipulations.DeleteSave(_identifier);
 
-                foreach (var actor in _currentData.Objects)
-                    _currentSave!.ApplyToActor(actor);
-
-                if (_currentData.Objects.Count > 0)
-                    _currentSave = _manipulations.GetOrCreateSave(_currentData.Objects[0]);
-
-                _currentSave!.Reset();
+                //foreach (var actor in _currentData.Objects)
+                //    _currentSave!.ApplyToActor(actor);
+                //
+                //if (_currentData.Objects.Count > 0)
+                //    _currentSave = _manipulations.GetOrCreateSave(_currentData.Objects[0]);
+                //
+                //_currentSave!.Reset();
             }
 
             if (_currentData.Objects.Count > 0)

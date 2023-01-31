@@ -29,18 +29,18 @@ public unsafe partial class RedrawManager
 
     private ulong FlagSlotForUpdateDetourBase(nint drawObject, uint slotIdx, CharacterArmor* data, bool manual)
     {
-        try
-        {
-            var slot = slotIdx.ToEquipSlot();
-            Glamourer.Log.Verbose(
-                $"Flagged slot {slot} of 0x{(ulong)drawObject:X} for update with {data->Set.Value}-{data->Variant} (Stain {data->Stain.Value}).");
-            HandleEquipUpdate(drawObject, slot, ref *data, manual);
-        }
-        catch (Exception ex)
-        {
-            Glamourer.Log.Error($"Error invoking SlotUpdate:\n{ex}");
-        }
-
+//        try
+//        {
+//            var slot = slotIdx.ToEquipSlot();
+//            Glamourer.Log.Verbose(
+//                $"Flagged slot {slot} of 0x{(ulong)drawObject:X} for update with {data->Set.Value}-{data->Variant} (Stain {data->Stain.Value}).");
+//            HandleEquipUpdate(drawObject, slot, ref *data, manual);
+//        }
+//        catch (Exception ex)
+//        {
+//            Glamourer.Log.Error($"Error invoking SlotUpdate:\n{ex}");
+//        }
+//
         return _flagSlotForUpdateHook.Original(drawObject, slotIdx, data);
 
         //try

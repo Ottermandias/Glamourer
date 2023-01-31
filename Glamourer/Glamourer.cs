@@ -93,7 +93,7 @@ public class Glamourer : IDalamudPlugin
                 HelpMessage = $"Use Glamourer Functions: {HelpString}",
             });
 
-            _interface = new Interface(CurrentManipulations, _designManager, _fileSystem);
+            _interface = new Interface(Items, CurrentManipulations, _designManager, _fileSystem);
             _windowSystem.AddWindow(_interface);
             Dalamud.PluginInterface.UiBuilder.Draw += _windowSystem.Draw;
             //FixedDesignManager.Flag((Human*)((Actor)Dalamud.ClientState.LocalPlayer?.Address).Pointer->GameObject.DrawObject, 0, &x);

@@ -8,6 +8,7 @@ using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui.Raii;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui;
@@ -17,11 +18,13 @@ internal partial class Interface
     private class DesignTab : IDisposable
     {
         public readonly  DesignFileSystemSelector Selector;
+        private readonly Interface                _main;
         private readonly DesignFileSystem         _fileSystem;
         private readonly Design.Manager           _manager;
 
-        public DesignTab(Design.Manager manager, DesignFileSystem fileSystem)
+        public DesignTab(Interface main, Design.Manager manager, DesignFileSystem fileSystem)
         {
+            _main       = main;
             _manager    = manager;
             _fileSystem = fileSystem;
             Selector    = new DesignFileSystemSelector(manager, fileSystem);
@@ -53,12 +56,12 @@ internal partial class Interface
                 return;
 
             CustomizationDrawer.Draw(Selector.Selected.Customize(), Selector.Selected.Equipment(), true);
-            var weapon = Selector.Selected.WeaponMain;
-            var mw = new CharacterWeapon(weapon.ModelBase, weapon.WeaponBase, weapon.Variant, weapon.Stain);
-            weapon = Selector.Selected.WeaponOff;
-            var              ow = new CharacterWeapon(weapon.ModelBase, weapon.WeaponBase, weapon.Variant, weapon.Stain);
-            ApplicationFlags f  = 0;
-            EquipmentDrawer.Draw(Selector.Selected.Customize(), Selector.Selected.Equipment(), ref mw, ref ow, ref f, Array.Empty<Actor>(), true);
+            foreach (var slot in EquipSlotExtensions.EqdpSlots)
+            {
+                _main._equipmentDrawer.DrawStain(Selector.Selected, slot, out var stain);
+                ImGui.SameLine();
+                _main._equipmentDrawer.DrawArmor(Selector.Selected, slot, out var armor);
+            }
         }
     }
 }

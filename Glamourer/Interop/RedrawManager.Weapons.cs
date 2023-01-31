@@ -48,15 +48,15 @@ public unsafe partial class RedrawManager
             else if (redrawOnEquality == 1 && _currentManipulations.TryGetDesign(identifier, out var save2))
             {
                 PluginLog.Information($"Loaded weapon from current design for {identifier}.");
-                switch (slot)
-                {
-                    case 0:
-                        save2.Data.MainHand = new CharacterWeapon(weapon);
-                        break;
-                    case 1:
-                        save2.Data.OffHand = new CharacterWeapon(weapon);
-                        break;
-                }
+                //switch (slot)
+                //{
+                //    case 0:
+                //        save2.MainHand = new CharacterWeapon(weapon);
+                //        break;
+                //    case 1:
+                //        save2.Data.OffHand = new CharacterWeapon(weapon);
+                //        break;
+                //}
             }
         }
         catch (Exception e)
