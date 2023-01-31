@@ -21,7 +21,7 @@ internal partial class Interface
 
         private LowerString     _manipulationFilter = LowerString.Empty;
         private ActorIdentifier _selection          = ActorIdentifier.Invalid;
-        private CurrentDesign?  _save               = null;
+        private ActiveDesign?  _save               = null;
         private bool            _delete             = false;
 
         public DebugStateTab(CurrentManipulations currentManipulations)
@@ -73,14 +73,14 @@ internal partial class Interface
             DrawSelector(oldSpacing);
         }
 
-        private bool CheckFilter(KeyValuePair<ActorIdentifier, CurrentDesign> data)
+        private bool CheckFilter(KeyValuePair<ActorIdentifier, ActiveDesign> data)
         {
             if (data.Key.Equals(_selection))
                 _save = data.Value;
             return _manipulationFilter.Length == 0 || _manipulationFilter.IsContained(data.Key.ToString()!);
         }
 
-        private void DrawSelectable(KeyValuePair<ActorIdentifier, CurrentDesign> data)
+        private void DrawSelectable(KeyValuePair<ActorIdentifier, ActiveDesign> data)
         {
             var equal = data.Key.Equals(_selection);
             if (ImGui.Selectable(data.Key.ToString(), equal))

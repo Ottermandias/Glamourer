@@ -6,30 +6,29 @@ using Dalamud.Data;
 using Glamourer.Structs;
 using Lumina.Excel.GeneratedSheets;
 using Penumbra.GameData.Enums;
-using Item = Glamourer.Structs.Item;
 
 namespace Glamourer;
 
 public static class GameData
 {
-    private static Dictionary<EquipSlot, List<Item>>? _itemsBySlot;
+    private static Dictionary<EquipSlot, List<Item2>>? _itemsBySlot;
     private static Dictionary<byte, Job>?             _jobs;
     private static Dictionary<ushort, JobGroup>?      _jobGroups;
 
-    public static IReadOnlyDictionary<EquipSlot, List<Item>> ItemsBySlot(DataManager dataManager)
+    public static IReadOnlyDictionary<EquipSlot, List<Item2>> ItemsBySlot(DataManager dataManager)
     {
         if (_itemsBySlot != null)
             return _itemsBySlot;
 
         var sheet = dataManager.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;
 
-        Item EmptySlot(EquipSlot slot)
+        Item2 EmptySlot(EquipSlot slot)
             => new(sheet.First(), "Nothing", slot);
 
-        static Item EmptyNpc(EquipSlot slot)
+        static Item2 EmptyNpc(EquipSlot slot)
             => new(new Lumina.Excel.GeneratedSheets.Item() { ModelMain = 9903 }, "Smallclothes (NPC)", slot);
 
-        _itemsBySlot = new Dictionary<EquipSlot, List<Item>>()
+        _itemsBySlot = new Dictionary<EquipSlot, List<Item2>>()
         {
             [EquipSlot.Head] = new(200)
             {
@@ -93,7 +92,7 @@ public static class GameData
             if (slot == EquipSlot.OffHand)
                 slot = EquipSlot.MainHand;
             if (_itemsBySlot.TryGetValue(slot, out var list))
-                list.Add(new Item(item, name, slot));
+                list.Add(new Item2(item, name, slot));
         }
 
         foreach (var list in _itemsBySlot.Values)

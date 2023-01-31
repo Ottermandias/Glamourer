@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Numerics;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;

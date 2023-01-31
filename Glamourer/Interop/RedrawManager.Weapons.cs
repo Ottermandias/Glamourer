@@ -40,8 +40,8 @@ public unsafe partial class RedrawManager
                 PluginLog.Information($"Loaded weapon from fixed design for {identifier}.");
                 weapon = slot switch
                 {
-                    0 => save.MainHand.Value,
-                    1 => save.OffHand.Value,
+                    0 => save.WeaponMain.Model.Value,
+                    1 => save.WeaponOff.Model.Value,
                     _ => weapon,
                 };
             }

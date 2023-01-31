@@ -2,69 +2,34 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Reflection.Metadata.Ecma335;
 using Dalamud.Logging;
-using System.Runtime;
 using System.Text;
 using Dalamud.Utility;
-using Glamourer.Interop;
-using Glamourer.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Penumbra.GameData.Structs;
-using Glamourer.Saves;
 using Penumbra.GameData.Actors;
+using Glamourer.Designs;
 
-namespace Glamourer.Designs;
-
-public struct FixedCondition
-{
-    private const ulong _territoryFlag = 1ul << 32;
-    private const ulong _jobFlag       = 1ul << 33;
-    private       ulong _data;
-
-    public static FixedCondition TerritoryCondition(ushort territoryType)
-        => new() { _data = territoryType | _territoryFlag };
-
-    public static FixedCondition JobCondition(JobGroup group)
-        => new() { _data = group.Id | _jobFlag };
-
-    public bool Check(Actor actor)
-    {
-        if ((_data & (_territoryFlag | _jobFlag)) == 0)
-            return true;
-
-        if ((_data & _territoryFlag) != 0)
-            return Dalamud.ClientState.TerritoryType == (ushort)_data;
-
-        if (actor && GameData.JobGroups(Dalamud.GameData).TryGetValue((ushort)_data, out var group) && group.Fits(actor.Job))
-            return true;
-
-        return true;
-    }
-
-    public override string ToString()
-        => _data.ToString();
-}
+namespace Glamourer.Fixed;
 
 public class FixedDesign
 {
     public const int CurrentVersion = 0;
 
-    public string                         Name    { get; private set; }
-    public bool                           Enabled;
-    public List<ActorIdentifier>        Actors;
+    public string Name { get; private set; }
+    public bool Enabled;
+    public List<ActorIdentifier> Actors;
     public List<(FixedCondition, Design)> Customization;
     public List<(FixedCondition, Design)> Equipment;
     public List<(FixedCondition, Design)> Weapons;
 
     public FixedDesign(string name)
     {
-        Name          = name;
-        Actors        = new List<ActorIdentifier>();
+        Name = name;
+        Actors = new List<ActorIdentifier>();
         Customization = new List<(FixedCondition, Design)>();
-        Equipment     = new List<(FixedCondition, Design)>();
-        Weapons       = new List<(FixedCondition, Design)>();
+        Equipment = new List<(FixedCondition, Design)>();
+        Weapons = new List<(FixedCondition, Design)>();
     }
 
     public static FixedDesign? Load(JObject j)
@@ -82,7 +47,7 @@ public class FixedDesign
             return version switch
             {
                 CurrentVersion => LoadCurrentVersion(j, name),
-                _              => null,
+                _ => null,
             };
         }
         catch (Exception e)
@@ -100,7 +65,7 @@ public class FixedDesign
             Enabled = enabled,
         };
 
-        var actors  = j[nameof(Actors)];
+        var actors = j[nameof(Actors)];
         //foreach(var pair in actors?.Children().)
         return null;
     }
@@ -164,7 +129,7 @@ public class FixedDesign
 
     public static bool Load(FileInfo path, [NotNullWhen(true)] out FixedDesign? result)
     {
-        result = null;
+        result = null!;
         return true;
     }
 }

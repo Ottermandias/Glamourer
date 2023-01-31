@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Security.AccessControl;
 using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui;

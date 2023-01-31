@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
@@ -13,7 +10,6 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Actors;
-using Penumbra.GameData.Enums;
 using ImGui = ImGuiNET.ImGui;
 
 namespace Glamourer.Gui;
@@ -30,7 +26,7 @@ internal partial class Interface
         private ActorIdentifier         _identifier   = ActorIdentifier.Invalid;
         private ObjectManager.ActorData _currentData  = ObjectManager.ActorData.Invalid;
         private string                  _currentLabel = string.Empty;
-        private CurrentDesign?          _currentSave;
+        private ActiveDesign?          _currentSave;
 
         public void Draw()
         {

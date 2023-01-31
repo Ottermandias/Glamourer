@@ -1,16 +1,23 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Api;
 using Glamourer.Customization;
+using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.State;
+using Glamourer.Util;
+using ImGuizmoNET;
+using OtterGui.Classes;
 using OtterGui.Log;
-using Penumbra.GameData;
 using Penumbra.GameData.Actors;
-using Penumbra.GameData.Data;
+using FixedDesigns = Glamourer.State.FixedDesigns;
 
 namespace Glamourer;
 
@@ -29,20 +36,21 @@ public class Glamourer : IDalamudPlugin
         Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "Unknown";
 
 
-    public static GlamourerConfig Config = null!;
-    public static Logger          Log    = null!;
-
-    public static   IObjectIdentifier     Identifier     = null!;
-    public static   ActorManager          Actors         = null!;
-    public static   PenumbraAttach        Penumbra       = null!;
-    public static   ICustomizationManager Customization  = null!;
-    public static   RestrictedGear        RestrictedGear = null!;
-    public static   RedrawManager         RedrawManager  = null!;
+    public static   GlamourerConfig       Config        = null!;
+    public static   Logger                Log           = null!;
+    public static   ActorManager          Actors        = null!;
+    public static   PenumbraAttach        Penumbra      = null!;
+    public static   ICustomizationManager Customization = null!;
+    public static   RedrawManager         RedrawManager = null!;
+    public static   ItemManager           Items         = null!;
     public readonly FixedDesigns          FixedDesigns;
     public readonly CurrentManipulations  CurrentManipulations;
 
-    private readonly WindowSystem _windowSystem = new("Glamourer");
-    private readonly Interface    _interface;
+    private readonly Design.Manager   _designManager;
+    private readonly DesignFileSystem _fileSystem;
+    private readonly FrameworkManager _framework;
+    private readonly WindowSystem     _windowSystem = new("Glamourer");
+    private readonly Interface        _interface;
 
     //public readonly  DesignManager         Designs;
 
@@ -56,17 +64,22 @@ public class Glamourer : IDalamudPlugin
             Dalamud.Initialize(pluginInterface);
             Log = new Logger();
 
-            Customization  = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData);
+            _framework = new FrameworkManager(Dalamud.Framework, Log);
 
-            Config = GlamourerConfig.Load();
+            Items         = new ItemManager(Dalamud.PluginInterface, Dalamud.GameData);
+            Customization = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData);
 
-            Identifier           = global::Penumbra.GameData.GameData.GetIdentifier(Dalamud.PluginInterface, Dalamud.GameData);
-            Penumbra             = new PenumbraAttach(Config.AttachToPenumbra);
+            Backup.CreateBackup(pluginInterface.ConfigDirectory, BackupFiles(Dalamud.PluginInterface));
+            Config        = GlamourerConfig.Load();
+
+            Penumbra = new PenumbraAttach(Config.AttachToPenumbra);
             Actors = new ActorManager(Dalamud.PluginInterface, Dalamud.Objects, Dalamud.ClientState, Dalamud.GameData, Dalamud.GameGui,
                 i => (short)Penumbra.CutsceneParent(i));
+
+            _designManager       = new Design.Manager(Dalamud.PluginInterface, _framework);
+            _fileSystem          = new DesignFileSystem(_designManager, Dalamud.PluginInterface, _framework);
             FixedDesigns         = new FixedDesigns();
             CurrentManipulations = new CurrentManipulations();
-            //Designs            = new DesignManager();
 
             //GlamourerIpc       = new GlamourerIpc(Dalamud.ClientState, Dalamud.Objects, Dalamud.PluginInterface);
             RedrawManager = new RedrawManager(FixedDesigns, CurrentManipulations);
@@ -80,7 +93,7 @@ public class Glamourer : IDalamudPlugin
                 HelpMessage = $"Use Glamourer Functions: {HelpString}",
             });
 
-            _interface = new Interface(this);
+            _interface = new Interface(CurrentManipulations, _designManager, _fileSystem);
             _windowSystem.AddWindow(_interface);
             Dalamud.PluginInterface.UiBuilder.Draw += _windowSystem.Draw;
             //FixedDesignManager.Flag((Human*)((Actor)Dalamud.ClientState.LocalPlayer?.Address).Pointer->GameObject.DrawObject, 0, &x);
@@ -95,13 +108,15 @@ public class Glamourer : IDalamudPlugin
 
     public void Dispose()
     {
-
         RedrawManager?.Dispose();
         Penumbra?.Dispose();
         if (_windowSystem != null)
             Dalamud.PluginInterface.UiBuilder.Draw -= _windowSystem.Draw;
         _interface?.Dispose();
+        _fileSystem?.Dispose();
         //GlamourerIpc.Dispose();
+        _framework?.Dispose();
+        Items?.Dispose();
         Dalamud.Commands.RemoveHandler(ApplyCommandString);
         Dalamud.Commands.RemoveHandler(MainCommandString);
     }
@@ -240,5 +255,26 @@ public class Glamourer : IDalamudPlugin
         //        PrintHelp();
         //        return;
         //}
+    }
+
+    // Collect all relevant files for glamourer configuration.
+    private static IReadOnlyList<FileInfo> BackupFiles(DalamudPluginInterface pi)
+    {
+        var list = new List<FileInfo>(16)
+        {
+            pi.ConfigFile,
+            new(DesignFileSystem.GetDesignFileSystemFile(pi)),
+        };
+
+        var configDir = Dalamud.PluginInterface.ConfigDirectory;
+        if (Directory.Exists(configDir.FullName))
+        {
+            list.Add(new FileInfo(Path.Combine(configDir.FullName,             "Designs.json"))); // migration
+            var designDir = new DirectoryInfo(Path.Combine(configDir.FullName, Design.Manager.DesignFolderName));
+            if (designDir.Exists)
+                list.AddRange(designDir.EnumerateFiles("*.json", SearchOption.TopDirectoryOnly));
+        }
+
+        return list;
     }
 }

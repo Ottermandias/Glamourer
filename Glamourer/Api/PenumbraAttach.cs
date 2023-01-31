@@ -109,42 +109,42 @@ public unsafe class PenumbraAttach : IDisposable
             return;
 
         var item      = (Lumina.Excel.GeneratedSheets.Item)type.GetObject(Dalamud.GameData, id)!;
-        var writeItem = new Item(item, string.Empty);
+        var writeItem = new Item2(item, string.Empty);
 
         UpdateItem(ObjectManager.GPosePlayer, writeItem);
         UpdateItem(ObjectManager.Player,      writeItem);
     }
 
-    private static void UpdateItem(Actor actor, Item item)
+    private static void UpdateItem(Actor actor, Item2 item2)
     {
         if (!actor || !actor.DrawObject)
             return;
 
-        switch (item.EquippableTo)
+        switch (item2.EquippableTo)
         {
             case EquipSlot.MainHand:
             {
-                var off = item.HasSubModel
-                    ? new CharacterWeapon(item.SubModel.id, item.SubModel.type, item.SubModel.variant, actor.DrawObject.OffHand.Stain)
-                    : item.IsBothHand
+                var off = item2.HasSubModel
+                    ? new CharacterWeapon(item2.SubModel.id, item2.SubModel.type, item2.SubModel.variant, actor.DrawObject.OffHand.Stain)
+                    : item2.IsBothHand
                         ? CharacterWeapon.Empty
                         : actor.OffHand;
-                var main = new CharacterWeapon(item.MainModel.id, item.MainModel.type, item.MainModel.variant, actor.DrawObject.MainHand.Stain);
+                var main = new CharacterWeapon(item2.MainModel.id, item2.MainModel.type, item2.MainModel.variant, actor.DrawObject.MainHand.Stain);
                 Glamourer.RedrawManager.LoadWeapon(actor, main, off);
                 return;
             }
             case EquipSlot.OffHand:
             {
-                var off  = new CharacterWeapon(item.MainModel.id, item.MainModel.type, item.MainModel.variant, actor.DrawObject.OffHand.Stain);
+                var off  = new CharacterWeapon(item2.MainModel.id, item2.MainModel.type, item2.MainModel.variant, actor.DrawObject.OffHand.Stain);
                 var main = actor.MainHand;
                 Glamourer.RedrawManager.LoadWeapon(actor, main, off);
                 return;
             }
             default:
             {
-                var current = actor.DrawObject.Equip[item.EquippableTo];
-                var armor   = new CharacterArmor(item.MainModel.id, (byte)item.MainModel.variant, current.Stain);
-                Glamourer.RedrawManager.ChangeEquip(actor.DrawObject, item.EquippableTo, armor);
+                var current = actor.DrawObject.Equip[item2.EquippableTo];
+                var armor   = new CharacterArmor(item2.MainModel.id, (byte)item2.MainModel.variant, current.Stain);
+                Glamourer.RedrawManager.ChangeEquip(actor.DrawObject, item2.EquippableTo, armor);
                 return;
             }
         }

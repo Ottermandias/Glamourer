@@ -4,7 +4,7 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Structs;
 
 // An Item wrapper struct that contains the item table, a precomputed name and the associated equip slot.
-public readonly struct Item
+public readonly struct Item2
 {
     public readonly Lumina.Excel.GeneratedSheets.Item Base;
     public readonly string                            Name;
@@ -28,7 +28,7 @@ public readonly struct Item
         => ((WeaponCategory) (Base.ItemUICategory?.Row ?? 0)).ToEquipType();
 
     // Create a new item from its sheet list with the given name and either the inferred equip slot or the given one.
-    public Item(Lumina.Excel.GeneratedSheets.Item item, string name, EquipSlot slot = EquipSlot.Unknown)
+    public Item2(Lumina.Excel.GeneratedSheets.Item item, string name, EquipSlot slot = EquipSlot.Unknown)
     {
         Base         = item;
         Name         = name;
@@ -36,7 +36,7 @@ public readonly struct Item
     }
 
     // Create empty Nothing items.
-    public static Item Nothing(EquipSlot slot)
+    public static Item2 Nothing(EquipSlot slot)
         => new("Nothing", slot);
 
     // Produce the relevant model information for a given item and equip slot.
@@ -58,7 +58,7 @@ public readonly struct Item
     }
 
     // Used for 'Nothing' items.
-    private Item(string name, EquipSlot slot)
+    private Item2(string name, EquipSlot slot)
     {
         Name         = name;
         Base         = new Lumina.Excel.GeneratedSheets.Item();

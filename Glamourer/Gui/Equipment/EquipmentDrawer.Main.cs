@@ -17,8 +17,8 @@ public enum ApplicationFlags
 
 public partial class EquipmentDrawer
 {
-    private static readonly FilterComboColors _stainCombo;
-    private static readonly StainData         _stainData;
+    private static readonly FilterComboColors StainCombo;
+    private static readonly StainData         StainData;
 
     private Race                       _race;
     private Gender                     _gender;
@@ -31,10 +31,10 @@ public partial class EquipmentDrawer
 
     static EquipmentDrawer()
     {
-        _stainData = new StainData(Dalamud.PluginInterface, Dalamud.GameData, Dalamud.GameData.Language);
-        _stainCombo = new FilterComboColors(140,
-            _stainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))));
-        Identifier    = Glamourer.Identifier;
+        StainData = Glamourer.Items.Stains;
+        StainCombo = new FilterComboColors(140,
+            StainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))));
+        Identifier    = Glamourer.Items.Identifier;
         ItemCombos    = EquipSlotExtensions.EqdpSlots.Select(s => new ItemCombo(s)).ToArray();
         MainHandCombo = new WeaponCombo(EquipSlot.MainHand);
         OffHandCombo  = new WeaponCombo(EquipSlot.OffHand);
@@ -82,8 +82,8 @@ public partial class EquipmentDrawer
 
     private void DrawStainCombo()
     {
-        var found = _stainData.TryGetValue(_currentArmor.Stain, out var stain);
-        _stainCombo.Draw("##stain", stain.RgbaColor, found);
+        var found = StainData.TryGetValue(_currentArmor.Stain, out var stain);
+        StainCombo.Draw("##stain", stain.RgbaColor, found);
     }
 
     private void DrawInternal(ref CharacterWeapon mainHand, ref CharacterWeapon offHand)

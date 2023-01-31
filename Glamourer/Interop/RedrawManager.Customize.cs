@@ -14,6 +14,8 @@ public unsafe partial class RedrawManager
     [Signature("E8 ?? ?? ?? ?? 41 0F B6 C5 66 41 89 86")]
     private readonly ChangeCustomizeDelegate _changeCustomize = null!;
 
+
+
     public bool UpdateCustomize(Actor actor, Customize customize)
     {
         if (!actor.Valid || !actor.DrawObject.Valid)
@@ -43,10 +45,11 @@ public unsafe partial class RedrawManager
             return;
 
         var flags = &data->CharacterBase.UnkFlags_01;
-        var state = (*flags & 0x40) != 0;
+        var state = (*flags & Offsets.DrawObjectVisorStateFlag) != 0;
         if (state == on)
             return;
 
-        *flags = (byte)((on ? *flags | 0x40 : *flags & 0xBF) | 0x80);
+        var newFlag = (byte)(on ? *flags | Offsets.DrawObjectVisorStateFlag : *flags & ~Offsets.DrawObjectVisorStateFlag);
+        *flags = (byte) (newFlag | Offsets.DrawObjectVisorToggleFlag);
     }
 }

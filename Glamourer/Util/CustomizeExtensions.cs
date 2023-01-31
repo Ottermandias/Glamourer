@@ -134,6 +134,6 @@ public static unsafe class CustomizeExtensions
             return;
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            (_, equip[slot]) = Glamourer.RestrictedGear.ResolveRestricted(equip[slot], slot, race, gender);
+            (_, equip[slot]) = Glamourer.Items.RestrictedGear.ResolveRestricted(equip[slot], slot, race, gender);
     }
 }

@@ -2,17 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Interface;
+using Glamourer.Structs;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using Lumina.Text;
 using OtterGui;
 using OtterGui.Classes;
-using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using Item = Glamourer.Structs.Item;
 
 namespace Glamourer.Gui.Equipment;
 
@@ -20,15 +19,15 @@ public partial class EquipmentDrawer
 {
     public const int ItemComboWidth = 320;
 
-    private sealed class ItemCombo : FilterComboBase<Item>
+    private sealed class ItemCombo : FilterComboBase<Item2>
     {
         public readonly string    Label;
         public readonly EquipSlot Slot;
 
-        public  Lumina.Excel.GeneratedSheets.Item? LastItem;
-        private CharacterArmor                     _lastArmor;
-        private string                             _lastPreview = string.Empty;
-        private int                                _lastIndex;
+        public  Item?          LastItem;
+        private CharacterArmor _lastArmor;
+        private string         _lastPreview = string.Empty;
+        private int            _lastIndex;
 
         public ItemCombo(EquipSlot slot)
             : base(GetItems(slot), false)
@@ -37,7 +36,7 @@ public partial class EquipmentDrawer
             Slot  = slot;
         }
 
-        protected override string ToString(Item obj)
+        protected override string ToString(Item2 obj)
             => obj.Name;
 
         private static string GetLabel(EquipSlot slot)
@@ -78,21 +77,21 @@ public partial class EquipmentDrawer
             _lastPreview = _lastIndex >= 0 ? Items[_lastIndex].Name : LastItem.Name.ToString();
         }
 
-        private static IReadOnlyList<Item> GetItems(EquipSlot slot)
-            => GameData.ItemsBySlot(Dalamud.GameData).TryGetValue(slot, out var list) ? list : Array.Empty<Item>();
+        private static IReadOnlyList<Item2> GetItems(EquipSlot slot)
+            => GameData.ItemsBySlot(Dalamud.GameData).TryGetValue(slot, out var list) ? list : Array.Empty<Item2>();
     }
 
-    private sealed class WeaponCombo : FilterComboBase<Item>
+    private sealed class WeaponCombo : FilterComboBase<Item2>
     {
         public readonly string    Label;
         public readonly EquipSlot Slot;
 
-        public  Lumina.Excel.GeneratedSheets.Item? LastItem;
-        private CharacterWeapon                    _lastWeapon  = new(ulong.MaxValue);
-        private string                             _lastPreview = string.Empty;
-        private int                                _lastIndex;
-        public  FullEquipType                      LastCategory { get; private set; }
-        private bool                               _drawAll;
+        public  Item?           LastItem;
+        private CharacterWeapon _lastWeapon  = new(ulong.MaxValue);
+        private string          _lastPreview = string.Empty;
+        private int             _lastIndex;
+        public  FullEquipType   LastCategory { get; private set; }
+        private bool            _drawAll;
 
         public WeaponCombo(EquipSlot slot)
             : base(GetItems(slot), false)
@@ -101,7 +100,7 @@ public partial class EquipmentDrawer
             Slot  = slot;
         }
 
-        protected override string ToString(Item obj)
+        protected override string ToString(Item2 obj)
             => obj.Name;
 
         private static string GetLabel(EquipSlot slot)
@@ -124,7 +123,7 @@ public partial class EquipmentDrawer
             }
 
             UpdateItem(weapon);
-            UpdateCategory(((WeaponCategory) (LastItem!.ItemUICategory?.Row ?? 0)).ToEquipType());
+            UpdateCategory(((WeaponCategory)(LastItem!.ItemUICategory?.Row ?? 0)).ToEquipType());
             newIdx = _lastIndex;
             return Draw(Label, _lastPreview, ref newIdx, ItemComboWidth * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeight());
         }
@@ -175,8 +174,8 @@ public partial class EquipmentDrawer
             ResetFilter();
         }
 
-        private static IReadOnlyList<Item> GetItems(EquipSlot slot)
-            => GameData.ItemsBySlot(Dalamud.GameData).TryGetValue(EquipSlot.MainHand, out var list) ? list : Array.Empty<Item>();
+        private static IReadOnlyList<Item2> GetItems(EquipSlot slot)
+            => GameData.ItemsBySlot(Dalamud.GameData).TryGetValue(EquipSlot.MainHand, out var list) ? list : Array.Empty<Item2>();
     }
 
     private static readonly IObjectIdentifier        Identifier;
@@ -203,15 +202,15 @@ public partial class EquipmentDrawer
         UpdateActors();
     }
 
-    private static CharacterArmor ToArmor(Item item, StainId stain)
+    private static CharacterArmor ToArmor(Item2 item2, StainId stain)
     {
-        var (id, _, variant) = item.MainModel;
+        var (id, _, variant) = item2.MainModel;
         return new CharacterArmor(id, (byte)variant, stain);
     }
 
-    private static CharacterWeapon ToWeapon(Item item, StainId stain)
+    private static CharacterWeapon ToWeapon(Item2 item2, StainId stain)
     {
-        var (id, type, variant) = item.MainModel;
+        var (id, type, variant) = item2.MainModel;
         return new CharacterWeapon(id, type, variant, stain);
     }
 
@@ -331,31 +330,31 @@ public partial class EquipmentDrawer
     //
 
 
-    private static readonly Lumina.Excel.GeneratedSheets.Item SmallClothes = new()
+    private static readonly Item SmallClothes = new()
     {
         Name  = new SeString("Nothing"),
         RowId = 0,
     };
 
-    private static readonly Lumina.Excel.GeneratedSheets.Item SmallClothesNpc = new()
+    private static readonly Item SmallClothesNpc = new()
     {
         Name  = new SeString("Smallclothes (NPC)"),
         RowId = 1,
     };
 
-    private static readonly Lumina.Excel.GeneratedSheets.Item Unknown = new()
+    private static readonly Item Unknown = new()
     {
         Name  = new SeString("Unknown"),
         RowId = 2,
     };
 
-    private static Lumina.Excel.GeneratedSheets.Item Identify(SetId set, WeaponType weapon, ushort variant, EquipSlot slot)
+    private static Item Identify(SetId set, WeaponType weapon, ushort variant, EquipSlot slot)
     {
         return (uint)set switch
         {
             0    => SmallClothes,
             9903 => SmallClothesNpc,
-            _    => Identifier.Identify(set, weapon, variant, slot).FirstOrDefault(Unknown),
+            _    => Identifier.Identify(set, weapon, variant, slot.ToSlot()).FirstOrDefault(Unknown),
         };
     }
 }

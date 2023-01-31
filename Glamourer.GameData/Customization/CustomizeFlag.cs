@@ -47,6 +47,8 @@ public enum CustomizeFlag : ulong
 
 public static class CustomizeFlagExtensions
 {
+    public const CustomizeFlag All = (CustomizeFlag)(((ulong)CustomizeFlag.FacePaintColor << 1) - 1ul);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static CustomizeIndex ToIndex(this CustomizeFlag flag)
         => flag switch
@@ -87,6 +89,6 @@ public static class CustomizeFlagExtensions
             CustomizeFlag.FacePaint         => CustomizeIndex.FacePaint,
             CustomizeFlag.FacePaintReversed => CustomizeIndex.FacePaintReversed,
             CustomizeFlag.FacePaintColor    => CustomizeIndex.FacePaintColor,
-            _                               => (CustomizeIndex) byte.MaxValue,
+            _                               => (CustomizeIndex)byte.MaxValue,
         };
 }

@@ -3,7 +3,9 @@ using System.Linq;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
+using Glamourer.Designs;
 using Glamourer.Gui.Customization;
+using Glamourer.State;
 using ImGuiNET;
 using OtterGui.Raii;
 
@@ -11,16 +13,14 @@ namespace Glamourer.Gui;
 
 internal partial class Interface : Window, IDisposable
 {
-    private readonly Glamourer _plugin;
-
     private readonly ActorTab      _actorTab;
+    private readonly DesignTab     _designTab;
     private readonly DebugStateTab _debugStateTab;
     private readonly DebugDataTab  _debugDataTab;
 
-    public Interface(Glamourer plugin)
+    public Interface(CurrentManipulations manipulations, Design.Manager manager, DesignFileSystem fileSystem)
         : base(GetLabel())
     {
-        _plugin                                              =  plugin;
         Dalamud.PluginInterface.UiBuilder.DisableGposeUiHide =  true;
         Dalamud.PluginInterface.UiBuilder.OpenConfigUi       += Toggle;
         SizeConstraints = new WindowSizeConstraints()
@@ -28,9 +28,10 @@ internal partial class Interface : Window, IDisposable
             MinimumSize = new Vector2(675, 675),
             MaximumSize = ImGui.GetIO().DisplaySize,
         };
-        _actorTab      = new ActorTab(_plugin.CurrentManipulations);
-        _debugStateTab = new DebugStateTab(_plugin.CurrentManipulations);
+        _actorTab      = new ActorTab(manipulations);
+        _debugStateTab = new DebugStateTab(manipulations);
         _debugDataTab  = new DebugDataTab(Glamourer.Customization);
+        _designTab     = new DesignTab(manager, fileSystem);
     }
 
     public override void Draw()
@@ -44,6 +45,7 @@ internal partial class Interface : Window, IDisposable
             UpdateState();
 
             _actorTab.Draw();
+            _designTab.Draw();
             DrawSettingsTab();
             _debugStateTab.Draw();
             _debugDataTab.Draw();
@@ -61,6 +63,7 @@ internal partial class Interface : Window, IDisposable
     {
         Dalamud.PluginInterface.UiBuilder.OpenConfigUi -= Toggle;
         CustomizationDrawer.Dispose();
+        _designTab.Dispose();
     }
 
     private static string GetLabel()

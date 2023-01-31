@@ -1,6 +1,9 @@
-﻿namespace Glamourer.Gui.Designs;
+﻿using Dalamud.Game.ClientState.Keys;
+using Glamourer.Designs;
+using OtterGui.Filesystem;
+using OtterGui.FileSystem.Selector;
 
-
+namespace Glamourer.Gui.Designs;
 
 //internal partial class Interface
 //{

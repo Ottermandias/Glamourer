@@ -2,27 +2,40 @@
 using Dalamud.Hooking;
 using Dalamud.Logging;
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Customization;
 using Glamourer.State;
 using Glamourer.Structs;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
 
 namespace Glamourer.Interop;
 
+public class DesignBaseValidator
+{
+    private readonly CustomizationManager _manager;
+    private readonly RestrictedGear       _restrictedGear;
+
+    public DesignBaseValidator(CustomizationManager manager, RestrictedGear restrictedGear)
+    {
+        _manager = manager;
+        _restrictedGear = restrictedGear;
+    }
+}
+
+
 public unsafe partial class RedrawManager
 {
     private delegate void ChangeJobDelegate(IntPtr data, uint job);
 
-    [Signature("88 51 ?? 44 3B CA", DetourName = nameof(ChangeJobDetour))]
+    [Signature(Sigs.ChangeJob, DetourName = nameof(ChangeJobDetour))]
     private readonly Hook<ChangeJobDelegate> _changeJobHook = null!;
 
     private void ChangeJobDetour(IntPtr data, uint job)
     {
         _changeJobHook.Original(data, job);
-        JobChanged?.Invoke(data - 0x1A8, GameData.Jobs(Dalamud.GameData)[(byte)job]);
+        JobChanged?.Invoke(data - Offsets.Character.ClassJobContainer, GameData.Jobs(Dalamud.GameData)[(byte)job]);
     }
 
     public event Action<Actor, Job>? JobChanged;
@@ -70,18 +83,18 @@ public unsafe partial class RedrawManager : IDisposable
         // Apply customization if they correspond and there is customization to apply.
         var gameObjectCustomize = new Customize((CustomizeData*)actor.Pointer->CustomizeData);
         if (gameObjectCustomize.Equals(customize))
-            customize.Load(save!.Data.Customize);
+            customize.Load(save!.Customize());
 
         // Compare game object equip data against draw object equip data for transformations.
         // Apply each piece of equip that should be applied if they correspond.
         var gameObjectEquip = new CharacterEquip((CharacterArmor*)actor.Pointer->EquipSlotData);
         if (gameObjectEquip.Equals(equip))
         {
-            var saveEquip = save!.Data.Equipment;
+            var saveEquip = save!.Equipment();
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
                 (_, equip[slot]) =
-                    Glamourer.RestrictedGear.ResolveRestricted(saveEquip[slot], slot, customize.Race, customize.Gender);
+                    Glamourer.Items.RestrictedGear.ResolveRestricted(saveEquip[slot], slot, customize.Race, customize.Gender);
             }
         }
     }

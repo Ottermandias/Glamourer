@@ -1,7 +1,6 @@
 ﻿using System;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
-using FFXIVClientStructs.FFXIV.Client.System.String;
 using Glamourer.Customization;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Structs;
