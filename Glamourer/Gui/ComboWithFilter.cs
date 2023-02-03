@@ -34,6 +34,28 @@ namespace Glamourer.Gui
         public ImGuiComboFlags Flags       { get; set; } = ImGuiComboFlags.None;
         public int             ItemsAtOnce { get; set; } = 12;
 
+        private bool TestFilter(string text, string filter)
+        {
+            var remainingWords = text.Split(Array.Empty<char>(), StringSplitOptions.RemoveEmptyEntries).AsEnumerable();
+
+            foreach (var currentFilterWord in filter.Split(Array.Empty<char>(), StringSplitOptions.RemoveEmptyEntries))
+            {
+                // check each word until we find a match or reach the end of the set
+                remainingWords = remainingWords.SkipWhile(word => !word.Contains(currentFilterWord));
+
+                // no remaing words means this filter word was not found
+                if (!remainingWords.Any())
+                {
+                    return false;
+                }
+
+                // remove matched word and check next filter
+                remainingWords = remainingWords.Skip(1);
+            }
+
+            return true;
+        }
+
         private void UpdateFilter(string newFilter)
         {
             if (newFilter == _currentFilter)
@@ -41,9 +63,9 @@ namespace Glamourer.Gui
 
             var lower = newFilter.ToLowerInvariant();
             if (_currentFilterLower.Any() && lower.Contains(_currentFilterLower))
-                _currentItemNames = _currentItemNames.Where(p => p.Item1.Contains(lower)).ToArray();
+                _currentItemNames = _currentItemNames.Where(p => TestFilter(p.Item1, lower)).ToArray();
             else if (lower.Any())
-                _currentItemNames = _itemNamesLower.Where(p => p.Item1.Contains(lower)).ToArray();
+                _currentItemNames = _itemNamesLower.Where(p => TestFilter(p.Item1, lower)).ToArray();
             else
                 _currentItemNames = _itemNamesLower;
             _currentFilter      = newFilter;
