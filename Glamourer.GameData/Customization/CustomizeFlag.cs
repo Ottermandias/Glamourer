@@ -47,7 +47,11 @@ public enum CustomizeFlag : ulong
 
 public static class CustomizeFlagExtensions
 {
-    public const CustomizeFlag All = (CustomizeFlag)(((ulong)CustomizeFlag.FacePaintColor << 1) - 1ul);
+    public const CustomizeFlag All            = (CustomizeFlag)(((ulong)CustomizeFlag.FacePaintColor << 1) - 1ul);
+    public const CustomizeFlag RedrawRequired = CustomizeFlag.Race | CustomizeFlag.Clan | CustomizeFlag.Gender | CustomizeFlag.Face;
+
+    public static bool RequiresRedraw(this CustomizeFlag flags)
+        => (flags & RedrawRequired) != 0;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static CustomizeIndex ToIndex(this CustomizeFlag flag)

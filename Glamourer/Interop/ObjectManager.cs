@@ -1,22 +1,15 @@
-﻿using System.Collections.Generic;
-using System.Text;
-using Dalamud.Game.ClientState.Objects.Enums;
-using Lumina.Excel.GeneratedSheets;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using Dalamud.Game;
+using Dalamud.Game.ClientState;
+using Dalamud.Game.ClientState.Objects;
 using Penumbra.GameData.Actors;
-using static Glamourer.Interop.Actor;
 
 namespace Glamourer.Interop;
 
-public static class ObjectManager
+public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ObjectManager.ActorData>
 {
-    private const int CutsceneIndex        = 200;
-    private const int GPosePlayerIndex     = 201;
-    private const int CharacterScreenIndex = 240;
-    private const int ExamineScreenIndex   = 241;
-    private const int FittingRoomIndex     = 242;
-    private const int DyePreviewIndex      = 243;
-    private const int PortraitIndex        = 244;
-
     public readonly struct ActorData
     {
         public readonly List<Actor> Objects;
@@ -40,28 +33,22 @@ public static class ObjectManager
         }
     }
 
-    public static bool   IsInGPose { get; private set; }
-    public static ushort World     { get; private set; }
+    public DateTime LastUpdate { get; private set; }
 
-    public static IReadOnlyDictionary<ActorIdentifier, ActorData> Actors
-        => Identifiers;
+    public bool   IsInGPose { get; private set; }
+    public ushort World     { get; private set; }
 
-    public static IReadOnlyList<(ActorIdentifier, ActorData)> List
-        => ListData;
+    private readonly Dictionary<ActorIdentifier, ActorData> _identifiers = new(200);
 
-    private static readonly Dictionary<ActorIdentifier, ActorData> Identifiers = new(200);
-    private static readonly List<(ActorIdentifier, ActorData)>     ListData    = new(Dalamud.Objects.Length);
-
-    private static void HandleIdentifier(ActorIdentifier identifier, Actor character)
+    private void HandleIdentifier(ActorIdentifier identifier, Actor character)
     {
         if (!character.DrawObject || !identifier.IsValid)
             return;
 
-        if (!Identifiers.TryGetValue(identifier, out var data))
+        if (!_identifiers.TryGetValue(identifier, out var data))
         {
-            data = new ActorData(character, identifier.ToString());
-            Identifiers[identifier] = data;
-            ListData.Add((identifier, data));
+            data                     = new ActorData(character, identifier.ToString());
+            _identifiers[identifier] = data;
         }
         else
         {
@@ -69,88 +56,100 @@ public static class ObjectManager
         }
     }
 
-    public static void Update()
-    {
-        World = (ushort)(Dalamud.ClientState.LocalPlayer?.CurrentWorld.Id ?? 0u);
-        Identifiers.Clear();
-        ListData.Clear();
+    private readonly Framework   _framework;
+    private readonly ClientState _clientState;
+    private readonly ObjectTable _objects;
 
-        for (var i = 0; i < CutsceneIndex; ++i)
+    public ObjectManager(Framework framework, ClientState clientState, ObjectTable objects)
+    {
+        _framework   = framework;
+        _clientState = clientState;
+        _objects     = objects;
+    }
+
+    public void Update()
+    {
+        var lastUpdate = _framework.LastUpdate;
+        if (lastUpdate <= LastUpdate)
+            return;
+
+        LastUpdate = lastUpdate;
+        World      = (ushort)(_clientState.LocalPlayer?.CurrentWorld.Id ?? 0u);
+        _identifiers.Clear();
+
+        for (var i = 0; i < (int)ScreenActor.CutsceneStart; ++i)
         {
-            Actor character = Dalamud.Objects.GetObjectAddress(i);
+            Actor character = _objects.GetObjectAddress(i);
             if (character.Identifier(out var identifier))
                 HandleIdentifier(identifier, character);
         }
 
-        for (var i = CutsceneIndex; i < CharacterScreenIndex; ++i)
+        for (var i = (int)ScreenActor.CutsceneStart; i < (int)ScreenActor.CutsceneEnd; ++i)
         {
-            Actor character = Dalamud.Objects.GetObjectAddress(i);
+            Actor character = _objects.GetObjectAddress(i);
             if (!character.Identifier(out var identifier))
                 break;
 
             HandleIdentifier(identifier, character);
         }
 
-        void AddSpecial(int idx, string label)
+        void AddSpecial(ScreenActor idx, string label)
         {
-            Actor actor = Dalamud.Objects.GetObjectAddress(idx);
+            Actor actor = _objects.GetObjectAddress((int)idx);
             if (actor.Identifier(out var ident))
             {
                 var data = new ActorData(actor, label);
-                Identifiers.Add(ident, data);
-                ListData.Add((ident, data));
+                _identifiers.Add(ident, data);
             }
         }
 
-        AddSpecial(CharacterScreenIndex, "Character Screen Actor");
-        AddSpecial(ExamineScreenIndex,   "Examine Screen Actor");
-        AddSpecial(FittingRoomIndex,     "Fitting Room Actor");
-        AddSpecial(DyePreviewIndex,      "Dye Preview Actor");
-        AddSpecial(PortraitIndex,        "Portrait Actor");
+        AddSpecial(ScreenActor.CharacterScreen, "Character Screen Actor");
+        AddSpecial(ScreenActor.ExamineScreen,   "Examine Screen Actor");
+        AddSpecial(ScreenActor.FittingRoom,     "Fitting Room Actor");
+        AddSpecial(ScreenActor.DyePreview,      "Dye Preview Actor");
+        AddSpecial(ScreenActor.Portrait,        "Portrait Actor");
+        AddSpecial(ScreenActor.Card6,           "Card Actor 6");
+        AddSpecial(ScreenActor.Card7,           "Card Actor 7");
+        AddSpecial(ScreenActor.Card8,           "Card Actor 8");
 
-        for (var i = PortraitIndex + 1; i < Dalamud.Objects.Length; ++i)
+        for (var i = (int)ScreenActor.ScreenEnd; i < Dalamud.Objects.Length; ++i)
         {
-            Actor character = Dalamud.Objects.GetObjectAddress(i);
+            Actor character = _objects.GetObjectAddress(i);
             if (character.Identifier(out var identifier))
                 HandleIdentifier(identifier, character);
         }
 
-
-        Actor gPose = Dalamud.Objects.GetObjectAddress(GPosePlayerIndex);
+        var gPose = GPosePlayer;
         IsInGPose = gPose && gPose.Utf8Name.Length > 0;
     }
 
-    public static Actor GPosePlayer
-        => Dalamud.Objects.GetObjectAddress(GPosePlayerIndex);
+    public Actor GPosePlayer
+        => _objects.GetObjectAddress((int)ScreenActor.GPosePlayer);
 
-    public static Actor Player
-        => Dalamud.Objects.GetObjectAddress(0);
+    public Actor Player
+        => _objects.GetObjectAddress(0);
 
-    private static unsafe string GetLabel(Actor player, string playerName, int num, bool gPose)
-    {
-        var sb = new StringBuilder(64);
-        sb.Append(playerName);
+    public IEnumerator<KeyValuePair<ActorIdentifier, ActorData>> GetEnumerator()
+        => _identifiers.GetEnumerator();
 
-        if (gPose)
-        {
-            sb.Append(" (GPose");
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
 
-            if (player.ObjectKind == ObjectKind.Player)
-                sb.Append(')');
-            else
-                sb.Append(player.ModelId == 0 ? ", NPC)" : ", Monster)");
-        }
-        else if (player.ObjectKind != ObjectKind.Player)
-        {
-            sb.Append(player.ModelId == 0 ? " (NPC)" : " (Monster)");
-        }
+    public int Count
+        => _identifiers.Count;
 
-        if (num > 1)
-        {
-            sb.Append(" #");
-            sb.Append(num);
-        }
+    public bool ContainsKey(ActorIdentifier key)
+        => _identifiers.ContainsKey(key);
 
-        return sb.ToString();
-    }
+    public bool TryGetValue(ActorIdentifier key, out ActorData value)
+        => _identifiers.TryGetValue(key, out value);
+
+    public ActorData this[ActorIdentifier key]
+        => _identifiers[key];
+
+    public IEnumerable<ActorIdentifier> Keys
+        => _identifiers.Keys;
+
+    public IEnumerable<ActorData> Values
+        => _identifiers.Values;
 }

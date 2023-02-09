@@ -1,8 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Interface;
-using Glamourer.Gui.Customization;
-using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
@@ -20,18 +19,20 @@ internal partial class Interface
     private class ActorTab
     {
         private readonly Interface            _main;
-        private readonly CurrentManipulations _manipulations;
+        private readonly ActiveDesign.Manager _activeDesigns;
+        private readonly ObjectManager        _objects;
 
-        public ActorTab(Interface main, CurrentManipulations manipulations)
+        public ActorTab(Interface main, ActiveDesign.Manager activeDesigns, ObjectManager objects)
         {
             _main          = main;
-            _manipulations = manipulations;
+            _activeDesigns = activeDesigns;
+            _objects       = objects;
         }
 
         private ActorIdentifier         _identifier   = ActorIdentifier.Invalid;
         private ObjectManager.ActorData _currentData  = ObjectManager.ActorData.Invalid;
         private string                  _currentLabel = string.Empty;
-        private ActiveDesign?          _currentSave;
+        private ActiveDesign?           _currentSave;
 
         public void Draw()
         {
@@ -40,7 +41,7 @@ internal partial class Interface
                 return;
 
             DrawActorSelector();
-            if (!ObjectManager.Actors.TryGetValue(_identifier, out _currentData))
+            if (!_objects.TryGetValue(_identifier, out _currentData))
                 _currentData = ObjectManager.ActorData.Invalid;
             else
                 _currentLabel = _currentData.Label;
@@ -66,14 +67,31 @@ internal partial class Interface
                 _currentSave.Update(_currentData.Objects[0]);
 
             RevertButton();
-            CustomizationDrawer.Draw(_currentSave.Customize(), _currentSave.Equipment(), _currentData.Objects,
-                _identifier.Type == IdentifierType.Special);
+            if (_main._customizationDrawer.Draw(_currentSave.Customize(), _identifier.Type == IdentifierType.Special))
+                _activeDesigns.ChangeCustomize(_currentSave, _main._customizationDrawer.Changed, _main._customizationDrawer.CustomizeData, false);
 
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
-                _main._equipmentDrawer.DrawStain(_currentSave, slot, out var stain);
+                var current = _currentSave.Armor(slot);
+                if (_main._equipmentDrawer.DrawStain(current.Stain, slot, out var stain))
+                    _activeDesigns.ChangeStain(_currentSave, slot, stain.RowIndex, false);
                 ImGui.SameLine();
-                _main._equipmentDrawer.DrawArmor(_currentSave, slot, out var armor);
+                if (_main._equipmentDrawer.DrawArmor(current, slot, out var armor, _currentSave.Customize().Gender, _currentSave.Customize().Race))
+                    _activeDesigns.ChangeEquipment(_currentSave, slot, armor, false);
+            }
+
+            var currentMain = _currentSave.WeaponMain;
+            if (_main._equipmentDrawer.DrawStain(currentMain.Stain, EquipSlot.MainHand, out var stainMain))
+                _activeDesigns.ChangeStain(_currentSave, EquipSlot.MainHand, stainMain.RowIndex, false);
+            ImGui.SameLine();
+            _main._equipmentDrawer.DrawMainhand(currentMain, true, out var main);
+            if (currentMain.Type.Offhand() != FullEquipType.Unknown)
+            {
+                var currentOff = _currentSave.WeaponOff;
+                if (_main._equipmentDrawer.DrawStain(currentOff.Stain, EquipSlot.OffHand, out var stainOff))
+                    _activeDesigns.ChangeStain(_currentSave, EquipSlot.OffHand, stainOff.RowIndex, false);
+                ImGui.SameLine();
+                _main._equipmentDrawer.DrawOffhand(currentOff, main.Type, out var off);
             }
         }
 
@@ -83,18 +101,14 @@ internal partial class Interface
         private unsafe void RevertButton()
         {
             if (ImGui.Button("Revert"))
-            {
-                _manipulations.DeleteSave(_identifier);
-
-                //foreach (var actor in _currentData.Objects)
-                //    _currentSave!.ApplyToActor(actor);
-                //
-                //if (_currentData.Objects.Count > 0)
-                //    _currentSave = _manipulations.GetOrCreateSave(_currentData.Objects[0]);
-                //
-                //_currentSave!.Reset();
-            }
-
+                _activeDesigns.RevertDesign(_currentSave!);
+            //foreach (var actor in _currentData.Objects)
+            //    _currentSave!.ApplyToActor(actor);
+            //
+            //if (_currentData.Objects.Count > 0)
+            //    _currentSave = _manipulations.GetOrCreateSave(_currentData.Objects[0]);
+            //
+            //_currentSave!.Reset();
             if (_currentData.Objects.Count > 0)
                 ImGui.TextUnformatted(_currentData.Objects[0].Pointer->GameObject.DataID.ToString());
             //VisorBox();
@@ -215,24 +229,24 @@ internal partial class Interface
             if (!child)
                 return;
 
-            ObjectManager.Update();
+            _objects.Update();
             using var style     = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, oldSpacing);
             var       skips     = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
-            var       remainder = ImGuiClip.FilteredClippedDraw(ObjectManager.List, skips, CheckFilter, DrawSelectable);
+            var       remainder = ImGuiClip.FilteredClippedDraw(_objects, skips, CheckFilter, DrawSelectable);
             ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
         }
 
-        private bool CheckFilter((ActorIdentifier, ObjectManager.ActorData) pair)
-            => _actorFilter.IsEmpty || pair.Item2.Label.Contains(_actorFilter.Lower, StringComparison.OrdinalIgnoreCase);
+        private bool CheckFilter(KeyValuePair<ActorIdentifier, ObjectManager.ActorData> pair)
+            => _actorFilter.IsEmpty || pair.Value.Label.Contains(_actorFilter.Lower, StringComparison.OrdinalIgnoreCase);
 
-        private void DrawSelectable((ActorIdentifier, ObjectManager.ActorData) pair)
+        private void DrawSelectable(KeyValuePair<ActorIdentifier, ObjectManager.ActorData> pair)
         {
-            var equal = pair.Item1.Equals(_identifier);
-            if (ImGui.Selectable(pair.Item2.Label, equal) && !equal)
+            var equal = pair.Key.Equals(_identifier);
+            if (ImGui.Selectable(pair.Value.Label, equal) && !equal)
             {
-                _identifier  = pair.Item1.CreatePermanent();
-                _currentData = pair.Item2;
-                _currentSave = _currentData.Valid ? _manipulations.GetOrCreateSave(_currentData.Objects[0]) : null;
+                _identifier  = pair.Key.CreatePermanent();
+                _currentData = pair.Value;
+                _currentSave = _currentData.Valid ? _activeDesigns.GetOrCreateSave(_currentData.Objects[0]) : null;
             }
         }
 
@@ -243,325 +257,14 @@ internal partial class Interface
             var buttonWidth = new Vector2(_actorSelectorWidth / 2, 0);
 
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth
-                    , "Select the local player character.", !ObjectManager.Player, true))
-                _identifier = ObjectManager.Player.GetIdentifier();
+                    , "Select the local player character.", !_objects.Player, true))
+                _identifier = _objects.Player.GetIdentifier();
 
             ImGui.SameLine();
             Actor targetActor = Dalamud.Targets.Target?.Address;
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth,
-                    "Select the current target, if it is in the list.", ObjectManager.IsInGPose || !targetActor, true))
+                    "Select the current target, if it is in the list.", _objects.IsInGPose || !targetActor, true))
                 _identifier = targetActor.GetIdentifier();
         }
     }
 }
-
-//internal partial class Interface
-//{
-//    private readonly CharacterSave _currentSave   = new();
-//    private          string        _newDesignName = string.Empty;
-//    private          bool          _keyboardFocus;
-//    private          bool          _holdShift;
-//    private          bool          _holdCtrl;
-//    private const    string        DesignNamePopupLabel = "Save Design As...";
-//    private const    uint          RedHeaderColor       = 0xFF1818C0;
-//    private const    uint          GreenHeaderColor     = 0xFF18C018;
-//
-//    private void DrawPlayerHeader()
-//    {
-//        var color       = _player == null ? RedHeaderColor : GreenHeaderColor;
-//        var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
-//        using var c = ImRaii.PushColor(ImGuiCol.Text, color)
-//            .Push(ImGuiCol.Button,        buttonColor)
-//            .Push(ImGuiCol.ButtonHovered, buttonColor)
-//            .Push(ImGuiCol.ButtonActive,  buttonColor);
-//        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
-//            .Push(ImGuiStyleVar.FrameRounding, 0);
-//        ImGui.Button($"{_currentLabel}##playerHeader", -Vector2.UnitX * 0.0001f);
-//    }
-//
-//    private static void DrawCopyClipboardButton(CharacterSave save)
-//    {
-//        ImGui.PushFont(UiBuilder.IconFont);
-//        if (ImGui.Button(FontAwesomeIcon.Clipboard.ToIconString()))
-//            ImGui.SetClipboardText(save.ToBase64());
-//        ImGui.PopFont();
-//        ImGuiUtil.HoverTooltip("Copy customization code to clipboard.");
-//    }
-//
-//    private static unsafe void ConditionalApply(CharacterSave save, FFXIVClientStructs.FFXIV.Client.Game.Character.Character* player)
-//    {
-//        //if (ImGui.GetIO().KeyShift)
-//        //    save.ApplyOnlyCustomizations(player);
-//        //else if (ImGui.GetIO().KeyCtrl)
-//        //    save.ApplyOnlyEquipment(player);
-//        //else
-//        //    save.Apply(player);
-//    }
-//
-//    private static unsafe void ConditionalApply(CharacterSave save, Character player)
-//        => ConditionalApply(save, (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)player.Address);
-//
-//    private static CharacterSave ConditionalCopy(CharacterSave save, bool shift, bool ctrl)
-//    {
-//        var copy = save.Copy();
-//        if (shift)
-//        {
-//            copy.Load(new CharacterEquipment());
-//            copy.SetHatState    = false;
-//            copy.SetVisorState  = false;
-//            copy.SetWeaponState = false;
-//            copy.WriteEquipment = CharacterEquipMask.None;
-//        }
-//        else if (ctrl)
-//        {
-//            copy.Load(CharacterCustomization.Default);
-//            copy.SetHatState         = false;
-//            copy.SetVisorState       = false;
-//            copy.SetWeaponState      = false;
-//            copy.WriteCustomizations = false;
-//        }
-//
-//        return copy;
-//    }
-//
-//    private bool DrawApplyClipboardButton()
-//    {
-//        ImGui.PushFont(UiBuilder.IconFont);
-//        var applyButton = ImGui.Button(FontAwesomeIcon.Paste.ToIconString()) && _player != null;
-//        ImGui.PopFont();
-//        ImGuiUtil.HoverTooltip(
-//            "Apply customization code from clipboard.\nHold Shift to apply only customizations.\nHold Control to apply only equipment.");
-//
-//        if (!applyButton)
-//            return false;
-//
-//        try
-//        {
-//            var text = ImGui.GetClipboardText();
-//            if (!text.Any())
-//                return false;
-//
-//            var save = CharacterSave.FromString(text);
-//            ConditionalApply(save, _player!);
-//        }
-//        catch (Exception e)
-//        {
-//            PluginLog.Information($"{e}");
-//            return false;
-//        }
-//
-//        return true;
-//    }
-//
-//    private void DrawSaveDesignButton()
-//    {
-//        ImGui.PushFont(UiBuilder.IconFont);
-//        if (ImGui.Button(FontAwesomeIcon.Save.ToIconString()))
-//            OpenDesignNamePopup(DesignNameUse.SaveCurrent);
-//
-//        ImGui.PopFont();
-//        ImGuiUtil.HoverTooltip("Save the current design.\nHold Shift to save only customizations.\nHold Control to save only equipment.");
-//
-//        DrawDesignNamePopup(DesignNameUse.SaveCurrent);
-//    }
-//
-//    private void DrawTargetPlayerButton()
-//    {
-//        if (ImGui.Button("Target Player"))
-//            Dalamud.Targets.SetTarget(_player);
-//    }
-//
-//    private unsafe void DrawApplyToPlayerButton(CharacterSave save)
-//    {
-//        if (!ImGui.Button("Apply to Self"))
-//            return;
-//
-//        var player = _inGPose
-//            ? (Character?)Dalamud.Objects[GPoseObjectId]
-//            : Dalamud.ClientState.LocalPlayer;
-//        var fallback = _inGPose ? Dalamud.ClientState.LocalPlayer : null;
-//        if (player == null)
-//            return;
-//
-//        ConditionalApply(save, (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)player.Address);
-//        if (_inGPose)
-//            ConditionalApply(save, (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)fallback!.Address);
-//        Glamourer.Penumbra.UpdateCharacters(player, fallback);
-//    }
-//
-//
-//    private static unsafe FFXIVClientStructs.FFXIV.Client.Game.Character.Character* TransformToCustomizable(
-//        FFXIVClientStructs.FFXIV.Client.Game.Character.Character* actor)
-//    {
-//        if (actor == null)
-//            return null;
-//
-//        if (actor->ModelCharaId == 0)
-//            return actor;
-//
-//        actor->ModelCharaId = 0;
-//        CharacterCustomization.Default.Write(actor);
-//        return actor;
-//    }
-//
-//    private static unsafe FFXIVClientStructs.FFXIV.Client.Game.Character.Character* Convert(GameObject? actor)
-//    {
-//        return actor switch
-//        {
-//            null              => null,
-//            PlayerCharacter p => (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)p.Address,
-//            BattleChara b     => (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)b.Address,
-//            _ => actor.ObjectKind switch
-//            {
-//                ObjectKind.BattleNpc => (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)actor.Address,
-//                ObjectKind.Companion => (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)actor.Address,
-//                ObjectKind.Retainer  => (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)actor.Address,
-//                ObjectKind.EventNpc  => (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)actor.Address,
-//                _                    => null,
-//            },
-//        };
-//    }
-//
-//    private unsafe void DrawApplyToTargetButton(CharacterSave save)
-//    {
-//        if (!ImGui.Button("Apply to Target"))
-//            return;
-//
-//        var player = TransformToCustomizable(Convert(Dalamud.Targets.Target));
-//        if (player == null)
-//            return;
-//
-//        var fallBackCharacter = _gPoseActors.TryGetValue(new Utf8String(player->GameObject.Name).ToString(), out var f) ? f : null;
-//        ConditionalApply(save, player);
-//        if (fallBackCharacter != null)
-//            ConditionalApply(save, fallBackCharacter!);
-//        //Glamourer.Penumbra.UpdateCharacters(player, fallBackCharacter);
-//    }
-//
-//    private void DrawRevertButton()
-//    {
-//        if (!ImGuiUtil.DrawDisabledButton("Revert", Vector2.Zero, string.Empty, _player == null))
-//            return;
-//
-//        Glamourer.RevertableDesigns.Revert(_player!);
-//        var fallBackCharacter = _gPoseActors.TryGetValue(_player!.Name.ToString(), out var f) ? f : null;
-//        if (fallBackCharacter != null)
-//            Glamourer.RevertableDesigns.Revert(fallBackCharacter);
-//        Glamourer.Penumbra.UpdateCharacters(_player, fallBackCharacter);
-//    }
-//
-//    private void SaveNewDesign(CharacterSave save)
-//    {
-//        try
-//        {
-//            var (folder, name) = _designs.FileSystem.CreateAllFolders(_newDesignName);
-//            if (!name.Any())
-//                return;
-//
-//            var newDesign = new Design(folder, name) { Data = save };
-//            folder.AddChild(newDesign);
-//            _designs.Designs[newDesign.FullName()] = save;
-//            _designs.SaveToFile();
-//        }
-//        catch (Exception e)
-//        {
-//            PluginLog.Error($"Could not save new design {_newDesignName}:\n{e}");
-//        }
-//    }
-//
-//    private unsafe void DrawMonsterPanel()
-//    {
-//        if (DrawApplyClipboardButton())
-//            Glamourer.Penumbra.UpdateCharacters(_player!);
-//
-//        ImGui.SameLine();
-//        if (ImGui.Button("Convert to Character"))
-//        {
-//            //TransformToCustomizable(_player);
-//            _currentLabel = _currentLabel.Replace("(Monster)", "(NPC)");
-//            Glamourer.Penumbra.UpdateCharacters(_player!);
-//        }
-//
-//        if (!_inGPose)
-//        {
-//            ImGui.SameLine();
-//            DrawTargetPlayerButton();
-//        }
-//
-//        var       currentModel = ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)_player!.Address)->ModelCharaId;
-//        using var combo        = ImRaii.Combo("Model Id", currentModel.ToString());
-//        if (!combo)
-//            return;
-//
-//        foreach (var (id, _) in _models.Skip(1))
-//        {
-//            if (!ImGui.Selectable($"{id:D6}##models", id == currentModel) || id == currentModel)
-//                continue;
-//
-//            ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)_player!.Address)->ModelCharaId = 0;
-//            Glamourer.Penumbra.UpdateCharacters(_player!);
-//        }
-//    }
-//
-//    private void DrawPlayerPanel()
-//    {
-//        DrawCopyClipboardButton(_currentSave);
-//        ImGui.SameLine();
-//        var changes = !_currentSave.WriteProtected && DrawApplyClipboardButton();
-//        ImGui.SameLine();
-//        DrawSaveDesignButton();
-//        ImGui.SameLine();
-//        DrawApplyToPlayerButton(_currentSave);
-//        if (!_inGPose)
-//        {
-//            ImGui.SameLine();
-//            DrawApplyToTargetButton(_currentSave);
-//            if (_player != null && !_currentSave.WriteProtected)
-//            {
-//                ImGui.SameLine();
-//                DrawTargetPlayerButton();
-//            }
-//        }
-//
-//        var data = _currentSave;
-//        if (!_currentSave.WriteProtected)
-//        {
-//            ImGui.SameLine();
-//            DrawRevertButton();
-//        }
-//        else
-//        {
-//            ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.8f);
-//            data = data.Copy();
-//        }
-//
-//        if (DrawCustomization(ref data.Customizations) && _player != null)
-//        {
-//            Glamourer.RevertableDesigns.Add(_player);
-//            _currentSave.Customizations.Write(_player.Address);
-//            changes = true;
-//        }
-//
-//        changes |= DrawEquip(data.Equipment);
-//        changes |= DrawMiscellaneous(data, _player);
-//
-//        if (_player != null && changes)
-//            Glamourer.Penumbra.UpdateCharacters(_player);
-//        if (_currentSave.WriteProtected)
-//            ImGui.PopStyleVar();
-//    }
-//
-//    private unsafe void DrawActorPanel()
-//    {
-//        using var group = ImRaii.Group();
-//        DrawPlayerHeader();
-//        using var child = ImRaii.Child("##playerData", -Vector2.One, true);
-//        if (!child)
-//            return;
-//
-//        if (_player == null || ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)_player.Address)->ModelCharaId == 0)
-//            DrawPlayerPanel();
-//        else
-//            DrawMonsterPanel();
-//    }
-//}

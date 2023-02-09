@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Dalamud.Interface;
-using Glamourer.Structs;
 using Glamourer.Util;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -12,52 +8,53 @@ using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Structs;
 using Item = Glamourer.Designs.Item;
 
 namespace Glamourer.Gui.Equipment;
 
 public sealed class ItemCombo : FilterComboCache<Item>
 {
-    public readonly  string      Label;
-    public readonly  EquipSlot   Slot;
-
-    private uint _lastItemId;
-    private uint _previewId;
+    public readonly string    Label;
+    private         uint      _currentItem;
 
     public ItemCombo(ItemManager items, EquipSlot slot)
-        : base(GetItems(items, slot))
+        : base(() => GetItems(items, slot))
     {
         Label        = GetLabel(slot);
-        Slot         = slot;
-        _lastItemId = ItemManager.NothingId(slot);
-        _previewId  = _lastItemId;
+        _currentItem = ItemManager.NothingId(slot);
     }
 
     protected override void DrawList(float width, float itemHeight)
     {
-        if (_previewId != _lastItemId)
-        {
-            _lastItemId         = _previewId;
-            CurrentSelectionIdx = Items.IndexOf(i => i.ItemId == _lastItemId);
-            CurrentSelection    = Items[CurrentSelectionIdx];
-        }
         base.DrawList(width, itemHeight);
         if (NewSelection != null && Items.Count > NewSelection.Value)
             CurrentSelection = Items[NewSelection.Value];
     }
 
+    protected override int UpdateCurrentSelected(int currentSelected)
+    {
+        if (CurrentSelection.ItemId != _currentItem)
+        {
+            CurrentSelectionIdx = Items.IndexOf(i => i.ItemId == _currentItem);
+            CurrentSelection    = CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : default;
+            return base.UpdateCurrentSelected(CurrentSelectionIdx);
+        }
+
+        return currentSelected;
+    }
+
     public bool Draw(string previewName, uint previewIdx, float width)
     {
-        _previewId = previewIdx;
-        return Draw(Label, previewName, width, ImGui.GetTextLineHeightWithSpacing());
+        _currentItem = previewIdx;
+        return Draw(Label, previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
     }
 
     protected override bool DrawSelectable(int globalIdx, bool selected)
     {
-        var       obj   = Items[globalIdx];
-        var       name  = ToString(obj);
-        var       ret   = ImGui.Selectable(name, selected);
+        var obj  = Items[globalIdx];
+        var name = ToString(obj);
+        var ret  = ImGui.Selectable(name, selected);
+        ImGui.SameLine();
         using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
         ImGuiUtil.RightAlign($"({obj.ModelBase.Value}-{obj.Variant})");
         return ret;
@@ -89,12 +86,18 @@ public sealed class ItemCombo : FilterComboCache<Item>
         };
     }
 
-    private static IEnumerable<Item> GetItems(ItemManager items, EquipSlot slot)
+    private static IReadOnlyList<Item> GetItems(ItemManager items, EquipSlot slot)
     {
         var nothing = ItemManager.NothingItem(slot);
         if (!items.Items.TryGetValue(slot.ToEquipType(), out var list))
-            return new[] { nothing };
+            return new[]
+            {
+                nothing,
+            };
 
-        return list.Select(i => new Item(i)).Append(ItemManager.SmallClothesItem(slot)).OrderBy(i => i.Name).Prepend(nothing);
+        var enumerable = list.Select(i => new Item(i));
+        if (slot.IsEquipment())
+            enumerable = enumerable.Append(ItemManager.SmallClothesItem(slot));
+        return enumerable.OrderBy(i => i.Name).Prepend(nothing).ToList();
     }
 }

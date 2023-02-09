@@ -1,7 +1,6 @@
 ﻿using System;
 using Glamourer.Customization;
 using Glamourer.Util;
-using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -102,6 +101,9 @@ public class DesignBase
 
         return SetArmor(slot, set, variant, name, itemId);
     }
+
+    protected bool SetArmor(EquipSlot slot, Item item)
+        => SetArmor(slot, item.ModelBase, item.Variant, item.Name, item.ItemId);
 
     protected bool UpdateArmor(EquipSlot slot, CharacterArmor armor, bool force)
     {

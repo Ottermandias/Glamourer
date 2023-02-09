@@ -6,12 +6,12 @@ using Glamourer.Util;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
-using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
-internal partial class CustomizationDrawer
+public partial class CustomizationDrawer
 {
     private void DrawRaceGenderSelector()
     {
@@ -26,21 +26,20 @@ internal partial class CustomizationDrawer
 
     private void DrawGenderSelector()
     {
-        using var font       = ImRaii.PushFont(UiBuilder.IconFont);
-        var       icon       = _customize.Gender == Gender.Male ? FontAwesomeIcon.Mars : FontAwesomeIcon.Venus;
-        var       restricted = _customize.Race == Race.Hrothgar;
-        if (restricted)
-            icon = FontAwesomeIcon.MarsDouble;
+        using var font = ImRaii.PushFont(UiBuilder.IconFont);
+        var icon = _customize.Gender switch
+        {
+            Gender.Male when _customize.Race is Race.Hrothgar => FontAwesomeIcon.MarsDouble,
+            Gender.Male                                       => FontAwesomeIcon.Mars,
+            Gender.Female                                     => FontAwesomeIcon.Venus,
 
-        if (!ImGuiUtil.DrawDisabledButton(icon.ToIconString(), _framedIconSize, string.Empty, restricted, true))
+            _ => throw new Exception($"Gender value {_customize.Gender} is not a valid gender for a design."),
+        };
+
+        if (!ImGuiUtil.DrawDisabledButton(icon.ToIconString(), _framedIconSize, string.Empty, icon == FontAwesomeIcon.MarsDouble, true))
             return;
 
-        var gender = _customize.Gender == Gender.Male ? Gender.Female : Gender.Male;
-        if (!_customize.ChangeGender(_equip, gender))
-            return;
-
-        foreach (var actor in _actors.Where(a => a))
-            Glamourer.Penumbra.RedrawObject(actor.Character, RedrawType.Redraw);
+        Changed |= _customize.ChangeGender(CharacterEquip.Null, _customize.Gender is Gender.Male ? Gender.Female : Gender.Male);
     }
 
     private void DrawRaceCombo()
@@ -52,12 +51,8 @@ internal partial class CustomizationDrawer
 
         foreach (var subRace in Enum.GetValues<SubRace>().Skip(1)) // Skip Unknown
         {
-            if (!ImGui.Selectable(CustomizeExtensions.ClanName(subRace, _customize.Gender), subRace == _customize.Clan)
-             || !_customize.ChangeRace(_equip, subRace))
-                continue;
-
-            foreach (var actor in _actors.Where(a => a && a.DrawObject))
-                Glamourer.Penumbra.RedrawObject(actor.Character, RedrawType.Redraw);
+            if (ImGui.Selectable(CustomizeExtensions.ClanName(subRace, _customize.Gender), subRace == _customize.Clan))
+                Changed |= _customize.ChangeRace(CharacterEquip.Null, subRace);
         }
     }
 }

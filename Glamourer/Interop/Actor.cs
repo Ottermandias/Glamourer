@@ -66,6 +66,9 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
     public bool Valid
         => Pointer != null;
 
+    public int Index
+        => Pointer->GameObject.ObjectIndex;
+
     public uint ModelId
     {
         get => (uint)Pointer->ModelCharaId;

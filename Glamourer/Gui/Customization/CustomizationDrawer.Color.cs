@@ -1,11 +1,12 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui.Raii;
 
 namespace Glamourer.Gui.Customization;
 
-internal partial class CustomizationDrawer
+public partial class CustomizationDrawer
 {
     private const string ColorPickerPopupName = "ColorPicker";
 
@@ -26,7 +27,6 @@ internal partial class CustomizationDrawer
             DataInputInt(current);
             ImGui.TextUnformatted(_currentOption);
         }
-
         DrawColorPickerPopup();
     }
 
@@ -56,10 +56,9 @@ internal partial class CustomizationDrawer
     private (int, CustomizeData) GetCurrentCustomization(CustomizeIndex index)
     {
         var current = _set.DataByValue(index, _customize[index], out var custom, _customize.Face);
-        if (!_set.IsAvailable(index) || current >= 0)
-            return (current, custom!.Value);
+        if (_set.IsAvailable(index) && current < 0)
+            throw new Exception($"Read invalid customization value {_customize[index]} for {index}.");
 
-        Glamourer.Log.Warning($"Read invalid customization value {_customize[index]} for {index}.");
-        return (0, _set.Data(index, 0));
+        return (current, custom!.Value);
     }
 }

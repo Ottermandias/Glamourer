@@ -50,8 +50,9 @@ internal partial class Interface
             return;
         }
 
-        if (ImGui.Button(buttonLabel))
-            Glamourer.Penumbra.Reattach(true);
+        // TODO
+        //if (ImGui.Button(buttonLabel))
+        //    Glamourer.Penumbra.Reattach(true);
 
         ImGuiUtil.HoverTooltip(
             "If Penumbra did not register the functions for some reason, pressing this button might help restore functionality.");
@@ -73,18 +74,6 @@ internal partial class Interface
             v => cfg.ColorDesigns = v);
         Checkmark("Show Locks", "Write-protected Designs show a lock besides their name in the selector.", cfg.ShowLocks,
             v => cfg.ShowLocks = v);
-        Checkmark("Attach to Penumbra",
-            "Allows you to right-click items in the Changed Items tab of a mod in Penumbra to apply them to your player character.",
-            cfg.AttachToPenumbra,
-            v =>
-            {
-                cfg.AttachToPenumbra = v;
-                if (v)
-                    Glamourer.Penumbra.Reattach(true);
-                else
-                    Glamourer.Penumbra.Unattach();
-            });
-        ImGui.SameLine();
         DrawRestorePenumbraButton();
 
         Checkmark("Apply Fixed Designs",

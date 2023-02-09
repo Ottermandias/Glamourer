@@ -69,16 +69,4 @@ public unsafe partial class RedrawManager
         //
         //return _flagSlotForUpdateHook.Original(drawObject, slotIdx, data);
     }
-
-    private void HandleEquipUpdate(nint drawObject, EquipSlot slot, ref CharacterArmor data, bool manual)
-    {
-        var actor      = Glamourer.Penumbra.GameObjectFromDrawObject(drawObject);
-        var identifier = actor.GetIdentifier();
-
-        if (!_currentManipulations.TryGetDesign(identifier, out var design))
-            return;
-
-        var flag      = slot.ToFlag();
-        var stainFlag = slot.ToStainFlag();
-    }
 }

@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
-using Glamourer.Gui.Customization;
-using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
@@ -17,15 +15,15 @@ internal partial class Interface
 {
     private class DebugStateTab
     {
-        private readonly CurrentManipulations _currentManipulations;
+        private readonly ActiveDesign.Manager _activeDesigns;
 
         private LowerString     _manipulationFilter = LowerString.Empty;
         private ActorIdentifier _selection          = ActorIdentifier.Invalid;
         private ActiveDesign?  _save               = null;
         private bool            _delete             = false;
 
-        public DebugStateTab(CurrentManipulations currentManipulations)
-            => _currentManipulations = currentManipulations;
+        public DebugStateTab(ActiveDesign.Manager activeDesigns)
+            => _activeDesigns = activeDesigns;
 
         [Conditional("DEBUG")]
         public void Draw()
@@ -43,7 +41,7 @@ internal partial class Interface
             if (_delete)
             {
                 _delete = false;
-                _currentManipulations.DeleteSave(_selection);
+                _activeDesigns.DeleteSave(_selection);
                 _selection = ActorIdentifier.Invalid;
             }
         }
@@ -56,7 +54,7 @@ internal partial class Interface
 
             using var style     = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, oldSpacing);
             var       skips     = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
-            var       remainder = ImGuiClip.FilteredClippedDraw(_currentManipulations, skips, CheckFilter, DrawSelectable);
+            var       remainder = ImGuiClip.FilteredClippedDraw(_activeDesigns, skips, CheckFilter, DrawSelectable);
             ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
         }
 

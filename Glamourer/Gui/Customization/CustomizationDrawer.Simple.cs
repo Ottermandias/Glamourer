@@ -6,44 +6,8 @@ using OtterGui.Raii;
 
 namespace Glamourer.Gui.Customization;
 
-internal partial class CustomizationDrawer
+public partial class CustomizationDrawer
 {
-    private void DrawListSelector(CustomizeIndex index)
-    {
-        using var _        = SetId(index);
-        using var bigGroup = ImRaii.Group();
-
-        ListCombo();
-        ImGui.SameLine();
-        ListInputInt();
-        ImGui.SameLine();
-        ImGui.TextUnformatted(_currentOption);
-    }
-
-    private void ListCombo()
-    {
-        ImGui.SetNextItemWidth(_comboSelectorSize * ImGui.GetIO().FontGlobalScale);
-        using var combo = ImRaii.Combo("##combo", $"{_currentOption} #{_currentByte.Value + 1}");
-
-        if (!combo)
-            return;
-
-        for (var i = 0; i < _currentCount; ++i)
-        {
-            if (ImGui.Selectable($"{_currentOption} #{i + 1}##combo", i == _currentByte.Value))
-                UpdateValue((CustomizeValue)i);
-        }
-    }
-    
-    private void ListInputInt()
-    {
-        var tmp = _currentByte.Value + 1;
-        ImGui.SetNextItemWidth(_inputIntSize);
-        if (ImGui.InputInt("##text", ref tmp, 1, 1) && tmp > 0 && tmp <= _currentCount)
-            UpdateValue((CustomizeValue)Math.Clamp(tmp - 1, 0, _currentCount - 1));
-        ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]");
-    }
-
     private void PercentageSelector(CustomizeIndex index)
     {
         using var _        = SetId(index);
@@ -73,26 +37,6 @@ internal partial class CustomizationDrawer
         ImGuiUtil.HoverTooltip($"Input Range: [0, {_currentCount - 1}]");
     }
 
-
-    // Draw one of the four checkboxes for single bool customization options.
-    private void Checkbox(string label, bool current, Action<bool> setter)
-    {
-        var tmp = current;
-        if (ImGui.Checkbox(label, ref tmp) && tmp != current)
-        {
-            setter(tmp);
-            UpdateActors();
-        }
-    }
-
-    // Draw a customize checkbox.
-    private void DrawCheckbox(CustomizeIndex idx)
-    {
-        using var id = SetId(idx);
-        Checkbox(_set.Option(idx), _customize.Get(idx) != CustomizeValue.Zero,
-            b => _customize.Set(idx, b ? CustomizeValue.Max : CustomizeValue.Zero));
-    }
-
     // Integral input for an icon- or color based item.
     private void DataInputInt(int currentIndex)
     {
@@ -106,5 +50,53 @@ internal partial class CustomizationDrawer
         }
 
         ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]");
+    }
+
+    private void DrawListSelector(CustomizeIndex index)
+    {
+        using var _        = SetId(index);
+        using var bigGroup = ImRaii.Group();
+
+        ListCombo();
+        ImGui.SameLine();
+        ListInputInt();
+        ImGui.SameLine();
+        ImGui.TextUnformatted(_currentOption);
+    }
+
+    private void ListCombo()
+    {
+        ImGui.SetNextItemWidth(_comboSelectorSize * ImGui.GetIO().FontGlobalScale);
+        using var combo = ImRaii.Combo("##combo", $"{_currentOption} #{_currentByte.Value + 1}");
+
+        if (!combo)
+            return;
+
+        for (var i = 0; i < _currentCount; ++i)
+        {
+            if (ImGui.Selectable($"{_currentOption} #{i + 1}##combo", i == _currentByte.Value))
+                UpdateValue((CustomizeValue)i);
+        }
+    }
+
+    private void ListInputInt()
+    {
+        var tmp = _currentByte.Value + 1;
+        ImGui.SetNextItemWidth(_inputIntSize);
+        if (ImGui.InputInt("##text", ref tmp, 1, 1) && tmp > 0 && tmp <= _currentCount)
+            UpdateValue((CustomizeValue)Math.Clamp(tmp - 1, 0, _currentCount - 1));
+        ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]");
+    }
+
+    // Draw a customize checkbox.
+    private void DrawCheckbox(CustomizeIndex idx)
+    {
+        using var id  = SetId(idx);
+        var       tmp = _currentByte != CustomizeValue.Zero;
+        if (ImGui.Checkbox(_currentOption, ref tmp))
+        {
+            _customize.Set(idx, tmp ? CustomizeValue.Max : CustomizeValue.Zero);
+            Changed |= _currentFlag;
+        }
     }
 }

@@ -56,13 +56,19 @@ public class ItemManager : IDisposable
 
     public static Designs.Item NothingItem(EquipSlot slot)
     {
-        Debug.Assert(slot.IsEquipment() || slot.IsAccessory());
+        Debug.Assert(slot.IsEquipment() || slot.IsAccessory(), $"Called {nameof(NothingItem)} on {slot}.");
         return new Designs.Item(Nothing, NothingId(slot), CharacterArmor.Empty);
+    }
+
+    public static Designs.Weapon NothingItem(FullEquipType type)
+    {
+        Debug.Assert(type.ToSlot() == EquipSlot.OffHand, $"Called {nameof(NothingItem)} on {type}.");
+        return new Designs.Weapon(Nothing, NothingId(type), CharacterWeapon.Empty, type);
     }
 
     public static Designs.Item SmallClothesItem(EquipSlot slot)
     {
-        Debug.Assert(slot.IsEquipment());
+        Debug.Assert(slot.IsEquipment(), $"Called {nameof(SmallClothesItem)} on {slot}.");
         return new Designs.Item(SmallClothesNpc, SmallclothesId(slot), new CharacterArmor(SmallClothesNpcModel, 1, 0));
     }
 

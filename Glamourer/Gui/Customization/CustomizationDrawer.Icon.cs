@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Linq;
 using System.Numerics;
 using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
-using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Customization;
 
-internal partial class CustomizationDrawer
+public partial class CustomizationDrawer
 {
     private const string IconSelectorPopup = "Style Picker";
 
@@ -40,22 +38,23 @@ internal partial class CustomizationDrawer
                 FaceInputInt(current);
             else
                 DataInputInt(current);
+
             ImGui.TextUnformatted($"{label} ({custom.Value.Value})");
         }
 
         DrawIconPickerPopup();
     }
 
-    private void UpdateFace(CustomizeData data)
+    private bool UpdateFace(CustomizeData data)
     {
         // Hrothgar Hack
         var value = _set.Race == Race.Hrothgar ? data.Value + 4 : data.Value;
         if (_customize.Face == value)
-            return;
+            return false;
 
-        _customize.Face = value;
-        foreach (var actor in _actors)
-            Glamourer.Penumbra.RedrawObject(actor.Character, RedrawType.Redraw);
+        _customize.Face =  value;
+        Changed         |= CustomizeFlag.Face;
+        return true;
     }
 
     private void FaceInputInt(int currentIndex)
@@ -78,6 +77,7 @@ internal partial class CustomizationDrawer
         if (!popup)
             return;
 
+        var ret = false;
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
         for (var i = 0; i < _currentCount; ++i)
@@ -104,6 +104,47 @@ internal partial class CustomizationDrawer
             }
 
             if (i % 8 != 7)
+                ImGui.SameLine();
+        }
+    }
+
+
+    // Only used for facial features, so fixed ID.
+    private void DrawMultiIconSelector()
+    {
+        using var bigGroup = ImRaii.Group();
+        DrawMultiIcons();
+        ImGui.SameLine();
+        using var group = ImRaii.Group();
+        ImGui.Dummy(new Vector2(0, ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y / 2));
+
+        _currentCount = 256;
+        PercentageInputInt();
+
+        ImGui.TextUnformatted(_set.Option(CustomizeIndex.LegacyTattoo));
+    }
+
+    private void DrawMultiIcons()
+    {
+        var       options = _set.Order[CharaMakeParams.MenuType.IconCheckmark];
+        using var _       = ImRaii.Group();
+        foreach (var (featureIdx, idx) in options.WithIndex())
+        {
+            using var id      = SetId(featureIdx);
+            var       enabled = _customize.Get(featureIdx) != CustomizeValue.Zero;
+            var       feature = _set.Data(featureIdx, 0, _customize.Face);
+            var icon = featureIdx == CustomizeIndex.LegacyTattoo
+                ? _legacyTattoo ?? Glamourer.Customization.GetIcon(feature.IconId)
+                : Glamourer.Customization.GetIcon(feature.IconId);
+            if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize, Vector2.Zero, Vector2.One, (int)ImGui.GetStyle().FramePadding.X,
+                    Vector4.Zero, enabled ? Vector4.One : _redTint))
+            {
+                _customize.Set(featureIdx, enabled ? CustomizeValue.Zero : CustomizeValue.Max);
+                Changed |= _currentFlag;
+            }
+
+            ImGuiUtil.HoverIconTooltip(icon, _iconSize);
+            if (idx % 4 != 3)
                 ImGui.SameLine();
         }
     }

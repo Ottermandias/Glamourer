@@ -1,5 +1,4 @@
 ﻿using Dalamud.Utility;
-using Glamourer.Util;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -62,6 +61,9 @@ public readonly struct Weapon
         => Model.Stain;
 
 
+    public Weapon WithStain(StainId id)
+        => new(Name, ItemId, Model with { Stain = id }, Type);
+
     public Weapon(string name, uint itemId, CharacterWeapon weapon, FullEquipType type)
     {
         Name          = name;
@@ -80,5 +82,24 @@ public readonly struct Weapon
         return offType is FullEquipType.Unknown
             ? new Weapon()
             : new Weapon(name, itemId, weapon, offType);
+    }
+
+    public Weapon(Lumina.Excel.GeneratedSheets.Item item, bool offhand)
+    {
+        Name   = string.Intern(item.Name.ToDalamudString().TextValue);
+        ItemId = item.RowId;
+        Type   = item.ToEquipType();
+        var offType = Type.Offhand();
+        var model   = offhand && offType == Type ? item.ModelSub : item.ModelMain;
+        Valid = Type.ToSlot() switch
+        {
+            EquipSlot.MainHand when !offhand                   => true,
+            EquipSlot.MainHand when offhand && offType == Type => true,
+            EquipSlot.OffHand when offhand                     => true,
+            _                                                  => false,
+        };
+        Model.Set     = (SetId)model;
+        Model.Type    = (WeaponType)(model >> 16);
+        Model.Variant = (byte)(model >> 32);
     }
 }

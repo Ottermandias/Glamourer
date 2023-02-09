@@ -59,7 +59,7 @@ public partial class CustomizationOptions
 
 public partial class CustomizationOptions
 {
-    internal readonly bool Valid;
+    private readonly bool _valid;
 
     public string GetName(CustomName name)
         => _names[(int)name];
@@ -68,7 +68,7 @@ public partial class CustomizationOptions
     {
         var tmp = new TemporaryData(gameData, this);
         _icons = new IconStorage(pi, gameData, _customizationSets.Length * 50);
-        Valid  = tmp.Valid;
+        _valid  = tmp.Valid;
         SetNames(gameData, tmp);
         foreach (var race in Clans)
         {
@@ -76,7 +76,6 @@ public partial class CustomizationOptions
                 _customizationSets[ToIndex(race, gender)] = tmp.GetSet(race, gender);
         }
     }
-
 
     // Obtain localized names of customization options and race names from the game data.
     private readonly string[] _names = new string[Enum.GetValues<CustomName>().Length];
@@ -430,10 +429,14 @@ public partial class CustomizationOptions
 
                 // Hair Row from CustomizeSheet might not be set in case of unlockable hair.
                 var hairRow = _customizeSheet.GetRow(customizeIdx);
-                hairList.Add(hairRow != null
-                    ? new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)hairRow.FeatureID, hairRow.Icon,
-                        (ushort)hairRow.RowId)
-                    : new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)i, customizeIdx));
+                if (hairRow == null)
+                {
+                    hairList.Add(new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)i, customizeIdx));
+                }
+                else if (_options._icons.IconExists(hairRow.Icon))
+                {
+                    hairList.Add(new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)hairRow.FeatureID, hairRow.Icon, (ushort)hairRow.RowId));
+                }
             }
 
             return hairList.ToArray();

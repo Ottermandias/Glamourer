@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Numerics;
 using Dalamud.Interface;
+using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Designs;
@@ -37,9 +38,7 @@ internal partial class Interface
         {
             using var tab = ImRaii.TabItem("Designs");
             if (!tab)
-            {
                 return;
-            }
 
             Selector.Draw(GetDesignSelectorSize());
             ImGui.SameLine();
@@ -55,12 +54,25 @@ internal partial class Interface
             if (!child || Selector.Selected == null)
                 return;
 
-            CustomizationDrawer.Draw(Selector.Selected.Customize(), Selector.Selected.Equipment(), true);
+            _main._customizationDrawer.Draw(Selector.Selected.Customize(), CustomizeFlagExtensions.All, true);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
-                _main._equipmentDrawer.DrawStain(Selector.Selected, slot, out var stain);
+                var current = Selector.Selected.Armor(slot);
+                _main._equipmentDrawer.DrawStain(current.Stain, slot, out var stain);
                 ImGui.SameLine();
-                _main._equipmentDrawer.DrawArmor(Selector.Selected, slot, out var armor);
+                _main._equipmentDrawer.DrawArmor(current, slot, out var armor);
+            }
+
+            var currentMain = Selector.Selected.WeaponMain;
+            _main._equipmentDrawer.DrawStain(currentMain.Stain, EquipSlot.MainHand, out var stainMain);
+            ImGui.SameLine();
+            _main._equipmentDrawer.DrawMainhand(currentMain, true, out var main);
+            if (currentMain.Type.Offhand() != FullEquipType.Unknown)
+            {
+                var currentOff = Selector.Selected.WeaponOff;
+                _main._equipmentDrawer.DrawStain(currentOff.Stain, EquipSlot.OffHand, out var stainOff);
+                ImGui.SameLine();
+                _main._equipmentDrawer.DrawOffhand(currentOff, main.Type, out var off);
             }
         }
     }

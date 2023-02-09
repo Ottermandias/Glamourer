@@ -21,7 +21,7 @@ public readonly struct JobGroup
         Id     = group.RowId;
         Name   = group.Name.ToString();
 
-        Debug.Assert(jobs.RowCount < 64);
+        Debug.Assert(jobs.RowCount < 64, $"Number of Jobs exceeded 63 ({jobs.RowCount}).");
         foreach (var job in jobs)
         {
             var abbr = job.Abbreviation.ToString();
@@ -29,7 +29,7 @@ public readonly struct JobGroup
                 continue;
 
             var prop = group.GetType().GetProperty(abbr);
-            Debug.Assert(prop != null);
+            Debug.Assert(prop != null, $"Could not get job abbreviation {abbr} property.");
 
             if (!(bool)prop.GetValue(group)!)
                 continue;

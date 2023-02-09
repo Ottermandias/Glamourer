@@ -2,32 +2,37 @@
 using Glamourer.Designs;
 using Glamourer.Interop;
 using Penumbra.Api.Enums;
+using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.State;
 
 public sealed partial class ActiveDesign : DesignBase
 {
+    public readonly ActorIdentifier Identifier;
+
     private CharacterData _initialData = new();
 
-    private CustomizeFlag _changedCustomize;
-    private CustomizeFlag _fixedCustomize;
+    public CustomizeFlag ChangedCustomize { get; private set; } = 0;
+    public CustomizeFlag FixedCustomize   { get; private set; } = 0;
 
-    private EquipFlag _changedEquip;
-    private EquipFlag _fixedEquip;
+    public EquipFlag ChangedEquip { get; private set; } = 0;
+    public EquipFlag FixedEquip   { get; private set; } = 0;
 
     public bool IsHatVisible    { get; private set; } = false;
     public bool IsWeaponVisible { get; private set; } = false;
     public bool IsVisorToggled  { get; private set; } = false;
     public bool IsWet           { get; private set; } = false;
 
-    private ActiveDesign()
-    { }
+    private ActiveDesign(ActorIdentifier identifier)
+        => Identifier = identifier;
 
-    public ActiveDesign(Actor actor)
+    private ActiveDesign(ActorIdentifier identifier, Actor actor)
     {
+        Identifier = identifier;
         Update(actor);
     }
+
 
     //public void ApplyToActor(Actor actor)
     //{
@@ -72,14 +77,14 @@ public sealed partial class ActiveDesign : DesignBase
 
         var initialEquip = _initialData.Equipment;
         var currentEquip = actor.Equip;
-        var equipment    = Equipment();
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var current = currentEquip[slot];
             if (initialEquip[slot] != current)
             {
                 initialEquip[slot] = current;
-                equipment[slot]    = current;
+                UpdateArmor(slot, current, true);
+                SetStain(slot, current.Stain);
             }
         }
 
@@ -87,12 +92,14 @@ public sealed partial class ActiveDesign : DesignBase
         {
             _initialData.MainHand = actor.MainHand;
             UpdateMainhand(actor.MainHand);
+            SetStain(EquipSlot.MainHand, actor.MainHand.Stain);
         }
 
         if (_initialData.OffHand != actor.OffHand)
         {
             _initialData.OffHand = actor.OffHand;
-            UpdateMainhand(actor.OffHand);
+            UpdateOffhand(actor.OffHand);
+            SetStain(EquipSlot.OffHand, actor.OffHand.Stain);
         }
     }
 }

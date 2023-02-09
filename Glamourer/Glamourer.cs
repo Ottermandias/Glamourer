@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Api;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -13,7 +12,6 @@ using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.State;
 using Glamourer.Util;
-using ImGuizmoNET;
 using OtterGui.Classes;
 using OtterGui.Log;
 using Penumbra.GameData.Actors;
@@ -39,18 +37,21 @@ public class Glamourer : IDalamudPlugin
     public static   GlamourerConfig       Config        = null!;
     public static   Logger                Log           = null!;
     public static   ActorManager          Actors        = null!;
-    public static   PenumbraAttach        Penumbra      = null!;
     public static   ICustomizationManager Customization = null!;
     public static   RedrawManager         RedrawManager = null!;
     public static   ItemManager           Items         = null!;
     public readonly FixedDesigns          FixedDesigns;
-    public readonly CurrentManipulations  CurrentManipulations;
 
-    private readonly Design.Manager   _designManager;
-    private readonly DesignFileSystem _fileSystem;
-    private readonly FrameworkManager _framework;
-    private readonly WindowSystem     _windowSystem = new("Glamourer");
-    private readonly Interface        _interface;
+    private readonly Interop.Interop      _interop;
+    private readonly PenumbraAttach       _penumbra;
+    private readonly ObjectManager        _objectManager;
+    private readonly Design.Manager       _designManager;
+    private readonly ActiveDesign.Manager _stateManager;
+    private readonly DrawObjectManager    _drawObjectManager;
+    private readonly DesignFileSystem     _fileSystem;
+    private readonly FrameworkManager     _framework;
+    private readonly WindowSystem         _windowSystem = new("Glamourer");
+    private readonly Interface            _interface;
 
     //public readonly  DesignManager         Designs;
 
@@ -65,24 +66,28 @@ public class Glamourer : IDalamudPlugin
             Log = new Logger();
 
             _framework = new FrameworkManager(Dalamud.Framework, Log);
+            _interop   = new Interop.Interop();
+            _penumbra  = new PenumbraAttach();
 
             Items         = new ItemManager(Dalamud.PluginInterface, Dalamud.GameData);
             Customization = CustomizationManager.Create(Dalamud.PluginInterface, Dalamud.GameData);
 
             Backup.CreateBackup(pluginInterface.ConfigDirectory, BackupFiles(Dalamud.PluginInterface));
-            Config        = GlamourerConfig.Load();
+            Config = GlamourerConfig.Load();
 
-            Penumbra = new PenumbraAttach(Config.AttachToPenumbra);
-            Actors = new ActorManager(Dalamud.PluginInterface, Dalamud.Objects, Dalamud.ClientState, Dalamud.GameData, Dalamud.GameGui,
-                i => (short)Penumbra.CutsceneParent(i));
+            _objectManager = new ObjectManager(Dalamud.Framework, Dalamud.ClientState, Dalamud.Objects);
+            Actors = new ActorManager(Dalamud.PluginInterface, Dalamud.Objects, Dalamud.ClientState, Dalamud.Framework, Dalamud.GameData,
+                Dalamud.GameGui, i => (short)_penumbra.CutsceneParent(i));
 
-            _designManager       = new Design.Manager(Dalamud.PluginInterface, _framework);
-            _fileSystem          = new DesignFileSystem(_designManager, Dalamud.PluginInterface, _framework);
-            FixedDesigns         = new FixedDesigns();
-            CurrentManipulations = new CurrentManipulations();
+
+            _designManager = new Design.Manager(Dalamud.PluginInterface, _framework);
+            _fileSystem    = new DesignFileSystem(_designManager, Dalamud.PluginInterface, _framework);
+            FixedDesigns   = new FixedDesigns();
+            _stateManager  = new ActiveDesign.Manager(Actors, _objectManager, _interop, _penumbra);
 
             //GlamourerIpc       = new GlamourerIpc(Dalamud.ClientState, Dalamud.Objects, Dalamud.PluginInterface);
-            RedrawManager = new RedrawManager(FixedDesigns, CurrentManipulations);
+            RedrawManager      = new RedrawManager(FixedDesigns, _stateManager);
+            _drawObjectManager = new DrawObjectManager(Items, Actors, _stateManager, _interop, _penumbra);
 
             Dalamud.Commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer)
             {
@@ -93,7 +98,7 @@ public class Glamourer : IDalamudPlugin
                 HelpMessage = $"Use Glamourer Functions: {HelpString}",
             });
 
-            _interface = new Interface(Items, CurrentManipulations, _designManager, _fileSystem);
+            _interface = new Interface(Dalamud.PluginInterface, Items, _stateManager, _designManager, _fileSystem, _objectManager);
             _windowSystem.AddWindow(_interface);
             Dalamud.PluginInterface.UiBuilder.Draw += _windowSystem.Draw;
             //FixedDesignManager.Flag((Human*)((Actor)Dalamud.ClientState.LocalPlayer?.Address).Pointer->GameObject.DrawObject, 0, &x);
@@ -108,13 +113,15 @@ public class Glamourer : IDalamudPlugin
 
     public void Dispose()
     {
+        _drawObjectManager?.Dispose();
         RedrawManager?.Dispose();
-        Penumbra?.Dispose();
         if (_windowSystem != null)
             Dalamud.PluginInterface.UiBuilder.Draw -= _windowSystem.Draw;
         _interface?.Dispose();
         _fileSystem?.Dispose();
         //GlamourerIpc.Dispose();
+        _interop?.Dispose();
+        _penumbra?.Dispose();
         _framework?.Dispose();
         Items?.Dispose();
         Dalamud.Commands.RemoveHandler(ApplyCommandString);

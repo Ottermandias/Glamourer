@@ -45,7 +45,7 @@ public unsafe partial class RedrawManager
                     _ => weapon,
                 };
             }
-            else if (redrawOnEquality == 1 && _currentManipulations.TryGetDesign(identifier, out var save2))
+            else if (redrawOnEquality == 1 && _stateManager.TryGetValue(identifier, out var save2))
             {
                 PluginLog.Information($"Loaded weapon from current design for {identifier}.");
                 //switch (slot)

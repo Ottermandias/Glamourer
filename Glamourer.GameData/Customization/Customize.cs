@@ -10,6 +10,14 @@ public unsafe struct Customize
     public Customize(Penumbra.GameData.Structs.CustomizeData* data)
         => Data = data;
 
+    public Customize(ref Penumbra.GameData.Structs.CustomizeData data)
+    {
+        fixed (Penumbra.GameData.Structs.CustomizeData* ptr = &data)
+        {
+            Data = ptr;
+        }
+    }
+
     public Race Race
     {
         get => (Race)Data->Get(CustomizeIndex.Race).Value;
@@ -96,4 +104,18 @@ public unsafe struct Customize
 
     public string WriteBase64()
         => Data->WriteBase64();
+
+    public static CustomizeFlag Compare(Customize lhs, Customize rhs)
+    {
+        CustomizeFlag ret = 0;
+        foreach (var idx in Enum.GetValues<CustomizeIndex>())
+        {
+            var l = lhs[idx];
+            var r = rhs[idx];
+            if (l.Value != r.Value)
+                ret |= idx.ToFlag();
+        }
+
+        return ret;
+    }
 }
