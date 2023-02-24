@@ -18,7 +18,7 @@ namespace Glamourer
 {
     public class Glamourer : IDalamudPlugin
     {
-        private const string HelpString = "[Copy|Apply|Save],[Name or PlaceHolder],<Name for Save>";
+        private const string HelpString = "[Copy|Apply|Save|Revert],[Name or PlaceHolder],<Name for Save>";
 
         public string Name
             => "Glamourer";
@@ -132,6 +132,11 @@ namespace Glamourer
             }
         }
 
+        public void RevertCommand(Character player)
+        {
+            GlamourerIpc.Revert(player);
+        }
+
         public void OnGlamour(string command, string arguments)
         {
             static void PrintHelp()
@@ -191,6 +196,11 @@ namespace Glamourer
                     }
 
                     SaveCommand(player, split[2]);
+                    return;
+                }
+                case "revert":
+                {
+                    RevertCommand(player);
                     return;
                 }
                 default:
