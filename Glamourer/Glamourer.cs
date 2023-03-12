@@ -4,7 +4,6 @@ using System.Reflection;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Api;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -19,7 +18,7 @@ using FixedDesigns = Glamourer.State.FixedDesigns;
 
 namespace Glamourer;
 
-public class Glamourer : IDalamudPlugin
+public partial class Glamourer : IDalamudPlugin
 {
     private const string HelpString         = "[Copy|Apply|Save],[Name or PlaceHolder],<Name for Save>";
     private const string MainCommandString  = "/glamourer";
@@ -56,15 +55,14 @@ public class Glamourer : IDalamudPlugin
     //public readonly  DesignManager         Designs;
 
     //public static   RevertableDesigns RevertableDesigns = new();
-    //public readonly GlamourerIpc      GlamourerIpc;
+    public readonly GlamourerIpc Ipc;
 
     public Glamourer(DalamudPluginInterface pluginInterface)
     {
         try
         {
             Dalamud.Initialize(pluginInterface);
-            Log = new Logger();
-
+            Log        = new Logger();
             _framework = new FrameworkManager(Dalamud.Framework, Log);
             _interop   = new Interop.Interop();
             _penumbra  = new PenumbraAttach();
@@ -100,8 +98,8 @@ public class Glamourer : IDalamudPlugin
 
             _interface = new Interface(Dalamud.PluginInterface, Items, _stateManager, _designManager, _fileSystem, _objectManager);
             _windowSystem.AddWindow(_interface);
-            Dalamud.PluginInterface.UiBuilder.Draw += _windowSystem.Draw;
-            //FixedDesignManager.Flag((Human*)((Actor)Dalamud.ClientState.LocalPlayer?.Address).Pointer->GameObject.DrawObject, 0, &x);
+            Dalamud.PluginInterface.UiBuilder.Draw += _windowSystem.Draw; 
+            Ipc = new GlamourerIpc(this, Dalamud.ClientState, Dalamud.Objects, Dalamud.PluginInterface);
         }
         catch
         {
@@ -113,6 +111,7 @@ public class Glamourer : IDalamudPlugin
 
     public void Dispose()
     {
+        Ipc?.Dispose();
         _drawObjectManager?.Dispose();
         RedrawManager?.Dispose();
         if (_windowSystem != null)

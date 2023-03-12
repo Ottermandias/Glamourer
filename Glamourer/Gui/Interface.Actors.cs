@@ -64,7 +64,7 @@ internal partial class Interface
                 return;
 
             if (_currentData.Valid)
-                _currentSave.Update(_currentData.Objects[0]);
+                _currentSave.Initialize(_currentData.Objects[0]);
 
             RevertButton();
             if (_main._customizationDrawer.Draw(_currentSave.Customize(), _identifier.Type == IdentifierType.Special))
@@ -92,6 +92,11 @@ internal partial class Interface
                     _activeDesigns.ChangeStain(_currentSave, EquipSlot.OffHand, stainOff.RowIndex, false);
                 ImGui.SameLine();
                 _main._equipmentDrawer.DrawOffhand(currentOff, main.Type, out var off);
+            }
+
+            if (_main._equipmentDrawer.DrawVisor(_currentSave, out var value))
+            {
+                _activeDesigns.ChangeVisor(_currentSave, value, false);
             }
         }
 

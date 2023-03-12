@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Dalamud.Interface;
-using Dalamud.Utility;
 using Glamourer.Designs;
+using Glamourer.State;
 using Glamourer.Util;
 using ImGuiNET;
 using OtterGui;
@@ -51,7 +51,7 @@ public class EquipmentDrawer
         if (slot.IsAccessory())
             return gear.Name;
 
-        var (changed, _) = _items.RestrictedGear.ResolveRestricted(gear.Model, slot, race, gender);
+        var (changed, _) = _items.ResolveRestrictedGear(gear.Model, slot, race, gender);
         if (changed)
             return gear.Name + " (Restricted)";
 
@@ -136,26 +136,51 @@ public class EquipmentDrawer
     }
 
     public bool DrawApply(Design design, EquipSlot slot, out bool enabled)
-    {
-        enabled = design.DoApplyEquip(slot);
-        var tmp = enabled;
-        if (!ImGuiUtil.Checkbox($"##apply{slot}", string.Empty, enabled, v => tmp = v))
-            return false;
-
-        var change = enabled != tmp;
-        enabled = tmp;
-        return change;
-    }
+        => DrawCheckbox($"##apply{slot}", design.DoApplyEquip(slot), out enabled);
 
     public bool DrawApplyStain(Design design, EquipSlot slot, out bool enabled)
-    {
-        enabled = design.DoApplyStain(slot);
-        var tmp = enabled;
-        if (!ImGuiUtil.Checkbox($"##applyStain{slot}", string.Empty, enabled, v => tmp = v))
-            return false;
+        => DrawCheckbox($"##applyStain{slot}", design.DoApplyStain(slot), out enabled);
 
-        var change = enabled != tmp;
-        enabled = tmp;
-        return change;
+    private static bool DrawCheckbox(string label, bool value, out bool on)
+    {
+        var ret = ImGuiUtil.Checkbox(label, string.Empty, value, v => value = v);
+        on = value;
+        return ret;
     }
+
+    public bool DrawVisor(Design design, out bool on)
+        => DrawCheckbox("##visorToggled", design.Visor.ForcedValue, out on);
+
+    public bool DrawVisor(ActiveDesign design, out bool on)
+        => DrawCheckbox("##visorToggled", design.IsVisorToggled, out on);
+
+    public bool DrawHat(Design design, out bool on)
+        => DrawCheckbox("##hatVisible", design.Hat.ForcedValue, out on);
+
+    public bool DrawHat(ActiveDesign design, out bool on)
+        => DrawCheckbox("##hatVisible", design.IsHatVisible, out on);
+
+    public bool DrawWeapon(Design design, out bool on)
+        => DrawCheckbox("##weaponVisible", design.Weapon.ForcedValue, out on);
+
+    public bool DrawWeapon(ActiveDesign design, out bool on)
+        => DrawCheckbox("##weaponVisible", design.IsWeaponVisible, out on);
+
+    public bool DrawWetness(Design design, out bool on)
+        => DrawCheckbox("##wetness", design.Wetness.ForcedValue, out on);
+
+    public bool DrawWetness(ActiveDesign design, out bool on)
+        => DrawCheckbox("##wetnessVisible", design.IsWet, out on);
+
+    public bool DrawApplyVisor(Design design, out bool on)
+        => DrawCheckbox("##applyVisor", design.Visor.Enabled, out on);
+
+    public bool DrawApplyWetness(Design design, out bool on)
+        => DrawCheckbox("##applyWetness", design.Wetness.Enabled, out on);
+
+    public bool DrawApplyHatState(Design design, out bool on)
+        => DrawCheckbox("##applyHatState", design.Hat.Enabled, out on);
+
+    public bool DrawApplyWeaponState(Design design, out bool on)
+        => DrawCheckbox("##applyWeaponState", design.Weapon.Enabled, out on);
 }

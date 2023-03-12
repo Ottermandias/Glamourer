@@ -1,4 +1,6 @@
-﻿using Glamourer.Customization;
+﻿using System;
+using System.Linq;
+using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Interop;
 using Penumbra.Api.Enums;
@@ -27,12 +29,11 @@ public sealed partial class ActiveDesign : DesignBase
     private ActiveDesign(ActorIdentifier identifier)
         => Identifier = identifier;
 
-    private ActiveDesign(ActorIdentifier identifier, Actor actor)
+    public ActiveDesign(ActorIdentifier identifier, Actor actor)
     {
         Identifier = identifier;
-        Update(actor);
+        Initialize(actor);
     }
-
 
     //public void ApplyToActor(Actor actor)
     //{
@@ -64,7 +65,7 @@ public sealed partial class ActiveDesign : DesignBase
     //        RedrawManager.SetVisor(actor.DrawObject.Pointer, actor.VisorEnabled);
     //}
     //
-    public void Update(Actor actor)
+    public void Initialize(Actor actor)
     {
         if (!actor)
             return;
@@ -101,5 +102,14 @@ public sealed partial class ActiveDesign : DesignBase
             UpdateOffhand(actor.OffHand);
             SetStain(EquipSlot.OffHand, actor.OffHand.Stain);
         }
+
+        var visor = Interop.Interop.GetVisorState(actor.DrawObject);
+        if (IsVisorToggled != visor)
+            IsVisorToggled = visor;
     }
+
+    public string CreateOldBase64()
+        => CreateOldBase64(in CharacterData, EquipFlagExtensions.All, CustomizeFlagExtensions.All, IsWet, IsHatVisible, true,
+            IsVisorToggled,
+            true, IsWeaponVisible, true, false, 1f);
 }

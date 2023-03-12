@@ -1,6 +1,8 @@
 ﻿using System;
 using Glamourer.Customization;
 using Glamourer.Util;
+using OtterGui.Classes;
+using OtterGui;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -74,11 +76,12 @@ public class DesignBase
         };
     }
 
+
     public Weapon WeaponMain
         => new(MainhandName, MainHand, CharacterData.MainHand, MainhandType);
 
     public Weapon WeaponOff
-        => Designs.Weapon.Offhand(OffhandName, OffHand, CharacterData.OffHand, MainhandType);
+        => Weapon.Offhand(OffhandName, OffHand, CharacterData.OffHand, MainhandType);
 
     public CustomizeValue GetCustomize(CustomizeIndex idx)
         => Customize()[idx];
@@ -108,7 +111,6 @@ public class DesignBase
     protected bool UpdateArmor(EquipSlot slot, CharacterArmor armor, bool force)
     {
         if (!force)
-        {
             switch (slot)
             {
                 case EquipSlot.Head when CharacterData.Head.Value == armor.Value:       return false;
@@ -122,7 +124,6 @@ public class DesignBase
                 case EquipSlot.RFinger when CharacterData.RFinger.Value == armor.Value: return false;
                 case EquipSlot.LFinger when CharacterData.LFinger.Value == armor.Value: return false;
             }
-        }
 
         var (valid, id, name) = Glamourer.Items.Identify(slot, armor.Set, armor.Variant);
         if (!valid)
@@ -328,5 +329,124 @@ public class DesignBase
                 return changes;
             default: return false;
         }
+    }
+
+    protected const int Base64Size = 89;
+
+    public static CharacterData MigrateBase64(string base64, out EquipFlag equipFlags, out CustomizeFlag customizeFlags,
+        out bool writeProtected, out QuadBool wet, out QuadBool hat, out QuadBool visor, out QuadBool weapon)
+    {
+        static void CheckSize(int length, int requiredLength)
+        {
+            if (length != requiredLength)
+                throw new Exception(
+                    $"Can not parse Base64 string into CharacterSave:\n\tInvalid size {length} instead of {requiredLength}.");
+        }
+
+        byte   applicationFlags;
+        ushort equipFlagsS;
+        var    bytes = Convert.FromBase64String(base64);
+        hat    = QuadBool.Null;
+        visor  = QuadBool.Null;
+        weapon = QuadBool.Null;
+        switch (bytes[0])
+        {
+            case 1:
+            {
+                CheckSize(bytes.Length, 86);
+                applicationFlags = bytes[1];
+                equipFlagsS      = BitConverter.ToUInt16(bytes, 2);
+                break;
+            }
+            case 2:
+            {
+                CheckSize(bytes.Length, Base64Size);
+                applicationFlags = bytes[1];
+                equipFlagsS      = BitConverter.ToUInt16(bytes, 2);
+                hat              = hat.SetValue((bytes[90] & 0x01) == 0);
+                visor            = visor.SetValue((bytes[90] & 0x10) != 0);
+                weapon           = weapon.SetValue((bytes[90] & 0x02) == 0);
+                break;
+            }
+            default: throw new Exception($"Can not parse Base64 string into design for migration:\n\tInvalid Version {bytes[0]}.");
+        }
+
+        customizeFlags = (applicationFlags & 0x01) != 0 ? CustomizeFlagExtensions.All : 0;
+        wet            = (applicationFlags & 0x02) != 0 ? QuadBool.True : QuadBool.NullFalse;
+        hat            = hat.SetEnabled((applicationFlags & 0x04) != 0);
+        weapon         = weapon.SetEnabled((applicationFlags & 0x08) != 0);
+        visor          = visor.SetEnabled((applicationFlags & 0x10) != 0);
+        writeProtected = (applicationFlags & 0x20) != 0;
+
+        equipFlags =  0;
+        equipFlags |= (equipFlagsS & 0x0001) != 0 ? EquipFlag.Mainhand | EquipFlag.MainhandStain : 0;
+        equipFlags |= (equipFlagsS & 0x0002) != 0 ? EquipFlag.Offhand | EquipFlag.OffhandStain : 0;
+        var flag = 0x0002u;
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+        {
+            flag       <<= 1;
+            equipFlags |=  (equipFlagsS & flag) != 0 ? slot.ToFlag() | slot.ToStainFlag() : 0;
+        }
+
+        var data = new CharacterData();
+        unsafe
+        {
+            fixed (byte* ptr = bytes)
+            {
+                data.CustomizeData.Read(ptr + 4);
+                var cur = (CharacterWeapon*)(ptr + 30);
+                data.MainHand = cur[0];
+                data.OffHand  = cur[1];
+                var eq = (CharacterArmor*)(cur + 2);
+                foreach (var (slot, idx) in EquipSlotExtensions.EqdpSlots.WithIndex())
+                    data.Equipment[slot] = eq[idx];
+            }
+        }
+
+        return data;
+    }
+
+    public static unsafe string CreateOldBase64(in CharacterData save, EquipFlag equipFlags, CustomizeFlag customizeFlags, bool wet, bool hat,
+        bool setHat, bool visor, bool setVisor, bool weapon, bool setWeapon, bool writeProtected, float alpha)
+    {
+        var data = stackalloc byte[Base64Size];
+        data[0] = 2;
+        data[1] = (byte)((customizeFlags == CustomizeFlagExtensions.All ? 0x01 : 0)
+          | (wet ? 0x02 : 0)
+          | (setHat ? 0x04 : 0)
+          | (setWeapon ? 0x08 : 0)
+          | (setVisor ? 0x10 : 0)
+          | (writeProtected ? 0x20 : 0));
+        data[2] = (byte)((equipFlags.HasFlag(EquipFlag.Mainhand) ? 0x01 : 0)
+          | (equipFlags.HasFlag(EquipFlag.Offhand) ? 0x02 : 0)
+          | (equipFlags.HasFlag(EquipFlag.Head) ? 0x04 : 0)
+          | (equipFlags.HasFlag(EquipFlag.Body) ? 0x08 : 0)
+          | (equipFlags.HasFlag(EquipFlag.Hands) ? 0x10 : 0)
+          | (equipFlags.HasFlag(EquipFlag.Legs) ? 0x20 : 0)
+          | (equipFlags.HasFlag(EquipFlag.Feet) ? 0x40 : 0)
+          | (equipFlags.HasFlag(EquipFlag.Ears) ? 0x80 : 0));
+        data[3] = (byte)((equipFlags.HasFlag(EquipFlag.Neck) ? 0x01 : 0)
+          | (equipFlags.HasFlag(EquipFlag.Wrist) ? 0x02 : 0)
+          | (equipFlags.HasFlag(EquipFlag.RFinger) ? 0x04 : 0)
+          | (equipFlags.HasFlag(EquipFlag.LFinger) ? 0x08 : 0));
+        save.CustomizeData.Write(data + 4);
+        ((CharacterWeapon*)(data + 30))[0] = save.MainHand;
+        ((CharacterWeapon*)(data + 30))[1] = save.OffHand;
+        ((CharacterArmor*)(data + 44))[0]  = save.Head;
+        ((CharacterArmor*)(data + 44))[1]  = save.Body;
+        ((CharacterArmor*)(data + 44))[2]  = save.Hands;
+        ((CharacterArmor*)(data + 44))[3]  = save.Legs;
+        ((CharacterArmor*)(data + 44))[4]  = save.Feet;
+        ((CharacterArmor*)(data + 44))[5]  = save.Ears;
+        ((CharacterArmor*)(data + 44))[6]  = save.Neck;
+        ((CharacterArmor*)(data + 44))[7]  = save.Wrists;
+        ((CharacterArmor*)(data + 44))[8]  = save.RFinger;
+        ((CharacterArmor*)(data + 44))[9]  = save.LFinger;
+        *(float*)(data + 84)               = 1f;
+        data[88] = (byte)((hat ? 0x01 : 0)
+          | (visor ? 0x10 : 0)
+          | (weapon ? 0x02 : 0));
+
+        return Convert.ToBase64String(new Span<byte>(data, Base64Size));
     }
 }

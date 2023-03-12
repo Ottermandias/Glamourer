@@ -34,6 +34,8 @@ public enum EquipFlag : uint
 
 public static class EquipFlagExtensions
 {
+    public const EquipFlag All = (EquipFlag)(((uint)EquipFlag.OffhandStain << 1) - 1);
+
     public static EquipFlag ToFlag(this EquipSlot slot)
         => slot switch
         {

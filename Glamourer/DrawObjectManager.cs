@@ -36,7 +36,7 @@ public class DrawObjectManager : IDisposable
     private void FixEquipment(DrawObject drawObject, EquipSlot slot, ref CharacterArmor item)
     {
         var customize = drawObject.Customize;
-        var (changed, newArmor) = _items.RestrictedGear.ResolveRestricted(item, slot, customize.Race, customize.Gender);
+        var (changed, newArmor) = _items.ResolveRestrictedGear(item, slot, customize.Race, customize.Gender);
         if (!changed)
             return;
 
@@ -54,7 +54,7 @@ public class DrawObjectManager : IDisposable
         if (gameObject.ModelId != modelId)
             return;
 
-        var identifier = _actors.FromObject((GameObject*)gameObjectPtr, out _, true, true);
+        var identifier = _actors.FromObject((GameObject*)gameObjectPtr, out _, true, true, false);
         if (!identifier.IsValid || !_manager.TryGetValue(identifier, out var design))
             return;
 
@@ -75,7 +75,7 @@ public class DrawObjectManager : IDisposable
             foreach (var slot in EquipSlotExtensions.EquipmentSlots)
             {
                 (_, equip[slot]) =
-                    Glamourer.Items.RestrictedGear.ResolveRestricted(saveEquip[slot], slot, customize.Race, customize.Gender);
+                    Glamourer.Items.ResolveRestrictedGear(saveEquip[slot], slot, customize.Race, customize.Gender);
             }
         }
     }

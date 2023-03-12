@@ -21,50 +21,50 @@ public partial class Design : DesignBase
     public string[]       Tags         { get; private set; } = Array.Empty<string>();
     public int            Index        { get; private set; }
 
-    private EquipFlag     _applyEquip;
-    private CustomizeFlag _applyCustomize;
-    public  QuadBool      Wetness        { get; private set; } = QuadBool.NullFalse;
-    public  QuadBool      Visor          { get; private set; } = QuadBool.NullFalse;
-    public  QuadBool      Hat            { get; private set; } = QuadBool.NullFalse;
-    public  QuadBool      Weapon         { get; private set; } = QuadBool.NullFalse;
-    public  bool          WriteProtected { get; private set; }
+    public EquipFlag     ApplyEquip     { get; private set; }
+    public CustomizeFlag ApplyCustomize { get; private set; }
+    public QuadBool      Wetness        { get; private set; } = QuadBool.NullFalse;
+    public QuadBool      Visor          { get; private set; } = QuadBool.NullFalse;
+    public QuadBool      Hat            { get; private set; } = QuadBool.NullFalse;
+    public QuadBool      Weapon         { get; private set; } = QuadBool.NullFalse;
+    public bool          WriteProtected { get; private set; }
 
     public bool DoApplyEquip(EquipSlot slot)
-        => _applyEquip.HasFlag(slot.ToFlag());
+        => ApplyEquip.HasFlag(slot.ToFlag());
 
     public bool DoApplyStain(EquipSlot slot)
-        => _applyEquip.HasFlag(slot.ToStainFlag());
+        => ApplyEquip.HasFlag(slot.ToStainFlag());
 
     public bool DoApplyCustomize(CustomizeIndex idx)
-        => _applyCustomize.HasFlag(idx.ToFlag());
+        => ApplyCustomize.HasFlag(idx.ToFlag());
 
     private bool SetApplyEquip(EquipSlot slot, bool value)
     {
-        var newValue = value ? _applyEquip | slot.ToFlag() : _applyEquip & ~slot.ToFlag();
-        if (newValue == _applyEquip)
+        var newValue = value ? ApplyEquip | slot.ToFlag() : ApplyEquip & ~slot.ToFlag();
+        if (newValue == ApplyEquip)
             return false;
 
-        _applyEquip = newValue;
+        ApplyEquip = newValue;
         return true;
     }
 
     private bool SetApplyStain(EquipSlot slot, bool value)
     {
-        var newValue = value ? _applyEquip | slot.ToStainFlag() : _applyEquip & ~slot.ToStainFlag();
-        if (newValue == _applyEquip)
+        var newValue = value ? ApplyEquip | slot.ToStainFlag() : ApplyEquip & ~slot.ToStainFlag();
+        if (newValue == ApplyEquip)
             return false;
 
-        _applyEquip = newValue;
+        ApplyEquip = newValue;
         return true;
     }
 
     private bool SetApplyCustomize(CustomizeIndex idx, bool value)
     {
-        var newValue = value ? _applyCustomize | idx.ToFlag() : _applyCustomize & ~idx.ToFlag();
-        if (newValue == _applyCustomize)
+        var newValue = value ? ApplyCustomize | idx.ToFlag() : ApplyCustomize & ~idx.ToFlag();
+        if (newValue == ApplyCustomize)
             return false;
 
-        _applyCustomize = newValue;
+        ApplyCustomize = newValue;
         return true;
     }
 
@@ -104,7 +104,8 @@ public partial class Design : DesignBase
         {
             [nameof(MainHand)] =
                 Serialize(MainHand, CharacterData.MainHand.Stain, DoApplyEquip(EquipSlot.MainHand), DoApplyStain(EquipSlot.MainHand)),
-            [nameof(OffHand)] = Serialize(OffHand, CharacterData.OffHand.Stain, DoApplyEquip(EquipSlot.OffHand), DoApplyStain(EquipSlot.OffHand)),
+            [nameof(OffHand)] = Serialize(OffHand, CharacterData.OffHand.Stain, DoApplyEquip(EquipSlot.OffHand),
+                DoApplyStain(EquipSlot.OffHand)),
         };
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
@@ -258,82 +259,41 @@ public partial class Design : DesignBase
         return false;
     }
 
-
     public void MigrateBase64(string base64)
     {
-        static void CheckSize(int length, int requiredLength)
-        {
-            if (length != requiredLength)
-                throw new Exception(
-                    $"Can not parse Base64 string into CharacterSave:\n\tInvalid size {length} instead of {requiredLength}.");
-        }
-
-        var bytes = Convert.FromBase64String(base64);
-
-        byte   applicationFlags;
-        ushort equipFlags;
-
-        switch (bytes[0])
-        {
-            case 1:
-            {
-                CheckSize(bytes.Length, 86);
-                applicationFlags = bytes[1];
-                equipFlags       = BitConverter.ToUInt16(bytes, 2);
-                break;
-            }
-            case 2:
-            {
-                CheckSize(bytes.Length, 91);
-                applicationFlags = bytes[1];
-                equipFlags       = BitConverter.ToUInt16(bytes, 2);
-                Hat              = Hat.SetValue((bytes[90] & 0x01) == 0);
-                Visor            = Visor.SetValue((bytes[90] & 0x10) != 0);
-                Weapon           = Weapon.SetValue((bytes[90] & 0x02) == 0);
-                break;
-            }
-            default: throw new Exception($"Can not parse Base64 string into design for migration:\n\tInvalid Version {bytes[0]}.");
-        }
-
-        _applyCustomize = (applicationFlags & 0x01) != 0 ? CustomizeFlagExtensions.All : 0;
-        Wetness         = (applicationFlags & 0x02) != 0 ? QuadBool.True : QuadBool.NullFalse;
-        Hat             = Hat.SetEnabled((applicationFlags & 0x04) != 0);
-        Weapon          = Weapon.SetEnabled((applicationFlags & 0x08) != 0);
-        Visor           = Visor.SetEnabled((applicationFlags & 0x10) != 0);
-        WriteProtected  = (applicationFlags & 0x20) != 0;
-
-        CharacterData.ModelId = 0;
-
-        SetApplyEquip(EquipSlot.MainHand, (equipFlags & 0x0001) != 0);
-        SetApplyEquip(EquipSlot.OffHand,  (equipFlags & 0x0002) != 0);
-        SetApplyStain(EquipSlot.MainHand, (equipFlags & 0x0001) != 0);
-        SetApplyStain(EquipSlot.OffHand,  (equipFlags & 0x0002) != 0);
-        var flag = 0x0002u;
+        var data = MigrateBase64(base64, out var applyEquip, out var applyCustomize, out var writeProtected, out var wet, out var hat,
+            out var visor,               out var weapon);
+        UpdateMainhand(data.MainHand);
+        UpdateMainhand(data.OffHand);
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
-        {
-            flag <<= 1;
-            var apply = (equipFlags & flag) != 0;
-            SetApplyEquip(slot, apply);
-            SetApplyStain(slot, apply);
-        }
-        unsafe
-        {
-            fixed (byte* ptr = bytes)
-            {
-                CharacterData.CustomizeData.Read(ptr + 4);
-                var cur = (CharacterWeapon*)(ptr + 30);
-
-                UpdateMainhand(cur[0]);
-                SetStain(EquipSlot.MainHand, cur[0].Stain);
-                UpdateOffhand(cur[1]);
-                SetStain(EquipSlot.OffHand, cur[1].Stain);
-                var eq = (CharacterArmor*)(cur + 2);
-                foreach (var (slot, idx) in EquipSlotExtensions.EqdpSlots.WithIndex())
-                {
-                    UpdateArmor(slot, eq[idx], true);
-                    SetStain(slot, eq[idx].Stain);
-                }
-            }
-        }
+            UpdateArmor(slot, data.Equipment[slot], true);
+        CharacterData.CustomizeData = data.CustomizeData;
+        ApplyEquip                  = applyEquip;
+        ApplyCustomize              = applyCustomize;
+        WriteProtected              = writeProtected;
+        Wetness                     = wet;
+        Hat                         = hat;
+        Visor                       = visor;
+        Weapon                      = weapon;
     }
+
+    public static Design CreateTemporaryFromBase64(string base64, bool customize, bool equip)
+    {
+        var ret = new Design();
+        ret.MigrateBase64(base64);
+        if (!customize)
+            ret.ApplyCustomize = 0;
+        if (!equip)
+            ret.ApplyEquip = 0;
+        ret.Wetness = ret.Wetness.SetEnabled(customize);
+        ret.Visor   = ret.Visor.SetEnabled(equip);
+        ret.Hat     = ret.Hat.SetEnabled(equip);
+        ret.Weapon  = ret.Weapon.SetEnabled(equip);
+        return ret;
+    }
+
+    // Outdated.
+    public string CreateOldBase64()
+        => CreateOldBase64(in CharacterData, ApplyEquip,    ApplyCustomize,     Wetness == QuadBool.True, Hat.ForcedValue, Hat.Enabled,
+            Visor.ForcedValue,               Visor.Enabled, Weapon.ForcedValue, Weapon.Enabled,           WriteProtected,  1f);
 }

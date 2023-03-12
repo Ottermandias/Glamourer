@@ -4,7 +4,9 @@ using Glamourer.Interop;
 using Penumbra.GameData.Actors;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Api;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -65,18 +67,56 @@ public sealed partial class ActiveDesign
 
         public unsafe ActiveDesign GetOrCreateSave(Actor actor)
         {
-            var id = _actors.FromObject((GameObject*)actor.Pointer, out _, false, false);
+            var id = _actors.FromObject((GameObject*)actor.Pointer, out _, false, false, false);
             if (_characterSaves.TryGetValue(id, out var save))
             {
-                save.Update(actor);
+                save.Initialize(actor);
                 return save;
             }
 
             id   = id.CreatePermanent();
             save = new ActiveDesign(id, actor);
-            save.Update(actor);
+            save.Initialize(actor);
             _characterSaves.Add(id, save);
             return save;
+        }
+
+        public void SetWetness(ActiveDesign design, bool wet, bool fromFixed)
+            => design.IsWet = wet;
+
+        public void SetHatVisible(ActiveDesign design, bool visible, bool fromFixed)
+            => design.IsHatVisible = visible;
+
+        public void SetVisor(ActiveDesign design, bool toggled, bool fromFixed)
+            => design.IsVisorToggled = toggled;
+
+        public void SetWeaponVisible(ActiveDesign design, bool visible, bool fromFixed)
+            => design.IsWeaponVisible = visible;
+
+        public unsafe void ApplyDesign(ActiveDesign to, Design from, bool fromFixed)
+        {
+            if (to.ModelId != from.ModelId)
+                return;
+
+            if (from.DoApplyEquip(EquipSlot.MainHand))
+                ChangeMainHand(to, from.MainHand, fromFixed);
+                    
+            if (from.DoApplyEquip(EquipSlot.OffHand))
+                ChangeOffHand(to, from.OffHand, fromFixed);
+
+            foreach (var slot in EquipSlotExtensions.EqdpSlots.Where(from.DoApplyEquip))
+                ChangeEquipment(to, slot, from.Armor(slot), fromFixed);
+
+            ChangeCustomize(to, from.ApplyCustomize, *from.Customize().Data, fromFixed);
+
+            if (from.Wetness.Enabled)
+                SetWetness(to, from.Wetness.ForcedValue, fromFixed);
+            if (from.Hat.Enabled)
+                SetHatVisible(to, from.Hat.ForcedValue, fromFixed);
+            if (from.Visor.Enabled)
+                SetVisor(to, from.Visor.ForcedValue, fromFixed);
+            if (from.Weapon.Enabled)
+                SetWeaponVisible(to, from.Weapon.ForcedValue, fromFixed);
         }
 
         public void RevertDesign(ActiveDesign design)
@@ -88,6 +128,12 @@ public sealed partial class ActiveDesign
             RevertMainHand(design);
             RevertOffHand(design);
         }
+
+        public void ChangeMainHand(ActiveDesign design, uint itemId, bool fromFixed)
+            => design.SetMainhand(itemId);
+
+        public void ChangeOffHand(ActiveDesign design, uint itemId, bool fromFixed)
+            => design.SetOffhand(itemId);
 
         public void RevertMainHand(ActiveDesign design)
         { }
@@ -206,6 +252,21 @@ public sealed partial class ActiveDesign
 
             foreach (var obj in data.Objects)
                 _interop.UpdateStain(obj.DrawObject, slot, stain);
+        }
+
+        public void ChangeVisor(ActiveDesign design, bool on, bool fromFixed)
+        {
+            var current = design.IsVisorToggled;
+            if (current == on)
+                return;
+
+            design.IsVisorToggled = on;
+            _objects.Update();
+            if (!_objects.TryGetValue(design.Identifier, out var data))
+                return;
+
+            foreach (var obj in data.Objects) 
+                Interop.Interop.SetVisorState(obj.DrawObject, on);
         }
     }
 }

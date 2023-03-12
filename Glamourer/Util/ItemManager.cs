@@ -10,6 +10,7 @@ using Penumbra.GameData;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Race = Penumbra.GameData.Enums.Race;
 
 namespace Glamourer.Util;
 
@@ -41,6 +42,14 @@ public class ItemManager : IDisposable
         Items.Dispose();
         Identifier.Dispose();
         RestrictedGear.Dispose();
+    }
+
+    public (bool, CharacterArmor) ResolveRestrictedGear(CharacterArmor armor, EquipSlot slot, Race race, Gender gender)
+    {
+        if (Glamourer.Config.UseRestrictedGearProtection)
+            return RestrictedGear.ResolveRestricted(armor, slot, race, gender);
+
+        return (false, armor);
     }
 
     public readonly Item DefaultSword;

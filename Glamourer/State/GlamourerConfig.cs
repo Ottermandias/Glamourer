@@ -1,47 +1,47 @@
 ﻿using System.Collections.Generic;
 using Dalamud.Configuration;
 
-namespace Glamourer.State
+namespace Glamourer.State;
+
+public class GlamourerConfig : IPluginConfiguration
 {
-    public class GlamourerConfig : IPluginConfiguration
+    public class FixedDesign
     {
-        public class FixedDesign
-        {
-            public string Name = string.Empty;
-            public string Path = string.Empty;
-            public uint JobGroups;
-            public bool Enabled;
-        }
+        public string Name = string.Empty;
+        public string Path = string.Empty;
+        public uint   JobGroups;
+        public bool   Enabled;
+    }
 
-        public int Version { get; set; } = 1;
+    public int Version { get; set; } = 1;
 
-        public const uint DefaultCustomizationColor = 0xFFC000C0;
-        public const uint DefaultStateColor = 0xFF00C0C0;
-        public const uint DefaultEquipmentColor = 0xFF00C000;
+    public const uint DefaultCustomizationColor = 0xFFC000C0;
+    public const uint DefaultStateColor         = 0xFF00C0C0;
+    public const uint DefaultEquipmentColor     = 0xFF00C000;
 
-        public bool FoldersFirst { get; set; } = false;
-        public bool ColorDesigns { get; set; } = true;
-        public bool ShowLocks { get; set; } = true;
-        public bool AttachToPenumbra { get; set; } = true;
-        public bool ApplyFixedDesigns { get; set; } = true;
+    public bool UseRestrictedGearProtection { get; set; } = true;
 
-        public uint CustomizationColor { get; set; } = DefaultCustomizationColor;
-        public uint StateColor { get; set; } = DefaultStateColor;
-        public uint EquipmentColor { get; set; } = DefaultEquipmentColor;
+    public bool FoldersFirst      { get; set; } = false;
+    public bool ColorDesigns      { get; set; } = true;
+    public bool ShowLocks         { get; set; } = true;
+    public bool ApplyFixedDesigns { get; set; } = true;
 
-        public List<FixedDesign> FixedDesigns { get; set; } = new();
+    public uint CustomizationColor { get; set; } = DefaultCustomizationColor;
+    public uint StateColor         { get; set; } = DefaultStateColor;
+    public uint EquipmentColor     { get; set; } = DefaultEquipmentColor;
 
-        public void Save()
-            => Dalamud.PluginInterface.SavePluginConfig(this);
+    public List<FixedDesign> FixedDesigns { get; set; } = new();
 
-        public static GlamourerConfig Load()
-        {
-            if (Dalamud.PluginInterface.GetPluginConfig() is GlamourerConfig config)
-                return config;
+    public void Save()
+        => Dalamud.PluginInterface.SavePluginConfig(this);
 
-            config = new GlamourerConfig();
-            config.Save();
+    public static GlamourerConfig Load()
+    {
+        if (Dalamud.PluginInterface.GetPluginConfig() is GlamourerConfig config)
             return config;
-        }
+
+        config = new GlamourerConfig();
+        config.Save();
+        return config;
     }
 }

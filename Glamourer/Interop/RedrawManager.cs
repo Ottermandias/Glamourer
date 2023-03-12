@@ -20,11 +20,82 @@ public partial class Interop : IDisposable
     {
         SignatureHelper.Initialise(this);
         _changeJobHook.Enable();
+        _flagSlotForUpdateHook.Enable();
+        _setupVisorHook.Enable();
     }
 
     public void Dispose()
     {
         _changeJobHook.Dispose();
+        _flagSlotForUpdateHook.Dispose();
+        _setupVisorHook.Dispose();
+    }
+
+    public static unsafe bool GetVisorState(nint humanPtr)
+    {
+        if (humanPtr == IntPtr.Zero)
+            return false;
+
+        var data  = (Human*)humanPtr;
+        var flags = &data->CharacterBase.UnkFlags_01;
+        return (*flags & Offsets.DrawObjectVisorStateFlag) != 0;
+    }
+
+    public static unsafe void SetVisorState(nint humanPtr, bool on)
+    {
+        if (humanPtr == IntPtr.Zero)
+            return;
+
+        var data  = (Human*)humanPtr;
+        var flags = &data->CharacterBase.UnkFlags_01;
+        var state = (*flags & Offsets.DrawObjectVisorStateFlag) != 0;
+        if (state == on)
+            return;
+
+        var newFlag = (byte)(on ? *flags | Offsets.DrawObjectVisorStateFlag : *flags & ~Offsets.DrawObjectVisorStateFlag);
+        *flags = (byte)(newFlag | Offsets.DrawObjectVisorToggleFlag);
+    }
+}
+
+public partial class Interop
+{
+    private delegate void UpdateVisorDelegateInternal(nint humanPtr, ushort modelId, bool on);
+    public delegate  void UpdateVisorDelegate(DrawObject human, SetId modelId, ref bool on);
+
+    [Signature(Penumbra.GameData.Sigs.SetupVisor, DetourName = nameof(SetupVisorDetour))]
+    private readonly Hook<UpdateVisorDelegateInternal> _setupVisorHook = null!;
+
+    public event UpdateVisorDelegate? VisorUpdate;
+
+    private void SetupVisorDetour(nint humanPtr, ushort modelId, bool on)
+    {
+        InvokeVisorEvent(humanPtr, modelId, ref on);
+        _setupVisorHook.Original(humanPtr, modelId, on);
+    }
+
+    private void InvokeVisorEvent(DrawObject drawObject, SetId modelId, ref bool on)
+    {
+        if (VisorUpdate == null)
+        {
+            Glamourer.Log.Verbose($"Visor setup on 0x{drawObject.Address:X} with {modelId.Value}, setting to {on}.");
+            return;
+        }
+
+        var initialValue = on;
+        foreach (var del in VisorUpdate.GetInvocationList().OfType<UpdateVisorDelegate>())
+        {
+            try
+            {
+                del(drawObject, modelId, ref on);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Log.Error($"Could not invoke {nameof(VisorUpdate)} Subscriber:\n{ex}");
+            }
+        }
+
+        Glamourer.Log.Verbose(
+            $"Visor setup on 0x{drawObject.Address:X} with {modelId.Value}, setting to {on}, initial call was {initialValue}.");
     }
 }
 
@@ -64,8 +135,13 @@ public unsafe partial class Interop
     private void InvokeFlagSlotEvent(DrawObject drawObject, EquipSlot slot, ref CharacterArmor armor)
     {
         if (EquipUpdate == null)
+        {
+            Glamourer.Log.Verbose(
+                $"{slot} updated on 0x{drawObject.Address:X} to {armor.Set.Value}-{armor.Variant} with stain {armor.Stain.Value}.");
             return;
+        }
 
+        var iv = armor;
         foreach (var del in EquipUpdate.GetInvocationList().OfType<FlagSlotForUpdateDelegate>())
         {
             try
@@ -77,6 +153,9 @@ public unsafe partial class Interop
                 Glamourer.Log.Error($"Could not invoke {nameof(EquipUpdate)} Subscriber:\n{ex}");
             }
         }
+
+        Glamourer.Log.Verbose(
+            $"{slot} updated on 0x{drawObject.Address:X} to {armor.Set.Value}-{armor.Variant} with stain {armor.Stain.Value}, initial armor was {iv.Set.Value}-{iv.Variant} with stain {iv.Stain.Value}.");
     }
 }
 
@@ -122,8 +201,8 @@ public unsafe partial class RedrawManager : IDisposable
     public RedrawManager(FixedDesigns fixedDesigns, ActiveDesign.Manager stateManager)
     {
         SignatureHelper.Initialise(this);
-        _fixedDesigns                                  =  fixedDesigns;
-        _stateManager                                  =  stateManager;
+        _fixedDesigns = fixedDesigns;
+        _stateManager = stateManager;
         _flagSlotForUpdateHook.Enable();
         _loadWeaponHook.Enable();
     }
@@ -161,7 +240,7 @@ public unsafe partial class RedrawManager : IDisposable
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
                 (_, equip[slot]) =
-                    Glamourer.Items.RestrictedGear.ResolveRestricted(saveEquip[slot], slot, customize.Race, customize.Gender);
+                    Glamourer.Items.ResolveRestrictedGear(saveEquip[slot], slot, customize.Race, customize.Gender);
             }
         }
     }

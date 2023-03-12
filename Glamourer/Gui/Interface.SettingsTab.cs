@@ -43,19 +43,12 @@ internal partial class Interface
     private static void DrawRestorePenumbraButton()
     {
         const string buttonLabel = "Re-Register Penumbra";
-        if (!Glamourer.Config.AttachToPenumbra)
-        {
-            using var style = ImRaii.PushStyle(ImGuiStyleVar.Alpha, 0.5f);
-            ImGui.Button(buttonLabel);
-            return;
-        }
-
         // TODO
         //if (ImGui.Button(buttonLabel))
         //    Glamourer.Penumbra.Reattach(true);
 
-        ImGuiUtil.HoverTooltip(
-            "If Penumbra did not register the functions for some reason, pressing this button might help restore functionality.");
+        //ImGuiUtil.HoverTooltip(
+        //    "If Penumbra did not register the functions for some reason, pressing this button might help restore functionality.");
     }
 
     private static void DrawSettingsTab()
