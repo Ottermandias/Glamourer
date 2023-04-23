@@ -19,8 +19,8 @@ public partial class CustomizationDrawer
         ImGui.SameLine();
         using var group = ImRaii.Group();
         DrawRaceCombo();
-        var gender = Glamourer.Customization.GetName(CustomName.Gender);
-        var clan   = Glamourer.Customization.GetName(CustomName.Clan);
+        var gender = _service.AwaitedService.GetName(CustomName.Gender);
+        var clan   = _service.AwaitedService.GetName(CustomName.Clan);
         ImGui.TextUnformatted($"{gender} & {clan}");
     }
 
@@ -39,20 +39,20 @@ public partial class CustomizationDrawer
         if (!ImGuiUtil.DrawDisabledButton(icon.ToIconString(), _framedIconSize, string.Empty, icon == FontAwesomeIcon.MarsDouble, true))
             return;
 
-        Changed |= _customize.ChangeGender(CharacterEquip.Null, _customize.Gender is Gender.Male ? Gender.Female : Gender.Male);
+        Changed |= _customize.ChangeGender(CharacterEquip.Null, _customize.Gender is Gender.Male ? Gender.Female : Gender.Male, _items, _service.AwaitedService);
     }
 
     private void DrawRaceCombo()
     {
         ImGui.SetNextItemWidth(_raceSelectorWidth);
-        using var combo = ImRaii.Combo("##subRaceCombo", _customize.ClanName());
+        using var combo = ImRaii.Combo("##subRaceCombo", _customize.ClanName(_service.AwaitedService));
         if (!combo)
             return;
 
         foreach (var subRace in Enum.GetValues<SubRace>().Skip(1)) // Skip Unknown
         {
-            if (ImGui.Selectable(CustomizeExtensions.ClanName(subRace, _customize.Gender), subRace == _customize.Clan))
-                Changed |= _customize.ChangeRace(CharacterEquip.Null, subRace);
+            if (ImGui.Selectable(CustomizeExtensions.ClanName(_service.AwaitedService, subRace, _customize.Gender), subRace == _customize.Clan))
+                Changed |= _customize.ChangeRace(CharacterEquip.Null, subRace, _items, _service.AwaitedService);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using Glamourer.Customization;
+using Glamourer.Services;
 using Glamourer.Util;
 using ImGuiNET;
 using OtterGui;
@@ -7,31 +8,34 @@ using OtterGui.Raii;
 
 namespace Glamourer.Gui;
 
-internal partial class Interface
+public partial class Interface
 {
     private class DebugDataTab
     {
-        private readonly ICustomizationManager _mg;
+        private readonly CustomizationService _service;
 
-        public DebugDataTab(ICustomizationManager manager)
-            => _mg = manager;
+        public DebugDataTab(CustomizationService service)
+            => _service = service;
 
         public void Draw()
         {
+            if (!_service.Valid)
+                return;
+
             using var tab = ImRaii.TabItem("Debug");
             if (!tab)
                 return;
 
-            foreach (var clan in _mg.Clans)
+            foreach (var clan in _service.AwaitedService.Clans)
             {
-                foreach (var gender in _mg.Genders)
-                    DrawCustomizationInfo(_mg.GetList(clan, gender));
+                foreach (var gender in _service.AwaitedService.Genders)
+                    DrawCustomizationInfo(_service.AwaitedService.GetList(clan, gender));
             }
         }
 
-        public static void DrawCustomizationInfo(CustomizationSet set)
+        public void DrawCustomizationInfo(CustomizationSet set)
         {
-            if (!ImGui.CollapsingHeader($"{CustomizeExtensions.ClanName(set.Clan, set.Gender)} {set.Gender}"))
+            if (!ImGui.CollapsingHeader($"{CustomizeExtensions.ClanName(_service.AwaitedService, set.Clan, set.Gender)} {set.Gender}"))
                 return;
 
             using var table = ImRaii.Table("data", 5);

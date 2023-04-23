@@ -1,5 +1,6 @@
 ﻿using System;
 using Glamourer.Customization;
+using Glamourer.Services;
 using Glamourer.Util;
 using OtterGui.Classes;
 using OtterGui;
@@ -45,14 +46,14 @@ public class DesignBase
     public CharacterEquip Equipment()
         => CharacterData.Equipment;
 
-    public DesignBase()
+    public DesignBase(ItemManager items)
     {
-        MainHand = Glamourer.Items.DefaultSword.RowId;
+        MainHand = items.DefaultSword.RowId;
         (_, CharacterData.MainHand.Set, CharacterData.MainHand.Type, CharacterData.MainHand.Variant, MainhandName, MainhandType) =
-            Glamourer.Items.Resolve(MainHand, Glamourer.Items.DefaultSword);
+            items.Resolve(MainHand, items.DefaultSword);
         OffHand = ItemManager.NothingId(MainhandType.Offhand());
         (_, CharacterData.OffHand.Set, CharacterData.OffHand.Type, CharacterData.OffHand.Variant, OffhandName, _) =
-            Glamourer.Items.Resolve(OffHand, MainhandType);
+            items.Resolve(OffHand, MainhandType);
     }
 
     public uint ModelId
@@ -96,9 +97,9 @@ public class DesignBase
         return true;
     }
 
-    protected bool SetArmor(EquipSlot slot, uint itemId, Lumina.Excel.GeneratedSheets.Item? item = null)
+    protected bool SetArmor(ItemManager items, EquipSlot slot, uint itemId, Lumina.Excel.GeneratedSheets.Item? item = null)
     {
-        var (valid, set, variant, name) = Glamourer.Items.Resolve(slot, itemId, item);
+        var (valid, set, variant, name) = items.Resolve(slot, itemId, item);
         if (!valid)
             return false;
 
@@ -108,7 +109,7 @@ public class DesignBase
     protected bool SetArmor(EquipSlot slot, Item item)
         => SetArmor(slot, item.ModelBase, item.Variant, item.Name, item.ItemId);
 
-    protected bool UpdateArmor(EquipSlot slot, CharacterArmor armor, bool force)
+    protected bool UpdateArmor(ItemManager items, EquipSlot slot, CharacterArmor armor, bool force)
     {
         if (!force)
             switch (slot)
@@ -125,19 +126,19 @@ public class DesignBase
                 case EquipSlot.LFinger when CharacterData.LFinger.Value == armor.Value: return false;
             }
 
-        var (valid, id, name) = Glamourer.Items.Identify(slot, armor.Set, armor.Variant);
+        var (valid, id, name) = items.Identify(slot, armor.Set, armor.Variant);
         if (!valid)
             return false;
 
         return SetArmor(slot, armor.Set, armor.Variant, name, id);
     }
 
-    protected bool SetMainhand(uint mainId, Lumina.Excel.GeneratedSheets.Item? main = null)
+    protected bool SetMainhand(ItemManager items, uint mainId, Lumina.Excel.GeneratedSheets.Item? main = null)
     {
         if (mainId == MainHand)
             return false;
 
-        var (valid, set, weapon, variant, name, type) = Glamourer.Items.Resolve(mainId, main);
+        var (valid, set, weapon, variant, name, type) = items.Resolve(mainId, main);
         if (!valid)
             return false;
 
@@ -150,16 +151,16 @@ public class DesignBase
         CharacterData.MainHand.Type    = weapon;
         CharacterData.MainHand.Variant = variant;
         if (fixOffhand)
-            SetOffhand(ItemManager.NothingId(type.Offhand()));
+            SetOffhand(items, ItemManager.NothingId(type.Offhand()));
         return true;
     }
 
-    protected bool SetOffhand(uint offId, Lumina.Excel.GeneratedSheets.Item? off = null)
+    protected bool SetOffhand(ItemManager items, uint offId, Lumina.Excel.GeneratedSheets.Item? off = null)
     {
         if (offId == OffHand)
             return false;
 
-        var (valid, set, weapon, variant, name, type) = Glamourer.Items.Resolve(offId, MainhandType, off);
+        var (valid, set, weapon, variant, name, type) = items.Resolve(offId, MainhandType, off);
         if (!valid)
             return false;
 
@@ -171,12 +172,12 @@ public class DesignBase
         return true;
     }
 
-    protected bool UpdateMainhand(CharacterWeapon weapon)
+    protected bool UpdateMainhand(ItemManager items, CharacterWeapon weapon)
     {
         if (weapon.Value == CharacterData.MainHand.Value)
             return false;
 
-        var (valid, id, name, type) = Glamourer.Items.Identify(EquipSlot.MainHand, weapon.Set, weapon.Type, (byte)weapon.Variant);
+        var (valid, id, name, type) = items.Identify(EquipSlot.MainHand, weapon.Set, weapon.Type, (byte)weapon.Variant);
         if (!valid || id == MainHand)
             return false;
 
@@ -190,16 +191,16 @@ public class DesignBase
         CharacterData.MainHand.Variant = weapon.Variant;
         CharacterData.MainHand.Stain   = weapon.Stain;
         if (fixOffhand)
-            SetOffhand(ItemManager.NothingId(type.Offhand()));
+            SetOffhand(items, ItemManager.NothingId(type.Offhand()));
         return true;
     }
 
-    protected bool UpdateOffhand(CharacterWeapon weapon)
+    protected bool UpdateOffhand(ItemManager items, CharacterWeapon weapon)
     {
         if (weapon.Value == CharacterData.OffHand.Value)
             return false;
 
-        var (valid, id, name, _) = Glamourer.Items.Identify(EquipSlot.OffHand, weapon.Set, weapon.Type, (byte)weapon.Variant, MainhandType);
+        var (valid, id, name, _) = items.Identify(EquipSlot.OffHand, weapon.Set, weapon.Type, (byte)weapon.Variant, MainhandType);
         if (!valid || id == OffHand)
             return false;
 

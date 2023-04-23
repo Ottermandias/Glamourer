@@ -1,6 +1,7 @@
 ﻿using System;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
+using Dalamud.Plugin;
 using Glamourer.Interop;
 using Penumbra.Api;
 using Penumbra.Api.Enums;
@@ -8,11 +9,17 @@ using Penumbra.Api.Helpers;
 
 namespace Glamourer.Api;
 
+public class CommunicatorService
+{
+
+}
+
 public unsafe class PenumbraAttach : IDisposable
 {
     public const int RequiredPenumbraBreakingVersion = 4;
     public const int RequiredPenumbraFeatureVersion  = 15;
 
+    private readonly DalamudPluginInterface                              _pluginInterface;
     private readonly EventSubscriber<ChangedItemType, uint>              _tooltipSubscriber;
     private readonly EventSubscriber<MouseButton, ChangedItemType, uint> _clickSubscriber;
     private readonly EventSubscriber<nint, string, nint, nint, nint>     _creatingCharacterBase;
@@ -25,14 +32,15 @@ public unsafe class PenumbraAttach : IDisposable
     private readonly EventSubscriber _disposedEvent;
     public           bool            Available { get; private set; }
 
-    public PenumbraAttach()
+    public PenumbraAttach(DalamudPluginInterface pi)
     {
-        _initializedEvent      = Ipc.Initialized.Subscriber(Dalamud.PluginInterface, Reattach);
-        _disposedEvent         = Ipc.Disposed.Subscriber(Dalamud.PluginInterface, Unattach);
-        _tooltipSubscriber     = Ipc.ChangedItemTooltip.Subscriber(Dalamud.PluginInterface);
-        _clickSubscriber       = Ipc.ChangedItemClick.Subscriber(Dalamud.PluginInterface);
-        _createdCharacterBase  = Ipc.CreatedCharacterBase.Subscriber(Dalamud.PluginInterface);
-        _creatingCharacterBase = Ipc.CreatingCharacterBase.Subscriber(Dalamud.PluginInterface);
+        _pluginInterface       = pi;
+        _initializedEvent      = Ipc.Initialized.Subscriber(pi, Reattach);
+        _disposedEvent         = Ipc.Disposed.Subscriber(pi, Unattach);
+        _tooltipSubscriber     = Ipc.ChangedItemTooltip.Subscriber(pi);
+        _clickSubscriber       = Ipc.ChangedItemClick.Subscriber(pi);
+        _createdCharacterBase  = Ipc.CreatedCharacterBase.Subscriber(pi);
+        _creatingCharacterBase = Ipc.CreatingCharacterBase.Subscriber(pi);
         Reattach();
     }
 
@@ -88,7 +96,7 @@ public unsafe class PenumbraAttach : IDisposable
         {
             Unattach();
 
-            var (breaking, feature) = Ipc.ApiVersions.Subscriber(Dalamud.PluginInterface).Invoke();
+            var (breaking, feature) = Ipc.ApiVersions.Subscriber(_pluginInterface).Invoke();
             if (breaking != RequiredPenumbraBreakingVersion || feature < RequiredPenumbraFeatureVersion)
                 throw new Exception(
                     $"Invalid Version {breaking}.{feature:D4}, required major Version {RequiredPenumbraBreakingVersion} with feature greater or equal to {RequiredPenumbraFeatureVersion}.");
@@ -97,9 +105,9 @@ public unsafe class PenumbraAttach : IDisposable
             _clickSubscriber.Enable();
             _creatingCharacterBase.Enable();
             _createdCharacterBase.Enable();
-            _drawObjectInfo   = Ipc.GetDrawObjectInfo.Subscriber(Dalamud.PluginInterface);
-            _cutsceneParent   = Ipc.GetCutsceneParentIndex.Subscriber(Dalamud.PluginInterface);
-            _redrawSubscriber = Ipc.RedrawObjectByIndex.Subscriber(Dalamud.PluginInterface);
+            _drawObjectInfo   = Ipc.GetDrawObjectInfo.Subscriber(_pluginInterface);
+            _cutsceneParent   = Ipc.GetCutsceneParentIndex.Subscriber(_pluginInterface);
+            _redrawSubscriber = Ipc.RedrawObjectByIndex.Subscriber(_pluginInterface);
             Available         = true;
             Glamourer.Log.Debug("Glamourer attached to Penumbra.");
         }

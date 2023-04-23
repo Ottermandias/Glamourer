@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Dalamud.Plugin;
 using Glamourer.Customization;
+using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -40,8 +41,13 @@ public partial class CustomizationDrawer : IDisposable
     private float   _comboSelectorSize;
     private float   _raceSelectorWidth;
 
-    public CustomizationDrawer(DalamudPluginInterface pi)
+    private readonly CustomizationService _service;
+    private readonly ItemManager          _items;
+
+    public CustomizationDrawer(DalamudPluginInterface pi, CustomizationService service, ItemManager items)
     {
+        _service      = service;
+        _items        = items;
         _legacyTattoo = GetLegacyTattooIcon(pi);
         unsafe
         {
@@ -120,7 +126,7 @@ public partial class CustomizationDrawer : IDisposable
         try
         {
             DrawRaceGenderSelector();
-            _set = Glamourer.Customization.GetList(_customize.Clan, _customize.Gender);
+            _set = _service.AwaitedService.GetList(_customize.Clan, _customize.Gender);
 
             foreach (var id in _set.Order[CharaMakeParams.MenuType.Percentage])
                 PercentageSelector(id);

@@ -1,9 +1,7 @@
-﻿using System;
-using System.Linq;
-using Glamourer.Customization;
+﻿using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Interop;
-using Penumbra.Api.Enums;
+using Glamourer.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 
@@ -26,13 +24,15 @@ public sealed partial class ActiveDesign : DesignBase
     public bool IsVisorToggled  { get; private set; } = false;
     public bool IsWet           { get; private set; } = false;
 
-    private ActiveDesign(ActorIdentifier identifier)
+    private ActiveDesign(ItemManager items, ActorIdentifier identifier)
+    : base(items)
         => Identifier = identifier;
 
-    public ActiveDesign(ActorIdentifier identifier, Actor actor)
+    public ActiveDesign(ItemManager items, ActorIdentifier identifier, Actor actor)
+    : base(items)
     {
         Identifier = identifier;
-        Initialize(actor);
+        Initialize(items, actor);
     }
 
     //public void ApplyToActor(Actor actor)
@@ -65,7 +65,7 @@ public sealed partial class ActiveDesign : DesignBase
     //        RedrawManager.SetVisor(actor.DrawObject.Pointer, actor.VisorEnabled);
     //}
     //
-    public void Initialize(Actor actor)
+    public void Initialize(ItemManager items, Actor actor)
     {
         if (!actor)
             return;
@@ -84,7 +84,7 @@ public sealed partial class ActiveDesign : DesignBase
             if (initialEquip[slot] != current)
             {
                 initialEquip[slot] = current;
-                UpdateArmor(slot, current, true);
+                UpdateArmor(items, slot, current, true);
                 SetStain(slot, current.Stain);
             }
         }
@@ -92,14 +92,14 @@ public sealed partial class ActiveDesign : DesignBase
         if (_initialData.MainHand != actor.MainHand)
         {
             _initialData.MainHand = actor.MainHand;
-            UpdateMainhand(actor.MainHand);
+            UpdateMainhand(items, actor.MainHand);
             SetStain(EquipSlot.MainHand, actor.MainHand.Stain);
         }
 
         if (_initialData.OffHand != actor.OffHand)
         {
             _initialData.OffHand = actor.OffHand;
-            UpdateOffhand(actor.OffHand);
+            UpdateOffhand(items, actor.OffHand);
             SetStain(EquipSlot.OffHand, actor.OffHand.Stain);
         }
 

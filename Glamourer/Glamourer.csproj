@@ -86,6 +86,7 @@
     <ProjectReference Include="..\Glamourer.GameData\Glamourer.GameData.csproj" />
     <ProjectReference Include="..\..\Penumbra\Penumbra.Api\Penumbra.Api.csproj" />
     <ProjectReference Include="..\..\Penumbra\Penumbra.GameData\Penumbra.GameData.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>

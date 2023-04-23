@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
 using Glamourer.Interop;
+using Glamourer.Services;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
@@ -14,25 +16,32 @@ using ImGui = ImGuiNET.ImGui;
 
 namespace Glamourer.Gui;
 
-internal partial class Interface
+public partial class Interface
 {
     private class ActorTab
     {
         private readonly Interface            _main;
         private readonly ActiveDesign.Manager _activeDesigns;
         private readonly ObjectManager        _objects;
+        private readonly TargetManager        _targets;
+        private readonly ActorService         _actors;
+        private readonly ItemManager          _items;
 
-        public ActorTab(Interface main, ActiveDesign.Manager activeDesigns, ObjectManager objects)
+        public ActorTab(Interface main, ActiveDesign.Manager activeDesigns, ObjectManager objects, TargetManager targets, ActorService actors,
+            ItemManager items)
         {
             _main          = main;
             _activeDesigns = activeDesigns;
             _objects       = objects;
+            _targets       = targets;
+            _actors        = actors;
+            _items         = items;
         }
 
-        private ActorIdentifier         _identifier   = ActorIdentifier.Invalid;
-        private ObjectManager.ActorData _currentData  = ObjectManager.ActorData.Invalid;
-        private string                  _currentLabel = string.Empty;
-        private ActiveDesign?           _currentSave;
+        private ActorIdentifier _identifier   = ActorIdentifier.Invalid;
+        private ActorData       _currentData  = ActorData.Invalid;
+        private string          _currentLabel = string.Empty;
+        private ActiveDesign?   _currentSave;
 
         public void Draw()
         {
@@ -42,7 +51,7 @@ internal partial class Interface
 
             DrawActorSelector();
             if (!_objects.TryGetValue(_identifier, out _currentData))
-                _currentData = ObjectManager.ActorData.Invalid;
+                _currentData = ActorData.Invalid;
             else
                 _currentLabel = _currentData.Label;
 
@@ -64,11 +73,12 @@ internal partial class Interface
                 return;
 
             if (_currentData.Valid)
-                _currentSave.Initialize(_currentData.Objects[0]);
+                _currentSave.Initialize(_items, _currentData.Objects[0]);
 
             RevertButton();
             if (_main._customizationDrawer.Draw(_currentSave.Customize(), _identifier.Type == IdentifierType.Special))
-                _activeDesigns.ChangeCustomize(_currentSave, _main._customizationDrawer.Changed, _main._customizationDrawer.CustomizeData, false);
+                _activeDesigns.ChangeCustomize(_currentSave, _main._customizationDrawer.Changed, _main._customizationDrawer.CustomizeData,
+                    false);
 
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
@@ -76,7 +86,8 @@ internal partial class Interface
                 if (_main._equipmentDrawer.DrawStain(current.Stain, slot, out var stain))
                     _activeDesigns.ChangeStain(_currentSave, slot, stain.RowIndex, false);
                 ImGui.SameLine();
-                if (_main._equipmentDrawer.DrawArmor(current, slot, out var armor, _currentSave.Customize().Gender, _currentSave.Customize().Race))
+                if (_main._equipmentDrawer.DrawArmor(current, slot, out var armor, _currentSave.Customize().Gender,
+                        _currentSave.Customize().Race))
                     _activeDesigns.ChangeEquipment(_currentSave, slot, armor, false);
             }
 
@@ -95,9 +106,7 @@ internal partial class Interface
             }
 
             if (_main._equipmentDrawer.DrawVisor(_currentSave, out var value))
-            {
                 _activeDesigns.ChangeVisor(_currentSave, value, false);
-            }
         }
 
         private const uint RedHeaderColor   = 0xFF1818C0;
@@ -241,10 +250,10 @@ internal partial class Interface
             ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
         }
 
-        private bool CheckFilter(KeyValuePair<ActorIdentifier, ObjectManager.ActorData> pair)
+        private bool CheckFilter(KeyValuePair<ActorIdentifier, ActorData> pair)
             => _actorFilter.IsEmpty || pair.Value.Label.Contains(_actorFilter.Lower, StringComparison.OrdinalIgnoreCase);
 
-        private void DrawSelectable(KeyValuePair<ActorIdentifier, ObjectManager.ActorData> pair)
+        private void DrawSelectable(KeyValuePair<ActorIdentifier, ActorData> pair)
         {
             var equal = pair.Key.Equals(_identifier);
             if (ImGui.Selectable(pair.Value.Label, equal) && !equal)
@@ -263,13 +272,13 @@ internal partial class Interface
 
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth
                     , "Select the local player character.", !_objects.Player, true))
-                _identifier = _objects.Player.GetIdentifier();
+                _identifier = _objects.Player.GetIdentifier(_actors.AwaitedService);
 
             ImGui.SameLine();
-            Actor targetActor = Dalamud.Targets.Target?.Address;
+            Actor targetActor = _targets.Target?.Address;
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth,
                     "Select the current target, if it is in the list.", _objects.IsInGPose || !targetActor, true))
-                _identifier = targetActor.GetIdentifier();
+                _identifier = targetActor.GetIdentifier(_actors.AwaitedService);
         }
     }
 }

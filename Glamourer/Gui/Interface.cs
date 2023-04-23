@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Numerics;
+using Dalamud.Data;
+using Dalamud.Game.ClientState.Keys;
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Dalamud.Plugin;
@@ -7,43 +10,43 @@ using Glamourer.Designs;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
+using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Util;
 using ImGuiNET;
 using OtterGui.Raii;
 
 namespace Glamourer.Gui;
 
-internal partial class Interface : Window, IDisposable
+public partial class Interface : Window, IDisposable
 {
     private readonly DalamudPluginInterface _pi;
 
     private readonly EquipmentDrawer     _equipmentDrawer;
     private readonly CustomizationDrawer _customizationDrawer;
-
-    private readonly ActorTab      _actorTab;
-    private readonly DesignTab     _designTab;
-    private readonly DebugStateTab _debugStateTab;
-    private readonly DebugDataTab  _debugDataTab;
+    private readonly Configuration       _config;
+    private readonly ActorTab            _actorTab;
+    private readonly DesignTab           _designTab;
+    private readonly DebugStateTab       _debugStateTab;
+    private readonly DebugDataTab        _debugDataTab;
 
     public Interface(DalamudPluginInterface pi, ItemManager items, ActiveDesign.Manager activeDesigns, Design.Manager manager,
-        DesignFileSystem fileSystem, ObjectManager objects)
+        DesignFileSystem fileSystem, ObjectManager objects, CustomizationService customization, Configuration config, DataManager gameData, TargetManager targets, ActorService actors, KeyState keyState)
         : base(GetLabel())
     {
-        _pi                                                  =  pi;
-        _equipmentDrawer                                     =  new EquipmentDrawer(items);
-        _customizationDrawer                                 =  new CustomizationDrawer(pi);
-        Dalamud.PluginInterface.UiBuilder.DisableGposeUiHide =  true;
-        Dalamud.PluginInterface.UiBuilder.OpenConfigUi       += Toggle;
+        _pi                             = pi;
+        _config                         = config;
+        _equipmentDrawer                = new EquipmentDrawer(gameData, items);
+        _customizationDrawer            = new CustomizationDrawer(pi, customization, items);
+        pi.UiBuilder.DisableGposeUiHide = true;
         SizeConstraints = new WindowSizeConstraints()
         {
             MinimumSize = new Vector2(675, 675),
             MaximumSize = ImGui.GetIO().DisplaySize,
         };
-        _actorTab      = new ActorTab(this, activeDesigns, objects);
+        _actorTab      = new ActorTab(this, activeDesigns, objects, targets, actors, items);
         _debugStateTab = new DebugStateTab(activeDesigns);
-        _debugDataTab  = new DebugDataTab(Glamourer.Customization);
-        _designTab     = new DesignTab(this, manager, fileSystem);
+        _debugDataTab  = new DebugDataTab(customization);
+        _designTab     = new DesignTab(this, manager, fileSystem, keyState);
     }
 
     public override void Draw()

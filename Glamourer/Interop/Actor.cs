@@ -24,23 +24,20 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
     public static implicit operator IntPtr(Actor actor)
         => actor.Pointer == null ? IntPtr.Zero : (IntPtr)actor.Pointer;
 
-    public ActorIdentifier GetIdentifier()
-        => Glamourer.Actors.FromObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)Pointer, out _, true, true, false);
+    public ActorIdentifier GetIdentifier(ActorManager actors)
+        => actors.FromObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)Pointer, out _, true, true, false);
 
-    public bool Identifier(out ActorIdentifier ident)
+    public bool Identifier(ActorManager actors, out ActorIdentifier ident)
     {
         if (Valid)
         {
-            ident = GetIdentifier();
+            ident = GetIdentifier(actors);
             return true;
         }
 
         ident = ActorIdentifier.Invalid;
         return false;
     }
-
-    public Character? Character
-        => Pointer == null ? null : Dalamud.Objects[Pointer->GameObject.ObjectIndex] as Character;
 
     public bool IsAvailable
         => Pointer->GameObject.GetIsTargetable();

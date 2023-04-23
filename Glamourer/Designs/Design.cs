@@ -1,16 +1,17 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using Glamourer.Customization;
-using Glamourer.Util;
+using Glamourer.Services;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OtterGui;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
-public partial class Design : DesignBase
+public partial class Design : DesignBase, ISavable
 {
     public const int FileVersion = 1;
 
@@ -69,7 +70,8 @@ public partial class Design : DesignBase
     }
 
 
-    private Design()
+    private Design(ItemManager items)
+        : base(items)
     { }
 
     public JObject JsonSerialize()
@@ -142,17 +144,17 @@ public partial class Design : DesignBase
         return ret;
     }
 
-    public static Design LoadDesign(JObject json, out bool changes)
+    public static Design LoadDesign(ItemManager items, JObject json, out bool changes)
     {
         var version = json[nameof(FileVersion)]?.ToObject<int>() ?? 0;
         return version switch
         {
-            1 => LoadDesignV1(json, out changes),
+            1 => LoadDesignV1(items, json, out changes),
             _ => throw new Exception("The design to be loaded has no valid Version."),
         };
     }
 
-    private static Design LoadDesignV1(JObject json, out bool changes)
+    private static Design LoadDesignV1(ItemManager items, JObject json, out bool changes)
     {
         static string[] ParseTags(JObject json)
         {
@@ -160,7 +162,7 @@ public partial class Design : DesignBase
             return tags.OrderBy(t => t).Distinct().ToArray();
         }
 
-        var design = new Design()
+        var design = new Design(items)
         {
             CreationDate = json["CreationDate"]?.ToObject<DateTimeOffset>() ?? throw new ArgumentNullException("CreationDate"),
             Identifier   = json["Identifier"]?.ToObject<Guid>() ?? throw new ArgumentNullException("Identifier"),
@@ -169,12 +171,12 @@ public partial class Design : DesignBase
             Tags         = ParseTags(json),
         };
 
-        changes =  LoadEquip(json["Equipment"], design);
+        changes =  LoadEquip(items, json["Equipment"], design);
         changes |= LoadCustomize(json["Customize"], design);
         return design;
     }
 
-    private static bool LoadEquip(JToken? equip, Design design)
+    private static bool LoadEquip(ItemManager items, JToken? equip, Design design)
     {
         if (equip == null)
             return true;
@@ -192,7 +194,7 @@ public partial class Design : DesignBase
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var (id, stain, apply, applyStain) =  ParseItem(slot, equip[slot.ToString()]);
-            changes                            |= !design.SetArmor(slot, id);
+            changes                            |= !design.SetArmor(items, slot, id);
             changes                            |= !design.SetStain(slot, stain);
             design.SetApplyEquip(slot, apply);
             design.SetApplyStain(slot, applyStain);
@@ -205,11 +207,11 @@ public partial class Design : DesignBase
         }
         else
         {
-            var id         = main["ItemId"]?.ToObject<uint>() ?? Glamourer.Items.DefaultSword.RowId;
+            var id         = main["ItemId"]?.ToObject<uint>() ?? items.DefaultSword.RowId;
             var stain      = (StainId)(main["Stain"]?.ToObject<byte>() ?? 0);
             var apply      = main["Apply"]?.ToObject<bool>() ?? false;
             var applyStain = main["ApplyStain"]?.ToObject<bool>() ?? false;
-            changes |= !design.SetMainhand(id);
+            changes |= !design.SetMainhand(items, id);
             changes |= !design.SetStain(EquipSlot.MainHand, stain);
             design.SetApplyEquip(EquipSlot.MainHand, apply);
             design.SetApplyStain(EquipSlot.MainHand, applyStain);
@@ -226,7 +228,7 @@ public partial class Design : DesignBase
             var stain      = (StainId)(off["Stain"]?.ToObject<byte>() ?? 0);
             var apply      = off["Apply"]?.ToObject<bool>() ?? false;
             var applyStain = off["ApplyStain"]?.ToObject<bool>() ?? false;
-            changes |= !design.SetOffhand(id);
+            changes |= !design.SetOffhand(items, id);
             changes |= !design.SetStain(EquipSlot.OffHand, stain);
             design.SetApplyEquip(EquipSlot.OffHand, apply);
             design.SetApplyStain(EquipSlot.OffHand, applyStain);
@@ -259,14 +261,14 @@ public partial class Design : DesignBase
         return false;
     }
 
-    public void MigrateBase64(string base64)
+    public void MigrateBase64(ItemManager items, string base64)
     {
         var data = MigrateBase64(base64, out var applyEquip, out var applyCustomize, out var writeProtected, out var wet, out var hat,
             out var visor,               out var weapon);
-        UpdateMainhand(data.MainHand);
-        UpdateMainhand(data.OffHand);
+        UpdateMainhand(items, data.MainHand);
+        UpdateOffhand(items, data.OffHand);
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            UpdateArmor(slot, data.Equipment[slot], true);
+            UpdateArmor(items, slot, data.Equipment[slot], true);
         CharacterData.CustomizeData = data.CustomizeData;
         ApplyEquip                  = applyEquip;
         ApplyCustomize              = applyCustomize;
@@ -277,10 +279,10 @@ public partial class Design : DesignBase
         Weapon                      = weapon;
     }
 
-    public static Design CreateTemporaryFromBase64(string base64, bool customize, bool equip)
+    public static Design CreateTemporaryFromBase64(ItemManager items, string base64, bool customize, bool equip)
     {
-        var ret = new Design();
-        ret.MigrateBase64(base64);
+        var ret = new Design(items);
+        ret.MigrateBase64(items, base64);
         if (!customize)
             ret.ApplyCustomize = 0;
         if (!equip)
@@ -296,4 +298,20 @@ public partial class Design : DesignBase
     public string CreateOldBase64()
         => CreateOldBase64(in CharacterData, ApplyEquip,    ApplyCustomize,     Wetness == QuadBool.True, Hat.ForcedValue, Hat.Enabled,
             Visor.ForcedValue,               Visor.Enabled, Weapon.ForcedValue, Weapon.Enabled,           WriteProtected,  1f);
+
+    public string ToFilename(FilenameService fileNames)
+        => fileNames.DesignFile(this);
+
+    public void   Save(StreamWriter writer)
+    {
+        using var j = new JsonTextWriter(writer)
+        {
+            Formatting = Formatting.Indented,
+        };
+        var obj = JsonSerialize();
+        obj.WriteTo(j);
+    }
+
+    public string LogName(string fileName)
+        => Path.GetFileNameWithoutExtension(fileName);
 }

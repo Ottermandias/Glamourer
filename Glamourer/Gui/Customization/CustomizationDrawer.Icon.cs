@@ -26,7 +26,7 @@ public partial class CustomizationDrawer
             custom  = _set.Data(index, 0);
         }
 
-        var icon = Glamourer.Customization.GetIcon(custom!.Value.IconId);
+        var icon = _service.AwaitedService.GetIcon(custom!.Value.IconId);
         if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
             ImGui.OpenPopup(IconSelectorPopup);
         ImGuiUtil.HoverIconTooltip(icon, _iconSize);
@@ -77,13 +77,12 @@ public partial class CustomizationDrawer
         if (!popup)
             return;
 
-        var ret = false;
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
         for (var i = 0; i < _currentCount; ++i)
         {
             var custom = _set.Data(_currentIndex, i, _customize.Face);
-            var icon   = Glamourer.Customization.GetIcon(custom.IconId);
+            var icon   = _service.AwaitedService.GetIcon(custom.IconId);
             using (var _ = ImRaii.Group())
             {
                 if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
@@ -134,8 +133,8 @@ public partial class CustomizationDrawer
             var       enabled = _customize.Get(featureIdx) != CustomizeValue.Zero;
             var       feature = _set.Data(featureIdx, 0, _customize.Face);
             var icon = featureIdx == CustomizeIndex.LegacyTattoo
-                ? _legacyTattoo ?? Glamourer.Customization.GetIcon(feature.IconId)
-                : Glamourer.Customization.GetIcon(feature.IconId);
+                ? _legacyTattoo ?? _service.AwaitedService.GetIcon(feature.IconId)
+                : _service.AwaitedService.GetIcon(feature.IconId);
             if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize, Vector2.Zero, Vector2.One, (int)ImGui.GetStyle().FramePadding.X,
                     Vector4.Zero, enabled ? Vector4.One : _redTint))
             {

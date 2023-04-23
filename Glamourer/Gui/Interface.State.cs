@@ -4,7 +4,7 @@ using ImGuiNET;
 
 namespace Glamourer.Gui;
 
-internal partial class Interface
+public partial class Interface
 {
     private static Vector2 _spacing        = Vector2.Zero;
     private static float   _actorSelectorWidth;

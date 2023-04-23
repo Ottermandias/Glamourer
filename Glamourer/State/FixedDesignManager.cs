@@ -5,7 +5,7 @@ using Penumbra.GameData.Actors;
 
 namespace Glamourer.State;
 
-public class FixedDesigns
+public class FixedDesignManager
 {
     public bool TryGetDesign(ActorIdentifier actor, [NotNullWhen(true)] out Design? save)
     {

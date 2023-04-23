@@ -17,15 +17,15 @@ public struct FixedCondition
 
     public bool Check(Actor actor)
     {
-        if ((_data & (_territoryFlag | _jobFlag)) == 0)
-            return true;
-
-        if ((_data & _territoryFlag) != 0)
-            return Dalamud.ClientState.TerritoryType == (ushort)_data;
-
-        if (actor && GameData.JobGroups(Dalamud.GameData).TryGetValue((ushort)_data, out var group) && group.Fits(actor.Job))
-            return true;
-
+        //if ((_data & (_territoryFlag | _jobFlag)) == 0)
+        //    return true;
+        //
+        //if ((_data & _territoryFlag) != 0)
+        //    return Dalamud.ClientState.TerritoryType == (ushort)_data;
+        //
+        //if (actor && GameData.JobGroups(Dalamud.GameData).TryGetValue((ushort)_data, out var group) && group.Fits(actor.Job))
+        //    return true;
+        //
         return true;
     }
 

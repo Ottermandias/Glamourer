@@ -6,13 +6,13 @@ using Dalamud.Plugin;
 using Dalamud.Utility;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
-using Penumbra.GameData;
+using Lumina.Text;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Race = Penumbra.GameData.Enums.Race;
 
-namespace Glamourer.Util;
+namespace Glamourer.Services;
 
 public class ItemManager : IDisposable
 {
@@ -20,33 +20,33 @@ public class ItemManager : IDisposable
     public const string SmallClothesNpc      = "Smallclothes (NPC)";
     public const ushort SmallClothesNpcModel = 9903;
 
-    public readonly IObjectIdentifier Identifier;
-    public readonly ExcelSheet<Item>  ItemSheet;
-    public readonly StainData         Stains;
-    public readonly ItemData          Items;
-    public readonly RestrictedGear    RestrictedGear;
+    private readonly Configuration     _config;
+    public readonly  IdentifierService IdentifierService;
+    public readonly  ExcelSheet<Item>  ItemSheet;
+    public readonly  StainData         Stains;
+    public readonly  ItemService       ItemService;
+    public readonly  RestrictedGear    RestrictedGear;
 
-    public ItemManager(DalamudPluginInterface pi, DataManager gameData)
+    public ItemManager(DalamudPluginInterface pi, DataManager gameData, IdentifierService identifierService, ItemService itemService, Configuration config)
     {
-        ItemSheet      = gameData.GetExcelSheet<Item>()!;
-        Identifier     = Penumbra.GameData.GameData.GetIdentifier(pi, gameData, gameData.Language);
-        Stains         = new StainData(pi, gameData, gameData.Language);
-        Items          = new ItemData(pi, gameData, gameData.Language);
-        RestrictedGear = new RestrictedGear(pi, gameData.Language, gameData);
-        DefaultSword   = ItemSheet.GetRow(1601)!; // Weathered Shortsword
+        _config           = config;
+        ItemSheet         = gameData.GetExcelSheet<Item>()!;
+        IdentifierService = identifierService;
+        Stains            = new StainData(pi, gameData, gameData.Language);
+        ItemService       = itemService;
+        RestrictedGear    = new RestrictedGear(pi, gameData.Language, gameData);
+        DefaultSword      = ItemSheet.GetRow(1601)!; // Weathered Shortsword
     }
 
     public void Dispose()
     {
         Stains.Dispose();
-        Items.Dispose();
-        Identifier.Dispose();
         RestrictedGear.Dispose();
     }
 
     public (bool, CharacterArmor) ResolveRestrictedGear(CharacterArmor armor, EquipSlot slot, Race race, Gender gender)
     {
-        if (Glamourer.Config.UseRestrictedGearProtection)
+        if (_config.UseRestrictedGearProtection)
             return RestrictedGear.ResolveRestricted(armor, slot, race, gender);
 
         return (false, armor);
@@ -152,7 +152,7 @@ public class ItemManager : IDisposable
             case 0:                    return (true, NothingId(slot), Nothing);
             case SmallClothesNpcModel: return (true, SmallclothesId(slot), SmallClothesNpc);
             default:
-                var item = Identifier.Identify(id, variant, slot).FirstOrDefault();
+                var item = IdentifierService.AwaitedService.Identify(id, variant, slot).FirstOrDefault();
                 return item == null
                     ? (false, 0, string.Intern($"Unknown ({id.Value}-{variant})"))
                     : (true, item.RowId, string.Intern(item.Name.ToDalamudString().TextValue));
@@ -166,7 +166,7 @@ public class ItemManager : IDisposable
         {
             case EquipSlot.MainHand:
             {
-                var item = Identifier.Identify(id, type, variant, slot).FirstOrDefault();
+                var item = IdentifierService.AwaitedService.Identify(id, type, variant, slot).FirstOrDefault();
                 return item != null
                     ? (true, item.RowId, string.Intern(item.Name.ToDalamudString().TextValue), item.ToEquipType())
                     : (false, 0, string.Intern($"Unknown ({id.Value}-{type.Value}-{variant})"), mainhandType);
@@ -177,7 +177,7 @@ public class ItemManager : IDisposable
                 if (id.Value == 0)
                     return (true, NothingId(weaponType), Nothing, weaponType);
 
-                var item = Identifier.Identify(id, type, variant, slot).FirstOrDefault();
+                var item = IdentifierService.AwaitedService.Identify(id, type, variant, slot).FirstOrDefault();
                 return item != null
                     ? (true, item.RowId, string.Intern(item.Name.ToDalamudString().TextValue), item.ToEquipType())
                     : (false, 0, string.Intern($"Unknown ({id.Value}-{type.Value}-{variant})"),

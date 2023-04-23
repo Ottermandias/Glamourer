@@ -6,16 +6,14 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Api;
 using Glamourer.Customization;
 using Glamourer.Designs;
+using Glamourer.Services;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
-using Item = Glamourer.Designs.Item;
-using Lumina.Excel.GeneratedSheets;
 
 namespace Glamourer.State;
 
@@ -23,19 +21,21 @@ public sealed partial class ActiveDesign
 {
     public partial class Manager : IReadOnlyDictionary<ActorIdentifier, ActiveDesign>
     {
-        private readonly ActorManager    _actors;
+        private readonly ActorService    _actors;
         private readonly ObjectManager   _objects;
         private readonly Interop.Interop _interop;
         private readonly PenumbraAttach  _penumbra;
+        private readonly ItemManager     _items;
 
         private readonly Dictionary<ActorIdentifier, ActiveDesign> _characterSaves = new();
 
-        public Manager(ActorManager actors, ObjectManager objects, Interop.Interop interop, PenumbraAttach penumbra)
+        public Manager(ActorService actors, ObjectManager objects, Interop.Interop interop, PenumbraAttach penumbra, ItemManager items)
         {
             _actors   = actors;
             _objects  = objects;
             _interop  = interop;
             _penumbra = penumbra;
+            _items    = items;
         }
 
         public IEnumerator<KeyValuePair<ActorIdentifier, ActiveDesign>> GetEnumerator()
@@ -67,16 +67,16 @@ public sealed partial class ActiveDesign
 
         public unsafe ActiveDesign GetOrCreateSave(Actor actor)
         {
-            var id = _actors.FromObject((GameObject*)actor.Pointer, out _, false, false, false);
+            var id = _actors.AwaitedService.FromObject((GameObject*)actor.Pointer, out _, false, false, false);
             if (_characterSaves.TryGetValue(id, out var save))
             {
-                save.Initialize(actor);
+                save.Initialize(_items, actor);
                 return save;
             }
 
             id   = id.CreatePermanent();
-            save = new ActiveDesign(id, actor);
-            save.Initialize(actor);
+            save = new ActiveDesign(_items, id, actor);
+            save.Initialize(_items, actor);
             _characterSaves.Add(id, save);
             return save;
         }
@@ -100,7 +100,7 @@ public sealed partial class ActiveDesign
 
             if (from.DoApplyEquip(EquipSlot.MainHand))
                 ChangeMainHand(to, from.MainHand, fromFixed);
-                    
+
             if (from.DoApplyEquip(EquipSlot.OffHand))
                 ChangeOffHand(to, from.OffHand, fromFixed);
 
@@ -130,10 +130,10 @@ public sealed partial class ActiveDesign
         }
 
         public void ChangeMainHand(ActiveDesign design, uint itemId, bool fromFixed)
-            => design.SetMainhand(itemId);
+            => design.SetMainhand(_items, itemId);
 
         public void ChangeOffHand(ActiveDesign design, uint itemId, bool fromFixed)
-            => design.SetOffhand(itemId);
+            => design.SetOffhand(_items, itemId);
 
         public void RevertMainHand(ActiveDesign design)
         { }
@@ -187,7 +187,7 @@ public sealed partial class ActiveDesign
             if (equip)
             {
                 var flag = slot.ToFlag();
-                design.UpdateArmor(slot, item, true);
+                design.UpdateArmor(_items, slot, item, true);
                 design.ChangedEquip &= ~flag;
                 design.FixedEquip   &= ~flag;
             }
@@ -265,7 +265,7 @@ public sealed partial class ActiveDesign
             if (!_objects.TryGetValue(design.Identifier, out var data))
                 return;
 
-            foreach (var obj in data.Objects) 
+            foreach (var obj in data.Objects)
                 Interop.Interop.SetVisorState(obj.DrawObject, on);
         }
     }

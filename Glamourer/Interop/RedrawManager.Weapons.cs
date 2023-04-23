@@ -34,8 +34,8 @@ public unsafe partial class RedrawManager
         var character = (Actor)(characterOffset - CharacterWeaponOffset);
         try
         {
-            var identifier = character.GetIdentifier();
-            if (_fixedDesigns.TryGetDesign(identifier, out var save))
+            var identifier = character.GetIdentifier(_actors.AwaitedService);
+            if (_fixedDesignManager.TryGetDesign(identifier, out var save))
             {
                 PluginLog.Information($"Loaded weapon from fixed design for {identifier}.");
                 weapon = slot switch

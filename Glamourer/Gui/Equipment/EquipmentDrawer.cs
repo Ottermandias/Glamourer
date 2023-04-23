@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Dalamud.Data;
 using Dalamud.Interface;
 using Glamourer.Designs;
+using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Util;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Widgets;
@@ -23,27 +24,27 @@ public class EquipmentDrawer
     private readonly ItemCombo[]                                         _itemCombo;
     private readonly Dictionary<(FullEquipType, EquipSlot), WeaponCombo> _weaponCombo;
 
-    public EquipmentDrawer(ItemManager items)
+    public EquipmentDrawer(DataManager gameData, ItemManager items)
     {
         _items     = items;
         _stainData = items.Stains;
         _stainCombo = new FilterComboColors(140,
             _stainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))));
-        _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(items, e)).ToArray();
+        _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e)).ToArray();
         _weaponCombo = new Dictionary<(FullEquipType, EquipSlot), WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
         foreach (var type in Enum.GetValues<FullEquipType>())
         {
             if (type.ToSlot() is EquipSlot.MainHand)
-                _weaponCombo.TryAdd((type, EquipSlot.MainHand), new WeaponCombo(items, type, EquipSlot.MainHand));
+                _weaponCombo.TryAdd((type, EquipSlot.MainHand), new WeaponCombo(gameData, items, type, EquipSlot.MainHand));
             else if (type.ToSlot() is EquipSlot.OffHand)
-                _weaponCombo.TryAdd((type, EquipSlot.OffHand), new WeaponCombo(items, type, EquipSlot.OffHand));
+                _weaponCombo.TryAdd((type, EquipSlot.OffHand), new WeaponCombo(gameData, items, type, EquipSlot.OffHand));
 
             var offhand = type.Offhand();
             if (offhand is not FullEquipType.Unknown && !_weaponCombo.ContainsKey((offhand, EquipSlot.OffHand)))
-                _weaponCombo.TryAdd((offhand, EquipSlot.OffHand), new WeaponCombo(items, type, EquipSlot.OffHand));
+                _weaponCombo.TryAdd((offhand, EquipSlot.OffHand), new WeaponCombo(gameData, items, type, EquipSlot.OffHand));
         }
 
-        _weaponCombo.Add((FullEquipType.Unknown, EquipSlot.MainHand), new WeaponCombo(items, FullEquipType.Unknown, EquipSlot.MainHand));
+        _weaponCombo.Add((FullEquipType.Unknown, EquipSlot.MainHand), new WeaponCombo(gameData, items, FullEquipType.Unknown, EquipSlot.MainHand));
     }
 
     private string VerifyRestrictedGear(Item gear, EquipSlot slot, Gender gender, Race race)

@@ -5,6 +5,7 @@ using System.Linq;
 using Dalamud.Plugin;
 using Dalamud.Utility;
 using Glamourer.Customization;
+using Glamourer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -21,8 +22,9 @@ public partial class Design
         public const    string DesignFolderName = "designs";
         public readonly string DesignFolder;
 
-        private readonly FrameworkManager _framework;
-        private readonly List<Design>     _designs = new();
+        private readonly ItemManager  _items;
+        private readonly SaveService  _saveService;
+        private readonly List<Design> _designs = new();
 
         public enum DesignChangeType
         {
@@ -50,9 +52,10 @@ public partial class Design
         public IReadOnlyList<Design> Designs
             => _designs;
 
-        public Manager(DalamudPluginInterface pi, FrameworkManager framework)
+        public Manager(DalamudPluginInterface pi, SaveService saveService, ItemManager items)
         {
-            _framework   =  framework;
+            _saveService =  saveService;
+            _items       =  items;
             DesignFolder =  SetDesignFolder(pi);
             DesignChange += OnChange;
             LoadDesigns();
@@ -105,7 +108,7 @@ public partial class Design
             => Path.Combine(DesignFolder, $"{design.Identifier}.json");
 
         public void SaveDesign(Design design)
-            => _framework.RegisterDelayed($"{nameof(SaveDesign)}_{design.Identifier}", () => SaveDesignInternal(design));
+            => _saveService.QueueSave(design);
 
         private void SaveDesignInternal(Design design)
         {
@@ -133,7 +136,7 @@ public partial class Design
                 {
                     var text   = File.ReadAllText(file.FullName);
                     var data   = JObject.Parse(text);
-                    var design = LoadDesign(data, out var changes);
+                    var design = LoadDesign(_items, data, out var changes);
                     if (design.Identifier.ToString() != Path.GetFileNameWithoutExtension(file.Name))
                         invalidNames.Add((design, file.FullName));
                     if (_designs.Any(f => f.Identifier == design.Identifier))
@@ -177,7 +180,7 @@ public partial class Design
 
         public Design Create(string name)
         {
-            var design = new Design()
+            var design = new Design(_items)
             {
                 CreationDate = DateTimeOffset.UtcNow,
                 Identifier   = CreateNewGuid(),
@@ -297,7 +300,7 @@ public partial class Design
         public void ChangeEquip(Design design, EquipSlot slot, uint itemId, Lumina.Excel.GeneratedSheets.Item? item = null)
         {
             var old = design.Armor(slot);
-            if (design.SetArmor(slot, itemId, item))
+            if (design.SetArmor(_items, slot, itemId, item))
             {
                 var n = design.Armor(slot);
                 Glamourer.Log.Debug(
@@ -309,8 +312,8 @@ public partial class Design
         public void ChangeWeapon(Design design, uint itemId, EquipSlot offhand, Lumina.Excel.GeneratedSheets.Item? item = null)
         {
             var (old, change, n) = offhand == EquipSlot.OffHand
-                ? (design.WeaponOff, design.SetOffhand(itemId, item), design.WeaponOff)
-                : (design.WeaponMain, design.SetMainhand(itemId, item), design.WeaponMain);
+                ? (design.WeaponOff, design.SetOffhand(_items, itemId, item), design.WeaponOff)
+                : (design.WeaponMain, design.SetMainhand(_items, itemId, item), design.WeaponMain);
             if (change)
             {
                 Glamourer.Log.Debug(
@@ -386,13 +389,13 @@ public partial class Design
                     try
                     {
                         var actualName = Path.GetFileName(name);
-                        var design = new Design()
+                        var design = new Design(_items)
                         {
                             CreationDate = DateTimeOffset.UtcNow,
                             Identifier   = CreateNewGuid(),
                             Name         = actualName,
                         };
-                        design.MigrateBase64(base64);
+                        design.MigrateBase64(_items, base64);
                         Add(design, $"Migrated old design to {design.Identifier}.");
                         migratedFileSystemPaths.Add(design.Identifier.ToString(), name);
                         ++successes;

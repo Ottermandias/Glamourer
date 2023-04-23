@@ -1,4 +1,8 @@
-﻿using Glamourer.Designs;
+﻿using System.Numerics;
+using Dalamud.Game.ClientState.Keys;
+using Dalamud.Interface;
+using Glamourer.Designs;
+using OtterGui;
 using OtterGui.FileSystem.Selector;
 
 namespace Glamourer.Gui.Designs;
@@ -10,11 +14,12 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     public struct DesignState
     { }
 
-    public DesignFileSystemSelector(Design.Manager manager, DesignFileSystem fileSystem)
-        : base(fileSystem, Dalamud.KeyState)
+    public DesignFileSystemSelector(Design.Manager manager, DesignFileSystem fileSystem, KeyState keyState)
+        : base(fileSystem, keyState)
     {
         _manager              =  manager;
         _manager.DesignChange += OnDesignChange;
+        AddButton(DeleteButton, 1000);
     }
 
     public override void Dispose()
@@ -35,5 +40,20 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
                 SetFilterDirty();
                 break;
         }
+    }
+
+    private void DeleteButton(Vector2 size)
+    {
+        var keys = true;
+        var tt = SelectedLeaf == null
+            ? "No design selected."
+            : "Delete the currently selected design entirely from your drive.\n"
+          + "This can not be undone.";
+        //if (!keys)
+        //    tt += $"\nHold {_config.DeleteModModifier} while clicking to delete the mod.";
+
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), size, tt, SelectedLeaf == null || !keys, true)
+         && Selected != null)
+            _manager.Delete(Selected);
     }
 }

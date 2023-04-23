@@ -4,34 +4,49 @@ using System.Collections.Generic;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Objects;
+using Glamourer.Services;
 using Penumbra.GameData.Actors;
 
 namespace Glamourer.Interop;
 
-public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ObjectManager.ActorData>
+public readonly struct ActorData
 {
-    public readonly struct ActorData
+    public readonly List<Actor> Objects;
+    public readonly string      Label;
+
+    public bool Valid
+        => Objects.Count > 0;
+
+    public ActorData(Actor actor, string label)
     {
-        public readonly List<Actor> Objects;
-        public readonly string      Label;
-
-        public bool Valid
-            => Objects.Count > 0;
-
-        public ActorData(Actor actor, string label)
-        {
-            Objects = new List<Actor> { actor };
-            Label   = label;
-        }
-
-        public static readonly ActorData Invalid = new(false);
-
-        private ActorData(bool _)
-        {
-            Objects = new List<Actor>(0);
-            Label   = string.Empty;
-        }
+        Objects = new List<Actor> { actor };
+        Label   = label;
     }
+
+    public static readonly ActorData Invalid = new(false);
+
+    private ActorData(bool _)
+    {
+        Objects = new List<Actor>(0);
+        Label   = string.Empty;
+    }
+}
+
+public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
+{
+    private readonly Framework    _framework;
+    private readonly ClientState  _clientState;
+    private readonly ObjectTable  _objects;
+    private readonly ActorService _actors;
+
+    public ObjectManager(Framework framework, ClientState clientState, ObjectTable objects, ActorService actors)
+    {
+        _framework   = framework;
+        _clientState = clientState;
+        _objects     = objects;
+        _actors      = actors;
+    }
+
 
     public DateTime LastUpdate { get; private set; }
 
@@ -56,16 +71,6 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ObjectManager.
         }
     }
 
-    private readonly Framework   _framework;
-    private readonly ClientState _clientState;
-    private readonly ObjectTable _objects;
-
-    public ObjectManager(Framework framework, ClientState clientState, ObjectTable objects)
-    {
-        _framework   = framework;
-        _clientState = clientState;
-        _objects     = objects;
-    }
 
     public void Update()
     {
@@ -80,14 +85,14 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ObjectManager.
         for (var i = 0; i < (int)ScreenActor.CutsceneStart; ++i)
         {
             Actor character = _objects.GetObjectAddress(i);
-            if (character.Identifier(out var identifier))
+            if (character.Identifier(_actors.AwaitedService, out var identifier))
                 HandleIdentifier(identifier, character);
         }
 
         for (var i = (int)ScreenActor.CutsceneStart; i < (int)ScreenActor.CutsceneEnd; ++i)
         {
             Actor character = _objects.GetObjectAddress(i);
-            if (!character.Identifier(out var identifier))
+            if (!character.Identifier(_actors.AwaitedService, out var identifier))
                 break;
 
             HandleIdentifier(identifier, character);
@@ -96,7 +101,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ObjectManager.
         void AddSpecial(ScreenActor idx, string label)
         {
             Actor actor = _objects.GetObjectAddress((int)idx);
-            if (actor.Identifier(out var ident))
+            if (actor.Identifier(_actors.AwaitedService, out var ident))
             {
                 var data = new ActorData(actor, label);
                 _identifiers.Add(ident, data);
@@ -112,10 +117,10 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ObjectManager.
         AddSpecial(ScreenActor.Card7,           "Card Actor 7");
         AddSpecial(ScreenActor.Card8,           "Card Actor 8");
 
-        for (var i = (int)ScreenActor.ScreenEnd; i < Dalamud.Objects.Length; ++i)
+        for (var i = (int)ScreenActor.ScreenEnd; i < _objects.Length; ++i)
         {
             Actor character = _objects.GetObjectAddress(i);
-            if (character.Identifier(out var identifier))
+            if (character.Identifier(_actors.AwaitedService, out var identifier))
                 HandleIdentifier(identifier, character);
         }
 

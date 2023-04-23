@@ -30,7 +30,6 @@ public partial class Glamourer
 
         private readonly ObjectTable            _objectTable;
         private readonly DalamudPluginInterface _pluginInterface;
-        private readonly Glamourer              _glamourer;
 
         internal ICallGateProvider<string, string?>?            ProviderGetAllCustomization;
         internal ICallGateProvider<Character?, string?>?        ProviderGetAllCustomizationFromCharacter;
@@ -44,10 +43,8 @@ public partial class Glamourer
         internal ICallGateProvider<Character?, object>?         ProviderRevertCharacter;
         internal ICallGateProvider<int>?                        ProviderGetApiVersion;
 
-        public GlamourerIpc(Glamourer glamourer, ClientState clientState, ObjectTable objectTable,
-            DalamudPluginInterface pluginInterface)
+        public GlamourerIpc(ObjectTable objectTable, DalamudPluginInterface pluginInterface)
         {
-            _glamourer       = glamourer;
             _objectTable     = objectTable;
             _pluginInterface = pluginInterface;
 
@@ -214,9 +211,9 @@ public partial class Glamourer
             if (character == null)
                 return;
 
-            var design = Design.CreateTemporaryFromBase64(customization, true, true);
-            var active = _glamourer._stateManager.GetOrCreateSave(character.Address);
-            _glamourer._stateManager.ApplyDesign(active, design, false);
+            //var design = Design.CreateTemporaryFromBase64(customization, true, true);
+            //var active = _glamourer._stateManager.GetOrCreateSave(character.Address);
+            //_glamourer._stateManager.ApplyDesign(active, design, false);
         }
 
         private void ApplyOnlyCustomization(string customization, string characterName)
@@ -235,9 +232,9 @@ public partial class Glamourer
         {
             if (character == null)
                 return;
-            var design = Design.CreateTemporaryFromBase64(customization, true, false);
-            var active = _glamourer._stateManager.GetOrCreateSave(character.Address);
-            _glamourer._stateManager.ApplyDesign(active, design, false);
+            //var design = Design.CreateTemporaryFromBase64(customization, true, false);
+            //var active = _glamourer._stateManager.GetOrCreateSave(character.Address);
+            //_glamourer._stateManager.ApplyDesign(active, design, false);
         }
 
         private void ApplyOnlyEquipment(string customization, string characterName)
@@ -256,9 +253,9 @@ public partial class Glamourer
         {
             if (character == null)
                 return;
-            var design = Design.CreateTemporaryFromBase64(customization, false, true);
-            var active = _glamourer._stateManager.GetOrCreateSave(character.Address);
-            _glamourer._stateManager.ApplyDesign(active, design, false);
+            //var design = Design.CreateTemporaryFromBase64(customization, false, true);
+            //var active = _glamourer._stateManager.GetOrCreateSave(character.Address);
+            //_glamourer._stateManager.ApplyDesign(active, design, false);
         }
 
         private void Revert(string characterName)
@@ -277,9 +274,9 @@ public partial class Glamourer
             if (character == null)
                 return;
 
-            var ident = Actors.FromObject(character, true, false, false);
-            _glamourer._stateManager.DeleteSave(ident);
-            _glamourer._penumbra.RedrawObject(character.Address, RedrawType.Redraw);
+            //var ident = Actors.FromObject(character, true, false, false);
+            //_glamourer._stateManager.DeleteSave(ident);
+            //_glamourer._penumbra.RedrawObject(character.Address, RedrawType.Redraw);
         }
 
         private string? GetAllCustomization(Character? character)
@@ -287,11 +284,12 @@ public partial class Glamourer
             if (character == null)
                 return null;
 
-            var ident = Actors.FromObject(character, true, false, false);
-            if (!_glamourer._stateManager.TryGetValue(ident, out var design))
-                design = new ActiveDesign(ident, character.Address);
-
-            return design.CreateOldBase64();
+            //var ident = Actors.FromObject(character, true, false, false);
+            //if (!_glamourer._stateManager.TryGetValue(ident, out var design))
+            //    design = new ActiveDesign(ident, character.Address);
+            //
+            //return design.CreateOldBase64();
+            return null;
         }
 
         private string? GetAllCustomization(string characterName)

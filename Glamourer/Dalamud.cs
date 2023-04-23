@@ -7,26 +7,43 @@ using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-
-// ReSharper disable AutoPropertyCanBeMadeGetOnly.Local
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Glamourer;
 
-public class Dalamud
+public class DalamudServices
 {
-    public static void Initialize(DalamudPluginInterface pluginInterface)
-        => pluginInterface.Create<Dalamud>();
+    public DalamudServices(DalamudPluginInterface pi)
+    {
+        pi.Inject(this);
+    }
+
+    public void AddServices(IServiceCollection services)
+    {
+        services.AddSingleton(PluginInterface);
+        services.AddSingleton(Commands);
+        services.AddSingleton(GameData);
+        services.AddSingleton(ClientState);
+        services.AddSingleton(GameGui);
+        services.AddSingleton(Chat);
+        services.AddSingleton(Framework);
+        services.AddSingleton(Targets);
+        services.AddSingleton(Objects);
+        services.AddSingleton(KeyState);
+        services.AddSingleton(this);
+        services.AddSingleton(PluginInterface.UiBuilder);
+    }
 
     // @formatter:off
-    [PluginService][RequiredVersion("1.0")] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService][RequiredVersion("1.0")] public static CommandManager         Commands        { get; private set; } = null!;
-    [PluginService][RequiredVersion("1.0")] public static DataManager            GameData        { get; private set; } = null!;
-    [PluginService][RequiredVersion("1.0")] public static ClientState            ClientState     { get; private set; } = null!;
-    [PluginService][RequiredVersion("1.0")] public static GameGui                GameGui         { get; private set; } = null!;
-    [PluginService][RequiredVersion("1.0")] public static ChatGui                Chat            { get; private set; } = null!;
-    [PluginService][RequiredVersion("1.0")] public static Framework              Framework       { get; private set; } = null!;
-    [PluginService][RequiredVersion("1.0")] public static TargetManager          Targets         { get; private set; } = null!;
-    [PluginService][RequiredVersion("1.0")] public static ObjectTable            Objects         { get; private set; } = null!;
-    [PluginService][RequiredVersion("1.0")] public static KeyState               KeyState        { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public DalamudPluginInterface PluginInterface { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public CommandManager         Commands        { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public DataManager            GameData        { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public ClientState            ClientState     { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public GameGui                GameGui         { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public ChatGui                Chat            { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public Framework              Framework       { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public TargetManager          Targets         { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public ObjectTable            Objects         { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public KeyState               KeyState        { get; private set; } = null!;
     // @formatter:on
 }

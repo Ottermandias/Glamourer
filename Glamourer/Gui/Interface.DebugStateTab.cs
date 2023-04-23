@@ -11,7 +11,7 @@ using Penumbra.GameData.Actors;
 
 namespace Glamourer.Gui;
 
-internal partial class Interface
+public partial class Interface
 {
     private class DebugStateTab
     {

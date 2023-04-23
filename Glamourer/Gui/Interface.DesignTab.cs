@@ -1,34 +1,31 @@
 ﻿using System;
 using System.Numerics;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Glamourer.Customization;
 using Glamourer.Designs;
-using Glamourer.Gui.Customization;
 using Glamourer.Gui.Designs;
-using Glamourer.Gui.Equipment;
-using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui;
 
-internal partial class Interface
+public partial class Interface
 {
     private class DesignTab : IDisposable
     {
         public readonly  DesignFileSystemSelector Selector;
         private readonly Interface                _main;
         private readonly DesignFileSystem         _fileSystem;
-        private readonly Design.Manager           _manager;
+        private readonly Design.Manager            _manager;
 
-        public DesignTab(Interface main, Design.Manager manager, DesignFileSystem fileSystem)
+        public DesignTab(Interface main, Design.Manager manager, DesignFileSystem fileSystem, KeyState keyState)
         {
             _main       = main;
             _manager    = manager;
             _fileSystem = fileSystem;
-            Selector    = new DesignFileSystemSelector(manager, fileSystem);
+            Selector    = new DesignFileSystemSelector(manager, fileSystem, keyState);
         }
 
         public void Dispose()

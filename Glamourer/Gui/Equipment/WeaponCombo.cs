@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Dalamud.Data;
 using Glamourer.Designs;
-using Glamourer.Util;
+using Glamourer.Services;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using OtterGui;
@@ -18,9 +19,9 @@ public sealed class WeaponCombo : FilterComboCache<Weapon>
     public readonly string Label;
     private         uint   _currentItem;
 
-    public WeaponCombo(ItemManager items, FullEquipType type, EquipSlot offhand)
+    public WeaponCombo(DataManager gameData, ItemManager items, FullEquipType type, EquipSlot offhand)
         : base(offhand is EquipSlot.OffHand ? () => GetOff(items, type) : () => GetMain(items, type))
-        => Label = GetLabel(offhand);
+        => Label = GetLabel(gameData, offhand);
 
     protected override void DrawList(float width, float itemHeight)
     {
@@ -64,9 +65,9 @@ public sealed class WeaponCombo : FilterComboCache<Weapon>
     protected override string ToString(Weapon obj)
         => obj.Name;
 
-    private static string GetLabel(EquipSlot offhand)
+    private static string GetLabel(DataManager gameData, EquipSlot offhand)
     {
-        var sheet = Dalamud.GameData.GetExcelSheet<Addon>()!;
+        var sheet = gameData.GetExcelSheet<Addon>()!;
         return offhand is EquipSlot.OffHand
             ? sheet.GetRow(739)?.Text.ToString() ?? "Off Hand"
             : sheet.GetRow(738)?.Text.ToString() ?? "Main Hand";
@@ -77,9 +78,9 @@ public sealed class WeaponCombo : FilterComboCache<Weapon>
         var list = new List<Weapon>();
         if (type is FullEquipType.Unknown)
             foreach (var t in Enum.GetValues<FullEquipType>().Where(t => t.ToSlot() == EquipSlot.MainHand))
-                list.AddRange(items.Items[t].Select(w => new Weapon(w, false)));
+                list.AddRange(items.ItemService.AwaitedService[t].Select(w => new Weapon(w, false)));
         else if (type.ToSlot() is EquipSlot.MainHand)
-            list.AddRange(items.Items[type].Select(w => new Weapon(w, false)));
+            list.AddRange(items.ItemService.AwaitedService[type].Select(w => new Weapon(w, false)));
         list.Sort((w1, w2) => string.CompareOrdinal(w1.Name, w2.Name));
         return list;
     }
@@ -89,7 +90,7 @@ public sealed class WeaponCombo : FilterComboCache<Weapon>
         if (type.ToSlot() == EquipSlot.OffHand)
         {
             var nothing = ItemManager.NothingItem(type);
-            if (!items.Items.TryGetValue(type, out var list))
+            if (!items.ItemService.AwaitedService.TryGetValue(type, out var list))
                 return new[]
                 {
                     nothing,
@@ -97,7 +98,7 @@ public sealed class WeaponCombo : FilterComboCache<Weapon>
 
             return list.Select(w => new Weapon(w, true)).OrderBy(w => w.Name).Prepend(nothing).ToList();
         }
-        else if (items.Items.TryGetValue(type, out var list))
+        else if (items.ItemService.AwaitedService.TryGetValue(type, out var list))
         {
             return list.Select(w => new Weapon(w, true)).OrderBy(w => w.Name).ToList();
         }

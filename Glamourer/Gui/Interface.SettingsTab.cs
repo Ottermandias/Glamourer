@@ -1,29 +1,28 @@
 ﻿using System;
-using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 
 namespace Glamourer.Gui;
 
-internal partial class Interface
+public partial class Interface
 {
-    private static void Checkmark(string label, string tooltip, bool value, Action<bool> setter)
+    private void Checkmark(string label, string tooltip, bool value, Action<bool> setter)
     {
         if (ImGuiUtil.Checkbox(label, tooltip, value, setter))
-            Glamourer.Config.Save();
+            _config.Save();
     }
 
-    private static void ChangeAndSave<T>(T value, T currentValue, Action<T> setter) where T : IEquatable<T>
+    private void ChangeAndSave<T>(T value, T currentValue, Action<T> setter) where T : IEquatable<T>
     {
         if (value.Equals(currentValue))
             return;
 
         setter(value);
-        Glamourer.Config.Save();
+        _config.Save();
     }
 
-    private static void DrawColorPicker(string name, string tooltip, uint value, uint defaultValue, Action<uint> setter)
+    private void DrawColorPicker(string name, string tooltip, uint value, uint defaultValue, Action<uint> setter)
     {
         const ImGuiColorEditFlags flags = ImGuiColorEditFlags.AlphaPreviewHalf | ImGuiColorEditFlags.NoInputs;
 
@@ -42,7 +41,7 @@ internal partial class Interface
 
     private static void DrawRestorePenumbraButton()
     {
-        const string buttonLabel = "Re-Register Penumbra";
+        //const string buttonLabel = "Re-Register Penumbra";
         // TODO
         //if (ImGui.Button(buttonLabel))
         //    Glamourer.Penumbra.Reattach(true);
@@ -51,36 +50,35 @@ internal partial class Interface
         //    "If Penumbra did not register the functions for some reason, pressing this button might help restore functionality.");
     }
 
-    private static void DrawSettingsTab()
+    private void DrawSettingsTab()
     {
         using var tab = ImRaii.TabItem("Settings");
         if (!tab)
             return;
 
-        var cfg = Glamourer.Config;
         ImGui.Dummy(_spacing);
 
-        Checkmark("Folders First", "Sort Folders before all designs instead of lexicographically.", cfg.FoldersFirst,
-            v => cfg.FoldersFirst = v);
+        Checkmark("Folders First", "Sort Folders before all designs instead of lexicographically.", _config.FoldersFirst,
+            v => _config.FoldersFirst = v);
         Checkmark("Color Designs", "Color the names of designs in the selector using the colors from below for the given cases.",
-            cfg.ColorDesigns,
-            v => cfg.ColorDesigns = v);
-        Checkmark("Show Locks", "Write-protected Designs show a lock besides their name in the selector.", cfg.ShowLocks,
-            v => cfg.ShowLocks = v);
+            _config.ColorDesigns,
+            v => _config.ColorDesigns = v);
+        Checkmark("Show Locks", "Write-protected Designs show a lock besides their name in the selector.", _config.ShowLocks,
+            v => _config.ShowLocks = v);
         DrawRestorePenumbraButton();
 
         Checkmark("Apply Fixed Designs",
             "Automatically apply fixed designs to characters and redraw them when anything changes.",
-            cfg.ApplyFixedDesigns,
-            v => { cfg.ApplyFixedDesigns = v; });
+            _config.ApplyFixedDesigns,
+            v => { _config.ApplyFixedDesigns = v; });
 
         ImGui.Dummy(_spacing);
 
         DrawColorPicker("Customization Color", "The color for designs that only apply their character customization.",
-            cfg.CustomizationColor,            GlamourerConfig.DefaultCustomizationColor, c => cfg.CustomizationColor = c);
+            _config.CustomizationColor,            Configuration.DefaultCustomizationColor, c => _config.CustomizationColor = c);
         DrawColorPicker("Equipment Color", "The color for designs that only apply some or all of their equipment slots and stains.",
-            cfg.EquipmentColor,            GlamourerConfig.DefaultEquipmentColor, c => cfg.EquipmentColor = c);
+            _config.EquipmentColor,            Configuration.DefaultEquipmentColor, c => _config.EquipmentColor = c);
         DrawColorPicker("State Color", "The color for designs that only apply some state modification.",
-            cfg.StateColor,            GlamourerConfig.DefaultStateColor, c => cfg.StateColor = c);
+            _config.StateColor,            Configuration.DefaultStateColor, c => _config.StateColor = c);
     }
 }

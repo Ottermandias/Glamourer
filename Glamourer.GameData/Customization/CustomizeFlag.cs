@@ -95,4 +95,14 @@ public static class CustomizeFlagExtensions
             CustomizeFlag.FacePaintColor    => CustomizeIndex.FacePaintColor,
             _                               => (CustomizeIndex)byte.MaxValue,
         };
+
+    public static bool SetIfDifferent(ref this CustomizeFlag flags, CustomizeFlag flag, bool value)
+    {
+        var newValue = value ? flags | flag : flags & ~flag;
+        if (newValue == flags)
+            return false;
+
+        flags = newValue;
+        return true;
+    }
 }

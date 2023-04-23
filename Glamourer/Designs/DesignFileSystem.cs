@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Dalamud.Plugin;
+using Glamourer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
@@ -12,20 +13,20 @@ using OtterGui.Filesystem;
 
 namespace Glamourer.Designs;
 
-public sealed class DesignFileSystem : FileSystem<Design>, IDisposable
+public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
 {
     public static string GetDesignFileSystemFile(DalamudPluginInterface pi)
         => Path.Combine(pi.GetPluginConfigDirectory(), "sort_order.json");
 
-    public readonly  string           DesignFileSystemFile;
-    private readonly FrameworkManager _framework;
-    private readonly Design.Manager   _designManager;
+    public readonly  string         DesignFileSystemFile;
+    private readonly SaveService    _saveService;
+    private readonly Design.Manager _designManager;
 
-    public DesignFileSystem(Design.Manager designManager, DalamudPluginInterface pi, FrameworkManager framework)
+    public DesignFileSystem(Design.Manager designManager, DalamudPluginInterface pi, SaveService saveService)
     {
         DesignFileSystemFile        =  GetDesignFileSystemFile(pi);
         _designManager              =  designManager;
-        _framework                  =  framework;
+        _saveService                =  saveService;
         _designManager.DesignChange += OnDataChange;
         Changed                     += OnChange;
         Reload();
@@ -34,7 +35,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable
     private void Reload()
     {
         if (Load(new FileInfo(DesignFileSystemFile), _designManager.Designs, DesignToIdentifier, DesignToName))
-            SaveFilesystem();
+            _saveService.ImmediateSave(this);
 
         Glamourer.Log.Debug("Reloaded design filesystem.");
     }
@@ -71,17 +72,8 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable
     private void OnChange(FileSystemChangeType type, IPath _1, IPath? _2, IPath? _3)
     {
         if (type != FileSystemChangeType.Reload)
-            SaveFilesystem();
+            _saveService.QueueSave(this);
     }
-
-    private void SaveFilesystem()
-    {
-        SaveToFile(new FileInfo(DesignFileSystemFile), SaveDesign, true);
-        Glamourer.Log.Verbose("Saved design filesystem.");
-    }
-
-    public void Save()
-        => _framework.RegisterDelayed(nameof(SaveFilesystem), SaveFilesystem);
 
     private void OnDataChange(Design.Manager.DesignChangeType type, Design design, object? data)
     {
@@ -175,5 +167,13 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable
         {
             Glamourer.Log.Error($"Could not migrate old folder paths to new version:\n{ex}");
         }
+    }
+
+    public string ToFilename(FilenameService fileNames)
+        => fileNames.DesignFileSystem;
+
+    public void Save(StreamWriter writer)
+    {
+        SaveToFile(writer, SaveDesign, true);
     }
 }

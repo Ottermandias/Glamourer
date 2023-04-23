@@ -1,7 +1,7 @@
 ﻿
 namespace Glamourer.Gui;
 
-internal partial class Interface
+public partial class Interface
 {
     //private readonly CharacterSave _currentSave   = new();
     //private          string        _newDesignName = string.Empty;

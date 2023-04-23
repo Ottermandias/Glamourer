@@ -3,9 +3,8 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Api;
 using Glamourer.Customization;
 using Glamourer.Interop;
+using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Util;
-using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
@@ -15,12 +14,12 @@ namespace Glamourer;
 public class DrawObjectManager : IDisposable
 {
     private readonly ItemManager          _items;
-    private readonly ActorManager         _actors;
+    private readonly ActorService         _actors;
     private readonly ActiveDesign.Manager _manager;
     private readonly Interop.Interop      _interop;
     private readonly PenumbraAttach       _penumbra;
 
-    public DrawObjectManager(ItemManager items, ActorManager actors, ActiveDesign.Manager manager, Interop.Interop interop,
+    public DrawObjectManager(ItemManager items, ActorService actors, ActiveDesign.Manager manager, Interop.Interop interop,
         PenumbraAttach penumbra)
     {
         _items    = items;
@@ -54,7 +53,7 @@ public class DrawObjectManager : IDisposable
         if (gameObject.ModelId != modelId)
             return;
 
-        var identifier = _actors.FromObject((GameObject*)gameObjectPtr, out _, true, true, false);
+        var identifier = _actors.AwaitedService.FromObject((GameObject*)gameObjectPtr, out _, true, true, false);
         if (!identifier.IsValid || !_manager.TryGetValue(identifier, out var design))
             return;
 
@@ -75,7 +74,7 @@ public class DrawObjectManager : IDisposable
             foreach (var slot in EquipSlotExtensions.EquipmentSlots)
             {
                 (_, equip[slot]) =
-                    Glamourer.Items.ResolveRestrictedGear(saveEquip[slot], slot, customize.Race, customize.Gender);
+                    _items.ResolveRestrictedGear(saveEquip[slot], slot, customize.Race, customize.Gender);
             }
         }
     }

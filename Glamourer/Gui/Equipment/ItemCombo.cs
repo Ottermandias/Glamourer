@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Glamourer.Util;
+using Dalamud.Data;
+using Glamourer.Designs;
+using Glamourer.Services;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using OtterGui;
@@ -17,10 +19,10 @@ public sealed class ItemCombo : FilterComboCache<Item>
     public readonly string    Label;
     private         uint      _currentItem;
 
-    public ItemCombo(ItemManager items, EquipSlot slot)
+    public ItemCombo(DataManager gameData, ItemManager items, EquipSlot slot)
         : base(() => GetItems(items, slot))
     {
-        Label        = GetLabel(slot);
+        Label        = GetLabel(gameData, slot);
         _currentItem = ItemManager.NothingId(slot);
     }
 
@@ -66,9 +68,9 @@ public sealed class ItemCombo : FilterComboCache<Item>
     protected override string ToString(Item obj)
         => obj.Name;
 
-    private static string GetLabel(EquipSlot slot)
+    private static string GetLabel(DataManager gameData, EquipSlot slot)
     {
-        var sheet = Dalamud.GameData.GetExcelSheet<Addon>()!;
+        var sheet = gameData.GetExcelSheet<Addon>()!;
 
         return slot switch
         {
@@ -89,7 +91,7 @@ public sealed class ItemCombo : FilterComboCache<Item>
     private static IReadOnlyList<Item> GetItems(ItemManager items, EquipSlot slot)
     {
         var nothing = ItemManager.NothingItem(slot);
-        if (!items.Items.TryGetValue(slot.ToEquipType(), out var list))
+        if (!items.ItemService.AwaitedService.TryGetValue(slot.ToEquipType(), out var list))
             return new[]
             {
                 nothing,

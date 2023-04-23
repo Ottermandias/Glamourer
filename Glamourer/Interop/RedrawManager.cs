@@ -6,6 +6,7 @@ using Dalamud.Logging;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Customization;
+using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Structs;
 using Penumbra.GameData.Enums;
@@ -16,8 +17,11 @@ namespace Glamourer.Interop;
 
 public partial class Interop : IDisposable
 {
-    public Interop()
+    private readonly JobService _jobService;
+
+    public Interop(JobService jobService)
     {
+        _jobService = jobService;
         SignatureHelper.Initialise(this);
         _changeJobHook.Enable();
         _flagSlotForUpdateHook.Enable();
@@ -187,7 +191,7 @@ public partial class Interop
     private void ChangeJobDetour(IntPtr data, uint job)
     {
         _changeJobHook.Original(data, job);
-        JobChanged?.Invoke(data - Offsets.Character.ClassJobContainer, GameData.Jobs(Dalamud.GameData)[(byte)job]);
+        JobChanged?.Invoke(data - Offsets.Character.ClassJobContainer, _jobService.Jobs[(byte)job]);
     }
 
     public event Action<Actor, Job>? JobChanged;
@@ -195,14 +199,18 @@ public partial class Interop
 
 public unsafe partial class RedrawManager : IDisposable
 {
-    private readonly FixedDesigns         _fixedDesigns;
+    private readonly ItemManager          _items;
+    private readonly ActorService         _actors;
+    private readonly FixedDesignManager   _fixedDesignManager;
     private readonly ActiveDesign.Manager _stateManager;
 
-    public RedrawManager(FixedDesigns fixedDesigns, ActiveDesign.Manager stateManager)
+    public RedrawManager(FixedDesignManager fixedDesignManager, ActiveDesign.Manager stateManager, ItemManager items, ActorService actors)
     {
         SignatureHelper.Initialise(this);
-        _fixedDesigns = fixedDesigns;
-        _stateManager = stateManager;
+        _fixedDesignManager = fixedDesignManager;
+        _stateManager       = stateManager;
+        _items              = items;
+        _actors             = actors;
         _flagSlotForUpdateHook.Enable();
         _loadWeaponHook.Enable();
     }
@@ -221,8 +229,8 @@ public unsafe partial class RedrawManager : IDisposable
             return;
 
         // Check if we have a current design in use, or if not if the actor has a fixed design.
-        var identifier = actor.GetIdentifier();
-        if (!(_stateManager.TryGetValue(identifier, out var save) || _fixedDesigns.TryGetDesign(identifier, out var save2)))
+        var identifier = actor.GetIdentifier(_actors.AwaitedService);
+        if (!(_stateManager.TryGetValue(identifier, out var save) || _fixedDesignManager.TryGetDesign(identifier, out var save2)))
             return;
 
         // Compare game object customize data against draw object customize data for transformations.
@@ -240,7 +248,7 @@ public unsafe partial class RedrawManager : IDisposable
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
                 (_, equip[slot]) =
-                    Glamourer.Items.ResolveRestrictedGear(saveEquip[slot], slot, customize.Race, customize.Gender);
+                    _items.ResolveRestrictedGear(saveEquip[slot], slot, customize.Race, customize.Gender);
             }
         }
     }
