@@ -274,14 +274,7 @@ namespace Glamourer.Customization
             => _names[(int) name];
 
         private static Language FromClientLanguage(ClientLanguage language)
-            => language switch
-            {
-                ClientLanguage.English  => Language.English,
-                ClientLanguage.French   => Language.French,
-                ClientLanguage.German   => Language.German,
-                ClientLanguage.Japanese => Language.Japanese,
-                _                       => Language.English,
-            };
+            => language.ToLumina();
 
         internal CustomizationOptions(DalamudPluginInterface pi, DataManager gameData, ClientLanguage language)
         {
