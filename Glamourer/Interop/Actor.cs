@@ -39,6 +39,9 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
         return false;
     }
 
+    public override string ToString()
+        => Pointer != null ? Utf8Name.ToString() : "Invalid";
+
     public bool IsAvailable
         => Pointer->GameObject.GetIsTargetable();
 

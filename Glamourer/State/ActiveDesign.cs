@@ -7,17 +7,18 @@ using Penumbra.GameData.Enums;
 
 namespace Glamourer.State;
 
-public sealed partial class ActiveDesign : DesignBase
+public sealed partial class ActiveDesign : DesignData
 {
     public readonly ActorIdentifier Identifier;
 
-    private CharacterData _initialData = new();
+    private ModelData _initialData = new();
 
     public CustomizeFlag ChangedCustomize { get; private set; } = 0;
     public CustomizeFlag FixedCustomize   { get; private set; } = 0;
 
     public EquipFlag ChangedEquip { get; private set; } = 0;
     public EquipFlag FixedEquip   { get; private set; } = 0;
+
 
     public bool IsHatVisible    { get; private set; } = false;
     public bool IsWeaponVisible { get; private set; } = false;
@@ -73,7 +74,7 @@ public sealed partial class ActiveDesign : DesignBase
         if (!_initialData.Customize.Equals(actor.Customize))
         {
             _initialData.Customize.Load(actor.Customize);
-            Customize().Load(actor.Customize);
+            Customize.Load(actor.Customize);
         }
 
         var initialEquip = _initialData.Equipment;
@@ -103,13 +104,13 @@ public sealed partial class ActiveDesign : DesignBase
             SetStain(EquipSlot.OffHand, actor.OffHand.Stain);
         }
 
-        var visor = Interop.Interop.GetVisorState(actor.DrawObject);
+        var visor = VisorService.GetVisorState(actor.DrawObject);
         if (IsVisorToggled != visor)
             IsVisorToggled = visor;
     }
 
     public string CreateOldBase64()
-        => CreateOldBase64(in CharacterData, EquipFlagExtensions.All, CustomizeFlagExtensions.All, IsWet, IsHatVisible, true,
+        => DesignBase64Migration.CreateOldBase64(in ModelData, EquipFlagExtensions.All, CustomizeFlagExtensions.All, IsWet, IsHatVisible, true,
             IsVisorToggled,
             true, IsWeaponVisible, true, false, 1f);
 }

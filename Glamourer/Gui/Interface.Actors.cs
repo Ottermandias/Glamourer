@@ -40,7 +40,6 @@ public partial class Interface
 
         private ActorIdentifier _identifier   = ActorIdentifier.Invalid;
         private ActorData       _currentData  = ActorData.Invalid;
-        private string          _currentLabel = string.Empty;
         private ActiveDesign?   _currentSave;
 
         public void Draw()
@@ -52,8 +51,6 @@ public partial class Interface
             DrawActorSelector();
             if (!_objects.TryGetValue(_identifier, out _currentData))
                 _currentData = ActorData.Invalid;
-            else
-                _currentLabel = _currentData.Label;
 
             ImGui.SameLine();
 
@@ -65,7 +62,6 @@ public partial class Interface
             if (_identifier == ActorIdentifier.Invalid)
                 return;
 
-
             using var group = ImRaii.Group();
             DrawPanelHeader();
             using var child = ImRaii.Child("##ActorPanel", -Vector2.One, true);
@@ -76,7 +72,7 @@ public partial class Interface
                 _currentSave.Initialize(_items, _currentData.Objects[0]);
 
             RevertButton();
-            if (_main._customizationDrawer.Draw(_currentSave.Customize(), _identifier.Type == IdentifierType.Special))
+            if (_main._customizationDrawer.Draw(_currentSave.Customize, _identifier.Type == IdentifierType.Special))
                 _activeDesigns.ChangeCustomize(_currentSave, _main._customizationDrawer.Changed, _main._customizationDrawer.CustomizeData,
                     false);
 
@@ -86,8 +82,8 @@ public partial class Interface
                 if (_main._equipmentDrawer.DrawStain(current.Stain, slot, out var stain))
                     _activeDesigns.ChangeStain(_currentSave, slot, stain.RowIndex, false);
                 ImGui.SameLine();
-                if (_main._equipmentDrawer.DrawArmor(current, slot, out var armor, _currentSave.Customize().Gender,
-                        _currentSave.Customize().Race))
+                if (_main._equipmentDrawer.DrawArmor(current, slot, out var armor, _currentSave.Customize.Gender,
+                        _currentSave.Customize.Race))
                     _activeDesigns.ChangeEquipment(_currentSave, slot, armor, false);
             }
 
@@ -166,7 +162,7 @@ public partial class Interface
                 .Push(ImGuiCol.ButtonActive,  buttonColor);
             using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
                 .Push(ImGuiStyleVar.FrameRounding, 0);
-            ImGui.Button($"{_currentLabel}##playerHeader", -Vector2.UnitX);
+            ImGui.Button($"{_currentData.Label}##playerHeader", -Vector2.UnitX);
         }
 
         //private void DrawActorPanel()
@@ -244,10 +240,18 @@ public partial class Interface
                 return;
 
             _objects.Update();
+            if (!_activeDesigns.TryGetValue(_identifier, out _currentSave))
+                _currentSave = null;
+
             using var style     = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, oldSpacing);
             var       skips     = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
             var       remainder = ImGuiClip.FilteredClippedDraw(_objects, skips, CheckFilter, DrawSelectable);
             ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
+            if (_currentSave == null)
+            {
+                _identifier = ActorIdentifier.Invalid;
+                _currentData = ActorData.Invalid;
+            }
         }
 
         private bool CheckFilter(KeyValuePair<ActorIdentifier, ActorData> pair)
@@ -256,11 +260,12 @@ public partial class Interface
         private void DrawSelectable(KeyValuePair<ActorIdentifier, ActorData> pair)
         {
             var equal = pair.Key.Equals(_identifier);
-            if (ImGui.Selectable(pair.Value.Label, equal) && !equal)
+            if (ImGui.Selectable(pair.Value.Label, equal) || equal)
             {
                 _identifier  = pair.Key.CreatePermanent();
                 _currentData = pair.Value;
-                _currentSave = _currentData.Valid ? _activeDesigns.GetOrCreateSave(_currentData.Objects[0]) : null;
+                if (!_activeDesigns.TryGetValue(_identifier, out _currentSave))
+                    _currentSave = _currentData.Valid ? _activeDesigns.GetOrCreateSave(_currentData.Objects[0]) : null;
             }
         }
 

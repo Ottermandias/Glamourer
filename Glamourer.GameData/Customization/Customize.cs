@@ -5,61 +5,53 @@ namespace Glamourer.Customization;
 
 public unsafe struct Customize
 {
-    public readonly Penumbra.GameData.Structs.CustomizeData* Data;
+    public Penumbra.GameData.Structs.CustomizeData Data;
 
-    public Customize(Penumbra.GameData.Structs.CustomizeData* data)
+    public Customize(in Penumbra.GameData.Structs.CustomizeData data)
         => Data = data;
-
-    public Customize(ref Penumbra.GameData.Structs.CustomizeData data)
-    {
-        fixed (Penumbra.GameData.Structs.CustomizeData* ptr = &data)
-        {
-            Data = ptr;
-        }
-    }
 
     public Race Race
     {
-        get => (Race)Data->Get(CustomizeIndex.Race).Value;
-        set => Data->Set(CustomizeIndex.Race, (CustomizeValue)(byte)value);
+        get => (Race)Data.Get(CustomizeIndex.Race).Value;
+        set => Data.Set(CustomizeIndex.Race, (CustomizeValue)(byte)value);
     }
 
     public Gender Gender
     {
-        get => (Gender)Data->Get(CustomizeIndex.Gender).Value + 1;
-        set => Data->Set(CustomizeIndex.Gender, (CustomizeValue)(byte)value - 1);
+        get => (Gender)Data.Get(CustomizeIndex.Gender).Value + 1;
+        set => Data.Set(CustomizeIndex.Gender, (CustomizeValue)(byte)value - 1);
     }
 
     public CustomizeValue BodyType
     {
-        get => Data->Get(CustomizeIndex.BodyType);
-        set => Data->Set(CustomizeIndex.BodyType, value);
+        get => Data.Get(CustomizeIndex.BodyType);
+        set => Data.Set(CustomizeIndex.BodyType, value);
     }
 
     public SubRace Clan
     {
-        get => (SubRace)Data->Get(CustomizeIndex.Clan).Value;
-        set => Data->Set(CustomizeIndex.Clan, (CustomizeValue)(byte)value);
+        get => (SubRace)Data.Get(CustomizeIndex.Clan).Value;
+        set => Data.Set(CustomizeIndex.Clan, (CustomizeValue)(byte)value);
     }
 
     public CustomizeValue Face
     {
-        get => Data->Get(CustomizeIndex.Face);
-        set => Data->Set(CustomizeIndex.Face, value);
+        get => Data.Get(CustomizeIndex.Face);
+        set => Data.Set(CustomizeIndex.Face, value);
     }
 
 
-    public static readonly Penumbra.GameData.Structs.CustomizeData Default = GenerateDefault();
-    public static readonly Penumbra.GameData.Structs.CustomizeData Empty   = new();
+    public static readonly Customize Default = GenerateDefault();
+    public static readonly Customize Empty   = new();
 
     public CustomizeValue Get(CustomizeIndex index)
-        => Data->Get(index);
+        => Data.Get(index);
 
-    public void Set(CustomizeIndex flag, CustomizeValue index)
-        => Data->Set(flag, index);
+    public bool Set(CustomizeIndex flag, CustomizeValue index)
+        => Data.Set(flag, index);
 
     public bool Equals(Customize other)
-        => Penumbra.GameData.Structs.CustomizeData.Equals(Data, other.Data);
+        => Equals(Data, other.Data);
 
     public CustomizeValue this[CustomizeIndex index]
     {
@@ -67,9 +59,9 @@ public unsafe struct Customize
         set => Set(index, value);
     }
 
-    private static Penumbra.GameData.Structs.CustomizeData GenerateDefault()
+    private static Customize GenerateDefault()
     {
-        var ret = new Penumbra.GameData.Structs.CustomizeData();
+        var ret = new Customize();
         ret.Set(CustomizeIndex.BodyType,        (CustomizeValue)1);
         ret.Set(CustomizeIndex.Height,          (CustomizeValue)50);
         ret.Set(CustomizeIndex.Face,            (CustomizeValue)1);
@@ -94,16 +86,16 @@ public unsafe struct Customize
     }
 
     public void Load(Customize other)
-        => Data->Read(other.Data);
+        => Data.Read(&other.Data);
 
-    public void Write(IntPtr target)
-        => Data->Write((void*)target);
+    public void Write(nint target)
+        => Data.Write((void*)target);
 
     public bool LoadBase64(string data)
-        => Data->LoadBase64(data);
+        => Data.LoadBase64(data);
 
     public string WriteBase64()
-        => Data->WriteBase64();
+        => Data.WriteBase64();
 
     public static CustomizeFlag Compare(Customize lhs, Customize rhs)
     {

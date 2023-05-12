@@ -5,7 +5,9 @@ using Dalamud.Logging;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;
 using System;
+using Glamourer.Api;
 using Glamourer.Designs;
+using Glamourer.Services;
 using Glamourer.State;
 using Penumbra.Api.Enums;
 
@@ -30,6 +32,10 @@ public partial class Glamourer
 
         private readonly ObjectTable            _objectTable;
         private readonly DalamudPluginInterface _pluginInterface;
+        private readonly ActiveDesign.Manager   _stateManager;
+        private readonly ItemManager            _items;
+        private readonly PenumbraAttach         _penumbra;
+        private readonly ActorService           _actors;
 
         internal ICallGateProvider<string, string?>?            ProviderGetAllCustomization;
         internal ICallGateProvider<Character?, string?>?        ProviderGetAllCustomizationFromCharacter;
@@ -43,10 +49,15 @@ public partial class Glamourer
         internal ICallGateProvider<Character?, object>?         ProviderRevertCharacter;
         internal ICallGateProvider<int>?                        ProviderGetApiVersion;
 
-        public GlamourerIpc(ObjectTable objectTable, DalamudPluginInterface pluginInterface)
+        public GlamourerIpc(ObjectTable objectTable, DalamudPluginInterface pluginInterface, ActiveDesign.Manager stateManager,
+            ItemManager items, PenumbraAttach penumbra, ActorService actors)
         {
             _objectTable     = objectTable;
             _pluginInterface = pluginInterface;
+            _stateManager    = stateManager;
+            _items           = items;
+            _penumbra        = penumbra;
+            _actors          = actors;
 
             InitializeProviders();
         }
@@ -211,9 +222,9 @@ public partial class Glamourer
             if (character == null)
                 return;
 
-            //var design = Design.CreateTemporaryFromBase64(customization, true, true);
-            //var active = _glamourer._stateManager.GetOrCreateSave(character.Address);
-            //_glamourer._stateManager.ApplyDesign(active, design, false);
+            var design = Design.CreateTemporaryFromBase64(_items, customization, true, true);
+            var active = _stateManager.GetOrCreateSave(character.Address);
+            _stateManager.ApplyDesign(active, design, false);
         }
 
         private void ApplyOnlyCustomization(string customization, string characterName)
@@ -232,20 +243,21 @@ public partial class Glamourer
         {
             if (character == null)
                 return;
-            //var design = Design.CreateTemporaryFromBase64(customization, true, false);
-            //var active = _glamourer._stateManager.GetOrCreateSave(character.Address);
-            //_glamourer._stateManager.ApplyDesign(active, design, false);
+
+            var design = Design.CreateTemporaryFromBase64(_items, customization, true, false);
+            var active = _stateManager.GetOrCreateSave(character.Address);
+            _stateManager.ApplyDesign(active, design, false);
         }
 
         private void ApplyOnlyEquipment(string customization, string characterName)
         {
             foreach (var gameObject in _objectTable)
             {
-                if (gameObject.Name.ToString() == characterName)
-                {
-                    ApplyOnlyEquipment(customization, gameObject as Character);
-                    return;
-                }
+                if (gameObject.Name.ToString() != characterName)
+                    continue;
+
+                ApplyOnlyEquipment(customization, gameObject as Character);
+                return;
             }
         }
 
@@ -253,9 +265,10 @@ public partial class Glamourer
         {
             if (character == null)
                 return;
-            //var design = Design.CreateTemporaryFromBase64(customization, false, true);
-            //var active = _glamourer._stateManager.GetOrCreateSave(character.Address);
-            //_glamourer._stateManager.ApplyDesign(active, design, false);
+
+            var design = Design.CreateTemporaryFromBase64(_items, customization, false, true);
+            var active = _stateManager.GetOrCreateSave(character.Address);
+            _stateManager.ApplyDesign(active, design, false);
         }
 
         private void Revert(string characterName)
@@ -274,9 +287,9 @@ public partial class Glamourer
             if (character == null)
                 return;
 
-            //var ident = Actors.FromObject(character, true, false, false);
-            //_glamourer._stateManager.DeleteSave(ident);
-            //_glamourer._penumbra.RedrawObject(character.Address, RedrawType.Redraw);
+            var ident = _actors.AwaitedService.FromObject(character, true, false, false);
+            _stateManager.DeleteSave(ident);
+            _penumbra.RedrawObject(character.Address, RedrawType.Redraw);
         }
 
         private string? GetAllCustomization(Character? character)
@@ -284,12 +297,11 @@ public partial class Glamourer
             if (character == null)
                 return null;
 
-            //var ident = Actors.FromObject(character, true, false, false);
-            //if (!_glamourer._stateManager.TryGetValue(ident, out var design))
-            //    design = new ActiveDesign(ident, character.Address);
-            //
-            //return design.CreateOldBase64();
-            return null;
+            var ident = _actors.AwaitedService.FromObject(character, true, false, false);
+            if (!_stateManager.TryGetValue(ident, out var design))
+                design = new ActiveDesign(_items, ident, character.Address);
+
+            return design.CreateOldBase64();
         }
 
         private string? GetAllCustomization(string characterName)

@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Dalamud.Plugin;
 using Glamourer.Gui;
+using Glamourer.Interop;
 using Glamourer.Services;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
@@ -33,6 +34,12 @@ public partial class Glamourer : IDalamudPlugin
             _services.GetRequiredService<GlamourerWindowSystem>();
             _services.GetRequiredService<CommandService>();
             _services.GetRequiredService<GlamourerIpc>();
+            _services.GetRequiredService<ChangeCustomizeService>();
+            _services.GetRequiredService<JobService>();
+            _services.GetRequiredService<UpdateSlotService>();
+            _services.GetRequiredService<VisorService>();
+            _services.GetRequiredService<WeaponService>();
+            _services.GetRequiredService<RedrawManager>();
         }
         catch
         {

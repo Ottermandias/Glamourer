@@ -16,19 +16,17 @@ public class DrawObjectManager : IDisposable
     private readonly ItemManager          _items;
     private readonly ActorService         _actors;
     private readonly ActiveDesign.Manager _manager;
-    private readonly Interop.Interop      _interop;
     private readonly PenumbraAttach       _penumbra;
 
-    public DrawObjectManager(ItemManager items, ActorService actors, ActiveDesign.Manager manager, Interop.Interop interop,
+    public DrawObjectManager(ItemManager items, ActorService actors, ActiveDesign.Manager manager,
         PenumbraAttach penumbra)
     {
         _items    = items;
         _actors   = actors;
         _manager  = manager;
-        _interop  = interop;
         _penumbra = penumbra;
 
-        _interop.EquipUpdate            += FixEquipment;
+        //_interop.EquipUpdate            += FixEquipment;
         _penumbra.CreatingCharacterBase += ApplyActiveDesign;
     }
 
@@ -62,7 +60,7 @@ public class DrawObjectManager : IDisposable
         var gameObjectCustomize = gameObject.Customize;
         var customize           = new Customize((CustomizeData*)customizePtr);
         if (gameObjectCustomize.Equals(customize))
-            customize.Load(design.Customize());
+            customize.Load(design.Customize);
 
         // Compare game object equip data against draw object equip data for transformations.
         // Apply each piece of equip that should be applied if they correspond.
@@ -70,7 +68,7 @@ public class DrawObjectManager : IDisposable
         var equip           = new CharacterEquip((CharacterArmor*)equipDataPtr);
         if (gameObjectEquip.Equals(equip))
         {
-            var saveEquip = design.Equipment();
+            var saveEquip = design.Equipment;
             foreach (var slot in EquipSlotExtensions.EquipmentSlots)
             {
                 (_, equip[slot]) =
@@ -82,6 +80,6 @@ public class DrawObjectManager : IDisposable
     public void Dispose()
     {
         _penumbra.CreatingCharacterBase -= ApplyActiveDesign;
-        _interop.EquipUpdate            -= FixEquipment;
+        //_interop.EquipUpdate            -= FixEquipment;
     }
 }

@@ -11,24 +11,24 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
-public partial class Design : DesignBase, ISavable
+public partial class Design : DesignData, ISavable
 {
     public const int FileVersion = 1;
 
-    public Guid           Identifier   { get; private init; }
-    public DateTimeOffset CreationDate { get; private init; }
-    public LowerString    Name         { get; private set; } = LowerString.Empty;
-    public string         Description  { get; private set; } = string.Empty;
-    public string[]       Tags         { get; private set; } = Array.Empty<string>();
-    public int            Index        { get; private set; }
+    public Guid           Identifier   { get; internal init; }
+    public DateTimeOffset CreationDate { get; internal init; }
+    public LowerString    Name         { get; internal set; } = LowerString.Empty;
+    public string         Description  { get; internal set; } = string.Empty;
+    public string[]       Tags         { get; internal set; } = Array.Empty<string>();
+    public int            Index        { get; internal set; }
 
-    public EquipFlag     ApplyEquip     { get; private set; }
-    public CustomizeFlag ApplyCustomize { get; private set; }
-    public QuadBool      Wetness        { get; private set; } = QuadBool.NullFalse;
-    public QuadBool      Visor          { get; private set; } = QuadBool.NullFalse;
-    public QuadBool      Hat            { get; private set; } = QuadBool.NullFalse;
-    public QuadBool      Weapon         { get; private set; } = QuadBool.NullFalse;
-    public bool          WriteProtected { get; private set; }
+    public EquipFlag     ApplyEquip     { get; internal set; }
+    public CustomizeFlag ApplyCustomize { get; internal set; }
+    public QuadBool      Wetness        { get; internal set; } = QuadBool.NullFalse;
+    public QuadBool      Visor          { get; internal set; } = QuadBool.NullFalse;
+    public QuadBool      Hat            { get; internal set; } = QuadBool.NullFalse;
+    public QuadBool      Weapon         { get; internal set; } = QuadBool.NullFalse;
+    public bool          WriteProtected { get; internal set; }
 
     public bool DoApplyEquip(EquipSlot slot)
         => ApplyEquip.HasFlag(slot.ToFlag());
@@ -39,7 +39,7 @@ public partial class Design : DesignBase, ISavable
     public bool DoApplyCustomize(CustomizeIndex idx)
         => ApplyCustomize.HasFlag(idx.ToFlag());
 
-    private bool SetApplyEquip(EquipSlot slot, bool value)
+    internal bool SetApplyEquip(EquipSlot slot, bool value)
     {
         var newValue = value ? ApplyEquip | slot.ToFlag() : ApplyEquip & ~slot.ToFlag();
         if (newValue == ApplyEquip)
@@ -49,7 +49,7 @@ public partial class Design : DesignBase, ISavable
         return true;
     }
 
-    private bool SetApplyStain(EquipSlot slot, bool value)
+    internal bool SetApplyStain(EquipSlot slot, bool value)
     {
         var newValue = value ? ApplyEquip | slot.ToStainFlag() : ApplyEquip & ~slot.ToStainFlag();
         if (newValue == ApplyEquip)
@@ -59,7 +59,7 @@ public partial class Design : DesignBase, ISavable
         return true;
     }
 
-    private bool SetApplyCustomize(CustomizeIndex idx, bool value)
+    internal bool SetApplyCustomize(CustomizeIndex idx, bool value)
     {
         var newValue = value ? ApplyCustomize | idx.ToFlag() : ApplyCustomize & ~idx.ToFlag();
         if (newValue == ApplyCustomize)
@@ -70,7 +70,7 @@ public partial class Design : DesignBase, ISavable
     }
 
 
-    private Design(ItemManager items)
+    internal Design(ItemManager items)
         : base(items)
     { }
 
@@ -78,15 +78,15 @@ public partial class Design : DesignBase, ISavable
     {
         var ret = new JObject
         {
-            [nameof(FileVersion)]             = FileVersion,
-            [nameof(Identifier)]              = Identifier,
-            [nameof(CreationDate)]            = CreationDate,
-            [nameof(Name)]                    = Name.Text,
-            [nameof(Description)]             = Description,
-            [nameof(Tags)]                    = JArray.FromObject(Tags),
-            [nameof(WriteProtected)]          = WriteProtected,
-            [nameof(CharacterData.Equipment)] = SerializeEquipment(),
-            [nameof(CharacterData.Customize)] = SerializeCustomize(),
+            [nameof(FileVersion)]         = FileVersion,
+            [nameof(Identifier)]          = Identifier,
+            [nameof(CreationDate)]        = CreationDate,
+            [nameof(Name)]                = Name.Text,
+            [nameof(Description)]         = Description,
+            [nameof(Tags)]                = JArray.FromObject(Tags),
+            [nameof(WriteProtected)]      = WriteProtected,
+            [nameof(ModelData.Equipment)] = SerializeEquipment(),
+            [nameof(ModelData.Customize)] = SerializeCustomize(),
         };
         return ret;
     }
@@ -104,9 +104,9 @@ public partial class Design : DesignBase, ISavable
 
         var ret = new JObject()
         {
-            [nameof(MainHand)] =
-                Serialize(MainHand, CharacterData.MainHand.Stain, DoApplyEquip(EquipSlot.MainHand), DoApplyStain(EquipSlot.MainHand)),
-            [nameof(OffHand)] = Serialize(OffHand, CharacterData.OffHand.Stain, DoApplyEquip(EquipSlot.OffHand),
+            [nameof(MainHandId)] =
+                Serialize(MainHandId, ModelData.MainHand.Stain, DoApplyEquip(EquipSlot.MainHand), DoApplyStain(EquipSlot.MainHand)),
+            [nameof(OffHandId)] = Serialize(OffHandId, ModelData.OffHand.Stain, DoApplyEquip(EquipSlot.OffHand),
                 DoApplyStain(EquipSlot.OffHand)),
         };
 
@@ -129,7 +129,7 @@ public partial class Design : DesignBase, ISavable
         {
             [nameof(ModelId)] = ModelId,
         };
-        var customize = CharacterData.Customize;
+        var customize = ModelData.Customize;
         foreach (var idx in Enum.GetValues<CustomizeIndex>())
         {
             var data = customize[idx];
@@ -154,7 +154,7 @@ public partial class Design : DesignBase, ISavable
         };
     }
 
-    private static Design LoadDesignV1(ItemManager items, JObject json, out bool changes)
+    internal static Design LoadDesignV1(ItemManager items, JObject json, out bool changes)
     {
         static string[] ParseTags(JObject json)
         {
@@ -176,7 +176,7 @@ public partial class Design : DesignBase, ISavable
         return design;
     }
 
-    private static bool LoadEquip(ItemManager items, JToken? equip, Design design)
+    internal static bool LoadEquip(ItemManager items, JToken? equip, Design design)
     {
         if (equip == null)
             return true;
@@ -241,12 +241,12 @@ public partial class Design : DesignBase, ISavable
         return changes;
     }
 
-    private static bool LoadCustomize(JToken? json, Design design)
+    internal static bool LoadCustomize(JToken? json, Design design)
     {
         if (json == null)
             return true;
 
-        var customize = design.CharacterData.Customize;
+        var customize = design.ModelData.Customize;
         foreach (var idx in Enum.GetValues<CustomizeIndex>())
         {
             var tok   = json[idx.ToString()];
@@ -263,20 +263,21 @@ public partial class Design : DesignBase, ISavable
 
     public void MigrateBase64(ItemManager items, string base64)
     {
-        var data = MigrateBase64(base64, out var applyEquip, out var applyCustomize, out var writeProtected, out var wet, out var hat,
-            out var visor,               out var weapon);
+        var data = DesignBase64Migration.MigrateBase64(base64, out var applyEquip, out var applyCustomize, out var writeProtected, out var wet,
+            out var hat,
+            out var visor, out var weapon);
         UpdateMainhand(items, data.MainHand);
         UpdateOffhand(items, data.OffHand);
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
             UpdateArmor(items, slot, data.Equipment[slot], true);
-        CharacterData.CustomizeData = data.CustomizeData;
-        ApplyEquip                  = applyEquip;
-        ApplyCustomize              = applyCustomize;
-        WriteProtected              = writeProtected;
-        Wetness                     = wet;
-        Hat                         = hat;
-        Visor                       = visor;
-        Weapon                      = weapon;
+        ModelData.CustomizeData = data.CustomizeData;
+        ApplyEquip              = applyEquip;
+        ApplyCustomize          = applyCustomize;
+        WriteProtected          = writeProtected;
+        Wetness                 = wet;
+        Hat                     = hat;
+        Visor                   = visor;
+        Weapon                  = weapon;
     }
 
     public static Design CreateTemporaryFromBase64(ItemManager items, string base64, bool customize, bool equip)
@@ -296,13 +297,14 @@ public partial class Design : DesignBase, ISavable
 
     // Outdated.
     public string CreateOldBase64()
-        => CreateOldBase64(in CharacterData, ApplyEquip,    ApplyCustomize,     Wetness == QuadBool.True, Hat.ForcedValue, Hat.Enabled,
-            Visor.ForcedValue,               Visor.Enabled, Weapon.ForcedValue, Weapon.Enabled,           WriteProtected,  1f);
+        => DesignBase64Migration.CreateOldBase64(in ModelData, ApplyEquip, ApplyCustomize, Wetness == QuadBool.True, Hat.ForcedValue,
+            Hat.Enabled,
+            Visor.ForcedValue, Visor.Enabled, Weapon.ForcedValue, Weapon.Enabled, WriteProtected, 1f);
 
     public string ToFilename(FilenameService fileNames)
         => fileNames.DesignFile(this);
 
-    public void   Save(StreamWriter writer)
+    public void Save(StreamWriter writer)
     {
         using var j = new JsonTextWriter(writer)
         {

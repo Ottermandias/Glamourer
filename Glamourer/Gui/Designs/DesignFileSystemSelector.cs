@@ -9,34 +9,34 @@ namespace Glamourer.Gui.Designs;
 
 public sealed class DesignFileSystemSelector : FileSystemSelector<Design, DesignFileSystemSelector.DesignState>
 {
-    private readonly Design.Manager _manager;
+    private readonly DesignManager _designManager;
 
     public struct DesignState
     { }
 
-    public DesignFileSystemSelector(Design.Manager manager, DesignFileSystem fileSystem, KeyState keyState)
+    public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, KeyState keyState)
         : base(fileSystem, keyState)
     {
-        _manager              =  manager;
-        _manager.DesignChange += OnDesignChange;
+        _designManager              =  designManager;
+        _designManager.DesignChange += OnDesignChange;
         AddButton(DeleteButton, 1000);
     }
 
     public override void Dispose()
     {
         base.Dispose();
-        _manager.DesignChange -= OnDesignChange;
+        _designManager.DesignChange -= OnDesignChange;
     }
 
-    private void OnDesignChange(Design.Manager.DesignChangeType type, Design design, object? oldData)
+    private void OnDesignChange(DesignManager.DesignChangeType type, Design design, object? oldData)
     {
         switch (type)
         {
-            case Design.Manager.DesignChangeType.ReloadedAll:
-            case Design.Manager.DesignChangeType.Renamed:
-            case Design.Manager.DesignChangeType.AddedTag:
-            case Design.Manager.DesignChangeType.ChangedTag:
-            case Design.Manager.DesignChangeType.RemovedTag:
+            case DesignManager.DesignChangeType.ReloadedAll:
+            case DesignManager.DesignChangeType.Renamed:
+            case DesignManager.DesignChangeType.AddedTag:
+            case DesignManager.DesignChangeType.ChangedTag:
+            case DesignManager.DesignChangeType.RemovedTag:
                 SetFilterDirty();
                 break;
         }
@@ -54,6 +54,6 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
 
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), size, tt, SelectedLeaf == null || !keys, true)
          && Selected != null)
-            _manager.Delete(Selected);
+            _designManager.Delete(Selected);
     }
 }

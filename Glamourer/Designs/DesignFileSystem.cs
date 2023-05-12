@@ -8,7 +8,6 @@ using Dalamud.Plugin;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OtterGui.Classes;
 using OtterGui.Filesystem;
 
 namespace Glamourer.Designs;
@@ -20,9 +19,9 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
 
     public readonly  string         DesignFileSystemFile;
     private readonly SaveService    _saveService;
-    private readonly Design.Manager _designManager;
+    private readonly DesignManager _designManager;
 
-    public DesignFileSystem(Design.Manager designManager, DalamudPluginInterface pi, SaveService saveService)
+    public DesignFileSystem(DesignManager designManager, DalamudPluginInterface pi, SaveService saveService)
     {
         DesignFileSystemFile        =  GetDesignFileSystemFile(pi);
         _designManager              =  designManager;
@@ -75,11 +74,11 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
             _saveService.QueueSave(this);
     }
 
-    private void OnDataChange(Design.Manager.DesignChangeType type, Design design, object? data)
+    private void OnDataChange(DesignManager.DesignChangeType type, Design design, object? data)
     {
         switch (type)
         {
-            case Design.Manager.DesignChangeType.Created:
+            case DesignManager.DesignChangeType.Created:
                 var originalName = design.Name.Text.FixName();
                 var name         = originalName;
                 var counter      = 1;
@@ -88,14 +87,14 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
 
                 CreateLeaf(Root, name, design);
                 break;
-            case Design.Manager.DesignChangeType.Deleted:
+            case DesignManager.DesignChangeType.Deleted:
                 if (FindLeaf(design, out var leaf))
                     Delete(leaf);
                 break;
-            case Design.Manager.DesignChangeType.ReloadedAll:
+            case DesignManager.DesignChangeType.ReloadedAll:
                 Reload();
                 break;
-            case Design.Manager.DesignChangeType.Renamed when data is string oldName:
+            case DesignManager.DesignChangeType.Renamed when data is string oldName:
                 var old = oldName.FixName();
                 if (Find(old, out var child) && child is not Folder)
                     Rename(child, design.Name);

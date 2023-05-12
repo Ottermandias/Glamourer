@@ -14,28 +14,44 @@ using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
+using Object = FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Object;
 
 namespace Glamourer.State;
 
 public sealed partial class ActiveDesign
 {
-    public partial class Manager : IReadOnlyDictionary<ActorIdentifier, ActiveDesign>
+    [Flags]
+    public enum ChangeType
     {
-        private readonly ActorService    _actors;
-        private readonly ObjectManager   _objects;
-        private readonly Interop.Interop _interop;
-        private readonly PenumbraAttach  _penumbra;
-        private readonly ItemManager     _items;
+        Default = 0x00,
+        Changed = 0x01,
+        Fixed   = 0x02,
+    }
+
+    public class Manager : IReadOnlyDictionary<ActorIdentifier, ActiveDesign>
+    {
+        private readonly ActorService           _actors;
+        private readonly ObjectManager          _objects;
+        private readonly PenumbraAttach         _penumbra;
+        private readonly ItemManager            _items;
+        private readonly VisorService           _visor;
+        private readonly ChangeCustomizeService _customize;
+        private readonly UpdateSlotService      _updateSlot;
+        private readonly WeaponService          _weaponService;
 
         private readonly Dictionary<ActorIdentifier, ActiveDesign> _characterSaves = new();
 
-        public Manager(ActorService actors, ObjectManager objects, Interop.Interop interop, PenumbraAttach penumbra, ItemManager items)
+        public Manager(ActorService actors, ObjectManager objects, PenumbraAttach penumbra, ItemManager items, VisorService visor,
+            ChangeCustomizeService customize, UpdateSlotService updateSlot, WeaponService weaponService)
         {
-            _actors   = actors;
-            _objects  = objects;
-            _interop  = interop;
-            _penumbra = penumbra;
-            _items    = items;
+            _actors        = actors;
+            _objects       = objects;
+            _penumbra      = penumbra;
+            _items         = items;
+            _visor         = visor;
+            _customize     = customize;
+            _updateSlot    = updateSlot;
+            _weaponService = weaponService;
         }
 
         public IEnumerator<KeyValuePair<ActorIdentifier, ActiveDesign>> GetEnumerator()
@@ -99,15 +115,25 @@ public sealed partial class ActiveDesign
                 return;
 
             if (from.DoApplyEquip(EquipSlot.MainHand))
-                ChangeMainHand(to, from.MainHand, fromFixed);
+                ChangeMainHand(to, from.MainHandId, fromFixed);
+            if (from.DoApplyStain(EquipSlot.MainHand))
+                ChangeStain(to, EquipSlot.MainHand, from.WeaponMain.Stain, fromFixed);
 
             if (from.DoApplyEquip(EquipSlot.OffHand))
-                ChangeOffHand(to, from.OffHand, fromFixed);
+                ChangeOffHand(to, from.OffHandId, fromFixed);
+            if (from.DoApplyStain(EquipSlot.OffHand))
+                ChangeStain(to, EquipSlot.OffHand, from.WeaponOff.Stain, fromFixed);
 
-            foreach (var slot in EquipSlotExtensions.EqdpSlots.Where(from.DoApplyEquip))
-                ChangeEquipment(to, slot, from.Armor(slot), fromFixed);
+            foreach (var slot in EquipSlotExtensions.EqdpSlots)
+            {
+                var armor = from.Armor(slot);
+                if (from.DoApplyEquip(slot))
+                    ChangeEquipment(to, slot, armor, fromFixed);
+                if (from.DoApplyStain(slot))
+                    ChangeStain(to, slot, armor.Stain, fromFixed);
+            }
 
-            ChangeCustomize(to, from.ApplyCustomize, *from.Customize().Data, fromFixed);
+            ChangeCustomize(to, from.ApplyCustomize, *from.Customize.Data, fromFixed);
 
             if (from.Wetness.Enabled)
                 SetWetness(to, from.Wetness.ForcedValue, fromFixed);
@@ -177,7 +203,7 @@ public sealed partial class ActiveDesign
                 if (redraw)
                     _penumbra.RedrawObject(obj, RedrawType.Redraw);
                 else
-                    _interop.UpdateCustomize(obj, design.CharacterData.CustomizeData);
+                    _customize.UpdateCustomize(obj, design.ModelData.CustomizeData);
             }
         }
 
@@ -205,7 +231,7 @@ public sealed partial class ActiveDesign
                 return;
 
             foreach (var obj in data.Objects)
-                _interop.UpdateSlot(obj.DrawObject, slot, item);
+                _updateSlot.UpdateSlot(obj.DrawObject, slot, item);
         }
 
         public void ChangeEquipment(ActiveDesign design, EquipSlot slot, Item item, bool fromFixed)
@@ -228,16 +254,20 @@ public sealed partial class ActiveDesign
                 return;
 
             foreach (var obj in data.Objects)
-                _interop.UpdateSlot(obj.DrawObject, slot, item.Model);
+                _updateSlot.UpdateSlot(obj.DrawObject, slot, item.Model);
         }
 
         public void ChangeStain(ActiveDesign design, EquipSlot slot, StainId stain, bool fromFixed)
         {
             var flag = slot.ToStainFlag();
             design.SetStain(slot, stain);
-            var current = design.Armor(slot);
-            var initial = design._initialData.Equipment[slot];
-            if (current.Stain.Value != initial.Stain.Value)
+            var (current, initial, weapon) = slot switch
+            {
+                EquipSlot.MainHand => (design.WeaponMain.Stain, design._initialData.MainHand.Stain, true),
+                EquipSlot.OffHand  => (design.WeaponOff.Stain, design._initialData.OffHand.Stain, true),
+                _                  => (design.Armor(slot).Stain, design._initialData.Equipment[slot].Stain, false),
+            };
+            if (current.Value != initial.Value)
                 design.ChangedEquip |= flag;
             else
                 design.ChangedEquip &= ~flag;
@@ -251,7 +281,12 @@ public sealed partial class ActiveDesign
                 return;
 
             foreach (var obj in data.Objects)
-                _interop.UpdateStain(obj.DrawObject, slot, stain);
+            {
+                if (weapon)
+                    _weaponService.LoadStain(obj, EquipSlot.MainHand, stain);
+                else
+                    _updateSlot.UpdateStain(obj.DrawObject, slot, stain);
+            }
         }
 
         public void ChangeVisor(ActiveDesign design, bool on, bool fromFixed)
@@ -266,7 +301,7 @@ public sealed partial class ActiveDesign
                 return;
 
             foreach (var obj in data.Objects)
-                Interop.Interop.SetVisorState(obj.DrawObject, on);
+                _visor.SetVisorState(obj.DrawObject, on);
         }
     }
 }

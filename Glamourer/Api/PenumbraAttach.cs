@@ -9,11 +9,6 @@ using Penumbra.Api.Helpers;
 
 namespace Glamourer.Api;
 
-public class CommunicatorService
-{
-
-}
-
 public unsafe class PenumbraAttach : IDisposable
 {
     public const int RequiredPenumbraBreakingVersion = 4;

@@ -53,18 +53,22 @@ public static class ServiceManager
             .AddSingleton<ActorService>()
             .AddSingleton<ItemService>()
             .AddSingleton<ItemManager>()
-            .AddSingleton<CustomizationService>()
-            .AddSingleton<JobService>();
+            .AddSingleton<CustomizationService>();
 
     private static IServiceCollection AddInterop(this IServiceCollection services)
-        => services.AddSingleton<Interop.Interop>()
+        => services.AddSingleton<ChangeCustomizeService>()
+            .AddSingleton<JobService>()
+            .AddSingleton<UpdateSlotService>()
+            .AddSingleton<VisorService>()
+            .AddSingleton<WeaponService>()
             .AddSingleton<ObjectManager>();
 
     private static IServiceCollection AddDesigns(this IServiceCollection services)
-        => services.AddSingleton<Design.Manager>()
+        => services.AddSingleton<DesignManager>()
             .AddSingleton<DesignFileSystem>()
             .AddSingleton<ActiveDesign.Manager>()
-            .AddSingleton<FixedDesignManager>();
+            .AddSingleton<FixedDesignManager>()
+            .AddSingleton<RedrawManager>();
 
     private static IServiceCollection AddInterface(this IServiceCollection services)
         => services.AddSingleton<Interface>()

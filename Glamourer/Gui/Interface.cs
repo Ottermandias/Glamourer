@@ -29,7 +29,7 @@ public partial class Interface : Window, IDisposable
     private readonly DebugStateTab       _debugStateTab;
     private readonly DebugDataTab        _debugDataTab;
 
-    public Interface(DalamudPluginInterface pi, ItemManager items, ActiveDesign.Manager activeDesigns, Design.Manager manager,
+    public Interface(DalamudPluginInterface pi, ItemManager items, ActiveDesign.Manager activeDesigns, DesignManager designManager,
         DesignFileSystem fileSystem, ObjectManager objects, CustomizationService customization, Configuration config, DataManager gameData, TargetManager targets, ActorService actors, KeyState keyState)
         : base(GetLabel())
     {
@@ -46,7 +46,7 @@ public partial class Interface : Window, IDisposable
         _actorTab      = new ActorTab(this, activeDesigns, objects, targets, actors, items);
         _debugStateTab = new DebugStateTab(activeDesigns);
         _debugDataTab  = new DebugDataTab(customization);
-        _designTab     = new DesignTab(this, manager, fileSystem, keyState);
+        _designTab     = new DesignTab(this, designManager, fileSystem, keyState, activeDesigns, objects);
     }
 
     public override void Draw()

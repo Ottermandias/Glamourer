@@ -2,10 +2,16 @@
 using System.Numerics;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
+using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Gui.Designs;
+using Glamourer.Interop;
+using Glamourer.Services;
+using Glamourer.State;
 using ImGuiNET;
+using Microsoft.VisualBasic;
+using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 
@@ -18,14 +24,19 @@ public partial class Interface
         public readonly  DesignFileSystemSelector Selector;
         private readonly Interface                _main;
         private readonly DesignFileSystem         _fileSystem;
-        private readonly Design.Manager            _manager;
+        private readonly DesignManager            _designManager;
+        private readonly ActiveDesign.Manager     _activeDesignManager;
+        private readonly ObjectManager             _objects;
 
-        public DesignTab(Interface main, Design.Manager manager, DesignFileSystem fileSystem, KeyState keyState)
+        public DesignTab(Interface main, DesignManager designManager, DesignFileSystem fileSystem, KeyState keyState,
+            ActiveDesign.Manager activeDesignManager, ObjectManager objects)
         {
-            _main       = main;
-            _manager    = manager;
-            _fileSystem = fileSystem;
-            Selector    = new DesignFileSystemSelector(manager, fileSystem, keyState);
+            _main                = main;
+            _designManager       = designManager;
+            _fileSystem          = fileSystem;
+            _activeDesignManager = activeDesignManager;
+            _objects             = objects;
+            Selector             = new DesignFileSystemSelector(designManager, fileSystem, keyState);
         }
 
         public void Dispose()
@@ -45,13 +56,30 @@ public partial class Interface
         public float GetDesignSelectorSize()
             => 200f * ImGuiHelpers.GlobalScale;
 
-        public void DrawDesignPanel()
+        private void ApplySelfButton()
         {
-            using var child = ImRaii.Child("##DesignPanel", new Vector2(-0.001f), true, ImGuiWindowFlags.HorizontalScrollbar);
-            if (!child || Selector.Selected == null)
+            var self = _objects.Player;
+            if (!ImGuiUtil.DrawDisabledButton("Apply to Self", Vector2.Zero, string.Empty, !self.Valid))
                 return;
 
-            _main._customizationDrawer.Draw(Selector.Selected.Customize(), CustomizeFlagExtensions.All, true);
+            var design = _activeDesignManager.GetOrCreateSave(self);
+            _activeDesignManager.ApplyDesign(design, Selector.Selected!, false);
+        }
+
+        public void DrawDesignPanel()
+        {
+            if (Selector.Selected == null)
+                return;
+
+            using var group = ImRaii.Group();
+
+            ApplySelfButton();
+
+            using var child = ImRaii.Child("##DesignPanel", new Vector2(-0.001f), true, ImGuiWindowFlags.HorizontalScrollbar);
+            if (!child)
+                return;
+
+            _main._customizationDrawer.Draw(Selector.Selected.Customize, CustomizeFlagExtensions.All, true);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
                 var current = Selector.Selected.Armor(slot);
