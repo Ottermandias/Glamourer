@@ -1,29 +1,13 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using Dalamud.Game.ClientState.Objects.Types;
 using Penumbra.GameData.Enums;
+using Character = Dalamud.Game.ClientState.Objects.Types.Character;
 
 namespace Glamourer.Customization
 {
-    public unsafe struct LazyCustomization
-    {
-        public CharacterCustomization* Address;
-
-        public LazyCustomization(IntPtr characterPtr)
-            => Address = (CharacterCustomization*) (characterPtr + CharacterCustomization.CustomizationOffset);
-
-        public ref CharacterCustomization Value
-            => ref *Address;
-
-        public LazyCustomization(CharacterCustomization data)
-            => Address = &data;
-    }
-
-
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct CharacterCustomization
     {
-        public const int CustomizationOffset = 0x840;
         public const int CustomizationBytes  = 26;
 
         public static CharacterCustomization Default = new()
@@ -150,13 +134,13 @@ namespace Glamourer.Customization
             }
         }
 
-        public void Read(Character character)
-            => Read(character.Address + CustomizationOffset);
+        public unsafe void Read(Character character)
+            => Read((nint) ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)character.Address)->DrawData.CustomizeData.Data);
 
         public CharacterCustomization(Character character)
             : this()
         {
-            Read(character.Address + CustomizationOffset);
+            Read(character);
         }
 
         public byte this[CustomizationId id]
@@ -282,7 +266,7 @@ namespace Glamourer.Customization
         {
             fixed (Race* ptr = &Race)
             {
-                Buffer.MemoryCopy(ptr, (byte*) characterAddress + CustomizationOffset, CustomizationBytes, CustomizationBytes);
+                Buffer.MemoryCopy(ptr, ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)characterAddress)->DrawData.CustomizeData.Data, CustomizationBytes, CustomizationBytes);
             }
         }
 

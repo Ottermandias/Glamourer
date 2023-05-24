@@ -10,9 +10,6 @@ namespace Penumbra.PlayerWatch;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public class CharacterEquipment
 {
-    public const int MainWeaponOffset = 0x6E0;
-    public const int OffWeaponOffset  = 0x748;
-    public const int EquipmentOffset  = 0x818;
     public const int EquipmentSlots   = 10;
     public const int WeaponSlots      = 2;
 
@@ -58,16 +55,16 @@ public class CharacterEquipment
     private unsafe CharacterEquipment(IntPtr actorAddress)
     {
         IsSet = 1;
-        var actorPtr = (byte*)actorAddress.ToPointer();
+        var actorPtr = (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)actorAddress.ToPointer();
         fixed (CharacterWeapon* main = &MainHand, off = &OffHand)
         {
-            Buffer.MemoryCopy(actorPtr + MainWeaponOffset, main, sizeof(CharacterWeapon), sizeof(CharacterWeapon));
-            Buffer.MemoryCopy(actorPtr + OffWeaponOffset,  off,  sizeof(CharacterWeapon), sizeof(CharacterWeapon));
+            Buffer.MemoryCopy(&actorPtr->DrawData.MainHandModel, main, sizeof(CharacterWeapon), sizeof(CharacterWeapon));
+            Buffer.MemoryCopy(&actorPtr->DrawData.OffHandModel, off,  sizeof(CharacterWeapon), sizeof(CharacterWeapon));
         }
 
         fixed (CharacterArmor* equipment = &Head)
         {
-            Buffer.MemoryCopy(actorPtr + EquipmentOffset, equipment, EquipmentSlots * sizeof(CharacterArmor),
+            Buffer.MemoryCopy(&actorPtr->DrawData.Head, equipment, EquipmentSlots * sizeof(CharacterArmor),
                 EquipmentSlots * sizeof(CharacterArmor));
         }
     }
