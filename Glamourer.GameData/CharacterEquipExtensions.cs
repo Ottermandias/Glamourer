@@ -12,75 +12,73 @@ public static class WriteExtensions
 {
     private static unsafe void Write(IntPtr characterPtr, EquipSlot slot, SetId? id, WeaponType? type, ushort? variant, StainId? stain)
     {
-        void WriteWeapon(int offset)
+        void WriteWeapon(WeaponModelId* address)
         {
-            var address = (byte*)characterPtr + offset;
             if (id.HasValue)
-                *(ushort*)address = (ushort)id.Value;
+                address->Id = (ushort)id.Value;
 
             if (type.HasValue)
-                *(ushort*)(address + 2) = (ushort)type.Value;
+                address->Type = (ushort)type.Value;
 
             if (variant.HasValue)
-                *(ushort*)(address + 4) = variant.Value;
+                address->Variant = variant.Value;
 
             if (*(ushort*)address == 0)
-                *(address + 6) = 0;
+                address->Stain = 0;
             else if (stain.HasValue)
-                *(address + 6) = (byte)stain.Value;
+                address->Stain = (byte)stain.Value;
         }
 
-        void WriteEquip(int offset)
+        void WriteEquip(EquipmentModelId* address)
         {
-            var address = (byte*)characterPtr + offset;
             if (id.HasValue)
-                *(ushort*)address = (ushort)id.Value;
+                address->Id = (ushort)id.Value;
 
             if (variant < byte.MaxValue)
-                *(address + 2) = (byte)variant.Value;
+                address->Variant = (byte)variant.Value;
 
             if (stain.HasValue)
-                *(address + 3) = (byte)stain.Value;
+                address->Stain = (byte)stain.Value;
         }
 
-        var drawDataOffset = (int) Marshal.OffsetOf<Character>(nameof(Character.DrawData));
+        var ptr = (Character*)characterPtr;
         switch (slot)
         {
             case EquipSlot.MainHand:
-                WriteWeapon(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.MainHandModel)));
+                WriteWeapon(&ptr->DrawData.MainHandModel);
                 break;
             case EquipSlot.OffHand:
-                WriteWeapon(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.OffHandModel)));
+                WriteWeapon(&ptr->DrawData.OffHandModel);
                 break;
             case EquipSlot.Head:
-                WriteEquip(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.Head)));
+                WriteEquip(&ptr->DrawData.Head);
                 break;
             case EquipSlot.Body:
-                WriteEquip(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.Top)));
+                WriteEquip(&ptr->DrawData.Top);
                 break;
             case EquipSlot.Hands:
-                WriteEquip(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.Arms)));
+                WriteEquip(&ptr->DrawData.Arms);
                 break;
             case EquipSlot.Legs:
-                WriteEquip(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.Legs)));
+                WriteEquip(&ptr->DrawData.Legs);
                 break;
             case EquipSlot.Feet:
-                WriteEquip(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.Feet)));
+                WriteEquip(&ptr->DrawData.Feet);
                 break;
             case EquipSlot.Ears:
-                WriteEquip(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.Ear)));
+                WriteEquip(&ptr->DrawData.Ear);
                 break;
             case EquipSlot.Neck:
-                WriteEquip(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.Neck)));
+                WriteEquip(&ptr->DrawData.Neck);
                 break;
             case EquipSlot.Wrists:
-                WriteEquip(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.Wrist)));
+                WriteEquip(&ptr->DrawData.Wrist);
                 break;
             case EquipSlot.RFinger:
-                WriteEquip(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.RFinger)));
+                WriteEquip(&ptr->DrawData.RFinger);
                 break;
             case EquipSlot.LFinger:
-                WriteEquip(drawDataOffset + (int)Marshal.OffsetOf<DrawDataContainer>(nameof(DrawDataContainer.LFinger)));
+                WriteEquip(&ptr->DrawData.LFinger);
                 break;
             default: throw new InvalidEnumArgumentException();
         }
