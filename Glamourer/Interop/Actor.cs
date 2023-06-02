@@ -82,10 +82,10 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
         => ObjectKind == ObjectKind.Companion ? *(ushort*)((byte*)Pointer + 0x1AAC) : (ushort)0;
 
     public Customize Customize
-        => new((CustomizeData*)Pointer->CustomizeData);
+        => new(*(CustomizeData*)&Pointer->DrawData.CustomizeData);
 
     public CharacterEquip Equip
-        => new((CharacterArmor*)Pointer->EquipSlotData);
+        => new((CharacterArmor*)&Pointer->DrawData.Head);
 
     public CharacterWeapon MainHand
     {

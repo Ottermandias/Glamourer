@@ -7,6 +7,8 @@ using Penumbra.GameData.Enums;
 
 namespace Glamourer.State;
 
+
+
 public sealed partial class ActiveDesign : DesignData
 {
     public readonly ActorIdentifier Identifier;
@@ -74,17 +76,16 @@ public sealed partial class ActiveDesign : DesignData
         if (!_initialData.Customize.Equals(actor.Customize))
         {
             _initialData.Customize.Load(actor.Customize);
-            Customize.Load(actor.Customize);
+            ModelData.Customize.Load(actor.Customize);
         }
 
-        var initialEquip = _initialData.Equipment;
         var currentEquip = actor.Equip;
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var current = currentEquip[slot];
-            if (initialEquip[slot] != current)
+            if (_initialData.Armor(slot) != current)
             {
-                initialEquip[slot] = current;
+                _initialData.SetPiece(slot, current.Set, current.Variant, current.Stain, out _);
                 UpdateArmor(items, slot, current, true);
                 SetStain(slot, current.Stain);
             }

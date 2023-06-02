@@ -6,6 +6,13 @@ using Penumbra.String.Functions;
 
 namespace Glamourer.Designs;
 
+public struct ItemPiece
+{
+    public string Name;
+    public uint   ItemId;
+    public SetId  ModelId;
+}
+
 [Flags]
 public enum ModelFlags : ushort
 {

@@ -58,9 +58,9 @@ public class DrawObjectManager : IDisposable
         // Compare game object customize data against draw object customize data for transformations.
         // Apply customization if they correspond and there is customization to apply.
         var gameObjectCustomize = gameObject.Customize;
-        var customize           = new Customize((CustomizeData*)customizePtr);
+        var customize           = new Customize(*(CustomizeData*)customizePtr);
         if (gameObjectCustomize.Equals(customize))
-            customize.Load(design.Customize);
+            customize.Load(design.ModelData.Customize);
 
         // Compare game object equip data against draw object equip data for transformations.
         // Apply each piece of equip that should be applied if they correspond.
@@ -68,11 +68,10 @@ public class DrawObjectManager : IDisposable
         var equip           = new CharacterEquip((CharacterArmor*)equipDataPtr);
         if (gameObjectEquip.Equals(equip))
         {
-            var saveEquip = design.Equipment;
             foreach (var slot in EquipSlotExtensions.EquipmentSlots)
             {
                 (_, equip[slot]) =
-                    _items.ResolveRestrictedGear(saveEquip[slot], slot, customize.Race, customize.Gender);
+                    _items.ResolveRestrictedGear(design.ModelData.Armor(slot), slot, customize.Race, customize.Gender);
             }
         }
     }

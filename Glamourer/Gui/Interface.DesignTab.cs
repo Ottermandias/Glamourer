@@ -79,7 +79,7 @@ public partial class Interface
             if (!child)
                 return;
 
-            _main._customizationDrawer.Draw(Selector.Selected.Customize, CustomizeFlagExtensions.All, true);
+            _main._customizationDrawer.Draw(Selector.Selected.ModelData.Customize, CustomizeFlagExtensions.All, true);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
                 var current = Selector.Selected.Armor(slot);

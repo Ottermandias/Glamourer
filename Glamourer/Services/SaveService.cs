@@ -43,7 +43,7 @@ public class SaveService
     public void QueueSave(ISavable value)
     {
         var file = value.ToFilename(FileNames);
-        _framework.RegisterDelayed(value.GetType().Name + file, () =>
+        _framework.RegisterOnTick(value.GetType().Name + file, () =>
         {
             ImmediateSave(value);
         });

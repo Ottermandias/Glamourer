@@ -32,7 +32,7 @@ public unsafe partial struct DrawObject : IEquatable<DrawObject>, IDesignable
         => (*(delegate* unmanaged<Human*, uint>**)Pointer)[50](Pointer);
 
     public Customize Customize
-        => new((CustomizeData*)Pointer->CustomizeData);
+        => *(Customize*)Pointer->CustomizeData;
 
     public CharacterEquip Equip
         => new((CharacterArmor*)Pointer->EquipSlotData);

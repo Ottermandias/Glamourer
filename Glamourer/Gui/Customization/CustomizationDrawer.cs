@@ -20,13 +20,10 @@ public partial class CustomizationDrawer : IDisposable
     private bool       _withFlags = false;
     private Exception? _terminate = null;
 
-    private readonly unsafe CustomizeData* _data;
-
     private Customize        _customize;
     private CustomizationSet _set = null!;
 
-    public unsafe CustomizeData CustomizeData
-        => *_data;
+    public Customize Customize;
 
     public CustomizeFlag CurrentFlag { get; private set; }
     public CustomizeFlag Changed     { get; private set; }
@@ -49,21 +46,12 @@ public partial class CustomizationDrawer : IDisposable
         _service      = service;
         _items        = items;
         _legacyTattoo = GetLegacyTattooIcon(pi);
-        unsafe
-        {
-            _data      = (CustomizeData*)Marshal.AllocHGlobal(sizeof(CustomizeData));
-            *_data     = Customize.Default;
-            _customize = new Customize(_data);
-        }
+        Customize     = Customize.Default;
     }
 
     public void Dispose()
     {
         _legacyTattoo?.Dispose();
-        unsafe
-        {
-            Marshal.FreeHGlobal((nint)_data);
-        }
     }
 
     public bool Draw(Customize current, bool locked)

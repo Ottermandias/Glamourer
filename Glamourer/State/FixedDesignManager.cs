@@ -13,7 +13,7 @@ public class FixedDesignManager
 {
     public class FixedDesign
     {
-        public Design  Design;
+        public Design  Design = null!;
         public byte?   JobCondition;
         public ushort? TerritoryCondition;
 

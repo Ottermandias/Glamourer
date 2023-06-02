@@ -72,8 +72,8 @@ public partial class Interface
                 _currentSave.Initialize(_items, _currentData.Objects[0]);
 
             RevertButton();
-            if (_main._customizationDrawer.Draw(_currentSave.Customize, _identifier.Type == IdentifierType.Special))
-                _activeDesigns.ChangeCustomize(_currentSave, _main._customizationDrawer.Changed, _main._customizationDrawer.CustomizeData,
+            if (_main._customizationDrawer.Draw(_currentSave.ModelData.Customize, _identifier.Type == IdentifierType.Special))
+                _activeDesigns.ChangeCustomize(_currentSave, _main._customizationDrawer.Changed, _main._customizationDrawer.Customize.Data,
                     false);
 
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
@@ -82,8 +82,8 @@ public partial class Interface
                 if (_main._equipmentDrawer.DrawStain(current.Stain, slot, out var stain))
                     _activeDesigns.ChangeStain(_currentSave, slot, stain.RowIndex, false);
                 ImGui.SameLine();
-                if (_main._equipmentDrawer.DrawArmor(current, slot, out var armor, _currentSave.Customize.Gender,
-                        _currentSave.Customize.Race))
+                if (_main._equipmentDrawer.DrawArmor(current, slot, out var armor, _currentSave.ModelData.Customize.Gender,
+                        _currentSave.ModelData.Customize.Race))
                     _activeDesigns.ChangeEquipment(_currentSave, slot, armor, false);
             }
 

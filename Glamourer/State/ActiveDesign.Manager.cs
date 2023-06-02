@@ -133,7 +133,7 @@ public sealed partial class ActiveDesign
                     ChangeStain(to, slot, armor.Stain, fromFixed);
             }
 
-            ChangeCustomize(to, from.ApplyCustomize, *from.Customize.Data, fromFixed);
+            ChangeCustomize(to, from.ApplyCustomize, from.ModelData.Customize.Data, fromFixed);
 
             if (from.Wetness.Enabled)
                 SetWetness(to, from.Wetness.ForcedValue, fromFixed);
@@ -168,11 +168,11 @@ public sealed partial class ActiveDesign
         { }
 
         public void RevertCustomize(ActiveDesign design, CustomizeFlag flags)
-            => ChangeCustomize(design, flags, design._initialData.CustomizeData, false);
+            => ChangeCustomize(design, flags, design._initialData.Customize.Data, false);
 
         public void ChangeCustomize(ActiveDesign design, CustomizeFlag flags, CustomizeData newValue, bool fromFixed)
         {
-            var customize  = new Customize(ref newValue);
+            var customize  = new Customize(newValue);
             var anyChanges = false;
             foreach (var option in Enum.GetValues<CustomizeIndex>())
             {
@@ -203,13 +203,13 @@ public sealed partial class ActiveDesign
                 if (redraw)
                     _penumbra.RedrawObject(obj, RedrawType.Redraw);
                 else
-                    _customize.UpdateCustomize(obj, design.ModelData.CustomizeData);
+                    _customize.UpdateCustomize(obj, design.ModelData.Customize.Data);
             }
         }
 
         public void RevertEquipment(ActiveDesign design, EquipSlot slot, bool equip, bool stain)
         {
-            var item = design._initialData.Equipment[slot];
+            var item = design._initialData.Armor(slot);
             if (equip)
             {
                 var flag = slot.ToFlag();
@@ -239,7 +239,7 @@ public sealed partial class ActiveDesign
             var flag = slot.ToFlag();
             design.SetArmor(slot, item);
             var current = design.Armor(slot);
-            var initial = design._initialData.Equipment[slot];
+            var initial = design._initialData.Armor(slot);
             if (current.ModelBase.Value != initial.Set.Value || current.Variant != initial.Variant)
                 design.ChangedEquip |= flag;
             else
@@ -265,7 +265,7 @@ public sealed partial class ActiveDesign
             {
                 EquipSlot.MainHand => (design.WeaponMain.Stain, design._initialData.MainHand.Stain, true),
                 EquipSlot.OffHand  => (design.WeaponOff.Stain, design._initialData.OffHand.Stain, true),
-                _                  => (design.Armor(slot).Stain, design._initialData.Equipment[slot].Stain, false),
+                _                  => (design.Armor(slot).Stain, design._initialData.Armor(slot).Stain, false),
             };
             if (current.Value != initial.Value)
                 design.ChangedEquip |= flag;

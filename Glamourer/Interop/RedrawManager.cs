@@ -56,20 +56,19 @@ public unsafe partial class RedrawManager : IDisposable
 
         // Compare game object customize data against draw object customize data for transformations.
         // Apply customization if they correspond and there is customization to apply.
-        var gameObjectCustomize = new Customize((CustomizeData*)actor.Pointer->CustomizeData);
+        var gameObjectCustomize = new Customize(*(CustomizeData*)&actor.Pointer->DrawData.CustomizeData);
         if (gameObjectCustomize.Equals(customize))
-            customize.Load(save!.Customize);
+            customize.Load(save.ModelData.Customize);
 
         // Compare game object equip data against draw object equip data for transformations.
         // Apply each piece of equip that should be applied if they correspond.
-        var gameObjectEquip = new CharacterEquip((CharacterArmor*)actor.Pointer->EquipSlotData);
+        var gameObjectEquip = new CharacterEquip((CharacterArmor*)&actor.Pointer->DrawData.Head);
         if (gameObjectEquip.Equals(equip))
         {
-            var saveEquip = save!.Equipment;
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
                 (_, equip[slot]) =
-                    _items.ResolveRestrictedGear(saveEquip[slot], slot, customize.Race, customize.Gender);
+                    _items.ResolveRestrictedGear(save.ModelData.Armor(slot), slot, customize.Race, customize.Gender);
             }
         }
     }
@@ -78,7 +77,7 @@ public unsafe partial class RedrawManager : IDisposable
     {
         try
         {
-            OnCharacterRedraw(gameObject, (uint*)modelId, new Customize((CustomizeData*)customize),
+            OnCharacterRedraw(gameObject, (uint*)modelId, new Customize(*(CustomizeData*)customize),
                 new CharacterEquip((CharacterArmor*)equipData));
         }
         catch (Exception e)

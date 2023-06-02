@@ -15,6 +15,7 @@ public partial class Design : DesignData, ISavable
 {
     public const int FileVersion = 1;
 
+
     public Guid           Identifier   { get; internal init; }
     public DateTimeOffset CreationDate { get; internal init; }
     public LowerString    Name         { get; internal set; } = LowerString.Empty;
@@ -85,7 +86,7 @@ public partial class Design : DesignData, ISavable
             [nameof(Description)]         = Description,
             [nameof(Tags)]                = JArray.FromObject(Tags),
             [nameof(WriteProtected)]      = WriteProtected,
-            [nameof(ModelData.Equipment)] = SerializeEquipment(),
+            ["Equipment"]                 = SerializeEquipment(),
             [nameof(ModelData.Customize)] = SerializeCustomize(),
         };
         return ret;
@@ -269,15 +270,15 @@ public partial class Design : DesignData, ISavable
         UpdateMainhand(items, data.MainHand);
         UpdateOffhand(items, data.OffHand);
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            UpdateArmor(items, slot, data.Equipment[slot], true);
-        ModelData.CustomizeData = data.CustomizeData;
-        ApplyEquip              = applyEquip;
-        ApplyCustomize          = applyCustomize;
-        WriteProtected          = writeProtected;
-        Wetness                 = wet;
-        Hat                     = hat;
-        Visor                   = visor;
-        Weapon                  = weapon;
+            UpdateArmor(items, slot, data.Armor(slot), true);
+        ModelData.Customize = data.Customize;
+        ApplyEquip          = applyEquip;
+        ApplyCustomize      = applyCustomize;
+        WriteProtected      = writeProtected;
+        Wetness             = wet;
+        Hat                 = hat;
+        Visor               = visor;
+        Weapon              = weapon;
     }
 
     public static Design CreateTemporaryFromBase64(ItemManager items, string base64, bool customize, bool equip)

@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using Glamourer.Customization;
-using Glamourer.Interop;
 using Glamourer.Services;
 using OtterGui.Classes;
 using OtterGui;
-using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using CustomizeData = FFXIVClientStructs.FFXIV.Client.Game.Character.CustomizeData;
 
 namespace Glamourer.Designs;
 
@@ -218,7 +214,6 @@ public class DesignData
         return true;
     }
 
-
     private bool SetArmor(EquipSlot slot, SetId set, byte variant, string name, uint id)
     {
         var changes = false;
@@ -373,13 +368,16 @@ public static class DesignBase64Migration
         {
             fixed (byte* ptr = bytes)
             {
-                data.CustomizeData.Read(ptr + 4);
+                data.Customize.Load(*(Customize*) (ptr + 4));
                 var cur = (CharacterWeapon*)(ptr + 30);
                 data.MainHand = cur[0];
                 data.OffHand  = cur[1];
                 var eq = (CharacterArmor*)(cur + 2);
                 foreach (var (slot, idx) in EquipSlotExtensions.EqdpSlots.WithIndex())
-                    data.Equipment[slot] = eq[idx];
+                {
+                    var mdl = eq[idx];
+                    data.SetPiece(slot, mdl.Set, mdl.Variant, mdl.Stain, out _);
+                }
             }
         }
 
@@ -409,7 +407,7 @@ public static class DesignBase64Migration
           | (equipFlags.HasFlag(EquipFlag.Wrist) ? 0x02 : 0)
           | (equipFlags.HasFlag(EquipFlag.RFinger) ? 0x04 : 0)
           | (equipFlags.HasFlag(EquipFlag.LFinger) ? 0x08 : 0));
-        save.CustomizeData.Write(data + 4);
+        save.Customize.Load(*(Customize*) (data + 4));
         ((CharacterWeapon*)(data + 30))[0] = save.MainHand;
         ((CharacterWeapon*)(data + 30))[1] = save.OffHand;
         ((CharacterArmor*)(data + 44))[0]  = save.Head;
