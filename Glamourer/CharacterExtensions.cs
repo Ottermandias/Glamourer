@@ -5,7 +5,7 @@ namespace Glamourer;
 public static class CharacterExtensions
 {
     public static unsafe bool IsWet(this Character a)
-        => (*((byte*)a.Address + Offsets.Character.Wetness) & Offsets.Character.Flags.IsWet) != 0;
+        => ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*) a.Address)->IsGPoseWet;
 
     public static unsafe bool SetWetness(this Character a, bool value)
     {
@@ -13,17 +13,12 @@ public static class CharacterExtensions
         if (current == value)
             return false;
 
-        if (value)
-            *((byte*)a.Address + Offsets.Character.Wetness) =
-                (byte)(*((byte*)a.Address + Offsets.Character.Wetness) | Offsets.Character.Flags.IsWet);
-        else
-            *((byte*)a.Address + Offsets.Character.Wetness) =
-                (byte)(*((byte*)a.Address + Offsets.Character.Wetness) & ~Offsets.Character.Flags.IsWet);
+        ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)a.Address)->IsGPoseWet = value;
         return true;
     }
 
     public static unsafe bool IsHatVisible(this Character a)
-        => (*((byte*)a.Address + Offsets.Character.HatVisible) & Offsets.Character.Flags.IsHatHidden) == 0;
+        => !((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)a.Address)->DrawData.IsHatHidden;
 
     public static unsafe bool SetHatVisible(this Character a, bool visible)
     {
@@ -31,18 +26,12 @@ public static class CharacterExtensions
         if (current == visible)
             return false;
 
-        if (visible)
-            *((byte*)a.Address + Offsets.Character.HatVisible) =
-                (byte)(*((byte*)a.Address + Offsets.Character.HatVisible) & ~Offsets.Character.Flags.IsHatHidden);
-        else
-            *((byte*)a.Address + Offsets.Character.HatVisible) =
-                (byte)(*((byte*)a.Address + Offsets.Character.HatVisible) | Offsets.Character.Flags.IsHatHidden);
+        ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)a.Address)->DrawData.IsHatHidden = !visible;
         return true;
     }
 
     public static unsafe bool IsVisorToggled(this Character a)
-        => (*((byte*)a.Address + Offsets.Character.VisorToggled) & Offsets.Character.Flags.IsVisorToggled)
-         == Offsets.Character.Flags.IsVisorToggled;
+        => ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)a.Address)->DrawData.IsVisorToggled;
 
     public static unsafe bool SetVisorToggled(this Character a, bool toggled)
     {
@@ -50,20 +39,13 @@ public static class CharacterExtensions
         if (current == toggled)
             return false;
 
-        if (toggled)
-            *((byte*)a.Address + Offsets.Character.VisorToggled) =
-                (byte)(*((byte*)a.Address + Offsets.Character.VisorToggled) | Offsets.Character.Flags.IsVisorToggled);
-        else
-            *((byte*)a.Address + Offsets.Character.VisorToggled) =
-                (byte)(*((byte*)a.Address + Offsets.Character.VisorToggled) & ~Offsets.Character.Flags.IsVisorToggled);
+        ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)a.Address)->DrawData.IsVisorToggled = toggled;
         return true;
     }
 
     public static unsafe bool IsWeaponHidden(this Character a)
-        => (*((byte*)a.Address + Offsets.Character.WeaponHidden1) & Offsets.Character.Flags.IsWeaponHidden1)
-         == Offsets.Character.Flags.IsWeaponHidden1
-         && (*((byte*)a.Address + Offsets.Character.WeaponHidden2) & Offsets.Character.Flags.IsWeaponHidden2)
-         == Offsets.Character.Flags.IsWeaponHidden2;
+        => ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)a.Address)->DrawData.IsWeaponHidden 
+        && ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)a.Address)->DrawData.IsMainHandHidden;
 
     public static unsafe bool SetWeaponHidden(this Character a, bool value)
     {
@@ -71,22 +53,19 @@ public static class CharacterExtensions
         if (hidden == value)
             return false;
 
-        var val1 = *((byte*)a.Address + Offsets.Character.WeaponHidden1);
-        var val2 = *((byte*)a.Address + Offsets.Character.WeaponHidden2);
-        if (value)
-        {
-            *((byte*)a.Address + Offsets.Character.WeaponHidden1) = (byte)(val1 | Offsets.Character.Flags.IsWeaponHidden1);
-            *((byte*)a.Address + Offsets.Character.WeaponHidden2) = (byte)(val2 | Offsets.Character.Flags.IsWeaponHidden2);
-        }
-        else
-        {
-            *((byte*)a.Address + Offsets.Character.WeaponHidden1) = (byte)(val1 & ~Offsets.Character.Flags.IsWeaponHidden1);
-            *((byte*)a.Address + Offsets.Character.WeaponHidden2) = (byte)(val2 & ~Offsets.Character.Flags.IsWeaponHidden2);
-        }
+        var drawData = &((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)a.Address)->DrawData;
 
+
+        drawData->IsWeaponHidden = value; 
+        drawData->IsMainHandHidden = value;
+        // TODO
+        if (value)
+            *(&drawData->MainHandState + ((long) &drawData->OffHandModel - (long) &drawData->MainHandModel)) |= 0x02;
+        else
+            *(&drawData->MainHandState + ((long) &drawData->OffHandModel - (long) &drawData->MainHandModel)) &= 0xFD;
         return true;
     }
 
     public static unsafe ref float Alpha(this Character a)
-        => ref *(float*)((byte*)a.Address + Offsets.Character.Alpha);
+        => ref ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)a.Address)->Alpha;
 }
