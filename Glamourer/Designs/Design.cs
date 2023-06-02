@@ -247,7 +247,7 @@ public partial class Design : DesignData, ISavable
         if (json == null)
             return true;
 
-        var customize = design.ModelData.Customize;
+        ref var customize = ref design.ModelData.Customize;
         foreach (var idx in Enum.GetValues<CustomizeIndex>())
         {
             var tok   = json[idx.ToString()];

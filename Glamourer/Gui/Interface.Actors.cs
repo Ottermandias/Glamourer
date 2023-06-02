@@ -72,6 +72,8 @@ public partial class Interface
                 _currentSave.Initialize(_items, _currentData.Objects[0]);
 
             RevertButton();
+            ActorDebug.Draw(_currentSave.ModelData);
+            return;
             if (_main._customizationDrawer.Draw(_currentSave.ModelData.Customize, _identifier.Type == IdentifierType.Special))
                 _activeDesigns.ChangeCustomize(_currentSave, _main._customizationDrawer.Changed, _main._customizationDrawer.Customize.Data,
                     false);

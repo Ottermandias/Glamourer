@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Numerics;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using Dalamud.Plugin;
 using Glamourer.Customization;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
-using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
 
 namespace Glamourer.Gui.Customization;
 

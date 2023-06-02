@@ -2,15 +2,12 @@
 using System.Numerics;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
-using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Gui.Designs;
 using Glamourer.Interop;
-using Glamourer.Services;
 using Glamourer.State;
 using ImGuiNET;
-using Microsoft.VisualBasic;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
@@ -72,13 +69,13 @@ public partial class Interface
                 return;
 
             using var group = ImRaii.Group();
-
             ApplySelfButton();
 
             using var child = ImRaii.Child("##DesignPanel", new Vector2(-0.001f), true, ImGuiWindowFlags.HorizontalScrollbar);
             if (!child)
                 return;
 
+            ActorDebug.Draw(Selector.Selected.ModelData);
             _main._customizationDrawer.Draw(Selector.Selected.ModelData.Customize, CustomizeFlagExtensions.All, true);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {

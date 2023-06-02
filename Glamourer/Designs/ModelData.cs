@@ -54,7 +54,7 @@ public struct ModelData
     public ModelData(CharacterWeapon mainHand)
         => MainHand = mainHand;
 
-    public CharacterArmor Armor(EquipSlot slot)
+    public readonly CharacterArmor Armor(EquipSlot slot) 
         => slot switch
         {
             EquipSlot.MainHand => MainHand.ToArmor(),
@@ -72,7 +72,7 @@ public struct ModelData
             _                  => CharacterArmor.Empty,
         };
 
-    public CharacterWeapon Piece(EquipSlot slot)
+    public readonly CharacterWeapon Piece(EquipSlot slot)
         => slot switch
         {
             EquipSlot.MainHand => MainHand,

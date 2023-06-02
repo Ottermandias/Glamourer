@@ -4,7 +4,6 @@ using Glamourer.Interop;
 using Penumbra.GameData.Actors;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Api;
 using Glamourer.Customization;
@@ -14,7 +13,6 @@ using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
-using Object = FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Object;
 
 namespace Glamourer.State;
 

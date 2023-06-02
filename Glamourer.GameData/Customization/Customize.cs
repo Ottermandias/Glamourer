@@ -61,7 +61,12 @@ public unsafe struct Customize
 
     private static Customize GenerateDefault()
     {
-        var ret = new Customize();
+        var ret = new Customize
+        {
+            Race   = Race.Hyur,
+            Clan   = SubRace.Midlander,
+            Gender = Gender.Male,
+        };
         ret.Set(CustomizeIndex.BodyType,        (CustomizeValue)1);
         ret.Set(CustomizeIndex.Height,          (CustomizeValue)50);
         ret.Set(CustomizeIndex.Face,            (CustomizeValue)1);
