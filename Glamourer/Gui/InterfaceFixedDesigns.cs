@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using Dalamud.Interface;
 using Glamourer.Designs;
 using Glamourer.FileSystem;
@@ -13,16 +12,20 @@ namespace Glamourer.Gui
     {
         private const string FixDragDropLabel = "##FixDragDrop";
 
-        private List<string>? _fullPathCache;
-        private string        _newFixCharacterName = string.Empty;
-        private string        _newFixDesignPath    = string.Empty;
-        private JobGroup?     _newFixDesignGroup;
-        private Design?       _newFixDesign;
-        private int           _fixDragDropIdx = -1;
+        private          List<string>?    _fullPathCache;
+        private          string           _newFixCharacterName = string.Empty;
+        private          string           _newFixDesignPath    = string.Empty;
+        private          JobGroup?        _newFixDesignGroup;
+        private          Design?          _newFixDesign;
+        private          int              _fixDragDropIdx = -1;
+        private readonly HashSet<string>  _openNames      = new();
 
         private static unsafe bool IsDropping()
             => ImGui.AcceptDragDropPayload(FixDragDropLabel).NativePtr != null;
 
+        private static string NormalizeIdentifier(string value)
+            => value.Replace(" ", "_").Replace("#", "_");
+        
         private void DrawFixedDesignsTab()
         {
             _newFixDesignGroup ??= _plugin.FixedDesigns.JobGroups[1];
@@ -43,69 +46,118 @@ namespace Glamourer.Gui
 
             var buttonWidth = 23.5f * ImGuiHelpers.GlobalScale;
 
-
             ImGui.TableSetupColumn("##DeleteColumn", ImGuiTableColumnFlags.WidthFixed, 2 * buttonWidth);
             ImGui.TableSetupColumn("Character",      ImGuiTableColumnFlags.WidthFixed, 200 * ImGuiHelpers.GlobalScale);
             ImGui.TableSetupColumn("Jobs",           ImGuiTableColumnFlags.WidthFixed, 175 * ImGuiHelpers.GlobalScale);
             ImGui.TableSetupColumn("Design",         ImGuiTableColumnFlags.WidthStretch);
             ImGui.TableHeadersRow();
-            var xPos = 0f;
+
+            var grouping = new Dictionary<string, List<int>>();
+
             for (var i = 0; i < _fullPathCache.Count; ++i)
             {
-                var path = _fullPathCache[i];
-                var name = _plugin.FixedDesigns.Data[i];
+                var name = _plugin.FixedDesigns.Data[i].Name;
 
+                grouping.TryAdd(name, new List<int>());
+                grouping[name].Add(i);
+            }
+
+            var xPos = 0f;
+
+            foreach (var (groupedName, indices) in grouping.OrderBy(kvp => kvp.Key))
+            {
+                
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 raii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing / 2);
                 raii.PushFont(UiBuilder.IconFont);
-                if (ImGui.Button($"{FontAwesomeIcon.Trash.ToIconChar()}##{i}"))
+                var isOpen = _openNames.Contains(groupedName);
+                var groupIcon = isOpen ? FontAwesomeIcon.CaretDown : FontAwesomeIcon.CaretRight;
+                if (ImGui.Button($"{groupIcon.ToIconChar()}##group_{NormalizeIdentifier(groupedName)}"))
                 {
-                    _fullPathCache.RemoveAt(i--);
-                    _plugin.FixedDesigns.Remove(name);
-                    continue;
-                }
-
-                var tmp = name.Enabled;
-                ImGui.SameLine();
-                xPos = ImGui.GetCursorPosX();
-                if (ImGui.Checkbox($"##Enabled{i}", ref tmp))
-                    if (tmp && _plugin.FixedDesigns.EnableDesign(name)
-                     || !tmp && _plugin.FixedDesigns.DisableDesign(name))
+                    if (isOpen)
                     {
-                        Glamourer.Config.FixedDesigns[i].Enabled = tmp;
-                        Glamourer.Config.Save();
+                        _openNames.Remove(groupedName);
+                    } else
+                    {
+                        _openNames.Add(groupedName);
                     }
-
+                    return;
+                }
                 raii.PopStyles();
                 raii.PopFonts();
+                
+                ImGui.SameLine();
+                xPos = ImGui.GetCursorPosX();
+                
                 ImGui.TableNextColumn();
-                ImGui.Selectable($"{name.Name}##Fix{i}");
-                if (ImGui.BeginDragDropSource())
-                {
-                    _fixDragDropIdx = i;
-                    ImGui.SetDragDropPayload("##FixDragDrop", IntPtr.Zero, 0);
-                    ImGui.Text($"Dragging {name.Name} ({path})...");
-                    ImGui.EndDragDropSource();
-                }
-                if (ImGui.BeginDragDropTarget())
-                {
-                    if (IsDropping() && _fixDragDropIdx >= 0)
-                    {
-                        var d = _plugin.FixedDesigns.Data[_fixDragDropIdx];
-                        _plugin.FixedDesigns.Move(d, i);
-                        var p = _fullPathCache[_fixDragDropIdx];
-                        _fullPathCache.RemoveAt(_fixDragDropIdx);
-                        _fullPathCache.Insert(i, p);
-                        _fixDragDropIdx = -1;
-                    }
-                    ImGui.EndDragDropTarget();
-                }
+                ImGui.Text(groupedName);
 
-                ImGui.TableNextColumn();
-                ImGui.Text(_plugin.FixedDesigns.Data[i].Jobs.Name);
-                ImGui.TableNextColumn();
-                ImGui.Text(path);
+                if (!_openNames.Contains(groupedName))
+                {
+                    ImGui.TableNextRow();
+                    continue;
+                }
+                
+                foreach (var i in indices)
+                {
+                    var path = _fullPathCache[i];
+                    var name = _plugin.FixedDesigns.Data[i];
+
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    raii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing / 2);
+                    raii.PushFont(UiBuilder.IconFont);
+                    if (ImGui.Button($"{FontAwesomeIcon.Trash.ToIconChar()}##{i}"))
+                    {
+                        _fullPathCache.RemoveAt(i);
+                        _plugin.FixedDesigns.Remove(name);
+                        continue;
+                    }
+
+                    var tmp = name.Enabled;
+                    ImGui.SameLine();
+                    xPos = ImGui.GetCursorPosX();
+                    if (ImGui.Checkbox($"##Enabled{i}", ref tmp))
+                        if (tmp && _plugin.FixedDesigns.EnableDesign(name)
+                         || !tmp && _plugin.FixedDesigns.DisableDesign(name))
+                        {
+                            Glamourer.Config.FixedDesigns[i].Enabled = tmp;
+                            Glamourer.Config.Save();
+                        }
+
+                    raii.PopStyles();
+                    raii.PopFonts();
+                    ImGui.TableNextColumn();
+                    ImGui.Selectable($"{name.Name}##Fix{i}");
+                    if (ImGui.BeginDragDropSource())
+                    {
+                        _fixDragDropIdx = i;
+                        ImGui.SetDragDropPayload("##FixDragDrop", IntPtr.Zero, 0);
+                        ImGui.Text($"Dragging {name.Name} ({path})...");
+                        ImGui.EndDragDropSource();
+                    }
+                    if (ImGui.BeginDragDropTarget())
+                    {
+                        if (IsDropping() && _fixDragDropIdx >= 0)
+                        {
+                            var d = _plugin.FixedDesigns.Data[_fixDragDropIdx];
+                            _plugin.FixedDesigns.Move(d, i);
+                            var p = _fullPathCache[_fixDragDropIdx];
+                            _fullPathCache.RemoveAt(_fixDragDropIdx);
+                            _fullPathCache.Insert(i, p);
+                            _fixDragDropIdx = -1;
+                        }
+                        ImGui.EndDragDropTarget();
+                    }
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text(_plugin.FixedDesigns.Data[i].Jobs.Name);
+                    ImGui.TableNextColumn();
+                    ImGui.Text(path);
+                }
+                
+                ImGui.TableNextRow();
             }
 
             ImGui.TableNextRow();
