@@ -1,16 +1,19 @@
 ﻿using System;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using Penumbra.GameData.Structs;
+using Glamourer.Events;
+using Glamourer.Interop.Structs;
 
 namespace Glamourer.Interop;
 
 public class VisorService : IDisposable
 {
-    public VisorService()
+    public readonly VisorStateChanged Event;
+
+    public VisorService(VisorStateChanged visorStateChanged)
     {
+        Event = visorStateChanged;
         SignatureHelper.Initialise(this);
         _setupVisorHook.Enable();
     }
@@ -18,61 +21,67 @@ public class VisorService : IDisposable
     public void Dispose()
         => _setupVisorHook.Dispose();
 
-    public static unsafe bool GetVisorState(nint humanPtr)
+    /// <summary> Obtain the current state of the Visor for the given draw object (true: toggled). </summary>
+    public unsafe bool GetVisorState(Model characterBase)
     {
-        if (humanPtr == IntPtr.Zero)
+        if (!characterBase.IsCharacterBase)
             return false;
 
-        var data  = (Human*)humanPtr;
-        var flags = &data->CharacterBase.UnkFlags_01;
-        return (*flags & Offsets.DrawObjectVisorStateFlag) != 0;
+        // TODO: use client structs.
+        return (characterBase.AsCharacterBase->UnkFlags_01 & Offsets.DrawObjectVisorStateFlag) != 0;
     }
 
-    public unsafe void SetVisorState(nint humanPtr, bool on)
+    /// <summary> Manually set the state of the Visor for the given draw object. </summary>
+    /// <param name="human"> The draw object. </param>
+    /// <param name="on"> The desired state (true: toggled). </param>
+    /// <returns> Whether the state was changed. </returns>
+    public unsafe bool SetVisorState(Model human, bool on)
     {
-        if (humanPtr == IntPtr.Zero)
-            return;
+        if (!human.IsHuman)
+            return false;
 
-        var data  = (Human*)humanPtr;
-        _setupVisorHook.Original(humanPtr, (ushort) data->HeadSetID, on);
+        var oldState = GetVisorState(human);
+        Item.Log.Verbose($"[SetVisorState] Invoked manually on 0x{human.Address:X} switching from {oldState} to {on}.");
+        if (oldState == on)
+            return false;
+
+
+        SetupVisorHook(human, (ushort)human.AsHuman->HeadSetID, on);
+        return true;
     }
 
     private delegate void UpdateVisorDelegateInternal(nint humanPtr, ushort modelId, bool on);
-    public delegate  void UpdateVisorDelegate(DrawObject human, SetId modelId, ref bool on);
 
-    [Signature(Penumbra.GameData.Sigs.SetupVisor, DetourName = nameof(SetupVisorDetour))]
+    [Signature(global::Penumbra.GameData.Sigs.SetupVisor, DetourName = nameof(SetupVisorDetour))]
     private readonly Hook<UpdateVisorDelegateInternal> _setupVisorHook = null!;
 
-    public event UpdateVisorDelegate? VisorUpdate;
-
-    private void SetupVisorDetour(nint humanPtr, ushort modelId, bool on)
+    private void SetupVisorDetour(nint human, ushort modelId, bool on)
     {
-        InvokeVisorEvent(humanPtr, modelId, ref on);
-        _setupVisorHook.Original(humanPtr, modelId, on);
+        var callOriginal = true;
+        var originalOn   = on;
+        // Invoke an event that can change the requested value
+        // and also control whether the function should be called at all.
+        Event.Invoke(human, ref on, ref callOriginal);
+
+        Item.Log.Excessive(
+            $"[SetVisorState] Invoked from game on 0x{human:X} switching to {on} (original {originalOn}, call original {callOriginal}).");
+
+        if (callOriginal)
+            SetupVisorHook(human, modelId, on);
     }
 
-    private void InvokeVisorEvent(DrawObject drawObject, SetId modelId, ref bool on)
+    /// <summary>
+    /// The SetupVisor function does not set the visor state for the draw object itself,
+    /// it only sets the "visor is changing" state to false.
+    /// So we wrap a manual change of that flag with the function call.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private unsafe void SetupVisorHook(Model human, ushort modelId, bool on)
     {
-        if (VisorUpdate == null)
-        {
-            Glamourer.Log.Excessive($"Visor setup on 0x{drawObject.Address:X} with {modelId.Value}, setting to {on}.");
-            return;
-        }
-
-        var initialValue = on;
-        foreach (var del in VisorUpdate.GetInvocationList().OfType<UpdateVisorDelegate>())
-        {
-            try
-            {
-                del(drawObject, modelId, ref on);
-            }
-            catch (Exception ex)
-            {
-                Glamourer.Log.Error($"Could not invoke {nameof(VisorUpdate)} Subscriber:\n{ex}");
-            }
-        }
-
-        Glamourer.Log.Excessive(
-            $"Visor setup on 0x{drawObject.Address:X} with {modelId.Value}, setting to {on}, initial call was {initialValue}.");
+        // TODO: use client structs.
+        human.AsCharacterBase->UnkFlags_01 = (byte)(on
+            ? human.AsCharacterBase->UnkFlags_01 | Offsets.DrawObjectVisorStateFlag
+            : human.AsCharacterBase->UnkFlags_01 & ~Offsets.DrawObjectVisorStateFlag);
+        _setupVisorHook.Original(human.Address, modelId, on);
     }
 }

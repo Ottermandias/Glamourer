@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Dalamud.Plugin;
+using Glamourer.Designs;
 
 namespace Glamourer.Services;
 
@@ -29,6 +31,9 @@ public class FilenameService
         foreach (var file in Directory.EnumerateFiles(DesignDirectory, "*.json", SearchOption.TopDirectoryOnly))
             yield return new FileInfo(file);
     }
+
+    public string DesignFile(Design design)
+        => DesignFile(design.Identifier.ToString());
 
     public string DesignFile(string identifier)
         => Path.Combine(DesignDirectory, $"{identifier}.json");

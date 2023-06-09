@@ -7,8 +7,8 @@ using Penumbra.GameData.Actors;
 using System;
 using System.Threading.Tasks;
 using Dalamud.Game;
+using Glamourer.Api;
 using Glamourer.Customization;
-using Glamourer.Interop.Penumbra;
 using Penumbra.GameData.Data;
 using Penumbra.GameData;
 
@@ -50,7 +50,7 @@ public abstract class AsyncServiceWrapper<T>
             else
             {
                 Service = service;
-                Item.Log.Verbose($"[{Name}] Created.");
+                Glamourer.Log.Verbose($"[{Name}] Created.");
                 _task = null;
             }
         });
@@ -70,7 +70,7 @@ public abstract class AsyncServiceWrapper<T>
         _task       = null;
         if (Service is IDisposable d)
             d.Dispose();
-        Item.Log.Verbose($"[{Name}] Disposed.");
+        Glamourer.Log.Verbose($"[{Name}] Disposed.");
     }
 }
 
@@ -91,7 +91,7 @@ public sealed class ItemService : AsyncServiceWrapper<ItemData>
 public sealed class ActorService : AsyncServiceWrapper<ActorManager>
 {
     public ActorService(DalamudPluginInterface pi, ObjectTable objects, ClientState clientState, Framework framework, DataManager gameData,
-        GameGui gui, PenumbraService penumbra)
+        GameGui gui, PenumbraAttach penumbra)
         : base(nameof(ActorService),
             () => new ActorManager(pi, objects, clientState, framework, gameData, gui, idx => (short)penumbra.CutsceneParent(idx)))
     { }

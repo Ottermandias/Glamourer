@@ -1,7 +1,6 @@
 ﻿using System;
 using Dalamud.Game.Command;
 using Glamourer.Gui;
-using Glamourer.Gui.Tabs;
 
 namespace Glamourer.Services;
 
@@ -12,12 +11,12 @@ public class CommandService : IDisposable
     private const string ApplyCommandString = "/glamour";
 
     private readonly CommandManager _commands;
-    private readonly MainWindow     _mainWindow;
+    private readonly Interface      _interface;
 
-    public CommandService(CommandManager commands, MainWindow mainWindow)
+    public CommandService(CommandManager commands, Interface ui)
     {
-        _commands   = commands;
-        _mainWindow = mainWindow;
+        _commands  = commands;
+        _interface = ui;
 
         _commands.AddHandler(MainCommandString,  new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString, new CommandInfo(OnGlamour) { HelpMessage   = $"Use Glamourer Functions: {HelpString}" });
@@ -30,7 +29,7 @@ public class CommandService : IDisposable
     }
 
     private void OnGlamourer(string command, string arguments)
-        => _mainWindow.Toggle();
+        => _interface.Toggle();
 
     private void OnGlamour(string command, string arguments)
     { }

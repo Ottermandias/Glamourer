@@ -22,7 +22,7 @@ public class ItemManager : IDisposable
 
     private readonly Configuration     _config;
     public readonly  IdentifierService IdentifierService;
-    public readonly  ExcelSheet<Lumina.Excel.GeneratedSheets.Item>  ItemSheet;
+    public readonly  ExcelSheet<Item>  ItemSheet;
     public readonly  StainData         Stains;
     public readonly  ItemService       ItemService;
     public readonly  RestrictedGear    RestrictedGear;
@@ -30,7 +30,7 @@ public class ItemManager : IDisposable
     public ItemManager(DalamudPluginInterface pi, DataManager gameData, IdentifierService identifierService, ItemService itemService, Configuration config)
     {
         _config           = config;
-        ItemSheet = gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;
+        ItemSheet         = gameData.GetExcelSheet<Item>()!;
         IdentifierService = identifierService;
         Stains            = new StainData(pi, gameData, gameData.Language);
         ItemService       = itemService;
@@ -52,7 +52,7 @@ public class ItemManager : IDisposable
         return (false, armor);
     }
 
-    public readonly Lumina.Excel.GeneratedSheets.Item DefaultSword;
+    public readonly Item DefaultSword;
 
     public static uint NothingId(EquipSlot slot)
         => uint.MaxValue - 128 - (uint)slot.ToSlot();
@@ -81,7 +81,7 @@ public class ItemManager : IDisposable
         return new Designs.Item(SmallClothesNpc, SmallclothesId(slot), new CharacterArmor(SmallClothesNpcModel, 1, 0));
     }
 
-    public (bool Valid, SetId Id, byte Variant, string ItemName) Resolve(EquipSlot slot, uint itemId, Lumina.Excel.GeneratedSheets.Item? item = null)
+    public (bool Valid, SetId Id, byte Variant, string ItemName) Resolve(EquipSlot slot, uint itemId, Item? item = null)
     {
         slot = slot.ToSlot();
         if (itemId == NothingId(slot))
@@ -100,7 +100,7 @@ public class ItemManager : IDisposable
         return (true, (SetId)item.ModelMain, (byte)(item.ModelMain >> 16), string.Intern(item.Name.ToDalamudString().TextValue));
     }
 
-    public (bool Valid, SetId Id, WeaponType Weapon, byte Variant, string ItemName, FullEquipType Type) Resolve(uint itemId, Lumina.Excel.GeneratedSheets.Item? item = null)
+    public (bool Valid, SetId Id, WeaponType Weapon, byte Variant, string ItemName, FullEquipType Type) Resolve(uint itemId, Item? item = null)
     {
         if (item == null || item.RowId != itemId)
             item = ItemSheet.GetRow(itemId);
@@ -117,7 +117,7 @@ public class ItemManager : IDisposable
     }
 
     public (bool Valid, SetId Id, WeaponType Weapon, byte Variant, string ItemName, FullEquipType Type) Resolve(uint itemId,
-        FullEquipType mainType, Lumina.Excel.GeneratedSheets.Item? item = null)
+        FullEquipType mainType, Item? item = null)
     {
         var offType = mainType.Offhand();
         if (itemId == NothingId(offType))

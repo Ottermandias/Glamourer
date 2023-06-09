@@ -1,9 +1,9 @@
 ﻿using Dalamud.Plugin;
-using Glamourer.Api;
-using Glamourer.Designs;
+using Glamourer.Events;
 using Glamourer.Gui;
+using Glamourer.Gui.Tabs;
 using Glamourer.Interop;
-using Glamourer.State;
+using Glamourer.Interop.Penumbra;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
 using OtterGui.Log;
@@ -18,12 +18,10 @@ public static class ServiceManager
             .AddSingleton(log)
             .AddDalamud(pi)
             .AddMeta()
-            .AddConfig()
-            .AddPenumbra()
             .AddInterop()
-            .AddGameData()
-            .AddDesigns()
-            .AddInterface()
+            .AddEvents()
+            .AddData()
+            .AddUi()
             .AddApi();
 
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
@@ -36,45 +34,33 @@ public static class ServiceManager
     }
 
     private static IServiceCollection AddMeta(this IServiceCollection services)
-        => services.AddSingleton<FilenameService>()
-            .AddSingleton<SaveService>()
-            .AddSingleton<FrameworkManager>()
-            .AddSingleton<ChatService>();
-
-    private static IServiceCollection AddConfig(this IServiceCollection services)
-        => services.AddSingleton<Configuration>()
+        => services.AddSingleton<ChatService>()
+            .AddSingleton<FilenameService>()
             .AddSingleton<BackupService>();
 
-    private static IServiceCollection AddPenumbra(this IServiceCollection services)
-        => services.AddSingleton<PenumbraAttach>();
+    private static IServiceCollection AddEvents(this IServiceCollection services)
+        => services.AddSingleton<VisorStateChanged>()
+            .AddSingleton<UpdatedSlot>();
 
-    private static IServiceCollection AddGameData(this IServiceCollection services)
+    private static IServiceCollection AddData(this IServiceCollection services)
         => services.AddSingleton<IdentifierService>()
-            .AddSingleton<ActorService>()
             .AddSingleton<ItemService>()
-            .AddSingleton<ItemManager>()
+            .AddSingleton<ActorService>()
             .AddSingleton<CustomizationService>();
 
     private static IServiceCollection AddInterop(this IServiceCollection services)
-        => services.AddSingleton<ChangeCustomizeService>()
-            .AddSingleton<JobService>()
+        => services.AddSingleton<VisorService>()
+            .AddSingleton<ChangeCustomizeService>()
             .AddSingleton<UpdateSlotService>()
-            .AddSingleton<VisorService>()
             .AddSingleton<WeaponService>()
-            .AddSingleton<ObjectManager>();
+            .AddSingleton<PenumbraService>();
 
-    private static IServiceCollection AddDesigns(this IServiceCollection services)
-        => services.AddSingleton<DesignManager>()
-            .AddSingleton<DesignFileSystem>()
-            .AddSingleton<ActiveDesign.Manager>()
-            .AddSingleton<FixedDesignManager>()
-            .AddSingleton<RedrawManager>();
-
-    private static IServiceCollection AddInterface(this IServiceCollection services)
-        => services.AddSingleton<Interface>()
+    private static IServiceCollection AddUi(this IServiceCollection services)
+        => services
+            .AddSingleton<DebugTab>()
+            .AddSingleton<MainWindow>()
             .AddSingleton<GlamourerWindowSystem>();
 
     private static IServiceCollection AddApi(this IServiceCollection services)
-        => services.AddSingleton<CommandService>()
-            .AddSingleton<Glamourer.GlamourerIpc>();
+        => services.AddSingleton<CommandService>();
 }

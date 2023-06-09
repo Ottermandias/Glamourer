@@ -8,9 +8,9 @@ public class GlamourerWindowSystem : IDisposable
 {
     private readonly WindowSystem _windowSystem = new("Glamourer");
     private readonly UiBuilder    _uiBuilder;
-    private readonly MainWindow   _ui;
+    private readonly Interface    _ui;
 
-    public GlamourerWindowSystem(UiBuilder uiBuilder, MainWindow ui)
+    public GlamourerWindowSystem(UiBuilder uiBuilder, Interface ui)
     {
         _uiBuilder = uiBuilder;
         _ui        = ui;
@@ -24,4 +24,7 @@ public class GlamourerWindowSystem : IDisposable
         _uiBuilder.Draw         -= _windowSystem.Draw;
         _uiBuilder.OpenConfigUi -= _ui.Toggle;
     }
+
+    public void Toggle()
+        => _ui.Toggle();
 }
