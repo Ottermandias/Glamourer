@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using Dalamud.Interface;
 using Glamourer.Designs;
 using Glamourer.FileSystem;
@@ -130,12 +129,8 @@ namespace Glamourer.Gui
                 _newFixDesignGroup   = _plugin.FixedDesigns.JobGroups[1];
             }
 
-            if (_newFixCharacterName == string.Empty) {
-                var player = CharacterFactory.Convert(Dalamud.Objects[0]);
-                if (player != null)
-                    _newFixCharacterName = player.Name.ToString();
-
-            }
+            if (_newFixCharacterName == string.Empty)
+                _newFixCharacterName = Dalamud.ClientState.LocalPlayer?.Name.ToString() ?? string.Empty;
 
             raii.PopFonts();
             ImGui.TableNextColumn();

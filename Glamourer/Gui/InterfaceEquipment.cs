@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using ImGuiNET;
 using Lumina.Text;
 using Penumbra.GameData.Enums;
@@ -133,8 +135,17 @@ namespace Glamourer.Gui
             {
                 0    => SmallClothes,
                 9903 => SmallClothesNpc,
-                _    => _identifier.Identify(set, weapon, variant, slot.ToSlot()).FirstOrDefault() ?? Unknown,
+                _    => ToItem(_identifier.Identify(set, weapon, variant, slot.ToSlot())),
             };
+        }
+
+        private Lumina.Excel.GeneratedSheets.Item ToItem(IEnumerable<EquipItem> items)
+        {
+            var item = items.FirstOrDefault();
+            if (item.Valid)
+                return Dalamud.GameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!.GetRow(item.Id) ?? Unknown;
+
+            return Unknown;
         }
 
         private bool DrawEquipSlot(EquipSlot slot, CharacterArmor equip)
