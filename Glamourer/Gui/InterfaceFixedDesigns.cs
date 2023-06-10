@@ -6,6 +6,7 @@ using Dalamud.Interface;
 using Glamourer.Designs;
 using Glamourer.FileSystem;
 using ImGuiNET;
+using Penumbra.PlayerWatch;
 
 namespace Glamourer.Gui
 {
@@ -127,6 +128,13 @@ namespace Glamourer.Gui
                 _newFixDesignPath    = string.Empty;
                 _newFixDesign        = null;
                 _newFixDesignGroup   = _plugin.FixedDesigns.JobGroups[1];
+            }
+
+            if (_newFixCharacterName == string.Empty) {
+                var player = CharacterFactory.Convert(Dalamud.Objects[0]);
+                if (player != null)
+                    _newFixCharacterName = player.Name.ToString();
+
             }
 
             raii.PopFonts();
