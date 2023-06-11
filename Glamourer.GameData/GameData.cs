@@ -51,7 +51,7 @@ namespace Glamourer
                 => new(sheet.First(), "Nothing", slot);
 
             static Item EmptyNpc(EquipSlot slot)
-                => new(new Lumina.Excel.GeneratedSheets.Item() { ModelMain = 9903 }, "Smallclothes (NPC)", slot);
+                => new(new Lumina.Excel.GeneratedSheets.Item() { ModelMain = 9903, RowId = 1 }, "Smallclothes (NPC)", slot);
 
             _itemsBySlot = new Dictionary<EquipSlot, List<Item>>()
             {

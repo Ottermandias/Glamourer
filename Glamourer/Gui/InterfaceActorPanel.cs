@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
-using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
 using Dalamud.Logging;
@@ -11,7 +8,6 @@ using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.FileSystem;
 using ImGuiNET;
-using Penumbra.GameData.Structs;
 using Penumbra.PlayerWatch;
 
 namespace Glamourer.Gui
