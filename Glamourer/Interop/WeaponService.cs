@@ -13,7 +13,7 @@ public unsafe class WeaponService : IDisposable
     public WeaponService()
     {
         SignatureHelper.Initialise(this);
-        _loadWeaponHook = Hook<LoadWeaponDelegate>.FromAddress((nint) DrawDataContainer.MemberFunctionPointers.LoadWeapon, LoadWeaponDetour);
+        _loadWeaponHook = Hook<LoadWeaponDelegate>.FromAddress((nint)DrawDataContainer.MemberFunctionPointers.LoadWeapon, LoadWeaponDetour);
         _loadWeaponHook.Enable();
     }
 
@@ -22,18 +22,20 @@ public unsafe class WeaponService : IDisposable
         _loadWeaponHook.Dispose();
     }
 
-    private delegate void LoadWeaponDelegate(DrawDataContainer* drawData, uint slot, ulong weapon, byte redrawOnEquality, byte unk2, byte skipGameObject, byte unk4);
+    private delegate void LoadWeaponDelegate(DrawDataContainer* drawData, uint slot, ulong weapon, byte redrawOnEquality, byte unk2,
+        byte skipGameObject, byte unk4);
 
     private readonly Hook<LoadWeaponDelegate> _loadWeaponHook;
 
     private void LoadWeaponDetour(DrawDataContainer* drawData, uint slot, ulong weapon, byte redrawOnEquality, byte unk2, byte skipGameObject,
         byte unk4)
     {
-        var actor = (Actor) (nint)drawData->Unk8;
-       
+        var actor = (Actor) (nint)(drawData + 1);
+
         // First call the regular function.
         _loadWeaponHook.Original(drawData, slot, weapon, redrawOnEquality, unk2, skipGameObject, unk4);
-        Item.Log.Information($"Weapon reloaded for 0x{actor.Address:X} with attributes {slot} {weapon:X14}, {redrawOnEquality}, {unk2}, {skipGameObject}, {unk4}");
+        Item.Log.Information(
+            $"Weapon reloaded for 0x{actor.Address:X} with attributes {slot} {weapon:X14}, {redrawOnEquality}, {unk2}, {skipGameObject}, {unk4}");
     }
 
     // Load a specific weapon for a character by its data and slot.

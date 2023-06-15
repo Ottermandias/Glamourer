@@ -162,4 +162,7 @@ public unsafe partial struct Actor : IEquatable<Actor>, IDesignable
 
     public static bool operator !=(Actor lhs, Actor rhs)
         => lhs.Pointer != rhs.Pointer;
+
+    public string AddressString()
+        => $"0x{Address:X}";
 }

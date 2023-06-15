@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
-using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Customization;
 using Glamourer.Interop;
@@ -31,16 +29,15 @@ public unsafe class DebugTab : ITab
     private readonly PenumbraService        _penumbra;
     private readonly ObjectTable            _objects;
 
-    private readonly IdentifierService    _identifier;
+    private readonly ItemManager          _items;
     private readonly ActorService         _actors;
-    private readonly ItemService          _items;
     private readonly CustomizationService _customization;
 
     private int _gameObjectIndex;
 
     public DebugTab(ChangeCustomizeService changeCustomizeService, VisorService visorService, ObjectTable objects,
         UpdateSlotService updateSlotService, WeaponService weaponService, PenumbraService penumbra, IdentifierService identifier,
-        ActorService actors, ItemService items, CustomizationService customization)
+        ActorService actors, ItemManager items, CustomizationService customization)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -48,7 +45,6 @@ public unsafe class DebugTab : ITab
         _updateSlotService      = updateSlotService;
         _weaponService          = weaponService;
         _penumbra               = penumbra;
-        _identifier             = identifier;
         _actors                 = actors;
         _items                  = items;
         _customization          = customization;
@@ -84,23 +80,25 @@ public unsafe class DebugTab : ITab
 
         ImGuiUtil.DrawTableColumn("Address");
         ImGui.TableNextColumn();
-        if (ImGui.Selectable($"0x{model.Address:X}"))
-            ImGui.SetClipboardText($"0x{model.Address:X}");
+        ImGuiUtil.CopyOnClickSelectable(actor.ToString());
         ImGui.TableNextColumn();
-        if (ImGui.Selectable($"0x{model.Address:X}"))
-            ImGui.SetClipboardText($"0x{model.Address:X}");
+        ImGuiUtil.CopyOnClickSelectable(model.ToString());
         ImGui.TableNextColumn();
 
         ImGuiUtil.DrawTableColumn("Mainhand");
         ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.GetMainhand().ToString() : "No Character");
+
+        var (mainhand, offhand, mainModel, offModel) = model.GetWeapons(actor);
+        ImGuiUtil.DrawTableColumn(mainModel.ToString());
         ImGui.TableNextColumn();
-        var weapon = model.AsDrawObject->Object.ChildObject;
-        if (ImGui.Selectable($"0x{(ulong)weapon:X}"))
-            ImGui.SetClipboardText($"0x{(ulong)weapon:X}");
+        ImGuiUtil.CopyOnClickSelectable(mainhand.ToString());
+
         ImGuiUtil.DrawTableColumn("Offhand");
         ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.GetOffhand().ToString() : "No Character");
-        if (weapon != null && ImGui.Selectable($"0x{(ulong)weapon->NextSiblingObject:X}"))
-            ImGui.SetClipboardText($"0x{(ulong)weapon->NextSiblingObject:X}");
+        ImGuiUtil.DrawTableColumn(offModel.ToString());
+        ImGui.TableNextColumn();
+        ImGuiUtil.CopyOnClickSelectable(offhand.ToString());
+
         DrawVisor(actor, model);
         DrawHatState(actor, model);
         DrawWeaponState(actor, model);
@@ -343,8 +341,10 @@ public unsafe class DebugTab : ITab
             return;
 
         DrawIdentifierService();
+        DrawRestrictedGear();
         DrawActorService();
         DrawItemService();
+        DrawStainService();
         DrawCustomizationService();
     }
 
@@ -355,9 +355,9 @@ public unsafe class DebugTab : ITab
 
     private void DrawIdentifierService()
     {
-        using var disabled = ImRaii.Disabled(!_identifier.Valid);
+        using var disabled = ImRaii.Disabled(!_items.IdentifierService.Valid);
         using var tree     = ImRaii.TreeNode("Identifier Service");
-        if (!tree || !_identifier.Valid)
+        if (!tree || !_items.IdentifierService.Valid)
             return;
 
         disabled.Dispose();
@@ -373,33 +373,73 @@ public unsafe class DebugTab : ITab
         ImGui.SameLine();
         ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
         ImGui.InputTextWithHint("##gamePath", "Enter game path...", ref _gamePath, 256);
-        var fileInfo = _identifier.AwaitedService.GamePathParser.GetFileInfo(_gamePath);
+        var fileInfo = _items.IdentifierService.AwaitedService.GamePathParser.GetFileInfo(_gamePath);
         ImGui.TextUnformatted(
             $"{fileInfo.ObjectType} {fileInfo.EquipSlot} {fileInfo.PrimaryId} {fileInfo.SecondaryId} {fileInfo.Variant} {fileInfo.BodySlot} {fileInfo.CustomizationType}");
-        Text(string.Join("\n", _identifier.AwaitedService.Identify(_gamePath).Keys));
+        Text(string.Join("\n", _items.IdentifierService.AwaitedService.Identify(_gamePath).Keys));
 
         ImGui.Separator();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted("Identify Model");
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        ImGui.InputInt("##SetId", ref _setId, 0, 0);
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        ImGui.InputInt("##TypeId", ref _secondaryId, 0, 0);
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        ImGui.InputInt("##Variant", ref _variant, 0, 0);
+        DrawInputModelSet(true);
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var identified = _identifier.AwaitedService.Identify((SetId)_setId, (ushort)_variant, slot);
-            Text(string.Join("\n", identified.Select(i => i.Name.ToDalamudString().TextValue)));
+            var identified = _items.Identify(slot, (SetId)_setId, (byte)_variant);
+            Text(identified.Name);
+            ImGuiUtil.HoverTooltip(string.Join("\n",
+                _items.IdentifierService.AwaitedService.Identify((SetId)_setId, (ushort)_variant, slot).Select(i => i.Name)));
         }
 
-        var main = _identifier.AwaitedService.Identify((SetId)_setId, (WeaponType)_secondaryId, (ushort)_variant, EquipSlot.MainHand);
-        Text(string.Join("\n", main.Select(i => i.Name.ToDalamudString().TextValue)));
-        var off = _identifier.AwaitedService.Identify((SetId)_setId, (WeaponType)_secondaryId, (ushort)_variant, EquipSlot.OffHand);
-        Text(string.Join("\n", off.Select(i => i.Name.ToDalamudString().TextValue)));
+        var weapon = _items.Identify(EquipSlot.MainHand, (SetId)_setId, (WeaponType)_secondaryId, (byte)_variant);
+        Text(weapon.Name);
+        ImGuiUtil.HoverTooltip(string.Join("\n",
+            _items.IdentifierService.AwaitedService.Identify((SetId)_setId, (WeaponType)_secondaryId, (ushort)_variant, EquipSlot.MainHand)));
+    }
+
+    private void DrawRestrictedGear()
+    {
+        using var tree = ImRaii.TreeNode("Restricted Gear Service");
+        if (!tree)
+            return;
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Resolve Model");
+        DrawInputModelSet(false);
+        foreach (var race in Enum.GetValues<Race>().Skip(1))
+        {
+            foreach (var gender in new[]
+                     {
+                         Gender.Male,
+                         Gender.Female,
+                     })
+            {
+                foreach (var slot in EquipSlotExtensions.EqdpSlots)
+                {
+                    var (replaced, model) =
+                        _items.RestrictedGear.ResolveRestricted(new CharacterArmor((SetId)_setId, (byte)_variant, 0), slot, race, gender);
+                    if (replaced)
+                        ImGui.TextUnformatted($"{race.ToName()} - {gender} - {slot.ToName()} resolves to {model}.");
+                }
+            }
+        }
+    }
+
+    private void DrawInputModelSet(bool withWeapon)
+    {
+        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
+        ImGui.InputInt("##SetId", ref _setId, 0, 0);
+        if (withWeapon)
+        {
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
+            ImGui.InputInt("##TypeId", ref _secondaryId, 0, 0);
+        }
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
+        ImGui.InputInt("##Variant", ref _variant, 0, 0);
     }
 
     private string _bnpcFilter      = string.Empty;
@@ -458,33 +498,106 @@ public unsafe class DebugTab : ITab
         ImGuiClip.DrawEndDummy(remainder, height);
     }
 
+    private string _itemFilter = string.Empty;
+
     private void DrawItemService()
     {
-        using var disabled = ImRaii.Disabled(!_items.Valid);
+        using var disabled = ImRaii.Disabled(!_items.ItemService.Valid);
         using var tree     = ImRaii.TreeNode("Item Manager");
-        if (!tree || !_items.Valid)
+        if (!tree || !_items.ItemService.Valid)
             return;
 
         disabled.Dispose();
+        ImRaii.TreeNode($"Default Sword: {_items.DefaultSword.Name} ({_items.DefaultSword.Id}) ({_items.DefaultSword.Weapon()})",
+            ImGuiTreeNodeFlags.Leaf).Dispose();
+        DrawNameTable("All Items (Main)", ref _itemFilter,
+            _items.ItemService.AwaitedService.AllItems(true).Select(p => (p.Item1,
+                    $"{p.Item2.Name} ({(p.Item2.WeaponType == 0 ? p.Item2.Armor().ToString() : p.Item2.Weapon().ToString())})"))
+                .OrderBy(p => p.Item1));
+        DrawNameTable("All Items (Off)", ref _itemFilter,
+            _items.ItemService.AwaitedService.AllItems(false).Select(p => (p.Item1,
+                    $"{p.Item2.Name} ({(p.Item2.WeaponType == 0 ? p.Item2.Armor().ToString() : p.Item2.Weapon().ToString())})"))
+                .OrderBy(p => p.Item1));
+        foreach (var type in Enum.GetValues<FullEquipType>().Skip(1))
+        {
+            DrawNameTable(type.ToName(), ref _itemFilter,
+                _items.ItemService.AwaitedService[type]
+                    .Select(p => (p.Id, $"{p.Name} ({(p.WeaponType == 0 ? p.Armor().ToString() : p.Weapon().ToString())})")));
+        }
+    }
+
+    private string _stainFilter = string.Empty;
+
+    private void DrawStainService()
+    {
+        using var tree = ImRaii.TreeNode("Stain Service");
+        if (!tree)
+            return;
+
+        var resetScroll = ImGui.InputTextWithHint("##filter", "Filter...", ref _stainFilter, 256);
+        var height      = ImGui.GetTextLineHeightWithSpacing() + 2 * ImGui.GetStyle().CellPadding.Y;
+        using var table = ImRaii.Table("##table", 4,
+            ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter | ImGuiTableFlags.SizingFixedFit,
+            new Vector2(-1, 10 * height));
+        if (!table)
+            return;
+
+        if (resetScroll)
+            ImGui.SetScrollY(0);
+
+        ImGui.TableNextColumn();
+        var skips = ImGuiClip.GetNecessarySkips(height);
+        ImGui.TableNextRow();
+        var remainder = ImGuiClip.FilteredClippedDraw(_items.Stains, skips,
+            p => p.Key.Value.ToString().Contains(_stainFilter) || p.Value.Name.Contains(_stainFilter, StringComparison.OrdinalIgnoreCase),
+            p =>
+            {
+                ImGuiUtil.DrawTableColumn(p.Key.Value.ToString("D3"));
+                ImGui.TableNextColumn();
+                ImGui.GetWindowDrawList().AddRectFilled(ImGui.GetCursorScreenPos(),
+                    ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetTextLineHeight()),
+                    p.Value.RgbaColor, 5 * ImGuiHelpers.GlobalScale);
+                ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight()));
+                ImGuiUtil.DrawTableColumn(p.Value.Name);
+                ImGuiUtil.DrawTableColumn($"#{p.Value.R:X2}{p.Value.G:X2}{p.Value.B:X2}{(p.Value.Gloss ? ", Glossy" : string.Empty)}");
+            });
+        ImGuiClip.DrawEndDummy(remainder, height);
     }
 
     private void DrawCustomizationService()
     {
-        using var id = ImRaii.PushId("Customization");
-        ImGuiUtil.DrawTableColumn("Customization Service");
-        ImGui.TableNextColumn();
-        if (!_customization.Valid)
-        {
-            ImGui.TextUnformatted("Unavailable");
-            ImGui.TableNextColumn();
+        using var disabled = ImRaii.Disabled(!_customization.Valid);
+        using var tree     = ImRaii.TreeNode("Customization Service");
+        if (!tree || !_customization.Valid)
             return;
+
+        disabled.Dispose();
+
+        foreach (var clan in _customization.AwaitedService.Clans)
+        {
+            foreach (var gender in _customization.AwaitedService.Genders)
+                DrawCustomizationInfo(_customization.AwaitedService.GetList(clan, gender));
         }
+    }
 
-        using var tree = ImRaii.TreeNode("Available###Customization", ImGuiTreeNodeFlags.NoTreePushOnOpen);
-        ImGui.TableNextColumn();
-
+    private void DrawCustomizationInfo(CustomizationSet set)
+    {
+        using var tree = ImRaii.TreeNode($"{_customization.ClanName(set.Clan, set.Gender)} {set.Gender}");
         if (!tree)
             return;
+
+        using var table = ImRaii.Table("data", 5, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        if (!table)
+            return;
+
+        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        {
+            ImGuiUtil.DrawTableColumn(index.ToString());
+            ImGuiUtil.DrawTableColumn(set.Option(index));
+            ImGuiUtil.DrawTableColumn(set.IsAvailable(index) ? "Available" : "Unavailable");
+            ImGuiUtil.DrawTableColumn(set.Type(index).ToString());
+            ImGuiUtil.DrawTableColumn(set.Count(index).ToString());
+        }
     }
 
     #endregion

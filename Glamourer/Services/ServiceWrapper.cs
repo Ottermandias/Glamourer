@@ -11,10 +11,11 @@ using Glamourer.Customization;
 using Glamourer.Interop.Penumbra;
 using Penumbra.GameData.Data;
 using Penumbra.GameData;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Services;
 
-public abstract class AsyncServiceWrapper<T>
+public abstract class AsyncServiceWrapper<T> : IDisposable
 {
     public string Name    { get; }
     public T?     Service { get; private set; }
@@ -102,4 +103,49 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     public CustomizationService(DalamudPluginInterface pi, DataManager gameData)
         : base(nameof(CustomizationService), () => CustomizationManager.Create(pi, gameData))
     { }
+
+    /// <summary> In languages other than english the actual clan name may depend on gender. </summary>
+    public string ClanName(SubRace race, Gender gender)
+    {
+        if (gender == Gender.FemaleNpc)
+            gender = Gender.Female;
+        if (gender == Gender.MaleNpc)
+            gender = Gender.Male;
+        return (gender, race) switch
+        {
+            (Gender.Male, SubRace.Midlander)         => AwaitedService.GetName(CustomName.MidlanderM),
+            (Gender.Male, SubRace.Highlander)        => AwaitedService.GetName(CustomName.HighlanderM),
+            (Gender.Male, SubRace.Wildwood)          => AwaitedService.GetName(CustomName.WildwoodM),
+            (Gender.Male, SubRace.Duskwight)         => AwaitedService.GetName(CustomName.DuskwightM),
+            (Gender.Male, SubRace.Plainsfolk)        => AwaitedService.GetName(CustomName.PlainsfolkM),
+            (Gender.Male, SubRace.Dunesfolk)         => AwaitedService.GetName(CustomName.DunesfolkM),
+            (Gender.Male, SubRace.SeekerOfTheSun)    => AwaitedService.GetName(CustomName.SeekerOfTheSunM),
+            (Gender.Male, SubRace.KeeperOfTheMoon)   => AwaitedService.GetName(CustomName.KeeperOfTheMoonM),
+            (Gender.Male, SubRace.Seawolf)           => AwaitedService.GetName(CustomName.SeawolfM),
+            (Gender.Male, SubRace.Hellsguard)        => AwaitedService.GetName(CustomName.HellsguardM),
+            (Gender.Male, SubRace.Raen)              => AwaitedService.GetName(CustomName.RaenM),
+            (Gender.Male, SubRace.Xaela)             => AwaitedService.GetName(CustomName.XaelaM),
+            (Gender.Male, SubRace.Helion)            => AwaitedService.GetName(CustomName.HelionM),
+            (Gender.Male, SubRace.Lost)              => AwaitedService.GetName(CustomName.LostM),
+            (Gender.Male, SubRace.Rava)              => AwaitedService.GetName(CustomName.RavaM),
+            (Gender.Male, SubRace.Veena)             => AwaitedService.GetName(CustomName.VeenaM),
+            (Gender.Female, SubRace.Midlander)       => AwaitedService.GetName(CustomName.MidlanderF),
+            (Gender.Female, SubRace.Highlander)      => AwaitedService.GetName(CustomName.HighlanderF),
+            (Gender.Female, SubRace.Wildwood)        => AwaitedService.GetName(CustomName.WildwoodF),
+            (Gender.Female, SubRace.Duskwight)       => AwaitedService.GetName(CustomName.DuskwightF),
+            (Gender.Female, SubRace.Plainsfolk)      => AwaitedService.GetName(CustomName.PlainsfolkF),
+            (Gender.Female, SubRace.Dunesfolk)       => AwaitedService.GetName(CustomName.DunesfolkF),
+            (Gender.Female, SubRace.SeekerOfTheSun)  => AwaitedService.GetName(CustomName.SeekerOfTheSunF),
+            (Gender.Female, SubRace.KeeperOfTheMoon) => AwaitedService.GetName(CustomName.KeeperOfTheMoonF),
+            (Gender.Female, SubRace.Seawolf)         => AwaitedService.GetName(CustomName.SeawolfF),
+            (Gender.Female, SubRace.Hellsguard)      => AwaitedService.GetName(CustomName.HellsguardF),
+            (Gender.Female, SubRace.Raen)            => AwaitedService.GetName(CustomName.RaenF),
+            (Gender.Female, SubRace.Xaela)           => AwaitedService.GetName(CustomName.XaelaF),
+            (Gender.Female, SubRace.Helion)          => AwaitedService.GetName(CustomName.HelionM),
+            (Gender.Female, SubRace.Lost)            => AwaitedService.GetName(CustomName.LostM),
+            (Gender.Female, SubRace.Rava)            => AwaitedService.GetName(CustomName.RavaF),
+            (Gender.Female, SubRace.Veena)           => AwaitedService.GetName(CustomName.VeenaF),
+            _                                        => "Unknown",
+        };
+    }
 }

@@ -46,7 +46,8 @@ public static class ServiceManager
         => services.AddSingleton<IdentifierService>()
             .AddSingleton<ItemService>()
             .AddSingleton<ActorService>()
-            .AddSingleton<CustomizationService>();
+            .AddSingleton<CustomizationService>()
+            .AddSingleton<ItemManager>();
 
     private static IServiceCollection AddInterop(this IServiceCollection services)
         => services.AddSingleton<VisorService>()

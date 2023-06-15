@@ -94,4 +94,7 @@ public readonly unsafe struct Actor : IEquatable<Actor>
 
     public CharacterWeapon GetOffhand()
         => *(CharacterWeapon*)&AsCharacter->DrawData.OffHandModel;
+
+    public override string ToString()
+        => $"0x{Address:X}";
 }
