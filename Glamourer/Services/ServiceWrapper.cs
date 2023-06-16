@@ -51,7 +51,7 @@ public abstract class AsyncServiceWrapper<T> : IDisposable
             else
             {
                 Service = service;
-                Item.Log.Verbose($"[{Name}] Created.");
+                Glamourer.Log.Verbose($"[{Name}] Created.");
                 _task = null;
             }
         });
@@ -71,7 +71,7 @@ public abstract class AsyncServiceWrapper<T> : IDisposable
         _task       = null;
         if (Service is IDisposable d)
             d.Dispose();
-        Item.Log.Verbose($"[{Name}] Disposed.");
+        Glamourer.Log.Verbose($"[{Name}] Disposed.");
     }
 }
 

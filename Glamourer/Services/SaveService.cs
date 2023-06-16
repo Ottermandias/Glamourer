@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Text;
 using OtterGui.Classes;
 using OtterGui.Log;
 

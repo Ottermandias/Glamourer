@@ -9,7 +9,7 @@ using OtterGui.Log;
 
 namespace Glamourer;
 
-public class Item : IDalamudPlugin
+public class Glamourer : IDalamudPlugin
 {
     public string Name
         => "Glamourer";
@@ -26,7 +26,7 @@ public class Item : IDalamudPlugin
 
     private readonly ServiceProvider _services;
 
-    public Item(DalamudPluginInterface pluginInterface)
+    public Glamourer(DalamudPluginInterface pluginInterface)
     {
         try
         {

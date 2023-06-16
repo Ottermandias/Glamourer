@@ -20,14 +20,14 @@ public class ItemManager : IDisposable
     public const string SmallClothesNpc      = "Smallclothes (NPC)";
     public const ushort SmallClothesNpcModel = 9903;
 
-    private readonly Configuration     _config;
+    private readonly ConfigurationOld     _config;
     public readonly  IdentifierService IdentifierService;
     public readonly  ExcelSheet<Item>  ItemSheet;
     public readonly  StainData         Stains;
     public readonly  ItemService       ItemService;
     public readonly  RestrictedGear    RestrictedGear;
 
-    public ItemManager(DalamudPluginInterface pi, DataManager gameData, IdentifierService identifierService, ItemService itemService, Configuration config)
+    public ItemManager(DalamudPluginInterface pi, DataManager gameData, IdentifierService identifierService, ItemService itemService, ConfigurationOld config)
     {
         _config           = config;
         ItemSheet         = gameData.GetExcelSheet<Item>()!;

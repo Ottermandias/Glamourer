@@ -36,7 +36,11 @@ public static class ServiceManager
     private static IServiceCollection AddMeta(this IServiceCollection services)
         => services.AddSingleton<ChatService>()
             .AddSingleton<FilenameService>()
-            .AddSingleton<BackupService>();
+            .AddSingleton<BackupService>()
+            .AddSingleton<FrameworkManager>()
+            .AddSingleton<SaveService>()
+            .AddSingleton<ConfigMigrationService>()
+            .AddSingleton<Configuration>();
 
     private static IServiceCollection AddEvents(this IServiceCollection services)
         => services.AddSingleton<VisorStateChanged>()
@@ -54,11 +58,11 @@ public static class ServiceManager
             .AddSingleton<ChangeCustomizeService>()
             .AddSingleton<UpdateSlotService>()
             .AddSingleton<WeaponService>()
-            .AddSingleton<PenumbraService>();
+            .AddSingleton<PenumbraService>()
+            .AddSingleton<ObjectManager>();
 
     private static IServiceCollection AddUi(this IServiceCollection services)
-        => services
-            .AddSingleton<DebugTab>()
+        => services.AddSingleton<DebugTab>()
             .AddSingleton<MainWindow>()
             .AddSingleton<GlamourerWindowSystem>();
 

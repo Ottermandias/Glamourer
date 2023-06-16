@@ -41,7 +41,7 @@ public class VisorService : IDisposable
             return false;
 
         var oldState = GetVisorState(human);
-        Item.Log.Verbose($"[SetVisorState] Invoked manually on 0x{human.Address:X} switching from {oldState} to {on}.");
+        Glamourer.Log.Verbose($"[SetVisorState] Invoked manually on 0x{human.Address:X} switching from {oldState} to {on}.");
         if (oldState == on)
             return false;
 
@@ -63,7 +63,7 @@ public class VisorService : IDisposable
         // and also control whether the function should be called at all.
         Event.Invoke(human, ref on, ref callOriginal);
 
-        Item.Log.Excessive(
+        Glamourer.Log.Excessive(
             $"[SetVisorState] Invoked from game on 0x{human:X} switching to {on} (original {originalOn}, call original {callOriginal}).");
 
         if (callOriginal)

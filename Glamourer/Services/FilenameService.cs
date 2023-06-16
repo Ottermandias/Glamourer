@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Dalamud.Plugin;
+using Glamourer.Designs;
 
 namespace Glamourer.Services;
 
@@ -32,4 +33,7 @@ public class FilenameService
 
     public string DesignFile(string identifier)
         => Path.Combine(DesignDirectory, $"{identifier}.json");
+
+    public string DesignFile(Design design)
+        => DesignFile(design.Identifier.ToString());
 }

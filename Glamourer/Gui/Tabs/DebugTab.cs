@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Customization;
+using Glamourer.Designs;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
@@ -17,6 +19,7 @@ using OtterGui.Widgets;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using static OtterGui.Raii.ImRaii;
 
 namespace Glamourer.Gui.Tabs;
 
@@ -28,6 +31,7 @@ public unsafe class DebugTab : ITab
     private readonly WeaponService          _weaponService;
     private readonly PenumbraService        _penumbra;
     private readonly ObjectTable            _objects;
+    private readonly ObjectManager          _objectManager;
 
     private readonly ItemManager          _items;
     private readonly ActorService         _actors;
@@ -37,7 +41,7 @@ public unsafe class DebugTab : ITab
 
     public DebugTab(ChangeCustomizeService changeCustomizeService, VisorService visorService, ObjectTable objects,
         UpdateSlotService updateSlotService, WeaponService weaponService, PenumbraService penumbra, IdentifierService identifier,
-        ActorService actors, ItemManager items, CustomizationService customization)
+        ActorService actors, ItemManager items, CustomizationService customization, ObjectManager objectManager)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -48,6 +52,7 @@ public unsafe class DebugTab : ITab
         _actors                 = actors;
         _items                  = items;
         _customization          = customization;
+        _objectManager          = objectManager;
     }
 
     public ReadOnlySpan<byte> Label
@@ -58,6 +63,7 @@ public unsafe class DebugTab : ITab
         DrawInteropHeader();
         DrawGameDataHeader();
         DrawPenumbraHeader();
+        DrawDesignManager();
     }
 
     #region Interop
@@ -67,10 +73,20 @@ public unsafe class DebugTab : ITab
         if (!ImGui.CollapsingHeader("Interop"))
             return;
 
+        DrawModelEvaluation();
+        DrawObjectManager();
+    }
+
+    private void DrawModelEvaluation()
+    {
+        using var tree = TreeNode("Model Evaluation");
+        if (!tree)
+            return;
+
         ImGui.InputInt("Game Object Index", ref _gameObjectIndex, 0, 0);
         var       actor = (Actor)_objects.GetObjectAddress(_gameObjectIndex);
         var       model = actor.Model;
-        using var table = ImRaii.Table("##interopTable", 4, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        using var table = Table("##evaluationTable", 4, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         ImGui.TableNextColumn();
         ImGui.TableNextColumn();
         ImGui.TableHeader("Actor");
@@ -107,9 +123,79 @@ public unsafe class DebugTab : ITab
         DrawCustomize(actor, model);
     }
 
+    private string _objectFilter = string.Empty;
+
+    private void DrawObjectManager()
+    {
+        using var tree = TreeNode("Object Manager");
+        if (!tree)
+            return;
+
+        _objectManager.Update();
+
+        using (var table = Table("##data", 3, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit))
+        {
+            if (!table)
+                return;
+
+            ImGuiUtil.DrawTableColumn("Last Update");
+            ImGuiUtil.DrawTableColumn(_objectManager.LastUpdate.ToString(CultureInfo.InvariantCulture));
+            ImGui.TableNextColumn();
+
+            ImGuiUtil.DrawTableColumn("World");
+            ImGuiUtil.DrawTableColumn(_actors.Valid ? _actors.AwaitedService.Data.ToWorldName(_objectManager.World) : "Service Missing");
+            ImGuiUtil.DrawTableColumn(_objectManager.World.ToString());
+
+            ImGuiUtil.DrawTableColumn("Player Character");
+            ImGuiUtil.DrawTableColumn($"{_objectManager.Player.Utf8Name} ({_objectManager.Player.Index})");
+            ImGui.TableNextColumn();
+            ImGuiUtil.CopyOnClickSelectable(_objectManager.Player.ToString());
+
+            ImGuiUtil.DrawTableColumn("In GPose");
+            ImGuiUtil.DrawTableColumn(_objectManager.IsInGPose.ToString());
+            ImGui.TableNextColumn();
+
+            if (_objectManager.IsInGPose)
+            {
+                ImGuiUtil.DrawTableColumn("GPose Player");
+                ImGuiUtil.DrawTableColumn($"{_objectManager.GPosePlayer.Utf8Name} ({_objectManager.GPosePlayer.Index})");
+                ImGui.TableNextColumn();
+                ImGuiUtil.CopyOnClickSelectable(_objectManager.GPosePlayer.ToString());
+            }
+
+            ImGuiUtil.DrawTableColumn("Number of Players");
+            ImGuiUtil.DrawTableColumn(_objectManager.Count.ToString());
+            ImGui.TableNextColumn();
+        }
+
+        var filterChanged = ImGui.InputTextWithHint("##Filter", "Filter...", ref _objectFilter, 64);
+        using var table2 = Table("##data2", 3,
+            ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY,
+            new Vector2(-1, 20 * ImGui.GetTextLineHeightWithSpacing()));
+        if (!table2)
+            return;
+
+        if (filterChanged)
+            ImGui.SetScrollY(0);
+
+        ImGui.TableNextColumn();
+        var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
+        ImGui.TableNextRow();
+
+        var remainder = ImGuiClip.FilteredClippedDraw(_objectManager, skips,
+            p => p.Value.Label.Contains(_objectFilter, StringComparison.OrdinalIgnoreCase), p
+                =>
+            {
+                ImGuiUtil.DrawTableColumn(p.Key.ToString());
+                ImGuiUtil.DrawTableColumn(p.Value.Label);
+                ImGuiUtil.DrawTableColumn(string.Join(", ", p.Value.Objects.OrderBy(a => a.Index).Select(a => a.Index.ToString())));
+            });
+        ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeightWithSpacing());
+    }
+
     private void DrawVisor(Actor actor, Model model)
     {
-        using var id = ImRaii.PushId("Visor");
+        using var id = PushId("Visor");
         ImGuiUtil.DrawTableColumn("Visor State");
         ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.AsCharacter->DrawData.IsVisorToggled.ToString() : "No Character");
         ImGuiUtil.DrawTableColumn(model.IsHuman ? _visorService.GetVisorState(model).ToString() : "No Human");
@@ -129,7 +215,7 @@ public unsafe class DebugTab : ITab
 
     private void DrawHatState(Actor actor, Model model)
     {
-        using var id = ImRaii.PushId("HatState");
+        using var id = PushId("HatState");
         ImGuiUtil.DrawTableColumn("Hat State");
         ImGuiUtil.DrawTableColumn(actor.IsCharacter
             ? actor.AsCharacter->DrawData.IsHatHidden ? "Hidden" : actor.GetArmor(EquipSlot.Head).ToString()
@@ -154,7 +240,7 @@ public unsafe class DebugTab : ITab
 
     private void DrawWeaponState(Actor actor, Model model)
     {
-        using var id = ImRaii.PushId("WeaponState");
+        using var id = PushId("WeaponState");
         ImGuiUtil.DrawTableColumn("Weapon State");
         ImGuiUtil.DrawTableColumn(actor.IsCharacter
             ? actor.AsCharacter->DrawData.IsWeaponHidden ? "Hidden" : "Visible"
@@ -186,7 +272,7 @@ public unsafe class DebugTab : ITab
 
     private void DrawWetness(Actor actor, Model model)
     {
-        using var id = ImRaii.PushId("Wetness");
+        using var id = PushId("Wetness");
         ImGuiUtil.DrawTableColumn("Wetness");
         ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.AsCharacter->IsGPoseWet ? "GPose" : "None" : "No Character");
         var modelString = model.IsCharacterBase
@@ -212,10 +298,10 @@ public unsafe class DebugTab : ITab
 
     private void DrawEquip(Actor actor, Model model)
     {
-        using var id = ImRaii.PushId("Equipment");
+        using var id = PushId("Equipment");
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            using var id2 = ImRaii.PushId((int)slot);
+            using var id2 = PushId((int)slot);
             ImGuiUtil.DrawTableColumn(slot.ToName());
             ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.GetArmor(slot).ToString() : "No Character");
             ImGuiUtil.DrawTableColumn(model.IsHuman ? model.GetArmor(slot).ToString() : "No Human");
@@ -237,7 +323,7 @@ public unsafe class DebugTab : ITab
 
     private void DrawCustomize(Actor actor, Model model)
     {
-        using var id = ImRaii.PushId("Customize");
+        using var id = PushId("Customize");
         var actorCustomize = new Customize(actor.IsCharacter
             ? *(Penumbra.GameData.Structs.CustomizeData*)&actor.AsCharacter->DrawData.CustomizeData
             : new Penumbra.GameData.Structs.CustomizeData());
@@ -246,7 +332,7 @@ public unsafe class DebugTab : ITab
             : new Penumbra.GameData.Structs.CustomizeData());
         foreach (var type in Enum.GetValues<CustomizeIndex>())
         {
-            using var id2 = ImRaii.PushId((int)type);
+            using var id2 = PushId((int)type);
             ImGuiUtil.DrawTableColumn(type.ToDefaultName());
             ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actorCustomize[type].Value.ToString("X2") : "No Character");
             ImGuiUtil.DrawTableColumn(model.IsHuman ? modelCustomize[type].Value.ToString("X2") : "No Human");
@@ -287,7 +373,7 @@ public unsafe class DebugTab : ITab
         if (!ImGui.CollapsingHeader("Penumbra"))
             return;
 
-        using var table = ImRaii.Table("##PenumbraTable", 3, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        using var table = Table("##PenumbraTable", 3, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         if (!table)
             return;
 
@@ -324,7 +410,7 @@ public unsafe class DebugTab : ITab
         ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
         ImGui.InputInt("##redrawObject", ref _gameObjectIndex, 0, 0);
         ImGui.TableNextColumn();
-        using (var disabled = ImRaii.Disabled(!_penumbra.Available))
+        using (var disabled = Disabled(!_penumbra.Available))
         {
             if (ImGui.SmallButton("Redraw"))
                 _penumbra.RedrawObject(_objects.GetObjectAddress(_gameObjectIndex), RedrawType.Redraw);
@@ -355,8 +441,8 @@ public unsafe class DebugTab : ITab
 
     private void DrawIdentifierService()
     {
-        using var disabled = ImRaii.Disabled(!_items.IdentifierService.Valid);
-        using var tree     = ImRaii.TreeNode("Identifier Service");
+        using var disabled = Disabled(!_items.IdentifierService.Valid);
+        using var tree     = TreeNode("Identifier Service");
         if (!tree || !_items.IdentifierService.Valid)
             return;
 
@@ -400,7 +486,7 @@ public unsafe class DebugTab : ITab
 
     private void DrawRestrictedGear()
     {
-        using var tree = ImRaii.TreeNode("Restricted Gear Service");
+        using var tree = TreeNode("Restricted Gear Service");
         if (!tree)
             return;
 
@@ -451,8 +537,8 @@ public unsafe class DebugTab : ITab
 
     private void DrawActorService()
     {
-        using var disabled = ImRaii.Disabled(!_actors.Valid);
-        using var tree     = ImRaii.TreeNode("Actor Service");
+        using var disabled = Disabled(!_actors.Valid);
+        using var tree     = TreeNode("Actor Service");
         if (!tree || !_actors.Valid)
             return;
 
@@ -468,14 +554,14 @@ public unsafe class DebugTab : ITab
 
     private static void DrawNameTable(string label, ref string filter, IEnumerable<(uint, string)> names)
     {
-        using var _    = ImRaii.PushId(label);
-        using var tree = ImRaii.TreeNode(label);
+        using var _    = PushId(label);
+        using var tree = TreeNode(label);
         if (!tree)
             return;
 
         var resetScroll = ImGui.InputTextWithHint("##filter", "Filter...", ref filter, 256);
         var height      = ImGui.GetTextLineHeightWithSpacing() + 2 * ImGui.GetStyle().CellPadding.Y;
-        using var table = ImRaii.Table("##table", 2, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
+        using var table = Table("##table", 2, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
             new Vector2(-1, 10 * height));
         if (!table)
             return;
@@ -502,13 +588,13 @@ public unsafe class DebugTab : ITab
 
     private void DrawItemService()
     {
-        using var disabled = ImRaii.Disabled(!_items.ItemService.Valid);
-        using var tree     = ImRaii.TreeNode("Item Manager");
+        using var disabled = Disabled(!_items.ItemService.Valid);
+        using var tree     = TreeNode("Item Manager");
         if (!tree || !_items.ItemService.Valid)
             return;
 
         disabled.Dispose();
-        ImRaii.TreeNode($"Default Sword: {_items.DefaultSword.Name} ({_items.DefaultSword.Id}) ({_items.DefaultSword.Weapon()})",
+        TreeNode($"Default Sword: {_items.DefaultSword.Name} ({_items.DefaultSword.Id}) ({_items.DefaultSword.Weapon()})",
             ImGuiTreeNodeFlags.Leaf).Dispose();
         DrawNameTable("All Items (Main)", ref _itemFilter,
             _items.ItemService.AwaitedService.AllItems(true).Select(p => (p.Item1,
@@ -530,13 +616,13 @@ public unsafe class DebugTab : ITab
 
     private void DrawStainService()
     {
-        using var tree = ImRaii.TreeNode("Stain Service");
+        using var tree = TreeNode("Stain Service");
         if (!tree)
             return;
 
         var resetScroll = ImGui.InputTextWithHint("##filter", "Filter...", ref _stainFilter, 256);
         var height      = ImGui.GetTextLineHeightWithSpacing() + 2 * ImGui.GetStyle().CellPadding.Y;
-        using var table = ImRaii.Table("##table", 4,
+        using var table = Table("##table", 4,
             ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter | ImGuiTableFlags.SizingFixedFit,
             new Vector2(-1, 10 * height));
         if (!table)
@@ -566,8 +652,8 @@ public unsafe class DebugTab : ITab
 
     private void DrawCustomizationService()
     {
-        using var disabled = ImRaii.Disabled(!_customization.Valid);
-        using var tree     = ImRaii.TreeNode("Customization Service");
+        using var disabled = Disabled(!_customization.Valid);
+        using var tree     = TreeNode("Customization Service");
         if (!tree || !_customization.Valid)
             return;
 
@@ -582,11 +668,11 @@ public unsafe class DebugTab : ITab
 
     private void DrawCustomizationInfo(CustomizationSet set)
     {
-        using var tree = ImRaii.TreeNode($"{_customization.ClanName(set.Clan, set.Gender)} {set.Gender}");
+        using var tree = TreeNode($"{_customization.ClanName(set.Clan, set.Gender)} {set.Gender}");
         if (!tree)
             return;
 
-        using var table = ImRaii.Table("data", 5, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        using var table = Table("data", 5, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         if (!table)
             return;
 
@@ -598,6 +684,142 @@ public unsafe class DebugTab : ITab
             ImGuiUtil.DrawTableColumn(set.Type(index).ToString());
             ImGuiUtil.DrawTableColumn(set.Count(index).ToString());
         }
+    }
+
+    #endregion
+
+    #region Designs
+
+    private string     _base64       = string.Empty;
+    private string     _restore      = string.Empty;
+    private byte[]     _base64Bytes  = Array.Empty<byte>();
+    private byte[]     _restoreBytes = Array.Empty<byte>();
+    private DesignData _parse64      = new();
+    private Exception? _parse64Failure;
+
+    private void DrawDesignManager()
+    {
+        if (!ImGui.CollapsingHeader("Designs"))
+            return;
+
+        ImGui.InputTextWithHint("##base64", "Base 64 input...", ref _base64, 2048);
+        if (ImGui.IsItemDeactivatedAfterEdit())
+        {
+            try
+            {
+                _base64Bytes    = Convert.FromBase64String(_base64);
+                _parse64Failure = null;
+            }
+            catch (Exception ex)
+            {
+                _base64Bytes    = Array.Empty<byte>();
+                _parse64Failure = ex;
+            }
+
+            if (_parse64Failure == null)
+                try
+                {
+                    _parse64 = DesignBase64Migration.MigrateBase64(_items, _base64, out var ef, out var cf, out var wp, out var ah, out var av,
+                        out var aw);
+                    _restore      = DesignBase64Migration.CreateOldBase64(in _parse64, ef, cf, ah, av, wp, aw);
+                    _restoreBytes = Convert.FromBase64String(_restore);
+                }
+                catch (Exception ex)
+                {
+                    _parse64Failure = ex;
+                    _restore        = string.Empty;
+                }
+        }
+
+        if (_parse64Failure != null)
+        {
+            ImGuiUtil.TextWrapped(_parse64Failure.ToString());
+        }
+        else if (_restore.Length > 0)
+        {
+            DrawDesignData(_parse64);
+            using var font = PushFont(UiBuilder.MonoFont);
+            ImGui.TextUnformatted(_base64);
+            using (var style = PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing with { X = 0 }))
+            {
+                foreach (var (c1, c2) in _restore.Zip(_base64))
+                {
+                    using var color = PushColor(ImGuiCol.Text, 0xFF4040D0, c1 != c2);
+                    ImGui.TextUnformatted(c1.ToString());
+                    ImGui.SameLine();
+                }
+            }
+
+            ImGui.NewLine();
+
+            foreach (var ((b1, b2), idx) in _base64Bytes.Zip(_restoreBytes).WithIndex())
+            {
+                using (var group = Group())
+                {
+                    ImGui.TextUnformatted(idx.ToString("D2"));
+                    ImGui.TextUnformatted(b1.ToString("X2"));
+                    using var color = PushColor(ImGuiCol.Text, 0xFF4040D0, b1 != b2);
+                    ImGui.TextUnformatted(b2.ToString("X2"));
+                }
+
+                ImGui.SameLine();
+            }
+        }
+
+        if (_parse64Failure != null && _base64Bytes.Length > 0)
+        {
+            using var font = PushFont(UiBuilder.MonoFont);
+            foreach (var (b, idx) in _base64Bytes.WithIndex())
+            {
+                using (var group = Group())
+                {
+                    ImGui.TextUnformatted(idx.ToString("D2"));
+                    ImGui.TextUnformatted(b.ToString("X2"));
+                }
+
+                ImGui.SameLine();
+            }
+        }
+    }
+
+    private static void DrawDesignData(in DesignData data)
+    {
+        using var table = Table("##equip", 4, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
+        foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
+        {
+            var item  = data.Item(slot);
+            var stain = data.Stain(slot);
+            ImGuiUtil.DrawTableColumn(slot.ToName());
+            ImGuiUtil.DrawTableColumn(item.Name);
+            ImGuiUtil.DrawTableColumn(item.Id.ToString());
+            ImGuiUtil.DrawTableColumn(stain.ToString());
+        }
+
+        ImGuiUtil.DrawTableColumn("Hat Visible");
+        ImGuiUtil.DrawTableColumn(data.IsHatVisible().ToString());
+        ImGui.TableNextRow();
+        ImGuiUtil.DrawTableColumn("Visor Toggled");
+        ImGuiUtil.DrawTableColumn(data.IsVisorToggled().ToString());
+        ImGui.TableNextRow();
+        ImGuiUtil.DrawTableColumn("Weapon Visible");
+        ImGuiUtil.DrawTableColumn(data.IsWeaponVisible().ToString());
+        ImGui.TableNextRow();
+
+        ImGuiUtil.DrawTableColumn("Model ID");
+        ImGuiUtil.DrawTableColumn(data.ModelId.ToString());
+        ImGui.TableNextRow();
+
+        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        {
+            var value = data.Customize[index];
+            ImGuiUtil.DrawTableColumn(index.ToDefaultName());
+            ImGuiUtil.DrawTableColumn(value.Value.ToString());
+            ImGui.TableNextRow();
+        }
+
+        ImGuiUtil.DrawTableColumn("Is Wet");
+        ImGuiUtil.DrawTableColumn(data.IsWet().ToString());
+        ImGui.TableNextRow();
     }
 
     #endregion

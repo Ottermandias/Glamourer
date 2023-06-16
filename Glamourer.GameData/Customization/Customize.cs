@@ -93,13 +93,13 @@ public unsafe struct Customize
     public void Load(Customize other)
         => Data.Read(&other.Data);
 
-    public void Write(nint target)
+    public readonly void Write(nint target)
         => Data.Write((void*)target);
 
     public bool LoadBase64(string data)
         => Data.LoadBase64(data);
 
-    public string WriteBase64()
+    public readonly string WriteBase64()
         => Data.WriteBase64();
 
     public static CustomizeFlag Compare(Customize lhs, Customize rhs)

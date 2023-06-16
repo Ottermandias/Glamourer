@@ -34,7 +34,7 @@ public unsafe class WeaponService : IDisposable
 
         // First call the regular function.
         _loadWeaponHook.Original(drawData, slot, weapon, redrawOnEquality, unk2, skipGameObject, unk4);
-        Item.Log.Information(
+        Glamourer.Log.Excessive(
             $"Weapon reloaded for 0x{actor.Address:X} with attributes {slot} {weapon:X14}, {redrawOnEquality}, {unk2}, {skipGameObject}, {unk4}");
     }
 

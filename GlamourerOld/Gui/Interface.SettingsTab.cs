@@ -75,10 +75,10 @@ public partial class Interface
         ImGui.Dummy(_spacing);
 
         DrawColorPicker("Customization Color", "The color for designs that only apply their character customization.",
-            _config.CustomizationColor,            Configuration.DefaultCustomizationColor, c => _config.CustomizationColor = c);
+            _config.CustomizationColor,            ConfigurationOld.DefaultCustomizationColor, c => _config.CustomizationColor = c);
         DrawColorPicker("Equipment Color", "The color for designs that only apply some or all of their equipment slots and stains.",
-            _config.EquipmentColor,            Configuration.DefaultEquipmentColor, c => _config.EquipmentColor = c);
+            _config.EquipmentColor,            ConfigurationOld.DefaultEquipmentColor, c => _config.EquipmentColor = c);
         DrawColorPicker("State Color", "The color for designs that only apply some state modification.",
-            _config.StateColor,            Configuration.DefaultStateColor, c => _config.StateColor = c);
+            _config.StateColor,            ConfigurationOld.DefaultStateColor, c => _config.StateColor = c);
     }
 }

@@ -33,7 +33,7 @@ public class MainWindow : Window
     }
 
     private static string GetLabel()
-        => Item.Version.Length == 0
+        => Glamourer.Version.Length == 0
             ? "Glamourer###GlamourerMainWindow"
-            : $"Glamourer v{Item.Version}###GlamourerMainWindow";
+            : $"Glamourer v{Glamourer.Version}###GlamourerMainWindow";
 }

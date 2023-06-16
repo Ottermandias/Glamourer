@@ -2,6 +2,9 @@
 
 namespace Glamourer.Interop.Structs;
 
+/// <summary>
+/// A single actor with its label and the list of associated game objects.
+/// </summary>
 public readonly struct ActorData
 {
     public readonly List<Actor> Objects;

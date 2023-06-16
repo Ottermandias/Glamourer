@@ -107,11 +107,11 @@ public unsafe class PenumbraService : IDisposable
             _cutsceneParent   = Ipc.GetCutsceneParentIndex.Subscriber(_pluginInterface);
             _redrawSubscriber = Ipc.RedrawObjectByIndex.Subscriber(_pluginInterface);
             Available         = true;
-            Item.Log.Debug("Glamourer attached to Penumbra.");
+            Glamourer.Log.Debug("Glamourer attached to Penumbra.");
         }
         catch (Exception e)
         {
-            Item.Log.Debug($"Could not attach to Penumbra:\n{e}");
+            Glamourer.Log.Debug($"Could not attach to Penumbra:\n{e}");
         }
     }
 
@@ -125,7 +125,7 @@ public unsafe class PenumbraService : IDisposable
         if (Available)
         {
             Available = false;
-            Item.Log.Debug("Glamourer detached from Penumbra.");
+            Glamourer.Log.Debug("Glamourer detached from Penumbra.");
         }
     }
 

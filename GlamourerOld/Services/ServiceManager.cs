@@ -42,7 +42,7 @@ public static class ServiceManager
             .AddSingleton<ChatService>();
 
     private static IServiceCollection AddConfig(this IServiceCollection services)
-        => services.AddSingleton<Configuration>()
+        => services.AddSingleton<ConfigurationOld>()
             .AddSingleton<BackupService>();
 
     private static IServiceCollection AddPenumbra(this IServiceCollection services)

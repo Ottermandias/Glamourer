@@ -16,6 +16,8 @@ public class ItemManager : IDisposable
     public const string SmallClothesNpc      = "Smallclothes (NPC)";
     public const ushort SmallClothesNpcModel = 9903;
 
+    private readonly Configuration _config;
+
     public readonly IdentifierService                             IdentifierService;
     public readonly ExcelSheet<Lumina.Excel.GeneratedSheets.Item> ItemSheet;
     public readonly StainData                                     Stains;
@@ -24,8 +26,10 @@ public class ItemManager : IDisposable
 
     public readonly EquipItem DefaultSword;
 
-    public ItemManager(DalamudPluginInterface pi, DataManager gameData, IdentifierService identifierService, ItemService itemService)
+    public ItemManager(Configuration config, DalamudPluginInterface pi, DataManager gameData, IdentifierService identifierService,
+        ItemService itemService)
     {
+        _config           = config;
         ItemSheet         = gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;
         IdentifierService = identifierService;
         Stains            = new StainData(pi, gameData, gameData.Language);
@@ -42,10 +46,8 @@ public class ItemManager : IDisposable
 
 
     public (bool, CharacterArmor) ResolveRestrictedGear(CharacterArmor armor, EquipSlot slot, Race race, Gender gender)
-        // TODO
-        //if (_config.UseRestrictedGearProtection)
-        => RestrictedGear.ResolveRestricted(armor, slot, race, gender);
-    //return (false, armor);
+        => _config.UseRestrictedGearProtection ? RestrictedGear.ResolveRestricted(armor, slot, race, gender) : (false, armor);
+
 
     public static uint NothingId(EquipSlot slot)
         => uint.MaxValue - 128 - (uint)slot.ToSlot();
@@ -77,6 +79,20 @@ public class ItemManager : IDisposable
             return new EquipItem(string.Intern($"Unknown #{itemId}"), itemId, 0, 0, 0, 0, 0);
 
         if (item.Type.ToSlot() != slot)
+            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0);
+
+        return item;
+    }
+
+    public EquipItem Resolve(FullEquipType type, uint itemId)
+    {
+        if (itemId == NothingId(type))
+            return NothingItem(type);
+
+        if (!ItemService.AwaitedService.TryGetValue(itemId, false, out var item))
+            return new EquipItem(string.Intern($"Unknown #{itemId}"), itemId, 0, 0, 0, 0, 0);
+
+        if (item.Type != type)
             return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0);
 
         return item;

@@ -23,14 +23,14 @@ public partial class Interface : Window, IDisposable
 
     private readonly EquipmentDrawer     _equipmentDrawer;
     private readonly CustomizationDrawer _customizationDrawer;
-    private readonly Configuration       _config;
+    private readonly ConfigurationOld       _config;
     private readonly ActorTab            _actorTab;
     private readonly DesignTab           _designTab;
     private readonly DebugStateTab       _debugStateTab;
     private readonly DebugDataTab        _debugDataTab;
 
     public Interface(DalamudPluginInterface pi, ItemManager items, ActiveDesign.Manager activeDesigns, DesignManager designManager,
-        DesignFileSystem fileSystem, ObjectManager objects, CustomizationService customization, Configuration config, DataManager gameData, TargetManager targets, ActorService actors, KeyState keyState)
+        DesignFileSystem fileSystem, ObjectManager objects, CustomizationService customization, ConfigurationOld config, DataManager gameData, TargetManager targets, ActorService actors, KeyState keyState)
         : base(GetLabel())
     {
         _pi                             = pi;

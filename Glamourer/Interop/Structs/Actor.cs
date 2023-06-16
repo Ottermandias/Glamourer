@@ -2,8 +2,10 @@
 using System;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.System.String;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Penumbra.String;
 
 namespace Glamourer.Interop.Structs;
 
@@ -43,6 +45,9 @@ public readonly unsafe struct Actor : IEquatable<Actor>
     public ActorIdentifier GetIdentifier(ActorManager actors)
         => actors.FromObject(AsObject, out _, true, true, false);
 
+    public ByteString Utf8Name
+        => Valid ? new ByteString(AsObject->Name) : ByteString.Empty;
+
     public bool Identifier(ActorManager actors, out ActorIdentifier ident)
     {
         if (Valid)
@@ -54,6 +59,9 @@ public readonly unsafe struct Actor : IEquatable<Actor>
         ident = ActorIdentifier.Invalid;
         return false;
     }
+
+    public int Index
+        => Valid ? AsObject->ObjectIndex : -1;
 
     public Model Model
         => Valid ? AsObject->DrawObject : null;

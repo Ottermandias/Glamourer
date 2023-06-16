@@ -25,7 +25,7 @@ public unsafe class ChangeCustomizeService
         if (!model.IsHuman)
             return false;
 
-        Item.Log.Verbose($"[ChangeCustomize] Invoked on 0x{model.Address:X} with {customize}.");
+        Glamourer.Log.Verbose($"[ChangeCustomize] Invoked on 0x{model.Address:X} with {customize}.");
         return _changeCustomize(model.AsHuman, customize.Data, 1);
     }
 
