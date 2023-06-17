@@ -19,9 +19,10 @@ public class DesignManager
     public const    string DesignFolderName = "designs";
     public readonly string DesignFolder;
 
-    private readonly ItemManager  _items;
-    private readonly SaveService  _saveService;
-    private readonly List<Design> _designs = new();
+    private readonly CustomizationManager _customizations;
+    private readonly ItemManager          _items;
+    private readonly SaveService          _saveService;
+    private readonly List<Design>         _designs = new();
 
     public enum DesignChangeType
     {

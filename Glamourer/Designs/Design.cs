@@ -15,8 +15,12 @@ namespace Glamourer.Designs;
 
 public class Design : ISavable
 {
+    #region Data
+
     internal Design(ItemManager items)
-    { }
+    {
+        SetDefaultEquipment(items);
+    }
 
     // Metadata
     public const int FileVersion = 1;
@@ -31,6 +35,22 @@ public class Design : ISavable
 
     internal DesignData DesignData;
 
+    public void SetDefaultEquipment(ItemManager items)
+    {
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+        {
+            DesignData.SetItem(slot, ItemManager.NothingItem(slot));
+            DesignData.SetStain(slot, 0);
+        }
+
+        DesignData.SetItem(EquipSlot.MainHand, items.DefaultSword);
+        DesignData.SetStain(EquipSlot.MainHand, 0);
+        DesignData.SetItem(EquipSlot.OffHand, ItemManager.NothingItem(FullEquipType.Shield));
+        DesignData.SetStain(EquipSlot.OffHand, 0);
+    }
+
+    #endregion
+
     #region Application Data
 
     [Flags]
@@ -42,9 +62,9 @@ public class Design : ISavable
         WriteProtected     = 0x08,
     }
 
-    private CustomizeFlag _applyCustomize;
-    private EquipFlag     _applyEquip;
-    private DesignFlags   _designFlags;
+    internal CustomizeFlag ApplyCustomize = CustomizeFlagExtensions.All;
+    internal EquipFlag     ApplyEquip     = EquipFlagExtensions.All;
+    private  DesignFlags   _designFlags   = DesignFlags.ApplyHatVisible | DesignFlags.ApplyVisorState | DesignFlags.ApplyWeaponVisible;
 
     public bool DoApplyHatVisible()
         => _designFlags.HasFlag(DesignFlags.ApplyHatVisible);
@@ -100,47 +120,47 @@ public class Design : ISavable
 
 
     public bool DoApplyEquip(EquipSlot slot)
-        => _applyEquip.HasFlag(slot.ToFlag());
+        => ApplyEquip.HasFlag(slot.ToFlag());
 
     public bool DoApplyStain(EquipSlot slot)
-        => _applyEquip.HasFlag(slot.ToStainFlag());
+        => ApplyEquip.HasFlag(slot.ToStainFlag());
 
     public bool DoApplyCustomize(CustomizeIndex idx)
-        => _applyCustomize.HasFlag(idx.ToFlag());
+        => ApplyCustomize.HasFlag(idx.ToFlag());
 
     internal bool SetApplyEquip(EquipSlot slot, bool value)
     {
-        var newValue = value ? _applyEquip | slot.ToFlag() : _applyEquip & ~slot.ToFlag();
-        if (newValue == _applyEquip)
+        var newValue = value ? ApplyEquip | slot.ToFlag() : ApplyEquip & ~slot.ToFlag();
+        if (newValue == ApplyEquip)
             return false;
 
-        _applyEquip = newValue;
+        ApplyEquip = newValue;
         return true;
     }
 
     internal bool SetApplyStain(EquipSlot slot, bool value)
     {
-        var newValue = value ? _applyEquip | slot.ToStainFlag() : _applyEquip & ~slot.ToStainFlag();
-        if (newValue == _applyEquip)
+        var newValue = value ? ApplyEquip | slot.ToStainFlag() : ApplyEquip & ~slot.ToStainFlag();
+        if (newValue == ApplyEquip)
             return false;
 
-        _applyEquip = newValue;
+        ApplyEquip = newValue;
         return true;
     }
 
     internal bool SetApplyCustomize(CustomizeIndex idx, bool value)
     {
-        var newValue = value ? _applyCustomize | idx.ToFlag() : _applyCustomize & ~idx.ToFlag();
-        if (newValue == _applyCustomize)
+        var newValue = value ? ApplyCustomize | idx.ToFlag() : ApplyCustomize & ~idx.ToFlag();
+        if (newValue == ApplyCustomize)
             return false;
 
-        _applyCustomize = newValue;
+        ApplyCustomize = newValue;
         return true;
     }
 
     #endregion
 
-    #region ISavable
+    #region Serialization
 
     public JObject JsonSerialize()
     {
@@ -207,17 +227,21 @@ public class Design : ISavable
         return ret;
     }
 
-    public static Design LoadDesign(CustomizationManager customizeManager, ItemManager items, JObject json, out bool changes)
+    #endregion
+
+    #region Deserialization
+
+    public static Design LoadDesign(CustomizationService customizations, ItemManager items, JObject json)
     {
         var version = json["FileVersion"]?.ToObject<int>() ?? 0;
         return version switch
         {
-            1 => LoadDesignV1(customizeManager, items, json, out changes),
+            1 => LoadDesignV1(customizations, items, json),
             _ => throw new Exception("The design to be loaded has no valid Version."),
         };
     }
 
-    private static Design LoadDesignV1(CustomizationManager customizeManager, ItemManager items, JObject json, out bool changes)
+    private static Design LoadDesignV1(CustomizationService customizations, ItemManager items, JObject json)
     {
         static string[] ParseTags(JObject json)
         {
@@ -236,85 +260,23 @@ public class Design : ISavable
             Tags         = ParseTags(json),
             LastEdit     = json["LastEdit"]?.ToObject<DateTimeOffset>() ?? creationDate,
         };
+        if (design.LastEdit < creationDate)
+            design.LastEdit = creationDate;
 
-        changes =  LoadEquip(items, json["Equipment"], design);
-        changes |= LoadCustomize(customizeManager, json["Customize"], design);
+        LoadEquip(items, json["Equipment"], design);
+        LoadCustomize(customizations, json["Customize"], design);
         return design;
     }
 
-    private static bool ValidateItem(ItemManager items, EquipSlot slot, uint itemId, out EquipItem item)
-    {
-        item = items.Resolve(slot, itemId);
-        if (item.Valid)
-            return true;
-
-        Glamourer.Chat.NotificationMessage($"The {slot.ToName()} item {itemId} does not exist, reset to Nothing.", "Warning",
-            NotificationType.Warning);
-        item = ItemManager.NothingItem(slot);
-        return false;
-    }
-
-    private static bool ValidateStain(ItemManager items, StainId stain, out StainId ret)
-    {
-        if (stain.Value != 0 && !items.Stains.ContainsKey(stain))
-        {
-            ret = 0;
-            Glamourer.Chat.NotificationMessage($"The Stain {stain} does not exist, reset to unstained.");
-            return false;
-        }
-
-        ret = stain;
-        return true;
-    }
-
-    private static bool ValidateWeapons(ItemManager items, uint mainId, uint offId, out EquipItem main, out EquipItem off)
-    {
-        var ret = true;
-        main = items.Resolve(EquipSlot.MainHand, mainId);
-        if (!main.Valid)
-        {
-            Glamourer.Chat.NotificationMessage($"The mainhand weapon {mainId} does not exist, reset to default sword.", "Warning",
-                NotificationType.Warning);
-            main = items.DefaultSword;
-            ret  = false;
-        }
-
-        off = items.Resolve(main.Type.Offhand(), offId);
-        if (off.Valid)
-            return ret;
-
-        ret = false;
-        off = items.Resolve(main.Type.Offhand(), mainId);
-        if (off.Valid)
-        {
-            Glamourer.Chat.NotificationMessage($"The offhand weapon {offId} does not exist, reset to implied offhand.", "Warning",
-                NotificationType.Warning);
-        }
-        else
-        {
-            off = ItemManager.NothingItem(FullEquipType.Shield);
-            if (main.Type.Offhand() == FullEquipType.Shield)
-            {
-                Glamourer.Chat.NotificationMessage($"The offhand weapon {offId} does not exist, reset to no offhand.", "Warning",
-                    NotificationType.Warning);
-            }
-            else
-            {
-                main = items.DefaultSword;
-                Glamourer.Chat.NotificationMessage(
-                    $"The offhand weapon {offId} does not exist, but no default could be restored, reset mainhand to default sword and offhand to nothing.",
-                    "Warning",
-                    NotificationType.Warning);
-            }
-        }
-
-        return ret;
-    }
-
-    private static bool LoadEquip(ItemManager items, JToken? equip, Design design)
+    private static void LoadEquip(ItemManager items, JToken? equip, Design design)
     {
         if (equip == null)
-            return true;
+        {
+            design.SetDefaultEquipment(items);
+            Glamourer.Chat.NotificationMessage("The loaded design does not contain any equipment data, reset to default.", "Warning",
+                NotificationType.Warning);
+            return;
+        }
 
         static (uint, StainId, bool, bool) ParseItem(EquipSlot slot, JToken? item)
         {
@@ -325,13 +287,19 @@ public class Design : ISavable
             return (id, stain, apply, applyStain);
         }
 
-        var changes = false;
+        void PrintWarning(string msg)
+        {
+            if (msg.Length > 0)
+                Glamourer.Chat.NotificationMessage($"{msg} ({design.Name})", "Warning", NotificationType.Warning);
+        }
+
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var (id, stain, apply, applyStain) =  ParseItem(slot, equip[slot.ToString()]);
-            changes                            |= !ValidateItem(items, slot, id, out var item);
-            changes                            |= !ValidateStain(items, stain, out stain);
-            design.DesignData.SetItem(item);
+            var (id, stain, apply, applyStain) = ParseItem(slot, equip[slot.ToString()]);
+
+            PrintWarning(items.ValidateItem(slot, id, out var item));
+            PrintWarning(items.ValidateStain(stain, out stain));
+            design.DesignData.SetItem(slot, item);
             design.DesignData.SetStain(slot, stain);
             design.SetApplyEquip(slot, apply);
             design.SetApplyStain(slot, applyStain);
@@ -344,11 +312,12 @@ public class Design : ISavable
             var (idOff, stainOff, applyOff, applyStainOff) = ParseItem(EquipSlot.OffHand, equip[EquipSlot.OffHand.ToString()]);
             if (id == ItemManager.NothingId(EquipSlot.OffHand))
                 id = ItemManager.NothingId(FullEquipType.Shield);
-            changes |= ValidateWeapons(items, id, idOff, out var main, out var off);
-            changes |= ValidateStain(items, stain,    out stain);
-            changes |= ValidateStain(items, stainOff, out stainOff);
-            design.DesignData.SetItem(main);
-            design.DesignData.SetItem(off);
+
+            PrintWarning(items.ValidateWeapons(id, idOff, out var main, out var off));
+            PrintWarning(items.ValidateStain(stain,    out stain));
+            PrintWarning(items.ValidateStain(stainOff, out stainOff));
+            design.DesignData.SetItem(EquipSlot.MainHand, main);
+            design.DesignData.SetItem(EquipSlot.OffHand,  off);
             design.DesignData.SetStain(EquipSlot.MainHand, stain);
             design.DesignData.SetStain(EquipSlot.OffHand,  stainOff);
             design.SetApplyEquip(EquipSlot.MainHand, apply);
@@ -367,146 +336,89 @@ public class Design : ISavable
         metaValue = QuadBool.FromJObject(equip["Visor"], "IsToggled", "Apply", QuadBool.NullFalse);
         design.SetApplyVisorToggle(metaValue.Enabled);
         design.DesignData.SetVisor(metaValue.ForcedValue);
-
-        return changes;
     }
 
-    private static bool ValidateCustomize(CustomizationManager manager, ref Customize customize)
-    {
-        var ret = true;
-        if (!manager.Races.Contains(customize.Race))
-        {
-            ret = false;
-            if (manager.Clans.Contains(customize.Clan))
-            {
-                Glamourer.Chat.NotificationMessage(
-                    $"The race {customize.Race.ToName()} is unknown, reset to {customize.Clan.ToRace().ToName()} from Clan.", "Warning",
-                    NotificationType.Warning);
-                customize.Race = customize.Clan.ToRace();
-            }
-            else
-            {
-                Glamourer.Chat.NotificationMessage(
-                    $"The race {customize.Race.ToName()} is unknown, reset to {Race.Hyur.ToName()} {SubRace.Midlander.ToName()}.", "Warning",
-                    NotificationType.Warning);
-                customize.Race = Race.Hyur;
-                customize.Clan = SubRace.Midlander;
-            }
-        }
-
-        if (!manager.Clans.Contains(customize.Clan))
-        {
-            ret = false;
-            var oldClan = customize.Clan;
-            customize.Clan = (SubRace)((byte)customize.Race * 2 - 1);
-            if (manager.Clans.Contains(customize.Clan))
-            {
-                Glamourer.Chat.NotificationMessage($"The clan {oldClan.ToName()} is unknown, reset to {customize.Clan.ToName()} from race.",
-                    "Warning", NotificationType.Warning);
-            }
-            else
-            {
-                customize.Race = Race.Hyur;
-                customize.Clan = SubRace.Midlander;
-                Glamourer.Chat.NotificationMessage(
-                    $"The clan {oldClan.ToName()} is unknown, reset to {customize.Race.ToName()} {customize.Clan.ToName()}.", "Warning",
-                    NotificationType.Warning);
-            }
-        }
-
-        if (!manager.Genders.Contains(customize.Gender))
-        {
-            ret = false;
-            Glamourer.Chat.NotificationMessage($"The gender {customize.Gender} is unknown, reset to {Gender.Male.ToName()}.", "Warning",
-                NotificationType.Warning);
-            customize.Gender = Gender.Male;
-        }
-
-        // TODO: Female Hrothgar
-        if (customize.Gender == Gender.Female && customize.Race == Race.Hrothgar)
-        {
-            ret = false;
-            Glamourer.Chat.NotificationMessage($"Hrothgar do not currently support female characters, reset to male.", "Warning",
-                NotificationType.Warning);
-            customize.Gender = Gender.Male;
-        }
-
-        var list = manager.GetList(customize.Clan, customize.Gender);
-
-        // Face is handled first automatically so it should not conflict with other customizations when corrupt.
-        foreach (var index in Enum.GetValues<CustomizeIndex>().Where(list.IsAvailable))
-        {
-            var value = customize.Get(index);
-            var count = list.Count(index, customize.Face);
-            var idx   = list.DataByValue(index, value, out var data, customize.Face);
-            if (idx >= 0 && idx < count)
-                continue;
-
-            ret = false;
-            var name     = list.Option(index);
-            var newValue = list.Data(index, 0, customize.Face);
-            Glamourer.Chat.NotificationMessage(
-                $"Customization {name} for {customize.Race.ToName()} {customize.Gender.ToName()}s does not support value {value.Value}, reset to {newValue.Value.Value}");
-            customize.Set(index, newValue.Value);
-        }
-
-        return ret;
-    }
-
-    private static bool ValidateModelId(ref uint modelId)
-    {
-        if (modelId != 0)
-        {
-            Glamourer.Chat.NotificationMessage($"Model IDs different from 0 are not currently allowed, reset {modelId} to 0.", "Warning",
-                NotificationType.Warning);
-            modelId = 0;
-            return false;
-        }
-
-        return true;
-    }
-
-    private static bool LoadCustomize(CustomizationManager manager, JToken? json, Design design)
+    private static void LoadCustomize(CustomizationService customizations, JToken? json, Design design)
     {
         if (json == null)
-            return true;
+        {
+            design.DesignData.ModelId   = 0;
+            design.DesignData.Customize = Customize.Default;
+            Glamourer.Chat.NotificationMessage("The loaded design does not contain any customization data, reset to default.", "Warning",
+                NotificationType.Warning);
+            return;
+        }
+
+        void PrintWarning(string msg)
+        {
+            if (msg.Length > 0)
+                Glamourer.Chat.NotificationMessage($"{msg} ({design.Name})", "Warning", NotificationType.Warning);
+        }
 
         design.DesignData.ModelId = json["ModelId"]?.ToObject<uint>() ?? 0;
-        var ret = !ValidateModelId(ref design.DesignData.ModelId);
+        PrintWarning(customizations.ValidateModelId(design.DesignData.ModelId, out design.DesignData.ModelId));
 
-        foreach (var idx in Enum.GetValues<CustomizeIndex>())
+        var race = (Race)(json[CustomizeIndex.Race.ToString()]?["Value"]?.ToObject<byte>() ?? 0);
+        var clan = (SubRace)(json[CustomizeIndex.Clan.ToString()]?["Value"]?.ToObject<byte>() ?? 0);
+        PrintWarning(customizations.ValidateClan(clan, race, out race, out clan));
+        var gender = (Gender)((json[CustomizeIndex.Gender.ToString()]?["Value"]?.ToObject<byte>() ?? 0) + 1);
+        PrintWarning(customizations.ValidateGender(race, gender, out gender));
+        design.DesignData.Customize.Race   = race;
+        design.DesignData.Customize.Clan   = clan;
+        design.DesignData.Customize.Gender = gender;
+        design.SetApplyCustomize(CustomizeIndex.Race,   json[CustomizeIndex.Race.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
+        design.SetApplyCustomize(CustomizeIndex.Clan,   json[CustomizeIndex.Clan.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
+        design.SetApplyCustomize(CustomizeIndex.Gender, json[CustomizeIndex.Gender.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
+
+        var set = customizations.AwaitedService.GetList(clan, gender);
+
+        foreach (var idx in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
         {
-            var tok   = json[idx.ToString()];
-            var data  = (CustomizeValue)(tok?["Value"]?.ToObject<byte>() ?? 0);
+            var tok  = json[idx.ToString()];
+            var data = (CustomizeValue)(tok?["Value"]?.ToObject<byte>() ?? 0);
+            PrintWarning(CustomizationService.ValidateCustomizeValue(set, design.DesignData.Customize.Face, idx, data, out data));
             var apply = tok?["Apply"]?.ToObject<bool>() ?? false;
             design.DesignData.Customize[idx] = data;
             design.SetApplyCustomize(idx, apply);
         }
 
         design.DesignData.SetIsWet(json["IsWet"]?.ToObject<bool>() ?? false);
-        ret |= !ValidateCustomize(manager, ref design.DesignData.Customize);
-
-        return ret;
     }
 
-    //public void MigrateBase64(ItemManager items, string base64)
-    //{
-    //    var data = DesignBase64Migration.MigrateBase64(items, base64, out var applyEquip, out var applyCustomize, out var writeProtected, out var wet,
-    //        out var hat,
-    //        out var visor, out var weapon);
-    //    UpdateMainhand(items, data.MainHand);
-    //    UpdateOffhand(items, data.OffHand);
-    //    foreach (var slot in EquipSlotExtensions.EqdpSlots)
-    //        UpdateArmor(items, slot, data.Armor(slot), true);
-    //    ModelData.Customize = data.Customize;
-    //    _applyEquip         = applyEquip;
-    //    _applyCustomize     = applyCustomize;
-    //    WriteProtected      = writeProtected;
-    //    Wetness             = wet;
-    //    Hat                 = hat;
-    //    Visor               = visor;
-    //    Weapon              = weapon;
-    //}
+    #endregion
+
+    #region ISavable
+
+    public string ToFilename(FilenameService fileNames)
+        => fileNames.DesignFile(this);
+
+    public void Save(StreamWriter writer)
+    {
+        using var j = new JsonTextWriter(writer)
+        {
+            Formatting = Formatting.Indented,
+        };
+        var obj = JsonSerialize();
+        obj.WriteTo(j);
+    }
+
+    public string LogName(string fileName)
+        => Path.GetFileNameWithoutExtension(fileName);
+
+    #endregion
+
+    public void MigrateBase64(ItemManager items, string base64)
+    {
+        DesignData = DesignBase64Migration.MigrateBase64(items, base64, out var equipFlags, out var customizeFlags, out var writeProtected,
+            out var applyHat, out var applyVisor, out var applyWeapon);
+        ApplyEquip     = equipFlags;
+        ApplyCustomize = customizeFlags;
+        SetWriteProtected(writeProtected);
+        SetApplyHatVisible(applyHat);
+        SetApplyVisorToggle(applyVisor);
+        SetApplyWeaponVisible(applyWeapon);
+    }
+
     //
     //public static Design CreateTemporaryFromBase64(ItemManager items, string base64, bool customize, bool equip)
     //{
@@ -528,22 +440,4 @@ public class Design : ISavable
     //    => DesignBase64Migration.CreateOldBase64(in ModelData, _applyEquip, _applyCustomize, Wetness == QuadBool.True, Hat.ForcedValue,
     //        Hat.Enabled,
     //        Visor.ForcedValue, Visor.Enabled, Weapon.ForcedValue, Weapon.Enabled, WriteProtected, 1f);
-
-    public string ToFilename(FilenameService fileNames)
-        => fileNames.DesignFile(this);
-
-    public void Save(StreamWriter writer)
-    {
-        using var j = new JsonTextWriter(writer)
-        {
-            Formatting = Formatting.Indented,
-        };
-        var obj = JsonSerialize();
-        obj.WriteTo(j);
-    }
-
-    public string LogName(string fileName)
-        => Path.GetFileNameWithoutExtension(fileName);
-
-    #endregion
 }

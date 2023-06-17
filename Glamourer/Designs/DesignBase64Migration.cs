@@ -78,16 +78,16 @@ public static class DesignBase64Migration
                 if (!main.Valid)
                     throw new Exception($"Base64 string invalid, weapon could not be identified.");
 
-                data.SetItem(main);
+                data.SetItem(EquipSlot.MainHand, main);
                 data.SetStain(EquipSlot.MainHand, cur[0].Stain);
                 var off = items.Identify(EquipSlot.OffHand, cur[1].Set, cur[1].Type, (byte)cur[1].Variant, main.Type);
                 if (!off.Valid)
                     throw new Exception($"Base64 string invalid, weapon could not be identified.");
 
-                data.SetItem(off);
+                data.SetItem(EquipSlot.OffHand, off);
                 data.SetStain(EquipSlot.OffHand, cur[1].Stain);
 
-                var eq = (CharacterArmor*)(ptr + 46);
+                var eq = (CharacterArmor*)(cur + 2);
                 foreach (var (slot, idx) in EquipSlotExtensions.EqdpSlots.WithIndex())
                 {
                     var mdl  = eq[idx];
@@ -95,7 +95,7 @@ public static class DesignBase64Migration
                     if (!item.Valid)
                         throw new Exception($"Base64 string invalid, item could not be identified.");
 
-                    data.SetItem(item);
+                    data.SetItem(slot, item);
                     data.SetStain(slot, mdl.Stain);
                 }
             }
@@ -130,20 +130,13 @@ public static class DesignBase64Migration
         save.Customize.Write((nint)data + 4);
         ((CharacterWeapon*)(data + 30))[0] = save.Item(EquipSlot.MainHand).Weapon(save.Stain(EquipSlot.MainHand));
         ((CharacterWeapon*)(data + 30))[1] = save.Item(EquipSlot.OffHand).Weapon(save.Stain(EquipSlot.OffHand));
-        ((CharacterArmor*)(data + 46))[0]  = save.Item(EquipSlot.Head).Armor(save.Stain(EquipSlot.Head));
-        ((CharacterArmor*)(data + 46))[1]  = save.Item(EquipSlot.Body).Armor(save.Stain(EquipSlot.Body));
-        ((CharacterArmor*)(data + 46))[2]  = save.Item(EquipSlot.Hands).Armor(save.Stain(EquipSlot.Hands));
-        ((CharacterArmor*)(data + 46))[3]  = save.Item(EquipSlot.Legs).Armor(save.Stain(EquipSlot.Legs));
-        ((CharacterArmor*)(data + 46))[4]  = save.Item(EquipSlot.Feet).Armor(save.Stain(EquipSlot.Feet));
-        ((CharacterArmor*)(data + 46))[5]  = save.Item(EquipSlot.Ears).Armor(save.Stain(EquipSlot.Ears));
-        ((CharacterArmor*)(data + 46))[6]  = save.Item(EquipSlot.Neck).Armor(save.Stain(EquipSlot.Neck));
-        ((CharacterArmor*)(data + 46))[7]  = save.Item(EquipSlot.Wrists).Armor(save.Stain(EquipSlot.Wrists));
-        ((CharacterArmor*)(data + 46))[8]  = save.Item(EquipSlot.RFinger).Armor(save.Stain(EquipSlot.RFinger));
-        ((CharacterArmor*)(data + 46))[9]  = save.Item(EquipSlot.LFinger).Armor(save.Stain(EquipSlot.LFinger));
-        *(float*)(data + 86)               = 1f;
-        data[90] = (byte)((save.IsHatVisible() ? 0x01 : 0)
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+            ((CharacterArmor*)(data + 44))[slot.ToIndex()] = save.Item(slot).Armor(save.Stain(slot));
+        *(ushort*)(data + 84) = 1; // IsSet.
+        *(float*)(data + 86)  = 1f;
+        data[90] = (byte)((save.IsHatVisible() ? 0x00 : 0x01)
           | (save.IsVisorToggled() ? 0x10 : 0)
-          | (save.IsWeaponVisible() ? 0x02 : 0));
+          | (save.IsWeaponVisible() ? 0x00 : 0x02));
 
         return Convert.ToBase64String(new Span<byte>(data, Base64Size));
     }

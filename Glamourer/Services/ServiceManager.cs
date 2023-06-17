@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin;
+using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui;
 using Glamourer.Gui.Tabs;
@@ -21,6 +22,7 @@ public static class ServiceManager
             .AddInterop()
             .AddEvents()
             .AddData()
+            .AddDesigns()
             .AddUi()
             .AddApi();
 
@@ -44,7 +46,8 @@ public static class ServiceManager
 
     private static IServiceCollection AddEvents(this IServiceCollection services)
         => services.AddSingleton<VisorStateChanged>()
-            .AddSingleton<UpdatedSlot>();
+            .AddSingleton<UpdatedSlot>()
+            .AddSingleton<DesignChanged>();
 
     private static IServiceCollection AddData(this IServiceCollection services)
         => services.AddSingleton<IdentifierService>()
@@ -60,6 +63,10 @@ public static class ServiceManager
             .AddSingleton<WeaponService>()
             .AddSingleton<PenumbraService>()
             .AddSingleton<ObjectManager>();
+
+    private static IServiceCollection AddDesigns(this IServiceCollection services)
+        => services.AddSingleton<DesignManager>()
+            .AddSingleton<DesignFileSystem>();
 
     private static IServiceCollection AddUi(this IServiceCollection services)
         => services.AddSingleton<DebugTab>()

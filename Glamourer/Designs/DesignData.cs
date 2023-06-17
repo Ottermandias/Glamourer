@@ -60,9 +60,9 @@ public unsafe struct DesignData
             // @formatter:on
         };
 
-    public bool SetItem(EquipItem item)
+    public bool SetItem(EquipSlot slot, EquipItem item)
     {
-        var index = item.Type.ToSlot().ToIndex();
+        var index = slot.ToIndex();
         if (index > 11 || _itemIds[index] == item.Id)
             return false;
 

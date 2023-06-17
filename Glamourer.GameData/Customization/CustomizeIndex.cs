@@ -55,7 +55,7 @@ public static class CustomizationExtensions
             CustomizeIndex.Clan              => (4, 0xFF),
             CustomizeIndex.Face              => (5, 0xFF),
             CustomizeIndex.Hairstyle         => (6, 0xFF),
-            CustomizeIndex.Highlights        => (7, 0xFF),
+            CustomizeIndex.Highlights        => (7, 0x80),
             CustomizeIndex.SkinColor         => (8, 0xFF),
             CustomizeIndex.EyeColorRight     => (9, 0xFF),
             CustomizeIndex.HairColor         => (10, 0xFF),
