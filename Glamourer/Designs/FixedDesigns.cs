@@ -124,6 +124,10 @@ namespace Glamourer.Designs
         private void OnPlayerChange(Character character)
         {
             var name = character.Name.ToString();
+
+            if (Dalamud.PluginInterface.UiBuilder.GposeActive && !Glamourer.Config.ApplyInGPose)
+                return;
+
             if (!EnabledDesigns.TryGetValue(name, out var designs))
                 return;
 

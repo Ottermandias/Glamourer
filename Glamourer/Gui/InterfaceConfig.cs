@@ -101,6 +101,8 @@ internal partial class Interface
                 else
                     Glamourer.PlayerWatcher.Disable();
             });
+        DrawConfigCheckMark("Apply in GPose", "Apply fixed designs to characters when entering into Group Pose", cfg.ApplyInGPose,
+            v => cfg.ApplyInGPose = v);
         DrawFixedDesignGroup();
 
         ImGui.Dummy(Vector2.UnitY * ImGui.GetTextLineHeightWithSpacing() / 2);

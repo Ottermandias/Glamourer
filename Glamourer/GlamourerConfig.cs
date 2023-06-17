@@ -24,6 +24,7 @@ public class GlamourerConfig : IPluginConfiguration
     public bool ShowLocks         { get; set; } = true;
     public bool AttachToPenumbra  { get; set; } = true;
     public bool ApplyFixedDesigns { get; set; } = true;
+    public bool ApplyInGPose      { get; set; } = true;
 
     public uint   CustomizationColor { get; set; } = DefaultCustomizationColor;
     public uint   StateColor         { get; set; } = DefaultStateColor;
