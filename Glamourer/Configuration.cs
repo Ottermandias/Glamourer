@@ -13,7 +13,15 @@ namespace Glamourer;
 
 public class Configuration : IPluginConfiguration, ISavable
 {
-    public bool UseRestrictedGearProtection = true;
+    public bool               UseRestrictedGearProtection { get; set; } = true;
+    public MainWindow.TabType SelectedTab                 { get; set; } = MainWindow.TabType.Settings;
+
+
+#if DEBUG
+    public bool DebugMode { get; set; } = true;
+#else
+    public bool               DebugMode                   { get; set; } = false;
+#endif
 
     public int Version { get; set; } = Constants.CurrentVersion;
 
@@ -30,7 +38,7 @@ public class Configuration : IPluginConfiguration, ISavable
     }
 
     public void Save()
-        => _saveService.QueueSave(this);
+        => _saveService.DelaySave(this);
 
     public void Load(ConfigMigrationService migrator)
     {
@@ -68,8 +76,8 @@ public class Configuration : IPluginConfiguration, ISavable
 
     public void Save(StreamWriter writer)
     {
-        using var jWriter = new JsonTextWriter(writer) { Formatting = Formatting.Indented };
-        var serializer = new JsonSerializer { Formatting = Formatting.Indented };
+        using var jWriter    = new JsonTextWriter(writer) { Formatting = Formatting.Indented };
+        var       serializer = new JsonSerializer { Formatting         = Formatting.Indented };
         serializer.Serialize(jWriter, this);
     }
 

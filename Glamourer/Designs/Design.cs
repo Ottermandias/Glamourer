@@ -19,7 +19,7 @@ public class Design : ISavable
 
     internal Design(ItemManager items)
     {
-        SetDefaultEquipment(items);
+        DesignData.SetDefaultEquipment(items);
     }
 
     // Metadata
@@ -34,20 +34,6 @@ public class Design : ISavable
     public int            Index        { get; internal set; }
 
     internal DesignData DesignData;
-
-    public void SetDefaultEquipment(ItemManager items)
-    {
-        foreach (var slot in EquipSlotExtensions.EqdpSlots)
-        {
-            DesignData.SetItem(slot, ItemManager.NothingItem(slot));
-            DesignData.SetStain(slot, 0);
-        }
-
-        DesignData.SetItem(EquipSlot.MainHand, items.DefaultSword);
-        DesignData.SetStain(EquipSlot.MainHand, 0);
-        DesignData.SetItem(EquipSlot.OffHand, ItemManager.NothingItem(FullEquipType.Shield));
-        DesignData.SetStain(EquipSlot.OffHand, 0);
-    }
 
     #endregion
 
@@ -272,7 +258,7 @@ public class Design : ISavable
     {
         if (equip == null)
         {
-            design.SetDefaultEquipment(items);
+            design.DesignData.SetDefaultEquipment(items);
             Glamourer.Chat.NotificationMessage("The loaded design does not contain any equipment data, reset to default.", "Warning",
                 NotificationType.Warning);
             return;

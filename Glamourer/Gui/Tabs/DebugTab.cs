@@ -12,6 +12,7 @@ using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
+using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -24,6 +25,7 @@ namespace Glamourer.Gui.Tabs;
 
 public unsafe class DebugTab : ITab
 {
+    private readonly Configuration          _config;
     private readonly VisorService           _visorService;
     private readonly ChangeCustomizeService _changeCustomizeService;
     private readonly UpdateSlotService      _updateSlotService;
@@ -39,12 +41,17 @@ public unsafe class DebugTab : ITab
     private readonly DesignManager    _designManager;
     private readonly DesignFileSystem _designFileSystem;
 
+    private readonly StateManager _state;
+
     private int _gameObjectIndex;
+
+    public bool IsVisible
+        => _config.DebugMode;
 
     public DebugTab(ChangeCustomizeService changeCustomizeService, VisorService visorService, ObjectTable objects,
         UpdateSlotService updateSlotService, WeaponService weaponService, PenumbraService penumbra,
         ActorService actors, ItemManager items, CustomizationService customization, ObjectManager objectManager,
-        DesignFileSystem designFileSystem, DesignManager designManager)
+        DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -58,6 +65,8 @@ public unsafe class DebugTab : ITab
         _objectManager          = objectManager;
         _designFileSystem       = designFileSystem;
         _designManager          = designManager;
+        _state                  = state;
+        _config            = config;
     }
 
     public ReadOnlySpan<byte> Label
@@ -69,6 +78,7 @@ public unsafe class DebugTab : ITab
         DrawGameDataHeader();
         DrawPenumbraHeader();
         DrawDesigns();
+        DrawState();
     }
 
     #region Interop
@@ -724,7 +734,8 @@ public unsafe class DebugTab : ITab
                 continue;
 
             DrawDesign(design);
-            var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.ApplyEquip, design.ApplyCustomize, design.DoApplyHatVisible(),
+            var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.ApplyEquip, design.ApplyCustomize,
+                design.DoApplyHatVisible(),
                 design.DoApplyVisorToggle(), design.DoApplyWeaponVisible(), design.WriteProtected());
             using var font = ImRaii.PushFont(UiBuilder.MonoFont);
             ImGuiUtil.TextWrapped(base64);
@@ -773,7 +784,7 @@ public unsafe class DebugTab : ITab
         }
         else if (_restore.Length > 0)
         {
-            DrawDesignData(_parse64, true);
+            DrawDesignData(_parse64);
             using var font = ImRaii.PushFont(UiBuilder.MonoFont);
             ImGui.TextUnformatted(_base64);
             using (var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing with { X = 0 }))
@@ -818,44 +829,60 @@ public unsafe class DebugTab : ITab
         }
     }
 
-    private static void DrawDesignData(in DesignData data, bool createTable)
+    private static void DrawDesignData(in DesignData data)
     {
-        using var table = createTable ? ImRaii.Table("##equip", 4, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit) : null;
-        foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
+        if (data.ModelId == 0)
         {
-            var item  = data.Item(slot);
-            var stain = data.Stain(slot);
-            ImGuiUtil.DrawTableColumn(slot.ToName());
-            ImGuiUtil.DrawTableColumn(item.Name);
-            ImGuiUtil.DrawTableColumn(item.Id.ToString());
-            ImGuiUtil.DrawTableColumn(stain.ToString());
-        }
+            using var table = ImRaii.Table("##equip", 4, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
+            foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
+            {
+                var item  = data.Item(slot);
+                var stain = data.Stain(slot);
+                ImGuiUtil.DrawTableColumn(slot.ToName());
+                ImGuiUtil.DrawTableColumn(item.Name);
+                ImGuiUtil.DrawTableColumn(item.Id.ToString());
+                ImGuiUtil.DrawTableColumn(stain.ToString());
+            }
 
-        ImGuiUtil.DrawTableColumn("Hat Visible");
-        ImGuiUtil.DrawTableColumn(data.IsHatVisible().ToString());
-        ImGui.TableNextRow();
-        ImGuiUtil.DrawTableColumn("Visor Toggled");
-        ImGuiUtil.DrawTableColumn(data.IsVisorToggled().ToString());
-        ImGui.TableNextRow();
-        ImGuiUtil.DrawTableColumn("Weapon Visible");
-        ImGuiUtil.DrawTableColumn(data.IsWeaponVisible().ToString());
-        ImGui.TableNextRow();
+            ImGuiUtil.DrawTableColumn("Hat Visible");
+            ImGuiUtil.DrawTableColumn(data.IsHatVisible().ToString());
+            ImGui.TableNextRow();
+            ImGuiUtil.DrawTableColumn("Visor Toggled");
+            ImGuiUtil.DrawTableColumn(data.IsVisorToggled().ToString());
+            ImGui.TableNextRow();
+            ImGuiUtil.DrawTableColumn("Weapon Visible");
+            ImGuiUtil.DrawTableColumn(data.IsWeaponVisible().ToString());
+            ImGui.TableNextRow();
 
-        ImGuiUtil.DrawTableColumn("Model ID");
-        ImGuiUtil.DrawTableColumn(data.ModelId.ToString());
-        ImGui.TableNextRow();
+            ImGuiUtil.DrawTableColumn("Model ID");
+            ImGuiUtil.DrawTableColumn(data.ModelId.ToString());
+            ImGui.TableNextRow();
 
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
-        {
-            var value = data.Customize[index];
-            ImGuiUtil.DrawTableColumn(index.ToDefaultName());
-            ImGuiUtil.DrawTableColumn(value.Value.ToString());
+            foreach (var index in Enum.GetValues<CustomizeIndex>())
+            {
+                var value = data.Customize[index];
+                ImGuiUtil.DrawTableColumn(index.ToDefaultName());
+                ImGuiUtil.DrawTableColumn(value.Value.ToString());
+                ImGui.TableNextRow();
+            }
+
+            ImGuiUtil.DrawTableColumn("Is Wet");
+            ImGuiUtil.DrawTableColumn(data.IsWet().ToString());
             ImGui.TableNextRow();
         }
+        else
+        {
+            ImGui.TextUnformatted($"Model ID {data.ModelId}");
+            ImGui.Separator();
+            using var font = ImRaii.PushFont(UiBuilder.MonoFont);
+            ImGui.TextUnformatted("Customize Array");
+            ImGui.Separator();
+            ImGuiUtil.TextWrapped(string.Join(" ", data.GetCustomizeBytes().Select(b => b.ToString("X2"))));
 
-        ImGuiUtil.DrawTableColumn("Is Wet");
-        ImGuiUtil.DrawTableColumn(data.IsWet().ToString());
-        ImGui.TableNextRow();
+            ImGui.TextUnformatted("Equipment Array");
+            ImGui.Separator();
+            ImGuiUtil.TextWrapped(string.Join(" ", data.GetEquipmentBytes().Select(b => b.ToString("X2"))));
+        }
     }
 
     private void DrawDesign(Design design)
@@ -930,6 +957,53 @@ public unsafe class DebugTab : ITab
         ImGuiUtil.DrawTableColumn("Is Wet");
         ImGuiUtil.DrawTableColumn(design.DesignData.IsWet().ToString());
         ImGui.TableNextRow();
+    }
+
+    #endregion
+
+    #region State
+
+    private void DrawState()
+    {
+        if (!ImGui.CollapsingHeader($"State ({_state.Count})###State"))
+            return;
+
+        DrawActorTrees();
+        DrawRetainedStates();
+    }
+
+    private void DrawActorTrees()
+    {
+        using var tree = ImRaii.TreeNode("Active Actors");
+        if (!tree)
+            return;
+
+        _objectManager.Update();
+        foreach (var (identifier, actors) in _objectManager)
+        {
+            using var t = ImRaii.TreeNode(actors.Label);
+            if (!t)
+                continue;
+
+            if (_state.GetOrCreate(identifier, actors.Objects[0], out var state))
+                DrawDesignData(state.Data);
+            else
+                ImGui.TextUnformatted("Invalid actor.");
+        }
+    }
+
+    private void DrawRetainedStates()
+    {
+        using var tree = ImRaii.TreeNode("Retained States (Inactive Actors)");
+        if (!tree)
+            return;
+
+        foreach (var (identifier, state) in _state.Where(kvp => !_objectManager.ContainsKey(kvp.Key)))
+        {
+            using var t = ImRaii.TreeNode(identifier.ToString());
+            if (t)
+                DrawDesignData(state.Data);
+        }
     }
 
     #endregion

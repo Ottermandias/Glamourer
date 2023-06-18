@@ -117,16 +117,16 @@ public partial class CustomizationDrawer : IDisposable
             foreach (var id in _set.Order[CharaMakeParams.MenuType.Percentage])
                 PercentageSelector(id);
 
-            Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.IconSelector], DrawIconSelector, ImGui.SameLine);
+            CustomGui.IteratePairwise(_set.Order[CharaMakeParams.MenuType.IconSelector], DrawIconSelector, ImGui.SameLine);
 
             DrawMultiIconSelector();
 
             foreach (var id in _set.Order[CharaMakeParams.MenuType.ListSelector])
                 DrawListSelector(id);
 
-            Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.ColorPicker], DrawColorPicker, ImGui.SameLine);
+            CustomGui.IteratePairwise(_set.Order[CharaMakeParams.MenuType.ColorPicker], DrawColorPicker, ImGui.SameLine);
 
-            Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.Checkmark], DrawCheckbox,
+            CustomGui.IteratePairwise(_set.Order[CharaMakeParams.MenuType.Checkmark], DrawCheckbox,
                 () => ImGui.SameLine(_inputIntSize + _framedIconSize.X + 3 * ImGui.GetStyle().ItemSpacing.X));
             return Changed != 0;
         }

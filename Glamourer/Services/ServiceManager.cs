@@ -5,6 +5,7 @@ using Glamourer.Gui;
 using Glamourer.Gui.Tabs;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
+using Glamourer.State;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
 using OtterGui.Log;
@@ -23,6 +24,7 @@ public static class ServiceManager
             .AddEvents()
             .AddData()
             .AddDesigns()
+            .AddState()
             .AddUi()
             .AddApi();
 
@@ -68,8 +70,12 @@ public static class ServiceManager
         => services.AddSingleton<DesignManager>()
             .AddSingleton<DesignFileSystem>();
 
+    private static IServiceCollection AddState(this IServiceCollection services)
+        => services.AddSingleton<StateManager>();
+
     private static IServiceCollection AddUi(this IServiceCollection services)
         => services.AddSingleton<DebugTab>()
+            .AddSingleton<SettingsTab>()
             .AddSingleton<MainWindow>()
             .AddSingleton<GlamourerWindowSystem>();
 

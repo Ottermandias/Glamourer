@@ -1,5 +1,6 @@
 ﻿using System;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using Glamourer.Customization;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Object = FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Object;
@@ -88,6 +89,9 @@ public readonly unsafe struct Model : IEquatable<Model>
     /// <summary> Only valid for humans. </summary>
     public CharacterArmor GetArmor(EquipSlot slot)
         => ((CharacterArmor*)AsHuman->EquipSlotData)[slot.ToIndex()];
+
+    public Customize GetCustomize()
+        => *(Customize*)&AsHuman->Customize;
 
     public (Model Address, CharacterWeapon Data) GetMainhand()
     {

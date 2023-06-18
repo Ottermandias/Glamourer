@@ -11,6 +11,11 @@ public enum ColorId
 
 public static class Colors
 {
+    public const uint DiscordColor     = 0xFFDA8972;
+    public const uint ReniColorButton  = 0xFFCC648D;
+    public const uint ReniColorHovered = 0xFFB070B0;
+    public const uint ReniColorActive  = 0xFF9070E0;
+
     public static (uint DefaultColor, string Name, string Description) Data(this ColorId color)
         => color switch
         {

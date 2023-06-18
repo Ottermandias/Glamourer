@@ -3,6 +3,7 @@ using System;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.String;
+using Glamourer.Customization;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.String;
@@ -102,6 +103,9 @@ public readonly unsafe struct Actor : IEquatable<Actor>
 
     public CharacterWeapon GetOffhand()
         => *(CharacterWeapon*)&AsCharacter->DrawData.OffHandModel;
+
+    public Customize GetCustomize()
+        => *(Customize*)&AsCharacter->DrawData.CustomizeData;
 
     public override string ToString()
         => $"0x{Address:X}";

@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
 using Glamourer.Customization;
+using Glamourer.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Penumbra.String.Functions;
+using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
 
 namespace Glamourer.Designs;
 
@@ -32,7 +37,7 @@ public unsafe struct DesignData
     private       byte          _states;
 
     public DesignData()
-    {}
+    { }
 
     public readonly StainId Stain(EquipSlot slot)
     {
@@ -166,6 +171,53 @@ public unsafe struct DesignData
         _states = (byte)(value ? _states | 0x08 : _states & ~0x08);
         return true;
     }
+
+    public void SetDefaultEquipment(ItemManager items)
+    {
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+        {
+            SetItem(slot, ItemManager.NothingItem(slot));
+            SetStain(slot, 0);
+        }
+
+        SetItem(EquipSlot.MainHand, items.DefaultSword);
+        SetStain(EquipSlot.MainHand, 0);
+        SetItem(EquipSlot.OffHand, ItemManager.NothingItem(FullEquipType.Shield));
+        SetStain(EquipSlot.OffHand, 0);
+    }
+
+    public void LoadNonHuman(uint modelId, Customize customize, byte* equipData)
+    {
+        ModelId = modelId;
+        Customize.Load(customize);
+        fixed (byte* ptr = _equipmentBytes)
+        {
+            MemoryUtility.MemCpyUnchecked(ptr, equipData, 40);
+        }
+    }
+
+    public readonly byte[] GetCustomizeBytes()
+    {
+        var ret = new byte[CustomizeData.Size];
+        fixed (byte* retPtr = ret, inPtr = Customize.Data.Data)
+        {
+            MemoryUtility.MemCpyUnchecked(retPtr, inPtr, ret.Length);
+        }
+
+        return ret;
+    }
+
+    public readonly byte[] GetEquipmentBytes()
+    {
+        var ret = new byte[40];
+        fixed (byte* retPtr = ret, inPtr = _equipmentBytes)
+        {
+            MemoryUtility.MemCpyUnchecked(retPtr, inPtr, ret.Length);
+        }
+
+        return ret;
+    }
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static bool SetIfDifferent<T>(ref T old, T value) where T : IEquatable<T>
