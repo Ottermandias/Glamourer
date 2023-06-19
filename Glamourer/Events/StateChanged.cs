@@ -1,0 +1,55 @@
+using System;
+using Glamourer.Interop.Structs;
+using Glamourer.State;
+using OtterGui.Classes;
+using Penumbra.GameData.Actors;
+
+namespace Glamourer.Events;
+
+/// <summary>
+/// Triggered when a Design is edited in any way.
+/// <list type="number">
+///     <item>Parameter is the type of the change </item>
+///     <item>Parameter is the changed saved state. </item>
+///     <item>Parameter is the existing actors using this saved state. </item>
+///     <item>Parameter is any additional data depending on the type of change. </item>
+/// </list>
+/// </summary>
+public sealed class StateChanged : EventWrapper<Action<StateChanged.Type, StateChanged.Source, ActorState, ActorData, object?>, StateChanged.Priority>
+{
+    public enum Type
+    {
+        /// <summary> A characters saved state had a customization value changed. Data is the old value, the new value and the type. [(CustomizeValue, CustomizeValue, CustomizeIndex)]. </summary>
+        Customize,
+
+        /// <summary> A characters saved state had an equipment piece changed. Data is the old value, the new value and the slot [(EquipItem, EquipItem, EquipSlot)]. </summary>
+        Equip,
+
+        /// <summary> A characters saved state had its weapons changed. Data is the old mainhand, the old offhand, the new mainhand and the new offhand [(EquipItem, EquipItem, EquipItem, EquipItem)]. </summary>
+        Weapon,
+
+        /// <summary> A characters saved state had a stain changed. Data is the old stain id, the new stain id and the slot [(StainId, StainId, EquipSlot)]. </summary>
+        Stain,
+
+        /// <summary> A characters saved state had a meta toggle changed. Data is the old stain id, the new stain id and the slot [(StainId, StainId, EquipSlot)]. </summary>
+        Other,
+    }
+
+    public enum Source : byte
+    {
+        Game,
+        Manual,
+        Fixed,
+    }
+
+    public enum Priority
+    {
+    }
+
+    public StateChanged()
+        : base(nameof(StateChanged))
+    { }
+
+    public void Invoke(Type type, Source source, ActorState state, ActorData actors, object? data = null)
+        => Invoke(this, type, source, state, actors, data);
+}

@@ -202,7 +202,9 @@ public class DesignManager
 
                 break;
             default:
-                if (!design.DesignData.Customize.Set(idx, value))
+                if (!_customizations.IsCustomizationValid(design.DesignData.Customize.Clan, design.DesignData.Customize.Gender,
+                        design.DesignData.Customize.Face, idx, value)
+                 || !design.DesignData.Customize.Set(idx, value))
                     return;
 
                 break;
@@ -228,7 +230,7 @@ public class DesignManager
     /// <summary> Change a non-weapon equipment piece. </summary>
     public void ChangeEquip(Design design, EquipSlot slot, EquipItem item)
     {
-        if (_items.ValidateItem(slot, item.Id, out item).Length > 0)
+        if (!_items.IsItemValid(slot, item.Id, out item))
             return;
 
         var old = design.DesignData.Item(slot);
@@ -250,32 +252,31 @@ public class DesignManager
         {
             case EquipSlot.MainHand:
                 var newOff = currentOff;
-                if (item.Type == currentMain.Type)
+                if (!_items.IsItemValid(EquipSlot.MainHand, item.Id, out item))
+                    return;
+
+                if (item.Type != currentMain.Type)
                 {
-                    if (_items.ValidateWeapons(item.Id, currentOff.Id, out _, out _).Length != 0)
-                        return;
-                }
-                else
-                {
+                    
                     var newOffId = FullEquipTypeExtensions.OffhandTypes.Contains(item.Type)
                         ? item.Id
                         : ItemManager.NothingId(item.Type.Offhand());
-                    if (_items.ValidateWeapons(item.Id, newOffId, out _, out newOff).Length != 0)
+                    if (!_items.IsOffhandValid(item, newOffId, out newOff))
                         return;
                 }
 
-                design.DesignData.SetItem(EquipSlot.MainHand, item);
-                design.DesignData.SetItem(EquipSlot.OffHand,  newOff);
+                if (!design.DesignData.SetItem(EquipSlot.MainHand, item) && !design.DesignData.SetItem(EquipSlot.OffHand, newOff))
+                    return;
+
                 design.LastEdit = DateTimeOffset.UtcNow;
                 _saveService.QueueSave(design);
                 Glamourer.Log.Debug(
                     $"Set {EquipSlot.MainHand.ToName()} weapon in design {design.Identifier} from {currentMain.Name} ({currentMain.Id}) to {item.Name} ({item.Id}).");
                 _event.Invoke(DesignChanged.Type.Weapon, design, (currentMain, currentOff, item, newOff));
+
                 return;
             case EquipSlot.OffHand:
-                if (item.Type != currentOff.Type)
-                    return;
-                if (_items.ValidateWeapons(currentMain.Id, item.Id, out _, out _).Length > 0)
+                if (!_items.IsOffhandValid(currentOff.Type, item.Id, out item))
                     return;
 
                 if (!design.DesignData.SetItem(EquipSlot.OffHand, item))

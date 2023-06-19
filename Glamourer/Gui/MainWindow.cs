@@ -3,6 +3,8 @@ using System.Numerics;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Gui.Tabs;
+using Glamourer.Gui.Tabs.ActorTab;
+using Glamourer.Gui.Tabs.DesignTab;
 using ImGuiNET;
 using OtterGui.Custom;
 using OtterGui.Widgets;
@@ -16,17 +18,22 @@ public class MainWindow : Window
         None     = -1,
         Settings = 0,
         Debug    = 1,
+        Actors   = 2,
+        Designs  = 3,
     }
 
     private readonly Configuration _config;
     private readonly ITab[]        _tabs;
 
     public readonly SettingsTab Settings;
+    public readonly ActorTab    Actors;
     public readonly DebugTab    Debug;
+    public readonly DesignTab   Designs;
 
     public TabType SelectTab = TabType.None;
 
-    public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, DebugTab debugTab)
+    public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
+        DebugTab debugTab)
         : base(GetLabel())
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -37,10 +44,14 @@ public class MainWindow : Window
         };
         Settings = settings;
         Debug    = debugTab;
+        Designs  = designs;
+        Actors   = actors;
         _config  = config;
         _tabs = new ITab[]
         {
             settings,
+            actors,
+            designs,
             debugTab,
         };
 
@@ -62,12 +73,16 @@ public class MainWindow : Window
         {
             TabType.Settings => Settings.Label,
             TabType.Debug    => Debug.Label,
+            TabType.Actors   => Actors.Label,
+            TabType.Designs  => Designs.Label,
             _                => ReadOnlySpan<byte>.Empty,
         };
 
     private TabType FromLabel(ReadOnlySpan<byte> label)
     {
         // @formatter:off
+        if (label == Actors.Label) return TabType.Actors;
+        if (label == Designs.Label) return TabType.Designs;
         if (label == Settings.Label) return TabType.Settings;
         if (label == Debug.Label)    return TabType.Debug;
         // @formatter:on

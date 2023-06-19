@@ -18,7 +18,10 @@ namespace Glamourer.Events;
 public sealed class UpdatedSlot : EventWrapper<Action<Model, EquipSlot, Ref<CharacterArmor>, Ref<ulong>>, UpdatedSlot.Priority>
 {
     public enum Priority
-    { }
+    {
+        /// <seealso cref="State.StateManager.OnSlotUpdated"/>
+        StateManager = 0,
+    }
 
     public UpdatedSlot()
         : base(nameof(UpdatedSlot))

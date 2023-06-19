@@ -7,6 +7,7 @@ using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Gui;
 using Glamourer.Services;
 using Newtonsoft.Json;
+using OtterGui.Classes;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace Glamourer;
@@ -15,6 +16,7 @@ public class Configuration : IPluginConfiguration, ISavable
 {
     public bool               UseRestrictedGearProtection { get; set; } = true;
     public MainWindow.TabType SelectedTab                 { get; set; } = MainWindow.TabType.Settings;
+    public DoubleModifier     DeleteDesignModifier        { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
 
 
 #if DEBUG

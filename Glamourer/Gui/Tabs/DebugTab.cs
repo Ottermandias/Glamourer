@@ -66,7 +66,7 @@ public unsafe class DebugTab : ITab
         _designFileSystem       = designFileSystem;
         _designManager          = designManager;
         _state                  = state;
-        _config            = config;
+        _config                 = config;
     }
 
     public ReadOnlySpan<byte> Label
@@ -74,6 +74,10 @@ public unsafe class DebugTab : ITab
 
     public void DrawContent()
     {
+        using var child = ImRaii.Child("MainWindowChild");
+        if (!child)
+            return;
+
         DrawInteropHeader();
         DrawGameDataHeader();
         DrawPenumbraHeader();
@@ -829,7 +833,7 @@ public unsafe class DebugTab : ITab
         }
     }
 
-    private static void DrawDesignData(in DesignData data)
+    public static void DrawDesignData(in DesignData data)
     {
         if (data.ModelId == 0)
         {

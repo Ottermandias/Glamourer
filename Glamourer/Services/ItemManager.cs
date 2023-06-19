@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Dalamud.Data;
 using Dalamud.Plugin;
 using Lumina.Excel;
@@ -135,6 +136,14 @@ public class ItemManager : IDisposable
             : new EquipItem($"Unknown ({id.Value}-{type.Value}-{variant})", 0, 0, id, type, variant, 0);
     }
 
+    /// <summary> Returns whether an item id represents a valid item for a slot and gives the item. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public bool IsItemValid(EquipSlot slot, uint itemId, out EquipItem item)
+    {
+        item = Resolve(slot, itemId);
+        return item.Valid;
+    }
+
     /// <summary>
     /// Check whether an item id resolves to an existing item of the correct slot (which should not be weapons.)
     /// The returned item is either the resolved correct item, or the Nothing item for that slot.
@@ -145,22 +154,26 @@ public class ItemManager : IDisposable
         if (slot is EquipSlot.MainHand or EquipSlot.OffHand)
             throw new Exception("Internal Error: Used armor functionality for weapons.");
 
-        item = Resolve(slot, itemId);
-        if (item.Valid)
+        if (IsItemValid(slot, itemId, out item))
             return string.Empty;
 
         item = NothingItem(slot);
         return $"The {slot.ToName()} item {itemId} does not exist, reset to Nothing.";
     }
 
+    /// <summary> Returns whether a stain id is a valid stain. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public bool IsStainValid(StainId stain)
+        => stain.Value == 0 || Stains.ContainsKey(stain);
+
     /// <summary>
     /// Check whether a stain id is an existing stain. 
     /// The returned stain id is either the input or 0.
     /// The return value is an empty string if there was no problem and a warning otherwise.
     /// </summary>
-    public  string ValidateStain(StainId stain, out StainId ret)
+    public string ValidateStain(StainId stain, out StainId ret)
     {
-        if (stain.Value == 0 || Stains.ContainsKey(stain))
+        if (IsStainValid(stain))
         {
             ret = stain;
             return string.Empty;
@@ -169,6 +182,19 @@ public class ItemManager : IDisposable
         ret = 0;
         return $"The Stain {stain} does not exist, reset to unstained.";
     }
+
+    /// <summary> Returns whether an offhand is valid given the required offhand type. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public bool IsOffhandValid(FullEquipType offType, uint offId, out EquipItem off)
+    {
+        off = Resolve(offType, offId);
+        return off.Valid;
+    }
+
+    /// <summary> Returns whether an offhand is valid given mainhand. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public bool IsOffhandValid(in EquipItem main, uint offId, out EquipItem off)
+        => IsOffhandValid(main.Type.Offhand(), offId, out off);
 
     /// <summary>
     /// Check whether a combination of an item id for a mainhand and for an offhand is valid.
@@ -180,42 +206,30 @@ public class ItemManager : IDisposable
     public string ValidateWeapons(uint mainId, uint offId, out EquipItem main, out EquipItem off)
     {
         var ret = string.Empty;
-        main = Resolve(EquipSlot.MainHand, mainId);
-        if (!main.Valid)
+        if (!IsItemValid(EquipSlot.MainHand, mainId, out main))
         {
             main = DefaultSword;
-            ret = $"The mainhand weapon {mainId} does not exist, reset to default sword.";
+            ret  = $"The mainhand weapon {mainId} does not exist, reset to default sword.";
         }
 
-        var offhandType = main.Type.Offhand();
-        off = Resolve(offhandType, offId);
-        if (off.Valid)
+        var offType = main.Type.Offhand();
+        if (IsOffhandValid(offType, offId, out off))
             return ret;
 
         // Try implicit offhand.
-        off = Resolve(offhandType, mainId);
-        if (off.Valid)
+        // Can not be set to default sword before because then it could not be valid.
+        if (IsOffhandValid(offType, mainId, out off))
+            return $"The offhand weapon {offId} does not exist, reset to implied offhand.";
+
+        if (FullEquipTypeExtensions.OffhandTypes.Contains(offType))
         {
-            // Can not be set to default sword before because then it could not be valid.
-            ret = $"The offhand weapon {offId} does not exist, reset to implied offhand.";
-        }
-        else
-        {
-            if (FullEquipTypeExtensions.OffhandTypes.Contains(offhandType))
-            {
-                main = DefaultSword;
-                off = NothingItem(FullEquipType.Shield);
-                ret =
-                    $"The offhand weapon {offId} does not exist, but no default could be restored, reset mainhand to default sword and offhand to nothing.";
-            }
-            else
-            {
-                off = NothingItem(offhandType);
-                if (ret.Length == 0)
-                    ret = $"The offhand weapon {offId} does not exist, reset to no offhand.";
-            }
+            main = DefaultSword;
+            off  = NothingItem(FullEquipType.Shield);
+            return
+                $"The offhand weapon {offId} does not exist, but no default could be restored, reset mainhand to default sword and offhand to nothing.";
         }
 
-        return ret;
+        off = NothingItem(offType);
+        return ret.Length == 0 ? $"The offhand weapon {offId} does not exist, reset to no offhand." : ret;
     }
 }

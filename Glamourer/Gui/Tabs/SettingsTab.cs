@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 
@@ -20,19 +22,22 @@ public class SettingsTab : ITab
 
     public void DrawContent()
     {
-        using var child = ImRaii.Child("##SettingsTab", -Vector2.One, false);
+        using var child = ImRaii.Child("MainWindowChild");
         if (!child)
             return;
 
         Checkbox("Restricted Gear Protection",
             "Use gender- and race-appropriate models when detecting certain items not available for a characters current gender and race.",
             _config.UseRestrictedGearProtection, v => _config.UseRestrictedGearProtection = v);
+        if (Widget.DoubleModifierSelector("Design Deletion Modifier",
+                "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
+                _config.DeleteDesignModifier, v => _config.DeleteDesignModifier = v))
+            _config.Save();
         Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use.", _config.DebugMode, v => _config.DebugMode = v);
         DrawColorSettings();
 
         MainWindow.DrawSupportButtons();
     }
-
 
     /// <summary> Draw the entire Color subsection. </summary>
     private void DrawColorSettings()

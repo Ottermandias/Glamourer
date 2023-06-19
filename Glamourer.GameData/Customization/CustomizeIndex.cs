@@ -44,6 +44,8 @@ public enum CustomizeIndex : byte
 
 public static class CustomizationExtensions
 {
+    public const int NumIndices = ((int)CustomizeIndex.FacePaintColor + 1);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static (int ByteIdx, byte Mask) ToByteAndMask(this CustomizeIndex index)
         => index switch

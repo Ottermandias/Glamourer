@@ -24,7 +24,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
         _designManager = designManager;
         _saveService   = saveService;
         _designChanged = designChanged;
-        _designChanged.Subscribe(OnDataChange, DesignChanged.Priority.DesignFileSystem);
+        _designChanged.Subscribe(OnDesignChange, DesignChanged.Priority.DesignFileSystem);
         Changed += OnChange;
         Reload();
     }
@@ -39,7 +39,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
 
     public void Dispose()
     {
-        _designChanged.Unsubscribe(OnDataChange);
+        _designChanged.Unsubscribe(OnDesignChange);
     }
 
     public struct CreationDate : ISortMode<Design>
@@ -96,7 +96,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
             _saveService.QueueSave(this);
     }
 
-    private void OnDataChange(DesignChanged.Type type, Design design, object? data)
+    private void OnDesignChange(DesignChanged.Type type, Design design, object? data)
     {
         switch (type)
         {

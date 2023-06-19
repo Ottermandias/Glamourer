@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
 using Glamourer.Customization;
 using Glamourer.Services;
 using Penumbra.GameData.Enums;
@@ -161,7 +159,7 @@ public unsafe struct DesignData
     }
 
     public readonly bool IsWeaponVisible()
-        => (_states & 0x08) == 0x09;
+        => (_states & 0x08) == 0x08;
 
     public bool SetWeaponVisible(bool value)
     {

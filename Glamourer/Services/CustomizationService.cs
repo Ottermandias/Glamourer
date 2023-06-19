@@ -1,8 +1,7 @@
 using System;
 using System.Linq;
-using System.Security.AccessControl;
+using System.Runtime.CompilerServices;
 using Dalamud.Data;
-using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin;
 using Glamourer.Customization;
 using Penumbra.GameData.Enums;
@@ -60,6 +59,26 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
         };
     }
 
+    /// <summary> Returns whether a clan is valid. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public bool IsClanValid(SubRace clan)
+        => AwaitedService.Clans.Contains(clan);
+
+    /// <summary> Returns whether a gender is valid for the given race. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public bool IsGenderValid(Race race, Gender gender)
+        => race is Race.Hrothgar ? gender == Gender.Male : AwaitedService.Genders.Contains(gender);
+
+    /// <summary> Returns whether a customization value is valid for a given clan/gender set and face. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool IsCustomizationValid(CustomizationSet set, CustomizeValue face, CustomizeIndex type, CustomizeValue value)
+        => set.DataByValue(type, value, out _, face) >= 0;
+
+    /// <summary> Returns whether a customization value is valid for a given clan, gender and face. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public bool IsCustomizationValid(SubRace race, Gender gender, CustomizeValue face, CustomizeIndex type, CustomizeValue value)
+        => AwaitedService.GetList(race, gender).DataByValue(type, value, out _, face) >= 0;
+
     /// <summary>
     /// Check that the given race and clan are valid.
     /// The returned race and clan fit together and are valid.
@@ -67,7 +86,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     /// </summary>
     public string ValidateClan(SubRace clan, Race race, out Race actualRace, out SubRace actualClan)
     {
-        if (AwaitedService.Clans.Contains(clan))
+        if (IsClanValid(clan))
         {
             actualClan = clan;
             actualRace = actualClan.ToRace();
@@ -113,7 +132,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
         }
 
         // TODO: Female Hrothgar
-        if (gender == Gender.Female && race == Race.Hrothgar)
+        if (gender is Gender.Female && race is Race.Hrothgar)
         {
             actualGender = Gender.Male;
             return $"{Race.Hrothgar.ToName()} do not currently support {Gender.Female.ToName()} characters, reset to {Gender.Male.ToName()}.";
@@ -134,7 +153,6 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
         return modelId != 0 ? $"Model IDs different from 0 are not currently allowed, reset {modelId} to 0." : string.Empty;
     }
 
-
     /// <summary>
     /// Validate a single customization value against a given set of race and gender (and face).
     /// The returned actualValue is either the correct value or the one with index 0.
@@ -143,9 +161,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     public static string ValidateCustomizeValue(CustomizationSet set, CustomizeValue face, CustomizeIndex index, CustomizeValue value,
         out CustomizeValue actualValue)
     {
-        var count = set.Count(index, face);
-        var idx   = set.DataByValue(index, value, out var data, face);
-        if (idx >= 0 && idx < count)
+        if (IsCustomizationValid(set, face, index, value))
         {
             actualValue = value;
             return string.Empty;

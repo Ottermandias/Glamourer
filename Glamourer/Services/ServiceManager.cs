@@ -2,7 +2,10 @@
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui;
+using Glamourer.Gui.Customization;
 using Glamourer.Gui.Tabs;
+using Glamourer.Gui.Tabs.ActorTab;
+using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
@@ -49,7 +52,8 @@ public static class ServiceManager
     private static IServiceCollection AddEvents(this IServiceCollection services)
         => services.AddSingleton<VisorStateChanged>()
             .AddSingleton<UpdatedSlot>()
-            .AddSingleton<DesignChanged>();
+            .AddSingleton<DesignChanged>()
+            .AddSingleton<StateChanged>();
 
     private static IServiceCollection AddData(this IServiceCollection services)
         => services.AddSingleton<IdentifierService>()
@@ -76,8 +80,15 @@ public static class ServiceManager
     private static IServiceCollection AddUi(this IServiceCollection services)
         => services.AddSingleton<DebugTab>()
             .AddSingleton<SettingsTab>()
+            .AddSingleton<ActorTab>()
+            .AddSingleton<ActorSelector>()
+            .AddSingleton<ActorPanel>()
             .AddSingleton<MainWindow>()
-            .AddSingleton<GlamourerWindowSystem>();
+            .AddSingleton<GlamourerWindowSystem>()
+            .AddSingleton<CustomizationDrawer>()
+            .AddSingleton<DesignFileSystemSelector>()
+            .AddSingleton<DesignPanel>()
+            .AddSingleton<DesignTab>();
 
     private static IServiceCollection AddApi(this IServiceCollection services)
         => services.AddSingleton<CommandService>();

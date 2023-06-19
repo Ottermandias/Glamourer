@@ -60,11 +60,18 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
 
         /// <summary> An existing design changed whether a specific stain is applied. Data is the slot of the equipment [EquipSlot]. </summary>
         ApplyStain,
+
+        /// <summary> An existing design changed one of the meta flags. Data is null. </summary>
+        Other,
     }
 
     public enum Priority
     {
+        /// <seealso cref="DesignFileSystem.OnDesignChange"/>
         DesignFileSystem = 0,
+
+        /// <seealso cref="Gui.Tabs.DesignTab.DesignFileSystemSelector.OnDesignChange"/>
+        DesignFileSystemSelector = -1,
     }
 
     public DesignChanged()
