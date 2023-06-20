@@ -41,6 +41,8 @@ public unsafe class DebugTab : ITab
     private readonly DesignManager    _designManager;
     private readonly DesignFileSystem _designFileSystem;
 
+    private readonly PenumbraChangedItemTooltip _penumbraTooltip;
+
     private readonly StateManager _state;
 
     private int _gameObjectIndex;
@@ -51,7 +53,8 @@ public unsafe class DebugTab : ITab
     public DebugTab(ChangeCustomizeService changeCustomizeService, VisorService visorService, ObjectTable objects,
         UpdateSlotService updateSlotService, WeaponService weaponService, PenumbraService penumbra,
         ActorService actors, ItemManager items, CustomizationService customization, ObjectManager objectManager,
-        DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config)
+        DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
+        PenumbraChangedItemTooltip penumbraTooltip)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -67,6 +70,7 @@ public unsafe class DebugTab : ITab
         _designManager          = designManager;
         _state                  = state;
         _config                 = config;
+        _penumbraTooltip        = penumbraTooltip;
     }
 
     public ReadOnlySpan<byte> Label
@@ -433,6 +437,23 @@ public unsafe class DebugTab : ITab
         {
             if (ImGui.SmallButton("Redraw"))
                 _penumbra.RedrawObject(_objects.GetObjectAddress(_gameObjectIndex), RedrawType.Redraw);
+        }
+
+        ImGuiUtil.DrawTableColumn("Last Tooltip Date");
+        ImGuiUtil.DrawTableColumn(_penumbraTooltip.LastTooltip > DateTime.MinValue ? _penumbraTooltip.LastTooltip.ToLongTimeString() : "Never");
+        ImGui.TableNextColumn();
+
+        ImGuiUtil.DrawTableColumn("Last Click Date");
+        ImGuiUtil.DrawTableColumn(_penumbraTooltip.LastClick > DateTime.MinValue ? _penumbraTooltip.LastClick.ToLongTimeString() : "Never");
+        ImGui.TableNextColumn();
+
+        ImGui.Separator();
+        ImGui.Separator();
+        foreach (var (slot, item) in _penumbraTooltip.LastItems)
+        {
+            ImGuiUtil.DrawTableColumn($"{slot.ToName()} Revert-Item");
+            ImGuiUtil.DrawTableColumn(item.Valid ? item.Name : "None");
+            ImGui.TableNextColumn();
         }
     }
 
@@ -990,7 +1011,7 @@ public unsafe class DebugTab : ITab
                 continue;
 
             if (_state.GetOrCreate(identifier, actors.Objects[0], out var state))
-                DrawDesignData(state.Data);
+                DrawDesignData(state.ModelData);
             else
                 ImGui.TextUnformatted("Invalid actor.");
         }
@@ -1006,7 +1027,7 @@ public unsafe class DebugTab : ITab
         {
             using var t = ImRaii.TreeNode(identifier.ToString());
             if (t)
-                DrawDesignData(state.Data);
+                DrawDesignData(state.ModelData);
         }
     }
 

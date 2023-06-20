@@ -10,11 +10,11 @@ namespace Glamourer.Interop;
 
 public unsafe class UpdateSlotService : IDisposable
 {
-    public readonly UpdatedSlot Event;
+    public readonly SlotUpdating Event;
 
-    public UpdateSlotService(UpdatedSlot updatedSlot)
+    public UpdateSlotService(SlotUpdating slotUpdating)
     {
-        Event = updatedSlot;
+        Event = slotUpdating;
         SignatureHelper.Initialise(this);
         _flagSlotForUpdateHook.Enable();
     }

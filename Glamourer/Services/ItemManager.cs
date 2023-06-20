@@ -45,10 +45,8 @@ public class ItemManager : IDisposable
         RestrictedGear.Dispose();
     }
 
-
     public (bool, CharacterArmor) ResolveRestrictedGear(CharacterArmor armor, EquipSlot slot, Race race, Gender gender)
         => _config.UseRestrictedGearProtection ? RestrictedGear.ResolveRestricted(armor, slot, race, gender) : (false, armor);
-
 
     public static uint NothingId(EquipSlot slot)
         => uint.MaxValue - 128 - (uint)slot.ToSlot();

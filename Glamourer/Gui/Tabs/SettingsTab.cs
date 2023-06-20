@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Interface;
+using Glamourer.Gui.Tabs.DesignTab;
+using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
-using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 
@@ -12,10 +12,16 @@ namespace Glamourer.Gui.Tabs;
 
 public class SettingsTab : ITab
 {
-    private readonly Configuration _config;
+    private readonly Configuration            _config;
+    private readonly DesignFileSystemSelector _selector;
+    private readonly StateListener            _stateListener;
 
-    public SettingsTab(Configuration config)
-        => _config = config;
+    public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener)
+    {
+        _config             = config;
+        _selector           = selector;
+        _stateListener = stateListener;
+    }
 
     public ReadOnlySpan<byte> Label
         => "Settings"u8;
@@ -25,7 +31,7 @@ public class SettingsTab : ITab
         using var child = ImRaii.Child("MainWindowChild");
         if (!child)
             return;
-
+        Checkbox("Enabled", "Enable main functionality of keeping and applying state.", _stateListener.Enabled, _stateListener.Enable);
         Checkbox("Restricted Gear Protection",
             "Use gender- and race-appropriate models when detecting certain items not available for a characters current gender and race.",
             _config.UseRestrictedGearProtection, v => _config.UseRestrictedGearProtection = v);
@@ -33,6 +39,10 @@ public class SettingsTab : ITab
                 "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
                 _config.DeleteDesignModifier, v => _config.DeleteDesignModifier = v))
             _config.Save();
+        DrawFolderSortType();
+        Checkbox("Auto-Open Design Folders",
+            "Have design folders open or closed as their default state after launching.", _config.OpenFoldersByDefault,
+            v => _config.OpenFoldersByDefault = v);
         Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use.", _config.DebugMode, v => _config.DebugMode = v);
         DrawColorSettings();
 
@@ -69,5 +79,29 @@ public class SettingsTab : ITab
 
         ImGui.SameLine();
         ImGuiUtil.LabeledHelpMarker(label, tooltip);
+    }
+
+    /// <summary> Different supported sort modes as a combo. </summary>
+    private void DrawFolderSortType()
+    {
+        var sortMode = _config.SortMode;
+        ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
+        using (var combo = ImRaii.Combo("##sortMode", sortMode.Name))
+        {
+            if (combo)
+                foreach (var val in Configuration.Constants.ValidSortModes)
+                {
+                    if (ImGui.Selectable(val.Name, val.GetType() == sortMode.GetType()) && val.GetType() != sortMode.GetType())
+                    {
+                        _config.SortMode = val;
+                        _selector.SetFilterDirty();
+                        _config.Save();
+                    }
+
+                    ImGuiUtil.HoverTooltip(val.Description);
+                }
+        }
+
+        ImGuiUtil.LabeledHelpMarker("Sort Mode", "Choose the sort mode for the mod selector in the designs tab.");
     }
 }

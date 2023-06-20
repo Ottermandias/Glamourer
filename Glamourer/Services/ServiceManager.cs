@@ -51,9 +51,10 @@ public static class ServiceManager
 
     private static IServiceCollection AddEvents(this IServiceCollection services)
         => services.AddSingleton<VisorStateChanged>()
-            .AddSingleton<UpdatedSlot>()
+            .AddSingleton<SlotUpdating>()
             .AddSingleton<DesignChanged>()
-            .AddSingleton<StateChanged>();
+            .AddSingleton<StateChanged>()
+            .AddSingleton<WeaponLoading>();
 
     private static IServiceCollection AddData(this IServiceCollection services)
         => services.AddSingleton<IdentifierService>()
@@ -75,7 +76,8 @@ public static class ServiceManager
             .AddSingleton<DesignFileSystem>();
 
     private static IServiceCollection AddState(this IServiceCollection services)
-        => services.AddSingleton<StateManager>();
+        => services.AddSingleton<StateManager>()
+            .AddSingleton<StateListener>();
 
     private static IServiceCollection AddUi(this IServiceCollection services)
         => services.AddSingleton<DebugTab>()
@@ -88,7 +90,8 @@ public static class ServiceManager
             .AddSingleton<CustomizationDrawer>()
             .AddSingleton<DesignFileSystemSelector>()
             .AddSingleton<DesignPanel>()
-            .AddSingleton<DesignTab>();
+            .AddSingleton<DesignTab>()
+            .AddSingleton<PenumbraChangedItemTooltip>();
 
     private static IServiceCollection AddApi(this IServiceCollection services)
         => services.AddSingleton<CommandService>();

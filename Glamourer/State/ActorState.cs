@@ -20,7 +20,8 @@ public class ActorState
     }
 
     public ActorIdentifier Identifier { get; internal init; }
-    public DesignData      Data;
+    public DesignData      ActorData;
+    public DesignData      ModelData;
 
     private readonly StateChanged.Source[] _sources = Enumerable
         .Repeat(StateChanged.Source.Game, EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 4).ToArray();

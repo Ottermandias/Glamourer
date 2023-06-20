@@ -23,13 +23,7 @@ public class VisorService : IDisposable
 
     /// <summary> Obtain the current state of the Visor for the given draw object (true: toggled). </summary>
     public unsafe bool GetVisorState(Model characterBase)
-    {
-        if (!characterBase.IsCharacterBase)
-            return false;
-
-        // TODO: use client structs.
-        return (characterBase.AsCharacterBase->UnkFlags_01 & Offsets.DrawObjectVisorStateFlag) != 0;
-    }
+        => characterBase.IsCharacterBase && characterBase.AsCharacterBase->VisorToggled;
 
     /// <summary> Manually set the state of the Visor for the given draw object. </summary>
     /// <param name="human"> The draw object. </param>
@@ -44,7 +38,6 @@ public class VisorService : IDisposable
         Glamourer.Log.Verbose($"[SetVisorState] Invoked manually on 0x{human.Address:X} switching from {oldState} to {on}.");
         if (oldState == on)
             return false;
-
 
         SetupVisorHook(human, (ushort)human.AsHuman->HeadSetID, on);
         return true;

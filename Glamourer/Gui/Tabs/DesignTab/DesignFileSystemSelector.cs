@@ -35,6 +35,21 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         _event.Unsubscribe(OnDesignChange);
     }
 
+    public override ISortMode<Design> SortMode
+        => _config.SortMode;
+
+    protected override uint ExpandedFolderColor
+        => ColorId.FolderExpanded.Value();
+
+    protected override uint CollapsedFolderColor
+        => ColorId.FolderCollapsed.Value();
+
+    protected override uint FolderLineColor
+        => ColorId.FolderLine.Value();
+
+    protected override bool FoldersDefaultOpen
+        => _config.OpenFoldersByDefault;
+
     private void OnDesignChange(DesignChanged.Type type, Design design, object? oldData)
     {
         switch (type)

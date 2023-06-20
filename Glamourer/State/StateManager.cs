@@ -17,7 +17,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
 
-public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>, IDisposable
+public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
     private readonly ActorService         _actors;
     private readonly ItemManager          _items;
@@ -26,57 +26,20 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>, ID
     private readonly StateChanged         _event;
 
     private readonly PenumbraService _penumbra;
-    private readonly UpdatedSlot     _updatedSlot;
-
+    
     private readonly Dictionary<ActorIdentifier, ActorState> _states = new();
 
+
     public StateManager(ActorService actors, ItemManager items, CustomizationService customizations, VisorService visor, StateChanged @event,
-        UpdatedSlot updatedSlot, PenumbraService penumbra)
+        PenumbraService penumbra)
     {
         _actors         = actors;
         _items          = items;
         _customizations = customizations;
         _visor          = visor;
         _event          = @event;
-        _updatedSlot    = updatedSlot;
         _penumbra       = penumbra;
-        _updatedSlot.Subscribe(OnSlotUpdated, UpdatedSlot.Priority.StateManager);
-    }
-
-    public void Dispose()
-    {
-        _updatedSlot.Unsubscribe(OnSlotUpdated);
-    }
-
-    private unsafe void OnSlotUpdated(Model model, EquipSlot slot, Ref<CharacterArmor> armor, Ref<ulong> returnValue)
-    {
-        var actor     = _penumbra.GameObjectFromDrawObject(model);
-        var customize = model.GetCustomize();
-        if (!actor.AsCharacter->DrawData.IsHatHidden && actor.Identifier(_actors.AwaitedService, out var identifier) && _states.TryGetValue(identifier, out var state))
-        {
-            ref var armorState = ref state[slot, false];
-            ref var stainState = ref state[slot, true];
-            if (armorState != StateChanged.Source.Fixed)
-            {
-                armorState = StateChanged.Source.Game;
-                var current = state.Data.Item(slot);
-                if (current.ModelId.Value != armor.Value.Set.Value || current.Variant != armor.Value.Variant)
-                {
-                    var item = _items.Identify(slot, armor.Value.Set, armor.Value.Variant);
-                    state.Data.SetItem(slot, item);
-                }
-            }
-
-            if (stainState != StateChanged.Source.Fixed)
-            {
-                stainState = StateChanged.Source.Game;
-                state.Data.SetStain(slot, armor.Value.Stain);
-            }
-        }
-
-        var (replaced, replacedArmor) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
-        if (replaced)
-            armor.Assign(replacedArmor);
+        
     }
 
     public bool GetOrCreate(Actor actor, [NotNullWhen(true)] out ActorState? state)
@@ -90,7 +53,12 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>, ID
         try
         {
             var designData = FromActor(actor);
-            _states.Add(identifier, new ActorState(identifier) { Data = designData });
+            state = new ActorState(identifier)
+            {
+                ModelData = designData,
+                ActorData = designData
+            };
+            _states.Add(identifier, state);
             return true;
         }
         catch (Exception ex)
@@ -100,84 +68,68 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>, ID
         }
     }
 
-    public unsafe void Update(ref DesignData data, Actor actor)
+    public void UpdateEquip(ActorState state, EquipSlot slot, CharacterArmor armor)
+    {
+        var current = state.ModelData.Item(slot);
+        if (armor.Set.Value != current.ModelId.Value || armor.Variant != current.Variant)
+        {
+            var item = _items.Identify(slot, armor.Set, armor.Variant);
+            state.ModelData.SetItem(slot, item);
+        }
+
+        state.ModelData.SetStain(slot, armor.Stain);
+    }
+
+    public void UpdateWeapon(ActorState state, EquipSlot slot, CharacterWeapon weapon)
+    {
+        var current = state.ModelData.Item(slot);
+        if (weapon.Set.Value != current.ModelId.Value || weapon.Variant != current.Variant || weapon.Type.Value != current.WeaponType.Value)
+        {
+            var item = _items.Identify(slot, weapon.Set, weapon.Type, (byte)weapon.Variant,
+                slot == EquipSlot.OffHand ? state.ModelData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
+            state.ModelData.SetItem(slot, item);
+        }
+
+        state.ModelData.SetStain(slot, weapon.Stain);
+    }
+
+    public unsafe void Update(ActorState state, Actor actor)
     {
         if (!actor.IsCharacter)
             return;
 
-        if (actor.AsCharacter->ModelCharaId != data.ModelId)
+        if (actor.AsCharacter->ModelCharaId != state.ModelData.ModelId)
             return;
 
         var model = actor.Model;
 
-        static bool EqualArmor(CharacterArmor armor, EquipItem item)
-            => armor.Set.Value == item.ModelId.Value && armor.Variant == item.Variant;
+        state.ModelData.SetHatVisible(!actor.AsCharacter->DrawData.IsHatHidden);
+        state.ModelData.SetIsWet(actor.AsCharacter->IsGPoseWet);
+        state.ModelData.SetWeaponVisible(!actor.AsCharacter->DrawData.IsWeaponHidden);
 
-        static bool EqualWeapon(CharacterWeapon weapon, EquipItem item)
-            => weapon.Set.Value == item.ModelId.Value && weapon.Type.Value == item.WeaponType.Value && weapon.Variant == item.Variant;
-
-        data.SetHatVisible(!actor.AsCharacter->DrawData.IsHatHidden);
-        data.SetIsWet(actor.AsCharacter->IsGPoseWet);
-        data.SetWeaponVisible(!actor.AsCharacter->DrawData.IsWeaponHidden);
-
-        CharacterWeapon main;
-        CharacterWeapon off;
         if (model.IsHuman)
         {
-            var head = data.IsHatVisible() ? model.GetArmor(EquipSlot.Head) : actor.GetArmor(EquipSlot.Head);
-            data.SetStain(EquipSlot.Head, head.Stain);
-            if (!EqualArmor(head, data.Item(EquipSlot.Head)))
-            {
-                var headItem = _items.Identify(EquipSlot.Head, head.Set, head.Variant);
-                data.SetItem(EquipSlot.Head, headItem);
-            }
+            var head = state.ModelData.IsHatVisible() ? model.GetArmor(EquipSlot.Head) : actor.GetArmor(EquipSlot.Head);
+            UpdateEquip(state, EquipSlot.Head, head);
 
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Skip(1))
-            {
-                var armor = model.GetArmor(slot);
-                data.SetStain(slot, armor.Stain);
-                if (EqualArmor(armor, data.Item(slot)))
-                    continue;
+                UpdateEquip(state, slot, model.GetArmor(slot));
 
-                var item = _items.Identify(slot, armor.Set, armor.Variant);
-                data.SetItem(slot, item);
-            }
-
-            data.Customize    = model.GetCustomize();
-            (_, _, main, off) = model.GetWeapons(actor);
-            data.SetVisor(_visor.GetVisorState(model));
+            state.ModelData.Customize = model.GetCustomize();
+            var (_, _, main, off) = model.GetWeapons(actor);
+            UpdateWeapon(state, EquipSlot.MainHand, main);
+            UpdateWeapon(state, EquipSlot.OffHand,  off);
+            state.ModelData.SetVisor(_visor.GetVisorState(model));
         }
         else
         {
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            {
-                var armor = actor.GetArmor(slot);
-                data.SetStain(slot, armor.Stain);
-                if (EqualArmor(armor, data.Item(slot)))
-                    continue;
+                UpdateEquip(state, slot, actor.GetArmor(slot));
 
-                var item = _items.Identify(slot, armor.Set, armor.Variant);
-                data.SetItem(slot, item);
-            }
-
-            data.Customize = actor.GetCustomize();
-            main           = actor.GetMainhand();
-            off            = actor.GetOffhand();
-            data.SetVisor(actor.AsCharacter->DrawData.IsVisorToggled);
-        }
-
-        data.SetStain(EquipSlot.MainHand, main.Stain);
-        data.SetStain(EquipSlot.OffHand,  off.Stain);
-        if (!EqualWeapon(main, data.Item(EquipSlot.MainHand)))
-        {
-            var mainItem = _items.Identify(EquipSlot.MainHand, main.Set, main.Type, (byte)main.Variant);
-            data.SetItem(EquipSlot.MainHand, mainItem);
-        }
-
-        if (!EqualWeapon(off, data.Item(EquipSlot.OffHand)))
-        {
-            var offItem = _items.Identify(EquipSlot.OffHand, off.Set, off.Type, (byte)off.Variant, data.Item(EquipSlot.MainHand).Type);
-            data.SetItem(EquipSlot.OffHand, offItem);
+            state.ModelData.Customize = actor.GetCustomize();
+            UpdateWeapon(state, EquipSlot.MainHand, actor.GetMainhand());
+            UpdateWeapon(state, EquipSlot.OffHand,  actor.GetOffhand());
+            state.ModelData.SetVisor(actor.AsCharacter->DrawData.IsVisorToggled);
         }
     }
 
@@ -281,11 +233,11 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>, ID
         if (s is StateChanged.Source.Fixed && source is StateChanged.Source.Game)
             return;
 
-        var oldValue = state.Data.Customize[idx];
+        var oldValue = state.ModelData.Customize[idx];
         if (oldValue == value && !force)
             return;
 
-        state.Data.Customize[idx] = value;
+        state.ModelData.Customize[idx] = value;
 
         Glamourer.Log.Excessive(
             $"Changed customize {idx.ToDefaultName()} for {state.Identifier} ({string.Join(", ", data.Objects.Select(o => $"0x{o.Address}"))}) from {oldValue.Value} to {value.Value}.");

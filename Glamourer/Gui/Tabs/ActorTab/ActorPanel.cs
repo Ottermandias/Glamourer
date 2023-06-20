@@ -75,7 +75,7 @@ public class ActorPanel
         if (!child || _state == null)
             return;
 
-        if (_customizationDrawer.Draw(_state.Data.Customize, false))
+        if (_customizationDrawer.Draw(_state.ModelData.Customize, false))
         {
         }
         // if (_currentData.Valid)

@@ -4,19 +4,28 @@ using System.IO;
 using System.Linq;
 using Dalamud.Configuration;
 using Dalamud.Interface.Internal.Notifications;
+using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Services;
 using Newtonsoft.Json;
+using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Filesystem;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace Glamourer;
 
 public class Configuration : IPluginConfiguration, ISavable
 {
+    public bool               Enabled                     { get; set; } = true;
     public bool               UseRestrictedGearProtection { get; set; } = true;
+    public bool               OpenFoldersByDefault        { get; set; } = false;
     public MainWindow.TabType SelectedTab                 { get; set; } = MainWindow.TabType.Settings;
     public DoubleModifier     DeleteDesignModifier        { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
+
+    [JsonConverter(typeof(SortModeConverter))]
+    [JsonProperty(Order = int.MaxValue)]
+    public ISortMode<Design> SortMode { get; set; } = ISortMode<Design>.FoldersFirst;
 
 
 #if DEBUG
@@ -86,5 +95,42 @@ public class Configuration : IPluginConfiguration, ISavable
     public static class Constants
     {
         public const int CurrentVersion = 2;
+
+        public static readonly ISortMode<Design>[] ValidSortModes =
+        {
+            ISortMode<Design>.FoldersFirst,
+            ISortMode<Design>.Lexicographical,
+            new DesignFileSystem.CreationDate(),
+            new DesignFileSystem.InverseCreationDate(),
+            new DesignFileSystem.UpdateDate(),
+            new DesignFileSystem.InverseUpdateDate(),
+            ISortMode<Design>.InverseFoldersFirst,
+            ISortMode<Design>.InverseLexicographical,
+            ISortMode<Design>.FoldersLast,
+            ISortMode<Design>.InverseFoldersLast,
+            ISortMode<Design>.InternalOrder,
+            ISortMode<Design>.InverseInternalOrder,
+        };
+    }
+
+    /// <summary> Convert SortMode Types to their name. </summary>
+    private class SortModeConverter : JsonConverter<ISortMode<Design>>
+    {
+        public override void WriteJson(JsonWriter writer, ISortMode<Design>? value, JsonSerializer serializer)
+        {
+            value ??= ISortMode<Design>.FoldersFirst;
+            serializer.Serialize(writer, value.GetType().Name);
+        }
+
+        public override ISortMode<Design> ReadJson(JsonReader reader, Type objectType, ISortMode<Design>? existingValue,
+            bool hasExistingValue,
+            JsonSerializer serializer)
+        {
+            var name = serializer.Deserialize<string>(reader);
+            if (name == null || !Constants.ValidSortModes.FindFirst(s => s.GetType().Name == name, out var mode))
+                return existingValue ?? ISortMode<Design>.FoldersFirst;
+
+            return mode;
+        }
     }
 }

@@ -15,16 +15,16 @@ namespace Glamourer.Events;
 ///     <item>Parameter is the return value the function should return, if it is ulong.MaxValue, the original will be called and returned. </item>
 /// </list>
 /// </summary>
-public sealed class UpdatedSlot : EventWrapper<Action<Model, EquipSlot, Ref<CharacterArmor>, Ref<ulong>>, UpdatedSlot.Priority>
+public sealed class SlotUpdating : EventWrapper<Action<Model, EquipSlot, Ref<CharacterArmor>, Ref<ulong>>, SlotUpdating.Priority>
 {
     public enum Priority
     {
-        /// <seealso cref="State.StateManager.OnSlotUpdated"/>
-        StateManager = 0,
+        /// <seealso cref="State.StateListener.OnSlotUpdating"/>
+        StateListener = 0,
     }
 
-    public UpdatedSlot()
-        : base(nameof(UpdatedSlot))
+    public SlotUpdating()
+        : base(nameof(SlotUpdating))
     { }
 
     public void Invoke(Model model, EquipSlot slot, ref CharacterArmor armor, ref ulong returnValue)

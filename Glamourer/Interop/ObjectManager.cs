@@ -113,6 +113,17 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
     public Actor Player
         => _objects.GetObjectAddress(0);
 
+    public (ActorIdentifier Identifier, ActorData Data) PlayerData
+    {
+        get
+        {
+            Update();
+            return Player.Identifier(_actors.AwaitedService, out var ident) && _identifiers.TryGetValue(ident, out var data)
+                ? (ident, data)
+                : (ActorIdentifier.Invalid, ActorData.Invalid);
+        }
+    }
+
     public IEnumerator<KeyValuePair<ActorIdentifier, ActorData>> GetEnumerator()
         => Identifiers.GetEnumerator();
 
