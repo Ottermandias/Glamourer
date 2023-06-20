@@ -10,7 +10,7 @@ using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
-using OtterGui.Classes;
+using Glamourer.Structs;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -28,7 +28,6 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
     private readonly PenumbraService _penumbra;
     
     private readonly Dictionary<ActorIdentifier, ActorState> _states = new();
-
 
     public StateManager(ActorService actors, ItemManager items, CustomizationService customizations, VisorService visor, StateChanged @event,
         PenumbraService penumbra)

@@ -25,9 +25,9 @@ public static class DesignBase64Migration
         byte   applicationFlags;
         ushort equipFlagsS;
         var    bytes = Convert.FromBase64String(base64);
-        applyHat    = false;
-        applyVisor  = false;
-        applyWeapon = false;
+        applyHat     = false;
+        applyVisor   = false;
+        applyWeapon  = false;
         var data = new DesignData();
         switch (bytes[0])
         {

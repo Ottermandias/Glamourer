@@ -35,6 +35,46 @@ public class Design : ISavable
 
     internal DesignData DesignData;
 
+    /// <summary> Unconditionally apply a design to a designdata. </summary>
+    /// <returns>Whether a redraw is required for the changes to take effect.</returns>
+    public bool ApplyDesign(ref DesignData data)
+    {
+        var modelChanged = data.ModelId != DesignData.ModelId;
+        data.ModelId = DesignData.ModelId;
+
+        CustomizeFlag customizeFlags = 0;
+        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        {
+            if (!DoApplyCustomize(index))
+                continue;
+
+            if (data.Customize.Set(index, DesignData.Customize[index]))
+                customizeFlags |= index.ToFlag();
+        }
+
+        foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
+        {
+            if (DoApplyEquip(slot))
+                data.SetItem(slot, DesignData.Item(slot));
+
+            if (DoApplyStain(slot))
+                data.SetStain(slot, DesignData.Stain(slot));
+        }
+
+        if (DoApplyHatVisible())
+            data.SetHatVisible(DesignData.IsHatVisible());
+
+        if (DoApplyVisorToggle())
+            data.SetVisor(DesignData.IsVisorToggled());
+
+        if (DoApplyWeaponVisible())
+            data.SetWeaponVisible(DesignData.IsWeaponVisible());
+
+        if (DoApplyWetness())
+            data.SetIsWet(DesignData.IsWet());
+        return modelChanged || customizeFlags.RequiresRedraw();
+    }
+
     #endregion
 
     #region Application Data
@@ -45,7 +85,8 @@ public class Design : ISavable
         ApplyHatVisible    = 0x01,
         ApplyVisorState    = 0x02,
         ApplyWeaponVisible = 0x04,
-        WriteProtected     = 0x08,
+        ApplyWetness       = 0x08,
+        WriteProtected     = 0x10,
     }
 
     internal CustomizeFlag ApplyCustomize = CustomizeFlagExtensions.All;
@@ -60,6 +101,9 @@ public class Design : ISavable
 
     public bool DoApplyWeaponVisible()
         => _designFlags.HasFlag(DesignFlags.ApplyWeaponVisible);
+
+    public bool DoApplyWetness()
+        => _designFlags.HasFlag(DesignFlags.ApplyWetness);
 
     public bool WriteProtected()
         => _designFlags.HasFlag(DesignFlags.WriteProtected);
@@ -87,6 +131,16 @@ public class Design : ISavable
     public bool SetApplyWeaponVisible(bool value)
     {
         var newFlag = value ? _designFlags | DesignFlags.ApplyWeaponVisible : _designFlags & ~DesignFlags.ApplyWeaponVisible;
+        if (newFlag == _designFlags)
+            return false;
+
+        _designFlags = newFlag;
+        return true;
+    }
+
+    public bool SetApplyWetness(bool value)
+    {
+        var newFlag = value ? _designFlags | DesignFlags.ApplyWetness : _designFlags & ~DesignFlags.ApplyWetness;
         if (newFlag == _designFlags)
             return false;
 
@@ -209,7 +263,12 @@ public class Design : ISavable
             };
         }
 
-        ret["IsWet"] = DesignData.IsWet();
+        ret["Wetness"] = new JObject()
+        {
+            ["Value"] = DesignData.IsWet(),
+            ["Apply"] = DoApplyWetness(),
+        };
+
         return ret;
     }
 
@@ -368,7 +427,9 @@ public class Design : ISavable
             design.SetApplyCustomize(idx, apply);
         }
 
-        design.DesignData.SetIsWet(json["IsWet"]?.ToObject<bool>() ?? false);
+        var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);
+        design.DesignData.SetIsWet(wetness.ForcedValue);
+        design.SetApplyWetness(wetness.Enabled);
     }
 
     #endregion
@@ -403,6 +464,7 @@ public class Design : ISavable
         SetApplyHatVisible(applyHat);
         SetApplyVisorToggle(applyVisor);
         SetApplyWeaponVisible(applyWeapon);
+        SetApplyWetness(DesignData.IsWet());
     }
 
     //
