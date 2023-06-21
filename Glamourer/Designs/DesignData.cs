@@ -63,6 +63,24 @@ public unsafe struct DesignData
             // @formatter:on
         };
 
+    public readonly CharacterArmor Armor(EquipSlot slot)
+    {
+        fixed (byte* ptr = _equipmentBytes)
+        {
+            var armorPtr = (CharacterArmor*)ptr;
+            return armorPtr[slot.ToIndex()];
+        }
+    }
+
+    public readonly CharacterWeapon Weapon(EquipSlot slot)
+    {
+        fixed (byte* ptr = _equipmentBytes)
+        {
+            var armorPtr = (CharacterArmor*)ptr;
+            return armorPtr[slot is EquipSlot.MainHand ? 10 : 11].ToWeapon(_secondaryMainhand);
+        }
+    }
+
     public bool SetItem(EquipSlot slot, EquipItem item)
     {
         var index = slot.ToIndex();

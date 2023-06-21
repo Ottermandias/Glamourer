@@ -26,6 +26,7 @@ public class StateEditor
         _items           = items;
     }
 
+
     public void ChangeCustomize(ActorData data, Customize customize)
     {
         foreach (var actor in data.Objects)
@@ -43,19 +44,15 @@ public class StateEditor
         }
     }
 
-    public void ChangeArmor(ActorData data, EquipSlot slot, EquipItem item)
+    public void ChangeArmor(ActorState state, ActorData data, EquipSlot slot)
     {
-        var idx = slot.ToIndex();
-        if (idx >= 10)
-            return;
-
-        var armor = item.Armor();
+        var armor = state.ModelData.Armor(slot);
         foreach (var actor in data.Objects.Where(a => a.IsCharacter))
         {
             var mdl       = actor.Model;
             var customize = mdl.IsHuman ? mdl.GetCustomize() : actor.GetCustomize();
             var (_, resolvedItem) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
-            _updateSlot.UpdateArmor(actor.Model, slot, resolvedItem);
+            _updateSlot.UpdateSlot(actor.Model, slot, resolvedItem);
         }
     }
 

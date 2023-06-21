@@ -61,42 +61,46 @@ public class StateListener : IDisposable
             Unsubscribe();
     }
 
+    private enum UpdateState
+    {
+        NoChange,
+        Transformed,
+        Change,
+    }
+
     private unsafe void OnCreatingCharacterBase(nint actorPtr, string _, nint modelPtr, nint customizePtr, nint equipDataPtr)
     {
         // TODO: Fixed Designs.
         var actor      = (Actor)actorPtr;
         var identifier = actor.GetIdentifier(_actors.AwaitedService);
 
-        if (*(int*)modelPtr != actor.AsCharacter->ModelCharaId)
-            return;
-
+        var     modelId   = *(uint*)modelPtr;
         ref var customize = ref *(Customize*)customizePtr;
         if (_manager.TryGetValue(identifier, out var state))
-        {
-            ApplyCustomize(actor, state, ref customize);
-            ApplyEquipment(actor, state, (CharacterArmor*)equipDataPtr);
-            if (_config.UseRestrictedGearProtection)
-                ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
-        }
-        else if (_config.UseRestrictedGearProtection && *(uint*)modelPtr == 0)
-        {
+            switch (UpdateBaseData(actor, state, modelId, customizePtr, equipDataPtr))
+            {
+                case UpdateState.Change:      break;
+                case UpdateState.Transformed: break;
+                case UpdateState.NoChange:
+                    UpdateBaseData(actor, state, customize);
+                    break;
+            }
+
+        if (_config.UseRestrictedGearProtection && modelId == 0)
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
-        }
     }
 
     private void OnSlotUpdating(Model model, EquipSlot slot, Ref<CharacterArmor> armor, Ref<ulong> returnValue)
     {
         // TODO handle hat state
-        // TODO handle fixed designs
         var actor     = _penumbra.GameObjectFromDrawObject(model);
         var customize = model.GetCustomize();
         if (actor.Identifier(_actors.AwaitedService, out var identifier)
          && _manager.TryGetValue(identifier, out var state))
             ApplyEquipmentPiece(actor, state, slot, ref armor.Value);
 
-        var (replaced, replacedArmor) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
-        if (replaced)
-            armor.Assign(replacedArmor);
+        if (_config.UseRestrictedGearProtection)
+            (_, armor.Value) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
     }
 
     private void OnWeaponLoading(Actor actor, EquipSlot slot, Ref<CharacterWeapon> weapon)
@@ -111,7 +115,7 @@ public class StateListener : IDisposable
          || actorWeapon.Type.Value != stateItem.WeaponType
          || actorWeapon.Variant != stateItem.Variant)
         {
-            var oldActorItem = state.ActorData.Item(slot);
+            var oldActorItem = state.BaseData.Item(slot);
             if (oldActorItem.ModelId.Value == actorWeapon.Set.Value
              && oldActorItem.WeaponType.Value == actorWeapon.Type.Value
              && oldActorItem.Variant == actorWeapon.Variant)
@@ -123,8 +127,8 @@ public class StateListener : IDisposable
             else
             {
                 var identified = _items.Identify(slot, actorWeapon.Set, actorWeapon.Type, (byte)actorWeapon.Variant,
-                    slot == EquipSlot.OffHand ? state.ActorData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
-                state.ActorData.SetItem(slot, identified);
+                    slot == EquipSlot.OffHand ? state.BaseData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
+                state.BaseData.SetItem(slot, identified);
                 if (state[slot, false] is not StateChanged.Source.Fixed)
                 {
                     state.ModelData.SetItem(slot, identified);
@@ -142,7 +146,7 @@ public class StateListener : IDisposable
         var stateStain = state.ModelData.Stain(slot);
         if (actorWeapon.Stain.Value != stateStain.Value)
         {
-            var oldActorStain = state.ActorData.Stain(slot);
+            var oldActorStain = state.BaseData.Stain(slot);
             if (state[slot, true] is not StateChanged.Source.Fixed)
             {
                 state.ModelData.SetStain(slot, actorWeapon.Stain);
@@ -159,7 +163,7 @@ public class StateListener : IDisposable
     private void ApplyCustomize(Actor actor, ActorState state, ref Customize customize)
     {
         var     actorCustomize    = actor.GetCustomize();
-        ref var oldActorCustomize = ref state.ActorData.Customize;
+        ref var oldActorCustomize = ref state.BaseData.Customize;
         ref var stateCustomize    = ref state.ModelData.Customize;
         foreach (var idx in Enum.GetValues<CustomizeIndex>())
         {
@@ -201,57 +205,34 @@ public class StateListener : IDisposable
 
     private void ApplyEquipmentPiece(Actor actor, ActorState state, EquipSlot slot, ref CharacterArmor armor)
     {
-        var actorArmor = actor.GetArmor(slot);
-        if (armor.Value != actorArmor.Value)
+        var changeState = UpdateBaseData(actor, state, slot, armor);
+        if (changeState is UpdateState.Transformed)
             return;
 
-        var stateArmor = state.ModelData.Item(slot);
-        if (armor.Set.Value != stateArmor.ModelId.Value || armor.Variant != stateArmor.Variant)
+        if (changeState is UpdateState.NoChange)
         {
-            var oldActorArmor = state.ActorData.Item(slot);
-            if (oldActorArmor.ModelId.Value == actorArmor.Set.Value && oldActorArmor.Variant == actorArmor.Variant)
-            {
-                armor.Set     = stateArmor.ModelId;
-                armor.Variant = stateArmor.Variant;
-            }
-            else
-            {
-                var identified = _items.Identify(slot, actorArmor.Set, actorArmor.Variant);
-                state.ActorData.SetItem(slot, identified);
-                if (state[slot, false] is not StateChanged.Source.Fixed)
-                {
-                    state.ModelData.SetItem(slot, identified);
-                    state[slot, false] = StateChanged.Source.Game;
-                }
-                else
-                {
-                    armor.Set     = stateArmor.ModelId;
-                    armor.Variant = stateArmor.Variant;
-                }
-            }
+            armor = state.ModelData.Armor(slot);
         }
-
-        var stateStain = state.ModelData.Stain(slot);
-        if (armor.Stain.Value != stateStain.Value)
+        else
         {
-            var oldActorStain = state.ActorData.Stain(slot);
-            if (oldActorStain.Value == actorArmor.Stain.Value)
+            var modelArmor = state.ModelData.Armor(slot);
+            if (armor.Value == modelArmor.Value)
+                return;
+
+            if (state[slot, false] is StateChanged.Source.Fixed)
             {
-                armor.Stain = stateStain;
+                armor.Set     = modelArmor.Set;
+                armor.Variant = modelArmor.Variant;
             }
             else
             {
-                state.ActorData.SetStain(slot, actorArmor.Stain);
-                if (state[slot, true] is not StateChanged.Source.Fixed)
-                {
-                    state.ModelData.SetStain(slot, actorArmor.Stain);
-                    state[slot, true] = StateChanged.Source.Game;
-                }
-                else
-                {
-                    armor.Stain = stateStain;
-                }
+                _manager.ChangeEquip(state, slot, state.BaseData.Item(slot), StateChanged.Source.Game);
             }
+
+            if (state[slot, true] is StateChanged.Source.Fixed)
+                armor.Stain = modelArmor.Stain;
+            else
+                _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Game);
         }
     }
 
@@ -279,5 +260,82 @@ public class StateListener : IDisposable
         _penumbra.CreatingCharacterBase -= OnCreatingCharacterBase;
         _slotUpdating.Unsubscribe(OnSlotUpdating);
         _weaponLoading.Unsubscribe(OnWeaponLoading);
+    }
+
+    private UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterArmor armor)
+    {
+        var actorArmor = actor.GetArmor(slot);
+        // The actor armor does not correspond to the model armor, thus the actor is transformed.
+        if (actorArmor.Value != armor.Value)
+            return UpdateState.Transformed;
+
+        // TODO: Hat State.
+
+        var baseData = state.BaseData.Armor(slot);
+        var change   = UpdateState.NoChange;
+        if (baseData.Stain != armor.Stain)
+        {
+            state.BaseData.SetStain(slot, armor.Stain);
+            change = UpdateState.Change;
+        }
+
+        if (baseData.Set.Value != armor.Set.Value || baseData.Variant != armor.Variant)
+        {
+            var item = _items.Identify(slot, armor.Set, armor.Variant);
+            state.BaseData.SetItem(slot, item);
+            change = UpdateState.Change;
+        }
+
+        return change;
+    }
+
+    private UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterWeapon weapon)
+    {
+        var baseData = state.BaseData.Weapon(slot);
+        var change   = UpdateState.NoChange;
+
+        if (baseData.Stain != weapon.Stain)
+        {
+            state.BaseData.SetStain(slot, weapon.Stain);
+            change = UpdateState.Change;
+        }
+
+        if (baseData.Set.Value != weapon.Set.Value || baseData.Type.Value != weapon.Type.Value || baseData.Variant != weapon.Variant)
+        {
+            var item = _items.Identify(slot, weapon.Set, weapon.Type, (byte)weapon.Variant,
+                slot is EquipSlot.OffHand ? state.BaseData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
+            state.BaseData.SetItem(slot, item);
+            change = UpdateState.Change;
+        }
+
+        return change;
+    }
+
+    private unsafe UpdateState UpdateBaseData(Actor actor, ActorState state, uint modelId, nint customizeData, nint equipData)
+    {
+        if (modelId != (uint)actor.AsCharacter->CharacterData.ModelCharaId)
+            return UpdateState.Transformed;
+
+        if (modelId == state.BaseData.ModelId)
+            return UpdateState.NoChange;
+
+        if (modelId == 0)
+            state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, (byte*)equipData);
+        else
+            state.BaseData = _manager.FromActor(actor);
+
+        return UpdateState.Change;
+    }
+
+    private UpdateState UpdateBaseData(Actor actor, ActorState state, Customize customize)
+    {
+        if (!actor.GetCustomize().Equals(customize))
+            return UpdateState.Transformed;
+
+        if (state.BaseData.Customize.Equals(customize))
+            return UpdateState.NoChange;
+
+        state.BaseData.Customize.Load(customize);
+        return UpdateState.Change;
     }
 }

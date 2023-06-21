@@ -13,14 +13,16 @@ public unsafe class PenumbraService : IDisposable
     public const int RequiredPenumbraBreakingVersion = 4;
     public const int RequiredPenumbraFeatureVersion  = 15;
 
-    private readonly DalamudPluginInterface                              _pluginInterface;
-    private readonly EventSubscriber<ChangedItemType, uint>              _tooltipSubscriber;
-    private readonly EventSubscriber<MouseButton, ChangedItemType, uint> _clickSubscriber;
-    private readonly EventSubscriber<nint, string, nint, nint, nint>     _creatingCharacterBase;
-    private readonly EventSubscriber<nint, string, nint>                 _createdCharacterBase;
-    private          ActionSubscriber<int, RedrawType>                   _redrawSubscriber;
-    private          FuncSubscriber<nint, (nint, string)>                _drawObjectInfo;
-    private          FuncSubscriber<int, int>                            _cutsceneParent;
+    private readonly DalamudPluginInterface                                  _pluginInterface;
+    private readonly EventSubscriber<ChangedItemType, uint>                  _tooltipSubscriber;
+    private readonly EventSubscriber<MouseButton, ChangedItemType, uint>     _clickSubscriber;
+    private readonly EventSubscriber<nint, string, nint, nint, nint>         _creatingCharacterBase;
+    private readonly EventSubscriber<nint, string, nint>                     _createdCharacterBase;
+    private readonly EventSubscriber<ModSettingChange, string, string, bool> _modSettingChanged;
+    private          ActionSubscriber<int, RedrawType>                       _redrawSubscriber;
+    private          FuncSubscriber<nint, (nint, string)>                    _drawObjectInfo;
+    private          FuncSubscriber<int, int>                                _cutsceneParent;
+    private          FuncSubscriber<int, (bool, bool, string)>               _objectCollection;
 
     private readonly EventSubscriber _initializedEvent;
     private readonly EventSubscriber _disposedEvent;
@@ -35,6 +37,7 @@ public unsafe class PenumbraService : IDisposable
         _clickSubscriber       = Ipc.ChangedItemClick.Subscriber(pi);
         _createdCharacterBase  = Ipc.CreatedCharacterBase.Subscriber(pi);
         _creatingCharacterBase = Ipc.CreatingCharacterBase.Subscriber(pi);
+        _modSettingChanged     = Ipc.ModSettingChanged.Subscriber(pi);
         Reattach();
     }
 
@@ -61,6 +64,22 @@ public unsafe class PenumbraService : IDisposable
     {
         add => _createdCharacterBase.Event += value;
         remove => _createdCharacterBase.Event -= value;
+    }
+
+    public event Action<ModSettingChange, string, string, bool> ModSettingChanged
+    {
+        add => _modSettingChanged.Event += value;
+        remove => _modSettingChanged.Event -= value;
+    }
+
+    /// <summary> Obtain the name of the collection currently assigned to the player. </summary>
+    public string GetCurrentPlayerCollection()
+    {
+        if (!Available)
+            return string.Empty;
+
+        var (valid, _, name) = _objectCollection.Invoke(0);
+        return valid ? name : string.Empty;
     }
 
     /// <summary> Obtain the game object corresponding to a draw object. </summary>
@@ -103,9 +122,11 @@ public unsafe class PenumbraService : IDisposable
             _clickSubscriber.Enable();
             _creatingCharacterBase.Enable();
             _createdCharacterBase.Enable();
+            _modSettingChanged.Enable();
             _drawObjectInfo   = Ipc.GetDrawObjectInfo.Subscriber(_pluginInterface);
             _cutsceneParent   = Ipc.GetCutsceneParentIndex.Subscriber(_pluginInterface);
             _redrawSubscriber = Ipc.RedrawObjectByIndex.Subscriber(_pluginInterface);
+            _objectCollection = Ipc.GetCollectionForObject.Subscriber(_pluginInterface);
             Available         = true;
             Glamourer.Log.Debug("Glamourer attached to Penumbra.");
         }
@@ -122,6 +143,7 @@ public unsafe class PenumbraService : IDisposable
         _clickSubscriber.Disable();
         _creatingCharacterBase.Disable();
         _createdCharacterBase.Disable();
+        _modSettingChanged.Disable();
         if (Available)
         {
             Available = false;
@@ -138,5 +160,6 @@ public unsafe class PenumbraService : IDisposable
         _createdCharacterBase.Dispose();
         _initializedEvent.Dispose();
         _disposedEvent.Dispose();
+        _modSettingChanged.Dispose();
     }
 }

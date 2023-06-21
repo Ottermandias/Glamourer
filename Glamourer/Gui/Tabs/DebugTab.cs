@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Customization;
 using Glamourer.Designs;
+using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
@@ -854,11 +856,81 @@ public unsafe class DebugTab : ITab
         }
     }
 
+    public void DrawState(ActorData data, ActorState state)
+    {
+        using var table = ImRaii.Table("##state", 7, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
+        if (!table)
+            return;
+
+        ImGuiUtil.DrawTableColumn("Name");
+        ImGuiUtil.DrawTableColumn(state.Identifier.ToString());
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Reset"))
+            _state.ResetState(state);
+
+        ImGui.TableNextRow();
+
+        static void PrintRow<T>(string label, T actor, T model, StateChanged.Source source) where T : notnull
+        {
+            ImGuiUtil.DrawTableColumn(label);
+            ImGuiUtil.DrawTableColumn(actor.ToString()!);
+            ImGuiUtil.DrawTableColumn(model.ToString()!);
+            ImGuiUtil.DrawTableColumn(source.ToString());
+        }
+
+        static string ItemString(in DesignData data, EquipSlot slot)
+        {
+            var item = data.Item(slot);
+            return $"{item.Name} ({item.ModelId.Value}{(item.WeaponType != 0 ? $"-{item.WeaponType.Value}" : string.Empty)}-{item.Variant})";
+        }
+
+        PrintRow("Model ID", state.BaseData.ModelId, state.ModelData.ModelId, state[ActorState.MetaFlag.ModelId]);
+        ImGui.TableNextRow();
+        PrintRow("Wetness", state.BaseData.IsWet(), state.ModelData.IsWet(), state[ActorState.MetaFlag.Wetness]);
+        ImGui.TableNextRow();
+
+        if (state.BaseData.ModelId == 0 && state.ModelData.ModelId == 0)
+        {
+            PrintRow("Hat Visible", state.BaseData.IsHatVisible(), state.ModelData.IsHatVisible(), state[ActorState.MetaFlag.HatState]);
+            ImGui.TableNextRow();
+            PrintRow("Visor Toggled", state.BaseData.IsVisorToggled(), state.ModelData.IsVisorToggled(),
+                state[ActorState.MetaFlag.VisorState]);
+            ImGui.TableNextRow();
+            PrintRow("Weapon Visible", state.BaseData.IsWeaponVisible(), state.ModelData.IsWeaponVisible(),
+                state[ActorState.MetaFlag.WeaponState]);
+            ImGui.TableNextRow();
+            foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
+            {
+                PrintRow(slot.ToName(), ItemString(state.BaseData, slot), ItemString(state.ModelData, slot), state[slot, false]);
+                ImGuiUtil.DrawTableColumn(state.BaseData.Stain(slot).Value.ToString());
+                ImGuiUtil.DrawTableColumn(state.ModelData.Stain(slot).Value.ToString());
+                ImGuiUtil.DrawTableColumn(state[slot, true].ToString());
+            }
+
+            foreach (var type in Enum.GetValues<CustomizeIndex>())
+            {
+                PrintRow(type.ToDefaultName(), state.BaseData.Customize[type].Value, state.ModelData.Customize[type].Value, state[type]);
+                ImGui.TableNextRow();
+            }
+        }
+        else
+        {
+            ImGuiUtil.DrawTableColumn(string.Join(" ", state.BaseData.GetCustomizeBytes().Select(b => b.ToString("X2"))));
+            ImGuiUtil.DrawTableColumn(string.Join(" ", state.ModelData.GetCustomizeBytes().Select(b => b.ToString("X2"))));
+            ImGui.TableNextRow();
+            ImGuiUtil.DrawTableColumn(string.Join(" ", state.BaseData.GetEquipmentBytes().Select(b => b.ToString("X2"))));
+            ImGuiUtil.DrawTableColumn(string.Join(" ", state.ModelData.GetEquipmentBytes().Select(b => b.ToString("X2"))));
+        }
+    }
+
     public static void DrawDesignData(in DesignData data)
     {
         if (data.ModelId == 0)
         {
             using var table = ImRaii.Table("##equip", 4, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
+            if (!table)
+                return;
+
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
                 var item  = data.Item(slot);
@@ -1011,7 +1083,7 @@ public unsafe class DebugTab : ITab
                 continue;
 
             if (_state.GetOrCreate(identifier, actors.Objects[0], out var state))
-                DrawDesignData(state.ModelData);
+                DrawState(actors, state);
             else
                 ImGui.TextUnformatted("Invalid actor.");
         }
@@ -1026,8 +1098,10 @@ public unsafe class DebugTab : ITab
         foreach (var (identifier, state) in _state.Where(kvp => !_objectManager.ContainsKey(kvp.Key)))
         {
             using var t = ImRaii.TreeNode(identifier.ToString());
-            if (t)
-                DrawDesignData(state.ModelData);
+            if (!t)
+                return;
+
+            DrawState(ActorData.Invalid, state);
         }
     }
 

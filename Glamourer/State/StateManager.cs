@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Security.Cryptography;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -11,6 +12,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.Structs;
+using OtterGui.Log;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -24,13 +26,15 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
     private readonly CustomizationService _customizations;
     private readonly VisorService         _visor;
     private readonly StateChanged         _event;
+    private readonly ObjectManager        _objects;
+    private readonly StateEditor          _editor;
 
     private readonly PenumbraService _penumbra;
-    
+
     private readonly Dictionary<ActorIdentifier, ActorState> _states = new();
 
     public StateManager(ActorService actors, ItemManager items, CustomizationService customizations, VisorService visor, StateChanged @event,
-        PenumbraService penumbra)
+        PenumbraService penumbra, ObjectManager objects, StateEditor editor)
     {
         _actors         = actors;
         _items          = items;
@@ -38,7 +42,8 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         _visor          = visor;
         _event          = @event;
         _penumbra       = penumbra;
-        
+        _objects        = objects;
+        _editor         = editor;
     }
 
     public bool GetOrCreate(Actor actor, [NotNullWhen(true)] out ActorState? state)
@@ -55,7 +60,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             state = new ActorState(identifier)
             {
                 ModelData = designData,
-                ActorData = designData
+                BaseData  = designData,
             };
             _states.Add(identifier, state);
             return true;
@@ -115,7 +120,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
                 UpdateEquip(state, slot, model.GetArmor(slot));
 
             state.ModelData.Customize = model.GetCustomize();
-            var (_, _, main, off) = model.GetWeapons(actor);
+            var (_, _, main, off)     = model.GetWeapons(actor);
             UpdateWeapon(state, EquipSlot.MainHand, main);
             UpdateWeapon(state, EquipSlot.OffHand,  off);
             state.ModelData.SetVisor(_visor.GetVisorState(model));
@@ -165,9 +170,9 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             return ret;
         }
 
-        if (actor.AsCharacter->ModelCharaId != 0)
+        if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
         {
-            ret.LoadNonHuman((uint)actor.AsCharacter->ModelCharaId, *(Customize*)&actor.AsCharacter->DrawData.CustomizeData,
+            ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(Customize*)&actor.AsCharacter->DrawData.CustomizeData,
                 (byte*)&actor.AsCharacter->DrawData.Head);
             return ret;
         }
@@ -242,6 +247,94 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             $"Changed customize {idx.ToDefaultName()} for {state.Identifier} ({string.Join(", ", data.Objects.Select(o => $"0x{o.Address}"))}) from {oldValue.Value} to {value.Value}.");
         _event.Invoke(StateChanged.Type.Customize, source, state, data, (oldValue, value, idx));
     }
+
+    public void ApplyDesign(Design design, ActorState state)
+    {
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+        {
+            switch (design.DoApplyEquip(slot), design.DoApplyStain(slot))
+            {
+                case (false, false): continue;
+                case (true, false):
+                    ChangeEquip(state, slot, design.DesignData.Item(slot), StateChanged.Source.Manual);
+                    break;
+                case (false, true):
+                    ChangeStain(state, slot, design.DesignData.Stain(slot), StateChanged.Source.Manual);
+                    break;
+                case (true, true):
+                    ChangeEquip(state, slot, design.DesignData.Item(slot), design.DesignData.Stain(slot), StateChanged.Source.Manual);
+                    break;
+            }
+        }
+    }
+
+    public void ResetState(ActorState state)
+    {
+        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+        {
+            ChangeEquip(state, slot, state.BaseData.Item(slot), state.BaseData.Stain(slot), StateChanged.Source.Game);
+            _editor.ChangeArmor(state, objects, slot);
+        }
+    }
+
+    public void ReapplyState(Actor actor)
+    {
+        if (!GetOrCreate(actor, out var state))
+            return;
+
+        _objects.Update();
+        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+            _editor.ChangeArmor(state, objects, slot);
+    }
+
+    public void ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StateChanged.Source source)
+    {
+        var old = state.ModelData.Item(slot);
+        state.ModelData.SetItem(slot, item);
+        state[slot, false] = source;
+        _objects.Update();
+        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
+        if (source is StateChanged.Source.Manual)
+            _editor.ChangeArmor(state, objects, slot);
+        Glamourer.Log.Verbose(
+            $"Set {slot.ToName()} equipment piece in state {state.Identifier} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}). [Affecting {objects.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Equip, source, state, objects, (old, item, slot));
+    }
+
+    public void ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainId stain, StateChanged.Source source)
+    {
+        var old      = state.ModelData.Item(slot);
+        var oldStain = state.ModelData.Stain(slot);
+        state.ModelData.SetItem(slot, item);
+        state.ModelData.SetStain(slot, stain);
+        state[slot, false] = source;
+        state[slot, true]  = source;
+        _objects.Update();
+        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
+        if (source is StateChanged.Source.Manual)
+            _editor.ChangeArmor(state, objects, slot);
+        Glamourer.Log.Verbose(
+            $"Set {slot.ToName()} equipment piece in state {state.Identifier} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}) and its stain from {oldStain.Value} to {stain.Value}. [Affecting {objects.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Equip, source, state, objects, (old, item, slot));
+        _event.Invoke(StateChanged.Type.Stain, source, state, objects, (oldStain, stain, slot));
+    }
+
+    public void ChangeStain(ActorState state, EquipSlot slot, StainId stain, StateChanged.Source source)
+    {
+        var old = state.ModelData.Stain(slot);
+        state.ModelData.SetStain(slot, stain);
+        state[slot, true] = source;
+        _objects.Update();
+        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
+        if (source is StateChanged.Source.Manual)
+            _editor.ChangeArmor(state, objects, slot);
+        Glamourer.Log.Verbose(
+            $"Set {slot.ToName()} stain in state {state.Identifier} from {old.Value} to {stain.Value}. [Affecting {objects.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Stain, source, state, objects, (old, stain, slot));
+    }
+
     //
     ///// <summary> Change whether to apply a specific customize value. </summary>
     //public void ChangeApplyCustomize(Design design, CustomizeIndex idx, bool value)
@@ -255,21 +348,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
     //    _event.Invoke(DesignChanged.Type.ApplyCustomize, design, idx);
     //}
     //
-    ///// <summary> Change a non-weapon equipment piece. </summary>
-    //public void ChangeEquip(Design design, EquipSlot slot, EquipItem item)
-    //{
-    //    if (_items.ValidateItem(slot, item.Id, out item).Length > 0)
-    //        return;
-    //
-    //    var old = design.DesignData.Item(slot);
-    //    if (!design.DesignData.SetItem(slot, item))
-    //        return;
-    //
-    //    Glamourer.Log.Debug(
-    //        $"Set {slot.ToName()} equipment piece in design {design.Identifier} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}).");
-    //    _saveService.QueueSave(design);
-    //    _event.Invoke(DesignChanged.Type.Equip, design, (old, item, slot));
-    //}
+
     //
     ///// <summary> Change a weapon. </summary>
     //public void ChangeWeapon(Design design, EquipSlot slot, EquipItem item)

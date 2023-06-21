@@ -69,7 +69,8 @@ public static class ServiceManager
             .AddSingleton<UpdateSlotService>()
             .AddSingleton<WeaponService>()
             .AddSingleton<PenumbraService>()
-            .AddSingleton<ObjectManager>();
+            .AddSingleton<ObjectManager>()
+            .AddSingleton<PenumbraAutoRedraw>();
 
     private static IServiceCollection AddDesigns(this IServiceCollection services)
         => services.AddSingleton<DesignManager>()
@@ -77,6 +78,7 @@ public static class ServiceManager
 
     private static IServiceCollection AddState(this IServiceCollection services)
         => services.AddSingleton<StateManager>()
+            .AddSingleton<StateEditor>()
             .AddSingleton<StateListener>();
 
     private static IServiceCollection AddUi(this IServiceCollection services)

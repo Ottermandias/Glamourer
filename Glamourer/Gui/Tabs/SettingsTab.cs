@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using Dalamud.Interface;
 using Glamourer.Gui.Tabs.DesignTab;
+using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
@@ -15,12 +16,14 @@ public class SettingsTab : ITab
     private readonly Configuration            _config;
     private readonly DesignFileSystemSelector _selector;
     private readonly StateListener            _stateListener;
+    private readonly PenumbraAutoRedraw       _autoRedraw;
 
-    public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener)
+    public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener, PenumbraAutoRedraw autoRedraw)
     {
-        _config             = config;
-        _selector           = selector;
+        _config        = config;
+        _selector      = selector;
         _stateListener = stateListener;
+        _autoRedraw    = autoRedraw;
     }
 
     public ReadOnlySpan<byte> Label
@@ -31,10 +34,14 @@ public class SettingsTab : ITab
         using var child = ImRaii.Child("MainWindowChild");
         if (!child)
             return;
+
         Checkbox("Enabled", "Enable main functionality of keeping and applying state.", _stateListener.Enabled, _stateListener.Enable);
         Checkbox("Restricted Gear Protection",
             "Use gender- and race-appropriate models when detecting certain items not available for a characters current gender and race.",
             _config.UseRestrictedGearProtection, v => _config.UseRestrictedGearProtection = v);
+        Checkbox("Auto-Reload Gear",
+            "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection.",
+            _config.AutoRedrawEquipOnChanges, _autoRedraw.SetState);
         if (Widget.DoubleModifierSelector("Design Deletion Modifier",
                 "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
                 _config.DeleteDesignModifier, v => _config.DeleteDesignModifier = v))

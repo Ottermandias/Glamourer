@@ -5,6 +5,7 @@ using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Glamourer.Interop;
 
@@ -31,24 +32,18 @@ public unsafe class UpdateSlotService : IDisposable
     {
         if (!drawObject.IsCharacterBase)
             return;
+
         FlagSlotForUpdateInterop(drawObject, slot, data);
     }
 
-    public void UpdateArmor(Model drawObject, EquipSlot slot, CharacterArmor data)
-    {
-        if (!drawObject.IsCharacterBase)
-            return;
+    public void UpdateArmor(Model drawObject, EquipSlot slot, CharacterArmor armor, StainId stain)
+        => UpdateSlot(drawObject, slot, armor.With(stain));
 
-        FlagSlotForUpdateInterop(drawObject, slot, data.With(drawObject.GetArmor(slot).Stain));
-    }
+    public void UpdateArmor(Model drawObject, EquipSlot slot, CharacterArmor armor)
+        => UpdateArmor(drawObject, slot, armor, drawObject.GetArmor(slot).Stain);
 
     public void UpdateStain(Model drawObject, EquipSlot slot, StainId stain)
-    {
-        if (!drawObject.IsHuman)
-            return;
-
-        FlagSlotForUpdateInterop(drawObject, slot, drawObject.GetArmor(slot).With(stain));
-    }
+        => UpdateArmor(drawObject, slot, drawObject.GetArmor(slot), stain);
 
     private ulong FlagSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
     {

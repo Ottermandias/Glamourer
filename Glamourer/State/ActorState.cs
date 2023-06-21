@@ -17,14 +17,20 @@ public class ActorState
         HatState,
         VisorState,
         WeaponState,
+        ModelId,
     }
 
     public ActorIdentifier Identifier { get; internal init; }
-    public DesignData      ActorData;
-    public DesignData      ModelData;
 
+    /// <summary> This should always represent the unmodified state of the draw object. </summary>
+    public DesignData BaseData;
+
+    /// <summary> This should be the desired state of the draw object. </summary>
+    public DesignData ModelData;
+
+    /// <summary> This contains whether a change to the base data was made by the game, the user via manual input or through automatic application. </summary>
     private readonly StateChanged.Source[] _sources = Enumerable
-        .Repeat(StateChanged.Source.Game, EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 4).ToArray();
+        .Repeat(StateChanged.Source.Game, EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5).ToArray();
 
     internal ActorState(ActorIdentifier identifier)
         => Identifier = identifier;

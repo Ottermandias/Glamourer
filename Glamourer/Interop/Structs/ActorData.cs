@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using OtterGui.Log;
 
 namespace Glamourer.Interop.Structs;
 
@@ -8,7 +10,7 @@ namespace Glamourer.Interop.Structs;
 public readonly struct ActorData
 {
     public readonly List<Actor> Objects;
-    public readonly string Label;
+    public readonly string      Label;
 
     public bool Valid
         => Objects.Count > 0;
@@ -16,7 +18,7 @@ public readonly struct ActorData
     public ActorData(Actor actor, string label)
     {
         Objects = new List<Actor> { actor };
-        Label = label;
+        Label   = label;
     }
 
     public static readonly ActorData Invalid = new(false);
@@ -24,6 +26,14 @@ public readonly struct ActorData
     private ActorData(bool _)
     {
         Objects = new List<Actor>(0);
-        Label = string.Empty;
+        Label   = string.Empty;
+    }
+
+    public LazyString ToLazyString(string invalid)
+    {
+        var objects = Objects;
+        return Valid
+            ? new LazyString(() => string.Join(", ", objects.Select(o => o.ToString())))
+            : new LazyString(() => invalid);
     }
 }

@@ -72,4 +72,22 @@ public static class EquipFlagExtensions
             EquipSlot.LFinger  => EquipFlag.LFingerStain,
             _                  => 0,
         };
+
+    public static EquipFlag ToBothFlags(this EquipSlot slot)
+        => slot switch
+        {
+            EquipSlot.MainHand => EquipFlag.Mainhand | EquipFlag.MainhandStain,
+            EquipSlot.OffHand  => EquipFlag.Offhand | EquipFlag.OffhandStain,
+            EquipSlot.Head     => EquipFlag.Head | EquipFlag.HeadStain,
+            EquipSlot.Body     => EquipFlag.Body | EquipFlag.BodyStain,
+            EquipSlot.Hands    => EquipFlag.Hands | EquipFlag.HandsStain,
+            EquipSlot.Legs     => EquipFlag.Legs | EquipFlag.LegsStain,
+            EquipSlot.Feet     => EquipFlag.Feet | EquipFlag.FeetStain,
+            EquipSlot.Ears     => EquipFlag.Ears | EquipFlag.EarsStain,
+            EquipSlot.Neck     => EquipFlag.Neck | EquipFlag.NeckStain,
+            EquipSlot.Wrists   => EquipFlag.Wrist | EquipFlag.WristStain,
+            EquipSlot.RFinger  => EquipFlag.RFinger | EquipFlag.RFingerStain,
+            EquipSlot.LFinger  => EquipFlag.LFinger | EquipFlag.LFingerStain,
+            _                  => 0,
+        };
 }

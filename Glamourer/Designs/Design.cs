@@ -37,7 +37,7 @@ public class Design : ISavable
 
     /// <summary> Unconditionally apply a design to a designdata. </summary>
     /// <returns>Whether a redraw is required for the changes to take effect.</returns>
-    public bool ApplyDesign(ref DesignData data)
+    public (bool, CustomizeFlag, EquipFlag) ApplyDesign(ref DesignData data)
     {
         var modelChanged = data.ModelId != DesignData.ModelId;
         data.ModelId = DesignData.ModelId;
@@ -52,13 +52,16 @@ public class Design : ISavable
                 customizeFlags |= index.ToFlag();
         }
 
+        EquipFlag equipFlags = 0;
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
         {
             if (DoApplyEquip(slot))
-                data.SetItem(slot, DesignData.Item(slot));
+                if (data.SetItem(slot, DesignData.Item(slot)))
+                    equipFlags |= slot.ToFlag();
 
             if (DoApplyStain(slot))
-                data.SetStain(slot, DesignData.Stain(slot));
+                if (data.SetStain(slot, DesignData.Stain(slot)))
+                    equipFlags |= slot.ToStainFlag();
         }
 
         if (DoApplyHatVisible())
@@ -72,7 +75,7 @@ public class Design : ISavable
 
         if (DoApplyWetness())
             data.SetIsWet(DesignData.IsWet());
-        return modelChanged || customizeFlags.RequiresRedraw();
+        return (modelChanged, customizeFlags, equipFlags);
     }
 
     #endregion
