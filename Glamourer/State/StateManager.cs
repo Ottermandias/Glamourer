@@ -12,6 +12,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.Structs;
+using Lumina.Excel.GeneratedSheets;
 using OtterGui.Log;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
@@ -266,6 +267,14 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
                     break;
             }
         }
+        if (design.DoApplyHatVisible())
+            ChangeHatState(state, design.DesignData.IsHatVisible(), StateChanged.Source.Manual);
+        if (design.DoApplyWeaponVisible())
+            ChangeWeaponState(state, design.DesignData.IsWeaponVisible(), StateChanged.Source.Manual);
+        if (design.DoApplyVisorToggle())
+            ChangeVisorState(state, design.DesignData.IsVisorToggled(), StateChanged.Source.Manual);
+        if (design.DoApplyWetness())
+            ChangeWetness(state, design.DesignData.IsWet());
     }
 
     public void ResetState(ActorState state)
@@ -333,6 +342,61 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} stain in state {state.Identifier} from {old.Value} to {stain.Value}. [Affecting {objects.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Stain, source, state, objects, (old, stain, slot));
+    }
+
+    public void ChangeHatState(ActorState state, bool value, StateChanged.Source source)
+    {
+        var old = state.ModelData.IsHatVisible();
+        state.ModelData.SetHatVisible(value);
+        state[ActorState.MetaFlag.HatState] = source;
+        _objects.Update();
+        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
+        if (source is StateChanged.Source.Manual)
+            _editor.ChangeHatState(objects, value);
+        Glamourer.Log.Verbose(
+            $"Set Head Gear Visibility in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaFlag.HatState));
+    }
+
+    public void ChangeWeaponState(ActorState state, bool value, StateChanged.Source source)
+    {
+        var old = state.ModelData.IsWeaponVisible();
+        state.ModelData.SetWeaponVisible(value);
+        state[ActorState.MetaFlag.WeaponState] = source;
+        _objects.Update();
+        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
+        if (source is StateChanged.Source.Manual)
+            _editor.ChangeWeaponState(objects, value);
+        Glamourer.Log.Verbose(
+            $"Set Weapon Visibility in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaFlag.WeaponState));
+    }
+
+    public void ChangeVisorState(ActorState state, bool value, StateChanged.Source source)
+    {
+        var old = state.ModelData.IsVisorToggled();
+        state.ModelData.SetVisor(value);
+        state[ActorState.MetaFlag.VisorState] = source;
+        _objects.Update();
+        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
+        if (source is StateChanged.Source.Manual)
+            _editor.ChangeVisor(objects, value);
+        Glamourer.Log.Verbose(
+            $"Set Visor State in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaFlag.VisorState));
+    }
+
+    public void ChangeWetness(ActorState state, bool value)
+    {
+        var old = state.ModelData.IsWet();
+        state.ModelData.SetIsWet(value);
+        state[ActorState.MetaFlag.Wetness] = value ? StateChanged.Source.Manual : StateChanged.Source.Game;
+        _objects.Update();
+        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
+        _editor.ChangeWetness(objects, value);
+        Glamourer.Log.Verbose(
+            $"Set Wetness in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Other, state[ActorState.MetaFlag.Wetness], state, objects, (old, value, ActorState.MetaFlag.Wetness));
     }
 
     //

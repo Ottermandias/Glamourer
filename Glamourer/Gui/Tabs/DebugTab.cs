@@ -32,6 +32,7 @@ public unsafe class DebugTab : ITab
     private readonly ChangeCustomizeService _changeCustomizeService;
     private readonly UpdateSlotService      _updateSlotService;
     private readonly WeaponService          _weaponService;
+    private readonly MetaService            _metaService;
     private readonly PenumbraService        _penumbra;
     private readonly ObjectTable            _objects;
     private readonly ObjectManager          _objectManager;
@@ -56,7 +57,7 @@ public unsafe class DebugTab : ITab
         UpdateSlotService updateSlotService, WeaponService weaponService, PenumbraService penumbra,
         ActorService actors, ItemManager items, CustomizationService customization, ObjectManager objectManager,
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
-        PenumbraChangedItemTooltip penumbraTooltip)
+        PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -73,6 +74,7 @@ public unsafe class DebugTab : ITab
         _state                  = state;
         _config                 = config;
         _penumbraTooltip        = penumbraTooltip;
+        _metaService       = metaService;
     }
 
     public ReadOnlySpan<byte> Label

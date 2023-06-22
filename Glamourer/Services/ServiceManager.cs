@@ -54,7 +54,9 @@ public static class ServiceManager
             .AddSingleton<SlotUpdating>()
             .AddSingleton<DesignChanged>()
             .AddSingleton<StateChanged>()
-            .AddSingleton<WeaponLoading>();
+            .AddSingleton<WeaponLoading>()
+            .AddSingleton<HeadGearVisibilityChanged>()
+            .AddSingleton<WeaponVisibilityChanged>();
 
     private static IServiceCollection AddData(this IServiceCollection services)
         => services.AddSingleton<IdentifierService>()
@@ -66,6 +68,7 @@ public static class ServiceManager
     private static IServiceCollection AddInterop(this IServiceCollection services)
         => services.AddSingleton<VisorService>()
             .AddSingleton<ChangeCustomizeService>()
+            .AddSingleton<MetaService>()
             .AddSingleton<UpdateSlotService>()
             .AddSingleton<WeaponService>()
             .AddSingleton<PenumbraService>()

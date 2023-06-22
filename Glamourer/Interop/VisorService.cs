@@ -4,6 +4,7 @@ using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Interop;
 
@@ -39,7 +40,7 @@ public class VisorService : IDisposable
         if (oldState == on)
             return false;
 
-        SetupVisorHook(human, (ushort)human.AsHuman->HeadSetID, on);
+        SetupVisorHook(human, human.GetArmor(EquipSlot.Head).Set.Value, on);
         return true;
     }
 
@@ -50,17 +51,15 @@ public class VisorService : IDisposable
 
     private void SetupVisorDetour(nint human, ushort modelId, bool on)
     {
-        var callOriginal = true;
         var originalOn   = on;
         // Invoke an event that can change the requested value
         // and also control whether the function should be called at all.
-        Event.Invoke(human, ref on, ref callOriginal);
+        Event.Invoke(human, ref on);
 
         Glamourer.Log.Excessive(
-            $"[SetVisorState] Invoked from game on 0x{human:X} switching to {on} (original {originalOn}, call original {callOriginal}).");
+            $"[SetVisorState] Invoked from game on 0x{human:X} switching to {on} (original {originalOn}).");
 
-        if (callOriginal)
-            SetupVisorHook(human, modelId, on);
+        SetupVisorHook(human, modelId, on);
     }
 
     /// <summary>

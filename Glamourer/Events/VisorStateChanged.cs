@@ -12,21 +12,22 @@ namespace Glamourer.Events;
 ///     <item>Parameter is whether to call the original function. </item>
 /// </list>
 /// </summary>
-public sealed class VisorStateChanged : EventWrapper<Action<Model, Ref<bool>, Ref<bool>>, VisorStateChanged.Priority>
+public sealed class VisorStateChanged : EventWrapper<Action<Model, Ref<bool>>, VisorStateChanged.Priority>
 {
     public enum Priority
-    { }
+    {
+        /// <seealso cref="State.StateListener.OnVisorChange"/>
+        StateListener = 0,
+    }
 
     public VisorStateChanged()
         : base(nameof(VisorStateChanged))
     { }
 
-    public void Invoke(Model model, ref bool state, ref bool callOriginal)
+    public void Invoke(Model model, ref bool state)
     {
         var value    = new Ref<bool>(state);
-        var original = new Ref<bool>(callOriginal);
-        Invoke(this, model, value, original);
+        Invoke(this, model, value);
         state        = value;
-        callOriginal = original;
     }
 }

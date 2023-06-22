@@ -12,13 +12,16 @@ namespace Glamourer.State;
 
 public class StateListener : IDisposable
 {
-    private readonly Configuration   _config;
-    private readonly ActorService    _actors;
-    private readonly StateManager    _manager;
-    private readonly ItemManager     _items;
-    private readonly PenumbraService _penumbra;
-    private readonly SlotUpdating    _slotUpdating;
-    private readonly WeaponLoading   _weaponLoading;
+    private readonly Configuration             _config;
+    private readonly ActorService              _actors;
+    private readonly StateManager              _manager;
+    private readonly ItemManager               _items;
+    private readonly PenumbraService           _penumbra;
+    private readonly SlotUpdating              _slotUpdating;
+    private readonly WeaponLoading             _weaponLoading;
+    private readonly HeadGearVisibilityChanged _headGearVisibility;
+    private readonly VisorStateChanged         _visorState;
+    private readonly WeaponVisibilityChanged   _weaponVisibility;
 
     public bool Enabled
     {
@@ -27,15 +30,19 @@ public class StateListener : IDisposable
     }
 
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
-        SlotUpdating slotUpdating, WeaponLoading weaponLoading)
+        SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
+        HeadGearVisibilityChanged headGearVisibility)
     {
-        _manager       = manager;
-        _items         = items;
-        _penumbra      = penumbra;
-        _actors        = actors;
-        _config        = config;
-        _slotUpdating  = slotUpdating;
-        _weaponLoading = weaponLoading;
+        _manager            = manager;
+        _items              = items;
+        _penumbra           = penumbra;
+        _actors             = actors;
+        _config             = config;
+        _slotUpdating       = slotUpdating;
+        _weaponLoading      = weaponLoading;
+        _visorState         = visorState;
+        _weaponVisibility   = weaponVisibility;
+        _headGearVisibility = headGearVisibility;
 
         if (Enabled)
             Subscribe();
@@ -253,6 +260,9 @@ public class StateListener : IDisposable
         _penumbra.CreatingCharacterBase += OnCreatingCharacterBase;
         _slotUpdating.Subscribe(OnSlotUpdating, SlotUpdating.Priority.StateListener);
         _weaponLoading.Subscribe(OnWeaponLoading, WeaponLoading.Priority.StateListener);
+        _visorState.Subscribe(OnVisorChange, VisorStateChanged.Priority.StateListener);
+        _headGearVisibility.Subscribe(OnHeadGearVisibilityChange, HeadGearVisibilityChanged.Priority.StateListener);
+        _weaponVisibility.Subscribe(OnWeaponVisibilityChange, WeaponVisibilityChanged.Priority.StateListener);
     }
 
     private void Unsubscribe()
@@ -260,16 +270,18 @@ public class StateListener : IDisposable
         _penumbra.CreatingCharacterBase -= OnCreatingCharacterBase;
         _slotUpdating.Unsubscribe(OnSlotUpdating);
         _weaponLoading.Unsubscribe(OnWeaponLoading);
+        _visorState.Unsubscribe(OnVisorChange);
+        _headGearVisibility.Unsubscribe(OnHeadGearVisibilityChange);
+        _weaponVisibility.Unsubscribe(OnWeaponVisibilityChange);
     }
 
     private UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterArmor armor)
     {
         var actorArmor = actor.GetArmor(slot);
         // The actor armor does not correspond to the model armor, thus the actor is transformed.
+        // This also prevents it from changing values due to hat state.
         if (actorArmor.Value != armor.Value)
             return UpdateState.Transformed;
-
-        // TODO: Hat State.
 
         var baseData = state.BaseData.Armor(slot);
         var change   = UpdateState.NoChange;
@@ -337,5 +349,69 @@ public class StateListener : IDisposable
 
         state.BaseData.Customize.Load(customize);
         return UpdateState.Change;
+    }
+
+    private void OnVisorChange(Model model, Ref<bool> value)
+    {
+        var actor = _penumbra.GameObjectFromDrawObject(model);
+        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
+            return;
+
+        if (!_manager.TryGetValue(identifier, out var state))
+            return;
+
+        if (state.BaseData.SetVisor(value))
+        {
+            if (state[ActorState.MetaFlag.VisorState] is StateChanged.Source.Fixed)
+                value.Value = state.ModelData.IsVisorToggled();
+            else
+                _manager.ChangeVisorState(state, value, StateChanged.Source.Game);
+        }
+        else
+        {
+            value.Value = state.ModelData.IsVisorToggled();
+        }
+    }
+
+    private void OnHeadGearVisibilityChange(Actor actor, Ref<bool> value)
+    {
+        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
+            return;
+
+        if (!_manager.TryGetValue(identifier, out var state))
+            return;
+
+        if (state.BaseData.SetHatVisible(value))
+        {
+            if (state[ActorState.MetaFlag.HatState] is StateChanged.Source.Fixed)
+                value.Value = state.ModelData.IsHatVisible();
+            else
+                _manager.ChangeHatState(state, value, StateChanged.Source.Game);
+        }
+        else
+        {
+            value.Value = state.ModelData.IsHatVisible();
+        }
+    }
+
+    private void OnWeaponVisibilityChange(Actor actor, Ref<bool> value)
+    {
+        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
+            return;
+
+        if (!_manager.TryGetValue(identifier, out var state))
+            return;
+
+        if (state.BaseData.SetWeaponVisible(value))
+        {
+            if (state[ActorState.MetaFlag.WeaponState] is StateChanged.Source.Fixed)
+                value.Value = state.ModelData.IsWeaponVisible();
+            else
+                _manager.ChangeWeaponState(state, value, StateChanged.Source.Game);
+        }
+        else
+        {
+            value.Value = state.ModelData.IsWeaponVisible();
+        }
     }
 }
