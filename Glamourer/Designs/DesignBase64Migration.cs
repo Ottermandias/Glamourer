@@ -81,7 +81,7 @@ public static class DesignBase64Migration
                 data.SetItem(EquipSlot.MainHand, main);
                 data.SetStain(EquipSlot.MainHand, cur[0].Stain);
                 var off = items.Identify(EquipSlot.OffHand, cur[1].Set, cur[1].Type, (byte)cur[1].Variant, main.Type);
-                if (!off.Valid)
+                if (main.Type.Offhand() != FullEquipType.Unknown && !off.Valid)
                     throw new Exception($"Base64 string invalid, weapon could not be identified.");
 
                 data.SetItem(EquipSlot.OffHand, off);

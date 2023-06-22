@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin;
+using Glamourer.Api;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui;
@@ -99,5 +100,6 @@ public static class ServiceManager
             .AddSingleton<PenumbraChangedItemTooltip>();
 
     private static IServiceCollection AddApi(this IServiceCollection services)
-        => services.AddSingleton<CommandService>();
+        => services.AddSingleton<CommandService>()
+            .AddSingleton<GlamourerIpc>();
 }

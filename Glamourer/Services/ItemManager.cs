@@ -186,7 +186,7 @@ public class ItemManager : IDisposable
     public bool IsOffhandValid(FullEquipType offType, uint offId, out EquipItem off)
     {
         off = Resolve(offType, offId);
-        return off.Valid;
+        return offType == FullEquipType.Unknown || off.Valid;
     }
 
     /// <summary> Returns whether an offhand is valid given mainhand. </summary>
