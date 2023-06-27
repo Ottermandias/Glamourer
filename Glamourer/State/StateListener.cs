@@ -1,4 +1,5 @@
 ﻿using System;
+using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
@@ -10,6 +11,11 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
 
+/// <summary>
+/// This class handles all game events that could cause a drawn model to change,
+/// it always updates the base state for existing states,
+/// and either discards the changes or updates the model state too.
+/// </summary>
 public class StateListener : IDisposable
 {
     private readonly Configuration             _config;
@@ -22,6 +28,7 @@ public class StateListener : IDisposable
     private readonly HeadGearVisibilityChanged _headGearVisibility;
     private readonly VisorStateChanged         _visorState;
     private readonly WeaponVisibilityChanged   _weaponVisibility;
+    private readonly AutoDesignApplier         _autoDesignApplier;
 
     public bool Enabled
     {
@@ -31,7 +38,7 @@ public class StateListener : IDisposable
 
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
-        HeadGearVisibilityChanged headGearVisibility)
+        HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier)
     {
         _manager            = manager;
         _items              = items;
@@ -43,6 +50,7 @@ public class StateListener : IDisposable
         _visorState         = visorState;
         _weaponVisibility   = weaponVisibility;
         _headGearVisibility = headGearVisibility;
+        _autoDesignApplier  = autoDesignApplier;
 
         if (Enabled)
             Subscribe();
@@ -68,48 +76,83 @@ public class StateListener : IDisposable
             Unsubscribe();
     }
 
+    /// <summary> The result of updating the base state of an ActorState. </summary>
     private enum UpdateState
     {
+        /// <summary> The base state is the same as prior state. </summary>
         NoChange,
+
+        /// <summary> The game requests an update to a state that does not agree with the actor state. </summary>
         Transformed,
+
+        /// <summary> The base state changed compared to prior state. </summary>
         Change,
     }
 
+    /// <summary>
+    /// Invoked when a new draw object is created from a game object.
+    /// We need to update all state: Model ID, Customize and Equipment.
+    /// Weapons and meta flags are updated independently.
+    /// We also need to apply fixed designs here (TODO).
+    /// </summary>
     private unsafe void OnCreatingCharacterBase(nint actorPtr, string _, nint modelPtr, nint customizePtr, nint equipDataPtr)
     {
-        // TODO: Fixed Designs.
         var actor      = (Actor)actorPtr;
         var identifier = actor.GetIdentifier(_actors.AwaitedService);
 
         var     modelId   = *(uint*)modelPtr;
         ref var customize = ref *(Customize*)customizePtr;
         if (_manager.TryGetValue(identifier, out var state))
+        {
+            _autoDesignApplier.Reduce(actor, identifier, state);
             switch (UpdateBaseData(actor, state, modelId, customizePtr, equipDataPtr))
             {
                 case UpdateState.Change:      break;
                 case UpdateState.Transformed: break;
                 case UpdateState.NoChange:
-                    UpdateBaseData(actor, state, customize);
+                    switch (UpdateBaseData(actor, state, customize))
+                    {
+                        case UpdateState.Transformed: break;
+                        case UpdateState.Change:      break;
+                        case UpdateState.NoChange:
+                            customize = state.ModelData.Customize;
+                            break;
+                    }
+
+                    foreach (var slot in EquipSlotExtensions.EqdpSlots)
+                        HandleEquipSlot(actor, state, slot, ref ((CharacterArmor*)equipDataPtr)[slot.ToIndex()]);
+
                     break;
             }
+        }
 
-        if (_config.UseRestrictedGearProtection && modelId == 0)
+        if (modelId == 0)
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
     }
 
+    /// <summary>
+    /// A draw model loads a new equipment piece.
+    /// Update base data, apply or update model data, and protect against restricted gear.
+    /// </summary>
     private void OnSlotUpdating(Model model, EquipSlot slot, Ref<CharacterArmor> armor, Ref<ulong> returnValue)
     {
-        // TODO handle hat state
-        var actor     = _penumbra.GameObjectFromDrawObject(model);
-        var customize = model.GetCustomize();
+        var actor = _penumbra.GameObjectFromDrawObject(model);
         if (actor.Identifier(_actors.AwaitedService, out var identifier)
          && _manager.TryGetValue(identifier, out var state))
-            ApplyEquipmentPiece(actor, state, slot, ref armor.Value);
+            HandleEquipSlot(actor, state, slot, ref armor.Value);
 
-        if (_config.UseRestrictedGearProtection)
-            (_, armor.Value) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
+        if (!_config.UseRestrictedGearProtection)
+            return;
+
+        var customize = model.GetCustomize();
+        (_, armor.Value) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
     }
 
+    /// <summary>
+    /// A game object loads a new weapon.
+    /// Update base data, apply or update model data.
+    /// Verify consistent weapon types.
+    /// </summary>
     private void OnWeaponLoading(Actor actor, EquipSlot slot, Ref<CharacterWeapon> weapon)
     {
         if (!actor.Identifier(_actors.AwaitedService, out var identifier)
@@ -117,134 +160,283 @@ public class StateListener : IDisposable
             return;
 
         ref var actorWeapon = ref weapon.Value;
-        var     stateItem   = state.ModelData.Item(slot);
-        if (actorWeapon.Set.Value != stateItem.ModelId.Value
-         || actorWeapon.Type.Value != stateItem.WeaponType
-         || actorWeapon.Variant != stateItem.Variant)
+        var     baseType    = state.BaseData.Item(slot).Type;
+        var     apply       = false;
+        switch (UpdateBaseData(actor, state, slot, actorWeapon))
         {
-            var oldActorItem = state.BaseData.Item(slot);
-            if (oldActorItem.ModelId.Value == actorWeapon.Set.Value
-             && oldActorItem.WeaponType.Value == actorWeapon.Type.Value
-             && oldActorItem.Variant == actorWeapon.Variant)
-            {
-                actorWeapon.Set     = stateItem.ModelId;
-                actorWeapon.Type    = stateItem.WeaponType;
-                actorWeapon.Variant = stateItem.Variant;
-            }
-            else
-            {
-                var identified = _items.Identify(slot, actorWeapon.Set, actorWeapon.Type, (byte)actorWeapon.Variant,
-                    slot == EquipSlot.OffHand ? state.BaseData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
-                state.BaseData.SetItem(slot, identified);
+            // Do nothing. But this usually can not happen because the hooked function also writes to game objects later.
+            case UpdateState.Transformed: break;
+            case UpdateState.Change:
                 if (state[slot, false] is not StateChanged.Source.Fixed)
                 {
-                    state.ModelData.SetItem(slot, identified);
+                    state.ModelData.SetItem(slot, state.BaseData.Item(slot));
                     state[slot, false] = StateChanged.Source.Game;
                 }
                 else
                 {
-                    actorWeapon.Set     = stateItem.ModelId;
-                    actorWeapon.Type    = stateItem.Variant;
-                    actorWeapon.Variant = stateItem.Variant;
+                    apply = true;
                 }
-            }
-        }
 
-        var stateStain = state.ModelData.Stain(slot);
-        if (actorWeapon.Stain.Value != stateStain.Value)
-        {
-            var oldActorStain = state.BaseData.Stain(slot);
-            if (state[slot, true] is not StateChanged.Source.Fixed)
-            {
-                state.ModelData.SetStain(slot, actorWeapon.Stain);
-                state[slot, true] = StateChanged.Source.Game;
-            }
-            else
-            {
-                actorWeapon.Stain = stateStain;
-            }
-        }
-    }
-
-
-    private void ApplyCustomize(Actor actor, ActorState state, ref Customize customize)
-    {
-        var     actorCustomize    = actor.GetCustomize();
-        ref var oldActorCustomize = ref state.BaseData.Customize;
-        ref var stateCustomize    = ref state.ModelData.Customize;
-        foreach (var idx in Enum.GetValues<CustomizeIndex>())
-        {
-            var value      = customize[idx];
-            var actorValue = actorCustomize[idx];
-            if (value.Value != actorValue.Value)
-                continue;
-
-            var stateValue = stateCustomize[idx];
-            if (value.Value == stateValue.Value)
-                continue;
-
-            if (oldActorCustomize[idx].Value == actorValue.Value)
-            {
-                customize[idx] = stateValue;
-            }
-            else
-            {
-                oldActorCustomize[idx] = actorValue;
-                if (state[idx] is StateChanged.Source.Fixed)
+                if (state[slot, false] is not StateChanged.Source.Fixed)
                 {
-                    state.ModelData.Customize[idx] = value;
-                    state[idx]                     = StateChanged.Source.Game;
+                    state.ModelData.SetStain(slot, state.BaseData.Stain(slot));
+                    state[slot, true] = StateChanged.Source.Game;
                 }
                 else
                 {
-                    customize[idx] = stateValue;
+                    apply = true;
                 }
-            }
+
+                break;
+            case UpdateState.NoChange:
+                apply = true;
+                break;
+        }
+
+        if (apply)
+        {
+            // Only allow overwriting identical weapons
+            var newWeapon = state.ModelData.Weapon(slot);
+            if (baseType is FullEquipType.Unknown || baseType == state.ModelData.Item(slot).Type)
+                actorWeapon = newWeapon;
+            else if (actorWeapon.Set.Value != 0)
+                actorWeapon = actorWeapon.With(newWeapon.Stain);
         }
     }
 
-    private unsafe void ApplyEquipment(Actor actor, ActorState state, CharacterArmor* equipData)
+    /// <summary> Update base data for a single changed equipment slot. </summary>
+    private UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterArmor armor)
     {
-        // TODO: Handle hat state
-        foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            ApplyEquipmentPiece(actor, state, slot, ref *equipData++);
+        var actorArmor = actor.GetArmor(slot);
+        // The actor armor does not correspond to the model armor, thus the actor is transformed.
+        // This also prevents it from changing values due to hat state.
+        if (actorArmor.Value != armor.Value)
+            return UpdateState.Transformed;
+
+        var baseData = state.BaseData.Armor(slot);
+        var change   = UpdateState.NoChange;
+        if (baseData.Stain != armor.Stain)
+        {
+            state.BaseData.SetStain(slot, armor.Stain);
+            change = UpdateState.Change;
+        }
+
+        if (baseData.Set.Value != armor.Set.Value || baseData.Variant != armor.Variant)
+        {
+            var item = _items.Identify(slot, armor.Set, armor.Variant);
+            state.BaseData.SetItem(slot, item);
+            change = UpdateState.Change;
+        }
+
+        return change;
     }
 
-    private void ApplyEquipmentPiece(Actor actor, ActorState state, EquipSlot slot, ref CharacterArmor armor)
+    /// <summary> Handle a full equip slot update for base data and model data. </summary>
+    private void HandleEquipSlot(Actor actor, ActorState state, EquipSlot slot, ref CharacterArmor armor)
     {
-        var changeState = UpdateBaseData(actor, state, slot, armor);
-        if (changeState is UpdateState.Transformed)
+        switch (UpdateBaseData(actor, state, slot, armor))
+        {
+            // Transformed also handles invisible hat state.
+            case UpdateState.Transformed: break;
+            // Base data changed equipment while actors were not there.
+            // Update model state if not on fixed design.
+            case UpdateState.Change:
+                var apply = false;
+                if (state[slot, false] is not StateChanged.Source.Fixed)
+                {
+                    state.ModelData.SetItem(slot, state.BaseData.Item(slot));
+                    state[slot, false] = StateChanged.Source.Game;
+                }
+                else
+                {
+                    apply = true;
+                }
+
+                if (state[slot, true] is not StateChanged.Source.Fixed)
+                {
+                    state.ModelData.SetStain(slot, state.BaseData.Stain(slot));
+                    state[slot, true] = StateChanged.Source.Game;
+                }
+                else
+                {
+                    apply = true;
+                }
+
+                if (apply)
+                    armor = state.ModelData.Armor(slot);
+
+                break;
+            // Use current model data.
+            case UpdateState.NoChange:
+                armor = state.ModelData.Armor(slot);
+                break;
+        }
+    }
+
+    /// <summary> Update base data for a single changed weapon slot. </summary>
+    private UpdateState UpdateBaseData(Actor _, ActorState state, EquipSlot slot, CharacterWeapon weapon)
+    {
+        var baseData = state.BaseData.Weapon(slot);
+        var change   = UpdateState.NoChange;
+
+        if (baseData.Stain != weapon.Stain)
+        {
+            state.BaseData.SetStain(slot, weapon.Stain);
+            change = UpdateState.Change;
+        }
+
+        if (baseData.Set.Value != weapon.Set.Value || baseData.Type.Value != weapon.Type.Value || baseData.Variant != weapon.Variant)
+        {
+            var item = _items.Identify(slot, weapon.Set, weapon.Type, (byte)weapon.Variant,
+                slot is EquipSlot.OffHand ? state.BaseData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
+            state.BaseData.SetItem(slot, item);
+            change = UpdateState.Change;
+        }
+
+        return change;
+    }
+
+    /// <summary>
+    /// Update the base data starting with the model id.
+    /// If the model id changed, and is not a transformation, we need to reload the entire base state from scratch.
+    /// Non-Humans are handled differently than humans.
+    /// </summary>
+    private unsafe UpdateState UpdateBaseData(Actor actor, ActorState state, uint modelId, nint customizeData, nint equipData)
+    {
+        // Model ID does not agree between game object and new draw object => Transformation.
+        if (modelId != (uint)actor.AsCharacter->CharacterData.ModelCharaId)
+            return UpdateState.Transformed;
+
+        // Model ID did not change to stored state.
+        if (modelId == state.BaseData.ModelId)
+            return UpdateState.NoChange;
+
+        // Model ID did change, reload entire state accordingly.
+        if (modelId == 0)
+            state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, (byte*)equipData);
+        else
+            state.BaseData = _manager.FromActor(actor);
+
+        return UpdateState.Change;
+    }
+
+    /// <summary>
+    /// Update the customize base data of a state.
+    /// This should rarely result in changes,
+    /// only if we kept track of state of someone who went to the aesthetician,
+    /// or if they used other tools to change things.
+    /// </summary>
+    private UpdateState UpdateBaseData(Actor actor, ActorState state, Customize customize)
+    {
+        // Customize array does not agree between game object and draw object => transformation.
+        if (!actor.GetCustomize().Equals(customize))
+            return UpdateState.Transformed;
+
+        // Customize array did not change to stored state.
+        if (state.BaseData.Customize.Equals(customize))
+            return UpdateState.NoChange;
+
+        // Update customize base state.
+        state.BaseData.Customize.Load(customize);
+        return UpdateState.Change;
+    }
+
+    /// <summary> Handle visor state changes made by the game. </summary>
+    private void OnVisorChange(Model model, Ref<bool> value)
+    {
+        // Find appropriate actor and state.
+        // We do not need to handle fixed designs,
+        // since a fixed design would already have established state-tracking.
+        var actor = _penumbra.GameObjectFromDrawObject(model);
+        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
             return;
 
-        if (changeState is UpdateState.NoChange)
+        if (!_manager.TryGetValue(identifier, out var state))
+            return;
+
+        // Update visor base state.
+        if (state.BaseData.SetVisor(value))
         {
-            armor = state.ModelData.Armor(slot);
+            // if base state changed, either overwrite the actual value if we have fixed values,
+            // or overwrite the stored model state with the new one.
+            if (state[ActorState.MetaFlag.VisorState] is StateChanged.Source.Fixed)
+                value.Value = state.ModelData.IsVisorToggled();
+            else
+                _manager.ChangeVisorState(state, value, StateChanged.Source.Game);
         }
         else
         {
-            var modelArmor = state.ModelData.Armor(slot);
-            if (armor.Value == modelArmor.Value)
-                return;
-
-            if (state[slot, false] is StateChanged.Source.Fixed)
-            {
-                armor.Set     = modelArmor.Set;
-                armor.Variant = modelArmor.Variant;
-            }
-            else
-            {
-                _manager.ChangeEquip(state, slot, state.BaseData.Item(slot), StateChanged.Source.Game);
-            }
-
-            if (state[slot, true] is StateChanged.Source.Fixed)
-                armor.Stain = modelArmor.Stain;
-            else
-                _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Game);
+            // if base state did not change, overwrite the value with the model state one.
+            value.Value = state.ModelData.IsVisorToggled();
         }
     }
 
+    /// <summary> Handle Hat Visibility changes. These act on the game object. </summary>
+    private void OnHeadGearVisibilityChange(Actor actor, Ref<bool> value)
+    {
+        // Find appropriate state.
+        // We do not need to handle fixed designs,
+        // if there is no model that caused a fixed design to exist yet,
+        // we also do not care about the invisible model.
+        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
+            return;
+
+        if (!_manager.TryGetValue(identifier, out var state))
+            return;
+
+        // Update hat visibility state.
+        if (state.BaseData.SetHatVisible(value))
+        {
+            // if base state changed, either overwrite the actual value if we have fixed values,
+            // or overwrite the stored model state with the new one.
+            if (state[ActorState.MetaFlag.HatState] is StateChanged.Source.Fixed)
+                value.Value = state.ModelData.IsHatVisible();
+            else
+                _manager.ChangeHatState(state, value, StateChanged.Source.Game);
+        }
+        else
+        {
+            // if base state did not change, overwrite the value with the model state one.
+            value.Value = state.ModelData.IsHatVisible();
+        }
+    }
+
+    /// <summary> Handle Weapon Visibility changes. These act on the game object. </summary>
+    private void OnWeaponVisibilityChange(Actor actor, Ref<bool> value)
+    {
+        // Find appropriate state.
+        // We do not need to handle fixed designs,
+        // if there is no model that caused a fixed design to exist yet,
+        // we also do not care about the invisible model.
+        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
+            return;
+
+        if (!_manager.TryGetValue(identifier, out var state))
+            return;
+
+        // Update weapon visibility state.
+        if (state.BaseData.SetWeaponVisible(value))
+        {
+            // if base state changed, either overwrite the actual value if we have fixed values,
+            // or overwrite the stored model state with the new one.
+            if (state[ActorState.MetaFlag.WeaponState] is StateChanged.Source.Fixed)
+                value.Value = state.ModelData.IsWeaponVisible();
+            else
+                _manager.ChangeWeaponState(state, value, StateChanged.Source.Game);
+        }
+        else
+        {
+            // if base state did not change, overwrite the value with the model state one.
+            value.Value = state.ModelData.IsWeaponVisible();
+        }
+    }
+
+    /// <summary> Protect a given equipment data array against restricted gear if enabled. </summary>
     private unsafe void ProtectRestrictedGear(nint equipDataPtr, Race race, Gender gender)
     {
+        if (!_config.UseRestrictedGearProtection)
+            return;
+
         var idx = 0;
         var ptr = (CharacterArmor*)equipDataPtr;
         for (var end = ptr + 10; ptr < end; ++ptr)
@@ -273,145 +465,5 @@ public class StateListener : IDisposable
         _visorState.Unsubscribe(OnVisorChange);
         _headGearVisibility.Unsubscribe(OnHeadGearVisibilityChange);
         _weaponVisibility.Unsubscribe(OnWeaponVisibilityChange);
-    }
-
-    private UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterArmor armor)
-    {
-        var actorArmor = actor.GetArmor(slot);
-        // The actor armor does not correspond to the model armor, thus the actor is transformed.
-        // This also prevents it from changing values due to hat state.
-        if (actorArmor.Value != armor.Value)
-            return UpdateState.Transformed;
-
-        var baseData = state.BaseData.Armor(slot);
-        var change   = UpdateState.NoChange;
-        if (baseData.Stain != armor.Stain)
-        {
-            state.BaseData.SetStain(slot, armor.Stain);
-            change = UpdateState.Change;
-        }
-
-        if (baseData.Set.Value != armor.Set.Value || baseData.Variant != armor.Variant)
-        {
-            var item = _items.Identify(slot, armor.Set, armor.Variant);
-            state.BaseData.SetItem(slot, item);
-            change = UpdateState.Change;
-        }
-
-        return change;
-    }
-
-    private UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterWeapon weapon)
-    {
-        var baseData = state.BaseData.Weapon(slot);
-        var change   = UpdateState.NoChange;
-
-        if (baseData.Stain != weapon.Stain)
-        {
-            state.BaseData.SetStain(slot, weapon.Stain);
-            change = UpdateState.Change;
-        }
-
-        if (baseData.Set.Value != weapon.Set.Value || baseData.Type.Value != weapon.Type.Value || baseData.Variant != weapon.Variant)
-        {
-            var item = _items.Identify(slot, weapon.Set, weapon.Type, (byte)weapon.Variant,
-                slot is EquipSlot.OffHand ? state.BaseData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
-            state.BaseData.SetItem(slot, item);
-            change = UpdateState.Change;
-        }
-
-        return change;
-    }
-
-    private unsafe UpdateState UpdateBaseData(Actor actor, ActorState state, uint modelId, nint customizeData, nint equipData)
-    {
-        if (modelId != (uint)actor.AsCharacter->CharacterData.ModelCharaId)
-            return UpdateState.Transformed;
-
-        if (modelId == state.BaseData.ModelId)
-            return UpdateState.NoChange;
-
-        if (modelId == 0)
-            state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, (byte*)equipData);
-        else
-            state.BaseData = _manager.FromActor(actor);
-
-        return UpdateState.Change;
-    }
-
-    private UpdateState UpdateBaseData(Actor actor, ActorState state, Customize customize)
-    {
-        if (!actor.GetCustomize().Equals(customize))
-            return UpdateState.Transformed;
-
-        if (state.BaseData.Customize.Equals(customize))
-            return UpdateState.NoChange;
-
-        state.BaseData.Customize.Load(customize);
-        return UpdateState.Change;
-    }
-
-    private void OnVisorChange(Model model, Ref<bool> value)
-    {
-        var actor = _penumbra.GameObjectFromDrawObject(model);
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
-            return;
-
-        if (!_manager.TryGetValue(identifier, out var state))
-            return;
-
-        if (state.BaseData.SetVisor(value))
-        {
-            if (state[ActorState.MetaFlag.VisorState] is StateChanged.Source.Fixed)
-                value.Value = state.ModelData.IsVisorToggled();
-            else
-                _manager.ChangeVisorState(state, value, StateChanged.Source.Game);
-        }
-        else
-        {
-            value.Value = state.ModelData.IsVisorToggled();
-        }
-    }
-
-    private void OnHeadGearVisibilityChange(Actor actor, Ref<bool> value)
-    {
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
-            return;
-
-        if (!_manager.TryGetValue(identifier, out var state))
-            return;
-
-        if (state.BaseData.SetHatVisible(value))
-        {
-            if (state[ActorState.MetaFlag.HatState] is StateChanged.Source.Fixed)
-                value.Value = state.ModelData.IsHatVisible();
-            else
-                _manager.ChangeHatState(state, value, StateChanged.Source.Game);
-        }
-        else
-        {
-            value.Value = state.ModelData.IsHatVisible();
-        }
-    }
-
-    private void OnWeaponVisibilityChange(Actor actor, Ref<bool> value)
-    {
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
-            return;
-
-        if (!_manager.TryGetValue(identifier, out var state))
-            return;
-
-        if (state.BaseData.SetWeaponVisible(value))
-        {
-            if (state[ActorState.MetaFlag.WeaponState] is StateChanged.Source.Fixed)
-                value.Value = state.ModelData.IsWeaponVisible();
-            else
-                _manager.ChangeWeaponState(state, value, StateChanged.Source.Game);
-        }
-        else
-        {
-            value.Value = state.ModelData.IsWeaponVisible();
-        }
     }
 }

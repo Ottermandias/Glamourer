@@ -14,6 +14,42 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
         : base(nameof(CustomizationService), () => CustomizationManager.Create(pi, gameData))
     { }
 
+    public (Customize NewValue, CustomizeFlag Applied) Combine(Customize oldValues, Customize newValues, CustomizeFlag applyWhich)
+    {
+        CustomizeFlag applied = 0;
+        Customize     ret     = default;
+        ret.Load(oldValues);
+        if (applyWhich.HasFlag(CustomizeFlag.Clan))
+        {
+            ChangeClan(ref ret, newValues.Clan);
+            applied |= CustomizeFlag.Clan;
+        }
+
+        if (applyWhich.HasFlag(CustomizeFlag.Gender))
+            if (ret.Race is not Race.Hrothgar || newValues.Gender is not Gender.Female)
+            {
+                ChangeGender(ref ret, newValues.Gender);
+                applied |= CustomizeFlag.Gender;
+            }
+
+        var set = AwaitedService.GetList(ret.Clan, ret.Gender);
+        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        {
+            var flag = index.ToFlag();
+            if (!applyWhich.HasFlag(flag))
+                continue;
+
+            var value = newValues[index];
+            if (IsCustomizationValid(set, ret.Face, index, value))
+            {
+                ret[index] =  value;
+                applied    |= flag;
+            }
+        }
+
+        return (ret, applied);
+    }
+
     /// <summary> In languages other than english the actual clan name may depend on gender. </summary>
     public string ClanName(SubRace race, Gender gender)
     {
@@ -175,53 +211,59 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     }
 
     /// <summary> Change a clan while keeping all other customizations valid. </summary>
-    public bool ChangeClan(ref Customize customize, SubRace newClan)
+    public CustomizeFlag ChangeClan(ref Customize customize, SubRace newClan)
     {
         if (customize.Clan == newClan)
-            return false;
+            return 0;
 
         if (ValidateClan(newClan, newClan.ToRace(), out var newRace, out newClan).Length > 0)
-            return false;
+            return 0;
 
+        var flags = CustomizeFlag.Clan | CustomizeFlag.Race;
         customize.Race = newRace;
         customize.Clan = newClan;
 
         // TODO Female Hrothgar
         if (newRace == Race.Hrothgar)
-            customize.Gender = Gender.Male;
+        {
+            customize.Gender =  Gender.Male;
+            flags            |= CustomizeFlag.Gender;
+        }
 
         var set = AwaitedService.GetList(customize.Clan, customize.Gender);
-        FixValues(set, ref customize);
-
-        return true;
+        return FixValues(set, ref customize) | flags;
     }
 
     /// <summary> Change a gender while keeping all other customizations valid. </summary>
-    public bool ChangeGender(ref Customize customize, Gender newGender)
+    public CustomizeFlag ChangeGender(ref Customize customize, Gender newGender)
     {
         if (customize.Gender == newGender)
-            return false;
+            return 0;
 
         // TODO Female Hrothgar
         if (customize.Race is Race.Hrothgar)
-            return false;
+            return 0;
 
         if (ValidateGender(customize.Race, newGender, out newGender).Length > 0)
-            return false;
+            return 0;
 
         customize.Gender = newGender;
         var set = AwaitedService.GetList(customize.Clan, customize.Gender);
-        FixValues(set, ref customize);
-
-        return true;
+        return FixValues(set, ref customize) | CustomizeFlag.Gender;
     }
 
-    private static void FixValues(CustomizationSet set, ref Customize customize)
+    private static CustomizeFlag FixValues(CustomizationSet set, ref Customize customize)
     {
+        CustomizeFlag flags = 0;
         foreach (var idx in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
         {
             if (ValidateCustomizeValue(set, customize.Face, idx, customize[idx], out var fixedValue).Length > 0)
-                customize[idx] = fixedValue;
+            {
+                customize[idx] =  fixedValue;
+                flags          |= idx.ToFlag();
+            }
         }
+
+        return flags;
     }
 }

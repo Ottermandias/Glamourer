@@ -88,7 +88,7 @@ public readonly unsafe struct Model : IEquatable<Model>
 
     /// <summary> Only valid for humans. </summary>
     public CharacterArmor GetArmor(EquipSlot slot)
-        => ((CharacterArmor*)AsHuman->EquipSlotData)[slot.ToIndex()];
+        => ((CharacterArmor*)&AsHuman->Head)[slot.ToIndex()];
 
     public Customize GetCustomize()
         => *(Customize*)&AsHuman->Customize;

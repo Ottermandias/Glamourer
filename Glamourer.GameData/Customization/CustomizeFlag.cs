@@ -48,7 +48,7 @@ public enum CustomizeFlag : ulong
 public static class CustomizeFlagExtensions
 {
     public const CustomizeFlag All            = (CustomizeFlag)(((ulong)CustomizeFlag.FacePaintColor << 1) - 1ul);
-    public const CustomizeFlag RedrawRequired = CustomizeFlag.Race | CustomizeFlag.Clan | CustomizeFlag.Gender | CustomizeFlag.Face;
+    public const CustomizeFlag RedrawRequired = CustomizeFlag.Race | CustomizeFlag.Clan | CustomizeFlag.Gender | CustomizeFlag.Face | CustomizeFlag.BodyType;
 
     public static bool RequiresRedraw(this CustomizeFlag flags)
         => (flags & RedrawRequired) != 0;

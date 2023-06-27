@@ -205,7 +205,7 @@ public class Design : ISavable
 
     #region Serialization
 
-    public JObject JsonSerialize()
+    private JObject JsonSerialize()
     {
         var ret = new JObject
         {
@@ -223,7 +223,7 @@ public class Design : ISavable
         return ret;
     }
 
-    public JObject SerializeEquipment()
+    private JObject SerializeEquipment()
     {
         static JObject Serialize(uint itemId, StainId stain, bool apply, bool applyStain)
             => new()
@@ -250,7 +250,7 @@ public class Design : ISavable
         return ret;
     }
 
-    public JObject SerializeCustomize()
+    private JObject SerializeCustomize()
     {
         var ret = new JObject()
         {

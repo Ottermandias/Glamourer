@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Dalamud.Interface;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop.Penumbra;
+using Glamourer.Services;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
@@ -16,18 +17,24 @@ public class SettingsTab : ITab
     private readonly Configuration            _config;
     private readonly DesignFileSystemSelector _selector;
     private readonly StateListener            _stateListener;
+    private readonly PhrasingService          _phrasingService;
     private readonly PenumbraAutoRedraw       _autoRedraw;
 
-    public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener, PenumbraAutoRedraw autoRedraw)
+    public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener,
+        PhrasingService phrasingService, PenumbraAutoRedraw autoRedraw)
     {
-        _config        = config;
-        _selector      = selector;
-        _stateListener = stateListener;
-        _autoRedraw    = autoRedraw;
+        _config          = config;
+        _selector        = selector;
+        _stateListener   = stateListener;
+        _phrasingService = phrasingService;
+        _autoRedraw      = autoRedraw;
     }
 
     public ReadOnlySpan<byte> Label
         => "Settings"u8;
+
+    private string? _tmpPhrasing1 = null;
+    private string? _tmpPhrasing2 = null;
 
     public void DrawContent()
     {
@@ -36,6 +43,8 @@ public class SettingsTab : ITab
             return;
 
         Checkbox("Enabled", "Enable main functionality of keeping and applying state.", _stateListener.Enabled, _stateListener.Enable);
+        Checkbox("Enable Auto Designs", "Enable the application of designs associated to characters to be applied automatically.",
+            _config.EnableAutoDesigns,  v => _config.EnableAutoDesigns = v);
         Checkbox("Restricted Gear Protection",
             "Use gender- and race-appropriate models when detecting certain items not available for a characters current gender and race.",
             _config.UseRestrictedGearProtection, v => _config.UseRestrictedGearProtection = v);
@@ -52,6 +61,24 @@ public class SettingsTab : ITab
             v => _config.OpenFoldersByDefault = v);
         Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use.", _config.DebugMode, v => _config.DebugMode = v);
         DrawColorSettings();
+
+        _tmpPhrasing1 ??= _config.Phrasing1;
+        ImGui.InputText("Phrasing 1", ref _tmpPhrasing1, 512);
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
+        {
+            _phrasingService.SetPhrasing1(_tmpPhrasing1);
+            _tmpPhrasing1 = null;
+        }
+
+        _tmpPhrasing2 ??= _config.Phrasing2;
+        ImGui.InputText("Phrasing 2", ref _tmpPhrasing2, 512);
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
+        {
+            _phrasingService.SetPhrasing2(_tmpPhrasing2);
+            _tmpPhrasing2 = null;
+        }
 
         MainWindow.DrawSupportButtons();
     }

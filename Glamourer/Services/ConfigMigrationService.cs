@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Glamourer.Automation;
 using Glamourer.Gui;
 using Newtonsoft.Json.Linq;
 
@@ -7,13 +8,17 @@ namespace Glamourer.Services;
 
 public class ConfigMigrationService
 {
-    private readonly SaveService _saveService;
+    private readonly SaveService         _saveService;
+    private readonly FixedDesignMigrator _fixedDesignMigrator;
 
     private Configuration _config = null!;
     private JObject       _data   = null!;
 
-    public ConfigMigrationService(SaveService saveService)
-        => _saveService = saveService;
+    public ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator)
+    {
+        _saveService         = saveService;
+        _fixedDesignMigrator = fixedDesignMigrator;
+    }
 
     public void Migrate(Configuration config)
     {
@@ -34,6 +39,7 @@ public class ConfigMigrationService
         if (_config.Version > 1)
             return;
 
+        _fixedDesignMigrator.Migrate(_data["FixedDesigns"]);
         _config.Version = 2;
         var customizationColor = _data["CustomizationColor"]?.ToObject<uint>() ?? ColorId.CustomizationDesign.Data().DefaultColor;
         _config.Colors[ColorId.CustomizationDesign] = customizationColor;

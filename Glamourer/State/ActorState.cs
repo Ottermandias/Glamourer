@@ -1,4 +1,5 @@
-﻿using Glamourer.Customization;
+﻿using System;
+using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Structs;
@@ -20,7 +21,7 @@ public class ActorState
         ModelId,
     }
 
-    public ActorIdentifier Identifier { get; internal init; }
+    public readonly ActorIdentifier Identifier;
 
     /// <summary> This should always represent the unmodified state of the draw object. </summary>
     public DesignData BaseData;
@@ -33,7 +34,7 @@ public class ActorState
         .Repeat(StateChanged.Source.Game, EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5).ToArray();
 
     internal ActorState(ActorIdentifier identifier)
-        => Identifier = identifier;
+        => Identifier = identifier.CreatePermanent();
 
     public ref StateChanged.Source this[EquipSlot slot, bool stain]
         => ref _sources[slot.ToIndex() + (stain ? EquipFlagExtensions.NumEquipFlags / 2 : 0)];

@@ -192,12 +192,12 @@ public class DesignManager
                 Glamourer.Log.Error("Somehow race or body type was changed in a design. This should not happen.");
                 return;
             case CustomizeIndex.Clan:
-                if (!_customizations.ChangeClan(ref design.DesignData.Customize, (SubRace)value.Value))
+                if (_customizations.ChangeClan(ref design.DesignData.Customize, (SubRace)value.Value) == 0)
                     return;
 
                 break;
             case CustomizeIndex.Gender:
-                if (!_customizations.ChangeGender(ref design.DesignData.Customize, (Gender)(value.Value + 1)))
+                if (_customizations.ChangeGender(ref design.DesignData.Customize, (Gender)(value.Value + 1)) == 0)
                     return;
 
                 break;

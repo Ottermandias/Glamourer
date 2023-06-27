@@ -3,6 +3,7 @@ using Dalamud.Plugin;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Services;
+using Lumina.Excel.GeneratedSheets;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
 using OtterGui.Log;

@@ -1,9 +1,11 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Api;
+using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui;
 using Glamourer.Gui.Customization;
+using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Gui.Tabs.DesignTab;
@@ -47,6 +49,7 @@ public static class ServiceManager
             .AddSingleton<BackupService>()
             .AddSingleton<FrameworkManager>()
             .AddSingleton<SaveService>()
+            .AddSingleton<PhrasingService>()
             .AddSingleton<ConfigMigrationService>()
             .AddSingleton<Configuration>();
 
@@ -54,6 +57,7 @@ public static class ServiceManager
         => services.AddSingleton<VisorStateChanged>()
             .AddSingleton<SlotUpdating>()
             .AddSingleton<DesignChanged>()
+            .AddSingleton<AutomationChanged>()
             .AddSingleton<StateChanged>()
             .AddSingleton<WeaponLoading>()
             .AddSingleton<HeadGearVisibilityChanged>()
@@ -74,11 +78,15 @@ public static class ServiceManager
             .AddSingleton<WeaponService>()
             .AddSingleton<PenumbraService>()
             .AddSingleton<ObjectManager>()
-            .AddSingleton<PenumbraAutoRedraw>();
+            .AddSingleton<PenumbraAutoRedraw>()
+            .AddSingleton<JobService>();
 
     private static IServiceCollection AddDesigns(this IServiceCollection services)
         => services.AddSingleton<DesignManager>()
-            .AddSingleton<DesignFileSystem>();
+            .AddSingleton<DesignFileSystem>()
+            .AddSingleton<AutoDesignManager>()
+            .AddSingleton<AutoDesignApplier>()
+            .AddSingleton<FixedDesignMigrator>();
 
     private static IServiceCollection AddState(this IServiceCollection services)
         => services.AddSingleton<StateManager>()
@@ -94,6 +102,7 @@ public static class ServiceManager
             .AddSingleton<MainWindow>()
             .AddSingleton<GlamourerWindowSystem>()
             .AddSingleton<CustomizationDrawer>()
+            .AddSingleton<EquipmentDrawer>()
             .AddSingleton<DesignFileSystemSelector>()
             .AddSingleton<DesignPanel>()
             .AddSingleton<DesignTab>()

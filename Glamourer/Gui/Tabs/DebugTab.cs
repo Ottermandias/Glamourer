@@ -9,6 +9,7 @@ using Dalamud.Interface;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Api;
+using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -40,13 +41,16 @@ public unsafe class DebugTab : ITab
     private readonly ObjectTable            _objects;
     private readonly ObjectManager          _objectManager;
     private readonly GlamourerIpc           _ipc;
+    private readonly PhrasingService        _phrasing;
 
     private readonly ItemManager          _items;
     private readonly ActorService         _actors;
     private readonly CustomizationService _customization;
+    private readonly JobService           _jobs;
 
-    private readonly DesignManager    _designManager;
-    private readonly DesignFileSystem _designFileSystem;
+    private readonly DesignManager     _designManager;
+    private readonly DesignFileSystem  _designFileSystem;
+    private readonly AutoDesignManager _autoDesignManager;
 
     private readonly PenumbraChangedItemTooltip _penumbraTooltip;
 
@@ -61,7 +65,8 @@ public unsafe class DebugTab : ITab
         UpdateSlotService updateSlotService, WeaponService weaponService, PenumbraService penumbra,
         ActorService actors, ItemManager items, CustomizationService customization, ObjectManager objectManager,
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
-        PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface)
+        PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
+        AutoDesignManager autoDesignManager, JobService jobs, PhrasingService phrasing)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -81,6 +86,9 @@ public unsafe class DebugTab : ITab
         _metaService            = metaService;
         _ipc                    = ipc;
         _pluginInterface        = pluginInterface;
+        _autoDesignManager      = autoDesignManager;
+        _jobs                   = jobs;
+        _phrasing               = phrasing;
     }
 
     public ReadOnlySpan<byte> Label
@@ -97,6 +105,7 @@ public unsafe class DebugTab : ITab
         DrawPenumbraHeader();
         DrawDesigns();
         DrawState();
+        DrawAutoDesigns();
         DrawIpc();
     }
 
@@ -376,14 +385,22 @@ public unsafe class DebugTab : ITab
 
             if (ImGui.SmallButton("++"))
             {
-                modelCustomize.Set(type, (CustomizeValue)(modelCustomize[type].Value + 1));
+                var value = modelCustomize[type].Value;
+                var (_, mask) = type.ToByteAndMask();
+                var shift    = BitOperations.TrailingZeroCount(mask);
+                var newValue = value + (1 << shift);
+                modelCustomize.Set(type, (CustomizeValue)newValue);
                 _changeCustomizeService.UpdateCustomize(model, modelCustomize.Data);
             }
 
             ImGui.SameLine();
             if (ImGui.SmallButton("--"))
             {
-                modelCustomize.Set(type, (CustomizeValue)(modelCustomize[type].Value - 1));
+                var value = modelCustomize[type].Value;
+                var (_, mask) = type.ToByteAndMask();
+                var shift    = BitOperations.TrailingZeroCount(mask);
+                var newValue = value - (1 << shift);
+                modelCustomize.Set(type, (CustomizeValue)newValue);
                 _changeCustomizeService.UpdateCustomize(model, modelCustomize.Data);
             }
 
@@ -483,6 +500,44 @@ public unsafe class DebugTab : ITab
         DrawItemService();
         DrawStainService();
         DrawCustomizationService();
+        DrawJobService();
+    }
+
+    private void DrawJobService()
+    {
+        using var tree = ImRaii.TreeNode("Job Service");
+        if (!tree)
+            return;
+
+        using (var t = ImRaii.TreeNode("Jobs"))
+        {
+            if (t)
+            {
+                using var table = ImRaii.Table("##jobs", 3, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+                if (table)
+                    foreach (var (id, job) in _jobs.Jobs)
+                    {
+                        ImGuiUtil.DrawTableColumn(id.ToString("D2"));
+                        ImGuiUtil.DrawTableColumn(job.Name);
+                        ImGuiUtil.DrawTableColumn(job.Abbreviation);
+                    }
+            }
+        }
+
+        using (var t = ImRaii.TreeNode("Job Groups"))
+        {
+            if (t)
+            {
+                using var table = ImRaii.Table("##groups", 3, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+                if (table)
+                    foreach (var (id, group) in _jobs.JobGroups)
+                    {
+                        ImGuiUtil.DrawTableColumn(id.ToString("D2"));
+                        ImGuiUtil.DrawTableColumn(group.Name);
+                        ImGuiUtil.DrawTableColumn(group.Count.ToString());
+                    }
+            }
+        }
     }
 
     private string _gamePath = string.Empty;
@@ -1112,6 +1167,66 @@ public unsafe class DebugTab : ITab
 
             DrawState(ActorData.Invalid, state);
         }
+    }
+
+    #endregion
+
+    #region Auto Designs
+
+    private void DrawAutoDesigns()
+    {
+        if (!ImGui.CollapsingHeader("Auto Designs"))
+            return;
+
+        DrawPhrasingService();
+
+        foreach (var (set, idx) in _autoDesignManager.WithIndex())
+        {
+            using var id   = ImRaii.PushId(idx);
+            using var tree = ImRaii.TreeNode(set.Name);
+            if (!tree)
+                continue;
+
+            using var table = ImRaii.Table("##autoDesign", 2, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+            if (!table)
+                continue;
+
+            ImGuiUtil.DrawTableColumn("Name");
+            ImGuiUtil.DrawTableColumn(set.Name);
+
+            ImGuiUtil.DrawTableColumn("Index");
+            ImGuiUtil.DrawTableColumn(idx.ToString());
+
+            ImGuiUtil.DrawTableColumn("Enabled");
+            ImGuiUtil.DrawTableColumn(set.Enabled.ToString());
+
+            ImGuiUtil.DrawTableColumn("Actor");
+            ImGuiUtil.DrawTableColumn(set.Identifier.ToString());
+
+            foreach (var (design, designIdx) in set.Designs.WithIndex())
+            {
+                ImGuiUtil.DrawTableColumn($"{design.Design.Name} ({designIdx})");
+                ImGuiUtil.DrawTableColumn($"{design.ApplicationType} {design.Jobs.Name}");
+            }
+        }
+    }
+
+    private void DrawPhrasingService()
+    {
+        using var tree = ImRaii.TreeNode("Phrasing");
+        if (!tree)
+            return;
+
+        using var table = ImRaii.Table("phrasing", 3, ImGuiTableFlags.SizingFixedFit);
+        if (!table)
+            return;
+
+        ImGuiUtil.DrawTableColumn("Phrasing 1");
+        ImGuiUtil.DrawTableColumn(_config.Phrasing1);
+        ImGuiUtil.DrawTableColumn(_phrasing.Phrasing1.ToString());
+        ImGuiUtil.DrawTableColumn("Phrasing 2");
+        ImGuiUtil.DrawTableColumn(_config.Phrasing2);
+        ImGuiUtil.DrawTableColumn(_phrasing.Phrasing2.ToString());
     }
 
     #endregion

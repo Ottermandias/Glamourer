@@ -24,20 +24,18 @@ public partial class CustomizationDrawer
 
     private void DrawGenderSelector()
     {
-        using var font = ImRaii.PushFont(UiBuilder.IconFont);
         var icon = _customize.Gender switch
         {
             Gender.Male when _customize.Race is Race.Hrothgar => FontAwesomeIcon.MarsDouble,
             Gender.Male                                       => FontAwesomeIcon.Mars,
             Gender.Female                                     => FontAwesomeIcon.Venus,
-
-            _ => throw new Exception($"Gender value {_customize.Gender} is not a valid gender for a design."),
+            _                                                 => FontAwesomeIcon.Question,
         };
 
-        if (!ImGuiUtil.DrawDisabledButton(icon.ToIconString(), _framedIconSize, string.Empty, icon == FontAwesomeIcon.MarsDouble, true))
+        if (!ImGuiUtil.DrawDisabledButton(icon.ToIconString(), _framedIconSize, string.Empty, icon is not FontAwesomeIcon.Mars and not FontAwesomeIcon.Venus, true))
             return;
 
-        _service.ChangeGender(ref _customize, _customize.Gender is Gender.Male ? Gender.Female : Gender.Male);
+        Changed |= _service.ChangeGender(ref _customize, icon is FontAwesomeIcon.Mars ? Gender.Female : Gender.Male);
     }
 
     private void DrawRaceCombo()
@@ -50,7 +48,7 @@ public partial class CustomizationDrawer
         foreach (var subRace in Enum.GetValues<SubRace>().Skip(1)) // Skip Unknown
         {
             if (ImGui.Selectable(_service.ClanName(subRace, _customize.Gender), subRace == _customize.Clan))
-                _service.ChangeClan(ref _customize, subRace);
+                Changed |= _service.ChangeClan(ref _customize, subRace);
         }
     }
 }

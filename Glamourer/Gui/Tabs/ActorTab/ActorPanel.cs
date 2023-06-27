@@ -1,5 +1,8 @@
 ﻿using System.Numerics;
+using Glamourer.Customization;
+using Glamourer.Events;
 using Glamourer.Gui.Customization;
+using Glamourer.Gui.Equipment;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
@@ -14,6 +17,7 @@ public class ActorPanel
     private readonly ActorSelector       _selector;
     private readonly StateManager        _stateManager;
     private readonly CustomizationDrawer _customizationDrawer;
+    private readonly EquipmentDrawer     _equipmentDrawer;
 
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -21,11 +25,13 @@ public class ActorPanel
     private ActorData       _data;
     private ActorState?     _state;
 
-    public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer)
+    public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer,
+        EquipmentDrawer equipmentDrawer)
     {
         _selector            = selector;
         _stateManager        = stateManager;
         _customizationDrawer = customizationDrawer;
+        _equipmentDrawer     = equipmentDrawer;
     }
 
     public void Draw()
@@ -76,46 +82,40 @@ public class ActorPanel
             return;
 
         if (_customizationDrawer.Draw(_state.ModelData.Customize, false))
+            _stateManager.ChangeCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, StateChanged.Source.Manual);
+
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
+            var stain = _state.ModelData.Stain(slot);
+            if (_equipmentDrawer.DrawStain(stain, slot, out var newStain))
+                _stateManager.ChangeStain(_state, slot, newStain.RowIndex, StateChanged.Source.Manual);
+
+            ImGui.SameLine();
+            var armor = _state.ModelData.Item(slot);
+            if (_equipmentDrawer.DrawArmor(armor, slot, out var newArmor, _state.ModelData.Customize.Gender, _state.ModelData.Customize.Race))
+                _stateManager.ChangeEquip(_state, slot, newArmor, newStain.RowIndex, StateChanged.Source.Manual);
         }
-        // if (_currentData.Valid)
-        //     _currentSave.Initialize(_items, _currentData.Objects[0]);
-        // 
-        // RevertButton();
-        // ActorDebug.Draw(_currentSave.ModelData);
-        // return;
-        // 
-        // if (_main._customizationDrawer.Draw(_currentSave.ModelData.Customize, _identifier.Type == IdentifierType.Special))
-        //     _activeDesigns.ChangeCustomize(_currentSave, _main._customizationDrawer.Changed, _main._customizationDrawer.Customize.Data,
-        //         false);
-        // 
-        // foreach (var slot in EquipSlotExtensions.EqdpSlots)
-        // {
-        //     var current = _currentSave.Armor(slot);
-        //     if (_main._equipmentDrawer.DrawStain(current.Stain, slot, out var stain))
-        //         _activeDesigns.ChangeStain(_currentSave, slot, stain.RowIndex, false);
-        //     ImGui.SameLine();
-        //     if (_main._equipmentDrawer.DrawArmor(current, slot, out var armor, _currentSave.ModelData.Customize.Gender,
-        //             _currentSave.ModelData.Customize.Race))
-        //         _activeDesigns.ChangeEquipment(_currentSave, slot, armor, false);
-        // }
-        // 
-        // var currentMain = _currentSave.WeaponMain;
-        // if (_main._equipmentDrawer.DrawStain(currentMain.Stain, EquipSlot.MainHand, out var stainMain))
-        //     _activeDesigns.ChangeStain(_currentSave, EquipSlot.MainHand, stainMain.RowIndex, false);
-        // ImGui.SameLine();
-        // _main._equipmentDrawer.DrawMainhand(currentMain, true, out var main);
-        // if (currentMain.Type.Offhand() != FullEquipType.Unknown)
-        // {
-        //     var currentOff = _currentSave.WeaponOff;
-        //     if (_main._equipmentDrawer.DrawStain(currentOff.Stain, EquipSlot.OffHand, out var stainOff))
-        //         _activeDesigns.ChangeStain(_currentSave, EquipSlot.OffHand, stainOff.RowIndex, false);
-        //     ImGui.SameLine();
-        //     _main._equipmentDrawer.DrawOffhand(currentOff, main.Type, out var off);
-        // }
-        // 
-        // if (_main._equipmentDrawer.DrawVisor(_currentSave, out var value))
-        //     _activeDesigns.ChangeVisor(_currentSave, value, false);
+
+        var mhStain = _state.ModelData.Stain(EquipSlot.MainHand);
+        if (_equipmentDrawer.DrawStain(mhStain, EquipSlot.MainHand, out var newMhStain))
+            _stateManager.ChangeStain(_state, EquipSlot.MainHand, newMhStain.RowIndex, StateChanged.Source.Manual);
+
+        ImGui.SameLine();
+        var mh = _state.ModelData.Item(EquipSlot.MainHand);
+        if (_equipmentDrawer.DrawMainhand(mh, false, out var newMh))
+            _stateManager.ChangeEquip(_state, EquipSlot.MainHand, newMh, newMhStain.RowIndex, StateChanged.Source.Manual);
+
+        if (newMh.Type.Offhand() is not FullEquipType.Unknown)
+        {
+            var ohStain = _state.ModelData.Stain(EquipSlot.OffHand);
+            if (_equipmentDrawer.DrawStain(ohStain, EquipSlot.OffHand, out var newOhStain))
+                _stateManager.ChangeStain(_state, EquipSlot.OffHand, newOhStain.RowIndex, StateChanged.Source.Manual);
+
+            ImGui.SameLine();
+            var oh = _state.ModelData.Item(EquipSlot.OffHand);
+            if (_equipmentDrawer.DrawMainhand(oh, false, out var newOh))
+                _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOh, newOhStain.RowIndex, StateChanged.Source.Manual);
+        }
     }
 
 

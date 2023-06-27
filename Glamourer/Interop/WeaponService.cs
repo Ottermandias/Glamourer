@@ -51,11 +51,14 @@ public unsafe class WeaponService : IDisposable
             _ => EquipSlot.Unknown,
         };
 
+        var tmpWeapon = weapon;
         // First call the regular function.
         if (equipSlot is not EquipSlot.Unknown)
-            _event.Invoke(actor, equipSlot, ref weapon);
+            _event.Invoke(actor, equipSlot, ref tmpWeapon);
 
         _loadWeaponHook.Original(drawData, slot, weapon.Value, redrawOnEquality, unk2, skipGameObject, unk4);
+        if (tmpWeapon.Value != weapon.Value)
+            _loadWeaponHook.Original(drawData, slot, tmpWeapon.Value, 1, unk2, 1, unk4);
         Glamourer.Log.Excessive(
             $"Weapon reloaded for 0x{actor.Address:X} ({actor.Utf8Name}) with attributes {slot} {weapon.Value:X14}, {redrawOnEquality}, {unk2}, {skipGameObject}, {unk4}");
     }
@@ -88,8 +91,10 @@ public unsafe class WeaponService : IDisposable
 
     public void LoadStain(Actor character, EquipSlot slot, StainId stain)
     {
-        var value  = slot == EquipSlot.OffHand ? character.AsCharacter->DrawData.OffHandModel : character.AsCharacter->DrawData.MainHandModel;
-        var weapon = new CharacterWeapon(value.Value) { Stain = stain.Value };
+        var mdl    = character.Model;
+        var (_, _, mh, oh) = mdl.GetWeapons(character);
+        var value  = slot == EquipSlot.OffHand ? oh : mh;
+        var weapon = value.With(value.Set.Value == 0 ? 0 : stain);
         LoadWeapon(character, slot, weapon);
     }
 }

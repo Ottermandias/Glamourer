@@ -12,11 +12,13 @@ public class FilenameService
     public readonly string DesignFileSystem;
     public readonly string MigrationDesignFile;
     public readonly string DesignDirectory;
+    public readonly string AutomationFile;
 
     public FilenameService(DalamudPluginInterface pi)
     {
         ConfigDirectory     = pi.ConfigDirectory.FullName;
         ConfigFile          = pi.ConfigFile.FullName;
+        AutomationFile      = Path.Combine(ConfigDirectory, "automation.json");
         DesignFileSystem    = Path.Combine(ConfigDirectory, "sort_order.json");
         MigrationDesignFile = Path.Combine(ConfigDirectory, "Designs.json");
         DesignDirectory     = Path.Combine(ConfigDirectory, "designs");

@@ -8,7 +8,9 @@ public unsafe struct Customize
     public Penumbra.GameData.Structs.CustomizeData Data;
 
     public Customize(in Penumbra.GameData.Structs.CustomizeData data)
-        => Data = data;
+    {
+        Data = data.Clone();
+    }
 
     public Race Race
     {

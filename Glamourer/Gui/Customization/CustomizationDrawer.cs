@@ -20,7 +20,8 @@ public partial class CustomizationDrawer : IDisposable
     private Customize        _customize;
     private CustomizationSet _set = null!;
 
-    public Customize Customize;
+    public Customize Customize
+        => _customize;
 
     public CustomizeFlag CurrentFlag { get; private set; }
     public CustomizeFlag Changed     { get; private set; }
@@ -41,7 +42,7 @@ public partial class CustomizationDrawer : IDisposable
     {
         _service      = service;
         _legacyTattoo = GetLegacyTattooIcon(pi);
-        Customize     = Customize.Default;
+        _customize    = Customize.Default;
     }
 
     public void Dispose()
