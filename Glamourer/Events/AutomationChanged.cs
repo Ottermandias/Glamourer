@@ -55,7 +55,10 @@ public sealed class AutomationChanged : EventWrapper<Action<AutomationChanged.Ty
     }
 
     public enum Priority
-    { }
+    {
+        /// <seealso cref="Gui.Tabs.AutomationTab.SetSelector.OnAutomationChanged"/>
+        SetSelector = 0,
+    }
 
     public AutomationChanged()
         : base(nameof(AutomationChanged))

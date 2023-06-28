@@ -1,16 +1,11 @@
 ﻿using System.Numerics;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
-using Glamourer.Interop.Penumbra;
 using Glamourer.State;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui.Raii;
-using Penumbra.Api.Enums;
-using Penumbra.Api.Helpers;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.DesignTab;

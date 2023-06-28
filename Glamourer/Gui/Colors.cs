@@ -12,6 +12,8 @@ public enum ColorId
     FolderExpanded,
     FolderCollapsed,
     FolderLine,
+    EnabledAutoSet,
+    DisabledAutoSet,
 }
 
 public static class Colors
@@ -28,7 +30,9 @@ public static class Colors
             ColorId.FolderExpanded        => (0xFFFFF0C0, "Expanded Design Folder",      "A design folder that is currently expanded."                                                               ),
             ColorId.FolderCollapsed       => (0xFFFFF0C0, "Collapsed Design Folder",     "A design folder that is currently collapsed."                                                              ),
             ColorId.FolderLine            => (0xFFFFF0C0, "Expanded Design Folder Line", "The line signifying which descendants belong to an expanded design folder."                                ),
-            _                             => (0x00000000, string.Empty,           string.Empty                                                ),
+            ColorId.EnabledAutoSet        => (0xFFA0F0A0, "Enabled Automation Set",      "An automation set that is currently enabled. Only one set can be enabled for each identifier at once."     ),
+            ColorId.DisabledAutoSet       => (0xFF808080, "Disabled Automation Set",     "An automation set that is currently disabled."                                                             ),
+            _                             => (0x00000000, string.Empty,                  string.Empty                                                                                                ),
             // @formatter:on
         };
 

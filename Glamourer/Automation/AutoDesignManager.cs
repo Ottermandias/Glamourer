@@ -148,6 +148,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         if (set.Enabled == value)
             return;
 
+        set.Enabled = value;
         AutoDesignSet? oldEnabled = null;
         if (value)
         {

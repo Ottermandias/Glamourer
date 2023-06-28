@@ -1,11 +1,11 @@
 ﻿using System.Numerics;
-using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
+using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
@@ -54,9 +54,6 @@ public class ActorPanel
         if (!_stateManager.GetOrCreate(_identifier, _actor, out _state))
             return;
 
-        //if (_state != null)
-        //    _stateManager.Update(ref _state.Data, _actor);
-
         using var group = ImRaii.Group();
         DrawHeader();
         DrawPanel();
@@ -66,13 +63,9 @@ public class ActorPanel
     {
         var color       = _data.Valid ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value();
         var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
-        using var c = ImRaii.PushColor(ImGuiCol.Text, color)
-            .Push(ImGuiCol.Button,        buttonColor)
-            .Push(ImGuiCol.ButtonHovered, buttonColor)
-            .Push(ImGuiCol.ButtonActive,  buttonColor);
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
-        ImGui.Button($"{(_data.Valid ? _data.Label : _identifier.ToString())}##playerHeader", -Vector2.UnitX);
+        ImGuiUtil.DrawTextButton($"{(_data.Valid ? _data.Label : _identifier.ToString())}##playerHeader", -Vector2.UnitX, buttonColor, color);
     }
 
     private unsafe void DrawPanel()

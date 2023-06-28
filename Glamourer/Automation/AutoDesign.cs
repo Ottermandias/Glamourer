@@ -10,16 +10,15 @@ namespace Glamourer.Automation;
 public class AutoDesign
 {
     [Flags]
-    public enum Type : uint
+    public enum Type : byte
     {
         Armor          = 0x01,
         Customizations = 0x02,
-        Meta           = 0x04,
-        Weapons        = 0x08,
-        Stains         = 0x10,
-        Accessories    = 0x20,
+        Weapons        = 0x04,
+        Stains         = 0x08,
+        Accessories    = 0x10,
 
-        All = Armor | Accessories | Customizations | Meta | Weapons | Stains,
+        All = Armor | Accessories | Customizations | Weapons | Stains,
     }
 
     public Design   Design;

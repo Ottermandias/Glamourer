@@ -1,7 +1,5 @@
 ﻿using System;
 using Dalamud.Interface;
-using Glamourer.Designs;
-using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui.Widgets;
 
@@ -10,18 +8,12 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 public class DesignTab : ITab
 {
     public readonly  DesignFileSystemSelector Selector;
-    private readonly DesignFileSystem         _fileSystem;
-    private readonly DesignManager            _designManager;
     private readonly DesignPanel              _panel;
-    private readonly ObjectManager            _objects;
 
-    public DesignTab(DesignFileSystemSelector selector, DesignFileSystem fileSystem, DesignManager designManager, ObjectManager objects, DesignPanel panel)
+    public DesignTab(DesignFileSystemSelector selector, DesignPanel panel)
     {
-        Selector       = selector;
-        _fileSystem    = fileSystem;
-        _designManager = designManager;
-        _objects       = objects;
-        _panel    = panel;
+        Selector = selector;
+        _panel   = panel;
     }
 
     public ReadOnlySpan<byte> Label

@@ -4,6 +4,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
+using Glamourer.Gui.Tabs.AutomationTab;
 using Glamourer.Gui.Tabs.DesignTab;
 using ImGuiNET;
 using OtterGui.Custom;
@@ -15,25 +16,27 @@ public class MainWindow : Window
 {
     public enum TabType
     {
-        None     = -1,
-        Settings = 0,
-        Debug    = 1,
-        Actors   = 2,
-        Designs  = 3,
+        None       = -1,
+        Settings   = 0,
+        Debug      = 1,
+        Actors     = 2,
+        Designs    = 3,
+        Automation = 4,
     }
 
     private readonly Configuration _config;
     private readonly ITab[]        _tabs;
 
-    public readonly SettingsTab Settings;
-    public readonly ActorTab    Actors;
-    public readonly DebugTab    Debug;
-    public readonly DesignTab   Designs;
+    public readonly SettingsTab   Settings;
+    public readonly ActorTab      Actors;
+    public readonly DebugTab      Debug;
+    public readonly DesignTab     Designs;
+    public readonly AutomationTab Automation;
 
     public TabType SelectTab = TabType.None;
 
     public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
-        DebugTab debugTab)
+        DebugTab debugTab, AutomationTab automation)
         : base(GetLabel())
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -42,16 +45,18 @@ public class MainWindow : Window
             MinimumSize = new Vector2(675, 675),
             MaximumSize = ImGui.GetIO().DisplaySize,
         };
-        Settings = settings;
-        Debug    = debugTab;
-        Designs  = designs;
-        Actors   = actors;
-        _config  = config;
+        Settings   = settings;
+        Actors     = actors;
+        Designs    = designs;
+        Automation = automation;
+        Debug      = debugTab;
+        _config    = config;
         _tabs = new ITab[]
         {
             settings,
             actors,
             designs,
+            automation,
             debugTab,
         };
 
@@ -71,20 +76,22 @@ public class MainWindow : Window
     private ReadOnlySpan<byte> ToLabel(TabType type)
         => type switch
         {
-            TabType.Settings => Settings.Label,
-            TabType.Debug    => Debug.Label,
-            TabType.Actors   => Actors.Label,
-            TabType.Designs  => Designs.Label,
-            _                => ReadOnlySpan<byte>.Empty,
+            TabType.Settings   => Settings.Label,
+            TabType.Debug      => Debug.Label,
+            TabType.Actors     => Actors.Label,
+            TabType.Designs    => Designs.Label,
+            TabType.Automation => Automation.Label,
+            _                  => ReadOnlySpan<byte>.Empty,
         };
 
     private TabType FromLabel(ReadOnlySpan<byte> label)
     {
         // @formatter:off
-        if (label == Actors.Label) return TabType.Actors;
-        if (label == Designs.Label) return TabType.Designs;
-        if (label == Settings.Label) return TabType.Settings;
-        if (label == Debug.Label)    return TabType.Debug;
+        if (label == Actors.Label)     return TabType.Actors;
+        if (label == Designs.Label)    return TabType.Designs;
+        if (label == Settings.Label)   return TabType.Settings;
+        if (label == Automation.Label) return TabType.Automation;
+        if (label == Debug.Label)      return TabType.Debug;
         // @formatter:on
         return TabType.None;
     }

@@ -8,6 +8,7 @@ using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
+using Glamourer.Gui.Tabs.AutomationTab;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -106,7 +107,10 @@ public static class ServiceManager
             .AddSingleton<DesignFileSystemSelector>()
             .AddSingleton<DesignPanel>()
             .AddSingleton<DesignTab>()
-            .AddSingleton<PenumbraChangedItemTooltip>();
+            .AddSingleton<PenumbraChangedItemTooltip>()
+            .AddSingleton<AutomationTab>()
+            .AddSingleton<SetSelector>()
+            .AddSingleton<SetPanel>();
 
     private static IServiceCollection AddApi(this IServiceCollection services)
         => services.AddSingleton<CommandService>()
