@@ -289,7 +289,7 @@ public unsafe class DebugTab : ITab
             ? actor.AsCharacter->DrawData.IsWeaponHidden ? "Hidden" : "Visible"
             : "No Character");
         var text = string.Empty;
-        // TODO
+
         if (!model.IsHuman)
         {
             text = "No Model";
@@ -1142,6 +1142,11 @@ public unsafe class DebugTab : ITab
         _objectManager.Update();
         foreach (var (identifier, actors) in _objectManager)
         {
+            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Trash.ToIconString()}##{actors.Label}", new Vector2(ImGui.GetFrameHeight()),
+                    string.Empty, !_state.ContainsKey(identifier), true))
+                _state.DeleteState(identifier);
+
+            ImGui.SameLine();
             using var t = ImRaii.TreeNode(actors.Label);
             if (!t)
                 continue;

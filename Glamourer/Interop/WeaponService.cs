@@ -4,8 +4,10 @@ using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
+using ImGuiNET;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using static FFXIVClientStructs.FFXIV.Client.UI.UIModule;
 
 namespace Glamourer.Interop;
 
@@ -69,24 +71,17 @@ public unsafe class WeaponService : IDisposable
         switch (slot)
         {
             case EquipSlot.MainHand:
-                LoadWeaponDetour(&character.AsCharacter->DrawData, 0, weapon.Value, 0, 0, 1, 0);
+                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value, 0, 0, 1, 0);
                 return;
             case EquipSlot.OffHand:
-                LoadWeaponDetour(&character.AsCharacter->DrawData, 1, weapon.Value, 0, 0, 1, 0);
+                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, weapon.Value, 0, 0, 1, 0);
                 return;
             case EquipSlot.BothHand:
-                LoadWeaponDetour(&character.AsCharacter->DrawData, 0, weapon.Value,                0, 0, 1, 0);
-                LoadWeaponDetour(&character.AsCharacter->DrawData, 1, CharacterWeapon.Empty.Value, 0, 0, 1, 0);
+                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value,                0, 0, 1, 0);
+                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, CharacterWeapon.Empty.Value, 0, 0, 1, 0);
                 return;
             // function can also be called with '2', but does not seem to ever be.
         }
-    }
-
-    // Load specific Main- and Offhand weapons.
-    public void LoadWeapon(Actor character, CharacterWeapon main, CharacterWeapon off)
-    {
-        LoadWeaponDetour(&character.AsCharacter->DrawData, 0, main.Value, 1, 0, 1, 0);
-        LoadWeaponDetour(&character.AsCharacter->DrawData, 1, off.Value,  1, 0, 1, 0);
     }
 
     public void LoadStain(Actor character, EquipSlot slot, StainId stain)

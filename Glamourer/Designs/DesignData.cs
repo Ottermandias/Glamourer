@@ -77,7 +77,7 @@ public unsafe struct DesignData
         fixed (byte* ptr = _equipmentBytes)
         {
             var armorPtr = (CharacterArmor*)ptr;
-            return armorPtr[slot is EquipSlot.MainHand ? 10 : 11].ToWeapon(_secondaryMainhand);
+            return slot is EquipSlot.MainHand ? armorPtr[10].ToWeapon(_secondaryMainhand) : armorPtr[11].ToWeapon(_secondaryOffhand);
         }
     }
 

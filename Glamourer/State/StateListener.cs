@@ -312,10 +312,11 @@ public class StateListener : IDisposable
             return UpdateState.NoChange;
 
         // Model ID did change, reload entire state accordingly.
+        // Always use the actor for the base data.
         if (modelId == 0)
             state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, (byte*)equipData);
         else
-            state.BaseData = _manager.FromActor(actor);
+            state.BaseData = _manager.FromActor(actor, false);
 
         return UpdateState.Change;
     }
@@ -334,7 +335,7 @@ public class StateListener : IDisposable
 
         // Customize array did not change to stored state.
         if (state.BaseData.Customize.Equals(customize))
-            return UpdateState.NoChange;
+            return UpdateState.NoChange; // TODO: handle wrong base data.
 
         // Update customize base state.
         state.BaseData.Customize.Load(customize);

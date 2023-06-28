@@ -75,12 +75,12 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         try
         {
-            var designData = FromActor(actor);
-            // Initial Creation has identical base and model data.
+            // Initial Creation, use the actors data for the base data, 
+            // and the draw objects data for the model data (where possible).
             state = new ActorState(identifier)
             {
-                ModelData = designData,
-                BaseData  = designData,
+                ModelData = FromActor(actor, true),
+                BaseData  = FromActor(actor, false),
             };
             // state.Identifier is owned.
             _states.Add(state.Identifier, state);
@@ -98,7 +98,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
     /// This uses the draw object if available and where possible,
     /// and the game object where necessary.
     /// </summary>
-    public unsafe DesignData FromActor(Actor actor)
+    public unsafe DesignData FromActor(Actor actor, bool useModel)
     {
         var ret = new DesignData();
         // If the given actor is not a character, just return a default character.
@@ -110,7 +110,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         // Model ID is only unambiguously contained in the game object.
         // The draw object only has the object type.
-        // TODO do this right.
+        // TODO reverse search model data to get model id from model.
         if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
         {
             ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(Customize*)&actor.AsCharacter->DrawData.CustomizeData,
@@ -127,7 +127,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         ret.SetHatVisible(!actor.AsCharacter->DrawData.IsHatHidden);
 
         // Use the draw object if it is a human.
-        if (model.IsHuman)
+        if (useModel && model.IsHuman)
         {
             // Customize can be obtained from the draw object.
             ret.Customize = model.GetCustomize();
@@ -484,4 +484,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         _editor.ChangeHatState(data, state.ModelData.IsHatVisible());
         _editor.ChangeVisor(data, state.ModelData.IsVisorToggled());
     }
+
+    public void DeleteState(ActorIdentifier identifier)
+        => _states.Remove(identifier);
 }
