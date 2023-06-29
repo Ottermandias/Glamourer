@@ -16,17 +16,29 @@ namespace Glamourer.Gui.Tabs.ActorTab;
 
 public class ActorSelector
 {
+    private readonly Configuration _config;
     private readonly ObjectManager _objects;
     private readonly ActorService  _actors;
     private readonly TargetManager _targets;
 
     private ActorIdentifier _identifier = ActorIdentifier.Invalid;
 
-    public ActorSelector(ObjectManager objects, TargetManager targets, ActorService actors)
+    public ActorSelector(ObjectManager objects, TargetManager targets, ActorService actors, Configuration config)
     {
         _objects = objects;
         _targets = targets;
         _actors  = actors;
+        _config  = config;
+    }
+
+    public bool IncognitoMode
+    {
+        get => _config.IncognitoMode;
+        set
+        {
+            _config.IncognitoMode = value;
+            _config.Save();
+        }
     }
 
     private LowerString _actorFilter = LowerString.Empty;
@@ -55,7 +67,7 @@ public class ActorSelector
 
     private void DrawSelector()
     {
-        using var child = ImRaii.Child("##actorSelector", new Vector2(_width, -ImGui.GetFrameHeight()), true);
+        using var child = ImRaii.Child("##Selector", new Vector2(_width, -ImGui.GetFrameHeight()), true);
         if (!child)
             return;
 
@@ -72,7 +84,7 @@ public class ActorSelector
     private void DrawSelectable(KeyValuePair<ActorIdentifier, ActorData> pair)
     {
         var equals = pair.Key.Equals(_identifier);
-        if (ImGui.Selectable(pair.Value.Label, equals) && !equals)
+        if (ImGui.Selectable(IncognitoMode ? pair.Key.Incognito(pair.Value.Label) : pair.Value.Label, equals) && !equals)
             _identifier = pair.Key.CreatePermanent();
     }
 

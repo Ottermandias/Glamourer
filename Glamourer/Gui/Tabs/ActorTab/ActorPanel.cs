@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Dalamud.Interface;
 using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
@@ -36,42 +37,52 @@ public class ActorPanel
 
     public void Draw()
     {
-        if (!_selector.HasSelection)
-            return;
-
-        (_identifier, _data) = _selector.Selection;
-        if (_data.Valid)
-        {
-            _actorName = _data.Label;
-            _actor     = _data.Objects[0];
-        }
-        else
-        {
-            _actorName = _identifier.ToString();
-            _actor     = Actor.Null;
-        }
-
-        if (!_stateManager.GetOrCreate(_identifier, _actor, out _state))
-            return;
-
         using var group = ImRaii.Group();
+        (_identifier, _data) = _selector.Selection;
+        (_actorName, _actor) = GetHeaderName();
         DrawHeader();
         DrawPanel();
     }
 
     private void DrawHeader()
     {
-        var color       = _data.Valid ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value();
+        var frameHeight = ImGui.GetFrameHeightWithSpacing();
+        var color       = !_identifier.IsValid ? ImGui.GetColorU32(ImGuiCol.Text) : _data.Valid ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value();
         var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
-        ImGuiUtil.DrawTextButton($"{(_data.Valid ? _data.Label : _identifier.ToString())}##playerHeader", -Vector2.UnitX, buttonColor, color);
+        ImGuiUtil.DrawTextButton($"{_actorName}##playerHeader", new Vector2(-frameHeight, ImGui.GetFrameHeight()), buttonColor, color);
+        ImGui.SameLine();
+        style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
+        using (var c = ImRaii.PushColor(ImGuiCol.Text, ColorId.FolderExpanded.Value())
+                   .Push(ImGuiCol.Border, ColorId.FolderExpanded.Value()))
+        {
+            if (ImGuiUtil.DrawDisabledButton(
+                    $"{(_selector.IncognitoMode ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash).ToIconString()}###IncognitoMode",
+                    new Vector2(frameHeight, ImGui.GetFrameHeight()), string.Empty, false, true))
+                _selector.IncognitoMode = !_selector.IncognitoMode;
+        }
+
+        var hovered = ImGui.IsItemHovered();
+        if (hovered)
+            ImGui.SetTooltip(_selector.IncognitoMode ? "Toggle incognito mode off." : "Toggle incognito mode on.");
+    }
+
+    private (string, Actor) GetHeaderName()
+    {
+        if (!_identifier.IsValid)
+            return ("No Selection", Actor.Null);
+
+        if (_data.Valid)
+            return (_selector.IncognitoMode ? _identifier.Incognito(_data.Label) : _data.Label, _data.Objects[0]);
+
+        return (_selector.IncognitoMode ? _identifier.Incognito(null) : _identifier.ToString(), Actor.Null);
     }
 
     private unsafe void DrawPanel()
     {
-        using var child = ImRaii.Child("##ActorPanel", -Vector2.One, true);
-        if (!child || _state == null)
+        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
+        if (!child || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
             return;
 
         if (_customizationDrawer.Draw(_state.ModelData.Customize, false))

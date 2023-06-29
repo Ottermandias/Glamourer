@@ -1,10 +1,12 @@
 ﻿using System.Numerics;
+using Dalamud.Interface;
 using Glamourer.Designs;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
+using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 
@@ -30,14 +32,38 @@ public class DesignPanel
         _equipmentDrawer     = equipmentDrawer;
     }
 
+    private void DrawHeader()
+    {
+        var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
+        var frameHeight = ImGui.GetFrameHeightWithSpacing();
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
+            .Push(ImGuiStyleVar.FrameRounding, 0);
+        ImGuiUtil.DrawTextButton(SelectionName, new Vector2(-frameHeight, ImGui.GetFrameHeight()), buttonColor);
+        ImGui.SameLine();
+        style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
+        using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.FolderExpanded.Value())
+            .Push(ImGuiCol.Border, ColorId.FolderExpanded.Value());
+        if (ImGuiUtil.DrawDisabledButton(
+                $"{(_selector.IncognitoMode ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash).ToIconString()}###IncognitoMode",
+                new Vector2(frameHeight, ImGui.GetFrameHeight()), string.Empty, false, true))
+            _selector.IncognitoMode = !_selector.IncognitoMode;
+        var hovered = ImGui.IsItemHovered();
+        color.Pop(2);
+        if (hovered)
+            ImGui.SetTooltip(_selector.IncognitoMode ? "Toggle incognito mode off." : "Toggle incognito mode on.");
+    }
+
+    private string SelectionName
+        => _selector.Selected == null ? "No Selection" : _selector.IncognitoMode ? _selector.Selected.Incognito : _selector.Selected.Name.Text;
+
     public void Draw()
     {
-        var design = _selector.Selected;
-        if (design == null)
-            return;
-
-        using var child = ImRaii.Child("##panel", -Vector2.One, true);
-        if (!child)
+        using var group  = ImRaii.Group();
+        DrawHeader();
+        
+        var       design = _selector.Selected;
+        using var child  = ImRaii.Child("##Panel", -Vector2.One, true);
+        if (!child || design == null)
             return;
 
         if (ImGui.Button("TEST"))

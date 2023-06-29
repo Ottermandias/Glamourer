@@ -40,9 +40,6 @@ public class SetPanel
 
     public void Draw()
     {
-        if (!_selector.HasSelection)
-            return;
-
         using var group = ImRaii.Group();
         DrawHeader();
         DrawPanel();
@@ -51,15 +48,28 @@ public class SetPanel
     private void DrawHeader()
     {
         var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
+        var frameHeight = ImGui.GetFrameHeightWithSpacing();
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
-        ImGuiUtil.DrawTextButton(Selection.Name, -Vector2.UnitX, buttonColor);
+        ImGuiUtil.DrawTextButton(_selector.SelectionName, new Vector2(-frameHeight, ImGui.GetFrameHeight()), buttonColor);
+        ImGui.SameLine();
+        style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
+        using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.FolderExpanded.Value())
+            .Push(ImGuiCol.Border, ColorId.FolderExpanded.Value());
+        if (ImGuiUtil.DrawDisabledButton(
+                $"{(_selector.IncognitoMode ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash).ToIconString()}###IncognitoMode",
+                new Vector2(frameHeight, ImGui.GetFrameHeight()), string.Empty, false, true))
+            _selector.IncognitoMode = !_selector.IncognitoMode;
+        var hovered = ImGui.IsItemHovered();
+        color.Pop(2);
+        if (hovered)
+            ImGui.SetTooltip(_selector.IncognitoMode ? "Toggle incognito mode off." : "Toggle incognito mode on.");
     }
 
     private void DrawPanel()
     {
-        using var child = ImRaii.Child("##SetPanel", -Vector2.One, true);
-        if (!child)
+        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
+        if (!child || !_selector.HasSelection)
             return;
 
         var name = _tempName ?? Selection.Name;
@@ -104,7 +114,7 @@ public class SetPanel
             ImGui.Selectable($"#{idx + 1:D2}");
             DrawDragDrop(Selection, idx);
             ImGui.TableNextColumn();
-            _designCombo.Draw(Selection, design, idx);
+            _designCombo.Draw(Selection, design, idx, _selector.IncognitoMode);
             DrawDragDrop(Selection, idx);
             ImGui.TableNextColumn();
             DrawApplicationTypeBoxes(Selection, design, idx);
@@ -117,7 +127,7 @@ public class SetPanel
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted("New");
         ImGui.TableNextColumn();
-        _designCombo.Draw(Selection, null, -1);
+        _designCombo.Draw(Selection, null, -1, _selector.IncognitoMode);
         ImGui.TableNextColumn();
         ImGui.TableNextColumn();
 
@@ -219,11 +229,12 @@ public class SetPanel
             _manager = manager;
         }
 
-        public void Draw(AutoDesignSet set, AutoDesign? design, int autoDesignIndex)
+        public void Draw(AutoDesignSet set, AutoDesign? design, int autoDesignIndex, bool incognito)
         {
             CurrentSelection    = design?.Design ?? (Items.Count > 0 ? Items[0] : null);
             CurrentSelectionIdx = design?.Design.Index ?? (Items.Count > 0 ? 0 : -1);
-            if (Draw("##design", CurrentSelection?.Name.Text ?? string.Empty, string.Empty, 220 * ImGuiHelpers.GlobalScale,
+            var name = (incognito ? CurrentSelection?.Incognito : CurrentSelection?.Name.Text) ?? string.Empty;
+            if (Draw("##design", name, string.Empty, 220 * ImGuiHelpers.GlobalScale,
                     ImGui.GetTextLineHeight())
              && CurrentSelection != null)
             {

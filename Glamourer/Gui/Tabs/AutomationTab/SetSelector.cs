@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+using System.Numerics;
 using Dalamud.Interface;
 using Glamourer.Automation;
 using Glamourer.Events;
@@ -12,7 +11,6 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.String;
-using Vector2 = FFXIVClientStructs.FFXIV.Common.Math.Vector2;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
@@ -28,7 +26,16 @@ public class SetSelector : IDisposable
     public AutoDesignSet? Selection      { get; private set; }
     public int            SelectionIndex { get; private set; } = -1;
 
-    private bool    IncognitoMode;
+    public bool IncognitoMode
+    {
+        get => _config.IncognitoMode;
+        set
+        {
+            _config.IncognitoMode = value;
+            _config.Save();
+        }
+    }
+
     private int     _dragIndex = -1;
     private Action? _endAction;
 
@@ -46,6 +53,12 @@ public class SetSelector : IDisposable
     {
         _event.Unsubscribe(OnAutomationChanged);
     }
+
+    public string SelectionName
+        => GetSetName(Selection, SelectionIndex);
+
+    public string GetSetName(AutoDesignSet? set, int index)
+        => set == null ? "No Selection" : IncognitoMode ? $"Auto Design Set #{index + 1}" : set.Name;
 
     private void OnAutomationChanged(AutomationChanged.Type type, AutoDesignSet? set, object? data)
     {
@@ -151,7 +164,7 @@ public class SetSelector : IDisposable
 
     private void DrawSelector()
     {
-        using var child = ImRaii.Child("##actorSelector", new Vector2(_width, -ImGui.GetFrameHeight()), true);
+        using var child = ImRaii.Child("##Selector", new Vector2(_width, -ImGui.GetFrameHeight()), true);
         if (!child)
             return;
 
@@ -169,12 +182,16 @@ public class SetSelector : IDisposable
         using var id = ImRaii.PushId(index);
         using (var color = ImRaii.PushColor(ImGuiCol.Text, set.Enabled ? ColorId.EnabledAutoSet.Value() : ColorId.DisabledAutoSet.Value()))
         {
-            if (ImGui.Selectable(set.Name, set == Selection, ImGuiSelectableFlags.None, _selectableSize))
+            if (ImGui.Selectable(GetSetName(set, index), set == Selection, ImGuiSelectableFlags.None, _selectableSize))
             {
                 Selection      = set;
                 SelectionIndex = index;
             }
         }
+
+        var lineEnd   = ImGui.GetItemRectMax();
+        var lineStart = new Vector2(ImGui.GetItemRectMin().X, lineEnd.Y);
+        ImGui.GetWindowDrawList().AddLine(lineStart, lineEnd, ImGui.GetColorU32(ImGuiCol.Border), ImGuiHelpers.GlobalScale);
 
         DrawDragDrop(set, index);
 
@@ -252,7 +269,7 @@ public class SetSelector : IDisposable
             if (source.Success && ImGui.SetDragDropPayload(dragDropLabel, nint.Zero, 0))
             {
                 _dragIndex = index;
-                ImGui.TextUnformatted($"Moving design set {set.Name} from position {index + 1}...");
+                ImGui.TextUnformatted($"Moving design set {GetSetName(set, index)} from position {index + 1}...");
             }
         }
     }

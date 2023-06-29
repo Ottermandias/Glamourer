@@ -35,6 +35,9 @@ public class Design : ISavable
 
     internal DesignData DesignData;
 
+    public string Incognito
+        => Identifier.ToString()[..8];
+
     /// <summary> Unconditionally apply a design to a designdata. </summary>
     /// <returns>Whether a redraw is required for the changes to take effect.</returns>
     public (bool, CustomizeFlag, EquipFlag) ApplyDesign(ref DesignData data)

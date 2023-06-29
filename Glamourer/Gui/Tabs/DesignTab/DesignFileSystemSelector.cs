@@ -3,9 +3,11 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Glamourer.Designs;
 using Glamourer.Events;
+using ImGuiNET;
 using OtterGui;
 using OtterGui.Filesystem;
 using OtterGui.FileSystem.Selector;
+using OtterGui.Raii;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
@@ -14,6 +16,16 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     private readonly DesignManager _designManager;
     private readonly DesignChanged _event;
     private readonly Configuration _config;
+
+    public bool IncognitoMode
+    {
+        get => _config.IncognitoMode;
+        set
+        {
+            _config.IncognitoMode = value;
+            _config.Save();
+        }
+    }
 
     public struct DesignState
     { }
@@ -27,6 +39,13 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         _config        = config;
         _event.Subscribe(OnDesignChange, DesignChanged.Priority.DesignFileSystemSelector);
         AddButton(DeleteButton, 1000);
+    }
+
+    protected override void DrawLeafName(FileSystem<Design>.Leaf leaf, in DesignState state, bool selected)
+    {
+        var       flag = selected ? ImGuiTreeNodeFlags.Selected | LeafFlags : LeafFlags;
+        var       name = IncognitoMode ? leaf.Value.Incognito : leaf.Name;
+        using var _    = ImRaii.TreeNode(name, flag);
     }
 
     public override void Dispose()
