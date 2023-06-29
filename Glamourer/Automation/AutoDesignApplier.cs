@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.AccessControl;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -8,6 +9,8 @@ using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Structs;
+using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 
@@ -46,13 +49,19 @@ public class AutoDesignApplier : IDisposable
         if (!_config.EnableAutoDesigns || !actor.Identifier(_actors.AwaitedService, out var id))
             return;
 
-        if (!_manager.EnabledSets.TryGetValue(id, out var set))
+        if (!GetPlayerSet(id, out var set))
+        {
+            if (_state.TryGetValue(id, out var s))
+                s.LastJob = actor.Job;
             return;
+        }
 
         if (!_state.GetOrCreate(id, actor, out var state))
             return;
 
-        Reduce(actor, state, set);
+        var sameJob = state.LastJob == actor.Job;
+        state.LastJob = actor.Job;
+        Reduce(actor, state, set, sameJob);
         _state.ReapplyState(actor);
     }
 
@@ -63,15 +72,15 @@ public class AutoDesignApplier : IDisposable
 
         if (!GetPlayerSet(identifier, out var set))
             return;
-        Reduce(actor, state, set);
+
+        Reduce(actor, state, set, true);
     }
 
-    private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set)
+    private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual)
     {
-        EquipFlag totalEquipFlags = 0;
-        //var       totalCustomizeFlags = _phrasing.Phrasing2 ? 0 : CustomizeFlagExtensions.RedrawRequired;
-        var  totalCustomizeFlags = CustomizeFlagExtensions.RedrawRequired;
-        byte totalMetaFlags      = 0;
+        EquipFlag totalEquipFlags     = 0;
+        var       totalCustomizeFlags = _phrasing.Phrasing2 ? 0 : CustomizeFlagExtensions.RedrawRequired;
+        byte      totalMetaFlags      = 0;
         foreach (var design in set.Designs)
         {
             if (!design.IsActive(actor))
@@ -84,9 +93,9 @@ public class AutoDesignApplier : IDisposable
                 continue;
 
             var (equipFlags, customizeFlags, applyHat, applyVisor, applyWeapon, applyWet) = design.ApplyWhat();
-            Reduce(state, in design.Design.DesignData, equipFlags,     ref totalEquipFlags);
-            Reduce(state, in design.Design.DesignData, customizeFlags, ref totalCustomizeFlags);
-            Reduce(state, in design.Design.DesignData, applyHat,       applyVisor, applyWeapon, applyWet, ref totalMetaFlags);
+            Reduce(state, in design.Design.DesignData, equipFlags,     ref totalEquipFlags, respectManual);
+            Reduce(state, in design.Design.DesignData, customizeFlags, ref totalCustomizeFlags, respectManual);
+            Reduce(state, in design.Design.DesignData, applyHat,       applyVisor, applyWeapon, applyWet, ref totalMetaFlags, respectManual);
         }
     }
 
@@ -103,7 +112,7 @@ public class AutoDesignApplier : IDisposable
         return _manager.EnabledSets.TryGetValue(identifier, out set);
     }
 
-    private void Reduce(ActorState state, in DesignData design, EquipFlag equipFlags, ref EquipFlag totalEquipFlags)
+    private void Reduce(ActorState state, in DesignData design, EquipFlag equipFlags, ref EquipFlag totalEquipFlags, bool respectManual)
     {
         equipFlags &= ~totalEquipFlags;
         if (equipFlags == 0)
@@ -115,14 +124,16 @@ public class AutoDesignApplier : IDisposable
             var flag = slot.ToFlag();
             if (equipFlags.HasFlag(flag))
             {
-                _state.ChangeItem(state, slot, design.Item(slot), StateChanged.Source.Fixed);
+                if (!respectManual || state[slot, false] is not StateChanged.Source.Manual)
+                    _state.ChangeItem(state, slot, design.Item(slot), StateChanged.Source.Fixed);
                 totalEquipFlags |= flag;
             }
 
             var stainFlag = slot.ToStainFlag();
             if (equipFlags.HasFlag(stainFlag))
             {
-                _state.ChangeStain(state, slot, design.Stain(slot), StateChanged.Source.Fixed);
+                if (!respectManual || state[slot, true] is not StateChanged.Source.Manual)
+                    _state.ChangeStain(state, slot, design.Stain(slot), StateChanged.Source.Fixed);
                 totalEquipFlags |= stainFlag;
             }
         }
@@ -132,7 +143,8 @@ public class AutoDesignApplier : IDisposable
             var item = design.Item(EquipSlot.MainHand);
             if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type)
             {
-                _state.ChangeItem(state, EquipSlot.MainHand, item, StateChanged.Source.Fixed);
+                if (!respectManual || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual)
+                    _state.ChangeItem(state, EquipSlot.MainHand, item, StateChanged.Source.Fixed);
                 totalEquipFlags |= EquipFlag.Mainhand;
             }
         }
@@ -142,31 +154,63 @@ public class AutoDesignApplier : IDisposable
             var item = design.Item(EquipSlot.OffHand);
             if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type)
             {
-                _state.ChangeItem(state, EquipSlot.OffHand, item, StateChanged.Source.Fixed);
+                if (!respectManual || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual)
+                    _state.ChangeItem(state, EquipSlot.OffHand, item, StateChanged.Source.Fixed);
                 totalEquipFlags |= EquipFlag.Offhand;
             }
         }
 
         if (equipFlags.HasFlag(EquipFlag.MainhandStain))
         {
-            _state.ChangeStain(state, EquipSlot.MainHand, design.Stain(EquipSlot.MainHand), StateChanged.Source.Fixed);
+            if (!respectManual || state[EquipSlot.MainHand, true] is not StateChanged.Source.Manual)
+                _state.ChangeStain(state, EquipSlot.MainHand, design.Stain(EquipSlot.MainHand), StateChanged.Source.Fixed);
             totalEquipFlags |= EquipFlag.MainhandStain;
         }
 
         if (equipFlags.HasFlag(EquipFlag.OffhandStain))
         {
-            _state.ChangeStain(state, EquipSlot.OffHand, design.Stain(EquipSlot.OffHand), StateChanged.Source.Fixed);
+            if (!respectManual || state[EquipSlot.OffHand, true] is not StateChanged.Source.Manual)
+                _state.ChangeStain(state, EquipSlot.OffHand, design.Stain(EquipSlot.OffHand), StateChanged.Source.Fixed);
             totalEquipFlags |= EquipFlag.OffhandStain;
         }
     }
 
-    private void Reduce(ActorState state, in DesignData design, CustomizeFlag customizeFlags, ref CustomizeFlag totalCustomizeFlags)
+    private void Reduce(ActorState state, in DesignData design, CustomizeFlag customizeFlags, ref CustomizeFlag totalCustomizeFlags,
+        bool respectManual)
     {
         customizeFlags &= ~totalCustomizeFlags;
         if (customizeFlags == 0)
             return;
 
-        // TODO add race/gender handling
+        var           customize = state.ModelData.Customize;
+        CustomizeFlag fixFlags  = 0;
+        if (customizeFlags.HasFlag(CustomizeFlag.Clan))
+        {
+            if (!respectManual || state[CustomizeIndex.Clan] is not StateChanged.Source.Manual)
+                fixFlags |= _customizations.ChangeClan(ref customize, design.Customize.Clan);
+            customizeFlags      &= ~(CustomizeFlag.Clan | CustomizeFlag.Race);
+            totalCustomizeFlags |= CustomizeFlag.Clan | CustomizeFlag.Race;
+        }
+
+        if (customizeFlags.HasFlag(CustomizeFlag.Gender))
+        {
+            if (!respectManual || state[CustomizeIndex.Gender] is not StateChanged.Source.Manual)
+                fixFlags |= _customizations.ChangeGender(ref customize, design.Customize.Gender);
+            customizeFlags      &= ~CustomizeFlag.Gender;
+            totalCustomizeFlags |= CustomizeFlag.Gender;
+        }
+
+        if (fixFlags != 0)
+            _state.ChangeCustomize(state, customize, fixFlags, StateChanged.Source.Fixed);
+
+        if (customizeFlags.HasFlag(CustomizeFlag.Face))
+        {
+            if (!respectManual || state[CustomizeIndex.Face] is not StateChanged.Source.Manual)
+                _state.ChangeCustomize(state, CustomizeIndex.Face, design.Customize.Face, StateChanged.Source.Fixed);
+            customizeFlags      &= ~CustomizeFlag.Face;
+            totalCustomizeFlags |= CustomizeFlag.Face;
+        }
+
         var set  = _customizations.AwaitedService.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
         var face = state.ModelData.Customize.Face;
         foreach (var index in Enum.GetValues<CustomizeIndex>())
@@ -178,36 +222,41 @@ public class AutoDesignApplier : IDisposable
             var value = design.Customize[index];
             if (CustomizationService.IsCustomizationValid(set, face, index, value))
             {
-                _state.ChangeCustomize(state, index, value, StateChanged.Source.Fixed);
+                if (!respectManual || state[index] is not StateChanged.Source.Manual)
+                    _state.ChangeCustomize(state, index, value, StateChanged.Source.Fixed);
                 totalCustomizeFlags |= flag;
             }
         }
     }
 
     private void Reduce(ActorState state, in DesignData design, bool applyHat, bool applyVisor, bool applyWeapon, bool applyWet,
-        ref byte totalMetaFlags)
+        ref byte totalMetaFlags, bool respectManual)
     {
         if (applyHat && (totalMetaFlags & 0x01) == 0)
         {
-            _state.ChangeHatState(state, design.IsHatVisible(), StateChanged.Source.Fixed);
+            if (!respectManual || state[ActorState.MetaFlag.HatState] is not StateChanged.Source.Manual)
+                _state.ChangeHatState(state, design.IsHatVisible(), StateChanged.Source.Fixed);
             totalMetaFlags |= 0x01;
         }
 
         if (applyVisor && (totalMetaFlags & 0x02) == 0)
         {
-            _state.ChangeVisorState(state, design.IsVisorToggled(), StateChanged.Source.Fixed);
+            if (!respectManual || state[ActorState.MetaFlag.VisorState] is not StateChanged.Source.Manual)
+                _state.ChangeVisorState(state, design.IsVisorToggled(), StateChanged.Source.Fixed);
             totalMetaFlags |= 0x02;
         }
 
         if (applyWeapon && (totalMetaFlags & 0x04) == 0)
         {
-            _state.ChangeWeaponState(state, design.IsWeaponVisible(), StateChanged.Source.Fixed);
+            if (!respectManual || state[ActorState.MetaFlag.WeaponState] is not StateChanged.Source.Manual)
+                _state.ChangeWeaponState(state, design.IsWeaponVisible(), StateChanged.Source.Fixed);
             totalMetaFlags |= 0x04;
         }
 
         if (applyWet && (totalMetaFlags & 0x08) == 0)
         {
-            _state.ChangeWetness(state, design.IsWet(), StateChanged.Source.Fixed);
+            if (!respectManual || state[ActorState.MetaFlag.Wetness] is not StateChanged.Source.Manual)
+                _state.ChangeWetness(state, design.IsWet(), StateChanged.Source.Fixed);
             totalMetaFlags |= 0x08;
         }
     }

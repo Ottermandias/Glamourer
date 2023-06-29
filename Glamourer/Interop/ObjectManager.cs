@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Objects;
@@ -133,8 +134,11 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
     public int Count
         => Identifiers.Count;
 
+    /// <summary> Also (inefficiently) handles All Worlds players. </summary>
     public bool ContainsKey(ActorIdentifier key)
-        => Identifiers.ContainsKey(key);
+        => Identifiers.ContainsKey(key)
+         || key.HomeWorld == ushort.MaxValue
+         && Identifiers.Keys.FirstOrDefault(i => i.Type is IdentifierType.Player && i.PlayerName == key.PlayerName).IsValid;
 
     public bool TryGetValue(ActorIdentifier key, out ActorData value)
         => Identifiers.TryGetValue(key, out value);

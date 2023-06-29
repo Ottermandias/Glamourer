@@ -68,7 +68,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         => GetOrCreate(actor.GetIdentifier(_actors.AwaitedService), actor, out state);
 
     /// <summary> Try to obtain or create a new state for an existing actor. Returns false if no state could be created. </summary>
-    public bool GetOrCreate(ActorIdentifier identifier, Actor actor, [NotNullWhen(true)] out ActorState? state)
+    public unsafe bool GetOrCreate(ActorIdentifier identifier, Actor actor, [NotNullWhen(true)] out ActorState? state)
     {
         if (TryGetValue(identifier, out state))
             return true;
@@ -81,6 +81,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             {
                 ModelData = FromActor(actor, true),
                 BaseData  = FromActor(actor, false),
+                LastJob = (byte) (actor.IsCharacter ? actor.AsCharacter->CharacterData.ClassJob : 0),
             };
             // state.Identifier is owned.
             _states.Add(state.Identifier, state);

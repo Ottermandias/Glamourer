@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Utility;
 using Glamourer.Designs;
@@ -66,7 +67,32 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         var newSet = new AutoDesignSet(name, identifier.CreatePermanent()) { Enabled = false };
         _data.Add(newSet);
         Save();
-        Glamourer.Log.Debug($"Created new design set for {identifier.Incognito(null)}.");
+        Glamourer.Log.Debug($"Created new design set for {newSet.Identifier.Incognito(null)}.");
+        _event.Invoke(AutomationChanged.Type.AddedSet, newSet, (_data.Count - 1, name));
+    }
+
+    public void DuplicateDesignSet(AutoDesignSet set)
+    {
+        var name = set.Name;
+        var match = Regex.Match(name, @"\(Duplicate( (?<Number>\d+))?\)$",
+            RegexOptions.Compiled | RegexOptions.NonBacktracking | RegexOptions.ExplicitCapture);
+        if (match.Success)
+        {
+            var number      = match.Groups["Number"];
+            var replacement = number.Success ? $"(Duplicate {int.Parse(number.Value) + 1})" : "(Duplicate 2)";
+            name = name.Replace(match.Value, replacement);
+        }
+        else
+        {
+            name += " (Duplicate)";
+        }
+
+        var newSet = new AutoDesignSet(name, set.Identifier) { Enabled = false };
+        newSet.Designs.AddRange(set.Designs.Select(d => d.Clone()));
+        _data.Add(newSet);
+        Save();
+        Glamourer.Log.Debug(
+            $"Duplicated new design set for {newSet.Identifier.Incognito(null)} with {newSet.Designs.Count} auto designs from existing set.");
         _event.Invoke(AutomationChanged.Type.AddedSet, newSet, (_data.Count - 1, name));
     }
 
@@ -82,6 +108,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             _enabled.Remove(set.Identifier);
         }
 
+        _data.RemoveAt(whichSet);
         Save();
         Glamourer.Log.Debug($"Deleted design set {whichSet + 1}.");
         _event.Invoke(AutomationChanged.Type.DeletedSet, set, whichSet);
@@ -155,6 +182,10 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             if (_enabled.Remove(set.Identifier, out oldEnabled))
                 oldEnabled.Enabled = false;
             _enabled.Add(set.Identifier, set);
+        }
+        else
+        {
+            _enabled.Remove(set.Identifier, out oldEnabled);
         }
 
         Save();

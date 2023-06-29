@@ -67,6 +67,9 @@ public readonly unsafe struct Actor : IEquatable<Actor>
     public Model Model
         => Valid ? AsObject->DrawObject : null;
 
+    public byte Job
+        => IsCharacter ? AsCharacter->CharacterData.ClassJob : (byte)0;
+
     public static implicit operator bool(Actor actor)
         => actor.Address != nint.Zero;
 

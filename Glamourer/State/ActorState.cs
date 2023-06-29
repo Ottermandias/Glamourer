@@ -29,6 +29,9 @@ public class ActorState
     /// <summary> This should be the desired state of the draw object. </summary>
     public DesignData ModelData;
 
+    /// <summary> The last seen job. </summary>
+    public byte LastJob;
+
     /// <summary> This contains whether a change to the base data was made by the game, the user via manual input or through automatic application. </summary>
     private readonly StateChanged.Source[] _sources = Enumerable
         .Repeat(StateChanged.Source.Game, EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5).ToArray();

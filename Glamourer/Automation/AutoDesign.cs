@@ -25,6 +25,14 @@ public class AutoDesign
     public JobGroup Jobs;
     public Type     ApplicationType;
 
+    public AutoDesign Clone()
+        => new()
+        {
+            Design          = Design,
+            ApplicationType = ApplicationType,
+            Jobs            = Jobs,
+        };
+
     public unsafe bool IsActive(Actor actor)
         => actor.IsCharacter && Jobs.Fits(actor.AsCharacter->CharacterData.ClassJob);
 
