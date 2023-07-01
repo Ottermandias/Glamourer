@@ -13,6 +13,7 @@ using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
+using Glamourer.Unlocks;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
 using OtterGui.Log;
@@ -80,7 +81,9 @@ public static class ServiceManager
             .AddSingleton<PenumbraService>()
             .AddSingleton<ObjectManager>()
             .AddSingleton<PenumbraAutoRedraw>()
-            .AddSingleton<JobService>();
+            .AddSingleton<JobService>()
+            .AddSingleton<CustomizeUnlockManager>()
+            .AddSingleton<ItemUnlockManager>();
 
     private static IServiceCollection AddDesigns(this IServiceCollection services)
         => services.AddSingleton<DesignManager>()

@@ -21,6 +21,9 @@ public class BackupService
             new(fileNames.ConfigFile),
             new(fileNames.DesignFileSystem),
             new(fileNames.MigrationDesignFile),
+            new(fileNames.AutomationFile),
+            new(fileNames.UnlockFileCustomize),
+            new(fileNames.UnlockFileItems),
         };
 
         list.AddRange(fileNames.Designs());

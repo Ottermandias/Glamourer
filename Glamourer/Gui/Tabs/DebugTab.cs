@@ -18,6 +18,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
+using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -43,10 +44,12 @@ public unsafe class DebugTab : ITab
     private readonly GlamourerIpc           _ipc;
     private readonly PhrasingService        _phrasing;
 
-    private readonly ItemManager          _items;
-    private readonly ActorService         _actors;
-    private readonly CustomizationService _customization;
-    private readonly JobService           _jobs;
+    private readonly ItemManager            _items;
+    private readonly ActorService           _actors;
+    private readonly CustomizationService   _customization;
+    private readonly JobService             _jobs;
+    private readonly CustomizeUnlockManager _customizeUnlocks;
+    private readonly CustomizeUnlockManager _itemUnlocks;
 
     private readonly DesignManager     _designManager;
     private readonly DesignFileSystem  _designFileSystem;
@@ -66,7 +69,7 @@ public unsafe class DebugTab : ITab
         ActorService actors, ItemManager items, CustomizationService customization, ObjectManager objectManager,
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
-        AutoDesignManager autoDesignManager, JobService jobs, PhrasingService phrasing)
+        AutoDesignManager autoDesignManager, JobService jobs, PhrasingService phrasing, CustomizeUnlockManager customizeUnlocks)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -89,6 +92,7 @@ public unsafe class DebugTab : ITab
         _autoDesignManager      = autoDesignManager;
         _jobs                   = jobs;
         _phrasing               = phrasing;
+        _customizeUnlocks       = customizeUnlocks;
     }
 
     public ReadOnlySpan<byte> Label
@@ -106,6 +110,7 @@ public unsafe class DebugTab : ITab
         DrawDesigns();
         DrawState();
         DrawAutoDesigns();
+        DrawUnlocks();
         DrawIpc();
     }
 
@@ -1232,6 +1237,61 @@ public unsafe class DebugTab : ITab
         ImGuiUtil.DrawTableColumn("Phrasing 2");
         ImGuiUtil.DrawTableColumn(_config.Phrasing2);
         ImGuiUtil.DrawTableColumn(_phrasing.Phrasing2.ToString());
+    }
+
+    #endregion
+
+    #region Unlocks
+
+    private void DrawUnlocks()
+    {
+        if (!ImGui.CollapsingHeader("Unlocks"))
+            return;
+
+        DrawCustomizationUnlocks();
+        DrawItemUnlocks();
+    }
+
+    private void DrawCustomizationUnlocks()
+    {
+        using var tree = ImRaii.TreeNode("Customization");
+        if (!tree)
+            return;
+
+
+        using var table = ImRaii.Table("customizationUnlocks", 6,
+            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY,
+            new Vector2(ImGui.GetContentRegionAvail().X, 12 * ImGui.GetTextLineHeight()));
+        if (!table)
+            return;
+
+        ImGui.TableNextColumn();
+        var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
+        ImGui.TableNextRow();
+        var remainder = ImGuiClip.ClippedDraw(_customizeUnlocks.Unlockable, skips, t =>
+        {
+            ImGuiUtil.DrawTableColumn(t.Key.Index.ToDefaultName());
+            ImGuiUtil.DrawTableColumn(t.Key.CustomizeId.ToString());
+            ImGuiUtil.DrawTableColumn(t.Key.Value.Value.ToString());
+            ImGuiUtil.DrawTableColumn(t.Value.Data.ToString());
+            ImGuiUtil.DrawTableColumn(t.Value.Name);
+            ImGuiUtil.DrawTableColumn(_customizeUnlocks.IsUnlocked(t.Key, out var time)
+                ? time == DateTimeOffset.MaxValue ? "Always" : time.LocalDateTime.ToShortDateString()
+                : "Never");
+        }, _customizeUnlocks.Unlockable.Count);
+        ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
+    }
+
+    private void DrawItemUnlocks()
+    {
+        using var tree = ImRaii.TreeNode("Item");
+        if (!tree)
+            return;
+
+
+        using var table = ImRaii.Table("itemUnlocks", 6, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        if (!table)
+            return;
     }
 
     #endregion

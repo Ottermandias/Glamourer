@@ -13,6 +13,8 @@ public class FilenameService
     public readonly string MigrationDesignFile;
     public readonly string DesignDirectory;
     public readonly string AutomationFile;
+    public readonly string UnlockFileCustomize;
+    public readonly string UnlockFileItems;
 
     public FilenameService(DalamudPluginInterface pi)
     {
@@ -21,6 +23,8 @@ public class FilenameService
         AutomationFile      = Path.Combine(ConfigDirectory, "automation.json");
         DesignFileSystem    = Path.Combine(ConfigDirectory, "sort_order.json");
         MigrationDesignFile = Path.Combine(ConfigDirectory, "Designs.json");
+        UnlockFileCustomize = Path.Combine(ConfigDirectory, "unlocks_customize.json");
+        UnlockFileItems     = Path.Combine(ConfigDirectory, "unlocks_items.json");
         DesignDirectory     = Path.Combine(ConfigDirectory, "designs");
     }
 

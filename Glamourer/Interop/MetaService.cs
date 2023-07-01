@@ -3,7 +3,6 @@ using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
-using static OtterGui.Raii.ImRaii;
 
 namespace Glamourer.Interop;
 
@@ -39,7 +38,7 @@ public unsafe class MetaService : IDisposable
         if (!actor.IsCharacter)
             return;
 
-        _hideHatGearHook.Original(&actor.AsCharacter->DrawData, 0, (byte) (value ? 1 : 0));
+        _hideHatGearHook.Original(&actor.AsCharacter->DrawData, 0, (byte)(value ? 1 : 0));
     }
 
     public void SetWeaponState(Actor actor, bool value)
@@ -53,10 +52,10 @@ public unsafe class MetaService : IDisposable
     private void HideHatDetour(DrawDataContainer* drawData, uint id, byte value)
     {
         Actor actor = drawData->Parent;
-        var v = value == 0;
+        var   v     = value == 0;
         _headGearEvent.Invoke(actor, ref v);
-        value = (byte) (v ? 0 : 1);
-        Glamourer.Log.Information($"[MetaService] Hide Hat triggered with 0x{(nint)drawData:X} {id} {value} for {actor.Utf8Name}.");
+        value = (byte)(v ? 0 : 1);
+        Glamourer.Log.Verbose($"[MetaService] Hide Hat triggered with 0x{(nint)drawData:X} {id} {value} for {actor.Utf8Name}.");
         _hideHatGearHook.Original(drawData, id, value);
     }
 
@@ -66,7 +65,7 @@ public unsafe class MetaService : IDisposable
         value = !value;
         _weaponEvent.Invoke(actor, ref value);
         value = !value;
-        Glamourer.Log.Information($"[MetaService] Hide Weapon triggered with 0x{(nint)drawData:X} {value} for {actor.Utf8Name}.");
+        Glamourer.Log.Verbose($"[MetaService] Hide Weapon triggered with 0x{(nint)drawData:X} {value} for {actor.Utf8Name}.");
         _hideWeaponsHook.Original(drawData, value);
     }
 }

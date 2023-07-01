@@ -11,6 +11,7 @@ using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Structs;
+using Glamourer.Unlocks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui.Filesystem;
@@ -28,6 +29,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
     private readonly DesignManager     _designs;
     private readonly ActorService      _actors;
     private readonly AutomationChanged _event;
+    private readonly ItemUnlockManager     _unlockManager;
 
     private readonly List<AutoDesignSet>                        _data    = new();
     private readonly Dictionary<ActorIdentifier, AutoDesignSet> _enabled = new();
@@ -36,13 +38,14 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         => _enabled;
 
     public AutoDesignManager(JobService jobs, ActorService actors, SaveService saveService, DesignManager designs, AutomationChanged @event,
-        FixedDesignMigrator migrator, DesignFileSystem fileSystem)
+        FixedDesignMigrator migrator, DesignFileSystem fileSystem, ItemUnlockManager unlockManager)
     {
-        _jobs        = jobs;
-        _actors      = actors;
-        _saveService = saveService;
-        _designs     = designs;
-        _event       = @event;
+        _jobs          = jobs;
+        _actors        = actors;
+        _saveService   = saveService;
+        _designs       = designs;
+        _event         = @event;
+        _unlockManager = unlockManager;
         Load();
         migrator.ConsumeMigratedData(_actors, fileSystem, this);
     }

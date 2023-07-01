@@ -20,11 +20,12 @@ public class StateEditor
     private readonly UpdateSlotService      _updateSlot;
     private readonly VisorService           _visor;
     private readonly WeaponService          _weapon;
+    private readonly MetaService            _metaService;
     private readonly ChangeCustomizeService _changeCustomize;
     private readonly ItemManager            _items;
 
     public StateEditor(UpdateSlotService updateSlot, VisorService visor, WeaponService weapon, ChangeCustomizeService changeCustomize,
-        ItemManager items, PenumbraService penumbra)
+        ItemManager items, PenumbraService penumbra, MetaService metaService)
     {
         _updateSlot      = updateSlot;
         _visor           = visor;
@@ -32,6 +33,7 @@ public class StateEditor
         _changeCustomize = changeCustomize;
         _items           = items;
         _penumbra        = penumbra;
+        _metaService     = metaService;
     }
 
     /// <summary> Changing the model ID simply requires guaranteed redrawing. </summary>
@@ -152,13 +154,13 @@ public class StateEditor
     public unsafe void ChangeHatState(ActorData data, bool value)
     {
         foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            actor.AsCharacter->DrawData.HideHeadgear(0, !value);
+            _metaService.SetHatState(actor, value);
     }
 
     /// <summary> Change the weapon-visibility state on actors. </summary>
     public unsafe void ChangeWeaponState(ActorData data, bool value)
     {
         foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            actor.AsCharacter->DrawData.HideWeapons(!value);
+            _metaService.SetWeaponState(actor, value);
     }
 }

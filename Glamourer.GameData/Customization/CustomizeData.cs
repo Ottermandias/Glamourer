@@ -1,11 +1,12 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Glamourer.Customization;
 
 // Any customization value can be represented in 8 bytes by its ID,
 // a byte value, an optional value-id and an optional icon or color.
 [StructLayout(LayoutKind.Explicit)]
-public readonly struct CustomizeData
+public readonly struct CustomizeData : IEquatable<CustomizeData>
 {
     [FieldOffset(0)]
     public readonly CustomizeIndex Index;
@@ -24,10 +25,21 @@ public readonly struct CustomizeData
 
     public CustomizeData(CustomizeIndex index, CustomizeValue value, uint data = 0, ushort customizeId = 0)
     {
-        Index          = index;
+        Index       = index;
         Value       = value;
         IconId      = data;
         Color       = data;
         CustomizeId = customizeId;
     }
+
+    public bool Equals(CustomizeData other)
+        => Index == other.Index
+         && Value.Value == other.Value.Value
+         && CustomizeId == other.CustomizeId;
+
+    public override bool Equals(object? obj)
+        => obj is CustomizeData other && Equals(other);
+
+    public override int GetHashCode()
+        => HashCode.Combine((int)Index, Value.Value, CustomizeId);
 }
