@@ -49,7 +49,7 @@ public unsafe class DebugTab : ITab
     private readonly CustomizationService   _customization;
     private readonly JobService             _jobs;
     private readonly CustomizeUnlockManager _customizeUnlocks;
-    private readonly CustomizeUnlockManager _itemUnlocks;
+    private readonly ItemUnlockManager      _itemUnlocks;
 
     private readonly DesignManager     _designManager;
     private readonly DesignFileSystem  _designFileSystem;
@@ -69,7 +69,8 @@ public unsafe class DebugTab : ITab
         ActorService actors, ItemManager items, CustomizationService customization, ObjectManager objectManager,
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
-        AutoDesignManager autoDesignManager, JobService jobs, PhrasingService phrasing, CustomizeUnlockManager customizeUnlocks)
+        AutoDesignManager autoDesignManager, JobService jobs, PhrasingService phrasing, CustomizeUnlockManager customizeUnlocks,
+        ItemUnlockManager itemUnlocks)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -93,6 +94,7 @@ public unsafe class DebugTab : ITab
         _jobs                   = jobs;
         _phrasing               = phrasing;
         _customizeUnlocks       = customizeUnlocks;
+        _itemUnlocks            = itemUnlocks;
     }
 
     public ReadOnlySpan<byte> Label
@@ -1250,6 +1252,7 @@ public unsafe class DebugTab : ITab
 
         DrawCustomizationUnlocks();
         DrawItemUnlocks();
+        DrawUnlockableItems();
     }
 
     private void DrawCustomizationUnlocks()
@@ -1260,7 +1263,7 @@ public unsafe class DebugTab : ITab
 
 
         using var table = ImRaii.Table("customizationUnlocks", 6,
-            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY,
+            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
             new Vector2(ImGui.GetContentRegionAvail().X, 12 * ImGui.GetTextLineHeight()));
         if (!table)
             return;
@@ -1276,7 +1279,9 @@ public unsafe class DebugTab : ITab
             ImGuiUtil.DrawTableColumn(t.Value.Data.ToString());
             ImGuiUtil.DrawTableColumn(t.Value.Name);
             ImGuiUtil.DrawTableColumn(_customizeUnlocks.IsUnlocked(t.Key, out var time)
-                ? time == DateTimeOffset.MaxValue ? "Always" : time.LocalDateTime.ToShortDateString()
+                ? time == DateTimeOffset.MaxValue
+                    ? "Always"
+                    : time.LocalDateTime.ToString("g")
                 : "Never");
         }, _customizeUnlocks.Unlockable.Count);
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
@@ -1284,14 +1289,96 @@ public unsafe class DebugTab : ITab
 
     private void DrawItemUnlocks()
     {
-        using var tree = ImRaii.TreeNode("Item");
+        using var tree = ImRaii.TreeNode("Unlocked Items");
         if (!tree)
             return;
 
-
-        using var table = ImRaii.Table("itemUnlocks", 6, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        using var table = ImRaii.Table("itemUnlocks", 5,
+            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
+            new Vector2(ImGui.GetContentRegionAvail().X, 12 * ImGui.GetTextLineHeight()));
         if (!table)
             return;
+
+        ImGui.TableSetupColumn("ItemId", ImGuiTableColumnFlags.WidthFixed, 30 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Name",   ImGuiTableColumnFlags.WidthFixed, 400 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Slot",   ImGuiTableColumnFlags.WidthFixed, 120 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Model",  ImGuiTableColumnFlags.WidthFixed, 80 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Unlock", ImGuiTableColumnFlags.WidthFixed, 120 * ImGuiHelpers.GlobalScale);
+
+        ImGui.TableNextColumn();
+        var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
+        ImGui.TableNextRow();
+        var remainder = ImGuiClip.ClippedDraw(_itemUnlocks.Unlocked, skips, t =>
+        {
+            ImGuiUtil.DrawTableColumn(t.Key.ToString());
+            if (_items.ItemService.AwaitedService.TryGetValue(t.Key, out var equip))
+            {
+                ImGuiUtil.DrawTableColumn(equip.Name);
+                ImGuiUtil.DrawTableColumn(equip.Type.ToName());
+                ImGuiUtil.DrawTableColumn(equip.Weapon().ToString());
+            }
+            else
+            {
+                ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+            }
+
+            ImGuiUtil.DrawTableColumn(_itemUnlocks.IsUnlocked(t.Key, out var time)
+                ? time == DateTimeOffset.MaxValue
+                    ? "Always"
+                    : time.LocalDateTime.ToString("g")
+                : "Never");
+        }, _itemUnlocks.Unlocked.Count);
+        ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
+    }
+
+    private void DrawUnlockableItems()
+    {
+        using var tree = ImRaii.TreeNode("Unlockable Items");
+        if (!tree)
+            return;
+
+        using var table = ImRaii.Table("unlockableItem", 6,
+            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
+            new Vector2(ImGui.GetContentRegionAvail().X, 12 * ImGui.GetTextLineHeight()));
+        if (!table)
+            return;
+
+        ImGui.TableSetupColumn("ItemId",   ImGuiTableColumnFlags.WidthFixed, 30 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Name",     ImGuiTableColumnFlags.WidthFixed, 400 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Slot",     ImGuiTableColumnFlags.WidthFixed, 120 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Model",    ImGuiTableColumnFlags.WidthFixed, 80 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Unlock",   ImGuiTableColumnFlags.WidthFixed, 120 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Criteria", ImGuiTableColumnFlags.WidthStretch);
+
+        ImGui.TableNextColumn();
+        var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
+        ImGui.TableNextRow();
+        var remainder = ImGuiClip.ClippedDraw(_itemUnlocks.Unlockable, skips, t =>
+        {
+            ImGuiUtil.DrawTableColumn(t.Key.ToString());
+            if (_items.ItemService.AwaitedService.TryGetValue(t.Key, out var equip))
+            {
+                ImGuiUtil.DrawTableColumn(equip.Name);
+                ImGuiUtil.DrawTableColumn(equip.Type.ToName());
+                ImGuiUtil.DrawTableColumn(equip.Weapon().ToString());
+            }
+            else
+            {
+                ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+                ImGui.TableNextColumn();
+            }
+
+            ImGuiUtil.DrawTableColumn(_itemUnlocks.IsUnlocked(t.Key, out var time)
+                ? time == DateTimeOffset.MaxValue
+                    ? "Always"
+                    : time.LocalDateTime.ToString("g")
+                : "Never");
+            ImGuiUtil.DrawTableColumn(t.Value.ToString());
+        }, _itemUnlocks.Unlockable.Count);
+        ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
     }
 
     #endregion
