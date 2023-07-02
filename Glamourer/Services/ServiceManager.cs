@@ -10,6 +10,7 @@ using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Gui.Tabs.AutomationTab;
 using Glamourer.Gui.Tabs.DesignTab;
+using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
@@ -51,7 +52,7 @@ public static class ServiceManager
             .AddSingleton<BackupService>()
             .AddSingleton<FrameworkManager>()
             .AddSingleton<SaveService>()
-            .AddSingleton<PhrasingService>()
+            .AddSingleton<CodeService>()
             .AddSingleton<ConfigMigrationService>()
             .AddSingleton<Configuration>();
 
@@ -95,7 +96,8 @@ public static class ServiceManager
     private static IServiceCollection AddState(this IServiceCollection services)
         => services.AddSingleton<StateManager>()
             .AddSingleton<StateEditor>()
-            .AddSingleton<StateListener>();
+            .AddSingleton<StateListener>()
+            .AddSingleton<FunModule>();
 
     private static IServiceCollection AddUi(this IServiceCollection services)
         => services.AddSingleton<DebugTab>()
@@ -110,6 +112,9 @@ public static class ServiceManager
             .AddSingleton<DesignFileSystemSelector>()
             .AddSingleton<DesignPanel>()
             .AddSingleton<DesignTab>()
+            .AddSingleton<UnlockTable>()
+            .AddSingleton<UnlockOverview>()
+            .AddSingleton<UnlocksTab>()
             .AddSingleton<PenumbraChangedItemTooltip>()
             .AddSingleton<AutomationTab>()
             .AddSingleton<SetSelector>()

@@ -42,7 +42,7 @@ public unsafe class DebugTab : ITab
     private readonly ObjectTable            _objects;
     private readonly ObjectManager          _objectManager;
     private readonly GlamourerIpc           _ipc;
-    private readonly PhrasingService        _phrasing;
+    private readonly CodeService        _code;
 
     private readonly ItemManager            _items;
     private readonly ActorService           _actors;
@@ -69,7 +69,7 @@ public unsafe class DebugTab : ITab
         ActorService actors, ItemManager items, CustomizationService customization, ObjectManager objectManager,
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
-        AutoDesignManager autoDesignManager, JobService jobs, PhrasingService phrasing, CustomizeUnlockManager customizeUnlocks,
+        AutoDesignManager autoDesignManager, JobService jobs, CodeService code, CustomizeUnlockManager customizeUnlocks,
         ItemUnlockManager itemUnlocks)
     {
         _changeCustomizeService = changeCustomizeService;
@@ -92,7 +92,7 @@ public unsafe class DebugTab : ITab
         _pluginInterface        = pluginInterface;
         _autoDesignManager      = autoDesignManager;
         _jobs                   = jobs;
-        _phrasing               = phrasing;
+        _code               = code;
         _customizeUnlocks       = customizeUnlocks;
         _itemUnlocks            = itemUnlocks;
     }
@@ -1190,8 +1190,6 @@ public unsafe class DebugTab : ITab
         if (!ImGui.CollapsingHeader("Auto Designs"))
             return;
 
-        DrawPhrasingService();
-
         foreach (var (set, idx) in _autoDesignManager.WithIndex())
         {
             using var id   = ImRaii.PushId(idx);
@@ -1221,24 +1219,6 @@ public unsafe class DebugTab : ITab
                 ImGuiUtil.DrawTableColumn($"{design.ApplicationType} {design.Jobs.Name}");
             }
         }
-    }
-
-    private void DrawPhrasingService()
-    {
-        using var tree = ImRaii.TreeNode("Phrasing");
-        if (!tree)
-            return;
-
-        using var table = ImRaii.Table("phrasing", 3, ImGuiTableFlags.SizingFixedFit);
-        if (!table)
-            return;
-
-        ImGuiUtil.DrawTableColumn("Phrasing 1");
-        ImGuiUtil.DrawTableColumn(_config.Phrasing1);
-        ImGuiUtil.DrawTableColumn(_phrasing.Phrasing1.ToString());
-        ImGuiUtil.DrawTableColumn("Phrasing 2");
-        ImGuiUtil.DrawTableColumn(_config.Phrasing2);
-        ImGuiUtil.DrawTableColumn(_phrasing.Phrasing2.ToString());
     }
 
     #endregion
@@ -1279,7 +1259,7 @@ public unsafe class DebugTab : ITab
             ImGuiUtil.DrawTableColumn(t.Value.Data.ToString());
             ImGuiUtil.DrawTableColumn(t.Value.Name);
             ImGuiUtil.DrawTableColumn(_customizeUnlocks.IsUnlocked(t.Key, out var time)
-                ? time == DateTimeOffset.MaxValue
+                ? time == DateTimeOffset.MinValue
                     ? "Always"
                     : time.LocalDateTime.ToString("g")
                 : "Never");
@@ -1325,7 +1305,7 @@ public unsafe class DebugTab : ITab
             }
 
             ImGuiUtil.DrawTableColumn(_itemUnlocks.IsUnlocked(t.Key, out var time)
-                ? time == DateTimeOffset.MaxValue
+                ? time == DateTimeOffset.MinValue
                     ? "Always"
                     : time.LocalDateTime.ToString("g")
                 : "Never");
@@ -1372,7 +1352,7 @@ public unsafe class DebugTab : ITab
             }
 
             ImGuiUtil.DrawTableColumn(_itemUnlocks.IsUnlocked(t.Key, out var time)
-                ? time == DateTimeOffset.MaxValue
+                ? time == DateTimeOffset.MinValue
                     ? "Always"
                     : time.LocalDateTime.ToString("g")
                 : "Never");

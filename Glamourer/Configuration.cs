@@ -23,6 +23,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool               AutoRedrawEquipOnChanges    { get; set; } = false;
     public bool               EnableAutoDesigns           { get; set; } = true;
     public bool               IncognitoMode               { get; set; } = false;
+    public bool               UnlockDetailMode            { get; set; } = true;
     public MainWindow.TabType SelectedTab                 { get; set; } = MainWindow.TabType.Settings;
     public DoubleModifier     DeleteDesignModifier        { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
 
@@ -30,8 +31,7 @@ public class Configuration : IPluginConfiguration, ISavable
     [JsonProperty(Order = int.MaxValue)]
     public ISortMode<Design> SortMode { get; set; } = ISortMode<Design>.FoldersFirst;
 
-    public string Phrasing1 { get; set; } = string.Empty;
-    public string Phrasing2 { get; set; } = string.Empty;
+    public List<(string Code, bool Enabled)> Codes { get; set; } = new List<(string Code, bool Enabled)>();
 
 #if DEBUG
     public bool DebugMode { get; set; } = true;

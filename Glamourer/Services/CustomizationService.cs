@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Dalamud.Data;
@@ -105,10 +106,16 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     public bool IsGenderValid(Race race, Gender gender)
         => race is Race.Hrothgar ? gender == Gender.Male : AwaitedService.Genders.Contains(gender);
 
-    /// <summary> Returns whether a customization value is valid for a given clan/gender set and face. </summary>
+    /// <inheritdoc cref="IsCustomizationValid(CustomizationSet,CustomizeValue,CustomizeIndex,CustomizeValue, out CustomizeData?)"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool IsCustomizationValid(CustomizationSet set, CustomizeValue face, CustomizeIndex type, CustomizeValue value)
-        => set.DataByValue(type, value, out _, face) >= 0;
+        => IsCustomizationValid(set, face, type, value, out _);
+
+    /// <summary> Returns whether a customization value is valid for a given clan/gender set and face. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static bool IsCustomizationValid(CustomizationSet set, CustomizeValue face, CustomizeIndex type, CustomizeValue value,
+        [NotNullWhen(true)] out CustomizeData? data)
+        => set.DataByValue(type, value, out data, face) >= 0;
 
     /// <summary> Returns whether a customization value is valid for a given clan, gender and face. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

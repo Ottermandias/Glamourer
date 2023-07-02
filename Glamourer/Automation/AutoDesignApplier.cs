@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.AccessControl;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -9,8 +8,7 @@ using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Structs;
-using Lumina.Excel.GeneratedSheets;
-using Newtonsoft.Json.Linq;
+using Glamourer.Unlocks;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 
@@ -18,25 +16,29 @@ namespace Glamourer.Automation;
 
 public class AutoDesignApplier : IDisposable
 {
-    private readonly Configuration        _config;
-    private readonly AutoDesignManager    _manager;
-    private readonly PhrasingService      _phrasing;
-    private readonly StateManager         _state;
-    private readonly JobService           _jobs;
-    private readonly ActorService         _actors;
-    private readonly CustomizationService _customizations;
+    private readonly Configuration          _config;
+    private readonly AutoDesignManager      _manager;
+    private readonly CodeService            _code;
+    private readonly StateManager           _state;
+    private readonly JobService             _jobs;
+    private readonly ActorService           _actors;
+    private readonly CustomizationService   _customizations;
+    private readonly CustomizeUnlockManager _customizeUnlocks;
+    private readonly ItemUnlockManager      _itemUnlocks;
 
-    public AutoDesignApplier(Configuration config, AutoDesignManager manager, PhrasingService phrasing, StateManager state, JobService jobs,
-        CustomizationService customizations, ActorService actors)
+    public AutoDesignApplier(Configuration config, AutoDesignManager manager, CodeService code, StateManager state, JobService jobs,
+        CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks)
     {
-        _config          =  config;
-        _manager         =  manager;
-        _phrasing        =  phrasing;
-        _state           =  state;
-        _jobs            =  jobs;
-        _customizations  =  customizations;
-        _actors          =  actors;
-        _jobs.JobChanged += OnJobChange;
+        _config           =  config;
+        _manager          =  manager;
+        _code             =  code;
+        _state            =  state;
+        _jobs             =  jobs;
+        _customizations   =  customizations;
+        _actors           =  actors;
+        _itemUnlocks      =  itemUnlocks;
+        _customizeUnlocks =  customizeUnlocks;
+        _jobs.JobChanged  += OnJobChange;
     }
 
     public void Dispose()
@@ -79,7 +81,7 @@ public class AutoDesignApplier : IDisposable
     private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual)
     {
         EquipFlag totalEquipFlags     = 0;
-        var       totalCustomizeFlags = _phrasing.Phrasing2 ? 0 : CustomizeFlagExtensions.RedrawRequired;
+        var       totalCustomizeFlags = _code.EnabledMesmer ? 0 : CustomizeFlagExtensions.RedrawRequired;
         byte      totalMetaFlags      = 0;
         foreach (var design in set.Designs)
         {
@@ -118,15 +120,18 @@ public class AutoDesignApplier : IDisposable
         if (equipFlags == 0)
             return;
 
-        // TODO add item conditions
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var flag = slot.ToFlag();
             if (equipFlags.HasFlag(flag))
             {
-                if (!respectManual || state[slot, false] is not StateChanged.Source.Manual)
-                    _state.ChangeItem(state, slot, design.Item(slot), StateChanged.Source.Fixed);
-                totalEquipFlags |= flag;
+                var item = design.Item(slot);
+                if (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.Id, out _))
+                {
+                    if (!respectManual || state[slot, false] is not StateChanged.Source.Manual)
+                        _state.ChangeItem(state, slot, item, StateChanged.Source.Fixed);
+                    totalEquipFlags |= flag;
+                }
             }
 
             var stainFlag = slot.ToStainFlag();
@@ -141,7 +146,8 @@ public class AutoDesignApplier : IDisposable
         if (equipFlags.HasFlag(EquipFlag.Mainhand))
         {
             var item = design.Item(EquipSlot.MainHand);
-            if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type)
+            if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type
+             && (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.Id, out _)))
             {
                 if (!respectManual || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual)
                     _state.ChangeItem(state, EquipSlot.MainHand, item, StateChanged.Source.Fixed);
@@ -152,7 +158,8 @@ public class AutoDesignApplier : IDisposable
         if (equipFlags.HasFlag(EquipFlag.Offhand))
         {
             var item = design.Item(EquipSlot.OffHand);
-            if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type)
+            if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type
+             && (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.Id, out _)))
             {
                 if (!respectManual || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual)
                     _state.ChangeItem(state, EquipSlot.OffHand, item, StateChanged.Source.Fixed);
@@ -220,7 +227,8 @@ public class AutoDesignApplier : IDisposable
                 continue;
 
             var value = design.Customize[index];
-            if (CustomizationService.IsCustomizationValid(set, face, index, value))
+            if (CustomizationService.IsCustomizationValid(set, face, index, value, out var data)
+             && (_code.EnabledInventory || _customizeUnlocks.IsUnlocked(data.Value, out _)))
             {
                 if (!respectManual || state[index] is not StateChanged.Source.Manual)
                     _state.ChangeCustomize(state, index, value, StateChanged.Source.Fixed);

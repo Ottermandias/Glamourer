@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Structs;
 using ImGuiNET;
+using OtterGui.Raii;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -45,10 +48,115 @@ public class PenumbraChangedItemTooltip : IDisposable
         _penumbra.Click   -= OnPenumbraClick;
     }
 
+    public bool Player()
+        => _objects.Player.Valid;
+
+    public bool Player([NotNullWhen(true)] out ActorState? player)
+    {
+        var (identifier, data) = _objects.PlayerData;
+        if (!data.Valid || !_stateManager.GetOrCreate(identifier, data.Objects[0], out player))
+        {
+            player = null;
+            return false;
+        }
+
+        return true;
+    }
+
+    public void CreateTooltip(EquipItem item, string prefix, bool openTooltip)
+    {
+        var slot = item.Type.ToSlot();
+        var last = _lastItems[slot.ToIndex()];
+        switch (slot)
+        {
+            case EquipSlot.MainHand when !CanApplyWeapon(EquipSlot.MainHand, item):
+            case EquipSlot.OffHand when !CanApplyWeapon(EquipSlot.OffHand,   item):
+                break;
+            case EquipSlot.RFinger:
+                using (var tt = !openTooltip ? null : ImRaii.Tooltip())
+                {
+                    ImGui.TextUnformatted($"{prefix}Right-Click to apply to current actor (Right Finger).");
+                    ImGui.TextUnformatted($"{prefix}Shift + Right-Click to apply to current actor (Left Finger).");
+                    if (last.Valid)
+                        ImGui.TextUnformatted(
+                            $"{prefix}Control + Right-Click to re-apply {last.Name} to current actor (Right Finger).");
+
+                    var last2 = _lastItems[EquipSlot.LFinger.ToIndex()];
+                    if (last2.Valid)
+                        ImGui.TextUnformatted(
+                            $"{prefix}Shift + Control + Right-Click to re-apply {last.Name} to current actor (Left Finger).");
+                }
+
+                break;
+            default:
+                using (var tt = !openTooltip ? null : ImRaii.Tooltip())
+                {
+                    ImGui.TextUnformatted($"{prefix}Right-Click to apply to current actor.");
+                    if (last.Valid)
+                        ImGui.TextUnformatted($"{prefix}Control + Right-Click to re-apply {last.Name} to current actor.");
+                }
+
+                break;
+        }
+    }
+
+    public void ApplyItem(ActorState state, EquipItem item)
+    {
+        var slot = item.Type.ToSlot();
+        var last = _lastItems[slot.ToIndex()];
+        switch (slot)
+        {
+            case EquipSlot.MainHand when !CanApplyWeapon(EquipSlot.MainHand, item):
+            case EquipSlot.OffHand when !CanApplyWeapon(EquipSlot.OffHand,   item):
+                break;
+            case EquipSlot.RFinger:
+                switch (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift)
+                {
+                    case (false, false):
+                        Glamourer.Log.Information($"Applying {item.Name} to Right Finger.");
+                        SetLastItem(EquipSlot.RFinger, item, state);
+                        _stateManager.ChangeItem(state, EquipSlot.RFinger, item, StateChanged.Source.Manual);
+                        break;
+                    case (false, true):
+                        Glamourer.Log.Information($"Applying {item.Name} to Left Finger.");
+                        SetLastItem(EquipSlot.LFinger, item, state);
+                        _stateManager.ChangeItem(state, EquipSlot.LFinger, item, StateChanged.Source.Manual);
+                        break;
+                    case (true, false) when last.Valid:
+                        Glamourer.Log.Information($"Re-Applying {last.Name} to Right Finger.");
+                        SetLastItem(EquipSlot.RFinger, default, state);
+                        _stateManager.ChangeItem(state, EquipSlot.RFinger, last, StateChanged.Source.Manual);
+                        break;
+                    case (true, true) when _lastItems[EquipSlot.LFinger.ToIndex()].Valid:
+                        Glamourer.Log.Information($"Re-Applying {last.Name} to Left Finger.");
+                        SetLastItem(EquipSlot.LFinger, default, state);
+                        _stateManager.ChangeItem(state, EquipSlot.LFinger, last, StateChanged.Source.Manual);
+                        break;
+                }
+
+                return;
+            default:
+                if (ImGui.GetIO().KeyCtrl && last.Valid)
+                {
+                    Glamourer.Log.Information($"Re-Applying {last.Name} to {slot.ToName()}.");
+                    SetLastItem(slot, default, state);
+                    _stateManager.ChangeItem(state, slot, last, StateChanged.Source.Manual);
+                }
+                else
+                {
+                    Glamourer.Log.Information($"Applying {item.Name} to {slot.ToName()}.");
+                    SetLastItem(slot, item, state);
+                    _stateManager.ChangeItem(state, slot, item, StateChanged.Source.Manual);
+                }
+
+                return;
+        }
+    }
+
     private void OnPenumbraTooltip(ChangedItemType type, uint id)
     {
         LastTooltip = DateTime.UtcNow;
-        if (!_objects.Player.Valid)
+        if (!Player())
             return;
 
         switch (type)
@@ -57,33 +165,7 @@ public class PenumbraChangedItemTooltip : IDisposable
                 if (!_items.ItemService.AwaitedService.TryGetValue(id, out var item))
                     return;
 
-                var slot = item.Type.ToSlot();
-                var last = _lastItems[slot.ToIndex()];
-                switch (slot)
-                {
-                    case EquipSlot.MainHand when !CanApplyWeapon(EquipSlot.MainHand, item):
-                    case EquipSlot.OffHand when !CanApplyWeapon(EquipSlot.OffHand,   item):
-                        break;
-                    case EquipSlot.RFinger:
-                        ImGui.TextUnformatted("[Glamourer] Right-Click to apply to current actor (Right Finger).");
-                        ImGui.TextUnformatted("[Glamourer] Shift + Right-Click to apply to current actor (Left Finger).");
-                        if (last.Valid)
-                            ImGui.TextUnformatted(
-                                $"[Glamourer] Control + Right-Click to re-apply {last.Name} to current actor (Right Finger).");
-
-                        var last2 = _lastItems[EquipSlot.LFinger.ToIndex()];
-                        if (last2.Valid)
-                            ImGui.TextUnformatted(
-                                $"[Glamourer] Shift + Control + Right-Click to re-apply {last.Name} to current actor (Left Finger).");
-
-                        break;
-                    default:
-                        ImGui.TextUnformatted("[Glamourer] Right-Click to apply to current actor.");
-                        if (last.Valid)
-                            ImGui.TextUnformatted($"[Glamourer] Control + Right-Click to re-apply {last.Name} to current actor.");
-                        break;
-                }
-
+                CreateTooltip(item, "[Glamourer] ", false);
                 return;
         }
     }
@@ -107,60 +189,13 @@ public class PenumbraChangedItemTooltip : IDisposable
                 if (button is not MouseButton.Right)
                     return;
 
-                var (identifier, data) = _objects.PlayerData;
-                if (!data.Valid)
-                    return;
-
-                if (!_stateManager.GetOrCreate(identifier, data.Objects[0], out var state))
+                if (!Player(out var state))
                     return;
 
                 if (!_items.ItemService.AwaitedService.TryGetValue(id, out var item))
                     return;
 
-                var slot = item.Type.ToSlot();
-                var last = _lastItems[slot.ToIndex()];
-                switch (slot)
-                {
-                    case EquipSlot.MainHand when !CanApplyWeapon(EquipSlot.MainHand, item):
-                    case EquipSlot.OffHand when !CanApplyWeapon(EquipSlot.OffHand,   item):
-                        break;
-                    case EquipSlot.RFinger:
-                        switch (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift)
-                        {
-                            case (false, false):
-                                Glamourer.Log.Information($"Applying {item.Name} to Right Finger.");
-                                SetLastItem(EquipSlot.RFinger, item, state);
-                                break;
-                            case (false, true):
-                                Glamourer.Log.Information($"Applying {item.Name} to Left Finger.");
-                                SetLastItem(EquipSlot.LFinger, item, state);
-                                break;
-                            case (true, false) when last.Valid:
-                                Glamourer.Log.Information($"Re-Applying {last.Name} to Right Finger.");
-                                SetLastItem(EquipSlot.RFinger, default, state);
-                                break;
-                            case (true, true) when _lastItems[EquipSlot.LFinger.ToIndex()].Valid:
-                                Glamourer.Log.Information($"Re-Applying {last.Name} to Left Finger.");
-                                SetLastItem(EquipSlot.LFinger, default, state);
-                                break;
-                        }
-
-                        return;
-                    default:
-                        if (ImGui.GetIO().KeyCtrl && last.Valid)
-                        {
-                            Glamourer.Log.Information($"Re-Applying {last.Name} to {slot.ToName()}.");
-                            SetLastItem(slot, default, state);
-                        }
-                        else
-                        {
-                            Glamourer.Log.Information($"Applying {item.Name} to {slot.ToName()}.");
-                            SetLastItem(slot, item, state);
-                        }
-
-                        return;
-                }
-
+                ApplyItem(state, item);
                 return;
         }
     }

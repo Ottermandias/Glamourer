@@ -6,6 +6,7 @@ using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Gui.Tabs.AutomationTab;
 using Glamourer.Gui.Tabs.DesignTab;
+using Glamourer.Gui.Tabs.UnlocksTab;
 using ImGuiNET;
 using OtterGui.Custom;
 using OtterGui.Widgets;
@@ -22,6 +23,7 @@ public class MainWindow : Window
         Actors     = 2,
         Designs    = 3,
         Automation = 4,
+        Unlocks    = 5,
     }
 
     private readonly Configuration _config;
@@ -32,11 +34,12 @@ public class MainWindow : Window
     public readonly DebugTab      Debug;
     public readonly DesignTab     Designs;
     public readonly AutomationTab Automation;
+    public readonly UnlocksTab    Unlocks;
 
     public TabType SelectTab = TabType.None;
 
     public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
-        DebugTab debugTab, AutomationTab automation)
+        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks)
         : base(GetLabel())
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -50,6 +53,7 @@ public class MainWindow : Window
         Designs    = designs;
         Automation = automation;
         Debug      = debugTab;
+        Unlocks    = unlocks;
         _config    = config;
         _tabs = new ITab[]
         {
@@ -57,6 +61,7 @@ public class MainWindow : Window
             actors,
             designs,
             automation,
+            unlocks,
             debugTab,
         };
 
@@ -81,6 +86,7 @@ public class MainWindow : Window
             TabType.Actors     => Actors.Label,
             TabType.Designs    => Designs.Label,
             TabType.Automation => Automation.Label,
+            TabType.Unlocks    => Unlocks.Label,
             _                  => ReadOnlySpan<byte>.Empty,
         };
 
@@ -91,6 +97,7 @@ public class MainWindow : Window
         if (label == Designs.Label)    return TabType.Designs;
         if (label == Settings.Label)   return TabType.Settings;
         if (label == Automation.Label) return TabType.Automation;
+        if (label == Unlocks.Label)    return TabType.Unlocks;
         if (label == Debug.Label)      return TabType.Debug;
         // @formatter:on
         return TabType.None;

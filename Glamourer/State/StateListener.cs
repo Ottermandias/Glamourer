@@ -29,6 +29,7 @@ public class StateListener : IDisposable
     private readonly VisorStateChanged         _visorState;
     private readonly WeaponVisibilityChanged   _weaponVisibility;
     private readonly AutoDesignApplier         _autoDesignApplier;
+    private readonly FunModule                 _funModule;
 
     public bool Enabled
     {
@@ -38,7 +39,7 @@ public class StateListener : IDisposable
 
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
-        HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier)
+        HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule)
     {
         _manager            = manager;
         _items              = items;
@@ -51,6 +52,7 @@ public class StateListener : IDisposable
         _weaponVisibility   = weaponVisibility;
         _headGearVisibility = headGearVisibility;
         _autoDesignApplier  = autoDesignApplier;
+        _funModule          = funModule;
 
         if (Enabled)
             Subscribe();
@@ -126,6 +128,7 @@ public class StateListener : IDisposable
             }
         }
 
+        _funModule.ApplyFun(actor, new Span<CharacterArmor>((void*) equipDataPtr, 10), ref customize);
         if (modelId == 0)
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
     }
@@ -141,6 +144,7 @@ public class StateListener : IDisposable
          && _manager.TryGetValue(identifier, out var state))
             HandleEquipSlot(actor, state, slot, ref armor.Value);
 
+        _funModule.ApplyFun(actor, ref armor.Value, slot);
         if (!_config.UseRestrictedGearProtection)
             return;
 

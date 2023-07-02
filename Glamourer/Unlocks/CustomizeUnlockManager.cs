@@ -48,9 +48,16 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     /// <summary> Check if a customization is unlocked for Glamourer. </summary>
     public bool IsUnlocked(CustomizeData data, out DateTimeOffset time)
     {
+        // All other customizations are not unlockable.
+        if (data.Index is not CustomizeIndex.Hairstyle and not CustomizeIndex.FacePaint)
+        {
+            time = DateTime.MinValue;
+            return true;
+        }
+
         if (!Unlockable.TryGetValue(data, out var pair))
         {
-            time = DateTime.MaxValue;
+            time = DateTime.MinValue;
             return true;
         }
 
@@ -62,7 +69,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
 
         if (!IsUnlockedGame(pair.Data))
         {
-            time = DateTimeOffset.MinValue;
+            time = DateTimeOffset.MaxValue;
             return false;
         }
 

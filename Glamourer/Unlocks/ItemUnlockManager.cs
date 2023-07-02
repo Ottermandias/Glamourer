@@ -196,6 +196,7 @@ public class ItemUnlockManager : ISavable, IDisposable
             }
         }
 
+        changes = false;
         var inventoryManager = InventoryManager.Instance();
         if (inventoryManager != null)
         {
@@ -216,7 +217,6 @@ public class ItemUnlockManager : ISavable, IDisposable
                 _currentInventoryIndex = 0;
             }
         }
-
         if (changes)
             Save();
     }
@@ -226,7 +226,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         // Pseudo items are always unlocked.
         if (itemId >= _items.ItemSheet.RowCount)
         {
-            time = DateTimeOffset.MaxValue;
+            time = DateTimeOffset.MinValue;
             return true;
         }
 
@@ -244,7 +244,7 @@ public class ItemUnlockManager : ISavable, IDisposable
             return true;
         }
 
-        time = DateTimeOffset.MinValue;
+        time = DateTimeOffset.MaxValue;
         return false;
     }
 
@@ -283,7 +283,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         => fileNames.UnlockFileItems;
 
     public void Save()
-        => _saveService.QueueSave(this);
+        => _saveService.DelaySave(this, TimeSpan.FromSeconds(10));
 
     public void Save(StreamWriter writer)
     { }

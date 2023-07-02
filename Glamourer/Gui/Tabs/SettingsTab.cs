@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Interface;
 using Glamourer.Gui.Tabs.DesignTab;
@@ -17,24 +18,24 @@ public class SettingsTab : ITab
     private readonly Configuration            _config;
     private readonly DesignFileSystemSelector _selector;
     private readonly StateListener            _stateListener;
-    private readonly PhrasingService          _phrasingService;
+    private readonly CodeService              _codeService;
     private readonly PenumbraAutoRedraw       _autoRedraw;
 
     public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener,
-        PhrasingService phrasingService, PenumbraAutoRedraw autoRedraw)
+        CodeService codeService, PenumbraAutoRedraw autoRedraw)
     {
-        _config          = config;
-        _selector        = selector;
-        _stateListener   = stateListener;
-        _phrasingService = phrasingService;
-        _autoRedraw      = autoRedraw;
+        _config        = config;
+        _selector      = selector;
+        _stateListener = stateListener;
+        _codeService   = codeService;
+        _autoRedraw    = autoRedraw;
     }
 
     public ReadOnlySpan<byte> Label
         => "Settings"u8;
 
-    private string? _tmpPhrasing1 = null;
-    private string? _tmpPhrasing2 = null;
+    private string _currentCode = string.Empty;
+
 
     public void DrawContent()
     {
@@ -62,25 +63,44 @@ public class SettingsTab : ITab
         Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use.", _config.DebugMode, v => _config.DebugMode = v);
         DrawColorSettings();
 
-        _tmpPhrasing1 ??= _config.Phrasing1;
-        ImGui.InputText("Phrasing 1", ref _tmpPhrasing1, 512);
-
-        if (ImGui.IsItemDeactivatedAfterEdit())
-        {
-            _phrasingService.SetPhrasing1(_tmpPhrasing1);
-            _tmpPhrasing1 = null;
-        }
-
-        _tmpPhrasing2 ??= _config.Phrasing2;
-        ImGui.InputText("Phrasing 2", ref _tmpPhrasing2, 512);
-
-        if (ImGui.IsItemDeactivatedAfterEdit())
-        {
-            _phrasingService.SetPhrasing2(_tmpPhrasing2);
-            _tmpPhrasing2 = null;
-        }
+        DrawCodes();
 
         MainWindow.DrawSupportButtons();
+    }
+
+    private void DrawCodes()
+    {
+        if (!ImGui.CollapsingHeader("Codes"))
+            return;
+
+        using (var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale, _currentCode.Length > 0))
+        {
+            var       color = _codeService.CheckCode(_currentCode) != null ? ColorId.ActorAvailable : ColorId.ActorUnavailable;
+            using var c     = ImRaii.PushColor(ImGuiCol.Border, color.Value(), _currentCode.Length > 0);
+            if (ImGui.InputTextWithHint("##Code", "Enter Code...", ref _currentCode, 512, ImGuiInputTextFlags.EnterReturnsTrue))
+            {
+                if (_codeService.AddCode(_currentCode))
+                    _currentCode = string.Empty;
+            }
+        }
+
+        if (_config.Codes.Count <= 0)
+            return;
+
+        for (var i = 0; i < _config.Codes.Count; ++i)
+        {
+            var (code, state) = _config.Codes[i];
+            var action = _codeService.CheckCode(code);
+            if (action == null)
+                continue;
+
+            if (ImGui.Checkbox(code, ref state))
+            {
+                action(state);
+                _config.Codes[i] = (code, state);
+                _config.Save();
+            }
+        }
     }
 
     /// <summary> Draw the entire Color subsection. </summary>
