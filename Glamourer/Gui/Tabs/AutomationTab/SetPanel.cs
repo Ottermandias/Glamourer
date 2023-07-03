@@ -2,22 +2,32 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Dalamud.Interface;
 using Glamourer.Automation;
+using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Interop;
+using Glamourer.Services;
 using Glamourer.Structs;
+using Glamourer.Unlocks;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Widgets;
+using Penumbra.GameData.Enums;
+using Action = System.Action;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
 public class SetPanel
 {
-    private readonly AutoDesignManager _manager;
-    private readonly SetSelector       _selector;
+    private readonly AutoDesignManager      _manager;
+    private readonly SetSelector            _selector;
+    private readonly ItemUnlockManager      _itemUnlocks;
+    private readonly CustomizeUnlockManager _customizeUnlocks;
+    private readonly CustomizationService   _customizations;
 
     private readonly DesignCombo   _designCombo;
     private readonly JobGroupCombo _jobGroupCombo;
@@ -27,12 +37,16 @@ public class SetPanel
 
     private Action? _endAction;
 
-    public SetPanel(SetSelector selector, AutoDesignManager manager, DesignManager designs, JobService jobs)
+    public SetPanel(SetSelector selector, AutoDesignManager manager, DesignManager designs, JobService jobs, ItemUnlockManager itemUnlocks,
+        CustomizeUnlockManager customizeUnlocks, CustomizationService customizations)
     {
-        _selector      = selector;
-        _manager       = manager;
-        _designCombo   = new DesignCombo(_manager, designs);
-        _jobGroupCombo = new JobGroupCombo(manager, jobs);
+        _selector         = selector;
+        _manager          = manager;
+        _itemUnlocks      = itemUnlocks;
+        _customizeUnlocks = customizeUnlocks;
+        _customizations   = customizations;
+        _designCombo      = new DesignCombo(_manager, designs);
+        _jobGroupCombo    = new JobGroupCombo(manager, jobs);
     }
 
     private AutoDesignSet Selection
@@ -92,7 +106,7 @@ public class SetPanel
 
     private void DrawDesignTable()
     {
-        using var table = ImRaii.Table("SetTable", 5, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY);
+        using var table = ImRaii.Table("SetTable", 6, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY);
         if (!table)
             return;
 
@@ -101,6 +115,7 @@ public class SetPanel
         ImGui.TableSetupColumn("Design", ImGuiTableColumnFlags.WidthFixed, 220 * ImGuiHelpers.GlobalScale);
         ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed, 5 * ImGui.GetFrameHeight() + 4 * 2 * ImGuiHelpers.GlobalScale);
         ImGui.TableSetupColumn("Job Restrictions", ImGuiTableColumnFlags.WidthStretch);
+        ImGui.TableSetupColumn("Warnings", ImGuiTableColumnFlags.WidthFixed, 4 * ImGui.GetFrameHeight() + 3 * 2 * ImGuiHelpers.GlobalScale);
         ImGui.TableHeadersRow();
 
         foreach (var (design, idx) in Selection.Designs.WithIndex())
@@ -120,6 +135,8 @@ public class SetPanel
             DrawApplicationTypeBoxes(Selection, design, idx);
             ImGui.TableNextColumn();
             _jobGroupCombo.Draw(Selection, design, idx);
+            ImGui.TableNextColumn();
+            DrawWarnings(design, idx);
         }
 
         ImGui.TableNextColumn();
@@ -133,6 +150,79 @@ public class SetPanel
 
         _endAction?.Invoke();
         _endAction = null;
+    }
+
+    private void DrawWarnings(AutoDesign design, int idx)
+    {
+        var size = new Vector2(ImGui.GetFrameHeight());
+        size.X += ImGuiHelpers.GlobalScale;
+
+        var (equipFlags, customizeFlags, _, _, _, _) =  design.ApplyWhat();
+        equipFlags                                   &= design.Design.ApplyEquip;
+        customizeFlags                               &= design.Design.ApplyCustomize;
+        var sb = new StringBuilder();
+        foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
+        {
+            var flag = slot.ToFlag();
+            if (!equipFlags.HasFlag(flag))
+                continue;
+
+            var item = design.Design.DesignData.Item(slot);
+            if (!_itemUnlocks.IsUnlocked(item.Id, out _))
+                sb.AppendLine($"{item.Name} in {slot.ToName()} slot is not unlocked but should be applied.");
+        }
+
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * ImGuiHelpers.GlobalScale, 0));
+
+
+        static void DrawWarning(StringBuilder sb, uint color, Vector2 size, string suffix, string good)
+        {
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
+            if (sb.Length > 0)
+            {
+                sb.Append(suffix);
+                using (var font = ImRaii.PushFont(UiBuilder.IconFont))
+                {
+                    ImGuiUtil.DrawTextButton(FontAwesomeIcon.ExclamationCircle.ToIconString(), size, color);
+                }
+
+                ImGuiUtil.HoverTooltip(sb.ToString());
+            }
+            else
+            {
+                ImGuiUtil.DrawTextButton(string.Empty, size, 0);
+                ImGuiUtil.HoverTooltip(good);
+            }
+        }
+
+        DrawWarning(sb, 0xA03030F0, size, "\nThese items will be skipped when applied automatically. To change this, see",
+            "All equipment to be applied is unlocked."); // TODO
+
+        sb.Clear();
+        var sb2       = new StringBuilder();
+        var customize = design.Design.DesignData.Customize;
+        var set       = _customizations.AwaitedService.GetList(customize.Clan, customize.Gender);
+        foreach (var type in CustomizationExtensions.All)
+        {
+            var flag = type.ToFlag();
+            if (!customizeFlags.HasFlag(flag))
+                continue;
+
+            if (flag.RequiresRedraw())
+                sb.AppendLine($"{type.ToDefaultName()} Customization can not be changed automatically."); // TODO
+            else if (type is CustomizeIndex.Hairstyle or CustomizeIndex.FacePaint
+                  && set.DataByValue(type, customize[type], out var data, customize.Face) >= 0
+                  && !_customizeUnlocks.IsUnlocked(data!.Value, out _))
+                sb2.AppendLine(
+                    $"{type.ToDefaultName()} Customization {_customizeUnlocks.Unlockable[data.Value].Name} is not unlocked but should be applied.");
+        }
+
+        ImGui.SameLine();
+        DrawWarning(sb2, 0xA03030F0, size, "\nThese customizations will be skipped when applied automatically. To change this, see",
+            "All customizations to be applied are unlocked."); // TODO
+        ImGui.SameLine();
+        DrawWarning(sb, 0xA030F0F0, size, "\nThese customizations will be skipped when applied automatically.",
+            "No customizations unable to be applied automatically are set to be applied."); // TODO
     }
 
     private void DrawDragDrop(AutoDesignSet set, int index)

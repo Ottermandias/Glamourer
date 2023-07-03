@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using Dalamud;
 using Dalamud.Data;
-using Dalamud.Logging;
 using Dalamud.Plugin;
 using Dalamud.Utility;
 using Lumina.Excel;
@@ -38,6 +37,9 @@ public partial class CustomizationOptions
     // Get specific icons.
     internal ImGuiScene.TextureWrap GetIcon(uint id)
         => _icons.LoadIcon(id);
+
+    internal void RemoveIcon(uint id)
+        => _icons.RemoveIcon(id);
 
     private readonly IconStorage _icons;
 
@@ -416,7 +418,7 @@ public partial class CustomizationOptions
         // Obtain available hairstyles via reflection from the Hair sheet for the given subrace and gender.
         private CustomizeData[] GetHairStyles(SubRace race, Gender gender)
         {
-            var row           = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
+            var row = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
             // Unknown30 is the number of available hairstyles.
             var hairList = new List<CustomizeData>(row.Unknown30);
             // Hairstyles can be found starting at Unknown66.
@@ -431,14 +433,10 @@ public partial class CustomizationOptions
                 // Hair Row from CustomizeSheet might not be set in case of unlockable hair.
                 var hairRow = _customizeSheet.GetRow(customizeIdx);
                 if (hairRow == null)
-                {
                     hairList.Add(new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)i, customizeIdx));
-                }
                 else if (_options._icons.IconExists(hairRow.Icon))
-                {
                     hairList.Add(new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)hairRow.FeatureID, hairRow.Icon,
                         (ushort)hairRow.RowId));
-                }
             }
 
             return hairList.ToArray();
@@ -464,8 +462,8 @@ public partial class CustomizationOptions
         // Get face paints from the hair sheet via reflection.
         private CustomizeData[] GetFacePaints(SubRace race, Gender gender)
         {
-            var row           = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
-            var paintList     = new List<CustomizeData>(row.Unknown37);
+            var row       = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
+            var paintList = new List<CustomizeData>(row.Unknown37);
             // Number of available face paints is at Unknown37.
             for (var i = 0; i < row.Unknown37; ++i)
             {
@@ -480,13 +478,12 @@ public partial class CustomizationOptions
                 var paintRow = _customizeSheet.GetRow(customizeIdx);
                 // Facepaint Row from CustomizeSheet might not be set in case of unlockable facepaints.
                 if (paintRow != null)
-                {
                     paintList.Add(new CustomizeData(CustomizeIndex.FacePaint, (CustomizeValue)paintRow.FeatureID, paintRow.Icon,
                         (ushort)paintRow.RowId));
-                }
                 else
                     paintList.Add(new CustomizeData(CustomizeIndex.FacePaint, (CustomizeValue)i, customizeIdx));
             }
+
             return paintList.ToArray();
         }
 

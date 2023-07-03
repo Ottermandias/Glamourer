@@ -3,13 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface;
+using Glamourer.Events;
 using Glamourer.Services;
 using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Table;
 using Penumbra.GameData.Enums;
@@ -17,35 +18,43 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.UnlocksTab;
 
-public class UnlockTable : Table<EquipItem>
+public class UnlockTable : Table<EquipItem>, IDisposable
 {
-    public UnlockTable(ItemManager items, CustomizationService customizations, ItemUnlockManager itemUnlocks,
-        PenumbraChangedItemTooltip tooltip)
+    private readonly ObjectUnlocked _event;
+
+    public UnlockTable(ItemManager items, TextureCache cache, ItemUnlockManager itemUnlocks,
+        PenumbraChangedItemTooltip tooltip, ObjectUnlocked @event)
         : base("ItemUnlockTable", new ItemList(items),
-            new NameColumn(customizations, tooltip) { Label = "Item Name..." },
-            new SlotColumn() { Label                        = "Equip Slot" },
-            new TypeColumn() { Label                        = "Item Type..." },
-            new UnlockDateColumn(itemUnlocks) { Label       = "Unlocked" },
-            new ItemIdColumn() { Label                      = "Item Id..." },
-            new ModelDataColumn(items) { Label              = "Model Data..." })
+            new NameColumn(cache, tooltip) { Label    = "Item Name..." },
+            new SlotColumn() { Label                  = "Equip Slot" },
+            new TypeColumn() { Label                  = "Item Type..." },
+            new UnlockDateColumn(itemUnlocks) { Label = "Unlocked" },
+            new ItemIdColumn() { Label                = "Item Id..." },
+            new ModelDataColumn(items) { Label        = "Model Data..." })
     {
+        _event   =  @event;
         Sortable =  true;
         Flags    |= ImGuiTableFlags.Hideable;
+        _event.Subscribe(OnObjectUnlock, ObjectUnlocked.Priority.UnlockTable);
+        cache.Logger = Glamourer.Log;
     }
+
+    public void Dispose()
+        => _event.Unsubscribe(OnObjectUnlock);
 
     private sealed class NameColumn : ColumnString<EquipItem>
     {
-        private readonly CustomizationService       _customizations;
+        private readonly TextureCache               _textures;
         private readonly PenumbraChangedItemTooltip _tooltip;
 
         public override float Width
             => 400 * ImGuiHelpers.GlobalScale;
 
-        public NameColumn(CustomizationService customizations, PenumbraChangedItemTooltip tooltip)
+        public NameColumn(TextureCache textures, PenumbraChangedItemTooltip tooltip)
         {
-            _customizations =  customizations;
-            _tooltip        =  tooltip;
-            Flags           |= ImGuiTableColumnFlags.NoHide | ImGuiTableColumnFlags.NoReorder;
+            _textures =  textures;
+            _tooltip  =  tooltip;
+            Flags     |= ImGuiTableColumnFlags.NoHide | ImGuiTableColumnFlags.NoReorder;
         }
 
         public override string ToName(EquipItem item)
@@ -53,8 +62,11 @@ public class UnlockTable : Table<EquipItem>
 
         public override void DrawColumn(EquipItem item, int _)
         {
-            var icon = _customizations.AwaitedService.GetIcon(item.IconId);
-            ImGui.Image(icon.ImGuiHandle, new Vector2(ImGui.GetFrameHeight()));
+            var iconHandle = _textures.LoadIcon(item.IconId);
+            if (iconHandle.HasValue)
+                ImGuiUtil.HoverIcon(iconHandle.Value, new Vector2(ImGui.GetFrameHeight()));
+            else
+                ImGui.Dummy(new Vector2(ImGui.GetFrameHeight()));
             ImGui.SameLine();
             ImGui.AlignTextToFramePadding();
             if (ImGui.Selectable(item.Name))
@@ -191,7 +203,7 @@ public class UnlockTable : Table<EquipItem>
         public override int Compare(EquipItem lhs, EquipItem rhs)
         {
             var unlockedLhs = _unlocks.IsUnlocked(lhs.Id, out var timeLhs);
-            var unlockedRhs = _unlocks.IsUnlocked(lhs.Id, out var timeRhs);
+            var unlockedRhs = _unlocks.IsUnlocked(rhs.Id, out var timeRhs);
             var c1          = unlockedLhs.CompareTo(unlockedRhs);
             return c1 != 0 ? c1 : timeLhs.CompareTo(timeRhs);
         }
@@ -272,5 +284,11 @@ public class UnlockTable : Table<EquipItem>
 
         public int Count
             => _items.ItemService.AwaitedService.TotalItemCount(true);
+    }
+
+    private void OnObjectUnlock(ObjectUnlocked.Type _1, uint _2, DateTimeOffset _3)
+    {
+        FilterDirty = true;
+        SortDirty   = true;
     }
 }

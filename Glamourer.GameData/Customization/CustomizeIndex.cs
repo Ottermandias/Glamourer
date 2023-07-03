@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Glamourer.Customization;
 
@@ -44,7 +46,10 @@ public enum CustomizeIndex : byte
 
 public static class CustomizationExtensions
 {
-    public const int NumIndices = ((int)CustomizeIndex.FacePaintColor + 1);
+    public const int NumIndices = (int)CustomizeIndex.FacePaintColor + 1;
+
+    public static readonly CustomizeIndex[] All = Enum.GetValues<CustomizeIndex>()
+        .Where(v => v is not CustomizeIndex.Race and not CustomizeIndex.BodyType).ToArray();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static (int ByteIdx, byte Mask) ToByteAndMask(this CustomizeIndex index)

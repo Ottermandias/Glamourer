@@ -7,6 +7,7 @@ using Dalamud.Game.ClientState;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using Glamourer.Events;
 using Glamourer.Services;
 using Lumina.Excel.GeneratedSheets;
 using Cabinet = Lumina.Excel.GeneratedSheets.Cabinet;
@@ -15,10 +16,12 @@ namespace Glamourer.Unlocks;
 
 public class ItemUnlockManager : ISavable, IDisposable
 {
-    private readonly SaveService            _saveService;
-    private readonly ItemManager            _items;
-    private readonly ClientState            _clientState;
-    private readonly Framework              _framework;
+    private readonly SaveService    _saveService;
+    private readonly ItemManager    _items;
+    private readonly ClientState    _clientState;
+    private readonly Framework      _framework;
+    private readonly ObjectUnlocked _event;
+
     private readonly Dictionary<uint, long> _unlocked = new();
 
     private bool _lastArmoireState;
@@ -37,65 +40,20 @@ public class ItemUnlockManager : ISavable, IDisposable
         Cabinet     = 0x08,
     }
 
-    public readonly record struct UnlockRequirements(uint Quest1, uint Quest2, uint Achievement, ushort State, UnlockType Type)
-    {
-        public override string ToString()
-        {
-            return Type switch
-            {
-                UnlockType.Quest1                                              => $"Quest {Quest1}",
-                UnlockType.Quest1 | UnlockType.Quest2                          => $"Quests {Quest1} & {Quest2}",
-                UnlockType.Achievement                                         => $"Achievement {Achievement}",
-                UnlockType.Quest1 | UnlockType.Achievement                     => $"Quest {Quest1} & Achievement {Achievement}",
-                UnlockType.Quest1 | UnlockType.Quest2 | UnlockType.Achievement => $"Quests {Quest1} & {Quest2}, Achievement {Achievement}",
-                UnlockType.Cabinet                                             => $"Cabinet {Quest1}",
-                _                                                              => string.Empty,
-            };
-        }
-
-        public unsafe bool IsUnlocked(ItemUnlockManager manager)
-        {
-            if (Type == 0)
-                return true;
-
-            var uiState = UIState.Instance();
-            if (uiState == null)
-                return false;
-
-            bool CheckQuest(uint quest)
-                => uiState->IsUnlockLinkUnlockedOrQuestCompleted(quest);
-
-            // TODO ClientStructs
-            bool CheckAchievement(uint achievement)
-                => false;
-
-            return Type switch
-            {
-                UnlockType.Quest1                          => CheckQuest(Quest1),
-                UnlockType.Quest1 | UnlockType.Quest2      => CheckQuest(Quest1) && CheckQuest(Quest2),
-                UnlockType.Achievement                     => CheckAchievement(Achievement),
-                UnlockType.Quest1 | UnlockType.Achievement => CheckQuest(Quest1) && CheckAchievement(Achievement),
-                UnlockType.Quest1 | UnlockType.Quest2 | UnlockType.Achievement => CheckQuest(Quest1)
-                 && CheckQuest(Quest2)
-                 && CheckAchievement(Achievement),
-                UnlockType.Cabinet => uiState->Cabinet.IsCabinetLoaded() && uiState->Cabinet.IsItemInCabinet((int)Quest1),
-                _                  => false,
-            };
-        }
-    }
-
     public readonly IReadOnlyDictionary<uint, UnlockRequirements> Unlockable;
 
     public IReadOnlyDictionary<uint, long> Unlocked
         => _unlocked;
 
-    public ItemUnlockManager(SaveService saveService, ItemManager items, ClientState clientState, DataManager gameData, Framework framework)
+    public ItemUnlockManager(SaveService saveService, ItemManager items, ClientState clientState, DataManager gameData, Framework framework,
+        ObjectUnlocked @event)
     {
         SignatureHelper.Initialise(this);
         _saveService = saveService;
         _items       = items;
         _clientState = clientState;
         _framework   = framework;
+        _event       = @event;
         Unlockable   = CreateUnlockData(gameData, items);
         Load();
         _clientState.Login += OnLogin;
@@ -166,7 +124,13 @@ public class ItemUnlockManager : ISavable, IDisposable
         var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         bool AddItem(uint itemId)
-            => _items.ItemService.AwaitedService.TryGetValue(itemId, out var equip) && _unlocked.TryAdd(equip.Id, time);
+        {
+            if (!_items.ItemService.AwaitedService.TryGetValue(itemId, out var equip) || !_unlocked.TryAdd(equip.Id, time))
+                return false;
+
+            _event.Invoke(ObjectUnlocked.Type.Item, equip.Id, DateTimeOffset.FromUnixTimeMilliseconds(time));
+            return true;
+        }
 
         var mirageManager = MirageManager.Instance();
         var changes       = false;
@@ -200,7 +164,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         var inventoryManager = InventoryManager.Instance();
         if (inventoryManager != null)
         {
-            var type = ScannableInventories[_currentInventory];
+            var type      = ScannableInventories[_currentInventory];
             var container = inventoryManager->GetInventoryContainer(type);
             if (container != null && container->Loaded != 0 && _currentInventoryIndex < container->Size)
             {
@@ -217,6 +181,7 @@ public class ItemUnlockManager : ISavable, IDisposable
                 _currentInventoryIndex = 0;
             }
         }
+
         if (changes)
             Save();
     }
@@ -239,8 +204,12 @@ public class ItemUnlockManager : ISavable, IDisposable
         if (IsGameUnlocked(itemId))
         {
             time = DateTimeOffset.UtcNow;
-            _unlocked.TryAdd(itemId, time.ToUnixTimeMilliseconds());
-            Save();
+            if (_unlocked.TryAdd(itemId, time.ToUnixTimeMilliseconds()))
+            {
+                _event.Invoke(ObjectUnlocked.Type.Item, itemId, time);
+                Save();
+            }
+
             return true;
         }
 
@@ -269,8 +238,11 @@ public class ItemUnlockManager : ISavable, IDisposable
         var changes = false;
         foreach (var (itemId, unlock) in Unlockable)
         {
-            if (unlock.IsUnlocked(this))
-                changes |= _unlocked.TryAdd(itemId, time);
+            if (unlock.IsUnlocked(this) && _unlocked.TryAdd(itemId, time))
+            {
+                _event.Invoke(ObjectUnlocked.Type.Item, itemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
+                changes = true;
+            }
         }
 
         // TODO inventories
@@ -286,16 +258,11 @@ public class ItemUnlockManager : ISavable, IDisposable
         => _saveService.DelaySave(this, TimeSpan.FromSeconds(10));
 
     public void Save(StreamWriter writer)
-    { }
+        => UnlockDictionaryHelpers.Save(writer, Unlocked);
 
     private void Load()
-    {
-        var file = ToFilename(_saveService.FileNames);
-        if (!File.Exists(file))
-            return;
-
-        _unlocked.Clear();
-    }
+        => UnlockDictionaryHelpers.Load(ToFilename(_saveService.FileNames), _unlocked,
+            id => _items.ItemService.AwaitedService.TryGetValue(id, out _), "item");
 
     private void OnLogin(object? _, EventArgs _2)
         => Scan();

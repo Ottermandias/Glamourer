@@ -54,7 +54,8 @@ public static class ServiceManager
             .AddSingleton<SaveService>()
             .AddSingleton<CodeService>()
             .AddSingleton<ConfigMigrationService>()
-            .AddSingleton<Configuration>();
+            .AddSingleton<Configuration>()
+            .AddSingleton<TextureCache>();
 
     private static IServiceCollection AddEvents(this IServiceCollection services)
         => services.AddSingleton<VisorStateChanged>()
@@ -64,7 +65,8 @@ public static class ServiceManager
             .AddSingleton<StateChanged>()
             .AddSingleton<WeaponLoading>()
             .AddSingleton<HeadGearVisibilityChanged>()
-            .AddSingleton<WeaponVisibilityChanged>();
+            .AddSingleton<WeaponVisibilityChanged>()
+            .AddSingleton<ObjectUnlocked>();
 
     private static IServiceCollection AddData(this IServiceCollection services)
         => services.AddSingleton<IdentifierService>()

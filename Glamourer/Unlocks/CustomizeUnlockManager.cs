@@ -10,6 +10,7 @@ using Dalamud.Utility;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Glamourer.Customization;
+using Glamourer.Events;
 using Glamourer.Services;
 using Lumina.Excel.GeneratedSheets;
 
@@ -17,8 +18,10 @@ namespace Glamourer.Unlocks;
 
 public class CustomizeUnlockManager : IDisposable, ISavable
 {
-    private readonly SaveService            _saveService;
-    private readonly ClientState            _clientState;
+    private readonly SaveService    _saveService;
+    private readonly ClientState    _clientState;
+    private readonly ObjectUnlocked _event;
+
     private readonly Dictionary<uint, long> _unlocked = new();
 
     public readonly IReadOnlyDictionary<CustomizeData, (uint Data, string Name)> Unlockable;
@@ -27,11 +30,12 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         => _unlocked;
 
     public unsafe CustomizeUnlockManager(SaveService saveService, CustomizationService customizations, DataManager gameData,
-        ClientState clientState)
+        ClientState clientState, ObjectUnlocked @event)
     {
         SignatureHelper.Initialise(this);
         _saveService = saveService;
         _clientState = clientState;
+        _event       = @event;
         Unlockable   = CreateUnlockableCustomizations(customizations, gameData);
         Load();
         _setUnlockLinkValueHook.Enable();
@@ -51,13 +55,13 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         // All other customizations are not unlockable.
         if (data.Index is not CustomizeIndex.Hairstyle and not CustomizeIndex.FacePaint)
         {
-            time = DateTime.MinValue;
+            time = DateTimeOffset.MinValue;
             return true;
         }
 
         if (!Unlockable.TryGetValue(data, out var pair))
         {
-            time = DateTime.MinValue;
+            time = DateTimeOffset.MinValue;
             return true;
         }
 
@@ -74,8 +78,9 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         }
 
         _unlocked.TryAdd(pair.Data, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-        Save();
         time = DateTimeOffset.UtcNow;
+        _event.Invoke(ObjectUnlocked.Type.Customization, pair.Data, time);
+        Save();
         return true;
     }
 
@@ -107,7 +112,10 @@ public class CustomizeUnlockManager : IDisposable, ISavable
             foreach (var (_, (id, _)) in Unlockable)
             {
                 if (instance->IsUnlockLinkUnlocked(id) && _unlocked.TryAdd(id, time))
+                {
+                    _event.Invoke(ObjectUnlocked.Type.Customization, id, DateTimeOffset.FromUnixTimeMilliseconds(time));
                     ++count;
+                }
             }
 
             if (count <= 0)
@@ -141,6 +149,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
                 if (id != data || !_unlocked.TryAdd(id, time))
                     continue;
 
+                _event.Invoke(ObjectUnlocked.Type.Customization, id, DateTimeOffset.FromUnixTimeMilliseconds(time));
                 Save();
                 break;
             }
@@ -161,16 +170,11 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         => _saveService.QueueSave(this);
 
     public void Save(StreamWriter writer)
-    { }
+        => UnlockDictionaryHelpers.Save(writer, Unlocked);
 
     private void Load()
-    {
-        var file = ToFilename(_saveService.FileNames);
-        if (!File.Exists(file))
-            return;
-
-        _unlocked.Clear();
-    }
+        => UnlockDictionaryHelpers.Load(ToFilename(_saveService.FileNames), _unlocked, id => Unlockable.Any(c => c.Value.Data == id),
+            "customization");
 
     /// <summary> Create a list of all unlockable hairstyles and facepaints. </summary>
     private static Dictionary<CustomizeData, (uint Data, string Name)> CreateUnlockableCustomizations(CustomizationService customizations,

@@ -3,7 +3,6 @@ using Dalamud.Plugin;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Services;
-using Lumina.Excel.GeneratedSheets;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
 using OtterGui.Log;
@@ -36,7 +35,7 @@ public class Glamourer : IDalamudPlugin
             _services.GetRequiredService<BackupService>();         // call backup service.
             _services.GetRequiredService<GlamourerWindowSystem>(); // initialize ui.
             _services.GetRequiredService<CommandService>();        // initialize commands.
-            _services.GetRequiredService<VisorService>();      
+            _services.GetRequiredService<VisorService>();
         }
         catch
         {
