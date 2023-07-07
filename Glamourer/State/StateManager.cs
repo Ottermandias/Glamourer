@@ -205,6 +205,8 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             ChangeEquip(state, slot, ItemManager.NothingItem(slot), 0, source);
         ChangeEquip(state, EquipSlot.MainHand, _items.DefaultSword,                           0, source);
         ChangeEquip(state, EquipSlot.OffHand,  ItemManager.NothingItem(FullEquipType.Shield), 0, source);
+        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
+        _editor.ChangeModelId(objects, 0);
     }
 
     /// <summary> Change a customization value. </summary>
@@ -446,6 +448,14 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         if (design.DoApplyHatVisible())
             ChangeHatState(state, design.DesignData.IsHatVisible(), StateChanged.Source.Manual);
+        if (design.DoApplyWeaponVisible())
+            ChangeWeaponState(state, design.DesignData.IsWeaponVisible(), StateChanged.Source.Manual);
+        if (design.DoApplyVisorToggle())
+            ChangeVisorState(state, design.DesignData.IsVisorToggled(), StateChanged.Source.Manual);
+        if (design.DoApplyWetness())
+            ChangeWetness(state, design.DesignData.IsWet(), StateChanged.Source.Manual);
+
+        ChangeCustomize(state, design.DesignData.Customize, design.ApplyCustomize, StateChanged.Source.Manual);
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
             HandleEquip(slot, design.DoApplyEquip(slot), design.DoApplyStain(slot));
@@ -458,18 +468,16 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             design.DoApplyEquip(EquipSlot.OffHand)
          && design.DesignData.Item(EquipSlot.OffHand).Type == state.BaseData.Item(EquipSlot.OffHand).Type,
             design.DoApplyStain(EquipSlot.OffHand));
-
-        if (design.DoApplyWeaponVisible())
-            ChangeWeaponState(state, design.DesignData.IsWeaponVisible(), StateChanged.Source.Manual);
-        if (design.DoApplyVisorToggle())
-            ChangeVisorState(state, design.DesignData.IsVisorToggled(), StateChanged.Source.Manual);
-        if (design.DoApplyWetness())
-            ChangeWetness(state, design.DesignData.IsWet(), StateChanged.Source.Manual);
-        ChangeCustomize(state, design.DesignData.Customize, design.ApplyCustomize, StateChanged.Source.Manual);
     }
 
     public void ResetState(ActorState state)
     {
+        ChangeHatState(state, state.BaseData.IsHatVisible(), StateChanged.Source.Game);
+        ChangeVisorState(state, state.BaseData.IsVisorToggled(), StateChanged.Source.Game);
+        ChangeWeaponState(state, state.BaseData.IsWeaponVisible(), StateChanged.Source.Game);
+        ChangeWetness(state, false, StateChanged.Source.Game);
+        ChangeCustomize(state, state.BaseData.Customize, CustomizeFlagExtensions.All, StateChanged.Source.Game);
+
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
             ChangeEquip(state, slot, state.BaseData.Item(slot), state.BaseData.Stain(slot), StateChanged.Source.Game);
 
@@ -477,11 +485,6 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             StateChanged.Source.Game);
         ChangeEquip(state, EquipSlot.OffHand, state.BaseData.Item(EquipSlot.OffHand), state.BaseData.Stain(EquipSlot.OffHand),
             StateChanged.Source.Game);
-        ChangeHatState(state, state.BaseData.IsHatVisible(), StateChanged.Source.Game);
-        ChangeVisorState(state, state.BaseData.IsVisorToggled(), StateChanged.Source.Game);
-        ChangeWeaponState(state, state.BaseData.IsWeaponVisible(), StateChanged.Source.Game);
-        ChangeWetness(state, false, StateChanged.Source.Game);
-        ChangeCustomize(state, state.BaseData.Customize, CustomizeFlagExtensions.All, StateChanged.Source.Game);
 
         _objects.Update();
         var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
@@ -501,18 +504,21 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         var data           = new ActorData(actor, string.Empty);
         var customizeFlags = Customize.Compare(mdl.GetCustomize(), state.ModelData.Customize);
 
+        _editor.ChangeHatState(data, state.ModelData.IsHatVisible());
+        _editor.ChangeWetness(data, false);
+        _editor.ChangeWeaponState(data, state.ModelData.IsWeaponVisible());
+        _editor.ChangeVisor(data, state.ModelData.IsVisorToggled());
+
         _editor.ChangeCustomize(data, state.ModelData.Customize);
         if (customizeFlags.RequiresRedraw())
             return;
 
-        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+        if (state.ModelData.IsHatVisible())
+            _editor.ChangeArmor(data, EquipSlot.Head, state.ModelData.Armor(EquipSlot.Head));
+        foreach (var slot in EquipSlotExtensions.EqdpSlots.Skip(1))
             _editor.ChangeArmor(data, slot, state.ModelData.Armor(slot));
         _editor.ChangeMainhand(data, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
         _editor.ChangeOffhand(data, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
-        _editor.ChangeWetness(data, false);
-        _editor.ChangeWeaponState(data, state.ModelData.IsWeaponVisible());
-        _editor.ChangeHatState(data, state.ModelData.IsHatVisible());
-        _editor.ChangeVisor(data, state.ModelData.IsVisorToggled());
     }
 
     public void DeleteState(ActorIdentifier identifier)

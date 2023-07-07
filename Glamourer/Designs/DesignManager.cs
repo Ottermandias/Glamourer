@@ -337,14 +337,14 @@ public class DesignManager
 
                 if (item.Type != currentMain.Type)
                 {
-                    var newOffId = FullEquipTypeExtensions.OffhandTypes.Contains(item.Type)
+                    var newOffId = item.Type.Offhand().IsOffhandType()
                         ? item.Id
                         : ItemManager.NothingId(item.Type.Offhand());
                     if (!_items.IsOffhandValid(item, newOffId, out newOff))
                         return;
                 }
 
-                if (!design.DesignData.SetItem(EquipSlot.MainHand, item) && !design.DesignData.SetItem(EquipSlot.OffHand, newOff))
+                if (!(design.DesignData.SetItem(EquipSlot.MainHand, item) | design.DesignData.SetItem(EquipSlot.OffHand, newOff)))
                     return;
 
                 design.LastEdit = DateTimeOffset.UtcNow;

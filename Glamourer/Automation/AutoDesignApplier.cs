@@ -143,9 +143,9 @@ public class AutoDesignApplier : IDisposable
                 continue;
 
             var (equipFlags, customizeFlags, applyHat, applyVisor, applyWeapon, applyWet) = design.ApplyWhat();
-            Reduce(state, in design.Design.DesignData, equipFlags,     ref totalEquipFlags, respectManual);
-            Reduce(state, in design.Design.DesignData, customizeFlags, ref totalCustomizeFlags, respectManual);
             Reduce(state, in design.Design.DesignData, applyHat,       applyVisor, applyWeapon, applyWet, ref totalMetaFlags, respectManual);
+            Reduce(state, in design.Design.DesignData, customizeFlags, ref totalCustomizeFlags, respectManual);
+            Reduce(state, in design.Design.DesignData, equipFlags,     ref totalEquipFlags, respectManual);
         }
     }
 
