@@ -68,8 +68,8 @@ public class SetPanel
         ImGuiUtil.DrawTextButton(_selector.SelectionName, new Vector2(-frameHeight, ImGui.GetFrameHeight()), buttonColor);
         ImGui.SameLine();
         style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
-        using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.FolderExpanded.Value())
-            .Push(ImGuiCol.Border, ColorId.FolderExpanded.Value());
+        using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.HeaderButtons.Value())
+            .Push(ImGuiCol.Border, ColorId.HeaderButtons.Value());
         if (ImGuiUtil.DrawDisabledButton(
                 $"{(_selector.IncognitoMode ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash).ToIconString()}###IncognitoMode",
                 new Vector2(frameHeight, ImGui.GetFrameHeight()), string.Empty, false, true))

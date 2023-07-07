@@ -33,9 +33,6 @@ public class CustomizationManager : ICustomizationManager
     public ImGuiScene.TextureWrap GetIcon(uint iconId)
         => _options!.GetIcon(iconId);
 
-    public void RemoveIcon(uint iconId)
-        => _options!.RemoveIcon(iconId);
-
     public string GetName(CustomName name)
         => _options!.GetName(name);
 }

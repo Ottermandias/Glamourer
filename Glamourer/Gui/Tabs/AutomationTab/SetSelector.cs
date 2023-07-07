@@ -46,12 +46,12 @@ public class SetSelector : IDisposable
         _config  = config;
         _actors  = actors;
         _objects = objects;
-        _event.Subscribe(OnAutomationChanged, AutomationChanged.Priority.SetSelector);
+        _event.Subscribe(OnAutomationChange, AutomationChanged.Priority.SetSelector);
     }
 
     public void Dispose()
     {
-        _event.Unsubscribe(OnAutomationChanged);
+        _event.Unsubscribe(OnAutomationChange);
     }
 
     public string SelectionName
@@ -60,7 +60,7 @@ public class SetSelector : IDisposable
     public string GetSetName(AutoDesignSet? set, int index)
         => set == null ? "No Selection" : IncognitoMode ? $"Auto Design Set #{index + 1}" : set.Name;
 
-    private void OnAutomationChanged(AutomationChanged.Type type, AutoDesignSet? set, object? data)
+    private void OnAutomationChange(AutomationChanged.Type type, AutoDesignSet? set, object? data)
     {
         switch (type)
         {

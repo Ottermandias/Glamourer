@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
@@ -19,7 +20,9 @@ using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Unlocks;
+using Glamourer.Utility;
 using ImGuiNET;
+using Newtonsoft.Json.Linq;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Widgets;
@@ -42,7 +45,7 @@ public unsafe class DebugTab : ITab
     private readonly ObjectTable            _objects;
     private readonly ObjectManager          _objectManager;
     private readonly GlamourerIpc           _ipc;
-    private readonly CodeService        _code;
+    private readonly CodeService            _code;
 
     private readonly ItemManager            _items;
     private readonly ActorService           _actors;
@@ -54,6 +57,7 @@ public unsafe class DebugTab : ITab
     private readonly DesignManager     _designManager;
     private readonly DesignFileSystem  _designFileSystem;
     private readonly AutoDesignManager _autoDesignManager;
+    private readonly DesignConverter   _designConverter;
 
     private readonly PenumbraChangedItemTooltip _penumbraTooltip;
 
@@ -70,7 +74,7 @@ public unsafe class DebugTab : ITab
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
         AutoDesignManager autoDesignManager, JobService jobs, CodeService code, CustomizeUnlockManager customizeUnlocks,
-        ItemUnlockManager itemUnlocks)
+        ItemUnlockManager itemUnlocks, DesignConverter designConverter)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -92,9 +96,10 @@ public unsafe class DebugTab : ITab
         _pluginInterface        = pluginInterface;
         _autoDesignManager      = autoDesignManager;
         _jobs                   = jobs;
-        _code               = code;
+        _code                   = code;
         _customizeUnlocks       = customizeUnlocks;
         _itemUnlocks            = itemUnlocks;
+        _designConverter        = designConverter;
     }
 
     public ReadOnlySpan<byte> Label
@@ -817,6 +822,7 @@ public unsafe class DebugTab : ITab
 
         DrawDesignManager();
         DrawDesignTester();
+        DrawDesignConverter();
     }
 
     private void DrawDesignManager()
@@ -927,6 +933,83 @@ public unsafe class DebugTab : ITab
         }
     }
 
+    private string      _clipboardText    = string.Empty;
+    private byte[]      _clipboardData    = Array.Empty<byte>();
+    private byte[]      _dataUncompressed = Array.Empty<byte>();
+    private byte        _version          = 0;
+    private string      _textUncompressed = string.Empty;
+    private JObject?    _json             = null;
+    private DesignBase? _tmpDesign        = null;
+    private Exception?  _clipboardProblem = null;
+
+    private void DrawDesignConverter()
+    {
+        using var tree = ImRaii.TreeNode("Design Converter");
+        if (!tree)
+            return;
+
+        if (ImGui.Button("Import Clipboard"))
+        {
+            _clipboardText    = string.Empty;
+            _clipboardData    = Array.Empty<byte>();
+            _dataUncompressed = Array.Empty<byte>();
+            _textUncompressed = string.Empty;
+            _json             = null;
+            _tmpDesign        = null;
+            _clipboardProblem = null;
+
+            try
+            {
+                _clipboardText    = ImGui.GetClipboardText();
+                _clipboardData    = Convert.FromBase64String(_clipboardText);
+                _version          = _clipboardData.Decompress(out _dataUncompressed);
+                _textUncompressed = Encoding.UTF8.GetString(_dataUncompressed);
+                _json             = JObject.Parse(_textUncompressed);
+                _tmpDesign        = _designConverter.FromBase64(_clipboardText, true, true);
+            }
+            catch (Exception ex)
+            {
+                _clipboardProblem = ex;
+            }
+        }
+
+        if (_clipboardText.Length > 0)
+        {
+            using var f = ImRaii.PushFont(UiBuilder.MonoFont);
+            ImGuiUtil.TextWrapped(_clipboardText);
+        }
+
+        if (_clipboardData.Length > 0)
+        {
+            using var f = ImRaii.PushFont(UiBuilder.MonoFont);
+            ImGuiUtil.TextWrapped(string.Join(" ", _clipboardData.Select(b => b.ToString("X2"))));
+        }
+
+        if (_dataUncompressed.Length > 0)
+        {
+            using var f = ImRaii.PushFont(UiBuilder.MonoFont);
+            ImGuiUtil.TextWrapped(string.Join(" ", _dataUncompressed.Select(b => b.ToString("X2"))));
+        }
+
+        if (_textUncompressed.Length > 0)
+        {
+            using var f = ImRaii.PushFont(UiBuilder.MonoFont);
+            ImGuiUtil.TextWrapped(_textUncompressed);
+        }
+
+        if (_json != null)
+            ImGui.TextUnformatted("JSON Parsing Successful!");
+
+        if (_tmpDesign != null)
+            DrawDesign(_tmpDesign);
+
+        if (_clipboardProblem != null)
+        {
+            using var f = ImRaii.PushFont(UiBuilder.MonoFont);
+            ImGuiUtil.TextWrapped(_clipboardProblem.ToString());
+        }
+    }
+
     public void DrawState(ActorData data, ActorState state)
     {
         using var table = ImRaii.Table("##state", 7, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
@@ -955,20 +1038,20 @@ public unsafe class DebugTab : ITab
             return $"{item.Name} ({item.ModelId.Value}{(item.WeaponType != 0 ? $"-{item.WeaponType.Value}" : string.Empty)}-{item.Variant})";
         }
 
-        PrintRow("Model ID", state.BaseData.ModelId, state.ModelData.ModelId, state[ActorState.MetaFlag.ModelId]);
+        PrintRow("Model ID", state.BaseData.ModelId, state.ModelData.ModelId, state[ActorState.MetaIndex.ModelId]);
         ImGui.TableNextRow();
-        PrintRow("Wetness", state.BaseData.IsWet(), state.ModelData.IsWet(), state[ActorState.MetaFlag.Wetness]);
+        PrintRow("Wetness", state.BaseData.IsWet(), state.ModelData.IsWet(), state[ActorState.MetaIndex.Wetness]);
         ImGui.TableNextRow();
 
         if (state.BaseData.ModelId == 0 && state.ModelData.ModelId == 0)
         {
-            PrintRow("Hat Visible", state.BaseData.IsHatVisible(), state.ModelData.IsHatVisible(), state[ActorState.MetaFlag.HatState]);
+            PrintRow("Hat Visible", state.BaseData.IsHatVisible(), state.ModelData.IsHatVisible(), state[ActorState.MetaIndex.HatState]);
             ImGui.TableNextRow();
             PrintRow("Visor Toggled", state.BaseData.IsVisorToggled(), state.ModelData.IsVisorToggled(),
-                state[ActorState.MetaFlag.VisorState]);
+                state[ActorState.MetaIndex.VisorState]);
             ImGui.TableNextRow();
             PrintRow("Weapon Visible", state.BaseData.IsWeaponVisible(), state.ModelData.IsWeaponVisible(),
-                state[ActorState.MetaFlag.WeaponState]);
+                state[ActorState.MetaIndex.WeaponState]);
             ImGui.TableNextRow();
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
@@ -1053,33 +1136,36 @@ public unsafe class DebugTab : ITab
         }
     }
 
-    private void DrawDesign(Design design)
+    private void DrawDesign(DesignBase design)
     {
         using var table = ImRaii.Table("##equip", 6, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
-        ImGuiUtil.DrawTableColumn("Name");
-        ImGuiUtil.DrawTableColumn(design.Name);
-        ImGuiUtil.DrawTableColumn($"({design.Index})");
-        ImGui.TableNextColumn();
-        ImGui.TextUnformatted("Description (Hover)");
-        ImGuiUtil.HoverTooltip(design.Description);
-        ImGui.TableNextRow();
+        if (design is Design d)
+        {
+            ImGuiUtil.DrawTableColumn("Name");
+            ImGuiUtil.DrawTableColumn(d.Name);
+            ImGuiUtil.DrawTableColumn($"({d.Index})");
+            ImGui.TableNextColumn();
+            ImGui.TextUnformatted("Description (Hover)");
+            ImGuiUtil.HoverTooltip(d.Description);
+            ImGui.TableNextRow();
 
-        ImGuiUtil.DrawTableColumn("Identifier");
-        ImGuiUtil.DrawTableColumn(design.Identifier.ToString());
-        ImGui.TableNextRow();
-        ImGuiUtil.DrawTableColumn("Design File System Path");
-        ImGuiUtil.DrawTableColumn(_designFileSystem.FindLeaf(design, out var leaf) ? leaf.FullName() : "No Path Known");
-        ImGui.TableNextRow();
+            ImGuiUtil.DrawTableColumn("Identifier");
+            ImGuiUtil.DrawTableColumn(d.Identifier.ToString());
+            ImGui.TableNextRow();
+            ImGuiUtil.DrawTableColumn("Design File System Path");
+            ImGuiUtil.DrawTableColumn(_designFileSystem.FindLeaf(d, out var leaf) ? leaf.FullName() : "No Path Known");
+            ImGui.TableNextRow();
 
-        ImGuiUtil.DrawTableColumn("Creation");
-        ImGuiUtil.DrawTableColumn(design.CreationDate.ToString());
-        ImGui.TableNextRow();
-        ImGuiUtil.DrawTableColumn("Update");
-        ImGuiUtil.DrawTableColumn(design.LastEdit.ToString());
-        ImGui.TableNextRow();
-        ImGuiUtil.DrawTableColumn("Tags");
-        ImGuiUtil.DrawTableColumn(string.Join(", ", design.Tags));
-        ImGui.TableNextRow();
+            ImGuiUtil.DrawTableColumn("Creation");
+            ImGuiUtil.DrawTableColumn(d.CreationDate.ToString());
+            ImGui.TableNextRow();
+            ImGuiUtil.DrawTableColumn("Update");
+            ImGuiUtil.DrawTableColumn(d.LastEdit.ToString());
+            ImGui.TableNextRow();
+            ImGuiUtil.DrawTableColumn("Tags");
+            ImGuiUtil.DrawTableColumn(string.Join(", ", d.Tags));
+            ImGui.TableNextRow();
+        }
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
         {
@@ -1174,10 +1260,8 @@ public unsafe class DebugTab : ITab
         foreach (var (identifier, state) in _state.Where(kvp => !_objectManager.ContainsKey(kvp.Key)))
         {
             using var t = ImRaii.TreeNode(identifier.ToString());
-            if (!t)
-                return;
-
-            DrawState(ActorData.Invalid, state);
+            if (t)
+                DrawState(ActorData.Invalid, state);
         }
     }
 

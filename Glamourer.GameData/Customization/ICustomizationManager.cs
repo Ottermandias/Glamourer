@@ -12,6 +12,5 @@ public interface ICustomizationManager
     public CustomizationSet GetList(SubRace race, Gender gender);
 
     public ImGuiScene.TextureWrap GetIcon(uint iconId);
-    public void                   RemoveIcon(uint iconId);
     public string                 GetName(CustomName name);
 }

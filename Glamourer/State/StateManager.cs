@@ -81,7 +81,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             {
                 ModelData = FromActor(actor, true),
                 BaseData  = FromActor(actor, false),
-                LastJob = (byte) (actor.IsCharacter ? actor.AsCharacter->CharacterData.ClassJob : 0),
+                LastJob   = (byte)(actor.IsCharacter ? actor.AsCharacter->CharacterData.ClassJob : 0),
             };
             // state.Identifier is owned.
             _states.Add(state.Identifier, state);
@@ -192,6 +192,21 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
     #region Change Values
 
+    /// <summary> Turn a non-human actor human. </summary>
+    public void TurnHuman(ActorState state, StateChanged.Source source)
+    {
+        if (state.ModelData.ModelId == 0)
+            return;
+
+        state.ModelData.ModelId             = 0;
+        state[ActorState.MetaIndex.ModelId] = source;
+        ChangeCustomize(state, Customize.Default, CustomizeFlagExtensions.All, source);
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+            ChangeEquip(state, slot, ItemManager.NothingItem(slot), 0, source);
+        ChangeEquip(state, EquipSlot.MainHand, _items.DefaultSword,                           0, source);
+        ChangeEquip(state, EquipSlot.OffHand,  ItemManager.NothingItem(FullEquipType.Shield), 0, source);
+    }
+
     /// <summary> Change a customization value. </summary>
     public void ChangeCustomize(ActorState state, CustomizeIndex idx, CustomizeValue value, StateChanged.Source source)
     {
@@ -256,9 +271,14 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
         if (source is StateChanged.Source.Manual)
             if (type == StateChanged.Type.Equip)
-                _editor.ChangeArmor(objects, slot, state.ModelData.Armor(slot));
+            {
+                if (slot is not EquipSlot.Head || state.ModelData.IsHatVisible())
+                    _editor.ChangeArmor(objects, slot, state.ModelData.Armor(slot));
+            }
             else
+            {
                 _editor.ChangeWeapon(objects, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
+            }
 
         // Meta.
         Glamourer.Log.Verbose(
@@ -283,9 +303,14 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
         if (source is StateChanged.Source.Manual)
             if (type == StateChanged.Type.Equip)
-                _editor.ChangeArmor(objects, slot, state.ModelData.Armor(slot));
+            {
+                if (slot is not EquipSlot.Head || state.ModelData.IsHatVisible())
+                    _editor.ChangeArmor(objects, slot, state.ModelData.Armor(slot));
+            }
             else
+            {
                 _editor.ChangeWeapon(objects, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
+            }
 
         // Meta.
         Glamourer.Log.Verbose(
@@ -322,7 +347,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // Update state data.
         var old = state.ModelData.IsHatVisible();
         state.ModelData.SetHatVisible(value);
-        state[ActorState.MetaFlag.HatState] = source;
+        state[ActorState.MetaIndex.HatState] = source;
 
         // Update draw objects / game objects.
         _objects.Update();
@@ -333,7 +358,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // Meta.
         Glamourer.Log.Verbose(
             $"Set Head Gear Visibility in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaFlag.HatState));
+        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaIndex.HatState));
     }
 
     /// <summary> Change weapon visibility. </summary>
@@ -342,7 +367,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // Update state data.
         var old = state.ModelData.IsWeaponVisible();
         state.ModelData.SetWeaponVisible(value);
-        state[ActorState.MetaFlag.WeaponState] = source;
+        state[ActorState.MetaIndex.WeaponState] = source;
 
         // Update draw objects / game objects.
         _objects.Update();
@@ -353,7 +378,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // Meta.
         Glamourer.Log.Verbose(
             $"Set Weapon Visibility in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaFlag.WeaponState));
+        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaIndex.WeaponState));
     }
 
     /// <summary> Change visor state. </summary>
@@ -362,7 +387,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // Update state data.
         var old = state.ModelData.IsVisorToggled();
         state.ModelData.SetVisor(value);
-        state[ActorState.MetaFlag.VisorState] = source;
+        state[ActorState.MetaIndex.VisorState] = source;
 
         // Update draw objects.
         _objects.Update();
@@ -373,7 +398,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // Meta.
         Glamourer.Log.Verbose(
             $"Set Visor State in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaFlag.VisorState));
+        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaIndex.VisorState));
     }
 
     /// <summary> Set GPose Wetness. </summary>
@@ -382,7 +407,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // Update state data.
         var old = state.ModelData.IsWet();
         state.ModelData.SetIsWet(value);
-        state[ActorState.MetaFlag.Wetness] = source;
+        state[ActorState.MetaIndex.Wetness] = source;
 
         // Update draw objects / game objects.
         _objects.Update();
@@ -392,12 +417,12 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // Meta.
         Glamourer.Log.Verbose(
             $"Set Wetness in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Other, state[ActorState.MetaFlag.Wetness], state, objects, (old, value, ActorState.MetaFlag.Wetness));
+        _event.Invoke(StateChanged.Type.Other, state[ActorState.MetaIndex.Wetness], state, objects, (old, value, ActorState.MetaIndex.Wetness));
     }
 
     #endregion
 
-    public void ApplyDesign(Design design, ActorState state)
+    public void ApplyDesign(DesignBase design, ActorState state)
     {
         void HandleEquip(EquipSlot slot, bool applyPiece, bool applyStain)
         {
@@ -416,6 +441,12 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             }
         }
 
+        if (state.ModelData.ModelId != 0 && design.DesignData.ModelId == 0)
+            TurnHuman(state, StateChanged.Source.Manual);
+
+        if (design.DoApplyHatVisible())
+            ChangeHatState(state, design.DesignData.IsHatVisible(), StateChanged.Source.Manual);
+
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
             HandleEquip(slot, design.DoApplyEquip(slot), design.DoApplyStain(slot));
 
@@ -428,8 +459,6 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
          && design.DesignData.Item(EquipSlot.OffHand).Type == state.BaseData.Item(EquipSlot.OffHand).Type,
             design.DoApplyStain(EquipSlot.OffHand));
 
-        if (design.DoApplyHatVisible())
-            ChangeHatState(state, design.DesignData.IsHatVisible(), StateChanged.Source.Manual);
         if (design.DoApplyWeaponVisible())
             ChangeWeaponState(state, design.DesignData.IsWeaponVisible(), StateChanged.Source.Manual);
         if (design.DoApplyVisorToggle())

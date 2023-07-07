@@ -249,7 +249,7 @@ public class CustomizationSet
             _ => index switch
             {
                 CustomizeIndex.Face            => Faces.Count,
-                CustomizeIndex.Hairstyle       => (face = HrothgarFaceHack(face)) < HairByFace.Count ? HairByFace[face.Value].Count : 0,
+                CustomizeIndex.Hairstyle       => (face = HrothgarFaceHack(face)) < HairByFace.Count ? HairByFace[face.Value].Count : HairStyles.Count,
                 CustomizeIndex.SkinColor       => SkinColors.Count,
                 CustomizeIndex.EyeColorRight   => EyeColors.Count,
                 CustomizeIndex.HairColor       => HairColors.Count,

@@ -18,6 +18,7 @@ using Glamourer.Unlocks;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
 using OtterGui.Log;
+using Penumbra.GameData.Data;
 
 namespace Glamourer.Services;
 
@@ -73,7 +74,8 @@ public static class ServiceManager
             .AddSingleton<ItemService>()
             .AddSingleton<ActorService>()
             .AddSingleton<CustomizationService>()
-            .AddSingleton<ItemManager>();
+            .AddSingleton<ItemManager>()
+            .AddSingleton<HumanModelList>();
 
     private static IServiceCollection AddInterop(this IServiceCollection services)
         => services.AddSingleton<VisorService>()
@@ -93,7 +95,8 @@ public static class ServiceManager
             .AddSingleton<DesignFileSystem>()
             .AddSingleton<AutoDesignManager>()
             .AddSingleton<AutoDesignApplier>()
-            .AddSingleton<FixedDesignMigrator>();
+            .AddSingleton<FixedDesignMigrator>()
+            .AddSingleton<DesignConverter>();
 
     private static IServiceCollection AddState(this IServiceCollection services)
         => services.AddSingleton<StateManager>()
@@ -114,6 +117,8 @@ public static class ServiceManager
             .AddSingleton<DesignFileSystemSelector>()
             .AddSingleton<DesignPanel>()
             .AddSingleton<DesignTab>()
+            .AddSingleton<ModAssociationsTab>()
+            .AddSingleton<DesignDetailTab>()
             .AddSingleton<UnlockTable>()
             .AddSingleton<UnlockOverview>()
             .AddSingleton<UnlocksTab>()

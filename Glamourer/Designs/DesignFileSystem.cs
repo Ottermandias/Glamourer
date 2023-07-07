@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Glamourer.Events;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -101,26 +102,22 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
         switch (type)
         {
             case DesignChanged.Type.Created:
-                var originalName = design.Name.Text.FixName();
-                var name         = originalName;
-                var counter      = 1;
-                while (Find(name, out _))
-                    name = $"{originalName} ({++counter})";
-
-                CreateLeaf(Root, name, design);
-                break;
+                CreateDuplicateLeaf(Root, design.Name.Text, design);
+                return;
             case DesignChanged.Type.Deleted:
-                if (FindLeaf(design, out var leaf))
-                    Delete(leaf);
-                break;
+                if (FindLeaf(design, out var leaf1))
+                    Delete(leaf1);
+                return;
             case DesignChanged.Type.ReloadedAll:
                 Reload();
-                break;
+                return;
             case DesignChanged.Type.Renamed when data is string oldName:
+                if (!FindLeaf(design, out var leaf2))
+                    return;
                 var old = oldName.FixName();
-                if (Find(old, out var child) && child is not Folder)
-                    Rename(child, design.Name);
-                break;
+                if (old == leaf2.Name || leaf2.Name.IsDuplicateName(out var baseName, out _) && baseName == old)
+                    RenameWithDuplicates(leaf2, design.Name);
+                return;
         }
     }
 

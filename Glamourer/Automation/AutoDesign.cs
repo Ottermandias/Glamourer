@@ -21,7 +21,7 @@ public class AutoDesign
         All = Armor | Accessories | Customizations | Weapons | Stains,
     }
 
-    public Design   Design;
+    public Design   Design = null!;
     public JobGroup Jobs;
     public Type     ApplicationType;
 

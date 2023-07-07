@@ -25,9 +25,12 @@ public class AutoDesignApplier : IDisposable
     private readonly CustomizationService   _customizations;
     private readonly CustomizeUnlockManager _customizeUnlocks;
     private readonly ItemUnlockManager      _itemUnlocks;
+    private readonly AutomationChanged      _event;
+    private readonly ObjectManager          _objects;
 
     public AutoDesignApplier(Configuration config, AutoDesignManager manager, CodeService code, StateManager state, JobService jobs,
-        CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks)
+        CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
+        AutomationChanged @event, ObjectManager objects)
     {
         _config           =  config;
         _manager          =  manager;
@@ -38,12 +41,57 @@ public class AutoDesignApplier : IDisposable
         _actors           =  actors;
         _itemUnlocks      =  itemUnlocks;
         _customizeUnlocks =  customizeUnlocks;
+        _event            =  @event;
+        _objects          =  objects;
         _jobs.JobChanged  += OnJobChange;
+        _event.Subscribe(OnAutomationChange, AutomationChanged.Priority.AutoDesignApplier);
     }
 
     public void Dispose()
     {
+        _event.Unsubscribe(OnAutomationChange);
         _jobs.JobChanged -= OnJobChange;
+    }
+
+    private void OnAutomationChange(AutomationChanged.Type type, AutoDesignSet? set, object? _)
+    {
+        if (!_config.EnableAutoDesigns || set is not { Enabled: true })
+            return;
+
+        switch (type)
+        {
+            case AutomationChanged.Type.ChangeIdentifier:
+            case AutomationChanged.Type.ToggleSet:
+            case AutomationChanged.Type.AddedDesign:
+            case AutomationChanged.Type.DeletedDesign:
+            case AutomationChanged.Type.MovedDesign:
+            case AutomationChanged.Type.ChangedDesign:
+            case AutomationChanged.Type.ChangedConditions:
+                _objects.Update();
+                if (_objects.TryGetValue(set.Identifier, out var data))
+                {
+                    if (_state.GetOrCreate(set.Identifier, data.Objects[0], out var state))
+                    {
+                        Reduce(data.Objects[0], state, set, false);
+                        foreach (var actor in data.Objects)
+                            _state.ReapplyState(actor);
+                    }
+                }
+                else if (_objects.TryGetValueAllWorld(set.Identifier, out data))
+                {
+                    foreach (var actor in data.Objects)
+                    {
+                        var id = actor.GetIdentifier(_actors.AwaitedService);
+                        if (_state.GetOrCreate(id, actor, out var state))
+                        {
+                            Reduce(actor, state, set, false);
+                            _state.ReapplyState(actor);
+                        }
+                    }
+                }
+
+                break;
+        }
     }
 
     private void OnJobChange(Actor actor, Job _)
@@ -242,28 +290,28 @@ public class AutoDesignApplier : IDisposable
     {
         if (applyHat && (totalMetaFlags & 0x01) == 0)
         {
-            if (!respectManual || state[ActorState.MetaFlag.HatState] is not StateChanged.Source.Manual)
+            if (!respectManual || state[ActorState.MetaIndex.HatState] is not StateChanged.Source.Manual)
                 _state.ChangeHatState(state, design.IsHatVisible(), StateChanged.Source.Fixed);
             totalMetaFlags |= 0x01;
         }
 
         if (applyVisor && (totalMetaFlags & 0x02) == 0)
         {
-            if (!respectManual || state[ActorState.MetaFlag.VisorState] is not StateChanged.Source.Manual)
+            if (!respectManual || state[ActorState.MetaIndex.VisorState] is not StateChanged.Source.Manual)
                 _state.ChangeVisorState(state, design.IsVisorToggled(), StateChanged.Source.Fixed);
             totalMetaFlags |= 0x02;
         }
 
         if (applyWeapon && (totalMetaFlags & 0x04) == 0)
         {
-            if (!respectManual || state[ActorState.MetaFlag.WeaponState] is not StateChanged.Source.Manual)
+            if (!respectManual || state[ActorState.MetaIndex.WeaponState] is not StateChanged.Source.Manual)
                 _state.ChangeWeaponState(state, design.IsWeaponVisible(), StateChanged.Source.Fixed);
             totalMetaFlags |= 0x04;
         }
 
         if (applyWet && (totalMetaFlags & 0x08) == 0)
         {
-            if (!respectManual || state[ActorState.MetaFlag.Wetness] is not StateChanged.Source.Manual)
+            if (!respectManual || state[ActorState.MetaIndex.Wetness] is not StateChanged.Source.Manual)
                 _state.ChangeWetness(state, design.IsWet(), StateChanged.Source.Fixed);
             totalMetaFlags |= 0x08;
         }

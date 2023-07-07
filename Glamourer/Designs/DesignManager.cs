@@ -5,7 +5,9 @@ using System.Linq;
 using Dalamud.Utility;
 using Glamourer.Customization;
 using Glamourer.Events;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
+using Glamourer.State;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -78,19 +80,60 @@ public class DesignManager
         _event.Invoke(DesignChanged.Type.ReloadedAll, null!);
     }
 
+    /// <summary> Create a new temporary design without adding it to the manager. </summary>
+    public DesignBase CreateTemporary()
+        => new(_items);
+
     /// <summary> Create a new design of a given name. </summary>
-    public Design Create(string name)
+    public Design CreateEmpty(string name)
     {
         var design = new Design(_items)
         {
             CreationDate = DateTimeOffset.UtcNow,
             LastEdit     = DateTimeOffset.UtcNow,
             Identifier   = CreateNewGuid(),
-            Index        = _designs.Count,
             Name         = name,
+            Index        = _designs.Count,
         };
         _designs.Add(design);
         Glamourer.Log.Debug($"Added new design {design.Identifier}.");
+        _saveService.ImmediateSave(design);
+        _event.Invoke(DesignChanged.Type.Created, design);
+        return design;
+    }
+
+    /// <summary> Create a new design cloning a given temporary design. </summary>
+    public Design CreateClone(DesignBase clone, string name)
+    {
+        var design = new Design(clone)
+        {
+            CreationDate = DateTimeOffset.UtcNow,
+            LastEdit     = DateTimeOffset.UtcNow,
+            Identifier   = CreateNewGuid(),
+            Name         = name,
+            Index        = _designs.Count,
+        };
+        _designs.Add(design);
+        Glamourer.Log.Debug($"Added new design {design.Identifier} by cloning Temporary Design.");
+        _saveService.ImmediateSave(design);
+        _event.Invoke(DesignChanged.Type.Created, design);
+        return design;
+    }
+
+    /// <summary> Create a new design cloning a given design. </summary>
+    public Design CreateClone(Design clone, string name)
+    {
+        var design = new Design(clone)
+        {
+            CreationDate = DateTimeOffset.UtcNow,
+            LastEdit     = DateTimeOffset.UtcNow,
+            Identifier   = CreateNewGuid(),
+            Name         = name,
+            Index        = _designs.Count,
+        };
+        _designs.Add(design);
+        Glamourer.Log.Debug(
+            $"Added new design {design.Identifier} by cloning {clone.Identifier.ToString()}.");
         _saveService.ImmediateSave(design);
         _event.Invoke(DesignChanged.Type.Created, design);
         return design;
@@ -181,6 +224,41 @@ public class DesignManager
         _event.Invoke(DesignChanged.Type.ChangedTag, design, (oldTag, newTag, tagIdx));
     }
 
+    /// <summary> Add an associated mod to a design. </summary>
+    public void AddMod(Design design, Mod mod, ModSettings settings)
+    {
+        if (!design.AssociatedMods.TryAdd(mod, settings))
+            return;
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Added associated mod {mod.DirectoryName} to design {design.Identifier}.");
+        _event.Invoke(DesignChanged.Type.AddedMod, design, (mod, settings));
+    }
+
+    /// <summary> Remove an associated mod from a design. </summary>
+    public void RemoveMod(Design design, Mod mod)
+    {
+        if (!design.AssociatedMods.Remove(mod, out var settings))
+            return;
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Removed associated mod {mod.DirectoryName} from design {design.Identifier}.");
+        _event.Invoke(DesignChanged.Type.RemovedMod, design, (mod, settings));
+    }
+
+    /// <summary> Set the write protection status of a design. </summary>
+    public void SetWriteProtection(Design design, bool value)
+    {
+        if (!design.SetWriteProtected(value))
+            return;
+
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set design {design.Identifier} to {(value ? "no longer be " : string.Empty)} write-protected.");
+        _event.Invoke(DesignChanged.Type.WriteProtection, design, value);
+    }
+
     /// <summary> Change a customization value. </summary>
     public void ChangeCustomize(Design design, CustomizeIndex idx, CustomizeValue value)
     {
@@ -210,6 +288,7 @@ public class DesignManager
                 break;
         }
 
+        design.LastEdit = DateTimeOffset.UtcNow;
         Glamourer.Log.Debug($"Changed customize {idx.ToDefaultName()} in design {design.Identifier} from {oldValue.Value} to {value.Value}.");
         _saveService.QueueSave(design);
         _event.Invoke(DesignChanged.Type.Customize, design, (oldValue, value, idx));
@@ -237,6 +316,7 @@ public class DesignManager
         if (!design.DesignData.SetItem(slot, item))
             return;
 
+        design.LastEdit = DateTimeOffset.UtcNow;
         Glamourer.Log.Debug(
             $"Set {slot.ToName()} equipment piece in design {design.Identifier} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}).");
         _saveService.QueueSave(design);
@@ -257,7 +337,6 @@ public class DesignManager
 
                 if (item.Type != currentMain.Type)
                 {
-                    
                     var newOffId = FullEquipTypeExtensions.OffhandTypes.Contains(item.Type)
                         ? item.Id
                         : ItemManager.NothingId(item.Type.Offhand());
@@ -330,6 +409,87 @@ public class DesignManager
         _saveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of stain of {slot} equipment piece to {value}.");
         _event.Invoke(DesignChanged.Type.ApplyStain, design, slot);
+    }
+
+    /// <summary> Change the bool value of one of the meta flags. </summary>
+    public void ChangeMeta(Design design, ActorState.MetaIndex metaIndex, bool value)
+    {
+        var change = metaIndex switch
+        {
+            ActorState.MetaIndex.Wetness     => design.DesignData.SetIsWet(value),
+            ActorState.MetaIndex.HatState    => design.DesignData.SetHatVisible(value),
+            ActorState.MetaIndex.VisorState  => design.DesignData.SetVisor(value),
+            ActorState.MetaIndex.WeaponState => design.DesignData.SetWeaponVisible(value),
+            _                                => throw new ArgumentOutOfRangeException(nameof(metaIndex), metaIndex, null),
+        };
+        if (!change)
+            return;
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set value of {metaIndex} to {value}.");
+        _event.Invoke(DesignChanged.Type.Other, design, (metaIndex, false, value));
+    }
+
+    /// <summary> Change the application value of one of the meta flags. </summary>
+    public void ChangeApplyMeta(Design design, ActorState.MetaIndex metaIndex, bool value)
+    {
+        var change = metaIndex switch
+        {
+            ActorState.MetaIndex.Wetness     => design.SetApplyWetness(value),
+            ActorState.MetaIndex.HatState    => design.SetApplyHatVisible(value),
+            ActorState.MetaIndex.VisorState  => design.SetApplyVisorToggle(value),
+            ActorState.MetaIndex.WeaponState => design.SetApplyWeaponVisible(value),
+            _                                => throw new ArgumentOutOfRangeException(nameof(metaIndex), metaIndex, null),
+        };
+        if (!change)
+            return;
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set applying of {metaIndex} to {value}.");
+        _event.Invoke(DesignChanged.Type.Other, design, (metaIndex, true, value));
+    }
+
+    /// <summary> Apply an entire design based on its appliance rules piece by piece. </summary>
+    public void ApplyDesign(Design design, DesignBase other)
+    {
+        if (other.DoApplyEquip(EquipSlot.MainHand))
+            ChangeWeapon(design, EquipSlot.MainHand, other.DesignData.Item(EquipSlot.MainHand));
+
+        if (other.DoApplyEquip(EquipSlot.OffHand))
+            ChangeWeapon(design, EquipSlot.OffHand, other.DesignData.Item(EquipSlot.OffHand));
+
+        if (other.DoApplyStain(EquipSlot.MainHand))
+            ChangeStain(design, EquipSlot.MainHand, other.DesignData.Stain(EquipSlot.MainHand));
+
+        if (other.DoApplyStain(EquipSlot.OffHand))
+            ChangeStain(design, EquipSlot.OffHand, other.DesignData.Stain(EquipSlot.OffHand));
+
+
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+        {
+            if (other.DoApplyEquip(slot))
+                ChangeEquip(design, slot, other.DesignData.Item(slot));
+
+            if (other.DoApplyStain(slot))
+                ChangeStain(design, slot, other.DesignData.Stain(slot));
+        }
+
+        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        {
+            if (other.DoApplyCustomize(index))
+                ChangeCustomize(design, index, other.DesignData.Customize[index]);
+        }
+
+        if (other.DoApplyHatVisible())
+            design.DesignData.SetHatVisible(other.DesignData.IsHatVisible());
+        if (other.DoApplyVisorToggle())
+            design.DesignData.SetVisor(other.DesignData.IsVisorToggled());
+        if (other.DoApplyWeaponVisible())
+            design.DesignData.SetWeaponVisible(other.DesignData.IsWeaponVisible());
+        if (other.DoApplyWetness())
+            design.DesignData.SetIsWet(other.DesignData.IsWet());
     }
 
     private void MigrateOldDesigns()

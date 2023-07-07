@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
 using Glamourer.Designs;
@@ -45,24 +44,24 @@ public partial class GlamourerIpc
 
 
     public void ApplyAll(string base64, string characterName)
-        => ApplyDesign(CreateTemporaryFromBase64(base64, true, true), FindActors(characterName));
+        => ApplyDesign(_designConverter.FromBase64(base64, true, true), FindActors(characterName));
 
     public void ApplyAllToCharacter(string base64, Character? character)
-        => ApplyDesign(CreateTemporaryFromBase64(base64, true, true), FindActors(character));
+        => ApplyDesign(_designConverter.FromBase64(base64, true, true), FindActors(character));
 
     public void ApplyOnlyEquipment(string base64, string characterName)
-        => ApplyDesign(CreateTemporaryFromBase64(base64, false, true), FindActors(characterName));
+        => ApplyDesign(_designConverter.FromBase64(base64, false, true), FindActors(characterName));
 
     public void ApplyOnlyEquipmentToCharacter(string base64, Character? character)
-        => ApplyDesign(CreateTemporaryFromBase64(base64, false, true), FindActors(character));
+        => ApplyDesign(_designConverter.FromBase64(base64, false, true), FindActors(character));
 
     public void ApplyOnlyCustomization(string base64, string characterName)
-        => ApplyDesign(CreateTemporaryFromBase64(base64, true, false), FindActors(characterName));
+        => ApplyDesign(_designConverter.FromBase64(base64, true, false), FindActors(characterName));
 
     public void ApplyOnlyCustomizationToCharacter(string base64, Character? character)
-        => ApplyDesign(CreateTemporaryFromBase64(base64, true, false), FindActors(character));
+        => ApplyDesign(_designConverter.FromBase64(base64, true, false), FindActors(character));
 
-    private void ApplyDesign(Design? design, IEnumerable<ActorIdentifier> actors)
+    private void ApplyDesign(DesignBase? design, IEnumerable<ActorIdentifier> actors)
     {
         if (design == null)
             return;
@@ -78,35 +77,6 @@ public partial class GlamourerIpc
             }
 
             _stateManager.ApplyDesign(design, state);
-        }
-    }
-
-    private Design? CreateTemporaryFromBase64(string base64, bool customize, bool equip)
-    {
-        try
-        {
-            var ret = new Design(_items);
-            ret.MigrateBase64(_items, base64);
-            if (!customize)
-            {
-                ret.ApplyCustomize = 0;
-                ret.SetApplyWetness(false);
-            }
-
-            if (!equip)
-            {
-                ret.ApplyEquip = 0;
-                ret.SetApplyHatVisible(false);
-                ret.SetApplyWeaponVisible(false);
-                ret.SetApplyVisorToggle(false);
-            }
-
-            return ret;
-        }
-        catch (Exception ex)
-        {
-            Glamourer.Log.Error($"[IPC] Could not parse base64 string [{base64}]:\n{ex}");
-            return null;
         }
     }
 }

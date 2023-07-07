@@ -40,6 +40,7 @@ public sealed class StateChanged : EventWrapper<Action<StateChanged.Type, StateC
         Game,
         Manual,
         Fixed,
+        Ipc,
     }
 
     public enum Priority

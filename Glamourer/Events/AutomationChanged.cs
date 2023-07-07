@@ -56,8 +56,11 @@ public sealed class AutomationChanged : EventWrapper<Action<AutomationChanged.Ty
 
     public enum Priority
     {
-        /// <seealso cref="Gui.Tabs.AutomationTab.SetSelector.OnAutomationChanged"/>
+        /// <seealso cref="Gui.Tabs.AutomationTab.SetSelector.OnAutomationChange"/>
         SetSelector = 0,
+
+        /// <seealso cref="AutoDesignApplier.OnAutomationChange"/>
+        AutoDesignApplier,
     }
 
     public AutomationChanged()

@@ -121,17 +121,20 @@ public partial class CustomizationDrawer
         PercentageInputInt();
 
         ImGui.TextUnformatted(_set.Option(CustomizeIndex.LegacyTattoo));
+        if (_set.DataByValue(CustomizeIndex.Face, _customize.Face, out _, _customize.Face) < 0)
+            ImGui.TextUnformatted("(Using Face 1)");
     }
 
     private void DrawMultiIcons()
     {
-        var       options = _set.Order[CharaMakeParams.MenuType.IconCheckmark];
-        using var _       = ImRaii.Group();
+        var options = _set.Order[CharaMakeParams.MenuType.IconCheckmark];
+        using var group = ImRaii.Group();
+        var face = _set.DataByValue(CustomizeIndex.Face, _customize.Face, out _, _customize.Face) < 0 ? _set.Faces[0].Value : _customize.Face;
         foreach (var (featureIdx, idx) in options.WithIndex())
         {
             using var id      = SetId(featureIdx);
             var       enabled = _customize.Get(featureIdx) != CustomizeValue.Zero;
-            var       feature = _set.Data(featureIdx, 0, _customize.Face);
+            var       feature = _set.Data(featureIdx, 0, face);
             var icon = featureIdx == CustomizeIndex.LegacyTattoo
                 ? _legacyTattoo ?? _service.AwaitedService.GetIcon(feature.IconId)
                 : _service.AwaitedService.GetIcon(feature.IconId);

@@ -1,15 +1,22 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
+using System.Xml.Linq;
 using Dalamud.Interface;
 using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop.Structs;
+using Glamourer.Services;
 using Glamourer.State;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
@@ -19,6 +26,8 @@ public class ActorPanel
     private readonly StateManager        _stateManager;
     private readonly CustomizationDrawer _customizationDrawer;
     private readonly EquipmentDrawer     _equipmentDrawer;
+    private readonly HumanModelList      _humans;
+    private readonly IdentifierService   _identification;
 
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -27,12 +36,14 @@ public class ActorPanel
     private ActorState?     _state;
 
     public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer,
-        EquipmentDrawer equipmentDrawer)
+        EquipmentDrawer equipmentDrawer, HumanModelList humans, IdentifierService identification)
     {
         _selector            = selector;
         _stateManager        = stateManager;
         _customizationDrawer = customizationDrawer;
         _equipmentDrawer     = equipmentDrawer;
+        _humans              = humans;
+        _identification      = identification;
     }
 
     public void Draw()
@@ -47,15 +58,16 @@ public class ActorPanel
     private void DrawHeader()
     {
         var frameHeight = ImGui.GetFrameHeightWithSpacing();
-        var color       = !_identifier.IsValid ? ImGui.GetColorU32(ImGuiCol.Text) : _data.Valid ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value();
+        var color = !_identifier.IsValid ? ImGui.GetColorU32(ImGuiCol.Text) :
+            _data.Valid                  ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value();
         var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
         ImGuiUtil.DrawTextButton($"{_actorName}##playerHeader", new Vector2(-frameHeight, ImGui.GetFrameHeight()), buttonColor, color);
         ImGui.SameLine();
         style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
-        using (var c = ImRaii.PushColor(ImGuiCol.Text, ColorId.FolderExpanded.Value())
-                   .Push(ImGuiCol.Border, ColorId.FolderExpanded.Value()))
+        using (var c = ImRaii.PushColor(ImGuiCol.Text, ColorId.HeaderButtons.Value())
+                   .Push(ImGuiCol.Border, ColorId.HeaderButtons.Value()))
         {
             if (ImGuiUtil.DrawDisabledButton(
                     $"{(_selector.IncognitoMode ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash).ToIconString()}###IncognitoMode",
@@ -79,13 +91,9 @@ public class ActorPanel
         return (_selector.IncognitoMode ? _identifier.Incognito(null) : _identifier.ToString(), Actor.Null);
     }
 
-    private unsafe void DrawPanel()
+    private void DrawHumanPanel()
     {
-        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
-        if (!child || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
-            return;
-
-        if (_customizationDrawer.Draw(_state.ModelData.Customize, false))
+        if (_customizationDrawer.Draw(_state!.ModelData.Customize, false))
             _stateManager.ChangeCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, StateChanged.Source.Manual);
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
@@ -120,6 +128,79 @@ public class ActorPanel
             if (_equipmentDrawer.DrawMainhand(oh, false, out var newOh))
                 _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOh, newOhStain.RowIndex, StateChanged.Source.Manual);
         }
+    }
+
+    private void DrawMonsterPanel()
+    {
+        var names     = _identification.AwaitedService.ModelCharaNames(_state!.ModelData.ModelId);
+        var turnHuman = ImGui.Button("Turn Human");
+        ImGui.Separator();
+        using (var box = ImRaii.ListBox("##MonsterList",
+                   new Vector2(ImGui.GetContentRegionAvail().X, 10 * ImGui.GetTextLineHeightWithSpacing())))
+        {
+            if (names.Count == 0)
+                ImGui.TextUnformatted("Unknown Monster");
+            else
+                ImGuiClip.ClippedDraw(names, p => ImGui.TextUnformatted($"{p.Name} ({p.Kind.ToName()} #{p.Id})"),
+                    ImGui.GetTextLineHeightWithSpacing());
+        }
+
+        ImGui.Separator();
+        ImGui.TextUnformatted("Customization Data");
+        using (var font = ImRaii.PushFont(UiBuilder.MonoFont))
+        {
+            foreach (var b in _state.ModelData.Customize.Data)
+            {
+                using (var g = ImRaii.Group())
+                {
+                    ImGui.TextUnformatted($" {b:X2}");
+                    ImGui.TextUnformatted($"{b,3}");
+                }
+
+                ImGui.SameLine();
+                if (ImGui.GetContentRegionAvail().X < ImGui.GetStyle().ItemSpacing.X + ImGui.CalcTextSize("XXX").X)
+                    ImGui.NewLine();
+            }
+
+            if (ImGui.GetCursorPosX() != 0)
+                ImGui.NewLine();
+        }
+
+        ImGui.Separator();
+        ImGui.TextUnformatted("Equipment Data");
+        using (var font = ImRaii.PushFont(UiBuilder.MonoFont))
+        {
+            foreach (var b in _state.ModelData.GetEquipmentBytes())
+            {
+                using (var g = ImRaii.Group())
+                {
+                    ImGui.TextUnformatted($" {b:X2}");
+                    ImGui.TextUnformatted($"{b,3}");
+                }
+
+                ImGui.SameLine();
+                if (ImGui.GetContentRegionAvail().X < ImGui.GetStyle().ItemSpacing.X + ImGui.CalcTextSize("XXX").X)
+                    ImGui.NewLine();
+            }
+
+            if (ImGui.GetCursorPosX() != 0)
+                ImGui.NewLine();
+        }
+
+        if (turnHuman)
+            _stateManager.TurnHuman(_state, StateChanged.Source.Manual);
+    }
+
+    private unsafe void DrawPanel()
+    {
+        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
+        if (!child || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
+            return;
+
+        if (_humans.IsHuman(_state.ModelData.ModelId))
+            DrawHumanPanel();
+        else
+            DrawMonsterPanel();
     }
 
 

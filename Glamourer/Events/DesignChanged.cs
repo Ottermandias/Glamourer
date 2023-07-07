@@ -40,6 +40,12 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
         /// <summary> An existing design had an existing tag renamed. Data is the old name of the tag, the new name of the tag, and the index it had before being resorted [(string, string, int)]. </summary>
         ChangedTag,
 
+        /// <summary> An existing design had a new associated mod added. Data is the Mod and its Settings [(Mod, ModSettings)]. </summary>
+        AddedMod,
+
+        /// <summary> An existing design had an existing associated mod removed. Data is the Mod and its Settings [(Mod, ModSettings)]. </summary>
+        RemovedMod,
+
         /// <summary> An existing design had a customization changed. Data is the old value, the new value and the type [(CustomizeValue, CustomizeValue, CustomizeIndex)]. </summary>
         Customize,
 
@@ -61,7 +67,10 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
         /// <summary> An existing design changed whether a specific stain is applied. Data is the slot of the equipment [EquipSlot]. </summary>
         ApplyStain,
 
-        /// <summary> An existing design changed one of the meta flags. Data is null. </summary>
+        /// <summary> An existing design changed its write protection status. Data is the new value [bool]. </summary>
+        WriteProtection,
+
+        /// <summary> An existing design changed one of the meta flags. Data is the flag, whether it was about their applying and the new value [(MetaFlag, bool, bool)]. </summary>
         Other,
     }
 

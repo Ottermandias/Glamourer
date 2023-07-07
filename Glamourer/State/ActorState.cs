@@ -12,7 +12,7 @@ namespace Glamourer.State;
 
 public class ActorState
 {
-    public enum MetaFlag
+    public enum MetaIndex
     {
         Wetness = EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices,
         HatState,
@@ -45,6 +45,6 @@ public class ActorState
     public ref StateChanged.Source this[CustomizeIndex type]
         => ref _sources[EquipFlagExtensions.NumEquipFlags + (int)type];
 
-    public ref StateChanged.Source this[MetaFlag flag]
-        => ref _sources[(int)flag];
+    public ref StateChanged.Source this[MetaIndex index]
+        => ref _sources[(int)index];
 }

@@ -3,6 +3,7 @@ using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Glamourer.Designs;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.State;
@@ -17,17 +18,21 @@ public partial class GlamourerIpc : IDisposable
     public const int CurrentApiVersionMajor = 0;
     public const int CurrentApiVersionMinor = 1;
 
-    private readonly StateManager  _stateManager;
-    private readonly ObjectManager _objects;
-    private readonly ActorService  _actors;
-    private readonly ItemManager   _items;
+    private readonly StateManager    _stateManager;
+    private readonly ObjectManager   _objects;
+    private readonly ActorService    _actors;
+    private readonly ItemManager     _items;
+    private readonly DesignConverter _designConverter;
 
-    public GlamourerIpc(DalamudPluginInterface pi, StateManager stateManager, ObjectManager objects, ActorService actors, ItemManager items)
+
+    public GlamourerIpc(DalamudPluginInterface pi, StateManager stateManager, ObjectManager objects, ActorService actors, ItemManager items,
+        DesignConverter designConverter)
     {
         _stateManager        = stateManager;
         _objects             = objects;
         _actors              = actors;
         _items               = items;
+        _designConverter     = designConverter;
         _apiVersionProvider  = new FuncProvider<int>(pi, LabelApiVersion, ApiVersion);
         _apiVersionsProvider = new FuncProvider<(int Major, int Minor)>(pi, LabelApiVersions, ApiVersions);
 

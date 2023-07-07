@@ -16,6 +16,7 @@ public enum ColorId
     DisabledAutoSet,
     AutomationActorAvailable,
     AutomationActorUnavailable,
+    HeaderButtons,
 }
 
 public static class Colors
@@ -36,6 +37,7 @@ public static class Colors
             ColorId.DisabledAutoSet            => (0xFF808080, "Disabled Automation Set",          "An automation set that is currently disabled."                                                             ),
             ColorId.AutomationActorAvailable   => (0xFFFFFFFF, "Automation Actor Available",       "A character associated with the given automated design set is currently visible."                          ),
             ColorId.AutomationActorUnavailable => (0xFF808080, "Automation Actor Unavailable",     "No character associated with the given automated design set is currently visible."                         ),
+            ColorId.HeaderButtons              => (0xFFFFF0C0, "Header Buttons",                   "The text and border color of buttons in the header, like the Incognito toggle."                            ),
             _                                  => (0x00000000, string.Empty,                       string.Empty                                                                                                ),
             // @formatter:on
         };

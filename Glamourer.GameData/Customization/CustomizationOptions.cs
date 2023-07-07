@@ -38,9 +38,6 @@ public partial class CustomizationOptions
     internal ImGuiScene.TextureWrap GetIcon(uint id)
         => _icons.LoadIcon(id);
 
-    internal void RemoveIcon(uint id)
-        => _icons.RemoveIcon(id);
-
     private readonly IconStorage _icons;
 
     private static readonly int                ListSize           = Clans.Length * Genders.Length;

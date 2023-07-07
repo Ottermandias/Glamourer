@@ -99,9 +99,10 @@ public class ActorSelector
             _identifier = _objects.Player.GetIdentifier(_actors.AwaitedService);
 
         ImGui.SameLine();
-        Actor targetActor = _targets.Target?.Address;
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth,
-                "Select the current target, if it is in the list.", _objects.IsInGPose || !targetActor, true))
-            _identifier = targetActor.GetIdentifier(_actors.AwaitedService);
+        var (id, data) = _objects.TargetData;
+        var tt = data.Valid ? $"Select the current target {id} in the list." :
+            id.IsValid      ? $"The target {id} is not in the list." : "No target selected.";
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth, tt, _objects.IsInGPose || !data.Valid, true))
+            _identifier = id;
     }
 }

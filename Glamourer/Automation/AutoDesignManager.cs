@@ -29,7 +29,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
     private readonly DesignManager     _designs;
     private readonly ActorService      _actors;
     private readonly AutomationChanged _event;
-    private readonly ItemUnlockManager     _unlockManager;
+    private readonly ItemUnlockManager _unlockManager;
 
     private readonly List<AutoDesignSet>                        _data    = new();
     private readonly Dictionary<ActorIdentifier, AutoDesignSet> _enabled = new();

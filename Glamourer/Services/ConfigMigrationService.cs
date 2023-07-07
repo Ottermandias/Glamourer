@@ -10,14 +10,16 @@ public class ConfigMigrationService
 {
     private readonly SaveService         _saveService;
     private readonly FixedDesignMigrator _fixedDesignMigrator;
+    private readonly BackupService       _backupService;
 
     private Configuration _config = null!;
     private JObject       _data   = null!;
 
-    public ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator)
+    public ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator, BackupService backupService)
     {
         _saveService         = saveService;
         _fixedDesignMigrator = fixedDesignMigrator;
+        _backupService       = backupService;
     }
 
     public void Migrate(Configuration config)
@@ -39,6 +41,7 @@ public class ConfigMigrationService
         if (_config.Version > 1)
             return;
 
+        _backupService.CreateMigrationBackup("pre_v1_to_v2_migration");
         _fixedDesignMigrator.Migrate(_data["FixedDesigns"]);
         _config.Version = 2;
         var customizationColor = _data["CustomizationColor"]?.ToObject<uint>() ?? ColorId.CustomizationDesign.Data().DefaultColor;

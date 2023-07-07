@@ -32,7 +32,6 @@ public class Glamourer : IDalamudPlugin
         {
             _services = ServiceManager.CreateProvider(pluginInterface, Log);
             Chat      = _services.GetRequiredService<ChatService>();
-            _services.GetRequiredService<BackupService>();         // call backup service.
             _services.GetRequiredService<GlamourerWindowSystem>(); // initialize ui.
             _services.GetRequiredService<CommandService>();        // initialize commands.
             _services.GetRequiredService<VisorService>();

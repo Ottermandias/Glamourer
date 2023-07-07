@@ -42,7 +42,6 @@ public class UnlockOverview
 
             if (ImGui.Selectable(type.ToName(), _selected1 == type))
             {
-                ClearIcons(_selected1);
                 _selected1 = type;
                 _selected2 = SubRace.Unknown;
                 _selected3 = Gender.Unknown;
@@ -59,22 +58,12 @@ public class UnlockOverview
                 if (ImGui.Selectable($"{(gender is Gender.Male ? '♂' : '♀')} {clan.ToShortName()} Hair & Paint",
                         _selected2 == clan && _selected3 == gender))
                 {
-                    ClearIcons(_selected1);
                     _selected1 = FullEquipType.Unknown;
                     _selected2 = clan;
                     _selected3 = gender;
                 }
             }
         }
-    }
-
-    private void ClearIcons(FullEquipType type)
-    {
-        if (!_items.ItemService.AwaitedService.TryGetValue(type, out var items))
-            return;
-
-        foreach (var item in items)
-            _customizations.AwaitedService.RemoveIcon(item.IconId);
     }
 
     public UnlockOverview(ItemManager items, CustomizationService customizations, ItemUnlockManager itemUnlocks,

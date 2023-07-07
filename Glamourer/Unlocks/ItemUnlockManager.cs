@@ -111,12 +111,12 @@ public class ItemUnlockManager : ISavable, IDisposable
             scan              |= newArmoireState;
         }
 
-        //var newAchievementState = uiState->Achievement.IsAchievementLoaded();
-        //if (newAchievementState != _lastAchievementState)
-        //{
-        //    _lastAchievementState =  newAchievementState;
-        //    scan                  |= newAchievementState;
-        //}
+        var newAchievementState = uiState->Achievement.IsLoaded();
+        if (newAchievementState != _lastAchievementState)
+        {
+            _lastAchievementState =  newAchievementState;
+            scan                  |= newAchievementState;
+        }
 
         if (scan)
             Scan();
