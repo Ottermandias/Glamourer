@@ -2,6 +2,7 @@
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
 using Glamourer.Designs;
+using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using Penumbra.Api.Helpers;
 using Penumbra.GameData.Actors;
@@ -76,7 +77,7 @@ public partial class GlamourerIpc
                     continue;
             }
 
-            _stateManager.ApplyDesign(design, state);
+            _stateManager.ApplyDesign(design, state, StateChanged.Source.Ipc);
         }
     }
 }

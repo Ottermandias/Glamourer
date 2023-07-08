@@ -1,22 +1,24 @@
 ﻿using System;
 using System.Numerics;
-using System.Xml.Linq;
 using Dalamud.Interface;
+using Dalamud.Interface.Internal.Notifications;
+using Glamourer.Automation;
+using Glamourer.Customization;
+using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
+using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
+using Glamourer.Structs;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using OtterGui.Raii;
-using Penumbra.GameData;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
@@ -26,8 +28,11 @@ public class ActorPanel
     private readonly StateManager        _stateManager;
     private readonly CustomizationDrawer _customizationDrawer;
     private readonly EquipmentDrawer     _equipmentDrawer;
-    private readonly HumanModelList      _humans;
     private readonly IdentifierService   _identification;
+    private readonly AutoDesignApplier   _autoDesignApplier;
+    private readonly Configuration       _config;
+    private readonly DesignConverter     _converter;
+    private readonly ObjectManager       _objects;
 
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -36,14 +41,18 @@ public class ActorPanel
     private ActorState?     _state;
 
     public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer,
-        EquipmentDrawer equipmentDrawer, HumanModelList humans, IdentifierService identification)
+        EquipmentDrawer equipmentDrawer, IdentifierService identification, AutoDesignApplier autoDesignApplier,
+        Configuration config, DesignConverter converter, ObjectManager objects)
     {
         _selector            = selector;
         _stateManager        = stateManager;
         _customizationDrawer = customizationDrawer;
         _equipmentDrawer     = equipmentDrawer;
-        _humans              = humans;
         _identification      = identification;
+        _autoDesignApplier   = autoDesignApplier;
+        _config              = config;
+        _converter           = converter;
+        _objects             = objects;
     }
 
     public void Draw()
@@ -89,6 +98,28 @@ public class ActorPanel
             return (_selector.IncognitoMode ? _identifier.Incognito(_data.Label) : _data.Label, _data.Objects[0]);
 
         return (_selector.IncognitoMode ? _identifier.Incognito(null) : _identifier.ToString(), Actor.Null);
+    }
+
+    private unsafe void DrawPanel()
+    {
+        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
+        if (!child || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
+            return;
+
+        ApplyClipboardButton();
+        ImGui.SameLine();
+        CopyToClipboardButton();
+        ImGui.SameLine();
+        DrawApplyToSelf();
+        ImGui.SameLine();
+        DrawApplyToTarget();
+
+        RevertButtons();
+
+        if (_state.ModelData.IsHuman)
+            DrawHumanPanel();
+        else
+            DrawMonsterPanel();
     }
 
     private void DrawHumanPanel()
@@ -191,113 +222,85 @@ public class ActorPanel
             _stateManager.TurnHuman(_state, StateChanged.Source.Manual);
     }
 
-    private unsafe void DrawPanel()
+    private void ApplyClipboardButton()
     {
-        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
-        if (!child || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
+        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
+                "Try to apply a design from your clipboard.", false, true))
             return;
 
-        if (_humans.IsHuman(_state.ModelData.ModelId))
-            DrawHumanPanel();
-        else
-            DrawMonsterPanel();
+        try
+        {
+            var text   = ImGui.GetClipboardText();
+            var design = _converter.FromBase64(text, true, true) ?? throw new Exception("The clipboard did not contain valid data.");
+            _stateManager.ApplyDesign(design, _state!, StateChanged.Source.Manual);
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Chat.NotificationMessage(ex, $"Could not apply clipboard to {_identifier}.",
+                $"Could not apply clipboard to design {_identifier.Incognito(null)}", "Failure", NotificationType.Error);
+        }
     }
 
-
-    private unsafe void RevertButton()
+    private void CopyToClipboardButton()
     {
-        //if (ImGui.Button("Revert"))
-        //    _activeDesigns.RevertDesign(_currentSave!);
-        //foreach (var actor in _currentData.Objects)
-        //    _currentSave!.ApplyToActor(actor);
-        //
-        //if (_currentData.Objects.Count > 0)
-        //    _currentSave = _manipulations.GetOrCreateSave(_currentData.Objects[0]);
-        //
-        //_currentSave!.Reset();
-        //if (_currentData.Objects.Count > 0)
-        //    ImGui.TextUnformatted(_currentData.Objects[0].Pointer->GameObject.DataID.ToString());
-        //VisorBox();
+        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Copy.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
+                "Copy the current design to your clipboard.", false, true))
+            return;
+
+        try
+        {
+            var text = _converter.ShareBase64(_state!);
+            ImGui.SetClipboardText(text);
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Chat.NotificationMessage(ex, $"Could not copy {_identifier} data to clipboard.",
+                $"Could not copy data from design {_identifier.Incognito(null)} to clipboard", "Failure", NotificationType.Error);
+        }
     }
 
-    //private unsafe void VisorBox()
-    //{
-    //    var (flags, mask) = (_currentSave!.Data.Flags & (ApplicationFlags.SetVisor | ApplicationFlags.Visor)) switch
-    //        {
-    //            ApplicationFlags.SetVisor                          => (0u, 3u),
-    //            ApplicationFlags.Visor                             => (1u, 3u),
-    //            ApplicationFlags.SetVisor | ApplicationFlags.Visor => (3u, 3u),
-    //            _                                                  => (2u, 3u),
-    //        };
-    //    var tmp = flags;
-    //    if (ImGui.CheckboxFlags("Visor Toggled", ref tmp, mask))
-    //    {
-    //        _currentSave.Data.Flags = flags switch
-    //        {
-    //            0 => (_currentSave.Data.Flags | ApplicationFlags.Visor) & ~ApplicationFlags.SetVisor,
-    //            1 => _currentSave.Data.Flags | ApplicationFlags.SetVisor,
-    //            2 => _currentSave.Data.Flags | ApplicationFlags.SetVisor,
-    //            _ => _currentSave.Data.Flags & ~(ApplicationFlags.SetVisor | ApplicationFlags.Visor),
-    //        };
-    //        if (_currentSave.Data.Flags.HasFlag(ApplicationFlags.SetVisor))
-    //        {
-    //            var on = _currentSave.Data.Flags.HasFlag(ApplicationFlags.Visor);
-    //            foreach (var actor in _currentData.Objects.Where(a => a.IsHuman && a.DrawObject))
-    //                RedrawManager.SetVisor(actor.DrawObject.Pointer, on);
-    //        }
-    //    }
-    //}
+    private void RevertButtons()
+    {
+        if (ImGui.Button("Revert to Game"))
+            _stateManager.ResetState(_state!);
 
+        ImGui.SameLine();
+        if (ImGui.Button("Reapply State"))
+            _stateManager.ReapplyState(_actor);
 
-    //private void DrawActorPanel()
-    //{
-    //    using var group = ImRaii.Group();
-    //    if (!_data.Identifier.IsValid)
-    //        return;
-    //
-    //    if (DrawCustomization(_currentSave.Customize, _currentSave.Equipment, !_data.Modifiable))
-    //        //Glamourer.RedrawManager.Set(_data.Actor.Address, _character);
-    //        Glamourer.Penumbra.RedrawObject(_data.Actor.Character, RedrawType.Redraw, true);
-    //
-    //    if (ImGui.Button("Set Machinist Goggles"))
-    //        Glamourer.RedrawManager.ChangeEquip(_data.Actor, EquipSlot.Head, new CharacterArmor(265, 1, 0));
-    //
-    //    if (ImGui.Button("Set Weapon"))
-    //        Glamourer.RedrawManager.LoadWeapon(_data.Actor.Address, new CharacterWeapon(0x00C9, 0x004E, 0x0001, 0x00),
-    //            new CharacterWeapon(0x0065,                                                     0x003D, 0x0001, 0x00));
-    //
-    //    if (ImGui.Button("Set Customize"))
-    //    {
-    //        unsafe
-    //        {
-    //            var data = _data.Actor.Customize.Data->Clone();
-    //            Glamourer.RedrawManager.UpdateCustomize(_data.Actor.DrawObject, new Customize(&data)
-    //            {
-    //                SkinColor = 154,
-    //            });
-    //        }
-    //    }
-    //}
-    //
-    //private void DrawMonsterPanel()
-    //{
-    //    using var group        = ImRaii.Group();
-    //    var       currentModel = (uint)_data.Actor.ModelId;
-    //    var       models       = GameData.Models(Dalamud.GameData);
-    //    var       currentData  = models.Models.TryGetValue(currentModel, out var c) ? c.FirstName : $"#{currentModel}";
-    //    using var combo        = ImRaii.Combo("Model Id", currentData);
-    //    if (!combo)
-    //        return;
-    //
-    //    foreach (var (id, data) in models.Models)
-    //    {
-    //        if (ImGui.Selectable(data.FirstName, id == currentModel) && id != currentModel)
-    //        {
-    //            _data.Actor.SetModelId((int)id);
-    //            Glamourer.Penumbra.RedrawObject(_data.Actor.Character, RedrawType.Redraw, true);
-    //        }
-    //
-    //        ImGuiUtil.HoverTooltip(data.AllNames);
-    //    }
-    //}
+        ImGui.SameLine();
+        if (ImGuiUtil.DrawDisabledButton("Reapply Automation", Vector2.Zero, string.Empty, !_config.EnableAutoDesigns))
+        {
+            _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!);
+            _stateManager.ReapplyState(_actor);
+        }
+    }
+
+    private void DrawApplyToSelf()
+    {
+        var (id, data) = _objects.PlayerData;
+        if (!ImGuiUtil.DrawDisabledButton("Apply to Yourself", Vector2.Zero, "Apply the current state to your own character.",
+                !data.Valid || id == _identifier))
+            return;
+
+        if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
+            _stateManager.ApplyDesign(_converter.Convert(_state!, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant), state,
+                StateChanged.Source.Manual);
+    }
+
+    private void DrawApplyToTarget()
+    {
+        var (id, data) = _objects.TargetData;
+        var tt = id.IsValid
+            ? data.Valid
+                ? "Apply the current state to your current target."
+                : "The current target can not be manipulated."
+            : "No valid target selected.";
+        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid || id == _identifier))
+            return;
+
+        if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
+            _stateManager.ApplyDesign(_converter.Convert(_state!, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant), state,
+                StateChanged.Source.Manual);
+    }
 }

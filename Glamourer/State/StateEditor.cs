@@ -1,166 +1,174 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Glamourer.Customization;
-using Glamourer.Interop;
-using Glamourer.Interop.Penumbra;
-using Glamourer.Interop.Structs;
+using Glamourer.Events;
 using Glamourer.Services;
-using Penumbra.Api.Enums;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
 
-/// <summary>
-/// This class applies changes made to state to actual objects in the game.
-/// It handles applying those changes as well as redrawing the actor if necessary.
-/// </summary>
 public class StateEditor
 {
-    private readonly PenumbraService        _penumbra;
-    private readonly UpdateSlotService      _updateSlot;
-    private readonly VisorService           _visor;
-    private readonly WeaponService          _weapon;
-    private readonly MetaService            _metaService;
-    private readonly ChangeCustomizeService _changeCustomize;
-    private readonly ItemManager            _items;
+    private readonly ItemManager          _items;
+    private readonly CustomizationService _customizations;
+    private readonly HumanModelList       _humans;
 
-    public StateEditor(UpdateSlotService updateSlot, VisorService visor, WeaponService weapon, ChangeCustomizeService changeCustomize,
-        ItemManager items, PenumbraService penumbra, MetaService metaService)
+    public StateEditor(CustomizationService customizations, HumanModelList humans, ItemManager items)
     {
-        _updateSlot      = updateSlot;
-        _visor           = visor;
-        _weapon          = weapon;
-        _changeCustomize = changeCustomize;
-        _items           = items;
-        _penumbra        = penumbra;
-        _metaService     = metaService;
+        _customizations = customizations;
+        _humans         = humans;
+        _items          = items;
     }
 
-    /// <summary> Changing the model ID simply requires guaranteed redrawing. </summary>
-    public void ChangeModelId(ActorData data, uint modelId)
+    /// <summary> Change the model id. If the actor is changed from a human to another human, customize and equipData are unused. </summary>
+    public bool ChangeModelId(ActorState state, uint modelId, in Customize customize, nint equipData, StateChanged.Source source,
+        out uint oldModelId, uint key = 0)
     {
-        foreach (var actor in data.Objects)
-            _penumbra.RedrawObject(actor, RedrawType.Redraw);
-    }
+        oldModelId = state.ModelData.ModelId;
+        if (!state.CanUnlock(key))
+            return false;
 
-    /// <summary>
-    /// Change the customization values of actors either by applying them via update or redrawing,
-    /// this depends on whether the changes include changes to Race, Gender, Body Type or Face. 
-    /// </summary>
-    public void ChangeCustomize(ActorData data, Customize customize)
-    {
-        foreach (var actor in data.Objects)
+        var oldIsHuman = state.ModelData.IsHuman;
+        state.ModelData.IsHuman = _humans.IsHuman(modelId);
+        if (state.ModelData.IsHuman)
         {
-            var mdl = actor.Model;
-            if (!mdl.IsHuman)
-                continue;
+            if (oldModelId == modelId)
+                return true;
 
-            var flags = Customize.Compare(mdl.GetCustomize(), customize);
-            if (!flags.RequiresRedraw())
-                _changeCustomize.UpdateCustomize(mdl, customize.Data);
-            else
-                _penumbra.RedrawObject(actor, RedrawType.Redraw);
+            state.ModelData.ModelId = modelId;
+            if (oldIsHuman)
+                return true;
+
+            // Fix up everything else to make sure the result is a valid human.
+            state.ModelData.Customize = Customize.Default;
+            state.ModelData.SetDefaultEquipment(_items);
+            state.ModelData.SetHatVisible(true);
+            state.ModelData.SetWeaponVisible(true);
+            state.ModelData.SetVisor(false);
+            state[ActorState.MetaIndex.ModelId]     = source;
+            state[ActorState.MetaIndex.HatState]    = source;
+            state[ActorState.MetaIndex.WeaponState] = source;
+            state[ActorState.MetaIndex.VisorState]  = source;
+            foreach (var slot in EquipSlotExtensions.FullSlots)
+            {
+                state[slot, true]  = source;
+                state[slot, false] = source;
+            }
+
+            state[CustomizeIndex.Clan]   = source;
+            state[CustomizeIndex.Gender] = source;
+            var set = _customizations.AwaitedService.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
+            foreach (var index in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
+                state[index] = source;
         }
-    }
-
-    /// <summary>
-    /// Change a single piece of armor and/or stain depending on slot.
-    /// This uses the current customization of the model to potentially prevent restricted gear types from appearing.
-    /// This never requires redrawing.
-    /// </summary>
-    public void ChangeArmor(ActorData data, EquipSlot slot, CharacterArmor armor)
-    {
-        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-        {
-            var mdl       = actor.Model;
-            var customize = mdl.IsHuman ? mdl.GetCustomize() : actor.GetCustomize();
-            var (_, resolvedItem) = _items.ResolveRestrictedGear(armor, slot, customize.Race, customize.Gender);
-            _updateSlot.UpdateSlot(actor.Model, slot, resolvedItem);
-        }
-    }
-
-    /// <summary>
-    /// Change the stain of a single piece of armor or weapon.
-    /// If the offhand is empty, the stain will be fixed to 0 to prevent crashes.
-    /// </summary>
-    public void ChangeStain(ActorData data, EquipSlot slot, StainId stain)
-    {
-        var idx = slot.ToIndex();
-        switch (idx)
-        {
-            case < 10:
-                foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-                    _updateSlot.UpdateStain(actor.Model, slot, stain);
-                break;
-            case 10:
-                foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-                    _weapon.LoadStain(actor, EquipSlot.MainHand, stain);
-                break;
-            case 11:
-                foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-                    _weapon.LoadStain(actor, EquipSlot.OffHand, stain);
-                break;
-        }
-    }
-
-    /// <summary> Apply a weapon to the appropriate slot. </summary>
-    public void ChangeWeapon(ActorData data, EquipSlot slot, EquipItem item, StainId stain)
-    {
-        if (slot is EquipSlot.MainHand)
-            ChangeMainhand(data, item, stain);
         else
-            ChangeOffhand(data, item, stain);
-    }
-
-    /// <summary>
-    /// Apply a weapon to the mainhand. If the weapon type has no associated offhand type, apply both.
-    /// </summary>
-    public void ChangeMainhand(ActorData data, EquipItem weapon, StainId stain)
-    {
-        var slot = weapon.Type.Offhand() == FullEquipType.Unknown ? EquipSlot.BothHand : EquipSlot.MainHand;
-        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            _weapon.LoadWeapon(actor, slot, weapon.Weapon().With(stain));
-    }
-
-    /// <summary> Apply a weapon to the offhand. </summary>
-    public void ChangeOffhand(ActorData data, EquipItem weapon, StainId stain)
-    {
-        stain = weapon.ModelId.Value == 0 ? 0 : stain;
-        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            _weapon.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stain));
-    }
-
-    /// <summary> Change the visor state of actors only on the draw object. </summary>
-    public void ChangeVisor(ActorData data, bool value)
-    {
-        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
         {
-            var mdl = actor.Model;
-            if (!mdl.IsHuman)
-                continue;
-
-            _visor.SetVisorState(mdl, value);
+            unsafe
+            {
+                state.ModelData.LoadNonHuman(modelId, customize, (byte*)equipData);
+                state[ActorState.MetaIndex.ModelId] = source;
+            }
         }
+
+        return true;
     }
 
-    /// <summary> Change the forced wetness state on actors. </summary>
-    public unsafe void ChangeWetness(ActorData data, bool value)
+    /// <summary> Change a customization value. </summary>
+    public bool ChangeCustomize(ActorState state, CustomizeIndex idx, CustomizeValue value, StateChanged.Source source,
+        out CustomizeValue old, uint key = 0)
     {
-        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            actor.AsCharacter->IsGPoseWet = value;
+        old = state.ModelData.Customize[idx];
+        if (!state.CanUnlock(key))
+            return false;
+
+        state.ModelData.Customize[idx] = value;
+        state[idx]                     = source;
+        return true;
     }
 
-    /// <summary> Change the hat-visibility state on actors. </summary>
-    public unsafe void ChangeHatState(ActorData data, bool value)
+    /// <summary> Change an entire customization array according to flags. </summary>
+    public bool ChangeHumanCustomize(ActorState state, in Customize customizeInput, CustomizeFlag applyWhich, StateChanged.Source source,
+        out Customize old, out CustomizeFlag changed, uint key = 0)
     {
-        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            _metaService.SetHatState(actor, value);
+        old     = state.ModelData.Customize;
+        changed = 0;
+        if (!state.CanUnlock(key))
+            return false;
+
+        (var customize, var applied, changed) = _customizations.Combine(state.ModelData.Customize, customizeInput, applyWhich);
+        if (changed == 0)
+            return false;
+
+        state.ModelData.Customize =  customize;
+        applied                   |= changed;
+        foreach (var type in Enum.GetValues<CustomizeIndex>())
+        {
+            if (applied.HasFlag(type.ToFlag()))
+                state[type] = source;
+        }
+
+        return true;
     }
 
-    /// <summary> Change the weapon-visibility state on actors. </summary>
-    public unsafe void ChangeWeaponState(ActorData data, bool value)
+    /// <summary> Change a single piece of equipment without stain. </summary>
+    public bool ChangeItem(ActorState state, EquipSlot slot, EquipItem item, StateChanged.Source source, out EquipItem oldItem, uint key = 0)
     {
-        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            _metaService.SetWeaponState(actor, value);
+        oldItem = state.ModelData.Item(slot);
+        if (!state.CanUnlock(key))
+            return false;
+
+        state.ModelData.SetItem(slot, item);
+        state[slot, false] = source;
+        return true;
+    }
+
+    /// <summary> Change a single piece of equipment including stain. </summary>
+    public bool ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainId stain, StateChanged.Source source, out EquipItem oldItem,
+        out StainId oldStain, uint key = 0)
+    {
+        oldItem  = state.ModelData.Item(slot);
+        oldStain = state.ModelData.Stain(slot);
+        if (!state.CanUnlock(key))
+            return false;
+
+        state.ModelData.SetItem(slot, item);
+        state.ModelData.SetStain(slot, stain);
+        state[slot, false] = source;
+        state[slot, true]  = source;
+        return true;
+    }
+
+    /// <summary> Change only the stain of an equipment piece. </summary>
+    public bool ChangeStain(ActorState state, EquipSlot slot, StainId stain, StateChanged.Source source, out StainId oldStain, uint key = 0)
+    {
+        oldStain = state.ModelData.Stain(slot);
+        if (!state.CanUnlock(key))
+            return false;
+
+        state.ModelData.SetStain(slot, stain);
+        state[slot, true] = source;
+        return true;
+    }
+
+    public bool ChangeMetaState(ActorState state, ActorState.MetaIndex index, bool value, StateChanged.Source source, out bool oldValue,
+        uint key = 0)
+    {
+        (var setter, oldValue) = index switch
+        {
+            ActorState.MetaIndex.Wetness     => ((Func<bool, bool>)state.ModelData.SetIsWet, state.ModelData.IsWet()),
+            ActorState.MetaIndex.HatState    => ((Func<bool, bool>)state.ModelData.SetHatVisible, state.ModelData.IsHatVisible()),
+            ActorState.MetaIndex.VisorState  => ((Func<bool, bool>)state.ModelData.SetVisor, state.ModelData.IsVisorToggled()),
+            ActorState.MetaIndex.WeaponState => ((Func<bool, bool>)state.ModelData.SetWeaponVisible, state.ModelData.IsWeaponVisible()),
+            _                                => throw new Exception("Invalid MetaIndex."),
+        };
+
+        if (!state.CanUnlock(key))
+            return false;
+
+        setter(value);
+        state[index] = source;
+        return true;
     }
 }

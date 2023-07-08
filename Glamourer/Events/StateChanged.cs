@@ -19,6 +19,12 @@ public sealed class StateChanged : EventWrapper<Action<StateChanged.Type, StateC
 {
     public enum Type
     {
+        /// <summary> A characters saved state had the model id changed. This means everything may have changed. Data is the old model id and the new model id. [(uint, uint)] </summary>
+        Model,
+
+        /// <summary> A characters saved state had multiple customization values changed. TData is the old customize array and the applied changes. [(Customize, CustomizeFlag)] </summary>
+        EntireCustomize,
+
         /// <summary> A characters saved state had a customization value changed. Data is the old value, the new value and the type. [(CustomizeValue, CustomizeValue, CustomizeIndex)]. </summary>
         Customize,
 
@@ -30,6 +36,12 @@ public sealed class StateChanged : EventWrapper<Action<StateChanged.Type, StateC
 
         /// <summary> A characters saved state had a stain changed. Data is the old stain id, the new stain id and the slot [(StainId, StainId, EquipSlot)]. </summary>
         Stain,
+
+        /// <summary> A characters saved state had a design applied. This means everything may have changed. Data is the applied design. [DesignBase] </summary>
+        Design,
+
+        /// <summary> A characters saved state had its state reset to its game values. This means everything may have changed. Data is null. </summary>
+        Reset,
 
         /// <summary> A characters saved state had a meta toggle changed. Data is the old stain id, the new stain id and the slot [(StainId, StainId, EquipSlot)]. </summary>
         Other,

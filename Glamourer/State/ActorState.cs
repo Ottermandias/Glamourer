@@ -1,5 +1,4 @@
-﻿using System;
-using Glamourer.Customization;
+﻿using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Structs;
@@ -31,6 +30,37 @@ public class ActorState
 
     /// <summary> The last seen job. </summary>
     public byte LastJob;
+
+    /// <summary> The Lock-Key locking this state. </summary>
+    public uint Combination;
+
+    /// <summary> Whether the State is locked at all. </summary>
+    public bool IsLocked
+        => Combination != 0;
+
+    /// <summary> Whether the given key can open the lock. </summary>
+    public bool CanUnlock(uint key)
+        => !IsLocked || Combination == key;
+
+    /// <summary> Lock the current state for further manipulations. </summary>
+    public bool Lock(uint combination)
+    {
+        if (combination == 0)
+            return false;
+        if (Combination != 0)
+            return Combination == combination;
+
+        Combination = combination;
+        return true;
+    }
+
+    /// <summary> Unlock the current state. </summary>
+    public bool Unlock(uint key)
+    {
+        if (key == Combination)
+            Combination = 0;
+        return !IsLocked;
+    }
 
     /// <summary> This contains whether a change to the base data was made by the game, the user via manual input or through automatic application. </summary>
     private readonly StateChanged.Source[] _sources = Enumerable

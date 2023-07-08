@@ -253,7 +253,7 @@ public unsafe class DebugTab : ITab
         using var id = ImRaii.PushId("Visor");
         ImGuiUtil.DrawTableColumn("Visor State");
         ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.AsCharacter->DrawData.IsVisorToggled.ToString() : "No Character");
-        ImGuiUtil.DrawTableColumn(model.IsHuman ? _visorService.GetVisorState(model).ToString() : "No Human");
+        ImGuiUtil.DrawTableColumn(model.IsHuman ? VisorService.GetVisorState(model).ToString() : "No Human");
         ImGui.TableNextColumn();
         if (!model.IsHuman)
             return;
@@ -265,7 +265,7 @@ public unsafe class DebugTab : ITab
             _visorService.SetVisorState(model, false);
         ImGui.SameLine();
         if (ImGui.SmallButton("Toggle"))
-            _visorService.SetVisorState(model, !_visorService.GetVisorState(model));
+            _visorService.SetVisorState(model, !VisorService.GetVisorState(model));
     }
 
     private void DrawHatState(Actor actor, Model model)
@@ -1043,7 +1043,7 @@ public unsafe class DebugTab : ITab
         PrintRow("Wetness", state.BaseData.IsWet(), state.ModelData.IsWet(), state[ActorState.MetaIndex.Wetness]);
         ImGui.TableNextRow();
 
-        if (state.BaseData.ModelId == 0 && state.ModelData.ModelId == 0)
+        if (state.BaseData.IsHuman && state.ModelData.IsHuman)
         {
             PrintRow("Hat Visible", state.BaseData.IsHatVisible(), state.ModelData.IsHatVisible(), state[ActorState.MetaIndex.HatState]);
             ImGui.TableNextRow();
@@ -1079,7 +1079,7 @@ public unsafe class DebugTab : ITab
 
     public static void DrawDesignData(in DesignData data)
     {
-        if (data.ModelId == 0)
+        if (data.IsHuman)
         {
             using var table = ImRaii.Table("##equip", 4, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
             if (!table)

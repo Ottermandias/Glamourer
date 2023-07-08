@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers.Text;
 using System.Runtime.CompilerServices;
 using Glamourer.Customization;
 using Glamourer.Services;
@@ -33,6 +34,7 @@ public unsafe struct DesignData
     private       FullEquipType _typeMainhand;
     private       FullEquipType _typeOffhand;
     private       byte          _states;
+    public        bool          IsHuman = true;
 
     public DesignData()
     { }
@@ -202,14 +204,49 @@ public unsafe struct DesignData
         SetStain(EquipSlot.OffHand, 0);
     }
 
-    public void LoadNonHuman(uint modelId, Customize customize, byte* equipData)
+
+    public bool LoadNonHuman(uint modelId, Customize customize, byte* equipData)
     {
         ModelId = modelId;
+        IsHuman = false;
         Customize.Load(customize);
         fixed (byte* ptr = _equipmentBytes)
         {
             MemoryUtility.MemCpyUnchecked(ptr, equipData, 40);
+            MemoryUtility.MemSet(ptr + 40, 0, 8);
         }
+
+        SetHatVisible(true);
+        SetWeaponVisible(true);
+        SetVisor(false);
+        fixed (uint* ptr = _itemIds)
+        {
+            MemoryUtility.MemSet(ptr, 0, 12 * 4);
+        }
+
+        fixed (ushort* ptr = _iconIds)
+        {
+            MemoryUtility.MemSet(ptr, 0, 12 * 2);
+        }
+
+        _secondaryMainhand = 0;
+        _secondaryOffhand  = 0;
+        _typeMainhand      = FullEquipType.Unknown;
+        _typeOffhand       = FullEquipType.Unknown;
+
+        _nameHead     = string.Empty;
+        _nameBody     = string.Empty;
+        _nameHands    = string.Empty;
+        _nameLegs     = string.Empty;
+        _nameFeet     = string.Empty;
+        _nameEars     = string.Empty;
+        _nameNeck     = string.Empty;
+        _nameWrists   = string.Empty;
+        _nameRFinger  = string.Empty;
+        _nameLFinger  = string.Empty;
+        _nameMainhand = string.Empty;
+        _nameOffhand  = string.Empty;
+        return true;
     }
 
     public readonly byte[] GetCustomizeBytes()
@@ -232,6 +269,32 @@ public unsafe struct DesignData
         }
 
         return ret;
+    }
+
+    public nint GetEquipmentPtr()
+    {
+        fixed (byte* ptr = _equipmentBytes)
+        {
+            return (nint)ptr;
+        }
+    }
+
+    public bool SetEquipmentBytesFromBase64(string base64)
+    {
+        fixed (byte* dataPtr = _equipmentBytes)
+        {
+            var data = new Span<byte>(dataPtr, 40);
+            return Convert.TryFromBase64String(base64, data, out var written) && written == 40;
+        }
+    }
+
+    public string WriteEquipmentBytesBase64()
+    {
+        fixed (byte* dataPtr = _equipmentBytes)
+        {
+            var data = new ReadOnlySpan<byte>(dataPtr, 40);
+            return Convert.ToBase64String(data);
+        }
     }
 
 

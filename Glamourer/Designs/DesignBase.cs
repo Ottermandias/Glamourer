@@ -25,7 +25,7 @@ public class DesignBase
         DesignData     = clone.DesignData;
         ApplyCustomize = clone.ApplyCustomize & CustomizeFlagExtensions.All;
         ApplyEquip     = clone.ApplyEquip & EquipFlagExtensions.All;
-        _designFlags   = clone._designFlags & (DesignFlags) 0x0F;
+        _designFlags   = clone._designFlags & (DesignFlags)0x0F;
     }
 
     internal DesignData DesignData = new();
@@ -177,7 +177,6 @@ public class DesignBase
             };
 
         var ret = new JObject();
-
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
         {
             var item  = DesignData.Item(slot);
@@ -188,6 +187,7 @@ public class DesignBase
         ret["Hat"]    = new QuadBool(DesignData.IsHatVisible(),    DoApplyHatVisible()).ToJObject("Show", "Apply");
         ret["Visor"]  = new QuadBool(DesignData.IsVisorToggled(),  DoApplyVisorToggle()).ToJObject("IsToggled", "Apply");
         ret["Weapon"] = new QuadBool(DesignData.IsWeaponVisible(), DoApplyWeaponVisible()).ToJObject("Show", "Apply");
+        ret["Array"]  = DesignData.WriteEquipmentBytesBase64();
 
         return ret;
     }
@@ -213,6 +213,7 @@ public class DesignBase
             ["Value"] = DesignData.IsWet(),
             ["Apply"] = DoApplyWetness(),
         };
+        ret["Array"] = DesignData.Customize.WriteBase64();
 
         return ret;
     }
@@ -234,8 +235,8 @@ public class DesignBase
     private static DesignBase LoadDesignV1Base(CustomizationService customizations, ItemManager items, JObject json)
     {
         var ret = new DesignBase(items);
-        LoadEquip(items, json["Equipment"], ret, "Temporary Design");
         LoadCustomize(customizations, json["Customize"], ret, "Temporary Design");
+        LoadEquip(items, json["Equipment"], ret, "Temporary Design");
         return ret;
     }
 
@@ -246,6 +247,13 @@ public class DesignBase
             design.DesignData.SetDefaultEquipment(items);
             Glamourer.Chat.NotificationMessage("The loaded design does not contain any equipment data, reset to default.", "Warning",
                 NotificationType.Warning);
+            return;
+        }
+
+        if (!design.DesignData.IsHuman)
+        {
+            var textArray = equip["Array"]?.ToObject<string>() ?? string.Empty;
+            design.DesignData.SetEquipmentBytesFromBase64(textArray);
             return;
         }
 
@@ -314,6 +322,7 @@ public class DesignBase
         if (json == null)
         {
             design.DesignData.ModelId   = 0;
+            design.DesignData.IsHuman   = true;
             design.DesignData.Customize = Customize.Default;
             Glamourer.Chat.NotificationMessage("The loaded design does not contain any customization data, reset to default.", "Warning",
                 NotificationType.Warning);
@@ -326,8 +335,18 @@ public class DesignBase
                 Glamourer.Chat.NotificationMessage($"{msg} ({name})", "Warning", NotificationType.Warning);
         }
 
+        var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);
+        design.DesignData.SetIsWet(wetness.ForcedValue);
+        design.SetApplyWetness(wetness.Enabled);
+
         design.DesignData.ModelId = json["ModelId"]?.ToObject<uint>() ?? 0;
-        PrintWarning(customizations.ValidateModelId(design.DesignData.ModelId, out design.DesignData.ModelId));
+        PrintWarning(customizations.ValidateModelId(design.DesignData.ModelId, out design.DesignData.ModelId, out design.DesignData.IsHuman));
+        if (!design.DesignData.IsHuman)
+        {
+            var arrayText = json["Array"]?.ToObject<string>() ?? string.Empty;
+            design.DesignData.Customize.LoadBase64(arrayText);
+            return;
+        }
 
         var race = (Race)(json[CustomizeIndex.Race.ToString()]?["Value"]?.ToObject<byte>() ?? 0);
         var clan = (SubRace)(json[CustomizeIndex.Clan.ToString()]?["Value"]?.ToObject<byte>() ?? 0);
@@ -352,10 +371,6 @@ public class DesignBase
             design.DesignData.Customize[idx] = data;
             design.SetApplyCustomize(idx, apply);
         }
-
-        var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);
-        design.DesignData.SetIsWet(wetness.ForcedValue);
-        design.SetApplyWetness(wetness.Enabled);
     }
 
     public void MigrateBase64(ItemManager items, string base64)

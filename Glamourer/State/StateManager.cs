@@ -10,6 +10,7 @@ using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -17,26 +18,24 @@ namespace Glamourer.State;
 
 public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
-    private readonly ActorService         _actors;
-    private readonly ItemManager          _items;
-    private readonly CustomizationService _customizations;
-    private readonly VisorService         _visor;
-    private readonly StateChanged         _event;
-    private readonly ObjectManager        _objects;
-    private readonly StateEditor          _editor;
+    private readonly ActorService   _actors;
+    private readonly ItemManager    _items;
+    private readonly HumanModelList _humans;
+    private readonly StateChanged   _event;
+    private readonly StateApplier   _applier;
+    private readonly StateEditor    _editor;
 
     private readonly Dictionary<ActorIdentifier, ActorState> _states = new();
 
-    public StateManager(ActorService actors, ItemManager items, CustomizationService customizations, VisorService visor, StateChanged @event,
-        ObjectManager objects, StateEditor editor)
+    public StateManager(ActorService actors, ItemManager items, StateChanged @event, StateApplier applier, StateEditor editor,
+        HumanModelList humans)
     {
-        _actors         = actors;
-        _items          = items;
-        _customizations = customizations;
-        _visor          = visor;
-        _event          = @event;
-        _objects        = objects;
-        _editor         = editor;
+        _actors  = actors;
+        _items   = items;
+        _event   = @event;
+        _applier = applier;
+        _editor  = editor;
+        _humans  = humans;
     }
 
     public IEnumerator<KeyValuePair<ActorIdentifier, ActorState>> GetEnumerator()
@@ -109,17 +108,18 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             return ret;
         }
 
+        var model = actor.Model;
+
         // Model ID is only unambiguously contained in the game object.
         // The draw object only has the object type.
         // TODO reverse search model data to get model id from model.
-        if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
+        if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
         {
             ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(Customize*)&actor.AsCharacter->DrawData.CustomizeData,
                 (byte*)&actor.AsCharacter->DrawData.Head);
             return ret;
         }
 
-        var             model = actor.Model;
         CharacterWeapon main;
         CharacterWeapon off;
 
@@ -152,7 +152,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             (_, _, main, off) = model.GetWeapons(actor);
 
             // Visor state is a flag on the game object, but we can see the actual state on the draw object.
-            ret.SetVisor(_visor.GetVisorState(model));
+            ret.SetVisor(VisorService.GetVisorState(model));
         }
         else
         {
@@ -192,304 +192,228 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
     #region Change Values
 
-    /// <summary> Turn a non-human actor human. </summary>
-    public void TurnHuman(ActorState state, StateChanged.Source source)
+    /// <summary> Turn an actor human. </summary>
+    public void TurnHuman(ActorState state, StateChanged.Source source, uint key = 0)
+        => ChangeModelId(state, 0, Customize.Default, nint.Zero, source, key);
+
+    /// <summary> Turn an actor to. </summary>
+    public void ChangeModelId(ActorState state, uint modelId, Customize customize, nint equipData, StateChanged.Source source,
+        uint key = 0)
     {
-        if (state.ModelData.ModelId == 0)
+        if (!_editor.ChangeModelId(state, modelId, customize, equipData, source, out var old, key))
             return;
 
-        state.ModelData.ModelId             = 0;
-        state[ActorState.MetaIndex.ModelId] = source;
-        ChangeCustomize(state, Customize.Default, CustomizeFlagExtensions.All, source);
-        foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            ChangeEquip(state, slot, ItemManager.NothingItem(slot), 0, source);
-        ChangeEquip(state, EquipSlot.MainHand, _items.DefaultSword,                           0, source);
-        ChangeEquip(state, EquipSlot.OffHand,  ItemManager.NothingItem(FullEquipType.Shield), 0, source);
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        _editor.ChangeModelId(objects, 0);
+        var actors = _applier.ForceRedraw(state, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
+        Glamourer.Log.Verbose(
+            $"Set model id in state {state.Identifier.Incognito(null)} from {old} to {modelId}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Model, source, state, actors, (old, modelId));
     }
 
     /// <summary> Change a customization value. </summary>
-    public void ChangeCustomize(ActorState state, CustomizeIndex idx, CustomizeValue value, StateChanged.Source source)
+    public void ChangeCustomize(ActorState state, CustomizeIndex idx, CustomizeValue value, StateChanged.Source source, uint key = 0)
     {
-        // Update state data.
-        var old = state.ModelData.Customize[idx];
-        state.ModelData.Customize[idx] = value;
-        state[idx]                     = source;
+        if (!_editor.ChangeCustomize(state, idx, value, source, out var old, key))
+            return;
 
-        // Update draw objects.
-        _objects.Update();
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        if (source is StateChanged.Source.Manual)
-            _editor.ChangeCustomize(objects, state.ModelData.Customize);
-
-        // Meta.
+        var actors = _applier.ChangeCustomize(state, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set {idx.ToDefaultName()} customizations in state {state.Identifier} from {old.Value} to {value.Value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Customize, source, state, objects, (old, value, idx));
+            $"Set {idx.ToDefaultName()} customizations in state {state.Identifier.Incognito(null)} from {old.Value} to {value.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Customize, source, state, actors, (old, value, idx));
     }
 
     /// <summary> Change an entire customization array according to flags. </summary>
-    public void ChangeCustomize(ActorState state, in Customize customizeInput, CustomizeFlag apply, StateChanged.Source source)
+    public void ChangeCustomize(ActorState state, in Customize customizeInput, CustomizeFlag apply, StateChanged.Source source, uint key = 0)
     {
-        // Update state data.
-        var old = state.ModelData.Customize;
-        var (customize, applied) = _customizations.Combine(state.ModelData.Customize, customizeInput, apply);
-        if (applied == 0)
+        if (!_editor.ChangeHumanCustomize(state, customizeInput, apply, source, out var old, out var applied, key))
             return;
 
-        state.ModelData.Customize = customize;
-        foreach (var type in Enum.GetValues<CustomizeIndex>())
-        {
-            var flag = type.ToFlag();
-            if (applied.HasFlag(flag))
-                state[type] = source;
-        }
-
-        // Update draw objects.
-        _objects.Update();
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        if (source is StateChanged.Source.Manual)
-            _editor.ChangeCustomize(objects, state.ModelData.Customize);
-
-        // Meta.
+        var actors = _applier.ChangeCustomize(state, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set {applied} customizations in state {state.Identifier} from {old} to {customize}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Customize, source, state, objects, (old, customize, applied));
+            $"Set {applied} customizations in state {state.Identifier.Incognito(null)} from {old} to {customizeInput}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.EntireCustomize, source, state, actors, (old, applied));
     }
 
     /// <summary> Change a single piece of equipment without stain. </summary>
-    /// <remarks> Do not use this in the same frame as ChangeStain, use <see cref="ChangeEquip(ActorState,EquipSlot,EquipItem,StainId,StateChanged.Source)"/> instead. </remarks>
-    public void ChangeItem(ActorState state, EquipSlot slot, EquipItem item, StateChanged.Source source)
+    /// <remarks> Do not use this in the same frame as ChangeStain, use <see cref="ChangeEquip(ActorState,EquipSlot,EquipItem,StainId,StateChanged.Source,uint)"/> instead. </remarks>
+    public void ChangeItem(ActorState state, EquipSlot slot, EquipItem item, StateChanged.Source source, uint key = 0)
     {
-        // Update state data.
-        var old = state.ModelData.Item(slot);
-        state.ModelData.SetItem(slot, item);
-        state[slot, false] = source;
-        var type = slot is EquipSlot.MainHand or EquipSlot.OffHand ? StateChanged.Type.Weapon : StateChanged.Type.Equip;
+        if (!_editor.ChangeItem(state, slot, item, source, out var old, key))
+            return;
 
-        // Update draw objects.
-        _objects.Update();
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        if (source is StateChanged.Source.Manual)
-            if (type == StateChanged.Type.Equip)
-            {
-                if (slot is not EquipSlot.Head || state.ModelData.IsHatVisible())
-                    _editor.ChangeArmor(objects, slot, state.ModelData.Armor(slot));
-            }
-            else
-            {
-                _editor.ChangeWeapon(objects, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
-            }
-
-        // Meta.
+        var type = slot.IsEquipmentPiece() ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
+        var actors = type is StateChanged.Type.Equip
+            ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
+            : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} in state {state.Identifier} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}). [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(type, source, state, objects, (old, item, slot));
+            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}). [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(type, source, state, actors, (old, item, slot));
     }
 
     /// <summary> Change a single piece of equipment including stain. </summary>
-    public void ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainId stain, StateChanged.Source source)
+    public void ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainId stain, StateChanged.Source source, uint key = 0)
     {
-        // Update state data.
-        var old      = state.ModelData.Item(slot);
-        var oldStain = state.ModelData.Stain(slot);
-        state.ModelData.SetItem(slot, item);
-        state.ModelData.SetStain(slot, stain);
-        state[slot, false] = source;
-        state[slot, true]  = source;
-        var type = slot is EquipSlot.MainHand or EquipSlot.OffHand ? StateChanged.Type.Weapon : StateChanged.Type.Equip;
+        if (!_editor.ChangeEquip(state, slot, item, stain, source, out var old, out var oldStain, key))
+            return;
 
-        // Update draw objects.
-        _objects.Update();
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        if (source is StateChanged.Source.Manual)
-            if (type == StateChanged.Type.Equip)
-            {
-                if (slot is not EquipSlot.Head || state.ModelData.IsHatVisible())
-                    _editor.ChangeArmor(objects, slot, state.ModelData.Armor(slot));
-            }
-            else
-            {
-                _editor.ChangeWeapon(objects, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
-            }
-
-        // Meta.
+        var type = slot.IsEquipmentPiece() ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
+        var actors = type is StateChanged.Type.Equip
+            ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
+            : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} in state {state.Identifier} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}) and its stain from {oldStain.Value} to {stain.Value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(type,                    source, state, objects, (old, item, slot));
-        _event.Invoke(StateChanged.Type.Stain, source, state, objects, (oldStain, stain, slot));
+            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}) and its stain from {oldStain.Value} to {stain.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(type,                    source, state, actors, (old, item, slot));
+        _event.Invoke(StateChanged.Type.Stain, source, state, actors, (oldStain, stain, slot));
     }
 
     /// <summary> Change only the stain of an equipment piece. </summary>
-    /// <remarks>
-    /// Do not use this in the same frame as ChangeEquip, use <see cref="ChangeEquip(ActorState,EquipSlot,EquipItem,StainId,StateChanged.Source)"/> instead. </remarks>
-    public void ChangeStain(ActorState state, EquipSlot slot, StainId stain, StateChanged.Source source)
+    /// <remarks> Do not use this in the same frame as ChangeEquip, use <see cref="ChangeEquip(ActorState,EquipSlot,EquipItem,StainId,StateChanged.Source,uint)"/> instead. </remarks>
+    public void ChangeStain(ActorState state, EquipSlot slot, StainId stain, StateChanged.Source source, uint key = 0)
     {
-        // Update state data.
-        var old = state.ModelData.Stain(slot);
-        state.ModelData.SetStain(slot, stain);
-        state[slot, true] = source;
+        if (!_editor.ChangeStain(state, slot, stain, source, out var old, key))
+            return;
 
-        // Update draw objects.
-        _objects.Update();
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        if (source is StateChanged.Source.Manual)
-            _editor.ChangeStain(objects, slot, stain);
-
-        // Meta.
+        var actors = _applier.ChangeStain(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} stain in state {state.Identifier} from {old.Value} to {stain.Value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Stain, source, state, objects, (old, stain, slot));
+            $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old.Value} to {stain.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Stain, source, state, actors, (old, stain, slot));
     }
 
     /// <summary> Change hat visibility. </summary>
-    public void ChangeHatState(ActorState state, bool value, StateChanged.Source source)
+    public void ChangeHatState(ActorState state, bool value, StateChanged.Source source, uint key = 0)
     {
-        // Update state data.
-        var old = state.ModelData.IsHatVisible();
-        state.ModelData.SetHatVisible(value);
-        state[ActorState.MetaIndex.HatState] = source;
+        if (!_editor.ChangeMetaState(state, ActorState.MetaIndex.HatState, value, source, out var old, key))
+            return;
 
-        // Update draw objects / game objects.
-        _objects.Update();
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        if (source is StateChanged.Source.Manual)
-            _editor.ChangeHatState(objects, value);
-
-        // Meta.
+        var actors = _applier.ChangeHatState(state, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set Head Gear Visibility in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaIndex.HatState));
+            $"Set Head Gear Visibility in state {state.Identifier} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Other, source, state, actors, (old, value, ActorState.MetaIndex.HatState));
     }
 
     /// <summary> Change weapon visibility. </summary>
-    public void ChangeWeaponState(ActorState state, bool value, StateChanged.Source source)
+    public void ChangeWeaponState(ActorState state, bool value, StateChanged.Source source, uint key = 0)
     {
-        // Update state data.
-        var old = state.ModelData.IsWeaponVisible();
-        state.ModelData.SetWeaponVisible(value);
-        state[ActorState.MetaIndex.WeaponState] = source;
+        if (!_editor.ChangeMetaState(state, ActorState.MetaIndex.WeaponState, value, source, out var old, key))
+            return;
 
-        // Update draw objects / game objects.
-        _objects.Update();
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        if (source is StateChanged.Source.Manual)
-            _editor.ChangeWeaponState(objects, value);
-
-        // Meta.
+        var actors = _applier.ChangeWeaponState(state, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set Weapon Visibility in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaIndex.WeaponState));
+            $"Set Weapon Visibility in state {state.Identifier} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Other, source, state, actors, (old, value, ActorState.MetaIndex.WeaponState));
     }
 
     /// <summary> Change visor state. </summary>
-    public void ChangeVisorState(ActorState state, bool value, StateChanged.Source source)
+    public void ChangeVisorState(ActorState state, bool value, StateChanged.Source source, uint key = 0)
     {
-        // Update state data.
-        var old = state.ModelData.IsVisorToggled();
-        state.ModelData.SetVisor(value);
-        state[ActorState.MetaIndex.VisorState] = source;
+        if (!_editor.ChangeMetaState(state, ActorState.MetaIndex.VisorState, value, source, out var old, key))
+            return;
 
-        // Update draw objects.
-        _objects.Update();
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        if (source is StateChanged.Source.Manual)
-            _editor.ChangeVisor(objects, value);
-
-        // Meta.
+        var actors = _applier.ChangeVisor(state, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set Visor State in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Other, source, state, objects, (old, value, ActorState.MetaIndex.VisorState));
+            $"Set Visor State in state {state.Identifier} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Other, source, state, actors, (old, value, ActorState.MetaIndex.VisorState));
     }
 
     /// <summary> Set GPose Wetness. </summary>
-    public void ChangeWetness(ActorState state, bool value, StateChanged.Source source)
+    public void ChangeWetness(ActorState state, bool value, StateChanged.Source source, uint key = 0)
     {
-        // Update state data.
-        var old = state.ModelData.IsWet();
-        state.ModelData.SetIsWet(value);
-        state[ActorState.MetaIndex.Wetness] = source;
+        if (!_editor.ChangeMetaState(state, ActorState.MetaIndex.Wetness, value, source, out var old, key))
+            return;
 
-        // Update draw objects / game objects.
-        _objects.Update();
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        _editor.ChangeWetness(objects, value);
-
-        // Meta.
+        var actors = _applier.ChangeVisor(state, true);
         Glamourer.Log.Verbose(
-            $"Set Wetness in state {state.Identifier} from {old} to {value}. [Affecting {objects.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Other, state[ActorState.MetaIndex.Wetness], state, objects, (old, value, ActorState.MetaIndex.Wetness));
+            $"Set Wetness in state {state.Identifier} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Other, state[ActorState.MetaIndex.Wetness], state, actors, (old, value, ActorState.MetaIndex.Wetness));
     }
 
     #endregion
 
-    public void ApplyDesign(DesignBase design, ActorState state)
+    public void ApplyDesign(DesignBase design, ActorState state, StateChanged.Source source, uint key = 0)
     {
         void HandleEquip(EquipSlot slot, bool applyPiece, bool applyStain)
         {
-            switch (applyPiece, applyStain)
+            var unused = (applyPiece, applyStain) switch
             {
-                case (false, false): break;
-                case (true, false):
-                    ChangeItem(state, slot, design.DesignData.Item(slot), StateChanged.Source.Manual);
-                    break;
-                case (false, true):
-                    ChangeStain(state, slot, design.DesignData.Stain(slot), StateChanged.Source.Manual);
-                    break;
-                case (true, true):
-                    ChangeEquip(state, slot, design.DesignData.Item(slot), design.DesignData.Stain(slot), StateChanged.Source.Manual);
-                    break;
-            }
+                (false, false) => false,
+                (true, false)  => _editor.ChangeItem(state, slot, design.DesignData.Item(slot), source, out _, key),
+                (false, true)  => _editor.ChangeStain(state, slot, design.DesignData.Stain(slot), source, out _, key),
+                (true, true) => _editor.ChangeEquip(state, slot, design.DesignData.Item(slot), design.DesignData.Stain(slot), source, out _,
+                    out _, key),
+            };
         }
 
-        if (state.ModelData.ModelId != 0 && design.DesignData.ModelId == 0)
-            TurnHuman(state, StateChanged.Source.Manual);
+        if (!_editor.ChangeModelId(state, design.DesignData.ModelId, design.DesignData.Customize, design.DesignData.GetEquipmentPtr(), source,
+                out var oldModelId, key))
+            return;
 
-        if (design.DoApplyHatVisible())
-            ChangeHatState(state, design.DesignData.IsHatVisible(), StateChanged.Source.Manual);
-        if (design.DoApplyWeaponVisible())
-            ChangeWeaponState(state, design.DesignData.IsWeaponVisible(), StateChanged.Source.Manual);
-        if (design.DoApplyVisorToggle())
-            ChangeVisorState(state, design.DesignData.IsVisorToggled(), StateChanged.Source.Manual);
+        var redraw = oldModelId != design.DesignData.ModelId || !design.DesignData.IsHuman;
         if (design.DoApplyWetness())
-            ChangeWetness(state, design.DesignData.IsWet(), StateChanged.Source.Manual);
+            _editor.ChangeMetaState(state, ActorState.MetaIndex.Wetness, design.DesignData.IsWet(), source, out _, key);
 
-        ChangeCustomize(state, design.DesignData.Customize, design.ApplyCustomize, StateChanged.Source.Manual);
+        if (state.ModelData.IsHuman)
+        {
+            if (design.DoApplyHatVisible())
+                _editor.ChangeMetaState(state, ActorState.MetaIndex.HatState, design.DesignData.IsHatVisible(), source, out _, key);
+            if (design.DoApplyWeaponVisible())
+                _editor.ChangeMetaState(state, ActorState.MetaIndex.WeaponState, design.DesignData.IsWeaponVisible(), source, out _, key);
+            if (design.DoApplyVisorToggle())
+                _editor.ChangeMetaState(state, ActorState.MetaIndex.VisorState, design.DesignData.IsVisorToggled(), source, out _, key);
 
-        foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            HandleEquip(slot, design.DoApplyEquip(slot), design.DoApplyStain(slot));
+            _editor.ChangeHumanCustomize(state, design.DesignData.Customize, design.ApplyCustomize, source, out _, out var applied, key);
+            redraw |= applied.RequiresRedraw();
 
-        HandleEquip(EquipSlot.MainHand,
-            design.DoApplyEquip(EquipSlot.MainHand)
-         && design.DesignData.Item(EquipSlot.MainHand).Type == state.BaseData.Item(EquipSlot.MainHand).Type,
-            design.DoApplyStain(EquipSlot.MainHand));
-        HandleEquip(EquipSlot.OffHand,
-            design.DoApplyEquip(EquipSlot.OffHand)
-         && design.DesignData.Item(EquipSlot.OffHand).Type == state.BaseData.Item(EquipSlot.OffHand).Type,
-            design.DoApplyStain(EquipSlot.OffHand));
+            foreach (var slot in EquipSlotExtensions.FullSlots)
+                HandleEquip(slot, design.DoApplyEquip(slot), design.DoApplyStain(slot));
+        }
+
+        var actors = ApplyAll(state, redraw);
+        Glamourer.Log.Verbose(
+            $"Applied design to {state.Identifier.Incognito(null)}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Design, state[ActorState.MetaIndex.Wetness], state, actors, design);
+    }
+
+    private ActorData ApplyAll(ActorState state, bool redraw)
+    {
+        var actors = _applier.ChangeWetness(state, true);
+        if (redraw)
+        {
+            _applier.ForceRedraw(actors);
+        }
+        else
+        {
+            _applier.ChangeCustomize(actors, state.ModelData.Customize);
+            _applier.ChangeHatState(actors, state.ModelData.IsHatVisible());
+            _applier.ChangeWeaponState(actors, state.ModelData.IsWeaponVisible());
+            _applier.ChangeVisor(actors, state.ModelData.IsVisorToggled());
+            foreach (var slot in EquipSlotExtensions.EqdpSlots)
+                _applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), state.ModelData.IsHatVisible());
+            foreach (var slot in EquipSlotExtensions.WeaponSlots)
+                _applier.ChangeWeapon(actors, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
+        }
+
+        return actors;
     }
 
     public void ResetState(ActorState state)
     {
-        ChangeHatState(state, state.BaseData.IsHatVisible(), StateChanged.Source.Game);
-        ChangeVisorState(state, state.BaseData.IsVisorToggled(), StateChanged.Source.Game);
-        ChangeWeaponState(state, state.BaseData.IsWeaponVisible(), StateChanged.Source.Game);
-        ChangeWetness(state, false, StateChanged.Source.Game);
-        ChangeCustomize(state, state.BaseData.Customize, CustomizeFlagExtensions.All, StateChanged.Source.Game);
+        var redraw = state.ModelData.ModelId != state.BaseData.ModelId || !state.ModelData.IsHuman
+         || Customize.Compare(state.ModelData.Customize, state.BaseData.Customize).RequiresRedraw();
+        state.ModelData = state.BaseData;
+        foreach (var index in Enum.GetValues<CustomizeIndex>())
+            state[index] = StateChanged.Source.Game;
+        foreach (var slot in EquipSlotExtensions.FullSlots)
+        {
+            state[slot, true]  = StateChanged.Source.Game;
+            state[slot, false] = StateChanged.Source.Game;
+        }
 
-        foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            ChangeEquip(state, slot, state.BaseData.Item(slot), state.BaseData.Stain(slot), StateChanged.Source.Game);
+        foreach (var type in Enum.GetValues<ActorState.MetaIndex>())
+            state[type] = StateChanged.Source.Game;
 
-        ChangeEquip(state, EquipSlot.MainHand, state.BaseData.Item(EquipSlot.MainHand), state.BaseData.Stain(EquipSlot.MainHand),
-            StateChanged.Source.Game);
-        ChangeEquip(state, EquipSlot.OffHand, state.BaseData.Item(EquipSlot.OffHand), state.BaseData.Stain(EquipSlot.OffHand),
-            StateChanged.Source.Game);
-
-        _objects.Update();
-        var objects = _objects.TryGetValue(state.Identifier, out var d) ? d : ActorData.Invalid;
-        foreach (var actor in objects.Objects)
-            ReapplyState(actor);
+        var actors = ApplyAll(state, redraw);
+        Glamourer.Log.Verbose(
+            $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Design, state[ActorState.MetaIndex.Wetness], state, actors, null);
     }
 
     public void ReapplyState(Actor actor)
@@ -497,28 +421,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         if (!GetOrCreate(actor, out var state))
             return;
 
-        var mdl = actor.Model;
-        if (!mdl.IsHuman)
-            return;
-
-        var data           = new ActorData(actor, string.Empty);
-        var customizeFlags = Customize.Compare(mdl.GetCustomize(), state.ModelData.Customize);
-
-        _editor.ChangeHatState(data, state.ModelData.IsHatVisible());
-        _editor.ChangeWetness(data, false);
-        _editor.ChangeWeaponState(data, state.ModelData.IsWeaponVisible());
-        _editor.ChangeVisor(data, state.ModelData.IsVisorToggled());
-
-        _editor.ChangeCustomize(data, state.ModelData.Customize);
-        if (customizeFlags.RequiresRedraw())
-            return;
-
-        if (state.ModelData.IsHatVisible())
-            _editor.ChangeArmor(data, EquipSlot.Head, state.ModelData.Armor(EquipSlot.Head));
-        foreach (var slot in EquipSlotExtensions.EqdpSlots.Skip(1))
-            _editor.ChangeArmor(data, slot, state.ModelData.Armor(slot));
-        _editor.ChangeMainhand(data, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
-        _editor.ChangeOffhand(data, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
+        ApplyAll(state, !actor.Model.IsHuman || Customize.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw());
     }
 
     public void DeleteState(ActorIdentifier identifier)

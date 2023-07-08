@@ -100,6 +100,7 @@ public static class ServiceManager
 
     private static IServiceCollection AddState(this IServiceCollection services)
         => services.AddSingleton<StateManager>()
+            .AddSingleton<StateApplier>()
             .AddSingleton<StateEditor>()
             .AddSingleton<StateListener>()
             .AddSingleton<FunModule>();

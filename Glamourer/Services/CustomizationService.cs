@@ -5,31 +5,36 @@ using System.Runtime.CompilerServices;
 using Dalamud.Data;
 using Dalamud.Plugin;
 using Glamourer.Customization;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Services;
 
 public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationManager>
 {
-    public CustomizationService(DalamudPluginInterface pi, DataManager gameData)
-        : base(nameof(CustomizationService), () => CustomizationManager.Create(pi, gameData))
-    { }
+    public readonly HumanModelList HumanModels;
 
-    public (Customize NewValue, CustomizeFlag Applied) Combine(Customize oldValues, Customize newValues, CustomizeFlag applyWhich)
+    public CustomizationService(DalamudPluginInterface pi, DataManager gameData, HumanModelList humanModels)
+        : base(nameof(CustomizationService), () => CustomizationManager.Create(pi, gameData))
+        => HumanModels = humanModels;
+
+    public (Customize NewValue, CustomizeFlag Applied, CustomizeFlag Changed) Combine(Customize oldValues, Customize newValues,
+        CustomizeFlag applyWhich)
     {
         CustomizeFlag applied = 0;
+        CustomizeFlag changed = 0;
         Customize     ret     = default;
         ret.Load(oldValues);
         if (applyWhich.HasFlag(CustomizeFlag.Clan))
         {
-            ChangeClan(ref ret, newValues.Clan);
+            changed |= ChangeClan(ref ret, newValues.Clan);
             applied |= CustomizeFlag.Clan;
         }
 
         if (applyWhich.HasFlag(CustomizeFlag.Gender))
             if (ret.Race is not Race.Hrothgar || newValues.Gender is not Gender.Female)
             {
-                ChangeGender(ref ret, newValues.Gender);
+                changed |= ChangeGender(ref ret, newValues.Gender);
                 applied |= CustomizeFlag.Gender;
             }
 
@@ -43,12 +48,14 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
             var value = newValues[index];
             if (IsCustomizationValid(set, ret.Face, index, value))
             {
+                if (ret[index].Value != value.Value)
+                    changed |= flag;
                 ret[index] =  value;
                 applied    |= flag;
             }
         }
 
-        return (ret, applied);
+        return (ret, applied, changed);
     }
 
     /// <summary> In languages other than english the actual clan name may depend on gender. </summary>
@@ -190,10 +197,18 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     /// The returned model id is 0.
     /// The return value is an empty string if everything was correct and a warning otherwise.
     /// </summary>
-    public string ValidateModelId(uint modelId, out uint actualModelId)
+    public string ValidateModelId(uint modelId, out uint actualModelId, out bool isHuman)
     {
-        actualModelId = 0;
-        return modelId != 0 ? $"Model IDs different from 0 are not currently allowed, reset {modelId} to 0." : string.Empty;
+        if (modelId >= HumanModels.Count)
+        {
+            actualModelId = 0;
+            isHuman       = true;
+            return $"Model ID {modelId} is not an existing model, reset to 0.";
+        }
+
+        actualModelId = modelId;
+        isHuman       = HumanModels.IsHuman(modelId);
+        return string.Empty;
     }
 
     /// <summary>

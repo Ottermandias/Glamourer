@@ -6,6 +6,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using OtterGui.Classes;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -30,6 +31,7 @@ public class StateListener : IDisposable
     private readonly WeaponVisibilityChanged   _weaponVisibility;
     private readonly AutoDesignApplier         _autoDesignApplier;
     private readonly FunModule                 _funModule;
+    private readonly HumanModelList            _humans;
 
     public bool Enabled
     {
@@ -39,7 +41,7 @@ public class StateListener : IDisposable
 
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
-        HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule)
+        HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans)
     {
         _manager            = manager;
         _items              = items;
@@ -53,6 +55,7 @@ public class StateListener : IDisposable
         _headGearVisibility = headGearVisibility;
         _autoDesignApplier  = autoDesignApplier;
         _funModule          = funModule;
+        _humans             = humans;
 
         if (Enabled)
             Subscribe();
@@ -320,10 +323,11 @@ public class StateListener : IDisposable
 
         // Model ID did change, reload entire state accordingly.
         // Always use the actor for the base data.
-        if (modelId == 0)
-            state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, (byte*)equipData);
-        else
+        var isHuman = _humans.IsHuman(modelId);
+        if (isHuman)
             state.BaseData = _manager.FromActor(actor, false);
+        else
+            state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, (byte*)equipData); 
 
         return UpdateState.Change;
     }

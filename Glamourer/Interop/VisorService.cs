@@ -23,7 +23,7 @@ public class VisorService : IDisposable
         => _setupVisorHook.Dispose();
 
     /// <summary> Obtain the current state of the Visor for the given draw object (true: toggled). </summary>
-    public unsafe bool GetVisorState(Model characterBase)
+    public static unsafe bool GetVisorState(Model characterBase)
         => characterBase.IsCharacterBase && characterBase.AsCharacterBase->VisorToggled;
 
     /// <summary> Manually set the state of the Visor for the given draw object. </summary>

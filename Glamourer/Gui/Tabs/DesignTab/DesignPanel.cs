@@ -7,6 +7,7 @@ using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Designs;
+using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
@@ -176,7 +177,7 @@ public class DesignPanel
         {
             var set = _customizationService.AwaitedService.GetList(_selector.Selected!.DesignData.Customize.Clan,
                 _selector.Selected!.DesignData.Customize.Gender);
-            var all   = CustomizationExtensions.All.Where(set.IsAvailable).Select(c => c.ToFlag()).Aggregate((a, b) => a | b);
+            var all   = CustomizationExtensions.All.Where(set.IsAvailable).Select(c => c.ToFlag()).Aggregate((a, b) => a | b) | CustomizeFlag.Clan | CustomizeFlag.Gender;
             var flags = (_selector.Selected!.ApplyCustomize & all) == 0 ? 0 : (_selector.Selected!.ApplyCustomize & all) == all ? 3 : 1;
             if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))
             {
@@ -342,7 +343,7 @@ public class DesignPanel
             return;
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
-            _state.ApplyDesign(_selector.Selected!, state);
+            _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
     }
 
     private void DrawApplyToTarget()
@@ -357,6 +358,6 @@ public class DesignPanel
             return;
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
-            _state.ApplyDesign(_selector.Selected!, state);
+            _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
     }
 }

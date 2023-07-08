@@ -115,6 +115,17 @@ public class AutoDesignApplier : IDisposable
         _state.ReapplyState(actor);
     }
 
+    public void ReapplyAutomation(Actor actor, ActorIdentifier identifier, ActorState state)
+    {
+        if (!_config.EnableAutoDesigns)
+            return;
+
+        if (!GetPlayerSet(identifier, out var set))
+            return;
+
+        Reduce(actor, state, set, false);
+    }
+
     public void Reduce(Actor actor, ActorIdentifier identifier, ActorState state)
     {
         if (!_config.EnableAutoDesigns)
