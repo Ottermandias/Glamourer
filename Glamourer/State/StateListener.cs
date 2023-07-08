@@ -327,7 +327,7 @@ public class StateListener : IDisposable
         if (isHuman)
             state.BaseData = _manager.FromActor(actor, false);
         else
-            state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, (byte*)equipData); 
+            state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, equipData);
 
         return UpdateState.Change;
     }

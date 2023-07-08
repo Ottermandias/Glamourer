@@ -205,15 +205,14 @@ public unsafe struct DesignData
     }
 
 
-    public bool LoadNonHuman(uint modelId, Customize customize, byte* equipData)
+    public bool LoadNonHuman(uint modelId, Customize customize, nint equipData)
     {
         ModelId = modelId;
         IsHuman = false;
         Customize.Load(customize);
         fixed (byte* ptr = _equipmentBytes)
         {
-            MemoryUtility.MemCpyUnchecked(ptr, equipData, 40);
-            MemoryUtility.MemSet(ptr + 40, 0, 8);
+            MemoryUtility.MemCpyUnchecked(ptr, (byte*) equipData, 40);
         }
 
         SetHatVisible(true);
@@ -221,18 +220,13 @@ public unsafe struct DesignData
         SetVisor(false);
         fixed (uint* ptr = _itemIds)
         {
-            MemoryUtility.MemSet(ptr, 0, 12 * 4);
+            MemoryUtility.MemSet(ptr, 0, 10 * 4);
         }
 
         fixed (ushort* ptr = _iconIds)
         {
-            MemoryUtility.MemSet(ptr, 0, 12 * 2);
+            MemoryUtility.MemSet(ptr, 0, 10 * 2);
         }
-
-        _secondaryMainhand = 0;
-        _secondaryOffhand  = 0;
-        _typeMainhand      = FullEquipType.Unknown;
-        _typeOffhand       = FullEquipType.Unknown;
 
         _nameHead     = string.Empty;
         _nameBody     = string.Empty;
@@ -244,8 +238,6 @@ public unsafe struct DesignData
         _nameWrists   = string.Empty;
         _nameRFinger  = string.Empty;
         _nameLFinger  = string.Empty;
-        _nameMainhand = string.Empty;
-        _nameOffhand  = string.Empty;
         return true;
     }
 

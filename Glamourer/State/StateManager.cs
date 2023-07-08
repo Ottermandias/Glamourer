@@ -116,7 +116,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
         {
             ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(Customize*)&actor.AsCharacter->DrawData.CustomizeData,
-                (byte*)&actor.AsCharacter->DrawData.Head);
+                (nint) (&actor.AsCharacter->DrawData.Head));
             return ret;
         }
 

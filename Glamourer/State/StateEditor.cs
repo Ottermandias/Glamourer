@@ -65,11 +65,8 @@ public class StateEditor
         }
         else
         {
-            unsafe
-            {
-                state.ModelData.LoadNonHuman(modelId, customize, (byte*)equipData);
-                state[ActorState.MetaIndex.ModelId] = source;
-            }
+            state.ModelData.LoadNonHuman(modelId, customize, equipData);
+            state[ActorState.MetaIndex.ModelId] = source;
         }
 
         return true;

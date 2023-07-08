@@ -46,6 +46,9 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
         /// <summary> An existing design had an existing associated mod removed. Data is the Mod and its Settings [(Mod, ModSettings)]. </summary>
         RemovedMod,
 
+        /// <summary> An existing design had its model id changed. This means everything else might also have changed. Data is the old value and the new value. [(uint, uint)]. </summary>
+        ModelId,
+
         /// <summary> An existing design had a customization changed. Data is the old value, the new value and the type [(CustomizeValue, CustomizeValue, CustomizeIndex)]. </summary>
         Customize,
 

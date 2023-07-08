@@ -13,6 +13,7 @@ using Newtonsoft.Json.Linq;
 using OtterGui;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using static OtterGui.Raii.ImRaii;
 
 namespace Glamourer.Designs;
 
@@ -259,6 +260,28 @@ public class DesignManager
         _event.Invoke(DesignChanged.Type.WriteProtection, design, value);
     }
 
+    public void ChangeModelId(Design design, uint modelId, Customize customize, nint equipData, bool isHuman)
+    {
+        var oldValue = design.DesignData.ModelId;
+
+        if (!isHuman)
+        {
+            design.DesignData.LoadNonHuman(modelId, customize, equipData);
+        }
+        else if (!design.DesignData.IsHuman)
+        {
+            design.DesignData.IsHuman = true;
+            design.DesignData.ModelId = modelId;
+            design.DesignData.SetDefaultEquipment(_items);
+            design.DesignData.Customize = Customize.Default;
+        }
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        Glamourer.Log.Debug($"Changed model id in design {design.Identifier} from {oldValue} to {modelId}.");
+        _saveService.QueueSave(design);
+        _event.Invoke(DesignChanged.Type.ModelId, design, (oldValue, modelId));
+    }
+
     /// <summary> Change a customization value. </summary>
     public void ChangeCustomize(Design design, CustomizeIndex idx, CustomizeValue value)
     {
@@ -454,6 +477,36 @@ public class DesignManager
     /// <summary> Apply an entire design based on its appliance rules piece by piece. </summary>
     public void ApplyDesign(Design design, DesignBase other)
     {
+        ChangeModelId(design, other.DesignData.ModelId, other.DesignData.Customize, other.DesignData.GetEquipmentPtr(),
+            other.DesignData.IsHuman);
+
+        if (other.DoApplyWetness())
+            design.DesignData.SetIsWet(other.DesignData.IsWet());
+        if (other.DoApplyHatVisible())
+            design.DesignData.SetHatVisible(other.DesignData.IsHatVisible());
+        if (other.DoApplyVisorToggle())
+            design.DesignData.SetVisor(other.DesignData.IsVisorToggled());
+        if (other.DoApplyWeaponVisible())
+            design.DesignData.SetWeaponVisible(other.DesignData.IsWeaponVisible());
+
+        if (design.DesignData.IsHuman)
+        {
+            foreach (var index in Enum.GetValues<CustomizeIndex>())
+            {
+                if (other.DoApplyCustomize(index))
+                    ChangeCustomize(design, index, other.DesignData.Customize[index]);
+            }
+
+            foreach (var slot in EquipSlotExtensions.EqdpSlots)
+            {
+                if (other.DoApplyEquip(slot))
+                    ChangeEquip(design, slot, other.DesignData.Item(slot));
+
+                if (other.DoApplyStain(slot))
+                    ChangeStain(design, slot, other.DesignData.Stain(slot));
+            }
+        }
+
         if (other.DoApplyEquip(EquipSlot.MainHand))
             ChangeWeapon(design, EquipSlot.MainHand, other.DesignData.Item(EquipSlot.MainHand));
 
@@ -465,31 +518,6 @@ public class DesignManager
 
         if (other.DoApplyStain(EquipSlot.OffHand))
             ChangeStain(design, EquipSlot.OffHand, other.DesignData.Stain(EquipSlot.OffHand));
-
-
-        foreach (var slot in EquipSlotExtensions.EqdpSlots)
-        {
-            if (other.DoApplyEquip(slot))
-                ChangeEquip(design, slot, other.DesignData.Item(slot));
-
-            if (other.DoApplyStain(slot))
-                ChangeStain(design, slot, other.DesignData.Stain(slot));
-        }
-
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
-        {
-            if (other.DoApplyCustomize(index))
-                ChangeCustomize(design, index, other.DesignData.Customize[index]);
-        }
-
-        if (other.DoApplyHatVisible())
-            design.DesignData.SetHatVisible(other.DesignData.IsHatVisible());
-        if (other.DoApplyVisorToggle())
-            design.DesignData.SetVisor(other.DesignData.IsVisorToggled());
-        if (other.DoApplyWeaponVisible())
-            design.DesignData.SetWeaponVisible(other.DesignData.IsWeaponVisible());
-        if (other.DoApplyWetness())
-            design.DesignData.SetIsWet(other.DesignData.IsWet());
     }
 
     private void MigrateOldDesigns()
