@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using Dalamud.Interface;
 using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui.Raii;
@@ -14,19 +15,33 @@ public partial class CustomizationDrawer
     {
         using var _ = SetId(index);
         var (current, custom) = GetCurrentCustomization(index);
-        var color = ImGui.ColorConvertU32ToFloat4(custom.Color);
 
-        // Print 1-based index instead of 0.
-        if (ImGui.ColorButton($"{current + 1}##color", color, ImGuiColorEditFlags.None, _framedIconSize))
-            ImGui.OpenPopup(ColorPickerPopupName);
+        var color = ImGui.ColorConvertU32ToFloat4(current < 0 ? ImGui.GetColorU32(ImGuiCol.FrameBg) : custom.Color);
+
+        using (var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * ImGuiHelpers.GlobalScale, current < 0))
+        {
+            // Print 1-based index instead of 0.
+            if (ImGui.ColorButton($"{current + 1}##color", color, ImGuiColorEditFlags.None, _framedIconSize))
+                ImGui.OpenPopup(ColorPickerPopupName);
+        }
+
+        if (current < 0)
+        {
+            using var font = ImRaii.PushFont(UiBuilder.IconFont);
+            var       size = ImGui.CalcTextSize(FontAwesomeIcon.Question.ToIconString());
+            var       pos  = ImGui.GetItemRectMin() + (ImGui.GetItemRectSize() - size) / 2;
+            ImGui.GetWindowDrawList().AddText(pos, ImGui.GetColorU32(ImGuiCol.Text), FontAwesomeIcon.Question.ToIconString());
+            current = 0;
+        }
 
         ImGui.SameLine();
 
         using (var group = ImRaii.Group())
         {
             DataInputInt(current);
-            ImGui.TextUnformatted(_currentOption);
+            ImGui.TextUnformatted(custom.Color == 0 ? $"{_currentOption} (Custom #{custom.Value})" : _currentOption);
         }
+
         DrawColorPickerPopup();
     }
 
@@ -57,7 +72,7 @@ public partial class CustomizationDrawer
     {
         var current = _set.DataByValue(index, _customize[index], out var custom, _customize.Face);
         if (_set.IsAvailable(index) && current < 0)
-            throw new Exception($"Read invalid customization value {_customize[index]} for {index}.");
+            return (current, new CustomizeData(index, _customize[index], 0, 0));
 
         return (current, custom!.Value);
     }

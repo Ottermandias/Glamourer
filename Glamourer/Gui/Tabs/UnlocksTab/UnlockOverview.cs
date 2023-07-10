@@ -153,7 +153,7 @@ public class UnlockOverview
 
         void DrawItem(EquipItem item)
         {
-            var unlocked   = _itemUnlocks.IsUnlocked(item.Id, out var time);
+            var unlocked   = _itemUnlocks.IsUnlocked(item.ItemId, out var time);
             var iconHandle = _textureCache.LoadIcon(item.IconId);
             if (!iconHandle.HasValue)
                 return;
@@ -179,7 +179,7 @@ public class UnlockOverview
                 ImGui.TextUnformatted($"{item.Type.ToName()} ({slot.ToName()})");
                 if (item.Type.Offhand().IsOffhandType())
                     ImGui.TextUnformatted(
-                        $"{item.Weapon()}{(_items.ItemService.AwaitedService.TryGetValue(item.Id, false, out var offhand) ? $" | {offhand.Weapon()}" : string.Empty)}");
+                        $"{item.Weapon()}{(_items.ItemService.AwaitedService.TryGetValue(item.ItemId, false, out var offhand) ? $" | {offhand.Weapon()}" : string.Empty)}");
                 else
                     ImGui.TextUnformatted(slot is EquipSlot.MainHand ? $"{item.Weapon()}" : $"{item.Armor()}");
                 ImGui.TextUnformatted(

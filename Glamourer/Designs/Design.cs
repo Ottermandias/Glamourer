@@ -130,8 +130,8 @@ public sealed class Design : DesignBase, ISavable
         if (design.LastEdit < creationDate)
             design.LastEdit = creationDate;
 
-        LoadCustomize(customizations, json["Customize"], design, design.Name);
-        LoadEquip(items, json["Equipment"], design, design.Name);
+        LoadCustomize(customizations, json["Customize"], design, design.Name, true, false);
+        LoadEquip(items, json["Equipment"], design, design.Name, false);
         LoadMods(json["Mods"], design);
         return design;
     }

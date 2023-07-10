@@ -34,10 +34,10 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
 
     protected override int UpdateCurrentSelected(int currentSelected)
     {
-        if (CurrentSelection.Id == _currentItem)
+        if (CurrentSelection.ItemId == _currentItem)
             return currentSelected;
 
-        CurrentSelectionIdx = Items.IndexOf(i => i.Id == _currentItem);
+        CurrentSelectionIdx = Items.IndexOf(i => i.ItemId == _currentItem);
         CurrentSelection    = CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : default;
         return base.UpdateCurrentSelected(CurrentSelectionIdx);
 

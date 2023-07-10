@@ -210,7 +210,7 @@ public class PenumbraChangedItemTooltip : IDisposable
         else
         {
             var oldItem = state.ModelData.Item(slot);
-            if (oldItem.Id != item.Id)
+            if (oldItem.ItemId != item.ItemId)
                 _lastItems[slot.ToIndex()] = oldItem;
         }
     }

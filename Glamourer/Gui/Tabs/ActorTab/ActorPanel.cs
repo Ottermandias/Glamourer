@@ -131,33 +131,33 @@ public class ActorPanel
         {
             var stain = _state.ModelData.Stain(slot);
             if (_equipmentDrawer.DrawStain(stain, slot, out var newStain))
-                _stateManager.ChangeStain(_state, slot, newStain.RowIndex, StateChanged.Source.Manual);
+                _stateManager.ChangeStain(_state, slot, newStain, StateChanged.Source.Manual);
 
             ImGui.SameLine();
             var armor = _state.ModelData.Item(slot);
             if (_equipmentDrawer.DrawArmor(armor, slot, out var newArmor, _state.ModelData.Customize.Gender, _state.ModelData.Customize.Race))
-                _stateManager.ChangeEquip(_state, slot, newArmor, newStain.RowIndex, StateChanged.Source.Manual);
+                _stateManager.ChangeEquip(_state, slot, newArmor, newStain, StateChanged.Source.Manual);
         }
 
         var mhStain = _state.ModelData.Stain(EquipSlot.MainHand);
         if (_equipmentDrawer.DrawStain(mhStain, EquipSlot.MainHand, out var newMhStain))
-            _stateManager.ChangeStain(_state, EquipSlot.MainHand, newMhStain.RowIndex, StateChanged.Source.Manual);
+            _stateManager.ChangeStain(_state, EquipSlot.MainHand, newMhStain, StateChanged.Source.Manual);
 
         ImGui.SameLine();
         var mh = _state.ModelData.Item(EquipSlot.MainHand);
         if (_equipmentDrawer.DrawMainhand(mh, false, out var newMh))
-            _stateManager.ChangeEquip(_state, EquipSlot.MainHand, newMh, newMhStain.RowIndex, StateChanged.Source.Manual);
+            _stateManager.ChangeEquip(_state, EquipSlot.MainHand, newMh, newMhStain, StateChanged.Source.Manual);
 
         if (newMh.Type.Offhand() is not FullEquipType.Unknown)
         {
             var ohStain = _state.ModelData.Stain(EquipSlot.OffHand);
             if (_equipmentDrawer.DrawStain(ohStain, EquipSlot.OffHand, out var newOhStain))
-                _stateManager.ChangeStain(_state, EquipSlot.OffHand, newOhStain.RowIndex, StateChanged.Source.Manual);
+                _stateManager.ChangeStain(_state, EquipSlot.OffHand, newOhStain, StateChanged.Source.Manual);
 
             ImGui.SameLine();
             var oh = _state.ModelData.Item(EquipSlot.OffHand);
             if (_equipmentDrawer.DrawMainhand(oh, false, out var newOh))
-                _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOh, newOhStain.RowIndex, StateChanged.Source.Manual);
+                _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOh, newOhStain, StateChanged.Source.Manual);
         }
     }
 

@@ -131,7 +131,7 @@ public class DesignPanel
         {
             var stain = _selector.Selected!.DesignData.Stain(slot);
             if (_equipmentDrawer.DrawStain(stain, slot, out var newStain))
-                _manager.ChangeStain(_selector.Selected!, slot, newStain.RowIndex);
+                _manager.ChangeStain(_selector.Selected!, slot, newStain);
 
             ImGui.SameLine();
             var armor = _selector.Selected!.DesignData.Item(slot);
@@ -142,7 +142,7 @@ public class DesignPanel
 
         var mhStain = _selector.Selected!.DesignData.Stain(EquipSlot.MainHand);
         if (_equipmentDrawer.DrawStain(mhStain, EquipSlot.MainHand, out var newMhStain))
-            _manager.ChangeStain(_selector.Selected!, EquipSlot.MainHand, newMhStain.RowIndex);
+            _manager.ChangeStain(_selector.Selected!, EquipSlot.MainHand, newMhStain);
 
         ImGui.SameLine();
         var mh = _selector.Selected!.DesignData.Item(EquipSlot.MainHand);
@@ -153,7 +153,7 @@ public class DesignPanel
         {
             var ohStain = _selector.Selected!.DesignData.Stain(EquipSlot.OffHand);
             if (_equipmentDrawer.DrawStain(ohStain, EquipSlot.OffHand, out var newOhStain))
-                _manager.ChangeStain(_selector.Selected!, EquipSlot.OffHand, newOhStain.RowIndex);
+                _manager.ChangeStain(_selector.Selected!, EquipSlot.OffHand, newOhStain);
 
             ImGui.SameLine();
             var oh = _selector.Selected!.DesignData.Item(EquipSlot.OffHand);

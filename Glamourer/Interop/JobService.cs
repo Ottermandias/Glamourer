@@ -17,7 +17,7 @@ public class JobService : IDisposable
     public readonly IReadOnlyDictionary<byte, Job>        Jobs;
     public readonly IReadOnlyDictionary<ushort, JobGroup> JobGroups;
 
-    public event Action<Actor, Job>? JobChanged;
+    public event Action<Actor, Job, Job>? JobChanged;
 
     public JobService(DataManager gameData)
     {
@@ -40,10 +40,12 @@ public class JobService : IDisposable
 
     private void ChangeJobDetour(nint data, uint jobIndex)
     {
+        var old = ((Actor)(data - _characterDataOffset)).Job;
         _changeJobHook.Original(data, jobIndex);
-        var actor = (Actor)(data - _characterDataOffset);
-        var job   = Jobs.TryGetValue((byte) jobIndex, out var j) ? j : Jobs[0];
-        Glamourer.Log.Excessive($"{actor} changed job to {job}");
-        JobChanged?.Invoke(actor, job);
+        var actor  = (Actor)(data - _characterDataOffset);
+        var job    = Jobs.TryGetValue((byte)jobIndex, out var j) ? j : Jobs[0];
+        var oldJob = Jobs.TryGetValue(old,            out var o) ? o : Jobs[0];
+        Glamourer.Log.Excessive($"{actor} changed job from {oldJob} to {job}");
+        JobChanged?.Invoke(actor, oldJob, job);
     }
 }

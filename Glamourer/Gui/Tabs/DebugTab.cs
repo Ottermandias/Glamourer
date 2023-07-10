@@ -155,6 +155,15 @@ public unsafe class DebugTab : ITab
         ImGui.TableNextColumn();
         ImGuiUtil.CopyOnClickSelectable(model.ToString());
         ImGui.TableNextColumn();
+        if (actor.IsCharacter)
+        {
+            if (actor.AsCharacter->CharacterData.TransformationId != 0)
+                ImGui.TextUnformatted($"Transformation Id: {actor.AsCharacter->CharacterData.TransformationId}");
+            if (actor.AsCharacter->CharacterData.ModelCharaId_2 != -1)
+                ImGui.TextUnformatted($"ModelChara2 {actor.AsCharacter->CharacterData.ModelCharaId_2}");
+            if (actor.AsCharacter->CharacterData.StatusEffectVFXId != 0)
+                ImGui.TextUnformatted($"Status Id: {actor.AsCharacter->CharacterData.StatusEffectVFXId}");
+        }
 
         ImGuiUtil.DrawTableColumn("Mainhand");
         ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.GetMainhand().ToString() : "No Character");
@@ -712,7 +721,7 @@ public unsafe class DebugTab : ITab
             return;
 
         disabled.Dispose();
-        ImRaii.TreeNode($"Default Sword: {_items.DefaultSword.Name} ({_items.DefaultSword.Id}) ({_items.DefaultSword.Weapon()})",
+        ImRaii.TreeNode($"Default Sword: {_items.DefaultSword.Name} ({_items.DefaultSword.ItemId}) ({_items.DefaultSword.Weapon()})",
             ImGuiTreeNodeFlags.Leaf).Dispose();
         DrawNameTable("All Items (Main)", ref _itemFilter,
             _items.ItemService.AwaitedService.AllItems(true).Select(p => (p.Item1,
@@ -726,7 +735,7 @@ public unsafe class DebugTab : ITab
         {
             DrawNameTable(type.ToName(), ref _itemFilter,
                 _items.ItemService.AwaitedService[type]
-                    .Select(p => (p.Id, $"{p.Name} ({(p.WeaponType == 0 ? p.Armor().ToString() : p.Weapon().ToString())})")));
+                    .Select(p => (Id: p.ItemId, $"{p.Name} ({(p.WeaponType == 0 ? p.Armor().ToString() : p.Weapon().ToString())})")));
         }
     }
 
@@ -1091,7 +1100,7 @@ public unsafe class DebugTab : ITab
                 var stain = data.Stain(slot);
                 ImGuiUtil.DrawTableColumn(slot.ToName());
                 ImGuiUtil.DrawTableColumn(item.Name);
-                ImGuiUtil.DrawTableColumn(item.Id.ToString());
+                ImGuiUtil.DrawTableColumn(item.ItemId.ToString());
                 ImGuiUtil.DrawTableColumn(stain.ToString());
             }
 
@@ -1175,7 +1184,7 @@ public unsafe class DebugTab : ITab
             var applyStain = design.DoApplyStain(slot);
             ImGuiUtil.DrawTableColumn(slot.ToName());
             ImGuiUtil.DrawTableColumn(item.Name);
-            ImGuiUtil.DrawTableColumn(item.Id.ToString());
+            ImGuiUtil.DrawTableColumn(item.ItemId.ToString());
             ImGuiUtil.DrawTableColumn(apply ? "Apply" : "Keep");
             ImGuiUtil.DrawTableColumn(stain.ToString());
             ImGuiUtil.DrawTableColumn(applyStain ? "Apply" : "Keep");

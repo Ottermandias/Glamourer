@@ -7,6 +7,7 @@ using Lumina.Excel;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using static OtterGui.Raii.ImRaii;
 using Race = Penumbra.GameData.Enums.Race;
 
 namespace Glamourer.Services;
@@ -111,7 +112,7 @@ public class ItemManager : IDisposable
                 var item = IdentifierService.AwaitedService.Identify(id, variant, slot).FirstOrDefault();
                 return item.Valid
                     ? item
-                    : new EquipItem($"Unknown ({id.Value}-{variant})", 0, 0, id, 0, variant, 0);
+                    : new EquipItem($"Unknown ({id.Value}-{variant})", 0, 0, id, 0, variant, slot.ToEquipType());
         }
     }
 
@@ -131,7 +132,7 @@ public class ItemManager : IDisposable
         var item = IdentifierService.AwaitedService.Identify(id, type, variant, slot).FirstOrDefault();
         return item.Valid
             ? item
-            : new EquipItem($"Unknown ({id.Value}-{type.Value}-{variant})", 0, 0, id, type, variant, 0);
+            : EquipItem.FromIds(0, 0, id, type, variant, slot.ToEquipType(), null);
     }
 
     /// <summary> Returns whether an item id represents a valid item for a slot and gives the item. </summary>
@@ -147,12 +148,20 @@ public class ItemManager : IDisposable
     /// The returned item is either the resolved correct item, or the Nothing item for that slot.
     /// The return value is an empty string if there was no problem and a warning otherwise.
     /// </summary>
-    public string ValidateItem(EquipSlot slot, uint itemId, out EquipItem item)
+    public string ValidateItem(EquipSlot slot, ulong itemId, out EquipItem item, bool allowUnknown)
     {
         if (slot is EquipSlot.MainHand or EquipSlot.OffHand)
             throw new Exception("Internal Error: Used armor functionality for weapons.");
 
-        if (IsItemValid(slot, itemId, out item))
+        if (itemId > uint.MaxValue)
+        {
+            var id      = (SetId)(itemId & ushort.MaxValue);
+            var variant = (byte)(itemId >> 32);
+            item = new EquipItem($"Unknown ({id}-{variant})", 0, 0, id, 0, variant, slot.ToEquipType());
+            return allowUnknown ? string.Empty : $"The item {itemId} yields an unknown item.";
+        }
+
+        if (IsItemValid(slot, (uint) itemId, out item))
             return string.Empty;
 
         item = NothingItem(slot);
@@ -169,9 +178,9 @@ public class ItemManager : IDisposable
     /// The returned stain id is either the input or 0.
     /// The return value is an empty string if there was no problem and a warning otherwise.
     /// </summary>
-    public string ValidateStain(StainId stain, out StainId ret)
+    public string ValidateStain(StainId stain, out StainId ret, bool allowUnknown)
     {
-        if (IsStainValid(stain))
+        if (allowUnknown || IsStainValid(stain))
         {
             ret = stain;
             return string.Empty;

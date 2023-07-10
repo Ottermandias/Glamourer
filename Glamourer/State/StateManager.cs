@@ -245,7 +245,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
             : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}). [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}). [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(type, source, state, actors, (old, item, slot));
     }
 
@@ -260,7 +260,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
             : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}) and its stain from {oldStain.Value} to {stain.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}) and its stain from {oldStain.Value} to {stain.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(type,                    source, state, actors, (old, item, slot));
         _event.Invoke(StateChanged.Type.Stain, source, state, actors, (oldStain, stain, slot));
     }

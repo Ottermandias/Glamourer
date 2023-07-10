@@ -193,7 +193,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
         public override void DrawColumn(EquipItem item, int idx)
         {
-            if (!_unlocks.IsUnlocked(item.Id, out var time))
+            if (!_unlocks.IsUnlocked(item.ItemId, out var time))
                 return;
 
             ImGui.AlignTextToFramePadding();
@@ -202,8 +202,8 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
         public override int Compare(EquipItem lhs, EquipItem rhs)
         {
-            var unlockedLhs = _unlocks.IsUnlocked(lhs.Id, out var timeLhs);
-            var unlockedRhs = _unlocks.IsUnlocked(rhs.Id, out var timeRhs);
+            var unlockedLhs = _unlocks.IsUnlocked(lhs.ItemId, out var timeLhs);
+            var unlockedRhs = _unlocks.IsUnlocked(rhs.ItemId, out var timeRhs);
             var c1          = unlockedLhs.CompareTo(unlockedRhs);
             return c1 != 0 ? c1 : timeLhs.CompareTo(timeRhs);
         }
@@ -215,15 +215,15 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             => 70 * ImGuiHelpers.GlobalScale;
 
         public override int Compare(EquipItem lhs, EquipItem rhs)
-            => lhs.Id.CompareTo(rhs.Id);
+            => lhs.ItemId.CompareTo(rhs.ItemId);
 
         public override string ToName(EquipItem item)
-            => item.Id.ToString();
+            => item.ItemId.ToString();
 
         public override void DrawColumn(EquipItem item, int _)
         {
             ImGui.AlignTextToFramePadding();
-            ImGuiUtil.RightAlign(item.Id.ToString());
+            ImGuiUtil.RightAlign(item.ItemId.ToString());
         }
     }
 
@@ -243,7 +243,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             ImGuiUtil.RightAlign(item.ModelString);
             if (ImGui.IsItemHovered()
              && item.Type.Offhand().IsOffhandType()
-             && _items.ItemService.AwaitedService.TryGetValue(item.Id, false, out var offhand))
+             && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, false, out var offhand))
             {
                 using var tt = ImRaii.Tooltip();
                 ImGui.TextUnformatted("Offhand: " + offhand.ModelString);
@@ -261,7 +261,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             if (FilterRegex?.IsMatch(item.ModelString) ?? item.ModelString.Contains(FilterValue, StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            if (item.Type.Offhand().IsOffhandType() && _items.ItemService.AwaitedService.TryGetValue(item.Id, false, out var offhand))
+            if (item.Type.Offhand().IsOffhandType() && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, false, out var offhand))
                 return FilterRegex?.IsMatch(offhand.ModelString)
                  ?? offhand.ModelString.Contains(FilterValue, StringComparison.OrdinalIgnoreCase);
 

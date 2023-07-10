@@ -167,27 +167,33 @@ public class DesignBase
 
     protected JObject SerializeEquipment()
     {
-        static JObject Serialize(uint itemId, StainId stain, bool apply, bool applyStain)
+        static JObject Serialize(ulong id, StainId stain, bool apply, bool applyStain)
             => new()
             {
-                ["ItemId"]     = itemId,
+                ["ItemId"]     = id,
                 ["Stain"]      = stain.Value,
                 ["Apply"]      = apply,
                 ["ApplyStain"] = applyStain,
             };
 
         var ret = new JObject();
-        foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
+        if (DesignData.IsHuman)
         {
-            var item  = DesignData.Item(slot);
-            var stain = DesignData.Stain(slot);
-            ret[slot.ToString()] = Serialize(item.Id, stain, DoApplyEquip(slot), DoApplyStain(slot));
-        }
+            foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
+            {
+                var item  = DesignData.Item(slot);
+                var stain = DesignData.Stain(slot);
+                ret[slot.ToString()] = Serialize(item.Id, stain, DoApplyEquip(slot), DoApplyStain(slot));
+            }
 
-        ret["Hat"]    = new QuadBool(DesignData.IsHatVisible(),    DoApplyHatVisible()).ToJObject("Show", "Apply");
-        ret["Visor"]  = new QuadBool(DesignData.IsVisorToggled(),  DoApplyVisorToggle()).ToJObject("IsToggled", "Apply");
-        ret["Weapon"] = new QuadBool(DesignData.IsWeaponVisible(), DoApplyWeaponVisible()).ToJObject("Show", "Apply");
-        ret["Array"]  = DesignData.WriteEquipmentBytesBase64();
+            ret["Hat"]    = new QuadBool(DesignData.IsHatVisible(),    DoApplyHatVisible()).ToJObject("Show", "Apply");
+            ret["Visor"]  = new QuadBool(DesignData.IsVisorToggled(),  DoApplyVisorToggle()).ToJObject("IsToggled", "Apply");
+            ret["Weapon"] = new QuadBool(DesignData.IsWeaponVisible(), DoApplyWeaponVisible()).ToJObject("Show", "Apply");
+        }
+        else
+        {
+            ret["Array"] = DesignData.WriteEquipmentBytesBase64();
+        }
 
         return ret;
     }
@@ -198,22 +204,25 @@ public class DesignBase
         {
             ["ModelId"] = DesignData.ModelId,
         };
+
         var customize = DesignData.Customize;
-        foreach (var idx in Enum.GetValues<CustomizeIndex>())
-        {
-            ret[idx.ToString()] = new JObject()
+        if (DesignData.IsHuman)
+            foreach (var idx in Enum.GetValues<CustomizeIndex>())
             {
-                ["Value"] = customize[idx].Value,
-                ["Apply"] = DoApplyCustomize(idx),
-            };
-        }
+                ret[idx.ToString()] = new JObject()
+                {
+                    ["Value"] = customize[idx].Value,
+                    ["Apply"] = DoApplyCustomize(idx),
+                };
+            }
+        else
+            ret["Array"] = customize.WriteBase64();
 
         ret["Wetness"] = new JObject()
         {
             ["Value"] = DesignData.IsWet(),
             ["Apply"] = DoApplyWetness(),
         };
-        ret["Array"] = DesignData.Customize.WriteBase64();
 
         return ret;
     }
@@ -235,12 +244,12 @@ public class DesignBase
     private static DesignBase LoadDesignV1Base(CustomizationService customizations, ItemManager items, JObject json)
     {
         var ret = new DesignBase(items);
-        LoadCustomize(customizations, json["Customize"], ret, "Temporary Design");
-        LoadEquip(items, json["Equipment"], ret, "Temporary Design");
+        LoadCustomize(customizations, json["Customize"], ret, "Temporary Design", false, true);
+        LoadEquip(items, json["Equipment"], ret, "Temporary Design", true);
         return ret;
     }
 
-    protected static void LoadEquip(ItemManager items, JToken? equip, DesignBase design, string name)
+    protected static void LoadEquip(ItemManager items, JToken? equip, DesignBase design, string name, bool allowUnknown)
     {
         if (equip == null)
         {
@@ -257,9 +266,9 @@ public class DesignBase
             return;
         }
 
-        static (uint, StainId, bool, bool) ParseItem(EquipSlot slot, JToken? item)
+        static (ulong, StainId, bool, bool) ParseItem(EquipSlot slot, JToken? item)
         {
-            var id         = item?["ItemId"]?.ToObject<uint>() ?? ItemManager.NothingId(slot);
+            var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot);
             var stain      = (StainId)(item?["Stain"]?.ToObject<byte>() ?? 0);
             var apply      = item?["Apply"]?.ToObject<bool>() ?? false;
             var applyStain = item?["ApplyStain"]?.ToObject<bool>() ?? false;
@@ -276,8 +285,8 @@ public class DesignBase
         {
             var (id, stain, apply, applyStain) = ParseItem(slot, equip[slot.ToString()]);
 
-            PrintWarning(items.ValidateItem(slot, id, out var item));
-            PrintWarning(items.ValidateStain(stain, out stain));
+            PrintWarning(items.ValidateItem(slot, id, out var item, allowUnknown));
+            PrintWarning(items.ValidateStain(stain, out stain, allowUnknown));
             design.DesignData.SetItem(slot, item);
             design.DesignData.SetStain(slot, stain);
             design.SetApplyEquip(slot, apply);
@@ -287,14 +296,14 @@ public class DesignBase
         {
             var (id, stain, apply, applyStain) = ParseItem(EquipSlot.MainHand, equip[EquipSlot.MainHand.ToString()]);
             if (id == ItemManager.NothingId(EquipSlot.MainHand))
-                id = items.DefaultSword.Id;
+                id = items.DefaultSword.ItemId;
             var (idOff, stainOff, applyOff, applyStainOff) = ParseItem(EquipSlot.OffHand, equip[EquipSlot.OffHand.ToString()]);
             if (id == ItemManager.NothingId(EquipSlot.OffHand))
                 id = ItemManager.NothingId(FullEquipType.Shield);
 
-            PrintWarning(items.ValidateWeapons(id, idOff, out var main, out var off));
-            PrintWarning(items.ValidateStain(stain,    out stain));
-            PrintWarning(items.ValidateStain(stainOff, out stainOff));
+            PrintWarning(items.ValidateWeapons((uint)id, (uint)idOff, out var main, out var off));
+            PrintWarning(items.ValidateStain(stain,    out stain,    allowUnknown));
+            PrintWarning(items.ValidateStain(stainOff, out stainOff, allowUnknown));
             design.DesignData.SetItem(EquipSlot.MainHand, main);
             design.DesignData.SetItem(EquipSlot.OffHand,  off);
             design.DesignData.SetStain(EquipSlot.MainHand, stain);
@@ -317,7 +326,8 @@ public class DesignBase
         design.DesignData.SetVisor(metaValue.ForcedValue);
     }
 
-    protected static void LoadCustomize(CustomizationService customizations, JToken? json, DesignBase design, string name)
+    protected static void LoadCustomize(CustomizationService customizations, JToken? json, DesignBase design, string name, bool forbidNonHuman,
+        bool allowUnknown)
     {
         if (json == null)
         {
@@ -341,7 +351,13 @@ public class DesignBase
 
         design.DesignData.ModelId = json["ModelId"]?.ToObject<uint>() ?? 0;
         PrintWarning(customizations.ValidateModelId(design.DesignData.ModelId, out design.DesignData.ModelId, out design.DesignData.IsHuman));
-        if (!design.DesignData.IsHuman)
+        if (design.DesignData.ModelId != 0 && forbidNonHuman)
+        {
+            PrintWarning("Model IDs different from 0 are not currently allowed, reset model id to 0.");
+            design.DesignData.ModelId = 0;
+            design.DesignData.IsHuman = true;
+        }
+        else if (!design.DesignData.IsHuman)
         {
             var arrayText = json["Array"]?.ToObject<string>() ?? string.Empty;
             design.DesignData.Customize.LoadBase64(arrayText);
@@ -366,7 +382,7 @@ public class DesignBase
         {
             var tok  = json[idx.ToString()];
             var data = (CustomizeValue)(tok?["Value"]?.ToObject<byte>() ?? 0);
-            PrintWarning(CustomizationService.ValidateCustomizeValue(set, design.DesignData.Customize.Face, idx, data, out data));
+            PrintWarning(CustomizationService.ValidateCustomizeValue(set, design.DesignData.Customize.Face, idx, data, out data, allowUnknown));
             var apply = tok?["Apply"]?.ToObject<bool>() ?? false;
             design.DesignData.Customize[idx] = data;
             design.SetApplyCustomize(idx, apply);

@@ -94,7 +94,7 @@ public class AutoDesignApplier : IDisposable
         }
     }
 
-    private void OnJobChange(Actor actor, Job _)
+    private void OnJobChange(Actor actor, Job oldJob, Job newJob)
     {
         if (!_config.EnableAutoDesigns || !actor.Identifier(_actors.AwaitedService, out var id))
             return;
@@ -102,16 +102,18 @@ public class AutoDesignApplier : IDisposable
         if (!GetPlayerSet(id, out var set))
         {
             if (_state.TryGetValue(id, out var s))
-                s.LastJob = actor.Job;
+                s.LastJob = (byte) newJob.Id;
             return;
         }
 
         if (!_state.GetOrCreate(id, actor, out var state))
             return;
 
-        var sameJob = state.LastJob == actor.Job;
+        if (oldJob.Id == newJob.Id && state.LastJob == newJob.Id)
+            return;
+
         state.LastJob = actor.Job;
-        Reduce(actor, state, set, sameJob);
+        Reduce(actor, state, set, state.LastJob == newJob.Id);
         _state.ReapplyState(actor);
     }
 
@@ -185,7 +187,7 @@ public class AutoDesignApplier : IDisposable
             if (equipFlags.HasFlag(flag))
             {
                 var item = design.Item(slot);
-                if (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.Id, out _))
+                if (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.ItemId, out _))
                 {
                     if (!respectManual || state[slot, false] is not StateChanged.Source.Manual)
                         _state.ChangeItem(state, slot, item, StateChanged.Source.Fixed);
@@ -206,7 +208,7 @@ public class AutoDesignApplier : IDisposable
         {
             var item = design.Item(EquipSlot.MainHand);
             if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type
-             && (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.Id, out _)))
+             && (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.ItemId, out _)))
             {
                 if (!respectManual || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual)
                     _state.ChangeItem(state, EquipSlot.MainHand, item, StateChanged.Source.Fixed);
@@ -218,7 +220,7 @@ public class AutoDesignApplier : IDisposable
         {
             var item = design.Item(EquipSlot.OffHand);
             if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type
-             && (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.Id, out _)))
+             && (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.ItemId, out _)))
             {
                 if (!respectManual || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual)
                     _state.ChangeItem(state, EquipSlot.OffHand, item, StateChanged.Source.Fixed);

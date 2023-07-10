@@ -13,7 +13,6 @@ using Newtonsoft.Json.Linq;
 using OtterGui;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using static OtterGui.Raii.ImRaii;
 
 namespace Glamourer.Designs;
 
@@ -260,28 +259,6 @@ public class DesignManager
         _event.Invoke(DesignChanged.Type.WriteProtection, design, value);
     }
 
-    public void ChangeModelId(Design design, uint modelId, Customize customize, nint equipData, bool isHuman)
-    {
-        var oldValue = design.DesignData.ModelId;
-
-        if (!isHuman)
-        {
-            design.DesignData.LoadNonHuman(modelId, customize, equipData);
-        }
-        else if (!design.DesignData.IsHuman)
-        {
-            design.DesignData.IsHuman = true;
-            design.DesignData.ModelId = modelId;
-            design.DesignData.SetDefaultEquipment(_items);
-            design.DesignData.Customize = Customize.Default;
-        }
-
-        design.LastEdit = DateTimeOffset.UtcNow;
-        Glamourer.Log.Debug($"Changed model id in design {design.Identifier} from {oldValue} to {modelId}.");
-        _saveService.QueueSave(design);
-        _event.Invoke(DesignChanged.Type.ModelId, design, (oldValue, modelId));
-    }
-
     /// <summary> Change a customization value. </summary>
     public void ChangeCustomize(Design design, CustomizeIndex idx, CustomizeValue value)
     {
@@ -332,7 +309,7 @@ public class DesignManager
     /// <summary> Change a non-weapon equipment piece. </summary>
     public void ChangeEquip(Design design, EquipSlot slot, EquipItem item)
     {
-        if (!_items.IsItemValid(slot, item.Id, out item))
+        if (!_items.IsItemValid(slot, item.ItemId, out item))
             return;
 
         var old = design.DesignData.Item(slot);
@@ -341,7 +318,7 @@ public class DesignManager
 
         design.LastEdit = DateTimeOffset.UtcNow;
         Glamourer.Log.Debug(
-            $"Set {slot.ToName()} equipment piece in design {design.Identifier} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}).");
+            $"Set {slot.ToName()} equipment piece in design {design.Identifier} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}).");
         _saveService.QueueSave(design);
         _event.Invoke(DesignChanged.Type.Equip, design, (old, item, slot));
     }
@@ -355,13 +332,13 @@ public class DesignManager
         {
             case EquipSlot.MainHand:
                 var newOff = currentOff;
-                if (!_items.IsItemValid(EquipSlot.MainHand, item.Id, out item))
+                if (!_items.IsItemValid(EquipSlot.MainHand, item.ItemId, out item))
                     return;
 
                 if (item.Type != currentMain.Type)
                 {
                     var newOffId = item.Type.Offhand().IsOffhandType()
-                        ? item.Id
+                        ? item.ItemId
                         : ItemManager.NothingId(item.Type.Offhand());
                     if (!_items.IsOffhandValid(item, newOffId, out newOff))
                         return;
@@ -373,12 +350,12 @@ public class DesignManager
                 design.LastEdit = DateTimeOffset.UtcNow;
                 _saveService.QueueSave(design);
                 Glamourer.Log.Debug(
-                    $"Set {EquipSlot.MainHand.ToName()} weapon in design {design.Identifier} from {currentMain.Name} ({currentMain.Id}) to {item.Name} ({item.Id}).");
+                    $"Set {EquipSlot.MainHand.ToName()} weapon in design {design.Identifier} from {currentMain.Name} ({currentMain.ItemId}) to {item.Name} ({item.ItemId}).");
                 _event.Invoke(DesignChanged.Type.Weapon, design, (currentMain, currentOff, item, newOff));
 
                 return;
             case EquipSlot.OffHand:
-                if (!_items.IsOffhandValid(currentOff.Type, item.Id, out item))
+                if (!_items.IsOffhandValid(currentOff.Type, item.ItemId, out item))
                     return;
 
                 if (!design.DesignData.SetItem(EquipSlot.OffHand, item))
@@ -387,7 +364,7 @@ public class DesignManager
                 design.LastEdit = DateTimeOffset.UtcNow;
                 _saveService.QueueSave(design);
                 Glamourer.Log.Debug(
-                    $"Set {EquipSlot.OffHand.ToName()} weapon in design {design.Identifier} from {currentOff.Name} ({currentOff.Id}) to {item.Name} ({item.Id}).");
+                    $"Set {EquipSlot.OffHand.ToName()} weapon in design {design.Identifier} from {currentOff.Name} ({currentOff.ItemId}) to {item.Name} ({item.ItemId}).");
                 _event.Invoke(DesignChanged.Type.Weapon, design, (currentMain, currentOff, currentMain, item));
                 return;
             default: return;
@@ -409,7 +386,7 @@ public class DesignManager
     /// <summary> Change the stain for any equipment piece. </summary>
     public void ChangeStain(Design design, EquipSlot slot, StainId stain)
     {
-        if (_items.ValidateStain(stain, out _).Length > 0)
+        if (_items.ValidateStain(stain, out _, false).Length > 0)
             return;
 
         var oldStain = design.DesignData.Stain(slot);
@@ -477,9 +454,6 @@ public class DesignManager
     /// <summary> Apply an entire design based on its appliance rules piece by piece. </summary>
     public void ApplyDesign(Design design, DesignBase other)
     {
-        ChangeModelId(design, other.DesignData.ModelId, other.DesignData.Customize, other.DesignData.GetEquipmentPtr(),
-            other.DesignData.IsHuman);
-
         if (other.DoApplyWetness())
             design.DesignData.SetIsWet(other.DesignData.IsWet());
         if (other.DoApplyHatVisible())

@@ -30,10 +30,10 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
 
     protected override int UpdateCurrentSelected(int currentSelected)
     {
-        if (CurrentSelection.Id == _currentItemId)
+        if (CurrentSelection.ItemId == _currentItemId)
             return currentSelected;
 
-        CurrentSelectionIdx = Items.IndexOf(i => i.Id == _currentItemId);
+        CurrentSelectionIdx = Items.IndexOf(i => i.ItemId == _currentItemId);
         CurrentSelection    = CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : default;
         return base.UpdateCurrentSelected(CurrentSelectionIdx);
     }

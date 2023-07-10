@@ -19,7 +19,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
         => HumanModels = humanModels;
 
     public (Customize NewValue, CustomizeFlag Applied, CustomizeFlag Changed) Combine(Customize oldValues, Customize newValues,
-        CustomizeFlag applyWhich)
+        CustomizeFlag applyWhich, bool allowUnknown)
     {
         CustomizeFlag applied = 0;
         CustomizeFlag changed = 0;
@@ -46,7 +46,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
                 continue;
 
             var value = newValues[index];
-            if (IsCustomizationValid(set, ret.Face, index, value))
+            if (allowUnknown || IsCustomizationValid(set, ret.Face, index, value))
             {
                 if (ret[index].Value != value.Value)
                     changed |= flag;
@@ -194,7 +194,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
 
     /// <summary>
     /// Check that the given model id is valid.
-    /// The returned model id is 0.
+    /// The returned model id is 0 if it is not.
     /// The return value is an empty string if everything was correct and a warning otherwise.
     /// </summary>
     public string ValidateModelId(uint modelId, out uint actualModelId, out bool isHuman)
@@ -217,9 +217,9 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     /// The return value is an empty string or a warning message.
     /// </summary>
     public static string ValidateCustomizeValue(CustomizationSet set, CustomizeValue face, CustomizeIndex index, CustomizeValue value,
-        out CustomizeValue actualValue)
+        out CustomizeValue actualValue, bool allowUnknown)
     {
-        if (IsCustomizationValid(set, face, index, value))
+        if (allowUnknown || IsCustomizationValid(set, face, index, value))
         {
             actualValue = value;
             return string.Empty;
@@ -279,7 +279,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
         CustomizeFlag flags = 0;
         foreach (var idx in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
         {
-            if (ValidateCustomizeValue(set, customize.Face, idx, customize[idx], out var fixedValue).Length > 0)
+            if (ValidateCustomizeValue(set, customize.Face, idx, customize[idx], out var fixedValue, false).Length > 0)
             {
                 customize[idx] =  fixedValue;
                 flags          |= idx.ToFlag();

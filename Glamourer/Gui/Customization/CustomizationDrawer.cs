@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Numerics;
 using System.Reflection;
+using Dalamud.Interface;
 using Dalamud.Plugin;
 using Glamourer.Customization;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
 
 namespace Glamourer.Gui.Customization;
 
 public partial class CustomizationDrawer : IDisposable
 {
+    private readonly CodeService _codes;
+
     private readonly Vector4                 _redTint = new(0.6f, 0.3f, 0.3f, 1f);
     private readonly ImGuiScene.TextureWrap? _legacyTattoo;
 
@@ -38,9 +42,10 @@ public partial class CustomizationDrawer : IDisposable
 
     private readonly CustomizationService _service;
 
-    public CustomizationDrawer(DalamudPluginInterface pi, CustomizationService service)
+    public CustomizationDrawer(DalamudPluginInterface pi, CustomizationService service, CodeService codes)
     {
         _service      = service;
+        _codes        = codes;
         _legacyTattoo = GetLegacyTattooIcon(pi);
         _customize    = Customize.Default;
     }
@@ -100,6 +105,9 @@ public partial class CustomizationDrawer : IDisposable
 
         try
         {
+            if (_codes.EnabledArtisan)
+                return DrawArtisan();
+
             DrawRaceGenderSelector();
             _set = _service.AwaitedService.GetList(_customize.Clan, _customize.Gender);
 
@@ -127,6 +135,31 @@ public partial class CustomizationDrawer : IDisposable
             ImGuiUtil.TextWrapped(_terminate.ToString());
             return false;
         }
+    }
+
+    private unsafe bool DrawArtisan()
+    {
+        for (var i = 0; i < CustomizeData.Size; ++i)
+        {
+            using var id    = ImRaii.PushId(i);
+            int       value = _customize.Data.Data[i];
+            ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
+            if (!ImGui.InputInt(string.Empty, ref value, 0, 0))
+                continue;
+
+            var newValue = (byte)Math.Clamp(value, 0, byte.MaxValue);
+            if (newValue != _customize.Data.Data[i])
+                foreach (var flag in Enum.GetValues<CustomizeIndex>())
+                {
+                    var (j, mask) = flag.ToByteAndMask();
+                    if (j == i)
+                        Changed |= flag.ToFlag();
+                }
+
+            _customize.Data.Data[i] = newValue;
+        }
+
+        return Changed != 0;
     }
 
     private void UpdateSizes()

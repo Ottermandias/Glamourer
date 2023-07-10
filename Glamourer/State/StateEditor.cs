@@ -23,10 +23,16 @@ public class StateEditor
     }
 
     /// <summary> Change the model id. If the actor is changed from a human to another human, customize and equipData are unused. </summary>
+    /// <remarks> We currently only allow changing things to humans, not humans to monsters. </remarks>
     public bool ChangeModelId(ActorState state, uint modelId, in Customize customize, nint equipData, StateChanged.Source source,
         out uint oldModelId, uint key = 0)
     {
         oldModelId = state.ModelData.ModelId;
+
+        // TODO think about this.
+        if (modelId != 0)
+            return false;
+
         if (!state.CanUnlock(key))
             return false;
 
@@ -94,7 +100,7 @@ public class StateEditor
         if (!state.CanUnlock(key))
             return false;
 
-        (var customize, var applied, changed) = _customizations.Combine(state.ModelData.Customize, customizeInput, applyWhich);
+        (var customize, var applied, changed) = _customizations.Combine(state.ModelData.Customize, customizeInput, applyWhich, true);
         if (changed == 0)
             return false;
 
@@ -128,6 +134,11 @@ public class StateEditor
         oldItem  = state.ModelData.Item(slot);
         oldStain = state.ModelData.Stain(slot);
         if (!state.CanUnlock(key))
+            return false;
+
+        // Can not change weapon type from expected type in state.
+        if (slot is EquipSlot.MainHand && item.Type != state.BaseData.MainhandType
+         || slot is EquipSlot.OffHand && item.Type != state.BaseData.MainhandType.Offhand())
             return false;
 
         state.ModelData.SetItem(slot, item);

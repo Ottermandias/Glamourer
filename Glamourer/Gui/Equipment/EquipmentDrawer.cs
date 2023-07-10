@@ -8,6 +8,7 @@ using Glamourer.Designs;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
@@ -22,10 +23,13 @@ public class EquipmentDrawer
     private readonly StainData                              _stainData;
     private readonly ItemCombo[]                            _itemCombo;
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
+    private readonly CodeService                            _codes;
 
-    public EquipmentDrawer(DataManager gameData, ItemManager items)
+
+    public EquipmentDrawer(DataManager gameData, ItemManager items, CodeService codes)
     {
         _items     = items;
+        _codes     = codes;
         _stainData = items.Stains;
         _stainCombo = new FilterComboColors(140,
             _stainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))));
@@ -57,9 +61,12 @@ public class EquipmentDrawer
     public bool DrawArmor(EquipItem current, EquipSlot slot, out EquipItem armor, Gender gender = Gender.Unknown, Race race = Race.Unknown)
     {
         Debug.Assert(slot.IsEquipment() || slot.IsAccessory(), $"Called {nameof(DrawArmor)} on {slot}.");
+        if (_codes.EnabledArtisan)
+            return DrawArmorArtisan(current, slot, out armor, gender, race);
+
         var combo = _itemCombo[slot.ToIndex()];
         armor = current;
-        var change = combo.Draw(VerifyRestrictedGear(armor, slot, gender, race), armor.Id, 320 * ImGuiHelpers.GlobalScale);
+        var change = combo.Draw(VerifyRestrictedGear(armor, slot, gender, race), armor.ItemId, 320 * ImGuiHelpers.GlobalScale);
         if (armor.ModelId.Value != 0)
         {
             ImGuiUtil.HoverTooltip("Right-click to clear.");
@@ -81,18 +88,82 @@ public class EquipmentDrawer
         return change;
     }
 
-    public bool DrawStain(StainId current, EquipSlot slot, out Stain stain)
+    public bool DrawArmorArtisan(EquipItem current, EquipSlot slot, out EquipItem armor, Gender gender = Gender.Unknown,
+        Race race = Race.Unknown)
     {
-        var found  = _stainData.TryGetValue(current, out stain);
+        using var id      = ImRaii.PushId((int)slot);
+        int       setId   = current.ModelId.Value;
+        int       variant = current.Variant;
+        var       ret     = false;
+        armor = current;
+        ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputInt("##setId", ref setId, 0, 0))
+        {
+            var newSetId = (SetId)Math.Clamp(setId, 0, ushort.MaxValue);
+            if (newSetId.Value != current.ModelId.Value)
+            {
+                armor = _items.Identify(slot, newSetId, current.Variant);
+                ret   = true;
+            }
+        }
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputInt("##variant", ref variant, 0, 0))
+        {
+            var newVariant = (byte)Math.Clamp(variant, 0, byte.MaxValue);
+            if (newVariant != current.Variant)
+            {
+                armor = _items.Identify(slot, current.ModelId, newVariant);
+                ret   = true;
+            }
+        }
+
+        return ret;
+    }
+
+    public bool DrawStain(StainId current, EquipSlot slot, out StainId ret)
+    {
+        if (_codes.EnabledArtisan)
+            return DrawStainArtisan(current, slot, out ret);
+
+        var found  = _stainData.TryGetValue(current, out var stain);
         var change = _stainCombo.Draw($"##stain{slot}", stain.RgbaColor, stain.Name, found);
         ImGuiUtil.HoverTooltip("Right-click to clear.");
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
         {
             stain = Stain.None;
+            ret   = stain.RowIndex;
             return true;
         }
 
-        return change && _stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain);
+        if (change && _stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
+        {
+            ret = stain.RowIndex;
+            return true;
+        }
+
+        ret = current;
+        return false;
+    }
+
+    public bool DrawStainArtisan(StainId current, EquipSlot slot, out StainId stain)
+    {
+        using var id      = ImRaii.PushId((int)slot);
+        int       stainId = current.Value;
+        ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputInt("##stain", ref stainId, 0, 0))
+        {
+            var newStainId = (StainId)Math.Clamp(stainId, 0, byte.MaxValue);
+            if (newStainId != current)
+            {
+                stain = newStainId;
+                return true;
+            }
+        }
+
+        stain = current;
+        return false;
     }
 
     public bool DrawMainhand(EquipItem current, bool drawAll, out EquipItem weapon)
@@ -101,7 +172,7 @@ public class EquipmentDrawer
         if (!_weaponCombo.TryGetValue(drawAll ? FullEquipType.Unknown : current.Type, out var combo))
             return false;
 
-        if (!combo.Draw(weapon.Name, weapon.Id, 320 * ImGuiHelpers.GlobalScale))
+        if (!combo.Draw(weapon.Name, weapon.ItemId, 320 * ImGuiHelpers.GlobalScale))
             return false;
 
         weapon = combo.CurrentSelection;
@@ -118,7 +189,7 @@ public class EquipmentDrawer
         if (!_weaponCombo.TryGetValue(offType, out var combo))
             return false;
 
-        var change = combo.Draw(weapon.Name, weapon.Id, 320 * ImGuiHelpers.GlobalScale);
+        var change = combo.Draw(weapon.Name, weapon.ItemId, 320 * ImGuiHelpers.GlobalScale);
         if (!offType.IsOffhandType() && weapon.ModelId.Value != 0)
         {
             ImGuiUtil.HoverTooltip("Right-click to clear.");

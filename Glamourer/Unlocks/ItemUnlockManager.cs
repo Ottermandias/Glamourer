@@ -125,10 +125,10 @@ public class ItemUnlockManager : ISavable, IDisposable
 
         bool AddItem(uint itemId)
         {
-            if (!_items.ItemService.AwaitedService.TryGetValue(itemId, out var equip) || !_unlocked.TryAdd(equip.Id, time))
+            if (!_items.ItemService.AwaitedService.TryGetValue(itemId, out var equip) || !_unlocked.TryAdd(equip.ItemId, time))
                 return false;
 
-            _event.Invoke(ObjectUnlocked.Type.Item, equip.Id, DateTimeOffset.FromUnixTimeMilliseconds(time));
+            _event.Invoke(ObjectUnlocked.Type.Item, equip.ItemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
             return true;
         }
 
@@ -274,7 +274,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         foreach (var row in cabinet)
         {
             if (items.ItemService.AwaitedService.TryGetValue(row.Item.Row, out var item))
-                ret.TryAdd(item.Id, new UnlockRequirements(row.RowId, 0, 0, 0, UnlockType.Cabinet));
+                ret.TryAdd(item.ItemId, new UnlockRequirements(row.RowId, 0, 0, 0, UnlockType.Cabinet));
         }
 
         var gilShop = gameData.GetExcelSheet<GilShopItem>()!;
@@ -290,7 +290,7 @@ public class ItemUnlockManager : ISavable, IDisposable
             var type = (quest1 != 0 ? UnlockType.Quest1 : 0)
               | (quest2 != 0 ? UnlockType.Quest2 : 0)
               | (achievement != 0 ? UnlockType.Achievement : 0);
-            ret.TryAdd(item.Id, new UnlockRequirements(quest1, quest2, achievement, state, type));
+            ret.TryAdd(item.ItemId, new UnlockRequirements(quest1, quest2, achievement, state, type));
         }
 
         return ret;
