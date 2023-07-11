@@ -17,7 +17,6 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Actors;
-using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
@@ -33,6 +32,7 @@ public class ActorPanel
     private readonly Configuration       _config;
     private readonly DesignConverter     _converter;
     private readonly ObjectManager       _objects;
+    private readonly DesignManager       _designManager;
 
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -42,7 +42,7 @@ public class ActorPanel
 
     public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer,
         EquipmentDrawer equipmentDrawer, IdentifierService identification, AutoDesignApplier autoDesignApplier,
-        Configuration config, DesignConverter converter, ObjectManager objects)
+        Configuration config, DesignConverter converter, ObjectManager objects, DesignManager designManager)
     {
         _selector            = selector;
         _stateManager        = stateManager;
@@ -53,6 +53,7 @@ public class ActorPanel
         _config              = config;
         _converter           = converter;
         _objects             = objects;
+        _designManager       = designManager;
     }
 
     public void Draw()
@@ -106,9 +107,11 @@ public class ActorPanel
         if (!child || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
             return;
 
-        ApplyClipboardButton();
+        SetFromClipboard();
         ImGui.SameLine();
-        CopyToClipboardButton();
+        ExportToClipboardButton();
+        ImGui.SameLine();
+        SaveDesignButton();
         ImGui.SameLine();
         DrawApplyToSelf();
         ImGui.SameLine();
@@ -222,7 +225,7 @@ public class ActorPanel
             _stateManager.TurnHuman(_state, StateChanged.Source.Manual);
     }
 
-    private void ApplyClipboardButton()
+    private void SetFromClipboard()
     {
         if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
                 "Try to apply a design from your clipboard.", false, true))
@@ -241,7 +244,7 @@ public class ActorPanel
         }
     }
 
-    private void CopyToClipboardButton()
+    private void ExportToClipboardButton()
     {
         if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Copy.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
                 "Copy the current design to your clipboard.", false, true))
@@ -302,5 +305,27 @@ public class ActorPanel
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
             _stateManager.ApplyDesign(_converter.Convert(_state!, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant), state,
                 StateChanged.Source.Manual);
+    }
+
+    private string      _newName   = string.Empty;
+    private DesignBase? _newDesign = null;
+
+    private void SaveDesignButton()
+    {
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Save.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
+                "Save the current state as a design.", !_state!.ModelData.IsHuman, true))
+        {
+            ImGui.OpenPopup("Save as Design");
+            _newName   = _state.Identifier.ToName();
+            _newDesign = _converter.Convert(_state, EquipFlagExtensions.All, CustomizeFlagExtensions.All);
+        }
+
+        if (ImGuiUtil.OpenNameField("Save as Design", ref _newName))
+        {
+            if (_newDesign != null && _newName.Length > 0)
+                _designManager.CreateClone(_newDesign, _newName);
+            _newDesign = null;
+            _newName   = string.Empty;
+        }
     }
 }

@@ -286,7 +286,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         var actors = _applier.ChangeHatState(state, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set Head Gear Visibility in state {state.Identifier} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set Head Gear Visibility in state {state.Identifier.Incognito(null)} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Other, source, state, actors, (old, value, ActorState.MetaIndex.HatState));
     }
 
@@ -298,7 +298,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         var actors = _applier.ChangeWeaponState(state, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set Weapon Visibility in state {state.Identifier} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set Weapon Visibility in state {state.Identifier.Incognito(null)} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Other, source, state, actors, (old, value, ActorState.MetaIndex.WeaponState));
     }
 
@@ -310,7 +310,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         var actors = _applier.ChangeVisor(state, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set Visor State in state {state.Identifier} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set Visor State in state {state.Identifier.Incognito(null)} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Other, source, state, actors, (old, value, ActorState.MetaIndex.VisorState));
     }
 
@@ -322,7 +322,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         var actors = _applier.ChangeVisor(state, true);
         Glamourer.Log.Verbose(
-            $"Set Wetness in state {state.Identifier} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set Wetness in state {state.Identifier.Incognito(null)} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Other, state[ActorState.MetaIndex.Wetness], state, actors, (old, value, ActorState.MetaIndex.Wetness));
     }
 

@@ -98,7 +98,7 @@ public class StateListener : IDisposable
     /// Invoked when a new draw object is created from a game object.
     /// We need to update all state: Model ID, Customize and Equipment.
     /// Weapons and meta flags are updated independently.
-    /// We also need to apply fixed designs here (TODO).
+    /// We also need to apply fixed designs here.
     /// </summary>
     private unsafe void OnCreatingCharacterBase(nint actorPtr, string _, nint modelPtr, nint customizePtr, nint equipDataPtr)
     {
@@ -107,9 +107,8 @@ public class StateListener : IDisposable
 
         ref var modelId   = ref *(uint*)modelPtr;
         ref var customize = ref *(Customize*)customizePtr;
-        if (_manager.TryGetValue(identifier, out var state))
+        if (_autoDesignApplier.Reduce(actor, identifier, out var state))
         {
-            _autoDesignApplier.Reduce(actor, identifier, state);
             switch (UpdateBaseData(actor, state, modelId, customizePtr, equipDataPtr))
             {
                 // TODO handle right

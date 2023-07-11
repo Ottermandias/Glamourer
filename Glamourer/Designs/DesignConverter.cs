@@ -39,6 +39,9 @@ public class DesignConverter
         return ShareJObject(design);
     }
 
+    public string ShareBase64(Design design)
+        => ShareBase64(ShareJObject(design));
+
     public string ShareBase64(DesignBase design)
         => ShareBase64(ShareJObject(design));
 

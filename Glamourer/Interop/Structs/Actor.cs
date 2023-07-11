@@ -2,7 +2,6 @@
 using System;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using FFXIVClientStructs.FFXIV.Client.System.String;
 using Glamourer.Customization;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;

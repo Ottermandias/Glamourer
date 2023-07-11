@@ -106,7 +106,7 @@ public class AutoDesignApplier : IDisposable
             return;
         }
 
-        if (!_state.GetOrCreate(id, actor, out var state))
+        if (!_state.TryGetValue(id, out var state))
             return;
 
         if (oldJob.Id == newJob.Id && state.LastJob == newJob.Id)
@@ -126,6 +126,27 @@ public class AutoDesignApplier : IDisposable
             return;
 
         Reduce(actor, state, set, false);
+    }
+
+    public bool Reduce(Actor actor, ActorIdentifier identifier, [NotNullWhen(true)] out ActorState? state)
+    {
+        AutoDesignSet set;
+        if (!_state.TryGetValue(identifier, out state))
+        {
+            if (!_config.EnableAutoDesigns)
+                return false;
+
+            if (!GetPlayerSet(identifier, out set!))
+                return false;
+
+            if (!_state.GetOrCreate(identifier, actor, out state))
+                return false;
+        }
+        else if (!GetPlayerSet(identifier, out set!))
+            return true;
+
+        Reduce(actor, state, set, true);
+        return true;
     }
 
     public void Reduce(Actor actor, ActorIdentifier identifier, ActorState state)

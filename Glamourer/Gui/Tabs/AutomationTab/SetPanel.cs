@@ -268,6 +268,8 @@ public class SetPanel
         _manager.ChangeApplicationType(set, autoDesignIndex, newType);
     }
 
+
+
     private static readonly IReadOnlyList<(AutoDesign.Type, string)> Types = new[]
     {
         (AutoDesign.Type.Customizations,

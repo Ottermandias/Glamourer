@@ -289,16 +289,16 @@ public class DesignPanel
 
     private void DrawButtonRow()
     {
-        DrawSetFromClipboard();
+        SetFromClipboardButton();
         ImGui.SameLine();
-        DrawExportToClipboard();
+        ExportToClipboardButton();
         ImGui.SameLine();
         DrawApplyToSelf();
         ImGui.SameLine();
         DrawApplyToTarget();
     }
 
-    private void DrawSetFromClipboard()
+    private void SetFromClipboardButton()
     {
         if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
                 "Try to apply a design from your clipboard.", _selector.Selected!.WriteProtected(), true))
@@ -317,7 +317,7 @@ public class DesignPanel
         }
     }
 
-    private void DrawExportToClipboard()
+    private void ExportToClipboardButton()
     {
         if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Copy.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
                 "Copy the current design to your clipboard.", false, true))
