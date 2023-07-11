@@ -24,6 +24,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool               EnableAutoDesigns           { get; set; } = true;
     public bool               IncognitoMode               { get; set; } = false;
     public bool               UnlockDetailMode            { get; set; } = true;
+    public bool               SkipInvalidCustomizations   { get; set; } = false;
     public MainWindow.TabType SelectedTab                 { get; set; } = MainWindow.TabType.Settings;
     public DoubleModifier     DeleteDesignModifier        { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
 

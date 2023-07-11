@@ -102,7 +102,7 @@ public class AutoDesignApplier : IDisposable
         if (!GetPlayerSet(id, out var set))
         {
             if (_state.TryGetValue(id, out var s))
-                s.LastJob = (byte) newJob.Id;
+                s.LastJob = (byte)newJob.Id;
             return;
         }
 
@@ -143,21 +143,12 @@ public class AutoDesignApplier : IDisposable
                 return false;
         }
         else if (!GetPlayerSet(identifier, out set!))
+        {
             return true;
+        }
 
         Reduce(actor, state, set, true);
         return true;
-    }
-
-    public void Reduce(Actor actor, ActorIdentifier identifier, ActorState state)
-    {
-        if (!_config.EnableAutoDesigns)
-            return;
-
-        if (!GetPlayerSet(identifier, out var set))
-            return;
-
-        Reduce(actor, state, set, true);
     }
 
     private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual)
@@ -273,6 +264,15 @@ public class AutoDesignApplier : IDisposable
 
         var           customize = state.ModelData.Customize;
         CustomizeFlag fixFlags  = 0;
+
+        // Skip invalid designs entirely.
+        if (_config.SkipInvalidCustomizations
+         && !_code.EnabledMesmer
+         && (customize.Clan != design.Customize.Clan
+             || customize.Gender != design.Customize.Gender
+             || customize.Face != design.Customize.Face))
+            return;
+
         if (customizeFlags.HasFlag(CustomizeFlag.Clan))
         {
             if (!respectManual || state[CustomizeIndex.Clan] is not StateChanged.Source.Manual)
@@ -283,6 +283,9 @@ public class AutoDesignApplier : IDisposable
 
         if (customizeFlags.HasFlag(CustomizeFlag.Gender))
         {
+            if (_config.SkipInvalidCustomizations && customize.Gender != design.Customize.Gender)
+                return;
+
             if (!respectManual || state[CustomizeIndex.Gender] is not StateChanged.Source.Manual)
                 fixFlags |= _customizations.ChangeGender(ref customize, design.Customize.Gender);
             customizeFlags      &= ~CustomizeFlag.Gender;
