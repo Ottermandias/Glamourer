@@ -190,7 +190,9 @@ public class EquipmentDrawer
             return false;
 
         var change = combo.Draw(weapon.Name, weapon.ItemId, 320 * ImGuiHelpers.GlobalScale);
-        if (!offType.IsOffhandType() && weapon.ModelId.Value != 0)
+        if (change)
+            weapon = combo.CurrentSelection;
+        else if (!offType.IsOffhandType() && weapon.ModelId.Value != 0)
         {
             ImGuiUtil.HoverTooltip("Right-click to clear.");
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
@@ -198,10 +200,6 @@ public class EquipmentDrawer
                 change = true;
                 weapon = ItemManager.NothingItem(offType);
             }
-        }
-        else if (change)
-        {
-            weapon = combo.CurrentSelection;
         }
 
         return change;

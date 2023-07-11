@@ -157,7 +157,7 @@ public class DesignPanel
 
             ImGui.SameLine();
             var oh = _selector.Selected!.DesignData.Item(EquipSlot.OffHand);
-            if (_equipmentDrawer.DrawMainhand(oh, false, out var newOh))
+            if (_equipmentDrawer.DrawOffhand(oh, newMh.Type, out var newOh))
                 _manager.ChangeWeapon(_selector.Selected!, EquipSlot.OffHand, newOh);
         }
     }

@@ -159,7 +159,7 @@ public class ActorPanel
 
             ImGui.SameLine();
             var oh = _state.ModelData.Item(EquipSlot.OffHand);
-            if (_equipmentDrawer.DrawMainhand(oh, false, out var newOh))
+            if (_equipmentDrawer.DrawOffhand(oh, newMh.Type, out var newOh))
                 _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOh, newOhStain, StateChanged.Source.Manual);
         }
     }
