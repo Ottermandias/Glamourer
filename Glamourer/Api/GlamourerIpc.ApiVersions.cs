@@ -18,7 +18,6 @@ public partial class GlamourerIpc
     public static FuncSubscriber<(int Major, int Minor)> ApiVersionsSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApiVersions);
 
-    [Obsolete($"This call is obsolete, please use {nameof(ApiVersions)} instead.")]
     public int ApiVersion()
         => CurrentApiVersionMajor;
 
