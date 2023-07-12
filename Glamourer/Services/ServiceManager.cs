@@ -56,7 +56,7 @@ public static class ServiceManager
             .AddSingleton<CodeService>()
             .AddSingleton<ConfigMigrationService>()
             .AddSingleton<Configuration>()
-            .AddSingleton<TextureCache>();
+            .AddSingleton<TextureService>();
 
     private static IServiceCollection AddEvents(this IServiceCollection services)
         => services.AddSingleton<VisorStateChanged>()
@@ -126,7 +126,8 @@ public static class ServiceManager
             .AddSingleton<PenumbraChangedItemTooltip>()
             .AddSingleton<AutomationTab>()
             .AddSingleton<SetSelector>()
-            .AddSingleton<SetPanel>();
+            .AddSingleton<SetPanel>()
+            .AddSingleton<IdentifierDrawer>();
 
     private static IServiceCollection AddApi(this IServiceCollection services)
         => services.AddSingleton<CommandService>()

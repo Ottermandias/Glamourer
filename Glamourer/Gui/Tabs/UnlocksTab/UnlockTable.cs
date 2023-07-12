@@ -10,7 +10,6 @@ using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
-using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Table;
 using Penumbra.GameData.Enums;
@@ -22,10 +21,10 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 {
     private readonly ObjectUnlocked _event;
 
-    public UnlockTable(ItemManager items, TextureCache cache, ItemUnlockManager itemUnlocks,
+    public UnlockTable(ItemManager items, TextureService textures, ItemUnlockManager itemUnlocks,
         PenumbraChangedItemTooltip tooltip, ObjectUnlocked @event)
         : base("ItemUnlockTable", new ItemList(items),
-            new NameColumn(cache, tooltip) { Label    = "Item Name..." },
+            new NameColumn(textures, tooltip) { Label = "Item Name..." },
             new SlotColumn() { Label                  = "Equip Slot" },
             new TypeColumn() { Label                  = "Item Type..." },
             new UnlockDateColumn(itemUnlocks) { Label = "Unlocked" },
@@ -36,7 +35,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         Sortable =  true;
         Flags    |= ImGuiTableFlags.Hideable;
         _event.Subscribe(OnObjectUnlock, ObjectUnlocked.Priority.UnlockTable);
-        cache.Logger = Glamourer.Log;
+        textures.Logger = Glamourer.Log;
     }
 
     public void Dispose()
@@ -44,13 +43,13 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
     private sealed class NameColumn : ColumnString<EquipItem>
     {
-        private readonly TextureCache               _textures;
+        private readonly TextureService             _textures;
         private readonly PenumbraChangedItemTooltip _tooltip;
 
         public override float Width
             => 400 * ImGuiHelpers.GlobalScale;
 
-        public NameColumn(TextureCache textures, PenumbraChangedItemTooltip tooltip)
+        public NameColumn(TextureService textures, PenumbraChangedItemTooltip tooltip)
         {
             _textures =  textures;
             _tooltip  =  tooltip;

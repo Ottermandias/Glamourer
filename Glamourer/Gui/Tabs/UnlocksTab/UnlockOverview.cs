@@ -21,7 +21,7 @@ public class UnlockOverview
     private readonly CustomizationService       _customizations;
     private readonly CustomizeUnlockManager     _customizeUnlocks;
     private readonly PenumbraChangedItemTooltip _tooltip;
-    private readonly TextureCache               _textureCache;
+    private readonly TextureService             _textures;
 
     private static readonly Vector4 UnavailableTint = new(0.3f, 0.3f, 0.3f, 1.0f);
 
@@ -67,14 +67,14 @@ public class UnlockOverview
     }
 
     public UnlockOverview(ItemManager items, CustomizationService customizations, ItemUnlockManager itemUnlocks,
-        CustomizeUnlockManager customizeUnlocks, PenumbraChangedItemTooltip tooltip, TextureCache textureCache)
+        CustomizeUnlockManager customizeUnlocks, PenumbraChangedItemTooltip tooltip, TextureService textures)
     {
         _items            = items;
         _customizations   = customizations;
         _itemUnlocks      = itemUnlocks;
         _customizeUnlocks = customizeUnlocks;
         _tooltip          = tooltip;
-        _textureCache     = textureCache;
+        _textures         = textures;
     }
 
     public void Draw()
@@ -154,7 +154,7 @@ public class UnlockOverview
         void DrawItem(EquipItem item)
         {
             var unlocked   = _itemUnlocks.IsUnlocked(item.ItemId, out var time);
-            var iconHandle = _textureCache.LoadIcon(item.IconId);
+            var iconHandle = _textures.LoadIcon(item.IconId);
             if (!iconHandle.HasValue)
                 return;
 

@@ -15,12 +15,15 @@ namespace Glamourer.Gui.Equipment;
 
 public sealed class ItemCombo : FilterComboCache<EquipItem>
 {
+    private readonly TextureService _textures;
+
     public readonly string Label;
     private         uint   _currentItem;
 
-    public ItemCombo(DataManager gameData, ItemManager items, EquipSlot slot)
+    public ItemCombo(DataManager gameData, ItemManager items, EquipSlot slot, TextureService textures)
         : base(() => GetItems(items, slot))
     {
+        _textures    = textures;
         Label        = GetLabel(gameData, slot);
         _currentItem = ItemManager.NothingId(slot);
     }
@@ -40,7 +43,6 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
         CurrentSelectionIdx = Items.IndexOf(i => i.ItemId == _currentItem);
         CurrentSelection    = CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : default;
         return base.UpdateCurrentSelected(CurrentSelectionIdx);
-
     }
 
     public bool Draw(string previewName, uint previewIdx, float width)

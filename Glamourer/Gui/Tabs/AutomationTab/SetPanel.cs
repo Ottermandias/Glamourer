@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -12,12 +11,12 @@ using Glamourer.Services;
 using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Action = System.Action;
+using CustomizeIndex = Glamourer.Customization.CustomizeIndex;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
@@ -29,8 +28,9 @@ public class SetPanel
     private readonly CustomizeUnlockManager _customizeUnlocks;
     private readonly CustomizationService   _customizations;
 
-    private readonly DesignCombo   _designCombo;
-    private readonly JobGroupCombo _jobGroupCombo;
+    private readonly DesignCombo      _designCombo;
+    private readonly JobGroupCombo    _jobGroupCombo;
+    private readonly IdentifierDrawer _identifierDrawer;
 
     private string? _tempName;
     private int     _dragIndex = -1;
@@ -38,13 +38,14 @@ public class SetPanel
     private Action? _endAction;
 
     public SetPanel(SetSelector selector, AutoDesignManager manager, DesignManager designs, JobService jobs, ItemUnlockManager itemUnlocks,
-        CustomizeUnlockManager customizeUnlocks, CustomizationService customizations)
+        CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer)
     {
         _selector         = selector;
         _manager          = manager;
         _itemUnlocks      = itemUnlocks;
         _customizeUnlocks = customizeUnlocks;
         _customizations   = customizations;
+        _identifierDrawer = identifierDrawer;
         _designCombo      = new DesignCombo(_manager, designs);
         _jobGroupCombo    = new JobGroupCombo(manager, jobs);
     }
@@ -100,6 +101,9 @@ public class SetPanel
         var enabled = Selection.Enabled;
         if (ImGui.Checkbox("Enabled", ref enabled))
             _manager.SetState(_selector.SelectionIndex, enabled);
+
+        ImGui.Separator();
+        DrawIdentifierSelection(_selector.SelectionIndex);
 
         DrawDesignTable();
     }
@@ -201,7 +205,10 @@ public class SetPanel
         sb.Clear();
         var sb2       = new StringBuilder();
         var customize = design.Design.DesignData.Customize;
-        var set       = _customizations.AwaitedService.GetList(customize.Clan, customize.Gender);
+        if (!design.Design.DesignData.IsHuman)
+            sb.AppendLine("The base model id can not be changed automatically to something non-human.");
+
+        var set = _customizations.AwaitedService.GetList(customize.Clan, customize.Gender);
         foreach (var type in CustomizationExtensions.All)
         {
             var flag = type.ToFlag();
@@ -268,6 +275,21 @@ public class SetPanel
         _manager.ChangeApplicationType(set, autoDesignIndex, newType);
     }
 
+    private void DrawIdentifierSelection(int setIndex)
+    {
+        using var id = ImRaii.PushId("Identifiers");
+        _identifierDrawer.DrawWorld(200);
+        _identifierDrawer.DrawName(300);
+        _identifierDrawer.DrawNpcs(300);
+        if (ImGuiUtil.DrawDisabledButton("Set to Retainer", new Vector2(100, 0), string.Empty, !_identifierDrawer.CanSetRetainer))
+            _manager.ChangeIdentifier(setIndex, _identifierDrawer.RetainerIdentifier);
+        ImGui.SameLine();
+        if (ImGuiUtil.DrawDisabledButton("Set to Character", new Vector2(100, 0), string.Empty, !_identifierDrawer.CanSetPlayer))
+            _manager.ChangeIdentifier(setIndex, _identifierDrawer.PlayerIdentifier);
+        ImGui.SameLine();
+        if (ImGuiUtil.DrawDisabledButton("Set to Npc", new Vector2(100, 0), string.Empty, !_identifierDrawer.CanSetNpc))
+            _manager.ChangeIdentifier(setIndex, _identifierDrawer.NpcIdentifier);
+    }
 
 
     private static readonly IReadOnlyList<(AutoDesign.Type, string)> Types = new[]

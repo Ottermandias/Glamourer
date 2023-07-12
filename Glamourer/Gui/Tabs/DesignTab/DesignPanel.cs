@@ -127,6 +127,7 @@ public class DesignPanel
         if (!ImGui.CollapsingHeader("Equipment"))
             return;
 
+        _equipmentDrawer.Prepare();
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var stain = _selector.Selected!.DesignData.Stain(slot);

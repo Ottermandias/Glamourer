@@ -1304,7 +1304,7 @@ public unsafe class DebugTab : ITab
             ImGuiUtil.DrawTableColumn(set.Enabled.ToString());
 
             ImGuiUtil.DrawTableColumn("Actor");
-            ImGuiUtil.DrawTableColumn(set.Identifier.ToString());
+            ImGuiUtil.DrawTableColumn(set.Identifiers[0].ToString());
 
             foreach (var (design, designIdx) in set.Designs.WithIndex())
             {

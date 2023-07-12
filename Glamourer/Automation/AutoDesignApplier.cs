@@ -68,24 +68,27 @@ public class AutoDesignApplier : IDisposable
             case AutomationChanged.Type.ChangedDesign:
             case AutomationChanged.Type.ChangedConditions:
                 _objects.Update();
-                if (_objects.TryGetValue(set.Identifier, out var data))
+                foreach (var id1 in set.Identifiers)
                 {
-                    if (_state.GetOrCreate(set.Identifier, data.Objects[0], out var state))
+                    if (_objects.TryGetValue(id1, out var data))
                     {
-                        Reduce(data.Objects[0], state, set, false);
-                        foreach (var actor in data.Objects)
-                            _state.ReapplyState(actor);
-                    }
-                }
-                else if (_objects.TryGetValueAllWorld(set.Identifier, out data))
-                {
-                    foreach (var actor in data.Objects)
-                    {
-                        var id = actor.GetIdentifier(_actors.AwaitedService);
-                        if (_state.GetOrCreate(id, actor, out var state))
+                        if (_state.GetOrCreate(id1, data.Objects[0], out var state))
                         {
-                            Reduce(actor, state, set, false);
-                            _state.ReapplyState(actor);
+                            Reduce(data.Objects[0], state, set, false);
+                            foreach (var actor in data.Objects)
+                                _state.ReapplyState(actor);
+                        }
+                    }
+                    else if (_objects.TryGetValueAllWorld(id1, out data))
+                    {
+                        foreach (var actor in data.Objects)
+                        {
+                            var id = actor.GetIdentifier(_actors.AwaitedService);
+                            if (_state.GetOrCreate(id, actor, out var state))
+                            {
+                                Reduce(actor, state, set, false);
+                                _state.ReapplyState(actor);
+                            }
                         }
                     }
                 }
@@ -264,6 +267,10 @@ public class AutoDesignApplier : IDisposable
 
         var           customize = state.ModelData.Customize;
         CustomizeFlag fixFlags  = 0;
+
+        // Skip anything not human.
+        if (!state.ModelData.IsHuman || !design.IsHuman)
+            return;
 
         // Skip invalid designs entirely.
         if (_config.SkipInvalidCustomizations

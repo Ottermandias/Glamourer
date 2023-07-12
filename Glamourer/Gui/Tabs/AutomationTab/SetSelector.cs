@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
 using Glamourer.Automation;
@@ -118,7 +119,7 @@ public class SetSelector : IDisposable
         _list.Clear();
         foreach (var set in _manager)
         {
-            var id = set.Identifier.ToString();
+            var id = set.Identifiers[0].ToString();
             if (CheckFilters(set, id))
                 _list.Add(set);
         }
@@ -195,11 +196,11 @@ public class SetSelector : IDisposable
 
         DrawDragDrop(set, index);
 
-        var text = set.Identifier.ToString();
+        var text = set.Identifiers[0].ToString();
         if (IncognitoMode)
-            text = set.Identifier.Incognito(text);
+            text = set.Identifiers[0].Incognito(text);
         var textSize  = ImGui.CalcTextSize(text);
-        var textColor = _objects.ContainsKey(set.Identifier) ? ColorId.AutomationActorAvailable : ColorId.AutomationActorUnavailable;
+        var textColor = set.Identifiers.Any(_objects.ContainsKey) ? ColorId.AutomationActorAvailable : ColorId.AutomationActorUnavailable;
         ImGui.SetCursorPos(new Vector2(ImGui.GetContentRegionAvail().X - textSize.X,
             ImGui.GetCursorPosY() - ImGui.GetTextLineHeightWithSpacing()));
         ImGuiUtil.TextColored(textColor.Value(), text);

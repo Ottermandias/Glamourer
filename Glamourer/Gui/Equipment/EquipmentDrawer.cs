@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using Dalamud.Data;
 using Dalamud.Interface;
 using Glamourer.Designs;
@@ -24,16 +25,17 @@ public class EquipmentDrawer
     private readonly ItemCombo[]                            _itemCombo;
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
     private readonly CodeService                            _codes;
+    private readonly TextureService                         _textures;
 
-
-    public EquipmentDrawer(DataManager gameData, ItemManager items, CodeService codes)
+    public EquipmentDrawer(DataManager gameData, ItemManager items, CodeService codes, TextureService textures)
     {
         _items     = items;
         _codes     = codes;
+        _textures  = textures;
         _stainData = items.Stains;
         _stainCombo = new FilterComboColors(140,
             _stainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))));
-        _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e)).ToArray();
+        _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, textures)).ToArray();
         _weaponCombo = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
         foreach (var type in Enum.GetValues<FullEquipType>())
         {
@@ -44,6 +46,15 @@ public class EquipmentDrawer
         }
 
         _weaponCombo.Add(FullEquipType.Unknown, new WeaponCombo(items, FullEquipType.Unknown));
+    }
+
+    private Vector2 _iconSize;
+    private float   _comboLength;
+
+    public void Prepare()
+    {
+        _iconSize    = new Vector2(2 * ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y);
+        _comboLength = 320 * ImGuiHelpers.GlobalScale;
     }
 
     private string VerifyRestrictedGear(EquipItem gear, EquipSlot slot, Gender gender, Race race)
@@ -61,12 +72,20 @@ public class EquipmentDrawer
     public bool DrawArmor(EquipItem current, EquipSlot slot, out EquipItem armor, Gender gender = Gender.Unknown, Race race = Race.Unknown)
     {
         Debug.Assert(slot.IsEquipment() || slot.IsAccessory(), $"Called {nameof(DrawArmor)} on {slot}.");
+
         if (_codes.EnabledArtisan)
             return DrawArmorArtisan(current, slot, out armor, gender, race);
 
+        current.DrawIcon(_textures, _iconSize);
+        ImGui.SameLine();
+        using var group = ImRaii.Group();
+
         var combo = _itemCombo[slot.ToIndex()];
         armor = current;
-        var change = combo.Draw(VerifyRestrictedGear(armor, slot, gender, race), armor.ItemId, 320 * ImGuiHelpers.GlobalScale);
+        var change = combo.Draw(VerifyRestrictedGear(armor, slot, gender, race), armor.ItemId, _comboLength);
+        if (change)
+            armor = combo.CurrentSelection;
+
         if (armor.ModelId.Value != 0)
         {
             ImGuiUtil.HoverTooltip("Right-click to clear.");
@@ -75,51 +94,9 @@ public class EquipmentDrawer
                 change = true;
                 armor  = ItemManager.NothingItem(slot);
             }
-            else if (change)
-            {
-                armor = combo.CurrentSelection;
-            }
-        }
-        else if (change)
-        {
-            armor = combo.CurrentSelection;
         }
 
         return change;
-    }
-
-    public bool DrawArmorArtisan(EquipItem current, EquipSlot slot, out EquipItem armor, Gender gender = Gender.Unknown,
-        Race race = Race.Unknown)
-    {
-        using var id      = ImRaii.PushId((int)slot);
-        int       setId   = current.ModelId.Value;
-        int       variant = current.Variant;
-        var       ret     = false;
-        armor = current;
-        ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt("##setId", ref setId, 0, 0))
-        {
-            var newSetId = (SetId)Math.Clamp(setId, 0, ushort.MaxValue);
-            if (newSetId.Value != current.ModelId.Value)
-            {
-                armor = _items.Identify(slot, newSetId, current.Variant);
-                ret   = true;
-            }
-        }
-
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt("##variant", ref variant, 0, 0))
-        {
-            var newVariant = (byte)Math.Clamp(variant, 0, byte.MaxValue);
-            if (newVariant != current.Variant)
-            {
-                armor = _items.Identify(slot, current.ModelId, newVariant);
-                ret   = true;
-            }
-        }
-
-        return ret;
     }
 
     public bool DrawStain(StainId current, EquipSlot slot, out StainId ret)
@@ -128,42 +105,19 @@ public class EquipmentDrawer
             return DrawStainArtisan(current, slot, out ret);
 
         var found  = _stainData.TryGetValue(current, out var stain);
-        var change = _stainCombo.Draw($"##stain{slot}", stain.RgbaColor, stain.Name, found);
+        var change = _stainCombo.Draw($"##stain{slot}", stain.RgbaColor, stain.Name, found, stain.Gloss, _comboLength);
+        ret = current;
+        if (change && _stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
+            ret = stain.RowIndex;
+
         ImGuiUtil.HoverTooltip("Right-click to clear.");
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
         {
-            stain = Stain.None;
-            ret   = stain.RowIndex;
-            return true;
+            ret    = Stain.None.RowIndex;
+            change = true;
         }
 
-        if (change && _stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
-        {
-            ret = stain.RowIndex;
-            return true;
-        }
-
-        ret = current;
-        return false;
-    }
-
-    public bool DrawStainArtisan(StainId current, EquipSlot slot, out StainId stain)
-    {
-        using var id      = ImRaii.PushId((int)slot);
-        int       stainId = current.Value;
-        ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt("##stain", ref stainId, 0, 0))
-        {
-            var newStainId = (StainId)Math.Clamp(stainId, 0, byte.MaxValue);
-            if (newStainId != current)
-            {
-                stain = newStainId;
-                return true;
-            }
-        }
-
-        stain = current;
-        return false;
+        return change;
     }
 
     public bool DrawMainhand(EquipItem current, bool drawAll, out EquipItem weapon)
@@ -191,7 +145,9 @@ public class EquipmentDrawer
 
         var change = combo.Draw(weapon.Name, weapon.ItemId, 320 * ImGuiHelpers.GlobalScale);
         if (change)
+        {
             weapon = combo.CurrentSelection;
+        }
         else if (!offType.IsOffhandType() && weapon.ModelId.Value != 0)
         {
             ImGuiUtil.HoverTooltip("Right-click to clear.");
@@ -229,4 +185,59 @@ public class EquipmentDrawer
 
     public bool DrawWetness(bool current, out bool on)
         => DrawCheckbox("##wetness", current, out on);
+
+    /// <summary> Draw an input for armor that can set arbitrary values instead of choosing items. </summary>
+    private bool DrawArmorArtisan(EquipItem current, EquipSlot slot, out EquipItem armor, Gender gender = Gender.Unknown,
+        Race race = Race.Unknown)
+    {
+        using var id      = ImRaii.PushId((int)slot);
+        int       setId   = current.ModelId.Value;
+        int       variant = current.Variant;
+        var       ret     = false;
+        armor = current;
+        ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputInt("##setId", ref setId, 0, 0))
+        {
+            var newSetId = (SetId)Math.Clamp(setId, 0, ushort.MaxValue);
+            if (newSetId.Value != current.ModelId.Value)
+            {
+                armor = _items.Identify(slot, newSetId, current.Variant);
+                ret   = true;
+            }
+        }
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputInt("##variant", ref variant, 0, 0))
+        {
+            var newVariant = (byte)Math.Clamp(variant, 0, byte.MaxValue);
+            if (newVariant != current.Variant)
+            {
+                armor = _items.Identify(slot, current.ModelId, newVariant);
+                ret   = true;
+            }
+        }
+
+        return ret;
+    }
+
+    /// <summary> Draw an input for stain that can set arbitrary values instead of choosing valid stains. </summary>
+    private bool DrawStainArtisan(StainId current, EquipSlot slot, out StainId stain)
+    {
+        using var id      = ImRaii.PushId((int)slot);
+        int       stainId = current.Value;
+        ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputInt("##stain", ref stainId, 0, 0))
+        {
+            var newStainId = (StainId)Math.Clamp(stainId, 0, byte.MaxValue);
+            if (newStainId != current)
+            {
+                stain = newStainId;
+                return true;
+            }
+        }
+
+        stain = current;
+        return false;
+    }
 }

@@ -130,6 +130,7 @@ public class ActorPanel
         if (_customizationDrawer.Draw(_state!.ModelData.Customize, false))
             _stateManager.ChangeCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, StateChanged.Source.Manual);
 
+        _equipmentDrawer.Prepare();
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var stain = _state.ModelData.Stain(slot);

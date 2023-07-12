@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Utility;
 using Glamourer.Designs;
@@ -11,7 +12,6 @@ using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Structs;
-using Glamourer.Unlocks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui.Filesystem;
@@ -29,7 +29,6 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
     private readonly DesignManager     _designs;
     private readonly ActorService      _actors;
     private readonly AutomationChanged _event;
-    private readonly ItemUnlockManager _unlockManager;
 
     private readonly List<AutoDesignSet>                        _data    = new();
     private readonly Dictionary<ActorIdentifier, AutoDesignSet> _enabled = new();
@@ -38,14 +37,13 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         => _enabled;
 
     public AutoDesignManager(JobService jobs, ActorService actors, SaveService saveService, DesignManager designs, AutomationChanged @event,
-        FixedDesignMigrator migrator, DesignFileSystem fileSystem, ItemUnlockManager unlockManager)
+        FixedDesignMigrator migrator, DesignFileSystem fileSystem)
     {
-        _jobs          = jobs;
-        _actors        = actors;
-        _saveService   = saveService;
-        _designs       = designs;
-        _event         = @event;
-        _unlockManager = unlockManager;
+        _jobs        = jobs;
+        _actors      = actors;
+        _saveService = saveService;
+        _designs     = designs;
+        _event       = @event;
         Load();
         migrator.ConsumeMigratedData(_actors, fileSystem, this);
     }
@@ -64,13 +62,13 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
 
     public void AddDesignSet(string name, ActorIdentifier identifier)
     {
-        if (!IdentifierValid(identifier) || name.Length == 0)
+        if (!IdentifierValid(identifier, out var group) || name.Length == 0)
             return;
 
-        var newSet = new AutoDesignSet(name, identifier.CreatePermanent()) { Enabled = false };
+        var newSet = new AutoDesignSet(name, group) { Enabled = false };
         _data.Add(newSet);
         Save();
-        Glamourer.Log.Debug($"Created new design set for {newSet.Identifier.Incognito(null)}.");
+        Glamourer.Log.Debug($"Created new design set for {newSet.Identifiers[0].Incognito(null)}.");
         _event.Invoke(AutomationChanged.Type.AddedSet, newSet, (_data.Count - 1, name));
     }
 
@@ -90,12 +88,12 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             name += " (Duplicate)";
         }
 
-        var newSet = new AutoDesignSet(name, set.Identifier) { Enabled = false };
+        var newSet = new AutoDesignSet(name, set.Identifiers) { Enabled = false };
         newSet.Designs.AddRange(set.Designs.Select(d => d.Clone()));
         _data.Add(newSet);
         Save();
         Glamourer.Log.Debug(
-            $"Duplicated new design set for {newSet.Identifier.Incognito(null)} with {newSet.Designs.Count} auto designs from existing set.");
+            $"Duplicated new design set for {newSet.Identifiers[0].Incognito(null)} with {newSet.Designs.Count} auto designs from existing set.");
         _event.Invoke(AutomationChanged.Type.AddedSet, newSet, (_data.Count - 1, name));
     }
 
@@ -108,7 +106,8 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         if (set.Enabled)
         {
             set.Enabled = false;
-            _enabled.Remove(set.Identifier);
+            foreach (var id in set.Identifiers)
+                _enabled.Remove(id);
         }
 
         _data.RemoveAt(whichSet);
@@ -146,26 +145,33 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
 
     public void ChangeIdentifier(int whichSet, ActorIdentifier to)
     {
-        if (whichSet >= _data.Count || whichSet < 0 || !IdentifierValid(to))
+        if (whichSet >= _data.Count || whichSet < 0 || !IdentifierValid(to, out var group))
             return;
 
         var set = _data[whichSet];
-        if (set.Identifier == to)
+        if (set.Identifiers.Any(id => id == to))
             return;
 
-        var old = set.Identifier;
-        set.Identifier = to.CreatePermanent();
+        var old = set.Identifiers;
+        set.Identifiers = group;
         AutoDesignSet? oldEnabled = null;
         if (set.Enabled)
         {
-            _enabled.Remove(old);
+            foreach (var id in old)
+                _enabled.Remove(id);
             if (_enabled.Remove(to, out oldEnabled))
+            {
+                foreach (var id in oldEnabled.Identifiers)
+                    _enabled.Remove(id);
                 oldEnabled.Enabled = false;
-            _enabled.Add(set.Identifier, set);
+            }
+
+            foreach (var id in group)
+                _enabled.Add(id, set);
         }
 
         Save();
-        Glamourer.Log.Debug($"Changed Identifier of design set {whichSet + 1} from {old.Incognito(null)} to {to.Incognito(null)}.");
+        Glamourer.Log.Debug($"Changed Identifier of design set {whichSet + 1} from {old[0].Incognito(null)} to {to.Incognito(null)}.");
         _event.Invoke(AutomationChanged.Type.ChangeIdentifier, set, (old, to, oldEnabled));
     }
 
@@ -182,13 +188,20 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         AutoDesignSet? oldEnabled = null;
         if (value)
         {
-            if (_enabled.Remove(set.Identifier, out oldEnabled))
+            if (_enabled.Remove(set.Identifiers[0], out oldEnabled))
+            {
+                foreach (var id in oldEnabled.Identifiers)
+                    _enabled.Remove(id);
                 oldEnabled.Enabled = false;
-            _enabled.Add(set.Identifier, set);
+            }
+
+            foreach (var id in set.Identifiers)
+                _enabled.Add(id, set);
         }
-        else
+        else if (_enabled.Remove(set.Identifiers[0], out oldEnabled))
         {
-            _enabled.Remove(set.Identifier, out oldEnabled);
+            foreach (var id in oldEnabled.Identifiers)
+                _enabled.Remove(id);
         }
 
         Save();
@@ -353,7 +366,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             }
 
             var id = _actors.AwaitedService.FromJson(obj["Identifier"] as JObject);
-            if (!IdentifierValid(id))
+            if (!IdentifierValid(id, out var group))
             {
                 Glamourer.Chat.NotificationMessage("Skipped loading Automation Set: Invalid Identifier.", "Warning", NotificationType.Warning);
                 continue;
@@ -365,8 +378,13 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             };
 
             if (set.Enabled)
-                if (!_enabled.TryAdd(set.Identifier, set))
+            {
+                if (_enabled.TryAdd(group[0], set))
+                    foreach (var id2 in group.Skip(1))
+                        _enabled[id2] = set;
+                else
                     set.Enabled = false;
+            }
 
             _data.Add(set);
 
@@ -377,7 +395,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             {
                 if (designObj is not JObject j)
                 {
-                    Glamourer.Chat.NotificationMessage($"Skipped loading design in Automation Set for {set.Identifier}: Unknown design.");
+                    Glamourer.Chat.NotificationMessage($"Skipped loading design in Automation Set for {id.Incognito(null)}: Unknown design.");
                     continue;
                 }
 
@@ -442,16 +460,57 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
     private void Save()
         => _saveService.DelaySave(this);
 
-    private static bool IdentifierValid(ActorIdentifier identifier)
+    private bool IdentifierValid(ActorIdentifier identifier, out ActorIdentifier[] group)
     {
-        if (!identifier.IsValid)
-            return false;
-
-        return identifier.Type switch
+        var validType = identifier.Type switch
         {
             IdentifierType.Player   => true,
             IdentifierType.Retainer => true,
+            IdentifierType.Npc      => true,
             _                       => false,
+        };
+
+        if (!validType)
+        {
+            group = Array.Empty<ActorIdentifier>();
+            return false;
+        }
+
+        group = GetGroup(identifier);
+        return group.Length > 0;
+    }
+
+    private ActorIdentifier[] GetGroup(ActorIdentifier identifier)
+    {
+        if (!identifier.IsValid)
+            return Array.Empty<ActorIdentifier>();
+
+        static ActorIdentifier[] CreateNpcs(ActorManager manager, ActorIdentifier identifier)
+        {
+            var name = manager.Data.ToName(identifier.Kind, identifier.DataId);
+            var table = identifier.Kind switch
+            {
+                ObjectKind.BattleNpc => manager.Data.BNpcs,
+                ObjectKind.EventNpc  => manager.Data.ENpcs,
+                _                    => throw new NotImplementedException(),
+            };
+            return table.Where(kvp => kvp.Value == name)
+                .Select(kvp => manager.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, identifier.HomeWorld, identifier.Kind,
+                    kvp.Key)).ToArray();
+        }
+
+        return identifier.Type switch
+        {
+            IdentifierType.Player => new[]
+            {
+                identifier.CreatePermanent(),
+            },
+            IdentifierType.Retainer => new[]
+            {
+                identifier.CreatePermanent(),
+            },
+            IdentifierType.Npc => CreateNpcs(_actors.AwaitedService, identifier),
+            _                  => Array.Empty<ActorIdentifier>(),
         };
     }
 }
