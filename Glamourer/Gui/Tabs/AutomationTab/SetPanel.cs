@@ -61,25 +61,8 @@ public class SetPanel
     }
 
     private void DrawHeader()
-    {
-        var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
-        var frameHeight = ImGui.GetFrameHeightWithSpacing();
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
-            .Push(ImGuiStyleVar.FrameRounding, 0);
-        ImGuiUtil.DrawTextButton(_selector.SelectionName, new Vector2(-frameHeight, ImGui.GetFrameHeight()), buttonColor);
-        ImGui.SameLine();
-        style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
-        using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.HeaderButtons.Value())
-            .Push(ImGuiCol.Border, ColorId.HeaderButtons.Value());
-        if (ImGuiUtil.DrawDisabledButton(
-                $"{(_selector.IncognitoMode ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash).ToIconString()}###IncognitoMode",
-                new Vector2(frameHeight, ImGui.GetFrameHeight()), string.Empty, false, true))
-            _selector.IncognitoMode = !_selector.IncognitoMode;
-        var hovered = ImGui.IsItemHovered();
-        color.Pop(2);
-        if (hovered)
-            ImGui.SetTooltip(_selector.IncognitoMode ? "Toggle incognito mode off." : "Toggle incognito mode on.");
-    }
+        => HeaderDrawer.Draw(_selector.SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg), 0,
+            HeaderDrawer.Button.IncognitoButton(_selector.IncognitoMode, v => _selector.IncognitoMode = v));
 
     private void DrawPanel()
     {

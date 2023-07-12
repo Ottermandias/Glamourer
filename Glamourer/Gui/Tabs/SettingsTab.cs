@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Interface;
 using Glamourer.Gui.Tabs.DesignTab;

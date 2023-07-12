@@ -67,27 +67,10 @@ public class ActorPanel
 
     private void DrawHeader()
     {
-        var frameHeight = ImGui.GetFrameHeightWithSpacing();
-        var color = !_identifier.IsValid ? ImGui.GetColorU32(ImGuiCol.Text) :
-            _data.Valid                  ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value();
-        var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
-            .Push(ImGuiStyleVar.FrameRounding, 0);
-        ImGuiUtil.DrawTextButton($"{_actorName}##playerHeader", new Vector2(-frameHeight, ImGui.GetFrameHeight()), buttonColor, color);
-        ImGui.SameLine();
-        style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
-        using (var c = ImRaii.PushColor(ImGuiCol.Text, ColorId.HeaderButtons.Value())
-                   .Push(ImGuiCol.Border, ColorId.HeaderButtons.Value()))
-        {
-            if (ImGuiUtil.DrawDisabledButton(
-                    $"{(_selector.IncognitoMode ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash).ToIconString()}###IncognitoMode",
-                    new Vector2(frameHeight, ImGui.GetFrameHeight()), string.Empty, false, true))
-                _selector.IncognitoMode = !_selector.IncognitoMode;
-        }
-
-        var hovered = ImGui.IsItemHovered();
-        if (hovered)
-            ImGui.SetTooltip(_selector.IncognitoMode ? "Toggle incognito mode off." : "Toggle incognito mode on.");
+        var textColor = !_identifier.IsValid ? ImGui.GetColorU32(ImGuiCol.Text) :
+            _data.Valid                      ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value();
+        HeaderDrawer.Draw(_actorName, textColor, ImGui.GetColorU32(ImGuiCol.FrameBg), 0,
+            HeaderDrawer.Button.IncognitoButton(_selector.IncognitoMode, v => _selector.IncognitoMode = v));
     }
 
     private (string, Actor) GetHeaderName()

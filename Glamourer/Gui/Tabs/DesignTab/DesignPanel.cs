@@ -51,43 +51,30 @@ public class DesignPanel
         _converter            = converter;
     }
 
+    private HeaderDrawer.Button LockButton()
+        => _selector.Selected == null
+            ? HeaderDrawer.Button.Invisible
+            : _selector.Selected.WriteProtected()
+                ? new HeaderDrawer.Button
+                {
+                    BorderColor = ColorId.HeaderButtons.Value(),
+                    TextColor   = ColorId.HeaderButtons.Value(),
+                    Description = "Make this design editable.",
+                    Icon        = FontAwesomeIcon.Lock,
+                    OnClick     = () => _manager.SetWriteProtection(_selector.Selected!, false),
+                }
+                : new HeaderDrawer.Button
+                {
+                    BorderColor = ColorId.HeaderButtons.Value(),
+                    TextColor   = ColorId.HeaderButtons.Value(),
+                    Description = "Write-protect this design.",
+                    Icon        = FontAwesomeIcon.LockOpen,
+                    OnClick     = () => _manager.SetWriteProtection(_selector.Selected!, true),
+                };
+
     private void DrawHeader()
-    {
-        var selection   = _selector.Selected;
-        var buttonColor = ImGui.GetColorU32(ImGuiCol.FrameBg);
-        var frameHeight = ImGui.GetFrameHeightWithSpacing();
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
-            .Push(ImGuiStyleVar.FrameRounding, 0);
-        ImGuiUtil.DrawTextButton(SelectionName, new Vector2(selection != null ? -2 * frameHeight : -frameHeight, ImGui.GetFrameHeight()),
-            buttonColor);
-
-        ImGui.SameLine();
-        style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
-        using var color = ImRaii.PushColor(ImGuiCol.Border, ColorId.HeaderButtons.Value())
-            .Push(ImGuiCol.Text, ColorId.HeaderButtons.Value());
-
-        var hoverText = string.Empty;
-        if (selection != null)
-        {
-            if (ImGuiUtil.DrawDisabledButton(
-                    $"{(selection.WriteProtected() ? FontAwesomeIcon.LockOpen : FontAwesomeIcon.Lock).ToIconString()}###Locked",
-                    new Vector2(frameHeight, ImGui.GetFrameHeight()), string.Empty, false, true))
-                _manager.SetWriteProtection(selection, !selection.WriteProtected());
-            if (ImGui.IsItemHovered())
-                hoverText = selection.WriteProtected() ? "Make this design editable." : "Write-protect this design.";
-        }
-
-        ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton(
-                $"{(_selector.IncognitoMode ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash).ToIconString()}###IncognitoMode",
-                new Vector2(frameHeight, ImGui.GetFrameHeight()), string.Empty, false, true))
-            _selector.IncognitoMode = !_selector.IncognitoMode;
-        if (ImGui.IsItemHovered())
-            hoverText = _selector.IncognitoMode ? "Toggle incognito mode off." : "Toggle incognito mode on.";
-
-        if (hoverText.Length > 0)
-            ImGui.SetTooltip(hoverText);
-    }
+        => HeaderDrawer.Draw(SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg), 0, LockButton(),
+            HeaderDrawer.Button.IncognitoButton(_selector.IncognitoMode, v => _selector.IncognitoMode = v));
 
     private string SelectionName
         => _selector.Selected == null ? "No Selection" : _selector.IncognitoMode ? _selector.Selected.Incognito : _selector.Selected.Name.Text;
@@ -178,7 +165,9 @@ public class DesignPanel
         {
             var set = _customizationService.AwaitedService.GetList(_selector.Selected!.DesignData.Customize.Clan,
                 _selector.Selected!.DesignData.Customize.Gender);
-            var all   = CustomizationExtensions.All.Where(set.IsAvailable).Select(c => c.ToFlag()).Aggregate((a, b) => a | b) | CustomizeFlag.Clan | CustomizeFlag.Gender;
+            var all = CustomizationExtensions.All.Where(set.IsAvailable).Select(c => c.ToFlag()).Aggregate((a, b) => a | b)
+              | CustomizeFlag.Clan
+              | CustomizeFlag.Gender;
             var flags = (_selector.Selected!.ApplyCustomize & all) == 0 ? 0 : (_selector.Selected!.ApplyCustomize & all) == all ? 3 : 1;
             if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))
             {
