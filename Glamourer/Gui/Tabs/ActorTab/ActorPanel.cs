@@ -69,8 +69,11 @@ public class ActorPanel
     {
         var textColor = !_identifier.IsValid ? ImGui.GetColorU32(ImGuiCol.Text) :
             _data.Valid                      ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value();
-        HeaderDrawer.Draw(_actorName, textColor, ImGui.GetColorU32(ImGuiCol.FrameBg), 0,
+        HeaderDrawer.Draw(_actorName, textColor, ImGui.GetColorU32(ImGuiCol.FrameBg),
+            3, SetFromClipboardButton(), ExportToClipboardButton(), SaveAsDesignButton(), LockedButton(),
             HeaderDrawer.Button.IncognitoButton(_selector.IncognitoMode, v => _selector.IncognitoMode = v));
+
+        SaveDesignDrawPopup();
     }
 
     private (string, Actor) GetHeaderName()
@@ -90,12 +93,6 @@ public class ActorPanel
         if (!child || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
             return;
 
-        SetFromClipboard();
-        ImGui.SameLine();
-        ExportToClipboardButton();
-        ImGui.SameLine();
-        SaveDesignButton();
-        ImGui.SameLine();
         DrawApplyToSelf();
         ImGui.SameLine();
         DrawApplyToTarget();
@@ -116,36 +113,40 @@ public class ActorPanel
         _equipmentDrawer.Prepare();
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var stain = _state.ModelData.Stain(slot);
-            if (_equipmentDrawer.DrawStain(stain, slot, out var newStain))
-                _stateManager.ChangeStain(_state, slot, newStain, StateChanged.Source.Manual);
-
-            ImGui.SameLine();
-            var armor = _state.ModelData.Item(slot);
-            if (_equipmentDrawer.DrawArmor(armor, slot, out var newArmor, _state.ModelData.Customize.Gender, _state.ModelData.Customize.Race))
-                _stateManager.ChangeEquip(_state, slot, newArmor, newStain, StateChanged.Source.Manual);
+            var changes = _equipmentDrawer.DrawEquip(slot, _state.ModelData, out var newArmor, out var newStain, null, out _, out _,
+                _state.IsLocked);
+            switch (changes)
+            {
+                case EquipmentDrawer.EquipChange.Item:
+                    _stateManager.ChangeItem(_state, slot, newArmor, StateChanged.Source.Manual);
+                    break;
+                case EquipmentDrawer.EquipChange.Stain:
+                    _stateManager.ChangeStain(_state, slot, newStain, StateChanged.Source.Manual);
+                    break;
+                case EquipmentDrawer.EquipChange.Item | EquipmentDrawer.EquipChange.Stain:
+                    _stateManager.ChangeEquip(_state, slot, newArmor, newStain, StateChanged.Source.Manual);
+                    break;
+            }
         }
 
-        var mhStain = _state.ModelData.Stain(EquipSlot.MainHand);
-        if (_equipmentDrawer.DrawStain(mhStain, EquipSlot.MainHand, out var newMhStain))
-            _stateManager.ChangeStain(_state, EquipSlot.MainHand, newMhStain, StateChanged.Source.Manual);
+        var weaponChanges = _equipmentDrawer.DrawWeapons(_state.ModelData, out var newMainhand, out var newOffhand, out var newMainhandStain,
+            out var newOffhandStain, null, out _, out _, out _, out _, _state.IsLocked);
 
-        ImGui.SameLine();
-        var mh = _state.ModelData.Item(EquipSlot.MainHand);
-        if (_equipmentDrawer.DrawMainhand(mh, false, out var newMh))
-            _stateManager.ChangeEquip(_state, EquipSlot.MainHand, newMh, newMhStain, StateChanged.Source.Manual);
+        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Item))
+            if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain))
+                _stateManager.ChangeEquip(_state, EquipSlot.MainHand, newMainhand, newMainhandStain, StateChanged.Source.Manual);
+            else
+                _stateManager.ChangeItem(_state, EquipSlot.MainHand, newMainhand, StateChanged.Source.Manual);
+        else if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain))
+            _stateManager.ChangeStain(_state, EquipSlot.MainHand, newMainhandStain, StateChanged.Source.Manual);
 
-        if (newMh.Type.Offhand() is not FullEquipType.Unknown)
-        {
-            var ohStain = _state.ModelData.Stain(EquipSlot.OffHand);
-            if (_equipmentDrawer.DrawStain(ohStain, EquipSlot.OffHand, out var newOhStain))
-                _stateManager.ChangeStain(_state, EquipSlot.OffHand, newOhStain, StateChanged.Source.Manual);
-
-            ImGui.SameLine();
-            var oh = _state.ModelData.Item(EquipSlot.OffHand);
-            if (_equipmentDrawer.DrawOffhand(oh, newMh.Type, out var newOh))
-                _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOh, newOhStain, StateChanged.Source.Manual);
-        }
+        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Item2))
+            if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain2))
+                _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOffhand, newOffhandStain, StateChanged.Source.Manual);
+            else
+                _stateManager.ChangeItem(_state, EquipSlot.OffHand, newOffhand, StateChanged.Source.Manual);
+        else if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain2))
+            _stateManager.ChangeStain(_state, EquipSlot.OffHand, newOffhandStain, StateChanged.Source.Manual);
     }
 
     private void DrawMonsterPanel()
@@ -209,12 +210,68 @@ public class ActorPanel
             _stateManager.TurnHuman(_state, StateChanged.Source.Manual);
     }
 
-    private void SetFromClipboard()
+    private HeaderDrawer.Button SetFromClipboardButton()
+        => new()
+        {
+            Description = "Try to apply a design from your clipboard.",
+            Icon        = FontAwesomeIcon.Clipboard,
+            OnClick     = SetFromClipboard,
+            Visible     = _state != null,
+        };
+
+    private HeaderDrawer.Button ExportToClipboardButton()
+        => new()
+        {
+            Description = "Copy the current design to your clipboard.",
+            Icon        = FontAwesomeIcon.Copy,
+            OnClick     = ExportToClipboard,
+            Visible     = _state?.ModelData.IsHuman ?? false,
+        };
+
+    private HeaderDrawer.Button SaveAsDesignButton()
+        => new()
+        {
+            Description = "Save the current state as a design.",
+            Icon        = FontAwesomeIcon.Save,
+            OnClick     = SaveDesignOpen,
+            Visible     = _state?.ModelData.IsHuman ?? false,
+        };
+
+    private HeaderDrawer.Button LockedButton()
+        => new()
+        {
+            Description = "The current state of this actor is locked by external tools.",
+            Icon        = FontAwesomeIcon.Lock,
+            OnClick     = () => { },
+            Disabled    = true,
+            Visible     = _state?.IsLocked ?? false,
+            TextColor   = ColorId.ActorUnavailable.Value(),
+            BorderColor = ColorId.ActorUnavailable.Value(),
+        };
+
+    private string      _newName   = string.Empty;
+    private DesignBase? _newDesign = null;
+
+    private void SaveDesignOpen()
     {
-        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                "Try to apply a design from your clipboard.", false, true))
+        ImGui.OpenPopup("Save as Design");
+        _newName   = _state!.Identifier.ToName();
+        _newDesign = _converter.Convert(_state, EquipFlagExtensions.All, CustomizeFlagExtensions.All);
+    }
+
+    private void SaveDesignDrawPopup()
+    {
+        if (!ImGuiUtil.OpenNameField("Save as Design", ref _newName))
             return;
 
+        if (_newDesign != null && _newName.Length > 0)
+            _designManager.CreateClone(_newDesign, _newName);
+        _newDesign = null;
+        _newName   = string.Empty;
+    }
+
+    private void SetFromClipboard()
+    {
         try
         {
             var text   = ImGui.GetClipboardText();
@@ -228,12 +285,8 @@ public class ActorPanel
         }
     }
 
-    private void ExportToClipboardButton()
+    private void ExportToClipboard()
     {
-        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Copy.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                "Copy the current design to your clipboard.", false, true))
-            return;
-
         try
         {
             var text = _converter.ShareBase64(_state!);
@@ -267,7 +320,7 @@ public class ActorPanel
     {
         var (id, data) = _objects.PlayerData;
         if (!ImGuiUtil.DrawDisabledButton("Apply to Yourself", Vector2.Zero, "Apply the current state to your own character.",
-                !data.Valid || id == _identifier))
+                !data.Valid || id == _identifier || !_state!.ModelData.IsHuman))
             return;
 
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
@@ -283,33 +336,11 @@ public class ActorPanel
                 ? "Apply the current state to your current target."
                 : "The current target can not be manipulated."
             : "No valid target selected.";
-        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid || id == _identifier))
+        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid || id == _identifier || !_state!.ModelData.IsHuman))
             return;
 
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
             _stateManager.ApplyDesign(_converter.Convert(_state!, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant), state,
                 StateChanged.Source.Manual);
-    }
-
-    private string      _newName   = string.Empty;
-    private DesignBase? _newDesign = null;
-
-    private void SaveDesignButton()
-    {
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Save.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                "Save the current state as a design.", !_state!.ModelData.IsHuman, true))
-        {
-            ImGui.OpenPopup("Save as Design");
-            _newName   = _state.Identifier.ToName();
-            _newDesign = _converter.Convert(_state, EquipFlagExtensions.All, CustomizeFlagExtensions.All);
-        }
-
-        if (ImGuiUtil.OpenNameField("Save as Design", ref _newName))
-        {
-            if (_newDesign != null && _newName.Length > 0)
-                _designManager.CreateClone(_newDesign, _newName);
-            _newDesign = null;
-            _newName   = string.Empty;
-        }
     }
 }

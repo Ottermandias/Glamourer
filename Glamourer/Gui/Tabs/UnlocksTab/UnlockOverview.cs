@@ -177,7 +177,7 @@ public class UnlockOverview
                 ImGui.TextUnformatted(item.Name);
                 var slot = item.Type.ToSlot();
                 ImGui.TextUnformatted($"{item.Type.ToName()} ({slot.ToName()})");
-                if (item.Type.Offhand().IsOffhandType())
+                if (item.Type.ValidOffhand().IsOffhandType())
                     ImGui.TextUnformatted(
                         $"{item.Weapon()}{(_items.ItemService.AwaitedService.TryGetValue(item.ItemId, false, out var offhand) ? $" | {offhand.Weapon()}" : string.Empty)}");
                 else

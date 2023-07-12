@@ -172,7 +172,7 @@ public class StateApplier
     /// </summary>
     public void ChangeMainhand(ActorData data, EquipItem weapon, StainId stain)
     {
-        var slot = weapon.Type.Offhand() == FullEquipType.Unknown ? EquipSlot.BothHand : EquipSlot.MainHand;
+        var slot = weapon.Type.ValidOffhand() == FullEquipType.Unknown ? EquipSlot.BothHand : EquipSlot.MainHand;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
             _weapon.LoadWeapon(actor, slot, weapon.Weapon().With(stain));
     }

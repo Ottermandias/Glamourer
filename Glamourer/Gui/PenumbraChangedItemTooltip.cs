@@ -177,7 +177,7 @@ public class PenumbraChangedItemTooltip : IDisposable
         if (slot == EquipSlot.MainHand)
             return item.Type == mainItem.Type;
 
-        return item.Type == mainItem.Type.Offhand();
+        return item.Type == mainItem.Type.ValidOffhand();
     }
 
     private void OnPenumbraClick(MouseButton button, ChangedItemType type, uint id)

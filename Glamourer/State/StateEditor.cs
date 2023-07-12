@@ -138,7 +138,7 @@ public class StateEditor
 
         // Can not change weapon type from expected type in state.
         if (slot is EquipSlot.MainHand && item.Type != state.BaseData.MainhandType
-         || slot is EquipSlot.OffHand && item.Type != state.BaseData.MainhandType.Offhand())
+         || slot is EquipSlot.OffHand && item.Type != state.BaseData.MainhandType.ValidOffhand())
             return false;
 
         state.ModelData.SetItem(slot, item);

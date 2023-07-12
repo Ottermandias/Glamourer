@@ -29,9 +29,11 @@ public static class HeaderDrawer
 
         public Button()
         {
-            Visible  = true;
-            Width    = ImGui.GetFrameHeightWithSpacing();
-            Disabled = false;
+            Visible     = true;
+            Width       = ImGui.GetFrameHeightWithSpacing();
+            BorderColor = ColorId.HeaderButtons.Value();
+            TextColor   = ColorId.HeaderButtons.Value();
+            Disabled    = false;
         }
 
         public readonly void Draw()
@@ -41,24 +43,22 @@ public static class HeaderDrawer
 
             using var color = ImRaii.PushColor(ImGuiCol.Border, BorderColor)
                 .Push(ImGuiCol.Text, TextColor, TextColor != 0);
-            if (ImGuiUtil.DrawDisabledButton(Icon.ToIconString(), new Vector2(Width, ImGui.GetFrameHeight()), Description, Disabled, true))
+            if (ImGuiUtil.DrawDisabledButton(Icon.ToIconString(), new Vector2(Width, ImGui.GetFrameHeight()), string.Empty, Disabled, true))
                 OnClick?.Invoke();
+            color.Pop();
+            ImGuiUtil.HoverTooltip(Description);
         }
 
         public static Button IncognitoButton(bool current, Action<bool> setter)
             => current
                 ? new Button
                 {
-                    BorderColor = ColorId.HeaderButtons.Value(),
-                    TextColor   = ColorId.HeaderButtons.Value(),
                     Description = "Toggle incognito mode off.",
                     Icon        = FontAwesomeIcon.EyeSlash,
                     OnClick     = () => setter(false),
                 }
                 : new Button
                 {
-                    BorderColor = ColorId.HeaderButtons.Value(),
-                    TextColor   = ColorId.HeaderButtons.Value(),
                     Description = "Toggle incognito mode on.",
                     Icon        = FontAwesomeIcon.Eye,
                     OnClick     = () => setter(true),
@@ -83,7 +83,7 @@ public static class HeaderDrawer
         var midSize         = ImGui.GetContentRegionAvail().X - rightButtonSize - ImGuiHelpers.GlobalScale;
 
         style.Pop();
-        style.Push(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.5f + (rightButtonSize - leftButtonSize) / 2 / midSize, 0.5f));
+        style.Push(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.5f + (rightButtonSize - leftButtonSize) / midSize, 0.5f));
         if (textColor != 0)
             ImGuiUtil.DrawTextButton(text, new Vector2(midSize, ImGui.GetFrameHeight()), frameColor, textColor);
         else

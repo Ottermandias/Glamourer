@@ -241,7 +241,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             ImGui.AlignTextToFramePadding();
             ImGuiUtil.RightAlign(item.ModelString);
             if (ImGui.IsItemHovered()
-             && item.Type.Offhand().IsOffhandType()
+             && item.Type.ValidOffhand().IsOffhandType()
              && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, false, out var offhand))
             {
                 using var tt = ImRaii.Tooltip();
@@ -260,7 +260,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             if (FilterRegex?.IsMatch(item.ModelString) ?? item.ModelString.Contains(FilterValue, StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            if (item.Type.Offhand().IsOffhandType() && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, false, out var offhand))
+            if (item.Type.ValidOffhand().IsOffhandType() && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, false, out var offhand))
                 return FilterRegex?.IsMatch(offhand.ModelString)
                  ?? offhand.ModelString.Contains(FilterValue, StringComparison.OrdinalIgnoreCase);
 

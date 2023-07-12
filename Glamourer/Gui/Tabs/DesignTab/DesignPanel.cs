@@ -57,23 +57,39 @@ public class DesignPanel
             : _selector.Selected.WriteProtected()
                 ? new HeaderDrawer.Button
                 {
-                    BorderColor = ColorId.HeaderButtons.Value(),
-                    TextColor   = ColorId.HeaderButtons.Value(),
                     Description = "Make this design editable.",
                     Icon        = FontAwesomeIcon.Lock,
                     OnClick     = () => _manager.SetWriteProtection(_selector.Selected!, false),
                 }
                 : new HeaderDrawer.Button
                 {
-                    BorderColor = ColorId.HeaderButtons.Value(),
-                    TextColor   = ColorId.HeaderButtons.Value(),
                     Description = "Write-protect this design.",
                     Icon        = FontAwesomeIcon.LockOpen,
                     OnClick     = () => _manager.SetWriteProtection(_selector.Selected!, true),
                 };
 
+    private HeaderDrawer.Button SetFromClipboardButton()
+        => new()
+        {
+            Description = "Try to apply a design from your clipboard over this design.",
+            Icon        = FontAwesomeIcon.Clipboard,
+            OnClick     = SetFromClipboard,
+            Visible     = _selector.Selected != null,
+            Disabled    = _selector.Selected?.WriteProtected() ?? true,
+        };
+
+    private HeaderDrawer.Button ExportToClipboardButton()
+        => new()
+        {
+            Description = "Copy the current design to your clipboard.",
+            Icon        = FontAwesomeIcon.Copy,
+            OnClick     = ExportToClipboard,
+            Visible     = _selector.Selected != null,
+        };
+
     private void DrawHeader()
-        => HeaderDrawer.Draw(SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg), 0, LockButton(),
+        => HeaderDrawer.Draw(SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg),
+            2, SetFromClipboardButton(), ExportToClipboardButton(), LockButton(),
             HeaderDrawer.Button.IncognitoButton(_selector.IncognitoMode, v => _selector.IncognitoMode = v));
 
     private string SelectionName
@@ -117,37 +133,37 @@ public class DesignPanel
         _equipmentDrawer.Prepare();
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var stain = _selector.Selected!.DesignData.Stain(slot);
-            if (_equipmentDrawer.DrawStain(stain, slot, out var newStain))
-                _manager.ChangeStain(_selector.Selected!, slot, newStain);
-
-            ImGui.SameLine();
-            var armor = _selector.Selected!.DesignData.Item(slot);
-            if (_equipmentDrawer.DrawArmor(armor, slot, out var newArmor, _selector.Selected!.DesignData.Customize.Gender,
-                    _selector.Selected!.DesignData.Customize.Race))
-                _manager.ChangeEquip(_selector.Selected!, slot, newArmor);
+            var changes = _equipmentDrawer.DrawEquip(slot, _selector.Selected!.DesignData, out var newArmor, out var newStain,
+                _selector.Selected.ApplyEquip, out var newApply, out var newApplyStain, _selector.Selected!.WriteProtected());
+            if (changes.HasFlag(EquipmentDrawer.EquipChange.Item))
+                _manager.ChangeEquip(_selector.Selected, slot, newArmor);
+            if (changes.HasFlag(EquipmentDrawer.EquipChange.Stain))
+                _manager.ChangeStain(_selector.Selected, slot, newStain);
+            if (changes.HasFlag(EquipmentDrawer.EquipChange.ApplyItem))
+                _manager.ChangeApplyEquip(_selector.Selected, slot, newApply);
+            if (changes.HasFlag(EquipmentDrawer.EquipChange.ApplyStain))
+                _manager.ChangeApplyStain(_selector.Selected, slot, newApplyStain);
         }
 
-        var mhStain = _selector.Selected!.DesignData.Stain(EquipSlot.MainHand);
-        if (_equipmentDrawer.DrawStain(mhStain, EquipSlot.MainHand, out var newMhStain))
-            _manager.ChangeStain(_selector.Selected!, EquipSlot.MainHand, newMhStain);
-
-        ImGui.SameLine();
-        var mh = _selector.Selected!.DesignData.Item(EquipSlot.MainHand);
-        if (_equipmentDrawer.DrawMainhand(mh, true, out var newMh))
-            _manager.ChangeWeapon(_selector.Selected!, EquipSlot.MainHand, newMh);
-
-        if (newMh.Type.Offhand() is not FullEquipType.Unknown)
-        {
-            var ohStain = _selector.Selected!.DesignData.Stain(EquipSlot.OffHand);
-            if (_equipmentDrawer.DrawStain(ohStain, EquipSlot.OffHand, out var newOhStain))
-                _manager.ChangeStain(_selector.Selected!, EquipSlot.OffHand, newOhStain);
-
-            ImGui.SameLine();
-            var oh = _selector.Selected!.DesignData.Item(EquipSlot.OffHand);
-            if (_equipmentDrawer.DrawOffhand(oh, newMh.Type, out var newOh))
-                _manager.ChangeWeapon(_selector.Selected!, EquipSlot.OffHand, newOh);
-        }
+        var weaponChanges = _equipmentDrawer.DrawWeapons(_selector.Selected!.DesignData, out var newMainhand, out var newOffhand,
+            out var newMainhandStain, out var newOffhandStain, _selector.Selected.ApplyEquip, out var applyMain, out var applyMainStain,
+            out var applyOff, out var applyOffStain, _selector.Selected!.WriteProtected());
+        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Item))
+            _manager.ChangeWeapon(_selector.Selected, EquipSlot.MainHand, newMainhand);
+        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain))
+            _manager.ChangeStain(_selector.Selected, EquipSlot.MainHand, newMainhandStain);
+        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.ApplyItem))
+            _manager.ChangeApplyEquip(_selector.Selected, EquipSlot.MainHand, applyMain);
+        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.ApplyStain))
+            _manager.ChangeApplyStain(_selector.Selected, EquipSlot.MainHand, applyMainStain);
+        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Item2))
+            _manager.ChangeWeapon(_selector.Selected, EquipSlot.OffHand, newOffhand);
+        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain2))
+            _manager.ChangeStain(_selector.Selected, EquipSlot.OffHand, newOffhandStain);
+        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.ApplyItem2))
+            _manager.ChangeApplyEquip(_selector.Selected, EquipSlot.OffHand, applyOff);
+        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.ApplyStain2))
+            _manager.ChangeApplyStain(_selector.Selected, EquipSlot.OffHand, applyOffStain);
     }
 
     private void DrawCustomize()
@@ -279,21 +295,13 @@ public class DesignPanel
 
     private void DrawButtonRow()
     {
-        SetFromClipboardButton();
-        ImGui.SameLine();
-        ExportToClipboardButton();
-        ImGui.SameLine();
         DrawApplyToSelf();
         ImGui.SameLine();
         DrawApplyToTarget();
     }
 
-    private void SetFromClipboardButton()
+    private void SetFromClipboard()
     {
-        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                "Try to apply a design from your clipboard.", _selector.Selected!.WriteProtected(), true))
-            return;
-
         try
         {
             var text   = ImGui.GetClipboardText();
@@ -307,12 +315,8 @@ public class DesignPanel
         }
     }
 
-    private void ExportToClipboardButton()
+    private void ExportToClipboard()
     {
-        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Copy.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                "Copy the current design to your clipboard.", false, true))
-            return;
-
         try
         {
             var text = _converter.ShareBase64(_selector.Selected!);

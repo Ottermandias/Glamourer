@@ -1,16 +1,15 @@
-
 using System.Numerics;
 using Dalamud.Interface;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Raii;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui;
 
 public static class UiHelpers
 {
-
     public static void DrawIcon(this EquipItem item, TextureService textures, Vector2 size)
     {
         var isEmpty = item.ModelId.Value == 0;
@@ -31,4 +30,25 @@ public static class UiHelpers
             ImGuiUtil.HoverIcon(ptr, textureSize, size);
         }
     }
+
+    public static bool DrawCheckbox(string label, string tooltip, bool value, out bool on, bool locked)
+    {
+        using var disabled = ImRaii.Disabled(locked);
+        var       ret      = ImGuiUtil.Checkbox(label, string.Empty, value, v => value = v);
+        ImGuiUtil.HoverTooltip(tooltip);
+        on = value;
+        return ret;
+    }
+
+    public static bool DrawVisor(bool current, out bool on, bool locked)
+        => DrawCheckbox("##visorToggled", string.Empty, current, out on, locked);
+
+    public static bool DrawHat(bool current, out bool on, bool locked)
+        => DrawCheckbox("##hatVisible", string.Empty, current, out on, locked);
+
+    public static bool DrawWeapon(bool current, out bool on, bool locked)
+        => DrawCheckbox("##weaponVisible", string.Empty, current, out on, locked);
+
+    public static bool DrawWetness(bool current, out bool on, bool locked)
+        => DrawCheckbox("##wetness", string.Empty, current, out on, locked);
 }

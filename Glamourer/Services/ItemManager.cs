@@ -7,7 +7,6 @@ using Lumina.Excel;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using static OtterGui.Raii.ImRaii;
 using Race = Penumbra.GameData.Enums.Race;
 
 namespace Glamourer.Services;
@@ -116,12 +115,21 @@ public class ItemManager : IDisposable
         }
     }
 
+    /// <summary> Return the default offhand for a given mainhand, that is for both handed weapons, return the correct offhand part, and for everything else Nothing. </summary>
+    public EquipItem GetDefaultOffhand(EquipItem mainhand)
+    {
+        var offhandType = mainhand.Type.ValidOffhand();
+        if (offhandType.IsOffhandType())
+            return Resolve(offhandType, mainhand.ItemId);
+
+        return NothingItem(offhandType);
+    }
 
     public EquipItem Identify(EquipSlot slot, SetId id, WeaponType type, byte variant, FullEquipType mainhandType = FullEquipType.Unknown)
     {
         if (slot is EquipSlot.OffHand)
         {
-            var weaponType = mainhandType.Offhand();
+            var weaponType = mainhandType.ValidOffhand();
             if (id.Value == 0)
                 return NothingItem(weaponType);
         }
@@ -161,7 +169,7 @@ public class ItemManager : IDisposable
             return allowUnknown ? string.Empty : $"The item {itemId} yields an unknown item.";
         }
 
-        if (IsItemValid(slot, (uint) itemId, out item))
+        if (IsItemValid(slot, (uint)itemId, out item))
             return string.Empty;
 
         item = NothingItem(slot);
@@ -201,7 +209,7 @@ public class ItemManager : IDisposable
     /// <summary> Returns whether an offhand is valid given mainhand. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public bool IsOffhandValid(in EquipItem main, uint offId, out EquipItem off)
-        => IsOffhandValid(main.Type.Offhand(), offId, out off);
+        => IsOffhandValid(main.Type.ValidOffhand(), offId, out off);
 
     /// <summary>
     /// Check whether a combination of an item id for a mainhand and for an offhand is valid.
@@ -219,7 +227,7 @@ public class ItemManager : IDisposable
             ret  = $"The mainhand weapon {mainId} does not exist, reset to default sword.";
         }
 
-        var offType = main.Type.Offhand();
+        var offType = main.Type.ValidOffhand();
         if (IsOffhandValid(offType, offId, out off))
             return ret;
 

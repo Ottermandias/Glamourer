@@ -40,9 +40,7 @@ public unsafe class WeaponService : IDisposable
     private readonly Hook<LoadWeaponDelegate> _loadWeaponHook;
 
 
-    private void LoadWeaponDetour(DrawDataContainer* drawData, uint slot, ulong weaponValue, byte redrawOnEquality, byte unk2,
-        byte skipGameObject,
-        byte unk4)
+    private void LoadWeaponDetour(DrawDataContainer* drawData, uint slot, ulong weaponValue, byte redrawOnEquality, byte unk2, byte skipGameObject, byte unk4)
     {
         var actor  = (Actor)((nint*)drawData)[1];
         var weapon = new CharacterWeapon(weaponValue);
@@ -61,7 +59,7 @@ public unsafe class WeaponService : IDisposable
         _loadWeaponHook.Original(drawData, slot, weapon.Value, redrawOnEquality, unk2, skipGameObject, unk4);
         if (tmpWeapon.Value != weapon.Value)
             _loadWeaponHook.Original(drawData, slot, tmpWeapon.Value, 1, unk2, 1, unk4);
-        Glamourer.Log.Excessive(
+        Glamourer.Log.Information(
             $"Weapon reloaded for 0x{actor.Address:X} ({actor.Utf8Name}) with attributes {slot} {weapon.Value:X14}, {redrawOnEquality}, {unk2}, {skipGameObject}, {unk4}");
     }
 

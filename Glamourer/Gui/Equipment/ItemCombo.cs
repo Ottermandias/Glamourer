@@ -48,7 +48,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     public bool Draw(string previewName, uint previewIdx, float width)
     {
         _currentItem = previewIdx;
-        return Draw(Label, previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
+        return Draw($"##{Label}", previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
     }
 
     protected override bool DrawSelectable(int globalIdx, bool selected)

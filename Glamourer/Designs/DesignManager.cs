@@ -337,10 +337,8 @@ public class DesignManager
 
                 if (item.Type != currentMain.Type)
                 {
-                    var newOffId = item.Type.Offhand().IsOffhandType()
-                        ? item.ItemId
-                        : ItemManager.NothingId(item.Type.Offhand());
-                    if (!_items.IsOffhandValid(item, newOffId, out newOff))
+                    var defaultOffhand = _items.GetDefaultOffhand(item);
+                    if (!_items.IsOffhandValid(item, defaultOffhand.ItemId, out newOff))
                         return;
                 }
 

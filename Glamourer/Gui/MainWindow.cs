@@ -45,7 +45,7 @@ public class MainWindow : Window
         pi.UiBuilder.DisableGposeUiHide = true;
         SizeConstraints = new WindowSizeConstraints()
         {
-            MinimumSize = new Vector2(675, 675),
+            MinimumSize = new Vector2(700, 675),
             MaximumSize = ImGui.GetIO().DisplaySize,
         };
         Settings   = settings;
