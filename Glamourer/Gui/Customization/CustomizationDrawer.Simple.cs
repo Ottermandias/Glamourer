@@ -16,7 +16,14 @@ public partial class CustomizationDrawer
         DrawPercentageSlider();
         ImGui.SameLine();
         PercentageInputInt();
+        if (_withApply)
+        {
+            ImGui.SameLine();
+            ApplyCheckbox();
+        }
+
         ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(_currentOption);
     }
 
@@ -60,7 +67,14 @@ public partial class CustomizationDrawer
         ListCombo();
         ImGui.SameLine();
         ListInputInt();
+        if (_withApply)
+        {
+            ImGui.SameLine();
+            ApplyCheckbox();
+        }
+
         ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(_currentOption);
     }
 
@@ -93,10 +107,41 @@ public partial class CustomizationDrawer
     {
         using var id  = SetId(idx);
         var       tmp = _currentByte != CustomizeValue.Zero;
-        if (ImGui.Checkbox(_currentOption, ref tmp))
+        if (_withApply)
+        {
+            switch (UiHelpers.DrawMetaToggle(_currentOption, string.Empty, tmp, _currentApply, out var newValue, out var newApply, _locked))
+            {
+                case DataChange.Item:
+                    ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
+                    _customize.Set(idx, tmp ? CustomizeValue.Max : CustomizeValue.Zero);
+                    Changed |= _currentFlag;
+                    break;
+                case DataChange.ApplyItem:
+                    ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
+                    break;
+                case DataChange.Item | DataChange.ApplyItem:
+                    _customize.Set(idx, tmp ? CustomizeValue.Max : CustomizeValue.Zero);
+                    Changed |= _currentFlag;
+                    break;
+            }
+        }
+        else if (ImGui.Checkbox(_currentOption, ref tmp))
         {
             _customize.Set(idx, tmp ? CustomizeValue.Max : CustomizeValue.Zero);
             Changed |= _currentFlag;
         }
+    }
+
+    private void ApplyCheckbox()
+    {
+        if (UiHelpers.DrawCheckbox("##apply", $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
+            ToggleApply();
+    }
+
+    private void ApplyCheckbox(CustomizeIndex index)
+    {
+        SetId(index);
+        if (UiHelpers.DrawCheckbox("##apply", $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
+            ToggleApply();
     }
 }

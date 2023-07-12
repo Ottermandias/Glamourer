@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using Dalamud.Interface;
 using Glamourer.Services;
@@ -7,6 +8,20 @@ using OtterGui.Raii;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui;
+
+[Flags]
+public enum DataChange : byte
+{
+    None        = 0x00,
+    Item        = 0x01,
+    Stain       = 0x02,
+    ApplyItem   = 0x04,
+    ApplyStain  = 0x08,
+    Item2       = 0x10,
+    Stain2      = 0x20,
+    ApplyItem2  = 0x40,
+    ApplyStain2 = 0x80,
+}
 
 public static class UiHelpers
 {
@@ -40,15 +55,32 @@ public static class UiHelpers
         return ret;
     }
 
-    public static bool DrawVisor(bool current, out bool on, bool locked)
-        => DrawCheckbox("##visorToggled", string.Empty, current, out on, locked);
+    public static DataChange DrawMetaToggle(string label, string tooltip, bool currentValue, bool currentApply, out bool newValue, out bool newApply,
+        bool locked)
+    {
+        var  flags = currentApply ? currentValue ? 3 : 0 : 2;
+        bool ret;
+        using (var disabled = ImRaii.Disabled(locked))
+        {
+            ret = ImGui.CheckboxFlags(label, ref flags, 3);
+        }
 
-    public static bool DrawHat(bool current, out bool on, bool locked)
-        => DrawCheckbox("##hatVisible", string.Empty, current, out on, locked);
+        ImGuiUtil.HoverTooltip(tooltip);
 
-    public static bool DrawWeapon(bool current, out bool on, bool locked)
-        => DrawCheckbox("##weaponVisible", string.Empty, current, out on, locked);
+        if (ret)
+        {
+            (newValue, newApply, var change) = (currentValue, currentApply) switch
+            {
+                (false, false) => (false, true, DataChange.ApplyItem),
+                (false, true)  => (true, true, DataChange.Item),
+                (true, false)  => (false, false, DataChange.Item), // Should not happen
+                (true, true)   => (false, false, DataChange.Item | DataChange.ApplyItem),
+            };
+            return change;
+        }
 
-    public static bool DrawWetness(bool current, out bool on, bool locked)
-        => DrawCheckbox("##wetness", string.Empty, current, out on, locked);
+        newValue = currentValue;
+        newApply = currentApply;
+        return DataChange.None;
+    }
 }

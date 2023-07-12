@@ -95,36 +95,6 @@ public class DesignPanel
     private string SelectionName
         => _selector.Selected == null ? "No Selection" : _selector.IncognitoMode ? _selector.Selected.Incognito : _selector.Selected.Name.Text;
 
-    private void DrawMetaData()
-    {
-        if (!ImGui.CollapsingHeader("MetaData"))
-            return;
-
-        using (var group1 = ImRaii.Group())
-        {
-            var apply = _selector.Selected!.DesignData.IsHatVisible();
-            if (ImGui.Checkbox("Hat Visible", ref apply))
-                _manager.ChangeMeta(_selector.Selected, ActorState.MetaIndex.HatState, apply);
-
-            apply = _selector.Selected.DesignData.IsWeaponVisible();
-            if (ImGui.Checkbox("Weapon Visible", ref apply))
-                _manager.ChangeMeta(_selector.Selected, ActorState.MetaIndex.WeaponState, apply);
-        }
-
-        ImGui.SameLine(ImGui.GetContentRegionAvail().X / 2);
-
-        using (var group2 = ImRaii.Group())
-        {
-            var apply = _selector.Selected.DesignData.IsVisorToggled();
-            if (ImGui.Checkbox("Visor Toggled", ref apply))
-                _manager.ChangeMeta(_selector.Selected, ActorState.MetaIndex.VisorState, apply);
-
-            apply = _selector.Selected.DesignData.IsWet();
-            if (ImGui.Checkbox("Force Wetness", ref apply))
-                _manager.ChangeMeta(_selector.Selected, ActorState.MetaIndex.Wetness, apply);
-        }
-    }
-
     private void DrawEquipment()
     {
         if (!ImGui.CollapsingHeader("Equipment"))
@@ -135,41 +105,82 @@ public class DesignPanel
         {
             var changes = _equipmentDrawer.DrawEquip(slot, _selector.Selected!.DesignData, out var newArmor, out var newStain,
                 _selector.Selected.ApplyEquip, out var newApply, out var newApplyStain, _selector.Selected!.WriteProtected());
-            if (changes.HasFlag(EquipmentDrawer.EquipChange.Item))
+            if (changes.HasFlag(DataChange.Item))
                 _manager.ChangeEquip(_selector.Selected, slot, newArmor);
-            if (changes.HasFlag(EquipmentDrawer.EquipChange.Stain))
+            if (changes.HasFlag(DataChange.Stain))
                 _manager.ChangeStain(_selector.Selected, slot, newStain);
-            if (changes.HasFlag(EquipmentDrawer.EquipChange.ApplyItem))
+            if (changes.HasFlag(DataChange.ApplyItem))
                 _manager.ChangeApplyEquip(_selector.Selected, slot, newApply);
-            if (changes.HasFlag(EquipmentDrawer.EquipChange.ApplyStain))
+            if (changes.HasFlag(DataChange.ApplyStain))
                 _manager.ChangeApplyStain(_selector.Selected, slot, newApplyStain);
         }
 
         var weaponChanges = _equipmentDrawer.DrawWeapons(_selector.Selected!.DesignData, out var newMainhand, out var newOffhand,
             out var newMainhandStain, out var newOffhandStain, _selector.Selected.ApplyEquip, out var applyMain, out var applyMainStain,
             out var applyOff, out var applyOffStain, _selector.Selected!.WriteProtected());
-        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Item))
+
+        if (weaponChanges.HasFlag(DataChange.Item))
             _manager.ChangeWeapon(_selector.Selected, EquipSlot.MainHand, newMainhand);
-        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain))
+        if (weaponChanges.HasFlag(DataChange.Stain))
             _manager.ChangeStain(_selector.Selected, EquipSlot.MainHand, newMainhandStain);
-        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.ApplyItem))
+        if (weaponChanges.HasFlag(DataChange.ApplyItem))
             _manager.ChangeApplyEquip(_selector.Selected, EquipSlot.MainHand, applyMain);
-        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.ApplyStain))
+        if (weaponChanges.HasFlag(DataChange.ApplyStain))
             _manager.ChangeApplyStain(_selector.Selected, EquipSlot.MainHand, applyMainStain);
-        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Item2))
+        if (weaponChanges.HasFlag(DataChange.Item2))
             _manager.ChangeWeapon(_selector.Selected, EquipSlot.OffHand, newOffhand);
-        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain2))
+        if (weaponChanges.HasFlag(DataChange.Stain2))
             _manager.ChangeStain(_selector.Selected, EquipSlot.OffHand, newOffhandStain);
-        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.ApplyItem2))
+        if (weaponChanges.HasFlag(DataChange.ApplyItem2))
             _manager.ChangeApplyEquip(_selector.Selected, EquipSlot.OffHand, applyOff);
-        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.ApplyStain2))
+        if (weaponChanges.HasFlag(DataChange.ApplyStain2))
             _manager.ChangeApplyStain(_selector.Selected, EquipSlot.OffHand, applyOffStain);
+
+        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        DrawEquipmentMetaToggles();
+        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+    }
+
+    private void DrawEquipmentMetaToggles()
+    {
+        var hatChanges = _equipmentDrawer.DrawHatState(_selector.Selected!.DesignData.IsHatVisible(),
+            _selector.Selected.DoApplyHatVisible(),
+            out var newHatState, out var newHatApply, _selector.Selected.WriteProtected());
+        ApplyChanges(ActorState.MetaIndex.HatState, hatChanges, newHatState, newHatApply);
+
+        ImGui.SameLine();
+        var visorChanges = _equipmentDrawer.DrawVisorState(_selector.Selected!.DesignData.IsVisorToggled(),
+            _selector.Selected.DoApplyVisorToggle(),
+            out var newVisorState, out var newVisorApply, _selector.Selected.WriteProtected());
+        ApplyChanges(ActorState.MetaIndex.VisorState, visorChanges, newVisorState, newVisorApply);
+
+        ImGui.SameLine();
+        var weaponChanges = _equipmentDrawer.DrawWeaponState(_selector.Selected!.DesignData.IsWeaponVisible(),
+            _selector.Selected.DoApplyWeaponVisible(),
+            out var newWeaponState, out var newWeaponApply, _selector.Selected.WriteProtected());
+        ApplyChanges(ActorState.MetaIndex.WeaponState, weaponChanges, newWeaponState, newWeaponApply);
     }
 
     private void DrawCustomize()
     {
-        if (ImGui.CollapsingHeader("Customization"))
-            _customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected!.WriteProtected());
+        if (!ImGui.CollapsingHeader("Customization"))
+            return;
+
+        _customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.ApplyCustomize,
+            _selector.Selected!.WriteProtected());
+
+        if (_customizationDrawer.ChangeApply != _selector.Selected.ApplyCustomize)
+            foreach (var idx in Enum.GetValues<CustomizeIndex>())
+            {
+                var flag     = idx.ToFlag();
+                var newValue = _customizationDrawer.ChangeApply.HasFlag(flag);
+                _manager.ChangeApplyCustomize(_selector.Selected, idx, newValue);
+            }
+
+        var wetnessChanges = _customizationDrawer.DrawWetnessState(_selector.Selected!.DesignData.IsWet(),
+            _selector.Selected!.DoApplyWetness(), out var newWetnessState, out var newWetnessApply, _selector.Selected!.WriteProtected());
+        ApplyChanges(ActorState.MetaIndex.Wetness, wetnessChanges, newWetnessState, newWetnessApply);
+        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }
 
     private void DrawApplicationRules()
@@ -285,7 +296,6 @@ public class DesignPanel
             return;
 
         DrawButtonRow();
-        DrawMetaData();
         DrawCustomize();
         DrawEquipment();
         _designDetails.Draw();
@@ -353,5 +363,22 @@ public class DesignPanel
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
             _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
+    }
+
+    private void ApplyChanges(ActorState.MetaIndex index, DataChange change, bool value, bool apply)
+    {
+        switch (change)
+        {
+            case DataChange.Item:
+                _manager.ChangeMeta(_selector.Selected!, index, value);
+                break;
+            case DataChange.ApplyItem:
+                _manager.ChangeApplyMeta(_selector.Selected!, index, apply);
+                break;
+            case DataChange.Item | DataChange.ApplyItem:
+                _manager.ChangeApplyMeta(_selector.Selected!, index, apply);
+                _manager.ChangeMeta(_selector.Selected!, index, value);
+                break;
+        }
     }
 }

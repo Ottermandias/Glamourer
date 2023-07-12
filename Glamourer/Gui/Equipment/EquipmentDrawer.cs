@@ -20,6 +20,8 @@ namespace Glamourer.Gui.Equipment;
 
 public class EquipmentDrawer
 {
+    private const float DefaultWidth = 280;
+
     private readonly ItemManager                            _items;
     private readonly FilterComboColors                      _stainCombo;
     private readonly StainData                              _stainData;
@@ -27,14 +29,16 @@ public class EquipmentDrawer
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
     private readonly CodeService                            _codes;
     private readonly TextureService                         _textures;
+    private readonly Configuration                          _config;
 
-    public EquipmentDrawer(DataManager gameData, ItemManager items, CodeService codes, TextureService textures)
+    public EquipmentDrawer(DataManager gameData, ItemManager items, CodeService codes, TextureService textures, Configuration config)
     {
         _items     = items;
         _codes     = codes;
         _textures  = textures;
+        _config    = config;
         _stainData = items.Stains;
-        _stainCombo = new FilterComboColors(280,
+        _stainCombo = new FilterComboColors(DefaultWidth - 20,
             _stainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))));
         _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, textures)).ToArray();
         _weaponCombo = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
@@ -55,7 +59,7 @@ public class EquipmentDrawer
     public void Prepare()
     {
         _iconSize    = new Vector2(2 * ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y);
-        _comboLength = 300 * ImGuiHelpers.GlobalScale;
+        _comboLength = DefaultWidth * ImGuiHelpers.GlobalScale;
     }
 
     private bool VerifyRestrictedGear(EquipSlot slot, EquipItem gear, Gender gender, Race race)
@@ -67,45 +71,35 @@ public class EquipmentDrawer
         return changed;
     }
 
-    [Flags]
-    public enum EquipChange : byte
-    {
-        None        = 0x00,
-        Item        = 0x01,
-        Stain       = 0x02,
-        ApplyItem   = 0x04,
-        ApplyStain  = 0x08,
-        Item2       = 0x10,
-        Stain2      = 0x20,
-        ApplyItem2  = 0x40,
-        ApplyStain2 = 0x80,
-    }
 
-    public EquipChange DrawEquip(EquipSlot slot, in DesignData designData, out EquipItem rArmor, out StainId rStain, EquipFlag? cApply,
+    public DataChange DrawEquip(EquipSlot slot, in DesignData designData, out EquipItem rArmor, out StainId rStain, EquipFlag? cApply,
         out bool rApply, out bool rApplyStain, bool locked)
         => DrawEquip(slot, designData.Item(slot), out rArmor, designData.Stain(slot), out rStain, cApply, out rApply, out rApplyStain, locked,
             designData.Customize.Gender, designData.Customize.Race);
 
-    public EquipChange DrawEquip(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain, EquipFlag? cApply,
+    public DataChange DrawEquip(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain, EquipFlag? cApply,
         out bool rApply, out bool rApplyStain, bool locked, Gender gender = Gender.Unknown, Race race = Race.Unknown)
     {
+        if (_config.HideApplyCheckmarks)
+            cApply = null;
+
         if (!locked && _codes.EnabledArtisan)
             return DrawEquipArtisan(slot, cArmor, out rArmor, cStain, out rStain, cApply, out rApply, out rApplyStain);
 
         var       spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
         using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
 
-        var changes = EquipChange.None;
+        var changes = DataChange.None;
         cArmor.DrawIcon(_textures, _iconSize);
         ImGui.SameLine();
         using var group = ImRaii.Group();
         if (DrawItem(slot, cArmor, out rArmor, out var label, locked))
-            changes |= EquipChange.Item;
+            changes |= DataChange.Item;
         if (cApply.HasValue)
         {
             ImGui.SameLine();
             if (DrawApply(slot, cApply.Value, out rApply, locked))
-                changes |= EquipChange.ApplyItem;
+                changes |= DataChange.ApplyItem;
         }
         else
         {
@@ -115,12 +109,12 @@ public class EquipmentDrawer
         ImGui.SameLine();
         ImGui.TextUnformatted(label);
         if (DrawStain(slot, cStain, out rStain, locked))
-            changes |= EquipChange.Stain;
+            changes |= DataChange.Stain;
         if (cApply.HasValue)
         {
             ImGui.SameLine();
             if (DrawApplyStain(slot, cApply.Value, out rApplyStain, locked))
-                changes |= EquipChange.ApplyStain;
+                changes |= DataChange.ApplyStain;
         }
         else
         {
@@ -136,18 +130,21 @@ public class EquipmentDrawer
         return changes;
     }
 
-    public EquipChange DrawWeapons(in DesignData designData, out EquipItem rMainhand, out EquipItem rOffhand, out StainId rMainhandStain,
+    public DataChange DrawWeapons(in DesignData designData, out EquipItem rMainhand, out EquipItem rOffhand, out StainId rMainhandStain,
         out StainId rOffhandStain, EquipFlag? cApply, out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand,
         out bool rApplyOffhandStain, bool locked)
         => DrawWeapons(designData.Item(EquipSlot.MainHand), out rMainhand, designData.Item(EquipSlot.OffHand), out rOffhand,
             designData.Stain(EquipSlot.MainHand),           out rMainhandStain, designData.Stain(EquipSlot.OffHand), out rOffhandStain, cApply,
             out rApplyMainhand,                             out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked);
 
-    public EquipChange DrawWeapons(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
+    public DataChange DrawWeapons(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
         StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
         out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
     {
-        var changes = EquipChange.None;
+        if (_config.HideApplyCheckmarks)
+            cApply = null;
+
+        var changes = DataChange.None;
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
             ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y });
@@ -159,11 +156,11 @@ public class EquipmentDrawer
             rOffhand = cOffhand;
             if (DrawMainhand(cMainhand, cApply.HasValue, out rMainhand, out var mainhandLabel, locked))
             {
-                changes |= EquipChange.Item;
+                changes |= DataChange.Item;
                 if (rMainhand.Type.ValidOffhand() != cMainhand.Type.ValidOffhand())
                 {
                     rOffhand =  _items.GetDefaultOffhand(rMainhand);
-                    changes  |= EquipChange.Item2;
+                    changes  |= DataChange.Item2;
                 }
             }
 
@@ -171,7 +168,7 @@ public class EquipmentDrawer
             {
                 ImGui.SameLine();
                 if (DrawApply(EquipSlot.MainHand, cApply.Value, out rApplyMainhand, locked))
-                    changes |= EquipChange.ApplyItem;
+                    changes |= DataChange.ApplyItem;
             }
             else
             {
@@ -182,12 +179,12 @@ public class EquipmentDrawer
             ImGui.TextUnformatted(mainhandLabel);
 
             if (DrawStain(EquipSlot.MainHand, cMainhandStain, out rMainhandStain, locked))
-                changes |= EquipChange.Stain;
+                changes |= DataChange.Stain;
             if (cApply.HasValue)
             {
                 ImGui.SameLine();
                 if (DrawApplyStain(EquipSlot.MainHand, cApply.Value, out rApplyMainhandStain, locked))
-                    changes |= EquipChange.ApplyStain;
+                    changes |= DataChange.ApplyStain;
             }
             else
             {
@@ -208,12 +205,12 @@ public class EquipmentDrawer
         using (var group = ImRaii.Group())
         {
             if (DrawOffhand(rMainhand, rOffhand, out rOffhand, out var offhandLabel, locked))
-                changes |= EquipChange.Item2;
+                changes |= DataChange.Item2;
             if (cApply.HasValue)
             {
                 ImGui.SameLine();
                 if (DrawApply(EquipSlot.OffHand, cApply.Value, out rApplyOffhand, locked))
-                    changes |= EquipChange.ApplyItem2;
+                    changes |= DataChange.ApplyItem2;
             }
             else
             {
@@ -224,12 +221,12 @@ public class EquipmentDrawer
             ImGui.TextUnformatted(offhandLabel);
 
             if (DrawStain(EquipSlot.OffHand, cOffhandStain, out rOffhandStain, locked))
-                changes |= EquipChange.Stain2;
+                changes |= DataChange.Stain2;
             if (cApply.HasValue)
             {
                 ImGui.SameLine();
                 if (DrawApplyStain(EquipSlot.OffHand, cApply.Value, out rApplyOffhandStain, locked))
-                    changes |= EquipChange.ApplyStain2;
+                    changes |= DataChange.ApplyStain2;
             }
             else
             {
@@ -240,8 +237,29 @@ public class EquipmentDrawer
         return changes;
     }
 
+    public bool DrawHatState(bool currentValue, out bool newValue, bool locked)
+        => UiHelpers.DrawCheckbox("Hat Visible", "Hide or show the characters head gear.", currentValue, out newValue, locked);
 
-    public bool DrawMainhand(EquipItem current, bool drawAll, out EquipItem weapon, out string label, bool locked)
+    public DataChange DrawHatState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
+        => UiHelpers.DrawMetaToggle("Hat Visible", "Change the visibility of the characters head gear: Hidden, Visible or Don't Apply.",
+            currentValue, currentApply, out newValue, out newApply, locked);
+
+    public bool DrawVisorState(bool currentValue, out bool newValue, bool locked)
+        => UiHelpers.DrawCheckbox("Visor Toggled", "Toggle the visor state of the characters head gear.", currentValue, out newValue, locked);
+
+    public DataChange DrawVisorState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
+        => UiHelpers.DrawMetaToggle("Visor Toggled", "Change the toggled state of the characters head gear: Normal, Toggled or Don't Apply.",
+            currentValue, currentApply, out newValue, out newApply, locked);
+
+    public bool DrawWeaponState(bool currentValue, out bool newValue, bool locked)
+        => UiHelpers.DrawCheckbox("Weapon Visible", "Hide or show the characters weapons when not drawn.", currentValue, out newValue, locked);
+
+    public DataChange DrawWeaponState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
+        => UiHelpers.DrawMetaToggle("Weapon Visible",
+            "Change the visibility of the characters weapons when not drawn: Hidden, Visible or Don't Apply.", currentValue, currentApply,
+            out newValue, out newApply, locked);
+
+    private bool DrawMainhand(EquipItem current, bool drawAll, out EquipItem weapon, out string label, bool locked)
     {
         weapon = current;
         if (!_weaponCombo.TryGetValue(drawAll ? FullEquipType.Unknown : current.Type, out var combo))
@@ -259,7 +277,7 @@ public class EquipmentDrawer
         return true;
     }
 
-    public bool DrawOffhand(EquipItem mainhand, EquipItem current, out EquipItem weapon, out string label, bool locked)
+    private bool DrawOffhand(EquipItem mainhand, EquipItem current, out EquipItem weapon, out string label, bool locked)
     {
         weapon = current;
         if (!_weaponCombo.TryGetValue(current.Type, out var combo))
@@ -291,11 +309,11 @@ public class EquipmentDrawer
         return change;
     }
 
-    public bool DrawApply(EquipSlot slot, EquipFlag flags, out bool enabled, bool locked)
+    private bool DrawApply(EquipSlot slot, EquipFlag flags, out bool enabled, bool locked)
         => UiHelpers.DrawCheckbox($"##apply{slot}", "Apply this item when applying the Design.", flags.HasFlag(slot.ToFlag()), out enabled,
             locked);
 
-    public bool DrawApplyStain(EquipSlot slot, EquipFlag flags, out bool enabled, bool locked)
+    private bool DrawApplyStain(EquipSlot slot, EquipFlag flags, out bool enabled, bool locked)
         => UiHelpers.DrawCheckbox($"##applyStain{slot}", "Apply this dye when applying the Design.", flags.HasFlag(slot.ToStainFlag()),
             out enabled, locked);
 
@@ -397,23 +415,23 @@ public class EquipmentDrawer
         return false;
     }
 
-    private EquipChange DrawEquipArtisan(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain,
+    private DataChange DrawEquipArtisan(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain,
         EquipFlag? cApply, out bool rApply, out bool rApplyStain)
     {
-        var changes = EquipChange.None;
+        var changes = DataChange.None;
         if (DrawStainArtisan(slot, cStain, out rStain))
-            changes |= EquipChange.Stain;
+            changes |= DataChange.Stain;
         ImGui.SameLine();
         if (DrawArmorArtisan(slot, cArmor, out rArmor))
-            changes |= EquipChange.Item;
+            changes |= DataChange.Item;
         if (cApply.HasValue)
         {
             ImGui.SameLine();
             if (DrawApply(slot, cApply.Value, out rApply, false))
-                changes |= EquipChange.ApplyItem;
+                changes |= DataChange.ApplyItem;
             ImGui.SameLine();
             if (DrawApplyStain(slot, cApply.Value, out rApplyStain, false))
-                changes |= EquipChange.ApplyStain;
+                changes |= DataChange.ApplyStain;
         }
         else
         {

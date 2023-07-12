@@ -116,7 +116,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
         {
             ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(Customize*)&actor.AsCharacter->DrawData.CustomizeData,
-                (nint) (&actor.AsCharacter->DrawData.Head));
+                (nint)(&actor.AsCharacter->DrawData.Head));
             return ret;
         }
 
@@ -320,7 +320,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         if (!_editor.ChangeMetaState(state, ActorState.MetaIndex.Wetness, value, source, out var old, key))
             return;
 
-        var actors = _applier.ChangeVisor(state, true);
+        var actors = _applier.ChangeWetness(state, true);
         Glamourer.Log.Verbose(
             $"Set Wetness in state {state.Identifier.Incognito(null)} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Other, state[ActorState.MetaIndex.Wetness], state, actors, (old, value, ActorState.MetaIndex.Wetness));
@@ -382,21 +382,29 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         else
         {
             _applier.ChangeCustomize(actors, state.ModelData.Customize);
-            _applier.ChangeHatState(actors, state.ModelData.IsHatVisible());
-            _applier.ChangeWeaponState(actors, state.ModelData.IsWeaponVisible());
-            _applier.ChangeVisor(actors, state.ModelData.IsVisorToggled());
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
                 _applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), state.ModelData.IsHatVisible());
             foreach (var slot in EquipSlotExtensions.WeaponSlots)
                 _applier.ChangeWeapon(actors, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
         }
 
+        if (state.ModelData.IsHuman)
+        {
+            _applier.ChangeHatState(actors, state.ModelData.IsHatVisible());
+            _applier.ChangeWeaponState(actors, state.ModelData.IsWeaponVisible());
+            _applier.ChangeVisor(actors, state.ModelData.IsVisorToggled());
+        }
+
         return actors;
     }
 
-    public void ResetState(ActorState state)
+    public void ResetState(ActorState state, uint key = 0)
     {
-        var redraw = state.ModelData.ModelId != state.BaseData.ModelId || !state.ModelData.IsHuman
+        if (!state.Unlock(key))
+            return;
+
+        var redraw = state.ModelData.ModelId != state.BaseData.ModelId
+         || !state.ModelData.IsHuman
          || Customize.Compare(state.ModelData.Customize, state.BaseData.Customize).RequiresRedraw();
         state.ModelData = state.BaseData;
         foreach (var index in Enum.GetValues<CustomizeIndex>())

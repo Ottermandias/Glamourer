@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Specialized;
 using System.Linq;
 using Dalamud.Interface;
 using Glamourer.Customization;
@@ -19,6 +20,17 @@ public partial class CustomizationDrawer
         DrawRaceCombo();
         var gender = _service.AwaitedService.GetName(CustomName.Gender);
         var clan   = _service.AwaitedService.GetName(CustomName.Clan);
+        if (_withApply)
+        {
+            if (UiHelpers.DrawCheckbox("##applyGender", "Apply gender of this design.", _currentApply, out var applyGender, _locked))
+                ChangeApply = applyGender ? ChangeApply | CustomizeFlag.Gender : ChangeApply & ~CustomizeFlag.Gender;
+            ImGui.SameLine();
+            if (UiHelpers.DrawCheckbox("##applyClan", "Apply clan of this design.", _currentApply, out var applyClan, _locked))
+                ChangeApply = applyClan ? ChangeApply | CustomizeFlag.Clan : ChangeApply & ~CustomizeFlag.Clan;
+            ImGui.SameLine();
+        }
+
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted($"{gender} & {clan}");
     }
 
@@ -32,7 +44,8 @@ public partial class CustomizationDrawer
             _                                                 => FontAwesomeIcon.Question,
         };
 
-        if (!ImGuiUtil.DrawDisabledButton(icon.ToIconString(), _framedIconSize, string.Empty, icon is not FontAwesomeIcon.Mars and not FontAwesomeIcon.Venus, true))
+        if (!ImGuiUtil.DrawDisabledButton(icon.ToIconString(), _framedIconSize, string.Empty,
+                icon is not FontAwesomeIcon.Mars and not FontAwesomeIcon.Venus, true))
             return;
 
         Changed |= _service.ChangeGender(ref _customize, icon is FontAwesomeIcon.Mars ? Gender.Female : Gender.Male);

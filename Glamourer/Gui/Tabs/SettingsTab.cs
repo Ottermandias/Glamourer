@@ -54,6 +54,10 @@ public class SettingsTab : ITab
         Checkbox("Auto-Reload Gear",
             "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection.",
             _config.AutoRedrawEquipOnChanges, _autoRedraw.SetState);
+
+        Checkbox("Hide Application Checkboxes",
+            "Hide the application checkboxes in the Customization and Equipment panels of the design tab, and only show them under Application Rules.",
+            _config.HideApplyCheckmarks, v => _config.HideApplyCheckmarks = v);
         if (Widget.DoubleModifierSelector("Design Deletion Modifier",
                 "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
                 _config.DeleteDesignModifier, v => _config.DeleteDesignModifier = v))

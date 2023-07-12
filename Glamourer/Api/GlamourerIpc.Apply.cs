@@ -77,7 +77,11 @@ public partial class GlamourerIpc
                     continue;
             }
 
-            _stateManager.ApplyDesign(design, state, StateChanged.Source.Ipc);
+            if (state.CanUnlock(0xDEADBEEF))
+            {
+                _stateManager.ApplyDesign(design, state, StateChanged.Source.Ipc, 0xDEADBEEF);
+                state.Lock(0xDEADBEEF);
+            }
         }
     }
 }

@@ -39,6 +39,13 @@ public partial class CustomizationDrawer
         using (var group = ImRaii.Group())
         {
             DataInputInt(current);
+            if (_withApply)
+            {
+                ApplyCheckbox();
+                ImGui.SameLine();
+            }
+
+            ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted(custom.Color == 0 ? $"{_currentOption} (Custom #{custom.Value})" : _currentOption);
         }
 

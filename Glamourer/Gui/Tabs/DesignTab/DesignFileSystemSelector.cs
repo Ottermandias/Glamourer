@@ -1,13 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
+using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Filesystem;
 using OtterGui.FileSystem.Selector;
 using OtterGui.Raii;
@@ -39,7 +41,9 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         => base.SelectedLeaf;
 
     public struct DesignState
-    { }
+    {
+        public ColorId Color;
+    }
 
     public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, KeyState keyState, DesignChanged @event,
         Configuration config, DesignConverter converter)
@@ -55,6 +59,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         AddButton(ImportDesignButton, 10);
         AddButton(CloneDesignButton,  20);
         AddButton(DeleteButton,       1000);
+        SetFilterTooltip();
     }
 
     protected override void DrawPopups()
@@ -64,9 +69,10 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
 
     protected override void DrawLeafName(FileSystem<Design>.Leaf leaf, in DesignState state, bool selected)
     {
-        var       flag = selected ? ImGuiTreeNodeFlags.Selected | LeafFlags : LeafFlags;
-        var       name = IncognitoMode ? leaf.Value.Incognito : leaf.Value.Name.Text;
-        using var _    = ImRaii.TreeNode(name, flag);
+        var       flag  = selected ? ImGuiTreeNodeFlags.Selected | LeafFlags : LeafFlags;
+        var       name  = IncognitoMode ? leaf.Value.Incognito : leaf.Value.Name.Text;
+        using var color = ImRaii.PushColor(ImGuiCol.Text, state.Color.Value());
+        using var _     = ImRaii.TreeNode(name, flag);
     }
 
     public override void Dispose()
@@ -103,6 +109,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
             case DesignChanged.Type.RemovedMod:
             case DesignChanged.Type.Created:
             case DesignChanged.Type.Deleted:
+            case DesignChanged.Type.ApplyCustomize:
+            case DesignChanged.Type.ApplyEquip:
                 SetFilterDirty();
                 break;
         }
@@ -188,4 +196,91 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
 
         _newName = string.Empty;
     }
+
+    #region Filters
+
+    private const StringComparison IgnoreCase    = StringComparison.OrdinalIgnoreCase;
+    private       LowerString      _designFilter = LowerString.Empty;
+    private       int              _filterType   = -1;
+
+    private void SetFilterTooltip()
+    {
+        FilterTooltip = "Filter designs for those where their full paths or names contain the given substring.\n"
+          + "Enter m:[string] to filter for designs with with a mod association containing the string.\n"
+          + "Enter t:[string] to filter for designs set to specific tags.\n"
+          + "Enter n:[string] to filter only for design names and no paths.";
+    }
+
+    /// <summary> Appropriately identify and set the string filter and its type. </summary>
+    protected override bool ChangeFilter(string filterValue)
+    {
+        (_designFilter, _filterType) = filterValue.Length switch
+        {
+            0 => (LowerString.Empty, -1),
+            > 1 when filterValue[1] == ':' =>
+                filterValue[0] switch
+                {
+                    'n' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 1),
+                    'N' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 1),
+                    'm' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 2),
+                    'M' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 2),
+                    't' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 3),
+                    'T' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 3),
+                    _   => (new LowerString(filterValue), 0),
+                },
+            _ => (new LowerString(filterValue), 0),
+        };
+
+        return true;
+    }
+
+    /// <summary>
+    /// The overwritten filter method also computes the state.
+    /// Folders have default state and are filtered out on the direct string instead of the other options.
+    /// If any filter is set, they should be hidden by default unless their children are visible,
+    /// or they contain the path search string.
+    /// </summary>
+    protected override bool ApplyFiltersAndState(FileSystem<Design>.IPath path, out DesignState state)
+    {
+        if (path is DesignFileSystem.Folder f)
+        {
+            state = default;
+            return FilterValue.Length > 0 && !f.FullName().Contains(FilterValue, IgnoreCase);
+        }
+
+        return ApplyFiltersAndState((DesignFileSystem.Leaf)path, out state);
+    }
+
+    /// <summary> Apply the string filters. </summary>
+    private bool ApplyStringFilters(DesignFileSystem.Leaf leaf, Design design)
+    {
+        return _filterType switch
+        {
+            -1 => false,
+            0  => !(_designFilter.IsContained(leaf.FullName()) || design.Name.Contains(_designFilter)),
+            1  => !design.Name.Contains(_designFilter),
+            2  => !design.AssociatedMods.Any(kvp => _designFilter.IsContained(kvp.Key.Name)),
+            3  => !design.Tags.Any(_designFilter.IsContained),
+            _  => false, // Should never happen
+        };
+    }
+
+    /// <summary> Combined wrapper for handling all filters and setting state. </summary>
+    private bool ApplyFiltersAndState(DesignFileSystem.Leaf leaf, out DesignState state)
+    {
+        var applyEquip     = leaf.Value.ApplyEquip != 0;
+        var applyCustomize = (leaf.Value.ApplyCustomize & ~(CustomizeFlag.BodyType | CustomizeFlag.Race)) != 0;
+
+        state.Color = (applyEquip, applyCustomize) switch
+        {
+            (false, false) => ColorId.StateDesign,
+            (false, true)  => ColorId.CustomizationDesign,
+            (true, false)  => ColorId.EquipmentDesign,
+            (true, true)   => ColorId.NormalDesign,
+        };
+
+        return ApplyStringFilters(leaf, leaf.Value);
+    }
+
+    #endregion
 }

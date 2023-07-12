@@ -14,7 +14,8 @@ namespace Glamourer.Gui.Customization;
 
 public partial class CustomizationDrawer : IDisposable
 {
-    private readonly CodeService _codes;
+    private readonly CodeService   _codes;
+    private readonly Configuration _config;
 
     private readonly Vector4                 _redTint = new(0.6f, 0.3f, 0.3f, 1f);
     private readonly ImGuiScene.TextureWrap? _legacyTattoo;
@@ -29,23 +30,28 @@ public partial class CustomizationDrawer : IDisposable
 
     public CustomizeFlag CurrentFlag { get; private set; }
     public CustomizeFlag Changed     { get; private set; }
+    public CustomizeFlag ChangeApply { get; private set; }
 
     public bool RequiresRedraw
         => Changed.RequiresRedraw();
 
     private bool    _locked = false;
+    private Vector2 _defaultSpacing;
+    private Vector2 _spacing;
     private Vector2 _iconSize;
     private Vector2 _framedIconSize;
     private float   _inputIntSize;
     private float   _comboSelectorSize;
     private float   _raceSelectorWidth;
+    private bool    _withApply;
 
     private readonly CustomizationService _service;
 
-    public CustomizationDrawer(DalamudPluginInterface pi, CustomizationService service, CodeService codes)
+    public CustomizationDrawer(DalamudPluginInterface pi, CustomizationService service, CodeService codes, Configuration config)
     {
         _service      = service;
         _codes        = codes;
+        _config       = config;
         _legacyTattoo = GetLegacyTattooIcon(pi);
         _customize    = Customize.Default;
     }
@@ -58,6 +64,17 @@ public partial class CustomizationDrawer : IDisposable
     public bool Draw(Customize current, bool locked)
     {
         CurrentFlag = CustomizeFlagExtensions.All;
+        _withApply  = false;
+        Init(current, locked);
+
+        return DrawInternal();
+    }
+
+    public bool Draw(Customize current, CustomizeFlag apply, bool locked)
+    {
+        CurrentFlag = CustomizeFlagExtensions.All;
+        ChangeApply = apply;
+        _withApply  = !_config.HideApplyCheckmarks;
         Init(current, locked);
         return DrawInternal();
     }
@@ -75,6 +92,7 @@ public partial class CustomizationDrawer : IDisposable
     private CustomizeIndex _currentIndex;
     private CustomizeFlag  _currentFlag;
     private CustomizeValue _currentByte = CustomizeValue.Zero;
+    private bool           _currentApply;
     private int            _currentCount;
     private string         _currentOption = string.Empty;
 
@@ -83,6 +101,7 @@ public partial class CustomizationDrawer : IDisposable
     {
         _currentIndex  = index;
         _currentFlag   = index.ToFlag();
+        _currentApply  = ChangeApply.HasFlag(_currentFlag);
         _currentByte   = _customize[index];
         _currentCount  = _set.Count(index, _customize.Face);
         _currentOption = _set.Option(index);
@@ -99,8 +118,23 @@ public partial class CustomizationDrawer : IDisposable
         Changed                   |= _currentFlag;
     }
 
+    // Update the current Apply value.
+    private void ToggleApply()
+    {
+        _currentApply = !_currentApply;
+        ChangeApply   = _currentApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
+    }
+
+    public bool DrawWetnessState(bool currentValue, out bool newValue, bool locked)
+        => UiHelpers.DrawCheckbox("Force Wetness", "Force the character to be wet or not.", currentValue, out newValue, locked);
+
+    public DataChange DrawWetnessState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
+        => UiHelpers.DrawMetaToggle("Force Wetness", "Change the characters forced wetness state: Disabled, Enabled or Don't Apply.",
+            currentValue, currentApply, out newValue, out newApply, locked);
+
     private bool DrawInternal()
     {
+        using var spacing  = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _spacing);
         using var disabled = ImRaii.Disabled(_locked);
 
         try
@@ -124,7 +158,7 @@ public partial class CustomizationDrawer : IDisposable
             Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.ColorPicker], DrawColorPicker, ImGui.SameLine);
 
             Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.Checkmark], DrawCheckbox,
-                () => ImGui.SameLine(_inputIntSize + _framedIconSize.X + 3 * ImGui.GetStyle().ItemSpacing.X));
+                () => ImGui.SameLine(_comboSelectorSize - _framedIconSize.X + _spacing.X));
             return Changed != 0;
         }
         catch (Exception ex)
@@ -144,19 +178,19 @@ public partial class CustomizationDrawer : IDisposable
             using var id    = ImRaii.PushId(i);
             int       value = _customize.Data.Data[i];
             ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
-            if (!ImGui.InputInt(string.Empty, ref value, 0, 0))
-                continue;
+            if (ImGui.InputInt(string.Empty, ref value, 0, 0))
+            {
+                var newValue = (byte)Math.Clamp(value, 0, byte.MaxValue);
+                if (newValue != _customize.Data.Data[i])
+                    foreach (var flag in Enum.GetValues<CustomizeIndex>())
+                    {
+                        var (j, mask) = flag.ToByteAndMask();
+                        if (j == i)
+                            Changed |= flag.ToFlag();
+                    }
 
-            var newValue = (byte)Math.Clamp(value, 0, byte.MaxValue);
-            if (newValue != _customize.Data.Data[i])
-                foreach (var flag in Enum.GetValues<CustomizeIndex>())
-                {
-                    var (j, mask) = flag.ToByteAndMask();
-                    if (j == i)
-                        Changed |= flag.ToFlag();
-                }
-
-            _customize.Data.Data[i] = newValue;
+                _customize.Data.Data[i] = newValue;
+            }
         }
 
         return Changed != 0;
@@ -164,10 +198,12 @@ public partial class CustomizationDrawer : IDisposable
 
     private void UpdateSizes()
     {
-        _iconSize          = new Vector2(ImGui.GetTextLineHeightWithSpacing() * 2);
+        _defaultSpacing    = ImGui.GetStyle().ItemSpacing;
+        _spacing           = ImGui.GetStyle().ItemSpacing with { X = ImGui.GetStyle().ItemInnerSpacing.X };
+        _iconSize          = new Vector2(ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 2 * ImGui.GetStyle().FramePadding.Y);
         _framedIconSize    = _iconSize + 2 * ImGui.GetStyle().FramePadding;
-        _inputIntSize      = 2 * _framedIconSize.X + ImGui.GetStyle().ItemSpacing.X;
-        _comboSelectorSize = 4 * _framedIconSize.X + 3 * ImGui.GetStyle().ItemSpacing.X;
+        _inputIntSize      = 2 * _framedIconSize.X + 1 * _spacing.X;
+        _comboSelectorSize = 4 * _framedIconSize.X + 3 * _spacing.X;
         _raceSelectorWidth = _inputIntSize + _comboSelectorSize - _framedIconSize.X;
     }
 

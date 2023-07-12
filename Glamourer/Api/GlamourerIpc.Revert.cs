@@ -31,7 +31,9 @@ public partial class GlamourerIpc
         foreach (var id in actors)
         {
             if (_stateManager.TryGetValue(id, out var state))
-                _stateManager.ResetState(state);
+            {
+                _stateManager.ResetState(state, 0xDEADBEEF);
+            }
         }
     }
 }

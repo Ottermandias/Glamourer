@@ -107,46 +107,77 @@ public class ActorPanel
 
     private void DrawHumanPanel()
     {
-        if (_customizationDrawer.Draw(_state!.ModelData.Customize, false))
+        DrawCustomizationsHeader();
+        DrawEquipmentHeader();
+    }
+
+    private void DrawCustomizationsHeader()
+    {
+        if (!ImGui.CollapsingHeader("Customizations"))
+            return;
+
+        if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked))
             _stateManager.ChangeCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, StateChanged.Source.Manual);
+
+        if (_customizationDrawer.DrawWetnessState(_state!.ModelData.IsWet(), out var newWetness, _state.IsLocked))
+            _stateManager.ChangeWetness(_state, newWetness, StateChanged.Source.Manual);
+        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+    }
+
+    private void DrawEquipmentHeader()
+    {
+        if (!ImGui.CollapsingHeader("Equipment"))
+            return;
 
         _equipmentDrawer.Prepare();
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var changes = _equipmentDrawer.DrawEquip(slot, _state.ModelData, out var newArmor, out var newStain, null, out _, out _,
+            var changes = _equipmentDrawer.DrawEquip(slot, _state!.ModelData, out var newArmor, out var newStain, null, out _, out _,
                 _state.IsLocked);
             switch (changes)
             {
-                case EquipmentDrawer.EquipChange.Item:
+                case DataChange.Item:
                     _stateManager.ChangeItem(_state, slot, newArmor, StateChanged.Source.Manual);
                     break;
-                case EquipmentDrawer.EquipChange.Stain:
+                case DataChange.Stain:
                     _stateManager.ChangeStain(_state, slot, newStain, StateChanged.Source.Manual);
                     break;
-                case EquipmentDrawer.EquipChange.Item | EquipmentDrawer.EquipChange.Stain:
+                case DataChange.Item | DataChange.Stain:
                     _stateManager.ChangeEquip(_state, slot, newArmor, newStain, StateChanged.Source.Manual);
                     break;
             }
         }
 
-        var weaponChanges = _equipmentDrawer.DrawWeapons(_state.ModelData, out var newMainhand, out var newOffhand, out var newMainhandStain,
+        var weaponChanges = _equipmentDrawer.DrawWeapons(_state!.ModelData, out var newMainhand, out var newOffhand,
+            out var newMainhandStain,
             out var newOffhandStain, null, out _, out _, out _, out _, _state.IsLocked);
 
-        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Item))
-            if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain))
+        if (weaponChanges.HasFlag(DataChange.Item))
+            if (weaponChanges.HasFlag(DataChange.Stain))
                 _stateManager.ChangeEquip(_state, EquipSlot.MainHand, newMainhand, newMainhandStain, StateChanged.Source.Manual);
             else
                 _stateManager.ChangeItem(_state, EquipSlot.MainHand, newMainhand, StateChanged.Source.Manual);
-        else if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain))
+        else if (weaponChanges.HasFlag(DataChange.Stain))
             _stateManager.ChangeStain(_state, EquipSlot.MainHand, newMainhandStain, StateChanged.Source.Manual);
 
-        if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Item2))
-            if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain2))
+        if (weaponChanges.HasFlag(DataChange.Item2))
+            if (weaponChanges.HasFlag(DataChange.Stain2))
                 _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOffhand, newOffhandStain, StateChanged.Source.Manual);
             else
                 _stateManager.ChangeItem(_state, EquipSlot.OffHand, newOffhand, StateChanged.Source.Manual);
-        else if (weaponChanges.HasFlag(EquipmentDrawer.EquipChange.Stain2))
+        else if (weaponChanges.HasFlag(DataChange.Stain2))
             _stateManager.ChangeStain(_state, EquipSlot.OffHand, newOffhandStain, StateChanged.Source.Manual);
+
+        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        if (_equipmentDrawer.DrawHatState(_state!.ModelData.IsHatVisible(), out var newHatState, _state!.IsLocked))
+            _stateManager.ChangeHatState(_state, newHatState, StateChanged.Source.Manual);
+        ImGui.SameLine();
+        if (_equipmentDrawer.DrawVisorState(_state!.ModelData.IsVisorToggled(), out var newVisorState, _state!.IsLocked))
+            _stateManager.ChangeVisorState(_state, newVisorState, StateChanged.Source.Manual);
+        ImGui.SameLine();
+        if (_equipmentDrawer.DrawWeaponState(_state!.ModelData.IsWeaponVisible(), out var newWeaponState, _state!.IsLocked))
+            _stateManager.ChangeWeaponState(_state, newWeaponState, StateChanged.Source.Manual);
+        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }
 
     private void DrawMonsterPanel()
@@ -217,6 +248,7 @@ public class ActorPanel
             Icon        = FontAwesomeIcon.Clipboard,
             OnClick     = SetFromClipboard,
             Visible     = _state != null,
+            Disabled    = _state?.IsLocked ?? true,
         };
 
     private HeaderDrawer.Button ExportToClipboardButton()
@@ -301,15 +333,19 @@ public class ActorPanel
 
     private void RevertButtons()
     {
-        if (ImGui.Button("Revert to Game"))
+        if (ImGuiUtil.DrawDisabledButton("Revert to Game", Vector2.Zero, "Revert the character to its actual state in the game.",
+                _state!.IsLocked))
             _stateManager.ResetState(_state!);
 
         ImGui.SameLine();
-        if (ImGui.Button("Reapply State"))
+        if (ImGuiUtil.DrawDisabledButton("Reapply State", Vector2.Zero, "Try to reapply the configured state if something went wrong.",
+                _state!.IsLocked))
             _stateManager.ReapplyState(_actor);
 
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Reapply Automation", Vector2.Zero, string.Empty, !_config.EnableAutoDesigns))
+        if (ImGuiUtil.DrawDisabledButton("Reapply Automation", Vector2.Zero,
+                "Try to revert the character to the state it would have using automated designs.",
+                !_config.EnableAutoDesigns || _state!.IsLocked))
         {
             _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!);
             _stateManager.ReapplyState(_actor);

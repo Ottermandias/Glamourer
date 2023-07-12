@@ -165,10 +165,10 @@ public class StateEditor
     {
         (var setter, oldValue) = index switch
         {
-            ActorState.MetaIndex.Wetness     => ((Func<bool, bool>)state.ModelData.SetIsWet, state.ModelData.IsWet()),
-            ActorState.MetaIndex.HatState    => ((Func<bool, bool>)state.ModelData.SetHatVisible, state.ModelData.IsHatVisible()),
-            ActorState.MetaIndex.VisorState  => ((Func<bool, bool>)state.ModelData.SetVisor, state.ModelData.IsVisorToggled()),
-            ActorState.MetaIndex.WeaponState => ((Func<bool, bool>)state.ModelData.SetWeaponVisible, state.ModelData.IsWeaponVisible()),
+            ActorState.MetaIndex.Wetness     => ((Func<bool, bool>) (v => state.ModelData.SetIsWet(v)), state.ModelData.IsWet()),
+            ActorState.MetaIndex.HatState    => ((Func<bool, bool>) (v => state.ModelData.SetHatVisible(v)), state.ModelData.IsHatVisible()),
+            ActorState.MetaIndex.VisorState  => ((Func<bool, bool>) (v => state.ModelData.SetVisor(v)), state.ModelData.IsVisorToggled()),
+            ActorState.MetaIndex.WeaponState => ((Func<bool, bool>) (v => state.ModelData.SetWeaponVisible(v)), state.ModelData.IsWeaponVisible()),
             _                                => throw new Exception("Invalid MetaIndex."),
         };
 

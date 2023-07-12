@@ -4,6 +4,7 @@ namespace Glamourer.Gui;
 
 public enum ColorId
 {
+    NormalDesign,
     CustomizationDesign,
     StateDesign,
     EquipmentDesign,
@@ -25,8 +26,9 @@ public static class Colors
         => color switch
         {
             // @formatter:off
+            ColorId.NormalDesign               => (0xFFFFFFFF, "Normal Design",                    "A design with no specific traits."                                                                         ),
             ColorId.CustomizationDesign        => (0xFFC000C0, "Customization Design",             "A design that only changes customizations on a character."                                                 ),
-            ColorId.StateDesign                => (0xFF00C0C0, "State Design",                     "A design that only changes meta state on a character."                                                     ),
+            ColorId.StateDesign                => (0xFF00C0C0, "State Design",                     "A design that does not change equipment or customizations on a character."                                 ),
             ColorId.EquipmentDesign            => (0xFF00C000, "Equipment Design",                 "A design that only changes equipment on a character."                                                      ),
             ColorId.ActorAvailable             => (0xFF18C018, "Actor Available",                  "The header in the Actor tab panel if the currently selected actor exists in the game world at least once." ),
             ColorId.ActorUnavailable           => (0xFF1818C0, "Actor Unavailable",                "The Header in the Actor tab panel if the currently selected actor does not exist in the game world."       ),

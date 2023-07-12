@@ -59,7 +59,7 @@ public unsafe class WeaponService : IDisposable
         _loadWeaponHook.Original(drawData, slot, weapon.Value, redrawOnEquality, unk2, skipGameObject, unk4);
         if (tmpWeapon.Value != weapon.Value)
             _loadWeaponHook.Original(drawData, slot, tmpWeapon.Value, 1, unk2, 1, unk4);
-        Glamourer.Log.Information(
+        Glamourer.Log.Excessive(
             $"Weapon reloaded for 0x{actor.Address:X} ({actor.Utf8Name}) with attributes {slot} {weapon.Value:X14}, {redrawOnEquality}, {unk2}, {skipGameObject}, {unk4}");
     }
 

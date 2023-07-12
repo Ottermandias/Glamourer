@@ -39,6 +39,12 @@ public partial class CustomizationDrawer
             else
                 DataInputInt(current);
 
+            if (_withApply)
+            {
+                ApplyCheckbox();
+                ImGui.SameLine();
+            }
+
             ImGui.TextUnformatted($"{label} ({custom.Value.Value})");
         }
 
@@ -115,14 +121,43 @@ public partial class CustomizationDrawer
         DrawMultiIcons();
         ImGui.SameLine();
         using var group = ImRaii.Group();
-        ImGui.Dummy(new Vector2(0, ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y / 2));
 
         _currentCount = 256;
-        PercentageInputInt();
+        if (_withApply)
+        {
+            ApplyCheckbox(CustomizeIndex.FacialFeature1);
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + _spacing.X);
+            ApplyCheckbox(CustomizeIndex.FacialFeature2);
+            ImGui.SameLine();
+            ApplyCheckbox(CustomizeIndex.FacialFeature3);
+            ImGui.SameLine();
+            ApplyCheckbox(CustomizeIndex.FacialFeature4);
+        }
 
-        ImGui.TextUnformatted(_set.Option(CustomizeIndex.LegacyTattoo));
+        PercentageInputInt();
         if (_set.DataByValue(CustomizeIndex.Face, _customize.Face, out _, _customize.Face) < 0)
+        {
+            ImGui.SameLine();
+            ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted("(Using Face 1)");
+        }
+
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + _spacing.Y);
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted(_set.Option(CustomizeIndex.LegacyTattoo));
+
+        if (_withApply)
+        {
+            ApplyCheckbox(CustomizeIndex.FacialFeature5);
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + _spacing.X);
+            ApplyCheckbox(CustomizeIndex.FacialFeature6);
+            ImGui.SameLine();
+            ApplyCheckbox(CustomizeIndex.FacialFeature7);
+            ImGui.SameLine();
+            ApplyCheckbox(CustomizeIndex.LegacyTattoo);
+        }
     }
 
     private void DrawMultiIcons()
