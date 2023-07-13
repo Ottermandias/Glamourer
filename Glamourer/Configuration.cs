@@ -34,7 +34,11 @@ public class Configuration : IPluginConfiguration, ISavable
     [JsonProperty(Order = int.MaxValue)]
     public ISortMode<Design> SortMode { get; set; } = ISortMode<Design>.FoldersFirst;
 
-    public List<(string Code, bool Enabled)> Codes { get; set; } = new List<(string Code, bool Enabled)>();
+    public List<(string Code, bool Enabled)> Codes { get; set; } = new List<(string Code, bool Enabled)>()
+    {
+        (CodeService.CodeInventoryString, false),
+        (CodeService.CodeMesmerString, false),
+    };
 
 #if DEBUG
     public bool DebugMode { get; set; } = true;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using Glamourer.Automation;
 using Glamourer.Gui;
 using Newtonsoft.Json.Linq;
@@ -50,6 +51,18 @@ public class ConfigMigrationService
         _config.Colors[ColorId.StateDesign] = stateColor;
         var equipmentColor = _data["EquipmentColor"]?.ToObject<uint>() ?? ColorId.EquipmentDesign.Data().DefaultColor;
         _config.Colors[ColorId.EquipmentDesign] = equipmentColor;
+    }
+
+    private void MigrateV2To3()
+    {
+        if (_config.Version > 2)
+            return;
+    
+        _config.Version = 3;
+        if (_config.Codes.All(s => s.Code != CodeService.CodeInventoryString))
+            _config.Codes.Add((CodeService.CodeInventoryString, false));
+        if (_config.Codes.All(s => s.Code != CodeService.CodeMesmerString))
+            _config.Codes.Add((CodeService.CodeMesmerString, false));
     }
 
     private static void AddColors(Configuration config, bool forceSave)

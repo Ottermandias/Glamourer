@@ -77,14 +77,14 @@ public class SettingsTab : ITab
 
     private void DrawCodes()
     {
-        if (!ImGui.CollapsingHeader("Codes"))
+        if (!ImGui.CollapsingHeader("Cheat Codes"))
             return;
 
         using (var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale, _currentCode.Length > 0))
         {
             var       color = _codeService.CheckCode(_currentCode) != null ? ColorId.ActorAvailable : ColorId.ActorUnavailable;
             using var c     = ImRaii.PushColor(ImGuiCol.Border, color.Value(), _currentCode.Length > 0);
-            if (ImGui.InputTextWithHint("##Code", "Enter Code...", ref _currentCode, 512, ImGuiInputTextFlags.EnterReturnsTrue))
+            if (ImGui.InputTextWithHint("##Code", "Enter Cheat Code...", ref _currentCode, 512, ImGuiInputTextFlags.EnterReturnsTrue))
                 if (_codeService.AddCode(_currentCode))
                     _currentCode = string.Empty;
         }

@@ -8,7 +8,7 @@ namespace Glamourer.Unlocks;
 public static class UnlockDictionaryHelpers
 {
     public const int Magic   = 0x00C0FFEE;
-    public const int Version = 1;
+    public const int Version = 2;
 
     public static void Save(StreamWriter writer, IReadOnlyDictionary<uint, long> data)
     {
@@ -26,11 +26,11 @@ public static class UnlockDictionaryHelpers
         b.Flush();
     }
 
-    public static void Load(string filePath, Dictionary<uint, long> data, Func<uint, bool> validate, string type)
+    public static int Load(string filePath, Dictionary<uint, long> data, Func<uint, bool> validate, string type)
     {
         data.Clear();
         if (!File.Exists(filePath))
-            return;
+            return -1;
 
         try
         {
@@ -49,7 +49,7 @@ public static class UnlockDictionaryHelpers
                 default:
                     Glamourer.Chat.NotificationMessage($"Loading unlocked {type}s failed: Invalid magic number.", "Warning",
                         NotificationType.Warning);
-                    return;
+                    return -1;
             }
 
             var version = b.ReadInt32();
@@ -57,6 +57,7 @@ public static class UnlockDictionaryHelpers
             var now     = DateTimeOffset.UtcNow;
             switch (version)
             {
+                case 1:
                 case Version:
                     var count = b.ReadInt32();
                     data.EnsureCapacity(count);
@@ -86,15 +87,18 @@ public static class UnlockDictionaryHelpers
                 default:
                     Glamourer.Chat.NotificationMessage($"Loading unlocked {type}s failed: Version {version} is unknown.", "Warning",
                         NotificationType.Warning);
-                    return;
+                    return version;
             }
 
             Glamourer.Log.Debug($"[UnlockManager] Loaded {data.Count} unlocked {type}s.");
+            return version;
         }
         catch (Exception ex)
         {
             Glamourer.Chat.NotificationMessage(ex, $"Loading unlocked {type}s failed: Unknown Error.", $"Loading unlocked {type}s failed:\n",
                 "Error", NotificationType.Error);
+
+            return -1;
         }
     }
 

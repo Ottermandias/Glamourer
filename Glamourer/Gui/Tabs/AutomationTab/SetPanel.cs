@@ -31,6 +31,7 @@ public class SetPanel
     private readonly DesignCombo      _designCombo;
     private readonly JobGroupCombo    _jobGroupCombo;
     private readonly IdentifierDrawer _identifierDrawer;
+    private readonly CodeService      _codeService;
 
     private string? _tempName;
     private int     _dragIndex = -1;
@@ -38,7 +39,8 @@ public class SetPanel
     private Action? _endAction;
 
     public SetPanel(SetSelector selector, AutoDesignManager manager, DesignManager designs, JobService jobs, ItemUnlockManager itemUnlocks,
-        CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer)
+        CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer,
+        CodeService codeService)
     {
         _selector         = selector;
         _manager          = manager;
@@ -46,6 +48,7 @@ public class SetPanel
         _customizeUnlocks = customizeUnlocks;
         _customizations   = customizations;
         _identifierDrawer = identifierDrawer;
+        _codeService      = codeService;
         _designCombo      = new DesignCombo(_manager, designs);
         _jobGroupCombo    = new JobGroupCombo(manager, jobs);
     }
@@ -182,8 +185,10 @@ public class SetPanel
             }
         }
 
-        DrawWarning(sb, 0xA03030F0, size, "\nThese items will be skipped when applied automatically. To change this, see",
-            "All equipment to be applied is unlocked."); // TODO
+        var tt = _codeService.EnabledInventory
+            ? "\nThese items will still be applied, because you have enabled a cheat code."
+            : $"\nThese items will be skipped when applied automatically.\n\nTo change this, enable the \"{CodeService.CodeInventoryString}\" Cheat Code in Settings.";
+        DrawWarning(sb, !_codeService.EnabledInventory ? 0xA03030F0 : 0x0, size, tt, "All equipment to be applied is unlocked.");
 
         sb.Clear();
         var sb2       = new StringBuilder();
@@ -199,7 +204,7 @@ public class SetPanel
                 continue;
 
             if (flag.RequiresRedraw())
-                sb.AppendLine($"{type.ToDefaultName()} Customization can not be changed automatically."); // TODO
+                sb.AppendLine($"{type.ToDefaultName()} Customization should not be changed automatically.");
             else if (type is CustomizeIndex.Hairstyle or CustomizeIndex.FacePaint
                   && set.DataByValue(type, customize[type], out var data, customize.Face) >= 0
                   && !_customizeUnlocks.IsUnlocked(data!.Value, out _))
@@ -208,10 +213,16 @@ public class SetPanel
         }
 
         ImGui.SameLine();
-        DrawWarning(sb2, 0xA03030F0, size, "\nThese customizations will be skipped when applied automatically. To change this, see",
-            "All customizations to be applied are unlocked."); // TODO
+        tt = _codeService.EnabledInventory
+            ? "\nThese customizations will still be applied, because you have enabled a cheat code."
+            : $"\nThese customizations will be skipped when applied automatically.\n\nTo change this, enable the \"{CodeService.CodeInventoryString}\" Cheat Code in Settings.";
+        DrawWarning(sb2, !_codeService.EnabledInventory ? 0xA03030F0 : 0x0, size, tt, "All customizations to be applied are unlocked.");
         ImGui.SameLine();
-        DrawWarning(sb, 0xA030F0F0, size, "\nThese customizations will be skipped when applied automatically.",
+
+        tt = _codeService.EnabledMesmer
+            ? "\nThese customizations will still be applied, because you have enabled a cheat code."
+            : $"\nThese customizations will be skipped when applied automatically.\n\nTo change this, enable the \"{CodeService.CodeMesmerString}\" Cheat Code in Settings.";
+        DrawWarning(sb, !_codeService.EnabledMesmer ? 0xA03030F0 : 0x0, size, tt,
             "No customizations unable to be applied automatically are set to be applied."); // TODO
     }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Dalamud.Data;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
@@ -10,17 +11,22 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Glamourer.Events;
 using Glamourer.Services;
 using Lumina.Excel.GeneratedSheets;
+using Penumbra.GameData.Enums;
+using static OtterGui.Raii.ImRaii;
+using static Penumbra.GameData.Files.ShpkFile;
 using Cabinet = Lumina.Excel.GeneratedSheets.Cabinet;
+using Item = Lumina.Excel.GeneratedSheets.Item;
 
 namespace Glamourer.Unlocks;
 
 public class ItemUnlockManager : ISavable, IDisposable
 {
-    private readonly SaveService    _saveService;
-    private readonly ItemManager    _items;
-    private readonly ClientState    _clientState;
-    private readonly Framework      _framework;
-    private readonly ObjectUnlocked _event;
+    private readonly SaveService       _saveService;
+    private readonly ItemManager       _items;
+    private readonly ClientState       _clientState;
+    private readonly Framework         _framework;
+    private readonly ObjectUnlocked    _event;
+    private readonly IdentifierService _identifier;
 
     private readonly Dictionary<uint, long> _unlocked = new();
 
@@ -46,7 +52,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         => _unlocked;
 
     public ItemUnlockManager(SaveService saveService, ItemManager items, ClientState clientState, DataManager gameData, Framework framework,
-        ObjectUnlocked @event)
+        ObjectUnlocked @event, IdentifierService identifier)
     {
         SignatureHelper.Initialise(this);
         _saveService = saveService;
@@ -54,6 +60,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         _clientState = clientState;
         _framework   = framework;
         _event       = @event;
+        _identifier  = identifier;
         Unlockable   = CreateUnlockData(gameData, items);
         Load();
         _clientState.Login += OnLogin;
@@ -97,6 +104,23 @@ public class ItemUnlockManager : ISavable, IDisposable
         InventoryType.RetainerMarket,
     };
 
+    bool AddItem(uint itemId, long time)
+    {
+        itemId = HandleHq(itemId);
+        if (!_items.ItemService.AwaitedService.TryGetValue(itemId, out var equip) || !_unlocked.TryAdd(equip.ItemId, time))
+            return false;
+
+        _event.Invoke(ObjectUnlocked.Type.Item, equip.ItemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
+        var ident = _identifier.AwaitedService.Identify(equip.ModelId, equip.WeaponType, equip.Variant, equip.Type.ToSlot());
+        foreach (var item in ident)
+        {
+            if (_unlocked.TryAdd(item.ItemId, time))
+                _event.Invoke(ObjectUnlocked.Type.Item, item.ItemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
+        }
+
+        return true;
+    }
+
     private unsafe void OnFramework(Framework _)
     {
         var uiState = UIState.Instance();
@@ -122,16 +146,6 @@ public class ItemUnlockManager : ISavable, IDisposable
             Scan();
 
         var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-        bool AddItem(uint itemId)
-        {
-            if (!_items.ItemService.AwaitedService.TryGetValue(itemId, out var equip) || !_unlocked.TryAdd(equip.ItemId, time))
-                return false;
-
-            _event.Invoke(ObjectUnlocked.Type.Item, equip.ItemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
-            return true;
-        }
-
         var mirageManager = MirageManager.Instance();
         var changes       = false;
         if (mirageManager != null)
@@ -143,7 +157,7 @@ public class ItemUnlockManager : ISavable, IDisposable
                 // TODO: Make independent from hardcoded value
                 var span = new ReadOnlySpan<uint>(mirageManager->PrismBoxItemIds, 800);
                 foreach (var item in span)
-                    changes |= AddItem(item);
+                    changes |= AddItem(item, time);
             }
 
             var newPlateState = mirageManager->GlamourPlatesLoaded;
@@ -155,7 +169,7 @@ public class ItemUnlockManager : ISavable, IDisposable
                     // TODO: Make independent from hardcoded value
                     var span = new ReadOnlySpan<uint>(plate.ItemIds, 12);
                     foreach (var item in span)
-                        changes |= AddItem(item);
+                        changes |= AddItem(item, time);
                 }
             }
         }
@@ -172,8 +186,8 @@ public class ItemUnlockManager : ISavable, IDisposable
                 var item = container->GetInventorySlot(_currentInventoryIndex++);
                 if (item != null)
                 {
-                    changes |= AddItem(item->ItemID);
-                    changes |= AddItem(item->GlamourID);
+                    changes |= AddItem(item->ItemID, time);
+                    changes |= AddItem(item->GlamourID, time);
                 }
             }
             else
@@ -262,8 +276,11 @@ public class ItemUnlockManager : ISavable, IDisposable
         => UnlockDictionaryHelpers.Save(writer, Unlocked);
 
     private void Load()
-        => UnlockDictionaryHelpers.Load(ToFilename(_saveService.FileNames), _unlocked,
+    {
+        var version = UnlockDictionaryHelpers.Load(ToFilename(_saveService.FileNames), _unlocked,
             id => _items.ItemService.AwaitedService.TryGetValue(id, out _), "item");
+        UpdateModels(version);
+    }
 
     private void OnLogin(object? _, EventArgs _2)
         => Scan();
@@ -296,4 +313,31 @@ public class ItemUnlockManager : ISavable, IDisposable
 
         return ret;
     }
+
+    private void UpdateModels(int version)
+    {
+        if (version > 1)
+            return;
+
+        foreach (var (item, time) in _unlocked.ToArray())
+        {
+            if (!_items.ItemService.AwaitedService.TryGetValue(item, out var equip))
+                continue;
+
+            var ident = _identifier.AwaitedService.Identify(equip.ModelId, equip.WeaponType, equip.Variant, equip.Type.ToSlot());
+            foreach (var item2 in ident)
+            {
+                if (_unlocked.TryAdd(item2.ItemId, time))
+                    _event.Invoke(ObjectUnlocked.Type.Item, item2.ItemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
+            }
+        }
+    }
+
+    private uint HandleHq(uint itemId)
+        => itemId switch
+        {
+            > 1000000 => itemId - 1000000,
+            > 500000  => itemId - 500000,
+            _         => itemId,
+        };
 }
