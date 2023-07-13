@@ -27,6 +27,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool               SkipInvalidCustomizations   { get; set; } = false;
     public bool               HideApplyCheckmarks         { get; set; } = false;
     public bool               SmallEquip                  { get; set; } = false;
+    public bool               UnlockedItemMode            { get; set; } = false;
     public MainWindow.TabType SelectedTab                 { get; set; } = MainWindow.TabType.Settings;
     public DoubleModifier     DeleteDesignModifier        { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
 
@@ -86,10 +87,7 @@ public class Configuration : IPluginConfiguration, ISavable
                     "Error reading Configuration, reverting to default.\nYou may be able to restore your configuration using the rolling backups in the XIVLauncher/backups/Glamourer directory.",
                     "Error reading Configuration", "Error", NotificationType.Error);
             }
-        if (Codes.All(p => p.Code != CodeService.CodeInventoryString))
-            Codes.Insert(0, (CodeService.CodeInventoryString, false));
-        if (Codes.All(p => p.Code != CodeService.CodeMesmerString))
-            Codes.Insert(0, (CodeService.CodeMesmerString, false));
+
         migrator.Migrate(this);
     }
 

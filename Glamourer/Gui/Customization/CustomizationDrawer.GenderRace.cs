@@ -22,10 +22,10 @@ public partial class CustomizationDrawer
         var clan   = _service.AwaitedService.GetName(CustomName.Clan);
         if (_withApply)
         {
-            if (UiHelpers.DrawCheckbox("##applyGender", "Apply gender of this design.", _currentApply, out var applyGender, _locked))
+            if (UiHelpers.DrawCheckbox("##applyGender", "Apply gender of this design.", ChangeApply.HasFlag(CustomizeFlag.Gender), out var applyGender, _locked))
                 ChangeApply = applyGender ? ChangeApply | CustomizeFlag.Gender : ChangeApply & ~CustomizeFlag.Gender;
             ImGui.SameLine();
-            if (UiHelpers.DrawCheckbox("##applyClan", "Apply clan of this design.", _currentApply, out var applyClan, _locked))
+            if (UiHelpers.DrawCheckbox("##applyClan", "Apply clan of this design.", ChangeApply.HasFlag(CustomizeFlag.Clan), out var applyClan, _locked))
                 ChangeApply = applyClan ? ChangeApply | CustomizeFlag.Clan : ChangeApply & ~CustomizeFlag.Clan;
             ImGui.SameLine();
         }

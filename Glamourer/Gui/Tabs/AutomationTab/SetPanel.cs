@@ -28,6 +28,7 @@ public class SetPanel
     private readonly CustomizeUnlockManager _customizeUnlocks;
     private readonly CustomizationService   _customizations;
 
+    private readonly Configuration    _config;
     private readonly DesignCombo      _designCombo;
     private readonly JobGroupCombo    _jobGroupCombo;
     private readonly IdentifierDrawer _identifierDrawer;
@@ -40,7 +41,7 @@ public class SetPanel
 
     public SetPanel(SetSelector selector, AutoDesignManager manager, DesignManager designs, JobService jobs, ItemUnlockManager itemUnlocks,
         CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer,
-        CodeService codeService)
+        CodeService codeService, Configuration config)
     {
         _selector         = selector;
         _manager          = manager;
@@ -49,6 +50,7 @@ public class SetPanel
         _customizations   = customizations;
         _identifierDrawer = identifierDrawer;
         _codeService      = codeService;
+        _config           = config;
         _designCombo      = new DesignCombo(_manager, designs);
         _jobGroupCombo    = new JobGroupCombo(manager, jobs);
     }
@@ -105,7 +107,7 @@ public class SetPanel
         ImGui.TableSetupColumn("Design", ImGuiTableColumnFlags.WidthFixed, 220 * ImGuiHelpers.GlobalScale);
         ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed, 5 * ImGui.GetFrameHeight() + 4 * 2 * ImGuiHelpers.GlobalScale);
         ImGui.TableSetupColumn("Job Restrictions", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("Warnings", ImGuiTableColumnFlags.WidthFixed, 4 * ImGui.GetFrameHeight() + 3 * 2 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Warnings", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Warnings").X);
         ImGui.TableHeadersRow();
 
         foreach (var (design, idx) in Selection.Designs.WithIndex())
@@ -159,7 +161,7 @@ public class SetPanel
 
             var item = design.Design.DesignData.Item(slot);
             if (!_itemUnlocks.IsUnlocked(item.ItemId, out _))
-                sb.AppendLine($"{item.Name} in {slot.ToName()} slot is not unlocked but should be applied.");
+                sb.AppendLine($"{item.Name} in {slot.ToName()} slot is not unlocked. Consider obtaining it via gameplay means!");
         }
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * ImGuiHelpers.GlobalScale, 0));
@@ -185,10 +187,10 @@ public class SetPanel
             }
         }
 
-        var tt = _codeService.EnabledInventory
-            ? "\nThese items will still be applied, because you have enabled a cheat code."
-            : $"\nThese items will be skipped when applied automatically.\n\nTo change this, enable the \"{CodeService.CodeInventoryString}\" Cheat Code in Settings.";
-        DrawWarning(sb, !_codeService.EnabledInventory ? 0xA03030F0 : 0x0, size, tt, "All equipment to be applied is unlocked.");
+        var tt = _config.UnlockedItemMode
+            ? "\nThese items will be skipped when applied automatically.\n\nTo change this, disable the Obtained Item Mode setting."
+            : string.Empty;
+        DrawWarning(sb, _config.UnlockedItemMode ? 0xA03030F0 : 0x0, size, tt, "All equipment to be applied is unlocked.");
 
         sb.Clear();
         var sb2       = new StringBuilder();
@@ -213,17 +215,11 @@ public class SetPanel
         }
 
         ImGui.SameLine();
-        tt = _codeService.EnabledInventory
-            ? "\nThese customizations will still be applied, because you have enabled a cheat code."
-            : $"\nThese customizations will be skipped when applied automatically.\n\nTo change this, enable the \"{CodeService.CodeInventoryString}\" Cheat Code in Settings.";
-        DrawWarning(sb2, !_codeService.EnabledInventory ? 0xA03030F0 : 0x0, size, tt, "All customizations to be applied are unlocked.");
+        tt = _config.UnlockedItemMode
+            ? "\nThese customizations will be skipped when applied automatically.\n\nTo change this, disable the Obtained Item Mode setting."
+            : string.Empty;
+        DrawWarning(sb2, _config.UnlockedItemMode ? 0xA03030F0 : 0x0, size, tt, "All customizations to be applied are unlocked.");
         ImGui.SameLine();
-
-        tt = _codeService.EnabledMesmer
-            ? "\nThese customizations will still be applied, because you have enabled a cheat code."
-            : $"\nThese customizations will be skipped when applied automatically.\n\nTo change this, enable the \"{CodeService.CodeMesmerString}\" Cheat Code in Settings.";
-        DrawWarning(sb, !_codeService.EnabledMesmer ? 0xA03030F0 : 0x0, size, tt,
-            "No customizations unable to be applied automatically are set to be applied."); // TODO
     }
 
     private void DrawDragDrop(AutoDesignSet set, int index)

@@ -50,6 +50,9 @@ public class SettingsTab : ITab
         Checkbox("Restricted Gear Protection",
             "Use gender- and race-appropriate models when detecting certain items not available for a characters current gender and race.",
             _config.UseRestrictedGearProtection, v => _config.UseRestrictedGearProtection = v);
+        Checkbox("Unlocked Item Mode",
+            "Enable this if you want automatically applied designs to only consider items and customizations you have actually unlocked once, and skip those you have not.",
+            _config.UnlockedItemMode, v => _config.UnlockedItemMode = v);
         Checkbox("Auto-Reload Gear",
             "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection.",
             _config.AutoRedrawEquipOnChanges, _autoRedraw.SetState);

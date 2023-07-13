@@ -156,9 +156,9 @@ public class AutoDesignApplier : IDisposable
 
     private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual)
     {
-        EquipFlag totalEquipFlags     = 0;
-        var       totalCustomizeFlags = _code.EnabledMesmer ? 0 : CustomizeFlagExtensions.RedrawRequired;
-        byte      totalMetaFlags      = 0;
+        EquipFlag     totalEquipFlags     = 0;
+        CustomizeFlag totalCustomizeFlags = 0;
+        byte          totalMetaFlags      = 0;
         foreach (var design in set.Designs)
         {
             if (!design.IsActive(actor))
@@ -202,7 +202,7 @@ public class AutoDesignApplier : IDisposable
             if (equipFlags.HasFlag(flag))
             {
                 var item = design.Item(slot);
-                if (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.ItemId, out _))
+                if (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.ItemId, out _))
                 {
                     if (!respectManual || state[slot, false] is not StateChanged.Source.Manual)
                         _state.ChangeItem(state, slot, item, StateChanged.Source.Fixed);
@@ -223,7 +223,7 @@ public class AutoDesignApplier : IDisposable
         {
             var item = design.Item(EquipSlot.MainHand);
             if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type
-             && (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.ItemId, out _)))
+             && (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.ItemId, out _)))
             {
                 if (!respectManual || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual)
                     _state.ChangeItem(state, EquipSlot.MainHand, item, StateChanged.Source.Fixed);
@@ -235,7 +235,7 @@ public class AutoDesignApplier : IDisposable
         {
             var item = design.Item(EquipSlot.OffHand);
             if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type
-             && (_code.EnabledInventory || _itemUnlocks.IsUnlocked(item.ItemId, out _)))
+             && (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.ItemId, out _)))
             {
                 if (!respectManual || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual)
                     _state.ChangeItem(state, EquipSlot.OffHand, item, StateChanged.Source.Fixed);
@@ -274,7 +274,6 @@ public class AutoDesignApplier : IDisposable
 
         // Skip invalid designs entirely.
         if (_config.SkipInvalidCustomizations
-         && !_code.EnabledMesmer
          && (customize.Clan != design.Customize.Clan
              || customize.Gender != design.Customize.Gender
              || customize.Face != design.Customize.Face))
@@ -320,7 +319,7 @@ public class AutoDesignApplier : IDisposable
 
             var value = design.Customize[index];
             if (CustomizationService.IsCustomizationValid(set, face, index, value, out var data)
-             && (_code.EnabledInventory || _customizeUnlocks.IsUnlocked(data.Value, out _)))
+             && (!_config.UnlockedItemMode || _customizeUnlocks.IsUnlocked(data.Value, out _)))
             {
                 if (!respectManual || state[index] is not StateChanged.Source.Manual)
                     _state.ChangeCustomize(state, index, value, StateChanged.Source.Fixed);
