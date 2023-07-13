@@ -35,7 +35,6 @@ public class SettingsTab : ITab
 
     private string _currentCode = string.Empty;
 
-
     public void DrawContent()
     {
         using var child = ImRaii.Child("MainWindowChild");
@@ -55,6 +54,8 @@ public class SettingsTab : ITab
             "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection.",
             _config.AutoRedrawEquipOnChanges, _autoRedraw.SetState);
 
+        Checkbox("Smaller Equip Display", "Use single-line display without icons and small dye buttons instead of double-line display.",
+            _config.SmallEquip,           v => _config.SmallEquip = v);
         Checkbox("Hide Application Checkboxes",
             "Hide the application checkboxes in the Customization and Equipment panels of the design tab, and only show them under Application Rules.",
             _config.HideApplyCheckmarks, v => _config.HideApplyCheckmarks = v);

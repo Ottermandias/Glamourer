@@ -35,15 +35,16 @@ public partial class CustomizationDrawer : IDisposable
     public bool RequiresRedraw
         => Changed.RequiresRedraw();
 
-    private bool    _locked = false;
-    private Vector2 _defaultSpacing;
-    private Vector2 _spacing;
-    private Vector2 _iconSize;
-    private Vector2 _framedIconSize;
-    private float   _inputIntSize;
-    private float   _comboSelectorSize;
-    private float   _raceSelectorWidth;
-    private bool    _withApply;
+    private CustomizeFlag _initialApply;
+    private bool          _locked = false;
+    private Vector2       _defaultSpacing;
+    private Vector2       _spacing;
+    private Vector2       _iconSize;
+    private Vector2       _framedIconSize;
+    private float         _inputIntSize;
+    private float         _comboSelectorSize;
+    private float         _raceSelectorWidth;
+    private bool          _withApply;
 
     private readonly CustomizationService _service;
 
@@ -72,9 +73,10 @@ public partial class CustomizationDrawer : IDisposable
 
     public bool Draw(Customize current, CustomizeFlag apply, bool locked)
     {
-        CurrentFlag = CustomizeFlagExtensions.All;
-        ChangeApply = apply;
-        _withApply  = !_config.HideApplyCheckmarks;
+        CurrentFlag   = CustomizeFlagExtensions.All;
+        ChangeApply   = apply;
+        _initialApply = apply;
+        _withApply    = !_config.HideApplyCheckmarks;
         Init(current, locked);
         return DrawInternal();
     }
@@ -118,13 +120,6 @@ public partial class CustomizationDrawer : IDisposable
         Changed                   |= _currentFlag;
     }
 
-    // Update the current Apply value.
-    private void ToggleApply()
-    {
-        _currentApply = !_currentApply;
-        ChangeApply   = _currentApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
-    }
-
     public bool DrawWetnessState(bool currentValue, out bool newValue, bool locked)
         => UiHelpers.DrawCheckbox("Force Wetness", "Force the character to be wet or not.", currentValue, out newValue, locked);
 
@@ -159,7 +154,7 @@ public partial class CustomizationDrawer : IDisposable
 
             Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.Checkmark], DrawCheckbox,
                 () => ImGui.SameLine(_comboSelectorSize - _framedIconSize.X + _spacing.X));
-            return Changed != 0;
+            return Changed != 0 || ChangeApply != _initialApply;
         }
         catch (Exception ex)
         {

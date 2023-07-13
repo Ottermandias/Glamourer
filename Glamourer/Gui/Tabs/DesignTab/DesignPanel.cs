@@ -166,15 +166,15 @@ public class DesignPanel
         if (!ImGui.CollapsingHeader("Customization"))
             return;
 
-        _customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.ApplyCustomize,
-            _selector.Selected!.WriteProtected());
-
-        if (_customizationDrawer.ChangeApply != _selector.Selected.ApplyCustomize)
+        if (_customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.ApplyCustomize,
+                _selector.Selected!.WriteProtected()))
             foreach (var idx in Enum.GetValues<CustomizeIndex>())
             {
                 var flag     = idx.ToFlag();
                 var newValue = _customizationDrawer.ChangeApply.HasFlag(flag);
                 _manager.ChangeApplyCustomize(_selector.Selected, idx, newValue);
+                if (_customizationDrawer.Changed.HasFlag(flag))
+                    _manager.ChangeCustomize(_selector.Selected, idx, _customizationDrawer.Customize[idx]);
             }
 
         var wetnessChanges = _customizationDrawer.DrawWetnessState(_selector.Selected!.DesignData.IsWet(),

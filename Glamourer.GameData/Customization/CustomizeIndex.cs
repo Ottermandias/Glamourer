@@ -116,7 +116,7 @@ public static class CustomizationExtensions
             CustomizeIndex.TattooColor       => "Tattoo Color",
             CustomizeIndex.Eyebrows          => "Eyebrow Style",
             CustomizeIndex.EyeColorLeft      => "Left Eye Color",
-            CustomizeIndex.EyeShape          => "Eye Shape",
+            CustomizeIndex.EyeShape          => "Small Pupils",
             CustomizeIndex.Nose              => "Nose Style",
             CustomizeIndex.Jaw               => "Jaw Style",
             CustomizeIndex.Mouth             => "Mouth Style",

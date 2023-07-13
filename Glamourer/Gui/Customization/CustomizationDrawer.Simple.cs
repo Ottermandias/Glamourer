@@ -109,23 +109,23 @@ public partial class CustomizationDrawer
         var       tmp = _currentByte != CustomizeValue.Zero;
         if (_withApply)
         {
-            switch (UiHelpers.DrawMetaToggle(_currentOption, string.Empty, tmp, _currentApply, out var newValue, out var newApply, _locked))
+            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToDefaultName(), string.Empty, tmp, _currentApply, out var newValue, out var newApply, _locked))
             {
                 case DataChange.Item:
                     ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
-                    _customize.Set(idx, tmp ? CustomizeValue.Max : CustomizeValue.Zero);
+                    _customize.Set(idx, newValue ? CustomizeValue.Max : CustomizeValue.Zero);
                     Changed |= _currentFlag;
                     break;
                 case DataChange.ApplyItem:
                     ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
                     break;
                 case DataChange.Item | DataChange.ApplyItem:
-                    _customize.Set(idx, tmp ? CustomizeValue.Max : CustomizeValue.Zero);
+                    _customize.Set(idx, newValue ? CustomizeValue.Max : CustomizeValue.Zero);
                     Changed |= _currentFlag;
                     break;
             }
         }
-        else if (ImGui.Checkbox(_currentOption, ref tmp))
+        else if (ImGui.Checkbox(_currentIndex.ToDefaultName(), ref tmp))
         {
             _customize.Set(idx, tmp ? CustomizeValue.Max : CustomizeValue.Zero);
             Changed |= _currentFlag;
@@ -143,5 +143,12 @@ public partial class CustomizationDrawer
         SetId(index);
         if (UiHelpers.DrawCheckbox("##apply", $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
             ToggleApply();
+    }
+
+    // Update the current Apply value.
+    private void ToggleApply()
+    {
+        _currentApply = !_currentApply;
+        ChangeApply   = _currentApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
     }
 }

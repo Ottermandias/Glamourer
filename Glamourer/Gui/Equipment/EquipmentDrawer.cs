@@ -83,51 +83,17 @@ public class EquipmentDrawer
         if (_config.HideApplyCheckmarks)
             cApply = null;
 
-        if (!locked && _codes.EnabledArtisan)
-            return DrawEquipArtisan(slot, cArmor, out rArmor, cStain, out rStain, cApply, out rApply, out rApplyStain);
-
+        using var id      = ImRaii.PushId((int)slot);
         var       spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
         using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
 
-        var changes = DataChange.None;
-        cArmor.DrawIcon(_textures, _iconSize);
-        ImGui.SameLine();
-        using var group = ImRaii.Group();
-        if (DrawItem(slot, cArmor, out rArmor, out var label, locked))
-            changes |= DataChange.Item;
-        if (cApply.HasValue)
-        {
-            ImGui.SameLine();
-            if (DrawApply(slot, cApply.Value, out rApply, locked))
-                changes |= DataChange.ApplyItem;
-        }
-        else
-        {
-            rApply = true;
-        }
+        if (_config.SmallEquip)
+            return DrawEquipSmall(slot, cArmor, out rArmor, cStain, out rStain, cApply, out rApply, out rApplyStain, locked, gender, race);
 
-        ImGui.SameLine();
-        ImGui.TextUnformatted(label);
-        if (DrawStain(slot, cStain, out rStain, locked))
-            changes |= DataChange.Stain;
-        if (cApply.HasValue)
-        {
-            ImGui.SameLine();
-            if (DrawApplyStain(slot, cApply.Value, out rApplyStain, locked))
-                changes |= DataChange.ApplyStain;
-        }
-        else
-        {
-            rApplyStain = true;
-        }
+        if (!locked && _codes.EnabledArtisan)
+            return DrawEquipArtisan(slot, cArmor, out rArmor, cStain, out rStain, cApply, out rApply, out rApplyStain);
 
-        if (VerifyRestrictedGear(slot, rArmor, gender, race))
-        {
-            ImGui.SameLine();
-            ImGui.TextUnformatted("(Restricted)");
-        }
-
-        return changes;
+        return DrawEquipNormal(slot, cArmor, out rArmor, cStain, out rStain, cApply, out rApply, out rApplyStain, locked, gender, race);
     }
 
     public DataChange DrawWeapons(in DesignData designData, out EquipItem rMainhand, out EquipItem rOffhand, out StainId rMainhandStain,
@@ -144,97 +110,16 @@ public class EquipmentDrawer
         if (_config.HideApplyCheckmarks)
             cApply = null;
 
-        var changes = DataChange.None;
+        using var id      = ImRaii.PushId("Weapons");
+        var       spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
+        using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
 
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
-            ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y });
+        if (_config.SmallEquip)
+            return DrawWeaponsSmall(cMainhand, out rMainhand, cOffhand, out rOffhand, cMainhandStain, out rMainhandStain, cOffhandStain,
+                out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked);
 
-        cMainhand.DrawIcon(_textures, _iconSize);
-        ImGui.SameLine();
-        using (var group = ImRaii.Group())
-        {
-            rOffhand = cOffhand;
-            if (DrawMainhand(cMainhand, cApply.HasValue, out rMainhand, out var mainhandLabel, locked))
-            {
-                changes |= DataChange.Item;
-                if (rMainhand.Type.ValidOffhand() != cMainhand.Type.ValidOffhand())
-                {
-                    rOffhand =  _items.GetDefaultOffhand(rMainhand);
-                    changes  |= DataChange.Item2;
-                }
-            }
-
-            if (cApply.HasValue)
-            {
-                ImGui.SameLine();
-                if (DrawApply(EquipSlot.MainHand, cApply.Value, out rApplyMainhand, locked))
-                    changes |= DataChange.ApplyItem;
-            }
-            else
-            {
-                rApplyMainhand = true;
-            }
-
-            ImGui.SameLine();
-            ImGui.TextUnformatted(mainhandLabel);
-
-            if (DrawStain(EquipSlot.MainHand, cMainhandStain, out rMainhandStain, locked))
-                changes |= DataChange.Stain;
-            if (cApply.HasValue)
-            {
-                ImGui.SameLine();
-                if (DrawApplyStain(EquipSlot.MainHand, cApply.Value, out rApplyMainhandStain, locked))
-                    changes |= DataChange.ApplyStain;
-            }
-            else
-            {
-                rApplyMainhandStain = true;
-            }
-        }
-
-        if (rOffhand.Type is FullEquipType.Unknown)
-        {
-            rOffhandStain      = cOffhandStain;
-            rApplyOffhand      = false;
-            rApplyOffhandStain = false;
-            return changes;
-        }
-
-        rOffhand.DrawIcon(_textures, _iconSize);
-        ImGui.SameLine();
-        using (var group = ImRaii.Group())
-        {
-            if (DrawOffhand(rMainhand, rOffhand, out rOffhand, out var offhandLabel, locked))
-                changes |= DataChange.Item2;
-            if (cApply.HasValue)
-            {
-                ImGui.SameLine();
-                if (DrawApply(EquipSlot.OffHand, cApply.Value, out rApplyOffhand, locked))
-                    changes |= DataChange.ApplyItem2;
-            }
-            else
-            {
-                rApplyOffhand = true;
-            }
-
-            ImGui.SameLine();
-            ImGui.TextUnformatted(offhandLabel);
-
-            if (DrawStain(EquipSlot.OffHand, cOffhandStain, out rOffhandStain, locked))
-                changes |= DataChange.Stain2;
-            if (cApply.HasValue)
-            {
-                ImGui.SameLine();
-                if (DrawApplyStain(EquipSlot.OffHand, cApply.Value, out rApplyOffhandStain, locked))
-                    changes |= DataChange.ApplyStain2;
-            }
-            else
-            {
-                rApplyOffhandStain = true;
-            }
-        }
-
-        return changes;
+        return DrawWeaponsNormal(cMainhand, out rMainhand, cOffhand, out rOffhand, cMainhandStain, out rMainhandStain, cOffhandStain,
+            out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked);
     }
 
     public bool DrawHatState(bool currentValue, out bool newValue, bool locked)
@@ -259,7 +144,7 @@ public class EquipmentDrawer
             "Change the visibility of the characters weapons when not drawn: Hidden, Visible or Don't Apply.", currentValue, currentApply,
             out newValue, out newApply, locked);
 
-    private bool DrawMainhand(EquipItem current, bool drawAll, out EquipItem weapon, out string label, bool locked)
+    private bool DrawMainhand(EquipItem current, bool drawAll, out EquipItem weapon, out string label, bool locked, bool small)
     {
         weapon = current;
         if (!_weaponCombo.TryGetValue(drawAll ? FullEquipType.Unknown : current.Type, out var combo))
@@ -270,14 +155,14 @@ public class EquipmentDrawer
 
         label = combo.Label;
         using var disabled = ImRaii.Disabled(locked);
-        if (!combo.Draw(weapon.Name, weapon.ItemId, _comboLength))
+        if (!combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength))
             return false;
 
         weapon = combo.CurrentSelection;
         return true;
     }
 
-    private bool DrawOffhand(EquipItem mainhand, EquipItem current, out EquipItem weapon, out string label, bool locked)
+    private bool DrawOffhand(EquipItem mainhand, EquipItem current, out EquipItem weapon, out string label, bool locked, bool small)
     {
         weapon = current;
         if (!_weaponCombo.TryGetValue(current.Type, out var combo))
@@ -288,7 +173,7 @@ public class EquipmentDrawer
 
         label = combo.Label;
         using var disabled = ImRaii.Disabled(locked);
-        var       change   = combo.Draw(weapon.Name, weapon.ItemId, _comboLength);
+        var       change   = combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength);
         if (change)
             weapon = combo.CurrentSelection;
 
@@ -317,14 +202,14 @@ public class EquipmentDrawer
         => UiHelpers.DrawCheckbox($"##applyStain{slot}", "Apply this dye when applying the Design.", flags.HasFlag(slot.ToStainFlag()),
             out enabled, locked);
 
-    private bool DrawItem(EquipSlot slot, EquipItem current, out EquipItem armor, out string label, bool locked)
+    private bool DrawItem(EquipSlot slot, EquipItem current, out EquipItem armor, out string label, bool locked, bool small)
     {
         Debug.Assert(slot.IsEquipment() || slot.IsAccessory(), $"Called {nameof(DrawItem)} on {slot}.");
         var combo = _itemCombo[slot.ToIndex()];
         label = combo.Label;
         armor = current;
         using var disabled = ImRaii.Disabled(locked);
-        var       change   = combo.Draw(armor.Name, armor.ItemId, _comboLength);
+        var       change   = combo.Draw(armor.Name, armor.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength);
         if (change)
             armor = combo.CurrentSelection;
 
@@ -341,11 +226,13 @@ public class EquipmentDrawer
         return change;
     }
 
-    private bool DrawStain(EquipSlot slot, StainId current, out StainId ret, bool locked)
+    private bool DrawStain(EquipSlot slot, StainId current, out StainId ret, bool locked, bool small)
     {
         var       found    = _stainData.TryGetValue(current, out var stain);
         using var disabled = ImRaii.Disabled(locked);
-        var       change   = _stainCombo.Draw($"##stain{slot}", stain.RgbaColor, stain.Name, found, stain.Gloss, _comboLength);
+        var change = small
+            ? _stainCombo.Draw($"##stain{slot}", stain.RgbaColor, stain.Name, found, stain.Gloss)
+            : _stainCombo.Draw($"##stain{slot}", stain.RgbaColor, stain.Name, found, stain.Gloss, _comboLength);
         ret = current;
         if (change && _stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
             ret = stain.RowIndex;
@@ -437,6 +324,252 @@ public class EquipmentDrawer
         {
             rApply      = false;
             rApplyStain = false;
+        }
+
+        return changes;
+    }
+
+    private DataChange DrawEquipSmall(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain,
+        EquipFlag? cApply, out bool rApply, out bool rApplyStain, bool locked, Gender gender, Race race)
+    {
+        var changes = DataChange.None;
+        if (DrawStain(slot, cStain, out rStain, locked, true))
+            changes |= DataChange.Stain;
+        ImGui.SameLine();
+        if (DrawItem(slot, cArmor, out rArmor, out var label, locked, true))
+            changes |= DataChange.Item;
+        if (cApply.HasValue)
+        {
+            ImGui.SameLine();
+            if (DrawApply(slot, cApply.Value, out rApply, false))
+                changes |= DataChange.ApplyItem;
+            ImGui.SameLine();
+            if (DrawApplyStain(slot, cApply.Value, out rApplyStain, false))
+                changes |= DataChange.ApplyStain;
+        }
+        else
+        {
+            rApply      = false;
+            rApplyStain = false;
+        }
+
+        if (VerifyRestrictedGear(slot, rArmor, gender, race))
+            label += " (Restricted)";
+
+        ImGui.SameLine();
+        ImGui.TextUnformatted(label);
+
+        return changes;
+    }
+
+    private DataChange DrawEquipNormal(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain,
+        EquipFlag? cApply, out bool rApply, out bool rApplyStain, bool locked, Gender gender, Race race)
+    {
+        var changes = DataChange.None;
+        cArmor.DrawIcon(_textures, _iconSize);
+        ImGui.SameLine();
+        using var group = ImRaii.Group();
+        if (DrawItem(slot, cArmor, out rArmor, out var label, locked, false))
+            changes |= DataChange.Item;
+        if (cApply.HasValue)
+        {
+            ImGui.SameLine();
+            if (DrawApply(slot, cApply.Value, out rApply, locked))
+                changes |= DataChange.ApplyItem;
+        }
+        else
+        {
+            rApply = true;
+        }
+
+        ImGui.SameLine();
+        ImGui.TextUnformatted(label);
+        if (DrawStain(slot, cStain, out rStain, locked, false))
+            changes |= DataChange.Stain;
+        if (cApply.HasValue)
+        {
+            ImGui.SameLine();
+            if (DrawApplyStain(slot, cApply.Value, out rApplyStain, locked))
+                changes |= DataChange.ApplyStain;
+        }
+        else
+        {
+            rApplyStain = true;
+        }
+
+        if (VerifyRestrictedGear(slot, rArmor, gender, race))
+        {
+            ImGui.SameLine();
+            ImGui.TextUnformatted("(Restricted)");
+        }
+
+        return changes;
+    }
+
+    private DataChange DrawWeaponsSmall(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
+        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
+        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
+    {
+        var changes = DataChange.None;
+        if (DrawStain(EquipSlot.MainHand, cMainhandStain, out rMainhandStain, locked, true))
+            changes |= DataChange.Stain;
+        ImGui.SameLine();
+
+        rOffhand = cOffhand;
+        if (DrawMainhand(cMainhand, cApply.HasValue, out rMainhand, out var mainhandLabel, locked, true))
+        {
+            changes |= DataChange.Item;
+            if (rMainhand.Type.ValidOffhand() != cMainhand.Type.ValidOffhand())
+            {
+                rOffhand =  _items.GetDefaultOffhand(rMainhand);
+                changes  |= DataChange.Item2;
+            }
+        }
+
+        if (cApply.HasValue)
+        {
+            ImGui.SameLine();
+            if (DrawApply(EquipSlot.MainHand, cApply.Value, out rApplyMainhand, locked))
+                changes |= DataChange.ApplyItem;
+            ImGui.SameLine();
+            if (DrawApplyStain(EquipSlot.MainHand, cApply.Value, out rApplyMainhandStain, locked))
+                changes |= DataChange.ApplyStain;
+        }
+        else
+        {
+            rApplyMainhand      = true;
+            rApplyMainhandStain = true;
+        }
+
+        ImGui.SameLine();
+        ImGui.TextUnformatted(mainhandLabel);
+        if (rOffhand.Type is FullEquipType.Unknown)
+        {
+            rOffhandStain      = cOffhandStain;
+            rApplyOffhand      = false;
+            rApplyOffhandStain = false;
+            return changes;
+        }
+
+        if (DrawStain(EquipSlot.OffHand, cOffhandStain, out rOffhandStain, locked, true))
+            changes |= DataChange.Stain2;
+
+        ImGui.SameLine();
+        if (DrawOffhand(rMainhand, rOffhand, out rOffhand, out var offhandLabel, locked, true))
+            changes |= DataChange.Item2;
+        if (cApply.HasValue)
+        {
+            ImGui.SameLine();
+            if (DrawApply(EquipSlot.OffHand, cApply.Value, out rApplyOffhand, locked))
+                changes |= DataChange.ApplyItem2;
+            ImGui.SameLine();
+            if (DrawApplyStain(EquipSlot.OffHand, cApply.Value, out rApplyOffhandStain, locked))
+                changes |= DataChange.ApplyStain2;
+        }
+        else
+        {
+            rApplyOffhand      = true;
+            rApplyOffhandStain = true;
+        }
+
+        ImGui.SameLine();
+        ImGui.TextUnformatted(offhandLabel);
+
+        return changes;
+    }
+
+    private DataChange DrawWeaponsNormal(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
+        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
+        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
+    {
+        var changes = DataChange.None;
+
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
+            ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y });
+
+        cMainhand.DrawIcon(_textures, _iconSize);
+        ImGui.SameLine();
+        using (var group = ImRaii.Group())
+        {
+            rOffhand = cOffhand;
+            if (DrawMainhand(cMainhand, cApply.HasValue, out rMainhand, out var mainhandLabel, locked, false))
+            {
+                changes |= DataChange.Item;
+                if (rMainhand.Type.ValidOffhand() != cMainhand.Type.ValidOffhand())
+                {
+                    rOffhand =  _items.GetDefaultOffhand(rMainhand);
+                    changes  |= DataChange.Item2;
+                }
+            }
+
+            if (cApply.HasValue)
+            {
+                ImGui.SameLine();
+                if (DrawApply(EquipSlot.MainHand, cApply.Value, out rApplyMainhand, locked))
+                    changes |= DataChange.ApplyItem;
+            }
+            else
+            {
+                rApplyMainhand = true;
+            }
+
+            ImGui.SameLine();
+            ImGui.TextUnformatted(mainhandLabel);
+
+            if (DrawStain(EquipSlot.MainHand, cMainhandStain, out rMainhandStain, locked, false))
+                changes |= DataChange.Stain;
+            if (cApply.HasValue)
+            {
+                ImGui.SameLine();
+                if (DrawApplyStain(EquipSlot.MainHand, cApply.Value, out rApplyMainhandStain, locked))
+                    changes |= DataChange.ApplyStain;
+            }
+            else
+            {
+                rApplyMainhandStain = true;
+            }
+        }
+
+        if (rOffhand.Type is FullEquipType.Unknown)
+        {
+            rOffhandStain      = cOffhandStain;
+            rApplyOffhand      = false;
+            rApplyOffhandStain = false;
+            return changes;
+        }
+
+        rOffhand.DrawIcon(_textures, _iconSize);
+        ImGui.SameLine();
+        using (var group = ImRaii.Group())
+        {
+            if (DrawOffhand(rMainhand, rOffhand, out rOffhand, out var offhandLabel, locked, false))
+                changes |= DataChange.Item2;
+            if (cApply.HasValue)
+            {
+                ImGui.SameLine();
+                if (DrawApply(EquipSlot.OffHand, cApply.Value, out rApplyOffhand, locked))
+                    changes |= DataChange.ApplyItem2;
+            }
+            else
+            {
+                rApplyOffhand = true;
+            }
+
+            ImGui.SameLine();
+            ImGui.TextUnformatted(offhandLabel);
+
+            if (DrawStain(EquipSlot.OffHand, cOffhandStain, out rOffhandStain, locked, false))
+                changes |= DataChange.Stain2;
+            if (cApply.HasValue)
+            {
+                ImGui.SameLine();
+                if (DrawApplyStain(EquipSlot.OffHand, cApply.Value, out rApplyOffhandStain, locked))
+                    changes |= DataChange.ApplyStain2;
+            }
+            else
+            {
+                rApplyOffhandStain = true;
+            }
         }
 
         return changes;
