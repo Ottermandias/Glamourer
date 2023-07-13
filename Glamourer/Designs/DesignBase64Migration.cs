@@ -74,13 +74,13 @@ public static class DesignBase64Migration
             {
                 data.Customize.Load(*(Customize*)(ptr + 4));
                 var cur  = (CharacterWeapon*)(ptr + 30);
-                var main = items.Identify(EquipSlot.MainHand, cur[0].Set, cur[0].Type, (byte)cur[0].Variant);
+                var main = cur[0].Set.Value == 0 ? items.DefaultSword : items.Identify(EquipSlot.MainHand, cur[0].Set, cur[0].Type, (byte)cur[0].Variant);
                 if (!main.Valid)
                     throw new Exception($"Base64 string invalid, weapon could not be identified.");
 
                 data.SetItem(EquipSlot.MainHand, main);
                 data.SetStain(EquipSlot.MainHand, cur[0].Stain);
-                var off = items.Identify(EquipSlot.OffHand, cur[1].Set, cur[1].Type, (byte)cur[1].Variant, main.Type);
+                var off = cur[0].Set.Value == 0 ? ItemManager.NothingItem(FullEquipType.Shield) : items.Identify(EquipSlot.OffHand, cur[1].Set, cur[1].Type, (byte)cur[1].Variant, main.Type);
                 if (main.Type.ValidOffhand() != FullEquipType.Unknown && !off.Valid)
                     throw new Exception($"Base64 string invalid, weapon could not be identified.");
 
