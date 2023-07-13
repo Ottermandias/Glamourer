@@ -196,7 +196,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
                 return;
 
             ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(time == DateTimeOffset.MinValue ? "Always" : time.ToString("g"));
+            ImGui.TextUnformatted(time == DateTimeOffset.MinValue ? "Always" : time.LocalDateTime.ToString("g"));
         }
 
         public override int Compare(EquipItem lhs, EquipItem rhs)

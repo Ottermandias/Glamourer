@@ -13,8 +13,8 @@ namespace Glamourer.Automation;
 
 public class FixedDesignMigrator
 {
-    private readonly JobService                                            _jobs;
-    private          Dictionary<string, (bool, List<(string, JobGroup)>)>? _migratedData;
+    private readonly JobService                                                        _jobs;
+    private          List<(string Name, bool Enabled, List<(string, JobGroup)> Data)>? _migratedData;
 
     public FixedDesignMigrator(JobService jobs)
         => _jobs = jobs;
@@ -26,13 +26,13 @@ public class FixedDesignMigrator
 
         foreach (var data in _migratedData)
         {
-            var enabled = data.Value.Item1;
-            var name    = data.Key + (data.Value.Item1 ? " (Enabled)" : " (Disabled)");
-            if (autoManager.Any(d => name == data.Key))
+            var enabled = data.Enabled;
+            var name    = data.Name + (enabled ? " (Enabled)" : " (Disabled)");
+            if (autoManager.Any(d => name == d.Name))
                 continue;
 
             var id = ActorIdentifier.Invalid;
-            if (ByteString.FromString(data.Key, out var byteString, false))
+            if (ByteString.FromString(data.Name, out var byteString, false))
             {
                 id = actors.AwaitedService.CreatePlayer(byteString, ushort.MaxValue);
                 if (!id.IsValid)
@@ -46,7 +46,7 @@ public class FixedDesignMigrator
                 enabled    = false;
                 if (!id.IsValid)
                 {
-                    Glamourer.Chat.NotificationMessage($"Could not migrate fixed design {data.Key}.", "Error", NotificationType.Error);
+                    Glamourer.Chat.NotificationMessage($"Could not migrate fixed design {data.Name}.", "Error", NotificationType.Error);
                     continue;
                 }
             }
@@ -54,7 +54,7 @@ public class FixedDesignMigrator
             autoManager.AddDesignSet(name, id);
             autoManager.SetState(autoManager.Count - 1, enabled);
             var set = autoManager[^1];
-            foreach (var design in data.Value.Item2)
+            foreach (var design in data.Data)
             {
                 if (!designFileSystem.Find(design.Item1, out var child) || child is not DesignFileSystem.Leaf leaf)
                 {
@@ -106,6 +106,7 @@ public class FixedDesignMigrator
         }
 
         _migratedData = list.GroupBy(t => (t.Name, t.Enabled))
-            .ToDictionary(kvp => kvp.Key.Name, kvp => (kvp.Key.Enabled, kvp.Select(k => (k.Path, k.Group)).ToList()));
+            .Select(kvp => (kvp.Key.Name, kvp.Key.Enabled, kvp.Select(k => (k.Path, k.Group)).ToList()))
+            .ToList();
     }
 }
