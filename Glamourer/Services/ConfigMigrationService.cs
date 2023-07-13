@@ -25,7 +25,7 @@ public class ConfigMigrationService
 
     public void Migrate(Configuration config)
     {
-        _config = config;
+        _config = config; 
         if (config.Version >= Configuration.Constants.CurrentVersion || !File.Exists(_saveService.FileNames.ConfigFile))
         {
             AddColors(config, false);
@@ -34,7 +34,7 @@ public class ConfigMigrationService
 
         _data = JObject.Parse(File.ReadAllText(_saveService.FileNames.ConfigFile));
         MigrateV1To2();
-        MigrateV2To3();
+        MigrateV2To4();
         AddColors(config, true);
     }
 
@@ -54,16 +54,13 @@ public class ConfigMigrationService
         _config.Colors[ColorId.EquipmentDesign] = equipmentColor;
     }
 
-    private void MigrateV2To3()
+    private void MigrateV2To4()
     {
-        if (_config.Version > 2)
+        if (_config.Version > 4)
             return;
     
-        _config.Version = 3;
-        if (_config.Codes.All(s => s.Code != CodeService.CodeInventoryString))
-            _config.Codes.Add((CodeService.CodeInventoryString, false));
-        if (_config.Codes.All(s => s.Code != CodeService.CodeMesmerString))
-            _config.Codes.Add((CodeService.CodeMesmerString, false));
+        _config.Version = 4;
+        _config.Codes   = _config.Codes.DistinctBy(c => c.Code).ToList();
     }
 
     private static void AddColors(Configuration config, bool forceSave)

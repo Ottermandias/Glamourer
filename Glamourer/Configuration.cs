@@ -34,11 +34,7 @@ public class Configuration : IPluginConfiguration, ISavable
     [JsonProperty(Order = int.MaxValue)]
     public ISortMode<Design> SortMode { get; set; } = ISortMode<Design>.FoldersFirst;
 
-    public List<(string Code, bool Enabled)> Codes { get; set; } = new List<(string Code, bool Enabled)>()
-    {
-        (CodeService.CodeInventoryString, false),
-        (CodeService.CodeMesmerString, false),
-    };
+    public List<(string Code, bool Enabled)> Codes { get; set; } = new();
 
 #if DEBUG
     public bool DebugMode { get; set; } = true;
@@ -90,7 +86,10 @@ public class Configuration : IPluginConfiguration, ISavable
                     "Error reading Configuration, reverting to default.\nYou may be able to restore your configuration using the rolling backups in the XIVLauncher/backups/Glamourer directory.",
                     "Error reading Configuration", "Error", NotificationType.Error);
             }
-
+        if (Codes.All(p => p.Code != CodeService.CodeInventoryString))
+            Codes.Insert(0, (CodeService.CodeInventoryString, false));
+        if (Codes.All(p => p.Code != CodeService.CodeMesmerString))
+            Codes.Insert(0, (CodeService.CodeMesmerString, false));
         migrator.Migrate(this);
     }
 
@@ -106,7 +105,7 @@ public class Configuration : IPluginConfiguration, ISavable
 
     public static class Constants
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 4;
 
         public static readonly ISortMode<Design>[] ValidSortModes =
         {
