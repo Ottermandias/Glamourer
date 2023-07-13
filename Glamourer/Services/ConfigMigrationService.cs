@@ -34,6 +34,7 @@ public class ConfigMigrationService
 
         _data = JObject.Parse(File.ReadAllText(_saveService.FileNames.ConfigFile));
         MigrateV1To2();
+        MigrateV2To3();
         AddColors(config, true);
     }
 
