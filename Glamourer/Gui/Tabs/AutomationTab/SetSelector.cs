@@ -17,12 +17,12 @@ namespace Glamourer.Gui.Tabs.AutomationTab;
 
 public class SetSelector : IDisposable
 {
-    private readonly Configuration       _config;
-    private readonly AutoDesignManager   _manager;
-    private readonly AutomationChanged   _event;
-    private readonly ActorService        _actors;
-    private readonly ObjectManager       _objects;
-    private readonly List<AutoDesignSet> _list = new();
+    private readonly Configuration              _config;
+    private readonly AutoDesignManager          _manager;
+    private readonly AutomationChanged          _event;
+    private readonly ActorService               _actors;
+    private readonly ObjectManager              _objects;
+    private readonly List<(AutoDesignSet, int)> _list = new();
 
     public AutoDesignSet? Selection      { get; private set; }
     public int            SelectionIndex { get; private set; } = -1;
@@ -117,11 +117,11 @@ public class SetSelector : IDisposable
             return;
 
         _list.Clear();
-        foreach (var set in _manager)
+        foreach (var (set, idx) in _manager.WithIndex())
         {
             var id = set.Identifiers[0].ToString();
             if (CheckFilters(set, id))
-                _list.Add(set);
+                _list.Add((set, idx));
         }
     }
 
@@ -178,15 +178,15 @@ public class SetSelector : IDisposable
         _endAction = null;
     }
 
-    private void DrawSetSelectable(AutoDesignSet set, int index)
+    private void DrawSetSelectable((AutoDesignSet Set, int Index) pair)
     {
-        using var id = ImRaii.PushId(index);
-        using (var color = ImRaii.PushColor(ImGuiCol.Text, set.Enabled ? ColorId.EnabledAutoSet.Value() : ColorId.DisabledAutoSet.Value()))
+        using var id = ImRaii.PushId(pair.Index);
+        using (var color = ImRaii.PushColor(ImGuiCol.Text, pair.Set.Enabled ? ColorId.EnabledAutoSet.Value() : ColorId.DisabledAutoSet.Value()))
         {
-            if (ImGui.Selectable(GetSetName(set, index), set == Selection, ImGuiSelectableFlags.None, _selectableSize))
+            if (ImGui.Selectable(GetSetName(pair.Set, pair.Index), pair.Set == Selection, ImGuiSelectableFlags.None, _selectableSize))
             {
-                Selection      = set;
-                SelectionIndex = index;
+                Selection      = pair.Set;
+                SelectionIndex = pair.Index;
             }
         }
 
@@ -194,13 +194,13 @@ public class SetSelector : IDisposable
         var lineStart = new Vector2(ImGui.GetItemRectMin().X, lineEnd.Y);
         ImGui.GetWindowDrawList().AddLine(lineStart, lineEnd, ImGui.GetColorU32(ImGuiCol.Border), ImGuiHelpers.GlobalScale);
 
-        DrawDragDrop(set, index);
+        DrawDragDrop(pair.Set, pair.Index);
 
-        var text = set.Identifiers[0].ToString();
+        var text = pair.Set.Identifiers[0].ToString();
         if (IncognitoMode)
-            text = set.Identifiers[0].Incognito(text);
+            text = pair.Set.Identifiers[0].Incognito(text);
         var textSize  = ImGui.CalcTextSize(text);
-        var textColor = set.Identifiers.Any(_objects.ContainsKey) ? ColorId.AutomationActorAvailable : ColorId.AutomationActorUnavailable;
+        var textColor = pair.Set.Identifiers.Any(_objects.ContainsKey) ? ColorId.AutomationActorAvailable : ColorId.AutomationActorUnavailable;
         ImGui.SetCursorPos(new Vector2(ImGui.GetContentRegionAvail().X - textSize.X,
             ImGui.GetCursorPosY() - ImGui.GetTextLineHeightWithSpacing()));
         ImGuiUtil.TextColored(textColor.Value(), text);
