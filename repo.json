@@ -12,7 +12,7 @@
     "ApplicableVersion": "any",
     "DalamudApiLevel": 8,
     "IsHide": "False",
-    "IsTestingExclusive": "false",
+    "IsTestingExclusive": "False",
     "DownloadCount": 1,
     "LastUpdate": 1618608322,
     "DownloadLinkInstall": "https://github.com/Ottermandias/Glamourer/raw/main/Glamourer.zip",
