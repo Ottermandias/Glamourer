@@ -44,9 +44,6 @@ public class SettingsTab : ITab
         Checkbox("Enabled", "Enable main functionality of keeping and applying state.", _stateListener.Enabled, _stateListener.Enable);
         Checkbox("Enable Auto Designs", "Enable the application of designs associated to characters to be applied automatically.",
             _config.EnableAutoDesigns,  v => _config.EnableAutoDesigns = v);
-        Checkbox("Skip Invalid Customizations",
-            "Entirely skip customizations for any automatically applied design that does not have the same race, gender or face as the affected character currently has.",
-            _config.SkipInvalidCustomizations, v => _config.SkipInvalidCustomizations = v);
         Checkbox("Restricted Gear Protection",
             "Use gender- and race-appropriate models when detecting certain items not available for a characters current gender and race.",
             _config.UseRestrictedGearProtection, v => _config.UseRestrictedGearProtection = v);

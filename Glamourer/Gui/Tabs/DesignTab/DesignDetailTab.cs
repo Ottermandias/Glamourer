@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
@@ -25,7 +24,9 @@ public class DesignDetailTab
     private string? _newDescription;
     private string? _newName;
 
-    private bool _editDescriptionMode;
+    private bool                   _editDescriptionMode;
+    private Design?                _changeDesign;
+    private DesignFileSystem.Leaf? _changeLeaf;
 
     public DesignDetailTab(SaveService saveService, DesignFileSystemSelector selector, DesignManager manager, DesignFileSystem fileSystem)
     {
@@ -62,18 +63,22 @@ public class DesignDetailTab
         var name  = _newName ?? _selector.Selected!.Name;
         ImGui.SetNextItemWidth(width.X);
         if (ImGui.InputText("##Name", ref name, 128))
-            _newName = name;
-
-        if (ImGui.IsItemDeactivatedAfterEdit())
         {
-            _manager.Rename(_selector.Selected!, name);
-            _newName = null;
+            _newName      = name;
+            _changeDesign = _selector.Selected;
+        }
+
+        if (ImGui.IsItemDeactivatedAfterEdit() && _changeDesign != null)
+        {
+            _manager.Rename(_changeDesign, name);
+            _newName      = null;
+            _changeDesign = null;
         }
 
         var identifier = _selector.Selected!.Identifier.ToString();
         ImGuiUtil.DrawFrameColumn("Unique Identifier");
         ImGui.TableNextColumn();
-        var fileName   = _saveService.FileNames.DesignFile(_selector.Selected!);
+        var fileName = _saveService.FileNames.DesignFile(_selector.Selected!);
         using (var mono = ImRaii.PushFont(UiBuilder.MonoFont))
         {
             if (ImGui.Button(identifier, width))
@@ -95,13 +100,17 @@ public class DesignDetailTab
         var path = _newPath ?? _selector.SelectedLeaf!.FullName();
         ImGui.SetNextItemWidth(width.X);
         if (ImGui.InputText("##Path", ref path, 1024))
-            _newPath = path;
+        {
+            _newPath    = path;
+            _changeLeaf = _selector.SelectedLeaf!;
+        }
 
-        if (ImGui.IsItemDeactivatedAfterEdit())
+        if (ImGui.IsItemDeactivatedAfterEdit() && _changeLeaf != null)
             try
             {
-                _fileSystem.RenameAndMove(_selector.SelectedLeaf!, path);
-                _newPath = null;
+                _fileSystem.RenameAndMove(_changeLeaf, path);
+                _newPath    = null;
+                _changeLeaf = null;
             }
             catch (Exception ex)
             {

@@ -157,6 +157,7 @@ public unsafe class DebugTab : ITab
         ImGui.TableNextColumn();
         if (actor.IsCharacter)
         {
+            ImGui.TextUnformatted(actor.AsCharacter->CharacterData.ModelCharaId.ToString());
             if (actor.AsCharacter->CharacterData.TransformationId != 0)
                 ImGui.TextUnformatted($"Transformation Id: {actor.AsCharacter->CharacterData.TransformationId}");
             if (actor.AsCharacter->CharacterData.ModelCharaId_2 != -1)

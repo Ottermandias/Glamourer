@@ -272,13 +272,6 @@ public class AutoDesignApplier : IDisposable
         if (!state.ModelData.IsHuman || !design.IsHuman)
             return;
 
-        // Skip invalid designs entirely.
-        if (_config.SkipInvalidCustomizations
-         && (customize.Clan != design.Customize.Clan
-             || customize.Gender != design.Customize.Gender
-             || customize.Face != design.Customize.Face))
-            return;
-
         if (customizeFlags.HasFlag(CustomizeFlag.Clan))
         {
             if (!respectManual || state[CustomizeIndex.Clan] is not StateChanged.Source.Manual)
@@ -289,9 +282,6 @@ public class AutoDesignApplier : IDisposable
 
         if (customizeFlags.HasFlag(CustomizeFlag.Gender))
         {
-            if (_config.SkipInvalidCustomizations && customize.Gender != design.Customize.Gender)
-                return;
-
             if (!respectManual || state[CustomizeIndex.Gender] is not StateChanged.Source.Manual)
                 fixFlags |= _customizations.ChangeGender(ref customize, design.Customize.Gender);
             customizeFlags      &= ~CustomizeFlag.Gender;
