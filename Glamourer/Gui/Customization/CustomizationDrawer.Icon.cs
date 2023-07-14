@@ -19,11 +19,13 @@ public partial class CustomizationDrawer
         var       label    = _currentOption;
 
         var current = _set.DataByValue(index, _currentByte, out var custom, _customize.Face);
+        var npc     = false;
         if (current < 0)
         {
-            label   = $"{_currentOption} (Custom #{_customize[index]})";
+            label   = $"{_currentOption} (NPC)";
             current = 0;
             custom  = _set.Data(index, 0);
+            npc     = true;
         }
 
         var icon = _service.AwaitedService.GetIcon(custom!.Value.IconId);
@@ -34,10 +36,7 @@ public partial class CustomizationDrawer
         ImGui.SameLine();
         using (var group = ImRaii.Group())
         {
-            if (_currentIndex == CustomizeIndex.Face)
-                FaceInputInt(current);
-            else
-                DataInputInt(current);
+            DataInputInt(current, npc);
 
             if (_withApply)
             {
@@ -45,36 +44,10 @@ public partial class CustomizationDrawer
                 ImGui.SameLine();
             }
 
-            ImGui.TextUnformatted($"{label} ({custom.Value.Value})");
+            ImGui.TextUnformatted(label);
         }
 
         DrawIconPickerPopup();
-    }
-
-    private bool UpdateFace(CustomizeData data)
-    {
-        // Hrothgar Hack
-        var value = _set.Race == Race.Hrothgar ? data.Value + 4 : data.Value;
-        if (_customize.Face == value)
-            return false;
-
-        _customize.Face =  value;
-        Changed         |= CustomizeFlag.Face;
-        return true;
-    }
-
-    private void FaceInputInt(int currentIndex)
-    {
-        ++currentIndex;
-        ImGui.SetNextItemWidth(_inputIntSize);
-        if (ImGui.InputInt("##text", ref currentIndex, 1, 1))
-        {
-            currentIndex = Math.Clamp(currentIndex - 1, 0, _currentCount - 1);
-            var data = _set.Data(_currentIndex, currentIndex, _customize.Face);
-            UpdateFace(data);
-        }
-
-        ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]");
     }
 
     private void DrawIconPickerPopup()
@@ -93,10 +66,7 @@ public partial class CustomizationDrawer
             {
                 if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
                 {
-                    if (_currentIndex == CustomizeIndex.Face)
-                        UpdateFace(custom);
-                    else
-                        UpdateValue(custom.Value);
+                    UpdateValue(custom.Value);
                     ImGui.CloseCurrentPopup();
                 }
 

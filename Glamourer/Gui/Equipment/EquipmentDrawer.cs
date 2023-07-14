@@ -107,6 +107,7 @@ public class EquipmentDrawer
         StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
         out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
     {
+        var allWeapons = cApply.HasValue;
         if (_config.HideApplyCheckmarks)
             cApply = null;
 
@@ -116,10 +117,12 @@ public class EquipmentDrawer
 
         if (_config.SmallEquip)
             return DrawWeaponsSmall(cMainhand, out rMainhand, cOffhand, out rOffhand, cMainhandStain, out rMainhandStain, cOffhandStain,
-                out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked);
+                out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked,
+                allWeapons);
 
         return DrawWeaponsNormal(cMainhand, out rMainhand, cOffhand, out rOffhand, cMainhandStain, out rMainhandStain, cOffhandStain,
-            out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked);
+            out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked,
+            allWeapons);
     }
 
     public bool DrawHatState(bool currentValue, out bool newValue, bool locked)
@@ -408,7 +411,8 @@ public class EquipmentDrawer
 
     private DataChange DrawWeaponsSmall(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
         StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
-        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
+        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked,
+        bool allWeapons)
     {
         var changes = DataChange.None;
         if (DrawStain(EquipSlot.MainHand, cMainhandStain, out rMainhandStain, locked, true))
@@ -416,7 +420,7 @@ public class EquipmentDrawer
         ImGui.SameLine();
 
         rOffhand = cOffhand;
-        if (DrawMainhand(cMainhand, cApply.HasValue, out rMainhand, out var mainhandLabel, locked, true))
+        if (DrawMainhand(cMainhand, allWeapons, out rMainhand, out var mainhandLabel, locked, true))
         {
             changes |= DataChange.Item;
             if (rMainhand.Type.ValidOffhand() != cMainhand.Type.ValidOffhand())
@@ -480,7 +484,8 @@ public class EquipmentDrawer
 
     private DataChange DrawWeaponsNormal(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
         StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
-        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
+        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked,
+        bool allWeapons)
     {
         var changes = DataChange.None;
 
@@ -492,7 +497,7 @@ public class EquipmentDrawer
         using (var group = ImRaii.Group())
         {
             rOffhand = cOffhand;
-            if (DrawMainhand(cMainhand, cApply.HasValue, out rMainhand, out var mainhandLabel, locked, false))
+            if (DrawMainhand(cMainhand, allWeapons, out rMainhand, out var mainhandLabel, locked, false))
             {
                 changes |= DataChange.Item;
                 if (rMainhand.Type.ValidOffhand() != cMainhand.Type.ValidOffhand())

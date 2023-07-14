@@ -8,6 +8,7 @@ using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Enums;
 using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
 
 namespace Glamourer.Gui.Customization;
@@ -42,6 +43,7 @@ public partial class CustomizationDrawer : IDisposable
     private Vector2       _iconSize;
     private Vector2       _framedIconSize;
     private float         _inputIntSize;
+    private float         _inputIntSizeNoButtons;
     private float         _comboSelectorSize;
     private float         _raceSelectorWidth;
     private bool          _withApply;
@@ -115,6 +117,10 @@ public partial class CustomizationDrawer : IDisposable
     {
         if (_currentByte == value)
             return;
+
+        // Hrothgar Face Hack.
+        if (_currentIndex is CustomizeIndex.Face && _set.Race is Race.Hrothgar)
+            value += 4;
 
         _customize[_currentIndex] =  value;
         Changed                   |= _currentFlag;
@@ -198,6 +204,7 @@ public partial class CustomizationDrawer : IDisposable
         _iconSize          = new Vector2(ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 2 * ImGui.GetStyle().FramePadding.Y);
         _framedIconSize    = _iconSize + 2 * ImGui.GetStyle().FramePadding;
         _inputIntSize      = 2 * _framedIconSize.X + 1 * _spacing.X;
+        _inputIntSizeNoButtons = _inputIntSize - 2 * _spacing.X - 2 * ImGui.GetFrameHeight();
         _comboSelectorSize = 4 * _framedIconSize.X + 3 * _spacing.X;
         _raceSelectorWidth = _inputIntSize + _comboSelectorSize - _framedIconSize.X;
     }

@@ -25,6 +25,7 @@ public partial class CustomizationDrawer
                 ImGui.OpenPopup(ColorPickerPopupName);
         }
 
+        var npc = false;
         if (current < 0)
         {
             using var font = ImRaii.PushFont(UiBuilder.IconFont);
@@ -32,13 +33,14 @@ public partial class CustomizationDrawer
             var       pos  = ImGui.GetItemRectMin() + (ImGui.GetItemRectSize() - size) / 2;
             ImGui.GetWindowDrawList().AddText(pos, ImGui.GetColorU32(ImGuiCol.Text), FontAwesomeIcon.Question.ToIconString());
             current = 0;
+            npc     = true;
         }
 
         ImGui.SameLine();
 
         using (var group = ImRaii.Group())
         {
-            DataInputInt(current);
+            DataInputInt(current, npc);
             if (_withApply)
             {
                 ApplyCheckbox();
@@ -46,7 +48,7 @@ public partial class CustomizationDrawer
             }
 
             ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(custom.Color == 0 ? $"{_currentOption} (Custom #{custom.Value})" : _currentOption);
+            ImGui.TextUnformatted(custom.Color == 0 ? $"{_currentOption} (NPC)" : _currentOption);
         }
 
         DrawColorPickerPopup();

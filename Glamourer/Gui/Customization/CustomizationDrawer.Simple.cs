@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Numerics;
 using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Customization;
 
@@ -45,18 +47,33 @@ public partial class CustomizationDrawer
     }
 
     // Integral input for an icon- or color based item.
-    private void DataInputInt(int currentIndex)
+    private void DataInputInt(int currentIndex, bool npc)
     {
-        ++currentIndex;
-        ImGui.SetNextItemWidth(_inputIntSize);
-        if (ImGui.InputInt("##text", ref currentIndex, 1, 1))
-        {
-            currentIndex = Math.Clamp(currentIndex - 1, 0, _currentCount - 1);
-            var data = _set.Data(_currentIndex, currentIndex, _customize.Face);
-            UpdateValue(data.Value);
-        }
+        int value = _currentByte.Value;
+        // Hrothgar face hack.
+        if (_currentIndex is CustomizeIndex.Face && _set.Race is Race.Hrothgar)
+            value -= 4;
 
-        ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]");
+        ImGui.SetNextItemWidth(_inputIntSizeNoButtons);
+        if (ImGui.InputInt("##text", ref value, 0, 0))
+        {
+            var index = _set.DataByValue(_currentIndex, (CustomizeValue)value, out var data, _customize.Face);
+            if (index >= 0)
+                UpdateValue(data!.Value.Value);
+            else if (ImGui.GetIO().KeyCtrl)
+                UpdateValue((CustomizeValue)value);
+        }
+        if (!_withApply)
+            ImGuiUtil.HoverTooltip("Hold Control to force updates with invalid/unknown options at your own risk.");
+
+        ImGui.SameLine();
+        if (ImGuiUtil.DrawDisabledButton("-", new Vector2(ImGui.GetFrameHeight()), "Select the previous available option in order.",
+                currentIndex <= 0))
+            UpdateValue(_set.Data(_currentIndex, currentIndex - 1, _customize.Face).Value);
+        ImGui.SameLine();
+        if (ImGuiUtil.DrawDisabledButton("+", new Vector2(ImGui.GetFrameHeight()), "Select the next available option in order.",
+                currentIndex >= _currentCount - 1 || npc))
+            UpdateValue(_set.Data(_currentIndex, currentIndex + 1, _customize.Face).Value);
     }
 
     private void DrawListSelector(CustomizeIndex index)
@@ -109,7 +126,8 @@ public partial class CustomizationDrawer
         var       tmp = _currentByte != CustomizeValue.Zero;
         if (_withApply)
         {
-            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToDefaultName(), string.Empty, tmp, _currentApply, out var newValue, out var newApply, _locked))
+            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToDefaultName(), string.Empty, tmp, _currentApply, out var newValue,
+                        out var newApply, _locked))
             {
                 case DataChange.Item:
                     ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
