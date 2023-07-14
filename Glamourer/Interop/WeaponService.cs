@@ -40,7 +40,8 @@ public unsafe class WeaponService : IDisposable
     private readonly Hook<LoadWeaponDelegate> _loadWeaponHook;
 
 
-    private void LoadWeaponDetour(DrawDataContainer* drawData, uint slot, ulong weaponValue, byte redrawOnEquality, byte unk2, byte skipGameObject, byte unk4)
+    private void LoadWeaponDetour(DrawDataContainer* drawData, uint slot, ulong weaponValue, byte redrawOnEquality, byte unk2,
+        byte skipGameObject, byte unk4)
     {
         var actor  = (Actor)((nint*)drawData)[1];
         var weapon = new CharacterWeapon(weaponValue);
@@ -58,7 +59,12 @@ public unsafe class WeaponService : IDisposable
 
         _loadWeaponHook.Original(drawData, slot, weapon.Value, redrawOnEquality, unk2, skipGameObject, unk4);
         if (tmpWeapon.Value != weapon.Value)
+        {
+            if (tmpWeapon.Set.Value == 0)
+                tmpWeapon.Stain = 0;
             _loadWeaponHook.Original(drawData, slot, tmpWeapon.Value, 1, unk2, 1, unk4);
+        }
+
         Glamourer.Log.Excessive(
             $"Weapon reloaded for 0x{actor.Address:X} ({actor.Utf8Name}) with attributes {slot} {weapon.Value:X14}, {redrawOnEquality}, {unk2}, {skipGameObject}, {unk4}");
     }
@@ -84,7 +90,7 @@ public unsafe class WeaponService : IDisposable
 
     public void LoadStain(Actor character, EquipSlot slot, StainId stain)
     {
-        var mdl    = character.Model;
+        var mdl = character.Model;
         var (_, _, mh, oh) = mdl.GetWeapons(character);
         var value  = slot == EquipSlot.OffHand ? oh : mh;
         var weapon = value.With(value.Set.Value == 0 ? 0 : stain);
