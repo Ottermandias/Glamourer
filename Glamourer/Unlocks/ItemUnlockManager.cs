@@ -104,7 +104,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         InventoryType.RetainerMarket,
     };
 
-    bool AddItem(uint itemId, long time)
+    private bool AddItem(uint itemId, long time)
     {
         itemId = HandleHq(itemId);
         if (!_items.ItemService.AwaitedService.TryGetValue(itemId, out var equip) || !_unlocked.TryAdd(equip.ItemId, time))
@@ -145,7 +145,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         if (scan)
             Scan();
 
-        var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var time          = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var mirageManager = MirageManager.Instance();
         var changes       = false;
         if (mirageManager != null)
@@ -186,7 +186,7 @@ public class ItemUnlockManager : ISavable, IDisposable
                 var item = container->GetInventorySlot(_currentInventoryIndex++);
                 if (item != null)
                 {
-                    changes |= AddItem(item->ItemID, time);
+                    changes |= AddItem(item->ItemID,    time);
                     changes |= AddItem(item->GlamourID, time);
                 }
             }
@@ -295,8 +295,9 @@ public class ItemUnlockManager : ISavable, IDisposable
                 ret.TryAdd(item.ItemId, new UnlockRequirements(row.RowId, 0, 0, 0, UnlockType.Cabinet));
         }
 
-        var gilShop = gameData.GetExcelSheet<GilShopItem>()!;
-        foreach (var row in gilShop)
+        var gilShopItem = gameData.GetExcelSheet<GilShopItem>()!;
+        var gilShop     = gameData.GetExcelSheet<GilShop>()!;
+        foreach (var row in gilShopItem)
         {
             if (!items.ItemService.AwaitedService.TryGetValue(row.Item.Row, out var item))
                 continue;
@@ -305,6 +306,16 @@ public class ItemUnlockManager : ISavable, IDisposable
             var quest2      = row.QuestRequired[1].Row;
             var achievement = row.AchievementRequired.Row;
             var state       = row.StateRequired;
+
+            var shop = gilShop.GetRow(row.RowId);
+            if (shop != null && shop.Quest.Row != 0)
+            {
+                if (quest1 == 0)
+                    quest1 = shop.Quest.Row;
+                else if (quest2 == 0)
+                    quest2 = shop.Quest.Row;
+            }
+
             var type = (quest1 != 0 ? UnlockType.Quest1 : 0)
               | (quest2 != 0 ? UnlockType.Quest2 : 0)
               | (achievement != 0 ? UnlockType.Achievement : 0);

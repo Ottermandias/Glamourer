@@ -30,9 +30,8 @@ public readonly record struct UnlockRequirements(uint Quest1, uint Quest2, uint 
         bool CheckQuest(uint quest)
             => uiState->IsUnlockLinkUnlockedOrQuestCompleted(quest);
 
-        // TODO ClientStructs
         bool CheckAchievement(uint achievement)
-            => false;
+            => uiState->Achievement.IsLoaded() && uiState->Achievement.IsComplete((int) achievement);
 
         return Type switch
         {
