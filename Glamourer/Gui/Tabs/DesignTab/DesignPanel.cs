@@ -167,7 +167,7 @@ public class DesignPanel
             return;
 
         if (_customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.ApplyCustomize,
-                _selector.Selected!.WriteProtected()))
+                _selector.Selected!.WriteProtected(), false))
             foreach (var idx in Enum.GetValues<CustomizeIndex>())
             {
                 var flag     = idx.ToFlag();

@@ -37,7 +37,8 @@ public partial class CustomizationDrawer : IDisposable
         => Changed.RequiresRedraw();
 
     private CustomizeFlag _initialApply;
-    private bool          _locked = false;
+    private bool          _locked       = false;
+    private bool          _lockedRedraw = false;
     private Vector2       _defaultSpacing;
     private Vector2       _spacing;
     private Vector2       _iconSize;
@@ -64,32 +65,33 @@ public partial class CustomizationDrawer : IDisposable
         _legacyTattoo?.Dispose();
     }
 
-    public bool Draw(Customize current, bool locked)
+    public bool Draw(Customize current, bool locked, bool lockedRedraw)
     {
         CurrentFlag = CustomizeFlagExtensions.All;
         _withApply  = false;
-        Init(current, locked);
+        Init(current, locked, lockedRedraw);
 
         return DrawInternal();
     }
 
-    public bool Draw(Customize current, CustomizeFlag apply, bool locked)
+    public bool Draw(Customize current, CustomizeFlag apply, bool locked, bool lockedRedraw)
     {
         CurrentFlag   = CustomizeFlagExtensions.All;
         ChangeApply   = apply;
         _initialApply = apply;
         _withApply    = !_config.HideApplyCheckmarks;
-        Init(current, locked);
+        Init(current, locked, lockedRedraw);
         return DrawInternal();
     }
 
-    private void Init(Customize current, bool locked)
+    private void Init(Customize current, bool locked, bool lockedRedraw)
     {
         UpdateSizes();
         _terminate = null;
         Changed    = 0;
         _customize.Load(current);
-        _locked = locked;
+        _locked       = locked;
+        _lockedRedraw = lockedRedraw;
     }
 
     // Set state for drawing of current customization.
@@ -136,7 +138,6 @@ public partial class CustomizationDrawer : IDisposable
     private bool DrawInternal()
     {
         using var spacing  = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _spacing);
-        using var disabled = ImRaii.Disabled(_locked);
 
         try
         {
@@ -199,11 +200,11 @@ public partial class CustomizationDrawer : IDisposable
 
     private void UpdateSizes()
     {
-        _defaultSpacing    = ImGui.GetStyle().ItemSpacing;
-        _spacing           = ImGui.GetStyle().ItemSpacing with { X = ImGui.GetStyle().ItemInnerSpacing.X };
-        _iconSize          = new Vector2(ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 2 * ImGui.GetStyle().FramePadding.Y);
-        _framedIconSize    = _iconSize + 2 * ImGui.GetStyle().FramePadding;
-        _inputIntSize      = 2 * _framedIconSize.X + 1 * _spacing.X;
+        _defaultSpacing = ImGui.GetStyle().ItemSpacing;
+        _spacing = ImGui.GetStyle().ItemSpacing with { X = ImGui.GetStyle().ItemInnerSpacing.X };
+        _iconSize = new Vector2(ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 2 * ImGui.GetStyle().FramePadding.Y);
+        _framedIconSize = _iconSize + 2 * ImGui.GetStyle().FramePadding;
+        _inputIntSize = 2 * _framedIconSize.X + 1 * _spacing.X;
         _inputIntSizeNoButtons = _inputIntSize - 2 * _spacing.X - 2 * ImGui.GetFrameHeight();
         _comboSelectorSize = 4 * _framedIconSize.X + 3 * _spacing.X;
         _raceSelectorWidth = _inputIntSize + _comboSelectorSize - _framedIconSize.X;

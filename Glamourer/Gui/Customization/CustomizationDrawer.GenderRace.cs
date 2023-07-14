@@ -22,6 +22,7 @@ public partial class CustomizationDrawer
         var clan   = _service.AwaitedService.GetName(CustomName.Clan);
         if (_withApply)
         {
+            using var disabled = ImRaii.Disabled(_locked);
             if (UiHelpers.DrawCheckbox("##applyGender", "Apply gender of this design.", ChangeApply.HasFlag(CustomizeFlag.Gender), out var applyGender, _locked))
                 ChangeApply = applyGender ? ChangeApply | CustomizeFlag.Gender : ChangeApply & ~CustomizeFlag.Gender;
             ImGui.SameLine();
@@ -36,6 +37,7 @@ public partial class CustomizationDrawer
 
     private void DrawGenderSelector()
     {
+        using var disabled = ImRaii.Disabled(_locked || _lockedRedraw);
         var icon = _customize.Gender switch
         {
             Gender.Male when _customize.Race is Race.Hrothgar => FontAwesomeIcon.MarsDouble,
@@ -53,6 +55,7 @@ public partial class CustomizationDrawer
 
     private void DrawRaceCombo()
     {
+        using var disabled = ImRaii.Disabled(_locked || _lockedRedraw);
         ImGui.SetNextItemWidth(_raceSelectorWidth);
         using var combo = ImRaii.Combo("##subRaceCombo", _service.ClanName(_customize.Clan, _customize.Gender));
         if (!combo)

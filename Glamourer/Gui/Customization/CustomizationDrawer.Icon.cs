@@ -29,8 +29,12 @@ public partial class CustomizationDrawer
         }
 
         var icon = _service.AwaitedService.GetIcon(custom!.Value.IconId);
-        if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
-            ImGui.OpenPopup(IconSelectorPopup);
+        using (var disabled = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw))
+        {
+            if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
+                ImGui.OpenPopup(IconSelectorPopup);
+        }
+
         ImGuiUtil.HoverIconTooltip(icon, _iconSize);
 
         ImGui.SameLine();
@@ -88,6 +92,7 @@ public partial class CustomizationDrawer
     private void DrawMultiIconSelector()
     {
         using var bigGroup = ImRaii.Group();
+        using var disabled = ImRaii.Disabled(_locked);
         DrawMultiIcons();
         ImGui.SameLine();
         using var group = ImRaii.Group();
@@ -110,12 +115,16 @@ public partial class CustomizationDrawer
         {
             ImGui.SameLine();
             ImGui.AlignTextToFramePadding();
+            using var _ = ImRaii.Enabled();
             ImGui.TextUnformatted("(Using Face 1)");
         }
 
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + _spacing.Y);
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted(_set.Option(CustomizeIndex.LegacyTattoo));
+        using (var _ = ImRaii.Enabled())
+        {
+            ImGui.TextUnformatted(_set.Option(CustomizeIndex.LegacyTattoo));
+        }
 
         if (_withApply)
         {

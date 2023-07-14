@@ -55,17 +55,22 @@ public static class UiHelpers
         return ret;
     }
 
-    public static DataChange DrawMetaToggle(string label, string tooltip, bool currentValue, bool currentApply, out bool newValue, out bool newApply,
+    public static DataChange DrawMetaToggle(string label, string tooltip, bool currentValue, bool currentApply, out bool newValue,
+        out bool newApply,
         bool locked)
     {
-        var  flags = currentApply ? currentValue ? 3 : 0 : 2;
-        bool ret;
+        var       flags = currentApply ? currentValue ? 3 : 0 : 2;
+        bool      ret;
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
         using (var disabled = ImRaii.Disabled(locked))
         {
-            ret = ImGui.CheckboxFlags(label, ref flags, 3);
+            ret = ImGui.CheckboxFlags("##" + label, ref flags, 3);
         }
 
         ImGuiUtil.HoverTooltip(tooltip);
+
+        ImGui.SameLine();
+        ImGui.TextUnformatted(label);
 
         if (ret)
         {

@@ -15,13 +15,16 @@ public partial class CustomizationDrawer
         using var _        = SetId(index);
         using var bigGroup = ImRaii.Group();
 
-        DrawPercentageSlider();
-        ImGui.SameLine();
-        PercentageInputInt();
-        if (_withApply)
+        using (var disabled = ImRaii.Disabled(_locked))
         {
+            DrawPercentageSlider();
             ImGui.SameLine();
-            ApplyCheckbox();
+            PercentageInputInt();
+            if (_withApply)
+            {
+                ImGui.SameLine();
+                ApplyCheckbox();
+            }
         }
 
         ImGui.SameLine();
@@ -54,6 +57,7 @@ public partial class CustomizationDrawer
         if (_currentIndex is CustomizeIndex.Face && _set.Race is Race.Hrothgar)
             value -= 4;
 
+        using var disabled = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw);
         ImGui.SetNextItemWidth(_inputIntSizeNoButtons);
         if (ImGui.InputInt("##text", ref value, 0, 0))
         {
@@ -63,6 +67,7 @@ public partial class CustomizationDrawer
             else if (ImGui.GetIO().KeyCtrl)
                 UpdateValue((CustomizeValue)value);
         }
+
         if (!_withApply)
             ImGuiUtil.HoverTooltip("Hold Control to force updates with invalid/unknown options at your own risk.");
 
@@ -81,6 +86,7 @@ public partial class CustomizationDrawer
         using var _        = SetId(index);
         using var bigGroup = ImRaii.Group();
 
+        using var disabled = ImRaii.Disabled(_locked);
         ListCombo();
         ImGui.SameLine();
         ListInputInt();
@@ -143,10 +149,19 @@ public partial class CustomizationDrawer
                     break;
             }
         }
-        else if (ImGui.Checkbox(_currentIndex.ToDefaultName(), ref tmp))
+        else
         {
-            _customize.Set(idx, tmp ? CustomizeValue.Max : CustomizeValue.Zero);
-            Changed |= _currentFlag;
+            using (var disabled = ImRaii.Disabled(_locked))
+            {
+                if (ImGui.Checkbox("##toggle", ref tmp))
+                {
+                    _customize.Set(idx, tmp ? CustomizeValue.Max : CustomizeValue.Zero);
+                    Changed |= _currentFlag;
+                }
+            }
+
+            ImGui.SameLine();
+            ImGui.TextUnformatted(_currentIndex.ToDefaultName());
         }
     }
 

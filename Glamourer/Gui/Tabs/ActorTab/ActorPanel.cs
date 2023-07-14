@@ -116,7 +116,7 @@ public class ActorPanel
         if (!ImGui.CollapsingHeader("Customizations"))
             return;
 
-        if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked))
+        if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked, _identifier.Type is IdentifierType.Special))
             _stateManager.ChangeCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, StateChanged.Source.Manual);
 
         if (_customizationDrawer.DrawWetnessState(_state!.ModelData.IsWet(), out var newWetness, _state.IsLocked))
