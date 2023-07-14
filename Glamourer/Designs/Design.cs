@@ -129,7 +129,7 @@ public sealed class Design : DesignBase, ISavable
         };
         if (design.LastEdit < creationDate)
             design.LastEdit = creationDate;
-
+        design.SetWriteProtected(json["WriteProtected"]?.ToObject<bool>() ?? false);
         LoadCustomize(customizations, json["Customize"], design, design.Name, true, false);
         LoadEquip(items, json["Equipment"], design, design.Name, false);
         LoadMods(json["Mods"], design);
