@@ -220,7 +220,7 @@ public class CustomizationSet
 
     internal static IReadOnlyDictionary<CharaMakeParams.MenuType, CustomizeIndex[]> ComputeOrder(CustomizationSet set)
     {
-        var ret = Enum.GetValues<CustomizeIndex>().SkipLast(1).ToArray();
+        var ret = Enum.GetValues<CustomizeIndex>().ToArray();
         ret[(int)CustomizeIndex.TattooColor]   = CustomizeIndex.EyeColorLeft;
         ret[(int)CustomizeIndex.EyeColorLeft]  = CustomizeIndex.EyeColorRight;
         ret[(int)CustomizeIndex.EyeColorRight] = CustomizeIndex.TattooColor;

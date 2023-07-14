@@ -254,6 +254,7 @@ public partial class CustomizationOptions
                     case CustomizeIndex.HighlightsColor:
                     case CustomizeIndex.EyeColorLeft:
                     case CustomizeIndex.EyeColorRight:
+                    case CustomizeIndex.FacePaintColor:
                         return CharaMakeParams.MenuType.ColorPicker;
                     case CustomizeIndex.BodyType: return CharaMakeParams.MenuType.Nothing;
                     case CustomizeIndex.FacePaintReversed:
