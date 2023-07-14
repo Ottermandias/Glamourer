@@ -436,7 +436,7 @@ public partial class CustomizationOptions
                         (ushort)hairRow.RowId));
             }
 
-            return hairList.ToArray();
+            return hairList.OrderBy(h => h.Value.Value).ToArray();
         }
 
         // Get Features.
@@ -481,7 +481,7 @@ public partial class CustomizationOptions
                     paintList.Add(new CustomizeData(CustomizeIndex.FacePaint, (CustomizeValue)i, customizeIdx));
             }
 
-            return paintList.ToArray();
+            return paintList.OrderBy(p => p.Value.Value).ToArray();
         }
 
         // Specific icons for tails or ears.
