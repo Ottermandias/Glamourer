@@ -199,7 +199,9 @@ public class DesignPanel
             if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))
             {
                 var newFlags = flags == 3;
-                foreach (var index in CustomizationExtensions.All)
+                _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Clan, newFlags);
+                _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Gender, newFlags);
+                foreach (var index in CustomizationExtensions.AllBasic.Where(set.IsAvailable))
                     _manager.ChangeApplyCustomize(_selector.Selected!, index, newFlags);
             }
 

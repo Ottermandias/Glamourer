@@ -378,28 +378,48 @@ public class DesignBase
 
         var set = customizations.AwaitedService.GetList(clan, gender);
 
-        foreach (var idx in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
+        foreach (var idx in CustomizationExtensions.AllBasic)
         {
-            var tok  = json[idx.ToString()];
-            var data = (CustomizeValue)(tok?["Value"]?.ToObject<byte>() ?? 0);
-            PrintWarning(CustomizationService.ValidateCustomizeValue(set, design.DesignData.Customize.Face, idx, data, out data, allowUnknown));
-            var apply = tok?["Apply"]?.ToObject<bool>() ?? false;
-            design.DesignData.Customize[idx] = data;
-            design.SetApplyCustomize(idx, apply);
+            if (set.IsAvailable(idx))
+            {
+                var tok  = json[idx.ToString()];
+                var data = (CustomizeValue)(tok?["Value"]?.ToObject<byte>() ?? 0);
+                PrintWarning(CustomizationService.ValidateCustomizeValue(set, design.DesignData.Customize.Face, idx, data, out data,
+                    allowUnknown));
+                var apply = tok?["Apply"]?.ToObject<bool>() ?? false;
+                design.DesignData.Customize[idx] = data;
+                design.SetApplyCustomize(idx, apply);
+            }
+            else
+            {
+                design.DesignData.Customize[idx] = CustomizeValue.Zero;
+                design.SetApplyCustomize(idx, false);
+            }
         }
     }
 
-    public void MigrateBase64(ItemManager items, string base64)
+    public void MigrateBase64(CustomizationService customizations, ItemManager items, string base64)
     {
         DesignData = DesignBase64Migration.MigrateBase64(items, base64, out var equipFlags, out var customizeFlags, out var writeProtected,
             out var applyHat, out var applyVisor, out var applyWeapon);
-        ApplyEquip     = equipFlags;
+        ApplyEquip = equipFlags;
+        var set = customizations.AwaitedService.GetList(DesignData.Customize.Clan, DesignData.Customize.Gender);
         ApplyCustomize = customizeFlags;
         SetWriteProtected(writeProtected);
         SetApplyHatVisible(applyHat);
         SetApplyVisorToggle(applyVisor);
         SetApplyWeaponVisible(applyWeapon);
         SetApplyWetness(DesignData.IsWet());
+    }
+
+    public void RemoveInvalidCustomize(CustomizationService customizations)
+    {
+        var set = customizations.AwaitedService.GetList(DesignData.Customize.Clan, DesignData.Customize.Gender);
+        foreach (var idx in CustomizationExtensions.AllBasic.Where(i => !set.IsAvailable(i)))
+        {
+            DesignData.Customize[idx] = CustomizeValue.Zero;
+            SetApplyCustomize(idx, false);
+        }
     }
 
     #endregion

@@ -273,11 +273,13 @@ public class DesignManager
                 if (_customizations.ChangeClan(ref design.DesignData.Customize, (SubRace)value.Value) == 0)
                     return;
 
+                design.RemoveInvalidCustomize(_customizations);
                 break;
             case CustomizeIndex.Gender:
                 if (_customizations.ChangeGender(ref design.DesignData.Customize, (Gender)(value.Value + 1)) == 0)
                     return;
 
+                design.RemoveInvalidCustomize(_customizations);
                 break;
             default:
                 if (!_customizations.IsCustomizationValid(design.DesignData.Customize.Clan, design.DesignData.Customize.Gender,
@@ -517,7 +519,7 @@ public class DesignManager
                         Identifier   = CreateNewGuid(),
                         Name         = actualName,
                     };
-                    design.MigrateBase64(_items, base64);
+                    design.MigrateBase64(_customizations, _items, base64);
                     if (!_designs.Any(d => d.Name == design.Name && d.CreationDate == design.CreationDate))
                     {
                         Add(design, $"Migrated old design to {design.Identifier}.");

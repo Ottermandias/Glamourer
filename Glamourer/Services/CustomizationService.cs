@@ -277,11 +277,19 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     private static CustomizeFlag FixValues(CustomizationSet set, ref Customize customize)
     {
         CustomizeFlag flags = 0;
-        foreach (var idx in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
+        foreach (var idx in Enum.GetValues<CustomizeIndex>())
         {
-            if (ValidateCustomizeValue(set, customize.Face, idx, customize[idx], out var fixedValue, false).Length > 0)
+            if (set.IsAvailable(idx))
             {
-                customize[idx] =  fixedValue;
+                if (ValidateCustomizeValue(set, customize.Face, idx, customize[idx], out var fixedValue, false).Length > 0)
+                {
+                    customize[idx] =  fixedValue;
+                    flags          |= idx.ToFlag();
+                }
+            }
+            else
+            {
+                customize[idx] =  CustomizeValue.Zero;
                 flags          |= idx.ToFlag();
             }
         }

@@ -79,7 +79,7 @@ public class DesignConverter
                 case 1:
                 case 2:
                     ret = _designs.CreateTemporary();
-                    ret.MigrateBase64(_items, base64);
+                    ret.MigrateBase64(_customize, _items, base64);
                     break;
                 case Version:
                     var version = bytes.DecompressToString(out var decompressed);

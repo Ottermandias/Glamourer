@@ -51,6 +51,9 @@ public static class CustomizationExtensions
     public static readonly CustomizeIndex[] All = Enum.GetValues<CustomizeIndex>()
         .Where(v => v is not CustomizeIndex.Race and not CustomizeIndex.BodyType).ToArray();
 
+    public static readonly CustomizeIndex[] AllBasic = All
+        .Where(v => v is not CustomizeIndex.Gender and not CustomizeIndex.Clan).ToArray();
+
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static (int ByteIdx, byte Mask) ToByteAndMask(this CustomizeIndex index)
         => index switch
