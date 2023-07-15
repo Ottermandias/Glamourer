@@ -54,7 +54,7 @@ public partial class CustomizationDrawer
     {
         int value = _currentByte.Value;
         // Hrothgar face hack.
-        if (_currentIndex is CustomizeIndex.Face && _set.Race is Race.Hrothgar)
+        if (_currentIndex is CustomizeIndex.Face && _set.Race is Race.Hrothgar && value is > 4 and < 9)
             value -= 4;
 
         using var disabled = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw);
