@@ -360,7 +360,7 @@ public class DesignPanel
                 ? "Apply the current design with its settings to your current target."
                 : "The current target can not be manipulated."
             : "No valid target selected.";
-        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid))
+        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid || _objects.IsInGPose))
             return;
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))

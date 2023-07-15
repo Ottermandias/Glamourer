@@ -372,7 +372,7 @@ public class ActorPanel
                 ? "Apply the current state to your current target."
                 : "The current target can not be manipulated."
             : "No valid target selected.";
-        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid || id == _identifier || !_state!.ModelData.IsHuman))
+        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid || id == _identifier || !_state!.ModelData.IsHuman || _objects.IsInGPose))
             return;
 
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
