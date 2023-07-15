@@ -14,7 +14,9 @@ public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings)>
 {
     public ModCombo(PenumbraService penumbra)
         : base(penumbra.GetMods)
-    { }
+    {
+        SearchByParts = false;
+    }
 
     protected override string ToString((Mod Mod, ModSettings Settings) obj)
         => obj.Mod.Name;

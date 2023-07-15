@@ -19,7 +19,10 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
 
     public WeaponCombo(ItemManager items, FullEquipType type)
         : base(() => GetWeapons(items, type))
-        => Label = GetLabel(type);
+    {
+        Label         = GetLabel(type);
+        SearchByParts = true;
+    }
 
     protected override void DrawList(float width, float itemHeight)
     {

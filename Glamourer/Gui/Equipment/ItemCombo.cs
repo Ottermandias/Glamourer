@@ -23,9 +23,10 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     public ItemCombo(DataManager gameData, ItemManager items, EquipSlot slot, TextureService textures)
         : base(() => GetItems(items, slot))
     {
-        _textures    = textures;
-        Label        = GetLabel(gameData, slot);
-        _currentItem = ItemManager.NothingId(slot);
+        _textures     = textures;
+        Label         = GetLabel(gameData, slot);
+        _currentItem  = ItemManager.NothingId(slot);
+        SearchByParts = true;
     }
 
     protected override void DrawList(float width, float itemHeight)
