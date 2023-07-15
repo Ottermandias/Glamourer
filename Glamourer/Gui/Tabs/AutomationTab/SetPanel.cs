@@ -11,6 +11,7 @@ using Glamourer.Services;
 using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Widgets;
@@ -96,18 +97,37 @@ public class SetPanel
         DrawDesignTable();
     }
 
+
     private void DrawDesignTable()
     {
-        using var table = ImRaii.Table("SetTable", 6, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY);
+        var requiredSizeOneLine = (1 + 6 + 2) * ImGui.GetFrameHeight()
+          + (30 + 220 + 10 + 4) * ImGuiHelpers.GlobalScale
+          + 5 * ImGui.GetStyle().CellPadding.X
+          + 150 * ImGuiHelpers.GlobalScale;
+
+        var singleRow = ImGui.GetContentRegionAvail().X >= requiredSizeOneLine;
+
+        using var table = ImRaii.Table("SetTable", singleRow ? 6 : 5,
+            ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY);
         if (!table)
             return;
 
-        ImGui.TableSetupColumn("##del", ImGuiTableColumnFlags.WidthFixed, ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("##del",   ImGuiTableColumnFlags.WidthFixed, ImGui.GetFrameHeight());
         ImGui.TableSetupColumn("##Index", ImGuiTableColumnFlags.WidthFixed, 30 * ImGuiHelpers.GlobalScale);
-        ImGui.TableSetupColumn("Design", ImGuiTableColumnFlags.WidthFixed, 220 * ImGuiHelpers.GlobalScale);
-        ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed, 5 * ImGui.GetFrameHeight() + 4 * 2 * ImGuiHelpers.GlobalScale);
-        ImGui.TableSetupColumn("Job Restrictions", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("Warnings", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Warnings").X);
+        if (singleRow)
+        {
+            ImGui.TableSetupColumn("Design",      ImGuiTableColumnFlags.WidthFixed, 220 * ImGuiHelpers.GlobalScale);
+            ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed, 6 * ImGui.GetFrameHeight() + 10 * ImGuiHelpers.GlobalScale);
+        }
+        else
+        {
+            ImGui.TableSetupColumn("Design / Job Restrictions", ImGuiTableColumnFlags.WidthFixed, 250 * ImGuiHelpers.GlobalScale);
+            ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed, 3 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
+        }
+
+        if (singleRow)
+            ImGui.TableSetupColumn("Job Restrictions", ImGuiTableColumnFlags.WidthStretch);
+        ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, 2 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
         ImGui.TableHeadersRow();
 
         foreach (var (design, idx) in Selection.Designs.WithIndex())
@@ -123,10 +143,20 @@ public class SetPanel
             ImGui.TableNextColumn();
             _designCombo.Draw(Selection, design, idx, _selector.IncognitoMode);
             DrawDragDrop(Selection, idx);
-            ImGui.TableNextColumn();
-            DrawApplicationTypeBoxes(Selection, design, idx);
-            ImGui.TableNextColumn();
-            _jobGroupCombo.Draw(Selection, design, idx);
+            if (singleRow)
+            {
+                ImGui.TableNextColumn();
+                DrawApplicationTypeBoxes(Selection, design, idx, singleRow);
+                ImGui.TableNextColumn();
+                _jobGroupCombo.Draw(Selection, design, idx);
+            }
+            else
+            {
+                _jobGroupCombo.Draw(Selection, design, idx);
+                ImGui.TableNextColumn();
+                DrawApplicationTypeBoxes(Selection, design, idx, singleRow);
+            }
+
             ImGui.TableNextColumn();
             DrawWarnings(design, idx);
         }
@@ -249,18 +279,36 @@ public class SetPanel
         }
     }
 
-    private void DrawApplicationTypeBoxes(AutoDesignSet set, AutoDesign design, int autoDesignIndex)
+    private void DrawApplicationTypeBoxes(AutoDesignSet set, AutoDesign design, int autoDesignIndex, bool singleLine)
     {
-        using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * ImGuiHelpers.GlobalScale));
-        var       newType = design.ApplicationType;
-        foreach (var (type, description) in Types)
+        using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * ImGuiHelpers.GlobalScale));
+        var       newType    = design.ApplicationType;
+        var       newTypeInt = (uint)newType;
+        if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)AutoDesign.Type.All))
+            newType = (AutoDesign.Type)newTypeInt;
+        ImGuiUtil.HoverTooltip("Toggle all modes at once.");
+
+        void Box(int idx)
         {
+            var (type, description) = Types[idx];
             var value = design.ApplicationType.HasFlag(type);
             if (ImGui.Checkbox($"##{(byte)type}", ref value))
                 newType = value ? newType | type : newType & ~type;
             ImGuiUtil.HoverTooltip(description);
-            ImGui.SameLine();
         }
+
+        ImGui.SameLine();
+        Box(0);
+        ImGui.SameLine();
+        Box(1);
+        if (singleLine)
+            ImGui.SameLine();
+
+        Box(2);
+        ImGui.SameLine();
+        Box(3);
+        ImGui.SameLine();
+        Box(4);
 
         _manager.ChangeApplicationType(set, autoDesignIndex, newType);
     }
@@ -338,7 +386,7 @@ public class SetPanel
             CurrentSelection    = design?.Design ?? (Items.Count > 0 ? Items[0] : null);
             CurrentSelectionIdx = design?.Design.Index ?? (Items.Count > 0 ? 0 : -1);
             var name = (incognito ? CurrentSelection?.Incognito : CurrentSelection?.Name.Text) ?? string.Empty;
-            if (Draw("##design", name, string.Empty, 220 * ImGuiHelpers.GlobalScale,
+            if (Draw("##design", name, string.Empty, ImGui.GetContentRegionAvail().X,
                     ImGui.GetTextLineHeight())
              && CurrentSelection != null)
             {
