@@ -277,7 +277,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     private static CustomizeFlag FixValues(CustomizationSet set, ref Customize customize)
     {
         CustomizeFlag flags = 0;
-        foreach (var idx in Enum.GetValues<CustomizeIndex>())
+        foreach (var idx in CustomizationExtensions.AllBasic)
         {
             if (set.IsAvailable(idx))
             {

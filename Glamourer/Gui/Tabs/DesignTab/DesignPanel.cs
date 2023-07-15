@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
+using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Internal.Notifications;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -11,7 +13,6 @@ using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
-using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Structs;
@@ -34,10 +35,12 @@ public class DesignPanel
     private readonly ModAssociationsTab       _modAssociations;
     private readonly DesignDetailTab          _designDetails;
     private readonly DesignConverter          _converter;
+    private readonly DatFileService           _datFileService;
+    private readonly FileDialogManager        _fileDialog = new();
 
     public DesignPanel(DesignFileSystemSelector selector, CustomizationDrawer customizationDrawer, DesignManager manager, ObjectManager objects,
-        StateManager state, EquipmentDrawer equipmentDrawer, CustomizationService customizationService, PenumbraService penumbra,
-        ModAssociationsTab modAssociations, DesignDetailTab designDetails, DesignConverter converter)
+        StateManager state, EquipmentDrawer equipmentDrawer, CustomizationService customizationService, ModAssociationsTab modAssociations,
+        DesignDetailTab designDetails, DesignConverter converter, DatFileService datFileService)
     {
         _selector             = selector;
         _customizationDrawer  = customizationDrawer;
@@ -49,6 +52,7 @@ public class DesignPanel
         _modAssociations      = modAssociations;
         _designDetails        = designDetails;
         _converter            = converter;
+        _datFileService       = datFileService;
     }
 
     private HeaderDrawer.Button LockButton()
@@ -199,7 +203,7 @@ public class DesignPanel
             if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))
             {
                 var newFlags = flags == 3;
-                _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Clan, newFlags);
+                _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Clan,   newFlags);
                 _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Gender, newFlags);
                 foreach (var index in CustomizationExtensions.AllBasic.Where(set.IsAvailable))
                     _manager.ChangeApplyCustomize(_selector.Selected!, index, newFlags);
@@ -291,10 +295,26 @@ public class DesignPanel
     {
         using var group = ImRaii.Group();
         DrawHeader();
+        DrawPanel();
 
-        var       design = _selector.Selected;
-        using var child  = ImRaii.Child("##Panel", -Vector2.One, true);
-        if (!child || design == null)
+        if (_selector.Selected == null || _selector.Selected.WriteProtected())
+            return;
+
+        if (_datFileService.CreateImGuiTarget(out var dat))
+        {
+            _manager.ChangeCustomize(_selector.Selected!, CustomizeIndex.Clan,   dat.Customize[CustomizeIndex.Clan]);
+            _manager.ChangeCustomize(_selector.Selected!, CustomizeIndex.Gender, dat.Customize[CustomizeIndex.Gender]);
+            foreach (var idx in CustomizationExtensions.AllBasic)
+                _manager.ChangeCustomize(_selector.Selected!, idx, dat.Customize[idx]);
+        }
+
+        _datFileService.CreateSource();
+    }
+
+    private void DrawPanel()
+    {
+        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
+        if (!child || _selector.Selected == null)
             return;
 
         DrawButtonRow();
@@ -310,6 +330,8 @@ public class DesignPanel
         DrawApplyToSelf();
         ImGui.SameLine();
         DrawApplyToTarget();
+        ImGui.SameLine();
+        DrawSaveToDat();
     }
 
     private void SetFromClipboard()
@@ -367,6 +389,25 @@ public class DesignPanel
             _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
     }
 
+    private void DrawSaveToDat()
+    {
+        var verified = _datFileService.Verify(_selector.Selected!.DesignData.Customize, out var voice);
+        var tt = verified
+            ? "Export the currently configured customizations of this design to a character creation data file."
+            : "The current design contains customizations that can not be applied during character creation.";
+        var startPath = GetUserPath();
+        if (startPath.Length == 0)
+            startPath = null;
+        if (ImGuiUtil.DrawDisabledButton("Export to Dat", Vector2.Zero, tt, !verified))
+            _fileDialog.SaveFileDialog("Save File...", ".dat", "FFXIV_CHARA_01.dat", ".dat", (v, path) =>
+            {
+                if (v && _selector.Selected != null)
+                    _datFileService.SaveDesign(path, _selector.Selected!.DesignData.Customize, _selector.Selected!.Name);
+            }, startPath);
+
+        _fileDialog.Draw();
+    }
+
     private void ApplyChanges(ActorState.MetaIndex index, DataChange change, bool value, bool apply)
     {
         switch (change)
@@ -383,4 +424,7 @@ public class DesignPanel
                 break;
         }
     }
+
+    private static unsafe string GetUserPath()
+        => Framework.Instance()->UserPath;
 }

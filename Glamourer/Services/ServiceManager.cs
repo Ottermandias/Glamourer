@@ -88,7 +88,8 @@ public static class ServiceManager
             .AddSingleton<PenumbraAutoRedraw>()
             .AddSingleton<JobService>()
             .AddSingleton<CustomizeUnlockManager>()
-            .AddSingleton<ItemUnlockManager>();
+            .AddSingleton<ItemUnlockManager>()
+            .AddSingleton<DatFileService>();
 
     private static IServiceCollection AddDesigns(this IServiceCollection services)
         => services.AddSingleton<DesignManager>()

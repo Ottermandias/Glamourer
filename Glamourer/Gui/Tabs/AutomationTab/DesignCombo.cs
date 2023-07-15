@@ -27,7 +27,7 @@ public sealed class DesignCombo : FilterComboCache<Design>
         if (_fileSystem.FindLeaf(Items[globalIdx], out var leaf))
         {
             var       fullName = leaf.FullName();
-            if (fullName != Items[globalIdx].Name)
+            if (!fullName.StartsWith(Items[globalIdx].Name))
             {
                 using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
                 ImGui.SameLine();

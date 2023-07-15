@@ -141,6 +141,7 @@ public partial class CustomizationOptions
             // Create the initial set with all the easily accessible parameters available for anyone.
             var set = new CustomizationSet(race, gender)
             {
+                Voices               = row.Voices,
                 HairStyles           = GetHairStyles(race, gender),
                 HairColors           = hair,
                 SkinColors           = skin,

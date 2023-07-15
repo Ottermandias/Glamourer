@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -46,6 +47,7 @@ public unsafe class DebugTab : ITab
     private readonly ObjectManager          _objectManager;
     private readonly GlamourerIpc           _ipc;
     private readonly CodeService            _code;
+    private readonly DatFileService         _datFileService;
 
     private readonly ItemManager            _items;
     private readonly ActorService           _actors;
@@ -74,7 +76,7 @@ public unsafe class DebugTab : ITab
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
         AutoDesignManager autoDesignManager, JobService jobs, CodeService code, CustomizeUnlockManager customizeUnlocks,
-        ItemUnlockManager itemUnlocks, DesignConverter designConverter)
+        ItemUnlockManager itemUnlocks, DesignConverter designConverter, DatFileService datFileService)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -100,6 +102,7 @@ public unsafe class DebugTab : ITab
         _customizeUnlocks       = customizeUnlocks;
         _itemUnlocks            = itemUnlocks;
         _designConverter        = designConverter;
+        _datFileService         = datFileService;
     }
 
     public ReadOnlySpan<byte> Label
@@ -130,6 +133,7 @@ public unsafe class DebugTab : ITab
 
         DrawModelEvaluation();
         DrawObjectManager();
+        DrawDatFiles();
     }
 
     private void DrawModelEvaluation()
@@ -256,6 +260,34 @@ public unsafe class DebugTab : ITab
                 ImGuiUtil.DrawTableColumn(string.Join(", ", p.Value.Objects.OrderBy(a => a.Index).Select(a => a.Index.ToString())));
             });
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeightWithSpacing());
+    }
+
+    private string            _datFilePath = string.Empty;
+    private DatCharacterFile? _datFile     = null;
+
+    private void DrawDatFiles()
+    {
+        using var tree = ImRaii.TreeNode("Character Dat File");
+        if (!tree)
+            return;
+
+        ImGui.InputTextWithHint("##datFilePath", "Dat File Path...", ref _datFilePath, 256);
+        var exists = _datFilePath.Length > 0 && File.Exists(_datFilePath);
+        if (ImGuiUtil.DrawDisabledButton("Load##Dat", Vector2.Zero, string.Empty, !exists))
+            _datFile = _datFileService.LoadDesign(_datFilePath, out var tmp) ? tmp : null;
+
+        if (ImGuiUtil.DrawDisabledButton("Save##Dat", Vector2.Zero, string.Empty, _datFilePath.Length == 0 || _datFile == null))
+            _datFileService.SaveDesign(_datFilePath, _datFile!.Value.Customize, _datFile!.Value.Description);
+
+        if (_datFile != null)
+        {
+            ImGui.TextUnformatted(_datFile.Value.Magic.ToString());
+            ImGui.TextUnformatted(_datFile.Value.Version.ToString());
+            ImGui.TextUnformatted(_datFile.Value.Time.LocalDateTime.ToString("g"));
+            ImGui.TextUnformatted(_datFile.Value.Voice.ToString());
+            ImGui.TextUnformatted(_datFile.Value.Customize.Data.ToString());
+            ImGui.TextUnformatted(_datFile.Value.Description);
+        }
     }
 
     private void DrawVisor(Actor actor, Model model)

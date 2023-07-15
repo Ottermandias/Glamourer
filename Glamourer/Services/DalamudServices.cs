@@ -5,6 +5,7 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
+using Dalamud.Interface.DragDrop;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,7 @@ public class DalamudServices
         services.AddSingleton(KeyState);
         services.AddSingleton(this);
         services.AddSingleton(PluginInterface.UiBuilder);
+        services.AddSingleton(DragDropManager);
     }
 
     // @formatter:off
@@ -45,5 +47,6 @@ public class DalamudServices
     [PluginService][RequiredVersion("1.0")] public TargetManager          Targets         { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public ObjectTable            Objects         { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public KeyState               KeyState        { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public IDragDropManager       DragDropManager { get; private set; } = null!;
     // @formatter:on
 }

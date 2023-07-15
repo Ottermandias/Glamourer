@@ -33,6 +33,7 @@ public class ActorPanel
     private readonly DesignConverter     _converter;
     private readonly ObjectManager       _objects;
     private readonly DesignManager       _designManager;
+    private readonly DatFileService      _datFileService;
 
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -42,7 +43,7 @@ public class ActorPanel
 
     public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer,
         EquipmentDrawer equipmentDrawer, IdentifierService identification, AutoDesignApplier autoDesignApplier,
-        Configuration config, DesignConverter converter, ObjectManager objects, DesignManager designManager)
+        Configuration config, DesignConverter converter, ObjectManager objects, DesignManager designManager, DatFileService datFileService)
     {
         _selector            = selector;
         _stateManager        = stateManager;
@@ -54,6 +55,7 @@ public class ActorPanel
         _converter           = converter;
         _objects             = objects;
         _designManager       = designManager;
+        _datFileService      = datFileService;
     }
 
     public void Draw()
@@ -63,6 +65,13 @@ public class ActorPanel
         (_actorName, _actor) = GetHeaderName();
         DrawHeader();
         DrawPanel();
+
+        if (_state is not { IsLocked: false })
+            return;
+
+        if (_datFileService.CreateImGuiTarget(out var dat))
+            _stateManager.ChangeCustomize(_state!, dat.Customize, CustomizeFlagExtensions.AllRelevant, StateChanged.Source.Manual);
+        _datFileService.CreateSource();
     }
 
     private void DrawHeader()
@@ -113,7 +122,7 @@ public class ActorPanel
 
     private void DrawCustomizationsHeader()
     {
-        if (!ImGui.CollapsingHeader("Customizations"))
+        if (!ImGui.CollapsingHeader("Customization"))
             return;
 
         if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked, _identifier.Type is IdentifierType.Special))
@@ -372,7 +381,8 @@ public class ActorPanel
                 ? "Apply the current state to your current target."
                 : "The current target can not be manipulated."
             : "No valid target selected.";
-        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid || id == _identifier || !_state!.ModelData.IsHuman || _objects.IsInGPose))
+        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt,
+                !data.Valid || id == _identifier || !_state!.ModelData.IsHuman || _objects.IsInGPose))
             return;
 
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
