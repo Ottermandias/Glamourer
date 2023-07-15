@@ -117,4 +117,7 @@ public unsafe struct Customize
 
         return ret;
     }
+
+    public override string ToString()
+        => Data.ToString();
 }
