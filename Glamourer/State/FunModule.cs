@@ -72,20 +72,20 @@ public unsafe class FunModule
         if (!_codes.EnabledEmperor)
             return;
 
-        if (armors.Length == 1)
+        void SetItem(EquipSlot slot2, ref CharacterArmor armor)
         {
-            ref var piece = ref armors[0];
-            piece.Variant = 1;
-            piece.Set     = (SetId)(slot.IsAccessory() ? 53 : 279);
-            return;
+            var list = _items.ItemService.AwaitedService[slot2.ToEquipType()];
+            var rng  = _rng.Next(0, list.Count - 1);
+            var item = list[rng];
+            armor.Set     = item.ModelId;
+            armor.Variant = item.Variant;
         }
 
-        for (var i = 0; i < armors.Length; ++i)
-        {
-            ref var piece = ref armors[i];
-            piece.Variant = 1;
-            piece.Set     = (SetId)(i < 5 ? 279 : 53);
-        }
+        if (armors.Length == 1)
+            SetItem(slot, ref armors[0]);
+        else
+            for (var i = 0u; i < armors.Length; ++i)
+                SetItem(i.ToEquipSlot(), ref armors[(int)i]);
     }
 
     public void ApplyOops(ref Customize customize)
