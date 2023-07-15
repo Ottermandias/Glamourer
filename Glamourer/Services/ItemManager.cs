@@ -100,7 +100,7 @@ public class ItemManager : IDisposable
     public EquipItem Identify(EquipSlot slot, SetId id, byte variant)
     {
         slot = slot.ToSlot();
-        if (!slot.IsEquipmentPiece())
+        if (slot.ToIndex() == uint.MaxValue)
             return new EquipItem($"Invalid ({id.Value}-{variant})", 0, 0, id, 0, variant, 0);
 
         switch (id.Value)

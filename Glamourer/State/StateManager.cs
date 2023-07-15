@@ -240,7 +240,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         if (!_editor.ChangeItem(state, slot, item, source, out var old, key))
             return;
 
-        var type = slot.IsEquipmentPiece() ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
+        var type = slot.ToIndex() < 10 ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
         var actors = type is StateChanged.Type.Equip
             ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
             : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
@@ -255,7 +255,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         if (!_editor.ChangeEquip(state, slot, item, stain, source, out var old, out var oldStain, key))
             return;
 
-        var type = slot.IsEquipmentPiece() ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
+        var type = slot.ToIndex() < 10 ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
         var actors = type is StateChanged.Type.Equip
             ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
             : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);

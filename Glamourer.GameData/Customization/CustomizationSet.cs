@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Xml.XPath;
 using OtterGui;
 using Penumbra.GameData.Enums;
 
@@ -38,8 +37,9 @@ public class CustomizationSet
     public string Option(CustomizeIndex index)
         => OptionName[(int)index];
 
-    public IReadOnlyList<CharaMakeParams.MenuType>                         Types { get; internal set; } = null!;
-    public IReadOnlyDictionary<CharaMakeParams.MenuType, CustomizeIndex[]> Order { get; internal set; } = null!;
+    public IReadOnlyList<byte>                                             Voices { get; internal init; } = null!;
+    public IReadOnlyList<CharaMakeParams.MenuType>                         Types  { get; internal set; }  = null!;
+    public IReadOnlyDictionary<CharaMakeParams.MenuType, CustomizeIndex[]> Order  { get; internal set; }  = null!;
 
 
     // Always list selector.
@@ -76,7 +76,6 @@ public class CustomizationSet
     public IReadOnlyList<CustomizeData> FacePaintColorsDark  { get; internal init; } = null!;
     public IReadOnlyList<CustomizeData> LipColorsLight       { get; internal init; } = null!;
     public IReadOnlyList<CustomizeData> LipColorsDark        { get; internal init; } = null!;
-
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public int DataByValue(CustomizeIndex index, CustomizeValue value, out CustomizeData? custom, CustomizeValue face)
@@ -248,8 +247,10 @@ public class CustomizationSet
             CharaMakeParams.MenuType.Checkmark     => 2,
             _ => index switch
             {
-                CustomizeIndex.Face            => Faces.Count,
-                CustomizeIndex.Hairstyle       => (face = HrothgarFaceHack(face)) < HairByFace.Count ? HairByFace[face.Value].Count : HairStyles.Count,
+                CustomizeIndex.Face => Faces.Count,
+                CustomizeIndex.Hairstyle => (face = HrothgarFaceHack(face)) < HairByFace.Count
+                    ? HairByFace[face.Value].Count
+                    : HairStyles.Count,
                 CustomizeIndex.SkinColor       => SkinColors.Count,
                 CustomizeIndex.EyeColorRight   => EyeColors.Count,
                 CustomizeIndex.HairColor       => HairColors.Count,
