@@ -33,7 +33,6 @@ public class SetPanel
     private readonly DesignCombo      _designCombo;
     private readonly JobGroupCombo    _jobGroupCombo;
     private readonly IdentifierDrawer _identifierDrawer;
-    private readonly CodeService      _codeService;
 
     private string? _tempName;
     private int     _dragIndex = -1;
@@ -41,8 +40,7 @@ public class SetPanel
     private Action? _endAction;
 
     public SetPanel(SetSelector selector, AutoDesignManager manager, DesignManager designs, JobService jobs, ItemUnlockManager itemUnlocks,
-        CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer,
-        CodeService codeService, Configuration config)
+        CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer, Configuration config, DesignCombo designCombo)
     {
         _selector         = selector;
         _manager          = manager;
@@ -50,9 +48,8 @@ public class SetPanel
         _customizeUnlocks = customizeUnlocks;
         _customizations   = customizations;
         _identifierDrawer = identifierDrawer;
-        _codeService      = codeService;
         _config           = config;
-        _designCombo      = new DesignCombo(_manager, designs);
+        _designCombo      = designCombo;
         _jobGroupCombo    = new JobGroupCombo(manager, jobs);
     }
 
@@ -367,37 +364,5 @@ public class SetPanel
 
         protected override string ToString(JobGroup obj)
             => obj.Name;
-    }
-
-    private sealed class DesignCombo : FilterComboCache<Design>
-    {
-        private readonly AutoDesignManager _manager;
-        private readonly DesignManager     _designs;
-
-        public DesignCombo(AutoDesignManager manager, DesignManager designs)
-            : base(() => designs.Designs.OrderBy(d => d.Name).ToList())
-        {
-            _designs = designs;
-            _manager = manager;
-        }
-
-        public void Draw(AutoDesignSet set, AutoDesign? design, int autoDesignIndex, bool incognito)
-        {
-            CurrentSelection    = design?.Design ?? (Items.Count > 0 ? Items[0] : null);
-            CurrentSelectionIdx = design?.Design.Index ?? (Items.Count > 0 ? 0 : -1);
-            var name = (incognito ? CurrentSelection?.Incognito : CurrentSelection?.Name.Text) ?? string.Empty;
-            if (Draw("##design", name, string.Empty, ImGui.GetContentRegionAvail().X,
-                    ImGui.GetTextLineHeight())
-             && CurrentSelection != null)
-            {
-                if (autoDesignIndex >= 0)
-                    _manager.ChangeDesign(set, autoDesignIndex, CurrentSelection);
-                else
-                    _manager.AddDesign(set, CurrentSelection);
-            }
-        }
-
-        protected override string ToString(Design obj)
-            => obj.Name.Text;
     }
 }

@@ -118,6 +118,7 @@ public static class ServiceManager
             .AddSingleton<DesignFileSystemSelector>()
             .AddSingleton<DesignPanel>()
             .AddSingleton<DesignTab>()
+            .AddSingleton<DesignCombo>()
             .AddSingleton<ModAssociationsTab>()
             .AddSingleton<DesignDetailTab>()
             .AddSingleton<UnlockTable>()
