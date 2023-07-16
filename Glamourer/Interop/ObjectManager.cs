@@ -137,6 +137,12 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
     public Actor Target
         => _targets.Target?.Address ?? nint.Zero;
 
+    public Actor Focus
+        => _targets.FocusTarget?.Address ?? nint.Zero;
+
+    public Actor MouseOver
+        => _targets.MouseOverTarget?.Address ?? nint.Zero;
+
     public (ActorIdentifier Identifier, ActorData Data) PlayerData
     {
         get
@@ -186,4 +192,22 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
 
     public IEnumerable<ActorData> Values
         => Identifiers.Values;
+
+    public bool GetName(string lowerName, out Actor actor)
+    {
+        (actor, var ret) = lowerName switch
+        {
+            ""          => (Actor.Null, true),
+            "<me>"      => (Player, true),
+            "self"      => (Player, true),
+            "<t>"       => (Target, true),
+            "target"    => (Target, true),
+            "<f>"       => (Focus, true),
+            "focus"     => (Focus, true),
+            "<mo>"      => (MouseOver, true),
+            "mouseover" => (MouseOver, true),
+            _           => (Actor.Null, false),
+        };
+        return ret;
+    }
 }
