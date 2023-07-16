@@ -62,6 +62,14 @@ public class ActorState
         return !IsLocked;
     }
 
+    /// <summary> Lock for temporary changes until after redrawing. </summary>
+    public bool TempLock()
+        => Lock(1337);
+
+    /// <summary> Unlock temp locks. </summary>
+    public bool TempUnlock()
+        => Unlock(1337);
+
     /// <summary> This contains whether a change to the base data was made by the game, the user via manual input or through automatic application. </summary>
     private readonly StateChanged.Source[] _sources = Enumerable
         .Repeat(StateChanged.Source.Game, EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5).ToArray();

@@ -377,6 +377,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         var actors = _applier.ChangeWetness(state, true);
         if (redraw)
         {
+            state.TempLock();
             _applier.ForceRedraw(actors);
         }
         else

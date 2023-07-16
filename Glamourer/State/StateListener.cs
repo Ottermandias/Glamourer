@@ -131,6 +131,8 @@ public class StateListener : IDisposable
 
                     break;
             }
+
+            state.TempUnlock();
         }
 
         _funModule.ApplyFun(actor, new Span<CharacterArmor>((void*)equipDataPtr, 10), ref customize);
