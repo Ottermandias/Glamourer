@@ -11,6 +11,7 @@ using Glamourer.Structs;
 using Glamourer.Unlocks;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Glamourer.Automation;
 
@@ -53,46 +54,79 @@ public class AutoDesignApplier : IDisposable
         _jobs.JobChanged -= OnJobChange;
     }
 
-    private void OnAutomationChange(AutomationChanged.Type type, AutoDesignSet? set, object? _)
+    private void OnAutomationChange(AutomationChanged.Type type, AutoDesignSet? set, object? bonusData)
     {
-        if (!_config.EnableAutoDesigns || set is not { Enabled: true })
+        if (!_config.EnableAutoDesigns || set == null)
             return;
 
-        switch (type)
+        void RemoveOld(ActorIdentifier[]? identifiers)
         {
-            case AutomationChanged.Type.ChangeIdentifier:
-            case AutomationChanged.Type.ToggleSet:
-            case AutomationChanged.Type.AddedDesign:
-            case AutomationChanged.Type.DeletedDesign:
-            case AutomationChanged.Type.MovedDesign:
-            case AutomationChanged.Type.ChangedDesign:
-            case AutomationChanged.Type.ChangedConditions:
-                _objects.Update();
-                foreach (var id1 in set.Identifiers)
+            if (identifiers == null)
+                return;
+
+            foreach (var id in identifiers)
+            {
+                if (_state.TryGetValue(id, out var state))
+                    state.RemoveFixedDesignSources();
+            }
+        }
+
+        void ApplyNew(AutoDesignSet? newSet)
+        {
+            if (newSet is not { Enabled: true })
+                return;
+
+            _objects.Update();
+            foreach (var id in newSet.Identifiers)
+            {
+                if (_objects.TryGetValue(id, out var data))
                 {
-                    if (_objects.TryGetValue(id1, out var data))
+                    if (_state.GetOrCreate(id, data.Objects[0], out var state))
                     {
-                        if (_state.GetOrCreate(id1, data.Objects[0], out var state))
-                        {
-                            Reduce(data.Objects[0], state, set, false);
-                            foreach (var actor in data.Objects)
-                                _state.ReapplyState(actor);
-                        }
-                    }
-                    else if (_objects.TryGetValueAllWorld(id1, out data))
-                    {
+                        Reduce(data.Objects[0], state, newSet, false);
                         foreach (var actor in data.Objects)
+                            _state.ReapplyState(actor);
+                    }
+                }
+                else if (_objects.TryGetValueAllWorld(id, out data))
+                {
+                    foreach (var actor in data.Objects)
+                    {
+                        var specificId = actor.GetIdentifier(_actors.AwaitedService);
+                        if (_state.GetOrCreate(specificId, actor, out var state))
                         {
-                            var id = actor.GetIdentifier(_actors.AwaitedService);
-                            if (_state.GetOrCreate(id, actor, out var state))
-                            {
-                                Reduce(actor, state, set, false);
-                                _state.ReapplyState(actor);
-                            }
+                            Reduce(actor, state, newSet, false);
+                            _state.ReapplyState(actor);
                         }
                     }
                 }
+                else if (_state.TryGetValue(id, out var state))
+                {
+                    state.RemoveFixedDesignSources();
+                }
+            }
+        }
 
+        switch (type)
+        {
+            case AutomationChanged.Type.ToggleSet when !set.Enabled:
+            case AutomationChanged.Type.DeletedDesign when set.Enabled:
+                // The automation set was disabled or deleted, no other for those identifiers can be enabled, remove existing Fixed Locks.
+                RemoveOld(set.Identifiers);
+                break;
+            case AutomationChanged.Type.ChangeIdentifier when set.Enabled:
+                // Remove fixed state from the old identifiers assigned and the old enabled set, if any.
+                var (oldIds, _, oldSet) = ((ActorIdentifier[], ActorIdentifier, AutoDesignSet?)) bonusData!;
+                RemoveOld(oldIds);
+                ApplyNew(set); // Does not need to disable oldSet because same identifiers.
+                break;
+            case AutomationChanged.Type.ToggleSet: // Does not need to disable old states because same identifiers.
+            case AutomationChanged.Type.AddedDesign:
+            case AutomationChanged.Type.MovedDesign:
+            case AutomationChanged.Type.ChangedDesign:
+            case AutomationChanged.Type.ChangedConditions:
+            case AutomationChanged.Type.ChangedType:
+                ApplyNew(set);
                 break;
         }
     }
@@ -159,6 +193,8 @@ public class AutoDesignApplier : IDisposable
         EquipFlag     totalEquipFlags     = 0;
         CustomizeFlag totalCustomizeFlags = 0;
         byte          totalMetaFlags      = 0;
+        if (!respectManual)
+            state.RemoveFixedDesignSources();
         foreach (var design in set.Designs)
         {
             if (!design.IsActive(actor))

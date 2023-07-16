@@ -29,7 +29,7 @@ public sealed class AutomationChanged : EventWrapper<Action<AutomationChanged.Ty
         /// <summary> Move a given set to a different position. Additional data is the old index of the set and the new index of the set [(int, int)]. </summary>
         MovedSet,
 
-        /// <summary> Change the identifier a given set is associated with to another one. Additional data is the old identifier and the new one, and a potentially disabled other design set. [(ActorIdentifier, ActorIdentifier, AutoDesignSet?)]. </summary>
+        /// <summary> Change the identifier a given set is associated with to another one. Additional data is the old identifier and the new one, and a potentially disabled other design set. [(ActorIdentifier[], ActorIdentifier, AutoDesignSet?)]. </summary>
         ChangeIdentifier,
 
         /// <summary> Toggle the enabled state of a given set. Additional data is the thus disabled other set, if any [AutoDesignSet?]. </summary>

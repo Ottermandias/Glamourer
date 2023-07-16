@@ -39,7 +39,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
             }
 
         var set = AwaitedService.GetList(ret.Clan, ret.Gender);
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        foreach (var index in CustomizationExtensions.AllBasic)
         {
             var flag = index.ToFlag();
             if (!applyWhich.HasFlag(flag))

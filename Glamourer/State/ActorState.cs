@@ -77,4 +77,13 @@ public class ActorState
 
     public ref StateChanged.Source this[MetaIndex index]
         => ref _sources[(int)index];
+
+    public void RemoveFixedDesignSources()
+    {
+        for (var i = 0; i < _sources.Length; ++i)
+        {
+            if (_sources[i] is StateChanged.Source.Fixed)
+                _sources[i] = StateChanged.Source.Manual;
+        }
+    }
 }

@@ -115,29 +115,10 @@ public class DatFileService
         if (inputVoice.HasValue && !set.Voices.Contains(inputVoice.Value))
             return false;
 
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        foreach (var index in CustomizationExtensions.AllBasic)
         {
-            switch (index)
-            {
-                case CustomizeIndex.Race:
-                case CustomizeIndex.BodyType:
-                case CustomizeIndex.Gender:
-                case CustomizeIndex.Clan:
-                    continue;
-                case CustomizeIndex.Hairstyle:
-                case CustomizeIndex.FacePaint:
-                    if (set.DataByValue(index, input[index], out var data, input.Face) < 0
-                     || data == null
-                     || _unlocks.Unlockable.ContainsKey(data.Value))
-                        return false;
-
-                    break;
-                default:
-                    if (!CustomizationService.IsCustomizationValid(set, input.Face, index, input[index]))
-                        return false;
-
-                    break;
-            }
+            if (!CustomizationService.IsCustomizationValid(set, input.Face, index, input[index]))
+                return false;
         }
 
         if (input[CustomizeIndex.LegacyTattoo].Value != 0)
