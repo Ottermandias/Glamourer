@@ -62,7 +62,7 @@ public unsafe class UpdateSlotService : IDisposable
         var slot        = slotIdx.ToEquipSlot();
         var returnValue = ulong.MaxValue;
         SlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
-        Glamourer.Log.Information($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue}).");
+        Glamourer.Log.Excessive($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue}).");
         return returnValue == ulong.MaxValue ? _flagSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
     }
 
@@ -70,7 +70,7 @@ public unsafe class UpdateSlotService : IDisposable
     {
         var slot = slotIdx.ToEquipSlot();
         EquipmentLoadingEvent.Invoke(drawDataContainer->Parent, slot, data);
-        Glamourer.Log.Information($"[LoadEquipment] Called with 0x{(ulong)drawDataContainer:X} for slot {slot} with {data} ({force}).");
+        Glamourer.Log.Excessive($"[LoadEquipment] Called with 0x{(ulong)drawDataContainer:X} for slot {slot} with {data} ({force}).");
         _loadEquipmentHook.Original(drawDataContainer, slotIdx, data, force);
     }
 
