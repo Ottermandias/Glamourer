@@ -39,8 +39,8 @@ public class SetPanel
 
     private Action? _endAction;
 
-    public SetPanel(SetSelector selector, AutoDesignManager manager, DesignManager designs, JobService jobs, ItemUnlockManager itemUnlocks,
-        CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer, Configuration config, DesignCombo designCombo)
+    public SetPanel(SetSelector selector, AutoDesignManager manager, JobService jobs, ItemUnlockManager itemUnlocks, DesignCombo designCombo,
+        CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer, Configuration config)
     {
         _selector         = selector;
         _manager          = manager;
@@ -73,8 +73,9 @@ public class SetPanel
         if (!child || !_selector.HasSelection)
             return;
 
-        var name = _tempName ?? Selection.Name;
-        if (ImGui.InputText("##Name", ref name, 64))
+        var name  = _tempName ?? Selection.Name;
+        var flags = _selector.IncognitoMode ? ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.Password : ImGuiInputTextFlags.None;
+        if (ImGui.InputText("##Name", ref name, 128, flags))
             _tempName = name;
 
         if (ImGui.IsItemDeactivated())
