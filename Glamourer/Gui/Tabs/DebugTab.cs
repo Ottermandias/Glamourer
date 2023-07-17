@@ -822,7 +822,11 @@ public unsafe class DebugTab : ITab
         foreach (var clan in _customization.AwaitedService.Clans)
         {
             foreach (var gender in _customization.AwaitedService.Genders)
-                DrawCustomizationInfo(_customization.AwaitedService.GetList(clan, gender));
+            {
+                var set = _customization.AwaitedService.GetList(clan, gender);
+                DrawCustomizationInfo(set);
+                DrawNpcCustomizationInfo(set);
+            }
         }
     }
 
@@ -843,6 +847,23 @@ public unsafe class DebugTab : ITab
             ImGuiUtil.DrawTableColumn(set.IsAvailable(index) ? "Available" : "Unavailable");
             ImGuiUtil.DrawTableColumn(set.Type(index).ToString());
             ImGuiUtil.DrawTableColumn(set.Count(index).ToString());
+        }
+    }
+
+    private void DrawNpcCustomizationInfo(CustomizationSet set)
+    {
+        using var tree = ImRaii.TreeNode($"{_customization.ClanName(set.Clan, set.Gender)} {set.Gender} (NPC Options)");
+        if (!tree)
+            return;
+
+        using var table = ImRaii.Table("npc", 2, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        if (!table)
+            return;
+
+        foreach(var (index, value) in set.NpcOptions)
+        {
+            ImGuiUtil.DrawTableColumn(index.ToString());
+            ImGuiUtil.DrawTableColumn(value.Value.ToString());
         }
     }
 

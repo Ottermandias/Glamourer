@@ -23,7 +23,6 @@ public class Glamourer : IDalamudPlugin
     public static readonly Logger      Log = new();
     public static          ChatService Chat { get; private set; } = null!;
 
-
     private readonly ServiceProvider _services;
 
     public Glamourer(DalamudPluginInterface pluginInterface)
@@ -45,7 +44,5 @@ public class Glamourer : IDalamudPlugin
 
 
     public void Dispose()
-    {
-        _services?.Dispose();
-    }
+        => _services?.Dispose();
 }

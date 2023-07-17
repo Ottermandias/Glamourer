@@ -45,7 +45,7 @@ public partial class CustomizationOptions
 
 
     // Get the index for the given pair of tribe and gender.
-    private static int ToIndex(SubRace race, Gender gender)
+    internal static int ToIndex(SubRace race, Gender gender)
     {
         var idx = ((int)race - 1) * Genders.Length + (gender == Gender.Female ? 1 : 0);
         if (idx < 0 || idx >= ListSize)
@@ -59,8 +59,6 @@ public partial class CustomizationOptions
 
 public partial class CustomizationOptions
 {
-    private readonly bool _valid;
-
     public string GetName(CustomName name)
         => _names[(int)name];
 
@@ -68,13 +66,13 @@ public partial class CustomizationOptions
     {
         var tmp = new TemporaryData(gameData, this);
         _icons = new IconStorage(pi, gameData, _customizationSets.Length * 50);
-        _valid = tmp.Valid;
         SetNames(gameData, tmp);
         foreach (var race in Clans)
         {
             foreach (var gender in Genders)
                 _customizationSets[ToIndex(race, gender)] = tmp.GetSet(race, gender);
         }
+        tmp.SetNpcData(_customizationSets);
     }
 
     // Obtain localized names of customization options and race names from the game data.
@@ -171,11 +169,24 @@ public partial class CustomizationOptions
             return set;
         }
 
+        public void SetNpcData(CustomizationSet[] sets)
+        {
+            var data = CustomizationNpcOptions.CreateNpcData(sets, _bnpcCustomize, _enpcBase);
+            foreach (var set in sets)
+            {
+                if (data.TryGetValue((set.Clan, set.Gender), out var npcData))
+                    set.NpcOptions = npcData.ToArray();
+            }
+        }
+
+
         public TemporaryData(DataManager gameData, CustomizationOptions options)
         {
             _options        = options;
             _cmpFile        = new CmpFile(gameData);
             _customizeSheet = gameData.GetExcelSheet<CharaMakeCustomize>()!;
+            _bnpcCustomize  = gameData.GetExcelSheet<BNpcCustomize>()!;
+            _enpcBase       = gameData.GetExcelSheet<ENpcBase>()!;
             Lobby           = gameData.GetExcelSheet<Lobby>()!;
             var tmp = gameData.Excel.GetType().GetMethod("GetSheet", BindingFlags.Instance | BindingFlags.NonPublic)?
                 .MakeGenericMethod(typeof(CharaMakeParams)).Invoke(gameData.Excel, new object?[]
@@ -199,6 +210,8 @@ public partial class CustomizationOptions
         private readonly ExcelSheet<CharaMakeCustomize> _customizeSheet;
         private readonly ExcelSheet<CharaMakeParams>    _listSheet;
         private readonly ExcelSheet<HairMakeType>       _hairSheet;
+        private readonly ExcelSheet<BNpcCustomize>      _bnpcCustomize;
+        private readonly ExcelSheet<ENpcBase>           _enpcBase;
         public readonly  ExcelSheet<Lobby>              Lobby;
         private readonly CmpFile                        _cmpFile;
 
@@ -212,6 +225,7 @@ public partial class CustomizationOptions
         private readonly CustomizeData[] _tattooColorPicker;
 
         private readonly CustomizationOptions _options;
+
 
         private CustomizeData[] CreateColorPicker(CustomizeIndex index, int offset, int num, bool light = false)
             => _cmpFile.GetSlice(offset, num)

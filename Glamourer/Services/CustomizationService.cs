@@ -122,12 +122,12 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static bool IsCustomizationValid(CustomizationSet set, CustomizeValue face, CustomizeIndex type, CustomizeValue value,
         [NotNullWhen(true)] out CustomizeData? data)
-        => set.DataByValue(type, value, out data, face) >= 0 || !set.IsAvailable(type) && value.Value == 0;
+        => set.Validate(type, value, out data, face);
 
     /// <summary> Returns whether a customization value is valid for a given clan, gender and face. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public bool IsCustomizationValid(SubRace race, Gender gender, CustomizeValue face, CustomizeIndex type, CustomizeValue value)
-        => AwaitedService.GetList(race, gender).DataByValue(type, value, out _, face) >= 0;
+        => IsCustomizationValid(AwaitedService.GetList(race, gender), face, type, value);
 
     /// <summary>
     /// Check that the given race and clan are valid.

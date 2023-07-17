@@ -65,6 +65,8 @@ public class CustomizationSet
     public (CustomizeData, CustomizeData)                LegacyTattoo   { get; internal set; }
     public IReadOnlyList<CustomizeData>                  FacePaints     { get; internal init; } = null!;
 
+    public IReadOnlyList<(CustomizeIndex Type, CustomizeValue Value)> NpcOptions { get; internal set; } =
+        Array.Empty<(CustomizeIndex Type, CustomizeValue Value)>();
 
     // Always Color Selector
     public IReadOnlyList<CustomizeData> SkinColors           { get; internal init; } = null!;
@@ -76,6 +78,17 @@ public class CustomizationSet
     public IReadOnlyList<CustomizeData> FacePaintColorsDark  { get; internal init; } = null!;
     public IReadOnlyList<CustomizeData> LipColorsLight       { get; internal init; } = null!;
     public IReadOnlyList<CustomizeData> LipColorsDark        { get; internal init; } = null!;
+
+    public bool Validate(CustomizeIndex index, CustomizeValue value, out CustomizeData? custom, CustomizeValue face)
+    {
+        if (IsAvailable(index))
+            return DataByValue(index, value, out custom, face) >= 0
+             || NpcOptions.Any(t => t.Type == index && t.Value == value);
+
+        custom = null;
+        return value == CustomizeValue.Zero;
+
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public int DataByValue(CustomizeIndex index, CustomizeValue value, out CustomizeData? custom, CustomizeValue face)
