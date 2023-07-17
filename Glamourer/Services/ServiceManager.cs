@@ -61,6 +61,7 @@ public static class ServiceManager
     private static IServiceCollection AddEvents(this IServiceCollection services)
         => services.AddSingleton<VisorStateChanged>()
             .AddSingleton<SlotUpdating>()
+            .AddSingleton<EquipmentLoading>()
             .AddSingleton<DesignChanged>()
             .AddSingleton<AutomationChanged>()
             .AddSingleton<StateChanged>()

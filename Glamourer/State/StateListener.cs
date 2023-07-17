@@ -6,6 +6,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using OtterGui.Classes;
+using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -25,6 +26,7 @@ public class StateListener : IDisposable
     private readonly ItemManager               _items;
     private readonly PenumbraService           _penumbra;
     private readonly SlotUpdating              _slotUpdating;
+    private readonly EquipmentLoading          _equipmentLoading;
     private readonly WeaponLoading             _weaponLoading;
     private readonly HeadGearVisibilityChanged _headGearVisibility;
     private readonly VisorStateChanged         _visorState;
@@ -41,7 +43,8 @@ public class StateListener : IDisposable
 
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
-        HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans)
+        HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
+        EquipmentLoading equipmentLoading)
     {
         _manager            = manager;
         _items              = items;
@@ -56,6 +59,7 @@ public class StateListener : IDisposable
         _autoDesignApplier  = autoDesignApplier;
         _funModule          = funModule;
         _humans             = humans;
+        _equipmentLoading   = equipmentLoading;
 
         if (Enabled)
             Subscribe();
@@ -160,6 +164,42 @@ public class StateListener : IDisposable
     }
 
     /// <summary>
+    /// The game object does not actually invoke changes when the model id is identical,
+    /// so we need to handle that case too.
+    /// </summary>
+    private void OnEquipmentLoading(Actor actor, EquipSlot slot, CharacterArmor armor)
+    {
+        if (armor != actor.GetArmor(slot))
+            return;
+
+        if (!actor.Identifier(_actors.AwaitedService, out var identifier)
+         || !_manager.TryGetValue(identifier, out var state) || !state.BaseData.IsHuman)
+            return;
+
+        if (state.ModelData.Armor(slot) == armor)
+            return;
+
+        var setItem  = state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc;
+        var setStain = state[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc;
+        switch (setItem, setStain)
+        {
+            case (true, true):  
+                _manager.ChangeEquip(state, slot, state.BaseData.Item(slot), state.BaseData.Stain(slot), StateChanged.Source.Manual);
+                state[slot, false] = StateChanged.Source.Game;
+                state[slot, true] = StateChanged.Source.Game;
+                break;
+            case (true, false):
+                _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateChanged.Source.Manual);
+                state[slot, false] = StateChanged.Source.Game;
+                break;
+            case (false, true):
+                _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Manual);
+                state[slot, true]  = StateChanged.Source.Game;
+                break;
+        }
+    }
+
+    /// <summary>
     /// A game object loads a new weapon.
     /// Update base data, apply or update model data.
     /// Verify consistent weapon types.
@@ -179,24 +219,14 @@ public class StateListener : IDisposable
             case UpdateState.Transformed: break;
             case UpdateState.Change:
                 if (state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
-                {
-                    state.ModelData.SetItem(slot, state.BaseData.Item(slot));
-                    state[slot, false] = StateChanged.Source.Game;
-                }
+                    _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateChanged.Source.Game);
                 else
-                {
                     apply = true;
-                }
 
                 if (state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
-                {
-                    state.ModelData.SetStain(slot, state.BaseData.Stain(slot));
-                    state[slot, true] = StateChanged.Source.Game;
-                }
+                    _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Game);
                 else
-                {
                     apply = true;
-                }
 
                 break;
             case UpdateState.NoChange:
@@ -254,24 +284,14 @@ public class StateListener : IDisposable
             case UpdateState.Change:
                 var apply = false;
                 if (state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
-                {
-                    state.ModelData.SetItem(slot, state.BaseData.Item(slot));
-                    state[slot, false] = StateChanged.Source.Game;
-                }
+                    _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateChanged.Source.Game);
                 else
-                {
                     apply = true;
-                }
 
                 if (state[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
-                {
-                    state.ModelData.SetStain(slot, state.BaseData.Stain(slot));
-                    state[slot, true] = StateChanged.Source.Game;
-                }
+                    _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Game);
                 else
-                {
                     apply = true;
-                }
 
                 if (apply)
                     armor = state.ModelData.Armor(slot);
@@ -464,6 +484,7 @@ public class StateListener : IDisposable
     {
         _penumbra.CreatingCharacterBase += OnCreatingCharacterBase;
         _slotUpdating.Subscribe(OnSlotUpdating, SlotUpdating.Priority.StateListener);
+        _equipmentLoading.Subscribe(OnEquipmentLoading, EquipmentLoading.Priority.StateListener);
         _weaponLoading.Subscribe(OnWeaponLoading, WeaponLoading.Priority.StateListener);
         _visorState.Subscribe(OnVisorChange, VisorStateChanged.Priority.StateListener);
         _headGearVisibility.Subscribe(OnHeadGearVisibilityChange, HeadGearVisibilityChanged.Priority.StateListener);
@@ -474,6 +495,7 @@ public class StateListener : IDisposable
     {
         _penumbra.CreatingCharacterBase -= OnCreatingCharacterBase;
         _slotUpdating.Unsubscribe(OnSlotUpdating);
+        _equipmentLoading.Unsubscribe(OnEquipmentLoading);
         _weaponLoading.Unsubscribe(OnWeaponLoading);
         _visorState.Unsubscribe(OnVisorChange);
         _headGearVisibility.Unsubscribe(OnHeadGearVisibilityChange);
