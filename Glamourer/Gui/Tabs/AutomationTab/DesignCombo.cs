@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Glamourer.Automation;
 using Glamourer.Designs;
+using Glamourer.Events;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -12,12 +13,14 @@ public sealed class DesignCombo : FilterComboCache<Design>
 {
     private readonly AutoDesignManager _manager;
     private readonly DesignFileSystem  _fileSystem;
+    private readonly TabSelected       _tabSelected;
 
-    public DesignCombo(AutoDesignManager manager, DesignManager designs, DesignFileSystem fileSystem)
+    public DesignCombo(AutoDesignManager manager, DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected)
         : base(() => designs.Designs.OrderBy(d => d.Name).ToList())
     {
-        _manager    = manager;
-        _fileSystem = fileSystem;
+        _manager     = manager;
+        _fileSystem  = fileSystem;
+        _tabSelected = tabSelected;
     }
 
     protected override bool DrawSelectable(int globalIdx, bool selected)
@@ -26,7 +29,7 @@ public sealed class DesignCombo : FilterComboCache<Design>
 
         if (_fileSystem.FindLeaf(Items[globalIdx], out var leaf))
         {
-            var       fullName = leaf.FullName();
+            var fullName = leaf.FullName();
             if (!fullName.StartsWith(Items[globalIdx].Name))
             {
                 using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
@@ -51,6 +54,13 @@ public sealed class DesignCombo : FilterComboCache<Design>
                 _manager.ChangeDesign(set, autoDesignIndex, CurrentSelection);
             else
                 _manager.AddDesign(set, CurrentSelection);
+        }
+
+        if (design != null)
+        {
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyCtrl)
+                _tabSelected.Invoke(MainWindow.TabType.Designs, design.Design);
+            ImGuiUtil.HoverTooltip("Control + Right-Click to move to design.");
         }
     }
 

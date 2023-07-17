@@ -22,6 +22,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     private readonly DesignChanged   _event;
     private readonly Configuration   _config;
     private readonly DesignConverter _converter;
+    private readonly TabSelected     _selectionEvent;
 
     private string? _clipboardText;
     private Design? _cloneDesign = null;
@@ -46,14 +47,16 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     }
 
     public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, KeyState keyState, DesignChanged @event,
-        Configuration config, DesignConverter converter)
+        Configuration config, DesignConverter converter, TabSelected selectionEvent)
         : base(fileSystem, keyState)
     {
-        _designManager = designManager;
-        _event         = @event;
-        _config        = config;
-        _converter     = converter;
+        _designManager  = designManager;
+        _event          = @event;
+        _config         = config;
+        _converter      = converter;
+        _selectionEvent = selectionEvent;
         _event.Subscribe(OnDesignChange, DesignChanged.Priority.DesignFileSystemSelector);
+        _selectionEvent.Subscribe(OnTabSelected, TabSelected.Priority.DesignSelector);
 
         AddButton(NewDesignButton,    0);
         AddButton(ImportDesignButton, 10);
@@ -79,6 +82,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     {
         base.Dispose();
         _event.Unsubscribe(OnDesignChange);
+        _selectionEvent.Unsubscribe(OnTabSelected);
     }
 
     public override ISortMode<Design> SortMode
@@ -195,6 +199,12 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         }
 
         _newName = string.Empty;
+    }
+
+    private void OnTabSelected(MainWindow.TabType type, Design? design)
+    {
+        if (type == MainWindow.TabType.Designs && design != null)
+            SelectByValue(design);
     }
 
     #region Filters

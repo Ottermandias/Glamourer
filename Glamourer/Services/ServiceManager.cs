@@ -67,7 +67,8 @@ public static class ServiceManager
             .AddSingleton<WeaponLoading>()
             .AddSingleton<HeadGearVisibilityChanged>()
             .AddSingleton<WeaponVisibilityChanged>()
-            .AddSingleton<ObjectUnlocked>();
+            .AddSingleton<ObjectUnlocked>()
+            .AddSingleton<TabSelected>();
 
     private static IServiceCollection AddData(this IServiceCollection services)
         => services.AddSingleton<IdentifierService>()

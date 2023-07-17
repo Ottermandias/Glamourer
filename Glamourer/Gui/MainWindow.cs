@@ -2,6 +2,8 @@
 using System.Numerics;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
+using Glamourer.Designs;
+using Glamourer.Events;
 using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Gui.Tabs.AutomationTab;
@@ -13,7 +15,7 @@ using OtterGui.Widgets;
 
 namespace Glamourer.Gui;
 
-public class MainWindow : Window
+public class MainWindow : Window, IDisposable
 {
     public enum TabType
     {
@@ -27,7 +29,9 @@ public class MainWindow : Window
     }
 
     private readonly Configuration _config;
+    private readonly TabSelected   _event;
     private readonly ITab[]        _tabs;
+
 
     public readonly SettingsTab   Settings;
     public readonly ActorTab      Actors;
@@ -39,7 +43,7 @@ public class MainWindow : Window
     public TabType SelectTab = TabType.None;
 
     public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
-        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks)
+        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event)
         : base(GetLabel())
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -54,6 +58,7 @@ public class MainWindow : Window
         Automation = automation;
         Debug      = debugTab;
         Unlocks    = unlocks;
+        _event     = @event;
         _config    = config;
         _tabs = new ITab[]
         {
@@ -64,9 +69,13 @@ public class MainWindow : Window
             unlocks,
             debugTab,
         };
+        _event.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
 
         IsOpen = _config.DebugMode;
     }
+
+    public void Dispose()
+        => _event.Unsubscribe(OnTabSelected);
 
     public override void Draw()
     {
@@ -103,12 +112,6 @@ public class MainWindow : Window
         return TabType.None;
     }
 
-    private static string GetLabel()
-        => Glamourer.Version.Length == 0
-            ? "Glamourer###GlamourerMainWindow"
-            : $"Glamourer v{Glamourer.Version}###GlamourerMainWindow";
-
-
     /// <summary> Draw the support button group on the right-hand side of the window. </summary>
     public static void DrawSupportButtons()
     {
@@ -124,4 +127,12 @@ public class MainWindow : Window
         ImGui.SetCursorPos(new Vector2(xPos, ImGui.GetFrameHeightWithSpacing()));
         CustomGui.DrawGuideButton(Glamourer.Chat, width);
     }
+
+    private void OnTabSelected(TabType type, Design? _)
+        => SelectTab = type;
+
+    private static string GetLabel()
+        => Glamourer.Version.Length == 0
+            ? "Glamourer###GlamourerMainWindow"
+            : $"Glamourer v{Glamourer.Version}###GlamourerMainWindow";
 }
