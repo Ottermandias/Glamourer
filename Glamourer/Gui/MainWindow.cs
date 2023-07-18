@@ -133,6 +133,6 @@ public class MainWindow : Window, IDisposable
 
     private static string GetLabel()
         => Glamourer.Version.Length == 0
-            ? "Glamourer###GlamourerMainWindow"
-            : $"Glamourer v{Glamourer.Version}###GlamourerMainWindow";
+            ? "Glamourer 2099###GlamourerMainWindow"
+            : $"Glamourer 2099 v{Glamourer.Version}###GlamourerMainWindow";
 }
