@@ -178,12 +178,13 @@ public class SetPanel
 
     private void DrawWarnings(AutoDesign design, int idx)
     {
+        if (design.Revert)
+            return;
+
         var size = new Vector2(ImGui.GetFrameHeight());
         size.X += ImGuiHelpers.GlobalScale;
 
         var (equipFlags, customizeFlags, _, _, _, _) =  design.ApplyWhat();
-        equipFlags                                   &= design.Design.ApplyEquip;
-        customizeFlags                               &= design.Design.ApplyCustomize;
         var sb = new StringBuilder();
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
         {
