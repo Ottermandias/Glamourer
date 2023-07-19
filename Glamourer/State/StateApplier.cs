@@ -50,10 +50,7 @@ public class StateApplier
     {
         var data = GetData(state);
         if (apply)
-        {
-            state.TempLock();
             ForceRedraw(data);
-        }
 
         return data;
     }
@@ -76,10 +73,7 @@ public class StateApplier
                 _changeCustomize.UpdateCustomize(mdl, customize.Data);
             }
             else
-            {
-                state?.TempLock();
                 _penumbra.RedrawObject(actor, RedrawType.Redraw);
-            }
         }
     }
 

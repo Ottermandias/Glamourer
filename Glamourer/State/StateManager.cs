@@ -377,7 +377,6 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         var actors = _applier.ChangeWetness(state, true);
         if (redraw)
         {
-            state.TempLock();
             _applier.ForceRedraw(actors);
         }
         else
@@ -419,7 +418,12 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         foreach (var type in Enum.GetValues<ActorState.MetaIndex>())
             state[type] = StateChanged.Source.Game;
 
-        var actors = source is StateChanged.Source.Manual or StateChanged.Source.Ipc ? ApplyAll(state, redraw) : ActorData.Invalid;
+        var actors = ActorData.Invalid;
+        if (source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
+        {
+            state.TempLock();
+            actors = ApplyAll(state, redraw);
+        }
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Design, StateChanged.Source.Manual, state, actors, null);

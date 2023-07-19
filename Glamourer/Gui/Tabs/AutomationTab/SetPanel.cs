@@ -5,13 +5,11 @@ using System.Text;
 using Dalamud.Interface;
 using Glamourer.Automation;
 using Glamourer.Customization;
-using Glamourer.Designs;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Widgets;
@@ -192,7 +190,7 @@ public class SetPanel
             if (!equipFlags.HasFlag(flag))
                 continue;
 
-            var item = design.Design.DesignData.Item(slot);
+            var item = design.Design!.DesignData.Item(slot);
             if (!_itemUnlocks.IsUnlocked(item.ItemId, out _))
                 sb.AppendLine($"{item.Name} in {slot.ToName()} slot is not unlocked. Consider obtaining it via gameplay means!");
         }
@@ -227,7 +225,7 @@ public class SetPanel
 
         sb.Clear();
         var sb2       = new StringBuilder();
-        var customize = design.Design.DesignData.Customize;
+        var customize = design.Design!.DesignData.Customize;
         if (!design.Design.DesignData.IsHuman)
             sb.AppendLine("The base model id can not be changed automatically to something non-human.");
 
