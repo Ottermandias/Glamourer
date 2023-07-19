@@ -88,7 +88,7 @@ public class ItemManager : IDisposable
         if (itemId == NothingId(type))
             return NothingItem(type);
 
-        if (!ItemService.AwaitedService.TryGetValue(itemId, false, out var item))
+        if (!ItemService.AwaitedService.TryGetValue(itemId, type is FullEquipType.Shield, out var item))
             return new EquipItem(string.Intern($"Unknown #{itemId}"), itemId, 0, 0, 0, 0, 0);
 
         if (item.Type != type)

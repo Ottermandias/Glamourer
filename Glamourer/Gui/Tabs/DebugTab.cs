@@ -906,6 +906,8 @@ public unsafe class DebugTab : ITab
                 design.DoApplyVisorToggle(), design.DoApplyWeaponVisible(), design.WriteProtected());
             using var font = ImRaii.PushFont(UiBuilder.MonoFont);
             ImGuiUtil.TextWrapped(base64);
+            if (ImGui.IsItemClicked())
+                ImGui.SetClipboardText(base64);
         }
     }
 
@@ -978,6 +980,7 @@ public unsafe class DebugTab : ITab
 
                 ImGui.SameLine();
             }
+            ImGui.NewLine();
         }
 
         if (_parse64Failure != null && _base64Bytes.Length > 0)
@@ -993,6 +996,7 @@ public unsafe class DebugTab : ITab
 
                 ImGui.SameLine();
             }
+            ImGui.NewLine();
         }
     }
 
