@@ -73,8 +73,17 @@ public class SetPanel
         if (!child || !_selector.HasSelection)
             return;
 
+        var enabled = Selection.Enabled;
+        if (ImGui.Checkbox("Enabled", ref enabled))
+            _manager.SetState(_selector.SelectionIndex, enabled);
+
+        var useGame = _selector.Selection!.BaseState is AutoDesignSet.Base.Game;
+        if (ImGui.Checkbox("Use Game State as Base", ref useGame))
+            _manager.ChangeBaseState(_selector.SelectionIndex, useGame ? AutoDesignSet.Base.Game : AutoDesignSet.Base.Current);
+
         var name  = _tempName ?? Selection.Name;
         var flags = _selector.IncognitoMode ? ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.Password : ImGuiInputTextFlags.None;
+        ImGui.SetNextItemWidth(220 * ImGuiHelpers.GlobalScale);
         if (ImGui.InputText("##Name", ref name, 128, flags))
             _tempName = name;
 
@@ -83,11 +92,6 @@ public class SetPanel
             _manager.Rename(_selector.SelectionIndex, name);
             _tempName = null;
         }
-
-        ImGui.SameLine();
-        var enabled = Selection.Enabled;
-        if (ImGui.Checkbox("Enabled", ref enabled))
-            _manager.SetState(_selector.SelectionIndex, enabled);
 
         ImGui.Separator();
         DrawIdentifierSelection(_selector.SelectionIndex);

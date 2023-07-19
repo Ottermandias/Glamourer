@@ -209,6 +209,22 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         _event.Invoke(AutomationChanged.Type.ToggleSet, set, oldEnabled);
     }
 
+    public void ChangeBaseState(int whichSet, AutoDesignSet.Base newBase)
+    {
+        if (whichSet >= _data.Count || whichSet < 0)
+            return;
+
+        var set = _data[whichSet];
+        if (newBase == set.BaseState)
+            return;
+
+        var old = set.BaseState;
+        set.BaseState = newBase;
+        Save();
+        Glamourer.Log.Debug($"Changed base state of set {whichSet + 1} from {old} to {newBase}.");
+        _event.Invoke(AutomationChanged.Type.ChangedBase, set, (old, newBase));
+    }
+
     public void AddDesign(AutoDesignSet set, Design design)
     {
         var newDesign = new AutoDesign()
@@ -375,6 +391,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             var set = new AutoDesignSet(name, id)
             {
                 Enabled = obj["Enabled"]?.ToObject<bool>() ?? false,
+                BaseState = obj["BaseState"]?.ToObject<AutoDesignSet.Base>() ?? AutoDesignSet.Base.Current,
             };
 
             if (set.Enabled)

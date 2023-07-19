@@ -35,6 +35,9 @@ public sealed class AutomationChanged : EventWrapper<Action<AutomationChanged.Ty
         /// <summary> Toggle the enabled state of a given set. Additional data is the thus disabled other set, if any [AutoDesignSet?]. </summary>
         ToggleSet,
 
+        /// <summary> Change the used base state of a given set. Additional data is prior and new base. [(AutoDesignSet.Base, AutoDesignSet.Base)]. </summary>
+        ChangedBase,
+
         /// <summary> Add a new associated design to a given set. Additional data is the index it got added at [int]. </summary>
         AddedDesign,
 

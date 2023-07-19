@@ -399,7 +399,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         return actors;
     }
 
-    public void ResetState(ActorState state, uint key = 0)
+    public void ResetState(ActorState state, StateChanged.Source source, uint key = 0)
     {
         if (!state.Unlock(key))
             return;
@@ -419,10 +419,10 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         foreach (var type in Enum.GetValues<ActorState.MetaIndex>())
             state[type] = StateChanged.Source.Game;
 
-        var actors = ApplyAll(state, redraw);
+        var actors = source is StateChanged.Source.Manual or StateChanged.Source.Ipc ? ApplyAll(state, redraw) : ActorData.Invalid;
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Design, state[ActorState.MetaIndex.Wetness], state, actors, null);
+        _event.Invoke(StateChanged.Type.Design, StateChanged.Source.Manual, state, actors, null);
     }
 
     public void ReapplyState(Actor actor)

@@ -116,11 +116,12 @@ public class AutoDesignApplier : IDisposable
                 break;
             case AutomationChanged.Type.ChangeIdentifier when set.Enabled:
                 // Remove fixed state from the old identifiers assigned and the old enabled set, if any.
-                var (oldIds, _, oldSet) = ((ActorIdentifier[], ActorIdentifier, AutoDesignSet?)) bonusData!;
+                var (oldIds, _, oldSet) = ((ActorIdentifier[], ActorIdentifier, AutoDesignSet?))bonusData!;
                 RemoveOld(oldIds);
                 ApplyNew(set); // Does not need to disable oldSet because same identifiers.
                 break;
             case AutomationChanged.Type.ToggleSet: // Does not need to disable old states because same identifiers.
+            case AutomationChanged.Type.ChangedBase:
             case AutomationChanged.Type.AddedDesign:
             case AutomationChanged.Type.MovedDesign:
             case AutomationChanged.Type.ChangedDesign:
@@ -193,7 +194,9 @@ public class AutoDesignApplier : IDisposable
         EquipFlag     totalEquipFlags     = 0;
         CustomizeFlag totalCustomizeFlags = 0;
         byte          totalMetaFlags      = 0;
-        if (!respectManual)
+        if (set.BaseState == AutoDesignSet.Base.Game)
+            _state.ResetState(state, StateChanged.Source.Fixed);
+        else if (!respectManual)
             state.RemoveFixedDesignSources();
         foreach (var design in set.Designs)
         {

@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
+using Glamourer.Designs;
+using Glamourer.State;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Actors;
 
@@ -11,6 +14,7 @@ public class AutoDesignSet
     public string            Name;
     public ActorIdentifier[] Identifiers;
     public bool              Enabled;
+    public Base              BaseState = Base.Current;
 
     public JObject Serialize()
     {
@@ -23,6 +27,7 @@ public class AutoDesignSet
             ["Name"]       = Name,
             ["Identifier"] = Identifiers[0].ToJson(),
             ["Enabled"]    = Enabled,
+            ["BaseState"]  = BaseState.ToString(),
             ["Designs"]    = list,
         };
     }
@@ -36,5 +41,11 @@ public class AutoDesignSet
         Name        = name;
         Identifiers = identifiers;
         Designs     = designs;
+    }
+
+    public enum Base : byte
+    {
+        Current,
+        Game,
     }
 }

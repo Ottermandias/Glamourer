@@ -344,7 +344,7 @@ public class ActorPanel
     {
         if (ImGuiUtil.DrawDisabledButton("Revert to Game", Vector2.Zero, "Revert the character to its actual state in the game.",
                 _state!.IsLocked))
-            _stateManager.ResetState(_state!);
+            _stateManager.ResetState(_state!, StateChanged.Source.Manual);
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton("Reapply State", Vector2.Zero, "Try to reapply the configured state if something went wrong.",

@@ -50,7 +50,11 @@ public class StateApplier
     {
         var data = GetData(state);
         if (apply)
+        {
+            state.TempLock();
             ForceRedraw(data);
+        }
+
         return data;
     }
 
@@ -58,7 +62,7 @@ public class StateApplier
     /// Change the customization values of actors either by applying them via update or redrawing,
     /// this depends on whether the changes include changes to Race, Gender, Body Type or Face. 
     /// </summary>
-    public void ChangeCustomize(ActorData data, in Customize customize)
+    public void ChangeCustomize(ActorData data, in Customize customize, ActorState? state = null)
     {
         foreach (var actor in data.Objects)
         {
@@ -68,9 +72,14 @@ public class StateApplier
 
             var flags = Customize.Compare(mdl.GetCustomize(), customize);
             if (!flags.RequiresRedraw() || !mdl.IsHuman)
+            {
                 _changeCustomize.UpdateCustomize(mdl, customize.Data);
+            }
             else
+            {
+                state?.TempLock();
                 _penumbra.RedrawObject(actor, RedrawType.Redraw);
+            }
         }
     }
 
@@ -79,7 +88,8 @@ public class StateApplier
     {
         var data = GetData(state);
         if (apply)
-            ChangeCustomize(data, state.ModelData.Customize);
+            ChangeCustomize(data, state.ModelData.Customize, state);
+
         return data;
     }
 
@@ -111,6 +121,7 @@ public class StateApplier
         var data = GetData(state);
         if (apply)
             ChangeArmor(data, slot, state.ModelData.Armor(slot), state.ModelData.IsHatVisible());
+
         return data;
     }
 
@@ -145,6 +156,7 @@ public class StateApplier
         var data = GetData(state);
         if (apply)
             ChangeStain(data, slot, state.ModelData.Stain(slot));
+
         return data;
     }
 
@@ -164,6 +176,7 @@ public class StateApplier
         var data = GetData(state);
         if (apply)
             ChangeWeapon(data, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
+
         return data;
     }
 
@@ -183,6 +196,7 @@ public class StateApplier
         var data = GetData(state);
         if (apply)
             ChangeMainhand(data, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
+
         return data;
     }
 

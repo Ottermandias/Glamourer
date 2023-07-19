@@ -1083,7 +1083,7 @@ public unsafe class DebugTab : ITab
         ImGuiUtil.DrawTableColumn(state.Identifier.ToString());
         ImGui.TableNextColumn();
         if (ImGui.Button("Reset"))
-            _state.ResetState(state);
+            _state.ResetState(state, StateChanged.Source.Manual);
 
         ImGui.TableNextRow();
 

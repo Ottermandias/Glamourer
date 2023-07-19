@@ -150,7 +150,7 @@ public class CommandService : IDisposable
             return false;
 
         if (_stateManager.TryGetValue(identifier, out var state))
-            _stateManager.ResetState(state);
+            _stateManager.ResetState(state, StateChanged.Source.Manual);
 
         return true;
     }
