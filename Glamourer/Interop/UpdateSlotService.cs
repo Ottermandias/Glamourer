@@ -20,6 +20,8 @@ public unsafe class UpdateSlotService : IDisposable
         EquipmentLoadingEvent = equipmentLoadingEvent;
         SignatureHelper.Initialise(this);
         _flagSlotForUpdateHook.Enable();
+        _loadEquipmentHook =
+            Hook<LoadEquipmentDelegateIntern>.FromAddress((nint) DrawDataContainer.MemberFunctionPointers.LoadEquipment, LoadEquipmentDetour);
         _loadEquipmentHook.Enable();
     }
 
@@ -53,8 +55,6 @@ public unsafe class UpdateSlotService : IDisposable
 
     private delegate void LoadEquipmentDelegateIntern(DrawDataContainer* drawDataContainer, uint slotIdx, CharacterArmor data, bool force);
 
-    // TODO: use client structs.
-    [Signature("E8 ?? ?? ?? ?? 41 B5 ?? FF C6", DetourName = nameof(LoadEquipmentDetour))]
     private readonly Hook<LoadEquipmentDelegateIntern> _loadEquipmentHook = null!;
 
     private ulong FlagSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
