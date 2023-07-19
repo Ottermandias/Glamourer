@@ -1362,7 +1362,7 @@ public unsafe class DebugTab : ITab
 
             foreach (var (design, designIdx) in set.Designs.WithIndex())
             {
-                ImGuiUtil.DrawTableColumn($"{design.Design.Name} ({designIdx})");
+                ImGuiUtil.DrawTableColumn($"{design.Name(false)} ({designIdx})");
                 ImGuiUtil.DrawTableColumn($"{design.ApplicationType} {design.Jobs.Name}");
             }
         }

@@ -14,7 +14,6 @@ namespace Glamourer.Designs;
 public sealed class Design : DesignBase, ISavable
 {
     #region Data
-
     internal Design(ItemManager items)
         : base(items)
     { }

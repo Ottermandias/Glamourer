@@ -2,6 +2,7 @@
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Interop.Structs;
+using Glamourer.State;
 using Glamourer.Structs;
 using Newtonsoft.Json.Linq;
 
@@ -9,6 +10,8 @@ namespace Glamourer.Automation;
 
 public class AutoDesign
 {
+    public const string RevertName = "Revert";
+
     [Flags]
     public enum Type : byte
     {
@@ -21,9 +24,18 @@ public class AutoDesign
         All = Armor | Accessories | Customizations | Weapons | Stains,
     }
 
-    public Design   Design = null!;
+    public Design?  Design;
     public JobGroup Jobs;
     public Type     ApplicationType;
+
+    public string Name(bool incognito)
+        => Revert ? RevertName : incognito ? Design!.Incognito : Design!.Name.Text;
+
+    public ref DesignData GetDesignData(ActorState state)
+        => ref Design == null ? ref state.BaseData : ref Design.DesignData;
+
+    public bool Revert
+        => Design == null;
 
     public AutoDesign Clone()
         => new()
@@ -39,7 +51,7 @@ public class AutoDesign
     public JObject Serialize()
         => new()
         {
-            ["Design"]          = Design.Identifier.ToString(),
+            ["Design"]          = Design?.Identifier.ToString(),
             ["ApplicationType"] = (uint)ApplicationType,
             ["Conditions"]      = CreateConditionObject(),
         };
@@ -59,7 +71,12 @@ public class AutoDesign
           | (ApplicationType.HasFlag(Type.Accessories) ? AccessoryFlags : 0)
           | (ApplicationType.HasFlag(Type.Stains) ? StainFlags : 0);
         var customizeFlags = ApplicationType.HasFlag(Type.Customizations) ? CustomizeFlagExtensions.All : 0;
-        return (equipFlags & Design.ApplyEquip, customizeFlags & Design.ApplyCustomize,
+
+        if (Revert)
+            return (equipFlags, customizeFlags, ApplicationType.HasFlag(Type.Armor), ApplicationType.HasFlag(Type.Armor),
+                ApplicationType.HasFlag(Type.Weapons), ApplicationType.HasFlag(Type.Customizations));
+
+        return (equipFlags & Design!.ApplyEquip, customizeFlags & Design.ApplyCustomize,
             ApplicationType.HasFlag(Type.Armor) && Design.DoApplyHatVisible(),
             ApplicationType.HasFlag(Type.Armor) && Design.DoApplyVisorToggle(),
             ApplicationType.HasFlag(Type.Weapons) && Design.DoApplyWeaponVisible(),

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.Internal.Notifications;
-using Dalamud.Utility;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
@@ -185,7 +184,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             return;
 
         set.Enabled = value;
-        AutoDesignSet? oldEnabled = null;
+        AutoDesignSet? oldEnabled;
         if (value)
         {
             if (_enabled.Remove(set.Identifiers[0], out oldEnabled))
@@ -225,7 +224,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         _event.Invoke(AutomationChanged.Type.ChangedBase, set, (old, newBase));
     }
 
-    public void AddDesign(AutoDesignSet set, Design design)
+    public void AddDesign(AutoDesignSet set, Design? design)
     {
         var newDesign = new AutoDesign()
         {
@@ -235,7 +234,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         };
         set.Designs.Add(newDesign);
         Save();
-        Glamourer.Log.Debug($"Added new associated design {design.Identifier} as design {set.Designs.Count} to design set.");
+        Glamourer.Log.Debug($"Added new associated design {design?.Identifier.ToString() ?? "Reverter"} as design {set.Designs.Count} to design set.");
         _event.Invoke(AutomationChanged.Type.AddedDesign, set, set.Designs.Count - 1);
     }
 
@@ -260,20 +259,20 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         _event.Invoke(AutomationChanged.Type.MovedDesign, set, (from, to));
     }
 
-    public void ChangeDesign(AutoDesignSet set, int which, Design newDesign)
+    public void ChangeDesign(AutoDesignSet set, int which, Design? newDesign)
     {
         if (which >= set.Designs.Count || which < 0)
             return;
 
         var design = set.Designs[which];
-        if (design.Design.Identifier == newDesign.Identifier)
+        if (design.Design?.Identifier == newDesign?.Identifier)
             return;
 
         var old = design.Design;
         design.Design = newDesign;
         Save();
         Glamourer.Log.Debug(
-            $"Changed linked design from {old.Identifier} to {newDesign.Identifier} for associated design {which + 1} in design set.");
+            $"Changed linked design from {old?.Identifier.ToString() ?? "Reverter"} to {newDesign?.Identifier.ToString() ?? "Reverter"} for associated design {which + 1} in design set.");
         _event.Invoke(AutomationChanged.Type.ChangedDesign, set, (which, old, newDesign));
     }
 
@@ -390,7 +389,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
 
             var set = new AutoDesignSet(name, id)
             {
-                Enabled = obj["Enabled"]?.ToObject<bool>() ?? false,
+                Enabled   = obj["Enabled"]?.ToObject<bool>() ?? false,
                 BaseState = obj["BaseState"]?.ToObject<AutoDesignSet.Base>() ?? AutoDesignSet.Base.Current,
             };
 
@@ -425,29 +424,32 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
 
     private AutoDesign? ToDesignObject(JObject jObj)
     {
-        var designIdentifier = jObj["Design"]?.ToObject<string>();
-        if (designIdentifier.IsNullOrEmpty())
+        var     designIdentifier = jObj["Design"]?.ToObject<string?>();
+        Design? design           = null;
+        // designIdentifier == null means Revert-Design.
+        if (designIdentifier != null)
         {
-            Glamourer.Chat.NotificationMessage("Error parsing automatically applied design: No design specified.");
-            return null;
+            if (designIdentifier.Length == 0)
+            {
+                Glamourer.Chat.NotificationMessage("Error parsing automatically applied design: No design specified.");
+                return null;
+            }
+
+            if (!Guid.TryParse(designIdentifier, out var guid))
+            {
+                Glamourer.Chat.NotificationMessage($"Error parsing automatically applied design: {designIdentifier} is not a valid GUID.");
+
+                return null;
+            }
+
+            design = _designs.Designs.FirstOrDefault(d => d.Identifier == guid);
+            if (design == null)
+            {
+                Glamourer.Chat.NotificationMessage($"Error parsing automatically applied design: The specified design {guid} does not exist.");
+                return null;
+            }
         }
-
-        if (!Guid.TryParse(designIdentifier, out var guid))
-        {
-            Glamourer.Chat.NotificationMessage($"Error parsing automatically applied design: {designIdentifier} is not a valid GUID.");
-
-            return null;
-        }
-
-        var design = _designs.Designs.FirstOrDefault(d => d.Identifier == guid);
-        if (design == null)
-        {
-            Glamourer.Chat.NotificationMessage($"Error parsing automatically applied design: The specified design {guid} does not exist.");
-            return null;
-        }
-
         var applicationType = (AutoDesign.Type)(jObj["ApplicationType"]?.ToObject<uint>() ?? 0);
-
 
         var ret = new AutoDesign()
         {
