@@ -169,7 +169,7 @@ public class StateListener : IDisposable
     /// </summary>
     private void OnEquipmentLoading(Actor actor, EquipSlot slot, CharacterArmor armor)
     {
-        if (armor != actor.GetArmor(slot))
+        if (!actor.Model.Valid || armor != actor.GetArmor(slot))
             return;
 
         if (!actor.Identifier(_actors.AwaitedService, out var identifier)
