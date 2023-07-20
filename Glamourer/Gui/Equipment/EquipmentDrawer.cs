@@ -107,6 +107,19 @@ public class EquipmentDrawer
         StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
         out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
     {
+        if (cMainhand.ModelId.Value == 0)
+        {
+            rOffhand            = cOffhand;
+            rMainhand           = cMainhand;
+            rMainhandStain      = cMainhandStain;
+            rOffhandStain       = cOffhandStain;
+            rApplyMainhand      = false;
+            rApplyMainhandStain = false;
+            rApplyOffhand       = false;
+            rApplyOffhandStain  = false;
+            return DataChange.None;
+        }
+
         var allWeapons = cApply.HasValue;
         if (_config.HideApplyCheckmarks)
             cApply = null;
