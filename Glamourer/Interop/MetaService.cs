@@ -10,27 +10,33 @@ public unsafe class MetaService : IDisposable
 {
     private readonly HeadGearVisibilityChanged _headGearEvent;
     private readonly WeaponVisibilityChanged   _weaponEvent;
+    private readonly VisorStateChanged         _visorEvent;
 
     private delegate void HideHatGearDelegate(DrawDataContainer* drawData, uint id, byte value);
     private delegate void HideWeaponsDelegate(DrawDataContainer* drawData, bool value);
 
     private readonly Hook<HideHatGearDelegate> _hideHatGearHook;
     private readonly Hook<HideWeaponsDelegate> _hideWeaponsHook;
+    private readonly Hook<HideWeaponsDelegate> _toggleVisorHook;
 
-    public MetaService(WeaponVisibilityChanged weaponEvent, HeadGearVisibilityChanged headGearEvent)
+    public MetaService(WeaponVisibilityChanged weaponEvent, HeadGearVisibilityChanged headGearEvent, VisorStateChanged visorEvent)
     {
         _weaponEvent     = weaponEvent;
         _headGearEvent   = headGearEvent;
+        _visorEvent      = visorEvent;
         _hideHatGearHook = Hook<HideHatGearDelegate>.FromAddress((nint)DrawDataContainer.MemberFunctionPointers.HideHeadgear, HideHatDetour);
         _hideWeaponsHook = Hook<HideWeaponsDelegate>.FromAddress((nint)DrawDataContainer.MemberFunctionPointers.HideWeapons, HideWeaponsDetour);
+        _toggleVisorHook = Hook<HideWeaponsDelegate>.FromAddress((nint)DrawDataContainer.MemberFunctionPointers.SetVisor,    ToggleVisorDetour);
         _hideHatGearHook.Enable();
         _hideWeaponsHook.Enable();
+        _toggleVisorHook.Enable();
     }
 
     public void Dispose()
     {
         _hideHatGearHook.Dispose();
         _hideWeaponsHook.Dispose();
+        _toggleVisorHook.Dispose();
     }
 
     public void SetHatState(Actor actor, bool value)
@@ -72,5 +78,13 @@ public unsafe class MetaService : IDisposable
         value = !value;
         Glamourer.Log.Verbose($"[MetaService] Hide Weapon triggered with 0x{(nint)drawData:X} {value} for {actor.Utf8Name}.");
         _hideWeaponsHook.Original(drawData, value);
+    }
+
+    private void ToggleVisorDetour(DrawDataContainer* drawData, bool value)
+    {
+        Actor actor = drawData->Parent;
+        _visorEvent.Invoke(actor.Model, ref value);
+        Glamourer.Log.Verbose($"[MetaService] Toggle Visor triggered with 0x{(nint)drawData:X} {value} for {actor.Utf8Name}.");
+        _toggleVisorHook.Original(drawData, value);
     }
 }

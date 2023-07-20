@@ -23,6 +23,7 @@ public class StateListener : IDisposable
     private readonly Configuration             _config;
     private readonly ActorService              _actors;
     private readonly StateManager              _manager;
+    private readonly StateApplier              _applier;
     private readonly ItemManager               _items;
     private readonly PenumbraService           _penumbra;
     private readonly SlotUpdating              _slotUpdating;
@@ -35,6 +36,9 @@ public class StateListener : IDisposable
     private readonly FunModule                 _funModule;
     private readonly HumanModelList            _humans;
 
+    private ActorIdentifier _creatingIdentifier = ActorIdentifier.Invalid;
+    private ActorState?     _creatingState      = null;
+
     public bool Enabled
     {
         get => _config.Enabled;
@@ -44,7 +48,7 @@ public class StateListener : IDisposable
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
-        EquipmentLoading equipmentLoading)
+        EquipmentLoading equipmentLoading, StateApplier applier)
     {
         _manager            = manager;
         _items              = items;
@@ -60,6 +64,7 @@ public class StateListener : IDisposable
         _funModule          = funModule;
         _humans             = humans;
         _equipmentLoading   = equipmentLoading;
+        _applier            = applier;
 
         if (Enabled)
             Subscribe();
@@ -106,37 +111,37 @@ public class StateListener : IDisposable
     /// </summary>
     private unsafe void OnCreatingCharacterBase(nint actorPtr, string _, nint modelPtr, nint customizePtr, nint equipDataPtr)
     {
-        var actor      = (Actor)actorPtr;
-        var identifier = actor.GetIdentifier(_actors.AwaitedService);
+        var actor = (Actor)actorPtr;
+        _creatingIdentifier = actor.GetIdentifier(_actors.AwaitedService);
 
         ref var modelId   = ref *(uint*)modelPtr;
         ref var customize = ref *(Customize*)customizePtr;
-        if (_autoDesignApplier.Reduce(actor, identifier, out var state))
+        if (_autoDesignApplier.Reduce(actor, _creatingIdentifier, out _creatingState))
         {
-            switch (UpdateBaseData(actor, state, modelId, customizePtr, equipDataPtr))
+            switch (UpdateBaseData(actor, _creatingState, modelId, customizePtr, equipDataPtr))
             {
                 // TODO handle right
                 case UpdateState.Change:      break;
                 case UpdateState.Transformed: break;
                 case UpdateState.NoChange:
 
-                    modelId = state.ModelData.ModelId;
-                    switch (UpdateBaseData(actor, state, customize))
+                    modelId = _creatingState.ModelData.ModelId;
+                    switch (UpdateBaseData(actor, _creatingState, customize))
                     {
                         case UpdateState.Transformed: break;
                         case UpdateState.Change:      break;
                         case UpdateState.NoChange:
-                            customize = state.ModelData.Customize;
+                            customize = _creatingState.ModelData.Customize;
                             break;
                     }
 
                     foreach (var slot in EquipSlotExtensions.EqdpSlots)
-                        HandleEquipSlot(actor, state, slot, ref ((CharacterArmor*)equipDataPtr)[slot.ToIndex()]);
+                        HandleEquipSlot(actor, _creatingState, slot, ref ((CharacterArmor*)equipDataPtr)[slot.ToIndex()]);
 
                     break;
             }
 
-            state.TempUnlock();
+            _creatingState.TempUnlock();
         }
 
         _funModule.ApplyFun(actor, new Span<CharacterArmor>((void*)equipDataPtr, 10), ref customize);
@@ -173,7 +178,8 @@ public class StateListener : IDisposable
             return;
 
         if (!actor.Identifier(_actors.AwaitedService, out var identifier)
-         || !_manager.TryGetValue(identifier, out var state) || !state.BaseData.IsHuman)
+         || !_manager.TryGetValue(identifier, out var state)
+         || !state.BaseData.IsHuman)
             return;
 
         if (state.ModelData.Armor(slot) == armor)
@@ -183,10 +189,10 @@ public class StateListener : IDisposable
         var setStain = state[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc;
         switch (setItem, setStain)
         {
-            case (true, true):  
+            case (true, true):
                 _manager.ChangeEquip(state, slot, state.BaseData.Item(slot), state.BaseData.Stain(slot), StateChanged.Source.Manual);
                 state[slot, false] = StateChanged.Source.Game;
-                state[slot, true] = StateChanged.Source.Game;
+                state[slot, true]  = StateChanged.Source.Game;
                 break;
             case (true, false):
                 _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateChanged.Source.Manual);
@@ -194,7 +200,7 @@ public class StateListener : IDisposable
                 break;
             case (false, true):
                 _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Manual);
-                state[slot, true]  = StateChanged.Source.Game;
+                state[slot, true] = StateChanged.Source.Game;
                 break;
         }
     }
@@ -483,6 +489,7 @@ public class StateListener : IDisposable
     private void Subscribe()
     {
         _penumbra.CreatingCharacterBase += OnCreatingCharacterBase;
+        _penumbra.CreatedCharacterBase  += OnCreatedCharacterBase;
         _slotUpdating.Subscribe(OnSlotUpdating, SlotUpdating.Priority.StateListener);
         _equipmentLoading.Subscribe(OnEquipmentLoading, EquipmentLoading.Priority.StateListener);
         _weaponLoading.Subscribe(OnWeaponLoading, WeaponLoading.Priority.StateListener);
@@ -494,11 +501,21 @@ public class StateListener : IDisposable
     private void Unsubscribe()
     {
         _penumbra.CreatingCharacterBase -= OnCreatingCharacterBase;
+        _penumbra.CreatedCharacterBase  -= OnCreatedCharacterBase;
         _slotUpdating.Unsubscribe(OnSlotUpdating);
         _equipmentLoading.Unsubscribe(OnEquipmentLoading);
         _weaponLoading.Unsubscribe(OnWeaponLoading);
         _visorState.Unsubscribe(OnVisorChange);
         _headGearVisibility.Unsubscribe(OnHeadGearVisibilityChange);
         _weaponVisibility.Unsubscribe(OnWeaponVisibilityChange);
+    }
+
+    private void OnCreatedCharacterBase(nint gameObject, string _, nint drawObject)
+    {
+        if (_creatingState == null)
+            return;
+
+        _applier.ChangeHatState(new ActorData(gameObject, _creatingIdentifier.ToName()), _creatingState.ModelData.IsHatVisible());
+        _applier.ChangeWeaponState(new ActorData(gameObject, _creatingIdentifier.ToName()), _creatingState.ModelData.IsWeaponVisible());
     }
 }
