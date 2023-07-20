@@ -366,17 +366,19 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
                 HandleEquip(slot, design.DoApplyEquip(slot), design.DoApplyStain(slot));
         }
 
-        var actors = ApplyAll(state, redraw);
+        var actors = ApplyAll(state, redraw, false);
         Glamourer.Log.Verbose(
             $"Applied design to {state.Identifier.Incognito(null)}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Design, state[ActorState.MetaIndex.Wetness], state, actors, design);
     }
 
-    private ActorData ApplyAll(ActorState state, bool redraw)
+    private ActorData ApplyAll(ActorState state, bool redraw, bool withLock)
     {
         var actors = _applier.ChangeWetness(state, true);
         if (redraw)
         {
+            if (withLock)
+                state.TempLock();
             _applier.ForceRedraw(actors);
         }
         else
@@ -420,10 +422,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         var actors = ActorData.Invalid;
         if (source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
-        {
-            state.TempLock();
-            actors = ApplyAll(state, redraw);
-        }
+            actors = ApplyAll(state, redraw, true);
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Design, StateChanged.Source.Manual, state, actors, null);
@@ -434,7 +433,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         if (!GetOrCreate(actor, out var state))
             return;
 
-        ApplyAll(state, !actor.Model.IsHuman || Customize.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw());
+        ApplyAll(state, !actor.Model.IsHuman || Customize.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
     }
 
     public void DeleteState(ActorIdentifier identifier)
