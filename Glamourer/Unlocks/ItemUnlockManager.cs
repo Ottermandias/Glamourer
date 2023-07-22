@@ -107,7 +107,7 @@ public class ItemUnlockManager : ISavable, IDisposable
     private bool AddItem(uint itemId, long time)
     {
         itemId = HandleHq(itemId);
-        if (!_items.ItemService.AwaitedService.TryGetValue(itemId, out var equip) || !_unlocked.TryAdd(equip.ItemId, time))
+        if (!_items.ItemService.AwaitedService.TryGetValue(itemId, EquipSlot.MainHand, out var equip) || !_unlocked.TryAdd(equip.ItemId, time))
             return false;
 
         _event.Invoke(ObjectUnlocked.Type.Item, equip.ItemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
@@ -278,7 +278,7 @@ public class ItemUnlockManager : ISavable, IDisposable
     private void Load()
     {
         var version = UnlockDictionaryHelpers.Load(ToFilename(_saveService.FileNames), _unlocked,
-            id => _items.ItemService.AwaitedService.TryGetValue(id, out _), "item");
+            id => _items.ItemService.AwaitedService.TryGetValue(id, EquipSlot.MainHand, out _), "item");
         UpdateModels(version);
     }
 
@@ -291,7 +291,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         var cabinet = gameData.GetExcelSheet<Cabinet>()!;
         foreach (var row in cabinet)
         {
-            if (items.ItemService.AwaitedService.TryGetValue(row.Item.Row, out var item))
+            if (items.ItemService.AwaitedService.TryGetValue(row.Item.Row, EquipSlot.MainHand, out var item))
                 ret.TryAdd(item.ItemId, new UnlockRequirements(row.RowId, 0, 0, 0, UnlockType.Cabinet));
         }
 
@@ -299,7 +299,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         var gilShop     = gameData.GetExcelSheet<GilShop>()!;
         foreach (var row in gilShopItem)
         {
-            if (!items.ItemService.AwaitedService.TryGetValue(row.Item.Row, out var item))
+            if (!items.ItemService.AwaitedService.TryGetValue(row.Item.Row, EquipSlot.MainHand, out var item))
                 continue;
 
             var quest1      = row.QuestRequired[0].Row;
@@ -332,7 +332,7 @@ public class ItemUnlockManager : ISavable, IDisposable
 
         foreach (var (item, time) in _unlocked.ToArray())
         {
-            if (!_items.ItemService.AwaitedService.TryGetValue(item, out var equip))
+            if (!_items.ItemService.AwaitedService.TryGetValue(item, EquipSlot.MainHand, out var equip))
                 continue;
 
             var ident = _identifier.AwaitedService.Identify(equip.ModelId, equip.WeaponType, equip.Variant, equip.Type.ToSlot());

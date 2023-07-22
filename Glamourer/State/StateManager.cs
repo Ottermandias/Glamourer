@@ -169,6 +169,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
             main = actor.GetMainhand();
             off  = actor.GetOffhand();
+            FistWeaponHack(ref ret, ref main, ref off);
             ret.SetVisor(actor.AsCharacter->DrawData.IsVisorToggled);
         }
 
@@ -188,6 +189,19 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // but since we use hat visibility from the game object we can also use weapon visibility from it.
         ret.SetWeaponVisible(!actor.AsCharacter->DrawData.IsWeaponHidden);
         return ret;
+    }
+
+    /// <summary> This is hardcoded in the game. </summary>
+    private void FistWeaponHack(ref DesignData ret, ref CharacterWeapon mainhand, ref CharacterWeapon offhand)
+    {
+        if (mainhand.Set.Value is < 1601 or >= 1651)
+            return;
+
+        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Set, 0, (byte)offhand.Variant);
+        offhand.Set     = (SetId)(mainhand.Set.Value + 50);
+        offhand.Variant = mainhand.Variant;
+        offhand.Type    = mainhand.Type;
+        ret.SetItem(EquipSlot.Hands, gauntlets);
     }
 
     #region Change Values
@@ -433,7 +447,8 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         if (!GetOrCreate(actor, out var state))
             return;
 
-        ApplyAll(state, !actor.Model.IsHuman || Customize.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
+        ApplyAll(state, !actor.Model.IsHuman || Customize.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(),
+            false);
     }
 
     public void DeleteState(ActorIdentifier identifier)

@@ -2,6 +2,7 @@
 using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Events;
+using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
@@ -22,12 +23,12 @@ public class StateListener : IDisposable
 {
     private readonly Configuration             _config;
     private readonly ActorService              _actors;
+    private readonly ObjectManager             _objects;
     private readonly StateManager              _manager;
     private readonly StateApplier              _applier;
     private readonly ItemManager               _items;
     private readonly PenumbraService           _penumbra;
     private readonly SlotUpdating              _slotUpdating;
-    private readonly EquipmentLoading          _equipmentLoading;
     private readonly WeaponLoading             _weaponLoading;
     private readonly HeadGearVisibilityChanged _headGearVisibility;
     private readonly VisorStateChanged         _visorState;
@@ -35,9 +36,11 @@ public class StateListener : IDisposable
     private readonly AutoDesignApplier         _autoDesignApplier;
     private readonly FunModule                 _funModule;
     private readonly HumanModelList            _humans;
+    private readonly MovedEquipment            _movedEquipment;
 
     private ActorIdentifier _creatingIdentifier = ActorIdentifier.Invalid;
-    private ActorState?     _creatingState      = null;
+    private ActorState?     _creatingState;
+    private CharacterWeapon _lastFistOffhand = CharacterWeapon.Empty;
 
     public bool Enabled
     {
@@ -48,7 +51,7 @@ public class StateListener : IDisposable
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
-        EquipmentLoading equipmentLoading, StateApplier applier)
+        StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects)
     {
         _manager            = manager;
         _items              = items;
@@ -63,8 +66,9 @@ public class StateListener : IDisposable
         _autoDesignApplier  = autoDesignApplier;
         _funModule          = funModule;
         _humans             = humans;
-        _equipmentLoading   = equipmentLoading;
         _applier            = applier;
+        _movedEquipment     = movedEquipment;
+        _objects            = objects;
 
         if (Enabled)
             Subscribe();
@@ -168,40 +172,36 @@ public class StateListener : IDisposable
         (_, armor.Value) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
     }
 
-    /// <summary>
-    /// The game object does not actually invoke changes when the model id is identical,
-    /// so we need to handle that case too.
-    /// </summary>
-    private void OnEquipmentLoading(Actor actor, EquipSlot slot, CharacterArmor armor)
+    private void OnMovedEquipment((EquipSlot, uint, StainId)[] items)
     {
-        if (!actor.Model.Valid || armor != actor.GetArmor(slot))
+        _objects.Update();
+        var (identifier, objects) = _objects.PlayerData;
+        if (!identifier.IsValid || !_manager.TryGetValue(identifier, out var state))
             return;
 
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier)
-         || !_manager.TryGetValue(identifier, out var state)
-         || !state.BaseData.IsHuman)
-            return;
-
-        if (state.ModelData.Armor(slot) == armor)
-            return;
-
-        var setItem  = state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc;
-        var setStain = state[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc;
-        switch (setItem, setStain)
+        foreach (var (slot, item, stain) in items)
         {
-            case (true, true):
-                _manager.ChangeEquip(state, slot, state.BaseData.Item(slot), state.BaseData.Stain(slot), StateChanged.Source.Manual);
-                state[slot, false] = StateChanged.Source.Game;
-                state[slot, true]  = StateChanged.Source.Game;
-                break;
-            case (true, false):
-                _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateChanged.Source.Manual);
-                state[slot, false] = StateChanged.Source.Game;
-                break;
-            case (false, true):
-                _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Manual);
-                state[slot, true] = StateChanged.Source.Game;
-                break;
+            var currentItem = state.BaseData.Item(slot);
+            var model       = state.ModelData.Weapon(slot);
+            var current     = currentItem.Weapon(state.BaseData.Stain(slot));
+            if (model.Value == current.Value || !_items.ItemService.AwaitedService.TryGetValue(item, EquipSlot.MainHand, out var changedItem))
+                continue;
+
+            var changed = changedItem.Weapon(stain);
+            if (current.Value == changed.Value && state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+            {
+                _manager.ChangeItem(state, slot, currentItem, StateChanged.Source.Game);
+                switch (slot)
+                {
+                    case EquipSlot.MainHand:
+                    case EquipSlot.OffHand:
+                        _applier.ChangeWeapon(objects, slot, currentItem, stain);
+                        break;
+                    default:
+                        _applier.ChangeArmor(objects, slot, current.ToArmor(), state.ModelData.IsHatVisible());
+                        break;
+                }
+            }
         }
     }
 
@@ -212,6 +212,13 @@ public class StateListener : IDisposable
     /// </summary>
     private void OnWeaponLoading(Actor actor, EquipSlot slot, Ref<CharacterWeapon> weapon)
     {
+        // Fist weapon gauntlet hack.
+        if (slot is EquipSlot.OffHand && weapon.Value.Variant == 0 && weapon.Value.Set.Value != 0 && _lastFistOffhand.Set.Value != 0)
+        {
+            weapon.Value     = _lastFistOffhand;
+            _lastFistOffhand = CharacterWeapon.Empty;
+        }
+
         if (!actor.Identifier(_actors.AwaitedService, out var identifier)
          || !_manager.TryGetValue(identifier, out var state))
             return;
@@ -229,7 +236,7 @@ public class StateListener : IDisposable
                 else
                     apply = true;
 
-                if (state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                if (state[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Game);
                 else
                     apply = true;
@@ -249,6 +256,11 @@ public class StateListener : IDisposable
             else if (actorWeapon.Set.Value != 0)
                 actorWeapon = actorWeapon.With(newWeapon.Stain);
         }
+
+        // Fist Weapon Offhand hack.
+        if (slot is EquipSlot.MainHand && weapon.Value.Set.Value is > 1600 and < 1651)
+            _lastFistOffhand = new CharacterWeapon((SetId)(weapon.Value.Set.Value + 50), weapon.Value.Type, weapon.Value.Variant,
+                weapon.Value.Stain);
     }
 
     /// <summary> Update base data for a single changed equipment slot. </summary>
@@ -257,7 +269,7 @@ public class StateListener : IDisposable
         var actorArmor = actor.GetArmor(slot);
         // The actor armor does not correspond to the model armor, thus the actor is transformed.
         // This also prevents it from changing values due to hat state.
-        if (actorArmor.Value != armor.Value)
+        if (actorArmor.Value != armor.Value && armor.Set.Value != actor.GetOffhand().Set.Value)
             return UpdateState.Transformed;
 
         var baseData = state.BaseData.Armor(slot);
@@ -491,7 +503,7 @@ public class StateListener : IDisposable
         _penumbra.CreatingCharacterBase += OnCreatingCharacterBase;
         _penumbra.CreatedCharacterBase  += OnCreatedCharacterBase;
         _slotUpdating.Subscribe(OnSlotUpdating, SlotUpdating.Priority.StateListener);
-        _equipmentLoading.Subscribe(OnEquipmentLoading, EquipmentLoading.Priority.StateListener);
+        _movedEquipment.Subscribe(OnMovedEquipment, MovedEquipment.Priority.StateListener);
         _weaponLoading.Subscribe(OnWeaponLoading, WeaponLoading.Priority.StateListener);
         _visorState.Subscribe(OnVisorChange, VisorStateChanged.Priority.StateListener);
         _headGearVisibility.Subscribe(OnHeadGearVisibilityChange, HeadGearVisibilityChanged.Priority.StateListener);
@@ -503,7 +515,7 @@ public class StateListener : IDisposable
         _penumbra.CreatingCharacterBase -= OnCreatingCharacterBase;
         _penumbra.CreatedCharacterBase  -= OnCreatedCharacterBase;
         _slotUpdating.Unsubscribe(OnSlotUpdating);
-        _equipmentLoading.Unsubscribe(OnEquipmentLoading);
+        _movedEquipment.Unsubscribe(OnMovedEquipment);
         _weaponLoading.Unsubscribe(OnWeaponLoading);
         _visorState.Unsubscribe(OnVisorChange);
         _headGearVisibility.Unsubscribe(OnHeadGearVisibilityChange);
@@ -515,7 +527,7 @@ public class StateListener : IDisposable
         if (_creatingState == null)
             return;
 
-        _applier.ChangeHatState(new ActorData(gameObject, _creatingIdentifier.ToName()), _creatingState.ModelData.IsHatVisible());
+        _applier.ChangeHatState(new ActorData(gameObject,    _creatingIdentifier.ToName()), _creatingState.ModelData.IsHatVisible());
         _applier.ChangeWeaponState(new ActorData(gameObject, _creatingIdentifier.ToName()), _creatingState.ModelData.IsWeaponVisible());
     }
 }

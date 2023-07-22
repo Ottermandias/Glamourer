@@ -19,6 +19,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
 
     public readonly string Label;
     private         uint   _currentItem;
+    private         float  _innerWidth;
 
     public ItemCombo(DataManager gameData, ItemManager items, EquipSlot slot, TextureService textures)
         : base(() => GetItems(items, slot))
@@ -46,11 +47,15 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
         return base.UpdateCurrentSelected(CurrentSelectionIdx);
     }
 
-    public bool Draw(string previewName, uint previewIdx, float width)
+    public bool Draw(string previewName, uint previewIdx, float width, float innerWidth)
     {
+        _innerWidth  = innerWidth;
         _currentItem = previewIdx;
         return Draw($"##{Label}", previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
     }
+
+    protected override float GetFilterWidth()
+        => _innerWidth - 2 * ImGui.GetStyle().FramePadding.X;
 
     protected override bool DrawSelectable(int globalIdx, bool selected)
     {

@@ -61,7 +61,6 @@ public static class ServiceManager
     private static IServiceCollection AddEvents(this IServiceCollection services)
         => services.AddSingleton<VisorStateChanged>()
             .AddSingleton<SlotUpdating>()
-            .AddSingleton<EquipmentLoading>()
             .AddSingleton<DesignChanged>()
             .AddSingleton<AutomationChanged>()
             .AddSingleton<StateChanged>()
@@ -69,7 +68,8 @@ public static class ServiceManager
             .AddSingleton<HeadGearVisibilityChanged>()
             .AddSingleton<WeaponVisibilityChanged>()
             .AddSingleton<ObjectUnlocked>()
-            .AddSingleton<TabSelected>();
+            .AddSingleton<TabSelected>()
+            .AddSingleton<MovedEquipment>();
 
     private static IServiceCollection AddData(this IServiceCollection services)
         => services.AddSingleton<IdentifierService>()
@@ -91,7 +91,8 @@ public static class ServiceManager
             .AddSingleton<JobService>()
             .AddSingleton<CustomizeUnlockManager>()
             .AddSingleton<ItemUnlockManager>()
-            .AddSingleton<DatFileService>();
+            .AddSingleton<DatFileService>()
+            .AddSingleton<InventoryService>();
 
     private static IServiceCollection AddDesigns(this IServiceCollection services)
         => services.AddSingleton<DesignManager>()

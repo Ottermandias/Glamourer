@@ -74,7 +74,7 @@ public class ItemManager : IDisposable
         if (itemId == SmallclothesId(slot))
             return SmallClothesItem(slot);
 
-        if (!ItemService.AwaitedService.TryGetValue(itemId, slot is not EquipSlot.OffHand, out var item))
+        if (!ItemService.AwaitedService.TryGetValue(itemId, slot, out var item))
             return new EquipItem(string.Intern($"Unknown #{itemId}"), itemId, 0, 0, 0, 0, 0);
 
         if (item.Type.ToSlot() != slot)
@@ -88,7 +88,7 @@ public class ItemManager : IDisposable
         if (itemId == NothingId(type))
             return NothingItem(type);
 
-        if (!ItemService.AwaitedService.TryGetValue(itemId, type is FullEquipType.Shield, out var item))
+        if (!ItemService.AwaitedService.TryGetValue(itemId, type is FullEquipType.Shield ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
             return new EquipItem(string.Intern($"Unknown #{itemId}"), itemId, 0, 0, 0, 0, 0);
 
         if (item.Type != type)

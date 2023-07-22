@@ -4,10 +4,8 @@ using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
-using ImGuiNET;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using static FFXIVClientStructs.FFXIV.Client.UI.UIModule;
 
 namespace Glamourer.Interop;
 
@@ -75,14 +73,14 @@ public unsafe class WeaponService : IDisposable
         switch (slot)
         {
             case EquipSlot.MainHand:
-                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value, 0, 0, 1, 0);
+                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value, 1, 0, 1, 0);
                 return;
             case EquipSlot.OffHand:
-                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, weapon.Value, 0, 0, 1, 0);
+                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, weapon.Value, 1, 0, 1, 0);
                 return;
             case EquipSlot.BothHand:
-                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value,                0, 0, 1, 0);
-                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, CharacterWeapon.Empty.Value, 0, 0, 1, 0);
+                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value,                1, 0, 1, 0);
+                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, CharacterWeapon.Empty.Value, 1, 0, 1, 0);
                 return;
             // function can also be called with '2', but does not seem to ever be.
         }

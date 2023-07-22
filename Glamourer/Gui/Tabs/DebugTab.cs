@@ -9,6 +9,7 @@ using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
 using Dalamud.Plugin;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Api;
 using Glamourer.Automation;
@@ -42,6 +43,7 @@ public unsafe class DebugTab : ITab
     private readonly UpdateSlotService      _updateSlotService;
     private readonly WeaponService          _weaponService;
     private readonly MetaService            _metaService;
+    private readonly InventoryService       _inventoryService;
     private readonly PenumbraService        _penumbra;
     private readonly ObjectTable            _objects;
     private readonly ObjectManager          _objectManager;
@@ -76,7 +78,7 @@ public unsafe class DebugTab : ITab
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
         AutoDesignManager autoDesignManager, JobService jobs, CodeService code, CustomizeUnlockManager customizeUnlocks,
-        ItemUnlockManager itemUnlocks, DesignConverter designConverter, DatFileService datFileService)
+        ItemUnlockManager itemUnlocks, DesignConverter designConverter, DatFileService datFileService, InventoryService inventoryService)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -103,6 +105,7 @@ public unsafe class DebugTab : ITab
         _itemUnlocks            = itemUnlocks;
         _designConverter        = designConverter;
         _datFileService         = datFileService;
+        _inventoryService       = inventoryService;
     }
 
     public ReadOnlySpan<byte> Label
@@ -120,6 +123,7 @@ public unsafe class DebugTab : ITab
         DrawDesigns();
         DrawState();
         DrawAutoDesigns();
+        DrawInventory();
         DrawUnlocks();
         DrawIpc();
     }
@@ -860,7 +864,7 @@ public unsafe class DebugTab : ITab
         if (!table)
             return;
 
-        foreach(var (index, value) in set.NpcOptions)
+        foreach (var (index, value) in set.NpcOptions)
         {
             ImGuiUtil.DrawTableColumn(index.ToString());
             ImGuiUtil.DrawTableColumn(value.Value.ToString());
@@ -980,6 +984,7 @@ public unsafe class DebugTab : ITab
 
                 ImGui.SameLine();
             }
+
             ImGui.NewLine();
         }
 
@@ -996,6 +1001,7 @@ public unsafe class DebugTab : ITab
 
                 ImGui.SameLine();
             }
+
             ImGui.NewLine();
         }
     }
@@ -1442,7 +1448,7 @@ public unsafe class DebugTab : ITab
         var remainder = ImGuiClip.ClippedDraw(_itemUnlocks.Unlocked, skips, t =>
         {
             ImGuiUtil.DrawTableColumn(t.Key.ToString());
-            if (_items.ItemService.AwaitedService.TryGetValue(t.Key, out var equip))
+            if (_items.ItemService.AwaitedService.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
             {
                 ImGuiUtil.DrawTableColumn(equip.Name);
                 ImGuiUtil.DrawTableColumn(equip.Type.ToName());
@@ -1489,7 +1495,7 @@ public unsafe class DebugTab : ITab
         var remainder = ImGuiClip.ClippedDraw(_itemUnlocks.Unlockable, skips, t =>
         {
             ImGuiUtil.DrawTableColumn(t.Key.ToString());
-            if (_items.ItemService.AwaitedService.TryGetValue(t.Key, out var equip))
+            if (_items.ItemService.AwaitedService.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
             {
                 ImGuiUtil.DrawTableColumn(equip.Name);
                 ImGuiUtil.DrawTableColumn(equip.Type.ToName());
@@ -1510,6 +1516,50 @@ public unsafe class DebugTab : ITab
             ImGuiUtil.DrawTableColumn(t.Value.ToString());
         }, _itemUnlocks.Unlockable.Count);
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
+    }
+
+    #endregion
+
+    #region Inventory
+
+    private void DrawInventory()
+    {
+        if (!ImGui.CollapsingHeader("Inventory"))
+            return;
+
+        var inventory = InventoryManager.Instance();
+        if (inventory == null)
+            return;
+
+        ImGuiUtil.CopyOnClickSelectable($"0x{(ulong)inventory:X}");
+
+        var equip = inventory->GetInventoryContainer(InventoryType.EquippedItems);
+        if (equip == null || equip->Loaded == 0)
+            return;
+
+        ImGuiUtil.CopyOnClickSelectable($"0x{(ulong)equip:X}");
+
+        using var table = ImRaii.Table("items", 4, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
+        if (!table)
+            return;
+
+        for (var i = 0; i < equip->Size; ++i)
+        {
+            ImGuiUtil.DrawTableColumn(i.ToString());
+            var item = equip->GetInventorySlot(i);
+            if (item == null)
+            {
+                ImGuiUtil.DrawTableColumn("NULL");
+                ImGui.TableNextRow();
+            }
+            else
+            {
+                ImGuiUtil.DrawTableColumn(item->ItemID.ToString());
+                ImGuiUtil.DrawTableColumn(item->GlamourID.ToString());
+                ImGui.TableNextColumn();
+                ImGuiUtil.CopyOnClickSelectable($"0x{(ulong)item:X}");
+            }
+        }
     }
 
     #endregion

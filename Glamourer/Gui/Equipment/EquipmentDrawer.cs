@@ -31,6 +31,9 @@ public class EquipmentDrawer
     private readonly TextureService                         _textures;
     private readonly Configuration                          _config;
 
+    private float _requiredComboWidthUnscaled;
+    private float _requiredComboWidth;
+
     public EquipmentDrawer(DataManager gameData, ItemManager items, CodeService codes, TextureService textures, Configuration config)
     {
         _items     = items;
@@ -60,6 +63,13 @@ public class EquipmentDrawer
     {
         _iconSize    = new Vector2(2 * ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y);
         _comboLength = DefaultWidth * ImGuiHelpers.GlobalScale;
+        if (_requiredComboWidthUnscaled == 0)
+        {
+            _requiredComboWidthUnscaled = _items.ItemService.AwaitedService.AllItems(true).Concat(_items.ItemService.AwaitedService.AllItems(false))
+                    .Max(i => ImGui.CalcTextSize($"{i.Item2.Name} ({i.Item2.ModelString})").X) / ImGuiHelpers.GlobalScale;
+        }
+
+        _requiredComboWidth = _requiredComboWidthUnscaled * ImGuiHelpers.GlobalScale;
     }
 
     private bool VerifyRestrictedGear(EquipSlot slot, EquipItem gear, Gender gender, Race race)
@@ -171,7 +181,7 @@ public class EquipmentDrawer
 
         label = combo.Label;
         using var disabled = ImRaii.Disabled(locked);
-        if (!combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength))
+        if (!combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth))
             return false;
 
         weapon = combo.CurrentSelection;
@@ -189,7 +199,7 @@ public class EquipmentDrawer
 
         label = combo.Label;
         using var disabled = ImRaii.Disabled(locked);
-        var       change   = combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength);
+        var       change   = combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth);
         if (change)
             weapon = combo.CurrentSelection;
 
@@ -225,7 +235,7 @@ public class EquipmentDrawer
         label = combo.Label;
         armor = current;
         using var disabled = ImRaii.Disabled(locked);
-        var       change   = combo.Draw(armor.Name, armor.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength);
+        var       change   = combo.Draw(armor.Name, armor.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth);
         if (change)
             armor = combo.CurrentSelection;
 

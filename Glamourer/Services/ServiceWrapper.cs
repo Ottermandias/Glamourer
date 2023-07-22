@@ -75,8 +75,8 @@ public abstract class AsyncServiceWrapper<T> : IDisposable
 
 public sealed class IdentifierService : AsyncServiceWrapper<IObjectIdentifier>
 {
-    public IdentifierService(DalamudPluginInterface pi, DataManager data)
-        : base(nameof(IdentifierService), () => Penumbra.GameData.GameData.GetIdentifier(pi, data))
+    public IdentifierService(DalamudPluginInterface pi, DataManager data, ItemService itemService)
+        : base(nameof(IdentifierService), () => Penumbra.GameData.GameData.GetIdentifier(pi, data, itemService.AwaitedService))
     { }
 }
 

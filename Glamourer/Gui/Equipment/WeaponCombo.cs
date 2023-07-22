@@ -16,6 +16,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
 {
     public readonly string Label;
     private         uint   _currentItemId;
+    private         float  _innerWidth;
 
     public WeaponCombo(ItemManager items, FullEquipType type)
         : base(() => GetWeapons(items, type))
@@ -41,9 +42,13 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
         return base.UpdateCurrentSelected(CurrentSelectionIdx);
     }
 
-    public bool Draw(string previewName, uint previewId, float width)
+    protected override float GetFilterWidth()
+        => _innerWidth - 2 * ImGui.GetStyle().FramePadding.X;
+
+    public bool Draw(string previewName, uint previewId, float width, float innerWidth)
     {
         _currentItemId = previewId;
+        _innerWidth    = innerWidth;
         return Draw($"##{Label}", previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
     }
 

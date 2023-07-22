@@ -179,7 +179,7 @@ public class UnlockOverview
                 ImGui.TextUnformatted($"{item.Type.ToName()} ({slot.ToName()})");
                 if (item.Type.ValidOffhand().IsOffhandType())
                     ImGui.TextUnformatted(
-                        $"{item.Weapon()}{(_items.ItemService.AwaitedService.TryGetValue(item.ItemId, false, out var offhand) ? $" | {offhand.Weapon()}" : string.Empty)}");
+                        $"{item.Weapon()}{(_items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand) ? $" | {offhand.Weapon()}" : string.Empty)}");
                 else
                     ImGui.TextUnformatted(slot is EquipSlot.MainHand ? $"{item.Weapon()}" : $"{item.Armor()}");
                 ImGui.TextUnformatted(
