@@ -57,6 +57,7 @@ public sealed class StateChanged : EventWrapper<Action<StateChanged.Type, StateC
 
     public enum Priority
     {
+        GlamourerIpc = int.MinValue,
     }
 
     public StateChanged()
