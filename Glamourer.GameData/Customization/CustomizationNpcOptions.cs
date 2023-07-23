@@ -9,7 +9,7 @@ namespace Glamourer.Customization;
 
 public static class CustomizationNpcOptions
 {
-    public static Dictionary<(SubRace, Gender), HashSet<(CustomizeIndex, CustomizeValue)>> CreateNpcData(CustomizationSet[] sets,
+    public static Dictionary<(SubRace, Gender), IReadOnlyList<(CustomizeIndex, CustomizeValue)>> CreateNpcData(CustomizationSet[] sets,
         ExcelSheet<BNpcCustomize> bNpc, ExcelSheet<ENpcBase> eNpc)
     {
         var customizes = bNpc.SelectWhere(FromBnpcCustomize)
@@ -55,7 +55,8 @@ public static class CustomizationNpcOptions
             }
         }
 
-        return dict;
+        return dict.ToDictionary(kvp => kvp.Key,
+            kvp => (IReadOnlyList<(CustomizeIndex, CustomizeValue)>)kvp.Value.OrderBy(p => p.Item1).ThenBy(p => p.Item2.Value).ToArray());
     }
 
     private static (bool, Customize) FromBnpcCustomize(BNpcCustomize bnpcCustomize)
@@ -99,7 +100,7 @@ public static class CustomizationNpcOptions
 
     private static (bool, Customize) FromEnpcBase(ENpcBase enpcBase)
     {
-        if (enpcBase.ModelChara.Row != 0)
+        if (enpcBase.ModelChara.Value?.Type != 1)
             return (false, Customize.Default);
 
         var customize = new Customize();
