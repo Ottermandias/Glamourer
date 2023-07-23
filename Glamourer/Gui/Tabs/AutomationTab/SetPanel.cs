@@ -191,7 +191,7 @@ public class SetPanel
                 continue;
 
             var item = design.Design!.DesignData.Item(slot);
-            if (!_itemUnlocks.IsUnlocked(item.ItemId, out _))
+            if (!_itemUnlocks.IsUnlocked(item.Id, out _))
                 sb.AppendLine($"{item.Name} in {slot.ToName()} slot is not unlocked. Consider obtaining it via gameplay means!");
         }
 

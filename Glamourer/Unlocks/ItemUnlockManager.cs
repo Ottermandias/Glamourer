@@ -201,7 +201,7 @@ public class ItemUnlockManager : ISavable, IDisposable
             Save();
     }
 
-    public bool IsUnlocked(uint itemId, out DateTimeOffset time)
+    public bool IsUnlocked(ulong itemId, out DateTimeOffset time)
     {
         // Pseudo items are always unlocked.
         if (itemId >= _items.ItemSheet.RowCount)
@@ -210,18 +210,18 @@ public class ItemUnlockManager : ISavable, IDisposable
             return true;
         }
 
-        if (_unlocked.TryGetValue(itemId, out var t))
+        if (_unlocked.TryGetValue((uint) itemId, out var t))
         {
             time = DateTimeOffset.FromUnixTimeMilliseconds(t);
             return true;
         }
 
-        if (IsGameUnlocked(itemId))
+        if (IsGameUnlocked((uint) itemId))
         {
             time = DateTimeOffset.UtcNow;
-            if (_unlocked.TryAdd(itemId, time.ToUnixTimeMilliseconds()))
+            if (_unlocked.TryAdd((uint) itemId, time.ToUnixTimeMilliseconds()))
             {
-                _event.Invoke(ObjectUnlocked.Type.Item, itemId, time);
+                _event.Invoke(ObjectUnlocked.Type.Item, (uint) itemId, time);
                 Save();
             }
 

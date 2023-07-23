@@ -18,7 +18,6 @@ public class AutoDesignApplier : IDisposable
 {
     private readonly Configuration          _config;
     private readonly AutoDesignManager      _manager;
-    private readonly CodeService            _code;
     private readonly StateManager           _state;
     private readonly JobService             _jobs;
     private readonly ActorService           _actors;
@@ -28,13 +27,12 @@ public class AutoDesignApplier : IDisposable
     private readonly AutomationChanged      _event;
     private readonly ObjectManager          _objects;
 
-    public AutoDesignApplier(Configuration config, AutoDesignManager manager, CodeService code, StateManager state, JobService jobs,
+    public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs,
         CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
         AutomationChanged @event, ObjectManager objects)
     {
         _config           =  config;
         _manager          =  manager;
-        _code             =  code;
         _state            =  state;
         _jobs             =  jobs;
         _customizations   =  customizations;
@@ -243,7 +241,7 @@ public class AutoDesignApplier : IDisposable
             if (equipFlags.HasFlag(flag))
             {
                 var item = design.Item(slot);
-                if (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.ItemId, out _))
+                if (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _))
                 {
                     if (!respectManual || state[slot, false] is not StateChanged.Source.Manual)
                         _state.ChangeItem(state, slot, item, source);
@@ -264,7 +262,7 @@ public class AutoDesignApplier : IDisposable
         {
             var item = design.Item(EquipSlot.MainHand);
             if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type
-             && (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.ItemId, out _)))
+             && (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _)))
             {
                 if (!respectManual || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual)
                     _state.ChangeItem(state, EquipSlot.MainHand, item, source);
@@ -276,7 +274,7 @@ public class AutoDesignApplier : IDisposable
         {
             var item = design.Item(EquipSlot.OffHand);
             if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type
-             && (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.ItemId, out _)))
+             && (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _)))
             {
                 if (!respectManual || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual)
                     _state.ChangeItem(state, EquipSlot.OffHand, item, source);
@@ -350,7 +348,7 @@ public class AutoDesignApplier : IDisposable
 
             var value = design.Customize[index];
             if (CustomizationService.IsCustomizationValid(set, face, index, value, out var data)
-             && (!_config.UnlockedItemMode || _customizeUnlocks.IsUnlocked(data.Value, out _)))
+             && (data.HasValue && (!_config.UnlockedItemMode || _customizeUnlocks.IsUnlocked(data.Value, out _))))
             {
                 if (!respectManual || state[index] is not StateChanged.Source.Manual)
                     _state.ChangeCustomize(state, index, value, source);
