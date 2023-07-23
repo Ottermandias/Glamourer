@@ -74,18 +74,6 @@ public static class DesignBase64Migration
             {
                 data.Customize.Load(*(Customize*)(ptr + 4));
                 var cur  = (CharacterWeapon*)(ptr + 30);
-                var main = cur[0].Set.Value == 0 ? items.DefaultSword : items.Identify(EquipSlot.MainHand, cur[0].Set, cur[0].Type, (byte)cur[0].Variant);
-                if (!main.Valid)
-                    throw new Exception($"Base64 string invalid, weapon could not be identified.");
-
-                data.SetItem(EquipSlot.MainHand, main);
-                data.SetStain(EquipSlot.MainHand, cur[0].Stain);
-                var off = cur[0].Set.Value == 0 ? ItemManager.NothingItem(FullEquipType.Shield) : items.Identify(EquipSlot.OffHand, cur[1].Set, cur[1].Type, (byte)cur[1].Variant, main.Type);
-                if (main.Type.ValidOffhand() != FullEquipType.Unknown && !off.Valid)
-                    throw new Exception($"Base64 string invalid, weapon could not be identified.");
-
-                data.SetItem(EquipSlot.OffHand, off);
-                data.SetStain(EquipSlot.OffHand, cur[1].Stain);
 
                 var eq = (CharacterArmor*)(cur + 2);
                 foreach (var (slot, idx) in EquipSlotExtensions.EqdpSlots.WithIndex())
@@ -98,6 +86,38 @@ public static class DesignBase64Migration
                     data.SetItem(slot, item);
                     data.SetStain(slot, mdl.Stain);
                 }
+
+                var main = cur[0].Set.Value == 0 ? items.DefaultSword : items.Identify(EquipSlot.MainHand, cur[0].Set, cur[0].Type, (byte)cur[0].Variant);
+                if (!main.Valid)
+                    throw new Exception($"Base64 string invalid, weapon could not be identified.");
+
+                data.SetItem(EquipSlot.MainHand, main);
+                data.SetStain(EquipSlot.MainHand, cur[0].Stain);
+
+                EquipItem off;
+                // Fist weapon hack
+                if (main.ModelId.Value is > 1600 and < 1651 && cur[1].Variant == 0)
+                {
+                    off = items.Identify(EquipSlot.OffHand, (SetId)(main.ModelId.Value + 50), main.WeaponType, main.Variant, main.Type);
+                    var gauntlet = items.Identify(EquipSlot.Hands, cur[1].Set, (byte)cur[1].Type);
+                    if (!gauntlet.Valid)
+                        throw new Exception($"Base64 string invalid, item could not be identified.");
+
+                    data.SetItem(EquipSlot.Hands, gauntlet);
+                    data.SetStain(EquipSlot.Hands, cur[0].Stain);
+                }
+                else
+                {
+                    off = cur[0].Set.Value == 0
+                        ? ItemManager.NothingItem(FullEquipType.Shield)
+                        : items.Identify(EquipSlot.OffHand, cur[1].Set, cur[1].Type, (byte)cur[1].Variant, main.Type);
+                }
+
+                if (main.Type.ValidOffhand() != FullEquipType.Unknown && !off.Valid)
+                    throw new Exception($"Base64 string invalid, weapon could not be identified.");
+
+                data.SetItem(EquipSlot.OffHand, off);
+                data.SetStain(EquipSlot.OffHand, cur[1].Stain);
             }
         }
 
