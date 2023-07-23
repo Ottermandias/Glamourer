@@ -400,16 +400,24 @@ public class DesignBase
 
     public void MigrateBase64(CustomizationService customizations, ItemManager items, string base64)
     {
-        DesignData = DesignBase64Migration.MigrateBase64(items, base64, out var equipFlags, out var customizeFlags, out var writeProtected,
-            out var applyHat, out var applyVisor, out var applyWeapon);
-        ApplyEquip = equipFlags;
-        var set = customizations.AwaitedService.GetList(DesignData.Customize.Clan, DesignData.Customize.Gender);
-        ApplyCustomize = customizeFlags;
-        SetWriteProtected(writeProtected);
-        SetApplyHatVisible(applyHat);
-        SetApplyVisorToggle(applyVisor);
-        SetApplyWeaponVisible(applyWeapon);
-        SetApplyWetness(DesignData.IsWet());
+        try
+        {
+            DesignData = DesignBase64Migration.MigrateBase64(items, base64, out var equipFlags, out var customizeFlags,
+                out var writeProtected,
+                out var applyHat, out var applyVisor, out var applyWeapon);
+            ApplyEquip     = equipFlags;
+            ApplyCustomize = customizeFlags;
+            SetWriteProtected(writeProtected);
+            SetApplyHatVisible(applyHat);
+            SetApplyVisorToggle(applyVisor);
+            SetApplyWeaponVisible(applyWeapon);
+            SetApplyWetness(DesignData.IsWet());
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Chat.NotificationMessage(ex, "Could not parse Base64 design.", "Could not parse Base64 design", "Failure",
+                NotificationType.Error);
+        }
     }
 
     public void RemoveInvalidCustomize(CustomizationService customizations)
