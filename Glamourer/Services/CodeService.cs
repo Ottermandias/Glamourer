@@ -45,7 +45,8 @@ public class CodeService
             }
             else
             {
-                enabled(_config.Codes[i].Enabled);
+                var value = _config.Codes[i].Enabled;
+                enabled(value);
             }
         }
 
@@ -86,6 +87,46 @@ public class CodeService
             _                                        => null,
         };
     }
+
+    public void VerifyState()
+    {
+        if (EnabledSizing == Sizing.None && EnabledOops == Race.Unknown)
+            return;
+
+        for (var i = 0; i < _config.Codes.Count; ++i)
+        {
+            var (code, enabled) = _config.Codes[i];
+            if (!enabled)
+                continue;
+
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(code));
+            var       sha    = (ReadOnlySpan<byte>)_hasher.ComputeHash(stream);
+            var _ = EnabledSizing switch
+            {
+                Sizing.Dwarf when sha.SequenceEqual(CodeGiant) => _config.Codes[i] = (code, false),
+                Sizing.Giant when sha.SequenceEqual(CodeDwarf) => _config.Codes[i] = (code, false),
+                _                                              => (string.Empty, false),
+            };
+
+            var race = OopsRace(sha);
+            if (race is not Race.Unknown && race != EnabledOops)
+                _config.Codes[i] = (code, false);
+        }
+    }
+
+    private static Race OopsRace(ReadOnlySpan<byte> sha)
+        => sha switch
+        {
+            _ when CodeOops1.SequenceEqual(sha) => Race.Hyur,
+            _ when CodeOops2.SequenceEqual(sha) => Race.Elezen,
+            _ when CodeOops3.SequenceEqual(sha) => Race.Lalafell,
+            _ when CodeOops4.SequenceEqual(sha) => Race.Miqote,
+            _ when CodeOops5.SequenceEqual(sha) => Race.Roegadyn,
+            _ when CodeOops6.SequenceEqual(sha) => Race.AuRa,
+            _ when CodeOops7.SequenceEqual(sha) => Race.Hrothgar,
+            _ when CodeOops8.SequenceEqual(sha) => Race.Viera,
+            _                                   => Race.Unknown,
+        };
 
     // @formatter:off
     private static ReadOnlySpan<byte> CodeClown      => new byte[] { 0xC4, 0xEE, 0x1D, 0x6F, 0xC5, 0x5D, 0x47, 0xBE, 0x78, 0x63, 0x66, 0x86, 0x81, 0x15, 0xEB, 0xFA, 0xF6, 0x4A, 0x90, 0xEA, 0xC0, 0xE4, 0xEE, 0x86, 0x69, 0x01, 0x8E, 0xDB, 0xCC, 0x69, 0xD1, 0xBD };

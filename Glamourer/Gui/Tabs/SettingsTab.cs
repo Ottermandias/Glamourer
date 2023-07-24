@@ -103,6 +103,7 @@ public class SettingsTab : ITab
             {
                 action(state);
                 _config.Codes[i] = (code, state);
+                _codeService.VerifyState();
                 _config.Save();
             }
         }
