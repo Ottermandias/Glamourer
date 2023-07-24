@@ -93,7 +93,8 @@ public static class ServiceManager
             .AddSingleton<ItemUnlockManager>()
             .AddSingleton<DatFileService>()
             .AddSingleton<InventoryService>()
-            .AddSingleton<ContextMenuService>();
+            .AddSingleton<ContextMenuService>()
+            .AddSingleton<ScalingService>();
 
     private static IServiceCollection AddDesigns(this IServiceCollection services)
         => services.AddSingleton<DesignManager>()

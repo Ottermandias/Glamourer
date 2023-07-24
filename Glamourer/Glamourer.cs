@@ -34,6 +34,7 @@ public class Glamourer : IDalamudPlugin
             _services.GetRequiredService<GlamourerWindowSystem>(); // initialize ui.
             _services.GetRequiredService<CommandService>();        // initialize commands.
             _services.GetRequiredService<VisorService>();
+            _services.GetRequiredService<ScalingService>();
         }
         catch
         {
