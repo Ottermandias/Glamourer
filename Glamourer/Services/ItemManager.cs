@@ -163,9 +163,9 @@ public class ItemManager : IDisposable
 
         if (itemId > uint.MaxValue)
         {
-            var id      = (SetId)(itemId & ushort.MaxValue);
-            var variant = (byte)(itemId >> 32);
-            item = new EquipItem($"Unknown ({id}-{variant})", 0, 0, id, 0, variant, slot.ToEquipType());
+            var id         = (SetId)(itemId & ushort.MaxValue);
+            var variant    = (byte)(itemId >> 32);
+            item = Identify(slot, id, variant);
             return allowUnknown ? string.Empty : $"The item {itemId} yields an unknown item.";
         }
 
