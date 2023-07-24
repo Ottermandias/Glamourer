@@ -7,6 +7,7 @@ using Dalamud.Game.ClientState.Objects;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Penumbra.GameData.Actors;
+using Penumbra.String;
 
 namespace Glamourer.Interop;
 
@@ -34,6 +35,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
 
     private readonly Dictionary<ActorIdentifier, ActorData> _identifiers         = new(200);
     private readonly Dictionary<ActorIdentifier, ActorData> _allWorldIdentifiers = new(200);
+    private readonly Dictionary<ActorIdentifier, ActorData> _nonOwnedIdentifiers = new(200);
 
     public IReadOnlyDictionary<ActorIdentifier, ActorData> Identifiers
         => _identifiers;
@@ -110,21 +112,35 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
             data.Objects.Add(character);
         }
 
-        if (identifier.Type is not (IdentifierType.Player or IdentifierType.Owned))
-            return;
-
-        var allWorld = _actors.AwaitedService.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, ushort.MaxValue,
-            identifier.Kind,
-            identifier.DataId);
-
-        if (!_allWorldIdentifiers.TryGetValue(allWorld, out var allWorldData))
+        if (identifier.Type is IdentifierType.Player or IdentifierType.Owned)
         {
-            allWorldData                   = new ActorData(character, allWorld.ToString());
-            _allWorldIdentifiers[allWorld] = allWorldData;
+            var allWorld = _actors.AwaitedService.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, ushort.MaxValue,
+                identifier.Kind,
+                identifier.DataId);
+
+            if (!_allWorldIdentifiers.TryGetValue(allWorld, out var allWorldData))
+            {
+                allWorldData                   = new ActorData(character, allWorld.ToString());
+                _allWorldIdentifiers[allWorld] = allWorldData;
+            }
+            else
+            {
+                allWorldData.Objects.Add(character);
+            }
         }
-        else
+
+        if (identifier.Type is IdentifierType.Owned)
         {
-            allWorldData.Objects.Add(character);
+            var nonOwned = _actors.AwaitedService.CreateNpc(identifier.Kind, identifier.DataId);
+            if (!_nonOwnedIdentifiers.TryGetValue(nonOwned, out var allWorldData))
+            {
+                allWorldData                   = new ActorData(character, nonOwned.ToString());
+                _allWorldIdentifiers[nonOwned] = allWorldData;
+            }
+            else
+            {
+                allWorldData.Objects.Add(character);
+            }
         }
     }
 
@@ -174,15 +190,18 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
     public int Count
         => Identifiers.Count;
 
-    /// <summary> Also handles All Worlds players. </summary>
+    /// <summary> Also handles All Worlds players and non-owned NPCs. </summary>
     public bool ContainsKey(ActorIdentifier key)
-        => Identifiers.ContainsKey(key) || _allWorldIdentifiers.ContainsKey(key);
+        => Identifiers.ContainsKey(key) || _allWorldIdentifiers.ContainsKey(key) || _nonOwnedIdentifiers.ContainsKey(key);
 
     public bool TryGetValue(ActorIdentifier key, out ActorData value)
         => Identifiers.TryGetValue(key, out value);
 
     public bool TryGetValueAllWorld(ActorIdentifier key, out ActorData value)
         => _allWorldIdentifiers.TryGetValue(key, out value);
+
+    public bool TryGetValueNonOwned(ActorIdentifier key, out ActorData value)
+        => _nonOwnedIdentifiers.TryGetValue(key, out value);
 
     public ActorData this[ActorIdentifier key]
         => Identifiers[key];

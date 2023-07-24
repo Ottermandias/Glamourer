@@ -85,7 +85,7 @@ public class AutoDesignApplier : IDisposable
                             _state.ReapplyState(actor);
                     }
                 }
-                else if (_objects.TryGetValueAllWorld(id, out data))
+                else if (_objects.TryGetValueAllWorld(id, out data) || _objects.TryGetValueNonOwned(id, out data))
                 {
                     foreach (var actor in data.Objects)
                     {
@@ -210,7 +210,7 @@ public class AutoDesignApplier : IDisposable
                 continue;
 
             var (equipFlags, customizeFlags, applyHat, applyVisor, applyWeapon, applyWet) = design.ApplyWhat();
-            Reduce(state, data, applyHat,       applyVisor,              applyWeapon, applyWet, ref totalMetaFlags, respectManual, source);
+            Reduce(state, data, applyHat,       applyVisor,              applyWeapon,   applyWet, ref totalMetaFlags, respectManual, source);
             Reduce(state, data, customizeFlags, ref totalCustomizeFlags, respectManual, source);
             Reduce(state, data, equipFlags,     ref totalEquipFlags,     respectManual, source);
         }
@@ -219,17 +219,28 @@ public class AutoDesignApplier : IDisposable
     /// <summary> Get world-specific first and all-world afterwards. </summary>
     private bool GetPlayerSet(ActorIdentifier identifier, [NotNullWhen(true)] out AutoDesignSet? set)
     {
-        if (identifier.Type is not IdentifierType.Player)
-            return _manager.EnabledSets.TryGetValue(identifier, out set);
+        switch (identifier.Type)
+        {
+            case IdentifierType.Player:
+                if (_manager.EnabledSets.TryGetValue(identifier, out set))
+                    return true;
 
-        if (_manager.EnabledSets.TryGetValue(identifier, out set))
-            return true;
-
-        identifier = _actors.AwaitedService.CreatePlayer(identifier.PlayerName, ushort.MaxValue);
-        return _manager.EnabledSets.TryGetValue(identifier, out set);
+                identifier = _actors.AwaitedService.CreatePlayer(identifier.PlayerName, ushort.MaxValue);
+                return _manager.EnabledSets.TryGetValue(identifier, out set);
+            case IdentifierType.Retainer:
+            case IdentifierType.Special:
+                return _manager.EnabledSets.TryGetValue(identifier, out set);
+            case IdentifierType.Owned:
+                identifier = _actors.AwaitedService.CreateNpc(identifier.Kind, identifier.DataId);
+                return _manager.EnabledSets.TryGetValue(identifier, out set);
+            default:
+                set = null;
+                return false;
+        }
     }
 
-    private void Reduce(ActorState state, in DesignData design, EquipFlag equipFlags, ref EquipFlag totalEquipFlags, bool respectManual, StateChanged.Source source)
+    private void Reduce(ActorState state, in DesignData design, EquipFlag equipFlags, ref EquipFlag totalEquipFlags, bool respectManual,
+        StateChanged.Source source)
     {
         equipFlags &= ~totalEquipFlags;
         if (equipFlags == 0)
@@ -347,9 +358,11 @@ public class AutoDesignApplier : IDisposable
                 continue;
 
             var value = design.Customize[index];
-            if (CustomizationService.IsCustomizationValid(set, face, index, value, out var data)
-             && (data.HasValue && (!_config.UnlockedItemMode || _customizeUnlocks.IsUnlocked(data.Value, out _))))
+            if (CustomizationService.IsCustomizationValid(set, face, index, value, out var data))
             {
+                if (data.HasValue && _config.UnlockedItemMode && !_customizeUnlocks.IsUnlocked(data.Value, out _))
+                    continue;
+
                 if (!respectManual || state[index] is not StateChanged.Source.Manual)
                     _state.ChangeCustomize(state, index, value, source);
                 totalCustomizeFlags |= flag;
