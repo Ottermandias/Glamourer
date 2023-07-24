@@ -214,10 +214,7 @@ public class StateListener : IDisposable
     {
         // Fist weapon gauntlet hack.
         if (slot is EquipSlot.OffHand && weapon.Value.Variant == 0 && weapon.Value.Set.Value != 0 && _lastFistOffhand.Set.Value != 0)
-        {
-            weapon.Value     = _lastFistOffhand;
-            _lastFistOffhand = CharacterWeapon.Empty;
-        }
+            weapon.Value = _lastFistOffhand;
 
         if (!actor.Identifier(_actors.AwaitedService, out var identifier)
          || !_manager.TryGetValue(identifier, out var state))
@@ -266,10 +263,19 @@ public class StateListener : IDisposable
     /// <summary> Update base data for a single changed equipment slot. </summary>
     private UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterArmor armor)
     {
+        bool FistWeaponGauntletHack()
+        {
+            if (slot is not EquipSlot.Hands)
+                return false;
+
+            var offhand = actor.GetOffhand();
+            return offhand.Variant == 0 && armor.Set.Value == offhand.Set.Value;
+        }
+
         var actorArmor = actor.GetArmor(slot);
         // The actor armor does not correspond to the model armor, thus the actor is transformed.
         // This also prevents it from changing values due to hat state.
-        if (actorArmor.Value != armor.Value && armor.Set.Value != actor.GetOffhand().Set.Value)
+        if (actorArmor.Value != armor.Value && !FistWeaponGauntletHack())
             return UpdateState.Transformed;
 
         var baseData = state.BaseData.Armor(slot);
