@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using Dalamud.Interface;
 using Glamourer.Gui.Tabs.DesignTab;
+using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
@@ -19,15 +20,17 @@ public class SettingsTab : ITab
     private readonly StateListener            _stateListener;
     private readonly CodeService              _codeService;
     private readonly PenumbraAutoRedraw       _autoRedraw;
+    private readonly ContextMenuService       _contextMenuService;
 
     public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener,
-        CodeService codeService, PenumbraAutoRedraw autoRedraw)
+        CodeService codeService, PenumbraAutoRedraw autoRedraw, ContextMenuService contextMenuService)
     {
-        _config        = config;
-        _selector      = selector;
-        _stateListener = stateListener;
-        _codeService   = codeService;
-        _autoRedraw    = autoRedraw;
+        _config             = config;
+        _selector           = selector;
+        _stateListener      = stateListener;
+        _codeService        = codeService;
+        _autoRedraw         = autoRedraw;
+        _contextMenuService = contextMenuService;
     }
 
     public ReadOnlySpan<byte> Label
@@ -59,6 +62,15 @@ public class SettingsTab : ITab
         Checkbox("Hide Application Checkboxes",
             "Hide the application checkboxes in the Customization and Equipment panels of the design tab, and only show them under Application Rules.",
             _config.HideApplyCheckmarks, v => _config.HideApplyCheckmarks = v);
+        Checkbox("Enable Game Context Menus", "Whether to show a Try On via Glamourer button on context menus for equippable items.",
+            _config.EnableGameContextMenu,    v =>
+            {
+                _config.EnableGameContextMenu = v;
+                if (v)
+                    _contextMenuService.Enable();
+                else
+                    _contextMenuService.Disable();
+            });
         if (Widget.DoubleModifierSelector("Design Deletion Modifier",
                 "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
                 _config.DeleteDesignModifier, v => _config.DeleteDesignModifier = v))
