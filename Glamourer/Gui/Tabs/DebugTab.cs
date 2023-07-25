@@ -29,6 +29,7 @@ using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.Api.Enums;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -62,6 +63,7 @@ public unsafe class DebugTab : ITab
     private readonly DesignFileSystem  _designFileSystem;
     private readonly AutoDesignManager _autoDesignManager;
     private readonly DesignConverter   _designConverter;
+    private readonly HumanModelList    _humans;
 
     private readonly PenumbraChangedItemTooltip _penumbraTooltip;
 
@@ -78,7 +80,8 @@ public unsafe class DebugTab : ITab
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
         AutoDesignManager autoDesignManager, JobService jobs, CodeService code, CustomizeUnlockManager customizeUnlocks,
-        ItemUnlockManager itemUnlocks, DesignConverter designConverter, DatFileService datFileService, InventoryService inventoryService)
+        ItemUnlockManager itemUnlocks, DesignConverter designConverter, DatFileService datFileService, InventoryService inventoryService,
+        HumanModelList humans)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -106,6 +109,7 @@ public unsafe class DebugTab : ITab
         _designConverter        = designConverter;
         _datFileService         = datFileService;
         _inventoryService       = inventoryService;
+        _humans                 = humans;
     }
 
     public ReadOnlySpan<byte> Label
@@ -639,7 +643,7 @@ public unsafe class DebugTab : ITab
             var identified = _items.Identify(slot, (SetId)_setId, (byte)_variant);
             Text(identified.Name);
             ImGuiUtil.HoverTooltip(string.Join("\n",
-                _items.IdentifierService.AwaitedService.Identify((SetId)_setId, (ushort)_variant, slot).Select(i => i.Name)));
+                _items.IdentifierService.AwaitedService.Identify((SetId)_setId, (ushort)_variant, slot).Select(i => $"{i.Name} {i.Id} {i.ItemId} {i.IconId}")));
         }
 
         var weapon = _items.Identify(EquipSlot.MainHand, (SetId)_setId, (WeaponType)_secondaryId, (byte)_variant);
@@ -939,7 +943,8 @@ public unsafe class DebugTab : ITab
             if (_parse64Failure == null)
                 try
                 {
-                    _parse64 = DesignBase64Migration.MigrateBase64(_items, _base64, out var ef, out var cf, out var wp, out var ah, out var av,
+                    _parse64 = DesignBase64Migration.MigrateBase64(_items, _humans, _base64, out var ef, out var cf, out var wp, out var ah,
+                        out var av,
                         out var aw);
                     _restore      = DesignBase64Migration.CreateOldBase64(in _parse64, ef, cf, ah, av, aw, wp);
                     _restoreBytes = Convert.FromBase64String(_restore);
@@ -1035,6 +1040,9 @@ public unsafe class DebugTab : ITab
             {
                 _clipboardText    = ImGui.GetClipboardText();
                 _clipboardData    = Convert.FromBase64String(_clipboardText);
+                _version          = _clipboardData[0];
+                if (_version == 5)
+                    _clipboardData = _clipboardData[DesignBase64Migration.Base64SizeV4..];
                 _version          = _clipboardData.Decompress(out _dataUncompressed);
                 _textUncompressed = Encoding.UTF8.GetString(_dataUncompressed);
                 _json             = JObject.Parse(_textUncompressed);

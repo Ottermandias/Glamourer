@@ -8,23 +8,26 @@ using Glamourer.Structs;
 using Glamourer.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Designs;
 
 public class DesignConverter
 {
-    public const byte Version = 3;
+    public const byte Version = 5;
 
     private readonly ItemManager          _items;
     private readonly DesignManager        _designs;
     private readonly CustomizationService _customize;
+    private readonly HumanModelList       _humans;
 
-    public DesignConverter(ItemManager items, DesignManager designs, CustomizationService customize)
+    public DesignConverter(ItemManager items, DesignManager designs, CustomizationService customize, HumanModelList humans)
     {
         _items     = items;
         _designs   = designs;
         _customize = customize;
+        _humans    = humans;
     }
 
     public JObject ShareJObject(DesignBase design)
@@ -40,13 +43,16 @@ public class DesignConverter
     }
 
     public string ShareBase64(Design design)
-        => ShareBase64(ShareJObject(design));
+        => ShareBackwardCompatible(ShareJObject(design), design);
 
     public string ShareBase64(DesignBase design)
-        => ShareBase64(ShareJObject(design));
+        => ShareBackwardCompatible(ShareJObject(design), design);
 
     public string ShareBase64(ActorState state)
-        => ShareBase64(ShareJObject(state, EquipFlagExtensions.All, CustomizeFlagExtensions.All));
+    {
+        var design = Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.All);
+        return ShareBackwardCompatible(ShareJObject(design), design);
+    }
 
     public DesignBase Convert(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags)
     {
@@ -79,17 +85,31 @@ public class DesignConverter
                     break;
                 case 1:
                 case 2:
+                case 4:
                     ret = _designs.CreateTemporary();
-                    ret.MigrateBase64(_customize, _items, base64);
+                    ret.MigrateBase64(_items, _humans, base64);
                     break;
-                case Version:
+                case 3:
+                {
                     version = bytes.DecompressToString(out var decompressed);
-                    var jObj2   = JObject.Parse(decompressed);
+                    var jObj2 = JObject.Parse(decompressed);
+                    Debug.Assert(version == 3);
+                    ret = jObj2["Identifier"] != null
+                        ? Design.LoadDesign(_customize, _items, jObj2)
+                        : DesignBase.LoadDesignBase(_customize, _items, jObj2);
+                    break;
+                }
+                case Version:
+                {
+                    bytes   = bytes[DesignBase64Migration.Base64SizeV4..];
+                    version = bytes.DecompressToString(out var decompressed);
+                    var jObj2 = JObject.Parse(decompressed);
                     Debug.Assert(version == Version);
                     ret = jObj2["Identifier"] != null
                         ? Design.LoadDesign(_customize, _items, jObj2)
                         : DesignBase.LoadDesignBase(_customize, _items, jObj2);
                     break;
+                }
                 default: throw new Exception($"Unknown Version {bytes[0]}.");
             }
         }
@@ -121,5 +141,18 @@ public class DesignConverter
         var json       = jObj.ToString(Formatting.None);
         var compressed = json.Compress(Version);
         return System.Convert.ToBase64String(compressed);
+    }
+
+    private static string ShareBackwardCompatible(JObject jObject, DesignBase design)
+    {
+        var oldBase64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.ApplyEquip, design.ApplyCustomize,
+            design.DoApplyHatVisible(), design.DoApplyVisorToggle(), design.DoApplyWeaponVisible(), design.WriteProtected(), 1f);
+        var oldBytes   = System.Convert.FromBase64String(oldBase64);
+        var json       = jObject.ToString(Formatting.None);
+        var compressed = json.Compress(Version);
+        var bytes      = new byte[oldBytes.Length + compressed.Length];
+        oldBytes.CopyTo(bytes, 0);
+        compressed.CopyTo(bytes, oldBytes.Length);
+        return System.Convert.ToBase64String(bytes);
     }
 }

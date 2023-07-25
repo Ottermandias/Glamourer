@@ -11,6 +11,7 @@ using Glamourer.State;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -20,6 +21,7 @@ public class DesignManager
 {
     private readonly CustomizationService _customizations;
     private readonly ItemManager          _items;
+    private readonly HumanModelList       _humans;
     private readonly SaveService          _saveService;
     private readonly DesignChanged        _event;
     private readonly List<Design>         _designs = new();
@@ -28,12 +30,13 @@ public class DesignManager
         => _designs;
 
     public DesignManager(SaveService saveService, ItemManager items, CustomizationService customizations,
-        DesignChanged @event)
+        DesignChanged @event, HumanModelList humans)
     {
         _saveService    = saveService;
         _items          = items;
         _customizations = customizations;
         _event          = @event;
+        _humans         = humans;
         CreateDesignFolder(saveService);
         LoadDesigns();
         MigrateOldDesigns();
@@ -519,7 +522,7 @@ public class DesignManager
                         Identifier   = CreateNewGuid(),
                         Name         = actualName,
                     };
-                    design.MigrateBase64(_customizations, _items, base64);
+                    design.MigrateBase64(_items, _humans, base64);
                     if (!_designs.Any(d => d.Name == design.Name && d.CreationDate == design.CreationDate))
                     {
                         Add(design, $"Migrated old design to {design.Identifier}.");

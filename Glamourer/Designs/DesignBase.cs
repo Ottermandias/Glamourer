@@ -6,6 +6,7 @@ using Glamourer.Services;
 using Glamourer.Structs;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -398,11 +399,11 @@ public class DesignBase
         }
     }
 
-    public void MigrateBase64(CustomizationService customizations, ItemManager items, string base64)
+    public void MigrateBase64(ItemManager items, HumanModelList humans, string base64)
     {
         try
         {
-            DesignData = DesignBase64Migration.MigrateBase64(items, base64, out var equipFlags, out var customizeFlags,
+            DesignData = DesignBase64Migration.MigrateBase64(items, humans, base64, out var equipFlags, out var customizeFlags,
                 out var writeProtected,
                 out var applyHat, out var applyVisor, out var applyWeapon);
             ApplyEquip     = equipFlags;

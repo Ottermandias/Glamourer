@@ -75,7 +75,7 @@ public class ItemManager : IDisposable
             return SmallClothesItem(slot);
 
         if (!ItemService.AwaitedService.TryGetValue(itemId, slot, out var item))
-            return new EquipItem(string.Intern($"Unknown #{itemId}"), itemId, 0, 0, 0, 0, 0);
+            return EquipItem.FromId(itemId);
 
         if (item.Type.ToSlot() != slot)
             return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0);
@@ -89,7 +89,7 @@ public class ItemManager : IDisposable
             return NothingItem(type);
 
         if (!ItemService.AwaitedService.TryGetValue(itemId, type is FullEquipType.Shield ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
-            return new EquipItem(string.Intern($"Unknown #{itemId}"), itemId, 0, 0, 0, 0, 0);
+            return EquipItem.FromId(itemId);
 
         if (item.Type != type)
             return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0);
@@ -111,7 +111,7 @@ public class ItemManager : IDisposable
                 var item = IdentifierService.AwaitedService.Identify(id, variant, slot).FirstOrDefault();
                 return item.Valid
                     ? item
-                    : new EquipItem($"Unknown ({id.Value}-{variant})", 0, 0, id, 0, variant, slot.ToEquipType());
+                    : EquipItem.FromIds(0, 0, id, 0, variant, slot.ToEquipType());
         }
     }
 
