@@ -32,9 +32,11 @@ public class CommandService : IDisposable
     private readonly AutoDesignApplier _autoDesignApplier;
     private readonly DesignManager     _designManager;
     private readonly DesignConverter   _converter;
+    private readonly DesignFileSystem  _designFileSystem;
 
     public CommandService(CommandManager commands, MainWindow mainWindow, ChatGui chat, ActorService actors, ObjectManager objects,
-        AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter)
+        AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
+        DesignFileSystem designFileSystem)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -45,6 +47,7 @@ public class CommandService : IDisposable
         _stateManager      = stateManager;
         _designManager     = designManager;
         _converter         = converter;
+        _designFileSystem  = designFileSystem;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -182,14 +185,18 @@ public class CommandService : IDisposable
         var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (split.Length != 2)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour apply ").AddYellow("[Design Name or Identifier]").AddText(" | ")
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour apply ").AddYellow("[Design Name, Path or Identifier]").AddText(" | ")
                 .AddGreen("[Character Identifier]").BuiltString);
             _chat.Print(new SeStringBuilder()
-                .AddText("    》 The design name must match up to case. If multiple designs of that name exist, the first one is chosen.")
+                .AddText(
+                    "    》 The design name is case-insensitive. If multiple designs of that name up to case exist, the first one is chosen.")
                 .BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText(
                     "    》 If using the design identifier, you need to specify at least 4 characters for it, and the first one starting with the provided characters is chosen.")
+                .BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》 The design path is the folder path in the selector, with '/' as separators. It is also case-insensitive.")
                 .BuiltString);
             PlayerIdentifierHelp(false);
         }
@@ -305,6 +312,8 @@ public class CommandService : IDisposable
             var lower = argument.ToLowerInvariant();
             design = _designManager.Designs.FirstOrDefault(d
                 => d.Name.Lower == lower || lower.Length > 3 && d.Identifier.ToString().StartsWith(lower));
+            if (design == null && _designFileSystem.Find(lower, out var child) && child is DesignFileSystem.Leaf leaf)
+                design = leaf.Value;
         }
 
         if (design == null)
