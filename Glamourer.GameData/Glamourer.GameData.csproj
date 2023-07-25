@@ -66,7 +66,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Penumbra\OtterGui\OtterGui.csproj" />
-    <ProjectReference Include="..\..\Penumbra\Penumbra.GameData\Penumbra.GameData.csproj" />
+    <ProjectReference Include="..\Penumbra.GameData\Penumbra.GameData.csproj" />
+    <ProjectReference Include="..\OtterGui\OtterGui.csproj" />
   </ItemGroup>
 </Project>

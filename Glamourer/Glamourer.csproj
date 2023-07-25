@@ -83,10 +83,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Penumbra\OtterGui\OtterGui.csproj" />
+    <ProjectReference Include="..\OtterGui\OtterGui.csproj" />
     <ProjectReference Include="..\Glamourer.GameData\Glamourer.GameData.csproj" />
-    <ProjectReference Include="..\..\Penumbra\Penumbra.Api\Penumbra.Api.csproj" />
-    <ProjectReference Include="..\..\Penumbra\Penumbra.GameData\Penumbra.GameData.csproj" />
+    <ProjectReference Include="..\Penumbra.Api\Penumbra.Api.csproj" />
+    <ProjectReference Include="..\Penumbra.String\Penumbra.string.csproj" />
+    <ProjectReference Include="..\Penumbra.GameData\Penumbra.GameData.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Dalamud.ContextMenu" Version="1.2.3" />
   </ItemGroup>
