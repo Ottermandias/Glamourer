@@ -45,28 +45,29 @@ public partial class GlamourerIpc
 
 
     public void ApplyAll(string base64, string characterName)
-        => ApplyDesign(_designConverter.FromBase64(base64, true, true), FindActors(characterName));
+        => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(characterName), version);
 
     public void ApplyAllToCharacter(string base64, Character? character)
-        => ApplyDesign(_designConverter.FromBase64(base64, true, true), FindActors(character));
+        => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(character), version);
 
     public void ApplyOnlyEquipment(string base64, string characterName)
-        => ApplyDesign(_designConverter.FromBase64(base64, false, true), FindActors(characterName));
+        => ApplyDesign(_designConverter.FromBase64(base64, false, true, out var version), FindActors(characterName), version);
 
     public void ApplyOnlyEquipmentToCharacter(string base64, Character? character)
-        => ApplyDesign(_designConverter.FromBase64(base64, false, true), FindActors(character));
+        => ApplyDesign(_designConverter.FromBase64(base64, false, true, out var version), FindActors(character), version);
 
     public void ApplyOnlyCustomization(string base64, string characterName)
-        => ApplyDesign(_designConverter.FromBase64(base64, true, false), FindActors(characterName));
+        => ApplyDesign(_designConverter.FromBase64(base64, true, false, out var version), FindActors(characterName), version);
 
     public void ApplyOnlyCustomizationToCharacter(string base64, Character? character)
-        => ApplyDesign(_designConverter.FromBase64(base64, true, false), FindActors(character));
+        => ApplyDesign(_designConverter.FromBase64(base64, true, false, out var version), FindActors(character), version);
 
-    private void ApplyDesign(DesignBase? design, IEnumerable<ActorIdentifier> actors)
+    private void ApplyDesign(DesignBase? design, IEnumerable<ActorIdentifier> actors, byte version)
     {
         if (design == null)
             return;
 
+        var hasModelId = version >= 3;
         _objects.Update();
         foreach (var id in actors)
         {
@@ -77,7 +78,7 @@ public partial class GlamourerIpc
                     continue;
             }
 
-            if (state.CanUnlock(0xDEADBEEF))
+            if ((hasModelId || state.ModelData.ModelId == 0) &&state.CanUnlock(0xDEADBEEF))
             {
                 _stateManager.ApplyDesign(design, state, StateChanged.Source.Ipc, 0xDEADBEEF);
                 state.Lock(0xDEADBEEF);

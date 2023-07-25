@@ -339,7 +339,7 @@ public class DesignPanel
         try
         {
             var text   = ImGui.GetClipboardText();
-            var design = _converter.FromBase64(text, true, true) ?? throw new Exception("The clipboard did not contain valid data.");
+            var design = _converter.FromBase64(text, true, true, out _) ?? throw new Exception("The clipboard did not contain valid data.");
             _manager.ApplyDesign(_selector.Selected!, design);
         }
         catch (Exception ex)

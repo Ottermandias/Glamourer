@@ -1038,7 +1038,7 @@ public unsafe class DebugTab : ITab
                 _version          = _clipboardData.Decompress(out _dataUncompressed);
                 _textUncompressed = Encoding.UTF8.GetString(_dataUncompressed);
                 _json             = JObject.Parse(_textUncompressed);
-                _tmpDesign        = _designConverter.FromBase64(_clipboardText, true, true);
+                _tmpDesign        = _designConverter.FromBase64(_clipboardText, true, true, out _);
             }
             catch (Exception ex)
             {

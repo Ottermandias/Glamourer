@@ -61,14 +61,15 @@ public class DesignConverter
         return design;
     }
 
-    public DesignBase? FromBase64(string base64, bool customize, bool equip)
+    public DesignBase? FromBase64(string base64, bool customize, bool equip, out byte version)
     {
-        var bytes = System.Convert.FromBase64String(base64);
-
         DesignBase ret;
+        version = 0;
         try
         {
-            switch (bytes[0])
+            var bytes = System.Convert.FromBase64String(base64);
+            version = bytes[0];
+            switch (version)
             {
                 case (byte)'{':
                     var jObj1 = JObject.Parse(Encoding.UTF8.GetString(bytes));
@@ -82,7 +83,7 @@ public class DesignConverter
                     ret.MigrateBase64(_customize, _items, base64);
                     break;
                 case Version:
-                    var version = bytes.DecompressToString(out var decompressed);
+                    version = bytes.DecompressToString(out var decompressed);
                     var jObj2   = JObject.Parse(decompressed);
                     Debug.Assert(version == Version);
                     ret = jObj2["Identifier"] != null

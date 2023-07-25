@@ -178,7 +178,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
 
         if (_clipboardText != null)
         {
-            var design = _converter.FromBase64(_clipboardText, true, true);
+            var design = _converter.FromBase64(_clipboardText, true, true, out _);
             if (design is Design d)
                 _designManager.CreateClone(d, _newName);
             else if (design != null)
