@@ -121,7 +121,7 @@ namespace Glamourer.Gui
         private void DrawTargetPlayerButton()
         {
             if (ImGui.Button("Target Player"))
-                Dalamud.Targets.SetTarget(_player);
+                Dalamud.Targets.Target = _player;
         }
 
         private void DrawApplyToPlayerButton(CharacterSave save)

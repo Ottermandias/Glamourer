@@ -5,7 +5,6 @@ using System.Linq;
 using Dalamud.Logging;
 using Glamourer.FileSystem;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Designs;
 
