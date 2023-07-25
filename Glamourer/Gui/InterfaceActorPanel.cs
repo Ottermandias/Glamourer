@@ -232,7 +232,7 @@ namespace Glamourer.Gui
                 if (!ImGui.Selectable($"{id:D6}##models", id == currentModel) || id == currentModel)
                     continue;
 
-                _player!.SetModelType((int) id);
+                _player!.SetModelType(id);
                 Glamourer.Penumbra.UpdateCharacters(_player!);
             }
         }

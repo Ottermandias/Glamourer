@@ -39,11 +39,13 @@ public class CharacterSaveConverter : JsonConverter
 [JsonConverter(typeof(CharacterSaveConverter))]
 public class CharacterSave
 {
-    public const byte CurrentVersion    = 2;
+    public const byte CurrentVersion    = 4;
     public const byte TotalSizeVersion1 = 1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes;
     public const byte TotalSizeVersion2 = 1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 1;
+    // Version 4 is part of the rework.
+    public const byte TotalSizeVersion4 = 1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 1 + 4;
 
-    public const byte TotalSize = TotalSizeVersion2;
+    public const byte TotalSize = TotalSizeVersion4;
 
     private readonly byte[] _bytes = new byte[TotalSize];
 
@@ -62,6 +64,21 @@ public class CharacterSave
 
     public byte Version
         => _bytes[0];
+
+    public uint ModelId
+    {
+        get => (uint)_bytes[1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 1]
+          | ((uint)_bytes[1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 1 + 1] << 8)
+          | ((uint)_bytes[1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 1 + 2] << 16)
+          | ((uint)_bytes[1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 1 + 3] << 24);
+        set
+        {
+            _bytes[1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 1] = (byte)value;
+            _bytes[1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 2] = (byte)(value >> 8);
+            _bytes[1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 3] = (byte)(value >> 16);
+            _bytes[1 + 1 + 2 + 56 + CharacterCustomization.CustomizationBytes + 4 + 4] = (byte)(value >> 24);
+        }
+    }
 
     public bool WriteCustomizations
     {
@@ -295,8 +312,9 @@ public class CharacterSave
         SetWeaponState = true;
         StateFlags     = (byte)((a.IsHatVisible() ? 0x00 : 0x01) | (a.IsVisorToggled() ? 0x10 : 0x00) | (a.IsWeaponHidden() ? 0x02 : 0x00));
 
-        IsWet = a.IsWet();
-        Alpha = a.Alpha();
+        IsWet   = a.IsWet();
+        Alpha   = a.Alpha();
+        ModelId = a.ModelType();
     }
 
 
@@ -304,6 +322,7 @@ public class CharacterSave
     {
         Glamourer.RevertableDesigns.Add(a);
 
+        a.SetModelType(ModelId);
         if (WriteCustomizations)
             Customizations.Write(a.Address);
         if (WriteEquipment != CharacterEquipMask.None)
@@ -357,8 +376,28 @@ public class CharacterSave
             case 2:
                 CheckSize(bytes.Length, TotalSizeVersion2);
                 CheckRange(2, bytes[1], 0, 0x3F);
+                oldVersion = true;
+                bytes[0]   = CurrentVersion;
+                ModelId    = 0;
+                break;
+            case 3:
+                throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tVersion 3 is only supported by the rework.");
+            case CurrentVersion:
+                CheckSize(bytes.Length, TotalSizeVersion4);
+                CheckRange(2, bytes[1], 0, 0x3F);
                 oldVersion = false;
                 break;
+            // This is a compatibility version between old glamourer and new glamourer,
+            // where new glamourer sends the byte array for old in front of its own.
+            case 5:
+                if (bytes.Length < TotalSizeVersion4)
+                    throw new Exception(
+                        $"Can not parse Base64 string into CharacterSave:\n\tInvalid size {bytes.Length} instead of at least {TotalSizeVersion4}.");
+                CheckRange(2, bytes[1], 0, 0x3F);
+                oldVersion = false;
+                CheckCharacterMask(bytes[2], bytes[3]);
+                bytes.AsSpan(0, TotalSizeVersion4).CopyTo(_bytes.AsSpan());
+                return;
             default: throw new Exception($"Can not parse Base64 string into CharacterSave:\n\tInvalid Version {bytes[0]}.");
         }
 
