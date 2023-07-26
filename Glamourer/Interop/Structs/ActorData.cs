@@ -45,5 +45,5 @@ public readonly struct ActorData
     }
 
     public ActorData OnlyGPose()
-        => new(Objects.Where(o => o.Index is >= (int)ScreenActor.GPosePlayer and < (int)ScreenActor.CutsceneEnd).ToList(), Label);
+        => new(Objects.Where(o => o.IsGPoseOrCutscene).ToList(), Label);
 }

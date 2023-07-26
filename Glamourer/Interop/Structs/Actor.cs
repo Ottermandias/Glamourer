@@ -42,6 +42,9 @@ public readonly unsafe struct Actor : IEquatable<Actor>
     public static implicit operator nint(Actor actor)
         => actor.Address;
 
+    public bool IsGPoseOrCutscene
+        => Index is >= (int)ScreenActor.CutsceneStart and < (int)ScreenActor.CutsceneEnd;
+
     public ActorIdentifier GetIdentifier(ActorManager actors)
         => actors.FromObject(AsObject, out _, true, true, false);
 

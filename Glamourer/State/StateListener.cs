@@ -37,6 +37,7 @@ public class StateListener : IDisposable
     private readonly FunModule                 _funModule;
     private readonly HumanModelList            _humans;
     private readonly MovedEquipment            _movedEquipment;
+    private readonly GPoseService              _gpose;
 
     private ActorIdentifier _creatingIdentifier = ActorIdentifier.Invalid;
     private ActorState?     _creatingState;
@@ -51,7 +52,7 @@ public class StateListener : IDisposable
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
-        StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects)
+        StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gpose)
     {
         _manager            = manager;
         _items              = items;
@@ -69,6 +70,7 @@ public class StateListener : IDisposable
         _applier            = applier;
         _movedEquipment     = movedEquipment;
         _objects            = objects;
+        _gpose              = gpose;
 
         if (Enabled)
             Subscribe();
@@ -248,7 +250,7 @@ public class StateListener : IDisposable
         {
             // Only allow overwriting identical weapons
             var newWeapon = state.ModelData.Weapon(slot);
-            if (baseType is FullEquipType.Unknown || baseType == state.ModelData.Item(slot).Type)
+            if (baseType is FullEquipType.Unknown || baseType == state.ModelData.Item(slot).Type || _gpose.InGPose && actor.IsGPoseOrCutscene)
                 actorWeapon = newWeapon;
             else if (actorWeapon.Set.Value != 0)
                 actorWeapon = actorWeapon.With(newWeapon.Stain);
