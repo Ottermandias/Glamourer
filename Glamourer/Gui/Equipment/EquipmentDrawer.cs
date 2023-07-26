@@ -64,10 +64,10 @@ public class EquipmentDrawer
         _iconSize    = new Vector2(2 * ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y);
         _comboLength = DefaultWidth * ImGuiHelpers.GlobalScale;
         if (_requiredComboWidthUnscaled == 0)
-        {
-            _requiredComboWidthUnscaled = _items.ItemService.AwaitedService.AllItems(true).Concat(_items.ItemService.AwaitedService.AllItems(false))
-                    .Max(i => ImGui.CalcTextSize($"{i.Item2.Name} ({i.Item2.ModelString})").X) / ImGuiHelpers.GlobalScale;
-        }
+            _requiredComboWidthUnscaled = _items.ItemService.AwaitedService.AllItems(true)
+                    .Concat(_items.ItemService.AwaitedService.AllItems(false))
+                    .Max(i => ImGui.CalcTextSize($"{i.Item2.Name} ({i.Item2.ModelString})").X)
+              / ImGuiHelpers.GlobalScale;
 
         _requiredComboWidth = _requiredComboWidthUnscaled * ImGuiHelpers.GlobalScale;
     }
@@ -107,14 +107,15 @@ public class EquipmentDrawer
     }
 
     public DataChange DrawWeapons(in DesignData designData, out EquipItem rMainhand, out EquipItem rOffhand, out StainId rMainhandStain,
-        out StainId rOffhandStain, EquipFlag? cApply, out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand,
-        out bool rApplyOffhandStain, bool locked)
+        out StainId rOffhandStain, EquipFlag? cApply, bool allWeapons, out bool rApplyMainhand, out bool rApplyMainhandStain,
+        out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
         => DrawWeapons(designData.Item(EquipSlot.MainHand), out rMainhand, designData.Item(EquipSlot.OffHand), out rOffhand,
-            designData.Stain(EquipSlot.MainHand),           out rMainhandStain, designData.Stain(EquipSlot.OffHand), out rOffhandStain, cApply,
-            out rApplyMainhand,                             out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked);
+            designData.Stain(EquipSlot.MainHand), out rMainhandStain, designData.Stain(EquipSlot.OffHand), out rOffhandStain, cApply,
+            allWeapons, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked);
 
     public DataChange DrawWeapons(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
         StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
+        bool allWeapons,
         out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
     {
         if (cMainhand.ModelId.Value == 0)
@@ -130,7 +131,6 @@ public class EquipmentDrawer
             return DataChange.None;
         }
 
-        var allWeapons = cApply.HasValue;
         if (_config.HideApplyCheckmarks)
             cApply = null;
 
@@ -199,7 +199,7 @@ public class EquipmentDrawer
 
         label = combo.Label;
         using var disabled = ImRaii.Disabled(locked);
-        var       change   = combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth);
+        var change = combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth);
         if (change)
             weapon = combo.CurrentSelection;
 
@@ -235,7 +235,7 @@ public class EquipmentDrawer
         label = combo.Label;
         armor = current;
         using var disabled = ImRaii.Disabled(locked);
-        var       change   = combo.Draw(armor.Name, armor.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth);
+        var change = combo.Draw(armor.Name, armor.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth);
         if (change)
             armor = combo.CurrentSelection;
 

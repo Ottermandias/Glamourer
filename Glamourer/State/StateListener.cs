@@ -269,7 +269,7 @@ public class StateListener : IDisposable
                 return false;
 
             var offhand = actor.GetOffhand();
-            return offhand.Variant == 0 && armor.Set.Value == offhand.Set.Value;
+            return offhand.Variant == 0 && offhand.Set.Value != 0 && armor.Set.Value == offhand.Set.Value;
         }
 
         var actorArmor = actor.GetArmor(slot);

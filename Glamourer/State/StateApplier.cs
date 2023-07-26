@@ -5,6 +5,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Penumbra.Api.Enums;
+using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -69,9 +70,7 @@ public class StateApplier
 
             var flags = Customize.Compare(mdl.GetCustomize(), customize);
             if (!flags.RequiresRedraw() || !mdl.IsHuman)
-            {
                 _changeCustomize.UpdateCustomize(mdl, customize.Data);
-            }
             else
                 _penumbra.RedrawObject(actor, RedrawType.Redraw);
         }
@@ -165,11 +164,15 @@ public class StateApplier
     }
 
     /// <inheritdoc cref="ChangeWeapon(ActorData,EquipSlot,EquipItem,StainId)"/>
-    public ActorData ChangeWeapon(ActorState state, EquipSlot slot, bool apply)
+    public ActorData ChangeWeapon(ActorState state, EquipSlot slot, bool apply, bool onlyGPose)
     {
         var data = GetData(state);
         if (apply)
+        {
+            if (onlyGPose)
+                data.Objects.RemoveAll(a => a.Index is < (int)ScreenActor.GPosePlayer or >= (int)ScreenActor.CutsceneEnd);
             ChangeWeapon(data, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
+        }
 
         return data;
     }
@@ -185,11 +188,15 @@ public class StateApplier
     }
 
     /// <inheritdoc cref="ChangeMainhand(ActorData,EquipItem,StainId)"/>
-    public ActorData ChangeMainhand(ActorState state, bool apply)
+    public ActorData ChangeMainhand(ActorState state, bool apply, bool onlyGPose)
     {
         var data = GetData(state);
         if (apply)
+        {
+            if (onlyGPose)
+                data.Objects.RemoveAll(a => a.Index is < (int)ScreenActor.GPosePlayer or >= (int)ScreenActor.CutsceneEnd);
             ChangeMainhand(data, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
+        }
 
         return data;
     }
@@ -203,11 +210,16 @@ public class StateApplier
     }
 
     /// <inheritdoc cref="ChangeOffhand(ActorData,EquipItem,StainId)"/>
-    public ActorData ChangeOffhand(ActorState state, bool apply)
+    public ActorData ChangeOffhand(ActorState state, bool apply, bool onlyGPose)
     {
         var data = GetData(state);
         if (apply)
+        {
+            if (onlyGPose)
+                data.Objects.RemoveAll(a => a.Index is < (int)ScreenActor.GPosePlayer or >= (int)ScreenActor.CutsceneEnd);
             ChangeOffhand(data, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
+        }
+
         return data;
     }
 

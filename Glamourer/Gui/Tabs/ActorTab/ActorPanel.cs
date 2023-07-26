@@ -2,6 +2,8 @@
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -157,9 +159,8 @@ public class ActorPanel
             }
         }
 
-        var weaponChanges = _equipmentDrawer.DrawWeapons(_state!.ModelData, out var newMainhand, out var newOffhand,
-            out var newMainhandStain,
-            out var newOffhandStain, null, out _, out _, out _, out _, _state.IsLocked);
+        var weaponChanges = _equipmentDrawer.DrawWeapons(_state!.ModelData, out var newMainhand, out var newOffhand, out var newMainhandStain,
+            out var newOffhandStain, null, GameMain.IsInGPose(), out _, out _, out _, out _, _state.IsLocked);
 
         if (weaponChanges.HasFlag(DataChange.Item))
             if (weaponChanges.HasFlag(DataChange.Stain))

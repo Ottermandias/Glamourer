@@ -122,6 +122,11 @@ public class StateEditor
         if (!state.CanUnlock(key))
             return false;
 
+        // Can not change weapon type from expected type in state.
+        if (slot is EquipSlot.MainHand && item.Type != state.BaseData.MainhandType
+         || slot is EquipSlot.OffHand && item.Type != state.BaseData.MainhandType.ValidOffhand())
+            return false;
+
         state.ModelData.SetItem(slot, item);
         state[slot, false] = source;
         return true;

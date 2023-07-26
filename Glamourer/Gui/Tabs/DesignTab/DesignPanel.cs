@@ -120,7 +120,7 @@ public class DesignPanel
         }
 
         var weaponChanges = _equipmentDrawer.DrawWeapons(_selector.Selected!.DesignData, out var newMainhand, out var newOffhand,
-            out var newMainhandStain, out var newOffhandStain, _selector.Selected.ApplyEquip, out var applyMain, out var applyMainStain,
+            out var newMainhandStain, out var newOffhandStain, _selector.Selected.ApplyEquip, true, out var applyMain, out var applyMainStain,
             out var applyOff, out var applyOffStain, _selector.Selected!.WriteProtected());
 
         if (weaponChanges.HasFlag(DataChange.Item))
@@ -264,7 +264,7 @@ public class DesignPanel
 
             ImGui.NewLine();
             ApplyEquip("Dyes", AutoDesign.StainFlags, true,
-                EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.MainHand).Prepend(EquipSlot.OffHand));
+                EquipSlotExtensions.FullSlots);
 
             ImGui.NewLine();
             const uint all = 0x0Fu;
