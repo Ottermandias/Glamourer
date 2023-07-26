@@ -14,7 +14,9 @@ public class GPoseService : EventWrapper<Action<bool>, GPoseService.Priority>
     private readonly ConcurrentQueue<Action> _onEnter = new();
 
     public enum Priority
-    { }
+    {
+        GlamourerIpc = int.MinValue,
+    }
 
     public bool InGPose { get; private set; } = false;
 
@@ -22,6 +24,7 @@ public class GPoseService : EventWrapper<Action<bool>, GPoseService.Priority>
         : base(nameof(GPoseService))
     {
         _framework        =  framework;
+        InGPose           =  GameMain.IsInGPose();
         _framework.Update += OnFramework;
     }
 

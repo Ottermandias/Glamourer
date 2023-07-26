@@ -18,12 +18,26 @@ public partial class GlamourerIpc
     public const string LabelApplyOnlyCustomization            = "Glamourer.ApplyOnlyCustomization";
     public const string LabelApplyOnlyCustomizationToCharacter = "Glamourer.ApplyOnlyCustomizationToCharacter";
 
+    public const string LabelApplyAllLock                          = "Glamourer.ApplyAllLock";
+    public const string LabelApplyAllToCharacterLock               = "Glamourer.ApplyAllToCharacterLock";
+    public const string LabelApplyOnlyEquipmentLock                = "Glamourer.ApplyOnlyEquipmentLock";
+    public const string LabelApplyOnlyEquipmentToCharacterLock     = "Glamourer.ApplyOnlyEquipmentToCharacterLock";
+    public const string LabelApplyOnlyCustomizationLock            = "Glamourer.ApplyOnlyCustomizationLock";
+    public const string LabelApplyOnlyCustomizationToCharacterLock = "Glamourer.ApplyOnlyCustomizationToCharacterLock";
+
     private readonly ActionProvider<string, string>     _applyAllProvider;
     private readonly ActionProvider<string, Character?> _applyAllToCharacterProvider;
     private readonly ActionProvider<string, string>     _applyOnlyEquipmentProvider;
     private readonly ActionProvider<string, Character?> _applyOnlyEquipmentToCharacterProvider;
     private readonly ActionProvider<string, string>     _applyOnlyCustomizationProvider;
     private readonly ActionProvider<string, Character?> _applyOnlyCustomizationToCharacterProvider;
+
+    private readonly ActionProvider<string, string, uint>     _applyAllProviderLock;
+    private readonly ActionProvider<string, Character?, uint> _applyAllToCharacterProviderLock;
+    private readonly ActionProvider<string, string, uint>     _applyOnlyEquipmentProviderLock;
+    private readonly ActionProvider<string, Character?, uint> _applyOnlyEquipmentToCharacterProviderLock;
+    private readonly ActionProvider<string, string, uint>     _applyOnlyCustomizationProviderLock;
+    private readonly ActionProvider<string, Character?, uint> _applyOnlyCustomizationToCharacterProviderLock;
 
     public static ActionSubscriber<string, string> ApplyAllSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApplyAll);
@@ -43,26 +57,45 @@ public partial class GlamourerIpc
     public static ActionSubscriber<string, Character?> ApplyOnlyCustomizationToCharacterSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApplyOnlyCustomizationToCharacter);
 
-
     public void ApplyAll(string base64, string characterName)
-        => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(characterName), version);
+        => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(characterName), version, 0);
 
     public void ApplyAllToCharacter(string base64, Character? character)
-        => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(character), version);
+        => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(character), version, 0);
 
     public void ApplyOnlyEquipment(string base64, string characterName)
-        => ApplyDesign(_designConverter.FromBase64(base64, false, true, out var version), FindActors(characterName), version);
+        => ApplyDesign(_designConverter.FromBase64(base64, false, true, out var version), FindActors(characterName), version, 0);
 
     public void ApplyOnlyEquipmentToCharacter(string base64, Character? character)
-        => ApplyDesign(_designConverter.FromBase64(base64, false, true, out var version), FindActors(character), version);
+        => ApplyDesign(_designConverter.FromBase64(base64, false, true, out var version), FindActors(character), version, 0);
 
     public void ApplyOnlyCustomization(string base64, string characterName)
-        => ApplyDesign(_designConverter.FromBase64(base64, true, false, out var version), FindActors(characterName), version);
+        => ApplyDesign(_designConverter.FromBase64(base64, true, false, out var version), FindActors(characterName), version, 0);
 
     public void ApplyOnlyCustomizationToCharacter(string base64, Character? character)
-        => ApplyDesign(_designConverter.FromBase64(base64, true, false, out var version), FindActors(character), version);
+        => ApplyDesign(_designConverter.FromBase64(base64, true, false, out var version), FindActors(character), version, 0);
 
-    private void ApplyDesign(DesignBase? design, IEnumerable<ActorIdentifier> actors, byte version)
+
+    public void ApplyAllLock(string base64, string characterName, uint lockCode)
+        => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(characterName), version, lockCode);
+
+    public void ApplyAllToCharacterLock(string base64, Character? character, uint lockCode)
+        => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(character), version, lockCode);
+
+    public void ApplyOnlyEquipmentLock(string base64, string characterName, uint lockCode)
+        => ApplyDesign(_designConverter.FromBase64(base64, false, true, out var version), FindActors(characterName), version, lockCode);
+
+    public void ApplyOnlyEquipmentToCharacterLock(string base64, Character? character, uint lockCode)
+        => ApplyDesign(_designConverter.FromBase64(base64, false, true, out var version), FindActors(character), version, lockCode);
+
+    public void ApplyOnlyCustomizationLock(string base64, string characterName, uint lockCode)
+        => ApplyDesign(_designConverter.FromBase64(base64, true, false, out var version), FindActors(characterName), version, lockCode);
+
+    public void ApplyOnlyCustomizationToCharacterLock(string base64, Character? character, uint lockCode)
+        => ApplyDesign(_designConverter.FromBase64(base64, true, false, out var version), FindActors(character), version, lockCode);
+
+
+    private void ApplyDesign(DesignBase? design, IEnumerable<ActorIdentifier> actors, byte version, uint lockCode)
     {
         if (design == null)
             return;
@@ -78,10 +111,10 @@ public partial class GlamourerIpc
                     continue;
             }
 
-            if ((hasModelId || state.ModelData.ModelId == 0) &&state.CanUnlock(0xDEADBEEF))
+            if ((hasModelId || state.ModelData.ModelId == 0) && state.CanUnlock(lockCode))
             {
-                _stateManager.ApplyDesign(design, state, StateChanged.Source.Ipc, 0xDEADBEEF);
-                state.Lock(0xDEADBEEF);
+                _stateManager.ApplyDesign(design, state, StateChanged.Source.Ipc, lockCode);
+                state.Lock(lockCode);
             }
         }
     }

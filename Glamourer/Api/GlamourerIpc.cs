@@ -17,7 +17,7 @@ namespace Glamourer.Api;
 public partial class GlamourerIpc : IDisposable
 {
     public const int CurrentApiVersionMajor = 0;
-    public const int CurrentApiVersionMinor = 2;
+    public const int CurrentApiVersionMinor = 3;
 
     private readonly StateManager    _stateManager;
     private readonly ObjectManager   _objects;
@@ -25,12 +25,13 @@ public partial class GlamourerIpc : IDisposable
     private readonly DesignConverter _designConverter;
 
     public GlamourerIpc(DalamudPluginInterface pi, StateManager stateManager, ObjectManager objects, ActorService actors,
-        DesignConverter designConverter, StateChanged stateChangedEvent)
+        DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose)
     {
         _stateManager        = stateManager;
         _objects             = objects;
         _actors              = actors;
         _designConverter     = designConverter;
+        _gPose               = gPose;
         _stateChangedEvent   = stateChangedEvent;
         _apiVersionProvider  = new FuncProvider<int>(pi, LabelApiVersion, ApiVersion);
         _apiVersionsProvider = new FuncProvider<(int Major, int Minor)>(pi, LabelApiVersions, ApiVersions);
@@ -48,12 +49,28 @@ public partial class GlamourerIpc : IDisposable
         _applyOnlyCustomizationToCharacterProvider =
             new ActionProvider<string, Character?>(pi, LabelApplyOnlyCustomizationToCharacter, ApplyOnlyCustomizationToCharacter);
 
-        _revertProvider          = new ActionProvider<string>(pi, LabelRevert, Revert);
-        _revertCharacterProvider = new ActionProvider<Character?>(pi, LabelRevertCharacter, RevertCharacter);
+        _applyAllProviderLock = new ActionProvider<string, string, uint>(pi, LabelApplyAllLock, ApplyAllLock);
+        _applyAllToCharacterProviderLock =
+            new ActionProvider<string, Character?, uint>(pi, LabelApplyAllToCharacterLock, ApplyAllToCharacterLock);
+        _applyOnlyEquipmentProviderLock = new ActionProvider<string, string, uint>(pi, LabelApplyOnlyEquipmentLock, ApplyOnlyEquipmentLock);
+        _applyOnlyEquipmentToCharacterProviderLock =
+            new ActionProvider<string, Character?, uint>(pi, LabelApplyOnlyEquipmentToCharacterLock, ApplyOnlyEquipmentToCharacterLock);
+        _applyOnlyCustomizationProviderLock =
+            new ActionProvider<string, string, uint>(pi, LabelApplyOnlyCustomizationLock, ApplyOnlyCustomizationLock);
+        _applyOnlyCustomizationToCharacterProviderLock =
+            new ActionProvider<string, Character?, uint>(pi, LabelApplyOnlyCustomizationToCharacterLock, ApplyOnlyCustomizationToCharacterLock);
+
+        _revertProvider              = new ActionProvider<string>(pi, LabelRevert, Revert);
+        _revertCharacterProvider     = new ActionProvider<Character?>(pi, LabelRevertCharacter, RevertCharacter);
+        _revertProviderLock          = new ActionProvider<string, uint>(pi, LabelRevertLock, RevertLock);
+        _revertCharacterProviderLock = new ActionProvider<Character?, uint>(pi, LabelRevertCharacterLock, RevertCharacterLock);
+        _unlockProvider              = new FuncProvider<Character?, uint, bool>(pi, LabelUnlock, Unlock);
 
         _stateChangedProvider = new EventProvider<StateChanged.Type, nint, Lazy<string>>(pi, LabelStateChanged);
+        _gPoseChangedProvider = new EventProvider<bool>(pi, LabelGPoseChanged);
 
         _stateChangedEvent.Subscribe(OnStateChanged, StateChanged.Priority.GlamourerIpc);
+        _gPose.Subscribe(OnGPoseChanged, GPoseService.Priority.GlamourerIpc);
     }
 
     public void Dispose()
@@ -70,11 +87,23 @@ public partial class GlamourerIpc : IDisposable
         _applyOnlyEquipmentToCharacterProvider.Dispose();
         _applyOnlyCustomizationProvider.Dispose();
         _applyOnlyCustomizationToCharacterProvider.Dispose();
+        _applyAllProviderLock.Dispose();
+        _applyAllToCharacterProviderLock.Dispose();
+        _applyOnlyEquipmentProviderLock.Dispose();
+        _applyOnlyEquipmentToCharacterProviderLock.Dispose();
+        _applyOnlyCustomizationProviderLock.Dispose();
+        _applyOnlyCustomizationToCharacterProviderLock.Dispose();
+
         _revertProvider.Dispose();
         _revertCharacterProvider.Dispose();
+        _revertProviderLock.Dispose();
+        _revertCharacterProviderLock.Dispose();
+        _unlockProvider.Dispose();
 
         _stateChangedEvent.Unsubscribe(OnStateChanged);
         _stateChangedProvider.Dispose();
+        _gPose.Unsubscribe(OnGPoseChanged);
+        _gPoseChangedProvider.Dispose();
     }
 
     private IEnumerable<ActorIdentifier> FindActors(string actorName)
