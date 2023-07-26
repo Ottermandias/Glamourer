@@ -21,7 +21,6 @@ public class ContextMenuService : IDisposable
     private readonly StateManager       _state;
     private readonly ObjectManager      _objects;
     private readonly GameGui            _gameGui;
-    private readonly Configuration      _config;
 
     public ContextMenuService(ItemManager items, StateManager state, ObjectManager objects, GameGui gameGui, Configuration config)
     {
@@ -29,8 +28,8 @@ public class ContextMenuService : IDisposable
         _state   = state;
         _objects = objects;
         _gameGui = gameGui;
-        _config  = config;
-        Enable();
+        if (config.EnableGameContextMenu)
+            Enable();
     }
 
     public void Enable()
