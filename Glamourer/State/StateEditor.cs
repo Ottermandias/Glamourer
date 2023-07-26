@@ -14,12 +14,14 @@ public class StateEditor
     private readonly ItemManager          _items;
     private readonly CustomizationService _customizations;
     private readonly HumanModelList       _humans;
+    private readonly GPoseService         _gPose;
 
-    public StateEditor(CustomizationService customizations, HumanModelList humans, ItemManager items)
+    public StateEditor(CustomizationService customizations, HumanModelList humans, ItemManager items, GPoseService gPose)
     {
         _customizations = customizations;
         _humans         = humans;
         _items          = items;
+        _gPose          = gPose;
     }
 
     /// <summary> Change the model id. If the actor is changed from a human to another human, customize and equipData are unused. </summary>
@@ -124,8 +126,18 @@ public class StateEditor
 
         // Can not change weapon type from expected type in state.
         if (slot is EquipSlot.MainHand && item.Type != state.BaseData.MainhandType
-         || slot is EquipSlot.OffHand && item.Type != state.BaseData.MainhandType.ValidOffhand())
-            return false;
+         || slot is EquipSlot.OffHand && item.Type != state.BaseData.OffhandType)
+        {
+            if (!_gPose.InGPose)
+                return false;
+
+            var old = oldItem;
+            _gPose.AddActionOnLeave(() =>
+            {
+                if (old.Type == state.BaseData.Item(slot).Type)
+                    ChangeItem(state, slot, old, state[slot, false], out _, key);
+            });
+        }
 
         state.ModelData.SetItem(slot, item);
         state[slot, false] = source;
@@ -143,8 +155,19 @@ public class StateEditor
 
         // Can not change weapon type from expected type in state.
         if (slot is EquipSlot.MainHand && item.Type != state.BaseData.MainhandType
-         || slot is EquipSlot.OffHand && item.Type != state.BaseData.MainhandType.ValidOffhand())
-            return false;
+         || slot is EquipSlot.OffHand && item.Type != state.BaseData.OffhandType)
+        {
+            if (!_gPose.InGPose)
+                return false;
+
+            var old  = oldItem;
+            var oldS = oldStain;
+            _gPose.AddActionOnLeave(() =>
+            {
+                if (old.Type == state.BaseData.Item(slot).Type)
+                    ChangeEquip(state, slot, old, oldS, state[slot, false], out _, out _, key);
+            });
+        }
 
         state.ModelData.SetItem(slot, item);
         state.ModelData.SetStain(slot, stain);
@@ -170,11 +193,12 @@ public class StateEditor
     {
         (var setter, oldValue) = index switch
         {
-            ActorState.MetaIndex.Wetness     => ((Func<bool, bool>) (v => state.ModelData.SetIsWet(v)), state.ModelData.IsWet()),
-            ActorState.MetaIndex.HatState    => ((Func<bool, bool>) (v => state.ModelData.SetHatVisible(v)), state.ModelData.IsHatVisible()),
-            ActorState.MetaIndex.VisorState  => ((Func<bool, bool>) (v => state.ModelData.SetVisor(v)), state.ModelData.IsVisorToggled()),
-            ActorState.MetaIndex.WeaponState => ((Func<bool, bool>) (v => state.ModelData.SetWeaponVisible(v)), state.ModelData.IsWeaponVisible()),
-            _                                => throw new Exception("Invalid MetaIndex."),
+            ActorState.MetaIndex.Wetness    => ((Func<bool, bool>)(v => state.ModelData.SetIsWet(v)), state.ModelData.IsWet()),
+            ActorState.MetaIndex.HatState   => ((Func<bool, bool>)(v => state.ModelData.SetHatVisible(v)), state.ModelData.IsHatVisible()),
+            ActorState.MetaIndex.VisorState => ((Func<bool, bool>)(v => state.ModelData.SetVisor(v)), state.ModelData.IsVisorToggled()),
+            ActorState.MetaIndex.WeaponState => ((Func<bool, bool>)(v => state.ModelData.SetWeaponVisible(v)),
+                state.ModelData.IsWeaponVisible()),
+            _ => throw new Exception("Invalid MetaIndex."),
         };
 
         if (!state.CanUnlock(key))

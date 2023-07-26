@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using OtterGui.Log;
+using Penumbra.GameData.Actors;
 
 namespace Glamourer.Interop.Structs;
 
@@ -36,4 +37,13 @@ public readonly struct ActorData
             ? new LazyString(() => string.Join(", ", objects.Select(o => o.ToString())))
             : new LazyString(() => invalid);
     }
+
+    private ActorData(List<Actor> objects, string label)
+    {
+        Objects = objects;
+        Label   = label;
+    }
+
+    public ActorData OnlyGPose()
+        => new(Objects.Where(o => o.Index is >= (int)ScreenActor.GPosePlayer and < (int)ScreenActor.CutsceneEnd).ToList(), Label);
 }

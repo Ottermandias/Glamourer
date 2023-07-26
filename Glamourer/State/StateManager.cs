@@ -13,7 +13,6 @@ using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using Penumbra.String;
 
 namespace Glamourer.State;
 
@@ -258,7 +257,8 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         var type = slot.ToIndex() < 10 ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
         var actors = type is StateChanged.Type.Equip
             ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
-            : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc, item.Type != old.Type);
+            : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc,
+                item.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}). [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(type, source, state, actors, (old, item, slot));
@@ -273,7 +273,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         var type = slot.ToIndex() < 10 ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
         var actors = type is StateChanged.Type.Equip
             ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
-            : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc, item.Type != old.Type);
+            : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc, item.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}) and its stain from {oldStain.Value} to {stain.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(type,                    source, state, actors, (old, item, slot));
@@ -401,8 +401,10 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             _applier.ChangeCustomize(actors, state.ModelData.Customize);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
                 _applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), state.ModelData.IsHatVisible());
-            foreach (var slot in EquipSlotExtensions.WeaponSlots)
-                _applier.ChangeWeapon(actors, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
+            var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
+            _applier.ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
+            var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? actors.OnlyGPose() : actors;
+            _applier.ChangeOffhand(offhandActors, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
         }
 
         if (state.ModelData.IsHuman)

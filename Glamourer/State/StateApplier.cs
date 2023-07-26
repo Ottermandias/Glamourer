@@ -167,12 +167,11 @@ public class StateApplier
     public ActorData ChangeWeapon(ActorState state, EquipSlot slot, bool apply, bool onlyGPose)
     {
         var data = GetData(state);
+        if (onlyGPose)
+            data = data.OnlyGPose();
+
         if (apply)
-        {
-            if (onlyGPose)
-                data.Objects.RemoveAll(a => a.Index is < (int)ScreenActor.GPosePlayer or >= (int)ScreenActor.CutsceneEnd);
             ChangeWeapon(data, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
-        }
 
         return data;
     }
@@ -187,40 +186,12 @@ public class StateApplier
             _weapon.LoadWeapon(actor, slot, weapon.Weapon().With(stain));
     }
 
-    /// <inheritdoc cref="ChangeMainhand(ActorData,EquipItem,StainId)"/>
-    public ActorData ChangeMainhand(ActorState state, bool apply, bool onlyGPose)
-    {
-        var data = GetData(state);
-        if (apply)
-        {
-            if (onlyGPose)
-                data.Objects.RemoveAll(a => a.Index is < (int)ScreenActor.GPosePlayer or >= (int)ScreenActor.CutsceneEnd);
-            ChangeMainhand(data, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
-        }
-
-        return data;
-    }
-
     /// <summary> Apply a weapon to the offhand. </summary>
     public void ChangeOffhand(ActorData data, EquipItem weapon, StainId stain)
     {
         stain = weapon.ModelId.Value == 0 ? 0 : stain;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
             _weapon.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stain));
-    }
-
-    /// <inheritdoc cref="ChangeOffhand(ActorData,EquipItem,StainId)"/>
-    public ActorData ChangeOffhand(ActorState state, bool apply, bool onlyGPose)
-    {
-        var data = GetData(state);
-        if (apply)
-        {
-            if (onlyGPose)
-                data.Objects.RemoveAll(a => a.Index is < (int)ScreenActor.GPosePlayer or >= (int)ScreenActor.CutsceneEnd);
-            ChangeOffhand(data, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
-        }
-
-        return data;
     }
 
     /// <summary> Change the visor state of actors only on the draw object. </summary>
