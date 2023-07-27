@@ -1,5 +1,4 @@
-﻿using System;
-using Glamourer.Automation;
+﻿using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop;
@@ -11,6 +10,7 @@ using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using System;
 
 namespace Glamourer.State;
 
@@ -27,6 +27,7 @@ public class StateListener : IDisposable
     private readonly StateManager              _manager;
     private readonly StateApplier              _applier;
     private readonly ItemManager               _items;
+    private readonly CustomizationService      _customizations;
     private readonly PenumbraService           _penumbra;
     private readonly SlotUpdating              _slotUpdating;
     private readonly WeaponLoading             _weaponLoading;
@@ -37,7 +38,8 @@ public class StateListener : IDisposable
     private readonly FunModule                 _funModule;
     private readonly HumanModelList            _humans;
     private readonly MovedEquipment            _movedEquipment;
-    private readonly GPoseService              _gpose;
+    private readonly GPoseService              _gPose;
+    private readonly ChangeCustomizeService    _changeCustomizeService;
 
     private ActorIdentifier _creatingIdentifier = ActorIdentifier.Invalid;
     private ActorState?     _creatingState;
@@ -52,25 +54,28 @@ public class StateListener : IDisposable
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
-        StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gpose)
+        StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gPose,
+        ChangeCustomizeService changeCustomizeService, CustomizationService customizations)
     {
-        _manager            = manager;
-        _items              = items;
-        _penumbra           = penumbra;
-        _actors             = actors;
-        _config             = config;
-        _slotUpdating       = slotUpdating;
-        _weaponLoading      = weaponLoading;
-        _visorState         = visorState;
-        _weaponVisibility   = weaponVisibility;
-        _headGearVisibility = headGearVisibility;
-        _autoDesignApplier  = autoDesignApplier;
-        _funModule          = funModule;
-        _humans             = humans;
-        _applier            = applier;
-        _movedEquipment     = movedEquipment;
-        _objects            = objects;
-        _gpose              = gpose;
+        _manager                = manager;
+        _items                  = items;
+        _penumbra               = penumbra;
+        _actors                 = actors;
+        _config                 = config;
+        _slotUpdating           = slotUpdating;
+        _weaponLoading          = weaponLoading;
+        _visorState             = visorState;
+        _weaponVisibility       = weaponVisibility;
+        _headGearVisibility     = headGearVisibility;
+        _autoDesignApplier      = autoDesignApplier;
+        _funModule              = funModule;
+        _humans                 = humans;
+        _applier                = applier;
+        _movedEquipment         = movedEquipment;
+        _objects                = objects;
+        _gPose                  = gPose;
+        _changeCustomizeService = changeCustomizeService;
+        _customizations         = customizations;
 
         if (Enabled)
             Subscribe();
@@ -132,15 +137,7 @@ public class StateListener : IDisposable
                 case UpdateState.NoChange:
 
                     modelId = _creatingState.ModelData.ModelId;
-                    switch (UpdateBaseData(actor, _creatingState, customize))
-                    {
-                        case UpdateState.Transformed: break;
-                        case UpdateState.Change:      break;
-                        case UpdateState.NoChange:
-                            customize = _creatingState.ModelData.Customize;
-                            break;
-                    }
-
+                    UpdateCustomize(actor, _creatingState, ref customize, true);
                     foreach (var slot in EquipSlotExtensions.EqdpSlots)
                         HandleEquipSlot(actor, _creatingState, slot, ref ((CharacterArmor*)equipDataPtr)[slot.ToIndex()]);
 
@@ -153,6 +150,54 @@ public class StateListener : IDisposable
         _funModule.ApplyFun(actor, new Span<CharacterArmor>((void*)equipDataPtr, 10), ref customize);
         if (modelId == 0)
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
+    }
+
+    private unsafe void OnCustomizeChange(Model model, Ref<Customize> customize)
+    {
+        if (!model.IsHuman)
+            return;
+
+        var actor = _penumbra.GameObjectFromDrawObject(model);
+        if (!actor.Identifier(_actors.AwaitedService, out var identifier)
+         || !_manager.TryGetValue(identifier, out var state))
+            return;
+
+        UpdateCustomize(actor, state, ref customize.Value, false);
+    }
+
+    private void UpdateCustomize(Actor actor, ActorState state, ref Customize customize, bool checkTransform)
+    {
+        switch (UpdateBaseData(actor, state, customize, checkTransform))
+        {
+            case UpdateState.Transformed: break;
+            case UpdateState.Change:
+                var set   = _customizations.AwaitedService.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
+                var model = state.ModelData.Customize;
+                foreach (var index in CustomizationExtensions.AllBasic)
+                {
+                    if (state[index] is not StateChanged.Source.Fixed)
+                    {
+                        var newValue = customize[index];
+                        var oldValue = model[index];
+                        if (newValue != oldValue)
+                        {
+                            if (set.Validate(index, newValue, out _, model.Face))
+                                _manager.ChangeCustomize(state, index, newValue, StateChanged.Source.Game);
+                            else
+                                customize[index] = oldValue;
+                        }
+                    }
+                    else
+                    {
+                        customize[index] = model[index];
+                    }
+                }
+
+                break;
+            case UpdateState.NoChange:
+                customize = state.ModelData.Customize;
+                break;
+        }
     }
 
     /// <summary>
@@ -250,7 +295,7 @@ public class StateListener : IDisposable
         {
             // Only allow overwriting identical weapons
             var newWeapon = state.ModelData.Weapon(slot);
-            if (baseType is FullEquipType.Unknown || baseType == state.ModelData.Item(slot).Type || _gpose.InGPose && actor.IsGPoseOrCutscene)
+            if (baseType is FullEquipType.Unknown || baseType == state.ModelData.Item(slot).Type || _gPose.InGPose && actor.IsGPoseOrCutscene)
                 actorWeapon = newWeapon;
             else if (actorWeapon.Set.Value != 0)
                 actorWeapon = actorWeapon.With(newWeapon.Stain);
@@ -385,10 +430,10 @@ public class StateListener : IDisposable
     /// only if we kept track of state of someone who went to the aesthetician,
     /// or if they used other tools to change things.
     /// </summary>
-    private UpdateState UpdateBaseData(Actor actor, ActorState state, Customize customize)
+    private UpdateState UpdateBaseData(Actor actor, ActorState state, Customize customize, bool checkTransform)
     {
         // Customize array does not agree between game object and draw object => transformation.
-        if (!actor.GetCustomize().Equals(customize))
+        if (checkTransform && !actor.GetCustomize().Equals(customize))
             return UpdateState.Transformed;
 
         // Customize array did not change to stored state.
@@ -516,6 +561,7 @@ public class StateListener : IDisposable
         _visorState.Subscribe(OnVisorChange, VisorStateChanged.Priority.StateListener);
         _headGearVisibility.Subscribe(OnHeadGearVisibilityChange, HeadGearVisibilityChanged.Priority.StateListener);
         _weaponVisibility.Subscribe(OnWeaponVisibilityChange, WeaponVisibilityChanged.Priority.StateListener);
+        _changeCustomizeService.Subscribe(OnCustomizeChange, ChangeCustomizeService.Priority.StateListener);
     }
 
     private void Unsubscribe()
@@ -528,6 +574,7 @@ public class StateListener : IDisposable
         _visorState.Unsubscribe(OnVisorChange);
         _headGearVisibility.Unsubscribe(OnHeadGearVisibilityChange);
         _weaponVisibility.Unsubscribe(OnWeaponVisibilityChange);
+        _changeCustomizeService.Unsubscribe(OnCustomizeChange);
     }
 
     private void OnCreatedCharacterBase(nint gameObject, string _, nint drawObject)

@@ -15,6 +15,7 @@ public class GPoseService : EventWrapper<Action<bool>, GPoseService.Priority>
 
     public enum Priority
     {
+        /// <seealso cref="Api.GlamourerIpc.OnGPoseChanged"/>
         GlamourerIpc = int.MinValue,
     }
 
