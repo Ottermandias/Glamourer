@@ -16,9 +16,10 @@ public class IdentifierDrawer
 
     private string _characterName = string.Empty;
 
-    public ActorIdentifier NpcIdentifier      { get; private set; } = ActorIdentifier.Invalid;
-    public ActorIdentifier PlayerIdentifier   { get; private set; } = ActorIdentifier.Invalid;
-    public ActorIdentifier RetainerIdentifier { get; private set; } = ActorIdentifier.Invalid;
+    public ActorIdentifier NpcIdentifier       { get; private set; } = ActorIdentifier.Invalid;
+    public ActorIdentifier PlayerIdentifier    { get; private set; } = ActorIdentifier.Invalid;
+    public ActorIdentifier RetainerIdentifier  { get; private set; } = ActorIdentifier.Invalid;
+    public ActorIdentifier MannequinIdentifier { get; private set; } = ActorIdentifier.Invalid;
 
     public IdentifierDrawer(ActorService actors, IdentifierService identifier, HumanModelList humans)
     {
@@ -52,6 +53,9 @@ public class IdentifierDrawer
     public bool CanSetRetainer
         => RetainerIdentifier.IsValid;
 
+    public bool CanSetMannequin
+        => MannequinIdentifier.IsValid;
+
     public bool CanSetNpc
         => NpcIdentifier.IsValid;
 
@@ -59,8 +63,9 @@ public class IdentifierDrawer
     {
         if (ByteString.FromString(_characterName, out var byteName))
         {
-            PlayerIdentifier   = _actors.AwaitedService.CreatePlayer(byteName, _worldCombo.CurrentSelection.Key);
-            RetainerIdentifier = _actors.AwaitedService.CreateRetainer(byteName, ActorIdentifier.RetainerType.Both);
+            PlayerIdentifier    = _actors.AwaitedService.CreatePlayer(byteName, _worldCombo.CurrentSelection.Key);
+            RetainerIdentifier  = _actors.AwaitedService.CreateRetainer(byteName, ActorIdentifier.RetainerType.Bell);
+            MannequinIdentifier = _actors.AwaitedService.CreateRetainer(byteName, ActorIdentifier.RetainerType.Mannequin);
         }
 
         NpcIdentifier = _humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc

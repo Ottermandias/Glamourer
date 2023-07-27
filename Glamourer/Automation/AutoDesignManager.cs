@@ -234,7 +234,8 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         };
         set.Designs.Add(newDesign);
         Save();
-        Glamourer.Log.Debug($"Added new associated design {design?.Identifier.ToString() ?? "Reverter"} as design {set.Designs.Count} to design set.");
+        Glamourer.Log.Debug(
+            $"Added new associated design {design?.Identifier.ToString() ?? "Reverter"} as design {set.Designs.Count} to design set.");
         _event.Invoke(AutomationChanged.Type.AddedDesign, set, set.Designs.Count - 1);
     }
 
@@ -387,7 +388,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
                 continue;
             }
 
-            var set = new AutoDesignSet(name, id)
+            var set = new AutoDesignSet(name, group)
             {
                 Enabled   = obj["Enabled"]?.ToObject<bool>() ?? false,
                 BaseState = obj["BaseState"]?.ToObject<AutoDesignSet.Base>() ?? AutoDesignSet.Base.Current,
@@ -449,6 +450,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
                 return null;
             }
         }
+
         var applicationType = (AutoDesign.Type)(jObj["ApplicationType"]?.ToObject<uint>() ?? 0);
 
         var ret = new AutoDesign()
@@ -526,7 +528,10 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             },
             IdentifierType.Retainer => new[]
             {
-                identifier.CreatePermanent(),
+                _actors.AwaitedService.CreateRetainer(identifier.PlayerName,
+                    identifier.Retainer == ActorIdentifier.RetainerType.Mannequin
+                        ? ActorIdentifier.RetainerType.Mannequin
+                        : ActorIdentifier.RetainerType.Bell).CreatePermanent(),
             },
             IdentifierType.Npc => CreateNpcs(_actors.AwaitedService, identifier),
             _                  => Array.Empty<ActorIdentifier>(),

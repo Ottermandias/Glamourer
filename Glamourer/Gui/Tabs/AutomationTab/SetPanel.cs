@@ -320,14 +320,17 @@ public class SetPanel
         _identifierDrawer.DrawWorld(200);
         _identifierDrawer.DrawName(300);
         _identifierDrawer.DrawNpcs(300);
-        if (ImGuiUtil.DrawDisabledButton("Set to Retainer", new Vector2(100, 0), string.Empty, !_identifierDrawer.CanSetRetainer))
-            _manager.ChangeIdentifier(setIndex, _identifierDrawer.RetainerIdentifier);
-        ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Set to Character", new Vector2(100, 0), string.Empty, !_identifierDrawer.CanSetPlayer))
+        if (ImGuiUtil.DrawDisabledButton("Set to Character", Vector2.Zero, string.Empty, !_identifierDrawer.CanSetPlayer))
             _manager.ChangeIdentifier(setIndex, _identifierDrawer.PlayerIdentifier);
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Set to Npc", new Vector2(100, 0), string.Empty, !_identifierDrawer.CanSetNpc))
+        if (ImGuiUtil.DrawDisabledButton("Set to Npc", Vector2.Zero, string.Empty, !_identifierDrawer.CanSetNpc))
             _manager.ChangeIdentifier(setIndex, _identifierDrawer.NpcIdentifier);
+        ImGui.SameLine();
+        if (ImGuiUtil.DrawDisabledButton("Set to Retainer", Vector2.Zero, string.Empty, !_identifierDrawer.CanSetRetainer))
+            _manager.ChangeIdentifier(setIndex, _identifierDrawer.RetainerIdentifier);
+        ImGui.SameLine();
+        if (ImGuiUtil.DrawDisabledButton("Set to Mannequin", Vector2.Zero, string.Empty, !_identifierDrawer.CanSetRetainer))
+            _manager.ChangeIdentifier(setIndex, _identifierDrawer.MannequinIdentifier);
     }
 
 
