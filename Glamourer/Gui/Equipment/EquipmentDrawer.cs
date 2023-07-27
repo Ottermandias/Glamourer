@@ -260,8 +260,11 @@ public class EquipmentDrawer
             ? _stainCombo.Draw($"##stain{slot}", stain.RgbaColor, stain.Name, found, stain.Gloss)
             : _stainCombo.Draw($"##stain{slot}", stain.RgbaColor, stain.Name, found, stain.Gloss, _comboLength);
         ret = current;
-        if (change && _stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
-            ret = stain.RowIndex;
+        if (change)
+            if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
+                ret = stain.RowIndex;
+            else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
+                ret = Stain.None.RowIndex;
 
         if (!locked && ret != Stain.None.RowIndex)
         {
