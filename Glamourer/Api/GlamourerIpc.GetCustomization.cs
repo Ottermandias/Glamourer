@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Buffers.Text;
+using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
@@ -45,7 +46,6 @@ public partial class GlamourerIpc
                 return null;
         }
 
-        return DesignBase64Migration.CreateOldBase64(state.ModelData, EquipFlagExtensions.All, CustomizeFlagExtensions.All, true, true,
-            true, false);
+        return _designConverter.ShareBase64(state);
     }
 }
