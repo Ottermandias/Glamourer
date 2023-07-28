@@ -98,7 +98,7 @@ public readonly unsafe struct Model : IEquatable<Model>
         Model weapon = AsDrawObject->Object.ChildObject;
         return !weapon.IsWeapon
             ? (Null, CharacterWeapon.Empty)
-            : (weapon, new CharacterWeapon(weapon.AsWeapon->ModelSetId, weapon.AsWeapon->SecondaryId, weapon.AsWeapon->Variant,
+            : (weapon, new CharacterWeapon(weapon.AsWeapon->ModelSetId, weapon.AsWeapon->SecondaryId, (Variant)weapon.AsWeapon->Variant,
                 (StainId)weapon.AsWeapon->ModelUnknown));
     }
 
@@ -112,7 +112,7 @@ public readonly unsafe struct Model : IEquatable<Model>
         if (offhand == mainhand || !offhand.IsWeapon)
             return (Null, CharacterWeapon.Empty);
 
-        return (offhand, new CharacterWeapon(offhand.AsWeapon->ModelSetId, offhand.AsWeapon->SecondaryId, offhand.AsWeapon->Variant,
+        return (offhand, new CharacterWeapon(offhand.AsWeapon->ModelSetId, offhand.AsWeapon->SecondaryId, (Variant)offhand.AsWeapon->Variant,
             (StainId)offhand.AsWeapon->ModelUnknown));
     }
 
@@ -124,13 +124,14 @@ public readonly unsafe struct Model : IEquatable<Model>
         {
             case 0: return (Null, Null, CharacterWeapon.Empty, CharacterWeapon.Empty);
             case 1:
-                return (first, Null, new CharacterWeapon(first.AsWeapon->ModelSetId, first.AsWeapon->SecondaryId, first.AsWeapon->Variant,
+                return (first, Null, new CharacterWeapon(first.AsWeapon->ModelSetId, first.AsWeapon->SecondaryId,
+                    (Variant)first.AsWeapon->Variant,
                     (StainId)first.AsWeapon->ModelUnknown), CharacterWeapon.Empty);
             default:
                 var (main, off) = DetermineMainhand(first, second);
-                var mainData = new CharacterWeapon(main.AsWeapon->ModelSetId, main.AsWeapon->SecondaryId, main.AsWeapon->Variant,
+                var mainData = new CharacterWeapon(main.AsWeapon->ModelSetId, main.AsWeapon->SecondaryId, (Variant)main.AsWeapon->Variant,
                     (StainId)main.AsWeapon->ModelUnknown);
-                var offData = new CharacterWeapon(off.AsWeapon->ModelSetId, off.AsWeapon->SecondaryId, off.AsWeapon->Variant,
+                var offData = new CharacterWeapon(off.AsWeapon->ModelSetId, off.AsWeapon->SecondaryId, (Variant)off.AsWeapon->Variant,
                     (StainId)off.AsWeapon->ModelUnknown);
                 return (main, off, mainData, offData);
         }
@@ -145,14 +146,14 @@ public readonly unsafe struct Model : IEquatable<Model>
         Model main     = *((nint*)&actor.AsCharacter->DrawData.MainHand + 1);
         var   mainData = CharacterWeapon.Empty;
         if (main.IsWeapon)
-            mainData = new CharacterWeapon(main.AsWeapon->ModelSetId, main.AsWeapon->SecondaryId, main.AsWeapon->Variant,
+            mainData = new CharacterWeapon(main.AsWeapon->ModelSetId, main.AsWeapon->SecondaryId, (Variant)main.AsWeapon->Variant,
                 (StainId)main.AsWeapon->ModelUnknown);
         else
             main = Null;
         Model off     = *((nint*)&actor.AsCharacter->DrawData.OffHand + 1);
         var   offData = CharacterWeapon.Empty;
         if (off.IsWeapon)
-            offData = new CharacterWeapon(off.AsWeapon->ModelSetId, off.AsWeapon->SecondaryId, off.AsWeapon->Variant,
+            offData = new CharacterWeapon(off.AsWeapon->ModelSetId, off.AsWeapon->SecondaryId, (Variant)off.AsWeapon->Variant,
                 (StainId)off.AsWeapon->ModelUnknown);
         else
             off = Null;

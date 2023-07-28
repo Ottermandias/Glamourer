@@ -61,7 +61,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
         public override void DrawColumn(EquipItem item, int _)
         {
-            var iconHandle = _textures.LoadIcon(item.IconId);
+            var iconHandle = _textures.LoadIcon(item.IconId.Id);
             if (iconHandle.HasValue)
                 ImGuiUtil.HoverIcon(iconHandle.Value, new Vector2(ImGui.GetFrameHeight()));
             else
@@ -214,7 +214,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             => 70 * ImGuiHelpers.GlobalScale;
 
         public override int Compare(EquipItem lhs, EquipItem rhs)
-            => lhs.ItemId.CompareTo(rhs.ItemId);
+            => lhs.ItemId.Id.CompareTo(rhs.ItemId.Id);
 
         public override string ToName(EquipItem item)
             => item.ItemId.ToString();

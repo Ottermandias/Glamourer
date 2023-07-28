@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,14 +13,12 @@ using Glamourer.Events;
 using Glamourer.Services;
 using Lumina.Excel.GeneratedSheets;
 using Penumbra.GameData.Enums;
-using static OtterGui.Raii.ImRaii;
-using static Penumbra.GameData.Files.ShpkFile;
+using Penumbra.GameData.Structs;
 using Cabinet = Lumina.Excel.GeneratedSheets.Cabinet;
-using Item = Lumina.Excel.GeneratedSheets.Item;
 
 namespace Glamourer.Unlocks;
 
-public class ItemUnlockManager : ISavable, IDisposable
+public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<ItemId, long>
 {
     private readonly SaveService       _saveService;
     private readonly ItemManager       _items;
@@ -46,10 +45,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         Cabinet     = 0x08,
     }
 
-    public readonly IReadOnlyDictionary<uint, UnlockRequirements> Unlockable;
-
-    public IReadOnlyDictionary<uint, long> Unlocked
-        => _unlocked;
+    public readonly IReadOnlyDictionary<ItemId, UnlockRequirements> Unlockable;
 
     public ItemUnlockManager(SaveService saveService, ItemManager items, ClientState clientState, DataManager gameData, Framework framework,
         ObjectUnlocked @event, IdentifierService identifier)
@@ -104,18 +100,19 @@ public class ItemUnlockManager : ISavable, IDisposable
         InventoryType.RetainerMarket,
     };
 
-    private bool AddItem(uint itemId, long time)
+    private bool AddItem(ItemId itemId, long time)
     {
-        itemId = HandleHq(itemId);
-        if (!_items.ItemService.AwaitedService.TryGetValue(itemId, EquipSlot.MainHand, out var equip) || !_unlocked.TryAdd(equip.ItemId, time))
+        itemId = itemId.StripModifiers;
+        if (!_items.ItemService.AwaitedService.TryGetValue(itemId, EquipSlot.MainHand, out var equip)
+         || !_unlocked.TryAdd(equip.ItemId.Id, time))
             return false;
 
-        _event.Invoke(ObjectUnlocked.Type.Item, equip.ItemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
+        _event.Invoke(ObjectUnlocked.Type.Item, equip.ItemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time));
         var ident = _identifier.AwaitedService.Identify(equip.ModelId, equip.WeaponType, equip.Variant, equip.Type.ToSlot());
         foreach (var item in ident)
         {
-            if (_unlocked.TryAdd(item.ItemId, time))
-                _event.Invoke(ObjectUnlocked.Type.Item, item.ItemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
+            if (_unlocked.TryAdd(item.ItemId.Id, time))
+                _event.Invoke(ObjectUnlocked.Type.Item, item.ItemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time));
         }
 
         return true;
@@ -201,27 +198,28 @@ public class ItemUnlockManager : ISavable, IDisposable
             Save();
     }
 
-    public bool IsUnlocked(ulong itemId, out DateTimeOffset time)
+    public bool IsUnlocked(CustomItemId itemId, out DateTimeOffset time)
     {
         // Pseudo items are always unlocked.
-        if (itemId >= _items.ItemSheet.RowCount)
+        if (itemId.Id >= _items.ItemSheet.RowCount)
         {
             time = DateTimeOffset.MinValue;
             return true;
         }
 
-        if (_unlocked.TryGetValue((uint) itemId, out var t))
+        var id = itemId.Item.Id;
+        if (_unlocked.TryGetValue(id, out var t))
         {
             time = DateTimeOffset.FromUnixTimeMilliseconds(t);
             return true;
         }
 
-        if (IsGameUnlocked((uint) itemId))
+        if (IsGameUnlocked(id))
         {
             time = DateTimeOffset.UtcNow;
-            if (_unlocked.TryAdd((uint) itemId, time.ToUnixTimeMilliseconds()))
+            if (_unlocked.TryAdd(id, time.ToUnixTimeMilliseconds()))
             {
-                _event.Invoke(ObjectUnlocked.Type.Item, (uint) itemId, time);
+                _event.Invoke(ObjectUnlocked.Type.Item, id, time);
                 Save();
             }
 
@@ -232,7 +230,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         return false;
     }
 
-    public unsafe bool IsGameUnlocked(uint itemId)
+    public unsafe bool IsGameUnlocked(ItemId itemId)
     {
         if (Unlockable.TryGetValue(itemId, out var req))
             return req.IsUnlocked(this);
@@ -253,15 +251,14 @@ public class ItemUnlockManager : ISavable, IDisposable
         var changes = false;
         foreach (var (itemId, unlock) in Unlockable)
         {
-            if (unlock.IsUnlocked(this) && _unlocked.TryAdd(itemId, time))
+            if (unlock.IsUnlocked(this) && _unlocked.TryAdd(itemId.Id, time))
             {
-                _event.Invoke(ObjectUnlocked.Type.Item, itemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
+                _event.Invoke(ObjectUnlocked.Type.Item, itemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time));
                 changes = true;
             }
         }
 
         // TODO inventories
-
         if (changes)
             Save();
     }
@@ -273,7 +270,7 @@ public class ItemUnlockManager : ISavable, IDisposable
         => _saveService.DelaySave(this, TimeSpan.FromSeconds(10));
 
     public void Save(StreamWriter writer)
-        => UnlockDictionaryHelpers.Save(writer, Unlocked);
+        => UnlockDictionaryHelpers.Save(writer, _unlocked);
 
     private void Load()
     {
@@ -285,9 +282,9 @@ public class ItemUnlockManager : ISavable, IDisposable
     private void OnLogin(object? _, EventArgs _2)
         => Scan();
 
-    private static Dictionary<uint, UnlockRequirements> CreateUnlockData(DataManager gameData, ItemManager items)
+    private static Dictionary<ItemId, UnlockRequirements> CreateUnlockData(DataManager gameData, ItemManager items)
     {
-        var ret     = new Dictionary<uint, UnlockRequirements>();
+        var ret     = new Dictionary<ItemId, UnlockRequirements>();
         var cabinet = gameData.GetExcelSheet<Cabinet>()!;
         foreach (var row in cabinet)
         {
@@ -338,17 +335,33 @@ public class ItemUnlockManager : ISavable, IDisposable
             var ident = _identifier.AwaitedService.Identify(equip.ModelId, equip.WeaponType, equip.Variant, equip.Type.ToSlot());
             foreach (var item2 in ident)
             {
-                if (_unlocked.TryAdd(item2.ItemId, time))
-                    _event.Invoke(ObjectUnlocked.Type.Item, item2.ItemId, DateTimeOffset.FromUnixTimeMilliseconds(time));
+                if (_unlocked.TryAdd(item2.ItemId.Id, time))
+                    _event.Invoke(ObjectUnlocked.Type.Item, item2.ItemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time));
             }
         }
     }
 
-    private uint HandleHq(uint itemId)
-        => itemId switch
-        {
-            > 1000000 => itemId - 1000000,
-            > 500000  => itemId - 500000,
-            _         => itemId,
-        };
+    public IEnumerator<KeyValuePair<ItemId, long>> GetEnumerator()
+        => _unlocked.Select(kvp => new KeyValuePair<ItemId, long>(kvp.Key, kvp.Value)).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
+
+    public int Count
+        => _unlocked.Count;
+
+    public bool ContainsKey(ItemId key)
+        => _unlocked.ContainsKey(key.Id);
+
+    public bool TryGetValue(ItemId key, out long value)
+        => _unlocked.TryGetValue(key.Id, out value);
+
+    public long this[ItemId key]
+        => _unlocked[key.Id];
+
+    public IEnumerable<ItemId> Keys
+        => _unlocked.Keys.Select(i => (ItemId)i);
+
+    public IEnumerable<long> Values
+        => _unlocked.Values;
 }

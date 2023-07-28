@@ -95,11 +95,11 @@ public unsafe struct DesignData
         if (index > 11)
             return false;
 
-        _itemIds[index]                = item.ItemId;
-        _iconIds[index]                = item.IconId;
-        _equipmentBytes[4 * index + 0] = (byte)item.ModelId;
-        _equipmentBytes[4 * index + 1] = (byte)(item.ModelId.Value >> 8);
-        _equipmentBytes[4 * index + 2] = item.Variant;
+        _itemIds[index]                = item.ItemId.Id;
+        _iconIds[index]                = item.IconId.Id;
+        _equipmentBytes[4 * index + 0] = (byte)item.ModelId.Id;
+        _equipmentBytes[4 * index + 1] = (byte)(item.ModelId.Id >> 8);
+        _equipmentBytes[4 * index + 2] = item.Variant.Id;
         switch (index)
         {
             // @formatter:off
@@ -132,18 +132,18 @@ public unsafe struct DesignData
     public bool SetStain(EquipSlot slot, StainId stain)
         => slot.ToIndex() switch
         {
-            0  => SetIfDifferent(ref _equipmentBytes[3],  stain.Value),
-            1  => SetIfDifferent(ref _equipmentBytes[7],  stain.Value),
-            2  => SetIfDifferent(ref _equipmentBytes[11], stain.Value),
-            3  => SetIfDifferent(ref _equipmentBytes[15], stain.Value),
-            4  => SetIfDifferent(ref _equipmentBytes[19], stain.Value),
-            5  => SetIfDifferent(ref _equipmentBytes[23], stain.Value),
-            6  => SetIfDifferent(ref _equipmentBytes[27], stain.Value),
-            7  => SetIfDifferent(ref _equipmentBytes[31], stain.Value),
-            8  => SetIfDifferent(ref _equipmentBytes[35], stain.Value),
-            9  => SetIfDifferent(ref _equipmentBytes[39], stain.Value),
-            10 => SetIfDifferent(ref _equipmentBytes[43], stain.Value),
-            11 => SetIfDifferent(ref _equipmentBytes[47], stain.Value),
+            0  => SetIfDifferent(ref _equipmentBytes[3],  stain.Id),
+            1  => SetIfDifferent(ref _equipmentBytes[7],  stain.Id),
+            2  => SetIfDifferent(ref _equipmentBytes[11], stain.Id),
+            3  => SetIfDifferent(ref _equipmentBytes[15], stain.Id),
+            4  => SetIfDifferent(ref _equipmentBytes[19], stain.Id),
+            5  => SetIfDifferent(ref _equipmentBytes[23], stain.Id),
+            6  => SetIfDifferent(ref _equipmentBytes[27], stain.Id),
+            7  => SetIfDifferent(ref _equipmentBytes[31], stain.Id),
+            8  => SetIfDifferent(ref _equipmentBytes[35], stain.Id),
+            9  => SetIfDifferent(ref _equipmentBytes[39], stain.Id),
+            10 => SetIfDifferent(ref _equipmentBytes[43], stain.Id),
+            11 => SetIfDifferent(ref _equipmentBytes[47], stain.Id),
             _  => false,
         };
 

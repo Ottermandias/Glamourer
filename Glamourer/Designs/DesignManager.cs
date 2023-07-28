@@ -398,7 +398,7 @@ public class DesignManager
 
         design.LastEdit = DateTimeOffset.UtcNow;
         _saveService.QueueSave(design);
-        Glamourer.Log.Debug($"Set stain of {slot} equipment piece to {stain.Value}.");
+        Glamourer.Log.Debug($"Set stain of {slot} equipment piece to {stain.Id}.");
         _event.Invoke(DesignChanged.Type.Stain, design, (oldStain, stain, slot));
     }
 

@@ -168,11 +168,11 @@ public class DesignBase
 
     protected JObject SerializeEquipment()
     {
-        static JObject Serialize(ulong id, StainId stain, bool apply, bool applyStain)
+        static JObject Serialize(CustomItemId id, StainId stain, bool apply, bool applyStain)
             => new()
             {
-                ["ItemId"]     = id,
-                ["Stain"]      = stain.Value,
+                ["ItemId"]     = id.Id,
+                ["Stain"]      = stain.Id,
                 ["Apply"]      = apply,
                 ["ApplyStain"] = applyStain,
             };
@@ -267,9 +267,9 @@ public class DesignBase
             return;
         }
 
-        static (ulong, StainId, bool, bool) ParseItem(EquipSlot slot, JToken? item)
+        static (CustomItemId, StainId, bool, bool) ParseItem(EquipSlot slot, JToken? item)
         {
-            var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot);
+            var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot).Id;
             var stain      = (StainId)(item?["Stain"]?.ToObject<byte>() ?? 0);
             var apply      = item?["Apply"]?.ToObject<bool>() ?? false;
             var applyStain = item?["ApplyStain"]?.ToObject<bool>() ?? false;
@@ -302,7 +302,7 @@ public class DesignBase
             if (id == ItemManager.NothingId(EquipSlot.OffHand))
                 id = ItemManager.NothingId(FullEquipType.Shield);
 
-            PrintWarning(items.ValidateWeapons((uint)id, (uint)idOff, out var main, out var off));
+            PrintWarning(items.ValidateWeapons(id.Item, idOff.Item, out var main, out var off));
             PrintWarning(items.ValidateStain(stain,    out stain,    allowUnknown));
             PrintWarning(items.ValidateStain(stainOff, out stainOff, allowUnknown));
             design.DesignData.SetItem(EquipSlot.MainHand, main);

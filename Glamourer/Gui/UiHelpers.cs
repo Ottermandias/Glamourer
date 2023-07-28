@@ -27,7 +27,7 @@ public static class UiHelpers
 {
     public static void DrawIcon(this EquipItem item, TextureService textures, Vector2 size)
     {
-        var isEmpty = item.ModelId.Value == 0;
+        var isEmpty = item.ModelId.Id == 0;
         var (ptr, textureSize, empty) = textures.GetIcon(item);
         if (empty)
         {

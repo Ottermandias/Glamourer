@@ -40,7 +40,7 @@ public class VisorService : IDisposable
         if (oldState == on)
             return false;
 
-        SetupVisorHook(human, human.GetArmor(EquipSlot.Head).Set.Value, on);
+        SetupVisorHook(human, human.GetArmor(EquipSlot.Head).Set.Id, on);
         return true;
     }
 

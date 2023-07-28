@@ -21,7 +21,7 @@ public sealed class TextureService : TextureCache, IDisposable
 
     public (nint, Vector2, bool) GetIcon(EquipItem item)
     {
-        if (item.IconId != 0 && TryLoadIcon(item.IconId, out var ret))
+        if (item.IconId.Id != 0 && TryLoadIcon(item.IconId.Id, out var ret))
             return (ret.Value.Texture, ret.Value.Dimensions, false);
 
         var idx = item.Type.ToSlot().ToIndex();

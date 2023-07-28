@@ -119,7 +119,7 @@ public class ContextMenuService : IDisposable
             _state.ChangeEquip(state, slot, item, 0, StateChanged.Source.Manual);
             if (item.Type.ValidOffhand().IsOffhandType())
             {
-                if (item.ModelId.Value is > 1600 and < 1651
+                if (item.ModelId.Id is > 1600 and < 1651
                  && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.Hands, out var gauntlets))
                     _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, 0, StateChanged.Source.Manual);
                 if (_items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
@@ -143,7 +143,7 @@ public class ContextMenuService : IDisposable
             _state.ChangeEquip(state, slot, item, 0, StateChanged.Source.Manual);
             if (item.Type.ValidOffhand().IsOffhandType())
             {
-                if (item.ModelId.Value is > 1600 and < 1651
+                if (item.ModelId.Id is > 1600 and < 1651
                  && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.Hands, out var gauntlets))
                     _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, 0, StateChanged.Source.Manual);
                 if (_items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))

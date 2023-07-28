@@ -513,10 +513,11 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             {
                 ObjectKind.BattleNpc => manager.Data.BNpcs,
                 ObjectKind.EventNpc  => manager.Data.ENpcs,
-                _                    => throw new NotImplementedException(),
+                _                    => new Dictionary<uint, string>(),
             };
             return table.Where(kvp => kvp.Value == name)
-                .Select(kvp => manager.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, identifier.HomeWorld, identifier.Kind,
+                .Select(kvp => manager.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, identifier.HomeWorld.Id,
+                    identifier.Kind,
                     kvp.Key)).ToArray();
         }
 

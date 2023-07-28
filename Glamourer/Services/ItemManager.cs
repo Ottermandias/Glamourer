@@ -48,13 +48,13 @@ public class ItemManager : IDisposable
     public (bool, CharacterArmor) ResolveRestrictedGear(CharacterArmor armor, EquipSlot slot, Race race, Gender gender)
         => _config.UseRestrictedGearProtection ? RestrictedGear.ResolveRestricted(armor, slot, race, gender) : (false, armor);
 
-    public static uint NothingId(EquipSlot slot)
+    public static ItemId NothingId(EquipSlot slot)
         => uint.MaxValue - 128 - (uint)slot.ToSlot();
 
-    public static uint SmallclothesId(EquipSlot slot)
+    public static ItemId SmallclothesId(EquipSlot slot)
         => uint.MaxValue - 256 - (uint)slot.ToSlot();
 
-    public static uint NothingId(FullEquipType type)
+    public static ItemId NothingId(FullEquipType type)
         => uint.MaxValue - 384 - (uint)type;
 
     public static EquipItem NothingItem(EquipSlot slot)
@@ -66,7 +66,7 @@ public class ItemManager : IDisposable
     public static EquipItem SmallClothesItem(EquipSlot slot)
         => new(SmallClothesNpc, SmallclothesId(slot), 0, SmallClothesNpcModel, 0, 1, slot.ToEquipType());
 
-    public EquipItem Resolve(EquipSlot slot, uint itemId)
+    public EquipItem Resolve(EquipSlot slot, ItemId itemId)
     {
         slot = slot.ToSlot();
         if (itemId == NothingId(slot))
@@ -83,7 +83,7 @@ public class ItemManager : IDisposable
         return item;
     }
 
-    public EquipItem Resolve(FullEquipType type, uint itemId)
+    public EquipItem Resolve(FullEquipType type, ItemId itemId)
     {
         if (itemId == NothingId(type))
             return NothingItem(type);
@@ -97,13 +97,13 @@ public class ItemManager : IDisposable
         return item;
     }
 
-    public EquipItem Identify(EquipSlot slot, SetId id, byte variant)
+    public EquipItem Identify(EquipSlot slot, SetId id, Variant variant)
     {
         slot = slot.ToSlot();
         if (slot.ToIndex() == uint.MaxValue)
-            return new EquipItem($"Invalid ({id.Value}-{variant})", 0, 0, id, 0, variant, 0);
+            return new EquipItem($"Invalid ({id.Id}-{variant})", 0, 0, id, 0, variant, 0);
 
-        switch (id.Value)
+        switch (id.Id)
         {
             case 0:                    return NothingItem(slot);
             case SmallClothesNpcModel: return SmallClothesItem(slot);
@@ -125,17 +125,17 @@ public class ItemManager : IDisposable
         return NothingItem(offhandType);
     }
 
-    public EquipItem Identify(EquipSlot slot, SetId id, WeaponType type, byte variant, FullEquipType mainhandType = FullEquipType.Unknown)
+    public EquipItem Identify(EquipSlot slot, SetId id, WeaponType type, Variant variant, FullEquipType mainhandType = FullEquipType.Unknown)
     {
         if (slot is EquipSlot.OffHand)
         {
             var weaponType = mainhandType.ValidOffhand();
-            if (id.Value == 0)
+            if (id.Id == 0)
                 return NothingItem(weaponType);
         }
 
         if (slot is not EquipSlot.MainHand and not EquipSlot.OffHand)
-            return new EquipItem($"Invalid ({id.Value}-{type.Value}-{variant})", 0, 0, id, type, variant, 0);
+            return new EquipItem($"Invalid ({id.Id}-{type.Id}-{variant})", 0, 0, id, type, variant, 0);
 
         var item = IdentifierService.AwaitedService.Identify(id, type, variant, slot).FirstOrDefault();
         return item.Valid
@@ -145,7 +145,7 @@ public class ItemManager : IDisposable
 
     /// <summary> Returns whether an item id represents a valid item for a slot and gives the item. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public bool IsItemValid(EquipSlot slot, uint itemId, out EquipItem item)
+    public bool IsItemValid(EquipSlot slot, ItemId itemId, out EquipItem item)
     {
         item = Resolve(slot, itemId);
         return item.Valid;
@@ -156,20 +156,19 @@ public class ItemManager : IDisposable
     /// The returned item is either the resolved correct item, or the Nothing item for that slot.
     /// The return value is an empty string if there was no problem and a warning otherwise.
     /// </summary>
-    public string ValidateItem(EquipSlot slot, ulong itemId, out EquipItem item, bool allowUnknown)
+    public string ValidateItem(EquipSlot slot, CustomItemId itemId, out EquipItem item, bool allowUnknown)
     {
         if (slot is EquipSlot.MainHand or EquipSlot.OffHand)
             throw new Exception("Internal Error: Used armor functionality for weapons.");
 
-        if (itemId > uint.MaxValue)
+        if (!itemId.IsItem)
         {
-            var id         = (SetId)(itemId & ushort.MaxValue);
-            var variant    = (byte)(itemId >> 32);
+            var (id, _, variant, _) = itemId.Split;
             item = Identify(slot, id, variant);
             return allowUnknown ? string.Empty : $"The item {itemId} yields an unknown item.";
         }
 
-        if (IsItemValid(slot, (uint)itemId, out item))
+        if (IsItemValid(slot, itemId.Item, out item))
             return string.Empty;
 
         item = NothingItem(slot);
@@ -179,7 +178,7 @@ public class ItemManager : IDisposable
     /// <summary> Returns whether a stain id is a valid stain. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public bool IsStainValid(StainId stain)
-        => stain.Value == 0 || Stains.ContainsKey(stain);
+        => stain.Id == 0 || Stains.ContainsKey(stain);
 
     /// <summary>
     /// Check whether a stain id is an existing stain. 
@@ -200,7 +199,7 @@ public class ItemManager : IDisposable
 
     /// <summary> Returns whether an offhand is valid given the required offhand type. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public bool IsOffhandValid(FullEquipType offType, uint offId, out EquipItem off)
+    public bool IsOffhandValid(FullEquipType offType, ItemId offId, out EquipItem off)
     {
         off = Resolve(offType, offId);
         return offType == FullEquipType.Unknown || off.Valid;
@@ -208,7 +207,7 @@ public class ItemManager : IDisposable
 
     /// <summary> Returns whether an offhand is valid given mainhand. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public bool IsOffhandValid(in EquipItem main, uint offId, out EquipItem off)
+    public bool IsOffhandValid(in EquipItem main, ItemId offId, out EquipItem off)
         => IsOffhandValid(main.Type.ValidOffhand(), offId, out off);
 
     /// <summary>
@@ -218,7 +217,7 @@ public class ItemManager : IDisposable
     /// or the default sword and a nothing offhand.
     /// The return value is an empty string if there was no problem and a warning otherwise.
     /// </summary>
-    public string ValidateWeapons(uint mainId, uint offId, out EquipItem main, out EquipItem off)
+    public string ValidateWeapons(ItemId mainId, ItemId offId, out EquipItem main, out EquipItem off)
     {
         var ret = string.Empty;
         if (!IsItemValid(EquipSlot.MainHand, mainId, out main))

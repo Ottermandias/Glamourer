@@ -43,7 +43,7 @@ public class EquipmentDrawer
         _stainData = items.Stains;
         _stainCombo = new FilterComboColors(DefaultWidth - 20,
             _stainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))));
-        _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, textures)).ToArray();
+        _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e)).ToArray();
         _weaponCombo = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
         foreach (var type in Enum.GetValues<FullEquipType>())
         {
@@ -118,7 +118,7 @@ public class EquipmentDrawer
         bool allWeapons,
         out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
     {
-        if (cMainhand.ModelId.Value == 0)
+        if (cMainhand.ModelId.Id == 0)
         {
             rOffhand            = cOffhand;
             rMainhand           = cMainhand;
@@ -239,7 +239,7 @@ public class EquipmentDrawer
         if (change)
             armor = combo.CurrentSelection;
 
-        if (!locked && armor.ModelId.Value != 0)
+        if (!locked && armor.ModelId.Id != 0)
         {
             ImGuiUtil.HoverTooltip("Right-click to clear.");
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
@@ -282,15 +282,15 @@ public class EquipmentDrawer
     /// <summary> Draw an input for armor that can set arbitrary values instead of choosing items. </summary>
     private bool DrawArmorArtisan(EquipSlot slot, EquipItem current, out EquipItem armor)
     {
-        int setId   = current.ModelId.Value;
-        int variant = current.Variant;
+        int setId   = current.ModelId.Id;
+        int variant = current.Variant.Id;
         var ret     = false;
         armor = current;
         ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt("##setId", ref setId, 0, 0))
         {
             var newSetId = (SetId)Math.Clamp(setId, 0, ushort.MaxValue);
-            if (newSetId.Value != current.ModelId.Value)
+            if (newSetId.Id != current.ModelId.Id)
             {
                 armor = _items.Identify(slot, newSetId, current.Variant);
                 ret   = true;
@@ -315,7 +315,7 @@ public class EquipmentDrawer
     /// <summary> Draw an input for stain that can set arbitrary values instead of choosing valid stains. </summary>
     private bool DrawStainArtisan(EquipSlot slot, StainId current, out StainId stain)
     {
-        int stainId = current.Value;
+        int stainId = current.Id;
         ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt("##stain", ref stainId, 0, 0))
         {

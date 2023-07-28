@@ -640,16 +640,17 @@ public unsafe class DebugTab : ITab
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var identified = _items.Identify(slot, (SetId)_setId, (byte)_variant);
+            var identified = _items.Identify(slot, (SetId)_setId, (Variant)_variant);
             Text(identified.Name);
             ImGuiUtil.HoverTooltip(string.Join("\n",
-                _items.IdentifierService.AwaitedService.Identify((SetId)_setId, (ushort)_variant, slot).Select(i => $"{i.Name} {i.Id} {i.ItemId} {i.IconId}")));
+                _items.IdentifierService.AwaitedService.Identify((SetId)_setId, (Variant)_variant, slot)
+                    .Select(i => $"{i.Name} {i.Id} {i.ItemId} {i.IconId}")));
         }
 
-        var weapon = _items.Identify(EquipSlot.MainHand, (SetId)_setId, (WeaponType)_secondaryId, (byte)_variant);
+        var weapon = _items.Identify(EquipSlot.MainHand, (SetId)_setId, (WeaponType)_secondaryId, (Variant)_variant);
         Text(weapon.Name);
         ImGuiUtil.HoverTooltip(string.Join("\n",
-            _items.IdentifierService.AwaitedService.Identify((SetId)_setId, (WeaponType)_secondaryId, (ushort)_variant, EquipSlot.MainHand)));
+            _items.IdentifierService.AwaitedService.Identify((SetId)_setId, (WeaponType)_secondaryId, (Variant)_variant, EquipSlot.MainHand)));
     }
 
     private void DrawRestrictedGear()
@@ -672,7 +673,7 @@ public unsafe class DebugTab : ITab
                 foreach (var slot in EquipSlotExtensions.EqdpSlots)
                 {
                     var (replaced, model) =
-                        _items.RestrictedGear.ResolveRestricted(new CharacterArmor((SetId)_setId, (byte)_variant, 0), slot, race, gender);
+                        _items.RestrictedGear.ResolveRestricted(new CharacterArmor((SetId)_setId, (Variant)_variant, 0), slot, race, gender);
                     if (replaced)
                         ImGui.TextUnformatted($"{race.ToName()} - {gender} - {slot.ToName()} resolves to {model}.");
                 }
@@ -765,18 +766,18 @@ public unsafe class DebugTab : ITab
         ImRaii.TreeNode($"Default Sword: {_items.DefaultSword.Name} ({_items.DefaultSword.ItemId}) ({_items.DefaultSword.Weapon()})",
             ImGuiTreeNodeFlags.Leaf).Dispose();
         DrawNameTable("All Items (Main)", ref _itemFilter,
-            _items.ItemService.AwaitedService.AllItems(true).Select(p => (p.Item1,
+            _items.ItemService.AwaitedService.AllItems(true).Select(p => (p.Item1.Id,
                     $"{p.Item2.Name} ({(p.Item2.WeaponType == 0 ? p.Item2.Armor().ToString() : p.Item2.Weapon().ToString())})"))
                 .OrderBy(p => p.Item1));
         DrawNameTable("All Items (Off)", ref _itemFilter,
-            _items.ItemService.AwaitedService.AllItems(false).Select(p => (p.Item1,
+            _items.ItemService.AwaitedService.AllItems(false).Select(p => (p.Item1.Id,
                     $"{p.Item2.Name} ({(p.Item2.WeaponType == 0 ? p.Item2.Armor().ToString() : p.Item2.Weapon().ToString())})"))
                 .OrderBy(p => p.Item1));
         foreach (var type in Enum.GetValues<FullEquipType>().Skip(1))
         {
             DrawNameTable(type.ToName(), ref _itemFilter,
                 _items.ItemService.AwaitedService[type]
-                    .Select(p => (Id: p.ItemId, $"{p.Name} ({(p.WeaponType == 0 ? p.Armor().ToString() : p.Weapon().ToString())})")));
+                    .Select(p => (Id: p.ItemId.Id, $"{p.Name} ({(p.WeaponType == 0 ? p.Armor().ToString() : p.Weapon().ToString())})")));
         }
     }
 
@@ -803,10 +804,10 @@ public unsafe class DebugTab : ITab
         var skips = ImGuiClip.GetNecessarySkips(height);
         ImGui.TableNextRow();
         var remainder = ImGuiClip.FilteredClippedDraw(_items.Stains, skips,
-            p => p.Key.Value.ToString().Contains(_stainFilter) || p.Value.Name.Contains(_stainFilter, StringComparison.OrdinalIgnoreCase),
+            p => p.Key.Id.ToString().Contains(_stainFilter) || p.Value.Name.Contains(_stainFilter, StringComparison.OrdinalIgnoreCase),
             p =>
             {
-                ImGuiUtil.DrawTableColumn(p.Key.Value.ToString("D3"));
+                ImGuiUtil.DrawTableColumn(p.Key.Id.ToString("D3"));
                 ImGui.TableNextColumn();
                 ImGui.GetWindowDrawList().AddRectFilled(ImGui.GetCursorScreenPos(),
                     ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetTextLineHeight()),
@@ -1038,9 +1039,9 @@ public unsafe class DebugTab : ITab
 
             try
             {
-                _clipboardText    = ImGui.GetClipboardText();
-                _clipboardData    = Convert.FromBase64String(_clipboardText);
-                _version          = _clipboardData[0];
+                _clipboardText = ImGui.GetClipboardText();
+                _clipboardData = Convert.FromBase64String(_clipboardText);
+                _version       = _clipboardData[0];
                 if (_version == 5)
                     _clipboardData = _clipboardData[DesignBase64Migration.Base64SizeV4..];
                 _version          = _clipboardData.Decompress(out _dataUncompressed);
@@ -1116,7 +1117,7 @@ public unsafe class DebugTab : ITab
         static string ItemString(in DesignData data, EquipSlot slot)
         {
             var item = data.Item(slot);
-            return $"{item.Name} ({item.ModelId.Value}{(item.WeaponType != 0 ? $"-{item.WeaponType.Value}" : string.Empty)}-{item.Variant})";
+            return $"{item.Name} ({item.ModelId.Id}{(item.WeaponType != 0 ? $"-{item.WeaponType.Id}" : string.Empty)}-{item.Variant})";
         }
 
         PrintRow("Model ID", state.BaseData.ModelId, state.ModelData.ModelId, state[ActorState.MetaIndex.ModelId]);
@@ -1137,8 +1138,8 @@ public unsafe class DebugTab : ITab
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
                 PrintRow(slot.ToName(), ItemString(state.BaseData, slot), ItemString(state.ModelData, slot), state[slot, false]);
-                ImGuiUtil.DrawTableColumn(state.BaseData.Stain(slot).Value.ToString());
-                ImGuiUtil.DrawTableColumn(state.ModelData.Stain(slot).Value.ToString());
+                ImGuiUtil.DrawTableColumn(state.BaseData.Stain(slot).Id.ToString());
+                ImGuiUtil.DrawTableColumn(state.ModelData.Stain(slot).Id.ToString());
                 ImGuiUtil.DrawTableColumn(state[slot, true].ToString());
             }
 
@@ -1453,7 +1454,7 @@ public unsafe class DebugTab : ITab
         ImGui.TableNextColumn();
         var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
         ImGui.TableNextRow();
-        var remainder = ImGuiClip.ClippedDraw(_itemUnlocks.Unlocked, skips, t =>
+        var remainder = ImGuiClip.ClippedDraw(_itemUnlocks, skips, t =>
         {
             ImGuiUtil.DrawTableColumn(t.Key.ToString());
             if (_items.ItemService.AwaitedService.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
@@ -1474,7 +1475,7 @@ public unsafe class DebugTab : ITab
                     ? "Always"
                     : time.LocalDateTime.ToString("g")
                 : "Never");
-        }, _itemUnlocks.Unlocked.Count);
+        }, _itemUnlocks.Count);
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
     }
 

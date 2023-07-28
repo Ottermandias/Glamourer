@@ -154,7 +154,7 @@ public class UnlockOverview
         void DrawItem(EquipItem item)
         {
             var unlocked   = _itemUnlocks.IsUnlocked(item.Id, out var time);
-            var iconHandle = _textures.LoadIcon(item.IconId);
+            var iconHandle = _textures.LoadIcon(item.IconId.Id);
             if (!iconHandle.HasValue)
                 return;
 

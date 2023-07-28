@@ -78,7 +78,7 @@ public sealed class HumanNpcCombo : FilterComboCache<(string Name, ObjectKind Ki
                 {
                     case ObjectKind.BattleNpc:
                         var nameIds = service.AwaitedService.GetBnpcNames(id);
-                        ret.AddRange(nameIds.Select(nameId => (name, kind, nameId)));
+                        ret.AddRange(nameIds.Select(nameId => (service.AwaitedService.Name(ObjectKind.BattleNpc, nameId), kind, nameId.Id)));
                         break;
                     case ObjectKind.EventNpc:
                         ret.Add((name, kind, id));
@@ -87,8 +87,10 @@ public sealed class HumanNpcCombo : FilterComboCache<(string Name, ObjectKind Ki
             }
         }
 
-        return ret.GroupBy(t => (t.Name, t.Kind)).OrderBy(g => g.Key, Comparer)
-            .Select(g => (g.Key.Name, g.Key.Kind, g.Select(g => g.Id).ToArray())).ToList();
+        return ret.GroupBy(t => (t.Name, t.Kind))
+            .OrderBy(g => g.Key, Comparer)
+            .Select(g => (g.Key.Name, g.Key.Kind, g.Select(g => g.Id).Distinct().ToArray()))
+            .ToList();
     }
 
     private static readonly NameComparer Comparer = new();

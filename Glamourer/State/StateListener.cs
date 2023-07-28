@@ -260,7 +260,7 @@ public class StateListener : IDisposable
     private void OnWeaponLoading(Actor actor, EquipSlot slot, Ref<CharacterWeapon> weapon)
     {
         // Fist weapon gauntlet hack.
-        if (slot is EquipSlot.OffHand && weapon.Value.Variant == 0 && weapon.Value.Set.Value != 0 && _lastFistOffhand.Set.Value != 0)
+        if (slot is EquipSlot.OffHand && weapon.Value.Variant == 0 && weapon.Value.Set.Id != 0 && _lastFistOffhand.Set.Id != 0)
             weapon.Value = _lastFistOffhand;
 
         if (!actor.Identifier(_actors.AwaitedService, out var identifier)
@@ -297,13 +297,13 @@ public class StateListener : IDisposable
             var newWeapon = state.ModelData.Weapon(slot);
             if (baseType is FullEquipType.Unknown || baseType == state.ModelData.Item(slot).Type || _gPose.InGPose && actor.IsGPoseOrCutscene)
                 actorWeapon = newWeapon;
-            else if (actorWeapon.Set.Value != 0)
+            else if (actorWeapon.Set.Id != 0)
                 actorWeapon = actorWeapon.With(newWeapon.Stain);
         }
 
         // Fist Weapon Offhand hack.
-        if (slot is EquipSlot.MainHand && weapon.Value.Set.Value is > 1600 and < 1651)
-            _lastFistOffhand = new CharacterWeapon((SetId)(weapon.Value.Set.Value + 50), weapon.Value.Type, weapon.Value.Variant,
+        if (slot is EquipSlot.MainHand && weapon.Value.Set.Id is > 1600 and < 1651)
+            _lastFistOffhand = new CharacterWeapon((SetId)(weapon.Value.Set.Id + 50), weapon.Value.Type, weapon.Value.Variant,
                 weapon.Value.Stain);
     }
 
@@ -316,7 +316,7 @@ public class StateListener : IDisposable
                 return false;
 
             var offhand = actor.GetOffhand();
-            return offhand.Variant == 0 && offhand.Set.Value != 0 && armor.Set.Value == offhand.Set.Value;
+            return offhand.Variant == 0 && offhand.Set.Id != 0 && armor.Set.Id == offhand.Set.Id;
         }
 
         var actorArmor = actor.GetArmor(slot);
@@ -333,7 +333,7 @@ public class StateListener : IDisposable
             change = UpdateState.Change;
         }
 
-        if (baseData.Set.Value != armor.Set.Value || baseData.Variant != armor.Variant)
+        if (baseData.Set.Id != armor.Set.Id || baseData.Variant != armor.Variant)
         {
             var item = _items.Identify(slot, armor.Set, armor.Variant);
             state.BaseData.SetItem(slot, item);
@@ -387,9 +387,9 @@ public class StateListener : IDisposable
             change = UpdateState.Change;
         }
 
-        if (baseData.Set.Value != weapon.Set.Value || baseData.Type.Value != weapon.Type.Value || baseData.Variant != weapon.Variant)
+        if (baseData.Set.Id != weapon.Set.Id || baseData.Type.Id != weapon.Type.Id || baseData.Variant != weapon.Variant)
         {
-            var item = _items.Identify(slot, weapon.Set, weapon.Type, (byte)weapon.Variant,
+            var item = _items.Identify(slot, weapon.Set, weapon.Type, weapon.Variant,
                 slot is EquipSlot.OffHand ? state.BaseData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
             state.BaseData.SetItem(slot, item);
             change = UpdateState.Change;

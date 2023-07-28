@@ -15,16 +15,13 @@ namespace Glamourer.Gui.Equipment;
 
 public sealed class ItemCombo : FilterComboCache<EquipItem>
 {
-    private readonly TextureService _textures;
-
     public readonly string Label;
-    private         uint   _currentItem;
+    private         ItemId _currentItem;
     private         float  _innerWidth;
 
-    public ItemCombo(DataManager gameData, ItemManager items, EquipSlot slot, TextureService textures)
+    public ItemCombo(DataManager gameData, ItemManager items, EquipSlot slot)
         : base(() => GetItems(items, slot))
     {
-        _textures     = textures;
         Label         = GetLabel(gameData, slot);
         _currentItem  = ItemManager.NothingId(slot);
         SearchByParts = true;
@@ -47,7 +44,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
         return base.UpdateCurrentSelected(CurrentSelectionIdx);
     }
 
-    public bool Draw(string previewName, uint previewIdx, float width, float innerWidth)
+    public bool Draw(string previewName, ItemId previewIdx, float width, float innerWidth)
     {
         _innerWidth  = innerWidth;
         _currentItem = previewIdx;
@@ -64,12 +61,12 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
         var ret  = ImGui.Selectable(name, selected);
         ImGui.SameLine();
         using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
-        ImGuiUtil.RightAlign($"({obj.ModelId.Value}-{obj.Variant})");
+        ImGuiUtil.RightAlign($"({obj.ModelString})");
         return ret;
     }
 
     protected override bool IsVisible(int globalIndex, LowerString filter)
-        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].ModelId.Value.ToString());
+        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].ModelId.Id.ToString());
 
     protected override string ToString(EquipItem obj)
         => obj.Name;

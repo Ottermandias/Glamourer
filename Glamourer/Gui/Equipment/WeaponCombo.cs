@@ -15,7 +15,7 @@ namespace Glamourer.Gui.Equipment;
 public sealed class WeaponCombo : FilterComboCache<EquipItem>
 {
     public readonly string Label;
-    private         uint   _currentItemId;
+    private         ItemId _currentItemId;
     private         float  _innerWidth;
 
     public WeaponCombo(ItemManager items, FullEquipType type)
@@ -45,7 +45,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
     protected override float GetFilterWidth()
         => _innerWidth - 2 * ImGui.GetStyle().FramePadding.X;
 
-    public bool Draw(string previewName, uint previewId, float width, float innerWidth)
+    public bool Draw(string previewName, ItemId previewId, float width, float innerWidth)
     {
         _currentItemId = previewId;
         _innerWidth    = innerWidth;
@@ -59,12 +59,12 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
         var ret  = ImGui.Selectable(name, selected);
         ImGui.SameLine();
         using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
-        ImGuiUtil.RightAlign($"({obj.ModelId.Value}-{obj.WeaponType.Value}-{obj.Variant})");
+        ImGuiUtil.RightAlign($"({obj.ModelId.Id}-{obj.WeaponType.Id}-{obj.Variant})");
         return ret;
     }
 
     protected override bool IsVisible(int globalIndex, LowerString filter)
-        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].ModelId.Value.ToString());
+        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].ModelId.Id.ToString());
 
     protected override string ToString(EquipItem obj)
         => obj.Name;

@@ -174,8 +174,8 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         }
 
         // Set the weapons regardless of source.
-        var mainItem = _items.Identify(EquipSlot.MainHand, main.Set, main.Type, (byte)main.Variant);
-        var offItem  = _items.Identify(EquipSlot.OffHand,  off.Set,  off.Type,  (byte)off.Variant, mainItem.Type);
+        var mainItem = _items.Identify(EquipSlot.MainHand, main.Set, main.Type, main.Variant);
+        var offItem  = _items.Identify(EquipSlot.OffHand,  off.Set,  off.Type,  off.Variant, mainItem.Type);
         ret.SetItem(EquipSlot.MainHand, mainItem);
         ret.SetStain(EquipSlot.MainHand, main.Stain);
         ret.SetItem(EquipSlot.OffHand, offItem);
@@ -194,11 +194,11 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
     /// <summary> This is hardcoded in the game. </summary>
     private void FistWeaponHack(ref DesignData ret, ref CharacterWeapon mainhand, ref CharacterWeapon offhand)
     {
-        if (mainhand.Set.Value is < 1601 or >= 1651)
+        if (mainhand.Set.Id is < 1601 or >= 1651)
             return;
 
-        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Set, 0, (byte)offhand.Variant);
-        offhand.Set     = (SetId)(mainhand.Set.Value + 50);
+        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Set, 0, offhand.Variant);
+        offhand.Set     = (SetId)(mainhand.Set.Id + 50);
         offhand.Variant = mainhand.Variant;
         offhand.Type    = mainhand.Type;
         ret.SetItem(EquipSlot.Hands, gauntlets);
@@ -275,7 +275,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
             : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc, item.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}) and its stain from {oldStain.Value} to {stain.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}) and its stain from {oldStain.Id} to {stain.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(type,                    source, state, actors, (old, item, slot));
         _event.Invoke(StateChanged.Type.Stain, source, state, actors, (oldStain, stain, slot));
     }
@@ -289,7 +289,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         var actors = _applier.ChangeStain(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old.Value} to {stain.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old.Id} to {stain.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Stain, source, state, actors, (old, stain, slot));
     }
 

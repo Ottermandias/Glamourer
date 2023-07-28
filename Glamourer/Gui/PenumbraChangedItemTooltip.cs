@@ -173,7 +173,7 @@ public class PenumbraChangedItemTooltip : IDisposable
     private bool CanApplyWeapon(EquipSlot slot, EquipItem item)
     {
         var main     = _objects.Player.GetMainhand();
-        var mainItem = _items.Identify(slot, main.Set, main.Type, (byte)main.Variant);
+        var mainItem = _items.Identify(slot, main.Set, main.Type, main.Variant);
         if (slot == EquipSlot.MainHand)
             return item.Type == mainItem.Type;
 
