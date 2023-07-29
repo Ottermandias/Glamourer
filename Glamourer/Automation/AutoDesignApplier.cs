@@ -228,7 +228,7 @@ public class AutoDesignApplier : IDisposable
                 identifier = _actors.AwaitedService.CreatePlayer(identifier.PlayerName, ushort.MaxValue);
                 return _manager.EnabledSets.TryGetValue(identifier, out set);
             case IdentifierType.Retainer:
-            case IdentifierType.Special:
+            case IdentifierType.Npc:
                 return _manager.EnabledSets.TryGetValue(identifier, out set);
             case IdentifierType.Owned:
                 identifier = _actors.AwaitedService.CreateNpc(identifier.Kind, identifier.DataId);
