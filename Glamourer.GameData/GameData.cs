@@ -37,6 +37,7 @@ public static class GameData
 
             return idx switch
             {
+                // Single jobs
                 91  => true,
                 92  => true,
                 96  => true,
@@ -53,6 +54,18 @@ public static class GameData
                 159 => true,
                 180 => true,
                 181 => true,
+
+                // Class + Job
+                38 => true,
+                41 => true,
+                44 => true,
+                47 => true,
+                50 => true,
+                53 => true,
+                55 => true,
+                69 => true,
+                68 => true,
+                93 => true,
                 _   => false,
             };
         }
