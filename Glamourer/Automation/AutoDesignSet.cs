@@ -1,7 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Reflection.Metadata.Ecma335;
-using Glamourer.Designs;
-using Glamourer.State;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Actors;
 

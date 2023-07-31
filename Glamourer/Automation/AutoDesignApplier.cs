@@ -9,8 +9,10 @@ using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Structs;
 using Glamourer.Unlocks;
+using OtterGui.Classes;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Automation;
 
@@ -26,10 +28,15 @@ public class AutoDesignApplier : IDisposable
     private readonly ItemUnlockManager      _itemUnlocks;
     private readonly AutomationChanged      _event;
     private readonly ObjectManager          _objects;
+    private readonly WeaponLoading          _weapons;
+
+    private ActorState? _jobChangeState;
+    private EquipItem   _jobChangeMainhand;
+    private EquipItem   _jobChangeOffhand;
 
     public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs,
         CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
-        AutomationChanged @event, ObjectManager objects)
+        AutomationChanged @event, ObjectManager objects, WeaponLoading weapons)
     {
         _config           =  config;
         _manager          =  manager;
@@ -41,14 +48,51 @@ public class AutoDesignApplier : IDisposable
         _customizeUnlocks =  customizeUnlocks;
         _event            =  @event;
         _objects          =  objects;
+        _weapons          =  weapons;
         _jobs.JobChanged  += OnJobChange;
         _event.Subscribe(OnAutomationChange, AutomationChanged.Priority.AutoDesignApplier);
+        _weapons.Subscribe(OnWeaponLoading, WeaponLoading.Priority.AutoDesignApplier);
     }
 
     public void Dispose()
     {
+        _weapons.Unsubscribe(OnWeaponLoading);
         _event.Unsubscribe(OnAutomationChange);
         _jobs.JobChanged -= OnJobChange;
+    }
+
+    private void OnWeaponLoading(Actor actor, EquipSlot slot, Ref<CharacterWeapon> weapon)
+    {
+        if (_jobChangeState == null)
+            return;
+
+        var id = actor.GetIdentifier(_actors.AwaitedService);
+        if (id == _jobChangeState.Identifier)
+        {
+            var current = _jobChangeState.BaseData.Item(slot);
+            if (slot is EquipSlot.MainHand)
+            {
+                if (current.Type == _jobChangeMainhand.Type)
+                {
+                    _state.ChangeItem(_jobChangeState, EquipSlot.MainHand, _jobChangeMainhand, StateChanged.Source.Fixed);
+                    weapon.Value = _jobChangeState.ModelData.Weapon(EquipSlot.MainHand);
+                }
+            }
+            else if (slot is EquipSlot.OffHand)
+            {
+                if (current.Type == _jobChangeOffhand.Type)
+                {
+                    _state.ChangeItem(_jobChangeState, EquipSlot.OffHand, _jobChangeOffhand, StateChanged.Source.Fixed);
+                    weapon.Value = _jobChangeState.ModelData.Weapon(EquipSlot.OffHand);
+                }
+
+                _jobChangeState = null;
+            }
+        }
+        else
+        {
+            _jobChangeState = null;
+        }
     }
 
     private void OnAutomationChange(AutomationChanged.Type type, AutoDesignSet? set, object? bonusData)
@@ -80,7 +124,7 @@ public class AutoDesignApplier : IDisposable
                 {
                     if (_state.GetOrCreate(id, data.Objects[0], out var state))
                     {
-                        Reduce(data.Objects[0], state, newSet, false);
+                        Reduce(data.Objects[0], state, newSet, false, false);
                         foreach (var actor in data.Objects)
                             _state.ReapplyState(actor);
                     }
@@ -92,7 +136,7 @@ public class AutoDesignApplier : IDisposable
                         var specificId = actor.GetIdentifier(_actors.AwaitedService);
                         if (_state.GetOrCreate(specificId, actor, out var state))
                         {
-                            Reduce(actor, state, newSet, false);
+                            Reduce(actor, state, newSet, false, false);
                             _state.ReapplyState(actor);
                         }
                     }
@@ -122,7 +166,8 @@ public class AutoDesignApplier : IDisposable
             case AutomationChanged.Type.AddedDesign:
             case AutomationChanged.Type.MovedDesign:
             case AutomationChanged.Type.ChangedDesign:
-            case AutomationChanged.Type.ChangedConditions:
+            case AutomationChanged.Type.ChangedJobConditions:
+            case AutomationChanged.Type.ChangedCoordinateConditions:
             case AutomationChanged.Type.ChangedType:
                 ApplyNew(set);
                 break;
@@ -147,8 +192,9 @@ public class AutoDesignApplier : IDisposable
         if (oldJob.Id == newJob.Id && state.LastJob == newJob.Id)
             return;
 
+        var respectManual = state.LastJob == newJob.Id;
         state.LastJob = actor.Job;
-        Reduce(actor, state, set, state.LastJob == newJob.Id);
+        Reduce(actor, state, set, respectManual, true);
         _state.ReapplyState(actor);
     }
 
@@ -160,7 +206,7 @@ public class AutoDesignApplier : IDisposable
         if (!GetPlayerSet(identifier, out var set))
             return;
 
-        Reduce(actor, state, set, false);
+        Reduce(actor, state, set, false, false);
     }
 
     public bool Reduce(Actor actor, ActorIdentifier identifier, [NotNullWhen(true)] out ActorState? state)
@@ -182,11 +228,11 @@ public class AutoDesignApplier : IDisposable
             return true;
         }
 
-        Reduce(actor, state, set, true);
+        Reduce(actor, state, set, true, false);
         return true;
     }
 
-    private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual)
+    private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual, bool fromJobChange)
     {
         EquipFlag     totalEquipFlags     = 0;
         CustomizeFlag totalCustomizeFlags = 0;
@@ -212,7 +258,7 @@ public class AutoDesignApplier : IDisposable
             var (equipFlags, customizeFlags, applyHat, applyVisor, applyWeapon, applyWet) = design.ApplyWhat();
             Reduce(state, data, applyHat,       applyVisor,              applyWeapon,   applyWet, ref totalMetaFlags, respectManual, source);
             Reduce(state, data, customizeFlags, ref totalCustomizeFlags, respectManual, source);
-            Reduce(state, data, equipFlags,     ref totalEquipFlags,     respectManual, source);
+            Reduce(state, data, equipFlags,     ref totalEquipFlags,     respectManual, source, fromJobChange);
         }
     }
 
@@ -240,7 +286,7 @@ public class AutoDesignApplier : IDisposable
     }
 
     private void Reduce(ActorState state, in DesignData design, EquipFlag equipFlags, ref EquipFlag totalEquipFlags, bool respectManual,
-        StateChanged.Source source)
+        StateChanged.Source source, bool fromJobChange)
     {
         equipFlags &= ~totalEquipFlags;
         if (equipFlags == 0)
@@ -272,24 +318,42 @@ public class AutoDesignApplier : IDisposable
         if (equipFlags.HasFlag(EquipFlag.Mainhand))
         {
             var item = design.Item(EquipSlot.MainHand);
-            if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type
-             && (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _)))
+            if (!_config.UnlockedItemMode
+             || _itemUnlocks.IsUnlocked(item.Id, out _) && !respectManual
+             || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual)
             {
-                if (!respectManual || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual)
+                if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type)
+                {
                     _state.ChangeItem(state, EquipSlot.MainHand, item, source);
-                totalEquipFlags |= EquipFlag.Mainhand;
+                    totalEquipFlags |= EquipFlag.Mainhand;
+                }
+                else if (fromJobChange)
+                {
+                    _jobChangeMainhand =  item;
+                    _jobChangeState    =  state;
+                    totalEquipFlags    |= EquipFlag.Mainhand;
+                }
             }
         }
 
         if (equipFlags.HasFlag(EquipFlag.Offhand))
         {
             var item = design.Item(EquipSlot.OffHand);
-            if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type
-             && (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _)))
+            if (!_config.UnlockedItemMode
+             || _itemUnlocks.IsUnlocked(item.Id, out _) && !respectManual
+             || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual)
             {
-                if (!respectManual || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual)
+                if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type)
+                {
                     _state.ChangeItem(state, EquipSlot.OffHand, item, source);
-                totalEquipFlags |= EquipFlag.Offhand;
+                    totalEquipFlags |= EquipFlag.Mainhand;
+                }
+                else if (fromJobChange)
+                {
+                    _jobChangeOffhand =  item;
+                    _jobChangeState   =  state;
+                    totalEquipFlags   |= EquipFlag.Mainhand;
+                }
             }
         }
 

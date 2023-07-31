@@ -20,6 +20,9 @@ public sealed class WeaponLoading : EventWrapper<Action<Actor, EquipSlot, Ref<Ch
     {
         /// <seealso cref="State.StateListener.OnWeaponLoading"/>
         StateListener = 0,
+
+        /// <seealso cref="Automation.AutoDesignApplier.OnWeaponLoading"/>
+        AutoDesignApplier = -1,
     }
 
     public WeaponLoading()
