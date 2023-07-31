@@ -3,7 +3,6 @@ using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -270,7 +269,7 @@ public class ActorPanel
             Description = "Copy the current design to your clipboard.",
             Icon        = FontAwesomeIcon.Copy,
             OnClick     = ExportToClipboard,
-            Visible     = _state?.ModelData.IsHuman ?? false,
+            Visible     = _state?.ModelData.ModelId == 0,
         };
 
     private HeaderDrawer.Button SaveAsDesignButton()
@@ -279,7 +278,7 @@ public class ActorPanel
             Description = "Save the current state as a design.",
             Icon        = FontAwesomeIcon.Save,
             OnClick     = SaveDesignOpen,
-            Visible     = _state?.ModelData.IsHuman ?? false,
+            Visible     = _state?.ModelData.ModelId == 0,
         };
 
     private HeaderDrawer.Button LockedButton()
@@ -369,7 +368,7 @@ public class ActorPanel
     {
         var (id, data) = _objects.PlayerData;
         if (!ImGuiUtil.DrawDisabledButton("Apply to Yourself", Vector2.Zero, "Apply the current state to your own character.",
-                !data.Valid || id == _identifier || !_state!.ModelData.IsHuman))
+                !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0))
             return;
 
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
@@ -386,7 +385,7 @@ public class ActorPanel
                 : "The current target can not be manipulated."
             : "No valid target selected.";
         if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt,
-                !data.Valid || id == _identifier || !_state!.ModelData.IsHuman || _objects.IsInGPose))
+                !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0 || _objects.IsInGPose))
             return;
 
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))

@@ -113,7 +113,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // Model ID is only unambiguously contained in the game object.
         // The draw object only has the object type.
         // TODO reverse search model data to get model id from model.
-        if (!_humans.IsHuman(ret.ModelId))
+        if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
         {
             ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(Customize*)&actor.AsCharacter->DrawData.CustomizeData,
                 (nint)(&actor.AsCharacter->DrawData.Head));
