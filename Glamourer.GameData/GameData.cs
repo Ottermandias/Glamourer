@@ -37,7 +37,7 @@ public static class GameData
 
             return idx switch
             {
-                // Single jobs
+                // Single jobs and big groups
                 91  => true,
                 92  => true,
                 96  => true,
@@ -54,6 +54,8 @@ public static class GameData
                 159 => true,
                 180 => true,
                 181 => true,
+                188 => true,
+                189 => true,
 
                 // Class + Job
                 38 => true,
