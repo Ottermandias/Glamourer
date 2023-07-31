@@ -124,7 +124,10 @@ public class ActorPanel
 
     private void DrawCustomizationsHeader()
     {
-        if (!ImGui.CollapsingHeader("Customization"))
+        var header = _state!.ModelData.ModelId == 0
+            ? "Customization"
+            : $"Customization (Model Id #{_state.ModelData.ModelId})###Customization";
+        if (!ImGui.CollapsingHeader(header))
             return;
 
         if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked, _identifier.Type is IdentifierType.Special))

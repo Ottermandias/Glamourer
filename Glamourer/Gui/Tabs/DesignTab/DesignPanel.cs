@@ -167,7 +167,10 @@ public class DesignPanel
 
     private void DrawCustomize()
     {
-        if (!ImGui.CollapsingHeader("Customization"))
+        var header = _selector.Selected!.DesignData.ModelId == 0
+            ? "Customization"
+            : $"Customization (Model Id #{_selector.Selected!.DesignData.ModelId})###Customization";
+        if (!ImGui.CollapsingHeader(header))
             return;
 
         if (_customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.ApplyCustomize,

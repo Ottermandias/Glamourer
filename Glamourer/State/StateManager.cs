@@ -113,12 +113,15 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         // Model ID is only unambiguously contained in the game object.
         // The draw object only has the object type.
         // TODO reverse search model data to get model id from model.
-        if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
+        if (!_humans.IsHuman(ret.ModelId))
         {
             ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(Customize*)&actor.AsCharacter->DrawData.CustomizeData,
                 (nint)(&actor.AsCharacter->DrawData.Head));
             return ret;
         }
+
+        ret.ModelId = (uint)actor.AsCharacter->CharacterData.ModelCharaId;
+        ret.IsHuman = true;
 
         CharacterWeapon main;
         CharacterWeapon off;
@@ -273,7 +276,8 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         var type = slot.ToIndex() < 10 ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
         var actors = type is StateChanged.Type.Equip
             ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
-            : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc, item.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
+            : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc,
+                item.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}) and its stain from {oldStain.Id} to {stain.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(type,                    source, state, actors, (old, item, slot));
