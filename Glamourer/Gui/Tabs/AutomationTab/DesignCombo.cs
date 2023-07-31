@@ -52,7 +52,7 @@ public sealed class DesignCombo : FilterComboCache<Design>
         CurrentSelectionIdx = (design?.Design?.Index ?? -1) + 1;
         var name = design?.Name(incognito) ?? string.Empty;
         if (Draw("##design", name, string.Empty, ImGui.GetContentRegionAvail().X,
-                ImGui.GetTextLineHeight())
+                ImGui.GetTextLineHeightWithSpacing())
          && CurrentSelection != null)
         {
             if (autoDesignIndex >= 0)

@@ -362,7 +362,7 @@ public class SetPanel
             CurrentSelectionIdx = _jobs.JobGroups.Values.IndexOf(j => j.Id == design.Jobs.Id);
             if (Draw("##JobGroups", design.Jobs.Name,
                     "Select for which job groups this design should be applied.\nControl + Right-Click to set to all classes.",
-                    ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeight())
+                    ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeightWithSpacing())
              && CurrentSelectionIdx >= 0)
                 _manager.ChangeJobCondition(set, autoDesignIndex, CurrentSelection);
             else if (ImGui.GetIO().KeyCtrl && ImGui.IsItemClicked(ImGuiMouseButton.Right))
