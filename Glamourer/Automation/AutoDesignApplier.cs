@@ -166,8 +166,7 @@ public class AutoDesignApplier : IDisposable
             case AutomationChanged.Type.AddedDesign:
             case AutomationChanged.Type.MovedDesign:
             case AutomationChanged.Type.ChangedDesign:
-            case AutomationChanged.Type.ChangedJobConditions:
-            case AutomationChanged.Type.ChangedCoordinateConditions:
+            case AutomationChanged.Type.ChangedConditions:
             case AutomationChanged.Type.ChangedType:
                 ApplyNew(set);
                 break;
