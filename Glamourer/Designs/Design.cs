@@ -47,7 +47,6 @@ public sealed class Design : DesignBase, ISavable
 
     #endregion
 
-
     #region Serialization
 
     public new JObject JsonSerialize()

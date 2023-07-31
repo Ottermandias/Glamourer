@@ -45,8 +45,15 @@ public partial class CustomizationDrawer
         var tmp = (int)_currentByte.Value;
         ImGui.SetNextItemWidth(_inputIntSize);
         if (ImGui.InputInt("##text", ref tmp, 1, 1))
-            UpdateValue((CustomizeValue)Math.Clamp(tmp, 0, _currentCount - 1));
-        ImGuiUtil.HoverTooltip($"Input Range: [0, {_currentCount - 1}]");
+        {
+            var newValue = (CustomizeValue)(ImGui.GetIO().KeyCtrl
+                ? Math.Clamp(tmp, 0, byte.MaxValue)
+                : Math.Clamp(tmp, 0, _currentCount - 1));
+            UpdateValue(newValue);
+        }
+
+        ImGuiUtil.HoverTooltip($"Input Range: [0, {_currentCount - 1}]\n"
+          + "Hold Control to force updates with invalid/unknown options at your own risk.");
     }
 
     // Integral input for an icon- or color based item.
@@ -120,9 +127,15 @@ public partial class CustomizationDrawer
     {
         var tmp = _currentByte.Value + 1;
         ImGui.SetNextItemWidth(_inputIntSize);
-        if (ImGui.InputInt("##text", ref tmp, 1, 1) && tmp > 0 && tmp <= _currentCount)
-            UpdateValue((CustomizeValue)Math.Clamp(tmp - 1, 0, _currentCount - 1));
-        ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]");
+        if (ImGui.InputInt("##text", ref tmp, 1, 1))
+        {
+            var newValue = (CustomizeValue)(ImGui.GetIO().KeyCtrl
+                ? Math.Clamp(tmp - 1, 0, byte.MaxValue)
+                : Math.Clamp(tmp - 1, 0, _currentCount - 1));
+            UpdateValue(newValue);
+        }
+        ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]\n"
+          + "Hold Control to force updates with invalid/unknown options at your own risk.");
     }
 
     // Draw a customize checkbox.

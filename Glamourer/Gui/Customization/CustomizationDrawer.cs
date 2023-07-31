@@ -33,9 +33,6 @@ public partial class CustomizationDrawer : IDisposable
     public CustomizeFlag Changed     { get; private set; }
     public CustomizeFlag ChangeApply { get; private set; }
 
-    public bool RequiresRedraw
-        => Changed.RequiresRedraw();
-
     private CustomizeFlag _initialApply;
     private bool          _locked       = false;
     private bool          _lockedRedraw = false;
