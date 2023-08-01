@@ -70,7 +70,8 @@ public static class ServiceManager
             .AddSingleton<ObjectUnlocked>()
             .AddSingleton<TabSelected>()
             .AddSingleton<MovedEquipment>()
-            .AddSingleton<GPoseService>();
+            .AddSingleton<GPoseService>()
+            .AddSingleton<PenumbraReloaded>();
 
     private static IServiceCollection AddData(this IServiceCollection services)
         => services.AddSingleton<IdentifierService>()

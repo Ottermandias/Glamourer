@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using Penumbra.Api;
 using Penumbra.Api.Enums;
@@ -61,11 +62,15 @@ public unsafe class PenumbraService : IDisposable
 
     private readonly EventSubscriber _initializedEvent;
     private readonly EventSubscriber _disposedEvent;
-    public           bool            Available { get; private set; }
 
-    public PenumbraService(DalamudPluginInterface pi)
+    private readonly PenumbraReloaded _penumbraReloaded;
+
+    public bool Available { get; private set; }
+
+    public PenumbraService(DalamudPluginInterface pi, PenumbraReloaded penumbraReloaded)
     {
         _pluginInterface       = pi;
+        _penumbraReloaded      = penumbraReloaded;
         _initializedEvent      = Ipc.Initialized.Subscriber(pi, Reattach);
         _disposedEvent         = Ipc.Disposed.Subscriber(pi, Unattach);
         _tooltipSubscriber     = Ipc.ChangedItemTooltip.Subscriber(pi);
@@ -253,8 +258,8 @@ public unsafe class PenumbraService : IDisposable
             _setModPriority     = Ipc.TrySetModPriority.Subscriber(_pluginInterface);
             _setModSetting      = Ipc.TrySetModSetting.Subscriber(_pluginInterface);
             _setModSettings     = Ipc.TrySetModSettings.Subscriber(_pluginInterface);
-
             Available = true;
+            _penumbraReloaded.Invoke();
             Glamourer.Log.Debug("Glamourer attached to Penumbra.");
         }
         catch (Exception e)
