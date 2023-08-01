@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using Dalamud.Utility;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using Penumbra.Api;
@@ -36,6 +37,17 @@ public readonly record struct ModSettings(IDictionary<string, IList<string>> Set
     public static ModSettings Empty
         => new();
 }
+public readonly record struct Collection(string Name) : IComparable<Collection>
+{
+    public bool IsAssociable()
+    {
+        return !Name.IsNullOrEmpty();
+    }
+    public int CompareTo(Collection other)
+    {
+        return string.Compare(Name, other.Name, StringComparison.Ordinal);
+    }
+}
 
 public unsafe class PenumbraService : IDisposable
 {
@@ -54,7 +66,9 @@ public unsafe class PenumbraService : IDisposable
     private          FuncSubscriber<int, (bool, bool, string)>                                            _objectCollection;
     private          FuncSubscriber<IList<(string, string)>>                                              _getMods;
     private          FuncSubscriber<ApiCollectionType, string>                                            _currentCollection;
+    private          FuncSubscriber<IList<string>>                                                        _getAllCollections;
     private          FuncSubscriber<string, string, string, bool, CurrentSettings>                        _getCurrentSettings;
+    private          FuncSubscriber<int, string, bool, bool, (PenumbraApiEc, string)>                     _setCurrentCollection;
     private          FuncSubscriber<string, string, string, bool, PenumbraApiEc>                          _setMod;
     private          FuncSubscriber<string, string, string, int, PenumbraApiEc>                           _setModPriority;
     private          FuncSubscriber<string, string, string, string, string, PenumbraApiEc>                _setModSetting;
@@ -141,6 +155,25 @@ public unsafe class PenumbraService : IDisposable
         }
     }
 
+    public IReadOnlyList<Collection> GetAllCollections()
+    {
+        if (!Available)
+            return Array.Empty<Collection>();
+
+        try
+        {
+            var allCollections = _getAllCollections.Invoke();
+            return allCollections
+                .Select(c => new Collection(c))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Log.Error($"Error fetching collections from Penumbra:\n{ex}");
+            return Array.Empty<Collection>();
+        }
+    }
+
     public string CurrentCollection
         => Available ? _currentCollection.Invoke(ApiCollectionType.Current) : "<Unavailable>";
 
@@ -188,6 +221,24 @@ public unsafe class PenumbraService : IDisposable
                     "Missing Mod or Collection should not be possible here.");
             }
 
+            return sb.ToString();
+        }
+        catch (Exception ex)
+        {
+            return sb.AppendLine(ex.Message).ToString();
+        }
+    }
+    public string SetCollection(Actor actor, Collection collection)
+    {
+        if (!Available)
+            return "Penumbra is not available.";
+
+        var sb = new StringBuilder();
+        try
+        {
+            var ec = _setCurrentCollection.Invoke(actor.AsObject -> ObjectIndex, collection.Name, true, false);
+            if (ec.Item1 is PenumbraApiEc.CollectionMissing)
+                sb.AppendLine($"The collection {collection.Name}] could not be found.");
             return sb.ToString();
         }
         catch (Exception ex)
@@ -254,6 +305,8 @@ public unsafe class PenumbraService : IDisposable
             _getMods            = Ipc.GetMods.Subscriber(_pluginInterface);
             _currentCollection  = Ipc.GetCollectionForType.Subscriber(_pluginInterface);
             _getCurrentSettings = Ipc.GetCurrentModSettings.Subscriber(_pluginInterface);
+            _getAllCollections  = Ipc.GetCollections.Subscriber(_pluginInterface);
+            _setCurrentCollection = Ipc.SetCollectionForObject.Subscriber( _pluginInterface);
             _setMod             = Ipc.TrySetMod.Subscriber(_pluginInterface);
             _setModPriority     = Ipc.TrySetModPriority.Subscriber(_pluginInterface);
             _setModSetting      = Ipc.TrySetModSetting.Subscriber(_pluginInterface);

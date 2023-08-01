@@ -41,6 +41,7 @@ public sealed class Design : DesignBase, ISavable
     public string[]                     Tags           { get; internal set; } = Array.Empty<string>();
     public int                          Index          { get; internal set; }
     public SortedList<Mod, ModSettings> AssociatedMods { get; private set; } = new();
+    public Collection                   AssociatedCollection { get; internal set; } = new();
 
     public string Incognito
         => Identifier.ToString()[..8];
@@ -64,6 +65,7 @@ public sealed class Design : DesignBase, ISavable
                 ["Equipment"]      = SerializeEquipment(),
                 ["Customize"]      = SerializeCustomize(),
                 ["Mods"]           = SerializeMods(),
+                ["Collection"]     = AssociatedCollection.Name,
             }
             ;
         return ret;
@@ -124,6 +126,7 @@ public sealed class Design : DesignBase, ISavable
             Description  = json["Description"]?.ToObject<string>() ?? string.Empty,
             Tags         = ParseTags(json),
             LastEdit     = json["LastEdit"]?.ToObject<DateTimeOffset>() ?? creationDate,
+            AssociatedCollection = new Collection(json["Collection"]?.ToObject<string>() ?? string.Empty),
         };
         if (design.LastEdit < creationDate)
             design.LastEdit = creationDate;

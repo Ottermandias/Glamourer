@@ -251,6 +251,26 @@ public class DesignManager
         _event.Invoke(DesignChanged.Type.RemovedMod, design, (mod, settings));
     }
 
+    /// <summary> Change an associated collection to a design. </summary>
+    public void ChangeAssociatedCollection(Design design, Collection collection)
+    {
+        var oldAssociatedCollection = design.AssociatedCollection;
+        if (oldAssociatedCollection == collection)
+            return;
+
+        design.AssociatedCollection = collection;
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        if (collection.IsAssociable())
+        {
+            Glamourer.Log.Debug($"Removed associated collection from design {design.Identifier}.");
+        } else
+        {
+            Glamourer.Log.Debug($"Set associated collection {collection.Name} to design {design.Identifier}.");
+        }
+        _event.Invoke(DesignChanged.Type.ChangedAssociatedCollection, design, oldAssociatedCollection);
+    }
+
     /// <summary> Set the write protection status of a design. </summary>
     public void SetWriteProtection(Design design, bool value)
     {

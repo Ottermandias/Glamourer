@@ -13,6 +13,7 @@ using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Structs;
@@ -37,22 +38,26 @@ public class DesignPanel
     private readonly DesignConverter          _converter;
     private readonly DatFileService           _datFileService;
     private readonly FileDialogManager        _fileDialog = new();
+    private readonly PenumbraService          _penumbra;
+    private readonly CollectionAssociationTab _collectionAssociation;
 
     public DesignPanel(DesignFileSystemSelector selector, CustomizationDrawer customizationDrawer, DesignManager manager, ObjectManager objects,
-        StateManager state, EquipmentDrawer equipmentDrawer, CustomizationService customizationService, ModAssociationsTab modAssociations,
-        DesignDetailTab designDetails, DesignConverter converter, DatFileService datFileService)
+        StateManager state, EquipmentDrawer equipmentDrawer, CustomizationService customizationService, ModAssociationsTab modAssociations, CollectionAssociationTab collectionAssociation,
+        DesignDetailTab designDetails, DesignConverter converter, DatFileService datFileService, PenumbraService penumbra)
     {
-        _selector             = selector;
-        _customizationDrawer  = customizationDrawer;
-        _manager              = manager;
-        _objects              = objects;
-        _state                = state;
-        _equipmentDrawer      = equipmentDrawer;
-        _customizationService = customizationService;
-        _modAssociations      = modAssociations;
-        _designDetails        = designDetails;
-        _converter            = converter;
-        _datFileService       = datFileService;
+        _selector              = selector;
+        _customizationDrawer   = customizationDrawer;
+        _manager               = manager;
+        _objects               = objects;
+        _state                 = state;
+        _equipmentDrawer       = equipmentDrawer;
+        _customizationService  = customizationService;
+        _modAssociations       = modAssociations;
+        _collectionAssociation = collectionAssociation;
+        _designDetails         = designDetails;
+        _converter             = converter;
+        _datFileService        = datFileService;
+        _penumbra              = penumbra;
     }
 
     private HeaderDrawer.Button LockButton()
@@ -326,6 +331,7 @@ public class DesignPanel
         _designDetails.Draw();
         DrawApplicationRules();
         _modAssociations.Draw();
+        _collectionAssociation.Draw();
     }
 
     private void DrawButtonRow()
@@ -374,7 +380,10 @@ public class DesignPanel
             return;
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
+        {
             _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
+            _penumbra.SetCollection(data.Objects[0], _selector.Selected!.AssociatedCollection);
+        }
     }
 
     private void DrawApplyToTarget()

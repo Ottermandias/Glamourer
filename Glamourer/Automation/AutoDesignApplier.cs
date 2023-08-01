@@ -4,6 +4,7 @@ using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
@@ -29,6 +30,7 @@ public class AutoDesignApplier : IDisposable
     private readonly AutomationChanged      _event;
     private readonly ObjectManager          _objects;
     private readonly WeaponLoading          _weapons;
+    private readonly PenumbraService        _penumbra;
 
     private ActorState? _jobChangeState;
     private EquipItem   _jobChangeMainhand;
@@ -36,7 +38,7 @@ public class AutoDesignApplier : IDisposable
 
     public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs,
         CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
-        AutomationChanged @event, ObjectManager objects, WeaponLoading weapons)
+        AutomationChanged @event, ObjectManager objects, WeaponLoading weapons, PenumbraService penumbra)
     {
         _config           =  config;
         _manager          =  manager;
@@ -49,6 +51,7 @@ public class AutoDesignApplier : IDisposable
         _event            =  @event;
         _objects          =  objects;
         _weapons          =  weapons;
+        _penumbra         =  penumbra;
         _jobs.JobChanged  += OnJobChange;
         _event.Subscribe(OnAutomationChange, AutomationChanged.Priority.AutoDesignApplier);
         _weapons.Subscribe(OnWeaponLoading, WeaponLoading.Priority.AutoDesignApplier);
@@ -126,7 +129,10 @@ public class AutoDesignApplier : IDisposable
                     {
                         Reduce(data.Objects[0], state, newSet, false, false);
                         foreach (var actor in data.Objects)
+                        {
+                            _penumbra.SetCollection(actor, ReduceCollections(actor, set));
                             _state.ReapplyState(actor);
+                        }
                     }
                 }
                 else if (_objects.TryGetValueAllWorld(id, out data) || _objects.TryGetValueNonOwned(id, out data))
@@ -136,6 +142,7 @@ public class AutoDesignApplier : IDisposable
                         var specificId = actor.GetIdentifier(_actors.AwaitedService);
                         if (_state.GetOrCreate(specificId, actor, out var state))
                         {
+                            _penumbra.SetCollection(actor, ReduceCollections(actor, set));
                             Reduce(actor, state, newSet, false, false);
                             _state.ReapplyState(actor);
                         }
@@ -194,6 +201,7 @@ public class AutoDesignApplier : IDisposable
         var respectManual = state.LastJob == newJob.Id;
         state.LastJob = actor.Job;
         Reduce(actor, state, set, respectManual, true);
+        _penumbra.SetCollection(actor, ReduceCollections(actor, set));
         _state.ReapplyState(actor);
     }
 
@@ -206,6 +214,29 @@ public class AutoDesignApplier : IDisposable
             return;
 
         Reduce(actor, state, set, false, false);
+        _penumbra.SetCollection(actor, ReduceCollections(actor, set));
+    }
+
+    public unsafe Collection ReduceCollections(Actor actor, AutoDesignSet set)
+    {
+        Collection collection = new Collection();
+        foreach (var design in set.Designs)
+        {
+            if (!design.IsActive(actor))
+                continue;
+
+            if (design.ApplicationType is 0)
+                continue;
+
+            if (actor.AsCharacter->CharacterData.ModelCharaId != design?.Design?.DesignData.ModelId)
+                continue;
+
+            if (design.Design.AssociatedCollection.IsAssociable())
+            {
+                collection = design.Design.AssociatedCollection;
+            }
+        }
+        return collection;
     }
 
     public bool Reduce(Actor actor, ActorIdentifier identifier, [NotNullWhen(true)] out ActorState? state)
