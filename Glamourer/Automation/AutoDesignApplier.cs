@@ -130,7 +130,7 @@ public class AutoDesignApplier : IDisposable
                         Reduce(data.Objects[0], state, newSet, false, false);
                         foreach (var actor in data.Objects)
                         {
-                            _penumbra.SetCollection(actor, ReduceCollections(actor, set));
+                            _penumbra.SetCollection(actor, ReduceCollections(actor, state, set));
                             _state.ReapplyState(actor);
                         }
                     }
@@ -142,7 +142,7 @@ public class AutoDesignApplier : IDisposable
                         var specificId = actor.GetIdentifier(_actors.AwaitedService);
                         if (_state.GetOrCreate(specificId, actor, out var state))
                         {
-                            _penumbra.SetCollection(actor, ReduceCollections(actor, set));
+                            _penumbra.SetCollection(actor, ReduceCollections(actor, state, set));
                             Reduce(actor, state, newSet, false, false);
                             _state.ReapplyState(actor);
                         }
@@ -201,7 +201,7 @@ public class AutoDesignApplier : IDisposable
         var respectManual = state.LastJob == newJob.Id;
         state.LastJob = actor.Job;
         Reduce(actor, state, set, respectManual, true);
-        _penumbra.SetCollection(actor, ReduceCollections(actor, set));
+        _penumbra.SetCollection(actor, ReduceCollections(actor, state, set));
         _state.ReapplyState(actor);
     }
 
@@ -214,10 +214,10 @@ public class AutoDesignApplier : IDisposable
             return;
 
         Reduce(actor, state, set, false, false);
-        _penumbra.SetCollection(actor, ReduceCollections(actor, set));
+        _penumbra.SetCollection(actor, ReduceCollections(actor, state, set));
     }
 
-    public unsafe Collection ReduceCollections(Actor actor, AutoDesignSet set)
+    public unsafe Collection ReduceCollections(Actor actor, ActorState state, AutoDesignSet set)
     {
         Collection collection = new Collection();
         foreach (var design in set.Designs)
@@ -228,10 +228,10 @@ public class AutoDesignApplier : IDisposable
             if (design.ApplicationType is 0)
                 continue;
 
-            if (actor.AsCharacter->CharacterData.ModelCharaId != design?.Design?.DesignData.ModelId)
+            if (actor.AsCharacter->CharacterData.ModelCharaId != design.GetDesignData(state).ModelId)
                 continue;
 
-            if (design.Design.AssociatedCollection.IsAssociable())
+            if (design.Design!.AssociatedCollection.IsAssociable())
             {
                 collection = design.Design.AssociatedCollection;
             }
