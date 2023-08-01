@@ -263,10 +263,10 @@ public class DesignManager
         _saveService.QueueSave(design);
         if (collection.IsAssociable())
         {
-            Glamourer.Log.Debug($"Removed associated collection from design {design.Identifier}.");
+            Glamourer.Log.Debug($"Set associated collection {collection.Name} to design {design.Identifier}.");
         } else
         {
-            Glamourer.Log.Debug($"Set associated collection {collection.Name} to design {design.Identifier}.");
+            Glamourer.Log.Debug($"Removed associated collection from design {design.Identifier}.");
         }
         _event.Invoke(DesignChanged.Type.ChangedAssociatedCollection, design, oldAssociatedCollection);
     }
