@@ -1,13 +1,7 @@
 ﻿using System.Numerics;
-using Dalamud.Interface;
-using Dalamud.Interface.Internal.Notifications;
-using Dalamud.Logging;
-using Dalamud.Utility;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using ImGuiNET;
-using OtterGui;
-using OtterGui.Raii;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 

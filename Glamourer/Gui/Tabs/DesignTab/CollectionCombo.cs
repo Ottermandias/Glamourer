@@ -1,10 +1,5 @@
-﻿using System;
-using System.Numerics;
-using Dalamud.Interface;
-using Glamourer.Interop.Penumbra;
+﻿using Glamourer.Interop.Penumbra;
 using ImGuiNET;
-using OtterGui;
-using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 
