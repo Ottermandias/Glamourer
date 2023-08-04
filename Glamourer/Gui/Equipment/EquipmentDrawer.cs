@@ -170,7 +170,7 @@ public class EquipmentDrawer
             "Change the visibility of the characters weapons when not drawn: Hidden, Visible or Don't Apply.", currentValue, currentApply,
             out newValue, out newApply, locked);
 
-    private bool DrawMainhand(EquipItem current, bool drawAll, out EquipItem weapon, out string label, bool locked, bool small)
+    private bool DrawMainhand(EquipItem current, bool drawAll, out EquipItem weapon, out string label, bool locked, bool small, bool open)
     {
         weapon = current;
         if (!_weaponCombo.TryGetValue(drawAll ? FullEquipType.Unknown : current.Type, out var combo))
@@ -181,6 +181,8 @@ public class EquipmentDrawer
 
         label = combo.Label;
         using var disabled = ImRaii.Disabled(locked);
+        if (!locked && open)
+            UiHelpers.OpenCombo($"##{combo.Label}");
         if (!combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth))
             return false;
 
@@ -188,7 +190,7 @@ public class EquipmentDrawer
         return true;
     }
 
-    private bool DrawOffhand(EquipItem mainhand, EquipItem current, out EquipItem weapon, out string label, bool locked, bool small)
+    private bool DrawOffhand(EquipItem mainhand, EquipItem current, out EquipItem weapon, out string label, bool locked, bool small, bool clear, bool open)
     {
         weapon = current;
         if (!_weaponCombo.TryGetValue(current.Type, out var combo))
@@ -199,6 +201,8 @@ public class EquipmentDrawer
 
         label = combo.Label;
         using var disabled = ImRaii.Disabled(locked);
+        if (!locked && open)
+            UiHelpers.OpenCombo($"##{combo.Label}");
         var change = combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth);
         if (change)
             weapon = combo.CurrentSelection;
@@ -209,7 +213,7 @@ public class EquipmentDrawer
             if (defaultOffhand.Id != weapon.Id)
             {
                 ImGuiUtil.HoverTooltip("Right-click to set to Default.");
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                if (clear || ImGui.IsItemClicked(ImGuiMouseButton.Right))
                 {
                     change = true;
                     weapon = defaultOffhand;
@@ -228,12 +232,15 @@ public class EquipmentDrawer
         => UiHelpers.DrawCheckbox($"##applyStain{slot}", "Apply this dye when applying the Design.", flags.HasFlag(slot.ToStainFlag()),
             out enabled, locked);
 
-    private bool DrawItem(EquipSlot slot, EquipItem current, out EquipItem armor, out string label, bool locked, bool small)
+    private bool DrawItem(EquipSlot slot, EquipItem current, out EquipItem armor, out string label, bool locked, bool small, bool clear, bool open)
     {
         Debug.Assert(slot.IsEquipment() || slot.IsAccessory(), $"Called {nameof(DrawItem)} on {slot}.");
         var combo = _itemCombo[slot.ToIndex()];
         label = combo.Label;
         armor = current;
+        if(!locked && open)
+            UiHelpers.OpenCombo($"##{combo.Label}");
+
         using var disabled = ImRaii.Disabled(locked);
         var change = combo.Draw(armor.Name, armor.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth);
         if (change)
@@ -242,7 +249,7 @@ public class EquipmentDrawer
         if (!locked && armor.ModelId.Id != 0)
         {
             ImGuiUtil.HoverTooltip("Right-click to clear.");
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            if (clear || ImGui.IsItemClicked(ImGuiMouseButton.Right))
             {
                 change = true;
                 armor  = ItemManager.NothingItem(slot);
@@ -365,7 +372,7 @@ public class EquipmentDrawer
         if (DrawStain(slot, cStain, out rStain, locked, true))
             changes |= DataChange.Stain;
         ImGui.SameLine();
-        if (DrawItem(slot, cArmor, out rArmor, out var label, locked, true))
+        if (DrawItem(slot, cArmor, out rArmor, out var label, locked, true, false, false))
             changes |= DataChange.Item;
         if (cApply.HasValue)
         {
@@ -396,9 +403,11 @@ public class EquipmentDrawer
     {
         var changes = DataChange.None;
         cArmor.DrawIcon(_textures, _iconSize);
+        var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
+        var left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();
         using var group = ImRaii.Group();
-        if (DrawItem(slot, cArmor, out rArmor, out var label, locked, false))
+        if (DrawItem(slot, cArmor, out rArmor, out var label, locked, false, right, left))
             changes |= DataChange.Item;
         if (cApply.HasValue)
         {
@@ -446,7 +455,7 @@ public class EquipmentDrawer
         ImGui.SameLine();
 
         rOffhand = cOffhand;
-        if (DrawMainhand(cMainhand, allWeapons, out rMainhand, out var mainhandLabel, locked, true))
+        if (DrawMainhand(cMainhand, allWeapons, out rMainhand, out var mainhandLabel, locked, true, false))
         {
             changes |= DataChange.Item;
             if (rMainhand.Type.ValidOffhand() != cMainhand.Type.ValidOffhand())
@@ -485,7 +494,7 @@ public class EquipmentDrawer
             changes |= DataChange.Stain2;
 
         ImGui.SameLine();
-        if (DrawOffhand(rMainhand, rOffhand, out rOffhand, out var offhandLabel, locked, true))
+        if (DrawOffhand(rMainhand, rOffhand, out rOffhand, out var offhandLabel, locked, true, false, false))
             changes |= DataChange.Item2;
         if (cApply.HasValue)
         {
@@ -519,11 +528,12 @@ public class EquipmentDrawer
             ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y });
 
         cMainhand.DrawIcon(_textures, _iconSize);
+        var left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();
         using (var group = ImRaii.Group())
         {
             rOffhand = cOffhand;
-            if (DrawMainhand(cMainhand, allWeapons, out rMainhand, out var mainhandLabel, locked, false))
+            if (DrawMainhand(cMainhand, allWeapons, out rMainhand, out var mainhandLabel, locked, false, left))
             {
                 changes |= DataChange.Item;
                 if (rMainhand.Type.ValidOffhand() != cMainhand.Type.ValidOffhand())
@@ -570,10 +580,12 @@ public class EquipmentDrawer
         }
 
         rOffhand.DrawIcon(_textures, _iconSize);
+        var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
+        left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();
         using (var group = ImRaii.Group())
         {
-            if (DrawOffhand(rMainhand, rOffhand, out rOffhand, out var offhandLabel, locked, false))
+            if (DrawOffhand(rMainhand, rOffhand, out rOffhand, out var offhandLabel, locked, false, right, left))
                 changes |= DataChange.Item2;
             if (cApply.HasValue)
             {

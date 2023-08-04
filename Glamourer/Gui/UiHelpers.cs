@@ -3,6 +3,7 @@ using System.Numerics;
 using Dalamud.Interface;
 using Glamourer.Services;
 using ImGuiNET;
+using Lumina.Misc;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Structs;
@@ -25,6 +26,14 @@ public enum DataChange : byte
 
 public static class UiHelpers
 {
+    /// <summary> Open a combo popup with another method than the combo itself. </summary>
+    public static void OpenCombo(string comboLabel)
+    {
+        var windowId = ImGui.GetID(comboLabel);
+        var popupId  = ~Crc32.Get("##ComboPopup", windowId);
+        ImGui.OpenPopup(popupId);
+    }
+
     public static void DrawIcon(this EquipItem item, TextureService textures, Vector2 size)
     {
         var isEmpty = item.ModelId.Id == 0;
