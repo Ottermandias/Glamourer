@@ -242,7 +242,7 @@ public class SetSelector : IDisposable
         var (disabled, tt) = HasSelection
             ? keyValid
                 ? (false, "Delete the currently selected design set.")
-                : (true, $"Delete the currently selected design set.\n{_config.DeleteDesignModifier.ToString()}")
+                : (true, $"Delete the currently selected design set.\nHold {_config.DeleteDesignModifier} to delete.")
             : (true, "No Automatic Design Set selected.");
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), size, tt, disabled, true))
             _manager.DeleteDesignSet(SelectionIndex);

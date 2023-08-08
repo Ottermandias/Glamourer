@@ -129,13 +129,16 @@ public class SetPanel
             ImGui.TableSetupColumn("Job Restrictions", ImGuiTableColumnFlags.WidthStretch);
         ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, 2 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
         ImGui.TableHeadersRow();
-
         foreach (var (design, idx) in Selection.Designs.WithIndex())
         {
             using var id = ImRaii.PushId(idx);
             ImGui.TableNextColumn();
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                    "Remove this design from the set.", false, true))
+            var keyValid = _config.DeleteDesignModifier.IsActive();
+            var tt = keyValid
+                ? "Remove this design from the set."
+                : $"Remove this design from the set.\nHold {_config.DeleteDesignModifier} to remove.";
+
+            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), new Vector2(ImGui.GetFrameHeight()), tt, !keyValid, true))
                 _endAction = () => _manager.DeleteDesign(Selection, idx);
             ImGui.TableNextColumn();
             ImGui.Selectable($"#{idx + 1:D2}");
@@ -182,7 +185,7 @@ public class SetPanel
         var size = new Vector2(ImGui.GetFrameHeight());
         size.X += ImGuiHelpers.GlobalScale;
 
-        var (equipFlags, customizeFlags, _, _, _, _) =  design.ApplyWhat();
+        var (equipFlags, customizeFlags, _, _, _, _) = design.ApplyWhat();
         var sb = new StringBuilder();
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
         {
