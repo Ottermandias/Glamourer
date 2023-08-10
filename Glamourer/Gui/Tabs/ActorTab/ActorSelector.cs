@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
@@ -19,14 +18,12 @@ public class ActorSelector
     private readonly Configuration _config;
     private readonly ObjectManager _objects;
     private readonly ActorService  _actors;
-    private readonly TargetManager _targets;
 
     private ActorIdentifier _identifier = ActorIdentifier.Invalid;
 
-    public ActorSelector(ObjectManager objects, TargetManager targets, ActorService actors, Configuration config)
+    public ActorSelector(ObjectManager objects, ActorService actors, Configuration config)
     {
         _objects = objects;
-        _targets = targets;
         _actors  = actors;
         _config  = config;
     }

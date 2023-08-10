@@ -3,9 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Dalamud.Data;
 using Dalamud.Game;
-using Dalamud.Game.ClientState;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -22,7 +21,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
 {
     private readonly SaveService       _saveService;
     private readonly ItemManager       _items;
-    private readonly ClientState       _clientState;
+    private readonly IClientState       _clientState;
     private readonly Framework         _framework;
     private readonly ObjectUnlocked    _event;
     private readonly IdentifierService _identifier;
@@ -47,7 +46,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
 
     public readonly IReadOnlyDictionary<ItemId, UnlockRequirements> Unlockable;
 
-    public ItemUnlockManager(SaveService saveService, ItemManager items, ClientState clientState, DataManager gameData, Framework framework,
+    public ItemUnlockManager(SaveService saveService, ItemManager items, IClientState clientState, IDataManager gameData, Framework framework,
         ObjectUnlocked @event, IdentifierService identifier)
     {
         SignatureHelper.Initialise(this);
@@ -282,7 +281,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
     private void OnLogin(object? _, EventArgs _2)
         => Scan();
 
-    private static Dictionary<ItemId, UnlockRequirements> CreateUnlockData(DataManager gameData, ItemManager items)
+    private static Dictionary<ItemId, UnlockRequirements> CreateUnlockData(IDataManager gameData, ItemManager items)
     {
         var ret     = new Dictionary<ItemId, UnlockRequirements>();
         var cabinet = gameData.GetExcelSheet<Cabinet>()!;

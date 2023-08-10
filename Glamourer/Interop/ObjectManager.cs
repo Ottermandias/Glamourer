@@ -2,24 +2,26 @@
 using System.Collections;
 using System.Collections.Generic;
 using Dalamud.Game;
-using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Objects;
+using Dalamud.Plugin.Services;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Penumbra.GameData.Actors;
-using Penumbra.String;
 
 namespace Glamourer.Interop;
 
 public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
 {
     private readonly Framework     _framework;
-    private readonly ClientState   _clientState;
-    private readonly ObjectTable   _objects;
+    private readonly IClientState  _clientState;
+    private readonly IObjectTable  _objects;
     private readonly ActorService  _actors;
-    private readonly TargetManager _targets;
+    private readonly ITargetManager _targets;
 
-    public ObjectManager(Framework framework, ClientState clientState, ObjectTable objects, ActorService actors, TargetManager targets)
+    public IObjectTable Objects
+        => _objects;
+
+    public ObjectManager(Framework framework, IClientState clientState, IObjectTable objects, ActorService actors, ITargetManager targets)
     {
         _framework   = framework;
         _clientState = clientState;
@@ -132,14 +134,14 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
         if (identifier.Type is IdentifierType.Owned)
         {
             var nonOwned = _actors.AwaitedService.CreateNpc(identifier.Kind, identifier.DataId);
-            if (!_nonOwnedIdentifiers.TryGetValue(nonOwned, out var allWorldData))
+            if (!_nonOwnedIdentifiers.TryGetValue(nonOwned, out var nonOwnedData))
             {
-                allWorldData                   = new ActorData(character, nonOwned.ToString());
-                _allWorldIdentifiers[nonOwned] = allWorldData;
+                nonOwnedData                   = new ActorData(character, nonOwned.ToString());
+                _nonOwnedIdentifiers[nonOwned] = nonOwnedData;
             }
             else
             {
-                allWorldData.Objects.Add(character);
+                nonOwnedData.Objects.Add(character);
             }
         }
     }

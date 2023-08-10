@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Dalamud;
-using Dalamud.Data;
-using Dalamud.Game.ClientState;
 using Dalamud.Hooking;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -19,7 +18,7 @@ namespace Glamourer.Unlocks;
 public class CustomizeUnlockManager : IDisposable, ISavable
 {
     private readonly SaveService    _saveService;
-    private readonly ClientState    _clientState;
+    private readonly IClientState   _clientState;
     private readonly ObjectUnlocked _event;
 
     private readonly Dictionary<uint, long> _unlocked = new();
@@ -29,8 +28,8 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     public IReadOnlyDictionary<uint, long> Unlocked
         => _unlocked;
 
-    public unsafe CustomizeUnlockManager(SaveService saveService, CustomizationService customizations, DataManager gameData,
-        ClientState clientState, ObjectUnlocked @event)
+    public CustomizeUnlockManager(SaveService saveService, CustomizationService customizations, IDataManager gameData,
+        IClientState clientState, ObjectUnlocked @event)
     {
         SignatureHelper.Initialise(this);
         _saveService = saveService;
@@ -178,7 +177,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
 
     /// <summary> Create a list of all unlockable hairstyles and facepaints. </summary>
     private static Dictionary<CustomizeData, (uint Data, string Name)> CreateUnlockableCustomizations(CustomizationService customizations,
-        DataManager gameData)
+        IDataManager gameData)
     {
         var ret   = new Dictionary<CustomizeData, (uint Data, string Name)>();
         var sheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English)!;

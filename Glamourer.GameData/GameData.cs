@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Dalamud;
-using Dalamud.Data;
+using Dalamud.Plugin.Services;
 using Glamourer.Structs;
 using Lumina.Excel.GeneratedSheets;
 
@@ -12,7 +12,7 @@ public static class GameData
     private static Dictionary<byte, Job>?             _jobs;
     private static Dictionary<ushort, JobGroup>?      _jobGroups;
 
-    public static IReadOnlyDictionary<byte, Job> Jobs(DataManager dataManager)
+    public static IReadOnlyDictionary<byte, Job> Jobs(IDataManager dataManager)
     {
         if (_jobs != null)
             return _jobs;
@@ -22,7 +22,7 @@ public static class GameData
         return _jobs;
     }
 
-    public static IReadOnlyDictionary<ushort, JobGroup> JobGroups(DataManager dataManager)
+    public static IReadOnlyDictionary<ushort, JobGroup> JobGroups(IDataManager dataManager)
     {
         if (_jobGroups != null)
             return _jobGroups;

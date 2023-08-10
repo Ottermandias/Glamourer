@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
 using Dalamud.Plugin;
@@ -46,7 +45,6 @@ public unsafe class DebugTab : ITab
     private readonly MetaService            _metaService;
     private readonly InventoryService       _inventoryService;
     private readonly PenumbraService        _penumbra;
-    private readonly ObjectTable            _objects;
     private readonly ObjectManager          _objectManager;
     private readonly GlamourerIpc           _ipc;
     private readonly CodeService            _code;
@@ -74,8 +72,7 @@ public unsafe class DebugTab : ITab
     public bool IsVisible
         => _config.DebugMode;
 
-    public DebugTab(ChangeCustomizeService changeCustomizeService, VisorService visorService, ObjectTable objects,
-        UpdateSlotService updateSlotService, WeaponService weaponService, PenumbraService penumbra,
+    public DebugTab(ChangeCustomizeService changeCustomizeService, VisorService visorService, UpdateSlotService updateSlotService, WeaponService weaponService, PenumbraService penumbra,
         ActorService actors, ItemManager items, CustomizationService customization, ObjectManager objectManager,
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
@@ -85,7 +82,6 @@ public unsafe class DebugTab : ITab
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
-        _objects                = objects;
         _updateSlotService      = updateSlotService;
         _weaponService          = weaponService;
         _penumbra               = penumbra;
@@ -151,7 +147,7 @@ public unsafe class DebugTab : ITab
             return;
 
         ImGui.InputInt("Game Object Index", ref _gameObjectIndex, 0, 0);
-        var       actor = (Actor)_objects.GetObjectAddress(_gameObjectIndex);
+        var       actor = (Actor)_objectManager.Objects.GetObjectAddress(_gameObjectIndex);
         var       model = actor.Model;
         using var table = ImRaii.Table("##evaluationTable", 4, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         ImGui.TableNextColumn();
@@ -433,7 +429,7 @@ public unsafe class DebugTab : ITab
             ? *(Penumbra.GameData.Structs.CustomizeData*)&actor.AsCharacter->DrawData.CustomizeData
             : new Penumbra.GameData.Structs.CustomizeData());
         var modelCustomize = new Customize(model.IsHuman
-            ? *(Penumbra.GameData.Structs.CustomizeData*)model.AsHuman->CustomizeData
+            ? *(Penumbra.GameData.Structs.CustomizeData*)model.AsHuman->Customize.Data
             : new Penumbra.GameData.Structs.CustomizeData());
         foreach (var type in Enum.GetValues<CustomizeIndex>())
         {
@@ -526,7 +522,7 @@ public unsafe class DebugTab : ITab
         using (var disabled = ImRaii.Disabled(!_penumbra.Available))
         {
             if (ImGui.SmallButton("Redraw"))
-                _penumbra.RedrawObject(_objects.GetObjectAddress(_gameObjectIndex), RedrawType.Redraw);
+                _penumbra.RedrawObject(_objectManager.Objects.GetObjectAddress(_gameObjectIndex), RedrawType.Redraw);
         }
 
         ImGuiUtil.DrawTableColumn("Last Tooltip Date");
@@ -1604,7 +1600,7 @@ public unsafe class DebugTab : ITab
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelGetAllCustomizationFromCharacter);
         ImGui.TableNextColumn();
-        base64 = GlamourerIpc.GetAllCustomizationFromCharacterSubscriber(_pluginInterface).Invoke(_objects[_gameObjectIndex] as Character);
+        base64 = GlamourerIpc.GetAllCustomizationFromCharacterSubscriber(_pluginInterface).Invoke(_objectManager.Objects[_gameObjectIndex] as Character);
         if (base64 != null)
             ImGuiUtil.CopyOnClickSelectable(base64);
         else
@@ -1618,7 +1614,7 @@ public unsafe class DebugTab : ITab
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelRevertCharacter);
         ImGui.TableNextColumn();
         if (ImGui.Button("Revert##Character"))
-            GlamourerIpc.RevertCharacterSubscriber(_pluginInterface).Invoke(_objects[_gameObjectIndex] as Character);
+            GlamourerIpc.RevertCharacterSubscriber(_pluginInterface).Invoke(_objectManager.Objects[_gameObjectIndex] as Character);
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyAll);
         ImGui.TableNextColumn();
@@ -1628,7 +1624,7 @@ public unsafe class DebugTab : ITab
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyAllToCharacter);
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##AllCharacter"))
-            GlamourerIpc.ApplyAllToCharacterSubscriber(_pluginInterface).Invoke(_base64Apply, _objects[_gameObjectIndex] as Character);
+            GlamourerIpc.ApplyAllToCharacterSubscriber(_pluginInterface).Invoke(_base64Apply, _objectManager.Objects[_gameObjectIndex] as Character);
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyOnlyEquipment);
         ImGui.TableNextColumn();
@@ -1639,7 +1635,7 @@ public unsafe class DebugTab : ITab
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##EquipCharacter"))
             GlamourerIpc.ApplyOnlyEquipmentToCharacterSubscriber(_pluginInterface)
-                .Invoke(_base64Apply, _objects[_gameObjectIndex] as Character);
+                .Invoke(_base64Apply, _objectManager.Objects[_gameObjectIndex] as Character);
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyOnlyCustomization);
         ImGui.TableNextColumn();
@@ -1650,7 +1646,7 @@ public unsafe class DebugTab : ITab
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##CustomizeCharacter"))
             GlamourerIpc.ApplyOnlyCustomizationToCharacterSubscriber(_pluginInterface)
-                .Invoke(_base64Apply, _objects[_gameObjectIndex] as Character);
+                .Invoke(_base64Apply, _objectManager.Objects[_gameObjectIndex] as Character);
     }
 
     #endregion

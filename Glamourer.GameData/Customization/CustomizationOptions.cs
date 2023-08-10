@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Dalamud;
-using Dalamud.Data;
-using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
@@ -36,7 +35,7 @@ public partial class CustomizationOptions
 
     // Get specific icons.
     internal ImGuiScene.TextureWrap GetIcon(uint id)
-        => _icons.LoadIcon(id);
+        => _icons.LoadIcon(id)!;
 
     private readonly IconStorage _icons;
 
@@ -62,10 +61,10 @@ public partial class CustomizationOptions
     public string GetName(CustomName name)
         => _names[(int)name];
 
-    internal CustomizationOptions(DalamudPluginInterface pi, DataManager gameData)
+    internal CustomizationOptions(ITextureProvider textures, IDataManager gameData)
     {
         var tmp = new TemporaryData(gameData, this);
-        _icons = new IconStorage(pi, gameData, _customizationSets.Length * 50);
+        _icons = new IconStorage(textures, gameData);
         SetNames(gameData, tmp);
         foreach (var race in Clans)
         {
@@ -78,7 +77,7 @@ public partial class CustomizationOptions
     // Obtain localized names of customization options and race names from the game data.
     private readonly string[] _names = new string[Enum.GetValues<CustomName>().Length];
 
-    private void SetNames(DataManager gameData, TemporaryData tmp)
+    private void SetNames(IDataManager gameData, TemporaryData tmp)
     {
         var subRace = gameData.GetExcelSheet<Tribe>()!;
 
@@ -180,7 +179,7 @@ public partial class CustomizationOptions
         }
 
 
-        public TemporaryData(DataManager gameData, CustomizationOptions options)
+        public TemporaryData(IDataManager gameData, CustomizationOptions options)
         {
             _options        = options;
             _cmpFile        = new CmpFile(gameData);

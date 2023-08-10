@@ -7,7 +7,6 @@ using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
-using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -149,16 +148,15 @@ public class UnlockOverview
         var       iconSize       = ImGuiHelpers.ScaledVector2(64);
         var       iconsPerRow    = IconsPerRow(iconSize.X, spacing.X);
         var       numRows        = (items.Count + iconsPerRow - 1) / iconsPerRow;
-        var       numVisibleRows = (int)(Math.Ceiling(ImGui.GetContentRegionAvail().Y / (iconSize.Y + spacing.Y)) + 0.5f);
+        var       numVisibleRows = (int)(Math.Ceiling(ImGui.GetContentRegionAvail().Y / (iconSize.Y + spacing.Y)) + 0.5f) + 1;
 
         void DrawItem(EquipItem item)
         {
             var unlocked   = _itemUnlocks.IsUnlocked(item.Id, out var time);
-            var iconHandle = _textures.LoadIcon(item.IconId.Id);
-            if (!iconHandle.HasValue)
+            if (!_textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
                 return;
 
-            var (icon, size) = iconHandle.Value.Value;
+            var (icon, size) = (iconHandle.ImGuiHandle, new Vector2(iconHandle.Width, iconHandle.Height));
 
             ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One, unlocked ? Vector4.One : UnavailableTint);
             if (ImGui.IsItemClicked())

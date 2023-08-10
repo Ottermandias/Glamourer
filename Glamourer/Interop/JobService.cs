@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Dalamud.Data;
 using Dalamud.Hooking;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Interop.Structs;
@@ -19,7 +19,7 @@ public class JobService : IDisposable
 
     public event Action<Actor, Job, Job>? JobChanged;
 
-    public JobService(DataManager gameData)
+    public JobService(IDataManager gameData)
     {
         SignatureHelper.Initialise(this);
         _characterDataOffset = Marshal.OffsetOf<Character>(nameof(Character.CharacterData));
@@ -29,9 +29,7 @@ public class JobService : IDisposable
     }
 
     public void Dispose()
-    {
-        _changeJobHook.Dispose();
-    }
+        => _changeJobHook.Dispose();
 
     private delegate void ChangeJobDelegate(nint data, uint job);
 

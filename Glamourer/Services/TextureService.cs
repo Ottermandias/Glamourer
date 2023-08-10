@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
-using Dalamud.Data;
 using System.Numerics;
 using Dalamud.Game;
 using Dalamud.Interface;
+using Dalamud.Plugin.Services;
 using ImGuiScene;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
@@ -13,8 +12,8 @@ namespace Glamourer.Services;
 
 public sealed class TextureService : TextureCache, IDisposable
 {
-    public TextureService(Framework framework, UiBuilder uiBuilder, DataManager dataManager)
-        : base(framework, uiBuilder, dataManager)
+    public TextureService(UiBuilder uiBuilder, IDataManager dataManager, ITextureProvider textureProvider)
+        : base(dataManager, textureProvider)
         => _slotIcons = CreateSlotIcons(uiBuilder);
 
     private readonly TextureWrap?[] _slotIcons;
@@ -22,7 +21,7 @@ public sealed class TextureService : TextureCache, IDisposable
     public (nint, Vector2, bool) GetIcon(EquipItem item)
     {
         if (item.IconId.Id != 0 && TryLoadIcon(item.IconId.Id, out var ret))
-            return (ret.Value.Texture, ret.Value.Dimensions, false);
+            return (ret.ImGuiHandle, new Vector2(ret.Width, ret.Height), false);
 
         var idx = item.Type.ToSlot().ToIndex();
         return idx < 12 && _slotIcons[idx] != null
@@ -30,9 +29,8 @@ public sealed class TextureService : TextureCache, IDisposable
             : (nint.Zero, Vector2.Zero, true);
     }
 
-    public new void Dispose()
+    public void Dispose()
     {
-        base.Dispose();
         for (var i = 0; i < _slotIcons.Length; ++i)
         {
             _slotIcons[i]?.Dispose();

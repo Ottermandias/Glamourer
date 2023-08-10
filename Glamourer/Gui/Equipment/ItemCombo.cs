@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Dalamud.Data;
+using Dalamud.Plugin.Services;
 using Glamourer.Services;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -19,7 +19,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     private         ItemId _currentItem;
     private         float  _innerWidth;
 
-    public ItemCombo(DataManager gameData, ItemManager items, EquipSlot slot)
+    public ItemCombo(IDataManager gameData, ItemManager items, EquipSlot slot)
         : base(() => GetItems(items, slot))
     {
         Label         = GetLabel(gameData, slot);
@@ -71,7 +71,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     protected override string ToString(EquipItem obj)
         => obj.Name;
 
-    private static string GetLabel(DataManager gameData, EquipSlot slot)
+    private static string GetLabel(IDataManager gameData, EquipSlot slot)
     {
         var sheet = gameData.GetExcelSheet<Addon>()!;
 

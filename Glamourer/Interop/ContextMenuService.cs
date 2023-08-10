@@ -1,8 +1,8 @@
 ﻿using System;
 using Dalamud.ContextMenu;
-using Dalamud.Game.Gui;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Plugin.Services;
 using Glamourer.Events;
 using Glamourer.Services;
 using Glamourer.State;
@@ -20,9 +20,9 @@ public class ContextMenuService : IDisposable
     private readonly DalamudContextMenu _contextMenu = new();
     private readonly StateManager       _state;
     private readonly ObjectManager      _objects;
-    private readonly GameGui            _gameGui;
+    private readonly IGameGui           _gameGui;
 
-    public ContextMenuService(ItemManager items, StateManager state, ObjectManager objects, GameGui gameGui, Configuration config)
+    public ContextMenuService(ItemManager items, StateManager state, ObjectManager objects, IGameGui gameGui, Configuration config)
     {
         _items   = items;
         _state   = state;

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Data;
 using Dalamud.Interface;
+using Dalamud.Plugin.Services;
 using Glamourer.Designs;
 using Glamourer.Services;
 using Glamourer.Structs;
@@ -34,7 +34,7 @@ public class EquipmentDrawer
     private float _requiredComboWidthUnscaled;
     private float _requiredComboWidth;
 
-    public EquipmentDrawer(DataManager gameData, ItemManager items, CodeService codes, TextureService textures, Configuration config)
+    public EquipmentDrawer(IDataManager gameData, ItemManager items, CodeService codes, TextureService textures, Configuration config)
     {
         _items     = items;
         _codes     = codes;

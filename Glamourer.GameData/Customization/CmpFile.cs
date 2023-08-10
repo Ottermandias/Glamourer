@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Dalamud.Data;
 using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 
 namespace Glamourer.Customization;
 
@@ -20,7 +20,7 @@ internal class CmpFile
     public bool Valid
         => _file != null;
 
-    public CmpFile(DataManager gameData)
+    public CmpFile(IDataManager gameData)
     {
         try
         {

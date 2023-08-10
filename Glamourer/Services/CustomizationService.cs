@@ -1,9 +1,6 @@
-using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Dalamud.Data;
-using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using Glamourer.Customization;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
@@ -14,8 +11,8 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
 {
     public readonly HumanModelList HumanModels;
 
-    public CustomizationService(DalamudPluginInterface pi, DataManager gameData, HumanModelList humanModels)
-        : base(nameof(CustomizationService), () => CustomizationManager.Create(pi, gameData))
+    public CustomizationService(ITextureProvider textures, IDataManager gameData, HumanModelList humanModels)
+        : base(nameof(CustomizationService), () => CustomizationManager.Create(textures, gameData))
         => HumanModels = humanModels;
 
     public (Customize NewValue, CustomizeFlag Applied, CustomizeFlag Changed) Combine(Customize oldValues, Customize newValues,

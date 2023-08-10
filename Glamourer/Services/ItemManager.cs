@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Dalamud.Data;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using Lumina.Excel;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
@@ -27,7 +27,7 @@ public class ItemManager : IDisposable
 
     public readonly EquipItem DefaultSword;
 
-    public ItemManager(Configuration config, DalamudPluginInterface pi, DataManager gameData, IdentifierService identifierService,
+    public ItemManager(Configuration config, DalamudPluginInterface pi, IDataManager gameData, IdentifierService identifierService,
         ItemService itemService)
     {
         _config           = config;

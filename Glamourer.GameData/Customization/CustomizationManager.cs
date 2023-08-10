@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
-using Dalamud.Data;
-using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Customization;
@@ -12,9 +11,9 @@ public class CustomizationManager : ICustomizationManager
     private CustomizationManager()
     { }
 
-    public static ICustomizationManager Create(DalamudPluginInterface pi, DataManager gameData)
+    public static ICustomizationManager Create(ITextureProvider textures, IDataManager gameData)
     {
-        _options ??= new CustomizationOptions(pi, gameData);
+        _options ??= new CustomizationOptions(textures, gameData);
         return new CustomizationManager();
     }
 

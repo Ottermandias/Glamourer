@@ -35,7 +35,6 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         Sortable =  true;
         Flags    |= ImGuiTableFlags.Hideable;
         _event.Subscribe(OnObjectUnlock, ObjectUnlocked.Priority.UnlockTable);
-        textures.Logger = Glamourer.Log;
     }
 
     public void Dispose()
@@ -61,9 +60,8 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
         public override void DrawColumn(EquipItem item, int _)
         {
-            var iconHandle = _textures.LoadIcon(item.IconId.Id);
-            if (iconHandle.HasValue)
-                ImGuiUtil.HoverIcon(iconHandle.Value, new Vector2(ImGui.GetFrameHeight()));
+            if (_textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
+                ImGuiUtil.HoverIcon(iconHandle, new Vector2(ImGui.GetFrameHeight()));
             else
                 ImGui.Dummy(new Vector2(ImGui.GetFrameHeight()));
             ImGui.SameLine();
@@ -260,7 +258,8 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             if (FilterRegex?.IsMatch(item.ModelString) ?? item.ModelString.Contains(FilterValue, StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            if (item.Type.ValidOffhand().IsOffhandType() && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
+            if (item.Type.ValidOffhand().IsOffhandType()
+             && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
                 return FilterRegex?.IsMatch(offhand.ModelString)
                  ?? offhand.ModelString.Contains(FilterValue, StringComparison.OrdinalIgnoreCase);
 
