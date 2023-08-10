@@ -7,7 +7,7 @@
     "Tags": [ "Appearance", "Glamour", "Race", "Outfit", "Armor", "Clothes", "Skins", "Customization", "Design", "Character" ],
     "InternalName": "Glamourer",
     "AssemblyVersion": "0.1.3.2",
-    "TestingAssemblyVersion": "0.2.0.21",
+    "TestingAssemblyVersion": "0.2.0.22",
     "RepoUrl": "https://github.com/Ottermandias/Glamourer",
     "ApplicableVersion": "any",
     "DalamudApiLevel": 8,
