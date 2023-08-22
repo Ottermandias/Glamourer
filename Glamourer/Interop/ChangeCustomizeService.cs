@@ -6,7 +6,6 @@ using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using OtterGui.Classes;
-using Penumbra.String.Functions;
 using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
 
 namespace Glamourer.Interop;
