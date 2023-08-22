@@ -35,7 +35,7 @@ public unsafe class FunModule
         if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
             return;
 
-        ApplyEmperor(new Span<CharacterArmor>(ref armor));
+        ApplyEmperor(new Span<CharacterArmor>(ref armor), slot);
         ApplyClown(new Span<CharacterArmor>(ref armor));
     }
 

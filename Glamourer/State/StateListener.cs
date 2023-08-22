@@ -11,6 +11,7 @@ using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using System;
+using Dalamud.Game.ClientState.Conditions;
 
 namespace Glamourer.State;
 
@@ -40,6 +41,7 @@ public class StateListener : IDisposable
     private readonly MovedEquipment            _movedEquipment;
     private readonly GPoseService              _gPose;
     private readonly ChangeCustomizeService    _changeCustomizeService;
+    private readonly Condition                 _condition;
 
     private ActorIdentifier _creatingIdentifier = ActorIdentifier.Invalid;
     private ActorState?     _creatingState;
@@ -55,7 +57,7 @@ public class StateListener : IDisposable
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
         StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gPose,
-        ChangeCustomizeService changeCustomizeService, CustomizationService customizations)
+        ChangeCustomizeService changeCustomizeService, CustomizationService customizations, Condition condition)
     {
         _manager                = manager;
         _items                  = items;
@@ -76,6 +78,7 @@ public class StateListener : IDisposable
         _gPose                  = gPose;
         _changeCustomizeService = changeCustomizeService;
         _customizations         = customizations;
+        _condition              = condition;
 
         if (Enabled)
             Subscribe();
@@ -123,6 +126,9 @@ public class StateListener : IDisposable
     private unsafe void OnCreatingCharacterBase(nint actorPtr, string _, nint modelPtr, nint customizePtr, nint equipDataPtr)
     {
         var actor = (Actor)actorPtr;
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
+            return;
+
         _creatingIdentifier = actor.GetIdentifier(_actors.AwaitedService);
 
         ref var modelId   = ref *(uint*)modelPtr;
@@ -154,7 +160,7 @@ public class StateListener : IDisposable
 
     private unsafe void OnCustomizeChange(Model model, Ref<Customize> customize)
     {
-        if (!model.IsHuman)
+        if (_condition[ConditionFlag.CreatingCharacter] || !model.IsHuman)
             return;
 
         var actor = _penumbra.GameObjectFromDrawObject(model);
@@ -206,6 +212,9 @@ public class StateListener : IDisposable
     /// </summary>
     private void OnSlotUpdating(Model model, EquipSlot slot, Ref<CharacterArmor> armor, Ref<ulong> returnValue)
     {
+        if (_condition[ConditionFlag.CreatingCharacter])
+            return;
+
         var actor = _penumbra.GameObjectFromDrawObject(model);
         if (actor.Identifier(_actors.AwaitedService, out var identifier)
          && _manager.TryGetValue(identifier, out var state))
@@ -259,6 +268,9 @@ public class StateListener : IDisposable
     /// </summary>
     private void OnWeaponLoading(Actor actor, EquipSlot slot, Ref<CharacterWeapon> weapon)
     {
+        if (_condition[ConditionFlag.CreatingCharacter])
+            return;
+
         // Fist weapon gauntlet hack.
         if (slot is EquipSlot.OffHand && weapon.Value.Variant == 0 && weapon.Value.Set.Id != 0 && _lastFistOffhand.Set.Id != 0)
             weapon.Value = _lastFistOffhand;
@@ -448,6 +460,9 @@ public class StateListener : IDisposable
     /// <summary> Handle visor state changes made by the game. </summary>
     private void OnVisorChange(Model model, Ref<bool> value)
     {
+        if (_condition[ConditionFlag.CreatingCharacter])
+            return;
+
         // Find appropriate actor and state.
         // We do not need to handle fixed designs,
         // since a fixed design would already have established state-tracking.
@@ -478,6 +493,9 @@ public class StateListener : IDisposable
     /// <summary> Handle Hat Visibility changes. These act on the game object. </summary>
     private void OnHeadGearVisibilityChange(Actor actor, Ref<bool> value)
     {
+        if (_condition[ConditionFlag.CreatingCharacter])
+            return;
+
         // Find appropriate state.
         // We do not need to handle fixed designs,
         // if there is no model that caused a fixed design to exist yet,
@@ -508,6 +526,9 @@ public class StateListener : IDisposable
     /// <summary> Handle Weapon Visibility changes. These act on the game object. </summary>
     private void OnWeaponVisibilityChange(Actor actor, Ref<bool> value)
     {
+        if (_condition[ConditionFlag.CreatingCharacter])
+            return;
+
         // Find appropriate state.
         // We do not need to handle fixed designs,
         // if there is no model that caused a fixed design to exist yet,
@@ -579,6 +600,9 @@ public class StateListener : IDisposable
 
     private void OnCreatedCharacterBase(nint gameObject, string _, nint drawObject)
     {
+        if (_condition[ConditionFlag.CreatingCharacter])
+            return;
+
         if (_creatingState == null)
             return;
 

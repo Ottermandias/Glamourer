@@ -51,7 +51,7 @@ public unsafe class UpdateSlotService : IDisposable
         var slot        = slotIdx.ToEquipSlot();
         var returnValue = ulong.MaxValue;
         SlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
-        Glamourer.Log.Excessive($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue}).");
+        Glamourer.Log.Excessive($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
         return returnValue == ulong.MaxValue ? _flagSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
     }
 

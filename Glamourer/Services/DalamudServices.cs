@@ -1,4 +1,5 @@
 using Dalamud.Game;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Gui;
@@ -23,6 +24,7 @@ public class DalamudServices
         services.AddSingleton(Commands);
         services.AddSingleton(GameData);
         services.AddSingleton(ClientState);
+        services.AddSingleton(Condition);
         services.AddSingleton(GameGui);
         services.AddSingleton(Chat);
         services.AddSingleton(Framework);
@@ -40,6 +42,7 @@ public class DalamudServices
     [PluginService][RequiredVersion("1.0")] public ICommandManager        Commands        { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public IDataManager           GameData        { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public IClientState           ClientState     { get; private set; } = null!;
+    [PluginService][RequiredVersion("1.0")] public Condition              Condition       { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public IGameGui               GameGui         { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public ChatGui                Chat            { get; private set; } = null!;
     [PluginService][RequiredVersion("1.0")] public Framework              Framework       { get; private set; } = null!;

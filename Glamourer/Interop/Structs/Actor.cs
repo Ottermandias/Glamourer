@@ -43,7 +43,7 @@ public readonly unsafe struct Actor : IEquatable<Actor>
         => actor.Address;
 
     public bool IsGPoseOrCutscene
-        => Index is >= (int)ScreenActor.CutsceneStart and < (int)ScreenActor.CutsceneEnd;
+        => Index.Index is >= (int)ScreenActor.CutsceneStart and < (int)ScreenActor.CutsceneEnd;
 
     public ActorIdentifier GetIdentifier(ActorManager actors)
         => actors.FromObject(AsObject, out _, true, true, false);
@@ -63,8 +63,8 @@ public readonly unsafe struct Actor : IEquatable<Actor>
         return false;
     }
 
-    public int Index
-        => Valid ? AsObject->ObjectIndex : -1;
+    public ObjectIndex Index
+        => Valid ? AsObject->ObjectIndex : ObjectIndex.AnyIndex;
 
     public Model Model
         => Valid ? AsObject->DrawObject : null;

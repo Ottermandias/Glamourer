@@ -6,6 +6,7 @@ using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using OtterGui.Classes;
+using Penumbra.String.Functions;
 using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
 
 namespace Glamourer.Interop;
@@ -74,9 +75,7 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
     {
         var customize = new Ref<Customize>(new Customize(*(CustomizeData*)data));
         Invoke(this, (Model)human, customize);
-        fixed (byte* ptr = customize.Value.Data.Data)
-        {
-            return _changeCustomizeHook.Original(human, ptr, skipEquipment);
-        }
+        ((Customize*)data)->Load(customize.Value);
+        return _changeCustomizeHook.Original(human, data, skipEquipment);
     }
 }
