@@ -89,7 +89,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
         if (!items.ItemService.AwaitedService.TryGetValue(type, out var list))
             return Array.Empty<EquipItem>();
 
-        if (type.ToSlot() is EquipSlot.OffHand && !type.IsOffhandType())
+        if (type.AllowsNothing())
             return list.OrderBy(e => e.Name).Prepend(ItemManager.NothingItem(type)).ToList();
 
         return list.OrderBy(e => e.Name).ToList();
