@@ -143,6 +143,10 @@ public class EquipmentDrawer
                 out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked,
                 allWeapons);
 
+        if (!locked && _codes.EnabledArtisan)
+            return DrawWeaponsArtisan(cMainhand, out rMainhand, cOffhand, out rOffhand, cMainhandStain, out rMainhandStain, cOffhandStain,
+                out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain);
+
         return DrawWeaponsNormal(cMainhand, out rMainhand, cOffhand, out rOffhand, cMainhandStain, out rMainhandStain, cOffhandStain,
             out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked,
             allWeapons);
@@ -190,7 +194,8 @@ public class EquipmentDrawer
         return true;
     }
 
-    private bool DrawOffhand(EquipItem mainhand, EquipItem current, out EquipItem weapon, out string label, bool locked, bool small, bool clear, bool open)
+    private bool DrawOffhand(EquipItem mainhand, EquipItem current, out EquipItem weapon, out string label, bool locked, bool small, bool clear,
+        bool open)
     {
         weapon = current;
         if (!_weaponCombo.TryGetValue(current.Type, out var combo))
@@ -232,13 +237,14 @@ public class EquipmentDrawer
         => UiHelpers.DrawCheckbox($"##applyStain{slot}", "Apply this dye when applying the Design.", flags.HasFlag(slot.ToStainFlag()),
             out enabled, locked);
 
-    private bool DrawItem(EquipSlot slot, EquipItem current, out EquipItem armor, out string label, bool locked, bool small, bool clear, bool open)
+    private bool DrawItem(EquipSlot slot, EquipItem current, out EquipItem armor, out string label, bool locked, bool small, bool clear,
+        bool open)
     {
         Debug.Assert(slot.IsEquipment() || slot.IsAccessory(), $"Called {nameof(DrawItem)} on {slot}.");
         var combo = _itemCombo[slot.ToIndex()];
         label = combo.Label;
         armor = current;
-        if(!locked && open)
+        if (!locked && open)
             UiHelpers.OpenCombo($"##{combo.Label}");
 
         using var disabled = ImRaii.Disabled(locked);
@@ -404,7 +410,7 @@ public class EquipmentDrawer
         var changes = DataChange.None;
         cArmor.DrawIcon(_textures, _iconSize);
         var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
-        var left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
+        var left  = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();
         using var group = ImRaii.Group();
         if (DrawItem(slot, cArmor, out rArmor, out var label, locked, false, right, left))
@@ -616,5 +622,82 @@ public class EquipmentDrawer
         }
 
         return changes;
+    }
+
+    private DataChange DrawWeaponsArtisan(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
+        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
+        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain)
+    {
+        rApplyMainhand      = (cApply ?? 0).HasFlag(EquipFlag.Mainhand);
+        rApplyMainhandStain = (cApply ?? 0).HasFlag(EquipFlag.MainhandStain);
+        rApplyOffhand       = (cApply ?? 0).HasFlag(EquipFlag.Offhand);
+        rApplyOffhandStain  = (cApply ?? 0).HasFlag(EquipFlag.MainhandStain);
+
+        bool DrawWeapon(EquipItem current, out EquipItem ret)
+        {
+            int setId   = current.ModelId.Id;
+            int type    = current.WeaponType.Id;
+            int variant = current.Variant.Id;
+            ret = current;
+            var changed = false;
+
+            ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
+            if (ImGui.InputInt("##setId", ref setId, 0, 0))
+            {
+                var newSetId = (SetId)Math.Clamp(setId, 0, ushort.MaxValue);
+                if (newSetId.Id != current.ModelId.Id)
+                {
+                    ret     = _items.Identify(EquipSlot.MainHand, newSetId, current.WeaponType, current.Variant);
+                    changed = true;
+                }
+            }
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
+            if (ImGui.InputInt("##type", ref type, 0, 0))
+            {
+                var newType = (WeaponType)Math.Clamp(type, 0, ushort.MaxValue);
+                if (newType.Id != current.WeaponType.Id)
+                {
+                    ret     = _items.Identify(EquipSlot.MainHand, current.ModelId, newType, current.Variant);
+                    changed = true;
+                }
+            }
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
+            if (ImGui.InputInt("##variant", ref variant, 0, 0))
+            {
+                var newVariant = (Variant)Math.Clamp(variant, 0, byte.MaxValue);
+                if (newVariant.Id != current.Variant.Id)
+                {
+                    ret     = _items.Identify(EquipSlot.MainHand, current.ModelId, current.WeaponType, newVariant);
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        var ret = DataChange.None;
+        using (var id = ImRaii.PushId(0))
+        {
+            if (DrawStainArtisan(EquipSlot.MainHand, cMainhandStain, out rMainhandStain))
+                ret |= DataChange.Stain;
+            ImGui.SameLine();
+            if (DrawWeapon(cMainhand, out rMainhand))
+                ret |= DataChange.Item;
+        }
+
+        using (var id = ImRaii.PushId(1))
+        {
+            if (DrawStainArtisan(EquipSlot.OffHand, cOffhandStain, out rOffhandStain))
+                ret |= DataChange.Stain;
+            ImGui.SameLine();
+            if (DrawWeapon(cOffhand, out rOffhand))
+                ret |= DataChange.Item;
+        }
+
+        return ret;
     }
 }
