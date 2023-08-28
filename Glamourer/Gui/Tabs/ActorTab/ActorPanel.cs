@@ -41,6 +41,7 @@ public class ActorPanel
     private Actor           _actor     = Actor.Null;
     private ActorData       _data;
     private ActorState?     _state;
+    private bool            _lockedRedraw;
 
     public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer,
         EquipmentDrawer equipmentDrawer, IdentifierService identification, AutoDesignApplier autoDesignApplier,
@@ -59,10 +60,14 @@ public class ActorPanel
         _datFileService      = datFileService;
     }
 
+    private CustomizeFlag CustomizeApplicationFlags
+        => _lockedRedraw ? CustomizeFlagExtensions.AllRelevant & ~CustomizeFlagExtensions.RedrawRequired : CustomizeFlagExtensions.AllRelevant;
+
     public void Draw()
     {
         using var group = ImRaii.Group();
         (_identifier, _data) = _selector.Selection;
+        _lockedRedraw        = _identifier.Type is IdentifierType.Special;
         (_actorName, _actor) = GetHeaderName();
         DrawHeader();
         DrawPanel();
@@ -71,7 +76,7 @@ public class ActorPanel
             return;
 
         if (_datFileService.CreateImGuiTarget(out var dat))
-            _stateManager.ChangeCustomize(_state!, dat.Customize, CustomizeFlagExtensions.AllRelevant, StateChanged.Source.Manual);
+            _stateManager.ChangeCustomize(_state!, dat.Customize, CustomizeApplicationFlags, StateChanged.Source.Manual);
         _datFileService.CreateSource();
     }
 

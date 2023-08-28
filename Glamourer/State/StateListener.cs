@@ -177,8 +177,14 @@ public class StateListener : IDisposable
         {
             case UpdateState.Transformed: break;
             case UpdateState.Change:
-                var set   = _customizations.AwaitedService.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
                 var model = state.ModelData.Customize;
+                if (customize.Gender != model.Gender || customize.Clan != model.Clan)
+                {
+                    _manager.ChangeCustomize(state, in customize, CustomizeFlagExtensions.AllRelevant, StateChanged.Source.Game);
+                    return;
+                }
+
+                var set = _customizations.AwaitedService.GetList(model.Clan, model.Gender);
                 foreach (var index in CustomizationExtensions.AllBasic)
                 {
                     if (state[index] is not StateChanged.Source.Fixed)

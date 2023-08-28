@@ -378,7 +378,8 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             if (design.DoApplyVisorToggle())
                 _editor.ChangeMetaState(state, ActorState.MetaIndex.VisorState, design.DesignData.IsVisorToggled(), source, out _, key);
 
-            _editor.ChangeHumanCustomize(state, design.DesignData.Customize, design.ApplyCustomize, source, out _, out var applied, key);
+            var flags = state.AllowsRedraw ? design.ApplyCustomize : design.ApplyCustomize & ~CustomizeFlagExtensions.RedrawRequired; 
+            _editor.ChangeHumanCustomize(state, design.DesignData.Customize, flags, source, out _, out var applied, key);
             redraw |= applied.RequiresRedraw();
 
             foreach (var slot in EquipSlotExtensions.FullSlots)

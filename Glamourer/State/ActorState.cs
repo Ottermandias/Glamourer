@@ -22,6 +22,9 @@ public class ActorState
 
     public readonly ActorIdentifier Identifier;
 
+    public bool AllowsRedraw
+        => Identifier.Type is not IdentifierType.Special;
+
     /// <summary> This should always represent the unmodified state of the draw object. </summary>
     public DesignData BaseData;
 
