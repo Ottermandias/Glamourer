@@ -237,7 +237,7 @@ public class AutoDesignApplier : IDisposable
         CustomizeFlag totalCustomizeFlags = 0;
         byte          totalMetaFlags      = 0;
         if (set.BaseState == AutoDesignSet.Base.Game)
-            _state.ResetState(state, StateChanged.Source.Fixed);
+            _state.ResetStateFixed(state);
         else if (!respectManual)
             state.RemoveFixedDesignSources();
         foreach (var design in set.Designs)

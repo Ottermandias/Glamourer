@@ -378,7 +378,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             if (design.DoApplyVisorToggle())
                 _editor.ChangeMetaState(state, ActorState.MetaIndex.VisorState, design.DesignData.IsVisorToggled(), source, out _, key);
 
-            var flags = state.AllowsRedraw ? design.ApplyCustomize : design.ApplyCustomize & ~CustomizeFlagExtensions.RedrawRequired; 
+            var flags = state.AllowsRedraw ? design.ApplyCustomize : design.ApplyCustomize & ~CustomizeFlagExtensions.RedrawRequired;
             _editor.ChangeHumanCustomize(state, design.DesignData.Customize, flags, source, out _, out var applied, key);
             redraw |= applied.RequiresRedraw();
 
@@ -433,6 +433,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         state.ModelData = state.BaseData;
         foreach (var index in Enum.GetValues<CustomizeIndex>())
             state[index] = StateChanged.Source.Game;
+
         foreach (var slot in EquipSlotExtensions.FullSlots)
         {
             state[slot, true]  = StateChanged.Source.Game;
@@ -448,6 +449,57 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Reset, StateChanged.Source.Manual, state, actors, null);
+    }
+
+    public void ResetStateFixed(ActorState state, uint key = 0)
+    {
+        if (!state.Unlock(key))
+            return;
+
+        foreach (var index in Enum.GetValues<CustomizeIndex>().Where(i => state[i] is StateChanged.Source.Fixed))
+        {
+            state[index]                     = StateChanged.Source.Game;
+            state.ModelData.Customize[index] = state.BaseData.Customize[index];
+        }
+
+        foreach (var slot in EquipSlotExtensions.FullSlots)
+        {
+            if (state[slot, true] is StateChanged.Source.Fixed)
+            {
+                state[slot, true] = StateChanged.Source.Game;
+                state.ModelData.SetStain(slot, state.BaseData.Stain(slot));
+            }
+
+            if (state[slot, false] is StateChanged.Source.Fixed)
+            {
+                state[slot, false] = StateChanged.Source.Game;
+                state.ModelData.SetItem(slot, state.BaseData.Item(slot));
+            }
+        }
+
+        if (state[ActorState.MetaIndex.HatState] is StateChanged.Source.Fixed)
+        {
+            state[ActorState.MetaIndex.HatState] = StateChanged.Source.Game;
+            state.ModelData.SetHatVisible(state.BaseData.IsHatVisible());
+        }
+
+        if (state[ActorState.MetaIndex.VisorState] is StateChanged.Source.Fixed)
+        {
+            state[ActorState.MetaIndex.VisorState] = StateChanged.Source.Game;
+            state.ModelData.SetVisor(state.BaseData.IsVisorToggled());
+        }
+
+        if (state[ActorState.MetaIndex.WeaponState] is StateChanged.Source.Fixed)
+        {
+            state[ActorState.MetaIndex.WeaponState] = StateChanged.Source.Game;
+            state.ModelData.SetWeaponVisible(state.BaseData.IsWeaponVisible());
+        }
+
+        if (state[ActorState.MetaIndex.Wetness] is StateChanged.Source.Fixed)
+        {
+            state[ActorState.MetaIndex.Wetness] = StateChanged.Source.Game;
+            state.ModelData.SetIsWet(state.BaseData.IsWet());
+        }
     }
 
     public void ReapplyState(Actor actor)
