@@ -160,10 +160,13 @@ public class StateListener : IDisposable
 
     private unsafe void OnCustomizeChange(Model model, Ref<Customize> customize)
     {
-        if (_condition[ConditionFlag.CreatingCharacter] || !model.IsHuman)
+        if (!model.IsHuman)
             return;
 
         var actor = _penumbra.GameObjectFromDrawObject(model);
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
+            return;
+
         if (!actor.Identifier(_actors.AwaitedService, out var identifier)
          || !_manager.TryGetValue(identifier, out var state))
             return;
@@ -218,10 +221,10 @@ public class StateListener : IDisposable
     /// </summary>
     private void OnSlotUpdating(Model model, EquipSlot slot, Ref<CharacterArmor> armor, Ref<ulong> returnValue)
     {
-        if (_condition[ConditionFlag.CreatingCharacter])
+        var actor = _penumbra.GameObjectFromDrawObject(model);
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
-        var actor = _penumbra.GameObjectFromDrawObject(model);
         if (actor.Identifier(_actors.AwaitedService, out var identifier)
          && _manager.TryGetValue(identifier, out var state))
             HandleEquipSlot(actor, state, slot, ref armor.Value);
@@ -274,7 +277,7 @@ public class StateListener : IDisposable
     /// </summary>
     private void OnWeaponLoading(Actor actor, EquipSlot slot, Ref<CharacterWeapon> weapon)
     {
-        if (_condition[ConditionFlag.CreatingCharacter])
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
         // Fist weapon gauntlet hack.
@@ -466,13 +469,17 @@ public class StateListener : IDisposable
     /// <summary> Handle visor state changes made by the game. </summary>
     private void OnVisorChange(Model model, Ref<bool> value)
     {
-        if (_condition[ConditionFlag.CreatingCharacter])
+        // Skip updates when in customize update.
+        if (ChangeCustomizeService.InUpdate.IsValueCreated && ChangeCustomizeService.InUpdate.Value)
             return;
 
         // Find appropriate actor and state.
         // We do not need to handle fixed designs,
         // since a fixed design would already have established state-tracking.
         var actor = _penumbra.GameObjectFromDrawObject(model);
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
+            return;
+
         if (!actor.Identifier(_actors.AwaitedService, out var identifier))
             return;
 
@@ -499,7 +506,7 @@ public class StateListener : IDisposable
     /// <summary> Handle Hat Visibility changes. These act on the game object. </summary>
     private void OnHeadGearVisibilityChange(Actor actor, Ref<bool> value)
     {
-        if (_condition[ConditionFlag.CreatingCharacter])
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
         // Find appropriate state.
@@ -532,7 +539,7 @@ public class StateListener : IDisposable
     /// <summary> Handle Weapon Visibility changes. These act on the game object. </summary>
     private void OnWeaponVisibilityChange(Actor actor, Ref<bool> value)
     {
-        if (_condition[ConditionFlag.CreatingCharacter])
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
         // Find appropriate state.

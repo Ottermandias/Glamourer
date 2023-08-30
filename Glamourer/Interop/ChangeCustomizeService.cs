@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
@@ -18,6 +19,9 @@ namespace Glamourer.Interop;
 public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Customize>>, ChangeCustomizeService.Priority>
 {
     private readonly PenumbraReloaded _penumbraReloaded;
+
+    /// <summary> Check whether we in a manual customize update, in which case we need to not toggle certain flags. </summary>
+    public static readonly ThreadLocal<bool> InUpdate = new(() => false);
 
     public enum Priority
     {
@@ -62,9 +66,12 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
     {
         if (!model.IsHuman)
             return false;
-
+        
         Glamourer.Log.Verbose($"[ChangeCustomize] Invoked on 0x{model.Address:X} with {customize}.");
-        return _changeCustomizeHook.Original(model.AsHuman, customize.Data, 1);
+        InUpdate.Value = true;
+        var ret = _changeCustomizeHook.Original(model.AsHuman, customize.Data, 1);
+        InUpdate.Value = false;
+        return ret;
     }
 
     public bool UpdateCustomize(Actor actor, CustomizeData customize)
