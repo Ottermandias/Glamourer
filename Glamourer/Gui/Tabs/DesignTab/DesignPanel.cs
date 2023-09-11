@@ -105,6 +105,8 @@ public class DesignPanel
             return;
 
         _equipmentDrawer.Prepare();
+
+        var usedAllStain = _equipmentDrawer.DrawAllStain(out var newAllStain, _selector.Selected!.WriteProtected());
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var changes = _equipmentDrawer.DrawEquip(slot, _selector.Selected!.DesignData, out var newArmor, out var newStain,
@@ -113,6 +115,8 @@ public class DesignPanel
                 _manager.ChangeEquip(_selector.Selected, slot, newArmor);
             if (changes.HasFlag(DataChange.Stain))
                 _manager.ChangeStain(_selector.Selected, slot, newStain);
+            else if (usedAllStain)
+                _manager.ChangeStain(_selector.Selected, slot, newAllStain);
             if (changes.HasFlag(DataChange.ApplyItem))
                 _manager.ChangeApplyEquip(_selector.Selected, slot, newApply);
             if (changes.HasFlag(DataChange.ApplyStain))
@@ -127,6 +131,8 @@ public class DesignPanel
             _manager.ChangeWeapon(_selector.Selected, EquipSlot.MainHand, newMainhand);
         if (weaponChanges.HasFlag(DataChange.Stain))
             _manager.ChangeStain(_selector.Selected, EquipSlot.MainHand, newMainhandStain);
+        else if (usedAllStain)
+            _manager.ChangeStain(_selector.Selected, EquipSlot.MainHand, newAllStain);
         if (weaponChanges.HasFlag(DataChange.ApplyItem))
             _manager.ChangeApplyEquip(_selector.Selected, EquipSlot.MainHand, applyMain);
         if (weaponChanges.HasFlag(DataChange.ApplyStain))
@@ -135,6 +141,8 @@ public class DesignPanel
             _manager.ChangeWeapon(_selector.Selected, EquipSlot.OffHand, newOffhand);
         if (weaponChanges.HasFlag(DataChange.Stain2))
             _manager.ChangeStain(_selector.Selected, EquipSlot.OffHand, newOffhandStain);
+        else if (usedAllStain)
+            _manager.ChangeStain(_selector.Selected, EquipSlot.OffHand, newAllStain);
         if (weaponChanges.HasFlag(DataChange.ApplyItem2))
             _manager.ChangeApplyEquip(_selector.Selected, EquipSlot.OffHand, applyOff);
         if (weaponChanges.HasFlag(DataChange.ApplyStain2))

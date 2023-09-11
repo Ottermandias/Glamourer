@@ -254,12 +254,38 @@ public class EquipmentDrawer
 
         if (!locked && armor.ModelId.Id != 0)
         {
-            ImGuiUtil.HoverTooltip("Right-click to clear.");
             if (clear || ImGui.IsItemClicked(ImGuiMouseButton.Right))
             {
                 change = true;
                 armor  = ItemManager.NothingItem(slot);
             }
+
+            ImGuiUtil.HoverTooltip("Right-click to clear.");
+        }
+
+        return change;
+    }
+
+    public bool DrawAllStain(out StainId ret, bool locked)
+    {
+        using var disabled = ImRaii.Disabled(locked);
+        var       change   = _stainCombo.Draw("Dye All Slots", Stain.None.RgbaColor, string.Empty, false, false);
+        ret = Stain.None.RowIndex;
+        if (change)
+            if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out var stain))
+                ret = stain.RowIndex;
+            else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
+                ret = Stain.None.RowIndex;
+
+        if (!locked)
+        {
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && _config.DeleteDesignModifier.IsActive())
+            {
+                ret    = Stain.None.RowIndex;
+                change = true;
+            }
+
+            ImGuiUtil.HoverTooltip($"{_config.DeleteDesignModifier.ToString()} and Right-click to clear.");
         }
 
         return change;
@@ -281,12 +307,13 @@ public class EquipmentDrawer
 
         if (!locked && ret != Stain.None.RowIndex)
         {
-            ImGuiUtil.HoverTooltip("Right-click to clear.");
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             {
                 ret    = Stain.None.RowIndex;
                 change = true;
             }
+
+            ImGuiUtil.HoverTooltip("Right-click to clear.");
         }
 
         return change;

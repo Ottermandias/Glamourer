@@ -148,10 +148,18 @@ public class ActorPanel
             return;
 
         _equipmentDrawer.Prepare();
+
+        var usedAllStain = _equipmentDrawer.DrawAllStain(out var newAllStain, _state!.IsLocked);
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var changes = _equipmentDrawer.DrawEquip(slot, _state!.ModelData, out var newArmor, out var newStain, null, out _, out _,
                 _state.IsLocked);
+            if (usedAllStain)
+            {
+                changes  |= DataChange.Stain;
+                newStain =  newAllStain;
+            }
+
             switch (changes)
             {
                 case DataChange.Item:
@@ -168,6 +176,12 @@ public class ActorPanel
 
         var weaponChanges = _equipmentDrawer.DrawWeapons(_state!.ModelData, out var newMainhand, out var newOffhand, out var newMainhandStain,
             out var newOffhandStain, null, GameMain.IsInGPose(), out _, out _, out _, out _, _state.IsLocked);
+        if (usedAllStain)
+        {
+            weaponChanges    |= DataChange.Stain | DataChange.Stain2;
+            newMainhandStain =  newAllStain;
+            newOffhandStain  =  newAllStain;
+        }
 
         if (weaponChanges.HasFlag(DataChange.Item))
             if (weaponChanges.HasFlag(DataChange.Stain))
