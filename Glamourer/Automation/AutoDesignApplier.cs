@@ -316,10 +316,10 @@ public class AutoDesignApplier : IDisposable
 
         if (equipFlags.HasFlag(EquipFlag.Mainhand))
         {
-            var item = design.Item(EquipSlot.MainHand);
-            if (!_config.UnlockedItemMode
-             || _itemUnlocks.IsUnlocked(item.Id, out _) && !respectManual
-             || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual)
+            var item        = design.Item(EquipSlot.MainHand);
+            var checkUnlock = !_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _);
+            var checkState  = !respectManual || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual;
+            if (checkUnlock && checkState)
             {
                 if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type)
                 {
@@ -337,10 +337,10 @@ public class AutoDesignApplier : IDisposable
 
         if (equipFlags.HasFlag(EquipFlag.Offhand))
         {
-            var item = design.Item(EquipSlot.OffHand);
-            if (!_config.UnlockedItemMode
-             || _itemUnlocks.IsUnlocked(item.Id, out _) && !respectManual
-             || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual)
+            var item        = design.Item(EquipSlot.OffHand);
+            var checkUnlock = !_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _);
+            var checkState  = !respectManual || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual;
+            if (checkUnlock && checkState)
             {
                 if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type)
                 {
