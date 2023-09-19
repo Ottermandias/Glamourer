@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
@@ -15,16 +17,19 @@ public unsafe class ScalingService : IDisposable
         SignatureHelper.Initialise(this);
         _setupMountHook.Enable();
         _setupOrnamentHook.Enable();
+        _calculateHeightHook.Enable();
     }
 
     public void Dispose()
     {
         _setupMountHook.Dispose();
         _setupOrnamentHook.Dispose();
+        _calculateHeightHook.Dispose();
     }
 
-    private delegate void SetupMount(Character.MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4);
-    private delegate void SetupOrnament(Ornament* ornament, uint* unk1, float* unk2);
+    private delegate void  SetupMount(Character.MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4);
+    private delegate void  SetupOrnament(Ornament* ornament, uint* unk1, float* unk2);
+    private delegate ulong CalculateHeight(Character* character);
 
     [Signature("E8 ?? ?? ?? ?? 48 8B 43 ?? 80 B8 ?? ?? ?? ?? ?? 74 ?? 0F B6 90", DetourName = nameof(SetupMountDetour))]
     private readonly Hook<SetupMount> _setupMountHook = null!;
@@ -32,15 +37,18 @@ public unsafe class ScalingService : IDisposable
     [Signature("48 89 5C 24 ?? 41 54 41 56 41 57 48 83 EC ?? 4D 8B F8", DetourName = nameof(SetupOrnamentDetour))]
     private readonly Hook<SetupOrnament> _setupOrnamentHook = null!;
 
+    [Signature(global::Penumbra.GameData.Sigs.CalculateHeight, DetourName = nameof(CalculateHeightDetour))]
+    private readonly Hook<CalculateHeight> _calculateHeightHook = null!;
+
     [Signature("E8 ?? ?? ?? ?? 48 85 C0 48 0F 45 F8")]
     private readonly delegate* unmanaged<Ornament*, Character*> _getParentGameObject = null!;
 
     private void SetupMountDetour(Character.MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4)
     {
-        var (race, clan, gender) = GetRelevantCustomize(&container->OwnerObject->Character);
-        SetCustomize(&container->OwnerObject->Character, container->OwnerObject->Character.GameObject.DrawObject);
+        var (race, clan, gender) = GetScaleRelevantCustomize(&container->OwnerObject->Character);
+        SetScaleCustomize(&container->OwnerObject->Character, container->OwnerObject->Character.GameObject.DrawObject);
         _setupMountHook.Original(container, mountId, unk1, unk2, unk3, unk4);
-        SetCustomize(&container->OwnerObject->Character, race, clan, gender);
+        SetScaleCustomize(&container->OwnerObject->Character, race, clan, gender);
     }
 
     private void SetupOrnamentDetour(Ornament* ornament, uint* unk1, float* unk2)
@@ -52,28 +60,62 @@ public unsafe class ScalingService : IDisposable
             return;
         }
 
-        var (race, clan, gender) = GetRelevantCustomize(character);
-        SetCustomize(character, character->GameObject.DrawObject);
+        var (race, clan, gender) = GetScaleRelevantCustomize(character);
+        SetScaleCustomize(character, character->GameObject.DrawObject);
         _setupOrnamentHook.Original(ornament, unk1, unk2);
-        SetCustomize(character, race, clan, gender);
+        SetScaleCustomize(character, race, clan, gender);
+    }
+
+    private ulong CalculateHeightDetour(Character* character)
+    {
+        var (gender, bodyType, clan, height) = GetHeightRelevantCustomize(character);
+        SetHeightCustomize(character, character->GameObject.DrawObject);
+        var ret = _calculateHeightHook.Original(character);
+        SetHeightCustomize(character, gender, bodyType, clan, height);
+        return ret;
     }
 
     /// <summary> We do not change the Customize gender because the functions use the GetGender() vfunc, which uses the game objects gender value. </summary>
-    private static (byte Race, byte Clan, byte Gender) GetRelevantCustomize(Character* character)
+    private static (byte Race, byte Clan, byte Gender) GetScaleRelevantCustomize(Character* character)
         => (character->DrawData.CustomizeData.Race, character->DrawData.CustomizeData.Clan, character->GameObject.Gender);
 
-    private static void SetCustomize(Character* character, Model model)
+    private static (byte Gender, byte BodyType, byte Clan, byte Height) GetHeightRelevantCustomize(Character* character)
+        => (character->DrawData.CustomizeData.Sex, character->DrawData.CustomizeData.BodyType,
+            character->DrawData.CustomizeData.Clan, character->DrawData.CustomizeData[(int)CustomizeIndex.Height]);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void SetScaleCustomize(Character* character, Model model)
     {
         if (!model.IsHuman)
             return;
 
-        SetCustomize(character, model.AsHuman->Customize.Race, model.AsHuman->Customize.Clan, model.AsHuman->Customize.Sex);
+        SetScaleCustomize(character, model.AsHuman->Customize.Race, model.AsHuman->Customize.Clan, model.AsHuman->Customize.Sex);
     }
 
-    private static void SetCustomize(Character* character, byte race, byte clan, byte gender)
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void SetScaleCustomize(Character* character, byte race, byte clan, byte gender)
     {
         character->DrawData.CustomizeData.Race = race;
         character->DrawData.CustomizeData.Clan = clan;
         character->GameObject.Gender           = gender;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void SetHeightCustomize(Character* character, Model model)
+    {
+        if (!model.IsHuman)
+            return;
+
+        SetHeightCustomize(character, model.AsHuman->Customize.Sex, model.AsHuman->Customize.BodyType, model.AsHuman->Customize.Clan,
+            model.AsHuman->Customize[(int)CustomizeIndex.Height]);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void SetHeightCustomize(Character* character, byte gender, byte bodyType, byte clan, byte height)
+    {
+        character->DrawData.CustomizeData.Sex                              = gender;
+        character->DrawData.CustomizeData.BodyType                         = bodyType;
+        character->DrawData.CustomizeData.Clan                             = clan;
+        character->DrawData.CustomizeData.Data[(int)CustomizeIndex.Height] = height;
     }
 }
