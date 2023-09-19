@@ -66,19 +66,21 @@ public unsafe class DebugTab : ITab
     private readonly PenumbraChangedItemTooltip _penumbraTooltip;
 
     private readonly StateManager _state;
+    private readonly FunModule    _funModule;
 
     private int _gameObjectIndex;
 
     public bool IsVisible
         => _config.DebugMode;
 
-    public DebugTab(ChangeCustomizeService changeCustomizeService, VisorService visorService, UpdateSlotService updateSlotService, WeaponService weaponService, PenumbraService penumbra,
+    public DebugTab(ChangeCustomizeService changeCustomizeService, VisorService visorService, UpdateSlotService updateSlotService,
+        WeaponService weaponService, PenumbraService penumbra,
         ActorService actors, ItemManager items, CustomizationService customization, ObjectManager objectManager,
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
         AutoDesignManager autoDesignManager, JobService jobs, CodeService code, CustomizeUnlockManager customizeUnlocks,
         ItemUnlockManager itemUnlocks, DesignConverter designConverter, DatFileService datFileService, InventoryService inventoryService,
-        HumanModelList humans)
+        HumanModelList humans, FunModule funModule)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -106,6 +108,7 @@ public unsafe class DebugTab : ITab
         _datFileService         = datFileService;
         _inventoryService       = inventoryService;
         _humans                 = humans;
+        _funModule              = funModule;
     }
 
     public ReadOnlySpan<byte> Label
@@ -125,6 +128,7 @@ public unsafe class DebugTab : ITab
         DrawAutoDesigns();
         DrawInventory();
         DrawUnlocks();
+        DrawFun();
         DrawIpc();
     }
 
@@ -1569,6 +1573,35 @@ public unsafe class DebugTab : ITab
 
     #endregion
 
+    #region Fun
+
+    private void DrawFun()
+    {
+        if (!ImGui.CollapsingHeader("Fun Module"))
+            return;
+
+        ImGui.TextUnformatted($"Current Festival: {_funModule.CurrentFestival}");
+        ImGui.TextUnformatted($"Festivals Enabled: {_config.DisableFestivals switch { 1 => "Undecided", 0 => "Enabled", _ => "Disabled" }}");
+        ImGui.TextUnformatted($"Popup Open: {ImGui.IsPopupOpen("FestivalPopup", ImGuiPopupFlags.AnyPopup)}");
+        if (ImGui.Button("Force Christmas"))
+            _funModule.ForceFestival(FunModule.FestivalType.Christmas);
+        if (ImGui.Button("Force Halloween"))
+            _funModule.ForceFestival(FunModule.FestivalType.Halloween);
+        if (ImGui.Button("Force April First"))
+            _funModule.ForceFestival(FunModule.FestivalType.AprilFirst);
+        if (ImGui.Button("Force None"))
+            _funModule.ForceFestival(FunModule.FestivalType.None);
+        if (ImGui.Button("Revert"))
+            _funModule.ResetFestival();
+        if (ImGui.Button("Reset Popup"))
+        {
+            _config.DisableFestivals = 1;
+            _config.Save();
+        }
+    }
+
+    #endregion
+
     #region IPC
 
     private string _gameObjectName = string.Empty;
@@ -1600,7 +1633,8 @@ public unsafe class DebugTab : ITab
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelGetAllCustomizationFromCharacter);
         ImGui.TableNextColumn();
-        base64 = GlamourerIpc.GetAllCustomizationFromCharacterSubscriber(_pluginInterface).Invoke(_objectManager.Objects[_gameObjectIndex] as Character);
+        base64 = GlamourerIpc.GetAllCustomizationFromCharacterSubscriber(_pluginInterface)
+            .Invoke(_objectManager.Objects[_gameObjectIndex] as Character);
         if (base64 != null)
             ImGuiUtil.CopyOnClickSelectable(base64);
         else
@@ -1624,7 +1658,8 @@ public unsafe class DebugTab : ITab
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyAllToCharacter);
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##AllCharacter"))
-            GlamourerIpc.ApplyAllToCharacterSubscriber(_pluginInterface).Invoke(_base64Apply, _objectManager.Objects[_gameObjectIndex] as Character);
+            GlamourerIpc.ApplyAllToCharacterSubscriber(_pluginInterface)
+                .Invoke(_base64Apply, _objectManager.Objects[_gameObjectIndex] as Character);
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyOnlyEquipment);
         ImGui.TableNextColumn();

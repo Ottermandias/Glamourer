@@ -120,6 +120,7 @@ public static class ServiceManager
             .AddSingleton<ActorSelector>()
             .AddSingleton<ActorPanel>()
             .AddSingleton<MainWindow>()
+            .AddSingleton<GenericPopupWindow>()
             .AddSingleton<GlamourerWindowSystem>()
             .AddSingleton<CustomizationDrawer>()
             .AddSingleton<EquipmentDrawer>()

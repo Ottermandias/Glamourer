@@ -53,6 +53,9 @@ public class SettingsTab : ITab
         Checkbox("Unlocked Item Mode",
             "Enable this if you want automatically applied designs to only consider items and customizations you have actually unlocked once, and skip those you have not.",
             _config.UnlockedItemMode, v => _config.UnlockedItemMode = v);
+        Checkbox("Enable Festival Easter-Eggs",
+            "Glamourer may do some fun things on specific dates. Disable this if you do not want your experience disrupted by this.",
+            _config.DisableFestivals == 0, v => _config.DisableFestivals = v ? (byte)0 : (byte)2);
         Checkbox("Auto-Reload Gear",
             "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection.",
             _config.AutoRedrawEquipOnChanges, _autoRedraw.SetState);

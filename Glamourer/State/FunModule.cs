@@ -2,30 +2,79 @@
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Glamourer.Customization;
+using Glamourer.Gui;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
+using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using CustomizeIndex = Glamourer.Customization.CustomizeIndex;
 
 namespace Glamourer.State;
 
-public unsafe class FunModule
+public unsafe class FunModule : IDisposable
 {
+    public enum FestivalType
+    {
+        None,
+        Halloween,
+        Christmas,
+        AprilFirst,
+    }
+
     private readonly ItemManager          _items;
     private readonly CustomizationService _customizations;
+    private readonly Configuration        _config;
     private readonly CodeService          _codes;
     private readonly Random               _rng;
+    private readonly GenericPopupWindow   _popupWindow;
     private readonly StainId[]            _stains;
 
-    public FunModule(CodeService codes, CustomizationService customizations, ItemManager items)
+    public  FestivalType CurrentFestival { get; private set; } = FestivalType.None;
+    private FunEquipSet? _festivalSet;
+
+    private void OnDayChange(int day, int month, int _)
+    {
+        CurrentFestival = (day, month) switch
+        {
+            (1, 4)   => FestivalType.AprilFirst,
+            (24, 12) => FestivalType.Christmas,
+            (25, 12) => FestivalType.Christmas,
+            (26, 12) => FestivalType.Christmas,
+            (31, 10) => FestivalType.Halloween,
+            (01, 11) => FestivalType.Halloween,
+            _        => FestivalType.None,
+        };
+        _festivalSet                   = FunEquipSet.GetSet(CurrentFestival);
+        _popupWindow.OpenFestivalPopup = _festivalSet != null && _config.DisableFestivals == 1;
+    }
+
+    internal void ForceFestival(FestivalType type)
+    {
+        CurrentFestival                = type;
+        _festivalSet                   = FunEquipSet.GetSet(CurrentFestival);
+        _popupWindow.OpenFestivalPopup = _festivalSet != null && _config.DisableFestivals == 1;
+    }
+
+    internal void ResetFestival()
+        => OnDayChange(DateTime.UtcNow.Day, DateTime.UtcNow.Month, DateTime.UtcNow.Year);
+
+    public FunModule(CodeService codes, CustomizationService customizations, ItemManager items, Configuration config,
+        GenericPopupWindow popupWindow)
     {
         _codes          = codes;
         _customizations = customizations;
         _items          = items;
+        _config         = config;
+        _popupWindow    = popupWindow;
         _rng            = new Random();
         _stains         = _items.Stains.Keys.Prepend((StainId)0).ToArray();
+        ResetFestival();
+        DayChangeTracker.DayChanged += OnDayChange;
     }
+
+    public void Dispose()
+        => DayChangeTracker.DayChanged -= OnDayChange;
 
     public void ApplyFun(Actor actor, ref CharacterArmor armor, EquipSlot slot)
     {
@@ -47,8 +96,15 @@ public unsafe class FunModule
         if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
             return;
 
-        ApplyEmperor(armor);
-        ApplyClown(armor);
+        if (_config.DisableFestivals == 0 && _festivalSet != null)
+        {
+            _festivalSet.Apply(_stains, _rng, armor);
+        }
+        else
+        {
+            ApplyEmperor(armor);
+            ApplyClown(armor);
+        }
 
         ApplyOops(ref customize);
         ApplyIndividual(ref customize);
