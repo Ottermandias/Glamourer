@@ -14,6 +14,7 @@ using Glamourer.Interop;
 using Glamourer.State;
 using Glamourer.Structs;
 using ImGuiNET;
+using OtterGui;
 using OtterGui.Classes;
 using Penumbra.GameData.Actors;
 
@@ -31,13 +32,14 @@ public class CommandService : IDisposable
     private readonly ObjectManager     _objects;
     private readonly StateManager      _stateManager;
     private readonly AutoDesignApplier _autoDesignApplier;
+    private readonly AutoDesignManager _autoDesignManager;
     private readonly DesignManager     _designManager;
     private readonly DesignConverter   _converter;
     private readonly DesignFileSystem  _designFileSystem;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, ChatGui chat, ActorService actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
-        DesignFileSystem designFileSystem)
+        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -49,6 +51,7 @@ public class CommandService : IDisposable
         _designManager     = designManager;
         _converter         = converter;
         _designFileSystem  = designFileSystem;
+        _autoDesignManager = autoDesignManager;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -68,7 +71,10 @@ public class CommandService : IDisposable
     {
         var argumentList = arguments.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (argumentList.Length < 1)
+        {
+            PrintHelp("?");
             return;
+        }
 
         var argument = argumentList.Length == 2 ? argumentList[1] : string.Empty;
         var _ = argumentList[0].ToLowerInvariant() switch
@@ -77,10 +83,10 @@ public class CommandService : IDisposable
             "reapply"           => ReapplyState(argument),
             "revert"            => Revert(argument),
             "reapplyautomation" => ReapplyAutomation(argument),
-            //"automation"        => SetAutomation(argument),
-            "copy" => CopyState(argument),
-            "save" => SaveState(argument),
-            _      => PrintHelp(argumentList[0]),
+            "automation"        => SetAutomation(argument),
+            "copy"              => CopyState(argument),
+            "save"              => SaveState(argument),
+            _                   => PrintHelp(argumentList[0]),
         };
     }
 
@@ -104,14 +110,150 @@ public class CommandService : IDisposable
             .AddCommand("copy", "Copy the current state of a character to clipboard. Use without arguments for help.").BuiltString);
         _chat.Print(new SeStringBuilder()
             .AddCommand("save", "Save the current state of a character to a named design. Use without arguments for help.").BuiltString);
-        //_chat.Print(new SeStringBuilder()
-        //    .AddCommand("automation", "Change the configuration for automated designs. Use without arguments for help.").BuiltString);
+        _chat.Print(new SeStringBuilder()
+            .AddCommand("automation", "Change the state of automated design sets. Use without arguments for help.").BuiltString);
         return true;
     }
 
-    // TODO: implement automation changes via chat.
     private bool SetAutomation(string arguments)
-        => true;
+    {
+        var argumentList = arguments.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (argumentList.Length != 2)
+        {
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour automation ").AddBlue("enable, disable or application", true)
+                .AddText(" ")
+                .AddRed("Automated Design Set Index or Name", true).AddText(" | ").AddYellow("<Design Index>").AddText(" ")
+                .AddPurple("<Application Flags>")
+                .BuiltString);
+            _chat.Print(
+                "    》 If the design set name is a valid natural number it will be used as a index. Design names that are such numbers can not be dealt with.");
+            _chat.Print("    》 If multiple design sets have the same name, the first one will be changed.");
+            _chat.Print("    》 The name is case-insensitive.");
+            _chat.Print(new SeStringBuilder().AddText("    》 If the command is ").AddBlue("application")
+                .AddText(" the design index and flags are required.").BuiltString);
+            _chat.Print("    》 The design index is the number in front of the relevant design in the automated design set.");
+            _chat.Print(new SeStringBuilder().AddText("    》 The ").AddPurple("Application Flags").AddText(" are a combination of the letters ")
+                .AddPurple("C", true).AddText("ustomizations, ")
+                .AddPurple("E", true).AddText("quipment, ")
+                .AddPurple("A", true).AddText("ccessories, ")
+                .AddPurple("D", true).AddText("yes and ")
+                .AddPurple("W", true).AddText("eapons, where ").AddPurple("CEADW")
+                .AddText(" means everything should be toggled on, and no value means nothing should be toggled on.")
+                .BuiltString);
+            return false;
+        }
+
+        bool? state = null;
+        switch (argumentList[0].ToLowerInvariant())
+        {
+            case "enabled":
+            case "enable":
+            case "on":
+            case "true":
+                state = true;
+                break;
+            case "disabled":
+            case "disable":
+            case "off":
+            case "false":
+                state = false;
+                break;
+            case "toggle":
+            case "switch":
+                break;
+            case "application": return HandleApplication(argumentList[1]);
+            default:
+                _chat.Print(new SeStringBuilder().AddText("The command ")
+                    .AddBlue(argumentList[0], true).AddText(" is unknown. Currently only ").AddBlue("enable").AddText(", ").AddBlue("disable")
+                    .AddText(" or ").AddBlue("application")
+                    .AddText(" are supported.").BuiltString);
+                return false;
+        }
+
+        if (!GetAutoDesignSetIndex(argumentList[1], out var designIdx))
+            return false;
+
+        _autoDesignManager.SetState(designIdx, state ?? !_autoDesignManager[designIdx].Enabled);
+        return true;
+    }
+
+    private bool GetAutoDesignSetIndex(string name, out int idx)
+    {
+        var lowerName = name.ToLowerInvariant();
+
+        idx = int.TryParse(lowerName, out var designIdx) && designIdx > 0 && designIdx <= _autoDesignManager.Count
+            ? designIdx - 1
+            : _autoDesignManager.IndexOf(d => d.Name.ToLowerInvariant() == lowerName);
+        if (idx >= 0)
+            return true;
+
+        _chat.Print(new SeStringBuilder().AddText("Could not change state of automated design set ")
+            .AddRed(name, true).AddText(" No automated design set of that name or index exists.").BuiltString);
+        return false;
+    }
+
+    private bool HandleApplication(string argument)
+    {
+        var split = argument.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (split.Length != 2)
+        {
+            _chat.Print(new SeStringBuilder().AddText("The command ").AddBlue("automation")
+                .AddText(" requires a design index and application flags.").BuiltString);
+            return false;
+        }
+
+        var setName = split[0];
+        if (!GetAutoDesignSetIndex(setName, out var setIdx))
+            return false;
+
+        var set = _autoDesignManager[setIdx];
+
+        var split2 = split[1].Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (!int.TryParse(split2[0], out var designIdx) || designIdx <= 0)
+        {
+            _chat.Print(new SeStringBuilder().AddText("The value ").AddYellow(split2[0], true)
+                .AddText(" is not a valid design index.").BuiltString);
+            return false;
+        }
+
+        if (designIdx > set.Designs.Count)
+        {
+            _chat.Print(new SeStringBuilder().AddText($"The set {setIdx} does not have {designIdx} designs.").BuiltString);
+            return false;
+        }
+
+        --designIdx;
+        AutoDesign.Type applicationFlags = 0;
+        if (split2.Length == 2)
+            foreach (var character in split2[1])
+            {
+                switch (char.ToLowerInvariant(character))
+                {
+                    case 'c':
+                        applicationFlags |= AutoDesign.Type.Customizations;
+                        break;
+                    case 'e':
+                        applicationFlags |= AutoDesign.Type.Armor;
+                        break;
+                    case 'a':
+                        applicationFlags |= AutoDesign.Type.Accessories;
+                        break;
+                    case 'd':
+                        applicationFlags |= AutoDesign.Type.Stains;
+                        break;
+                    case 'w':
+                        applicationFlags |= AutoDesign.Type.Weapons;
+                        break;
+                    default:
+                        _chat.Print(new SeStringBuilder().AddText("The value ").AddPurple(split2[1], true)
+                            .AddText(" is not a valid set of application flags.").BuiltString);
+                        return false;
+                }
+            }
+
+        _autoDesignManager.ChangeApplicationType(set, designIdx, applicationFlags);
+        return true;
+    }
 
     private bool ReapplyAutomation(string argument)
     {
