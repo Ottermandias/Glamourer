@@ -29,7 +29,7 @@ public unsafe class ScalingService : IDisposable
 
     private delegate void  SetupMount(Character.MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4);
     private delegate void  SetupOrnament(Ornament* ornament, uint* unk1, float* unk2);
-    private delegate ulong CalculateHeight(Character* character);
+    private delegate float CalculateHeight(Character* character);
 
     [Signature("E8 ?? ?? ?? ?? 48 8B 43 ?? 80 B8 ?? ?? ?? ?? ?? 74 ?? 0F B6 90", DetourName = nameof(SetupMountDetour))]
     private readonly Hook<SetupMount> _setupMountHook = null!;
@@ -66,7 +66,7 @@ public unsafe class ScalingService : IDisposable
         SetScaleCustomize(character, race, clan, gender);
     }
 
-    private ulong CalculateHeightDetour(Character* character)
+    private float CalculateHeightDetour(Character* character)
     {
         var (gender, bodyType, clan, height) = GetHeightRelevantCustomize(character);
         SetHeightCustomize(character, character->GameObject.DrawObject);
