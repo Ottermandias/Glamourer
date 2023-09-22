@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -62,9 +63,9 @@ public class SettingsTab : ITab
 
         Checkbox("Smaller Equip Display", "Use single-line display without icons and small dye buttons instead of double-line display.",
             _config.SmallEquip,           v => _config.SmallEquip = v);
-        Checkbox("Hide Application Checkboxes",
-            "Hide the application checkboxes in the Customization and Equipment panels of the design tab, and only show them under Application Rules.",
-            _config.HideApplyCheckmarks, v => _config.HideApplyCheckmarks = v);
+        Checkbox("Show Application Checkboxes",
+            "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules.",
+            !_config.HideApplyCheckmarks, v => _config.HideApplyCheckmarks = !v);
         Checkbox("Enable Game Context Menus", "Whether to show a Try On via Glamourer button on context menus for equippable items.",
             _config.EnableGameContextMenu,    v =>
             {
@@ -92,7 +93,14 @@ public class SettingsTab : ITab
 
     private void DrawCodes()
     {
-        if (!ImGui.CollapsingHeader("Cheat Codes"))
+        const string tooltip =
+            "Cheat Codes are not actually for cheating in the game, but for 'cheating' in Glamourer. They allow for some fun easter-egg modes that usually manipulate the appearance of all players you see (including yourself) in some way.\n\n"
+          + "Cheat Codes are generally pop culture references, but it is unlikely you will be able to guess any of them based on nothing. Some codes have been published on the discord server, but other than that, we are still undecided on how and when to publish them or add any new ones. Maybe some will be hidden in the change logs or on the help pages. Or maybe I will just add hints in this section later on.\n\n"
+          + "In any case, you are not losing out on anything important if you never look at this section and there is no real reason to go on a treasure hunt for them. It is mostly something I added because it was fun for me.";
+
+        var show = ImGui.CollapsingHeader("Cheat Codes");
+        ImGuiUtil.HoverTooltip(tooltip);
+        if (!show)
             return;
 
         using (var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale, _currentCode.Length > 0))
@@ -103,6 +111,9 @@ public class SettingsTab : ITab
                 if (_codeService.AddCode(_currentCode))
                     _currentCode = string.Empty;
         }
+
+        ImGui.SameLine();
+        ImGuiComponents.HelpMarker(tooltip);
 
         if (_config.Codes.Count <= 0)
             return;
