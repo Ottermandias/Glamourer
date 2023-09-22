@@ -80,8 +80,16 @@ public class ModAssociationsTab
                 "Delete this mod from associations", false, true))
             removedMod = mod;
 
-        ImGuiUtil.DrawTableColumn(mod.Name);
-        ImGuiUtil.DrawTableColumn(mod.DirectoryName);
+        ImGui.TableNextColumn();
+        var selected = ImGui.Selectable($"{mod.Name}##name");
+        var hovered  = ImGui.IsItemHovered();
+        ImGui.TableNextColumn();
+        selected |= ImGui.Selectable($"{mod.DirectoryName}##directory");
+        hovered  |= ImGui.IsItemHovered();
+        if (selected)
+            _penumbra.OpenModPage(mod);
+        if (hovered)
+            ImGui.SetTooltip("Click to open mod page in Penumbra.");
         ImGui.TableNextColumn();
         using (var font = ImRaii.PushFont(UiBuilder.IconFont))
         {

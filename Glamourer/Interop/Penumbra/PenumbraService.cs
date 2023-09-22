@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using Glamourer.Events;
@@ -59,6 +60,7 @@ public unsafe class PenumbraService : IDisposable
     private          FuncSubscriber<string, string, string, int, PenumbraApiEc>                           _setModPriority;
     private          FuncSubscriber<string, string, string, string, string, PenumbraApiEc>                _setModSetting;
     private          FuncSubscriber<string, string, string, string, IReadOnlyList<string>, PenumbraApiEc> _setModSettings;
+    private          FuncSubscriber<TabType, string, string, PenumbraApiEc>                               _openModPage;
 
     private readonly EventSubscriber _initializedEvent;
     private readonly EventSubscriber _disposedEvent;
@@ -139,6 +141,13 @@ public unsafe class PenumbraService : IDisposable
             Glamourer.Log.Error($"Error fetching mods from Penumbra:\n{ex}");
             return Array.Empty<(Mod Mod, ModSettings Settings)>();
         }
+    }
+
+    public void OpenModPage(Mod mod)
+    {
+        if (_openModPage.Invoke(TabType.Mods, mod.DirectoryName, mod.Name) == PenumbraApiEc.ModMissing)
+            Glamourer.Chat.NotificationMessage($"Could not open the mod {mod.Name}, no fitting mod was found in your Penumbra install.",
+                "Mod Missing", NotificationType.Info);
     }
 
     public string CurrentCollection
@@ -258,7 +267,8 @@ public unsafe class PenumbraService : IDisposable
             _setModPriority     = Ipc.TrySetModPriority.Subscriber(_pluginInterface);
             _setModSetting      = Ipc.TrySetModSetting.Subscriber(_pluginInterface);
             _setModSettings     = Ipc.TrySetModSettings.Subscriber(_pluginInterface);
-            Available = true;
+            _openModPage        = Ipc.OpenMainWindow.Subscriber(_pluginInterface);
+            Available           = true;
             _penumbraReloaded.Invoke();
             Glamourer.Log.Debug("Glamourer attached to Penumbra.");
         }
