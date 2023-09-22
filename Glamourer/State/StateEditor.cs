@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Dalamud.Game.ClientState.Conditions;
 using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Services;
@@ -15,13 +16,15 @@ public class StateEditor
     private readonly CustomizationService _customizations;
     private readonly HumanModelList       _humans;
     private readonly GPoseService         _gPose;
+    private readonly Condition            _condition;
 
-    public StateEditor(CustomizationService customizations, HumanModelList humans, ItemManager items, GPoseService gPose)
+    public StateEditor(CustomizationService customizations, HumanModelList humans, ItemManager items, GPoseService gPose, Condition condition)
     {
         _customizations = customizations;
         _humans         = humans;
         _items          = items;
         _gPose          = gPose;
+        _condition      = condition;
     }
 
     /// <summary> Change the model id. If the actor is changed from a human to another human, customize and equipData are unused. </summary>
@@ -49,6 +52,9 @@ public class StateEditor
             if (oldIsHuman)
                 return true;
 
+            if (!state.AllowsRedraw(_condition))
+                return false;
+
             // Fix up everything else to make sure the result is a valid human.
             state.ModelData.Customize = Customize.Default;
             state.ModelData.SetDefaultEquipment(_items);
@@ -73,6 +79,9 @@ public class StateEditor
         }
         else
         {
+            if (!state.AllowsRedraw(_condition))
+                return false;
+
             state.ModelData.LoadNonHuman(modelId, customize, equipData);
             state[ActorState.MetaIndex.ModelId] = source;
         }

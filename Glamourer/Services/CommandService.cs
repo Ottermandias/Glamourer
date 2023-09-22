@@ -130,8 +130,9 @@ public class CommandService : IDisposable
             _chat.Print("    》 If multiple design sets have the same name, the first one will be changed.");
             _chat.Print("    》 The name is case-insensitive.");
             _chat.Print(new SeStringBuilder().AddText("    》 If the command is ").AddBlue("application")
-                .AddText(" the design index and flags are required.").BuiltString);
-            _chat.Print("    》 The design index is the number in front of the relevant design in the automated design set.");
+                .AddText(" the ").AddYellow("design index").AddText(" and ").AddPurple("flags").AddText(" are required.").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》 The ").AddYellow("design index")
+                .AddText(" is the number in front of the relevant design in the automated design set.").BuiltString);
             _chat.Print(new SeStringBuilder().AddText("    》 The ").AddPurple("Application Flags").AddText(" are a combination of the letters ")
                 .AddPurple("C", true).AddText("ustomizations, ")
                 .AddPurple("E", true).AddText("quipment, ")

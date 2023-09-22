@@ -5,6 +5,7 @@ using Glamourer.Structs;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using System.Linq;
+using Dalamud.Game.ClientState.Conditions;
 using CustomizeIndex = Glamourer.Customization.CustomizeIndex;
 
 namespace Glamourer.State;
@@ -22,8 +23,8 @@ public class ActorState
 
     public readonly ActorIdentifier Identifier;
 
-    public bool AllowsRedraw
-        => Identifier.Type is not IdentifierType.Special;
+    public bool AllowsRedraw(Condition condition)
+        => Identifier.Type is not IdentifierType.Special && !condition[ConditionFlag.OccupiedInCutSceneEvent];
 
     /// <summary> This should always represent the unmodified state of the draw object. </summary>
     public DesignData BaseData;

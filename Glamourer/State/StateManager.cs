@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Dalamud.Game.ClientState.Conditions;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -24,18 +25,20 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
     private readonly StateChanged   _event;
     private readonly StateApplier   _applier;
     private readonly StateEditor    _editor;
+    private readonly Condition      _condition;
 
     private readonly Dictionary<ActorIdentifier, ActorState> _states = new();
 
     public StateManager(ActorService actors, ItemManager items, StateChanged @event, StateApplier applier, StateEditor editor,
-        HumanModelList humans)
+        HumanModelList humans, Condition condition)
     {
-        _actors  = actors;
-        _items   = items;
-        _event   = @event;
-        _applier = applier;
-        _editor  = editor;
-        _humans  = humans;
+        _actors    = actors;
+        _items     = items;
+        _event     = @event;
+        _applier   = applier;
+        _editor    = editor;
+        _humans    = humans;
+        _condition = condition;
     }
 
     public IEnumerator<KeyValuePair<ActorIdentifier, ActorState>> GetEnumerator()
@@ -378,7 +381,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             if (design.DoApplyVisorToggle())
                 _editor.ChangeMetaState(state, ActorState.MetaIndex.VisorState, design.DesignData.IsVisorToggled(), source, out _, key);
 
-            var flags = state.AllowsRedraw ? design.ApplyCustomize : design.ApplyCustomize & ~CustomizeFlagExtensions.RedrawRequired;
+            var flags = state.AllowsRedraw(_condition) ? design.ApplyCustomize : design.ApplyCustomize & ~CustomizeFlagExtensions.RedrawRequired;
             _editor.ChangeHumanCustomize(state, design.DesignData.Customize, flags, source, out _, out var applied, key);
             redraw |= applied.RequiresRedraw();
 

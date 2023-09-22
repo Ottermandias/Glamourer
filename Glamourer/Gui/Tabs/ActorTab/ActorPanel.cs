@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -35,6 +37,7 @@ public class ActorPanel
     private readonly ObjectManager       _objects;
     private readonly DesignManager       _designManager;
     private readonly DatFileService      _datFileService;
+    private readonly Condition           _conditions;
 
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -45,7 +48,8 @@ public class ActorPanel
 
     public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer,
         EquipmentDrawer equipmentDrawer, IdentifierService identification, AutoDesignApplier autoDesignApplier,
-        Configuration config, DesignConverter converter, ObjectManager objects, DesignManager designManager, DatFileService datFileService)
+        Configuration config, DesignConverter converter, ObjectManager objects, DesignManager designManager, DatFileService datFileService,
+        Condition conditions)
     {
         _selector            = selector;
         _stateManager        = stateManager;
@@ -58,6 +62,7 @@ public class ActorPanel
         _objects             = objects;
         _designManager       = designManager;
         _datFileService      = datFileService;
+        _conditions          = conditions;
     }
 
     private CustomizeFlag CustomizeApplicationFlags
@@ -67,7 +72,8 @@ public class ActorPanel
     {
         using var group = ImRaii.Group();
         (_identifier, _data) = _selector.Selection;
-        _lockedRedraw        = _identifier.Type is IdentifierType.Special;
+        _lockedRedraw = _identifier.Type is IdentifierType.Special
+         || _conditions[ConditionFlag.OccupiedInCutSceneEvent];
         (_actorName, _actor) = GetHeaderName();
         DrawHeader();
         DrawPanel();
@@ -134,7 +140,7 @@ public class ActorPanel
         if (!ImGui.CollapsingHeader(header))
             return;
 
-        if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked, _identifier.Type is IdentifierType.Special))
+        if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked, _lockedRedraw))
             _stateManager.ChangeCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, StateChanged.Source.Manual);
 
         if (_customizationDrawer.DrawWetnessState(_state!.ModelData.IsWet(), out var newWetness, _state.IsLocked))
