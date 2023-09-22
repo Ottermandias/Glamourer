@@ -1,6 +1,7 @@
 ﻿using System;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
+using Glamourer.Gui.Tabs.UnlocksTab;
 
 namespace Glamourer.Gui;
 
@@ -11,15 +12,18 @@ public class GlamourerWindowSystem : IDisposable
     private readonly MainWindow                 _ui;
     private readonly PenumbraChangedItemTooltip _penumbraTooltip;
 
-    public GlamourerWindowSystem(UiBuilder uiBuilder, MainWindow ui, GenericPopupWindow popups, PenumbraChangedItemTooltip penumbraTooltip)
+    public GlamourerWindowSystem(UiBuilder uiBuilder, MainWindow ui, GenericPopupWindow popups, PenumbraChangedItemTooltip penumbraTooltip,
+        Configuration config, UnlocksTab unlocksTab)
     {
         _uiBuilder       = uiBuilder;
         _ui              = ui;
         _penumbraTooltip = penumbraTooltip;
         _windowSystem.AddWindow(ui);
         _windowSystem.AddWindow(popups);
-        _uiBuilder.Draw         += _windowSystem.Draw;
-        _uiBuilder.OpenConfigUi += _ui.Toggle;
+        _windowSystem.AddWindow(unlocksTab);
+        _uiBuilder.Draw                  += _windowSystem.Draw;
+        _uiBuilder.OpenConfigUi          += _ui.Toggle;
+        _uiBuilder.DisableCutsceneUiHide =  !config.HideWindowInCutscene;
     }
 
     public void Dispose()

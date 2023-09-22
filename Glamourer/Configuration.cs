@@ -27,8 +27,9 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool               HideApplyCheckmarks         { get; set; } = false;
     public bool               SmallEquip                  { get; set; } = false;
     public bool               UnlockedItemMode            { get; set; } = false;
-    public byte               DisableFestivals             { get; set; } = 1;
+    public byte               DisableFestivals            { get; set; } = 1;
     public bool               EnableGameContextMenu       { get; set; } = true;
+    public bool               HideWindowInCutscene        { get; set; } = false;
     public MainWindow.TabType SelectedTab                 { get; set; } = MainWindow.TabType.Settings;
     public DoubleModifier     DeleteDesignModifier        { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
 

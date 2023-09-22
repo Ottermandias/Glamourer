@@ -22,9 +22,10 @@ public class SettingsTab : ITab
     private readonly CodeService              _codeService;
     private readonly PenumbraAutoRedraw       _autoRedraw;
     private readonly ContextMenuService       _contextMenuService;
+    private readonly UiBuilder                _uiBuilder;
 
     public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener,
-        CodeService codeService, PenumbraAutoRedraw autoRedraw, ContextMenuService contextMenuService)
+        CodeService codeService, PenumbraAutoRedraw autoRedraw, ContextMenuService contextMenuService, UiBuilder uiBuilder)
     {
         _config             = config;
         _selector           = selector;
@@ -32,6 +33,7 @@ public class SettingsTab : ITab
         _codeService        = codeService;
         _autoRedraw         = autoRedraw;
         _contextMenuService = contextMenuService;
+        _uiBuilder          = uiBuilder;
     }
 
     public ReadOnlySpan<byte> Label
@@ -74,6 +76,13 @@ public class SettingsTab : ITab
                     _contextMenuService.Enable();
                 else
                     _contextMenuService.Disable();
+            });
+        Checkbox("Hide Window in Cutscenes", "Whether the main Glamourer window should automatically be hidden when entering cutscenes or not.",
+            _config.HideWindowInCutscene,
+            v =>
+            {
+                _config.HideWindowInCutscene     = v;
+                _uiBuilder.DisableCutsceneUiHide = !v;
             });
         if (Widget.DoubleModifierSelector("Design Deletion Modifier",
                 "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
