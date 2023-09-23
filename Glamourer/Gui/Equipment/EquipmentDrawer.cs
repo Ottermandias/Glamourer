@@ -6,6 +6,7 @@ using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using Glamourer.Designs;
+using Glamourer.Events;
 using Glamourer.Services;
 using Glamourer.Structs;
 using ImGuiNET;
@@ -30,16 +31,19 @@ public class EquipmentDrawer
     private readonly CodeService                            _codes;
     private readonly TextureService                         _textures;
     private readonly Configuration                          _config;
+    private readonly GPoseService                           _gPose;
 
     private float _requiredComboWidthUnscaled;
     private float _requiredComboWidth;
 
-    public EquipmentDrawer(IDataManager gameData, ItemManager items, CodeService codes, TextureService textures, Configuration config)
+    public EquipmentDrawer(IDataManager gameData, ItemManager items, CodeService codes, TextureService textures, Configuration config,
+        GPoseService gPose)
     {
         _items     = items;
         _codes     = codes;
         _textures  = textures;
         _config    = config;
+        _gPose     = gPose;
         _stainData = items.Stains;
         _stainCombo = new FilterComboColors(DefaultWidth - 20,
             _stainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))));
@@ -183,8 +187,9 @@ public class EquipmentDrawer
             return false;
         }
 
-        label = combo.Label;
-        using var disabled = ImRaii.Disabled(locked);
+        label  =  combo.Label;
+        locked |= !_gPose.InGPose && current.Type is FullEquipType.Unknown;
+        using var disabled = ImRaii.Disabled(locked );
         if (!locked && open)
             UiHelpers.OpenCombo($"##{combo.Label}");
         if (!combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth))
@@ -204,7 +209,8 @@ public class EquipmentDrawer
             return false;
         }
 
-        label = combo.Label;
+        label  =  combo.Label;
+        locked |= !_gPose.InGPose && (current.Type is FullEquipType.Unknown || mainhand.Type is FullEquipType.Unknown);
         using var disabled = ImRaii.Disabled(locked);
         if (!locked && open)
             UiHelpers.OpenCombo($"##{combo.Label}");
@@ -435,7 +441,7 @@ public class EquipmentDrawer
         EquipFlag? cApply, out bool rApply, out bool rApplyStain, bool locked, Gender gender, Race race)
     {
         var changes = DataChange.None;
-        cArmor.DrawIcon(_textures, _iconSize);
+        cArmor.DrawIcon(_textures, _iconSize, slot);
         var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
         var left  = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();
@@ -560,7 +566,7 @@ public class EquipmentDrawer
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
             ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y });
 
-        cMainhand.DrawIcon(_textures, _iconSize);
+        cMainhand.DrawIcon(_textures, _iconSize, EquipSlot.MainHand);
         var left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();
         using (var group = ImRaii.Group())
@@ -612,7 +618,7 @@ public class EquipmentDrawer
             return changes;
         }
 
-        rOffhand.DrawIcon(_textures, _iconSize);
+        rOffhand.DrawIcon(_textures, _iconSize, EquipSlot.OffHand);
         var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
         left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();

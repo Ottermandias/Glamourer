@@ -6,6 +6,7 @@ using ImGuiNET;
 using Lumina.Misc;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui;
@@ -34,18 +35,19 @@ public static class UiHelpers
         ImGui.OpenPopup(popupId);
     }
 
-    public static void DrawIcon(this EquipItem item, TextureService textures, Vector2 size)
+    public static void DrawIcon(this EquipItem item, TextureService textures, Vector2 size, EquipSlot slot)
     {
         var isEmpty = item.ModelId.Id == 0;
-        var (ptr, textureSize, empty) = textures.GetIcon(item);
+        var (ptr, textureSize, empty) = textures.GetIcon(item, slot);
         if (empty)
         {
+            var (bgColor, tint) = isEmpty
+                ? (ImGui.GetColorU32(ImGuiCol.FrameBg), new Vector4(0.1f,       0.1f, 0.1f, 0.5f))
+                : (ImGui.GetColorU32(ImGuiCol.FrameBgActive), new Vector4(0.3f, 0.3f, 0.3f, 0.8f));
             var pos = ImGui.GetCursorScreenPos();
-            ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size,
-                ImGui.GetColorU32(isEmpty ? ImGuiCol.FrameBg : ImGuiCol.FrameBgActive), 5 * ImGuiHelpers.GlobalScale);
+            ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * ImGuiHelpers.GlobalScale);
             if (ptr != nint.Zero)
-                ImGui.Image(ptr, size, Vector2.Zero, Vector2.One,
-                    isEmpty ? new Vector4(0.1f, 0.1f, 0.1f, 0.5f) : new Vector4(0.3f, 0.3f, 0.3f, 0.8f));
+                ImGui.Image(ptr, size, Vector2.Zero, Vector2.One, tint);
             else
                 ImGui.Dummy(size);
         }

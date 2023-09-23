@@ -18,12 +18,12 @@ public sealed class TextureService : TextureCache, IDisposable
 
     private readonly TextureWrap?[] _slotIcons;
 
-    public (nint, Vector2, bool) GetIcon(EquipItem item)
+    public (nint, Vector2, bool) GetIcon(EquipItem item, EquipSlot slot)
     {
         if (item.IconId.Id != 0 && TryLoadIcon(item.IconId.Id, out var ret))
             return (ret.ImGuiHandle, new Vector2(ret.Width, ret.Height), false);
 
-        var idx = item.Type.ToSlot().ToIndex();
+        var idx = slot.ToIndex();
         return idx < 12 && _slotIcons[idx] != null
             ? (_slotIcons[idx]!.ImGuiHandle, new Vector2(_slotIcons[idx]!.Width, _slotIcons[idx]!.Height), true)
             : (nint.Zero, Vector2.Zero, true);
@@ -59,7 +59,7 @@ public sealed class TextureService : TextureCache, IDisposable
         ret[6]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 9)!;
         ret[7]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 10)!;
         ret[8]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 11)!;
-        ret[9]  = ret[10];
+        ret[9]  = ret[8];
         ret[10] = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 0)!;
         ret[11] = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 7)!;
 
