@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Dalamud.Plugin.Services;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -117,10 +118,10 @@ public class EquipmentDrawer
             designData.Stain(EquipSlot.MainHand), out rMainhandStain, designData.Stain(EquipSlot.OffHand), out rOffhandStain, cApply,
             allWeapons, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked);
 
-    public DataChange DrawWeapons(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
+    private DataChange DrawWeapons(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
         StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
-        bool allWeapons,
-        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
+        bool allWeapons, out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain,
+        bool locked)
     {
         if (cMainhand.ModelId.Id == 0)
         {
@@ -156,24 +157,24 @@ public class EquipmentDrawer
             allWeapons);
     }
 
-    public bool DrawHatState(bool currentValue, out bool newValue, bool locked)
+    public static bool DrawHatState(bool currentValue, out bool newValue, bool locked)
         => UiHelpers.DrawCheckbox("Hat Visible", "Hide or show the characters head gear.", currentValue, out newValue, locked);
 
-    public DataChange DrawHatState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
+    public static DataChange DrawHatState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
         => UiHelpers.DrawMetaToggle("Hat Visible", "Change the visibility of the characters head gear: Hidden, Visible or Don't Apply.",
             currentValue, currentApply, out newValue, out newApply, locked);
 
-    public bool DrawVisorState(bool currentValue, out bool newValue, bool locked)
+    public static bool DrawVisorState(bool currentValue, out bool newValue, bool locked)
         => UiHelpers.DrawCheckbox("Visor Toggled", "Toggle the visor state of the characters head gear.", currentValue, out newValue, locked);
 
-    public DataChange DrawVisorState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
+    public static DataChange DrawVisorState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
         => UiHelpers.DrawMetaToggle("Visor Toggled", "Change the toggled state of the characters head gear: Normal, Toggled or Don't Apply.",
             currentValue, currentApply, out newValue, out newApply, locked);
 
-    public bool DrawWeaponState(bool currentValue, out bool newValue, bool locked)
+    public static bool DrawWeaponState(bool currentValue, out bool newValue, bool locked)
         => UiHelpers.DrawCheckbox("Weapon Visible", "Hide or show the characters weapons when not drawn.", currentValue, out newValue, locked);
 
-    public DataChange DrawWeaponState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
+    public static DataChange DrawWeaponState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
         => UiHelpers.DrawMetaToggle("Weapon Visible",
             "Change the visibility of the characters weapons when not drawn: Hidden, Visible or Don't Apply.", currentValue, currentApply,
             out newValue, out newApply, locked);
@@ -187,16 +188,24 @@ public class EquipmentDrawer
             return false;
         }
 
-        label  =  combo.Label;
-        locked |= !_gPose.InGPose && current.Type is FullEquipType.Unknown;
-        using var disabled = ImRaii.Disabled(locked );
-        if (!locked && open)
-            UiHelpers.OpenCombo($"##{combo.Label}");
-        if (!combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth))
-            return false;
+        label = combo.Label;
+        var       unknown = !_gPose.InGPose && current.Type is FullEquipType.Unknown;
+        var       ret     = false;
+        using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
+        using (var disabled = ImRaii.Disabled(locked | unknown))
+        {
+            if (!locked && open)
+                UiHelpers.OpenCombo($"##{label}");
+            if (combo.Draw(weapon.Name, weapon.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth))
+            {
+                ret    = true;
+                weapon = combo.CurrentSelection;
+            }
+        }
+        if (unknown && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("The weapon type could not be identified, thus changing it to other weapons of that type is not possible.");
 
-        weapon = combo.CurrentSelection;
-        return true;
+        return ret;
     }
 
     private bool DrawOffhand(EquipItem mainhand, EquipItem current, out EquipItem weapon, out string label, bool locked, bool small, bool clear,
@@ -483,6 +492,16 @@ public class EquipmentDrawer
         return changes;
     }
 
+    private static void WeaponHelpMarker(string label)
+    {
+        ImGui.SameLine();
+        ImGuiComponents.HelpMarker(
+            "Changing weapons to weapons of different types can cause crashes, freezes, soft- and hard locks and cheating, "
+          + "thus it is only allowed to change weapons to other weapons of the same type.");
+        ImGui.SameLine();
+        ImGui.TextUnformatted(label);
+    }
+
     private DataChange DrawWeaponsSmall(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
         StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
         out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked,
@@ -519,8 +538,8 @@ public class EquipmentDrawer
             rApplyMainhandStain = true;
         }
 
-        ImGui.SameLine();
-        ImGui.TextUnformatted(mainhandLabel);
+        WeaponHelpMarker(mainhandLabel);
+        
         if (rOffhand.Type is FullEquipType.Unknown)
         {
             rOffhandStain      = cOffhandStain;
@@ -550,8 +569,7 @@ public class EquipmentDrawer
             rApplyOffhandStain = true;
         }
 
-        ImGui.SameLine();
-        ImGui.TextUnformatted(offhandLabel);
+        WeaponHelpMarker(offhandLabel);
 
         return changes;
     }
@@ -593,8 +611,7 @@ public class EquipmentDrawer
                 rApplyMainhand = true;
             }
 
-            ImGui.SameLine();
-            ImGui.TextUnformatted(mainhandLabel);
+            WeaponHelpMarker(mainhandLabel);
 
             if (DrawStain(EquipSlot.MainHand, cMainhandStain, out rMainhandStain, locked, false))
                 changes |= DataChange.Stain;
@@ -637,8 +654,7 @@ public class EquipmentDrawer
                 rApplyOffhand = true;
             }
 
-            ImGui.SameLine();
-            ImGui.TextUnformatted(offhandLabel);
+            WeaponHelpMarker(offhandLabel);
 
             if (DrawStain(EquipSlot.OffHand, cOffhandStain, out rOffhandStain, locked, false))
                 changes |= DataChange.Stain2;
