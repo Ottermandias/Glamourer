@@ -412,7 +412,7 @@ public class DesignBase
             SetApplyHatVisible(applyHat);
             SetApplyVisorToggle(applyVisor);
             SetApplyWeaponVisible(applyWeapon);
-            SetApplyWetness(DesignData.IsWet());
+            SetApplyWetness(true);
         }
         catch (Exception ex)
         {
