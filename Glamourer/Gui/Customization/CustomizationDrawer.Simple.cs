@@ -64,6 +64,7 @@ public partial class CustomizationDrawer
         if (_currentIndex is CustomizeIndex.Face && _set.Race is Race.Hrothgar && value is > 4 and < 9)
             value -= 4;
 
+        using var group    = ImRaii.Group();
         using var disabled = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw);
         ImGui.SetNextItemWidth(_inputIntSizeNoButtons);
         if (ImGui.InputInt("##text", ref value, 0, 0))
@@ -134,6 +135,7 @@ public partial class CustomizationDrawer
                 : Math.Clamp(tmp - 1, 0, _currentCount - 1));
             UpdateValue(newValue);
         }
+
         ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]\n"
           + "Hold Control to force updates with invalid/unknown options at your own risk.");
     }
@@ -145,11 +147,12 @@ public partial class CustomizationDrawer
         var       tmp = _currentByte != CustomizeValue.Zero;
         if (_withApply)
         {
-            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToDefaultName(), string.Empty, tmp, _currentApply, out var newValue,
+            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToDefaultName(),
+                        $"This attribute will be {(_currentApply ? tmp ? "enabled." : "disabled." : "kept as is.")}", tmp, _currentApply,
+                        out var newValue,
                         out var newApply, _locked))
             {
                 case DataChange.Item:
-                    ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
                     _customize.Set(idx, newValue ? CustomizeValue.Max : CustomizeValue.Zero);
                     Changed |= _currentFlag;
                     break;
@@ -157,6 +160,7 @@ public partial class CustomizationDrawer
                     ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
                     break;
                 case DataChange.Item | DataChange.ApplyItem:
+                    ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
                     _customize.Set(idx, newValue ? CustomizeValue.Max : CustomizeValue.Zero);
                     Changed |= _currentFlag;
                     break;

@@ -36,7 +36,6 @@ public partial class CustomizationDrawer : IDisposable
     private CustomizeFlag _initialApply;
     private bool          _locked       = false;
     private bool          _lockedRedraw = false;
-    private Vector2       _defaultSpacing;
     private Vector2       _spacing;
     private Vector2       _iconSize;
     private Vector2       _framedIconSize;
@@ -157,7 +156,7 @@ public partial class CustomizationDrawer : IDisposable
             Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.ColorPicker], DrawColorPicker, ImGui.SameLine);
 
             Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.Checkmark], DrawCheckbox,
-                () => ImGui.SameLine(_comboSelectorSize - _framedIconSize.X + _spacing.X));
+                () => ImGui.SameLine(_comboSelectorSize - _framedIconSize.X + ImGui.GetStyle().WindowPadding.X));
             return Changed != 0 || ChangeApply != _initialApply;
         }
         catch (Exception ex)
@@ -197,7 +196,6 @@ public partial class CustomizationDrawer : IDisposable
 
     private void UpdateSizes()
     {
-        _defaultSpacing = ImGui.GetStyle().ItemSpacing;
         _spacing = ImGui.GetStyle().ItemSpacing with { X = ImGui.GetStyle().ItemInnerSpacing.X };
         _iconSize = new Vector2(ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 2 * ImGui.GetStyle().FramePadding.Y);
         _framedIconSize = _iconSize + 2 * ImGui.GetStyle().FramePadding;

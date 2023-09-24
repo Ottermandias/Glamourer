@@ -1,10 +1,8 @@
-﻿using System;
-using System.Numerics;
+﻿using System.Numerics;
 using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
-using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Customization;
 
@@ -41,6 +39,9 @@ public partial class CustomizationDrawer
         using (var group = ImRaii.Group())
         {
             DataInputInt(current, npc);
+            if (_lockedRedraw && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                ImGui.SetTooltip(
+                    "The face can not be changed as this requires a redraw of the character, which is not supported for this actor.");
 
             if (_withApply)
             {
