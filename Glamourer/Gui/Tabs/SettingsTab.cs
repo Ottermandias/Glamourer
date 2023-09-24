@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
@@ -50,6 +51,21 @@ public class SettingsTab : ITab
         Checkbox("Enabled", "Enable main functionality of keeping and applying state.", _stateListener.Enabled, _stateListener.Enable);
         Checkbox("Enable Auto Designs", "Enable the application of designs associated to characters to be applied automatically.",
             _config.EnableAutoDesigns,  v => _config.EnableAutoDesigns = v);
+        ImGui.NewLine();
+
+        DrawBehaviorSettings();
+        DrawInterfaceSettings();
+        DrawColorSettings();
+        DrawCodes();
+
+        MainWindow.DrawSupportButtons();
+    }
+
+    private void DrawBehaviorSettings()
+    {
+        if (!ImGui.CollapsingHeader("Glamourer Behavior"))
+            return;
+
         Checkbox("Restricted Gear Protection",
             "Use gender- and race-appropriate models when detecting certain items not available for a characters current gender and race.",
             _config.UseRestrictedGearProtection, v => _config.UseRestrictedGearProtection = v);
@@ -62,14 +78,21 @@ public class SettingsTab : ITab
         Checkbox("Auto-Reload Gear",
             "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection.",
             _config.AutoRedrawEquipOnChanges, _autoRedraw.SetState);
+        ImGui.NewLine();
+    }
+
+    private void DrawInterfaceSettings()
+    {
+        if (!ImGui.CollapsingHeader("Interface"))
+            return;
 
         Checkbox("Smaller Equip Display", "Use single-line display without icons and small dye buttons instead of double-line display.",
-            _config.SmallEquip,           v => _config.SmallEquip = v);
+            _config.SmallEquip, v => _config.SmallEquip = v);
         Checkbox("Show Application Checkboxes",
             "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules.",
             !_config.HideApplyCheckmarks, v => _config.HideApplyCheckmarks = !v);
         Checkbox("Enable Game Context Menus", "Whether to show a Try On via Glamourer button on context menus for equippable items.",
-            _config.EnableGameContextMenu,    v =>
+            _config.EnableGameContextMenu, v =>
             {
                 _config.EnableGameContextMenu = v;
                 if (v)
@@ -81,7 +104,7 @@ public class SettingsTab : ITab
             _config.HideWindowInCutscene,
             v =>
             {
-                _config.HideWindowInCutscene     = v;
+                _config.HideWindowInCutscene = v;
                 _uiBuilder.DisableCutsceneUiHide = !v;
             });
         if (Widget.DoubleModifierSelector("Design Deletion Modifier",
@@ -92,12 +115,25 @@ public class SettingsTab : ITab
         Checkbox("Auto-Open Design Folders",
             "Have design folders open or closed as their default state after launching.", _config.OpenFoldersByDefault,
             v => _config.OpenFoldersByDefault = v);
-        Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use.", _config.DebugMode, v => _config.DebugMode = v);
-        DrawColorSettings();
+        Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general.", _config.DebugMode, v => _config.DebugMode = v);
+        ImGui.NewLine();
+    }
+    
+    /// <summary> Draw the entire Color subsection. </summary>
+    private void DrawColorSettings()
+    {
+        if (!ImGui.CollapsingHeader("Colors"))
+            return;
 
-        DrawCodes();
+        foreach (var color in Enum.GetValues<ColorId>())
+        {
+            var (defaultColor, name, description) = color.Data();
+            var currentColor = _config.Colors.TryGetValue(color, out var current) ? current : defaultColor;
+            if (Widget.ColorPicker(name, description, currentColor, c => _config.Colors[color] = c, defaultColor))
+                _config.Save();
+        }
 
-        MainWindow.DrawSupportButtons();
+        ImGui.NewLine();
     }
 
     private void DrawCodes()
@@ -108,7 +144,12 @@ public class SettingsTab : ITab
           + "In any case, you are not losing out on anything important if you never look at this section and there is no real reason to go on a treasure hunt for them. It is mostly something I added because it was fun for me.";
 
         var show = ImGui.CollapsingHeader("Cheat Codes");
-        ImGuiUtil.HoverTooltip(tooltip);
+        if (ImGui.IsItemHovered())
+        {
+            ImGui.SetNextWindowSize(new Vector2(400, 0));
+            using var tt = ImRaii.Tooltip();
+            ImGuiUtil.TextWrapped(tooltip);
+        }
         if (!show)
             return;
 
@@ -123,6 +164,8 @@ public class SettingsTab : ITab
 
         ImGui.SameLine();
         ImGuiComponents.HelpMarker(tooltip);
+
+        DrawCodeHints();
 
         if (_config.Codes.Count <= 0)
             return;
@@ -144,21 +187,9 @@ public class SettingsTab : ITab
         }
     }
 
-    /// <summary> Draw the entire Color subsection. </summary>
-    private void DrawColorSettings()
+    private void DrawCodeHints()
     {
-        if (!ImGui.CollapsingHeader("Colors"))
-            return;
-
-        foreach (var color in Enum.GetValues<ColorId>())
-        {
-            var (defaultColor, name, description) = color.Data();
-            var currentColor = _config.Colors.TryGetValue(color, out var current) ? current : defaultColor;
-            if (Widget.ColorPicker(name, description, currentColor, c => _config.Colors[color] = c, defaultColor))
-                _config.Save();
-        }
-
-        ImGui.NewLine();
+        // TODO
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

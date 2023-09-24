@@ -206,13 +206,13 @@ public class ActorPanel
             _stateManager.ChangeStain(_state, EquipSlot.OffHand, newOffhandStain, StateChanged.Source.Manual);
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        if (_equipmentDrawer.DrawHatState(_state!.ModelData.IsHatVisible(), out var newHatState, _state!.IsLocked))
+        if (EquipmentDrawer.DrawHatState(_state!.ModelData.IsHatVisible(), out var newHatState, _state!.IsLocked))
             _stateManager.ChangeHatState(_state, newHatState, StateChanged.Source.Manual);
         ImGui.SameLine();
-        if (_equipmentDrawer.DrawVisorState(_state!.ModelData.IsVisorToggled(), out var newVisorState, _state!.IsLocked))
+        if (EquipmentDrawer.DrawVisorState(_state!.ModelData.IsVisorToggled(), out var newVisorState, _state!.IsLocked))
             _stateManager.ChangeVisorState(_state, newVisorState, StateChanged.Source.Manual);
         ImGui.SameLine();
-        if (_equipmentDrawer.DrawWeaponState(_state!.ModelData.IsWeaponVisible(), out var newWeaponState, _state!.IsLocked))
+        if (EquipmentDrawer.DrawWeaponState(_state!.ModelData.IsWeaponVisible(), out var newWeaponState, _state!.IsLocked))
             _stateManager.ChangeWeaponState(_state, newWeaponState, StateChanged.Source.Manual);
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }

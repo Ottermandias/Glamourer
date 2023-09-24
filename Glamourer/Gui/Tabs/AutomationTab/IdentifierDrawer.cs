@@ -25,7 +25,7 @@ public class IdentifierDrawer
     {
         _actors        = actors;
         _worldCombo    = new WorldCombo(actors.AwaitedService.Data.Worlds);
-        _humanNpcCombo = new HumanNpcCombo("Human Event NPCs", identifier, humans);
+        _humanNpcCombo = new HumanNpcCombo("##npcs", identifier, humans);
     }
 
     public void DrawName(float width)

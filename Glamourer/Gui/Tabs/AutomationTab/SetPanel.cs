@@ -71,18 +71,27 @@ public class SetPanel
         if (!child || !_selector.HasSelection)
             return;
 
-        var enabled = Selection.Enabled;
-        if (ImGui.Checkbox("Enabled", ref enabled))
-            _manager.SetState(_selector.SelectionIndex, enabled);
+        using (var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
+                   ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y }))
+        {
+            var enabled = Selection.Enabled;
+            if (ImGui.Checkbox("##Enabled", ref enabled))
+                _manager.SetState(_selector.SelectionIndex, enabled);
+            ImGuiUtil.LabeledHelpMarker("Enabled",
+                "Whether the designs in this set should be applied at all. Only one set can be enabled for a character at the same time.");
 
-        var useGame = _selector.Selection!.BaseState is AutoDesignSet.Base.Game;
-        if (ImGui.Checkbox("Use Game State as Base", ref useGame))
-            _manager.ChangeBaseState(_selector.SelectionIndex, useGame ? AutoDesignSet.Base.Game : AutoDesignSet.Base.Current);
+            var useGame = _selector.Selection!.BaseState is AutoDesignSet.Base.Game;
+            if (ImGui.Checkbox("##gameState", ref useGame))
+                _manager.ChangeBaseState(_selector.SelectionIndex, useGame ? AutoDesignSet.Base.Game : AutoDesignSet.Base.Current);
+            ImGuiUtil.LabeledHelpMarker("Use Game State as Base",
+                "When this is enabled, the designs matching conditions will be applied successively on top of what your character is supposed to look like for the game. "
+              + "Otherwise, they will be applied on top of the characters actual current look using Glamourer.");
+        }
 
         var name  = _tempName ?? Selection.Name;
         var flags = _selector.IncognitoMode ? ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.Password : ImGuiInputTextFlags.None;
-        ImGui.SetNextItemWidth(220 * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputText("##Name", ref name, 128, flags))
+        ImGui.SetNextItemWidth(330 * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputText("Rename Set##Name", ref name, 128, flags))
             _tempName = name;
 
         if (ImGui.IsItemDeactivated())
@@ -91,9 +100,14 @@ public class SetPanel
             _tempName = null;
         }
 
+        ImGui.Dummy(Vector2.Zero);
         ImGui.Separator();
+        ImGui.Dummy(Vector2.Zero);
         DrawIdentifierSelection(_selector.SelectionIndex);
 
+        ImGui.Dummy(Vector2.Zero);
+        ImGui.Separator();
+        ImGui.Dummy(Vector2.Zero);
         DrawDesignTable();
     }
 
@@ -275,10 +289,11 @@ public class SetPanel
 
         using (var source = ImRaii.DragDropSource())
         {
-            if (source.Success && ImGui.SetDragDropPayload(dragDropLabel, nint.Zero, 0))
+            if (source)
             {
-                _dragIndex = index;
                 ImGui.TextUnformatted($"Moving design #{index + 1:D2}...");
+                if (ImGui.SetDragDropPayload(dragDropLabel, nint.Zero, 0))
+                    _dragIndex = index;
             }
         }
     }
@@ -320,19 +335,20 @@ public class SetPanel
     private void DrawIdentifierSelection(int setIndex)
     {
         using var id = ImRaii.PushId("Identifiers");
-        _identifierDrawer.DrawWorld(200);
-        _identifierDrawer.DrawName(300);
-        _identifierDrawer.DrawNpcs(300);
-        if (ImGuiUtil.DrawDisabledButton("Set to Character", Vector2.Zero, string.Empty, !_identifierDrawer.CanSetPlayer))
+        _identifierDrawer.DrawWorld(130);
+        ImGui.SameLine();
+        _identifierDrawer.DrawName(200 - ImGui.GetStyle().ItemSpacing.X);
+        _identifierDrawer.DrawNpcs(330);
+        var buttonWidth = new Vector2(165 * ImGuiHelpers.GlobalScale - ImGui.GetStyle().ItemSpacing.X / 2, 0);
+        if (ImGuiUtil.DrawDisabledButton("Set to Character", buttonWidth, string.Empty, !_identifierDrawer.CanSetPlayer))
             _manager.ChangeIdentifier(setIndex, _identifierDrawer.PlayerIdentifier);
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Set to Npc", Vector2.Zero, string.Empty, !_identifierDrawer.CanSetNpc))
+        if (ImGuiUtil.DrawDisabledButton("Set to NPC", buttonWidth, string.Empty, !_identifierDrawer.CanSetNpc))
             _manager.ChangeIdentifier(setIndex, _identifierDrawer.NpcIdentifier);
-        ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Set to Retainer", Vector2.Zero, string.Empty, !_identifierDrawer.CanSetRetainer))
+        if (ImGuiUtil.DrawDisabledButton("Set to Retainer", buttonWidth, string.Empty, !_identifierDrawer.CanSetRetainer))
             _manager.ChangeIdentifier(setIndex, _identifierDrawer.RetainerIdentifier);
         ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Set to Mannequin", Vector2.Zero, string.Empty, !_identifierDrawer.CanSetRetainer))
+        if (ImGuiUtil.DrawDisabledButton("Set to Mannequin", buttonWidth, string.Empty, !_identifierDrawer.CanSetRetainer))
             _manager.ChangeIdentifier(setIndex, _identifierDrawer.MannequinIdentifier);
     }
 

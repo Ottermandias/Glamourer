@@ -68,7 +68,7 @@ public sealed class DesignCombo : FilterComboCache<(Design, string)>
         _innerWidth         = 400 * ImGuiHelpers.GlobalScale;
         CurrentSelectionIdx = Math.Max(Items.IndexOf(p => design?.Design == p.Item1), 0);
         CurrentSelection    = Items[CurrentSelectionIdx];
-        var name = design?.Name(incognito) ?? string.Empty;
+        var name = design?.Name(incognito) ?? "Select Design Here...";
         if (Draw("##design", name, string.Empty, ImGui.GetContentRegionAvail().X,
                 ImGui.GetTextLineHeightWithSpacing())
          && CurrentSelection.Item1 != null)

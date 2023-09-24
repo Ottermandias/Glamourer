@@ -210,12 +210,26 @@ public class SetSelector : IDisposable
     {
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
-        var buttonWidth = new Vector2(_width / 3, 0);
+        var buttonWidth = new Vector2(_width / 4, 0);
         NewSetButton(buttonWidth);
         ImGui.SameLine();
         DuplicateSetButton(buttonWidth);
         ImGui.SameLine();
+        HelpButton(buttonWidth);
+        ImGui.SameLine();
         DeleteSetButton(buttonWidth);
+    }
+
+    private void HelpButton(Vector2 size)
+    {
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.QuestionCircle.ToIconString(), size, "How does Automation work?", false, true))
+            ImGui.OpenPopup("Automation Help");
+
+        ImGuiUtil.HelpPopup("Automation Help", new Vector2(1000 * ImGuiHelpers.GlobalScale, 20 * ImGui.GetTextLineHeightWithSpacing()), () =>
+        {
+            ImGui.NewLine();
+            ImGui.TextUnformatted("Hi!");
+        });
     }
 
     private void NewSetButton(Vector2 size)
@@ -267,10 +281,11 @@ public class SetSelector : IDisposable
 
         using (var source = ImRaii.DragDropSource())
         {
-            if (source.Success && ImGui.SetDragDropPayload(dragDropLabel, nint.Zero, 0))
+            if (source)
             {
-                _dragIndex = index;
                 ImGui.TextUnformatted($"Moving design set {GetSetName(set, index)} from position {index + 1}...");
+                if (ImGui.SetDragDropPayload(dragDropLabel, nint.Zero, 0))
+                    _dragIndex = index;
             }
         }
     }

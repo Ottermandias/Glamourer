@@ -35,7 +35,7 @@ public sealed class HumanNpcCombo : FilterComboCache<(string Name, ObjectKind Ki
     }
 
     public bool Draw(float width)
-        => Draw(_label, CurrentSelection.Name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
+        => Draw(_label, CurrentSelection.Name.IsNullOrEmpty() ? "Human Non-Player-Characters..." : CurrentSelection.Name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
 
 
     /// <summary> Compare strings in a way that letters and numbers are sorted before any special symbols. </summary>

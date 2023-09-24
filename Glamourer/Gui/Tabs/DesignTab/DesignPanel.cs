@@ -155,19 +155,19 @@ public class DesignPanel
 
     private void DrawEquipmentMetaToggles()
     {
-        var hatChanges = _equipmentDrawer.DrawHatState(_selector.Selected!.DesignData.IsHatVisible(),
+        var hatChanges = EquipmentDrawer.DrawHatState(_selector.Selected!.DesignData.IsHatVisible(),
             _selector.Selected.DoApplyHatVisible(),
             out var newHatState, out var newHatApply, _selector.Selected.WriteProtected());
         ApplyChanges(ActorState.MetaIndex.HatState, hatChanges, newHatState, newHatApply);
 
         ImGui.SameLine();
-        var visorChanges = _equipmentDrawer.DrawVisorState(_selector.Selected!.DesignData.IsVisorToggled(),
+        var visorChanges = EquipmentDrawer.DrawVisorState(_selector.Selected!.DesignData.IsVisorToggled(),
             _selector.Selected.DoApplyVisorToggle(),
             out var newVisorState, out var newVisorApply, _selector.Selected.WriteProtected());
         ApplyChanges(ActorState.MetaIndex.VisorState, visorChanges, newVisorState, newVisorApply);
 
         ImGui.SameLine();
-        var weaponChanges = _equipmentDrawer.DrawWeaponState(_selector.Selected!.DesignData.IsWeaponVisible(),
+        var weaponChanges = EquipmentDrawer.DrawWeaponState(_selector.Selected!.DesignData.IsWeaponVisible(),
             _selector.Selected.DoApplyWeaponVisible(),
             out var newWeaponState, out var newWeaponApply, _selector.Selected.WriteProtected());
         ApplyChanges(ActorState.MetaIndex.WeaponState, weaponChanges, newWeaponState, newWeaponApply);
