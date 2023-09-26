@@ -48,7 +48,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
 
     public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, KeyState keyState, DesignChanged @event,
         Configuration config, DesignConverter converter, TabSelected selectionEvent)
-        : base(fileSystem, keyState)
+        : base(fileSystem, keyState, allowMultipleSelection: true)
     {
         _designManager  = designManager;
         _event          = @event;

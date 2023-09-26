@@ -305,21 +305,66 @@ public class DesignPanel
     public void Draw()
     {
         using var group = ImRaii.Group();
-        DrawHeader();
-        DrawPanel();
-
-        if (_selector.Selected == null || _selector.Selected.WriteProtected())
-            return;
-
-        if (_datFileService.CreateImGuiTarget(out var dat))
+        if (_selector.SelectedPaths.Count > 1)
         {
-            _manager.ChangeCustomize(_selector.Selected!, CustomizeIndex.Clan,   dat.Customize[CustomizeIndex.Clan]);
-            _manager.ChangeCustomize(_selector.Selected!, CustomizeIndex.Gender, dat.Customize[CustomizeIndex.Gender]);
-            foreach (var idx in CustomizationExtensions.AllBasic)
-                _manager.ChangeCustomize(_selector.Selected!, idx, dat.Customize[idx]);
+            DrawMultiSelection();
+        }
+        else
+        {
+            DrawHeader();
+            DrawPanel();
+
+            if (_selector.Selected == null || _selector.Selected.WriteProtected())
+                return;
+
+            if (_datFileService.CreateImGuiTarget(out var dat))
+            {
+                _manager.ChangeCustomize(_selector.Selected!, CustomizeIndex.Clan,   dat.Customize[CustomizeIndex.Clan]);
+                _manager.ChangeCustomize(_selector.Selected!, CustomizeIndex.Gender, dat.Customize[CustomizeIndex.Gender]);
+                foreach (var idx in CustomizationExtensions.AllBasic)
+                    _manager.ChangeCustomize(_selector.Selected!, idx, dat.Customize[idx]);
+            }
         }
 
         _datFileService.CreateSource();
+    }
+
+    private void DrawMultiSelection()
+    {
+        if (_selector.SelectedPaths.Count == 0)
+            return;
+
+        var sizeType             = ImGui.GetFrameHeight();
+        var availableSizePercent = (ImGui.GetContentRegionAvail().X - sizeType - 4 * ImGui.GetStyle().CellPadding.X) / 100;
+        var sizeMods             = availableSizePercent * 35;
+        var sizeFolders          = availableSizePercent * 65;
+
+        ImGui.NewLine();
+        ImGui.TextUnformatted("Currently Selected Objects");
+        ImGui.Separator();
+        using var table = ImRaii.Table("mods", 3, ImGuiTableFlags.RowBg);
+        ImGui.TableSetupColumn("type", ImGuiTableColumnFlags.WidthFixed, sizeType);
+        ImGui.TableSetupColumn("mod",  ImGuiTableColumnFlags.WidthFixed, sizeMods);
+        ImGui.TableSetupColumn("path", ImGuiTableColumnFlags.WidthFixed, sizeFolders);
+
+        var i = 0;
+        foreach (var (fullName, path) in _selector.SelectedPaths.Select(p => (p.FullName(), p))
+                     .OrderBy(p => p.Item1, StringComparer.OrdinalIgnoreCase))
+        {
+            using var id = ImRaii.PushId(i++);
+            ImGui.TableNextColumn();
+            var icon = (path is DesignFileSystem.Leaf ? FontAwesomeIcon.FileCircleMinus : FontAwesomeIcon.FolderMinus).ToIconString();
+            if (ImGuiUtil.DrawDisabledButton(icon, new Vector2(sizeType), "Remove from selection.", false, true))
+                _selector.RemovePathFromMultiselection(path);
+
+            ImGui.TableNextColumn();
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(path is DesignFileSystem.Leaf l ? l.Value.Name : string.Empty);
+
+            ImGui.TableNextColumn();
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(fullName);
+        }
     }
 
     private void DrawPanel()
