@@ -137,7 +137,7 @@ public class ItemManager : IDisposable
         if (slot is not EquipSlot.MainHand and not EquipSlot.OffHand)
             return new EquipItem($"Invalid ({id.Id}-{type.Id}-{variant})", 0, 0, id, type, variant, 0);
 
-        var item = IdentifierService.AwaitedService.Identify(id, type, variant, slot).FirstOrDefault();
+        var item = IdentifierService.AwaitedService.Identify(id, type, variant, slot).FirstOrDefault(i => i.Type.ToSlot() == slot);
         return item.Valid
             ? item
             : EquipItem.FromIds(0, 0, id, type, variant, slot.ToEquipType(), null);
