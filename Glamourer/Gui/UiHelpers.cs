@@ -66,7 +66,7 @@ public static class UiHelpers
         return ret;
     }
 
-    public static DataChange DrawMetaToggle(string label, string tooltip, bool currentValue, bool currentApply, out bool newValue,
+    public static DataChange DrawMetaToggle(string label, bool currentValue, bool currentApply, out bool newValue,
         out bool newApply,
         bool locked)
     {
@@ -78,7 +78,7 @@ public static class UiHelpers
             ret = ImGui.CheckboxFlags("##" + label, ref flags, 3);
         }
 
-        ImGuiUtil.HoverTooltip(tooltip);
+        ImGuiUtil.HoverTooltip($"This attribute will be {(currentApply ? currentValue ? "enabled." : "disabled." : "kept as is.")}");
 
         ImGui.SameLine();
         ImGui.TextUnformatted(label);

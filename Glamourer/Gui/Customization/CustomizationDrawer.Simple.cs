@@ -153,10 +153,7 @@ public partial class CustomizationDrawer
         var       tmp = _currentByte != CustomizeValue.Zero;
         if (_withApply)
         {
-            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToDefaultName(),
-                        $"This attribute will be {(_currentApply ? tmp ? "enabled." : "disabled." : "kept as is.")}", tmp, _currentApply,
-                        out var newValue,
-                        out var newApply, _locked))
+            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToDefaultName(), tmp, _currentApply, out var newValue, out var newApply, _locked))
             {
                 case DataChange.Item:
                     _customize.Set(idx, newValue ? CustomizeValue.Max : CustomizeValue.Zero);

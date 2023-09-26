@@ -161,23 +161,19 @@ public class EquipmentDrawer
         => UiHelpers.DrawCheckbox("Hat Visible", "Hide or show the characters head gear.", currentValue, out newValue, locked);
 
     public static DataChange DrawHatState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
-        => UiHelpers.DrawMetaToggle("Hat Visible", "Change the visibility of the characters head gear: Hidden, Visible or Don't Apply.",
-            currentValue, currentApply, out newValue, out newApply, locked);
+        => UiHelpers.DrawMetaToggle("Hat Visible", currentValue, currentApply, out newValue, out newApply, locked);
 
     public static bool DrawVisorState(bool currentValue, out bool newValue, bool locked)
         => UiHelpers.DrawCheckbox("Visor Toggled", "Toggle the visor state of the characters head gear.", currentValue, out newValue, locked);
 
     public static DataChange DrawVisorState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
-        => UiHelpers.DrawMetaToggle("Visor Toggled", "Change the toggled state of the characters head gear: Normal, Toggled or Don't Apply.",
-            currentValue, currentApply, out newValue, out newApply, locked);
+        => UiHelpers.DrawMetaToggle("Visor Toggled", currentValue, currentApply, out newValue, out newApply, locked);
 
     public static bool DrawWeaponState(bool currentValue, out bool newValue, bool locked)
         => UiHelpers.DrawCheckbox("Weapon Visible", "Hide or show the characters weapons when not drawn.", currentValue, out newValue, locked);
 
     public static DataChange DrawWeaponState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
-        => UiHelpers.DrawMetaToggle("Weapon Visible",
-            "Change the visibility of the characters weapons when not drawn: Hidden, Visible or Don't Apply.", currentValue, currentApply,
-            out newValue, out newApply, locked);
+        => UiHelpers.DrawMetaToggle("Weapon Visible", currentValue, currentApply, out newValue, out newApply, locked);
 
     private bool DrawMainhand(EquipItem current, bool drawAll, out EquipItem weapon, out string label, bool locked, bool small, bool open)
     {

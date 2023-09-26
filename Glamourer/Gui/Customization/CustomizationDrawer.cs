@@ -128,8 +128,7 @@ public partial class CustomizationDrawer : IDisposable
         => UiHelpers.DrawCheckbox("Force Wetness", "Force the character to be wet or not.", currentValue, out newValue, locked);
 
     public DataChange DrawWetnessState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
-        => UiHelpers.DrawMetaToggle("Force Wetness", "Change the characters forced wetness state: Disabled, Enabled or Don't Apply.",
-            currentValue, currentApply, out newValue, out newApply, locked);
+        => UiHelpers.DrawMetaToggle("Force Wetness", currentValue, currentApply, out newValue, out newApply, locked);
 
     private bool DrawInternal()
     {
