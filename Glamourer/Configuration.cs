@@ -31,6 +31,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public byte               DisableFestivals            { get; set; } = 1;
     public bool               EnableGameContextMenu       { get; set; } = true;
     public bool               HideWindowInCutscene        { get; set; } = false;
+    public bool               ShowAutomationSetEditing    { get; set; } = true;
     public MainWindow.TabType SelectedTab                 { get; set; } = MainWindow.TabType.Settings;
     public DoubleModifier     DeleteDesignModifier        { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
 

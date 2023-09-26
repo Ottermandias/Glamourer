@@ -71,15 +71,20 @@ public class SetPanel
         if (!child || !_selector.HasSelection)
             return;
 
-        using (var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
-                   ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y }))
+        var spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
+
+        using (var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
         {
             var enabled = Selection.Enabled;
             if (ImGui.Checkbox("##Enabled", ref enabled))
                 _manager.SetState(_selector.SelectionIndex, enabled);
             ImGuiUtil.LabeledHelpMarker("Enabled",
                 "Whether the designs in this set should be applied at all. Only one set can be enabled for a character at the same time.");
+        }
 
+        ImGui.SameLine();
+        using (var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
+        {
             var useGame = _selector.Selection!.BaseState is AutoDesignSet.Base.Game;
             if (ImGui.Checkbox("##gameState", ref useGame))
                 _manager.ChangeBaseState(_selector.SelectionIndex, useGame ? AutoDesignSet.Base.Game : AutoDesignSet.Base.Current);
@@ -88,22 +93,40 @@ public class SetPanel
               + "Otherwise, they will be applied on top of the characters actual current look using Glamourer.");
         }
 
-        var name  = _tempName ?? Selection.Name;
-        var flags = _selector.IncognitoMode ? ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.Password : ImGuiInputTextFlags.None;
-        ImGui.SetNextItemWidth(330 * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputText("Rename Set##Name", ref name, 128, flags))
-            _tempName = name;
-
-        if (ImGui.IsItemDeactivated())
+        ImGui.SameLine();
+        using (var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
         {
-            _manager.Rename(_selector.SelectionIndex, name);
-            _tempName = null;
+            var editing = _config.ShowAutomationSetEditing;
+            if (ImGui.Checkbox("##Show Editing", ref editing))
+            {
+                _config.ShowAutomationSetEditing = editing;
+                _config.Save();
+            }
+
+            ImGuiUtil.LabeledHelpMarker("Show Editing",
+                "Show options to change the name or the associated character or NPC of this design set.");
         }
 
-        ImGui.Dummy(Vector2.Zero);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.Zero);
-        DrawIdentifierSelection(_selector.SelectionIndex);
+        if (_showEditing)
+        {
+            ImGui.Dummy(Vector2.Zero);
+            ImGui.Separator();
+            ImGui.Dummy(Vector2.Zero);
+
+            var name  = _tempName ?? Selection.Name;
+            var flags = _selector.IncognitoMode ? ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.Password : ImGuiInputTextFlags.None;
+            ImGui.SetNextItemWidth(330 * ImGuiHelpers.GlobalScale);
+            if (ImGui.InputText("Rename Set##Name", ref name, 128, flags))
+                _tempName = name;
+
+            if (ImGui.IsItemDeactivated())
+            {
+                _manager.Rename(_selector.SelectionIndex, name);
+                _tempName = null;
+            }
+
+            DrawIdentifierSelection(_selector.SelectionIndex);
+        }
 
         ImGui.Dummy(Vector2.Zero);
         ImGui.Separator();
@@ -309,6 +332,7 @@ public class SetPanel
             if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)AutoDesign.Type.All))
                 newType = (AutoDesign.Type)newTypeInt;
         }
+
         style.Pop();
         ImGuiUtil.HoverTooltip("Toggle all modes at once.");
 
