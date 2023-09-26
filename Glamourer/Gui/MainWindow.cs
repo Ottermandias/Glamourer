@@ -28,9 +28,9 @@ public class MainWindow : Window, IDisposable
         Unlocks    = 5,
     }
 
-    private readonly Configuration      _config;
-    private readonly TabSelected        _event;
-    private readonly ITab[]             _tabs;
+    private readonly Configuration _config;
+    private readonly TabSelected   _event;
+    private readonly ITab[]        _tabs;
 
     public readonly SettingsTab   Settings;
     public readonly ActorTab      Actors;
@@ -51,14 +51,14 @@ public class MainWindow : Window, IDisposable
             MinimumSize = new Vector2(700, 675),
             MaximumSize = ImGui.GetIO().DisplaySize,
         };
-        Settings        = settings;
-        Actors          = actors;
-        Designs         = designs;
-        Automation      = automation;
-        Debug           = debugTab;
-        Unlocks         = unlocks;
-        _event          = @event;
-        _config         = config;
+        Settings   = settings;
+        Actors     = actors;
+        Designs    = designs;
+        Automation = automation;
+        Debug      = debugTab;
+        Unlocks    = unlocks;
+        _event     = @event;
+        _config    = config;
         _tabs = new ITab[]
         {
             settings,
@@ -136,6 +136,6 @@ public class MainWindow : Window, IDisposable
 
     private static string GetLabel()
         => Glamourer.Version.Length == 0
-            ? "Glamourer 2099###GlamourerMainWindow"
-            : $"Glamourer 2099 v{Glamourer.Version}###GlamourerMainWindow";
+            ? "Glamourer###GlamourerMainWindow"
+            : $"Glamourer v{Glamourer.Version}###GlamourerMainWindow";
 }

@@ -5,11 +5,11 @@
     <PlatformTarget>x64</PlatformTarget>
     <RootNamespace>Glamourer</RootNamespace>
     <AssemblyName>Glamourer</AssemblyName>
-    <FileVersion>0.2.0.27</FileVersion>
-    <AssemblyVersion>0.2.0.27</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <Company>SoftOtter</Company>
     <Product>Glamourer</Product>
-    <Copyright>Copyright © 2020</Copyright>
+    <Copyright>Copyright © 2023</Copyright>
     <Deterministic>true</Deterministic>
     <OutputType>Library</OutputType>
     <WarningLevel>4</WarningLevel>
