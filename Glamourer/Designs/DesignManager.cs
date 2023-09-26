@@ -506,9 +506,10 @@ public class DesignManager
         if (!File.Exists(_saveService.FileNames.MigrationDesignFile))
             return;
 
-        var errors    = 0;
-        var skips     = 0;
-        var successes = 0;
+        var errors     = 0;
+        var skips      = 0;
+        var successes  = 0;
+        var oldDesigns = _designs.ToList();
         try
         {
             var text                    = File.ReadAllText(_saveService.FileNames.MigrationDesignFile);
@@ -527,7 +528,7 @@ public class DesignManager
                         Name         = actualName,
                     };
                     design.MigrateBase64(_items, _humans, base64);
-                    if (!_designs.Any(d => d.Name == design.Name && d.CreationDate == design.CreationDate))
+                    if (!oldDesigns.Any(d => d.Name == design.Name && d.CreationDate == design.CreationDate))
                     {
                         Add(design, $"Migrated old design to {design.Identifier}.");
                         migratedFileSystemPaths.Add(design.Identifier.ToString(), name);
