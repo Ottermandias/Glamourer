@@ -220,16 +220,62 @@ public class SetSelector : IDisposable
         DeleteSetButton(buttonWidth);
     }
 
-    private void HelpButton(Vector2 size)
+    private static void HelpButton(Vector2 size)
     {
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.QuestionCircle.ToIconString(), size, "How does Automation work?", false, true))
             ImGui.OpenPopup("Automation Help");
 
-        ImGuiUtil.HelpPopup("Automation Help", new Vector2(1000 * ImGuiHelpers.GlobalScale, 20 * ImGui.GetTextLineHeightWithSpacing()), () =>
-        {
-            ImGui.NewLine();
-            ImGui.TextUnformatted("Hi!");
-        });
+        static void HalfLine()
+            => ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+
+        const string longestLine =
+            "A single set can contain multiple automated designs that apply under different conditions and different parts of their design.";
+
+        ImGuiUtil.HelpPopup("Automation Help",
+            new Vector2(ImGui.CalcTextSize(longestLine).X + 50 * ImGuiHelpers.GlobalScale, 33 * ImGui.GetTextLineHeightWithSpacing()), () =>
+            {
+                HalfLine();
+                ImGui.TextUnformatted("What is Automation?");
+                ImGui.BulletText("Automation helps you to automatically apply Designs to specific characters under specific circumstances.");
+                HalfLine();
+
+                ImGui.TextUnformatted("Automated Design Sets");
+                ImGui.BulletText("First, you create automated design sets. An automated design set can be... ");
+                using var indent = ImRaii.PushIndent();
+                ImGuiUtil.BulletTextColored(ColorId.EnabledAutoSet.Value(),  "... enabled, or");
+                ImGuiUtil.BulletTextColored(ColorId.DisabledAutoSet.Value(), "... disabled.");
+                indent.Pop(1);
+                ImGui.BulletText("You can create new, empty automated design sets, or duplicate existing ones.");
+                ImGui.BulletText("You can name automated design sets arbitrarily.");
+                ImGui.BulletText("You can re-order automated design sets via drag & drop in the selector.");
+                ImGui.BulletText("Each automated design set is assigned to exactly one specific character.");
+                indent.Push();
+                ImGui.BulletText("On creation, it is assigned to your current Player Character.");
+                ImGui.BulletText("You can assign sets to any players, retainers, mannequins and most human NPCs.");
+                ImGui.BulletText("Only one automated design set can be enabled at the same time for each specific character.");
+                indent.Push();
+                ImGui.BulletText("Enabling another automatically disables the prior one.");
+                indent.Pop(2);
+
+                HalfLine();
+                ImGui.TextUnformatted("Automated Designs");
+                ImGui.BulletText(longestLine);
+                ImGui.BulletText(
+                    "The order of these automated designs can also be changed via drag & drop, and is relevant for the application.");
+                ImGui.BulletText("Automated designs respect their own, coarse applications rules, and the designs own application rules.");
+                ImGui.BulletText("Automated designs can be configured to be job- or job-group specific and only apply on these jobs, then.");
+                ImGui.BulletText("There is also the special option 'Reset', which can be used to reset remaining slots to the game's values.");
+                ImGui.BulletText(
+                    "Automated designs apply from top to bottom, either on top of your characters current state, or its game state.");
+                ImGui.BulletText("For a value to apply, it needs to:");
+                indent.Push();
+                ImGui.BulletText("Be configured to apply in the design itself.");
+                ImGui.BulletText("Be configured to apply in the automation rules.");
+                ImGui.BulletText("Fulfill the conditions of the automation rules.");
+                ImGui.BulletText("Be a valid value for the current (on its own application) state of the character.");
+                ImGui.BulletText("Not have had anything applied to the same value before from a different design.");
+                indent.Pop(1);
+            });
     }
 
     private void NewSetButton(Vector2 size)
