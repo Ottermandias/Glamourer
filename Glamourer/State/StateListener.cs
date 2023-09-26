@@ -225,12 +225,19 @@ public class StateListener : IDisposable
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
+        // If the model comes from IPC it is probably from Mare,
+        // then we do not want to use our restricted gear protection
+        // since we assume the player has that gear modded to availability.
+        var locked = false;
         if (actor.Identifier(_actors.AwaitedService, out var identifier)
          && _manager.TryGetValue(identifier, out var state))
+        {
             HandleEquipSlot(actor, state, slot, ref armor.Value);
+            locked = state[slot, false] is StateChanged.Source.Ipc;
+        }
 
         _funModule.ApplyFun(actor, ref armor.Value, slot);
-        if (!_config.UseRestrictedGearProtection)
+        if (!_config.UseRestrictedGearProtection || locked)
             return;
 
         var customize = model.GetCustomize();
@@ -263,7 +270,7 @@ public class StateListener : IDisposable
                         _applier.ChangeWeapon(objects, slot, currentItem, stain);
                         break;
                     default:
-                        _applier.ChangeArmor(objects, slot, current.ToArmor(), state.ModelData.IsHatVisible());
+                        _applier.ChangeArmor(objects, slot, current.ToArmor(), state[slot, false] is not StateChanged.Source.Ipc, state.ModelData.IsHatVisible());
                         break;
                 }
             }

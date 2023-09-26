@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Glamourer.Customization;
+using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
@@ -91,7 +92,7 @@ public class StateApplier
     /// This uses the current customization of the model to potentially prevent restricted gear types from appearing.
     /// This never requires redrawing.
     /// </summary>
-    public void ChangeArmor(ActorData data, EquipSlot slot, CharacterArmor armor, bool isHatVisible = true)
+    public void ChangeArmor(ActorData data, EquipSlot slot, CharacterArmor armor, bool checkRestrictions, bool isHatVisible = true)
     {
         if (slot is EquipSlot.Head && !isHatVisible)
             return;
@@ -102,18 +103,26 @@ public class StateApplier
             if (!mdl.IsHuman)
                 continue;
 
-            var customize = mdl.GetCustomize();
-            var (_, resolvedItem) = _items.ResolveRestrictedGear(armor, slot, customize.Race, customize.Gender);
-            _updateSlot.UpdateSlot(actor.Model, slot, resolvedItem);
+            if (checkRestrictions)
+            {
+                var customize = mdl.GetCustomize();
+                var (_, resolvedItem) = _items.ResolveRestrictedGear(armor, slot, customize.Race, customize.Gender);
+                _updateSlot.UpdateSlot(actor.Model, slot, resolvedItem);
+            }
+            else
+            {
+                _updateSlot.UpdateSlot(actor.Model, slot, armor);
+            }
         }
     }
 
-    /// <inheritdoc cref="ChangeArmor(ActorData,EquipSlot,CharacterArmor,bool)"/>
+    /// <inheritdoc cref="ChangeArmor(ActorData,EquipSlot,CharacterArmor,bool,bool)"/>
     public ActorData ChangeArmor(ActorState state, EquipSlot slot, bool apply)
     {
+        // If the source is not IPC we do not want to apply restrictions.
         var data = GetData(state);
         if (apply)
-            ChangeArmor(data, slot, state.ModelData.Armor(slot), state.ModelData.IsHatVisible());
+            ChangeArmor(data, slot, state.ModelData.Armor(slot), state[slot, false] is not StateChanged.Source.Ipc, state.ModelData.IsHatVisible());
 
         return data;
     }

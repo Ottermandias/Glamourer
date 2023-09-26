@@ -408,7 +408,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         {
             _applier.ChangeCustomize(actors, state.ModelData.Customize);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
-                _applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), state.ModelData.IsHatVisible());
+                _applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), state[slot, false] is not StateChanged.Source.Ipc, state.ModelData.IsHatVisible());
             var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
             _applier.ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
             var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? actors.OnlyGPose() : actors;
