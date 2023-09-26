@@ -14,6 +14,7 @@ public class GlamourerChangelog
         Changelog = new Changelog("Glamourer Changelog", ConfigData, Save);
 
         Add1_0_0_0(Changelog);
+        Add1_0_0_1(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -25,6 +26,17 @@ public class GlamourerChangelog
         _config.ChangeLogDisplayType = type;
         _config.Save();
     }
+
+    private static void Add1_0_0_1(Changelog log)
+        => log.NextVersion("Version 1.0.0.1")
+            .RegisterImportant("Fixed Issue with Migration of identically named designs. "
+              + "If you lost any designs during migration, try going to \"%appdata%\\XIVLauncher\\pluginConfigs\\Glamourer\\\" "
+              + "and renaming the file \"Designs.json.bak\" to \"Designs.json\", then restarting.")
+            .RegisterEntry("This may cause some duplicated entries", 1)
+            .RegisterEntry("Added a highlight border around the Enable/Disable All toggle for Automated Designs.")
+            .RegisterEntry("Fixed newly created designs not being moved to folders when using paths like 'path/to/design' anymore.")
+            .RegisterEntry("Added a tooltip to clarify the intent of the Mod Associations tab.")
+            .RegisterEntry("Fixed an issue with some weapons not being recognized as offhands correctly.");
 
     private static void Add1_0_0_0(Changelog log)
         => log.NextVersion("Version 1.0.0.0 (Full Rework)")
