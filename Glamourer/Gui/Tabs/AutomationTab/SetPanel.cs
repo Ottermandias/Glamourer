@@ -303,8 +303,13 @@ public class SetPanel
         using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * ImGuiHelpers.GlobalScale));
         var       newType    = design.ApplicationType;
         var       newTypeInt = (uint)newType;
-        if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)AutoDesign.Type.All))
-            newType = (AutoDesign.Type)newTypeInt;
+        style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
+        using (var c = ImRaii.PushColor(ImGuiCol.Border, ColorId.FolderLine.Value()))
+        {
+            if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)AutoDesign.Type.All))
+                newType = (AutoDesign.Type)newTypeInt;
+        }
+        style.Pop();
         ImGuiUtil.HoverTooltip("Toggle all modes at once.");
 
         void Box(int idx)
