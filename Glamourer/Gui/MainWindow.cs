@@ -28,10 +28,9 @@ public class MainWindow : Window, IDisposable
         Unlocks    = 5,
     }
 
-    private readonly Configuration _config;
-    private readonly TabSelected   _event;
-    private readonly ITab[]        _tabs;
-
+    private readonly Configuration      _config;
+    private readonly TabSelected        _event;
+    private readonly ITab[]             _tabs;
 
     public readonly SettingsTab   Settings;
     public readonly ActorTab      Actors;
@@ -52,14 +51,14 @@ public class MainWindow : Window, IDisposable
             MinimumSize = new Vector2(700, 675),
             MaximumSize = ImGui.GetIO().DisplaySize,
         };
-        Settings   = settings;
-        Actors     = actors;
-        Designs    = designs;
-        Automation = automation;
-        Debug      = debugTab;
-        Unlocks    = unlocks;
-        _event     = @event;
-        _config    = config;
+        Settings        = settings;
+        Actors          = actors;
+        Designs         = designs;
+        Automation      = automation;
+        Debug           = debugTab;
+        Unlocks         = unlocks;
+        _event          = @event;
+        _config         = config;
         _tabs = new ITab[]
         {
             settings,
@@ -113,7 +112,7 @@ public class MainWindow : Window, IDisposable
     }
 
     /// <summary> Draw the support button group on the right-hand side of the window. </summary>
-    public static void DrawSupportButtons()
+    public static void DrawSupportButtons(Changelog changelog)
     {
         var width = ImGui.CalcTextSize("Join Discord for Support").X + ImGui.GetStyle().FramePadding.X * 2;
         var xPos  = ImGui.GetWindowWidth() - width;
@@ -126,6 +125,10 @@ public class MainWindow : Window, IDisposable
 
         ImGui.SetCursorPos(new Vector2(xPos, ImGui.GetFrameHeightWithSpacing()));
         CustomGui.DrawGuideButton(Glamourer.Chat, width);
+
+        ImGui.SetCursorPos(new Vector2(xPos, 2 * ImGui.GetFrameHeightWithSpacing()));
+        if (ImGui.Button("Show Changelogs", new Vector2(width, 0)))
+            changelog.ForceOpen = true;
     }
 
     private void OnTabSelected(TabType type, Design? _)

@@ -13,7 +13,7 @@ public class GlamourerWindowSystem : IDisposable
     private readonly PenumbraChangedItemTooltip _penumbraTooltip;
 
     public GlamourerWindowSystem(UiBuilder uiBuilder, MainWindow ui, GenericPopupWindow popups, PenumbraChangedItemTooltip penumbraTooltip,
-        Configuration config, UnlocksTab unlocksTab)
+        Configuration config, UnlocksTab unlocksTab, GlamourerChangelog changelog)
     {
         _uiBuilder       = uiBuilder;
         _ui              = ui;
@@ -21,6 +21,7 @@ public class GlamourerWindowSystem : IDisposable
         _windowSystem.AddWindow(ui);
         _windowSystem.AddWindow(popups);
         _windowSystem.AddWindow(unlocksTab);
+        _windowSystem.AddWindow(changelog.Changelog);
         _uiBuilder.Draw                  += _windowSystem.Draw;
         _uiBuilder.OpenConfigUi          += _ui.Toggle;
         _uiBuilder.DisableCutsceneUiHide =  !config.HideWindowInCutscene;

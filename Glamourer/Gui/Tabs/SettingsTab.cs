@@ -24,9 +24,11 @@ public class SettingsTab : ITab
     private readonly PenumbraAutoRedraw       _autoRedraw;
     private readonly ContextMenuService       _contextMenuService;
     private readonly UiBuilder                _uiBuilder;
+    private readonly GlamourerChangelog       _changelog;
 
     public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener,
-        CodeService codeService, PenumbraAutoRedraw autoRedraw, ContextMenuService contextMenuService, UiBuilder uiBuilder)
+        CodeService codeService, PenumbraAutoRedraw autoRedraw, ContextMenuService contextMenuService, UiBuilder uiBuilder,
+        GlamourerChangelog changelog)
     {
         _config             = config;
         _selector           = selector;
@@ -35,6 +37,7 @@ public class SettingsTab : ITab
         _autoRedraw         = autoRedraw;
         _contextMenuService = contextMenuService;
         _uiBuilder          = uiBuilder;
+        _changelog          = changelog;
     }
 
     public ReadOnlySpan<byte> Label
@@ -52,13 +55,14 @@ public class SettingsTab : ITab
         Checkbox("Enable Auto Designs", "Enable the application of designs associated to characters to be applied automatically.",
             _config.EnableAutoDesigns,  v => _config.EnableAutoDesigns = v);
         ImGui.NewLine();
+        ImGui.NewLine();
 
         DrawBehaviorSettings();
         DrawInterfaceSettings();
         DrawColorSettings();
         DrawCodes();
 
-        MainWindow.DrawSupportButtons();
+        MainWindow.DrawSupportButtons(_changelog.Changelog);
     }
 
     private void DrawBehaviorSettings()
@@ -87,12 +91,12 @@ public class SettingsTab : ITab
             return;
 
         Checkbox("Smaller Equip Display", "Use single-line display without icons and small dye buttons instead of double-line display.",
-            _config.SmallEquip, v => _config.SmallEquip = v);
+            _config.SmallEquip,           v => _config.SmallEquip = v);
         Checkbox("Show Application Checkboxes",
             "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules.",
             !_config.HideApplyCheckmarks, v => _config.HideApplyCheckmarks = !v);
         Checkbox("Enable Game Context Menus", "Whether to show a Try On via Glamourer button on context menus for equippable items.",
-            _config.EnableGameContextMenu, v =>
+            _config.EnableGameContextMenu,    v =>
             {
                 _config.EnableGameContextMenu = v;
                 if (v)
@@ -104,7 +108,7 @@ public class SettingsTab : ITab
             _config.HideWindowInCutscene,
             v =>
             {
-                _config.HideWindowInCutscene = v;
+                _config.HideWindowInCutscene     = v;
                 _uiBuilder.DisableCutsceneUiHide = !v;
             });
         if (Widget.DoubleModifierSelector("Design Deletion Modifier",
@@ -115,10 +119,11 @@ public class SettingsTab : ITab
         Checkbox("Auto-Open Design Folders",
             "Have design folders open or closed as their default state after launching.", _config.OpenFoldersByDefault,
             v => _config.OpenFoldersByDefault = v);
-        Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general.", _config.DebugMode, v => _config.DebugMode = v);
+        Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general.", _config.DebugMode,
+            v => _config.DebugMode = v);
         ImGui.NewLine();
     }
-    
+
     /// <summary> Draw the entire Color subsection. </summary>
     private void DrawColorSettings()
     {
@@ -150,6 +155,7 @@ public class SettingsTab : ITab
             using var tt = ImRaii.Tooltip();
             ImGuiUtil.TextWrapped(tooltip);
         }
+
         if (!show)
             return;
 

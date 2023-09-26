@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Filesystem;
+using OtterGui.Widgets;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace Glamourer;
@@ -32,6 +33,9 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool               HideWindowInCutscene        { get; set; } = false;
     public MainWindow.TabType SelectedTab                 { get; set; } = MainWindow.TabType.Settings;
     public DoubleModifier     DeleteDesignModifier        { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
+
+    public int                  LastSeenVersion      { get; set; } = GlamourerChangelog.LastChangelogVersion;
+    public ChangeLogDisplayType ChangeLogDisplayType { get; set; } = ChangeLogDisplayType.New;
 
     [JsonConverter(typeof(SortModeConverter))]
     [JsonProperty(Order = int.MaxValue)]
