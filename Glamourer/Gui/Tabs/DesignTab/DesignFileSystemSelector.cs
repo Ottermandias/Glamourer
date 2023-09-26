@@ -180,9 +180,9 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         {
             var design = _converter.FromBase64(_clipboardText, true, true, out _);
             if (design is Design d)
-                _designManager.CreateClone(d, _newName);
+                _designManager.CreateClone(d, _newName, true);
             else if (design != null)
-                _designManager.CreateClone(design, _newName);
+                _designManager.CreateClone(design, _newName, true);
             else
                 Glamourer.Chat.NotificationMessage("Could not create a design, clipboard did not contain valid design data.", "Failure",
                     NotificationType.Error);
@@ -190,12 +190,12 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         }
         else if (_cloneDesign != null)
         {
-            _designManager.CreateClone(_cloneDesign, _newName);
+            _designManager.CreateClone(_cloneDesign, _newName, true);
             _cloneDesign = null;
         }
         else
         {
-            _designManager.CreateEmpty(_newName);
+            _designManager.CreateEmpty(_newName, true);
         }
 
         _newName = string.Empty;

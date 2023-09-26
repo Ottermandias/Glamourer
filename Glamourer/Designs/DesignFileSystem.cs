@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
@@ -102,7 +103,21 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
         switch (type)
         {
             case DesignChanged.Type.Created:
-                CreateDuplicateLeaf(Root, design.Name.Text, design);
+                var parent = Root;
+                if (data is string path)
+                    try
+                    {
+                        parent = FindOrCreateAllFolders(path);
+                    }
+                    catch (Exception ex)
+                    {
+                        Glamourer.Chat.NotificationMessage(ex, $"Could not move design to {path} because the folder could not be created.",
+                            $"Could not move design to {path} because the folder could not be created", "Error",
+                            NotificationType.Error);
+                    }
+
+                CreateDuplicateLeaf(parent, design.Name.Text, design);
+
                 return;
             case DesignChanged.Type.Deleted:
                 if (FindLeaf(design, out var leaf1))
@@ -114,6 +129,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
             case DesignChanged.Type.Renamed when data is string oldName:
                 if (!FindLeaf(design, out var leaf2))
                     return;
+
                 var old = oldName.FixName();
                 if (old == leaf2.Name || leaf2.Name.IsDuplicateName(out var baseName, out _) && baseName == old)
                     RenameWithDuplicates(leaf2, design.Name);

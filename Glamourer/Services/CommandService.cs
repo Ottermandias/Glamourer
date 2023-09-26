@@ -437,7 +437,7 @@ public class CommandService : IDisposable
         }
 
         var design = _converter.Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant);
-        _designManager.CreateClone(design, split[0]);
+        _designManager.CreateClone(design, split[0], true);
         return true;
     }
 

@@ -88,57 +88,61 @@ public class DesignManager
         => new(_items);
 
     /// <summary> Create a new design of a given name. </summary>
-    public Design CreateEmpty(string name)
+    public Design CreateEmpty(string name, bool handlePath)
     {
+        var (actualName, path) = ParseName(name, handlePath);
         var design = new Design(_items)
         {
             CreationDate = DateTimeOffset.UtcNow,
             LastEdit     = DateTimeOffset.UtcNow,
             Identifier   = CreateNewGuid(),
-            Name         = name,
+            Name         = actualName,
             Index        = _designs.Count,
         };
         _designs.Add(design);
         Glamourer.Log.Debug($"Added new design {design.Identifier}.");
         _saveService.ImmediateSave(design);
-        _event.Invoke(DesignChanged.Type.Created, design);
+        _event.Invoke(DesignChanged.Type.Created, design, path);
         return design;
     }
 
     /// <summary> Create a new design cloning a given temporary design. </summary>
-    public Design CreateClone(DesignBase clone, string name)
+    public Design CreateClone(DesignBase clone, string name, bool handlePath)
     {
+        var (actualName, path) = ParseName(name, handlePath);
         var design = new Design(clone)
         {
             CreationDate = DateTimeOffset.UtcNow,
             LastEdit     = DateTimeOffset.UtcNow,
             Identifier   = CreateNewGuid(),
-            Name         = name,
+            Name         = actualName,
             Index        = _designs.Count,
         };
+
         _designs.Add(design);
         Glamourer.Log.Debug($"Added new design {design.Identifier} by cloning Temporary Design.");
         _saveService.ImmediateSave(design);
-        _event.Invoke(DesignChanged.Type.Created, design);
+        _event.Invoke(DesignChanged.Type.Created, design, path);
         return design;
     }
 
     /// <summary> Create a new design cloning a given design. </summary>
-    public Design CreateClone(Design clone, string name)
+    public Design CreateClone(Design clone, string name, bool handlePath)
     {
+        var (actualName, path) = ParseName(name, handlePath);
         var design = new Design(clone)
         {
             CreationDate = DateTimeOffset.UtcNow,
             LastEdit     = DateTimeOffset.UtcNow,
             Identifier   = CreateNewGuid(),
-            Name         = name,
+            Name         = actualName,
             Index        = _designs.Count,
         };
         _designs.Add(design);
         Glamourer.Log.Debug(
             $"Added new design {design.Identifier} by cloning {clone.Identifier.ToString()}.");
         _saveService.ImmediateSave(design);
-        _event.Invoke(DesignChanged.Type.Created, design);
+        _event.Invoke(DesignChanged.Type.Created, design, path);
         return design;
     }
 
@@ -632,5 +636,23 @@ public class DesignManager
         _saveService.ImmediateSave(design);
         _event.Invoke(DesignChanged.Type.Created, design);
         return true;
+    }
+
+    /// <summary> Split a given string into its folder path and its name, if <paramref name="handlePath"/> is true. </summary>
+    private static (string Name, string? Path) ParseName(string name, bool handlePath)
+    {
+        var     actualName = name;
+        string? path       = null;
+        if (handlePath)
+        {
+            var slashPos = name.LastIndexOf('/');
+            if (slashPos >= 0)
+            {
+                path       = name[..slashPos];
+                actualName = slashPos >= name.Length - 1 ? "<Unnamed>" : name[(slashPos + 1)..];
+            }
+        }
+
+        return (actualName, path);
     }
 }

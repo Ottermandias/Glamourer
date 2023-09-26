@@ -16,7 +16,7 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
 {
     public enum Type
     {
-        /// <summary> A new design was created. Data is null. </summary>
+        /// <summary> A new design was created. Data is a potential path to move it to [string?]. </summary>
         Created,
 
         /// <summary> An existing design was deleted. Data is null. </summary>

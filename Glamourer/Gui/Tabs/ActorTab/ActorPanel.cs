@@ -334,7 +334,7 @@ public class ActorPanel
             return;
 
         if (_newDesign != null && _newName.Length > 0)
-            _designManager.CreateClone(_newDesign, _newName);
+            _designManager.CreateClone(_newDesign, _newName, true);
         _newDesign = null;
         _newName   = string.Empty;
     }
