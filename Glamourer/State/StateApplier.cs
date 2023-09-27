@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop;
@@ -61,7 +62,7 @@ public class StateApplier
     /// Change the customization values of actors either by applying them via update or redrawing,
     /// this depends on whether the changes include changes to Race, Gender, Body Type or Face. 
     /// </summary>
-    public void ChangeCustomize(ActorData data, in Customize customize, ActorState? state = null)
+    public unsafe void ChangeCustomize(ActorData data, in Customize customize, ActorState? state = null)
     {
         foreach (var actor in data.Objects)
         {
@@ -71,13 +72,22 @@ public class StateApplier
 
             var flags = Customize.Compare(mdl.GetCustomize(), customize);
             if (!flags.RequiresRedraw() || !mdl.IsHuman)
+            {
                 _changeCustomize.UpdateCustomize(mdl, customize.Data);
+            }
+            else if (data.Objects.Count > 1 && _objects.IsInGPose && !actor.IsGPoseOrCutscene)
+            {
+                var mdlCustomize = (Customize*)&mdl.AsHuman->Customize;
+                mdlCustomize->Load(customize);
+            }
             else
+            {
                 _penumbra.RedrawObject(actor, RedrawType.Redraw);
+            }
         }
     }
 
-    /// <inheritdoc cref="ChangeCustomize(ActorData, in Customize)"/>
+    /// <inheritdoc cref="ChangeCustomize(ActorData, in Customize, ActorState?)"/>
     public ActorData ChangeCustomize(ActorState state, bool apply)
     {
         var data = GetData(state);
@@ -122,7 +132,8 @@ public class StateApplier
         // If the source is not IPC we do not want to apply restrictions.
         var data = GetData(state);
         if (apply)
-            ChangeArmor(data, slot, state.ModelData.Armor(slot), state[slot, false] is not StateChanged.Source.Ipc, state.ModelData.IsHatVisible());
+            ChangeArmor(data, slot, state.ModelData.Armor(slot), state[slot, false] is not StateChanged.Source.Ipc,
+                state.ModelData.IsHatVisible());
 
         return data;
     }

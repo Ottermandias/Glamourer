@@ -526,7 +526,7 @@ public unsafe class DebugTab : ITab
         using (var disabled = ImRaii.Disabled(!_penumbra.Available))
         {
             if (ImGui.SmallButton("Redraw"))
-                _penumbra.RedrawObject(_objectManager.Objects.GetObjectAddress(_gameObjectIndex), RedrawType.Redraw);
+                _penumbra.RedrawObject((ObjectIndex) _gameObjectIndex, RedrawType.Redraw);
         }
 
         ImGuiUtil.DrawTableColumn("Last Tooltip Date");

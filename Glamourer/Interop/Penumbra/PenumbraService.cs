@@ -11,6 +11,7 @@ using Glamourer.Interop.Structs;
 using Penumbra.Api;
 using Penumbra.Api.Enums;
 using Penumbra.Api.Helpers;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop.Penumbra;
 
@@ -232,6 +233,19 @@ public unsafe class PenumbraService : IDisposable
         try
         {
             _redrawSubscriber.Invoke(actor.AsObject->ObjectIndex, settings);
+        }
+        catch (Exception e)
+        {
+            PluginLog.Debug($"Failure redrawing object:\n{e}");
+        }
+    }
+
+    /// <summary> Try to redraw the given actor. </summary>
+    public void RedrawObject(ObjectIndex index, RedrawType settings)
+    {
+        try
+        {
+            _redrawSubscriber.Invoke(index.Index, settings);
         }
         catch (Exception e)
         {
