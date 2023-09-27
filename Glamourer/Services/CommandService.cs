@@ -329,7 +329,8 @@ public class CommandService : IDisposable
         var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (split.Length != 2)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour apply ").AddYellow("[Design Name, Path or Identifier]").AddText(" | ")
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour apply ").AddYellow("[Design Name, Path or Identifier, or Clipboard]")
+                .AddText(" | ")
                 .AddGreen("[Character Identifier]").BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText(
@@ -342,10 +343,12 @@ public class CommandService : IDisposable
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 The design path is the folder path in the selector, with '/' as separators. It is also case-insensitive.")
                 .BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》 Clipboard as a single word will try to apply a design string currently in your clipboard.").BuiltString);
             PlayerIdentifierHelp(false);
         }
 
-        if (!GetDesign(split[0], out var design) || !IdentifierHandling(split[1], out var identifier, false))
+        if (!GetDesign(split[0], out var design, true) || !IdentifierHandling(split[1], out var identifier, false))
             return false;
 
         _objects.Update();
@@ -441,11 +444,31 @@ public class CommandService : IDisposable
         return true;
     }
 
-    private bool GetDesign(string argument, [NotNullWhen(true)] out Design? design)
+    private bool GetDesign(string argument, [NotNullWhen(true)] out DesignBase? design, bool allowClipboard)
     {
         design = null;
         if (argument.Length == 0)
             return false;
+
+        if (allowClipboard && string.Equals("clipboard", argument, StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var clipboardText = ImGui.GetClipboardText();
+                if (clipboardText.Length > 0)
+                    design = _converter.FromBase64(clipboardText, true, true, out _);
+            }
+            catch
+            {
+                // ignored
+            }
+
+            if (design != null)
+                return true;
+
+            _chat.Print(new SeStringBuilder().AddText("Your current clipboard did not contain a valid design string.").BuiltString);
+            return false;
+        }
 
         if (Guid.TryParse(argument, out var guid))
         {
