@@ -15,6 +15,7 @@ public class GlamourerChangelog
 
         Add1_0_0_0(Changelog);
         Add1_0_0_1(Changelog);
+        Add1_0_0_2(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -26,6 +27,29 @@ public class GlamourerChangelog
         _config.ChangeLogDisplayType = type;
         _config.Save();
     }
+
+    private static void Add1_0_0_2(Changelog log)
+        => log.NextVersion("Version 1.0.0.2")
+            .RegisterHighlight("Added support for 'Clipboard' as a design source for /glamour apply.")
+            .RegisterEntry("Improved tooltips for tri-state toggles.")
+            .RegisterEntry("Improved some labels of settings to clarify what they do.")
+            .RegisterEntry("Improved vertical space for automated design sets.")
+            .RegisterEntry(
+                "Improved tooltips for renaming/moving designs via right-click context to make it clear that this does not rename the design itself.")
+            .RegisterHighlight("Added new configuration to hide advanced application rule settings in automated design lines.")
+            .RegisterHighlight("Added new configuration to hide unobtained item warnings in automated design lines.")
+            .RegisterEntry("Removed some warning popups for temporary designs when sharing non-human actors via Mare (I guess?)")
+            .RegisterEntry(
+                "Fixed an issue with unnecessary redrawing in GPose when having applied a change that required redrawing after entering GPose.")
+            .RegisterEntry("Fixed chat commands parsing concerning NPC identifiers.")
+            .RegisterEntry("Fixed restricted racial gear applying to accessories by mistake.")
+            .RegisterEntry("Maybe fixed Mare syncing having issues with restricted gear protection.")
+            .RegisterEntry("Fixed the icon for disabled mods in associated mods.")
+            .RegisterEntry("Fixed inability to remove associated mods except for the last one.")
+            .RegisterEntry(
+                "Fixed treating certain gloves as restricted because one restricted items sharing the model with identical, unrestricted gloves exists (wtf SE?).")
+            .RegisterEntry(
+                "Hopefully fixed ear shape numbering for Elezen and Lalafell (yes SE, just put a 1-indexed option in a sea of 0-indexed options, sure. Fuck off-by-one error).");
 
     private static void Add1_0_0_1(Changelog log)
         => log.NextVersion("Version 1.0.0.1")
