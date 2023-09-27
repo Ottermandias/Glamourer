@@ -119,6 +119,12 @@ public class SettingsTab : ITab
         Checkbox("Auto-Open Design Folders",
             "Have design folders open or closed as their default state after launching.", _config.OpenFoldersByDefault,
             v => _config.OpenFoldersByDefault = v);
+        Checkbox("Show all Application Rule Checkboxes for Automation",
+            "Show multiple separate application rule checkboxes for automated designs, instead of a single box for enabling or disabling.",
+            _config.ShowAllAutomatedApplicationRules, v => _config.ShowAllAutomatedApplicationRules = v);
+        Checkbox("Show Unobtained Item Warnings",
+            "Show information whether you have unlocked all items and customizations in your automated design or not.",
+            _config.ShowUnlockedItemWarnings, v => _config.ShowUnlockedItemWarnings = v);
         Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general.", _config.DebugMode,
             v => _config.DebugMode = v);
         ImGui.NewLine();

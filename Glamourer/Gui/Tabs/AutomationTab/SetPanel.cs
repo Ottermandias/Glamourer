@@ -107,7 +107,7 @@ public class SetPanel
                 "Show options to change the name or the associated character or NPC of this design set.");
         }
 
-        if (_showEditing)
+        if (_config.ShowAutomationSetEditing)
         {
             ImGui.Dummy(Vector2.Zero);
             ImGui.Separator();
@@ -137,34 +137,53 @@ public class SetPanel
 
     private void DrawDesignTable()
     {
-        var requiredSizeOneLine = (1 + 6 + 2) * ImGui.GetFrameHeight()
-          + (30 + 220 + 10 + 4) * ImGuiHelpers.GlobalScale
+        var (numCheckboxes, numSpacing) = (_config.ShowAllAutomatedApplicationRules, _config.ShowUnlockedItemWarnings) switch
+        {
+            (true, true)   => (9, 14),
+            (true, false)  => (7, 10),
+            (false, true)  => (4, 4),
+            (false, false) => (2, 0),
+        };
+
+        var requiredSizeOneLine = numCheckboxes * ImGui.GetFrameHeight()
+          + (30 + 220 + numSpacing) * ImGuiHelpers.GlobalScale
           + 5 * ImGui.GetStyle().CellPadding.X
           + 150 * ImGuiHelpers.GlobalScale;
 
-        var singleRow = ImGui.GetContentRegionAvail().X >= requiredSizeOneLine;
+        var singleRow = ImGui.GetContentRegionAvail().X >= requiredSizeOneLine || numSpacing == 0;
 
-        using var table = ImRaii.Table("SetTable", singleRow ? 6 : 5,
+        using var table = ImRaii.Table("SetTable", singleRow && _config.ShowUnlockedItemWarnings ? 6 : 5,
             ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY);
         if (!table)
             return;
 
         ImGui.TableSetupColumn("##del",   ImGuiTableColumnFlags.WidthFixed, ImGui.GetFrameHeight());
         ImGui.TableSetupColumn("##Index", ImGuiTableColumnFlags.WidthFixed, 30 * ImGuiHelpers.GlobalScale);
+
         if (singleRow)
         {
-            ImGui.TableSetupColumn("Design",      ImGuiTableColumnFlags.WidthFixed, 220 * ImGuiHelpers.GlobalScale);
-            ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed, 6 * ImGui.GetFrameHeight() + 10 * ImGuiHelpers.GlobalScale);
+            ImGui.TableSetupColumn("Design", ImGuiTableColumnFlags.WidthFixed, 220 * ImGuiHelpers.GlobalScale);
+            if (_config.ShowAllAutomatedApplicationRules)
+                ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed,
+                    6 * ImGui.GetFrameHeight() + 10 * ImGuiHelpers.GlobalScale);
+            else
+                ImGui.TableSetupColumn("Use", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
         }
         else
         {
             ImGui.TableSetupColumn("Design / Job Restrictions", ImGuiTableColumnFlags.WidthFixed, 250 * ImGuiHelpers.GlobalScale);
-            ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed, 3 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
+            if (_config.ShowAllAutomatedApplicationRules)
+                ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed,
+                    3 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
+            else
+                ImGui.TableSetupColumn("Use", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
         }
 
         if (singleRow)
             ImGui.TableSetupColumn("Job Restrictions", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, 2 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
+
+        if (_config.ShowUnlockedItemWarnings)
+            ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, 2 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
         ImGui.TableHeadersRow();
         foreach (var (design, idx) in Selection.Designs.WithIndex())
         {
@@ -197,8 +216,11 @@ public class SetPanel
                 DrawApplicationTypeBoxes(Selection, design, idx, singleRow);
             }
 
-            ImGui.TableNextColumn();
-            DrawWarnings(design, idx);
+            if (_config.ShowUnlockedItemWarnings)
+            {
+                ImGui.TableNextColumn();
+                DrawWarnings(design, idx);
+            }
         }
 
         ImGui.TableNextColumn();
@@ -207,8 +229,7 @@ public class SetPanel
         ImGui.TextUnformatted("New");
         ImGui.TableNextColumn();
         _designCombo.Draw(Selection, null, -1, _selector.IncognitoMode);
-        ImGui.TableNextColumn();
-        ImGui.TableNextColumn();
+        ImGui.TableNextRow();
 
         _endAction?.Invoke();
         _endAction = null;
@@ -334,29 +355,31 @@ public class SetPanel
         }
 
         style.Pop();
-        ImGuiUtil.HoverTooltip("Toggle all modes at once.");
-
-        void Box(int idx)
+        ImGuiUtil.HoverTooltip("Toggle all application modes at once.");
+        if (_config.ShowAllAutomatedApplicationRules)
         {
-            var (type, description) = Types[idx];
-            var value = design.ApplicationType.HasFlag(type);
-            if (ImGui.Checkbox($"##{(byte)type}", ref value))
-                newType = value ? newType | type : newType & ~type;
-            ImGuiUtil.HoverTooltip(description);
-        }
+            void Box(int idx)
+            {
+                var (type, description) = Types[idx];
+                var value = design.ApplicationType.HasFlag(type);
+                if (ImGui.Checkbox($"##{(byte)type}", ref value))
+                    newType = value ? newType | type : newType & ~type;
+                ImGuiUtil.HoverTooltip(description);
+            }
 
-        ImGui.SameLine();
-        Box(0);
-        ImGui.SameLine();
-        Box(1);
-        if (singleLine)
             ImGui.SameLine();
+            Box(0);
+            ImGui.SameLine();
+            Box(1);
+            if (singleLine)
+                ImGui.SameLine();
 
-        Box(2);
-        ImGui.SameLine();
-        Box(3);
-        ImGui.SameLine();
-        Box(4);
+            Box(2);
+            ImGui.SameLine();
+            Box(3);
+            ImGui.SameLine();
+            Box(4);
+        }
 
         _manager.ChangeApplicationType(set, autoDesignIndex, newType);
     }
