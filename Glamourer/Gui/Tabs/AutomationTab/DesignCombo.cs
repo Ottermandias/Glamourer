@@ -7,6 +7,7 @@ using Glamourer.Events;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
@@ -89,6 +90,12 @@ public sealed class DesignCombo : FilterComboCache<(Design, string)>
 
     protected override string ToString((Design, string) obj)
         => obj.Item1.Name.Text;
+
+    protected override bool IsVisible(int globalIndex, LowerString filter)
+    {
+        var (design, path) = Items[globalIndex];
+        return filter.IsContained(path) || design.Name.Lower.Contains(filter.Lower);
+    }
 
     private static Design CreateRevertDesign(ItemManager items)
         => new(items)
