@@ -17,6 +17,7 @@ public unsafe class ScalingService : IDisposable
         SignatureHelper.Initialise(this);
         _setupMountHook.Enable();
         _setupOrnamentHook.Enable();
+        _placeMinionHook.Enable();
         _calculateHeightHook.Enable();
     }
 
@@ -24,11 +25,13 @@ public unsafe class ScalingService : IDisposable
     {
         _setupMountHook.Dispose();
         _setupOrnamentHook.Dispose();
+        _placeMinionHook.Dispose();
         _calculateHeightHook.Dispose();
     }
 
     private delegate void  SetupMount(Character.MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4);
     private delegate void  SetupOrnament(Ornament* ornament, uint* unk1, float* unk2);
+    private delegate void  PlaceMinion(Companion* character);
     private delegate float CalculateHeight(Character* character);
 
     [Signature("E8 ?? ?? ?? ?? 48 8B 43 ?? 80 B8 ?? ?? ?? ?? ?? 74 ?? 0F B6 90", DetourName = nameof(SetupMountDetour))]
@@ -36,6 +39,9 @@ public unsafe class ScalingService : IDisposable
 
     [Signature("48 89 5C 24 ?? 41 54 41 56 41 57 48 83 EC ?? 4D 8B F8", DetourName = nameof(SetupOrnamentDetour))]
     private readonly Hook<SetupOrnament> _setupOrnamentHook = null!;
+
+    [Signature("48 89 5C 24 ?? 55 57 41 57 48 8D 6C 24", DetourName = nameof(PlaceMinionDetour))]
+    private readonly Hook<PlaceMinion> _placeMinionHook = null!;
 
     [Signature(global::Penumbra.GameData.Sigs.CalculateHeight, DetourName = nameof(CalculateHeightDetour))]
     private readonly Hook<CalculateHeight> _calculateHeightHook = null!;
@@ -64,6 +70,24 @@ public unsafe class ScalingService : IDisposable
         SetScaleCustomize(character, character->GameObject.DrawObject);
         _setupOrnamentHook.Original(ornament, unk1, unk2);
         SetScaleCustomize(character, race, clan, gender);
+    }
+
+    private void PlaceMinionDetour(Companion* companion)
+    {
+        var owner = (Actor)((nint*)companion)[0x374];
+        if (!owner.IsCharacter)
+        {
+            _placeMinionHook.Original(companion);
+        }
+        else
+        {
+            var mdl     = owner.Model;
+            var oldRace = owner.AsCharacter->DrawData.CustomizeData.Race;
+            if (mdl.IsHuman)
+                owner.AsCharacter->DrawData.CustomizeData.Race = mdl.AsHuman->Customize.Race;
+            _placeMinionHook.Original(companion);
+            owner.AsCharacter->DrawData.CustomizeData.Race = oldRace;
+        }
     }
 
     private float CalculateHeightDetour(Character* character)
