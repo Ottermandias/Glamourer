@@ -15,7 +15,6 @@ using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -281,7 +280,7 @@ public class ActorPanel
     private HeaderDrawer.Button SetFromClipboardButton()
         => new()
         {
-            Description = "Try to apply a design from your clipboard.",
+            Description = "Try to apply a design from your clipboard.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
             Icon        = FontAwesomeIcon.Clipboard,
             OnClick     = SetFromClipboard,
             Visible     = _state != null,
@@ -291,7 +290,7 @@ public class ActorPanel
     private HeaderDrawer.Button ExportToClipboardButton()
         => new()
         {
-            Description = "Copy the current design to your clipboard.",
+            Description = "Copy the current design to your clipboard.\nHold Control to disable applying of customizations for the copied design.\nHold Shift to disable applying of gear for the copied design.",
             Icon        = FontAwesomeIcon.Copy,
             OnClick     = ExportToClipboard,
             Visible     = _state?.ModelData.ModelId == 0,
@@ -300,7 +299,7 @@ public class ActorPanel
     private HeaderDrawer.Button SaveAsDesignButton()
         => new()
         {
-            Description = "Save the current state as a design.",
+            Description = "Save the current state as a design.\nHold Control to disable applying of customizations for the saved design.\nHold Shift to disable applying of gear for the saved design.",
             Icon        = FontAwesomeIcon.Save,
             OnClick     = SaveDesignOpen,
             Visible     = _state?.ModelData.ModelId == 0,
@@ -318,14 +317,15 @@ public class ActorPanel
             BorderColor = ColorId.ActorUnavailable.Value(),
         };
 
-    private string      _newName   = string.Empty;
-    private DesignBase? _newDesign = null;
+    private string        _newName   = string.Empty;
+    private DesignBase?   _newDesign = null;
 
     private void SaveDesignOpen()
     {
         ImGui.OpenPopup("Save as Design");
-        _newName   = _state!.Identifier.ToName();
-        _newDesign = _converter.Convert(_state, EquipFlagExtensions.All, CustomizeFlagExtensions.All);
+        _newName                        = _state!.Identifier.ToName();
+        var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
+        _newDesign                      = _converter.Convert(_state, applyGear, applyCustomize);
     }
 
     private void SaveDesignDrawPopup()
@@ -343,8 +343,9 @@ public class ActorPanel
     {
         try
         {
+            var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToBool();
             var text   = ImGui.GetClipboardText();
-            var design = _converter.FromBase64(text, true, true, out _) ?? throw new Exception("The clipboard did not contain valid data.");
+            var design = _converter.FromBase64(text, applyCustomize, applyGear, out _) ?? throw new Exception("The clipboard did not contain valid data.");
             _stateManager.ApplyDesign(design, _state!, StateChanged.Source.Manual);
         }
         catch (Exception ex)
@@ -358,7 +359,8 @@ public class ActorPanel
     {
         try
         {
-            var text = _converter.ShareBase64(_state!);
+            var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
+            var text = _converter.ShareBase64(_state!, applyGear, applyCustomize);
             ImGui.SetClipboardText(text);
         }
         catch (Exception ex)
@@ -392,12 +394,13 @@ public class ActorPanel
     private void DrawApplyToSelf()
     {
         var (id, data) = _objects.PlayerData;
-        if (!ImGuiUtil.DrawDisabledButton("Apply to Yourself", Vector2.Zero, "Apply the current state to your own character.",
+        if (!ImGuiUtil.DrawDisabledButton("Apply to Yourself", Vector2.Zero, "Apply the current state to your own character.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
                 !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0))
             return;
 
+        var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
-            _stateManager.ApplyDesign(_converter.Convert(_state!, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant), state,
+            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize), state,
                 StateChanged.Source.Manual);
     }
 
@@ -406,15 +409,16 @@ public class ActorPanel
         var (id, data) = _objects.TargetData;
         var tt = id.IsValid
             ? data.Valid
-                ? "Apply the current state to your current target."
+                ? "Apply the current state to your current target.\nHold Control to only apply gear.\nHold Shift to only apply customizations."
                 : "The current target can not be manipulated."
             : "No valid target selected.";
         if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt,
                 !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0 || _objects.IsInGPose))
             return;
 
+        var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
-            _stateManager.ApplyDesign(_converter.Convert(_state!, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant), state,
+            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize), state,
                 StateChanged.Source.Manual);
     }
 }

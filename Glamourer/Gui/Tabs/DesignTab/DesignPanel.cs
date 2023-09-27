@@ -75,7 +75,7 @@ public class DesignPanel
     private HeaderDrawer.Button SetFromClipboardButton()
         => new()
         {
-            Description = "Try to apply a design from your clipboard over this design.",
+            Description = "Try to apply a design from your clipboard over this design.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
             Icon        = FontAwesomeIcon.Clipboard,
             OnClick     = SetFromClipboard,
             Visible     = _selector.Selected != null,
@@ -395,7 +395,8 @@ public class DesignPanel
         try
         {
             var text   = ImGui.GetClipboardText();
-            var design = _converter.FromBase64(text, true, true, out _) ?? throw new Exception("The clipboard did not contain valid data.");
+            var (applyEquip, applyCustomize) = UiHelpers.ConvertKeysToBool();
+            var design = _converter.FromBase64(text, applyEquip, applyCustomize, out _) ?? throw new Exception("The clipboard did not contain valid data.");
             _manager.ApplyDesign(_selector.Selected!, design);
         }
         catch (Exception ex)

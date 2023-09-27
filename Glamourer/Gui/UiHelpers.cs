@@ -1,7 +1,9 @@
 using System;
 using System.Numerics;
 using Dalamud.Interface;
+using Glamourer.Customization;
 using Glamourer.Services;
+using Glamourer.Structs;
 using ImGuiNET;
 using Lumina.Misc;
 using OtterGui;
@@ -99,4 +101,22 @@ public static class UiHelpers
         newApply = currentApply;
         return DataChange.None;
     }
+
+    public static (EquipFlag, CustomizeFlag) ConvertKeysToFlags()
+        => (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift) switch
+        {
+            (false, false) => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant),
+            (true, true)   => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant),
+            (true, false)  => (EquipFlagExtensions.All, (CustomizeFlag)0),
+            (false, true)  => ((EquipFlag)0, CustomizeFlagExtensions.AllRelevant),
+        };
+
+    public static (bool, bool) ConvertKeysToBool()
+        => (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift) switch
+        {
+            (false, false) => (true, true),
+            (true, true)   => (true, true),
+            (true, false)  => (true, false),
+            (false, true)  => (false, true),
+        };
 }

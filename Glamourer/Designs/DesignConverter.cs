@@ -49,8 +49,11 @@ public class DesignConverter
         => ShareBackwardCompatible(ShareJObject(design), design);
 
     public string ShareBase64(ActorState state)
+        => ShareBase64(state, EquipFlagExtensions.All, CustomizeFlagExtensions.All);
+
+    public string ShareBase64(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags)
     {
-        var design = Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.All);
+        var design = Convert(state, equipFlags, customizeFlags);
         return ShareBackwardCompatible(ShareJObject(design), design);
     }
 
