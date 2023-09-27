@@ -69,7 +69,9 @@ public class ModAssociationsTab
         foreach (var ((mod, settings), idx) in _selector.Selected!.AssociatedMods.WithIndex())
         {
             using var id = ImRaii.PushId(idx);
-            DrawAssociatedModRow(mod, settings, out removedMod);
+            DrawAssociatedModRow(mod, settings, out var removedModTmp);
+            if (removedModTmp.HasValue)
+                removedMod = removedModTmp;
         }
 
         DrawNewModRow();
