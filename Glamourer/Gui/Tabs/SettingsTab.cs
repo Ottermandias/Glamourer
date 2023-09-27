@@ -70,10 +70,10 @@ public class SettingsTab : ITab
         if (!ImGui.CollapsingHeader("Glamourer Behavior"))
             return;
 
-        Checkbox("Restricted Gear Protection",
-            "Use gender- and race-appropriate models when detecting certain items not available for a characters current gender and race.",
+        Checkbox("Use Replacement Gear for Gear Unavailable to Your Race or Gender",
+            "Use different gender- and race-appropriate models as a substitute when detecting certain items not available for a characters current gender and race.",
             _config.UseRestrictedGearProtection, v => _config.UseRestrictedGearProtection = v);
-        Checkbox("Unlocked Item Mode",
+        Checkbox("Do Not Apply Unobtained Items in Automation",
             "Enable this if you want automatically applied designs to only consider items and customizations you have actually unlocked once, and skip those you have not.",
             _config.UnlockedItemMode, v => _config.UnlockedItemMode = v);
         Checkbox("Enable Festival Easter-Eggs",
