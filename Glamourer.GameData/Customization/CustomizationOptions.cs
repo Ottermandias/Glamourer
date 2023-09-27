@@ -293,7 +293,10 @@ public partial class CustomizationOptions
                 var menu = row.Menus
                     .Cast<CharaMakeParams.Menu?>()
                     .FirstOrDefault(m => m!.Value.Customize == gameId);
-                return menu?.Type ?? CharaMakeParams.MenuType.ListSelector;
+                var ret = menu?.Type ?? CharaMakeParams.MenuType.ListSelector;
+                if (c is CustomizeIndex.TailShape && ret is CharaMakeParams.MenuType.ListSelector)
+                    ret = CharaMakeParams.MenuType.List1Selector;
+                return ret;
             }).ToArray();
             set.Order = CustomizationSet.ComputeOrder(set);
         }

@@ -26,6 +26,7 @@ public class CharaMakeParams : ExcelRow
         Percentage        = 5,
         Checkmark         = 6, // custom
         Nothing           = 7, // custom
+        List1Selector     = 8, // custom, 1-indexed lists
     }
 
     public struct Menu

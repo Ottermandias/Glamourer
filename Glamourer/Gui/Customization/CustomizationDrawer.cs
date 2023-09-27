@@ -150,7 +150,10 @@ public partial class CustomizationDrawer : IDisposable
             DrawMultiIconSelector();
 
             foreach (var id in _set.Order[CharaMakeParams.MenuType.ListSelector])
-                DrawListSelector(id);
+                DrawListSelector(id, false);
+
+            foreach (var id in _set.Order[CharaMakeParams.MenuType.List1Selector])
+                DrawListSelector(id, true);
 
             Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.ColorPicker], DrawColorPicker, ImGui.SameLine);
 
