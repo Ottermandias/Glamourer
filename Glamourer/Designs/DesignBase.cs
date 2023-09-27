@@ -278,7 +278,7 @@ public class DesignBase
 
         void PrintWarning(string msg)
         {
-            if (msg.Length > 0)
+            if (msg.Length > 0 && name != "Temporary Design")
                 Glamourer.Chat.NotificationMessage($"{msg} ({name})", "Warning", NotificationType.Warning);
         }
 
