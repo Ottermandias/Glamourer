@@ -101,8 +101,7 @@ public class ModAssociationsTab
         ImGui.TableNextColumn();
         using (var font = ImRaii.PushFont(UiBuilder.IconFont))
         {
-            ImGuiUtil.DrawTextButton((settings.Enabled ? FontAwesomeIcon.Check : FontAwesomeIcon.Cross).ToIconString(),
-                new Vector2(ImGui.GetContentRegionAvail().X, 0), 0);
+            ImGuiUtil.Center((settings.Enabled ? FontAwesomeIcon.Check : FontAwesomeIcon.Times).ToIconString());
         }
 
         ImGui.TableNextColumn();
