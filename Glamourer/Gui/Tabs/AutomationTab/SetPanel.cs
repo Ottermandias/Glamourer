@@ -151,9 +151,15 @@ public class SetPanel
           + 150 * ImGuiHelpers.GlobalScale;
 
         var singleRow = ImGui.GetContentRegionAvail().X >= requiredSizeOneLine || numSpacing == 0;
+        var numRows = (singleRow, _config.ShowUnlockedItemWarnings) switch
+        {
+            (true, true)   => 6,
+            (true, false)  => 5,
+            (false, true)  => 5,
+            (false, false) => 4,
+        };
 
-        using var table = ImRaii.Table("SetTable", singleRow && _config.ShowUnlockedItemWarnings ? 6 : 5,
-            ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY);
+        using var table = ImRaii.Table("SetTable", numRows, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY);
         if (!table)
             return;
 
@@ -184,6 +190,7 @@ public class SetPanel
 
         if (_config.ShowUnlockedItemWarnings)
             ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, 2 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
+
         ImGui.TableHeadersRow();
         foreach (var (design, idx) in Selection.Designs.WithIndex())
         {
