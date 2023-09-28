@@ -66,7 +66,7 @@ public class AutoDesignApplier : IDisposable
 
     private void OnWeaponLoading(Actor actor, EquipSlot slot, Ref<CharacterWeapon> weapon)
     {
-        if (_jobChangeState == null)
+        if (_jobChangeState == null || !_config.EnableAutoDesigns)
             return;
 
         var id = actor.GetIdentifier(_actors.AwaitedService);
