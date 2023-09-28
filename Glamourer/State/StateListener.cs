@@ -628,5 +628,6 @@ public class StateListener : IDisposable
 
         _applier.ChangeHatState(new ActorData(gameObject,    _creatingIdentifier.ToName()), _creatingState.ModelData.IsHatVisible());
         _applier.ChangeWeaponState(new ActorData(gameObject, _creatingIdentifier.ToName()), _creatingState.ModelData.IsWeaponVisible());
+        _applier.ChangeWetness(new ActorData(gameObject,     _creatingIdentifier.ToName()), _creatingState.ModelData.IsWet());
     }
 }
