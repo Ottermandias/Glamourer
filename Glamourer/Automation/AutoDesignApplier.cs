@@ -11,6 +11,7 @@ using Glamourer.Structs;
 using Glamourer.Unlocks;
 using OtterGui.Classes;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -29,6 +30,7 @@ public class AutoDesignApplier : IDisposable
     private readonly AutomationChanged      _event;
     private readonly ObjectManager          _objects;
     private readonly WeaponLoading          _weapons;
+    private readonly HumanModelList         _humans;
 
     private ActorState? _jobChangeState;
     private EquipItem   _jobChangeMainhand;
@@ -36,7 +38,7 @@ public class AutoDesignApplier : IDisposable
 
     public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs,
         CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
-        AutomationChanged @event, ObjectManager objects, WeaponLoading weapons)
+        AutomationChanged @event, ObjectManager objects, WeaponLoading weapons, HumanModelList humans)
     {
         _config           =  config;
         _manager          =  manager;
@@ -49,6 +51,7 @@ public class AutoDesignApplier : IDisposable
         _event            =  @event;
         _objects          =  objects;
         _weapons          =  weapons;
+        _humans           =  humans;
         _jobs.JobChanged  += OnJobChange;
         _event.Subscribe(OnAutomationChange, AutomationChanged.Priority.AutoDesignApplier);
         _weapons.Subscribe(OnWeaponLoading, WeaponLoading.Priority.AutoDesignApplier);
@@ -240,6 +243,10 @@ public class AutoDesignApplier : IDisposable
             _state.ResetStateFixed(state);
         else if (!respectManual)
             state.RemoveFixedDesignSources();
+
+        if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
+            return;
+
         foreach (var design in set.Designs)
         {
             if (!design.IsActive(actor))
@@ -251,14 +258,17 @@ public class AutoDesignApplier : IDisposable
             ref var data   = ref design.GetDesignData(state);
             var     source = design.Revert ? StateChanged.Source.Game : StateChanged.Source.Fixed;
 
-            if (actor.AsCharacter->CharacterData.ModelCharaId != data.ModelId)
+            if (!data.IsHuman)
                 continue;
 
             var (equipFlags, customizeFlags, applyHat, applyVisor, applyWeapon, applyWet) = design.ApplyWhat();
-            Reduce(state, data, applyHat,       applyVisor,              applyWeapon,   applyWet, ref totalMetaFlags, respectManual, source);
-            Reduce(state, data, customizeFlags, ref totalCustomizeFlags, respectManual, source);
-            Reduce(state, data, equipFlags,     ref totalEquipFlags,     respectManual, source, fromJobChange);
+            ReduceMeta(state, data, applyHat, applyVisor, applyWeapon, applyWet, ref totalMetaFlags, respectManual, source);
+            ReduceCustomize(state, data, customizeFlags, ref totalCustomizeFlags, respectManual, source);
+            ReduceEquip(state, data, equipFlags, ref totalEquipFlags, respectManual, source, fromJobChange);
         }
+
+        if (totalCustomizeFlags != 0)
+            state.ModelData.ModelId = 0;
     }
 
     /// <summary> Get world-specific first and all-world afterwards. </summary>
@@ -284,7 +294,7 @@ public class AutoDesignApplier : IDisposable
         }
     }
 
-    private void Reduce(ActorState state, in DesignData design, EquipFlag equipFlags, ref EquipFlag totalEquipFlags, bool respectManual,
+    private void ReduceEquip(ActorState state, in DesignData design, EquipFlag equipFlags, ref EquipFlag totalEquipFlags, bool respectManual,
         StateChanged.Source source, bool fromJobChange)
     {
         equipFlags &= ~totalEquipFlags;
@@ -371,7 +381,7 @@ public class AutoDesignApplier : IDisposable
         }
     }
 
-    private void Reduce(ActorState state, in DesignData design, CustomizeFlag customizeFlags, ref CustomizeFlag totalCustomizeFlags,
+    private void ReduceCustomize(ActorState state, in DesignData design, CustomizeFlag customizeFlags, ref CustomizeFlag totalCustomizeFlags,
         bool respectManual, StateChanged.Source source)
     {
         customizeFlags &= ~totalCustomizeFlags;
@@ -433,7 +443,7 @@ public class AutoDesignApplier : IDisposable
         }
     }
 
-    private void Reduce(ActorState state, in DesignData design, bool applyHat, bool applyVisor, bool applyWeapon, bool applyWet,
+    private void ReduceMeta(ActorState state, in DesignData design, bool applyHat, bool applyVisor, bool applyWeapon, bool applyWet,
         ref byte totalMetaFlags, bool respectManual, StateChanged.Source source)
     {
         if (applyHat && (totalMetaFlags & 0x01) == 0)
