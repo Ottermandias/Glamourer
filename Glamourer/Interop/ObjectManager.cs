@@ -52,6 +52,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
         World      = (ushort)(_clientState.LocalPlayer?.CurrentWorld.Id ?? 0u);
         _identifiers.Clear();
         _allWorldIdentifiers.Clear();
+        _nonOwnedIdentifiers.Clear();
 
         for (var i = 0; i < (int)ScreenActor.CutsceneStart; ++i)
         {
