@@ -157,19 +157,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     }
 
     private void DeleteButton(Vector2 size)
-    {
-        var keys = _config.DeleteDesignModifier.IsActive();
-        var tt = SelectedLeaf == null
-            ? "No design selected."
-            : "Delete the currently selected design entirely from your drive.\n"
-          + "This can not be undone.";
-        if (!keys)
-            tt += $"\nHold {_config.DeleteDesignModifier} while clicking to delete the design.";
-
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), size, tt, SelectedLeaf == null || !keys, true)
-         && Selected != null)
-            _designManager.Delete(Selected);
-    }
+        => DeleteSelectionButton(size, _config.DeleteDesignModifier, "design", "designs", _designManager.Delete);
 
     private void DrawNewDesignPopup()
     {
