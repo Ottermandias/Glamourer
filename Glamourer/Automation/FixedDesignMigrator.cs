@@ -13,8 +13,8 @@ namespace Glamourer.Automation;
 
 public class FixedDesignMigrator
 {
-    private readonly JobService                                                        _jobs;
-    private          List<(string Name, bool Enabled, List<(string, JobGroup)> Data)>? _migratedData;
+    private readonly JobService                                                _jobs;
+    private          List<(string Name, List<(string, JobGroup, bool)> Data)>? _migratedData;
 
     public FixedDesignMigrator(JobService jobs)
         => _jobs = jobs;
@@ -26,8 +26,8 @@ public class FixedDesignMigrator
 
         foreach (var data in _migratedData)
         {
-            var enabled = data.Enabled;
-            var name    = data.Name + (enabled ? " (Enabled)" : " (Disabled)");
+            var allEnabled = true;
+            var name       = data.Name;
             if (autoManager.Any(d => name == d.Name))
                 continue;
 
@@ -43,18 +43,18 @@ public class FixedDesignMigrator
             {
                 byteString = ByteString.FromSpanUnsafe("Mig Ration"u8, true, false, true);
                 id         = actors.AwaitedService.CreatePlayer(byteString, actors.AwaitedService.Data.Worlds.First().Key);
-                enabled    = false;
                 if (!id.IsValid)
                 {
                     Glamourer.Chat.NotificationMessage($"Could not migrate fixed design {data.Name}.", "Error", NotificationType.Error);
+                    allEnabled = false;
                     continue;
                 }
             }
 
             autoManager.AddDesignSet(name, id);
-            autoManager.SetState(autoManager.Count - 1, enabled);
+            autoManager.SetState(autoManager.Count - 1, allEnabled);
             var set = autoManager[^1];
-            foreach (var design in data.Data)
+            foreach (var design in data.Data.AsEnumerable().Reverse())
             {
                 if (!designFileSystem.Find(design.Item1, out var child) || child is not DesignFileSystem.Leaf leaf)
                 {
@@ -65,6 +65,7 @@ public class FixedDesignMigrator
 
                 autoManager.AddDesign(set, leaf.Value);
                 autoManager.ChangeJobCondition(set, set.Designs.Count - 1, design.Item2);
+                autoManager.ChangeApplicationType(set, set.Designs.Count - 1, design.Item3 ? AutoDesign.Type.All : 0);
             }
         }
     }
@@ -105,8 +106,8 @@ public class FixedDesignMigrator
             list.Add((name, path, group, enabled));
         }
 
-        _migratedData = list.GroupBy(t => (t.Name, t.Enabled))
-            .Select(kvp => (kvp.Key.Name, kvp.Key.Enabled, kvp.Select(k => (k.Path, k.Group)).ToList()))
+        _migratedData = list.GroupBy(t => t.Name)
+            .Select(kvp => (kvp.Key, kvp.Select(k => (k.Path, k.Group, k.Enabled)).ToList()))
             .ToList();
     }
 }
