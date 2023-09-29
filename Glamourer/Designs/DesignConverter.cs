@@ -60,8 +60,8 @@ public class DesignConverter
     public DesignBase Convert(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags)
     {
         var design = _designs.CreateTemporary();
-        design.ApplyEquip     = equipFlags & EquipFlagExtensions.All;
-        design.ApplyCustomize = customizeFlags & CustomizeFlagExtensions.All;
+        design.ApplyEquip = equipFlags & EquipFlagExtensions.All;
+        design.FixCustomizeApplication(_customize, customizeFlags);
         design.SetApplyHatVisible(design.DoApplyEquip(EquipSlot.Head));
         design.SetApplyVisorToggle(design.DoApplyEquip(EquipSlot.Head));
         design.SetApplyWeaponVisible(design.DoApplyEquip(EquipSlot.MainHand) || design.DoApplyEquip(EquipSlot.OffHand));
@@ -126,6 +126,10 @@ public class DesignConverter
         {
             ret.ApplyCustomize = 0;
             ret.SetApplyWetness(false);
+        }
+        else
+        {
+            ret.FixCustomizeApplication(_customize);
         }
 
         if (!equip)

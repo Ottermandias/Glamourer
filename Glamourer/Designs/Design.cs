@@ -14,8 +14,8 @@ namespace Glamourer.Designs;
 public sealed class Design : DesignBase, ISavable
 {
     #region Data
-    internal Design(ItemManager items)
-        : base(items)
+    internal Design(CustomizationService customize, ItemManager items)
+        : base(customize, items)
     { }
 
     internal Design(DesignBase other)
@@ -116,7 +116,7 @@ public sealed class Design : DesignBase, ISavable
 
         var creationDate = json["CreationDate"]?.ToObject<DateTimeOffset>() ?? throw new ArgumentNullException("CreationDate");
 
-        var design = new Design(items)
+        var design = new Design(customizations, items)
         {
             CreationDate = creationDate,
             Identifier   = json["Identifier"]?.ToObject<Guid>() ?? throw new ArgumentNullException("Identifier"),

@@ -35,8 +35,9 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
                 applied |= CustomizeFlag.Gender;
             }
 
+
         var set = AwaitedService.GetList(ret.Clan, ret.Gender);
-        applyWhich &= set.SettingAvailable | CustomizeFlag.Gender | CustomizeFlag.Clan;
+        applyWhich = applyWhich.FixApplication(set);
         foreach (var index in CustomizationExtensions.AllBasic)
         {
             var flag = index.ToFlag();
@@ -118,7 +119,8 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
 
     /// <summary> Returns whether a customization value is valid for a given clan/gender set and face. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static bool IsCustomizationValid(CustomizationSet set, CustomizeValue face, CustomizeIndex type, CustomizeValue value, out CustomizeData? data)
+    public static bool IsCustomizationValid(CustomizationSet set, CustomizeValue face, CustomizeIndex type, CustomizeValue value,
+        out CustomizeData? data)
         => set.Validate(type, value, out data, face);
 
     /// <summary> Returns whether a customization value is valid for a given clan, gender and face. </summary>

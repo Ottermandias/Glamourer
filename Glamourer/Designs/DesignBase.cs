@@ -16,15 +16,16 @@ public class DesignBase
 {
     public const int FileVersion = 1;
 
-    internal DesignBase(ItemManager items)
+    internal DesignBase(CustomizationService customize, ItemManager items)
     {
         DesignData.SetDefaultEquipment(items);
+        FixCustomizeApplication(customize);
     }
 
     internal DesignBase(DesignBase clone)
     {
         DesignData     = clone.DesignData;
-        ApplyCustomize = clone.ApplyCustomize & CustomizeFlagExtensions.All;
+        ApplyCustomize = clone.ApplyCustomize & CustomizeFlagExtensions.AllRelevant;
         ApplyEquip     = clone.ApplyEquip & EquipFlagExtensions.All;
         _designFlags   = clone._designFlags & (DesignFlags)0x0F;
     }
@@ -43,7 +44,7 @@ public class DesignBase
         WriteProtected     = 0x10,
     }
 
-    internal CustomizeFlag ApplyCustomize = CustomizeFlagExtensions.All;
+    internal CustomizeFlag ApplyCustomize = CustomizeFlagExtensions.AllRelevant;
     internal EquipFlag     ApplyEquip     = EquipFlagExtensions.All;
     private  DesignFlags   _designFlags   = DesignFlags.ApplyHatVisible | DesignFlags.ApplyVisorState | DesignFlags.ApplyWeaponVisible;
 
@@ -151,6 +152,18 @@ public class DesignBase
         return true;
     }
 
+    public void FixCustomizeApplication(CustomizationService service)
+        => FixCustomizeApplication(service, ApplyCustomize);
+
+    public void FixCustomizeApplication(CustomizationSet set)
+        => FixCustomizeApplication(set, ApplyCustomize);
+
+    public void FixCustomizeApplication(CustomizationService service, CustomizeFlag flags)
+        => FixCustomizeApplication(service.AwaitedService.GetList(DesignData.Customize.Clan, DesignData.Customize.Gender), flags);
+
+    public void FixCustomizeApplication(CustomizationSet set, CustomizeFlag flags)
+        => ApplyCustomize = flags.FixApplication(set);
+
     #endregion
 
     #region Serialization
@@ -244,7 +257,7 @@ public class DesignBase
 
     private static DesignBase LoadDesignV1Base(CustomizationService customizations, ItemManager items, JObject json)
     {
-        var ret = new DesignBase(items);
+        var ret = new DesignBase(customizations, items);
         LoadCustomize(customizations, json["Customize"], ret, "Temporary Design", false, true);
         LoadEquip(items, json["Equipment"], ret, "Temporary Design", true);
         return ret;
@@ -398,7 +411,7 @@ public class DesignBase
             }
         }
 
-        design.ApplyCustomize &= set.SettingAvailable | CustomizeFlag.Gender | CustomizeFlag.Clan;
+        design.FixCustomizeApplication(set);
     }
 
     public void MigrateBase64(ItemManager items, HumanModelList humans, string base64)

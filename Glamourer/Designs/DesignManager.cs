@@ -85,13 +85,13 @@ public class DesignManager
 
     /// <summary> Create a new temporary design without adding it to the manager. </summary>
     public DesignBase CreateTemporary()
-        => new(_items);
+        => new(_customizations, _items);
 
     /// <summary> Create a new design of a given name. </summary>
     public Design CreateEmpty(string name, bool handlePath)
     {
         var (actualName, path) = ParseName(name, handlePath);
-        var design = new Design(_items)
+        var design = new Design(_customizations, _items)
         {
             CreationDate = DateTimeOffset.UtcNow,
             LastEdit     = DateTimeOffset.UtcNow,
@@ -522,7 +522,7 @@ public class DesignManager
                 try
                 {
                     var actualName = Path.GetFileName(name);
-                    var design = new Design(_items)
+                    var design = new Design(_customizations, _items)
                     {
                         CreationDate = File.GetCreationTimeUtc(_saveService.FileNames.MigrationDesignFile),
                         LastEdit     = File.GetLastWriteTimeUtc(_saveService.FileNames.MigrationDesignFile),

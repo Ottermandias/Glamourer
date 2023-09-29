@@ -2,6 +2,7 @@
 using System.Linq;
 using Dalamud.Interface;
 using Glamourer.Automation;
+using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Services;
@@ -22,8 +23,8 @@ public sealed class DesignCombo : FilterComboCache<(Design, string)>
     private          float             _innerWidth;
 
     public DesignCombo(AutoDesignManager manager, DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected,
-        ItemManager items)
-        : this(manager, designs, fileSystem, tabSelected, CreateRevertDesign(items))
+        ItemManager items, CustomizationService customize)
+        : this(manager, designs, fileSystem, tabSelected, CreateRevertDesign(customize, items))
     { }
 
     private DesignCombo(AutoDesignManager manager, DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected,
@@ -97,10 +98,11 @@ public sealed class DesignCombo : FilterComboCache<(Design, string)>
         return filter.IsContained(path) || design.Name.Lower.Contains(filter.Lower);
     }
 
-    private static Design CreateRevertDesign(ItemManager items)
-        => new(items)
+    private static Design CreateRevertDesign(CustomizationService customize, ItemManager items)
+        => new(customize, items)
         {
             Index = RevertDesignIndex,
             Name  = AutoDesign.RevertName,
+            ApplyCustomize = CustomizeFlagExtensions.AllRelevant,
         };
 }
