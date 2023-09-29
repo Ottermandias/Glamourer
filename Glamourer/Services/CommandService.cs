@@ -134,11 +134,11 @@ public class CommandService : IDisposable
             _chat.Print(new SeStringBuilder().AddText("    》 The ").AddYellow("design index")
                 .AddText(" is the number in front of the relevant design in the automated design set.").BuiltString);
             _chat.Print(new SeStringBuilder().AddText("    》 The ").AddPurple("Application Flags").AddText(" are a combination of the letters ")
-                .AddPurple("C", true).AddText("ustomizations, ")
-                .AddPurple("E", true).AddText("quipment, ")
-                .AddPurple("A", true).AddText("ccessories, ")
-                .AddPurple("D", true).AddText("yes and ")
-                .AddPurple("W", true).AddText("eapons, where ").AddPurple("CEADW")
+                .AddInitialPurple("Customizations, ")
+                .AddInitialPurple("Equipment, ")
+                .AddInitialPurple("Accessories, ")
+                .AddInitialPurple("Dyes and ")
+                .AddInitialPurple("Weapons, where ").AddPurple("CEADW")
                 .AddText(" means everything should be toggled on, and no value means nothing should be toggled on.")
                 .BuiltString);
             return false;
@@ -261,23 +261,26 @@ public class CommandService : IDisposable
         if (argument.Length == 0)
         {
             _chat.Print(new SeStringBuilder().AddText("Use with /glamour reapplyautomation ").AddGreen("[Character Identifier]").BuiltString);
-            PlayerIdentifierHelp(false);
+            PlayerIdentifierHelp(false, true);
             return true;
         }
 
-        if (!IdentifierHandling(argument, out var identifier, false))
+        if (!IdentifierHandling(argument, out var identifiers, false, true))
             return false;
 
         _objects.Update();
-        if (!_objects.TryGetValue(identifier, out var data))
-            return true;
-
-        foreach (var actor in data.Objects)
+        foreach (var identifier in identifiers)
         {
-            if (_stateManager.GetOrCreate(identifier, actor, out var state))
+            if (!_objects.TryGetValue(identifier, out var data))
+                return true;
+
+            foreach (var actor in data.Objects)
             {
-                _autoDesignApplier.ReapplyAutomation(actor, identifier, state);
-                _stateManager.ReapplyState(actor);
+                if (_stateManager.GetOrCreate(identifier, actor, out var state))
+                {
+                    _autoDesignApplier.ReapplyAutomation(actor, identifier, state);
+                    _stateManager.ReapplyState(actor);
+                }
             }
         }
 
@@ -289,15 +292,19 @@ public class CommandService : IDisposable
         if (argument.Length == 0)
         {
             _chat.Print(new SeStringBuilder().AddText("Use with /glamour revert ").AddGreen("[Character Identifier]").BuiltString);
-            PlayerIdentifierHelp(false);
+            PlayerIdentifierHelp(false, true);
             return true;
         }
 
-        if (!IdentifierHandling(argument, out var identifier, false))
+        if (!IdentifierHandling(argument, out var identifiers, false, true))
             return false;
 
-        if (_stateManager.TryGetValue(identifier, out var state))
-            _stateManager.ResetState(state, StateChanged.Source.Manual);
+        foreach (var identifier in identifiers)
+        {
+            if (_stateManager.TryGetValue(identifier, out var state))
+                _stateManager.ResetState(state, StateChanged.Source.Manual);
+        }
+
 
         return true;
     }
@@ -307,19 +314,23 @@ public class CommandService : IDisposable
         if (argument.Length == 0)
         {
             _chat.Print(new SeStringBuilder().AddText("Use with /glamour revert ").AddGreen("[Character Identifier]").BuiltString);
-            PlayerIdentifierHelp(false);
+            PlayerIdentifierHelp(false, true);
             return true;
         }
 
-        if (!IdentifierHandling(argument, out var identifier, false))
+        if (!IdentifierHandling(argument, out var identifiers, false, true))
             return false;
 
         _objects.Update();
-        if (!_objects.TryGetValue(identifier, out var data))
-            return true;
+        foreach (var identifier in identifiers)
+        {
+            if (!_objects.TryGetValue(identifier, out var data))
+                return true;
 
-        foreach (var actor in data.Objects)
-            _stateManager.ReapplyState(actor);
+            foreach (var actor in data.Objects)
+                _stateManager.ReapplyState(actor);
+        }
+
 
         return true;
     }
@@ -345,24 +356,27 @@ public class CommandService : IDisposable
                 .BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 Clipboard as a single word will try to apply a design string currently in your clipboard.").BuiltString);
-            PlayerIdentifierHelp(false);
+            PlayerIdentifierHelp(false, true);
         }
 
-        if (!GetDesign(split[0], out var design, true) || !IdentifierHandling(split[1], out var identifier, false))
+        if (!GetDesign(split[0], out var design, true) || !IdentifierHandling(split[1], out var identifiers, false, true))
             return false;
 
         _objects.Update();
-        if (!_objects.TryGetValue(identifier, out var actors))
+        foreach (var identifier in identifiers)
         {
-            if (_stateManager.TryGetValue(identifier, out var state))
-                _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
-        }
-        else
-        {
-            foreach (var actor in actors.Objects)
+            if (!_objects.TryGetValue(identifier, out var actors))
             {
-                if (_stateManager.GetOrCreate(identifier, actor, out var state))
+                if (_stateManager.TryGetValue(identifier, out var state))
                     _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
+            }
+            else
+            {
+                foreach (var actor in actors.Objects)
+                {
+                    if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors.AwaitedService), actor, out var state))
+                        _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
+                }
             }
         }
 
@@ -374,42 +388,38 @@ public class CommandService : IDisposable
         if (argument.Length == 0)
         {
             _chat.Print(new SeStringBuilder().AddText("Use with /glamour copy ").AddGreen("[Character Identifier]").BuiltString);
-            PlayerIdentifierHelp(false);
+            PlayerIdentifierHelp(false, true);
         }
 
-        if (!IdentifierHandling(argument, out var identifier, false))
+        if (!IdentifierHandling(argument, out var identifiers, false, true))
             return false;
 
-        string text;
-        if (_stateManager.TryGetValue(identifier, out var state))
+        _objects.Update();
+        foreach (var identifier in identifiers)
         {
-            text = _converter.ShareBase64(state);
-        }
-        else
-        {
-            if (!_objects.TryGetValue(identifier, out var data)
-             || !data.Valid
-             || !_stateManager.GetOrCreate(identifier, data.Objects[0], out state))
+            if (!_stateManager.TryGetValue(identifier, out var state)
+             && !(_objects.TryGetValue(identifier, out var data)
+                 && data.Valid
+                 && _stateManager.GetOrCreate(identifier, data.Objects[0], out state)))
+                continue;
+
+            try
             {
-                _chat.Print(new SeStringBuilder().AddText("Could not copy state to clipboard: The identified object ")
-                    .AddGreen(identifier.ToString(), true).AddText(" is not available and has no stored state.").BuiltString);
+                var text = _converter.ShareBase64(state);
+                ImGui.SetClipboardText(text);
+                return true;
+            }
+            catch
+            {
+                _chat.Print("Could not copy state to clipboard: Failure to write to clipboard.");
                 return false;
             }
-
-            text = _converter.ShareBase64(state);
         }
 
-        try
-        {
-            ImGui.SetClipboardText(text);
-        }
-        catch
-        {
-            _chat.Print("Could not copy state to clipboard: Failure to write to clipboard.");
-            return false;
-        }
+        _chat.Print(new SeStringBuilder().AddText("Could not copy state to clipboard: No identified object is available or has stored state.")
+            .BuiltString);
 
-        return true;
+        return false;
     }
 
     private bool SaveState(string arguments)
@@ -419,29 +429,29 @@ public class CommandService : IDisposable
         {
             _chat.Print(new SeStringBuilder().AddText("Use with /glamour save ").AddYellow("[New Design Name]").AddText(" | ")
                 .AddGreen("[Character Identifier]").BuiltString);
-            PlayerIdentifierHelp(false);
+            PlayerIdentifierHelp(false, true);
         }
 
-        if (!IdentifierHandling(split[1], out var identifier, false))
+        if (!IdentifierHandling(split[1], out var identifiers, false, true))
             return false;
 
-        if (!_stateManager.TryGetValue(identifier, out var state))
+        _objects.Update();
+        foreach (var identifier in identifiers)
         {
-            _objects.Update();
-            if (!_objects.TryGetValue(identifier, out var data)
-             || !data.Valid
-             || !_stateManager.GetOrCreate(identifier, data.Objects[0], out state))
-            {
-                _chat.Print(new SeStringBuilder().AddText("Could not save state to design ").AddYellow(split[0], true)
-                    .AddText(": The identified object ")
-                    .AddGreen(identifier.ToString(), true).AddText(" is not available and has no stored state.").BuiltString);
-                return false;
-            }
+            if (!_stateManager.TryGetValue(identifier, out var state)
+             && !(_objects.TryGetValue(identifier, out var data)
+                 && data.Valid
+                 && _stateManager.GetOrCreate(identifier, data.Objects[0], out state)))
+                continue;
+
+            var design = _converter.Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant);
+            _designManager.CreateClone(design, split[0], true);
+            return true;
         }
 
-        var design = _converter.Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant);
-        _designManager.CreateClone(design, split[0], true);
-        return true;
+        _chat.Print(new SeStringBuilder().AddText("Could not save state to design ").AddYellow(split[0], true)
+            .AddText(": No identified object is available or has stored state.").BuiltString);
+        return false;
     }
 
     private bool GetDesign(string argument, [NotNullWhen(true)] out DesignBase? design, bool allowClipboard)
@@ -493,26 +503,34 @@ public class CommandService : IDisposable
         return true;
     }
 
-    private unsafe bool IdentifierHandling(string argument, out ActorIdentifier identifier, bool allowAnyWorld)
+    private unsafe bool IdentifierHandling(string argument, out ActorIdentifier[] identifiers, bool allowAnyWorld, bool allowIndex)
     {
         try
         {
             if (_objects.GetName(argument.ToLowerInvariant(), out var obj))
             {
-                identifier = _actors.AwaitedService.FromObject(obj.AsObject, out _, true, true, true);
+                var identifier = _actors.AwaitedService.FromObject(obj.AsObject, out _, true, true, true);
                 if (!identifier.IsValid)
                 {
                     _chat.Print(new SeStringBuilder().AddText("The placeholder ").AddGreen(argument)
                         .AddText(" did not resolve to a game object with a valid identifier.").BuiltString);
+                    identifiers = Array.Empty<ActorIdentifier>();
                     return false;
                 }
+
+                if (allowIndex && identifier.Type is IdentifierType.Npc)
+                    identifier = _actors.AwaitedService.CreateNpc(identifier.Kind, identifier.DataId, obj.Index);
+                identifiers = new[]
+                {
+                    identifier,
+                };
             }
             else
             {
-                identifier = _actors.AwaitedService.FromUserString(argument);
+                identifiers = _actors.AwaitedService.FromUserString(argument, allowIndex);
                 if (!allowAnyWorld
-                 && identifier.Type is IdentifierType.Player or IdentifierType.Owned
-                 && identifier.HomeWorld == ushort.MaxValue)
+                 && identifiers[0].Type is IdentifierType.Player or IdentifierType.Owned
+                 && identifiers[0].HomeWorld == ushort.MaxValue)
                 {
                     _chat.Print(new SeStringBuilder().AddText("The argument ").AddRed(argument, true)
                         .AddText(" did not specify a world.").BuiltString);
@@ -527,13 +545,23 @@ public class CommandService : IDisposable
             _chat.Print(new SeStringBuilder().AddText("The argument ").AddRed(argument, true)
                 .AddText($" could not be converted to an identifier. {e.Message}")
                 .BuiltString);
-            identifier = ActorIdentifier.Invalid;
+            identifiers = Array.Empty<ActorIdentifier>();
             return false;
         }
     }
 
-    private void PlayerIdentifierHelp(bool allowAnyWorld)
+    private void PlayerIdentifierHelp(bool allowAnyWorld, bool allowIndex)
     {
+        var npcGuide = new SeStringBuilder().AddText("    》》》").AddGreen("n").AddText(" | ").AddPurple("[NPC Type]").AddText(" : ")
+            .AddRed("[NPC Name]").AddBlue(allowIndex ? "@<Object Index>" : string.Empty).AddText(", where NPC Type can be ")
+            .AddInitialPurple("Mount")
+            .AddInitialPurple("Companion")
+            .AddInitialPurple("Accessory").AddInitialPurple("Event NPC").AddText("or ").AddInitialPurple("Battle NPC", false);
+        if (allowIndex)
+            npcGuide = npcGuide.AddText(", and the ").AddBlue("index").AddText(" is an optional non-negative number in the object table.");
+        else
+            npcGuide = npcGuide.AddText(".");
+
         _chat.Print(new SeStringBuilder().AddText("    》 Valid Character Identifiers have the form:").BuiltString);
         _chat.Print(new SeStringBuilder().AddText("    》》》").AddGreen("<me>").AddText(" or ").AddGreen("<t>").AddText(" or ").AddGreen("<mo>")
             .AddText(" or ").AddGreen("<f>")
@@ -542,10 +570,7 @@ public class CommandService : IDisposable
             .AddText(allowAnyWorld ? ", if no @ is provided, Any World is used." : ".")
             .BuiltString);
         _chat.Print(new SeStringBuilder().AddText("    》》》").AddGreen("r").AddText(" | ").AddWhite("[Retainer Name]").AddText(".").BuiltString);
-        _chat.Print(new SeStringBuilder().AddText("    》》》").AddGreen("n").AddText(" | ").AddPurple("[NPC Type]").AddText(" : ")
-            .AddRed("[NPC Name]").AddText(", where NPC Type can be ").AddInitialPurple("Mount").AddInitialPurple("Companion")
-            .AddInitialPurple("Accessory").AddInitialPurple("Event NPC").AddText("or ").AddInitialPurple("Battle NPC", false).AddText(".")
-            .BuiltString);
+        _chat.Print(npcGuide.BuiltString);
         _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("o").AddText(" | ").AddPurple("[NPC Type]")
             .AddText(" : ")
             .AddRed("[NPC Name]").AddText(" | ").AddWhite("[Player Name]@<World Name>").AddText(".").BuiltString);
