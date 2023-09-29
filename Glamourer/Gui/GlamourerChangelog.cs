@@ -16,6 +16,7 @@ public class GlamourerChangelog
         Add1_0_0_0(Changelog);
         Add1_0_0_1(Changelog);
         Add1_0_0_2(Changelog);
+        Add1_0_0_3(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -27,6 +28,27 @@ public class GlamourerChangelog
         _config.ChangeLogDisplayType = type;
         _config.Save();
     }
+
+    private static void Add1_0_0_3(Changelog log)
+        => log.NextVersion("Version 1.0.0.3")
+            .RegisterHighlight("Reintroduced holding Control or Shift to apply only gear or customization changes.")
+            .RegisterEntry("Deletion of multiple selected designs at once is now supported.")
+            .RegisterEntry(
+                "Added an 'Apply Mod Associations' button at the top row for designs. Hovering it tells you which collection it would edit.")
+            .RegisterHighlight(
+                "Turned 'Use Replacement Gear for Gear Unavailable to Your Race or Gender' OFF by default. If this setting confused you or you use mods that make those pieces available, please disable the setting.")
+            .RegisterHighlight(
+                "Added an option that a characters state reverts all manual changes after a zone change to simulate pre-rework behavior. This is OFF by default.")
+            .RegisterEntry("Fixed some issues with chat command parsing and applying for NPCs.")
+            .RegisterEntry("Turning into a Lalafell should now correctly cause minions to sit on your head instead your shoulders.")
+            .RegisterEntry("Another, better, possibly working fix for Lalafell and Elezen ear shapes.")
+            .RegisterEntry("Fixed a big issue with a memory leak concerning owned NPCs.")
+            .RegisterEntry("Fixed some issues with non-zero model-ID but human characters, like Zero.")
+            .RegisterEntry("Fixed an issue with weapons not respecting disabled automated designs.")
+            .RegisterEntry("Maybe fixed an issue where unavailable customizations set to Apply still applied their invisible values.")
+            .RegisterEntry(
+                "Fixed display of automated design rows when unobtained item warnings were disabled but full checkmarks enabled, and the window was not wide enough for single row.")
+            .RegisterEntry("Apply Forced Wetness state after creation of draw objects, maybe fixing it turning off on zone changes.");
 
     private static void Add1_0_0_2(Changelog log)
         => log.NextVersion("Version 1.0.0.2")
