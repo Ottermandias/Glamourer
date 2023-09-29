@@ -77,9 +77,9 @@ jobs:
         run: |
           git config --global user.name "Actions User"
           git config --global user.email "actions@github.com"
-          git fetch origin master
-          git branch -f master ${{ github.sha }}
-          git checkout master
+          git fetch origin main
+          git branch -f main ${{ github.sha }}
+          git checkout main
           git add repo.json
           git commit -m "[CI] Updating repo.json for ${{ github.ref_name }}" || true
-          git push origin master
+          git push origin main
