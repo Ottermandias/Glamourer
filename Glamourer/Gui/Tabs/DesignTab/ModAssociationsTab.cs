@@ -43,10 +43,22 @@ public class ModAssociationsTab
     private void DrawApplyAllButton()
     {
         var current = _penumbra.CurrentCollection;
-        if (!ImGuiUtil.DrawDisabledButton($"Try Applying All Associated Mods to {current}##applyAll",
+        if (ImGuiUtil.DrawDisabledButton($"Try Applying All Associated Mods to {current}##applyAll",
                 new Vector2(ImGui.GetContentRegionAvail().X, 0), string.Empty, current is "<Unavailable>"))
-            return;
+            ApplyAll();
+    }
 
+    public void DrawApplyButton()
+    {
+        var current = _penumbra.CurrentCollection;
+        if (ImGuiUtil.DrawDisabledButton("Apply Mod Associations", Vector2.Zero,
+                $"Try to apply all associated mod settings to Penumbras current collection {current}",
+                _selector.Selected!.AssociatedMods.Count == 0 || current is "<Unavailable>"))
+            ApplyAll();
+    }
+
+    public void ApplyAll()
+    {
         foreach (var (mod, settings) in _selector.Selected!.AssociatedMods)
             _penumbra.SetMod(mod, settings);
     }

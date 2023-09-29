@@ -387,6 +387,8 @@ public class DesignPanel
         ImGui.SameLine();
         DrawApplyToTarget();
         ImGui.SameLine();
+        _modAssociations.DrawApplyButton();
+        ImGui.SameLine();
         DrawSaveToDat();
     }
 
