@@ -81,6 +81,9 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
 
         /// <seealso cref="Gui.Tabs.DesignTab.DesignFileSystemSelector.OnDesignChange"/>
         DesignFileSystemSelector = -1,
+
+        /// <seealso cref="Automation.AutoDesignManager.OnDesignChange"/>
+        AutoDesignManager = 1,
     }
 
     public DesignChanged()

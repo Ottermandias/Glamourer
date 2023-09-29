@@ -13,12 +13,13 @@ using Glamourer.Services;
 using Glamourer.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OtterGui;
 using OtterGui.Filesystem;
 using Penumbra.GameData.Actors;
 
 namespace Glamourer.Automation;
 
-public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
+public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDisposable
 {
     public const int CurrentVersion = 1;
 
@@ -28,6 +29,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
     private readonly DesignManager     _designs;
     private readonly ActorService      _actors;
     private readonly AutomationChanged _event;
+    private readonly DesignChanged     _designEvent;
 
     private readonly List<AutoDesignSet>                        _data    = new();
     private readonly Dictionary<ActorIdentifier, AutoDesignSet> _enabled = new();
@@ -36,16 +38,21 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
         => _enabled;
 
     public AutoDesignManager(JobService jobs, ActorService actors, SaveService saveService, DesignManager designs, AutomationChanged @event,
-        FixedDesignMigrator migrator, DesignFileSystem fileSystem)
+        FixedDesignMigrator migrator, DesignFileSystem fileSystem, DesignChanged designEvent)
     {
         _jobs        = jobs;
         _actors      = actors;
         _saveService = saveService;
         _designs     = designs;
         _event       = @event;
+        _designEvent = designEvent;
+        _designEvent.Subscribe(OnDesignChange, DesignChanged.Priority.AutoDesignManager);
         Load();
         migrator.ConsumeMigratedData(_actors, fileSystem, this);
     }
+
+    public void Dispose()
+        => _designEvent.Unsubscribe(OnDesignChange);
 
     public IEnumerator<AutoDesignSet> GetEnumerator()
         => _data.GetEnumerator();
@@ -537,5 +544,28 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>
             IdentifierType.Npc => CreateNpcs(_actors.AwaitedService, identifier),
             _                  => Array.Empty<ActorIdentifier>(),
         };
+    }
+
+    private void OnDesignChange(DesignChanged.Type type, Design design, object? data)
+    {
+        if (type is not DesignChanged.Type.Deleted)
+            return;
+
+        foreach (var (set, idx) in this.WithIndex())
+        {
+            var deleted = 0;
+            for (var i = 0; i < set.Designs.Count; ++i)
+            {
+                if (set.Designs[i].Design != design)
+                    continue;
+
+                DeleteDesign(set, i--);
+                ++deleted;
+            }
+
+            if (deleted > 0)
+                Glamourer.Log.Information(
+                    $"Removed {deleted} automated designs from automated design set {idx} due to deletion of {design.Incognito}.");
+        }
     }
 }
