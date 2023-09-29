@@ -36,6 +36,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
             }
 
         var set = AwaitedService.GetList(ret.Clan, ret.Gender);
+        applyWhich &= set.SettingAvailable;
         foreach (var index in CustomizationExtensions.AllBasic)
         {
             var flag = index.ToFlag();

@@ -397,6 +397,8 @@ public class DesignBase
                 design.SetApplyCustomize(idx, false);
             }
         }
+
+        design.ApplyCustomize &= set.SettingAvailable;
     }
 
     public void MigrateBase64(ItemManager items, HumanModelList humans, string base64)
