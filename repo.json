@@ -15,9 +15,9 @@
     "IsTestingExclusive": "False",
     "DownloadCount": 1,
     "LastUpdate": 1618608322,
-    "DownloadLinkInstall": "https://github.com/Ottermandias/Glamourer/raw/main/Glamourer.zip",
-    "DownloadLinkUpdate": "https://github.com/Ottermandias/Glamourer/raw/main/Glamourer.zip",
-    "DownloadLinkTesting": "https://github.com/Ottermandias/Glamourer/raw/main/Glamourer.zip",
+    "DownloadLinkInstall": "https://github.com/Ottermandias/Glamourer/releases/download/1.0.0.2/Glamourer.zip",
+    "DownloadLinkUpdate": "https://github.com/Ottermandias/Glamourer/releases/download/1.0.0.2/Glamourer.zip",
+    "DownloadLinkTesting": "https://github.com/Ottermandias/Glamourer/releases/download/1.0.0.2/Glamourer.zip",
     "IconUrl": "https://raw.githubusercontent.com/Ottermandias/Glamourer/main/images/icon.png"
   }
 ]
