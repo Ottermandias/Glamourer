@@ -398,7 +398,7 @@ public class DesignBase
             }
         }
 
-        design.ApplyCustomize &= set.SettingAvailable;
+        design.ApplyCustomize &= set.SettingAvailable | CustomizeFlag.Gender | CustomizeFlag.Clan;
     }
 
     public void MigrateBase64(ItemManager items, HumanModelList humans, string base64)

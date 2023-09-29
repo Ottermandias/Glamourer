@@ -307,7 +307,7 @@ public class DesignManager
     public void ChangeApplyCustomize(Design design, CustomizeIndex idx, bool value)
     {
         var set = _customizations.AwaitedService.GetList(design.DesignData.Customize.Clan, design.DesignData.Customize.Gender);
-        value &= set.IsAvailable(idx);
+        value &= set.IsAvailable(idx) || idx is CustomizeIndex.Clan or CustomizeIndex.Gender;
         if (!design.SetApplyCustomize(idx, value))
             return;
 
