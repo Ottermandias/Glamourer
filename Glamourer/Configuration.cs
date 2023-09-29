@@ -34,6 +34,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool               ShowAutomationSetEditing         { get; set; } = true;
     public bool               ShowAllAutomatedApplicationRules { get; set; } = true;
     public bool               ShowUnlockedItemWarnings         { get; set; } = true;
+    public bool               RevertManualChangesOnZoneChange  { get; set; } = false;
     public MainWindow.TabType SelectedTab                      { get; set; } = MainWindow.TabType.Settings;
     public DoubleModifier     DeleteDesignModifier             { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
 

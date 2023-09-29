@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using Dalamud.Plugin.Services;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -31,6 +32,7 @@ public class AutoDesignApplier : IDisposable
     private readonly ObjectManager          _objects;
     private readonly WeaponLoading          _weapons;
     private readonly HumanModelList         _humans;
+    private readonly IClientState           _clientState;
 
     private ActorState? _jobChangeState;
     private EquipItem   _jobChangeMainhand;
@@ -38,7 +40,7 @@ public class AutoDesignApplier : IDisposable
 
     public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs,
         CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
-        AutomationChanged @event, ObjectManager objects, WeaponLoading weapons, HumanModelList humans)
+        AutomationChanged @event, ObjectManager objects, WeaponLoading weapons, HumanModelList humans, IClientState clientState)
     {
         _config           =  config;
         _manager          =  manager;
@@ -52,6 +54,7 @@ public class AutoDesignApplier : IDisposable
         _objects          =  objects;
         _weapons          =  weapons;
         _humans           =  humans;
+        _clientState      =  clientState;
         _jobs.JobChanged  += OnJobChange;
         _event.Subscribe(OnAutomationChange, AutomationChanged.Priority.AutoDesignApplier);
         _weapons.Subscribe(OnWeaponLoading, WeaponLoading.Priority.AutoDesignApplier);
@@ -227,10 +230,15 @@ public class AutoDesignApplier : IDisposable
         }
         else if (!GetPlayerSet(identifier, out set!))
         {
+            if (state.UpdateTerritory(_clientState.TerritoryType) && _config.RevertManualChangesOnZoneChange)
+                _state.ResetState(state, StateChanged.Source.Game);
             return true;
         }
 
-        Reduce(actor, state, set, true, false);
+        var respectManual = !state.UpdateTerritory(_clientState.TerritoryType) || !_config.RevertManualChangesOnZoneChange;
+        if (!respectManual)
+            _state.ResetState(state, StateChanged.Source.Game);
+        Reduce(actor, state, set, respectManual, false);
         return true;
     }
 

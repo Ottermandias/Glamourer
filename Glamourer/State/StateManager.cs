@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Plugin.Services;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -26,19 +28,21 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
     private readonly StateApplier   _applier;
     private readonly StateEditor    _editor;
     private readonly Condition      _condition;
+    private readonly IClientState   _clientState;
 
     private readonly Dictionary<ActorIdentifier, ActorState> _states = new();
 
     public StateManager(ActorService actors, ItemManager items, StateChanged @event, StateApplier applier, StateEditor editor,
-        HumanModelList humans, Condition condition)
+        HumanModelList humans, Condition condition, IClientState clientState)
     {
-        _actors    = actors;
-        _items     = items;
-        _event     = @event;
-        _applier   = applier;
-        _editor    = editor;
-        _humans    = humans;
-        _condition = condition;
+        _actors      = actors;
+        _items       = items;
+        _event       = @event;
+        _applier     = applier;
+        _editor      = editor;
+        _humans      = humans;
+        _condition   = condition;
+        _clientState = clientState;
     }
 
     public IEnumerator<KeyValuePair<ActorIdentifier, ActorState>> GetEnumerator()
@@ -81,9 +85,10 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             // and the draw objects data for the model data (where possible).
             state = new ActorState(identifier)
             {
-                ModelData = FromActor(actor, true),
-                BaseData  = FromActor(actor, false),
-                LastJob   = (byte)(actor.IsCharacter ? actor.AsCharacter->CharacterData.ClassJob : 0),
+                ModelData     = FromActor(actor, true),
+                BaseData      = FromActor(actor, false),
+                LastJob       = (byte)(actor.IsCharacter ? actor.AsCharacter->CharacterData.ClassJob : 0),
+                LastTerritory = _clientState.TerritoryType,
             };
             // state.Identifier is owned.
             _states.Add(state.Identifier, state);
@@ -381,7 +386,9 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             if (design.DoApplyVisorToggle())
                 _editor.ChangeMetaState(state, ActorState.MetaIndex.VisorState, design.DesignData.IsVisorToggled(), source, out _, key);
 
-            var flags = state.AllowsRedraw(_condition) ? design.ApplyCustomize : design.ApplyCustomize & ~CustomizeFlagExtensions.RedrawRequired;
+            var flags = state.AllowsRedraw(_condition)
+                ? design.ApplyCustomize
+                : design.ApplyCustomize & ~CustomizeFlagExtensions.RedrawRequired;
             _editor.ChangeHumanCustomize(state, design.DesignData.Customize, flags, source, out _, out var applied, key);
             redraw |= applied.RequiresRedraw();
 
@@ -408,7 +415,8 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         {
             _applier.ChangeCustomize(actors, state.ModelData.Customize);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
-                _applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), state[slot, false] is not StateChanged.Source.Ipc, state.ModelData.IsHatVisible());
+                _applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), state[slot, false] is not StateChanged.Source.Ipc,
+                    state.ModelData.IsHatVisible());
             var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
             _applier.ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
             var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? actors.OnlyGPose() : actors;

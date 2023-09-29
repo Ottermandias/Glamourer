@@ -82,6 +82,9 @@ public class SettingsTab : ITab
         Checkbox("Auto-Reload Gear",
             "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection.",
             _config.AutoRedrawEquipOnChanges, _autoRedraw.SetState);
+        Checkbox("Revert Manual Changes on Zone Change",
+            "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone.",
+            _config.RevertManualChangesOnZoneChange, v => _config.RevertManualChangesOnZoneChange = v);
         ImGui.NewLine();
     }
 

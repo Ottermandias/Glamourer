@@ -38,6 +38,9 @@ public class ActorState
     /// <summary> The Lock-Key locking this state. </summary>
     public uint Combination;
 
+    /// <summary> The territory the draw object was created last. </summary>
+    public ushort LastTerritory;
+
     /// <summary> Whether the State is locked at all. </summary>
     public bool IsLocked
         => Combination != 0;
@@ -97,5 +100,14 @@ public class ActorState
             if (_sources[i] is StateChanged.Source.Fixed)
                 _sources[i] = StateChanged.Source.Manual;
         }
+    }
+
+    public bool UpdateTerritory(ushort territory)
+    {
+        if (territory == LastTerritory)
+            return false;
+
+        LastTerritory = territory;
+        return true;
     }
 }
