@@ -17,6 +17,7 @@ public class GlamourerChangelog
         Add1_0_0_1(Changelog);
         Add1_0_0_2(Changelog);
         Add1_0_0_3(Changelog);
+        Add1_0_0_6(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -28,6 +29,20 @@ public class GlamourerChangelog
         _config.ChangeLogDisplayType = type;
         _config.Save();
     }
+
+    private static void Add1_0_0_6(Changelog log)
+        => log.NextVersion("Version 1.0.0.6")
+            .RegisterHighlight(
+                "Added two buttons to the top-right of the Glamourer window that allow you to revert your own player characters state to Game or to Automation state from any tab.")
+            .RegisterEntry("Added the Shift/Control modifiers to the Apply buttons in the Designs tab, too.")
+            .RegisterEntry("Fixed some issues with weapon types applying wrongly in automated designs.")
+            .RegisterEntry(
+                "Glamourer now removes designs you delete from all automation sets instead of screaming about them missing the next time you launch.")
+            .RegisterEntry("Improved fixed design migration from pre 1.0 versions if anyone updates later.")
+            .RegisterEntry("Added a line to warning messages for invalid entries that those entries are not saved with the warning.")
+            .RegisterEntry("Added and improved some IPC for Mare.")
+            .RegisterEntry("Broke and fixed some application rules for not-always available options.")
+            .RegisterHighlight("This should fix tails and ears not being shared via Mare!", 1);
 
     private static void Add1_0_0_3(Changelog log)
         => log.NextVersion("Version 1.0.0.3")
