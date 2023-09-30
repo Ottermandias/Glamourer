@@ -339,16 +339,16 @@ public class AutoDesignApplier : IDisposable
             var checkState  = !respectManual || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual;
             if (checkUnlock && checkState)
             {
-                if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type)
-                {
-                    _state.ChangeItem(state, EquipSlot.MainHand, item, source);
-                    totalEquipFlags |= EquipFlag.Mainhand;
-                }
-                else if (fromJobChange)
+                if (fromJobChange)
                 {
                     _jobChangeMainhand =  item;
                     _jobChangeState    =  state;
                     totalEquipFlags    |= EquipFlag.Mainhand;
+                }
+                else if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type)
+                {
+                    _state.ChangeItem(state, EquipSlot.MainHand, item, source);
+                    totalEquipFlags |= EquipFlag.Mainhand;
                 }
             }
         }
@@ -360,16 +360,16 @@ public class AutoDesignApplier : IDisposable
             var checkState  = !respectManual || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual;
             if (checkUnlock && checkState)
             {
-                if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type)
-                {
-                    _state.ChangeItem(state, EquipSlot.OffHand, item, source);
-                    totalEquipFlags |= EquipFlag.Mainhand;
-                }
-                else if (fromJobChange)
+                if (fromJobChange)
                 {
                     _jobChangeOffhand =  item;
                     _jobChangeState   =  state;
-                    totalEquipFlags   |= EquipFlag.Mainhand;
+                    totalEquipFlags   |= EquipFlag.Offhand;
+                }
+                else if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type)
+                {
+                    _state.ChangeItem(state, EquipSlot.OffHand, item, source);
+                    totalEquipFlags |= EquipFlag.Offhand;
                 }
             }
         }
