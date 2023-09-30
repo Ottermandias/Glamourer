@@ -526,7 +526,7 @@ public unsafe class DebugTab : ITab
         using (var disabled = ImRaii.Disabled(!_penumbra.Available))
         {
             if (ImGui.SmallButton("Redraw"))
-                _penumbra.RedrawObject((ObjectIndex) _gameObjectIndex, RedrawType.Redraw);
+                _penumbra.RedrawObject((ObjectIndex)_gameObjectIndex, RedrawType.Redraw);
         }
 
         ImGuiUtil.DrawTableColumn("Last Tooltip Date");
@@ -1682,6 +1682,18 @@ public unsafe class DebugTab : ITab
         if (ImGui.Button("Apply##CustomizeCharacter"))
             GlamourerIpc.ApplyOnlyCustomizationToCharacterSubscriber(_pluginInterface)
                 .Invoke(_base64Apply, _objectManager.Objects[_gameObjectIndex] as Character);
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelUnlock);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Unlock##CustomizeCharacter"))
+            GlamourerIpc.UnlockSubscriber(_pluginInterface)
+                .Invoke(_objectManager.Objects[_gameObjectIndex] as Character, 1337);
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelRevertToAutomation);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Revert##CustomizeCharacter"))
+            GlamourerIpc.RevertToAutomationSubscriber(_pluginInterface)
+                .Invoke(_objectManager.Objects[_gameObjectIndex] as Character, 1337);
     }
 
     #endregion

@@ -3,6 +3,7 @@ using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
@@ -17,20 +18,22 @@ namespace Glamourer.Api;
 public partial class GlamourerIpc : IDisposable
 {
     public const int CurrentApiVersionMajor = 0;
-    public const int CurrentApiVersionMinor = 3;
+    public const int CurrentApiVersionMinor = 4;
 
-    private readonly StateManager    _stateManager;
-    private readonly ObjectManager   _objects;
-    private readonly ActorService    _actors;
-    private readonly DesignConverter _designConverter;
+    private readonly StateManager      _stateManager;
+    private readonly ObjectManager     _objects;
+    private readonly ActorService      _actors;
+    private readonly DesignConverter   _designConverter;
+    private readonly AutoDesignApplier _autoDesignApplier;
 
     public GlamourerIpc(DalamudPluginInterface pi, StateManager stateManager, ObjectManager objects, ActorService actors,
-        DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose)
+        DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose, AutoDesignApplier autoDesignApplier)
     {
         _stateManager        = stateManager;
         _objects             = objects;
         _actors              = actors;
         _designConverter     = designConverter;
+        _autoDesignApplier   = autoDesignApplier;
         _gPose               = gPose;
         _stateChangedEvent   = stateChangedEvent;
         _apiVersionProvider  = new FuncProvider<int>(pi, LabelApiVersion, ApiVersion);
@@ -65,6 +68,7 @@ public partial class GlamourerIpc : IDisposable
         _revertProviderLock          = new ActionProvider<string, uint>(pi, LabelRevertLock, RevertLock);
         _revertCharacterProviderLock = new ActionProvider<Character?, uint>(pi, LabelRevertCharacterLock, RevertCharacterLock);
         _unlockProvider              = new FuncProvider<Character?, uint, bool>(pi, LabelUnlock, Unlock);
+        _revertToAutomationProvider  = new FuncProvider<Character?, uint, bool>(pi, LabelRevertToAutomation, RevertToAutomation);
 
         _stateChangedProvider = new EventProvider<StateChanged.Type, nint, Lazy<string>>(pi, LabelStateChanged);
         _gPoseChangedProvider = new EventProvider<bool>(pi, LabelGPoseChanged);
@@ -99,6 +103,7 @@ public partial class GlamourerIpc : IDisposable
         _revertProviderLock.Dispose();
         _revertCharacterProviderLock.Dispose();
         _unlockProvider.Dispose();
+        _revertToAutomationProvider.Dispose();
 
         _stateChangedEvent.Unsubscribe(OnStateChanged);
         _stateChangedProvider.Dispose();
