@@ -9,12 +9,14 @@ namespace Glamourer.Api;
 
 public partial class GlamourerIpc
 {
-    public const string LabelRevert              = "Glamourer.Revert";
-    public const string LabelRevertCharacter     = "Glamourer.RevertCharacter";
-    public const string LabelRevertLock          = "Glamourer.RevertLock";
-    public const string LabelRevertCharacterLock = "Glamourer.RevertCharacterLock";
-    public const string LabelUnlock              = "Glamourer.Unlock";
-    public const string LabelRevertToAutomation  = "Glamourer.RevertToAutomation";
+    public const string LabelRevert                      = "Glamourer.Revert";
+    public const string LabelRevertCharacter             = "Glamourer.RevertCharacter";
+    public const string LabelRevertLock                  = "Glamourer.RevertLock";
+    public const string LabelRevertCharacterLock         = "Glamourer.RevertCharacterLock";
+    public const string LabelRevertToAutomation          = "Glamourer.RevertToAutomation";
+    public const string LabelRevertToAutomationCharacter = "Glamourer.RevertToAutomationCharacter";
+    public const string LabelUnlock                      = "Glamourer.Unlock";
+    public const string LabelUnlockName                  = "Glamourer.UnlockName";
 
     private readonly ActionProvider<string>     _revertProvider;
     private readonly ActionProvider<Character?> _revertCharacterProvider;
@@ -22,8 +24,10 @@ public partial class GlamourerIpc
     private readonly ActionProvider<string, uint>     _revertProviderLock;
     private readonly ActionProvider<Character?, uint> _revertCharacterProviderLock;
 
-    private readonly FuncProvider<Character?, uint, bool> _revertToAutomationProvider;
+    private readonly FuncProvider<string, uint, bool>     _revertToAutomationProvider;
+    private readonly FuncProvider<Character?, uint, bool> _revertToAutomationCharacterProvider;
 
+    private readonly FuncProvider<string, uint, bool>     _unlockNameProvider;
     private readonly FuncProvider<Character?, uint, bool> _unlockProvider;
 
     public static ActionSubscriber<string> RevertSubscriber(DalamudPluginInterface pi)
@@ -32,26 +36,44 @@ public partial class GlamourerIpc
     public static ActionSubscriber<Character?> RevertCharacterSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelRevertCharacter);
 
+    public static ActionSubscriber<string> RevertLockSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelRevertLock);
+
+    public static ActionSubscriber<Character?> RevertCharacterLockSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelRevertCharacterLock);
+
+    public static FuncSubscriber<string, uint, bool> UnlockNameSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelUnlockName);
+
     public static FuncSubscriber<Character?, uint, bool> UnlockSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelUnlock);
 
-    public static FuncSubscriber<Character?, uint, bool> RevertToAutomationSubscriber(DalamudPluginInterface pi)
+    public static FuncSubscriber<string, uint, bool> RevertToAutomationSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelRevertToAutomation);
 
+    public static FuncSubscriber<Character?, uint, bool> RevertToAutomationCharacterSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelRevertToAutomationCharacter);
+
     public void Revert(string characterName)
-        => Revert(FindActors(characterName), 0);
+        => Revert(FindActorsRevert(characterName), 0);
 
     public void RevertCharacter(Character? character)
         => Revert(FindActors(character), 0);
 
     public void RevertLock(string characterName, uint lockCode)
-        => Revert(FindActors(characterName), lockCode);
+        => Revert(FindActorsRevert(characterName), lockCode);
 
     public void RevertCharacterLock(Character? character, uint lockCode)
         => Revert(FindActors(character), lockCode);
 
+    public bool Unlock(string characterName, uint lockCode)
+        => Unlock(FindActorsRevert(characterName), lockCode);
+
     public bool Unlock(Character? character, uint lockCode)
         => Unlock(FindActors(character), lockCode);
+
+    public bool RevertToAutomation(string characterName, uint lockCode)
+        => RevertToAutomation(FindActorsRevert(characterName), lockCode);
 
     public bool RevertToAutomation(Character? character, uint lockCode)
         => RevertToAutomation(FindActors(character), lockCode);

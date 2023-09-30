@@ -1692,7 +1692,7 @@ public unsafe class DebugTab : ITab
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelRevertToAutomation);
         ImGui.TableNextColumn();
         if (ImGui.Button("Revert##CustomizeCharacter"))
-            GlamourerIpc.RevertToAutomationSubscriber(_pluginInterface)
+            GlamourerIpc.RevertToAutomationCharacterSubscriber(_pluginInterface)
                 .Invoke(_objectManager.Objects[_gameObjectIndex] as Character, 1337);
     }
 
