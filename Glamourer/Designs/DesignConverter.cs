@@ -61,12 +61,12 @@ public class DesignConverter
     {
         var design = _designs.CreateTemporary();
         design.ApplyEquip = equipFlags & EquipFlagExtensions.All;
-        design.FixCustomizeApplication(_customize, customizeFlags);
         design.SetApplyHatVisible(design.DoApplyEquip(EquipSlot.Head));
         design.SetApplyVisorToggle(design.DoApplyEquip(EquipSlot.Head));
         design.SetApplyWeaponVisible(design.DoApplyEquip(EquipSlot.MainHand) || design.DoApplyEquip(EquipSlot.OffHand));
         design.SetApplyWetness(true);
         design.DesignData = state.ModelData;
+        design.FixCustomizeApplication(_customize, customizeFlags);
         return design;
     }
 
