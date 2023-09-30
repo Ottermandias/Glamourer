@@ -356,7 +356,7 @@ public class DesignBase
         void PrintWarning(string msg)
         {
             if (msg.Length > 0)
-                Glamourer.Chat.NotificationMessage($"{msg} ({name})", "Warning", NotificationType.Warning);
+                Glamourer.Chat.NotificationMessage($"{msg} ({name})\n\nThis change is not saved automatically. If you want this replacement to stick and the warning to stop appearing, please save the design manually once by changing something in it.", "Warning", NotificationType.Warning);
         }
 
         var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);
