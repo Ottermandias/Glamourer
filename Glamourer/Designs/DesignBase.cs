@@ -16,10 +16,9 @@ public class DesignBase
 {
     public const int FileVersion = 1;
 
-    internal DesignBase(CustomizationService customize, ItemManager items)
+    internal DesignBase(ItemManager items)
     {
         DesignData.SetDefaultEquipment(items);
-        FixCustomizeApplication(customize);
     }
 
     internal DesignBase(DesignBase clone)
@@ -152,12 +151,6 @@ public class DesignBase
         return true;
     }
 
-    public void FixCustomizeApplication(CustomizationService service)
-        => FixCustomizeApplication(service, ApplyCustomize);
-
-    public void FixCustomizeApplication(CustomizationSet set)
-        => FixCustomizeApplication(set, ApplyCustomize);
-
     public void FixCustomizeApplication(CustomizationService service, CustomizeFlag flags)
         => FixCustomizeApplication(service.AwaitedService.GetList(DesignData.Customize.Clan, DesignData.Customize.Gender), flags);
 
@@ -257,7 +250,7 @@ public class DesignBase
 
     private static DesignBase LoadDesignV1Base(CustomizationService customizations, ItemManager items, JObject json)
     {
-        var ret = new DesignBase(customizations, items);
+        var ret = new DesignBase(items);
         LoadCustomize(customizations, json["Customize"], ret, "Temporary Design", false, true);
         LoadEquip(items, json["Equipment"], ret, "Temporary Design", true);
         return ret;
@@ -411,7 +404,7 @@ public class DesignBase
             }
         }
 
-        design.FixCustomizeApplication(set);
+        design.FixCustomizeApplication(set, design.ApplyCustomize);
     }
 
     public void MigrateBase64(ItemManager items, HumanModelList humans, string base64)

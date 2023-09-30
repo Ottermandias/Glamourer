@@ -129,7 +129,7 @@ public class DesignConverter
         }
         else
         {
-            ret.FixCustomizeApplication(_customize);
+            ret.FixCustomizeApplication(_customize, ret.ApplyCustomize);
         }
 
         if (!equip)

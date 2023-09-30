@@ -85,7 +85,7 @@ public class DesignManager
 
     /// <summary> Create a new temporary design without adding it to the manager. </summary>
     public DesignBase CreateTemporary()
-        => new(_customizations, _items);
+        => new(_items);
 
     /// <summary> Create a new design of a given name. </summary>
     public Design CreateEmpty(string name, bool handlePath)

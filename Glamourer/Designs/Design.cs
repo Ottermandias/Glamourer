@@ -15,7 +15,7 @@ public sealed class Design : DesignBase, ISavable
 {
     #region Data
     internal Design(CustomizationService customize, ItemManager items)
-        : base(customize, items)
+        : base(items)
     { }
 
     internal Design(DesignBase other)
