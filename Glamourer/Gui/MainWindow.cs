@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Designs;
@@ -28,9 +29,10 @@ public class MainWindow : Window, IDisposable
         Unlocks    = 5,
     }
 
-    private readonly Configuration _config;
-    private readonly TabSelected   _event;
-    private readonly ITab[]        _tabs;
+    private readonly Configuration            _config;
+    private readonly TabSelected              _event;
+    private readonly ConvenienceRevertButtons _convenienceButtons;
+    private readonly ITab[]                   _tabs;
 
     public readonly SettingsTab   Settings;
     public readonly ActorTab      Actors;
@@ -42,7 +44,7 @@ public class MainWindow : Window, IDisposable
     public TabType SelectTab = TabType.None;
 
     public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
-        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event)
+        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, ConvenienceRevertButtons convenienceButtons)
         : base(GetLabel())
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -51,14 +53,15 @@ public class MainWindow : Window, IDisposable
             MinimumSize = new Vector2(700, 675),
             MaximumSize = ImGui.GetIO().DisplaySize,
         };
-        Settings   = settings;
-        Actors     = actors;
-        Designs    = designs;
-        Automation = automation;
-        Debug      = debugTab;
-        Unlocks    = unlocks;
-        _event     = @event;
-        _config    = config;
+        Settings            = settings;
+        Actors              = actors;
+        Designs             = designs;
+        Automation          = automation;
+        Debug               = debugTab;
+        Unlocks             = unlocks;
+        _event              = @event;
+        _convenienceButtons = convenienceButtons;
+        _config             = config;
         _tabs = new ITab[]
         {
             settings,
@@ -69,7 +72,6 @@ public class MainWindow : Window, IDisposable
             debugTab,
         };
         _event.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
-
         IsOpen = _config.DebugMode;
     }
 
@@ -78,12 +80,15 @@ public class MainWindow : Window, IDisposable
 
     public override void Draw()
     {
-        if (!TabBar.Draw("##tabs", ImGuiTabBarFlags.None, ToLabel(SelectTab), out var currentTab, () => { }, _tabs))
-            return;
+        var yPos = ImGui.GetCursorPosY();
+        if (TabBar.Draw("##tabs", ImGuiTabBarFlags.None, ToLabel(SelectTab), out var currentTab, () => { }, _tabs))
+        {
+            SelectTab           = TabType.None;
+            _config.SelectedTab = FromLabel(currentTab);
+            _config.Save();
+        }
 
-        SelectTab           = TabType.None;
-        _config.SelectedTab = FromLabel(currentTab);
-        _config.Save();
+        _convenienceButtons.DrawButtons(yPos);
     }
 
     private ReadOnlySpan<byte> ToLabel(TabType type)

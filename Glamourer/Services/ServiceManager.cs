@@ -138,7 +138,8 @@ public static class ServiceManager
             .AddSingleton<SetSelector>()
             .AddSingleton<SetPanel>()
             .AddSingleton<IdentifierDrawer>()
-            .AddSingleton<GlamourerChangelog>();
+            .AddSingleton<GlamourerChangelog>()
+            .AddSingleton<ConvenienceRevertButtons>();
 
     private static IServiceCollection AddApi(this IServiceCollection services)
         => services.AddSingleton<CommandService>()
