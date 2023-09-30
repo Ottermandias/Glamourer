@@ -157,6 +157,31 @@ public class DesignBase
     public void FixCustomizeApplication(CustomizationSet set, CustomizeFlag flags)
         => ApplyCustomize = flags.FixApplication(set);
 
+    internal FlagRestrictionResetter TemporarilyRestrictApplication(EquipFlag equipFlags, CustomizeFlag customizeFlags)
+        => new(this, equipFlags, customizeFlags);
+
+    internal readonly struct FlagRestrictionResetter : IDisposable
+    {
+        private readonly DesignBase    _design;
+        private readonly EquipFlag     _oldEquipFlags;
+        private readonly CustomizeFlag _oldCustomizeFlags;
+
+        public FlagRestrictionResetter(DesignBase d, EquipFlag equipFlags, CustomizeFlag customizeFlags)
+        {
+            _design            =  d;
+            _oldEquipFlags     =  d.ApplyEquip;
+            _oldCustomizeFlags =  d.ApplyCustomize;
+            d.ApplyEquip       &= equipFlags;
+            d.ApplyCustomize   &= customizeFlags;
+        }
+
+        public void Dispose()
+        {
+            _design.ApplyEquip     = _oldEquipFlags;
+            _design.ApplyCustomize = _oldCustomizeFlags;
+        }
+    }
+
     #endregion
 
     #region Serialization
@@ -349,7 +374,9 @@ public class DesignBase
         void PrintWarning(string msg)
         {
             if (msg.Length > 0)
-                Glamourer.Chat.NotificationMessage($"{msg} ({name})\n\nThis change is not saved automatically. If you want this replacement to stick and the warning to stop appearing, please save the design manually once by changing something in it.", "Warning", NotificationType.Warning);
+                Glamourer.Chat.NotificationMessage(
+                    $"{msg} ({name})\n\nThis change is not saved automatically. If you want this replacement to stick and the warning to stop appearing, please save the design manually once by changing something in it.",
+                    "Warning", NotificationType.Warning);
         }
 
         var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);

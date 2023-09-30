@@ -75,11 +75,12 @@ public class DesignPanel
     private HeaderDrawer.Button SetFromClipboardButton()
         => new()
         {
-            Description = "Try to apply a design from your clipboard over this design.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
-            Icon        = FontAwesomeIcon.Clipboard,
-            OnClick     = SetFromClipboard,
-            Visible     = _selector.Selected != null,
-            Disabled    = _selector.Selected?.WriteProtected() ?? true,
+            Description =
+                "Try to apply a design from your clipboard over this design.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
+            Icon     = FontAwesomeIcon.Clipboard,
+            OnClick  = SetFromClipboard,
+            Visible  = _selector.Selected != null,
+            Disabled = _selector.Selected?.WriteProtected() ?? true,
         };
 
     private HeaderDrawer.Button ExportToClipboardButton()
@@ -396,9 +397,10 @@ public class DesignPanel
     {
         try
         {
-            var text   = ImGui.GetClipboardText();
+            var text = ImGui.GetClipboardText();
             var (applyEquip, applyCustomize) = UiHelpers.ConvertKeysToBool();
-            var design = _converter.FromBase64(text, applyEquip, applyCustomize, out _) ?? throw new Exception("The clipboard did not contain valid data.");
+            var design = _converter.FromBase64(text, applyEquip, applyCustomize, out _)
+             ?? throw new Exception("The clipboard did not contain valid data.");
             _manager.ApplyDesign(_selector.Selected!, design);
         }
         catch (Exception ex)
@@ -425,12 +427,17 @@ public class DesignPanel
     private void DrawApplyToSelf()
     {
         var (id, data) = _objects.PlayerData;
-        if (!ImGuiUtil.DrawDisabledButton("Apply to Yourself", Vector2.Zero, "Apply the current design with its settings to your character.",
+        if (!ImGuiUtil.DrawDisabledButton("Apply to Yourself", Vector2.Zero,
+                "Apply the current design with its settings to your character.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
                 !data.Valid))
             return;
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
+        {
+            var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
+            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize);
             _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
+        }
     }
 
     private void DrawApplyToTarget()
@@ -438,14 +445,18 @@ public class DesignPanel
         var (id, data) = _objects.TargetData;
         var tt = id.IsValid
             ? data.Valid
-                ? "Apply the current design with its settings to your current target."
+                ? "Apply the current design with its settings to your current target.\nHold Control to only apply gear.\nHold Shift to only apply customizations."
                 : "The current target can not be manipulated."
             : "No valid target selected.";
         if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid || _objects.IsInGPose))
             return;
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
+        {
+            var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
+            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize);
             _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
+        }
     }
 
     private void DrawSaveToDat()
