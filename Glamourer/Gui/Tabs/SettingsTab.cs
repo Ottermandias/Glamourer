@@ -57,10 +57,13 @@ public class SettingsTab : ITab
         ImGui.NewLine();
         ImGui.NewLine();
 
-        DrawBehaviorSettings();
-        DrawInterfaceSettings();
-        DrawColorSettings();
-        DrawCodes();
+        using (var child2 = ImRaii.Child("SettingsChild"))
+        {
+            DrawBehaviorSettings();
+            DrawInterfaceSettings();
+            DrawColorSettings();
+            DrawCodes();
+        }
 
         MainWindow.DrawSupportButtons(_changelog.Changelog);
     }
