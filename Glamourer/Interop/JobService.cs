@@ -31,19 +31,24 @@ public class JobService : IDisposable
     public void Dispose()
         => _changeJobHook.Dispose();
 
-    private delegate void ChangeJobDelegate(nint data, uint job);
+    private delegate void ChangeJobDelegate(nint data, byte oldJob, byte newJob);
 
     [Signature(Sigs.ChangeJob, DetourName = nameof(ChangeJobDetour))]
     private readonly Hook<ChangeJobDelegate> _changeJobHook = null!;
 
-    private void ChangeJobDetour(nint data, uint jobIndex)
+    private void ChangeJobDetour(nint data, byte oldJobIndex, byte newJobIndex)
     {
-        var old = ((Actor)(data - _characterDataOffset)).Job;
-        _changeJobHook.Original(data, jobIndex);
+        _changeJobHook.OriginalDisposeSafe(data, oldJobIndex, newJobIndex);
+
+        // Do not trigger on creation (Adventurer -> Anything)
+        if (oldJobIndex is 0)
+            return;
+
         var actor  = (Actor)(data - _characterDataOffset);
-        var job    = Jobs.TryGetValue((byte)jobIndex, out var j) ? j : Jobs[0];
-        var oldJob = Jobs.TryGetValue(old,            out var o) ? o : Jobs[0];
-        Glamourer.Log.Excessive($"{actor} changed job from {oldJob} to {job}");
-        JobChanged?.Invoke(actor, oldJob, job);
+        var newJob = Jobs.TryGetValue(newJobIndex, out var j) ? j : Jobs[0];
+        var oldJob = Jobs.TryGetValue(oldJobIndex, out var o) ? o : Jobs[0];
+        
+        Glamourer.Log.Excessive($"{actor} changed job from {oldJob} to {newJob}.");
+        JobChanged?.Invoke(actor, oldJob, newJob);
     }
 }
