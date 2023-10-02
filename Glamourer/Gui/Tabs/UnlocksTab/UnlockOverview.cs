@@ -21,6 +21,7 @@ public class UnlockOverview
     private readonly CustomizeUnlockManager     _customizeUnlocks;
     private readonly PenumbraChangedItemTooltip _tooltip;
     private readonly TextureService             _textures;
+    private readonly CodeService                _codes;
 
     private static readonly Vector4 UnavailableTint = new(0.3f, 0.3f, 0.3f, 1.0f);
 
@@ -66,7 +67,7 @@ public class UnlockOverview
     }
 
     public UnlockOverview(ItemManager items, CustomizationService customizations, ItemUnlockManager itemUnlocks,
-        CustomizeUnlockManager customizeUnlocks, PenumbraChangedItemTooltip tooltip, TextureService textures)
+        CustomizeUnlockManager customizeUnlocks, PenumbraChangedItemTooltip tooltip, TextureService textures, CodeService codes)
     {
         _items            = items;
         _customizations   = customizations;
@@ -74,6 +75,7 @@ public class UnlockOverview
         _customizeUnlocks = customizeUnlocks;
         _tooltip          = tooltip;
         _textures         = textures;
+        _codes            = codes;
     }
 
     public void Draw()
@@ -111,10 +113,10 @@ public class UnlockOverview
             if (!_customizeUnlocks.Unlockable.TryGetValue(customize, out var unlockData))
                 continue;
 
-            var unlocked = _customizeUnlocks.IsUnlocked(customize, out var time);
+            var unlocked = _customizeUnlocks.IsUnlocked(customize, out var time) ;
             var icon     = _customizations.AwaitedService.GetIcon(customize.IconId);
 
-            ImGui.Image(icon.ImGuiHandle, iconSize, Vector2.Zero, Vector2.One, unlocked ? Vector4.One : UnavailableTint);
+            ImGui.Image(icon.ImGuiHandle, iconSize, Vector2.Zero, Vector2.One, unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);
             if (ImGui.IsItemHovered())
             {
                 using var tt   = ImRaii.Tooltip();
@@ -152,13 +154,13 @@ public class UnlockOverview
 
         void DrawItem(EquipItem item)
         {
-            var unlocked   = _itemUnlocks.IsUnlocked(item.Id, out var time);
+            var unlocked = _itemUnlocks.IsUnlocked(item.Id, out var time);
             if (!_textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
                 return;
 
             var (icon, size) = (iconHandle.ImGuiHandle, new Vector2(iconHandle.Width, iconHandle.Height));
 
-            ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One, unlocked ? Vector4.One : UnavailableTint);
+            ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One, unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);
             if (ImGui.IsItemClicked())
             {
                 // TODO link

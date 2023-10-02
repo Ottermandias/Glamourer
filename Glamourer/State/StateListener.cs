@@ -270,7 +270,8 @@ public class StateListener : IDisposable
                         _applier.ChangeWeapon(objects, slot, currentItem, stain);
                         break;
                     default:
-                        _applier.ChangeArmor(objects, slot, current.ToArmor(), state[slot, false] is not StateChanged.Source.Ipc, state.ModelData.IsHatVisible());
+                        _applier.ChangeArmor(objects, slot, current.ToArmor(), state[slot, false] is not StateChanged.Source.Ipc,
+                            state.ModelData.IsHatVisible());
                         break;
                 }
             }
@@ -333,6 +334,8 @@ public class StateListener : IDisposable
         if (slot is EquipSlot.MainHand && weapon.Value.Set.Id is > 1600 and < 1651)
             _lastFistOffhand = new CharacterWeapon((SetId)(weapon.Value.Set.Id + 50), weapon.Value.Type, weapon.Value.Variant,
                 weapon.Value.Stain);
+
+        _funModule.ApplyFun(actor, ref weapon.Value, slot);
     }
 
     /// <summary> Update base data for a single changed equipment slot. </summary>

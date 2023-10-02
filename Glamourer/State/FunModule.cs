@@ -2,9 +2,12 @@
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Glamourer.Customization;
+using Glamourer.Designs;
 using Glamourer.Gui;
+using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
+using ImGuiNET;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -22,12 +25,17 @@ public unsafe class FunModule : IDisposable
         AprilFirst,
     }
 
+    private readonly WorldSets            _worldSets = new();
     private readonly ItemManager          _items;
     private readonly CustomizationService _customizations;
     private readonly Configuration        _config;
     private readonly CodeService          _codes;
     private readonly Random               _rng;
     private readonly GenericPopupWindow   _popupWindow;
+    private readonly StateManager         _stateManager;
+    private readonly DesignConverter      _designConverter;
+    private readonly DesignManager        _designManager;
+    private readonly ObjectManager        _objects;
     private readonly StainId[]            _stains;
 
     public  FestivalType CurrentFestival { get; private set; } = FestivalType.None;
@@ -60,15 +68,20 @@ public unsafe class FunModule : IDisposable
         => OnDayChange(DateTime.UtcNow.Day, DateTime.UtcNow.Month, DateTime.UtcNow.Year);
 
     public FunModule(CodeService codes, CustomizationService customizations, ItemManager items, Configuration config,
-        GenericPopupWindow popupWindow)
+        GenericPopupWindow popupWindow, StateManager stateManager, ObjectManager objects, DesignConverter designConverter,
+        DesignManager designManager)
     {
-        _codes          = codes;
-        _customizations = customizations;
-        _items          = items;
-        _config         = config;
-        _popupWindow    = popupWindow;
-        _rng            = new Random();
-        _stains         = _items.Stains.Keys.Prepend((StainId)0).ToArray();
+        _codes           = codes;
+        _customizations  = customizations;
+        _items           = items;
+        _config          = config;
+        _popupWindow     = popupWindow;
+        _stateManager    = stateManager;
+        _objects         = objects;
+        _designConverter = designConverter;
+        _designManager   = designManager;
+        _rng             = new Random();
+        _stains          = _items.Stains.Keys.Prepend((StainId)0).ToArray();
         ResetFestival();
         DayChangeTracker.DayChanged += OnDayChange;
     }
@@ -100,6 +113,10 @@ public unsafe class FunModule : IDisposable
         {
             _festivalSet.Apply(_stains, _rng, armor);
         }
+        else if (_codes.EnabledWorld && actor.Index != 0)
+        {
+            _worldSets.Apply(actor, _rng, armor);
+        }
         else
         {
             ApplyEmperor(armor);
@@ -107,8 +124,21 @@ public unsafe class FunModule : IDisposable
         }
 
         ApplyOops(ref customize);
+        Apply63(ref customize);
         ApplyIndividual(ref customize);
         ApplySizing(actor, ref customize);
+    }
+
+    public void ApplyFun(Actor actor, ref CharacterWeapon weapon, EquipSlot slot)
+    {
+        if (actor.AsObject->ObjectKind is not (byte)ObjectKind.Player || !actor.IsCharacter)
+            return;
+
+        if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
+            return;
+
+        if (_codes.EnabledWorld)
+            _worldSets.Apply(actor, _rng, ref weapon, slot);
     }
 
     public void ApplyClown(Span<CharacterArmor> armors)
@@ -172,6 +202,14 @@ public unsafe class FunModule : IDisposable
         }
     }
 
+    public void Apply63(ref Customize customize)
+    {
+        if (!_codes.Enabled63 || customize.Race is Race.Hrothgar) // TODO Female Hrothgar
+            return;
+
+        _customizations.ChangeGender(ref customize, customize.Gender is Gender.Male ? Gender.Female : Gender.Male);
+    }
+
     public void ApplySizing(Actor actor, ref Customize customize)
     {
         if (_codes.EnabledSizing == CodeService.Sizing.None)
@@ -189,5 +227,31 @@ public unsafe class FunModule : IDisposable
         if (customize.Gender is Gender.Female)
             customize[CustomizeIndex.BustSize] = (CustomizeValue)size;
         customize[CustomizeIndex.Height] = (CustomizeValue)size;
+    }
+
+    public void WhoAmI()
+        => WhoIsThat(_objects.Player);
+
+    public void WhoIsThat()
+        => WhoIsThat(_objects.Target);
+
+    private void WhoIsThat(Actor actor)
+    {
+        if (!actor.IsCharacter)
+            return;
+
+        try
+        {
+            var tmp = _designManager.CreateTemporary();
+            tmp.DesignData = _stateManager.FromActor(actor, true);
+            tmp.FixCustomizeApplication(_customizations, CustomizeFlagExtensions.AllRelevant);
+            var data = _designConverter.ShareBase64(tmp);
+            ImGui.SetClipboardText(data);
+            Glamourer.Chat.NotificationMessage($"Copied current actual design of {actor.Utf8Name} to clipboard.");
+        }
+        catch
+        {
+            // ignored
+        }
     }
 }

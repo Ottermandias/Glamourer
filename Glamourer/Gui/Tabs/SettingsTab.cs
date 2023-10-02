@@ -25,10 +25,11 @@ public class SettingsTab : ITab
     private readonly ContextMenuService       _contextMenuService;
     private readonly UiBuilder                _uiBuilder;
     private readonly GlamourerChangelog       _changelog;
+    private readonly FunModule                _funModule;
 
     public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener,
         CodeService codeService, PenumbraAutoRedraw autoRedraw, ContextMenuService contextMenuService, UiBuilder uiBuilder,
-        GlamourerChangelog changelog)
+        GlamourerChangelog changelog, FunModule funModule)
     {
         _config             = config;
         _selector           = selector;
@@ -38,6 +39,7 @@ public class SettingsTab : ITab
         _contextMenuService = contextMenuService;
         _uiBuilder          = uiBuilder;
         _changelog          = changelog;
+        _funModule          = funModule;
     }
 
     public ReadOnlySpan<byte> Label
@@ -202,6 +204,17 @@ public class SettingsTab : ITab
                 _codeService.VerifyState();
                 _config.Save();
             }
+        }
+
+        if (_codeService.EnabledCaptain)
+        {
+            if (ImGui.Button("Who am I?!?"))
+                _funModule.WhoAmI();
+
+            ImGui.SameLine();
+
+            if (ImGui.Button("Who is that!?!"))
+                _funModule.WhoIsThat();
         }
     }
 
