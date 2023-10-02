@@ -1,9 +1,8 @@
 using System;
 using System.Numerics;
-using Dalamud.Game;
 using Dalamud.Interface;
+using Dalamud.Interface.Internal;
 using Dalamud.Plugin.Services;
-using ImGuiScene;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -16,7 +15,7 @@ public sealed class TextureService : TextureCache, IDisposable
         : base(dataManager, textureProvider)
         => _slotIcons = CreateSlotIcons(uiBuilder);
 
-    private readonly TextureWrap?[] _slotIcons;
+    private readonly IDalamudTextureWrap?[] _slotIcons;
 
     public (nint, Vector2, bool) GetIcon(EquipItem item, EquipSlot slot)
     {
@@ -38,9 +37,9 @@ public sealed class TextureService : TextureCache, IDisposable
         }
     }
 
-    private static TextureWrap[] CreateSlotIcons(UiBuilder uiBuilder)
+    private static IDalamudTextureWrap[] CreateSlotIcons(UiBuilder uiBuilder)
     {
-        var ret = new TextureWrap[12];
+        var ret = new IDalamudTextureWrap[12];
 
         using var uldWrapper = uiBuilder.LoadUld("ui/uld/ArmouryBoard.uld");
 

@@ -20,7 +20,7 @@ internal class CmpFile
     public bool Valid
         => _file != null;
 
-    public CmpFile(IDataManager gameData)
+    public CmpFile(IDataManager gameData, IPluginLog log)
     {
         try
         {
@@ -36,7 +36,7 @@ internal class CmpFile
         }
         catch (Exception e)
         {
-            PluginLog.Error("READ THIS\n======== Could not obtain the human.cmp file which is necessary for color sets.\n"
+            log.Error("READ THIS\n======== Could not obtain the human.cmp file which is necessary for color sets.\n"
               + "======== This usually indicates an error with your index files caused by TexTools modifications.\n"
               + "======== If you have used TexTools before, you will probably need to start over in it to use Glamourer.", e);
             _file       = null;

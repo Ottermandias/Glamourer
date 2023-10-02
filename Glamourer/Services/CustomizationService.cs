@@ -11,8 +11,8 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
 {
     public readonly HumanModelList HumanModels;
 
-    public CustomizationService(ITextureProvider textures, IDataManager gameData, HumanModelList humanModels)
-        : base(nameof(CustomizationService), () => CustomizationManager.Create(textures, gameData))
+    public CustomizationService(ITextureProvider textures, IDataManager gameData, HumanModelList humanModels, IPluginLog log)
+        : base(nameof(CustomizationService), () => CustomizationManager.Create(textures, gameData, log))
         => HumanModels = humanModels;
 
     public (Customize NewValue, CustomizeFlag Applied, CustomizeFlag Changed) Combine(Customize oldValues, Customize newValues,

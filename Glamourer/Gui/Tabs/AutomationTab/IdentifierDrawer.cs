@@ -24,8 +24,8 @@ public class IdentifierDrawer
     public IdentifierDrawer(ActorService actors, IdentifierService identifier, HumanModelList humans)
     {
         _actors        = actors;
-        _worldCombo    = new WorldCombo(actors.AwaitedService.Data.Worlds);
-        _humanNpcCombo = new HumanNpcCombo("##npcs", identifier, humans);
+        _worldCombo    = new WorldCombo(actors.AwaitedService.Data.Worlds, Glamourer.Log);
+        _humanNpcCombo = new HumanNpcCombo("##npcs", identifier, humans, Glamourer.Log);
     }
 
     public void DrawName(float width)

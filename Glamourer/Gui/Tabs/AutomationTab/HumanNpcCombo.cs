@@ -6,6 +6,7 @@ using Dalamud.Utility;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui.Custom;
+using OtterGui.Log;
 using OtterGui.Widgets;
 using Penumbra.GameData.Data;
 
@@ -15,8 +16,8 @@ public sealed class HumanNpcCombo : FilterComboCache<(string Name, ObjectKind Ki
 {
     private readonly string _label;
 
-    public HumanNpcCombo(string label, IdentifierService service, HumanModelList humans)
-        : base(() => CreateList(service, humans))
+    public HumanNpcCombo(string label, IdentifierService service, HumanModelList humans, Logger log)
+        : base(() => CreateList(service, humans), log)
         => _label = label;
 
     protected override string ToString((string Name, ObjectKind Kind, uint[] Ids) obj)

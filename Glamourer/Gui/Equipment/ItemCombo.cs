@@ -6,6 +6,7 @@ using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Log;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
@@ -19,8 +20,8 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     private         ItemId _currentItem;
     private         float  _innerWidth;
 
-    public ItemCombo(IDataManager gameData, ItemManager items, EquipSlot slot)
-        : base(() => GetItems(items, slot))
+    public ItemCombo(IDataManager gameData, ItemManager items, EquipSlot slot, Logger log)
+        : base(() => GetItems(items, slot), log)
     {
         Label         = GetLabel(gameData, slot);
         _currentItem  = ItemManager.NothingId(slot);

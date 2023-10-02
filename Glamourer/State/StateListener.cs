@@ -12,6 +12,7 @@ using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using System;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Plugin.Services;
 
 namespace Glamourer.State;
 
@@ -41,7 +42,7 @@ public class StateListener : IDisposable
     private readonly MovedEquipment            _movedEquipment;
     private readonly GPoseService              _gPose;
     private readonly ChangeCustomizeService    _changeCustomizeService;
-    private readonly Condition                 _condition;
+    private readonly ICondition                _condition;
 
     private ActorIdentifier _creatingIdentifier = ActorIdentifier.Invalid;
     private ActorState?     _creatingState;
@@ -57,7 +58,7 @@ public class StateListener : IDisposable
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
         StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gPose,
-        ChangeCustomizeService changeCustomizeService, CustomizationService customizations, Condition condition)
+        ChangeCustomizeService changeCustomizeService, CustomizationService customizations, ICondition condition)
     {
         _manager                = manager;
         _items                  = items;

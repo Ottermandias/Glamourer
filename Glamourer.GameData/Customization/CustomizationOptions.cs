@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Dalamud;
+using Dalamud.Interface.Internal;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Lumina.Excel;
@@ -34,7 +35,7 @@ public partial class CustomizationOptions
         => _customizationSets[ToIndex(race, gender)];
 
     // Get specific icons.
-    internal ImGuiScene.TextureWrap GetIcon(uint id)
+    internal IDalamudTextureWrap GetIcon(uint id)
         => _icons.LoadIcon(id)!;
 
     private readonly IconStorage _icons;
@@ -61,9 +62,9 @@ public partial class CustomizationOptions
     public string GetName(CustomName name)
         => _names[(int)name];
 
-    internal CustomizationOptions(ITextureProvider textures, IDataManager gameData)
+    internal CustomizationOptions(ITextureProvider textures, IDataManager gameData, IPluginLog log)
     {
-        var tmp = new TemporaryData(gameData, this);
+        var tmp = new TemporaryData(gameData, this, log);
         _icons = new IconStorage(textures, gameData);
         SetNames(gameData, tmp);
         foreach (var race in Clans)
@@ -179,10 +180,10 @@ public partial class CustomizationOptions
         }
 
 
-        public TemporaryData(IDataManager gameData, CustomizationOptions options)
+        public TemporaryData(IDataManager gameData, CustomizationOptions options, IPluginLog log)
         {
             _options        = options;
-            _cmpFile        = new CmpFile(gameData);
+            _cmpFile        = new CmpFile(gameData, log);
             _customizeSheet = gameData.GetExcelSheet<CharaMakeCustomize>()!;
             _bnpcCustomize  = gameData.GetExcelSheet<BNpcCustomize>()!;
             _enpcBase       = gameData.GetExcelSheet<ENpcBase>()!;

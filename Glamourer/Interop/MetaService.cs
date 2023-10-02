@@ -1,5 +1,6 @@
 ﻿using System;
 using Dalamud.Hooking;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
@@ -19,14 +20,18 @@ public unsafe class MetaService : IDisposable
     private readonly Hook<HideWeaponsDelegate> _hideWeaponsHook;
     private readonly Hook<HideWeaponsDelegate> _toggleVisorHook;
 
-    public MetaService(WeaponVisibilityChanged weaponEvent, HeadGearVisibilityChanged headGearEvent, VisorStateChanged visorEvent)
+    public MetaService(WeaponVisibilityChanged weaponEvent, HeadGearVisibilityChanged headGearEvent, VisorStateChanged visorEvent,
+        IGameInteropProvider interop)
     {
-        _weaponEvent     = weaponEvent;
-        _headGearEvent   = headGearEvent;
-        _visorEvent      = visorEvent;
-        _hideHatGearHook = Hook<HideHatGearDelegate>.FromAddress((nint)DrawDataContainer.MemberFunctionPointers.HideHeadgear, HideHatDetour);
-        _hideWeaponsHook = Hook<HideWeaponsDelegate>.FromAddress((nint)DrawDataContainer.MemberFunctionPointers.HideWeapons, HideWeaponsDetour);
-        _toggleVisorHook = Hook<HideWeaponsDelegate>.FromAddress((nint)DrawDataContainer.MemberFunctionPointers.SetVisor,    ToggleVisorDetour);
+        _weaponEvent   = weaponEvent;
+        _headGearEvent = headGearEvent;
+        _visorEvent    = visorEvent;
+        _hideHatGearHook =
+            interop.HookFromAddress<HideHatGearDelegate>((nint)DrawDataContainer.MemberFunctionPointers.HideHeadgear, HideHatDetour);
+        _hideWeaponsHook =
+            interop.HookFromAddress<HideWeaponsDelegate>((nint)DrawDataContainer.MemberFunctionPointers.HideWeapons, HideWeaponsDetour);
+        _toggleVisorHook =
+            interop.HookFromAddress<HideWeaponsDelegate>((nint)DrawDataContainer.MemberFunctionPointers.SetVisor, ToggleVisorDetour);
         _hideHatGearHook.Enable();
         _hideWeaponsHook.Enable();
         _toggleVisorHook.Enable();

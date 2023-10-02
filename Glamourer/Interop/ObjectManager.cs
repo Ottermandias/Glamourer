@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Plugin.Services;
 using Glamourer.Interop.Structs;
@@ -12,16 +11,16 @@ namespace Glamourer.Interop;
 
 public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
 {
-    private readonly Framework     _framework;
-    private readonly IClientState  _clientState;
-    private readonly IObjectTable  _objects;
-    private readonly ActorService  _actors;
+    private readonly IFramework     _framework;
+    private readonly IClientState   _clientState;
+    private readonly IObjectTable   _objects;
+    private readonly ActorService   _actors;
     private readonly ITargetManager _targets;
 
     public IObjectTable Objects
         => _objects;
 
-    public ObjectManager(Framework framework, IClientState clientState, IObjectTable objects, ActorService actors, ITargetManager targets)
+    public ObjectManager(IFramework framework, IClientState clientState, IObjectTable objects, ActorService actors, ITargetManager targets)
     {
         _framework   = framework;
         _clientState = clientState;

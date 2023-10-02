@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Dalamud.Game.Command;
-using Dalamud.Game.Gui;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
@@ -27,7 +26,7 @@ public class CommandService : IDisposable
 
     private readonly ICommandManager   _commands;
     private readonly MainWindow        _mainWindow;
-    private readonly ChatGui           _chat;
+    private readonly IChatGui          _chat;
     private readonly ActorService      _actors;
     private readonly ObjectManager     _objects;
     private readonly StateManager      _stateManager;
@@ -37,7 +36,7 @@ public class CommandService : IDisposable
     private readonly DesignConverter   _converter;
     private readonly DesignFileSystem  _designFileSystem;
 
-    public CommandService(ICommandManager commands, MainWindow mainWindow, ChatGui chat, ActorService actors, ObjectManager objects,
+    public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorService actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager)
     {

@@ -28,14 +28,14 @@ public class ItemManager : IDisposable
     public readonly EquipItem DefaultSword;
 
     public ItemManager(Configuration config, DalamudPluginInterface pi, IDataManager gameData, IdentifierService identifierService,
-        ItemService itemService)
+        ItemService itemService, IPluginLog log)
     {
         _config           = config;
         ItemSheet         = gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;
         IdentifierService = identifierService;
-        Stains            = new StainData(pi, gameData, gameData.Language);
+        Stains            = new StainData(pi, gameData, gameData.Language, log);
         ItemService       = itemService;
-        RestrictedGear    = new RestrictedGear(pi, gameData.Language, gameData);
+        RestrictedGear    = new RestrictedGear(pi, gameData.Language, gameData, log);
         DefaultSword      = EquipItem.FromMainhand(ItemSheet.GetRow(1601)!); // Weathered Shortsword
     }
 
@@ -58,13 +58,13 @@ public class ItemManager : IDisposable
         => uint.MaxValue - 384 - (uint)type;
 
     public static EquipItem NothingItem(EquipSlot slot)
-        => new(Nothing, NothingId(slot), 0, 0, 0, 0, slot.ToEquipType());
+        => new(Nothing, NothingId(slot), 0, 0, 0, 0, slot.ToEquipType(), 0, 0, 0);
 
     public static EquipItem NothingItem(FullEquipType type)
-        => new(Nothing, NothingId(type), 0, 0, 0, 0, type);
+        => new(Nothing, NothingId(type), 0, 0, 0, 0, type, 0, 0, 0);
 
     public static EquipItem SmallClothesItem(EquipSlot slot)
-        => new(SmallClothesNpc, SmallclothesId(slot), 0, SmallClothesNpcModel, 0, 1, slot.ToEquipType());
+        => new(SmallClothesNpc, SmallclothesId(slot), 0, SmallClothesNpcModel, 0, 1, slot.ToEquipType(), 0, 0, 0);
 
     public EquipItem Resolve(EquipSlot slot, ItemId itemId)
     {
@@ -78,7 +78,7 @@ public class ItemManager : IDisposable
             return EquipItem.FromId(itemId);
 
         if (item.Type.ToSlot() != slot)
-            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0);
+            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0, 0, 0, 0);
 
         return item;
     }
@@ -92,7 +92,7 @@ public class ItemManager : IDisposable
             return EquipItem.FromId(itemId);
 
         if (item.Type != type)
-            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0);
+            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0, 0, 0, 0);
 
         return item;
     }
@@ -101,7 +101,7 @@ public class ItemManager : IDisposable
     {
         slot = slot.ToSlot();
         if (slot.ToIndex() == uint.MaxValue)
-            return new EquipItem($"Invalid ({id.Id}-{variant})", 0, 0, id, 0, variant, 0);
+            return new EquipItem($"Invalid ({id.Id}-{variant})", 0, 0, id, 0, variant, 0, 0, 0, 0);
 
         switch (id.Id)
         {
@@ -135,12 +135,12 @@ public class ItemManager : IDisposable
         }
 
         if (slot is not EquipSlot.MainHand and not EquipSlot.OffHand)
-            return new EquipItem($"Invalid ({id.Id}-{type.Id}-{variant})", 0, 0, id, type, variant, 0);
+            return new EquipItem($"Invalid ({id.Id}-{type.Id}-{variant})", 0, 0, id, type, variant, 0, 0, 0, 0);
 
         var item = IdentifierService.AwaitedService.Identify(id, type, variant, slot).FirstOrDefault(i => i.Type.ToSlot() == slot);
         return item.Valid
             ? item
-            : EquipItem.FromIds(0, 0, id, type, variant, slot.ToEquipType(), null);
+            : EquipItem.FromIds(0, 0, id, type, variant, slot.ToEquipType());
     }
 
     /// <summary> Returns whether an item id represents a valid item for a slot and gives the item. </summary>

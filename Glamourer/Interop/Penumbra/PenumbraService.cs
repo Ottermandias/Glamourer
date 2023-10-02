@@ -236,7 +236,7 @@ public unsafe class PenumbraService : IDisposable
         }
         catch (Exception e)
         {
-            PluginLog.Debug($"Failure redrawing object:\n{e}");
+            Glamourer.Log.Debug($"Failure redrawing object:\n{e}");
         }
     }
 
@@ -249,7 +249,7 @@ public unsafe class PenumbraService : IDisposable
         }
         catch (Exception e)
         {
-            PluginLog.Debug($"Failure redrawing object:\n{e}");
+            Glamourer.Log.Debug($"Failure redrawing object:\n{e}");
         }
     }
 

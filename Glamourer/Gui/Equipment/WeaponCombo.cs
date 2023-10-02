@@ -5,6 +5,7 @@ using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Log;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
@@ -18,8 +19,8 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
     private         ItemId _currentItemId;
     private         float  _innerWidth;
 
-    public WeaponCombo(ItemManager items, FullEquipType type)
-        : base(() => GetWeapons(items, type))
+    public WeaponCombo(ItemManager items, FullEquipType type, Logger log)
+        : base(() => GetWeapons(items, type), log)
     {
         Label         = GetLabel(type);
         SearchByParts = true;

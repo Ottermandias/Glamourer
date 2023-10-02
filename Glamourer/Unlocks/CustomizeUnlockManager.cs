@@ -29,23 +29,23 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         => _unlocked;
 
     public CustomizeUnlockManager(SaveService saveService, CustomizationService customizations, IDataManager gameData,
-        IClientState clientState, ObjectUnlocked @event)
+        IClientState clientState, ObjectUnlocked @event, IGameInteropProvider interop)
     {
-        SignatureHelper.Initialise(this);
+        interop.InitializeFromAttributes(this);
         _saveService = saveService;
         _clientState = clientState;
         _event       = @event;
         Unlockable   = CreateUnlockableCustomizations(customizations, gameData);
         Load();
         _setUnlockLinkValueHook.Enable();
-        _clientState.Login += OnLogin;
+        _clientState.Login += Scan;
         Scan();
     }
 
     public void Dispose()
     {
         _setUnlockLinkValueHook.Dispose();
-        _clientState.Login -= OnLogin;
+        _clientState.Login -= Scan;
     }
 
     /// <summary> Check if a customization is unlocked for Glamourer. </summary>
@@ -158,9 +158,6 @@ public class CustomizeUnlockManager : IDisposable, ISavable
             Glamourer.Log.Error($"[UnlockManager] Error in SetUnlockLinkValue Hook:\n{ex}");
         }
     }
-
-    private void OnLogin(object? _, EventArgs _2)
-        => Scan();
 
     public string ToFilename(FilenameService fileNames)
         => fileNames.UnlockFileCustomize;

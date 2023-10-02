@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Glamourer.Events;
+using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Structs;
 using Glamourer.Unlocks;
@@ -22,14 +24,20 @@ public class UnlockTable : Table<EquipItem>, IDisposable
     private readonly ObjectUnlocked _event;
 
     public UnlockTable(ItemManager items, TextureService textures, ItemUnlockManager itemUnlocks,
-        PenumbraChangedItemTooltip tooltip, ObjectUnlocked @event)
+        PenumbraChangedItemTooltip tooltip, ObjectUnlocked @event, JobService jobs)
         : base("ItemUnlockTable", new ItemList(items),
             new NameColumn(textures, tooltip) { Label = "Item Name..." },
             new SlotColumn() { Label                  = "Equip Slot" },
             new TypeColumn() { Label                  = "Item Type..." },
             new UnlockDateColumn(itemUnlocks) { Label = "Unlocked" },
             new ItemIdColumn() { Label                = "Item Id..." },
-            new ModelDataColumn(items) { Label        = "Model Data..." })
+            new ModelDataColumn(items) { Label        = "Model Data..." },
+            new JobColumn(jobs) { Label               = "Jobs" },
+            new LevelColumn() { Label                 = "Level..." },
+            new DyableColumn() { Label                = "Dye" },
+            new CrestColumn() { Label                 = "Crest" },
+            new TradableColumn() { Label              = "Trade" }
+        )
     {
         _event   =  @event;
         Sortable =  true;
@@ -265,6 +273,160 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
             return false;
         }
+    }
+
+    private sealed class LevelColumn : ColumnString<EquipItem>
+    {
+        public override float Width
+            => 70 * ImGuiHelpers.GlobalScale;
+
+        public override string ToName(EquipItem item)
+            => item.Level.ToString();
+
+        public override void DrawColumn(EquipItem item, int _)
+            => ImGuiUtil.RightAlign(item.Level.Value.ToString());
+
+        public override int Compare(EquipItem lhs, EquipItem rhs)
+            => lhs.Level.Value.CompareTo(rhs.Level.Value);
+    }
+
+
+    private sealed class JobColumn : ColumnFlags<JobFlag, EquipItem>
+    {
+        public override float Width
+            => 200 * ImGuiHelpers.GlobalScale;
+
+        private readonly JobService _jobs;
+
+        private readonly JobFlag[] _values;
+        private readonly string[]  _names;
+        private          JobFlag   _filterValue;
+
+        public override JobFlag FilterValue
+            => _filterValue;
+
+        public JobColumn(JobService jobs)
+        {
+            _jobs        = jobs;
+            _values      = _jobs.Jobs.Values.Skip(1).Select(j => j.Flag).ToArray();
+            _names       = _jobs.Jobs.Values.Skip(1).Select(j => j.Abbreviation).ToArray();
+            AllFlags     = _values.Aggregate((l, r) => l | r);
+            _filterValue = AllFlags;
+        }
+
+        protected override void SetValue(JobFlag value, bool enable)
+            => _filterValue = enable ? _filterValue | value : _filterValue & ~value;
+
+        protected override IReadOnlyList<JobFlag> Values
+            => _values;
+
+        protected override string[] Names
+            => _names;
+
+        public override int Compare(EquipItem lhs, EquipItem rhs)
+            => lhs.JobRestrictions.Id.CompareTo(rhs.JobRestrictions.Id);
+
+        public override bool FilterFunc(EquipItem item)
+        {
+            if (item.JobRestrictions.Id < 2)
+                return true;
+
+            if (item.JobRestrictions.Id >= _jobs.AllJobGroups.Count)
+                return false;
+
+            var group = _jobs.AllJobGroups[item.JobRestrictions.Id];
+            return group.Fits(FilterValue);
+        }
+
+        public override void DrawColumn(EquipItem item, int idx)
+        {
+            var text = $"Unknown {item.JobRestrictions.Id}";
+            if (item.JobRestrictions.Id < _jobs.AllJobGroups.Count)
+            {
+                var group = _jobs.AllJobGroups[Math.Max((int)item.JobRestrictions.Id, 1)];
+                if (group.Name.Length > 0)
+                    text = group.Name;
+            }
+
+            ImGui.TextUnformatted(text);
+        }
+    }
+
+    [Flags]
+    private enum YesNoFlag
+    {
+        Yes = 0x01,
+        No  = 0x02,
+    };
+
+    private class YesNoColumn : ColumnFlags<YesNoFlag, EquipItem>
+    {
+        public string Tooltip = string.Empty;
+
+        private YesNoFlag _filterValue;
+
+        public override YesNoFlag FilterValue
+            => _filterValue;
+
+        public YesNoColumn()
+        {
+            AllFlags     = YesNoFlag.Yes | YesNoFlag.No;
+            _filterValue = AllFlags;
+        }
+
+        protected override void SetValue(YesNoFlag value, bool enable)
+            => _filterValue = enable ? _filterValue | value : _filterValue & ~value;
+
+        protected virtual bool GetValue(EquipItem item)
+            => false;
+
+        public override float Width
+            => ImGui.GetFrameHeight() * 2;
+
+        public override bool FilterFunc(EquipItem item)
+            => GetValue(item)
+                ? FilterValue.HasFlag(YesNoFlag.Yes)
+                : FilterValue.HasFlag(YesNoFlag.No);
+
+        public override int Compare(EquipItem lhs, EquipItem rhs)
+            => GetValue(lhs).CompareTo(GetValue(rhs));
+
+        public override void DrawColumn(EquipItem item, int idx)
+        {
+            using (var font = ImRaii.PushFont(UiBuilder.IconFont))
+            {
+                ImGuiUtil.Center(GetValue(item) ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
+            }
+
+            ImGuiUtil.HoverTooltip(Tooltip);
+        }
+    }
+
+    private sealed class DyableColumn : YesNoColumn
+    {
+        public DyableColumn()
+            => Tooltip = "Whether the item is dyable.";
+
+        protected override bool GetValue(EquipItem item)
+            => item.Flags.HasFlag(ItemFlags.IsDyable);
+    }
+
+    private sealed class TradableColumn : YesNoColumn
+    {
+        public TradableColumn()
+            => Tooltip = "Whether the item is tradable.";
+
+        protected override bool GetValue(EquipItem item)
+            => item.Flags.HasFlag(ItemFlags.IsTradable);
+    }
+
+    private sealed class CrestColumn : YesNoColumn
+    {
+        public CrestColumn()
+            => Tooltip = "Whether a crest can be applied to the item..";
+
+        protected override bool GetValue(EquipItem item)
+            => item.Flags.HasFlag(ItemFlags.IsCrestWorthy);
     }
 
     private sealed class ItemList : IReadOnlyCollection<EquipItem>

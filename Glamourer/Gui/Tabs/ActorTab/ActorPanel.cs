@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Numerics;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Automation;
 using Glamourer.Customization;
@@ -36,7 +36,7 @@ public class ActorPanel
     private readonly ObjectManager       _objects;
     private readonly DesignManager       _designManager;
     private readonly DatFileService      _datFileService;
-    private readonly Condition           _conditions;
+    private readonly ICondition          _conditions;
 
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -48,7 +48,7 @@ public class ActorPanel
     public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer,
         EquipmentDrawer equipmentDrawer, IdentifierService identification, AutoDesignApplier autoDesignApplier,
         Configuration config, DesignConverter converter, ObjectManager objects, DesignManager designManager, DatFileService datFileService,
-        Condition conditions)
+        ICondition conditions)
     {
         _selector            = selector;
         _stateManager        = stateManager;
@@ -280,29 +280,32 @@ public class ActorPanel
     private HeaderDrawer.Button SetFromClipboardButton()
         => new()
         {
-            Description = "Try to apply a design from your clipboard.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
-            Icon        = FontAwesomeIcon.Clipboard,
-            OnClick     = SetFromClipboard,
-            Visible     = _state != null,
-            Disabled    = _state?.IsLocked ?? true,
+            Description =
+                "Try to apply a design from your clipboard.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
+            Icon     = FontAwesomeIcon.Clipboard,
+            OnClick  = SetFromClipboard,
+            Visible  = _state != null,
+            Disabled = _state?.IsLocked ?? true,
         };
 
     private HeaderDrawer.Button ExportToClipboardButton()
         => new()
         {
-            Description = "Copy the current design to your clipboard.\nHold Control to disable applying of customizations for the copied design.\nHold Shift to disable applying of gear for the copied design.",
-            Icon        = FontAwesomeIcon.Copy,
-            OnClick     = ExportToClipboard,
-            Visible     = _state?.ModelData.ModelId == 0,
+            Description =
+                "Copy the current design to your clipboard.\nHold Control to disable applying of customizations for the copied design.\nHold Shift to disable applying of gear for the copied design.",
+            Icon    = FontAwesomeIcon.Copy,
+            OnClick = ExportToClipboard,
+            Visible = _state?.ModelData.ModelId == 0,
         };
 
     private HeaderDrawer.Button SaveAsDesignButton()
         => new()
         {
-            Description = "Save the current state as a design.\nHold Control to disable applying of customizations for the saved design.\nHold Shift to disable applying of gear for the saved design.",
-            Icon        = FontAwesomeIcon.Save,
-            OnClick     = SaveDesignOpen,
-            Visible     = _state?.ModelData.ModelId == 0,
+            Description =
+                "Save the current state as a design.\nHold Control to disable applying of customizations for the saved design.\nHold Shift to disable applying of gear for the saved design.",
+            Icon    = FontAwesomeIcon.Save,
+            OnClick = SaveDesignOpen,
+            Visible = _state?.ModelData.ModelId == 0,
         };
 
     private HeaderDrawer.Button LockedButton()
@@ -317,8 +320,8 @@ public class ActorPanel
             BorderColor = ColorId.ActorUnavailable.Value(),
         };
 
-    private string        _newName   = string.Empty;
-    private DesignBase?   _newDesign = null;
+    private string      _newName   = string.Empty;
+    private DesignBase? _newDesign = null;
 
     private void SaveDesignOpen()
     {
@@ -344,8 +347,9 @@ public class ActorPanel
         try
         {
             var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToBool();
-            var text   = ImGui.GetClipboardText();
-            var design = _converter.FromBase64(text, applyCustomize, applyGear, out _) ?? throw new Exception("The clipboard did not contain valid data.");
+            var text = ImGui.GetClipboardText();
+            var design = _converter.FromBase64(text, applyCustomize, applyGear, out _)
+             ?? throw new Exception("The clipboard did not contain valid data.");
             _stateManager.ApplyDesign(design, _state!, StateChanged.Source.Manual);
         }
         catch (Exception ex)
@@ -394,7 +398,8 @@ public class ActorPanel
     private void DrawApplyToSelf()
     {
         var (id, data) = _objects.PlayerData;
-        if (!ImGuiUtil.DrawDisabledButton("Apply to Yourself", Vector2.Zero, "Apply the current state to your own character.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
+        if (!ImGuiUtil.DrawDisabledButton("Apply to Yourself", Vector2.Zero,
+                "Apply the current state to your own character.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
                 !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0))
             return;
 

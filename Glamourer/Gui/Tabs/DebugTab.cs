@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Text;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
@@ -31,6 +32,7 @@ using Penumbra.Api.Enums;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs;
 
@@ -579,14 +581,29 @@ public unsafe class DebugTab : ITab
                 if (table)
                     foreach (var (id, job) in _jobs.Jobs)
                     {
-                        ImGuiUtil.DrawTableColumn(id.ToString("D2"));
+                        ImGuiUtil.DrawTableColumn(id.ToString("D3"));
                         ImGuiUtil.DrawTableColumn(job.Name);
                         ImGuiUtil.DrawTableColumn(job.Abbreviation);
                     }
             }
         }
 
-        using (var t = ImRaii.TreeNode("Job Groups"))
+        using (var t = ImRaii.TreeNode("All Job Groups"))
+        {
+            if (t)
+            {
+                using var table = ImRaii.Table("##groups", 3, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+                if (table)
+                    foreach (var (group, idx) in _jobs.AllJobGroups.WithIndex())
+                    {
+                        ImGuiUtil.DrawTableColumn(idx.ToString("D3"));
+                        ImGuiUtil.DrawTableColumn(group.Name);
+                        ImGuiUtil.DrawTableColumn(group.Count.ToString());
+                    }
+            }
+        }
+
+        using (var t = ImRaii.TreeNode("Valid Job Groups"))
         {
             if (t)
             {
@@ -594,7 +611,7 @@ public unsafe class DebugTab : ITab
                 if (table)
                     foreach (var (id, group) in _jobs.JobGroups)
                     {
-                        ImGuiUtil.DrawTableColumn(id.ToString("D2"));
+                        ImGuiUtil.DrawTableColumn(id.ToString("D3"));
                         ImGuiUtil.DrawTableColumn(group.Name);
                         ImGuiUtil.DrawTableColumn(group.Count.ToString());
                     }

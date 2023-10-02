@@ -1,5 +1,6 @@
 ﻿using System;
 using Dalamud.Hooking;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
@@ -12,10 +13,10 @@ public unsafe class UpdateSlotService : IDisposable
 {
     public readonly SlotUpdating SlotUpdatingEvent;
 
-    public UpdateSlotService(SlotUpdating slotUpdating)
+    public UpdateSlotService(SlotUpdating slotUpdating, IGameInteropProvider interop)
     {
         SlotUpdatingEvent = slotUpdating;
-        SignatureHelper.Initialise(this);
+        interop.InitializeFromAttributes(this);
         _flagSlotForUpdateHook.Enable();
     }
 

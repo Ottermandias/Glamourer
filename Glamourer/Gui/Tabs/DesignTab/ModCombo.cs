@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Numerics;
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Glamourer.Interop.Penumbra;
 using ImGuiNET;
-using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Log;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 
@@ -12,8 +12,8 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings)>
 {
-    public ModCombo(PenumbraService penumbra)
-        : base(penumbra.GetMods)
+    public ModCombo(PenumbraService penumbra, Logger log)
+        : base(penumbra.GetMods, log)
     {
         SearchByParts = false;
     }

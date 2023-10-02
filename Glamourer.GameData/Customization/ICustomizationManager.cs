@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Dalamud.Interface.Internal;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Customization;
@@ -11,6 +12,6 @@ public interface ICustomizationManager
 
     public CustomizationSet GetList(SubRace race, Gender gender);
 
-    public ImGuiScene.TextureWrap GetIcon(uint iconId);
-    public string                 GetName(CustomName name);
+    public IDalamudTextureWrap GetIcon(uint iconId);
+    public string              GetName(CustomName name);
 }

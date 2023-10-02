@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Dalamud.Game.ClientState;
-using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -27,13 +25,13 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
     private readonly StateChanged   _event;
     private readonly StateApplier   _applier;
     private readonly StateEditor    _editor;
-    private readonly Condition      _condition;
+    private readonly ICondition      _condition;
     private readonly IClientState   _clientState;
 
     private readonly Dictionary<ActorIdentifier, ActorState> _states = new();
 
     public StateManager(ActorService actors, ItemManager items, StateChanged @event, StateApplier applier, StateEditor editor,
-        HumanModelList humans, Condition condition, IClientState clientState)
+        HumanModelList humans, ICondition condition, IClientState clientState)
     {
         _actors      = actors;
         _items       = items;

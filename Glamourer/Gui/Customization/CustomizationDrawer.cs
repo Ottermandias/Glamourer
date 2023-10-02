@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Numerics;
 using System.Reflection;
-using Dalamud.Interface;
+using Dalamud.Interface.Internal;
+using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Glamourer.Customization;
 using Glamourer.Services;
@@ -18,10 +19,10 @@ public partial class CustomizationDrawer : IDisposable
     private readonly CodeService   _codes;
     private readonly Configuration _config;
 
-    private readonly Vector4                 _redTint = new(0.6f, 0.3f, 0.3f, 1f);
-    private readonly ImGuiScene.TextureWrap? _legacyTattoo;
+    private readonly Vector4              _redTint = new(0.6f, 0.3f, 0.3f, 1f);
+    private readonly IDalamudTextureWrap? _legacyTattoo;
 
-    private Exception? _terminate = null;
+    private Exception? _terminate;
 
     private Customize        _customize;
     private CustomizationSet _set = null!;
@@ -34,8 +35,8 @@ public partial class CustomizationDrawer : IDisposable
     public CustomizeFlag ChangeApply { get; private set; }
 
     private CustomizeFlag _initialApply;
-    private bool          _locked       = false;
-    private bool          _lockedRedraw = false;
+    private bool          _locked;
+    private bool          _lockedRedraw;
     private Vector2       _spacing;
     private Vector2       _iconSize;
     private Vector2       _framedIconSize;
@@ -132,7 +133,7 @@ public partial class CustomizationDrawer : IDisposable
 
     private bool DrawInternal()
     {
-        using var spacing  = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _spacing);
+        using var spacing = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _spacing);
 
         try
         {
@@ -207,7 +208,7 @@ public partial class CustomizationDrawer : IDisposable
         _raceSelectorWidth = _inputIntSize + _comboSelectorSize - _framedIconSize.X;
     }
 
-    private static ImGuiScene.TextureWrap? GetLegacyTattooIcon(DalamudPluginInterface pi)
+    private static IDalamudTextureWrap? GetLegacyTattooIcon(DalamudPluginInterface pi)
     {
         using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("Glamourer.LegacyTattoo.raw");
         if (resource == null)

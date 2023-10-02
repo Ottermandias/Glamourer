@@ -16,14 +16,16 @@ public class JobService : IDisposable
 
     public readonly IReadOnlyDictionary<byte, Job>        Jobs;
     public readonly IReadOnlyDictionary<ushort, JobGroup> JobGroups;
+    public readonly IReadOnlyList<JobGroup>               AllJobGroups;
 
     public event Action<Actor, Job, Job>? JobChanged;
 
-    public JobService(IDataManager gameData)
+    public JobService(IDataManager gameData, IGameInteropProvider interop)
     {
-        SignatureHelper.Initialise(this);
+        interop.InitializeFromAttributes(this);
         _characterDataOffset = Marshal.OffsetOf<Character>(nameof(Character.CharacterData));
         Jobs                 = GameData.Jobs(gameData);
+        AllJobGroups         = GameData.AllJobGroups(gameData);
         JobGroups            = GameData.JobGroups(gameData);
         _changeJobHook.Enable();
     }
@@ -47,7 +49,7 @@ public class JobService : IDisposable
         var actor  = (Actor)(data - _characterDataOffset);
         var newJob = Jobs.TryGetValue(newJobIndex, out var j) ? j : Jobs[0];
         var oldJob = Jobs.TryGetValue(oldJobIndex, out var o) ? o : Jobs[0];
-        
+
         Glamourer.Log.Excessive($"{actor} changed job from {oldJob} to {newJob}.");
         JobChanged?.Invoke(actor, oldJob, newJob);
     }

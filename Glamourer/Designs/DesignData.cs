@@ -55,18 +55,18 @@ public unsafe struct DesignData
         => slot.ToIndex() switch
         {
             // @formatter:off
-            0  => EquipItem.FromIds(_itemIds[ 0], _iconIds[ 0], (SetId)(_equipmentBytes[ 0] | (_equipmentBytes[ 1] << 8)), (WeaponType)0,      _equipmentBytes[ 2], FullEquipType.Head,   _nameHead    ),
-            1  => EquipItem.FromIds(_itemIds[ 1], _iconIds[ 1], (SetId)(_equipmentBytes[ 4] | (_equipmentBytes[ 5] << 8)), (WeaponType)0,      _equipmentBytes[ 6], FullEquipType.Body,   _nameBody    ),
-            2  => EquipItem.FromIds(_itemIds[ 2], _iconIds[ 2], (SetId)(_equipmentBytes[ 8] | (_equipmentBytes[ 9] << 8)), (WeaponType)0,      _equipmentBytes[10], FullEquipType.Hands,  _nameHands   ),
-            3  => EquipItem.FromIds(_itemIds[ 3], _iconIds[ 3], (SetId)(_equipmentBytes[12] | (_equipmentBytes[13] << 8)), (WeaponType)0,      _equipmentBytes[14], FullEquipType.Legs,   _nameLegs    ),
-            4  => EquipItem.FromIds(_itemIds[ 4], _iconIds[ 4], (SetId)(_equipmentBytes[16] | (_equipmentBytes[17] << 8)), (WeaponType)0,      _equipmentBytes[18], FullEquipType.Feet,   _nameFeet    ),
-            5  => EquipItem.FromIds(_itemIds[ 5], _iconIds[ 5], (SetId)(_equipmentBytes[20] | (_equipmentBytes[21] << 8)), (WeaponType)0,      _equipmentBytes[22], FullEquipType.Ears,   _nameEars    ),
-            6  => EquipItem.FromIds(_itemIds[ 6], _iconIds[ 6], (SetId)(_equipmentBytes[24] | (_equipmentBytes[25] << 8)), (WeaponType)0,      _equipmentBytes[26], FullEquipType.Neck,   _nameNeck    ),
-            7  => EquipItem.FromIds(_itemIds[ 7], _iconIds[ 7], (SetId)(_equipmentBytes[28] | (_equipmentBytes[29] << 8)), (WeaponType)0,      _equipmentBytes[30], FullEquipType.Wrists, _nameWrists  ),
-            8  => EquipItem.FromIds(_itemIds[ 8], _iconIds[ 8], (SetId)(_equipmentBytes[32] | (_equipmentBytes[33] << 8)), (WeaponType)0,      _equipmentBytes[34], FullEquipType.Finger, _nameRFinger ),
-            9  => EquipItem.FromIds(_itemIds[ 9], _iconIds[ 9], (SetId)(_equipmentBytes[36] | (_equipmentBytes[37] << 8)), (WeaponType)0,      _equipmentBytes[38], FullEquipType.Finger, _nameLFinger ),
-            10 => EquipItem.FromIds(_itemIds[10], _iconIds[10], (SetId)(_equipmentBytes[40] | (_equipmentBytes[41] << 8)), _secondaryMainhand, _equipmentBytes[42], _typeMainhand,        _nameMainhand),
-            11 => EquipItem.FromIds(_itemIds[11], _iconIds[11], (SetId)(_equipmentBytes[44] | (_equipmentBytes[45] << 8)), _secondaryOffhand,  _equipmentBytes[46], _typeOffhand,         _nameOffhand ),
+            0  => EquipItem.FromIds(_itemIds[ 0], _iconIds[ 0], (SetId)(_equipmentBytes[ 0] | (_equipmentBytes[ 1] << 8)), (WeaponType)0,      _equipmentBytes[ 2], FullEquipType.Head,   name: _nameHead    ),
+            1  => EquipItem.FromIds(_itemIds[ 1], _iconIds[ 1], (SetId)(_equipmentBytes[ 4] | (_equipmentBytes[ 5] << 8)), (WeaponType)0,      _equipmentBytes[ 6], FullEquipType.Body,   name: _nameBody    ),
+            2  => EquipItem.FromIds(_itemIds[ 2], _iconIds[ 2], (SetId)(_equipmentBytes[ 8] | (_equipmentBytes[ 9] << 8)), (WeaponType)0,      _equipmentBytes[10], FullEquipType.Hands,  name: _nameHands   ),
+            3  => EquipItem.FromIds(_itemIds[ 3], _iconIds[ 3], (SetId)(_equipmentBytes[12] | (_equipmentBytes[13] << 8)), (WeaponType)0,      _equipmentBytes[14], FullEquipType.Legs,   name: _nameLegs    ),
+            4  => EquipItem.FromIds(_itemIds[ 4], _iconIds[ 4], (SetId)(_equipmentBytes[16] | (_equipmentBytes[17] << 8)), (WeaponType)0,      _equipmentBytes[18], FullEquipType.Feet,   name: _nameFeet    ),
+            5  => EquipItem.FromIds(_itemIds[ 5], _iconIds[ 5], (SetId)(_equipmentBytes[20] | (_equipmentBytes[21] << 8)), (WeaponType)0,      _equipmentBytes[22], FullEquipType.Ears,   name: _nameEars    ),
+            6  => EquipItem.FromIds(_itemIds[ 6], _iconIds[ 6], (SetId)(_equipmentBytes[24] | (_equipmentBytes[25] << 8)), (WeaponType)0,      _equipmentBytes[26], FullEquipType.Neck,   name: _nameNeck    ),
+            7  => EquipItem.FromIds(_itemIds[ 7], _iconIds[ 7], (SetId)(_equipmentBytes[28] | (_equipmentBytes[29] << 8)), (WeaponType)0,      _equipmentBytes[30], FullEquipType.Wrists, name: _nameWrists  ),
+            8  => EquipItem.FromIds(_itemIds[ 8], _iconIds[ 8], (SetId)(_equipmentBytes[32] | (_equipmentBytes[33] << 8)), (WeaponType)0,      _equipmentBytes[34], FullEquipType.Finger, name: _nameRFinger ),
+            9  => EquipItem.FromIds(_itemIds[ 9], _iconIds[ 9], (SetId)(_equipmentBytes[36] | (_equipmentBytes[37] << 8)), (WeaponType)0,      _equipmentBytes[38], FullEquipType.Finger, name: _nameLFinger ),
+            10 => EquipItem.FromIds(_itemIds[10], _iconIds[10], (SetId)(_equipmentBytes[40] | (_equipmentBytes[41] << 8)), _secondaryMainhand, _equipmentBytes[42], _typeMainhand,        name: _nameMainhand),
+            11 => EquipItem.FromIds(_itemIds[11], _iconIds[11], (SetId)(_equipmentBytes[44] | (_equipmentBytes[45] << 8)), _secondaryOffhand,  _equipmentBytes[46], _typeOffhand,         name: _nameOffhand ),
             _  => new EquipItem(),
             // @formatter:on
         };

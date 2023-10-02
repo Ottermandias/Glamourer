@@ -65,6 +65,9 @@ public class PenumbraChangedItemTooltip : IDisposable
 
     public void CreateTooltip(EquipItem item, string prefix, bool openTooltip)
     {
+        if (!Player())
+            return;
+
         var slot = item.Type.ToSlot();
         var last = _lastItems[slot.ToIndex()];
         switch (slot)

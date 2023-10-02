@@ -2,6 +2,7 @@
 using Dalamud.ContextMenu;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Glamourer.Events;
 using Glamourer.Services;
@@ -17,17 +18,19 @@ public class ContextMenuService : IDisposable
     public const int ChatLogContextItemId    = 0x948;
 
     private readonly ItemManager        _items;
-    private readonly DalamudContextMenu _contextMenu = new();
+    private readonly DalamudContextMenu _contextMenu;
     private readonly StateManager       _state;
     private readonly ObjectManager      _objects;
     private readonly IGameGui           _gameGui;
 
-    public ContextMenuService(ItemManager items, StateManager state, ObjectManager objects, IGameGui gameGui, Configuration config)
+    public ContextMenuService(ItemManager items, StateManager state, ObjectManager objects, IGameGui gameGui, Configuration config,
+        DalamudPluginInterface pi)
     {
-        _items   = items;
-        _state   = state;
-        _objects = objects;
-        _gameGui = gameGui;
+        _contextMenu = new DalamudContextMenu(pi);
+        _items       = items;
+        _state       = state;
+        _objects     = objects;
+        _gameGui     = gameGui;
         if (config.EnableGameContextMenu)
             Enable();
     }

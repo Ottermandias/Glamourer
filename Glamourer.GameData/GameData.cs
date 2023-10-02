@@ -9,8 +9,9 @@ namespace Glamourer;
 
 public static class GameData
 {
-    private static Dictionary<byte, Job>?             _jobs;
-    private static Dictionary<ushort, JobGroup>?      _jobGroups;
+    private static Dictionary<byte, Job>?        _jobs;
+    private static Dictionary<ushort, JobGroup>? _jobGroups;
+    private static JobGroup[]?                   _allJobGroups;
 
     public static IReadOnlyDictionary<byte, Job> Jobs(IDataManager dataManager)
     {
@@ -22,13 +23,21 @@ public static class GameData
         return _jobs;
     }
 
+    public static IReadOnlyList<JobGroup> AllJobGroups(IDataManager dataManager)
+    {
+        if (_allJobGroups != null)
+            return _allJobGroups;
+
+        var sheet = dataManager.GetExcelSheet<ClassJobCategory>()!;
+        var jobs  = dataManager.GetExcelSheet<ClassJob>(ClientLanguage.English)!;
+        _allJobGroups = sheet.Select(j => new JobGroup(j, jobs)).ToArray();
+        return _allJobGroups;
+    }
+
     public static IReadOnlyDictionary<ushort, JobGroup> JobGroups(IDataManager dataManager)
     {
         if (_jobGroups != null)
             return _jobGroups;
-
-        var sheet = dataManager.GetExcelSheet<ClassJobCategory>()!;
-        var jobs  = dataManager.GetExcelSheet<ClassJob>(ClientLanguage.English)!;
 
         static bool ValidIndex(uint idx)
         {
@@ -68,12 +77,12 @@ public static class GameData
                 69 => true,
                 68 => true,
                 93 => true,
-                _   => false,
+                _  => false,
             };
         }
 
-        _jobGroups = sheet.Where(j => ValidIndex(j.RowId))
-            .ToDictionary(j => (ushort)j.RowId, j => new JobGroup(j, jobs));
+        _jobGroups = AllJobGroups(dataManager).Where(j => ValidIndex(j.Id))
+            .ToDictionary(j => (ushort) j.Id, j => j);
         return _jobGroups;
     }
 }

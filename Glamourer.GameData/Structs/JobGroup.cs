@@ -1,16 +1,21 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 
 namespace Glamourer.Structs;
 
+[Flags]
+public enum JobFlag : ulong
+{ }
+
 // The game specifies different job groups that can contain specific jobs or not.
 public readonly struct JobGroup
 {
-    public readonly  string Name;
-    public readonly  int    Count;
-    public readonly  uint   Id;
-    private readonly ulong  _flags;
+    public readonly  string  Name;
+    public readonly  int     Count;
+    public readonly  uint    Id;
+    private readonly JobFlag _flags;
 
     // Create a job group from a given category and the ClassJob sheet.
     // It looks up the different jobs contained in the category and sets the flags appropriately.
@@ -35,18 +40,22 @@ public readonly struct JobGroup
                 continue;
 
             ++Count;
-            _flags |= 1ul << (int)job.RowId;
+            _flags |= (JobFlag)(1ul << (int)job.RowId);
         }
     }
 
     // Check if a job is contained inside this group.
     public bool Fits(Job job)
-        => Fits(job.Id);
+        => _flags.HasFlag(job.Flag);
+
+    // Check if any of the jobs in the given flags fit this group.
+    public bool Fits(JobFlag flag)
+        => (_flags & flag) != 0;
 
     // Check if a job is contained inside this group.
     public bool Fits(uint jobId)
     {
-        var flag = 1ul << (int)jobId;
-        return (flag & _flags) != 0;
+        var flag = (JobFlag)(1ul << (int)jobId);
+        return _flags.HasFlag(flag);
     }
 }

@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Dalamud.Game;
 using Dalamud.Plugin.Services;
-using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Glamourer.Events;
@@ -22,7 +20,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
     private readonly SaveService       _saveService;
     private readonly ItemManager       _items;
     private readonly IClientState       _clientState;
-    private readonly Framework         _framework;
+    private readonly IFramework         _framework;
     private readonly ObjectUnlocked    _event;
     private readonly IdentifierService _identifier;
 
@@ -46,10 +44,10 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
 
     public readonly IReadOnlyDictionary<ItemId, UnlockRequirements> Unlockable;
 
-    public ItemUnlockManager(SaveService saveService, ItemManager items, IClientState clientState, IDataManager gameData, Framework framework,
-        ObjectUnlocked @event, IdentifierService identifier)
+    public ItemUnlockManager(SaveService saveService, ItemManager items, IClientState clientState, IDataManager gameData, IFramework framework,
+        ObjectUnlocked @event, IdentifierService identifier, IGameInteropProvider interop)
     {
-        SignatureHelper.Initialise(this);
+        interop.InitializeFromAttributes(this);
         _saveService = saveService;
         _items       = items;
         _clientState = clientState;
@@ -58,7 +56,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
         _identifier  = identifier;
         Unlockable   = CreateUnlockData(gameData, items);
         Load();
-        _clientState.Login += OnLogin;
+        _clientState.Login += Scan;
         _framework.Update  += OnFramework;
         Scan();
     }
@@ -117,7 +115,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
         return true;
     }
 
-    private unsafe void OnFramework(Framework _)
+    private unsafe void OnFramework(IFramework _)
     {
         var uiState = UIState.Instance();
         if (uiState == null)
@@ -240,7 +238,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
 
     public void Dispose()
     {
-        _clientState.Login -= OnLogin;
+        _clientState.Login -= Scan;
         _framework.Update  -= OnFramework;
     }
 
@@ -277,9 +275,6 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
             id => _items.ItemService.AwaitedService.TryGetValue(id, EquipSlot.MainHand, out _), "item");
         UpdateModels(version);
     }
-
-    private void OnLogin(object? _, EventArgs _2)
-        => Scan();
 
     private static Dictionary<ItemId, UnlockRequirements> CreateUnlockData(IDataManager gameData, ItemManager items)
     {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Dalamud.Hooking;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Glamourer.Events;
@@ -14,12 +15,12 @@ public unsafe class InventoryService : IDisposable
     private readonly MovedEquipment                   _event;
     private readonly List<(EquipSlot, uint, StainId)> _itemList = new(12);
 
-    public InventoryService(MovedEquipment @event)
+    public InventoryService(MovedEquipment @event, IGameInteropProvider interop)
     {
         _event        = @event;
-        _moveItemHook = Hook<MoveItemDelegate>.FromAddress((nint)InventoryManager.MemberFunctionPointers.MoveItemSlot, MoveItemDetour);
+        _moveItemHook = interop.HookFromAddress<MoveItemDelegate>((nint)InventoryManager.MemberFunctionPointers.MoveItemSlot, MoveItemDetour);
         _equipGearsetHook =
-            Hook<EquipGearsetDelegate>.FromAddress((nint)RaptureGearsetModule.MemberFunctionPointers.EquipGearset, EquipGearSetDetour);
+            interop.HookFromAddress<EquipGearsetDelegate>((nint)RaptureGearsetModule.MemberFunctionPointers.EquipGearset, EquipGearSetDetour);
         _moveItemHook.Enable();
         _equipGearsetHook.Enable();
     }
@@ -76,7 +77,7 @@ public unsafe class InventoryService : IDisposable
                 Add(EquipSlot.Neck,     plate.ItemIds[8],  plate.StainIds[8],  ref entry->Neck);
                 Add(EquipSlot.Wrists,   plate.ItemIds[9],  plate.StainIds[9],  ref entry->Wrists);
                 Add(EquipSlot.RFinger,  plate.ItemIds[10], plate.StainIds[10], ref entry->RingRight);
-                Add(EquipSlot.LFinger,  plate.ItemIds[11], plate.StainIds[11], ref entry->RightLeft);
+                Add(EquipSlot.LFinger,  plate.ItemIds[11], plate.StainIds[11], ref entry->RingLeft);
             }
             else
             {
@@ -101,7 +102,7 @@ public unsafe class InventoryService : IDisposable
                 Add(EquipSlot.Neck,     ref entry->Neck);
                 Add(EquipSlot.Wrists,   ref entry->Wrists);
                 Add(EquipSlot.RFinger,  ref entry->RingRight);
-                Add(EquipSlot.LFinger,  ref entry->RightLeft);
+                Add(EquipSlot.LFinger,  ref entry->RingLeft);
             }
 
             _event.Invoke(_itemList.ToArray());

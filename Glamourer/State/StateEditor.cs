@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Plugin.Services;
 using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Services;
@@ -16,9 +16,9 @@ public class StateEditor
     private readonly CustomizationService _customizations;
     private readonly HumanModelList       _humans;
     private readonly GPoseService         _gPose;
-    private readonly Condition            _condition;
+    private readonly ICondition           _condition;
 
-    public StateEditor(CustomizationService customizations, HumanModelList humans, ItemManager items, GPoseService gPose, Condition condition)
+    public StateEditor(CustomizationService customizations, HumanModelList humans, ItemManager items, GPoseService gPose, ICondition condition)
     {
         _customizations = customizations;
         _humans         = humans;

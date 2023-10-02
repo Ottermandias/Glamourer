@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using Dalamud.Hooking;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using Penumbra.GameData.Enums;
@@ -12,10 +14,11 @@ public class VisorService : IDisposable
 {
     public readonly VisorStateChanged Event;
 
-    public VisorService(VisorStateChanged visorStateChanged)
+    public unsafe VisorService(VisorStateChanged visorStateChanged, IGameInteropProvider interop)
     {
-        Event = visorStateChanged;
-        SignatureHelper.Initialise(this);
+        Event           = visorStateChanged;
+        _setupVisorHook = interop.HookFromAddress<UpdateVisorDelegateInternal>((nint)Human.MemberFunctionPointers.SetupVisor, SetupVisorDetour);
+        interop.InitializeFromAttributes(this);
         _setupVisorHook.Enable();
     }
 
@@ -30,7 +33,7 @@ public class VisorService : IDisposable
     /// <param name="human"> The draw object. </param>
     /// <param name="on"> The desired state (true: toggled). </param>
     /// <returns> Whether the state was changed. </returns>
-    public unsafe bool SetVisorState(Model human, bool on)
+    public bool SetVisorState(Model human, bool on)
     {
         if (!human.IsHuman)
             return false;
@@ -46,12 +49,11 @@ public class VisorService : IDisposable
 
     private delegate void UpdateVisorDelegateInternal(nint humanPtr, ushort modelId, bool on);
 
-    [Signature(global::Penumbra.GameData.Sigs.SetupVisor, DetourName = nameof(SetupVisorDetour))]
-    private readonly Hook<UpdateVisorDelegateInternal> _setupVisorHook = null!;
+    private readonly Hook<UpdateVisorDelegateInternal> _setupVisorHook;
 
     private void SetupVisorDetour(nint human, ushort modelId, bool on)
     {
-        var originalOn   = on;
+        var originalOn = on;
         // Invoke an event that can change the requested value
         // and also control whether the function should be called at all.
         Event.Invoke(human, ref on);
@@ -70,10 +72,7 @@ public class VisorService : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private unsafe void SetupVisorHook(Model human, ushort modelId, bool on)
     {
-        // TODO: use client structs.
-        human.AsCharacterBase->UnkFlags_01 = (byte)(on
-            ? human.AsCharacterBase->UnkFlags_01 | Offsets.DrawObjectVisorStateFlag
-            : human.AsCharacterBase->UnkFlags_01 & ~Offsets.DrawObjectVisorStateFlag);
+        human.AsCharacterBase->VisorToggled = on;
         _setupVisorHook.Original(human.Address, modelId, on);
     }
 }

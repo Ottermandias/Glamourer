@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using Dalamud.Game;
+using Dalamud.Plugin.Services;
 using OtterGui.Classes;
-using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace Glamourer.Events;
 
 public class GPoseService : EventWrapper<Action<bool>, GPoseService.Priority>
 {
-    private readonly Framework _framework;
+    private readonly IFramework   _framework;
+    private readonly IClientState _state;
 
     private readonly ConcurrentQueue<Action> _onLeave = new();
     private readonly ConcurrentQueue<Action> _onEnter = new();
@@ -19,13 +19,14 @@ public class GPoseService : EventWrapper<Action<bool>, GPoseService.Priority>
         GlamourerIpc = int.MinValue,
     }
 
-    public bool InGPose { get; private set; } = false;
+    public bool InGPose { get; private set; }
 
-    public GPoseService(Framework framework)
+    public GPoseService(IFramework framework, IClientState state)
         : base(nameof(GPoseService))
     {
         _framework        =  framework;
-        InGPose           =  GameMain.IsInGPose();
+        _state            =  state;
+        InGPose           =  state.IsGPosing;
         _framework.Update += OnFramework;
     }
 
@@ -51,9 +52,9 @@ public class GPoseService : EventWrapper<Action<bool>, GPoseService.Priority>
             _onEnter.Enqueue(onEnter);
     }
 
-    private void OnFramework(Framework _)
+    private void OnFramework(IFramework _)
     {
-        var inGPose = GameMain.IsInGPose();
+        var inGPose = _state.IsGPosing;
         if (InGPose == inGPose)
             return;
 

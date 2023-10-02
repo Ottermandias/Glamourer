@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -9,6 +9,7 @@ using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Log;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
@@ -23,14 +24,14 @@ public sealed class DesignCombo : FilterComboCache<(Design, string)>
     private          float             _innerWidth;
 
     public DesignCombo(AutoDesignManager manager, DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected,
-        ItemManager items, CustomizationService customize)
-        : this(manager, designs, fileSystem, tabSelected, CreateRevertDesign(customize, items))
+        ItemManager items, CustomizationService customize, Logger log)
+        : this(manager, designs, fileSystem, tabSelected, CreateRevertDesign(customize, items), log)
     { }
 
     private DesignCombo(AutoDesignManager manager, DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected,
-        Design revertDesign)
+        Design revertDesign, Logger log)
         : base(() => designs.Designs.Select(d => (d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty)).OrderBy(d => d.Item2)
-            .Prepend((revertDesign, string.Empty)).ToList())
+            .Prepend((revertDesign, string.Empty)).ToList(), log)
     {
         _manager     = manager;
         _tabSelected = tabSelected;

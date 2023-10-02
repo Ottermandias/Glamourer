@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Plugin.Services;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -12,6 +12,7 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Filesystem;
 using OtterGui.FileSystem.Selector;
+using OtterGui.Log;
 using OtterGui.Raii;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
@@ -25,8 +26,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     private readonly TabSelected     _selectionEvent;
 
     private string? _clipboardText;
-    private Design? _cloneDesign = null;
-    private string  _newName     = string.Empty;
+    private Design? _cloneDesign;
+    private string  _newName = string.Empty;
 
     public bool IncognitoMode
     {
@@ -46,9 +47,9 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         public ColorId Color;
     }
 
-    public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, KeyState keyState, DesignChanged @event,
-        Configuration config, DesignConverter converter, TabSelected selectionEvent)
-        : base(fileSystem, keyState, allowMultipleSelection: true)
+    public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, IKeyState keyState, DesignChanged @event,
+        Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log)
+        : base(fileSystem, keyState, log, allowMultipleSelection: true)
     {
         _designManager  = designManager;
         _event          = @event;

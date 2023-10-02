@@ -1,5 +1,5 @@
 ﻿using System.Numerics;
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using OtterGui;
@@ -9,8 +9,8 @@ namespace Glamourer.Gui;
 
 public class GenericPopupWindow : Window
 {
-    private Configuration _config;
-    public  bool          OpenFestivalPopup { get; internal set; } = false;
+    private readonly Configuration _config;
+    public           bool          OpenFestivalPopup { get; internal set; } = false;
 
     public GenericPopupWindow(Configuration config)
         : base("Glamourer Popups",

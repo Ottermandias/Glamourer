@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.Utility;
 using Dalamud.Utility;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
@@ -22,7 +23,7 @@ public class ModAssociationsTab
         _penumbra = penumbra;
         _selector = selector;
         _manager  = manager;
-        _modCombo = new ModCombo(penumbra);
+        _modCombo = new ModCombo(penumbra, Glamourer.Log);
     }
 
     public void Draw()

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Interop;
@@ -11,6 +12,7 @@ using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Log;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
@@ -48,7 +50,7 @@ public class SetPanel
         _identifierDrawer = identifierDrawer;
         _config           = config;
         _designCombo      = designCombo;
-        _jobGroupCombo    = new JobGroupCombo(manager, jobs);
+        _jobGroupCombo    = new JobGroupCombo(manager, jobs, Glamourer.Log);
     }
 
     private AutoDesignSet Selection
@@ -427,8 +429,8 @@ public class SetPanel
         private readonly AutoDesignManager _manager;
         private readonly JobService        _jobs;
 
-        public JobGroupCombo(AutoDesignManager manager, JobService jobs)
-            : base(() => jobs.JobGroups.Values.ToList())
+        public JobGroupCombo(AutoDesignManager manager, JobService jobs, Logger log)
+            : base(() => jobs.JobGroups.Values.ToList(), log)
         {
             _manager = manager;
             _jobs    = jobs;

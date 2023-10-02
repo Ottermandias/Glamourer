@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using Dalamud.Hooking;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Customization;
@@ -18,7 +19,8 @@ namespace Glamourer.Interop;
 /// </summary>
 public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Customize>>, ChangeCustomizeService.Priority>
 {
-    private readonly PenumbraReloaded _penumbraReloaded;
+    private readonly PenumbraReloaded     _penumbraReloaded;
+    private readonly IGameInteropProvider _interop;
 
     /// <summary> Check whether we in a manual customize update, in which case we need to not toggle certain flags. </summary>
     public static readonly ThreadLocal<bool> InUpdate = new(() => false);
@@ -29,10 +31,11 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
         StateListener = 0,
     }
 
-    public ChangeCustomizeService(PenumbraReloaded penumbraReloaded)
+    public ChangeCustomizeService(PenumbraReloaded penumbraReloaded, IGameInteropProvider interop)
         : base("ChangeCustomize")
     {
         _penumbraReloaded    = penumbraReloaded;
+        _interop             = interop;
         _changeCustomizeHook = Create();
         _penumbraReloaded.Subscribe(Restore, PenumbraReloaded.Priority.ChangeCustomizeService);
     }
@@ -52,7 +55,7 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
 
     private Hook<ChangeCustomizeDelegate> Create()
     {
-        var ret = Hook<ChangeCustomizeDelegate>.FromAddress((nint)Human.MemberFunctionPointers.UpdateDrawData, ChangeCustomizeDetour);
+        var ret = _interop.HookFromAddress<ChangeCustomizeDelegate>((nint)Human.MemberFunctionPointers.UpdateDrawData, ChangeCustomizeDetour);
         ret.Enable();
         return ret;
     }
@@ -66,7 +69,7 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
     {
         if (!model.IsHuman)
             return false;
-        
+
         Glamourer.Log.Verbose($"[ChangeCustomize] Invoked on 0x{model.Address:X} with {customize}.");
         InUpdate.Value = true;
         var ret = _changeCustomizeHook.Original(model.AsHuman, customize.Data, 1);

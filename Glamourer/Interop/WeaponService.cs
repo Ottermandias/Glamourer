@@ -1,5 +1,6 @@
 ﻿using System;
 using Dalamud.Hooking;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
@@ -13,11 +14,11 @@ public unsafe class WeaponService : IDisposable
 {
     private readonly WeaponLoading _event;
 
-    public WeaponService(WeaponLoading @event)
+    public WeaponService(WeaponLoading @event, IGameInteropProvider interop)
     {
         _event = @event;
-        SignatureHelper.Initialise(this);
-        _loadWeaponHook = Hook<LoadWeaponDelegate>.FromAddress((nint)DrawDataContainer.MemberFunctionPointers.LoadWeapon, LoadWeaponDetour);
+        _loadWeaponHook =
+            interop.HookFromAddress<LoadWeaponDelegate>((nint)DrawDataContainer.MemberFunctionPointers.LoadWeapon, LoadWeaponDetour);
         _loadWeaponHook.Enable();
     }
 

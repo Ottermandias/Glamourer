@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Glamourer.Customization;
+using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
-using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs.UnlocksTab;
 
@@ -22,6 +23,7 @@ public class UnlockOverview
     private readonly PenumbraChangedItemTooltip _tooltip;
     private readonly TextureService             _textures;
     private readonly CodeService                _codes;
+    private readonly JobService                 _jobs;
 
     private static readonly Vector4 UnavailableTint = new(0.3f, 0.3f, 0.3f, 1.0f);
 
@@ -67,7 +69,8 @@ public class UnlockOverview
     }
 
     public UnlockOverview(ItemManager items, CustomizationService customizations, ItemUnlockManager itemUnlocks,
-        CustomizeUnlockManager customizeUnlocks, PenumbraChangedItemTooltip tooltip, TextureService textures, CodeService codes)
+        CustomizeUnlockManager customizeUnlocks, PenumbraChangedItemTooltip tooltip, TextureService textures, CodeService codes,
+        JobService jobs)
     {
         _items            = items;
         _customizations   = customizations;
@@ -76,6 +79,7 @@ public class UnlockOverview
         _tooltip          = tooltip;
         _textures         = textures;
         _codes            = codes;
+        _jobs             = jobs;
     }
 
     public void Draw()
@@ -113,10 +117,11 @@ public class UnlockOverview
             if (!_customizeUnlocks.Unlockable.TryGetValue(customize, out var unlockData))
                 continue;
 
-            var unlocked = _customizeUnlocks.IsUnlocked(customize, out var time) ;
+            var unlocked = _customizeUnlocks.IsUnlocked(customize, out var time);
             var icon     = _customizations.AwaitedService.GetIcon(customize.IconId);
 
-            ImGui.Image(icon.ImGuiHandle, iconSize, Vector2.Zero, Vector2.One, unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);
+            ImGui.Image(icon.ImGuiHandle, iconSize, Vector2.Zero, Vector2.One,
+                unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);
             if (ImGui.IsItemHovered())
             {
                 using var tt   = ImRaii.Tooltip();
@@ -184,6 +189,28 @@ public class UnlockOverview
                     ImGui.TextUnformatted(slot is EquipSlot.MainHand ? $"{item.Weapon()}" : $"{item.Armor()}");
                 ImGui.TextUnformatted(
                     unlocked ? time == DateTimeOffset.MinValue ? "Always Unlocked" : $"Unlocked on {time:g}" : "Not Unlocked.");
+
+                if (item.Level.Value <= 1)
+                {
+                    if (item.JobRestrictions.Id <= 1 || item.JobRestrictions.Id >= _jobs.AllJobGroups.Count)
+                        ImGui.TextUnformatted("For Everyone");
+                    else
+                        ImGui.TextUnformatted($"For all {_jobs.AllJobGroups[item.JobRestrictions.Id].Name}");
+                }
+                else
+                {
+                    if (item.JobRestrictions.Id <= 1 || item.JobRestrictions.Id >= _jobs.AllJobGroups.Count)
+                        ImGui.TextUnformatted($"For Everyone of at least Level {item.Level}");
+                    else
+                        ImGui.TextUnformatted($"For all {_jobs.AllJobGroups[item.JobRestrictions.Id].Name} of at least Level {item.Level}");
+                }
+
+                if (item.Flags.HasFlag(ItemFlags.IsDyable))
+                    ImGui.TextUnformatted("Dyable");
+                if (item.Flags.HasFlag(ItemFlags.IsTradable))
+                    ImGui.TextUnformatted("Tradable");
+                if (item.Flags.HasFlag(ItemFlags.IsCrestWorthy))
+                    ImGui.TextUnformatted("Can apply Crest");
                 _tooltip.CreateTooltip(item, string.Empty, false);
             }
         }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Dalamud.Interface.Internal;
 using Dalamud.Plugin.Services;
 using Penumbra.GameData.Enums;
 
@@ -11,9 +12,9 @@ public class CustomizationManager : ICustomizationManager
     private CustomizationManager()
     { }
 
-    public static ICustomizationManager Create(ITextureProvider textures, IDataManager gameData)
+    public static ICustomizationManager Create(ITextureProvider textures, IDataManager gameData, IPluginLog log)
     {
-        _options ??= new CustomizationOptions(textures, gameData);
+        _options ??= new CustomizationOptions(textures, gameData, log);
         return new CustomizationManager();
     }
 
@@ -29,7 +30,7 @@ public class CustomizationManager : ICustomizationManager
     public CustomizationSet GetList(SubRace clan, Gender gender)
         => _options!.GetList(clan, gender);
 
-    public ImGuiScene.TextureWrap GetIcon(uint iconId)
+    public IDalamudTextureWrap GetIcon(uint iconId)
         => _options!.GetIcon(iconId);
 
     public string GetName(CustomName name)
