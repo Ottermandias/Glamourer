@@ -79,8 +79,13 @@ public class SetSelector : IDisposable
                 Selection      = set!;
                 _dirty         = true;
                 break;
-            case AutomationChanged.Type.RenamedSet:
             case AutomationChanged.Type.MovedSet:
+                _dirty               = true;
+                var (oldIdx, newIdx) = ((int, int))data!;
+                if (SelectionIndex == oldIdx)
+                    SelectionIndex = newIdx;
+                break;
+            case AutomationChanged.Type.RenamedSet:
             case AutomationChanged.Type.ChangeIdentifier:
             case AutomationChanged.Type.ToggleSet:
                 _dirty = true;
