@@ -104,10 +104,10 @@ public readonly unsafe struct Actor : IEquatable<Actor>
         => ((CharacterArmor*)&AsCharacter->DrawData.Head)[slot.ToIndex()];
 
     public CharacterWeapon GetMainhand()
-        => *(CharacterWeapon*)&AsCharacter->DrawData.MainHandModel;
+        => new(AsCharacter->DrawData.Weapon(DrawDataContainer.WeaponSlot.MainHand).ModelId.Value);
 
     public CharacterWeapon GetOffhand()
-        => *(CharacterWeapon*)&AsCharacter->DrawData.OffHandModel;
+        => new(AsCharacter->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand).ModelId.Value);
 
     public Customize GetCustomize()
         => *(Customize*)&AsCharacter->DrawData.CustomizeData;
