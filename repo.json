@@ -18,7 +18,7 @@
     ],
     "InternalName": "Glamourer",
     "AssemblyVersion": "1.0.0.6",
-    "TestingAssemblyVersion": "1.0.0.6",
+    "TestingAssemblyVersion": "1.0.1.0",
     "RepoUrl": "https://github.com/Ottermandias/Glamourer",
     "ApplicableVersion": "any",
     "DalamudApiLevel": 9,
@@ -28,7 +28,7 @@
     "LastUpdate": 1618608322,
     "DownloadLinkInstall": "https://github.com/Ottermandias/Glamourer/releases/download/1.0.0.6/Glamourer.zip",
     "DownloadLinkUpdate": "https://github.com/Ottermandias/Glamourer/releases/download/1.0.0.6/Glamourer.zip",
-    "DownloadLinkTesting": "https://github.com/Ottermandias/Glamourer/releases/download/1.0.0.6/Glamourer.zip",
+    "DownloadLinkTesting": "https://github.com/Ottermandias/Glamourer/releases/download/testing_1.0.1.0/Glamourer.zip",
     "IconUrl": "https://raw.githubusercontent.com/Ottermandias/Glamourer/main/images/icon.png"
   }
 ]
