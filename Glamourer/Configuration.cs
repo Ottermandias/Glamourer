@@ -93,9 +93,9 @@ public class Configuration : IPluginConfiguration, ISavable
             }
             catch (Exception ex)
             {
-                Glamourer.Chat.NotificationMessage(ex,
+                Glamourer.Messager.NotificationMessage(ex,
                     "Error reading Configuration, reverting to default.\nYou may be able to restore your configuration using the rolling backups in the XIVLauncher/backups/Glamourer directory.",
-                    "Error reading Configuration", "Error", NotificationType.Error);
+                    "Error reading Configuration", NotificationType.Error);
             }
 
         migrator.Migrate(this);

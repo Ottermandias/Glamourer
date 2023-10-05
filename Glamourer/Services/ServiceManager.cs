@@ -48,7 +48,7 @@ public static class ServiceManager
     }
 
     private static IServiceCollection AddMeta(this IServiceCollection services)
-        => services.AddSingleton<ChatService>()
+        => services.AddSingleton<MessageService>()
             .AddSingleton<FilenameService>()
             .AddSingleton<BackupService>()
             .AddSingleton<FrameworkManager>()
@@ -115,6 +115,7 @@ public static class ServiceManager
 
     private static IServiceCollection AddUi(this IServiceCollection services)
         => services.AddSingleton<DebugTab>()
+            .AddSingleton<MessagesTab>()
             .AddSingleton<SettingsTab>()
             .AddSingleton<ActorTab>()
             .AddSingleton<ActorSelector>()

@@ -146,7 +146,7 @@ public sealed class Design : DesignBase, ISavable
             var enabled   = tok["Enabled"]?.ToObject<bool>();
             if (name == null || directory == null || enabled == null)
             {
-                Glamourer.Chat.NotificationMessage("The loaded design contains an invalid mod, skipped.", "Warning", NotificationType.Warning);
+                Glamourer.Messager.NotificationMessage("The loaded design contains an invalid mod, skipped.", NotificationType.Warning);
                 continue;
             }
 
@@ -156,8 +156,7 @@ public sealed class Design : DesignBase, ISavable
                 settings.Add(key, value);
             var priority = tok["Priority"]?.ToObject<int>() ?? 0;
             if (!design.AssociatedMods.TryAdd(new Mod(name, directory), new ModSettings(settings, priority, enabled.Value)))
-                Glamourer.Chat.NotificationMessage("The loaded design contains a mod more than once, skipped.", "Warning",
-                    NotificationType.Warning);
+                Glamourer.Messager.NotificationMessage("The loaded design contains a mod more than once, skipped.", NotificationType.Warning);
         }
     }
 

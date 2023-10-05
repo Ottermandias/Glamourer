@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Gui;
@@ -247,7 +248,7 @@ public unsafe class FunModule : IDisposable
             tmp.FixCustomizeApplication(_customizations, CustomizeFlagExtensions.AllRelevant);
             var data = _designConverter.ShareBase64(tmp);
             ImGui.SetClipboardText(data);
-            Glamourer.Chat.NotificationMessage($"Copied current actual design of {actor.Utf8Name} to clipboard.");
+            Glamourer.Messager.NotificationMessage($"Copied current actual design of {actor.Utf8Name} to clipboard.", NotificationType.Info, false);
         }
         catch
         {

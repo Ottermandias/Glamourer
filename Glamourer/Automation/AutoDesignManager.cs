@@ -14,6 +14,7 @@ using Glamourer.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Filesystem;
 using Penumbra.GameData.Actors;
 
@@ -359,7 +360,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             {
                 case < 1:
                 case > CurrentVersion:
-                    Glamourer.Chat.NotificationMessage("Failure to load automated designs: No valid version available.", "Error",
+                    Glamourer.Messager.NotificationMessage("Failure to load automated designs: No valid version available.",
                         NotificationType.Error);
                     break;
                 case 1:
@@ -369,8 +370,8 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         }
         catch (Exception ex)
         {
-            Glamourer.Chat.NotificationMessage(ex, "Failure to load automated designs: Error during parsing.",
-                "Failure to load automated designs", "Error", NotificationType.Error);
+            Glamourer.Messager.NotificationMessage(ex, "Failure to load automated designs: Error during parsing.",
+                "Failure to load automated designs", NotificationType.Error);
         }
     }
 
@@ -384,14 +385,14 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             var name = obj["Name"]?.ToObject<string>() ?? string.Empty;
             if (name.Length == 0)
             {
-                Glamourer.Chat.NotificationMessage("Skipped loading Automation Set: No name provided.", "Warning", NotificationType.Warning);
+                Glamourer.Messager.NotificationMessage("Skipped loading Automation Set: No name provided.", NotificationType.Warning);
                 continue;
             }
 
             var id = _actors.AwaitedService.FromJson(obj["Identifier"] as JObject);
             if (!IdentifierValid(id, out var group))
             {
-                Glamourer.Chat.NotificationMessage("Skipped loading Automation Set: Invalid Identifier.", "Warning", NotificationType.Warning);
+                Glamourer.Messager.NotificationMessage("Skipped loading Automation Set: Invalid Identifier.", NotificationType.Warning);
                 continue;
             }
 
@@ -419,7 +420,8 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             {
                 if (designObj is not JObject j)
                 {
-                    Glamourer.Chat.NotificationMessage($"Skipped loading design in Automation Set for {id.Incognito(null)}: Unknown design.");
+                    Glamourer.Messager.NotificationMessage(
+                        $"Skipped loading design in Automation Set for {id.Incognito(null)}: Unknown design.");
                     continue;
                 }
 
@@ -439,13 +441,13 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         {
             if (designIdentifier.Length == 0)
             {
-                Glamourer.Chat.NotificationMessage("Error parsing automatically applied design: No design specified.");
+                Glamourer.Messager.NotificationMessage("Error parsing automatically applied design: No design specified.");
                 return null;
             }
 
             if (!Guid.TryParse(designIdentifier, out var guid))
             {
-                Glamourer.Chat.NotificationMessage($"Error parsing automatically applied design: {designIdentifier} is not a valid GUID.");
+                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design: {designIdentifier} is not a valid GUID.");
 
                 return null;
             }
@@ -453,7 +455,8 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             design = _designs.Designs.FirstOrDefault(d => d.Identifier == guid);
             if (design == null)
             {
-                Glamourer.Chat.NotificationMessage($"Error parsing automatically applied design: The specified design {guid} does not exist.");
+                Glamourer.Messager.NotificationMessage(
+                    $"Error parsing automatically applied design: The specified design {guid} does not exist.");
                 return null;
             }
         }
@@ -475,7 +478,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         {
             if (!_jobs.JobGroups.TryGetValue((ushort)jobs, out var jobGroup))
             {
-                Glamourer.Chat.NotificationMessage($"Error parsing automatically applied design: The job condition {jobs} does not exist.");
+                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design: The job condition {jobs} does not exist.");
                 return null;
             }
 

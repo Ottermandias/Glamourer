@@ -7,6 +7,7 @@ using Glamourer.Designs;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 
@@ -88,8 +89,7 @@ public class DesignDetailTab
                 }
                 catch (Exception ex)
                 {
-                    Glamourer.Chat.NotificationMessage(ex, $"Could not open file {fileName}.", $"Could not open file {fileName}", "Failure",
-                        NotificationType.Warning);
+                    Glamourer.Messager.NotificationMessage(ex, $"Could not open file {fileName}.", $"Could not open file {fileName}", NotificationType.Warning);
                 }
         }
 
@@ -114,7 +114,7 @@ public class DesignDetailTab
             }
             catch (Exception ex)
             {
-                Glamourer.Chat.NotificationMessage(ex, ex.Message, "Could not rename or move design", "Error", NotificationType.Error);
+                Glamourer.Messager.NotificationMessage(ex, ex.Message, "Could not rename or move design", NotificationType.Error);
             }
 
         ImGuiUtil.DrawFrameColumn("Creation Date");

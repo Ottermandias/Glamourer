@@ -7,6 +7,7 @@ using Glamourer.Customization;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
+using OtterGui.Classes;
 
 namespace Glamourer.Interop;
 
@@ -62,8 +63,7 @@ public class DatFileService
         }
         catch (Exception ex)
         {
-            Glamourer.Chat.NotificationMessage(ex, $"Could not read character data file {path}.",
-                $"Could not read character data file {path}", "Failure", NotificationType.Error);
+            Glamourer.Messager.NotificationMessage(ex, $"Could not read character data file {path}.", NotificationType.Error);
             file = default;
         }
 
@@ -94,8 +94,7 @@ public class DatFileService
         }
         catch (Exception ex)
         {
-            Glamourer.Chat.NotificationMessage(ex, $"Could not save character data to file {path}.",
-                $"Could not save character data to file {path}", "Failure", NotificationType.Error);
+            Glamourer.Messager.NotificationMessage(ex, $"Could not save character data to file {path}.", "Failure", NotificationType.Error);
             return false;
         }
     }

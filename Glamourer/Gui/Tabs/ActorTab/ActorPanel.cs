@@ -17,6 +17,7 @@ using Glamourer.Services;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
@@ -354,8 +355,8 @@ public class ActorPanel
         }
         catch (Exception ex)
         {
-            Glamourer.Chat.NotificationMessage(ex, $"Could not apply clipboard to {_identifier}.",
-                $"Could not apply clipboard to design {_identifier.Incognito(null)}", "Failure", NotificationType.Error);
+            Glamourer.Messager.NotificationMessage(ex, $"Could not apply clipboard to {_identifier}.",
+                $"Could not apply clipboard to design {_identifier.Incognito(null)}", NotificationType.Error, false);
         }
     }
 
@@ -369,8 +370,8 @@ public class ActorPanel
         }
         catch (Exception ex)
         {
-            Glamourer.Chat.NotificationMessage(ex, $"Could not copy {_identifier} data to clipboard.",
-                $"Could not copy data from design {_identifier.Incognito(null)} to clipboard", "Failure", NotificationType.Error);
+            Glamourer.Messager.NotificationMessage(ex, $"Could not copy {_identifier} data to clipboard.",
+                $"Could not copy data from design {_identifier.Incognito(null)} to clipboard", NotificationType.Error);
         }
     }
 

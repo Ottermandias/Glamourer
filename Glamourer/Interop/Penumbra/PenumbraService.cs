@@ -8,6 +8,7 @@ using Dalamud.Logging;
 using Dalamud.Plugin;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
+using OtterGui.Classes;
 using Penumbra.Api;
 using Penumbra.Api.Enums;
 using Penumbra.Api.Helpers;
@@ -147,8 +148,7 @@ public unsafe class PenumbraService : IDisposable
     public void OpenModPage(Mod mod)
     {
         if (_openModPage.Invoke(TabType.Mods, mod.DirectoryName, mod.Name) == PenumbraApiEc.ModMissing)
-            Glamourer.Chat.NotificationMessage($"Could not open the mod {mod.Name}, no fitting mod was found in your Penumbra install.",
-                "Mod Missing", NotificationType.Info);
+            Glamourer.Messager.NotificationMessage($"Could not open the mod {mod.Name}, no fitting mod was found in your Penumbra install.", NotificationType.Info, false);
     }
 
     public string CurrentCollection

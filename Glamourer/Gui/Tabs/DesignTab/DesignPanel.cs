@@ -18,6 +18,7 @@ using Glamourer.State;
 using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 
@@ -405,8 +406,8 @@ public class DesignPanel
         }
         catch (Exception ex)
         {
-            Glamourer.Chat.NotificationMessage(ex, $"Could not apply clipboard to {_selector.Selected!.Name}.",
-                $"Could not apply clipboard to design {_selector.Selected!.Identifier}", "Failure", NotificationType.Error);
+            Glamourer.Messager.NotificationMessage(ex, $"Could not apply clipboard to {_selector.Selected!.Name}.",
+                $"Could not apply clipboard to design {_selector.Selected!.Identifier}", NotificationType.Error, false);
         }
     }
 
@@ -419,8 +420,8 @@ public class DesignPanel
         }
         catch (Exception ex)
         {
-            Glamourer.Chat.NotificationMessage(ex, $"Could not copy {_selector.Selected!.Name} data to clipboard.",
-                $"Could not copy data from design {_selector.Selected!.Identifier} to clipboard", "Failure", NotificationType.Error);
+            Glamourer.Messager.NotificationMessage(ex, $"Could not copy {_selector.Selected!.Name} data to clipboard.",
+                $"Could not copy data from design {_selector.Selected!.Identifier} to clipboard", NotificationType.Error, false);
         }
     }
 

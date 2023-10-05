@@ -27,6 +27,7 @@ public class MainWindow : Window, IDisposable
         Designs    = 3,
         Automation = 4,
         Unlocks    = 5,
+        Messages   = 6,
     }
 
     private readonly Configuration            _config;
@@ -40,11 +41,13 @@ public class MainWindow : Window, IDisposable
     public readonly DesignTab     Designs;
     public readonly AutomationTab Automation;
     public readonly UnlocksTab    Unlocks;
+    public readonly MessagesTab   Messages;
 
     public TabType SelectTab = TabType.None;
 
     public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
-        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, ConvenienceRevertButtons convenienceButtons)
+        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, ConvenienceRevertButtons convenienceButtons,
+        MessagesTab messages)
         : base(GetLabel())
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -61,6 +64,7 @@ public class MainWindow : Window, IDisposable
         Unlocks             = unlocks;
         _event              = @event;
         _convenienceButtons = convenienceButtons;
+        Messages            = messages;
         _config             = config;
         _tabs = new ITab[]
         {
@@ -69,6 +73,7 @@ public class MainWindow : Window, IDisposable
             designs,
             automation,
             unlocks,
+            messages,
             debugTab,
         };
         _event.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
@@ -100,6 +105,7 @@ public class MainWindow : Window, IDisposable
             TabType.Designs    => Designs.Label,
             TabType.Automation => Automation.Label,
             TabType.Unlocks    => Unlocks.Label,
+            TabType.Messages   => Messages.Label,
             _                  => ReadOnlySpan<byte>.Empty,
         };
 
@@ -111,6 +117,7 @@ public class MainWindow : Window, IDisposable
         if (label == Settings.Label)   return TabType.Settings;
         if (label == Automation.Label) return TabType.Automation;
         if (label == Unlocks.Label)    return TabType.Unlocks;
+        if (label == Messages.Label)   return TabType.Messages;
         if (label == Debug.Label)      return TabType.Debug;
         // @formatter:on
         return TabType.None;
@@ -126,10 +133,10 @@ public class MainWindow : Window, IDisposable
             xPos -= ImGui.GetStyle().ScrollbarSize + ImGui.GetStyle().FramePadding.X;
 
         ImGui.SetCursorPos(new Vector2(xPos, 0));
-        CustomGui.DrawDiscordButton(Glamourer.Chat, width);
+        CustomGui.DrawDiscordButton(Glamourer.Messager, width);
 
         ImGui.SetCursorPos(new Vector2(xPos, ImGui.GetFrameHeightWithSpacing()));
-        CustomGui.DrawGuideButton(Glamourer.Chat, width);
+        CustomGui.DrawGuideButton(Glamourer.Messager, width);
 
         ImGui.SetCursorPos(new Vector2(xPos, 2 * ImGui.GetFrameHeightWithSpacing()));
         if (ImGui.Button("Show Changelogs", new Vector2(width, 0)))

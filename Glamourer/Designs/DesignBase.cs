@@ -286,7 +286,7 @@ public class DesignBase
         if (equip == null)
         {
             design.DesignData.SetDefaultEquipment(items);
-            Glamourer.Chat.NotificationMessage("The loaded design does not contain any equipment data, reset to default.", "Warning",
+            Glamourer.Messager.NotificationMessage("The loaded design does not contain any equipment data, reset to default.",
                 NotificationType.Warning);
             return;
         }
@@ -310,7 +310,7 @@ public class DesignBase
         void PrintWarning(string msg)
         {
             if (msg.Length > 0 && name != "Temporary Design")
-                Glamourer.Chat.NotificationMessage($"{msg} ({name})", "Warning", NotificationType.Warning);
+                Glamourer.Messager.NotificationMessage($"{msg} ({name})", NotificationType.Warning);
         }
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
@@ -366,7 +366,7 @@ public class DesignBase
             design.DesignData.ModelId   = 0;
             design.DesignData.IsHuman   = true;
             design.DesignData.Customize = Customize.Default;
-            Glamourer.Chat.NotificationMessage("The loaded design does not contain any customization data, reset to default.", "Warning",
+            Glamourer.Messager.NotificationMessage("The loaded design does not contain any customization data, reset to default.",
                 NotificationType.Warning);
             return;
         }
@@ -374,9 +374,9 @@ public class DesignBase
         void PrintWarning(string msg)
         {
             if (msg.Length > 0)
-                Glamourer.Chat.NotificationMessage(
-                    $"{msg} ({name})\n\nThis change is not saved automatically. If you want this replacement to stick and the warning to stop appearing, please save the design manually once by changing something in it.",
-                    "Warning", NotificationType.Warning);
+                Glamourer.Messager.NotificationMessage(
+                    $"{msg} ({name})\nThis change is not saved automatically. If you want this replacement to stick and the warning to stop appearing, please save the design manually once by changing something in it.",
+                    NotificationType.Warning);
         }
 
         var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);
@@ -451,8 +451,7 @@ public class DesignBase
         }
         catch (Exception ex)
         {
-            Glamourer.Chat.NotificationMessage(ex, "Could not parse Base64 design.", "Could not parse Base64 design", "Failure",
-                NotificationType.Error);
+            Glamourer.Messager.NotificationMessage(ex, "Could not parse Base64 design.", NotificationType.Error);
         }
     }
 

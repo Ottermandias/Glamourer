@@ -10,6 +10,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OtterGui.Classes;
 using OtterGui.Filesystem;
 
 namespace Glamourer.Designs;
@@ -111,9 +112,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
                     }
                     catch (Exception ex)
                     {
-                        Glamourer.Chat.NotificationMessage(ex, $"Could not move design to {path} because the folder could not be created.",
-                            $"Could not move design to {path} because the folder could not be created", "Error",
-                            NotificationType.Error);
+                        Glamourer.Messager.NotificationMessage(ex, $"Could not move design to {path} because the folder could not be created.", NotificationType.Error);
                     }
 
                 CreateDuplicateLeaf(parent, design.Name.Text, design);

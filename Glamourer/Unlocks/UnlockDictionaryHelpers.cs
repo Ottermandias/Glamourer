@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Dalamud.Interface.Internal.Notifications;
+using OtterGui.Classes;
 
 namespace Glamourer.Unlocks;
 
@@ -47,8 +48,7 @@ public static class UnlockDictionaryHelpers
                     revertEndian = true;
                     break;
                 default:
-                    Glamourer.Chat.NotificationMessage($"Loading unlocked {type}s failed: Invalid magic number.", "Warning",
-                        NotificationType.Warning);
+                    Glamourer.Messager.NotificationMessage($"Loading unlocked {type}s failed: Invalid magic number.", NotificationType.Warning);
                     return -1;
             }
 
@@ -80,12 +80,12 @@ public static class UnlockDictionaryHelpers
                     }
 
                     if (skips > 0)
-                        Glamourer.Chat.NotificationMessage($"Skipped {skips} unlocked {type}s while loading unlocked {type}s.", "Warning",
+                        Glamourer.Messager.NotificationMessage($"Skipped {skips} unlocked {type}s while loading unlocked {type}s.",
                             NotificationType.Warning);
 
                     break;
                 default:
-                    Glamourer.Chat.NotificationMessage($"Loading unlocked {type}s failed: Version {version} is unknown.", "Warning",
+                    Glamourer.Messager.NotificationMessage($"Loading unlocked {type}s failed: Version {version} is unknown.",
                         NotificationType.Warning);
                     return version;
             }
@@ -95,8 +95,8 @@ public static class UnlockDictionaryHelpers
         }
         catch (Exception ex)
         {
-            Glamourer.Chat.NotificationMessage(ex, $"Loading unlocked {type}s failed: Unknown Error.", $"Loading unlocked {type}s failed:\n",
-                "Error", NotificationType.Error);
+            Glamourer.Messager.NotificationMessage(ex, $"Loading unlocked {type}s failed: Unknown Error.",
+                $"Loading unlocked {type}s failed:\n", NotificationType.Error);
 
             return -1;
         }

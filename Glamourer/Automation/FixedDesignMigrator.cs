@@ -6,6 +6,7 @@ using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Structs;
 using Newtonsoft.Json.Linq;
+using OtterGui.Classes;
 using Penumbra.GameData.Actors;
 using Penumbra.String;
 
@@ -45,7 +46,7 @@ public class FixedDesignMigrator
                 id         = actors.AwaitedService.CreatePlayer(byteString, actors.AwaitedService.Data.Worlds.First().Key);
                 if (!id.IsValid)
                 {
-                    Glamourer.Chat.NotificationMessage($"Could not migrate fixed design {data.Name}.", "Error", NotificationType.Error);
+                    Glamourer.Messager.NotificationMessage($"Could not migrate fixed design {data.Name}.", NotificationType.Error);
                     allEnabled = false;
                     continue;
                 }
@@ -58,7 +59,7 @@ public class FixedDesignMigrator
             {
                 if (!designFileSystem.Find(design.Item1, out var child) || child is not DesignFileSystem.Leaf leaf)
                 {
-                    Glamourer.Chat.NotificationMessage($"Could not find design with path {design.Item1}, skipped fixed design.", "Warning",
+                    Glamourer.Messager.NotificationMessage($"Could not find design with path {design.Item1}, skipped fixed design.",
                         NotificationType.Warning);
                     continue;
                 }
@@ -81,7 +82,7 @@ public class FixedDesignMigrator
             var name = obj["Name"]?.ToObject<string>() ?? string.Empty;
             if (name.Length == 0)
             {
-                Glamourer.Chat.NotificationMessage("Could not semi-migrate fixed design: No character name available.", "Warning",
+                Glamourer.Messager.NotificationMessage("Could not semi-migrate fixed design: No character name available.",
                     NotificationType.Warning);
                 continue;
             }
@@ -89,7 +90,7 @@ public class FixedDesignMigrator
             var path = obj["Path"]?.ToObject<string>() ?? string.Empty;
             if (path.Length == 0)
             {
-                Glamourer.Chat.NotificationMessage("Could not semi-migrate fixed design: No design path available.", "Warning",
+                Glamourer.Messager.NotificationMessage("Could not semi-migrate fixed design: No design path available.",
                     NotificationType.Warning);
                 continue;
             }
@@ -97,7 +98,7 @@ public class FixedDesignMigrator
             var job = obj["JobGroups"]?.ToObject<int>() ?? -1;
             if (job < 0 || !_jobs.JobGroups.TryGetValue((ushort)job, out var group))
             {
-                Glamourer.Chat.NotificationMessage("Could not semi-migrate fixed design: Invalid job group specified.", "Warning",
+                Glamourer.Messager.NotificationMessage("Could not semi-migrate fixed design: Invalid job group specified.",
                     NotificationType.Warning);
                 continue;
             }

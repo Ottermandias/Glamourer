@@ -141,7 +141,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         }
         catch
         {
-            Glamourer.Chat.NotificationMessage("Could not import data from clipboard.", "Failure", NotificationType.Error);
+            Glamourer.Messager.NotificationMessage("Could not import data from clipboard.", NotificationType.Error, false);
         }
     }
 
@@ -173,8 +173,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
             else if (design != null)
                 _designManager.CreateClone(design, _newName, true);
             else
-                Glamourer.Chat.NotificationMessage("Could not create a design, clipboard did not contain valid design data.", "Failure",
-                    NotificationType.Error);
+                Glamourer.Messager.NotificationMessage("Could not create a design, clipboard did not contain valid design data.", NotificationType.Error, false);
             _clipboardText = null;
         }
         else if (_cloneDesign != null)

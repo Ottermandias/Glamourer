@@ -7,6 +7,7 @@ using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
@@ -125,7 +126,7 @@ public class ModAssociationsTab
         {
             var text = _penumbra.SetMod(mod, settings);
             if (text.Length > 0)
-                Glamourer.Chat.NotificationMessage(text, "Failure", NotificationType.Warning);
+                Glamourer.Messager.NotificationMessage(text, NotificationType.Warning, false);
         }
 
         DrawAssociatedModTooltip(settings);

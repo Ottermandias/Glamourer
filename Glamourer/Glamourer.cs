@@ -20,8 +20,8 @@ public class Glamourer : IDalamudPlugin
         Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "Unknown";
 
 
-    public static readonly Logger      Log = new();
-    public static          ChatService Chat { get; private set; } = null!;
+    public static readonly Logger         Log = new();
+    public static          MessageService Messager { get; private set; } = null!;
 
     private readonly ServiceProvider _services;
 
@@ -30,7 +30,7 @@ public class Glamourer : IDalamudPlugin
         try
         {
             _services = ServiceManager.CreateProvider(pluginInterface, Log);
-            Chat      = _services.GetRequiredService<ChatService>();
+            Messager  = _services.GetRequiredService<MessageService>();
             _services.GetRequiredService<GlamourerWindowSystem>(); // initialize ui.
             _services.GetRequiredService<CommandService>();        // initialize commands.
             _services.GetRequiredService<VisorService>();
