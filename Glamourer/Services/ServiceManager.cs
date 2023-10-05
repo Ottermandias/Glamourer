@@ -56,7 +56,8 @@ public static class ServiceManager
             .AddSingleton<CodeService>()
             .AddSingleton<ConfigMigrationService>()
             .AddSingleton<Configuration>()
-            .AddSingleton<TextureService>();
+            .AddSingleton<TextureService>()
+            .AddSingleton<FavoriteManager>();
 
     private static IServiceCollection AddEvents(this IServiceCollection services)
         => services.AddSingleton<VisorStateChanged>()

@@ -22,6 +22,7 @@ public sealed class ObjectUnlocked : EventWrapper<Action<ObjectUnlocked.Type, ui
     public enum Priority
     {
         /// <seealso cref="Gui.Tabs.UnlocksTab.UnlockTable.OnObjectUnlock"/>
+        /// <remarks> Currently used as a hack to make the unlock table dirty in it. If anything else starts using this, rework. </remarks>
         UnlockTable = 0,
     }
 

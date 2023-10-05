@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Utility;
 using Glamourer.Customization;
 using Glamourer.Interop;
@@ -24,6 +25,7 @@ public class UnlockOverview
     private readonly TextureService             _textures;
     private readonly CodeService                _codes;
     private readonly JobService                 _jobs;
+    private readonly FavoriteManager            _favorites;
 
     private static readonly Vector4 UnavailableTint = new(0.3f, 0.3f, 0.3f, 1.0f);
 
@@ -70,7 +72,7 @@ public class UnlockOverview
 
     public UnlockOverview(ItemManager items, CustomizationService customizations, ItemUnlockManager itemUnlocks,
         CustomizeUnlockManager customizeUnlocks, PenumbraChangedItemTooltip tooltip, TextureService textures, CodeService codes,
-        JobService jobs)
+        JobService jobs, FavoriteManager favorites)
     {
         _items            = items;
         _customizations   = customizations;
@@ -80,6 +82,7 @@ public class UnlockOverview
         _textures         = textures;
         _codes            = codes;
         _jobs             = jobs;
+        _favorites        = favorites;
     }
 
     public void Draw()
@@ -166,10 +169,12 @@ public class UnlockOverview
             var (icon, size) = (iconHandle.ImGuiHandle, new Vector2(iconHandle.Width, iconHandle.Height));
 
             ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One, unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);
+            if (_favorites.Contains(item))
+                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
+                    2 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * ImGuiHelpers.GlobalScale);
+
             if (ImGui.IsItemClicked())
-            {
-                // TODO link
-            }
+                Glamourer.Messager.Chat.Print(new SeStringBuilder().AddItemLink(item.ItemId.Id, false).BuiltString);
 
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && _tooltip.Player(out var state))
                 _tooltip.ApplyItem(state, item);

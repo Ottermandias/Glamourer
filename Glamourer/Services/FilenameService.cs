@@ -15,6 +15,7 @@ public class FilenameService
     public readonly string AutomationFile;
     public readonly string UnlockFileCustomize;
     public readonly string UnlockFileItems;
+    public readonly string FavoriteFile;
 
     public FilenameService(DalamudPluginInterface pi)
     {
@@ -26,6 +27,7 @@ public class FilenameService
         UnlockFileCustomize = Path.Combine(ConfigDirectory, "unlocks_customize.json");
         UnlockFileItems     = Path.Combine(ConfigDirectory, "unlocks_items.json");
         DesignDirectory     = Path.Combine(ConfigDirectory, "designs");
+        FavoriteFile        = Path.Combine(ConfigDirectory, "favorites.json");
     }
 
 

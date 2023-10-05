@@ -1,9 +1,11 @@
 using System;
 using System.Numerics;
+using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Glamourer.Customization;
 using Glamourer.Services;
 using Glamourer.Structs;
+using Glamourer.Unlocks;
 using ImGuiNET;
 using Lumina.Misc;
 using OtterGui;
@@ -119,4 +121,26 @@ public static class UiHelpers
             (true, false)  => (true, false),
             (false, true)  => (false, true),
         };
+
+    public static bool DrawFavoriteStar(FavoriteManager favorites, EquipItem item)
+    {
+        var favorite = favorites.Contains(item);
+        var hovering = ImGui.IsMouseHoveringRect(ImGui.GetCursorScreenPos(),
+            ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetTextLineHeight()));
+
+        using var font = ImRaii.PushFont(UiBuilder.IconFont);
+        using var c = ImRaii.PushColor(ImGuiCol.Text,
+            hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
+        ImGui.TextUnformatted(FontAwesomeIcon.Star.ToIconString());
+        if (ImGui.IsItemClicked())
+        {
+            if (favorite)
+                favorites.Remove(item);
+            else
+                favorites.TryAdd(item);
+            return true;
+        }
+
+        return false;
+    }
 }

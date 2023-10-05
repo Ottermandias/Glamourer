@@ -2,6 +2,7 @@
 using System.Linq;
 using Dalamud.Plugin.Services;
 using Glamourer.Services;
+using Glamourer.Unlocks;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using OtterGui;
@@ -16,13 +17,15 @@ namespace Glamourer.Gui.Equipment;
 
 public sealed class ItemCombo : FilterComboCache<EquipItem>
 {
-    public readonly string Label;
-    private         ItemId _currentItem;
-    private         float  _innerWidth;
+    private readonly FavoriteManager _favorites;
+    public readonly  string          Label;
+    private          ItemId          _currentItem;
+    private          float           _innerWidth;
 
-    public ItemCombo(IDataManager gameData, ItemManager items, EquipSlot slot, Logger log)
-        : base(() => GetItems(items, slot), log)
+    public ItemCombo(IDataManager gameData, ItemManager items, EquipSlot slot, Logger log, FavoriteManager favorites)
+        : base(() => GetItems(favorites, items, slot), log)
     {
+        _favorites    = favorites;
         Label         = GetLabel(gameData, slot);
         _currentItem  = ItemManager.NothingId(slot);
         SearchByParts = true;
@@ -59,7 +62,15 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     {
         var obj  = Items[globalIdx];
         var name = ToString(obj);
-        var ret  = ImGui.Selectable(name, selected);
+        if (UiHelpers.DrawFavoriteStar(_favorites, obj) && CurrentSelectionIdx == globalIdx)
+        {
+            CurrentSelectionIdx = -1;
+            _currentItem        = obj.ItemId;
+            CurrentSelection    = default;
+        }
+
+        ImGui.SameLine();
+        var ret = ImGui.Selectable(name, selected);
         ImGui.SameLine();
         using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
         ImGuiUtil.RightAlign($"({obj.ModelString})");
@@ -92,7 +103,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
         };
     }
 
-    private static IReadOnlyList<EquipItem> GetItems(ItemManager items, EquipSlot slot)
+    private static IReadOnlyList<EquipItem> GetItems(FavoriteManager favorites, ItemManager items, EquipSlot slot)
     {
         var nothing = ItemManager.NothingItem(slot);
         if (!items.ItemService.AwaitedService.TryGetValue(slot.ToEquipType(), out var list))
@@ -104,6 +115,6 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
         var enumerable = list.AsEnumerable();
         if (slot.IsEquipment())
             enumerable = enumerable.Append(ItemManager.SmallClothesItem(slot));
-        return enumerable.OrderBy(i => i.Name).Prepend(nothing).ToList();
+        return enumerable.OrderByDescending(favorites.Contains).ThenBy(i => i.Name).Prepend(nothing).ToList();
     }
 }

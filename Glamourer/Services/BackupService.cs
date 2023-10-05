@@ -34,6 +34,7 @@ public class BackupService
             new(fileNames.AutomationFile),
             new(fileNames.UnlockFileCustomize),
             new(fileNames.UnlockFileItems),
+            new(fileNames.FavoriteFile),
         };
 
         list.AddRange(fileNames.Designs());

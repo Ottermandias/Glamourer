@@ -18,6 +18,9 @@ public enum ColorId
     AutomationActorAvailable,
     AutomationActorUnavailable,
     HeaderButtons,
+    FavoriteStarOn,
+    FavoriteStarHovered,
+    FavoriteStarOff,
 }
 
 public static class Colors
@@ -40,6 +43,9 @@ public static class Colors
             ColorId.AutomationActorAvailable   => (0xFFFFFFFF, "Automation Actor Available",       "A character associated with the given automated design set is currently visible."                          ),
             ColorId.AutomationActorUnavailable => (0xFF808080, "Automation Actor Unavailable",     "No character associated with the given automated design set is currently visible."                         ),
             ColorId.HeaderButtons              => (0xFFFFF0C0, "Header Buttons",                   "The text and border color of buttons in the header, like the Incognito toggle."                            ),
+            ColorId.FavoriteStarOn             => (0xFF40D0D0, "Favored Item",                     "The color of the star for favored items and of the border in the unlock overview tab."                     ),
+            ColorId.FavoriteStarHovered        => (0xFFD040D0, "Favorite Star Hovered",            "The color of the star for favored items when it is hovered."                                               ),
+            ColorId.FavoriteStarOff            => (0x20808080, "Favorite Star Outline",            "The color of the star for items that are not favored when it is not hovered."                              ),
             _                                  => (0x00000000, string.Empty,                       string.Empty                                                                                                ),
             // @formatter:on
         };

@@ -10,6 +10,7 @@ using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Services;
 using Glamourer.Structs;
+using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -37,7 +38,8 @@ public class EquipmentDrawer
     private float _requiredComboWidthUnscaled;
     private float _requiredComboWidth;
 
-    public EquipmentDrawer(IDataManager gameData, ItemManager items, CodeService codes, TextureService textures, Configuration config,
+    public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, CodeService codes, TextureService textures,
+        Configuration config,
         GPoseService gPose)
     {
         _items     = items;
@@ -48,7 +50,7 @@ public class EquipmentDrawer
         _stainData = items.Stains;
         _stainCombo = new FilterComboColors(DefaultWidth - 20,
             _stainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))), Glamourer.Log);
-        _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log)).ToArray();
+        _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log, favorites)).ToArray();
         _weaponCombo = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
         foreach (var type in Enum.GetValues<FullEquipType>())
         {

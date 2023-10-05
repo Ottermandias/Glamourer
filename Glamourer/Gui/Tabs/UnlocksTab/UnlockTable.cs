@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Glamourer.Events;
@@ -24,19 +25,20 @@ public class UnlockTable : Table<EquipItem>, IDisposable
     private readonly ObjectUnlocked _event;
 
     public UnlockTable(ItemManager items, TextureService textures, ItemUnlockManager itemUnlocks,
-        PenumbraChangedItemTooltip tooltip, ObjectUnlocked @event, JobService jobs)
+        PenumbraChangedItemTooltip tooltip, ObjectUnlocked @event, JobService jobs, FavoriteManager favorites)
         : base("ItemUnlockTable", new ItemList(items),
-            new NameColumn(textures, tooltip) { Label = "Item Name..." },
-            new SlotColumn() { Label                  = "Equip Slot" },
-            new TypeColumn() { Label                  = "Item Type..." },
-            new UnlockDateColumn(itemUnlocks) { Label = "Unlocked" },
-            new ItemIdColumn() { Label                = "Item Id..." },
-            new ModelDataColumn(items) { Label        = "Model Data..." },
-            new JobColumn(jobs) { Label               = "Jobs" },
-            new LevelColumn() { Label                 = "Level..." },
-            new DyableColumn() { Label                = "Dye" },
-            new CrestColumn() { Label                 = "Crest" },
-            new TradableColumn() { Label              = "Trade" }
+            new FavoriteColumn(favorites, @event) { Label = "F" },
+            new NameColumn(textures, tooltip) { Label     = "Item Name..." },
+            new SlotColumn() { Label                      = "Equip Slot" },
+            new TypeColumn() { Label                      = "Item Type..." },
+            new UnlockDateColumn(itemUnlocks) { Label     = "Unlocked" },
+            new ItemIdColumn() { Label                    = "Item Id..." },
+            new ModelDataColumn(items) { Label            = "Model Data..." },
+            new JobColumn(jobs) { Label                   = "Jobs" },
+            new LevelColumn() { Label                     = "Level..." },
+            new DyableColumn() { Label                    = "Dye" },
+            new CrestColumn() { Label                     = "Crest" },
+            new TradableColumn() { Label                  = "Trade" }
         )
     {
         _event   =  @event;
@@ -47,6 +49,37 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
     public void Dispose()
         => _event.Unsubscribe(OnObjectUnlock);
+
+    private sealed class FavoriteColumn : YesNoColumn
+    {
+        public override float Width
+            => ImGui.GetFrameHeightWithSpacing();
+
+        private readonly FavoriteManager _favorites;
+        private readonly ObjectUnlocked  _hackEvent; // used to trigger the table dirty.
+
+        public FavoriteColumn(FavoriteManager favorites, ObjectUnlocked hackEvent)
+        {
+            _favorites = favorites;
+            _hackEvent = hackEvent;
+        }
+
+        protected override bool GetValue(EquipItem item)
+            => _favorites.Contains(item);
+
+        public override void DrawColumn(EquipItem item, int idx)
+        {
+            ImGui.AlignTextToFramePadding();
+            if (UiHelpers.DrawFavoriteStar(_favorites, item))
+                _hackEvent.Invoke(ObjectUnlocked.Type.Customization, 0, DateTimeOffset.Now);
+        }
+
+        public override bool FilterFunc(EquipItem item)
+            => FilterValue.HasFlag(_favorites.Contains(item) ? YesNoFlag.Yes : YesNoFlag.No);
+
+        public override int Compare(EquipItem lhs, EquipItem rhs)
+            => _favorites.Contains(rhs).CompareTo(_favorites.Contains(lhs));
+    }
 
     private sealed class NameColumn : ColumnString<EquipItem>
     {
@@ -75,9 +108,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             ImGui.SameLine();
             ImGui.AlignTextToFramePadding();
             if (ImGui.Selectable(item.Name))
-            {
-                // TODO link
-            }
+                Glamourer.Messager.Chat.Print(new SeStringBuilder().AddItemLink(item.ItemId.Id, false).BuiltString);
 
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && _tooltip.Player(out var state))
                 _tooltip.ApplyItem(state, item);
