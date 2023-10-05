@@ -400,7 +400,7 @@ public class DesignPanel
         {
             var text = ImGui.GetClipboardText();
             var (applyEquip, applyCustomize) = UiHelpers.ConvertKeysToBool();
-            var design = _converter.FromBase64(text, applyEquip, applyCustomize, out _)
+            var design = _converter.FromBase64(text, applyCustomize, applyEquip, out _)
              ?? throw new Exception("The clipboard did not contain valid data.");
             _manager.ApplyDesign(_selector.Selected!, design);
         }
