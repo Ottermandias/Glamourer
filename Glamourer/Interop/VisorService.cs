@@ -43,7 +43,7 @@ public class VisorService : IDisposable
         if (oldState == on)
             return false;
 
-        SetupVisorHook(human, human.GetArmor(EquipSlot.Head).Set.Id, on);
+        SetupVisorDetour(human, human.GetArmor(EquipSlot.Head).Set.Id, on);
         return true;
     }
 
@@ -61,7 +61,7 @@ public class VisorService : IDisposable
         Glamourer.Log.Excessive(
             $"[SetVisorState] Invoked from game on 0x{human:X} switching to {on} (original {originalOn}).");
 
-        SetupVisorHook(human, modelId, on);
+        SetupVisorDetour((Model)human, modelId, on);
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public class VisorService : IDisposable
     /// So we wrap a manual change of that flag with the function call.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private unsafe void SetupVisorHook(Model human, ushort modelId, bool on)
+    private unsafe void SetupVisorDetour(Model human, ushort modelId, bool on)
     {
         human.AsCharacterBase->VisorToggled = on;
         _setupVisorHook.Original(human.Address, modelId, on);

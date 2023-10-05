@@ -18,9 +18,11 @@ public unsafe class InventoryService : IDisposable
     public InventoryService(MovedEquipment @event, IGameInteropProvider interop)
     {
         _event        = @event;
+
         _moveItemHook = interop.HookFromAddress<MoveItemDelegate>((nint)InventoryManager.MemberFunctionPointers.MoveItemSlot, MoveItemDetour);
         _equipGearsetHook =
             interop.HookFromAddress<EquipGearsetDelegate>((nint)RaptureGearsetModule.MemberFunctionPointers.EquipGearset, EquipGearSetDetour);
+
         _moveItemHook.Enable();
         _equipGearsetHook.Enable();
     }
