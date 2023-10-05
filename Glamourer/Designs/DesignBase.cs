@@ -333,7 +333,7 @@ public class DesignBase
             if (id == ItemManager.NothingId(EquipSlot.OffHand))
                 id = ItemManager.NothingId(FullEquipType.Shield);
 
-            PrintWarning(items.ValidateWeapons(id.Item, idOff.Item, out var main, out var off));
+            PrintWarning(items.ValidateWeapons(id, idOff, out var main, out var off, allowUnknown));
             PrintWarning(items.ValidateStain(stain,    out stain,    allowUnknown));
             PrintWarning(items.ValidateStain(stainOff, out stainOff, allowUnknown));
             design.DesignData.SetItem(EquipSlot.MainHand, main);

@@ -185,6 +185,7 @@ public class EquipmentDrawer
         }
 
         label = combo.Label;
+
         var       unknown = !_gPose.InGPose && current.Type is FullEquipType.Unknown;
         var       ret     = false;
         using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
@@ -198,6 +199,7 @@ public class EquipmentDrawer
                 weapon = combo.CurrentSelection;
             }
         }
+
         if (unknown && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("The weapon type could not be identified, thus changing it to other weapons of that type is not possible.");
 
@@ -488,7 +490,7 @@ public class EquipmentDrawer
         return changes;
     }
 
-    private static void WeaponHelpMarker(string label)
+    private static void WeaponHelpMarker(string label, string? type = null)
     {
         ImGui.SameLine();
         ImGuiComponents.HelpMarker(
@@ -496,6 +498,12 @@ public class EquipmentDrawer
           + "thus it is only allowed to change weapons to other weapons of the same type.");
         ImGui.SameLine();
         ImGui.TextUnformatted(label);
+        if (type != null)
+        {
+            var pos = ImGui.GetItemRectMin();
+            pos.Y += ImGui.GetFrameHeightWithSpacing();
+            ImGui.GetWindowDrawList().AddText(pos, ImGui.GetColorU32(ImGuiCol.Text), $"({type})");
+        }
     }
 
     private DataChange DrawWeaponsSmall(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
@@ -534,8 +542,10 @@ public class EquipmentDrawer
             rApplyMainhandStain = true;
         }
 
+        if (allWeapons)
+            mainhandLabel += $" ({cMainhand.Type.ToName()})";
         WeaponHelpMarker(mainhandLabel);
-        
+
         if (rOffhand.Type is FullEquipType.Unknown)
         {
             rOffhandStain      = cOffhandStain;
@@ -607,7 +617,7 @@ public class EquipmentDrawer
                 rApplyMainhand = true;
             }
 
-            WeaponHelpMarker(mainhandLabel);
+            WeaponHelpMarker(mainhandLabel, allWeapons ? cMainhand.Type.ToName() : null);
 
             if (DrawStain(EquipSlot.MainHand, cMainhandStain, out rMainhandStain, locked, false))
                 changes |= DataChange.Stain;

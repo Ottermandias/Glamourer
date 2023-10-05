@@ -78,7 +78,8 @@ public class ItemManager : IDisposable
             return EquipItem.FromId(itemId);
 
         if (item.Type.ToSlot() != slot)
-            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0, 0, 0, 0);
+            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0, 0, 0,
+                0);
 
         return item;
     }
@@ -88,11 +89,13 @@ public class ItemManager : IDisposable
         if (itemId == NothingId(type))
             return NothingItem(type);
 
-        if (!ItemService.AwaitedService.TryGetValue(itemId, type is FullEquipType.Shield ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
+        if (!ItemService.AwaitedService.TryGetValue(itemId, type is FullEquipType.Shield ? EquipSlot.MainHand : EquipSlot.OffHand,
+                out var item))
             return EquipItem.FromId(itemId);
 
         if (item.Type != type)
-            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0, 0, 0, 0);
+            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0, 0, 0,
+                0);
 
         return item;
     }
@@ -164,7 +167,7 @@ public class ItemManager : IDisposable
         if (!itemId.IsItem)
         {
             var (id, _, variant, _) = itemId.Split;
-            item = Identify(slot, id, variant);
+            item                    = Identify(slot, id, variant);
             return allowUnknown ? string.Empty : $"The item {itemId} yields an unknown item.";
         }
 
@@ -217,33 +220,61 @@ public class ItemManager : IDisposable
     /// or the default sword and a nothing offhand.
     /// The return value is an empty string if there was no problem and a warning otherwise.
     /// </summary>
-    public string ValidateWeapons(ItemId mainId, ItemId offId, out EquipItem main, out EquipItem off)
+    public string ValidateWeapons(CustomItemId mainId, CustomItemId offId, out EquipItem main, out EquipItem off, bool allowUnknown)
     {
         var ret = string.Empty;
-        if (!IsItemValid(EquipSlot.MainHand, mainId, out main))
+        if (!mainId.IsItem)
+        {
+            var (id, weapon, variant, _) = mainId.Split;
+            main                         = Identify(EquipSlot.MainHand, id, weapon, variant);
+            if (!allowUnknown)
+            {
+                ret  = $"The item {mainId} yields an unknown item, reset to default sword.";
+                main = DefaultSword;
+            }
+        }
+        else if (!IsItemValid(EquipSlot.MainHand, mainId.Item, out main))
         {
             main = DefaultSword;
             ret  = $"The mainhand weapon {mainId} does not exist, reset to default sword.";
         }
 
-        var offType = main.Type.ValidOffhand();
-        if (IsOffhandValid(offType, offId, out off))
-            return ret;
-
-        // Try implicit offhand.
-        // Can not be set to default sword before because then it could not be valid.
-        if (IsOffhandValid(offType, mainId, out off))
-            return $"The offhand weapon {offId} does not exist, reset to implied offhand.";
-
-        if (FullEquipTypeExtensions.OffhandTypes.Contains(offType))
+        if (!offId.IsItem)
         {
-            main = DefaultSword;
-            off  = NothingItem(FullEquipType.Shield);
-            return
-                $"The offhand weapon {offId} does not exist, but no default could be restored, reset mainhand to default sword and offhand to nothing.";
+            var (id, weapon, variant, _) = offId.Split;
+            off                          = Identify(EquipSlot.OffHand, id, weapon, variant, main.Type);
+            if (!allowUnknown)
+            {
+                if (!FullEquipTypeExtensions.OffhandTypes.Contains(main.Type.ValidOffhand()))
+                {
+                    main = DefaultSword;
+                    off  = NothingItem(FullEquipType.Shield);
+                    return
+                        $"The offhand weapon {offId} does not exist, but no default could be restored, reset mainhand to default sword and offhand to nothing.";
+                }
+
+                if (ret.Length > 0)
+                    ret += '\n';
+                ret += $"The item {offId} yields an unknown item, reset to implied offhand.";
+                off =  GetDefaultOffhand(main);
+            }
+        }
+        else if (!IsOffhandValid(main.Type.ValidOffhand(), offId.Item, out off))
+        {
+            if (!FullEquipTypeExtensions.OffhandTypes.Contains(main.Type.ValidOffhand()))
+            {
+                main = DefaultSword;
+                off  = NothingItem(FullEquipType.Shield);
+                return
+                    $"The offhand weapon {offId} does not exist, but no default could be restored, reset mainhand to default sword and offhand to nothing.";
+            }
+
+            if (ret.Length > 0)
+                ret += '\n';
+            ret += $"The offhand weapon {mainId} does not exist or is of invalid type, reset to default sword.";
+            off =  GetDefaultOffhand(main);
         }
 
-        off = NothingItem(offType);
-        return ret.Length == 0 ? $"The offhand weapon {offId} does not exist, reset to no offhand." : ret;
+        return ret;
     }
 }
