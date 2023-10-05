@@ -18,6 +18,7 @@ public class GlamourerChangelog
         Add1_0_0_2(Changelog);
         Add1_0_0_3(Changelog);
         Add1_0_0_6(Changelog);
+        Add1_0_1_1(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -29,6 +30,22 @@ public class GlamourerChangelog
         _config.ChangeLogDisplayType = type;
         _config.Save();
     }
+
+    private static void Add1_0_1_1(Changelog log)
+        => log.NextVersion("Version 1.0.1.1")
+            .RegisterImportant(
+                "Updated for 6.5 - Square Enix shuffled around a lot of things this update, so some things still might not work but have not been noticed yet. Please report any issues.")
+            .RegisterHighlight(
+                "Added additional item data like Job Restrictions, Required Level and Dyability to Items to search or filter for in the Detailed Unlocks tab.")
+            .RegisterEntry("Improved support for non-item Weapons like NPC-Weapons saved to designs.")
+            .RegisterEntry(
+                "Improved messaging: many warnings or errors appearing will stay a little longer and can now be looked at in a Messages tab (visible only if there have been any).")
+            .RegisterEntry("Fixed an issue where moving automation sets caused editing them to not work correctly afterwards.")
+            .RegisterEntry("Omega items are no longer restricted.")
+            .RegisterEntry("Fixed reverting to game state not removing forced wetness.")
+            .RegisterEntry(
+                "Added some new cheat codes. You can now use the code 'Look at me, I'm your character now' to add buttons that copy the actual state of yourself or your target into a clipboard-design, in case the randomizers gave you something cool!")
+            .RegisterEntry("Other new codes will be published in other ways.", 1);
 
     private static void Add1_0_0_6(Changelog log)
         => log.NextVersion("Version 1.0.0.6")
