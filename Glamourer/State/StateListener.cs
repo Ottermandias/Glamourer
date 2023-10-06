@@ -352,9 +352,10 @@ public class StateListener : IDisposable
         }
 
         var actorArmor = actor.GetArmor(slot);
+        var fistWeapon = FistWeaponGauntletHack();
         // The actor armor does not correspond to the model armor, thus the actor is transformed.
         // This also prevents it from changing values due to hat state.
-        if (actorArmor.Value != armor.Value && !FistWeaponGauntletHack())
+        if (actorArmor.Value != armor.Value && !fistWeapon)
             return UpdateState.Transformed;
 
         var baseData = state.BaseData.Armor(slot);
@@ -365,7 +366,7 @@ public class StateListener : IDisposable
             change = UpdateState.Change;
         }
 
-        if (baseData.Set.Id != armor.Set.Id || baseData.Variant != armor.Variant)
+        if (baseData.Set.Id != armor.Set.Id || (baseData.Variant != armor.Variant && !fistWeapon))
         {
             var item = _items.Identify(slot, armor.Set, armor.Variant);
             state.BaseData.SetItem(slot, item);
@@ -408,10 +409,14 @@ public class StateListener : IDisposable
     }
 
     /// <summary> Update base data for a single changed weapon slot. </summary>
-    private UpdateState UpdateBaseData(Actor _, ActorState state, EquipSlot slot, CharacterWeapon weapon)
+    private UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterWeapon weapon)
     {
         var baseData = state.BaseData.Weapon(slot);
         var change   = UpdateState.NoChange;
+
+        // Fist weapon bug hack
+        if (slot is EquipSlot.OffHand && weapon.Value == 0 && actor.GetMainhand().Set.Id is > 1600 and < 1651)
+            return UpdateState.NoChange;
 
         if (baseData.Stain != weapon.Stain)
         {

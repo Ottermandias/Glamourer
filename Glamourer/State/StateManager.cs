@@ -206,11 +206,12 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         if (mainhand.Set.Id is < 1601 or >= 1651)
             return;
 
-        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Set, 0, offhand.Variant);
+        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Set, (Variant) offhand.Type.Id);
         offhand.Set     = (SetId)(mainhand.Set.Id + 50);
         offhand.Variant = mainhand.Variant;
         offhand.Type    = mainhand.Type;
         ret.SetItem(EquipSlot.Hands, gauntlets);
+        ret.SetStain(EquipSlot.Hands, mainhand.Stain);
     }
 
     #region Change Values
