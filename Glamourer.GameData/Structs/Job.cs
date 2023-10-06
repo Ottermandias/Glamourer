@@ -15,7 +15,7 @@ public readonly struct Job
         => Base.RowId;
 
     public JobFlag Flag
-        => (JobFlag)(1u << (int)Base.RowId);
+        => (JobFlag)(1ul << (int)Base.RowId);
 
     public Job(ClassJob job)
     {

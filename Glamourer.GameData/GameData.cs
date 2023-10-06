@@ -19,7 +19,7 @@ public static class GameData
             return _jobs;
 
         var sheet = dataManager.GetExcelSheet<ClassJob>()!;
-        _jobs = sheet.ToDictionary(j => (byte)j.RowId, j => new Job(j));
+        _jobs = sheet.Where(j => j.Abbreviation.RawData.Length > 0).ToDictionary(j => (byte)j.RowId, j => new Job(j));
         return _jobs;
     }
 
