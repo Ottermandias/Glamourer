@@ -61,7 +61,7 @@ public class GlamourerChangelog
             .RegisterEntry("Omega items are no longer restricted.")
             .RegisterEntry("Fixed reverting to game state not removing forced wetness.")
             .RegisterEntry(
-                "Added some new cheat codes. You can now use the code 'Look at me, I'm your character now' to add buttons that copy the actual state of yourself or your target into a clipboard-design, in case the randomizers gave you something cool!")
+                "Added some new cheat codes. You can now use the code 'Look at me, I'm your character now.' to add buttons that copy the actual state of yourself or your target into a clipboard-design, in case the randomizers gave you something cool!")
             .RegisterEntry("Other new codes will be published in other ways.", 1);
 
     private static void Add1_0_0_6(Changelog log)
