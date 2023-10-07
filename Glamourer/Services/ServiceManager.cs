@@ -26,6 +26,7 @@ public static class ServiceManager
 {
     public static ServiceProvider CreateProvider(DalamudPluginInterface pi, Logger log)
     {
+        EventWrapper.ChangeLogger(log);
         var services = new ServiceCollection()
             .AddSingleton(log)
             .AddDalamud(pi)

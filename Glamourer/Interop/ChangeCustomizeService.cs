@@ -17,7 +17,7 @@ namespace Glamourer.Interop;
 /// Changes in Race, body type or Gender are probably ignored.
 /// This operates on draw objects, not game objects.
 /// </summary>
-public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Customize>>, ChangeCustomizeService.Priority>, IDisposable
+public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Customize>>, ChangeCustomizeService.Priority>
 {
     private readonly PenumbraReloaded     _penumbraReloaded;
     private readonly IGameInteropProvider _interop;
@@ -40,9 +40,8 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
         _penumbraReloaded.Subscribe(Restore, PenumbraReloaded.Priority.ChangeCustomizeService);
     }
 
-    public new void Dispose()
+    protected override void Dispose(bool _)
     {
-        base.Dispose();
         _changeCustomizeHook.Dispose();
         _penumbraReloaded.Unsubscribe(Restore);
     }

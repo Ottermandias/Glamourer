@@ -5,7 +5,7 @@ using OtterGui.Classes;
 
 namespace Glamourer.Events;
 
-public class GPoseService : EventWrapper<Action<bool>, GPoseService.Priority>
+public sealed class GPoseService : EventWrapper<Action<bool>, GPoseService.Priority>
 {
     private readonly IFramework   _framework;
     private readonly IClientState _state;
@@ -30,11 +30,8 @@ public class GPoseService : EventWrapper<Action<bool>, GPoseService.Priority>
         _framework.Update += OnFramework;
     }
 
-    public new void Dispose()
-    {
-        _framework.Update -= OnFramework;
-        base.Dispose();
-    }
+    protected override void Dispose(bool _)
+        => _framework.Update -= OnFramework;
 
     public void AddActionOnLeave(Action onLeave)
     {
