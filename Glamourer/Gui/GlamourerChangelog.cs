@@ -19,6 +19,7 @@ public class GlamourerChangelog
         Add1_0_0_3(Changelog);
         Add1_0_0_6(Changelog);
         Add1_0_1_1(Changelog);
+        Add1_0_2_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -30,6 +31,22 @@ public class GlamourerChangelog
         _config.ChangeLogDisplayType = type;
         _config.Save();
     }
+
+    private static void Add1_0_2_0(Changelog log)
+        => log.NextVersion("Version 1.0.2.0")
+            .RegisterHighlight("Added option to favorite items so they appear first in the item selection combos.")
+            .RegisterEntry(
+                "The reordering in the combo only happens after closing and opening it again so items do not vanish from view when you (un)favor them.",
+                1)
+            .RegisterEntry("Favored items also get a highlighting border in the overview panels of the unlocks tab, but do not reorder those.",
+                1)
+            .RegisterEntry("In the details panel of the unlocks tab items can be sorted and filtered on favorites.", 1)
+            .RegisterEntry("Added drag & drop support to drag an automated design into a different automated design set.")
+            .RegisterEntry("This will remove said design from your current set and add it to the dragged-on set at the end.", 1)
+            .RegisterEntry("Fixed ONE issue with hat visibility state. There are probably more. This is weird.")
+            .RegisterEntry("Fixed minion placement for transformed Lalafell again.")
+            .RegisterEntry("Fixed job flag filtering in detailed unlocks.")
+            .RegisterEntry("Worked around a bug in the game's code breaking certain Monk Fist Weapons again... thanks SE.");
 
     private static void Add1_0_1_1(Changelog log)
         => log.NextVersion("Version 1.0.1.1")
