@@ -247,6 +247,21 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         _event.Invoke(AutomationChanged.Type.AddedDesign, set, set.Designs.Count - 1);
     }
 
+    /// <remarks> Only used to move between sets. </remarks>
+    public void MoveDesignToSet(AutoDesignSet from, int idx, AutoDesignSet to)
+    {
+        if (ReferenceEquals(from, to))
+            return;
+
+        var design = from.Designs[idx];
+        to.Designs.Add(design);
+        from.Designs.RemoveAt(idx);
+        Save();
+        Glamourer.Log.Debug($"Moved design {idx} from design set {from.Name} to design set {to.Name}.");
+        _event.Invoke(AutomationChanged.Type.AddedDesign,   to,   to.Designs.Count - 1);
+        _event.Invoke(AutomationChanged.Type.DeletedDesign, from, idx);
+    }
+
     public void DeleteDesign(AutoDesignSet set, int which)
     {
         if (which >= set.Designs.Count || which < 0)

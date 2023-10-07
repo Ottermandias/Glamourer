@@ -42,6 +42,8 @@ public class SetSelector : IDisposable
     private int     _dragIndex = -1;
     private Action? _endAction;
 
+    internal int _dragDesignIndex = -1;
+
     public SetSelector(AutoDesignManager manager, AutomationChanged @event, Configuration config, ActorService actors, ObjectManager objects)
     {
         _manager = manager;
@@ -320,15 +322,30 @@ public class SetSelector : IDisposable
         const string dragDropLabel = "DesignSetDragDrop";
         using (var target = ImRaii.DragDropTarget())
         {
-            if (target.Success && ImGuiUtil.IsDropping(dragDropLabel))
+            if (target.Success)
             {
-                if (_dragIndex >= 0)
+                if (ImGuiUtil.IsDropping(dragDropLabel))
                 {
-                    var idx = _dragIndex;
-                    _endAction = () => _manager.MoveSet(idx, index);
-                }
+                    if (_dragIndex >= 0)
+                    {
+                        var idx = _dragIndex;
+                        _endAction = () => _manager.MoveSet(idx, index);
+                    }
 
-                _dragIndex = -1;
+                    _dragIndex = -1;
+                }
+                else if (ImGuiUtil.IsDropping("DesignDragDrop"))
+                {
+                    if (_dragDesignIndex >= 0)
+                    {
+                        var idx     = _dragDesignIndex;
+                        var setTo   = set;
+                        var setFrom = Selection!;
+                        _endAction = () => _manager.MoveDesignToSet(setFrom, idx, setTo);
+                    }
+
+                    _dragDesignIndex = -1;
+                }
             }
         }
 

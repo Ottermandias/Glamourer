@@ -346,7 +346,10 @@ public class SetPanel
             {
                 ImGui.TextUnformatted($"Moving design #{index + 1:D2}...");
                 if (ImGui.SetDragDropPayload(dragDropLabel, nint.Zero, 0))
-                    _dragIndex = index;
+                {
+                    _dragIndex                 = index;
+                    _selector._dragDesignIndex = index;
+                }
             }
         }
     }
