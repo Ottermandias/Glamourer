@@ -92,7 +92,7 @@ public unsafe class FunModule : IDisposable
 
     public void ApplyFun(Actor actor, ref CharacterArmor armor, EquipSlot slot)
     {
-        if (actor.AsObject->ObjectKind is not (byte)ObjectKind.Player || !actor.IsCharacter)
+        if (!actor.IsCharacter || actor.AsObject->ObjectKind is not (byte)ObjectKind.Player)
             return;
 
         if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
@@ -104,7 +104,7 @@ public unsafe class FunModule : IDisposable
 
     public void ApplyFun(Actor actor, Span<CharacterArmor> armor, ref Customize customize)
     {
-        if (actor.AsObject->ObjectKind is not (byte)ObjectKind.Player || !actor.IsCharacter)
+        if (!actor.IsCharacter || actor.AsObject->ObjectKind is not (byte)ObjectKind.Player)
             return;
 
         if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
@@ -132,7 +132,7 @@ public unsafe class FunModule : IDisposable
 
     public void ApplyFun(Actor actor, ref CharacterWeapon weapon, EquipSlot slot)
     {
-        if (actor.AsObject->ObjectKind is not (byte)ObjectKind.Player || !actor.IsCharacter)
+        if (!actor.IsCharacter || actor.AsObject->ObjectKind is not (byte)ObjectKind.Player)
             return;
 
         if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
