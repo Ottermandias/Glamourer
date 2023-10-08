@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Dalamud.Plugin.Services;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -34,9 +36,16 @@ public class AutoDesignApplier : IDisposable
     private readonly HumanModelList         _humans;
     private readonly IClientState           _clientState;
 
-    private ActorState? _jobChangeState;
-    private EquipItem   _jobChangeMainhand;
-    private EquipItem   _jobChangeOffhand;
+    private          ActorState?                                                 _jobChangeState;
+    private readonly Dictionary<FullEquipType, (EquipItem, StateChanged.Source)> _jobChangeMainhand = new();
+    private readonly Dictionary<FullEquipType, (EquipItem, StateChanged.Source)> _jobChangeOffhand  = new();
+
+    private void ResetJobChange()
+    {
+        _jobChangeState = null;
+        _jobChangeMainhand.Clear();
+        _jobChangeOffhand.Clear();
+    }
 
     public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs,
         CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
@@ -78,26 +87,28 @@ public class AutoDesignApplier : IDisposable
             var current = _jobChangeState.BaseData.Item(slot);
             if (slot is EquipSlot.MainHand)
             {
-                if (current.Type == _jobChangeMainhand.Type)
+                if (_jobChangeMainhand.TryGetValue(current.Type, out var data))
                 {
-                    _state.ChangeItem(_jobChangeState, EquipSlot.MainHand, _jobChangeMainhand, StateChanged.Source.Fixed);
+                    Glamourer.Log.Verbose($"Changing Mainhand from {_jobChangeState.ModelData.Weapon(EquipSlot.MainHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{actor.Address:X}.");
+                    _state.ChangeItem(_jobChangeState, EquipSlot.MainHand, data.Item1, data.Item2);
                     weapon.Value = _jobChangeState.ModelData.Weapon(EquipSlot.MainHand);
                 }
             }
-            else if (slot is EquipSlot.OffHand)
+            else if (slot is EquipSlot.OffHand && current.Type == _jobChangeState.BaseData.MainhandType.Offhand())
             {
-                if (current.Type == _jobChangeOffhand.Type)
+                if (_jobChangeOffhand.TryGetValue(current.Type, out var data))
                 {
-                    _state.ChangeItem(_jobChangeState, EquipSlot.OffHand, _jobChangeOffhand, StateChanged.Source.Fixed);
+                    Glamourer.Log.Verbose($"Changing Offhand from {_jobChangeState.ModelData.Weapon(EquipSlot.OffHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{actor.Address:X}.");
+                    _state.ChangeItem(_jobChangeState, EquipSlot.OffHand, data.Item1, data.Item2);
                     weapon.Value = _jobChangeState.ModelData.Weapon(EquipSlot.OffHand);
                 }
 
-                _jobChangeState = null;
+                ResetJobChange();
             }
         }
         else
         {
-            _jobChangeState = null;
+            ResetJobChange();
         }
     }
 
@@ -113,7 +124,10 @@ public class AutoDesignApplier : IDisposable
 
             foreach (var id in identifiers)
             {
-                if (_state.TryGetValue(id, out var state))
+                if (id.Type is IdentifierType.Player && id.HomeWorld == WorldId.AnyWorld)
+                    foreach (var state in _state.Where(kvp => kvp.Key.PlayerName == id.PlayerName).Select(kvp => kvp.Value))
+                        state.RemoveFixedDesignSources();
+                else if (_state.TryGetValue(id, out var state))
                     state.RemoveFixedDesignSources();
             }
         }
@@ -341,9 +355,8 @@ public class AutoDesignApplier : IDisposable
             {
                 if (fromJobChange)
                 {
-                    _jobChangeMainhand =  item;
-                    _jobChangeState    =  state;
-                    totalEquipFlags    |= EquipFlag.Mainhand;
+                    _jobChangeMainhand.TryAdd(item.Type, (item, source));
+                    _jobChangeState = state;
                 }
                 else if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type)
                 {
@@ -362,9 +375,8 @@ public class AutoDesignApplier : IDisposable
             {
                 if (fromJobChange)
                 {
-                    _jobChangeOffhand =  item;
-                    _jobChangeState   =  state;
-                    totalEquipFlags   |= EquipFlag.Offhand;
+                    _jobChangeOffhand.TryAdd(item.Type, (item, source));
+                    _jobChangeState = state;
                 }
                 else if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type)
                 {
