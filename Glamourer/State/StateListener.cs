@@ -414,8 +414,6 @@ public class StateListener : IDisposable
             // Use current model data.
             // Transformed also handles invisible hat state.
             case UpdateState.NoChange:
-                armor = state.ModelData.ArmorWithState(slot);
-                break;
             case UpdateState.Transformed when slot is EquipSlot.Head && armor.Value is 0:
                 armor = state.ModelData.ArmorWithState(slot);
                 break;
