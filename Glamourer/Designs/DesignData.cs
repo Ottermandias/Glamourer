@@ -80,6 +80,18 @@ public unsafe struct DesignData
         }
     }
 
+    public readonly CharacterArmor ArmorWithState(EquipSlot slot)
+    {
+        if (slot is EquipSlot.Head && !IsHatVisible())
+            return CharacterArmor.Empty;
+
+        fixed (byte* ptr = _equipmentBytes)
+        {
+            var armorPtr = (CharacterArmor*)ptr;
+            return armorPtr[slot.ToIndex()];
+        }
+    }
+
     public readonly CharacterWeapon Weapon(EquipSlot slot)
     {
         fixed (byte* ptr = _equipmentBytes)

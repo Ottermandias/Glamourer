@@ -353,10 +353,22 @@ public class StateListener : IDisposable
 
         var actorArmor = actor.GetArmor(slot);
         var fistWeapon = FistWeaponGauntletHack();
+
         // The actor armor does not correspond to the model armor, thus the actor is transformed.
-        // This also prevents it from changing values due to hat state.
-        if (actorArmor.Value != armor.Value && !fistWeapon)
-            return UpdateState.Transformed;
+        if (actorArmor.Value != armor.Value)
+        {
+            // Update base data in case hat visibility is off.
+            if (slot is EquipSlot.Head && armor.Value == 0 && actorArmor.Value != state.BaseData.Armor(EquipSlot.Head).Value)
+            {
+                var item = _items.Identify(slot, actorArmor.Set, actorArmor.Variant);
+                state.BaseData.SetItem(EquipSlot.Head, item);
+                state.BaseData.SetStain(EquipSlot.Head, actorArmor.Stain);
+                return UpdateState.Change;
+            }
+
+            if (!fistWeapon)
+                return UpdateState.Transformed;
+        }
 
         var baseData = state.BaseData.Armor(slot);
         var change   = UpdateState.NoChange;
@@ -366,7 +378,7 @@ public class StateListener : IDisposable
             change = UpdateState.Change;
         }
 
-        if (baseData.Set.Id != armor.Set.Id || (baseData.Variant != armor.Variant && !fistWeapon))
+        if (baseData.Set.Id != armor.Set.Id || baseData.Variant != armor.Variant && !fistWeapon)
         {
             var item = _items.Identify(slot, armor.Set, armor.Variant);
             state.BaseData.SetItem(slot, item);
@@ -381,10 +393,6 @@ public class StateListener : IDisposable
     {
         switch (UpdateBaseData(actor, state, slot, armor))
         {
-            // Transformed also handles invisible hat state.
-            case UpdateState.Transformed when slot is EquipSlot.Head && armor.Value == 0 && state.ModelData.IsHatVisible():
-                armor = state.ModelData.Armor(slot);
-                break;
             // Base data changed equipment while actors were not there.
             // Update model state if not on fixed design.
             case UpdateState.Change:
@@ -400,12 +408,16 @@ public class StateListener : IDisposable
                     apply = true;
 
                 if (apply)
-                    armor = state.ModelData.Armor(slot);
+                    armor = state.ModelData.ArmorWithState(slot);
 
                 break;
             // Use current model data.
+            // Transformed also handles invisible hat state.
             case UpdateState.NoChange:
-                armor = state.ModelData.Armor(slot);
+                armor = state.ModelData.ArmorWithState(slot);
+                break;
+            case UpdateState.Transformed when slot is EquipSlot.Head && armor.Value is 0:
+                armor = state.ModelData.ArmorWithState(slot);
                 break;
             case UpdateState.Transformed: break;
         }
