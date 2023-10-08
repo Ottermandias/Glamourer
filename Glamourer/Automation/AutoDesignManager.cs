@@ -436,18 +436,18 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
                 if (designObj is not JObject j)
                 {
                     Glamourer.Messager.NotificationMessage(
-                        $"Skipped loading design in Automation Set for {id.Incognito(null)}: Unknown design.");
+                        $"Skipped loading design in Automation Set {name}: Unknown design.", NotificationType.Warning);
                     continue;
                 }
 
-                var design = ToDesignObject(j);
+                var design = ToDesignObject(set.Name, j);
                 if (design != null)
                     set.Designs.Add(design);
             }
         }
     }
 
-    private AutoDesign? ToDesignObject(JObject jObj)
+    private AutoDesign? ToDesignObject(string setName, JObject jObj)
     {
         var     designIdentifier = jObj["Design"]?.ToObject<string?>();
         Design? design           = null;
@@ -456,13 +456,13 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         {
             if (designIdentifier.Length == 0)
             {
-                Glamourer.Messager.NotificationMessage("Error parsing automatically applied design: No design specified.");
+                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design for set {setName}: No design specified.", NotificationType.Warning);
                 return null;
             }
 
             if (!Guid.TryParse(designIdentifier, out var guid))
             {
-                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design: {designIdentifier} is not a valid GUID.");
+                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design for set {setName}: {designIdentifier} is not a valid GUID.", NotificationType.Warning);
 
                 return null;
             }
@@ -471,7 +471,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             if (design == null)
             {
                 Glamourer.Messager.NotificationMessage(
-                    $"Error parsing automatically applied design: The specified design {guid} does not exist.");
+                    $"Error parsing automatically applied design for set {setName}: The specified design {guid} does not exist.", NotificationType.Warning);
                 return null;
             }
         }
@@ -493,7 +493,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         {
             if (!_jobs.JobGroups.TryGetValue((ushort)jobs, out var jobGroup))
             {
-                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design: The job condition {jobs} does not exist.");
+                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design for set {setName}: The job condition {jobs} does not exist.", NotificationType.Warning);
                 return null;
             }
 
