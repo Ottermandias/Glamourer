@@ -100,6 +100,9 @@ public class ItemManager : IDisposable
         return item;
     }
 
+    public EquipItem Resolve(FullEquipType type, CustomItemId id)
+        => id.IsItem ? Resolve(type, id.Item) : EquipItem.FromId(id);
+
     public EquipItem Identify(EquipSlot slot, SetId id, Variant variant)
     {
         slot = slot.ToSlot();
