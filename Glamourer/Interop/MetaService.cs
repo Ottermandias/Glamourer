@@ -67,6 +67,12 @@ public unsafe class MetaService : IDisposable
 
     private void HideHatDetour(DrawDataContainer* drawData, uint id, byte value)
     {
+        if (id != 0)
+        {
+            _hideHatGearHook.Original(drawData, id, value);
+            return;
+        }
+
         Actor actor = drawData->Parent;
         var   v     = value == 0;
         _headGearEvent.Invoke(actor, ref v);
