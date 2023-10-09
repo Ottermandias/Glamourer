@@ -468,7 +468,7 @@ public class StateListener : IDisposable
         // Always use the actor for the base data.
         var isHuman = _humans.IsHuman(modelId);
         if (isHuman)
-            state.BaseData = _manager.FromActor(actor, false);
+            state.BaseData = _manager.FromActor(actor, false, false);
         else
             state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, equipData);
 

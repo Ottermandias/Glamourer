@@ -77,7 +77,8 @@ internal class FunEquipSet
         new Group(0000, 0, 0137, 1, 0000, 0, 0000, 0, 0000, 0), // Howling Spirit
         new Group(0000, 0, 0137, 2, 0000, 0, 0000, 0, 0000, 0), // Wailing Spirit
         new Group(0232, 1, 0232, 1, 0279, 1, 0232, 1, 0232, 1), // Eerie Attire
-        new Group(0232, 1, 6036, 1, 0279, 1, 0232, 1, 0232, 1)  // Vampire
+        new Group(0232, 1, 6036, 1, 0279, 1, 0232, 1, 0232, 1), // Vampire
+        new Group(0505, 6, 0505, 6, 0505, 6, 0505, 6, 0505, 6)  // Manusya Casting
     );
 
     public static readonly FunEquipSet AprilFirst = new

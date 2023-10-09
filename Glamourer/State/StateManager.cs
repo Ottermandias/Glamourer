@@ -83,8 +83,8 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             // and the draw objects data for the model data (where possible).
             state = new ActorState(identifier)
             {
-                ModelData     = FromActor(actor, true),
-                BaseData      = FromActor(actor, false),
+                ModelData     = FromActor(actor, true, false),
+                BaseData      = FromActor(actor, false, false),
                 LastJob       = (byte)(actor.IsCharacter ? actor.AsCharacter->CharacterData.ClassJob : 0),
                 LastTerritory = _clientState.TerritoryType,
             };
@@ -104,7 +104,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
     /// This uses the draw object if available and where possible,
     /// and the game object where necessary.
     /// </summary>
-    public unsafe DesignData FromActor(Actor actor, bool useModel)
+    public unsafe DesignData FromActor(Actor actor, bool useModel, bool ignoreHatState)
     {
         var ret = new DesignData();
         // If the given actor is not a character, just return a default character.
@@ -143,7 +143,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             ret.Customize = model.GetCustomize();
 
             // We can not use the head slot data from the draw object if the hat is hidden.
-            var head     = ret.IsHatVisible() ? model.GetArmor(EquipSlot.Head) : actor.GetArmor(EquipSlot.Head);
+            var head     = ret.IsHatVisible() || ignoreHatState ? model.GetArmor(EquipSlot.Head) : actor.GetArmor(EquipSlot.Head);
             var headItem = _items.Identify(EquipSlot.Head, head.Set, head.Variant);
             ret.SetItem(EquipSlot.Head, headItem);
             ret.SetStain(EquipSlot.Head, head.Stain);

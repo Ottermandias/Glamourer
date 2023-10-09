@@ -98,8 +98,16 @@ public unsafe class FunModule : IDisposable
         if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
             return;
 
-        ApplyEmperor(new Span<CharacterArmor>(ref armor), slot);
-        ApplyClown(new Span<CharacterArmor>(ref armor));
+        if (_config.DisableFestivals == 0 && _festivalSet != null
+         || _codes.EnabledWorld && actor.Index != 0)
+        {
+            armor = actor.Model.GetArmor(slot);
+        }
+        else
+        {
+            ApplyEmperor(new Span<CharacterArmor>(ref armor), slot);
+            ApplyClown(new Span<CharacterArmor>(ref armor));
+        }
     }
 
     public void ApplyFun(Actor actor, Span<CharacterArmor> armor, ref Customize customize)
@@ -244,11 +252,12 @@ public unsafe class FunModule : IDisposable
         try
         {
             var tmp = _designManager.CreateTemporary();
-            tmp.DesignData = _stateManager.FromActor(actor, true);
+            tmp.DesignData = _stateManager.FromActor(actor, true, true);
             tmp.FixCustomizeApplication(_customizations, CustomizeFlagExtensions.AllRelevant);
             var data = _designConverter.ShareBase64(tmp);
             ImGui.SetClipboardText(data);
-            Glamourer.Messager.NotificationMessage($"Copied current actual design of {actor.Utf8Name} to clipboard.", NotificationType.Info, false);
+            Glamourer.Messager.NotificationMessage($"Copied current actual design of {actor.Utf8Name} to clipboard.", NotificationType.Info,
+                false);
         }
         catch
         {
