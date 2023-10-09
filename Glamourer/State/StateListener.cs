@@ -264,6 +264,7 @@ public class StateListener : IDisposable
             if (current.Value == changed.Value && state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
             {
                 _manager.ChangeItem(state, slot, currentItem, StateChanged.Source.Game);
+                _manager.ChangeStain(state, slot, current.Stain, StateChanged.Source.Game);
                 switch (slot)
                 {
                     case EquipSlot.MainHand:
