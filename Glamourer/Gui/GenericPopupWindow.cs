@@ -24,6 +24,7 @@ public class GenericPopupWindow : Window
           | ImGuiWindowFlags.NoTitleBar, true)
     {
         _config = config;
+        DisableWindowSounds = true;
         IsOpen  = true;
     }
 
