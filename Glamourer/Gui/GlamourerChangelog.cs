@@ -20,6 +20,7 @@ public class GlamourerChangelog
         Add1_0_0_6(Changelog);
         Add1_0_1_1(Changelog);
         Add1_0_2_0(Changelog);
+        Add1_0_3_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -31,6 +32,23 @@ public class GlamourerChangelog
         _config.ChangeLogDisplayType = type;
         _config.Save();
     }
+
+    private static void Add1_0_3_0(Changelog log)
+        => log.NextVersion("Version 1.0.3.0")
+            .RegisterEntry("Hopefully improved Palette+ compatibility.")
+            .RegisterHighlight(
+                "Added a Quick Design Bar, which is a small bar in which you can select your designs and apply them to yourself or your target, or revert them.")
+            .RegisterEntry("You can toggle visibility of this bar via keybinds, which you can set up in the settings tab.",     1)
+            .RegisterEntry("You can also lock the bar, and enable or disable an additional, identical bar in the main window.", 1)
+            .RegisterEntry("Disabled a sound that played on startup when a certain Dalamud setting was enabled.")
+            .RegisterEntry("Fixed an issue with reading state for Who Am I!?!. (1.0.2.2)")
+            .RegisterEntry("Fixed an issue where applying gear sets would not always update your dyes. (1.0.2.2)")
+            .RegisterEntry("Fixed an issue where some errors due to missing null-checks wound up in the log. (1.0.2.2)")
+            .RegisterEntry("Fixed an issue with hat visibility. (1.0.2.1 and 1.0.2.2)")
+            .RegisterEntry("Improved some logging. (1.0.2.1)")
+            .RegisterEntry("Improved notifications when encountering errors while loading automation sets. (1.0.2.1)")
+            .RegisterEntry("Fixed another issue with monk fist weapons. (1.0.2.1)")
+            .RegisterEntry("Added missing dot to changelog entry.");
 
     private static void Add1_0_2_0(Changelog log)
         => log.NextVersion("Version 1.0.2.0")
