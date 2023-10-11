@@ -2,7 +2,6 @@
 using System.Threading;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
-using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Customization;
 using Glamourer.Events;
@@ -19,8 +18,9 @@ namespace Glamourer.Interop;
 /// </summary>
 public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Customize>>, ChangeCustomizeService.Priority>
 {
-    private readonly PenumbraReloaded     _penumbraReloaded;
-    private readonly IGameInteropProvider _interop;
+    private readonly PenumbraReloaded                                        _penumbraReloaded;
+    private readonly IGameInteropProvider                                    _interop;
+    private readonly delegate* unmanaged[Stdcall]<Human*, byte*, bool, bool> _original;
 
     /// <summary> Check whether we in a manual customize update, in which case we need to not toggle certain flags. </summary>
     public static readonly ThreadLocal<bool> InUpdate = new(() => false);
@@ -37,6 +37,7 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
         _penumbraReloaded    = penumbraReloaded;
         _interop             = interop;
         _changeCustomizeHook = Create();
+        _original            = Human.MemberFunctionPointers.UpdateDrawData;
         _penumbraReloaded.Subscribe(Restore, PenumbraReloaded.Priority.ChangeCustomizeService);
     }
 
@@ -61,7 +62,6 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
 
     private delegate bool ChangeCustomizeDelegate(Human* human, byte* data, byte skipEquipment);
 
-    [Signature(Sigs.ChangeCustomize, DetourName = nameof(ChangeCustomizeDetour))]
     private Hook<ChangeCustomizeDelegate> _changeCustomizeHook;
 
     public bool UpdateCustomize(Model model, CustomizeData customize)
@@ -71,7 +71,7 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
 
         Glamourer.Log.Verbose($"[ChangeCustomize] Invoked on 0x{model.Address:X} with {customize}.");
         InUpdate.Value = true;
-        var ret = _changeCustomizeHook.Original(model.AsHuman, customize.Data, 1);
+        var ret = _original(model.AsHuman, customize.Data, true);
         InUpdate.Value = false;
         return ret;
     }
@@ -81,9 +81,12 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
 
     private bool ChangeCustomizeDetour(Human* human, byte* data, byte skipEquipment)
     {
-        var customize = new Ref<Customize>(new Customize(*(CustomizeData*)data));
-        Invoke(this, (Model)human, customize);
-        ((Customize*)data)->Load(customize.Value);
+        if (!InUpdate.Value)
+        {
+            var customize = new Ref<Customize>(new Customize(*(CustomizeData*)data));
+            Invoke(this, (Model)human, customize);
+            ((Customize*)data)->Load(customize.Value);
+        }
         return _changeCustomizeHook.Original(human, data, skipEquipment);
     }
 }
