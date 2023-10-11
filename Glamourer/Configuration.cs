@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Dalamud.Configuration;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
 using Glamourer.Gui;
@@ -18,25 +19,30 @@ namespace Glamourer;
 
 public class Configuration : IPluginConfiguration, ISavable
 {
-    public bool               Enabled                          { get; set; } = true;
-    public bool               UseRestrictedGearProtection      { get; set; } = false;
-    public bool               OpenFoldersByDefault             { get; set; } = false;
-    public bool               AutoRedrawEquipOnChanges         { get; set; } = false;
-    public bool               EnableAutoDesigns                { get; set; } = true;
-    public bool               IncognitoMode                    { get; set; } = false;
-    public bool               UnlockDetailMode                 { get; set; } = true;
-    public bool               HideApplyCheckmarks              { get; set; } = false;
-    public bool               SmallEquip                       { get; set; } = false;
-    public bool               UnlockedItemMode                 { get; set; } = false;
-    public byte               DisableFestivals                 { get; set; } = 1;
-    public bool               EnableGameContextMenu            { get; set; } = true;
-    public bool               HideWindowInCutscene             { get; set; } = false;
-    public bool               ShowAutomationSetEditing         { get; set; } = true;
-    public bool               ShowAllAutomatedApplicationRules { get; set; } = true;
-    public bool               ShowUnlockedItemWarnings         { get; set; } = true;
-    public bool               RevertManualChangesOnZoneChange  { get; set; } = false;
-    public MainWindow.TabType SelectedTab                      { get; set; } = MainWindow.TabType.Settings;
-    public DoubleModifier     DeleteDesignModifier             { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
+    public bool Enabled                          { get; set; } = true;
+    public bool UseRestrictedGearProtection      { get; set; } = false;
+    public bool OpenFoldersByDefault             { get; set; } = false;
+    public bool AutoRedrawEquipOnChanges         { get; set; } = false;
+    public bool EnableAutoDesigns                { get; set; } = true;
+    public bool IncognitoMode                    { get; set; } = false;
+    public bool UnlockDetailMode                 { get; set; } = true;
+    public bool HideApplyCheckmarks              { get; set; } = false;
+    public bool SmallEquip                       { get; set; } = false;
+    public bool UnlockedItemMode                 { get; set; } = false;
+    public byte DisableFestivals                 { get; set; } = 1;
+    public bool EnableGameContextMenu            { get; set; } = true;
+    public bool HideWindowInCutscene             { get; set; } = false;
+    public bool ShowAutomationSetEditing         { get; set; } = true;
+    public bool ShowAllAutomatedApplicationRules { get; set; } = true;
+    public bool ShowUnlockedItemWarnings         { get; set; } = true;
+    public bool RevertManualChangesOnZoneChange  { get; set; } = false;
+    public bool ShowDesignQuickBar               { get; set; } = false;
+    public bool LockDesignQuickBar               { get; set; } = false;
+    public bool ShowQuickBarInTabs               { get; set; } = true;
+
+    public ModifiableHotkey   ToggleQuickDesignBar { get; set; } = new(VirtualKey.D, ModifierHotkey.Control, ModifierHotkey.Shift);
+    public MainWindow.TabType SelectedTab          { get; set; } = MainWindow.TabType.Settings;
+    public DoubleModifier     DeleteDesignModifier { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
 
     public int                  LastSeenVersion      { get; set; } = GlamourerChangelog.LastChangelogVersion;
     public ChangeLogDisplayType ChangeLogDisplayType { get; set; } = ChangeLogDisplayType.New;

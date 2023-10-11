@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Numerics;
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Designs;
@@ -30,10 +30,10 @@ public class MainWindow : Window, IDisposable
         Messages   = 6,
     }
 
-    private readonly Configuration            _config;
-    private readonly TabSelected              _event;
-    private readonly ConvenienceRevertButtons _convenienceButtons;
-    private readonly ITab[]                   _tabs;
+    private readonly Configuration  _config;
+    private readonly DesignQuickBar _quickBar;
+    private readonly TabSelected    _event;
+    private readonly ITab[]         _tabs;
 
     public readonly SettingsTab   Settings;
     public readonly ActorTab      Actors;
@@ -46,8 +46,7 @@ public class MainWindow : Window, IDisposable
     public TabType SelectTab = TabType.None;
 
     public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
-        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, ConvenienceRevertButtons convenienceButtons,
-        MessagesTab messages)
+        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, MessagesTab messages, DesignQuickBar quickBar)
         : base(GetLabel())
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -56,16 +55,16 @@ public class MainWindow : Window, IDisposable
             MinimumSize = new Vector2(700, 675),
             MaximumSize = ImGui.GetIO().DisplaySize,
         };
-        Settings            = settings;
-        Actors              = actors;
-        Designs             = designs;
-        Automation          = automation;
-        Debug               = debugTab;
-        Unlocks             = unlocks;
-        _event              = @event;
-        _convenienceButtons = convenienceButtons;
-        Messages            = messages;
-        _config             = config;
+        Settings   = settings;
+        Actors     = actors;
+        Designs    = designs;
+        Automation = automation;
+        Debug      = debugTab;
+        Unlocks    = unlocks;
+        _event     = @event;
+        Messages   = messages;
+        _quickBar  = quickBar;
+        _config    = config;
         _tabs = new ITab[]
         {
             settings,
@@ -93,7 +92,11 @@ public class MainWindow : Window, IDisposable
             _config.Save();
         }
 
-        _convenienceButtons.DrawButtons(yPos);
+        if (_config.ShowQuickBarInTabs)
+        {
+            ImGui.SetCursorPos(new Vector2(ImGui.GetWindowContentRegionMax().X - 10 * ImGui.GetFrameHeight(), yPos - ImGuiHelpers.GlobalScale));
+            _quickBar.Draw();
+        }
     }
 
     private ReadOnlySpan<byte> ToLabel(TabType type)

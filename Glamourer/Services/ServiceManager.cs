@@ -131,6 +131,7 @@ public static class ServiceManager
             .AddSingleton<DesignPanel>()
             .AddSingleton<DesignTab>()
             .AddSingleton<DesignCombo>()
+            .AddSingleton<RevertDesignCombo>()
             .AddSingleton<ModAssociationsTab>()
             .AddSingleton<DesignDetailTab>()
             .AddSingleton<UnlockTable>()
@@ -142,7 +143,7 @@ public static class ServiceManager
             .AddSingleton<SetPanel>()
             .AddSingleton<IdentifierDrawer>()
             .AddSingleton<GlamourerChangelog>()
-            .AddSingleton<ConvenienceRevertButtons>();
+            .AddSingleton<DesignQuickBar>();
 
     private static IServiceCollection AddApi(this IServiceCollection services)
         => services.AddSingleton<CommandService>()

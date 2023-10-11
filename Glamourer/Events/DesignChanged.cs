@@ -1,5 +1,6 @@
 using System;
 using Glamourer.Designs;
+using Glamourer.Gui;
 using OtterGui.Classes;
 
 namespace Glamourer.Events;
@@ -76,14 +77,17 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
 
     public enum Priority
     {
+        /// <seealso cref="Automation.AutoDesignManager.OnDesignChange"/>
+        AutoDesignManager = 1,
+
         /// <seealso cref="DesignFileSystem.OnDesignChange"/>
         DesignFileSystem = 0,
 
         /// <seealso cref="Gui.Tabs.DesignTab.DesignFileSystemSelector.OnDesignChange"/>
         DesignFileSystemSelector = -1,
 
-        /// <seealso cref="Automation.AutoDesignManager.OnDesignChange"/>
-        AutoDesignManager = 1,
+        /// <seealso cref="RevertDesignCombo.OnDesignChange"/>
+        DesignCombo = -2,
     }
 
     public DesignChanged()

@@ -30,7 +30,7 @@ public class SetPanel
     private readonly CustomizationService   _customizations;
 
     private readonly Configuration    _config;
-    private readonly DesignCombo      _designCombo;
+    private readonly RevertDesignCombo      _designCombo;
     private readonly JobGroupCombo    _jobGroupCombo;
     private readonly IdentifierDrawer _identifierDrawer;
 
@@ -39,7 +39,7 @@ public class SetPanel
 
     private Action? _endAction;
 
-    public SetPanel(SetSelector selector, AutoDesignManager manager, JobService jobs, ItemUnlockManager itemUnlocks, DesignCombo designCombo,
+    public SetPanel(SetSelector selector, AutoDesignManager manager, JobService jobs, ItemUnlockManager itemUnlocks, RevertDesignCombo designCombo,
         CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer, Configuration config)
     {
         _selector         = selector;
@@ -209,7 +209,7 @@ public class SetPanel
             ImGui.Selectable($"#{idx + 1:D2}");
             DrawDragDrop(Selection, idx);
             ImGui.TableNextColumn();
-            _designCombo.Draw(Selection, design, idx, _selector.IncognitoMode);
+            _designCombo.Draw(Selection, design, idx);
             DrawDragDrop(Selection, idx);
             if (singleRow)
             {
@@ -237,7 +237,7 @@ public class SetPanel
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted("New");
         ImGui.TableNextColumn();
-        _designCombo.Draw(Selection, null, -1, _selector.IncognitoMode);
+        _designCombo.Draw(Selection, null, -1);
         ImGui.TableNextRow();
 
         _endAction?.Invoke();

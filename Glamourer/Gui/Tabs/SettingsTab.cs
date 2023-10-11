@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
+using Dalamud.Plugin.Services;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -18,6 +21,7 @@ namespace Glamourer.Gui.Tabs;
 
 public class SettingsTab : ITab
 {
+    private readonly VirtualKey[]             _validKeys;
     private readonly Configuration            _config;
     private readonly DesignFileSystemSelector _selector;
     private readonly StateListener            _stateListener;
@@ -30,7 +34,7 @@ public class SettingsTab : ITab
 
     public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener,
         CodeService codeService, PenumbraAutoRedraw autoRedraw, ContextMenuService contextMenuService, UiBuilder uiBuilder,
-        GlamourerChangelog changelog, FunModule funModule)
+        GlamourerChangelog changelog, FunModule funModule, IKeyState keys)
     {
         _config             = config;
         _selector           = selector;
@@ -41,6 +45,7 @@ public class SettingsTab : ITab
         _uiBuilder          = uiBuilder;
         _changelog          = changelog;
         _funModule          = funModule;
+        _validKeys          = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
     }
 
     public ReadOnlySpan<byte> Label
@@ -99,11 +104,23 @@ public class SettingsTab : ITab
         if (!ImGui.CollapsingHeader("Interface"))
             return;
 
-        Checkbox("Smaller Equip Display", "Use single-line display without icons and small dye buttons instead of double-line display.",
-            _config.SmallEquip,           v => _config.SmallEquip = v);
-        Checkbox("Show Application Checkboxes",
-            "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules.",
-            !_config.HideApplyCheckmarks, v => _config.HideApplyCheckmarks = !v);
+        Checkbox("Show Quick Design Bar",
+            "Show a bar separate from the main window that allows you to quickly apply designs or revert your character and target.",
+            _config.ShowDesignQuickBar, v => _config.ShowDesignQuickBar = v);
+        Checkbox("Lock Quick Design Bar", "Prevent the quick design bar from being moved and lock it in place.", _config.LockDesignQuickBar,
+            v => _config.LockDesignQuickBar = v);
+        if (Widget.ModifiableKeySelector("Hotkey to Toggle Quick Design Bar", "Set a hotkey that opens or closes the quick design bar.",
+                100 * ImGuiHelpers.GlobalScale,
+                _config.ToggleQuickDesignBar, v => _config.ToggleQuickDesignBar = v, _validKeys))
+            _config.Save();
+        Checkbox("Show Quick Design Bar in Main Window",
+            "Show the quick design bar in the tab selection part of the main window, too.",
+            _config.ShowQuickBarInTabs, v => _config.ShowQuickBarInTabs = v);
+
+        ImGui.Dummy(Vector2.Zero);
+        ImGui.Separator();
+        ImGui.Dummy(Vector2.Zero);
+
         Checkbox("Enable Game Context Menus", "Whether to show a Try On via Glamourer button on context menus for equippable items.",
             _config.EnableGameContextMenu,    v =>
             {
@@ -120,14 +137,29 @@ public class SettingsTab : ITab
                 _config.HideWindowInCutscene     = v;
                 _uiBuilder.DisableCutsceneUiHide = !v;
             });
+
+        ImGui.Dummy(Vector2.Zero);
+        ImGui.Separator();
+        ImGui.Dummy(Vector2.Zero);
+
+        Checkbox("Smaller Equip Display", "Use single-line display without icons and small dye buttons instead of double-line display.",
+            _config.SmallEquip,           v => _config.SmallEquip = v);
+        Checkbox("Show Application Checkboxes",
+            "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules.",
+            !_config.HideApplyCheckmarks, v => _config.HideApplyCheckmarks = !v);
         if (Widget.DoubleModifierSelector("Design Deletion Modifier",
                 "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
                 _config.DeleteDesignModifier, v => _config.DeleteDesignModifier = v))
             _config.Save();
-        DrawFolderSortType();
         Checkbox("Auto-Open Design Folders",
             "Have design folders open or closed as their default state after launching.", _config.OpenFoldersByDefault,
             v => _config.OpenFoldersByDefault = v);
+        DrawFolderSortType();
+
+        ImGui.Dummy(Vector2.Zero);
+        ImGui.Separator();
+        ImGui.Dummy(Vector2.Zero);
+
         Checkbox("Show all Application Rule Checkboxes for Automation",
             "Show multiple separate application rule checkboxes for automated designs, instead of a single box for enabling or disabling.",
             _config.ShowAllAutomatedApplicationRules, v => _config.ShowAllAutomatedApplicationRules = v);
