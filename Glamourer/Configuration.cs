@@ -39,8 +39,9 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool ShowDesignQuickBar               { get; set; } = false;
     public bool LockDesignQuickBar               { get; set; } = false;
     public bool ShowQuickBarInTabs               { get; set; } = true;
+    public bool LockMainWindow                   { get; set; } = false;
 
-    public ModifiableHotkey   ToggleQuickDesignBar { get; set; } = new(VirtualKey.D, ModifierHotkey.Control, ModifierHotkey.Shift);
+    public ModifiableHotkey   ToggleQuickDesignBar { get; set; } = new(VirtualKey.NO_KEY);
     public MainWindow.TabType SelectedTab          { get; set; } = MainWindow.TabType.Settings;
     public DoubleModifier     DeleteDesignModifier { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
 
