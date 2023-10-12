@@ -79,6 +79,13 @@ public class MainWindow : Window, IDisposable
         IsOpen = _config.DebugMode;
     }
 
+    public override void PreDraw()
+    {
+        Flags = _config.LockMainWindow
+            ? Flags | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize
+            : Flags & ~(ImGuiWindowFlags.NoMove |ImGuiWindowFlags.NoResize);
+    }
+
     public void Dispose()
         => _event.Unsubscribe(OnTabSelected);
 

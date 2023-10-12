@@ -22,7 +22,7 @@ public class DesignQuickBar : Window, IDisposable
 {
     private ImGuiWindowFlags GetFlags
         => _config.LockDesignQuickBar
-            ? ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoBackground
+            ? ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoMove
             : ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoFocusOnAppearing;
 
     private readonly Configuration     _config;
@@ -32,6 +32,7 @@ public class DesignQuickBar : Window, IDisposable
     private readonly ObjectManager     _objects;
     private readonly IKeyState         _keyState;
     private readonly ImRaii.Style      _windowPadding  = new();
+    private readonly ImRaii.Color      _windowColor    = new();
     private          DateTime          _keyboardToggle = DateTime.UnixEpoch;
 
     public DesignQuickBar(Configuration config, DesignCombo designCombo, StateManager stateManager, IKeyState keyState,
@@ -64,10 +65,16 @@ public class DesignQuickBar : Window, IDisposable
         Size  = new Vector2(12 * ImGui.GetFrameHeight(), ImGui.GetFrameHeight());
 
         _windowPadding.Push(ImGuiStyleVar.WindowPadding, new Vector2(ImGuiHelpers.GlobalScale * 4));
+        _windowColor.Push(ImGuiCol.WindowBg, ColorId.QuickDesignBg.Value())
+            .Push(ImGuiCol.Button,  ColorId.QuickDesignButton.Value())
+            .Push(ImGuiCol.FrameBg, ColorId.QuickDesignFrame.Value());
     }
 
     public override void PostDraw()
-        => _windowPadding.Dispose();
+    {
+        _windowPadding.Dispose();
+        _windowColor.Dispose();
+    }
 
 
     public override void Draw()

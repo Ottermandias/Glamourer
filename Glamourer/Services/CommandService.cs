@@ -35,10 +35,11 @@ public class CommandService : IDisposable
     private readonly DesignManager     _designManager;
     private readonly DesignConverter   _converter;
     private readonly DesignFileSystem  _designFileSystem;
+    private readonly Configuration     _config;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorService actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
-        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager)
+        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -51,6 +52,7 @@ public class CommandService : IDisposable
         _converter         = converter;
         _designFileSystem  = designFileSystem;
         _autoDesignManager = autoDesignManager;
+        _config            = config;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -64,7 +66,33 @@ public class CommandService : IDisposable
     }
 
     private void OnGlamourer(string command, string arguments)
-        => _mainWindow.Toggle();
+    {
+        if (arguments.Length > 0)
+            switch (arguments)
+            {
+                case "qdb":
+                case "quick":
+                case "bar":
+                case "designs":
+                case "design":
+                case "design bar":
+                    _config.ShowDesignQuickBar = !_config.ShowDesignQuickBar;
+                    _config.Save();
+                    return;
+                case "lock":
+                case "unlock":
+                    _config.LockMainWindow = !_config.LockMainWindow;
+                    _config.Save();
+                    return;
+                default:
+                    _chat.Print("Use without argument to toggle the main window.");
+                    _chat.Print(new SeStringBuilder().AddCommand("qdb",  "Toggles the quick design bar on or off.").BuiltString);
+                    _chat.Print(new SeStringBuilder().AddCommand("lock", "Toggles the lock of the main window on or off.").BuiltString);
+                    return;
+            }
+
+        _mainWindow.Toggle();
+    }
 
     private void OnGlamour(string command, string arguments)
     {

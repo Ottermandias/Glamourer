@@ -137,6 +137,8 @@ public class SettingsTab : ITab
                 _config.HideWindowInCutscene     = v;
                 _uiBuilder.DisableCutsceneUiHide = !v;
             });
+        Checkbox("Lock Main Window", "Prevent the main window from being moved and lock it in place.", _config.LockMainWindow,
+            v => _config.LockMainWindow = v);
 
         ImGui.Dummy(Vector2.Zero);
         ImGui.Separator();
