@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Dalamud.Interface.Utility;
 using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui;
@@ -52,10 +53,10 @@ public partial class CustomizationDrawer
             ImGui.TextUnformatted(label);
         }
 
-        DrawIconPickerPopup();
+        DrawIconPickerPopup(current);
     }
 
-    private void DrawIconPickerPopup()
+    private void DrawIconPickerPopup(int current)
     {
         using var popup = ImRaii.Popup(IconSelectorPopup, ImGuiWindowFlags.AlwaysAutoResize);
         if (!popup)
@@ -69,6 +70,8 @@ public partial class CustomizationDrawer
             var icon   = _service.AwaitedService.GetIcon(custom.IconId);
             using (var _ = ImRaii.Group())
             {
+                using var frameColor = ImRaii.PushColor(ImGuiCol.Button, Colors.SelectedRed, current == i);
+
                 if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
                 {
                     UpdateValue(custom.Value);

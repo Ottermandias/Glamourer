@@ -3,7 +3,9 @@ using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Glamourer.Customization;
 using ImGuiNET;
+using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData;
 
 namespace Glamourer.Gui.Customization;
 
@@ -50,10 +52,10 @@ public partial class CustomizationDrawer
             ImGui.TextUnformatted(custom.Color == 0 ? $"{_currentOption} (NPC)" : _currentOption);
         }
 
-        DrawColorPickerPopup();
+        DrawColorPickerPopup(current);
     }
 
-    private void DrawColorPickerPopup()
+    private void DrawColorPickerPopup(int current)
     {
         using var popup = ImRaii.Popup(ColorPickerPopupName, ImGuiWindowFlags.AlwaysAutoResize);
         if (!popup)
@@ -68,6 +70,13 @@ public partial class CustomizationDrawer
             {
                 UpdateValue(custom.Value);
                 ImGui.CloseCurrentPopup();
+            }
+
+            if (i == current)
+            {
+                var size = ImGui.GetItemRectSize();
+                ImGui.GetWindowDrawList()
+                    .AddCircleFilled(ImGui.GetItemRectMin() + size / 2, size.X / 4, ImGuiUtil.ContrastColorBW(custom.Color));
             }
 
             if (i % 8 != 7)

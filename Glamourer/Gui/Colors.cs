@@ -29,6 +29,8 @@ public enum ColorId
 
 public static class Colors
 {
+    public const uint SelectedRed = 0xFF2020D0;
+
     public static (uint DefaultColor, string Name, string Description) Data(this ColorId color)
         => color switch
         {
