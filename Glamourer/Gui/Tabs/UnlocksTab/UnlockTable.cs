@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Glamourer.Events;
 using Glamourer.Interop;
@@ -35,7 +34,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             new ItemIdColumn() { Label                    = "Item Id..." },
             new ModelDataColumn(items) { Label            = "Model Data..." },
             new JobColumn(jobs) { Label                   = "Jobs" },
-            new LevelColumn() { Label                     = "Level..." },
+            new RequiredLevelColumn() { Label             = "Level..." },
             new DyableColumn() { Label                    = "Dye" },
             new CrestColumn() { Label                     = "Crest" },
             new TradableColumn() { Label                  = "Trade" }
@@ -43,14 +42,14 @@ public class UnlockTable : Table<EquipItem>, IDisposable
     {
         _event   =  @event;
         Sortable =  true;
-        Flags    |= ImGuiTableFlags.Hideable;
+        Flags    |= ImGuiTableFlags.Hideable | ImGuiTableFlags.Reorderable | ImGuiTableFlags.Resizable;
         _event.Subscribe(OnObjectUnlock, ObjectUnlocked.Priority.UnlockTable);
     }
 
     public void Dispose()
         => _event.Unsubscribe(OnObjectUnlock);
 
-    private sealed class FavoriteColumn : YesNoColumn
+    private sealed class FavoriteColumn : YesNoColumn<EquipItem>
     {
         public override float Width
             => ImGui.GetFrameHeightWithSpacing();
@@ -60,8 +59,9 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
         public FavoriteColumn(FavoriteManager favorites, ObjectUnlocked hackEvent)
         {
-            _favorites = favorites;
-            _hackEvent = hackEvent;
+            _favorites =  favorites;
+            _hackEvent =  hackEvent;
+            Flags      |= ImGuiTableColumnFlags.NoResize;
         }
 
         protected override bool GetValue(EquipItem item)
@@ -145,8 +145,9 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
         public SlotColumn()
         {
-            AllFlags     = Values.Aggregate((a, b) => a | b);
-            _filterValue = AllFlags;
+            Flags        &= ~ImGuiTableColumnFlags.NoResize;
+            AllFlags     =  Values.Aggregate((a, b) => a | b);
+            _filterValue =  AllFlags;
         }
 
         public override void DrawColumn(EquipItem item, int idx)
@@ -225,7 +226,10 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             => 110 * ImGuiHelpers.GlobalScale;
 
         public UnlockDateColumn(ItemUnlockManager unlocks)
-            => _unlocks = unlocks;
+        {
+            _unlocks =  unlocks;
+            Flags    &= ~ImGuiTableColumnFlags.NoResize;
+        }
 
         public override void DrawColumn(EquipItem item, int idx)
         {
@@ -245,22 +249,17 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         }
     }
 
-    private sealed class ItemIdColumn : ColumnString<EquipItem>
+    private sealed class ItemIdColumn : ColumnNumber<EquipItem>
     {
         public override float Width
             => 70 * ImGuiHelpers.GlobalScale;
 
-        public override int Compare(EquipItem lhs, EquipItem rhs)
-            => lhs.ItemId.Id.CompareTo(rhs.ItemId.Id);
+        public override int ToValue(EquipItem item)
+            => (int) item.Id.Id;
 
-        public override string ToName(EquipItem item)
-            => item.ItemId.ToString();
-
-        public override void DrawColumn(EquipItem item, int _)
-        {
-            ImGui.AlignTextToFramePadding();
-            ImGuiUtil.RightAlign(item.ItemId.ToString());
-        }
+        public ItemIdColumn()
+            : base(ComparisonMethod.Equal)
+        { }
     }
 
     private sealed class ModelDataColumn : ColumnString<EquipItem>
@@ -287,7 +286,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         }
 
         public override int Compare(EquipItem lhs, EquipItem rhs)
-            => lhs.Weapon().Value.CompareTo(rhs.Weapon().Value);
+            => lhs.Weapon().CompareTo(rhs.Weapon());
 
         public override bool FilterFunc(EquipItem item)
         {
@@ -306,7 +305,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         }
     }
 
-    private sealed class LevelColumn : ColumnString<EquipItem>
+    private sealed class RequiredLevelColumn : ColumnNumber<EquipItem>
     {
         public override float Width
             => 70 * ImGuiHelpers.GlobalScale;
@@ -314,11 +313,12 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         public override string ToName(EquipItem item)
             => item.Level.ToString();
 
-        public override void DrawColumn(EquipItem item, int _)
-            => ImGuiUtil.RightAlign(item.Level.Value.ToString());
+        public override int ToValue(EquipItem item)
+            => item.Level.Value;
 
-        public override int Compare(EquipItem lhs, EquipItem rhs)
-            => lhs.Level.Value.CompareTo(rhs.Level.Value);
+        public RequiredLevelColumn()
+            : base(ComparisonMethod.LessEqual)
+        { }
     }
 
 
@@ -338,11 +338,12 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
         public JobColumn(JobService jobs)
         {
-            _jobs        = jobs;
-            _values      = _jobs.Jobs.Values.Skip(1).Select(j => j.Flag).ToArray();
-            _names       = _jobs.Jobs.Values.Skip(1).Select(j => j.Abbreviation).ToArray();
-            AllFlags     = _values.Aggregate((l, r) => l | r);
-            _filterValue = AllFlags;
+            _jobs        =  jobs;
+            _values      =  _jobs.Jobs.Values.Skip(1).Select(j => j.Flag).ToArray();
+            _names       =  _jobs.Jobs.Values.Skip(1).Select(j => j.Abbreviation).ToArray();
+            AllFlags     =  _values.Aggregate((l, r) => l | r);
+            _filterValue =  AllFlags;
+            Flags        &= ~ImGuiTableColumnFlags.NoResize;
         }
 
         protected override void SetValue(JobFlag value, bool enable)
@@ -383,57 +384,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         }
     }
 
-    [Flags]
-    private enum YesNoFlag
-    {
-        Yes = 0x01,
-        No  = 0x02,
-    };
-
-    private class YesNoColumn : ColumnFlags<YesNoFlag, EquipItem>
-    {
-        public string Tooltip = string.Empty;
-
-        private YesNoFlag _filterValue;
-
-        public override YesNoFlag FilterValue
-            => _filterValue;
-
-        public YesNoColumn()
-        {
-            AllFlags     = YesNoFlag.Yes | YesNoFlag.No;
-            _filterValue = AllFlags;
-        }
-
-        protected override void SetValue(YesNoFlag value, bool enable)
-            => _filterValue = enable ? _filterValue | value : _filterValue & ~value;
-
-        protected virtual bool GetValue(EquipItem item)
-            => false;
-
-        public override float Width
-            => ImGui.GetFrameHeight() * 2;
-
-        public override bool FilterFunc(EquipItem item)
-            => GetValue(item)
-                ? FilterValue.HasFlag(YesNoFlag.Yes)
-                : FilterValue.HasFlag(YesNoFlag.No);
-
-        public override int Compare(EquipItem lhs, EquipItem rhs)
-            => GetValue(lhs).CompareTo(GetValue(rhs));
-
-        public override void DrawColumn(EquipItem item, int idx)
-        {
-            using (var font = ImRaii.PushFont(UiBuilder.IconFont))
-            {
-                ImGuiUtil.Center(GetValue(item) ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
-            }
-
-            ImGuiUtil.HoverTooltip(Tooltip);
-        }
-    }
-
-    private sealed class DyableColumn : YesNoColumn
+    private sealed class DyableColumn : YesNoColumn<EquipItem>
     {
         public DyableColumn()
             => Tooltip = "Whether the item is dyable.";
@@ -442,7 +393,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             => item.Flags.HasFlag(ItemFlags.IsDyable);
     }
 
-    private sealed class TradableColumn : YesNoColumn
+    private sealed class TradableColumn : YesNoColumn<EquipItem>
     {
         public TradableColumn()
             => Tooltip = "Whether the item is tradable.";
@@ -451,7 +402,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             => item.Flags.HasFlag(ItemFlags.IsTradable);
     }
 
-    private sealed class CrestColumn : YesNoColumn
+    private sealed class CrestColumn : YesNoColumn<EquipItem>
     {
         public CrestColumn()
             => Tooltip = "Whether a crest can be applied to the item..";

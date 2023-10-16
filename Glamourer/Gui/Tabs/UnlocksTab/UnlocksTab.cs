@@ -50,6 +50,7 @@ public class UnlocksTab : Window, ITab
             _table.Draw(ImGui.GetFrameHeightWithSpacing());
         else
             _overview.Draw();
+        _table.Flags |= ImGuiTableFlags.Resizable;
     }
 
     public override void Draw()
@@ -64,6 +65,8 @@ public class UnlocksTab : Window, ITab
         var buttonSize = new Vector2(ImGui.GetContentRegionAvail().X / 2, ImGui.GetFrameHeight());
         if (!IsOpen)
             buttonSize.X -= ImGui.GetFrameHeight() / 2;
+        if (DetailMode)
+            buttonSize.X -= ImGui.GetFrameHeight() / 2;
 
         if (ImGuiUtil.DrawDisabledButton("Overview Mode", buttonSize, "Show tinted icons of sets of unlocks.", !DetailMode))
             DetailMode = false;
@@ -72,6 +75,15 @@ public class UnlocksTab : Window, ITab
         if (ImGuiUtil.DrawDisabledButton("Detailed Mode", buttonSize, "Show all unlockable data as a combined filterable and sortable table.",
                 DetailMode))
             DetailMode = true;
+
+        if (DetailMode)
+        {
+            ImGui.SameLine();
+            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Expand.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
+                    "Restore all columns to their original size.", false, true))
+                _table.Flags &= ~ImGuiTableFlags.Resizable;
+        }
+
         if (!IsOpen)
         {
             ImGui.SameLine();

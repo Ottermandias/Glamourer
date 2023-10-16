@@ -184,7 +184,7 @@ public class DesignQuickBar : Window, IDisposable
         if (available == 0)
             tooltip = "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.";
 
-        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.RedoAlt, buttonSize, tooltip, available);
+        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, tooltip, available);
         if (clicked)
             _stateManager.ResetState(state!, StateChanged.Source.Manual);
     }
