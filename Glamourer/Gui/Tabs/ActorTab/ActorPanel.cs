@@ -419,7 +419,7 @@ public class ActorPanel
                 : "The current target can not be manipulated."
             : "No valid target selected.";
         if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt,
-                !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0 || _objects.IsInGPose))
+                !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0))
             return;
 
         var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();

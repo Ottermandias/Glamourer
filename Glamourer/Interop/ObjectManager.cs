@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Penumbra.GameData.Actors;
@@ -152,8 +153,8 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
     public Actor Player
         => _objects.GetObjectAddress(0);
 
-    public Actor Target
-        => _targets.Target?.Address ?? nint.Zero;
+    public unsafe Actor Target
+        => _clientState.IsGPosing ? TargetSystem.Instance()->GPoseTarget : TargetSystem.Instance()->Target;
 
     public Actor Focus
         => _targets.FocusTarget?.Address ?? nint.Zero;

@@ -449,7 +449,7 @@ public class DesignPanel
                 ? "Apply the current design with its settings to your current target.\nHold Control to only apply gear.\nHold Shift to only apply customizations."
                 : "The current target can not be manipulated."
             : "No valid target selected.";
-        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid || _objects.IsInGPose))
+        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid))
             return;
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
