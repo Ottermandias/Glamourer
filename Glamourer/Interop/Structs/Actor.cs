@@ -45,6 +45,9 @@ public readonly unsafe struct Actor : IEquatable<Actor>
     public bool IsGPoseOrCutscene
         => Index.Index is >= (int)ScreenActor.CutsceneStart and < (int)ScreenActor.CutsceneEnd;
 
+    public bool IsTransformed
+        => AsCharacter->CharacterData.TransformationId != 0;
+
     public ActorIdentifier GetIdentifier(ActorManager actors)
         => actors.FromObject(AsObject, out _, true, true, false);
 

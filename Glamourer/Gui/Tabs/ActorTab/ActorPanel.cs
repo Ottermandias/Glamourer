@@ -68,7 +68,7 @@ public class ActorPanel
     private CustomizeFlag CustomizeApplicationFlags
         => _lockedRedraw ? CustomizeFlagExtensions.AllRelevant & ~CustomizeFlagExtensions.RedrawRequired : CustomizeFlagExtensions.AllRelevant;
 
-    public void Draw()
+    public unsafe void Draw()
     {
         using var group = ImRaii.Group();
         (_identifier, _data) = _selector.Selection;
@@ -114,12 +114,18 @@ public class ActorPanel
         if (!child || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
             return;
 
+        var transformationId = _actor.IsCharacter ? _actor.AsCharacter->CharacterData.TransformationId : 0;
+        if (transformationId != 0)
+            ImGuiUtil.DrawTextButton($"Currently transformed to Transformation {transformationId}.",
+                -Vector2.UnitX, Colors.SelectedRed);
+
         DrawApplyToSelf();
         ImGui.SameLine();
         DrawApplyToTarget();
 
         RevertButtons();
 
+        using var disabled = ImRaii.Disabled(transformationId != 0);
         if (_state.ModelData.IsHuman)
             DrawHumanPanel();
         else

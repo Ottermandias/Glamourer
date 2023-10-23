@@ -92,10 +92,7 @@ public unsafe class FunModule : IDisposable
 
     public void ApplyFun(Actor actor, ref CharacterArmor armor, EquipSlot slot)
     {
-        if (!actor.IsCharacter || actor.AsObject->ObjectKind is not (byte)ObjectKind.Player)
-            return;
-
-        if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
+        if (!ValidFunTarget(actor))
             return;
 
         if (_config.DisableFestivals == 0 && _festivalSet != null
@@ -112,10 +109,7 @@ public unsafe class FunModule : IDisposable
 
     public void ApplyFun(Actor actor, Span<CharacterArmor> armor, ref Customize customize)
     {
-        if (!actor.IsCharacter || actor.AsObject->ObjectKind is not (byte)ObjectKind.Player)
-            return;
-
-        if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
+        if (!ValidFunTarget(actor))
             return;
 
         if (_config.DisableFestivals == 0 && _festivalSet != null)
@@ -140,15 +134,18 @@ public unsafe class FunModule : IDisposable
 
     public void ApplyFun(Actor actor, ref CharacterWeapon weapon, EquipSlot slot)
     {
-        if (!actor.IsCharacter || actor.AsObject->ObjectKind is not (byte)ObjectKind.Player)
-            return;
-
-        if (actor.AsCharacter->CharacterData.ModelCharaId != 0)
+        if (!ValidFunTarget(actor))
             return;
 
         if (_codes.EnabledWorld)
             _worldSets.Apply(actor, _rng, ref weapon, slot);
     }
+
+    private static bool ValidFunTarget(Actor actor)
+        => actor.IsCharacter
+         && actor.AsObject->ObjectKind is (byte)ObjectKind.Player
+         && !actor.IsTransformed
+         && actor.AsCharacter->CharacterData.ModelCharaId == 0;
 
     public void ApplyClown(Span<CharacterArmor> armors)
     {

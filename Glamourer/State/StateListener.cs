@@ -13,6 +13,7 @@ using Penumbra.GameData.Structs;
 using System;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
+using Glamourer.Structs;
 
 namespace Glamourer.State;
 
@@ -116,6 +117,9 @@ public class StateListener : IDisposable
 
         /// <summary> The base state changed compared to prior state. </summary>
         Change,
+
+        /// <summary> Special case for hat stuff. </summary>
+        HatHack,
     }
 
     /// <summary>
@@ -315,7 +319,6 @@ public class StateListener : IDisposable
                     _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Game);
                 else
                     apply = true;
-
                 break;
             case UpdateState.NoChange:
                 apply = true;
@@ -359,12 +362,20 @@ public class StateListener : IDisposable
         if (actorArmor.Value != armor.Value)
         {
             // Update base data in case hat visibility is off.
-            if (slot is EquipSlot.Head && armor.Value == 0 && actorArmor.Value != state.BaseData.Armor(EquipSlot.Head).Value)
+            if (slot is EquipSlot.Head && armor.Value == 0)
             {
-                var item = _items.Identify(slot, actorArmor.Set, actorArmor.Variant);
-                state.BaseData.SetItem(EquipSlot.Head, item);
-                state.BaseData.SetStain(EquipSlot.Head, actorArmor.Stain);
-                return UpdateState.Change;
+                if (actor.IsTransformed)
+                    return UpdateState.Transformed;
+
+                if (actorArmor.Value != state.BaseData.Armor(EquipSlot.Head).Value)
+                {
+                    var item = _items.Identify(slot, actorArmor.Set, actorArmor.Variant);
+                    state.BaseData.SetItem(EquipSlot.Head, item);
+                    state.BaseData.SetStain(EquipSlot.Head, actorArmor.Stain);
+                    return UpdateState.Change;
+                }
+
+                return UpdateState.HatHack;
             }
 
             if (!fistWeapon)
@@ -410,12 +421,10 @@ public class StateListener : IDisposable
 
                 if (apply)
                     armor = state.ModelData.ArmorWithState(slot);
-
                 break;
             // Use current model data.
-            // Transformed also handles invisible hat state.
             case UpdateState.NoChange:
-            case UpdateState.Transformed when slot is EquipSlot.Head && armor.Value is 0:
+            case UpdateState.HatHack:
                 armor = state.ModelData.ArmorWithState(slot);
                 break;
             case UpdateState.Transformed: break;
@@ -423,8 +432,15 @@ public class StateListener : IDisposable
     }
 
     /// <summary> Update base data for a single changed weapon slot. </summary>
-    private UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterWeapon weapon)
+    private unsafe UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterWeapon weapon)
     {
+        if (actor.AsCharacter->CharacterData.TransformationId != 0)
+        {
+            var actorWeapon = slot is EquipSlot.MainHand ? actor.GetMainhand() : actor.GetOffhand();
+            if (weapon.Value != actorWeapon.Value)
+                return UpdateState.Transformed;
+        }
+
         var baseData = state.BaseData.Weapon(slot);
         var change   = UpdateState.NoChange;
 
