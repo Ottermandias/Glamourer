@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Threading;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
-using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
@@ -12,20 +12,27 @@ namespace Glamourer.Interop;
 
 public unsafe class WeaponService : IDisposable
 {
-    private readonly WeaponLoading _event;
+    private readonly WeaponLoading     _event;
+    private readonly ThreadLocal<bool> _inUpdate = new(() => false);
+
+
+    private readonly delegate* unmanaged[Stdcall]<DrawDataContainer*, uint, ulong, byte, byte, byte, byte, void>
+        _original;
+
 
     public WeaponService(WeaponLoading @event, IGameInteropProvider interop)
     {
         _event = @event;
         _loadWeaponHook =
             interop.HookFromAddress<LoadWeaponDelegate>((nint)DrawDataContainer.MemberFunctionPointers.LoadWeapon, LoadWeaponDetour);
+        _original =
+            (delegate* unmanaged[Stdcall] < DrawDataContainer*, uint, ulong, byte, byte, byte, byte, void >)
+            DrawDataContainer.MemberFunctionPointers.LoadWeapon;
         _loadWeaponHook.Enable();
     }
 
     public void Dispose()
-    {
-        _loadWeaponHook.Dispose();
-    }
+        => _loadWeaponHook.Dispose();
 
     // Weapons for a specific character are reloaded with this function.
     // slot is 0 for main hand, 1 for offhand, 2 for combat effects.
@@ -42,30 +49,37 @@ public unsafe class WeaponService : IDisposable
     private void LoadWeaponDetour(DrawDataContainer* drawData, uint slot, ulong weaponValue, byte redrawOnEquality, byte unk2,
         byte skipGameObject, byte unk4)
     {
-        var actor  = (Actor)((nint*)drawData)[1];
-        var weapon = new CharacterWeapon(weaponValue);
-        var equipSlot = slot switch
+        if (!_inUpdate.Value)
         {
-            0 => EquipSlot.MainHand,
-            1 => EquipSlot.OffHand,
-            _ => EquipSlot.Unknown,
-        };
+            var actor  = (Actor)((nint*)drawData)[1];
+            var weapon = new CharacterWeapon(weaponValue);
+            var equipSlot = slot switch
+            {
+                0 => EquipSlot.MainHand,
+                1 => EquipSlot.OffHand,
+                _ => EquipSlot.Unknown,
+            };
 
-        var tmpWeapon = weapon;
-        // First call the regular function.
-        if (equipSlot is not EquipSlot.Unknown)
-            _event.Invoke(actor, equipSlot, ref tmpWeapon);
+            var tmpWeapon = weapon;
+            // First call the regular function.
+            if (equipSlot is not EquipSlot.Unknown)
+                _event.Invoke(actor, equipSlot, ref tmpWeapon);
 
-        _loadWeaponHook.Original(drawData, slot, weapon.Value, redrawOnEquality, unk2, skipGameObject, unk4);
-        if (tmpWeapon.Value != weapon.Value)
-        {
-            if (tmpWeapon.Set.Id == 0)
-                tmpWeapon.Stain = 0;
-            _loadWeaponHook.Original(drawData, slot, tmpWeapon.Value, 1, unk2, 1, unk4);
+            _loadWeaponHook.Original(drawData, slot, weapon.Value, redrawOnEquality, unk2, skipGameObject, unk4);
+            if (tmpWeapon.Value != weapon.Value)
+            {
+                if (tmpWeapon.Set.Id == 0)
+                    tmpWeapon.Stain = 0;
+                _loadWeaponHook.Original(drawData, slot, tmpWeapon.Value, 1, unk2, 1, unk4);
+            }
+
+            Glamourer.Log.Excessive(
+                $"Weapon reloaded for 0x{actor.Address:X} ({actor.Utf8Name}) with attributes {slot} {weapon.Value:X14}, {redrawOnEquality}, {unk2}, {skipGameObject}, {unk4}");
         }
-
-        Glamourer.Log.Excessive(
-            $"Weapon reloaded for 0x{actor.Address:X} ({actor.Utf8Name}) with attributes {slot} {weapon.Value:X14}, {redrawOnEquality}, {unk2}, {skipGameObject}, {unk4}");
+        else
+        {
+            _original(drawData, slot, weaponValue, redrawOnEquality, unk2, skipGameObject, unk4);
+        }
     }
 
     // Load a specific weapon for a character by its data and slot.
@@ -74,16 +88,21 @@ public unsafe class WeaponService : IDisposable
         switch (slot)
         {
             case EquipSlot.MainHand:
+                _inUpdate.Value = true;
                 _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value, 1, 0, 1, 0);
+                _inUpdate.Value = false;
                 return;
             case EquipSlot.OffHand:
+                _inUpdate.Value = true;
                 _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, weapon.Value, 1, 0, 1, 0);
+                _inUpdate.Value = false;
                 return;
             case EquipSlot.BothHand:
+                _inUpdate.Value = true;
                 _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value,                1, 0, 1, 0);
                 _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, CharacterWeapon.Empty.Value, 1, 0, 1, 0);
+                _inUpdate.Value = false;
                 return;
-            // function can also be called with '2', but does not seem to ever be.
         }
     }
 

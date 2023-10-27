@@ -164,8 +164,9 @@ public class PenumbraChangedItemTooltip : IDisposable
 
         switch (type)
         {
+            case ChangedItemType.ItemOffhand:
             case ChangedItemType.Item:
-                if (!_items.ItemService.AwaitedService.TryGetValue(id, EquipSlot.MainHand, out var item))
+                if (!_items.ItemService.AwaitedService.TryGetValue(id, type is ChangedItemType.Item ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
                     return;
 
                 CreateTooltip(item, "[Glamourer] ", false);
@@ -189,13 +190,14 @@ public class PenumbraChangedItemTooltip : IDisposable
         switch (type)
         {
             case ChangedItemType.Item:
+            case ChangedItemType.ItemOffhand:
                 if (button is not MouseButton.Right)
                     return;
 
                 if (!Player(out var state))
                     return;
 
-                if (!_items.ItemService.AwaitedService.TryGetValue(id, EquipSlot.MainHand, out var item))
+                if (!_items.ItemService.AwaitedService.TryGetValue(id, type is ChangedItemType.Item ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
                     return;
 
                 ApplyItem(state, item);
