@@ -66,7 +66,7 @@ public unsafe class FunModule : IDisposable
     }
 
     internal void ResetFestival()
-        => OnDayChange(DateTime.UtcNow.Day, DateTime.UtcNow.Month, DateTime.UtcNow.Year);
+        => OnDayChange(DateTime.Now.Day, DateTime.Now.Month, DateTime.Now.Year);
 
     public FunModule(CodeService codes, CustomizationService customizations, ItemManager items, Configuration config,
         GenericPopupWindow popupWindow, StateManager stateManager, ObjectManager objects, DesignConverter designConverter,
