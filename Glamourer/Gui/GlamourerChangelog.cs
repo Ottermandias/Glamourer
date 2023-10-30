@@ -21,6 +21,7 @@ public class GlamourerChangelog
         Add1_0_1_1(Changelog);
         Add1_0_2_0(Changelog);
         Add1_0_3_0(Changelog);
+        Add1_0_4_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -32,6 +33,19 @@ public class GlamourerChangelog
         _config.ChangeLogDisplayType = type;
         _config.Save();
     }
+
+    private static void Add1_0_4_0(Changelog log)
+        => log.NextVersion("Version 1.0.4.0")
+            .RegisterEntry("The GPose target is now used for target-dependent functionality in GPose.")
+            .RegisterEntry("Fixed a few issues with transformations, especially their weapons and head gear.")
+            .RegisterEntry(
+                "Previewing Offhand Models for both-handed weapons via right click is now possible (may need to wait for a not-yet released Penumbra update).")
+            .RegisterEntry("Updated the known list of Battle NPCs.")
+            .RegisterEntry("Removed another technically unrestricted item from restricted item list.")
+            .RegisterEntry("Use local time for discerning the current day on start-up instead of UTC-time.")
+            .RegisterEntry("Improved the Unlocks Table with additional info. (1.0.3.1)")
+            .RegisterEntry("Added position locking option and more color options. (1.0.3.1)")
+            .RegisterEntry("Removed the default key combination for toggling the quick bar. (1.0.3.1)");
 
     private static void Add1_0_3_0(Changelog log)
         => log.NextVersion("Version 1.0.3.0")
