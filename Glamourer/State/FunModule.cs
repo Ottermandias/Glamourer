@@ -98,7 +98,7 @@ public unsafe class FunModule : IDisposable
         if (_config.DisableFestivals == 0 && _festivalSet != null
          || _codes.EnabledWorld && actor.Index != 0)
         {
-            armor = actor.Model.GetArmor(slot);
+            armor = actor.Model.Valid ? actor.Model.GetArmor(slot) : actor.GetArmor(slot);
         }
         else
         {
