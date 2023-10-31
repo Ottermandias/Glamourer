@@ -1,6 +1,8 @@
 ﻿using System.Numerics;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -10,9 +12,11 @@ namespace Glamourer.Gui;
 public class GenericPopupWindow : Window
 {
     private readonly Configuration _config;
+    private readonly ICondition    _condition;
+    private readonly IClientState  _state;
     public           bool          OpenFestivalPopup { get; internal set; } = false;
 
-    public GenericPopupWindow(Configuration config)
+    public GenericPopupWindow(Configuration config, IClientState state, ICondition condition)
         : base("Glamourer Popups",
             ImGuiWindowFlags.NoBringToFrontOnFocus
           | ImGuiWindowFlags.NoDecoration
@@ -23,14 +27,16 @@ public class GenericPopupWindow : Window
           | ImGuiWindowFlags.NoNav
           | ImGuiWindowFlags.NoTitleBar, true)
     {
-        _config = config;
+        _config             = config;
+        _state              = state;
+        _condition          = condition;
         DisableWindowSounds = true;
-        IsOpen  = true;
+        IsOpen              = true;
     }
 
     public override void Draw()
     {
-        if (OpenFestivalPopup)
+        if (OpenFestivalPopup && CheckFestivalPopupConditions())
         {
             ImGui.OpenPopup("FestivalPopup");
             OpenFestivalPopup = false;
@@ -38,6 +44,18 @@ public class GenericPopupWindow : Window
 
         DrawFestivalPopup();
     }
+
+    private bool CheckFestivalPopupConditions()
+        => !_state.IsPvPExcludingDen
+         && !_condition[ConditionFlag.InCombat]
+         && !_condition[ConditionFlag.BoundByDuty]
+         && !_condition[ConditionFlag.WatchingCutscene]
+         && !_condition[ConditionFlag.WatchingCutscene78]
+         && !_condition[ConditionFlag.BoundByDuty95]
+         && !_condition[ConditionFlag.BoundByDuty56]
+         && !_condition[ConditionFlag.InDeepDungeon]
+         && !_condition[ConditionFlag.PlayingLordOfVerminion]
+         && !_condition[ConditionFlag.ChocoboRacing];
 
 
     private void DrawFestivalPopup()
