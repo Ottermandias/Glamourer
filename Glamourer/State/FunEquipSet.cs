@@ -70,7 +70,7 @@ internal class FunEquipSet
 
     public static readonly FunEquipSet Halloween = new
     (
-        new Group(0316, 1, 0316, 1, 0316, 1, 0279, 1, 0316, 1), // Witch
+        new Group(0316, 1, 0316, 1, 0316, 1, 0049, 6, 0316, 1), // Witch
         new Group(6047, 1, 6047, 1, 6047, 1, 6047, 1, 6047, 1), // Werewolf
         new Group(6148, 1, 6148, 1, 6148, 1, 6148, 1, 6148, 1), // Wake Doctor
         new Group(6117, 1, 6117, 1, 6117, 1, 6117, 1, 6117, 1), // Clown
