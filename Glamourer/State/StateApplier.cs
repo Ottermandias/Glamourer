@@ -79,6 +79,7 @@ public class StateApplier
             {
                 var mdlCustomize = (Customize*)&mdl.AsHuman->Customize;
                 mdlCustomize->Load(customize);
+                _penumbra.RedrawObject(actor, RedrawType.AfterGPose);
             }
             else
             {
