@@ -21,6 +21,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
     private readonly   DesignChanged _designChanged;
     protected readonly TabSelected   TabSelected;
     protected          float         InnerWidth;
+    private            Design?       _currentDesign;
 
     protected DesignComboBase(Func<IReadOnlyList<Tuple<Design, string>>> generator, Logger log, DesignChanged designChanged,
         TabSelected tabSelected, Configuration config)
@@ -63,11 +64,17 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
         return ret;
     }
 
+    protected override int UpdateCurrentSelected(int currentSelected)
+    {
+        CurrentSelectionIdx = Items.IndexOf(p => _currentDesign == p.Item1);
+        CurrentSelection    = CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : null;
+        return CurrentSelectionIdx;
+    }
+
     protected bool Draw(Design? currentDesign, string? label, float width)
     {
-        InnerWidth          = 400 * ImGuiHelpers.GlobalScale;
-        CurrentSelectionIdx = Math.Max(Items.IndexOf(p => currentDesign == p.Item1), 0);
-        CurrentSelection    = Items[CurrentSelectionIdx];
+        _currentDesign = currentDesign;
+        InnerWidth     = 400 * ImGuiHelpers.GlobalScale;
         var name = label ?? "Select Design Here...";
         var ret = Draw("##design", name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing())
          && CurrentSelection != null;
@@ -79,6 +86,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
             ImGuiUtil.HoverTooltip("Control + Right-Click to move to design.");
         }
 
+        _currentDesign = null;
         return ret;
     }
 
@@ -106,8 +114,8 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
                 Cleanup();
                 if (CurrentSelection?.Item1 == design)
                 {
-                    CurrentSelectionIdx = -1;
-                    CurrentSelection    = null;
+                    CurrentSelectionIdx = Items.Count > 0 ? 0 : -1;
+                    CurrentSelection    = Items[CurrentSelectionIdx];
                 }
 
                 break;
@@ -117,20 +125,43 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
 
 public sealed class DesignCombo : DesignComboBase
 {
+    private readonly DesignManager _manager;
+
     public DesignCombo(DesignManager designs, DesignFileSystem fileSystem, Logger log, DesignChanged designChanged, TabSelected tabSelected,
         Configuration config)
-        : base(
-            () => designs.Designs
-                .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
-                .OrderBy(d => d.Item2)
-                .ToList(), log, designChanged, tabSelected, config)
-    { }
+        : base(() => designs.Designs
+            .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
+            .OrderBy(d => d.Item2)
+            .ToList(), log, designChanged, tabSelected, config)
+    {
+        _manager = designs;
+        if (designs.Designs.Count == 0)
+            return;
+
+        CurrentSelection    = Items[0];
+        CurrentSelectionIdx = 0;
+    }
 
     public Design? Design
         => CurrentSelection?.Item1;
 
     public void Draw(float width)
-        => Draw(Design, (Incognito ? Design?.Incognito : Design?.Name.Text) ?? string.Empty, width);
+    {
+        Draw(Design, (Incognito ? Design?.Incognito : Design?.Name.Text) ?? string.Empty, width);
+        if (ImGui.IsItemHovered() && _manager.Designs.Count > 1)
+        {
+            var mouseWheel = -(int)ImGui.GetIO().MouseWheel % _manager.Designs.Count;
+            CurrentSelectionIdx = mouseWheel switch
+            {
+                < 0 when CurrentSelectionIdx < 0 => _manager.Designs.Count - 1 + mouseWheel,
+                < 0                              => (CurrentSelectionIdx + _manager.Designs.Count + mouseWheel) % _manager.Designs.Count,
+                > 0 when CurrentSelectionIdx < 0 => mouseWheel,
+                > 0                              => (CurrentSelectionIdx + mouseWheel) % _manager.Designs.Count,
+                _                                => CurrentSelectionIdx,
+            };
+            CurrentSelection = Items[CurrentSelectionIdx];
+        }
+    }
 }
 
 public sealed class RevertDesignCombo : DesignComboBase, IDisposable
