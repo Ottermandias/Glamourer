@@ -84,6 +84,16 @@ public class DesignPanel
             Disabled = _selector.Selected?.WriteProtected() ?? true,
         };
 
+    private HeaderDrawer.Button UndoButton()
+        => new()
+        {
+            Description = "Undo the last change if you accidentally overwrote your design with a different one.",
+            Icon     = FontAwesomeIcon.Undo,
+            OnClick  = UndoOverwrite,
+            Visible  = _selector.Selected != null,
+            Disabled = !_manager.CanUndo(_selector.Selected),
+        };
+
     private HeaderDrawer.Button ExportToClipboardButton()
         => new()
         {
@@ -95,7 +105,7 @@ public class DesignPanel
 
     private void DrawHeader()
         => HeaderDrawer.Draw(SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg),
-            2, SetFromClipboardButton(), ExportToClipboardButton(), LockButton(),
+            3, SetFromClipboardButton(), UndoButton(), ExportToClipboardButton(), LockButton(),
             HeaderDrawer.Button.IncognitoButton(_selector.IncognitoMode, v => _selector.IncognitoMode = v));
 
     private string SelectionName
@@ -408,6 +418,18 @@ public class DesignPanel
         {
             Glamourer.Messager.NotificationMessage(ex, $"Could not apply clipboard to {_selector.Selected!.Name}.",
                 $"Could not apply clipboard to design {_selector.Selected!.Identifier}", NotificationType.Error, false);
+        }
+    }
+
+    private void UndoOverwrite()
+    {
+        try
+        {
+            _manager.UndoDesignChange(_selector.Selected!);
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Messager.NotificationMessage(ex, $"Could not undo last changes to {_selector.Selected!.Name}.", NotificationType.Error, false);
         }
     }
 

@@ -19,12 +19,13 @@ namespace Glamourer.Designs;
 
 public class DesignManager
 {
-    private readonly CustomizationService _customizations;
-    private readonly ItemManager          _items;
-    private readonly HumanModelList       _humans;
-    private readonly SaveService          _saveService;
-    private readonly DesignChanged        _event;
-    private readonly List<Design>         _designs = new();
+    private readonly CustomizationService         _customizations;
+    private readonly ItemManager                  _items;
+    private readonly HumanModelList               _humans;
+    private readonly SaveService                  _saveService;
+    private readonly DesignChanged                _event;
+    private readonly List<Design>                 _designs   = new();
+    private readonly Dictionary<Guid, DesignData> _undoStore = new();
 
     public IReadOnlyList<Design> Designs
         => _designs;
@@ -82,6 +83,10 @@ public class DesignManager
             $"Loaded {_designs.Count} designs.{(skipped > 0 ? $" Skipped loading {skipped} designs due to errors." : string.Empty)}");
         _event.Invoke(DesignChanged.Type.ReloadedAll, null!);
     }
+
+    /// <summary> Whether an Undo for the given design is possible. </summary>
+    public bool CanUndo(Design? design)
+        => design != null && _undoStore.ContainsKey(design.Identifier);
 
     /// <summary> Create a new temporary design without adding it to the manager. </summary>
     public DesignBase CreateTemporary()
@@ -463,6 +468,7 @@ public class DesignManager
     /// <summary> Apply an entire design based on its appliance rules piece by piece. </summary>
     public void ApplyDesign(Design design, DesignBase other)
     {
+        _undoStore[design.Identifier] = design.DesignData;
         if (other.DoApplyWetness())
             design.DesignData.SetIsWet(other.DesignData.IsWet());
         if (other.DoApplyHatVisible())
@@ -501,6 +507,16 @@ public class DesignManager
 
         if (other.DoApplyStain(EquipSlot.OffHand))
             ChangeStain(design, EquipSlot.OffHand, other.DesignData.Stain(EquipSlot.OffHand));
+    }
+
+    public void UndoDesignChange(Design design)
+    {
+        if (!_undoStore.Remove(design.Identifier, out var otherData))
+            return;
+
+        var other = CreateTemporary();
+        other.DesignData = otherData;
+        ApplyDesign(design, other);
     }
 
     private void MigrateOldDesigns()
