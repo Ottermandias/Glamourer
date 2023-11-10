@@ -3,6 +3,7 @@ using Dalamud.Plugin;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Services;
+using Glamourer.State;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
 using OtterGui.Log;
@@ -31,6 +32,7 @@ public class Glamourer : IDalamudPlugin
         {
             _services = ServiceManager.CreateProvider(pluginInterface, Log);
             Messager  = _services.GetRequiredService<MessageService>();
+            _services.GetRequiredService<StateListener>();         // Initialize State Listener.
             _services.GetRequiredService<GlamourerWindowSystem>(); // initialize ui.
             _services.GetRequiredService<CommandService>();        // initialize commands.
             _services.GetRequiredService<VisorService>();

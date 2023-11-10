@@ -13,7 +13,6 @@ using Penumbra.GameData.Structs;
 using System;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
-using Glamourer.Structs;
 
 namespace Glamourer.State;
 
@@ -49,12 +48,6 @@ public class StateListener : IDisposable
     private ActorState?     _creatingState;
     private CharacterWeapon _lastFistOffhand = CharacterWeapon.Empty;
 
-    public bool Enabled
-    {
-        get => _config.Enabled;
-        set => Enable(value);
-    }
-
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
@@ -81,30 +74,11 @@ public class StateListener : IDisposable
         _changeCustomizeService = changeCustomizeService;
         _customizations         = customizations;
         _condition              = condition;
-
-        if (Enabled)
-            Subscribe();
-    }
-
-    public void Enable(bool value)
-    {
-        if (value == Enabled)
-            return;
-
-        _config.Enabled = value;
-        _config.Save();
-
-        if (value)
-            Subscribe();
-        else
-            Unsubscribe();
+        Subscribe();
     }
 
     void IDisposable.Dispose()
-    {
-        if (Enabled)
-            Unsubscribe();
-    }
+        => Unsubscribe();
 
     /// <summary> The result of updating the base state of an ActorState. </summary>
     private enum UpdateState

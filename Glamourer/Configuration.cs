@@ -19,7 +19,6 @@ namespace Glamourer;
 
 public class Configuration : IPluginConfiguration, ISavable
 {
-    public bool Enabled                          { get; set; } = true;
     public bool UseRestrictedGearProtection      { get; set; } = false;
     public bool OpenFoldersByDefault             { get; set; } = false;
     public bool AutoRedrawEquipOnChanges         { get; set; } = false;

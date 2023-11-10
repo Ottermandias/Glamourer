@@ -24,7 +24,6 @@ public class SettingsTab : ITab
     private readonly VirtualKey[]             _validKeys;
     private readonly Configuration            _config;
     private readonly DesignFileSystemSelector _selector;
-    private readonly StateListener            _stateListener;
     private readonly CodeService              _codeService;
     private readonly PenumbraAutoRedraw       _autoRedraw;
     private readonly ContextMenuService       _contextMenuService;
@@ -32,13 +31,11 @@ public class SettingsTab : ITab
     private readonly GlamourerChangelog       _changelog;
     private readonly FunModule                _funModule;
 
-    public SettingsTab(Configuration config, DesignFileSystemSelector selector, StateListener stateListener,
-        CodeService codeService, PenumbraAutoRedraw autoRedraw, ContextMenuService contextMenuService, UiBuilder uiBuilder,
-        GlamourerChangelog changelog, FunModule funModule, IKeyState keys)
+    public SettingsTab(Configuration config, DesignFileSystemSelector selector, CodeService codeService, PenumbraAutoRedraw autoRedraw,
+        ContextMenuService contextMenuService, UiBuilder uiBuilder, GlamourerChangelog changelog, FunModule funModule, IKeyState keys)
     {
         _config             = config;
         _selector           = selector;
-        _stateListener      = stateListener;
         _codeService        = codeService;
         _autoRedraw         = autoRedraw;
         _contextMenuService = contextMenuService;
@@ -59,9 +56,9 @@ public class SettingsTab : ITab
         if (!child)
             return;
 
-        Checkbox("Enabled", "Enable main functionality of keeping and applying state.", _stateListener.Enabled, _stateListener.Enable);
         Checkbox("Enable Auto Designs", "Enable the application of designs associated to characters to be applied automatically.",
             _config.EnableAutoDesigns,  v => _config.EnableAutoDesigns = v);
+        ImGui.NewLine();
         ImGui.NewLine();
         ImGui.NewLine();
 
