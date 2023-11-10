@@ -173,7 +173,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
             else if (design != null)
                 _designManager.CreateClone(design, _newName, true);
             else
-                Glamourer.Messager.NotificationMessage("Could not create a design, clipboard did not contain valid design data.", NotificationType.Error, false);
+                Glamourer.Messager.NotificationMessage("Could not create a design, clipboard did not contain valid design data.",
+                    NotificationType.Error, false);
             _clipboardText = null;
         }
         else if (_cloneDesign != null)
@@ -206,6 +207,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         FilterTooltip = "Filter designs for those where their full paths or names contain the given substring.\n"
           + "Enter m:[string] to filter for designs with with a mod association containing the string.\n"
           + "Enter t:[string] to filter for designs set to specific tags.\n"
+          + "Enter i:[string] to filter for designs containing specific items.\n"
           + "Enter n:[string] to filter only for design names and no paths.";
     }
 
@@ -224,6 +226,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
                     'M' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 2),
                     't' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 3),
                     'T' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 3),
+                    'i' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 4),
+                    'I' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 4),
                     _   => (new LowerString(filterValue), 0),
                 },
             _ => (new LowerString(filterValue), 0),
@@ -259,6 +263,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
             1  => !design.Name.Contains(_designFilter),
             2  => !design.AssociatedMods.Any(kvp => _designFilter.IsContained(kvp.Key.Name)),
             3  => !design.Tags.Any(_designFilter.IsContained),
+            4  => !design.DesignData.ContainsName(_designFilter),
             _  => false, // Should never happen
         };
     }

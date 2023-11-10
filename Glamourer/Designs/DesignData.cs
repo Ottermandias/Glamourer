@@ -3,6 +3,7 @@ using System.Buffers.Text;
 using System.Runtime.CompilerServices;
 using Glamourer.Customization;
 using Glamourer.Services;
+using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.String.Functions;
@@ -38,6 +39,20 @@ public unsafe struct DesignData
 
     public DesignData()
     { }
+
+    public bool ContainsName(LowerString name)
+        => name.IsContained(_nameHead)
+         || name.IsContained(_nameBody)
+         || name.IsContained(_nameHands)
+         || name.IsContained(_nameLegs)
+         || name.IsContained(_nameFeet)
+         || name.IsContained(_nameEars)
+         || name.IsContained(_nameNeck)
+         || name.IsContained(_nameWrists)
+         || name.IsContained(_nameRFinger)
+         || name.IsContained(_nameLFinger)
+         || name.IsContained(_nameMainhand)
+         || name.IsContained(_nameOffhand);
 
     public readonly StainId Stain(EquipSlot slot)
     {
