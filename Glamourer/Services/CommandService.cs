@@ -86,6 +86,7 @@ public class CommandService : IDisposable
                     return;
                 default:
                     _chat.Print("Use without argument to toggle the main window.");
+                    _chat.Print(new SeStringBuilder().AddText("Use ").AddPurple("/glamour").AddText(" instead of ").AddRed("/glamourer").AddText(" for application commands.").BuiltString);
                     _chat.Print(new SeStringBuilder().AddCommand("qdb",  "Toggles the quick design bar on or off.").BuiltString);
                     _chat.Print(new SeStringBuilder().AddCommand("lock", "Toggles the lock of the main window on or off.").BuiltString);
                     return;
