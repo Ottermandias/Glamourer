@@ -14,7 +14,6 @@ using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
-using OtterGui.Widgets;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -26,7 +25,7 @@ public class EquipmentDrawer
     private const float DefaultWidth = 280;
 
     private readonly ItemManager                            _items;
-    private readonly FilterComboColors                      _stainCombo;
+    private readonly GlamourerColorCombo                    _stainCombo;
     private readonly StainData                              _stainData;
     private readonly ItemCombo[]                            _itemCombo;
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
@@ -39,17 +38,15 @@ public class EquipmentDrawer
     private float _requiredComboWidth;
 
     public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, CodeService codes, TextureService textures,
-        Configuration config,
-        GPoseService gPose)
+        Configuration config, GPoseService gPose)
     {
-        _items     = items;
-        _codes     = codes;
-        _textures  = textures;
-        _config    = config;
-        _gPose     = gPose;
-        _stainData = items.Stains;
-        _stainCombo = new FilterComboColors(DefaultWidth - 20,
-            _stainData.Data.Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))), Glamourer.Log);
+        _items       = items;
+        _codes       = codes;
+        _textures    = textures;
+        _config      = config;
+        _gPose       = gPose;
+        _stainData   = items.Stains;
+        _stainCombo  = new GlamourerColorCombo(DefaultWidth - 20, _stainData, favorites);
         _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log, favorites)).ToArray();
         _weaponCombo = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
         foreach (var type in Enum.GetValues<FullEquipType>())

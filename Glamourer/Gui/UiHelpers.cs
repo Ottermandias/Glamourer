@@ -143,4 +143,27 @@ public static class UiHelpers
 
         return false;
     }
+
+    public static bool DrawFavoriteStar(FavoriteManager favorites, StainId stain)
+    {
+        var favorite = favorites.Contains(stain);
+        var hovering = ImGui.IsMouseHoveringRect(ImGui.GetCursorScreenPos(),
+            ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetFrameHeight()));
+
+        using var font = ImRaii.PushFont(UiBuilder.IconFont);
+        using var c = ImRaii.PushColor(ImGuiCol.Text,
+            hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted(FontAwesomeIcon.Star.ToIconString());
+        if (ImGui.IsItemClicked())
+        {
+            if (favorite)
+                favorites.Remove(stain);
+            else
+                favorites.TryAdd(stain);
+            return true;
+        }
+
+        return false;
+    }
 }
