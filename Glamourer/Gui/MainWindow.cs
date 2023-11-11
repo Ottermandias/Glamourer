@@ -83,7 +83,7 @@ public class MainWindow : Window, IDisposable
     {
         Flags = _config.LockMainWindow
             ? Flags | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize
-            : Flags & ~(ImGuiWindowFlags.NoMove |ImGuiWindowFlags.NoResize);
+            : Flags & ~(ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize);
     }
 
     public void Dispose()
@@ -154,7 +154,10 @@ public class MainWindow : Window, IDisposable
     }
 
     private void OnTabSelected(TabType type, Design? _)
-        => SelectTab = type;
+    {
+        SelectTab = type;
+        IsOpen    = true;
+    }
 
     private static string GetLabel()
         => Glamourer.Version.Length == 0
