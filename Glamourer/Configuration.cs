@@ -39,6 +39,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool LockDesignQuickBar               { get; set; } = false;
     public bool ShowQuickBarInTabs               { get; set; } = true;
     public bool LockMainWindow                   { get; set; } = false;
+    public bool OpenWindowAtStart                { get; set; } = false;
 
     public ModifiableHotkey   ToggleQuickDesignBar { get; set; } = new(VirtualKey.NO_KEY);
     public MainWindow.TabType SelectedTab          { get; set; } = MainWindow.TabType.Settings;

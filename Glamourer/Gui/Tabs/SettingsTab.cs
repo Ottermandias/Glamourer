@@ -136,7 +136,8 @@ public class SettingsTab : ITab
             });
         Checkbox("Lock Main Window", "Prevent the main window from being moved and lock it in place.", _config.LockMainWindow,
             v => _config.LockMainWindow = v);
-
+        Checkbox("Open Main Window at Game Start", "Whether the main Glamourer window should be open or closed after launching the game.",
+            _config.OpenWindowAtStart,             v => _config.OpenWindowAtStart = v);
         ImGui.Dummy(Vector2.Zero);
         ImGui.Separator();
         ImGui.Dummy(Vector2.Zero);

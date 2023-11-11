@@ -76,7 +76,7 @@ public class MainWindow : Window, IDisposable
             debugTab,
         };
         _event.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
-        IsOpen = _config.DebugMode;
+        IsOpen = _config.OpenWindowAtStart;
     }
 
     public override void PreDraw()
