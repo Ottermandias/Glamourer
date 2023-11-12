@@ -64,7 +64,8 @@ public class DesignQuickBar : Window, IDisposable
         Flags = GetFlags;
         Size  = new Vector2(12 * ImGui.GetFrameHeight(), ImGui.GetFrameHeight());
 
-        _windowPadding.Push(ImGuiStyleVar.WindowPadding, new Vector2(ImGuiHelpers.GlobalScale * 4));
+        _windowPadding.Push(ImGuiStyleVar.WindowPadding, new Vector2(ImGuiHelpers.GlobalScale * 4))
+            .Push(ImGuiStyleVar.WindowBorderSize, 0);
         _windowColor.Push(ImGuiCol.WindowBg, ColorId.QuickDesignBg.Value())
             .Push(ImGuiCol.Button,  ColorId.QuickDesignButton.Value())
             .Push(ImGuiCol.FrameBg, ColorId.QuickDesignFrame.Value());
