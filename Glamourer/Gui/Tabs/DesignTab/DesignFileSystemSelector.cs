@@ -7,6 +7,7 @@ using Dalamud.Plugin.Services;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
+using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -19,11 +20,12 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public sealed class DesignFileSystemSelector : FileSystemSelector<Design, DesignFileSystemSelector.DesignState>
 {
-    private readonly DesignManager   _designManager;
-    private readonly DesignChanged   _event;
-    private readonly Configuration   _config;
-    private readonly DesignConverter _converter;
-    private readonly TabSelected     _selectionEvent;
+    private readonly DesignManager        _designManager;
+    private readonly DesignChanged        _event;
+    private readonly Configuration        _config;
+    private readonly DesignConverter      _converter;
+    private readonly TabSelected          _selectionEvent;
+    private readonly CustomizationService _customizationService;
 
     private string? _clipboardText;
     private Design? _cloneDesign;
@@ -48,14 +50,15 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     }
 
     public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, IKeyState keyState, DesignChanged @event,
-        Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log)
+        Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log, CustomizationService customizationService)
         : base(fileSystem, keyState, log, allowMultipleSelection: true)
     {
-        _designManager  = designManager;
-        _event          = @event;
-        _config         = config;
-        _converter      = converter;
-        _selectionEvent = selectionEvent;
+        _designManager        = designManager;
+        _event                = @event;
+        _config               = config;
+        _converter            = converter;
+        _selectionEvent       = selectionEvent;
+        _customizationService = customizationService;
         _event.Subscribe(OnDesignChange, DesignChanged.Priority.DesignFileSystemSelector);
         _selectionEvent.Subscribe(OnTabSelected, TabSelected.Priority.DesignSelector);
 
@@ -271,8 +274,9 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     /// <summary> Combined wrapper for handling all filters and setting state. </summary>
     private bool ApplyFiltersAndState(DesignFileSystem.Leaf leaf, out DesignState state)
     {
-        var applyEquip     = leaf.Value.ApplyEquip != 0;
-        var applyCustomize = (leaf.Value.ApplyCustomize & ~(CustomizeFlag.BodyType | CustomizeFlag.Race)) != 0;
+        var applyEquip = leaf.Value.ApplyEquip != 0;
+        var list = _customizationService.AwaitedService.GetList(leaf.Value.DesignData.Customize.Clan, leaf.Value.DesignData.Customize.Gender);
+        var applyCustomize = leaf.Value.ApplyCustomize.FixApplication(list) != 0;
 
         state.Color = (applyEquip, applyCustomize) switch
         {

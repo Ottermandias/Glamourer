@@ -40,7 +40,7 @@ public unsafe struct DesignData
     public DesignData()
     { }
 
-    public bool ContainsName(LowerString name)
+    public readonly bool ContainsName(LowerString name)
         => name.IsContained(_nameHead)
          || name.IsContained(_nameBody)
          || name.IsContained(_nameHands)
