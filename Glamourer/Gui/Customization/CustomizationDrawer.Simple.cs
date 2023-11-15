@@ -94,24 +94,26 @@ public partial class CustomizationDrawer
         using var _        = SetId(index);
         using var bigGroup = ImRaii.Group();
 
-        using var disabled = ImRaii.Disabled(_locked);
-        if (indexedBy1)
+        using (var disabled = ImRaii.Disabled(_locked))
         {
-            ListCombo1();
-            ImGui.SameLine();
-            ListInputInt1();
-        }
-        else
-        {
-            ListCombo0();
-            ImGui.SameLine();
-            ListInputInt0();
-        }
+            if (indexedBy1)
+            {
+                ListCombo1();
+                ImGui.SameLine();
+                ListInputInt1();
+            }
+            else
+            {
+                ListCombo0();
+                ImGui.SameLine();
+                ListInputInt0();
+            }
 
-        if (_withApply)
-        {
-            ImGui.SameLine();
-            ApplyCheckbox();
+            if (_withApply)
+            {
+                ImGui.SameLine();
+                ApplyCheckbox();
+            }
         }
 
         ImGui.SameLine();
