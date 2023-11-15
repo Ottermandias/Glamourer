@@ -244,7 +244,7 @@ public class DesignPanel
             foreach (var index in CustomizationExtensions.All.Where(set.IsAvailable))
             {
                 var apply = _selector.Selected!.DoApplyCustomize(index);
-                if (ImGui.Checkbox($"Apply {index.ToDefaultName()}", ref apply))
+                if (ImGui.Checkbox($"Apply {set.Option(index)}", ref apply))
                     _manager.ChangeApplyCustomize(_selector.Selected!, index, apply);
             }
         }
