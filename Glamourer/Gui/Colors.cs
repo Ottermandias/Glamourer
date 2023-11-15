@@ -25,6 +25,9 @@ public enum ColorId
     QuickDesignButton,
     QuickDesignFrame,
     QuickDesignBg,
+    TriStateCheck,
+    TriStateCross,
+    TriStateNeutral,
 }
 
 public static class Colors
@@ -55,6 +58,9 @@ public static class Colors
             ColorId.QuickDesignButton          => (0x900A0A0A, "Quick Design Bar Button Background", "The color of button frames in the quick design bar."                                                       ),
             ColorId.QuickDesignFrame           => (0x90383838, "Quick Design Bar Combo Background",  "The color of the combo background in the quick design bar."                                                ),
             ColorId.QuickDesignBg              => (0x00F0F0F0, "Quick Design Bar Window Background", "The color of the window background in the quick design bar."                                               ),
+            ColorId.TriStateCheck              => (0xFF00D000, "Checkmark in Tri-State Checkboxes",  "The color of the checkmark indicating positive change in tri-state checkboxes."                            ),
+            ColorId.TriStateCross              => (0xFF0000D0, "Cross in Tri-State Checkboxes",      "The color of the cross indicating negative change in tri-state checkboxes."                                ),
+            ColorId.TriStateNeutral            => (0xFFD0D0D0, "Dot in Tri-State Checkboxes",        "The color of the dot indicating no change in tri-state checkboxes"                                         ),
             _                                  => (0x00000000, string.Empty,                         string.Empty                                                                                                ),
             // @formatter:on
         };

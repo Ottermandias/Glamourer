@@ -9,6 +9,7 @@ using Glamourer.Unlocks;
 using ImGuiNET;
 using Lumina.Misc;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -71,15 +72,26 @@ public static class UiHelpers
     }
 
     public static DataChange DrawMetaToggle(string label, bool currentValue, bool currentApply, out bool newValue,
-        out bool newApply,
-        bool locked)
+        out bool newApply, bool locked)
     {
-        var       flags = currentApply ? currentValue ? 3 : 0 : 2;
-        bool      ret;
+        var       flags = (sbyte)(currentApply ? currentValue ? 1 : -1 : 0);
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
         using (var disabled = ImRaii.Disabled(locked))
         {
-            ret = ImGui.CheckboxFlags("##" + label, ref flags, 3);
+            if (new TristateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw("##" + label, flags, out flags))
+            {
+                (newValue, newApply) = flags switch
+                {
+                    -1 => (false, true),
+                    0  => (true, false),
+                    _  => (true, true),
+                };
+            }
+            else
+            {
+                newValue = currentValue;
+                newApply = currentApply;
+            }
         }
 
         ImGuiUtil.HoverTooltip($"This attribute will be {(currentApply ? currentValue ? "enabled." : "disabled." : "kept as is.")}");
@@ -87,21 +99,13 @@ public static class UiHelpers
         ImGui.SameLine();
         ImGui.TextUnformatted(label);
 
-        if (ret)
+        return (currentApply != newApply, currentValue != newValue) switch
         {
-            (newValue, newApply, var change) = (currentValue, currentApply) switch
-            {
-                (false, false) => (false, true, DataChange.ApplyItem),
-                (false, true)  => (true, true, DataChange.Item),
-                (true, false)  => (false, false, DataChange.Item), // Should not happen
-                (true, true)   => (false, false, DataChange.Item | DataChange.ApplyItem),
-            };
-            return change;
-        }
-
-        newValue = currentValue;
-        newApply = currentApply;
-        return DataChange.None;
+            (true, true)  => DataChange.ApplyItem | DataChange.Item,
+            (true, false) => DataChange.ApplyItem,
+            (false, true) => DataChange.Item,
+            _             => DataChange.None,
+        };
     }
 
     public static (EquipFlag, CustomizeFlag) ConvertKeysToFlags()
