@@ -16,6 +16,7 @@ public class FilenameService
     public readonly string UnlockFileCustomize;
     public readonly string UnlockFileItems;
     public readonly string FavoriteFile;
+    public readonly string DesignColorFile;
 
     public FilenameService(DalamudPluginInterface pi)
     {
@@ -28,6 +29,7 @@ public class FilenameService
         UnlockFileItems     = Path.Combine(ConfigDirectory, "unlocks_items.json");
         DesignDirectory     = Path.Combine(ConfigDirectory, "designs");
         FavoriteFile        = Path.Combine(ConfigDirectory, "favorites.json");
+        DesignColorFile        = Path.Combine(ConfigDirectory, "design_colors.json");
     }
 
 

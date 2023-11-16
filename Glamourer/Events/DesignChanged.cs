@@ -32,6 +32,9 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
         /// <summary> An existing design had its description changed. Data is the prior description [string]. </summary>
         ChangedDescription,
 
+        /// <summary> An existing design had its associated color changed. Data is the prior color [string]. </summary>
+        ChangedColor,
+
         /// <summary> An existing design had a new tag added. Data is the new tag and the index it was added at [(string, int)]. </summary>
         AddedTag,
 

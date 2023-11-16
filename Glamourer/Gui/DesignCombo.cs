@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -19,17 +20,19 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
 {
     private readonly   Configuration _config;
     private readonly   DesignChanged _designChanged;
+    private readonly   DesignColors  _designColors;
     protected readonly TabSelected   TabSelected;
     protected          float         InnerWidth;
     private            Design?       _currentDesign;
 
     protected DesignComboBase(Func<IReadOnlyList<Tuple<Design, string>>> generator, Logger log, DesignChanged designChanged,
-        TabSelected tabSelected, Configuration config)
+        TabSelected tabSelected, Configuration config, DesignColors designColors)
         : base(generator, log)
     {
         _designChanged = designChanged;
         TabSelected    = tabSelected;
         _config        = config;
+        _designColors  = designColors;
         _designChanged.Subscribe(OnDesignChange, DesignChanged.Priority.DesignCombo);
     }
 
@@ -41,8 +44,13 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
 
     protected override bool DrawSelectable(int globalIdx, bool selected)
     {
-        var ret = base.DrawSelectable(globalIdx, selected);
         var (design, path) = Items[globalIdx];
+        bool ret;
+        using (var color = ImRaii.PushColor(ImGuiCol.Text, _designColors.GetColor(design)))
+        {
+            ret = base.DrawSelectable(globalIdx, selected);
+        }
+
         if (path.Length > 0 && design.Name != path)
         {
             var start          = ImGui.GetItemRectMin();
@@ -128,11 +136,11 @@ public sealed class DesignCombo : DesignComboBase
     private readonly DesignManager _manager;
 
     public DesignCombo(DesignManager designs, DesignFileSystem fileSystem, Logger log, DesignChanged designChanged, TabSelected tabSelected,
-        Configuration config)
+        Configuration config, DesignColors designColors)
         : base(() => designs.Designs
             .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
             .OrderBy(d => d.Item2)
-            .ToList(), log, designChanged, tabSelected, config)
+            .ToList(), log, designChanged, tabSelected, config, designColors)
     {
         _manager = designs;
         if (designs.Designs.Count == 0)
@@ -170,19 +178,19 @@ public sealed class RevertDesignCombo : DesignComboBase, IDisposable
     public readonly  Design            RevertDesign;
     private readonly AutoDesignManager _autoDesignManager;
 
-    public RevertDesignCombo(DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected,
+    public RevertDesignCombo(DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected, DesignColors designColors,
         ItemManager items, CustomizationService customize, Logger log, DesignChanged designChanged, AutoDesignManager autoDesignManager,
         Configuration config)
-        : this(designs, fileSystem, tabSelected, CreateRevertDesign(customize, items), log, designChanged, autoDesignManager, config)
+        : this(designs, fileSystem, tabSelected, designColors, CreateRevertDesign(customize, items), log, designChanged, autoDesignManager, config)
     { }
 
-    private RevertDesignCombo(DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected,
+    private RevertDesignCombo(DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected, DesignColors designColors,
         Design revertDesign, Logger log, DesignChanged designChanged, AutoDesignManager autoDesignManager, Configuration config)
         : base(() => designs.Designs
             .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
             .OrderBy(d => d.Item2)
             .Prepend(new Tuple<Design, string>(revertDesign, string.Empty))
-            .ToList(), log, designChanged, tabSelected, config)
+            .ToList(), log, designChanged, tabSelected, config, designColors)
     {
         RevertDesign       = revertDesign;
         _autoDesignManager = autoDesignManager;

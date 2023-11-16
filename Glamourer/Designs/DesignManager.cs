@@ -189,6 +189,19 @@ public class DesignManager
         _event.Invoke(DesignChanged.Type.ChangedDescription, design, oldDescription);
     }
 
+    public void ChangeColor(Design design, string newColor)
+    {
+        var oldColor = design.Color;
+        if (oldColor == newColor) 
+            return;
+
+        design.Color = newColor;
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Changed color of design {design.Identifier}.");
+        _event.Invoke(DesignChanged.Type.ChangedColor, design, oldColor);
+    }
+
     /// <summary> Add a new tag to a design. The tags remain sorted. </summary>
     public void AddTag(Design design, string tag)
     {

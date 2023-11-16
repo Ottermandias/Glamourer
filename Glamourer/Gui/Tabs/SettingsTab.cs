@@ -7,6 +7,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
+using Glamourer.Designs;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -30,9 +31,11 @@ public class SettingsTab : ITab
     private readonly UiBuilder                _uiBuilder;
     private readonly GlamourerChangelog       _changelog;
     private readonly FunModule                _funModule;
+    private readonly DesignColorUi            _designColorUi;
 
     public SettingsTab(Configuration config, DesignFileSystemSelector selector, CodeService codeService, PenumbraAutoRedraw autoRedraw,
-        ContextMenuService contextMenuService, UiBuilder uiBuilder, GlamourerChangelog changelog, FunModule funModule, IKeyState keys)
+        ContextMenuService contextMenuService, UiBuilder uiBuilder, GlamourerChangelog changelog, FunModule funModule, IKeyState keys,
+        DesignColorUi designColorUi)
     {
         _config             = config;
         _selector           = selector;
@@ -42,6 +45,7 @@ public class SettingsTab : ITab
         _uiBuilder          = uiBuilder;
         _changelog          = changelog;
         _funModule          = funModule;
+        _designColorUi      = designColorUi;
         _validKeys          = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
     }
 
@@ -177,12 +181,22 @@ public class SettingsTab : ITab
         if (!ImGui.CollapsingHeader("Colors"))
             return;
 
-        foreach (var color in Enum.GetValues<ColorId>())
+        using (var tree = ImRaii.TreeNode("Custom Design Colors"))
         {
-            var (defaultColor, name, description) = color.Data();
-            var currentColor = _config.Colors.TryGetValue(color, out var current) ? current : defaultColor;
-            if (Widget.ColorPicker(name, description, currentColor, c => _config.Colors[color] = c, defaultColor))
-                _config.Save();
+            if (tree)
+                _designColorUi.Draw();
+        }
+
+        using (var tree = ImRaii.TreeNode("Color Settings"))
+        {
+            if (tree)
+                foreach (var color in Enum.GetValues<ColorId>())
+                {
+                    var (defaultColor, name, description) = color.Data();
+                    var currentColor = _config.Colors.TryGetValue(color, out var current) ? current : defaultColor;
+                    if (Widget.ColorPicker(name, description, currentColor, c => _config.Colors[color] = c, defaultColor))
+                        _config.Save();
+                }
         }
 
         ImGui.NewLine();

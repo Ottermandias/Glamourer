@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers.Text;
 using System.Runtime.CompilerServices;
 using Glamourer.Customization;
 using Glamourer.Services;

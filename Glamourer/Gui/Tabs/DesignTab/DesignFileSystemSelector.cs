@@ -25,6 +25,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     private readonly DesignConverter      _converter;
     private readonly TabSelected          _selectionEvent;
     private readonly CustomizationService _customizationService;
+    private readonly DesignColors         _designColors;
 
     private string? _clipboardText;
     private Design? _cloneDesign;
@@ -43,13 +44,12 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     public new DesignFileSystem.Leaf? SelectedLeaf
         => base.SelectedLeaf;
 
-    public struct DesignState
-    {
-        public ColorId Color;
-    }
+    public record struct DesignState(uint Color)
+    { }
 
     public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, IKeyState keyState, DesignChanged @event,
-        Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log, CustomizationService customizationService)
+        Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log, CustomizationService customizationService,
+        DesignColors designColors)
         : base(fileSystem, keyState, log, allowMultipleSelection: true)
     {
         _designManager        = designManager;
@@ -58,8 +58,10 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         _converter            = converter;
         _selectionEvent       = selectionEvent;
         _customizationService = customizationService;
+        _designColors         = designColors;
         _event.Subscribe(OnDesignChange, DesignChanged.Priority.DesignFileSystemSelector);
         _selectionEvent.Subscribe(OnTabSelected, TabSelected.Priority.DesignSelector);
+        _designColors.ColorChanged += SetFilterDirty;
 
         AddButton(NewDesignButton,    0);
         AddButton(ImportDesignButton, 10);
@@ -77,7 +79,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     {
         var       flag  = selected ? ImGuiTreeNodeFlags.Selected | LeafFlags : LeafFlags;
         var       name  = IncognitoMode ? leaf.Value.Incognito : leaf.Value.Name.Text;
-        using var color = ImRaii.PushColor(ImGuiCol.Text, state.Color.Value());
+        using var color = ImRaii.PushColor(ImGuiCol.Text, state.Color);
         using var _     = ImRaii.TreeNode(name, flag);
     }
 
@@ -86,6 +88,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         base.Dispose();
         _event.Unsubscribe(OnDesignChange);
         _selectionEvent.Unsubscribe(OnTabSelected);
+        _designColors.ColorChanged -= SetFilterDirty;
     }
 
     public override ISortMode<Design> SortMode
@@ -121,7 +124,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
             case DesignChanged.Type.ApplyStain:
             case DesignChanged.Type.Customize:
             case DesignChanged.Type.Equip:
-            case DesignChanged.Type.Weapon:
+            case DesignChanged.Type.ChangedColor:
                 SetFilterDirty();
                 break;
         }
@@ -277,17 +280,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     /// <summary> Combined wrapper for handling all filters and setting state. </summary>
     private bool ApplyFiltersAndState(DesignFileSystem.Leaf leaf, out DesignState state)
     {
-        var applyEquip     = leaf.Value.ApplyEquip != 0;
-        var applyCustomize = leaf.Value.ApplyCustomize != 0;
-
-        state.Color = (applyEquip, applyCustomize) switch
-        {
-            (false, false) => ColorId.StateDesign,
-            (false, true)  => ColorId.CustomizationDesign,
-            (true, false)  => ColorId.EquipmentDesign,
-            (true, true)   => ColorId.NormalDesign,
-        };
-
+        state = new DesignState(_designColors.GetColor(leaf.Value));
         return ApplyStringFilters(leaf, leaf.Value);
     }
 

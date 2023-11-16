@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
@@ -13,12 +14,35 @@ using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
+public sealed class DesignColorCombo : FilterComboCache<string>
+{
+    private readonly DesignColors _designColors;
+
+    public DesignColorCombo(DesignColors designColors)
+        : base(designColors.Keys.OrderBy(k => k).Prepend(DesignColors.AutomaticName), Glamourer.Log)
+        => _designColors = designColors;
+
+    protected override bool DrawSelectable(int globalIdx, bool selected)
+    {
+        var       key   = Items[globalIdx];
+        var       color = globalIdx == 0 ? 0 : _designColors[key];
+        using var c     = ImRaii.PushColor(ImGuiCol.Text, color, color != 0);
+        var       ret   = base.DrawSelectable(globalIdx, selected);
+        if (globalIdx == 0)
+            ImGuiUtil.HoverTooltip(
+                "The automatic color uses the colors dependent on the design state, as defined in the regular color definitions.");
+        return ret;
+    }
+}
+
 public class DesignDetailTab
 {
     private readonly SaveService              _saveService;
     private readonly DesignFileSystemSelector _selector;
     private readonly DesignFileSystem         _fileSystem;
     private readonly DesignManager            _manager;
+    private readonly DesignColors             _colors;
+    private readonly DesignColorCombo         _colorCombo;
     private readonly TagButtons               _tagButtons = new();
 
     private string? _newPath;
@@ -29,12 +53,15 @@ public class DesignDetailTab
     private Design?                _changeDesign;
     private DesignFileSystem.Leaf? _changeLeaf;
 
-    public DesignDetailTab(SaveService saveService, DesignFileSystemSelector selector, DesignManager manager, DesignFileSystem fileSystem)
+    public DesignDetailTab(SaveService saveService, DesignFileSystemSelector selector, DesignManager manager, DesignFileSystem fileSystem,
+        DesignColors colors)
     {
         _saveService = saveService;
         _selector    = selector;
         _manager     = manager;
         _fileSystem  = fileSystem;
+        _colors      = colors;
+        _colorCombo  = new DesignColorCombo(_colors);
     }
 
     public void Draw()
@@ -89,7 +116,8 @@ public class DesignDetailTab
                 }
                 catch (Exception ex)
                 {
-                    Glamourer.Messager.NotificationMessage(ex, $"Could not open file {fileName}.", $"Could not open file {fileName}", NotificationType.Warning);
+                    Glamourer.Messager.NotificationMessage(ex, $"Could not open file {fileName}.", $"Could not open file {fileName}",
+                        NotificationType.Warning);
                 }
         }
 
@@ -116,6 +144,34 @@ public class DesignDetailTab
             {
                 Glamourer.Messager.NotificationMessage(ex, ex.Message, "Could not rename or move design", NotificationType.Error);
             }
+
+        ImGuiUtil.DrawFrameColumn("Color");
+        var colorName = _selector.Selected!.Color.Length == 0 ? DesignColors.AutomaticName : _selector.Selected!.Color;
+        ImGui.TableNextColumn();
+        if (_colorCombo.Draw("##colorCombo", colorName, "Associate a color with this design. Right-Click to revert to automatic coloring.",
+                width.X - ImGui.GetStyle().ItemSpacing.X - ImGui.GetFrameHeight(), ImGui.GetTextLineHeight())
+         && _colorCombo.CurrentSelection != null)
+        {
+            colorName = _colorCombo.CurrentSelection is DesignColors.AutomaticName ? string.Empty : _colorCombo.CurrentSelection;
+            _manager.ChangeColor(_selector.Selected!, colorName);
+        }
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            _manager.ChangeColor(_selector.Selected!, string.Empty);
+        
+        if (_colors.TryGetValue(_selector.Selected!.Color, out var currentColor))
+        {
+            ImGui.SameLine();
+            if (DesignColorUi.DrawColorButton($"Color associated with {_selector.Selected!.Color}", currentColor, out var newColor))
+                _colors.SetColor(_selector.Selected!.Color, newColor);
+        }
+        else if (_selector.Selected!.Color.Length != 0)
+        {
+            ImGui.SameLine();
+            var       size = new Vector2(ImGui.GetFrameHeight());
+            using var font = ImRaii.PushFont(UiBuilder.IconFont);
+            ImGuiUtil.DrawTextButton(FontAwesomeIcon.ExclamationCircle.ToIconString(), size, 0, _colors.MissingColor);
+            ImGuiUtil.HoverTooltip("The color associated with this design does not exist.");
+        }
 
         ImGuiUtil.DrawFrameColumn("Creation Date");
         ImGui.TableNextColumn();

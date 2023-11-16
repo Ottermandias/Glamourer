@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Events;
-using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

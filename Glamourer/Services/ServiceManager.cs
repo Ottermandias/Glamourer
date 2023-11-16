@@ -106,7 +106,8 @@ public static class ServiceManager
             .AddSingleton<AutoDesignManager>()
             .AddSingleton<AutoDesignApplier>()
             .AddSingleton<FixedDesignMigrator>()
-            .AddSingleton<DesignConverter>();
+            .AddSingleton<DesignConverter>()
+            .AddSingleton<DesignColors>();
 
     private static IServiceCollection AddState(this IServiceCollection services)
         => services.AddSingleton<StateManager>()
@@ -143,7 +144,8 @@ public static class ServiceManager
             .AddSingleton<SetPanel>()
             .AddSingleton<IdentifierDrawer>()
             .AddSingleton<GlamourerChangelog>()
-            .AddSingleton<DesignQuickBar>();
+            .AddSingleton<DesignQuickBar>()
+            .AddSingleton<DesignColorUi>();
 
     private static IServiceCollection AddApi(this IServiceCollection services)
         => services.AddSingleton<CommandService>()

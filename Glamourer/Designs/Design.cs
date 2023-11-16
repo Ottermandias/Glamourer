@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Dalamud.Interface.Internal.Notifications;
+using Glamourer.Customization;
+using Glamourer.Gui;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Newtonsoft.Json;
@@ -14,6 +16,7 @@ namespace Glamourer.Designs;
 public sealed class Design : DesignBase, ISavable
 {
     #region Data
+
     internal Design(CustomizationService customize, ItemManager items)
         : base(customize, items)
     { }
@@ -40,7 +43,8 @@ public sealed class Design : DesignBase, ISavable
     public string                       Description    { get; internal set; } = string.Empty;
     public string[]                     Tags           { get; internal set; } = Array.Empty<string>();
     public int                          Index          { get; internal set; }
-    public SortedList<Mod, ModSettings> AssociatedMods { get; private set; } = new();
+    public string                       Color          { get; internal set; } = string.Empty;
+    public SortedList<Mod, ModSettings> AssociatedMods { get; private set; }  = new();
 
     public string Incognito
         => Identifier.ToString()[..8];
@@ -59,6 +63,7 @@ public sealed class Design : DesignBase, ISavable
                 ["LastEdit"]       = LastEdit,
                 ["Name"]           = Name.Text,
                 ["Description"]    = Description,
+                ["Color"]          = Color,
                 ["Tags"]           = JArray.FromObject(Tags),
                 ["WriteProtected"] = WriteProtected(),
                 ["Equipment"]      = SerializeEquipment(),
@@ -131,6 +136,7 @@ public sealed class Design : DesignBase, ISavable
         LoadCustomize(customizations, json["Customize"], design, design.Name, true, false);
         LoadEquip(items, json["Equipment"], design, design.Name, true);
         LoadMods(json["Mods"], design);
+        design.Color = json["Color"]?.ToObject<string>() ?? string.Empty; 
         return design;
     }
 
