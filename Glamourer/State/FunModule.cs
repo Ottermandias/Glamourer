@@ -249,8 +249,7 @@ public unsafe class FunModule : IDisposable
         try
         {
             var tmp = _designManager.CreateTemporary();
-            tmp.DesignData = _stateManager.FromActor(actor, true, true);
-            tmp.FixCustomizeApplication(_customizations, CustomizeFlagExtensions.AllRelevant);
+            tmp.SetDesignData(_customizations, _stateManager.FromActor(actor, true, true));
             var data = _designConverter.ShareBase64(tmp);
             ImGui.SetClipboardText(data);
             Glamourer.Messager.NotificationMessage($"Copied current actual design of {actor.Utf8Name} to clipboard.", NotificationType.Info,

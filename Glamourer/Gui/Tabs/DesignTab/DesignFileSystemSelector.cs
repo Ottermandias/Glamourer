@@ -4,7 +4,6 @@ using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Services;
@@ -119,6 +118,9 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
             case DesignChanged.Type.Deleted:
             case DesignChanged.Type.ApplyCustomize:
             case DesignChanged.Type.ApplyEquip:
+            case DesignChanged.Type.Customize:
+            case DesignChanged.Type.Equip:
+            case DesignChanged.Type.Weapon:
                 SetFilterDirty();
                 break;
         }
@@ -274,9 +276,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     /// <summary> Combined wrapper for handling all filters and setting state. </summary>
     private bool ApplyFiltersAndState(DesignFileSystem.Leaf leaf, out DesignState state)
     {
-        var applyEquip = leaf.Value.ApplyEquip != 0;
-        var list = _customizationService.AwaitedService.GetList(leaf.Value.DesignData.Customize.Clan, leaf.Value.DesignData.Customize.Gender);
-        var applyCustomize = leaf.Value.ApplyCustomize.FixApplication(list) != 0;
+        var applyEquip     = leaf.Value.ApplyEquip != 0;
+        var applyCustomize = leaf.Value.ApplyCustomize != 0;
 
         state.Color = (applyEquip, applyCustomize) switch
         {

@@ -16,20 +16,37 @@ public class DesignBase
 {
     public const int FileVersion = 1;
 
-    internal DesignBase(ItemManager items)
+    private DesignData _designData = new();
+
+    /// <summary> For read-only information about the actual design. </summary>
+    public ref readonly DesignData DesignData
+        => ref _designData;
+
+    /// <summary> To make it clear that something is edited here. </summary>
+    public ref DesignData GetDesignDataRef()
+        => ref _designData;
+
+    internal DesignBase(CustomizationService customize, ItemManager items)
     {
-        DesignData.SetDefaultEquipment(items);
+        _designData.SetDefaultEquipment(items);
+        CustomizationSet = SetCustomizationSet(customize);
     }
 
     internal DesignBase(DesignBase clone)
     {
-        DesignData     = clone.DesignData;
-        ApplyCustomize = clone.ApplyCustomize & CustomizeFlagExtensions.AllRelevant;
-        ApplyEquip     = clone.ApplyEquip & EquipFlagExtensions.All;
-        _designFlags   = clone._designFlags & (DesignFlags)0x0F;
+        _designData       = clone._designData;
+        CustomizationSet = clone.CustomizationSet;
+        ApplyCustomize   = clone.ApplyCustomizeRaw;
+        ApplyEquip       = clone.ApplyEquip & EquipFlagExtensions.All;
+        _designFlags     = clone._designFlags & (DesignFlags)0x0F;
     }
 
-    internal DesignData DesignData = new();
+    /// <summary> Ensure that the customization set is updated when the design data changes. </summary>
+    internal void SetDesignData(CustomizationService customize, in DesignData other)
+    {
+        _designData       = other;
+        CustomizationSet = SetCustomizationSet(customize);
+    }
 
     #region Application Data
 
@@ -43,9 +60,30 @@ public class DesignBase
         WriteProtected     = 0x10,
     }
 
-    internal CustomizeFlag ApplyCustomize = CustomizeFlagExtensions.AllRelevant;
-    internal EquipFlag     ApplyEquip     = EquipFlagExtensions.All;
-    private  DesignFlags   _designFlags   = DesignFlags.ApplyHatVisible | DesignFlags.ApplyVisorState | DesignFlags.ApplyWeaponVisible;
+    private CustomizeFlag    _applyCustomize = CustomizeFlagExtensions.AllRelevant;
+    public  CustomizationSet CustomizationSet { get; private set; }
+
+    internal CustomizeFlag ApplyCustomize
+    {
+        get => _applyCustomize.FixApplication(CustomizationSet);
+        set => _applyCustomize = value & CustomizeFlagExtensions.AllRelevant;
+    }
+
+    internal CustomizeFlag ApplyCustomizeRaw
+        => _applyCustomize;
+
+    internal EquipFlag   ApplyEquip   = EquipFlagExtensions.All;
+    private  DesignFlags _designFlags = DesignFlags.ApplyHatVisible | DesignFlags.ApplyVisorState | DesignFlags.ApplyWeaponVisible;
+
+    public bool SetCustomize(CustomizationService customizationService, Customize customize)
+    {
+        if (customize.Equals(_designData.Customize))
+            return false;
+
+        _designData.Customize.Load(customize);
+        CustomizationSet = customizationService.AwaitedService.GetList(customize.Clan, customize.Gender);
+        return true;
+    }
 
     public bool DoApplyHatVisible()
         => _designFlags.HasFlag(DesignFlags.ApplyHatVisible);
@@ -119,7 +157,7 @@ public class DesignBase
         => ApplyEquip.HasFlag(slot.ToStainFlag());
 
     public bool DoApplyCustomize(CustomizeIndex idx)
-        => idx is not CustomizeIndex.Race and not CustomizeIndex.BodyType && ApplyCustomize.HasFlag(idx.ToFlag());
+        => ApplyCustomize.HasFlag(idx.ToFlag());
 
     internal bool SetApplyEquip(EquipSlot slot, bool value)
     {
@@ -143,19 +181,13 @@ public class DesignBase
 
     internal bool SetApplyCustomize(CustomizeIndex idx, bool value)
     {
-        var newValue = value ? ApplyCustomize | idx.ToFlag() : ApplyCustomize & ~idx.ToFlag();
-        if (newValue == ApplyCustomize)
+        var newValue = value ? _applyCustomize | idx.ToFlag() : _applyCustomize & ~idx.ToFlag();
+        if (newValue == _applyCustomize)
             return false;
 
-        ApplyCustomize = newValue;
+        _applyCustomize = newValue;
         return true;
     }
-
-    public void FixCustomizeApplication(CustomizationService service, CustomizeFlag flags)
-        => FixCustomizeApplication(service.AwaitedService.GetList(DesignData.Customize.Clan, DesignData.Customize.Gender), flags);
-
-    public void FixCustomizeApplication(CustomizationSet set, CustomizeFlag flags)
-        => ApplyCustomize = flags.FixApplication(set);
 
     internal FlagRestrictionResetter TemporarilyRestrictApplication(EquipFlag equipFlags, CustomizeFlag customizeFlags)
         => new(this, equipFlags, customizeFlags);
@@ -170,7 +202,7 @@ public class DesignBase
         {
             _design            =  d;
             _oldEquipFlags     =  d.ApplyEquip;
-            _oldCustomizeFlags =  d.ApplyCustomize;
+            _oldCustomizeFlags =  d.ApplyCustomizeRaw;
             d.ApplyEquip       &= equipFlags;
             d.ApplyCustomize   &= customizeFlags;
         }
@@ -181,6 +213,11 @@ public class DesignBase
             _design.ApplyCustomize = _oldCustomizeFlags;
         }
     }
+
+    private CustomizationSet SetCustomizationSet(CustomizationService customize)
+        => !_designData.IsHuman
+            ? customize.AwaitedService.GetList(SubRace.Midlander,         Gender.Male)
+            : customize.AwaitedService.GetList(_designData.Customize.Clan, _designData.Customize.Gender);
 
     #endregion
 
@@ -209,22 +246,22 @@ public class DesignBase
             };
 
         var ret = new JObject();
-        if (DesignData.IsHuman)
+        if (_designData.IsHuman)
         {
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
-                var item  = DesignData.Item(slot);
-                var stain = DesignData.Stain(slot);
+                var item  = _designData.Item(slot);
+                var stain = _designData.Stain(slot);
                 ret[slot.ToString()] = Serialize(item.Id, stain, DoApplyEquip(slot), DoApplyStain(slot));
             }
 
-            ret["Hat"]    = new QuadBool(DesignData.IsHatVisible(),    DoApplyHatVisible()).ToJObject("Show", "Apply");
-            ret["Visor"]  = new QuadBool(DesignData.IsVisorToggled(),  DoApplyVisorToggle()).ToJObject("IsToggled", "Apply");
-            ret["Weapon"] = new QuadBool(DesignData.IsWeaponVisible(), DoApplyWeaponVisible()).ToJObject("Show", "Apply");
+            ret["Hat"]    = new QuadBool(_designData.IsHatVisible(),    DoApplyHatVisible()).ToJObject("Show", "Apply");
+            ret["Visor"]  = new QuadBool(_designData.IsVisorToggled(),  DoApplyVisorToggle()).ToJObject("IsToggled", "Apply");
+            ret["Weapon"] = new QuadBool(_designData.IsWeaponVisible(), DoApplyWeaponVisible()).ToJObject("Show", "Apply");
         }
         else
         {
-            ret["Array"] = DesignData.WriteEquipmentBytesBase64();
+            ret["Array"] = _designData.WriteEquipmentBytesBase64();
         }
 
         return ret;
@@ -234,17 +271,17 @@ public class DesignBase
     {
         var ret = new JObject()
         {
-            ["ModelId"] = DesignData.ModelId,
+            ["ModelId"] = _designData.ModelId,
         };
 
-        var customize = DesignData.Customize;
-        if (DesignData.IsHuman)
+        var customize = _designData.Customize;
+        if (_designData.IsHuman)
             foreach (var idx in Enum.GetValues<CustomizeIndex>())
             {
                 ret[idx.ToString()] = new JObject()
                 {
                     ["Value"] = customize[idx].Value,
-                    ["Apply"] = DoApplyCustomize(idx),
+                    ["Apply"] = ApplyCustomizeRaw.HasFlag(idx.ToFlag()),
                 };
             }
         else
@@ -252,7 +289,7 @@ public class DesignBase
 
         ret["Wetness"] = new JObject()
         {
-            ["Value"] = DesignData.IsWet(),
+            ["Value"] = _designData.IsWet(),
             ["Apply"] = DoApplyWetness(),
         };
 
@@ -275,7 +312,7 @@ public class DesignBase
 
     private static DesignBase LoadDesignV1Base(CustomizationService customizations, ItemManager items, JObject json)
     {
-        var ret = new DesignBase(items);
+        var ret = new DesignBase(customizations, items);
         LoadCustomize(customizations, json["Customize"], ret, "Temporary Design", false, true);
         LoadEquip(items, json["Equipment"], ret, "Temporary Design", true);
         return ret;
@@ -285,16 +322,16 @@ public class DesignBase
     {
         if (equip == null)
         {
-            design.DesignData.SetDefaultEquipment(items);
+            design._designData.SetDefaultEquipment(items);
             Glamourer.Messager.NotificationMessage("The loaded design does not contain any equipment data, reset to default.",
                 NotificationType.Warning);
             return;
         }
 
-        if (!design.DesignData.IsHuman)
+        if (!design._designData.IsHuman)
         {
             var textArray = equip["Array"]?.ToObject<string>() ?? string.Empty;
-            design.DesignData.SetEquipmentBytesFromBase64(textArray);
+            design._designData.SetEquipmentBytesFromBase64(textArray);
             return;
         }
 
@@ -319,8 +356,8 @@ public class DesignBase
 
             PrintWarning(items.ValidateItem(slot, id, out var item, allowUnknown));
             PrintWarning(items.ValidateStain(stain, out stain, allowUnknown));
-            design.DesignData.SetItem(slot, item);
-            design.DesignData.SetStain(slot, stain);
+            design._designData.SetItem(slot, item);
+            design._designData.SetStain(slot, stain);
             design.SetApplyEquip(slot, apply);
             design.SetApplyStain(slot, applyStain);
         }
@@ -336,10 +373,10 @@ public class DesignBase
             PrintWarning(items.ValidateWeapons(id, idOff, out var main, out var off, allowUnknown));
             PrintWarning(items.ValidateStain(stain,    out stain,    allowUnknown));
             PrintWarning(items.ValidateStain(stainOff, out stainOff, allowUnknown));
-            design.DesignData.SetItem(EquipSlot.MainHand, main);
-            design.DesignData.SetItem(EquipSlot.OffHand,  off);
-            design.DesignData.SetStain(EquipSlot.MainHand, stain);
-            design.DesignData.SetStain(EquipSlot.OffHand,  stainOff);
+            design._designData.SetItem(EquipSlot.MainHand, main);
+            design._designData.SetItem(EquipSlot.OffHand,  off);
+            design._designData.SetStain(EquipSlot.MainHand, stain);
+            design._designData.SetStain(EquipSlot.OffHand,  stainOff);
             design.SetApplyEquip(EquipSlot.MainHand, apply);
             design.SetApplyEquip(EquipSlot.OffHand,  applyOff);
             design.SetApplyStain(EquipSlot.MainHand, applyStain);
@@ -347,15 +384,15 @@ public class DesignBase
         }
         var metaValue = QuadBool.FromJObject(equip["Hat"], "Show", "Apply", QuadBool.NullFalse);
         design.SetApplyHatVisible(metaValue.Enabled);
-        design.DesignData.SetHatVisible(metaValue.ForcedValue);
+        design._designData.SetHatVisible(metaValue.ForcedValue);
 
         metaValue = QuadBool.FromJObject(equip["Weapon"], "Show", "Apply", QuadBool.NullFalse);
         design.SetApplyWeaponVisible(metaValue.Enabled);
-        design.DesignData.SetWeaponVisible(metaValue.ForcedValue);
+        design._designData.SetWeaponVisible(metaValue.ForcedValue);
 
         metaValue = QuadBool.FromJObject(equip["Visor"], "IsToggled", "Apply", QuadBool.NullFalse);
         design.SetApplyVisorToggle(metaValue.Enabled);
-        design.DesignData.SetVisor(metaValue.ForcedValue);
+        design._designData.SetVisor(metaValue.ForcedValue);
     }
 
     protected static void LoadCustomize(CustomizationService customizations, JToken? json, DesignBase design, string name, bool forbidNonHuman,
@@ -363,9 +400,9 @@ public class DesignBase
     {
         if (json == null)
         {
-            design.DesignData.ModelId   = 0;
-            design.DesignData.IsHuman   = true;
-            design.DesignData.Customize = Customize.Default;
+            design._designData.ModelId   = 0;
+            design._designData.IsHuman   = true;
+            design.SetCustomize(customizations, Customize.Default);
             Glamourer.Messager.NotificationMessage("The loaded design does not contain any customization data, reset to default.",
                 NotificationType.Warning);
             return;
@@ -380,21 +417,22 @@ public class DesignBase
         }
 
         var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);
-        design.DesignData.SetIsWet(wetness.ForcedValue);
+        design._designData.SetIsWet(wetness.ForcedValue);
         design.SetApplyWetness(wetness.Enabled);
 
-        design.DesignData.ModelId = json["ModelId"]?.ToObject<uint>() ?? 0;
-        PrintWarning(customizations.ValidateModelId(design.DesignData.ModelId, out design.DesignData.ModelId, out design.DesignData.IsHuman));
-        if (design.DesignData.ModelId != 0 && forbidNonHuman)
+        design._designData.ModelId = json["ModelId"]?.ToObject<uint>() ?? 0;
+        PrintWarning(customizations.ValidateModelId(design._designData.ModelId, out design._designData.ModelId, out design._designData.IsHuman));
+        if (design._designData.ModelId != 0 && forbidNonHuman)
         {
             PrintWarning("Model IDs different from 0 are not currently allowed, reset model id to 0.");
-            design.DesignData.ModelId = 0;
-            design.DesignData.IsHuman = true;
+            design._designData.ModelId = 0;
+            design._designData.IsHuman = true;
         }
-        else if (!design.DesignData.IsHuman)
+        else if (!design._designData.IsHuman)
         {
             var arrayText = json["Array"]?.ToObject<string>() ?? string.Empty;
-            design.DesignData.Customize.LoadBase64(arrayText);
+            design._designData.Customize.LoadBase64(arrayText);
+            design.CustomizationSet = design.SetCustomizationSet(customizations);
             return;
         }
 
@@ -403,42 +441,32 @@ public class DesignBase
         PrintWarning(customizations.ValidateClan(clan, race, out race, out clan));
         var gender = (Gender)((json[CustomizeIndex.Gender.ToString()]?["Value"]?.ToObject<byte>() ?? 0) + 1);
         PrintWarning(customizations.ValidateGender(race, gender, out gender));
-        design.DesignData.Customize.Race   = race;
-        design.DesignData.Customize.Clan   = clan;
-        design.DesignData.Customize.Gender = gender;
+        design._designData.Customize.Race   = race;
+        design._designData.Customize.Clan   = clan;
+        design._designData.Customize.Gender = gender;
+        design.CustomizationSet            = design.SetCustomizationSet(customizations);
         design.SetApplyCustomize(CustomizeIndex.Race,   json[CustomizeIndex.Race.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
         design.SetApplyCustomize(CustomizeIndex.Clan,   json[CustomizeIndex.Clan.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
         design.SetApplyCustomize(CustomizeIndex.Gender, json[CustomizeIndex.Gender.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
-
-        var set = customizations.AwaitedService.GetList(clan, gender);
+        var set = design.CustomizationSet;
 
         foreach (var idx in CustomizationExtensions.AllBasic)
         {
-            if (set.IsAvailable(idx))
-            {
-                var tok  = json[idx.ToString()];
-                var data = (CustomizeValue)(tok?["Value"]?.ToObject<byte>() ?? 0);
-                PrintWarning(CustomizationService.ValidateCustomizeValue(set, design.DesignData.Customize.Face, idx, data, out data,
-                    allowUnknown));
-                var apply = tok?["Apply"]?.ToObject<bool>() ?? false;
-                design.DesignData.Customize[idx] = data;
-                design.SetApplyCustomize(idx, apply);
-            }
-            else
-            {
-                design.DesignData.Customize[idx] = CustomizeValue.Zero;
-                design.SetApplyCustomize(idx, false);
-            }
+            var tok  = json[idx.ToString()];
+            var data = (CustomizeValue)(tok?["Value"]?.ToObject<byte>() ?? 0);
+            PrintWarning(CustomizationService.ValidateCustomizeValue(set, design._designData.Customize.Face, idx, data, out data,
+                allowUnknown));
+            var apply = tok?["Apply"]?.ToObject<bool>() ?? false;
+            design._designData.Customize[idx] = data;
+            design.SetApplyCustomize(idx, apply);
         }
-
-        design.FixCustomizeApplication(set, design.ApplyCustomize);
     }
 
-    public void MigrateBase64(ItemManager items, HumanModelList humans, string base64)
+    public void MigrateBase64(CustomizationService customize, ItemManager items, HumanModelList humans, string base64)
     {
         try
         {
-            DesignData = DesignBase64Migration.MigrateBase64(items, humans, base64, out var equipFlags, out var customizeFlags,
+            _designData = DesignBase64Migration.MigrateBase64(items, humans, base64, out var equipFlags, out var customizeFlags,
                 out var writeProtected,
                 out var applyHat, out var applyVisor, out var applyWeapon);
             ApplyEquip     = equipFlags;
@@ -448,20 +476,11 @@ public class DesignBase
             SetApplyVisorToggle(applyVisor);
             SetApplyWeaponVisible(applyWeapon);
             SetApplyWetness(true);
+            CustomizationSet = SetCustomizationSet(customize);
         }
         catch (Exception ex)
         {
             Glamourer.Messager.NotificationMessage(ex, "Could not parse Base64 design.", NotificationType.Error);
-        }
-    }
-
-    public void RemoveInvalidCustomize(CustomizationService customizations)
-    {
-        var set = customizations.AwaitedService.GetList(DesignData.Customize.Clan, DesignData.Customize.Gender);
-        foreach (var idx in CustomizationExtensions.AllBasic.Where(i => !set.IsAvailable(i)))
-        {
-            DesignData.Customize[idx] = CustomizeValue.Zero;
-            SetApplyCustomize(idx, false);
         }
     }
 

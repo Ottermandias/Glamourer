@@ -962,7 +962,7 @@ public unsafe class DebugTab : ITab
                 continue;
 
             DrawDesign(design);
-            var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.ApplyEquip, design.ApplyCustomize,
+            var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.ApplyEquip, design.ApplyCustomizeRaw,
                 design.DoApplyHatVisible(),
                 design.DoApplyVisorToggle(), design.DoApplyWeaponVisible(), design.WriteProtected());
             using var font = ImRaii.PushFont(UiBuilder.MonoFont);

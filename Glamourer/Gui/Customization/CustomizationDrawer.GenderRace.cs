@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Specialized;
 using System.Linq;
 using Dalamud.Interface;
 using Glamourer.Customization;

@@ -89,7 +89,8 @@ public class AutoDesignApplier : IDisposable
             {
                 if (_jobChangeMainhand.TryGetValue(current.Type, out var data))
                 {
-                    Glamourer.Log.Verbose($"Changing Mainhand from {_jobChangeState.ModelData.Weapon(EquipSlot.MainHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{actor.Address:X}.");
+                    Glamourer.Log.Verbose(
+                        $"Changing Mainhand from {_jobChangeState.ModelData.Weapon(EquipSlot.MainHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{actor.Address:X}.");
                     _state.ChangeItem(_jobChangeState, EquipSlot.MainHand, data.Item1, data.Item2);
                     weapon.Value = _jobChangeState.ModelData.Weapon(EquipSlot.MainHand);
                 }
@@ -98,7 +99,8 @@ public class AutoDesignApplier : IDisposable
             {
                 if (_jobChangeOffhand.TryGetValue(current.Type, out var data))
                 {
-                    Glamourer.Log.Verbose($"Changing Offhand from {_jobChangeState.ModelData.Weapon(EquipSlot.OffHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{actor.Address:X}.");
+                    Glamourer.Log.Verbose(
+                        $"Changing Offhand from {_jobChangeState.ModelData.Weapon(EquipSlot.OffHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{actor.Address:X}.");
                     _state.ChangeItem(_jobChangeState, EquipSlot.OffHand, data.Item1, data.Item2);
                     weapon.Value = _jobChangeState.ModelData.Weapon(EquipSlot.OffHand);
                 }
@@ -277,8 +279,8 @@ public class AutoDesignApplier : IDisposable
             if (design.ApplicationType is 0)
                 continue;
 
-            ref var data   = ref design.GetDesignData(state);
-            var     source = design.Revert ? StateChanged.Source.Game : StateChanged.Source.Fixed;
+            ref readonly var data   = ref design.GetDesignData(state);
+            var              source = design.Revert ? StateChanged.Source.Game : StateChanged.Source.Fixed;
 
             if (!data.IsHuman)
                 continue;

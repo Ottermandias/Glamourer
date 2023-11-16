@@ -60,13 +60,13 @@ public class DesignConverter
     public DesignBase Convert(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags)
     {
         var design = _designs.CreateTemporary();
-        design.ApplyEquip = equipFlags & EquipFlagExtensions.All;
+        design.ApplyEquip     = equipFlags & EquipFlagExtensions.All;
+        design.ApplyCustomize = customizeFlags;
         design.SetApplyHatVisible(design.DoApplyEquip(EquipSlot.Head));
         design.SetApplyVisorToggle(design.DoApplyEquip(EquipSlot.Head));
         design.SetApplyWeaponVisible(design.DoApplyEquip(EquipSlot.MainHand) || design.DoApplyEquip(EquipSlot.OffHand));
         design.SetApplyWetness(true);
-        design.DesignData = state.ModelData;
-        design.FixCustomizeApplication(_customize, customizeFlags);
+        design.SetDesignData(_customize, state.ModelData);
         return design;
     }
 
@@ -90,7 +90,7 @@ public class DesignConverter
                 case 2:
                 case 4:
                     ret = _designs.CreateTemporary();
-                    ret.MigrateBase64(_items, _humans, base64);
+                    ret.MigrateBase64(_customize, _items, _humans, base64);
                     break;
                 case 3:
                 {
@@ -122,15 +122,8 @@ public class DesignConverter
             return null;
         }
 
-        if (!customize)
-        {
-            ret.ApplyCustomize = 0;
-            ret.SetApplyWetness(false);
-        }
-        else
-        {
-            ret.FixCustomizeApplication(_customize, ret.ApplyCustomize);
-        }
+        ret.SetApplyWetness(customize);
+        ret.ApplyCustomize = customize ? CustomizeFlagExtensions.AllRelevant : 0;
 
         if (!equip)
         {
@@ -152,7 +145,7 @@ public class DesignConverter
 
     private static string ShareBackwardCompatible(JObject jObject, DesignBase design)
     {
-        var oldBase64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.ApplyEquip, design.ApplyCustomize,
+        var oldBase64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.ApplyEquip, design.ApplyCustomizeRaw,
             design.DoApplyHatVisible(), design.DoApplyVisorToggle(), design.DoApplyWeaponVisible(), design.WriteProtected(), 1f);
         var oldBytes   = System.Convert.FromBase64String(oldBase64);
         var json       = jObject.ToString(Formatting.None);

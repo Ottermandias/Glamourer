@@ -193,7 +193,7 @@ public class DesignPanel
         if (!ImGui.CollapsingHeader(header))
             return;
 
-        if (_customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.ApplyCustomize,
+        if (_customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.ApplyCustomizeRaw,
                 _selector.Selected!.WriteProtected(), false))
             foreach (var idx in Enum.GetValues<CustomizeIndex>())
             {
@@ -217,18 +217,15 @@ public class DesignPanel
 
         using (var group1 = ImRaii.Group())
         {
-            var set = _customizationService.AwaitedService.GetList(_selector.Selected!.DesignData.Customize.Clan,
-                _selector.Selected!.DesignData.Customize.Gender);
-            var all = CustomizationExtensions.All.Where(set.IsAvailable).Select(c => c.ToFlag()).Aggregate((a, b) => a | b)
-              | CustomizeFlag.Clan
-              | CustomizeFlag.Gender;
-            var flags = (_selector.Selected!.ApplyCustomize & all) == 0 ? 0 : (_selector.Selected!.ApplyCustomize & all) == all ? 3 : 1;
+            var set       = _selector.Selected!.CustomizationSet;
+            var available = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender;
+            var flags     = _selector.Selected!.ApplyCustomize == 0 ? 0 : (_selector.Selected!.ApplyCustomize & available) == available ? 3 : 1;
             if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))
             {
                 var newFlags = flags == 3;
                 _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Clan,   newFlags);
                 _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Gender, newFlags);
-                foreach (var index in CustomizationExtensions.AllBasic.Where(set.IsAvailable))
+                foreach (var index in CustomizationExtensions.AllBasic)
                     _manager.ChangeApplyCustomize(_selector.Selected!, index, newFlags);
             }
 

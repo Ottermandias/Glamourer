@@ -90,7 +90,7 @@ public class DesignManager
 
     /// <summary> Create a new temporary design without adding it to the manager. </summary>
     public DesignBase CreateTemporary()
-        => new(_items);
+        => new(_customizations, _items);
 
     /// <summary> Create a new design of a given name. </summary>
     public Design CreateEmpty(string name, bool handlePath)
@@ -275,6 +275,7 @@ public class DesignManager
     public void ChangeCustomize(Design design, CustomizeIndex idx, CustomizeValue value)
     {
         var oldValue = design.DesignData.Customize[idx];
+
         switch (idx)
         {
             case CustomizeIndex.Race:
@@ -282,21 +283,29 @@ public class DesignManager
                 Glamourer.Log.Error("Somehow race or body type was changed in a design. This should not happen.");
                 return;
             case CustomizeIndex.Clan:
-                if (_customizations.ChangeClan(ref design.DesignData.Customize, (SubRace)value.Value) == 0)
+            {
+                var customize = new Customize(design.DesignData.Customize.Data.Clone());
+                if (_customizations.ChangeClan(ref customize, (SubRace)value.Value) == 0)
+                    return;
+                if (!design.SetCustomize(_customizations, customize))
                     return;
 
-                design.RemoveInvalidCustomize(_customizations);
                 break;
+            }
             case CustomizeIndex.Gender:
-                if (_customizations.ChangeGender(ref design.DesignData.Customize, (Gender)(value.Value + 1)) == 0)
+            {
+                var customize = new Customize(design.DesignData.Customize.Data.Clone());
+                if (_customizations.ChangeGender(ref customize, (Gender)(value.Value + 1)) == 0)
+                    return;
+                if (!design.SetCustomize(_customizations, customize))
                     return;
 
-                design.RemoveInvalidCustomize(_customizations);
                 break;
+            }
             default:
                 if (!_customizations.IsCustomizationValid(design.DesignData.Customize.Clan, design.DesignData.Customize.Gender,
                         design.DesignData.Customize.Face, idx, value)
-                 || !design.DesignData.Customize.Set(idx, value))
+                 || !design.GetDesignDataRef().Customize.Set(idx, value))
                     return;
 
                 break;
@@ -311,8 +320,6 @@ public class DesignManager
     /// <summary> Change whether to apply a specific customize value. </summary>
     public void ChangeApplyCustomize(Design design, CustomizeIndex idx, bool value)
     {
-        var set = _customizations.AwaitedService.GetList(design.DesignData.Customize.Clan, design.DesignData.Customize.Gender);
-        value &= set.IsAvailable(idx) || idx is CustomizeIndex.Clan or CustomizeIndex.Gender;
         if (!design.SetApplyCustomize(idx, value))
             return;
 
@@ -329,7 +336,7 @@ public class DesignManager
             return;
 
         var old = design.DesignData.Item(slot);
-        if (!design.DesignData.SetItem(slot, item))
+        if (!design.GetDesignDataRef().SetItem(slot, item))
             return;
 
         design.LastEdit = DateTimeOffset.UtcNow;
@@ -358,7 +365,8 @@ public class DesignManager
                         return;
                 }
 
-                if (!(design.DesignData.SetItem(EquipSlot.MainHand, item) | design.DesignData.SetItem(EquipSlot.OffHand, newOff)))
+                if (!(design.GetDesignDataRef().SetItem(EquipSlot.MainHand,  item)
+                      | design.GetDesignDataRef().SetItem(EquipSlot.OffHand, newOff)))
                     return;
 
                 design.LastEdit = DateTimeOffset.UtcNow;
@@ -372,7 +380,7 @@ public class DesignManager
                 if (!_items.IsOffhandValid(currentOff.Type, item.ItemId, out item))
                     return;
 
-                if (!design.DesignData.SetItem(EquipSlot.OffHand, item))
+                if (!design.GetDesignDataRef().SetItem(EquipSlot.OffHand, item))
                     return;
 
                 design.LastEdit = DateTimeOffset.UtcNow;
@@ -404,7 +412,7 @@ public class DesignManager
             return;
 
         var oldStain = design.DesignData.Stain(slot);
-        if (!design.DesignData.SetStain(slot, stain))
+        if (!design.GetDesignDataRef().SetStain(slot, stain))
             return;
 
         design.LastEdit = DateTimeOffset.UtcNow;
@@ -430,10 +438,10 @@ public class DesignManager
     {
         var change = metaIndex switch
         {
-            ActorState.MetaIndex.Wetness     => design.DesignData.SetIsWet(value),
-            ActorState.MetaIndex.HatState    => design.DesignData.SetHatVisible(value),
-            ActorState.MetaIndex.VisorState  => design.DesignData.SetVisor(value),
-            ActorState.MetaIndex.WeaponState => design.DesignData.SetWeaponVisible(value),
+            ActorState.MetaIndex.Wetness     => design.GetDesignDataRef().SetIsWet(value),
+            ActorState.MetaIndex.HatState    => design.GetDesignDataRef().SetHatVisible(value),
+            ActorState.MetaIndex.VisorState  => design.GetDesignDataRef().SetVisor(value),
+            ActorState.MetaIndex.WeaponState => design.GetDesignDataRef().SetWeaponVisible(value),
             _                                => throw new ArgumentOutOfRangeException(nameof(metaIndex), metaIndex, null),
         };
         if (!change)
@@ -470,13 +478,13 @@ public class DesignManager
     {
         _undoStore[design.Identifier] = design.DesignData;
         if (other.DoApplyWetness())
-            design.DesignData.SetIsWet(other.DesignData.IsWet());
+            design.GetDesignDataRef().SetIsWet(other.DesignData.IsWet());
         if (other.DoApplyHatVisible())
-            design.DesignData.SetHatVisible(other.DesignData.IsHatVisible());
+            design.GetDesignDataRef().SetHatVisible(other.DesignData.IsHatVisible());
         if (other.DoApplyVisorToggle())
-            design.DesignData.SetVisor(other.DesignData.IsVisorToggled());
+            design.GetDesignDataRef().SetVisor(other.DesignData.IsVisorToggled());
         if (other.DoApplyWeaponVisible())
-            design.DesignData.SetWeaponVisible(other.DesignData.IsWeaponVisible());
+            design.GetDesignDataRef().SetWeaponVisible(other.DesignData.IsWeaponVisible());
 
         if (design.DesignData.IsHuman)
         {
@@ -515,7 +523,7 @@ public class DesignManager
             return;
 
         var other = CreateTemporary();
-        other.DesignData = otherData;
+        other.SetDesignData(_customizations, otherData);
         ApplyDesign(design, other);
     }
 
@@ -545,7 +553,7 @@ public class DesignManager
                         Identifier   = CreateNewGuid(),
                         Name         = actualName,
                     };
-                    design.MigrateBase64(_items, _humans, base64);
+                    design.MigrateBase64(_customizations, _items, _humans, base64);
                     if (!oldDesigns.Any(d => d.Name == design.Name && d.CreationDate == design.CreationDate))
                     {
                         Add(design, $"Migrated old design to {design.Identifier}.");

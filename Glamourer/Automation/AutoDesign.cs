@@ -31,7 +31,7 @@ public class AutoDesign
     public string Name(bool incognito)
         => Revert ? RevertName : incognito ? Design!.Incognito : Design!.Name.Text;
 
-    public ref DesignData GetDesignData(ActorState state)
+    public ref readonly DesignData GetDesignData(ActorState state)
         => ref Design == null ? ref state.BaseData : ref Design.DesignData;
 
     public bool Revert

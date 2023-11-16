@@ -368,7 +368,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             };
         }
 
-        if (!_editor.ChangeModelId(state, design.DesignData.ModelId, design.DesignData.Customize, design.DesignData.GetEquipmentPtr(), source,
+        if (!_editor.ChangeModelId(state, design.DesignData.ModelId, design.DesignData.Customize, design.GetDesignDataRef().GetEquipmentPtr(), source,
                 out var oldModelId, key))
             return;
 
