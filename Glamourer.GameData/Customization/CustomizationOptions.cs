@@ -72,6 +72,7 @@ public partial class CustomizationOptions
             foreach (var gender in Genders)
                 _customizationSets[ToIndex(race, gender)] = tmp.GetSet(race, gender);
         }
+
         tmp.SetNpcData(_customizationSets);
     }
 
@@ -85,13 +86,6 @@ public partial class CustomizationOptions
         void Set(CustomName id, Lumina.Text.SeString? s, string def)
             => _names[(int)id] = s?.ToDalamudString().TextValue ?? def;
 
-        Set(CustomName.Clan,             tmp.Lobby.GetRow(102)?.Text,                             "Clan");
-        Set(CustomName.Gender,           tmp.Lobby.GetRow(103)?.Text,                             "Gender");
-        Set(CustomName.Reverse,          tmp.Lobby.GetRow(2135)?.Text,                            "Reverse");
-        Set(CustomName.OddEyes,          tmp.Lobby.GetRow(2125)?.Text,                            "Odd Eyes");
-        Set(CustomName.IrisSmall,        tmp.Lobby.GetRow(1076)?.Text,                            "Small");
-        Set(CustomName.IrisLarge,        tmp.Lobby.GetRow(1075)?.Text,                            "Large");
-        Set(CustomName.IrisSize,         tmp.Lobby.GetRow(244)?.Text,                             "Iris Size");
         Set(CustomName.MidlanderM,       subRace.GetRow((int)SubRace.Midlander)?.Masculine,       SubRace.Midlander.ToName());
         Set(CustomName.MidlanderF,       subRace.GetRow((int)SubRace.Midlander)?.Feminine,        SubRace.Midlander.ToName());
         Set(CustomName.HighlanderM,      subRace.GetRow((int)SubRace.Highlander)?.Masculine,      SubRace.Highlander.ToName());
@@ -184,10 +178,10 @@ public partial class CustomizationOptions
         {
             _options        = options;
             _cmpFile        = new CmpFile(gameData, log);
-            _customizeSheet = gameData.GetExcelSheet<CharaMakeCustomize>()!;
-            _bnpcCustomize  = gameData.GetExcelSheet<BNpcCustomize>()!;
-            _enpcBase       = gameData.GetExcelSheet<ENpcBase>()!;
-            Lobby           = gameData.GetExcelSheet<Lobby>()!;
+            _customizeSheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English)!;
+            _bnpcCustomize  = gameData.GetExcelSheet<BNpcCustomize>(ClientLanguage.English)!;
+            _enpcBase       = gameData.GetExcelSheet<ENpcBase>(ClientLanguage.English)!;
+            Lobby           = gameData.GetExcelSheet<Lobby>(ClientLanguage.English)!;
             var tmp = gameData.Excel.GetType().GetMethod("GetSheet", BindingFlags.Instance | BindingFlags.NonPublic)?
                 .MakeGenericMethod(typeof(CharaMakeParams)).Invoke(gameData.Excel, new object?[]
                 {
@@ -401,20 +395,25 @@ public partial class CustomizationOptions
                     return c.ToDefaultName();
                 }
 
-                // Facial Features and Tattoos is created by combining two strings.
-                if (c is >= CustomizeIndex.FacialFeature1 and <= CustomizeIndex.LegacyTattoo)
-                    return
-                        $"{Lobby.GetRow(1741)?.Text.ToDalamudString().ToString() ?? "Facial Features"} & {Lobby.GetRow(1742)?.Text.ToDalamudString().ToString() ?? "Tattoos"}";
-
                 // Otherwise all is normal, get the menu name or if it does not work the default name.
                 var textRow = Lobby.GetRow(menu.Value.Id);
                 return textRow?.Text.ToDalamudString().ToString() ?? c.ToDefaultName();
             }).ToArray();
 
             // Add names for both eye colors.
-            nameArray[(int)CustomizeIndex.EyeColorLeft]  = nameArray[(int)CustomizeIndex.EyeColorRight];
-            nameArray[(int)CustomizeIndex.EyeColorRight] = _options.GetName(CustomName.OddEyes);
-
+            nameArray[(int)CustomizeIndex.EyeColorLeft]      = CustomizeIndex.EyeColorLeft.ToDefaultName();
+            nameArray[(int)CustomizeIndex.EyeColorRight]     = CustomizeIndex.EyeColorRight.ToDefaultName();
+            nameArray[(int)CustomizeIndex.FacialFeature1]    = CustomizeIndex.FacialFeature1.ToDefaultName();
+            nameArray[(int)CustomizeIndex.FacialFeature2]    = CustomizeIndex.FacialFeature2.ToDefaultName();
+            nameArray[(int)CustomizeIndex.FacialFeature3]    = CustomizeIndex.FacialFeature3.ToDefaultName();
+            nameArray[(int)CustomizeIndex.FacialFeature4]    = CustomizeIndex.FacialFeature4.ToDefaultName();
+            nameArray[(int)CustomizeIndex.FacialFeature5]    = CustomizeIndex.FacialFeature5.ToDefaultName();
+            nameArray[(int)CustomizeIndex.FacialFeature6]    = CustomizeIndex.FacialFeature6.ToDefaultName();
+            nameArray[(int)CustomizeIndex.FacialFeature7]    = CustomizeIndex.FacialFeature7.ToDefaultName();
+            nameArray[(int)CustomizeIndex.LegacyTattoo]      = CustomizeIndex.LegacyTattoo.ToDefaultName();
+            nameArray[(int)CustomizeIndex.SmallIris]         = CustomizeIndex.SmallIris.ToDefaultName();
+            nameArray[(int)CustomizeIndex.Lipstick]          = CustomizeIndex.Lipstick.ToDefaultName();
+            nameArray[(int)CustomizeIndex.FacePaintReversed] = CustomizeIndex.FacePaintReversed.ToDefaultName();
             set.OptionName = nameArray;
         }
 

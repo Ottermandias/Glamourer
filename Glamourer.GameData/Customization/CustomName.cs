@@ -3,13 +3,6 @@
 // Localization from the game files directly.
 public enum CustomName
 {
-    Clan = 0,
-    Gender,
-    Reverse,
-    OddEyes,
-    IrisSmall,
-    IrisLarge,
-    IrisSize,
     MidlanderM,
     HighlanderM,
     WildwoodM,

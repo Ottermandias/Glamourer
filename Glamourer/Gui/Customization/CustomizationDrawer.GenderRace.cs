@@ -17,8 +17,6 @@ public partial class CustomizationDrawer
         ImGui.SameLine();
         using var group = ImRaii.Group();
         DrawRaceCombo();
-        var gender = _service.AwaitedService.GetName(CustomName.Gender);
-        var clan   = _service.AwaitedService.GetName(CustomName.Clan);
         if (_withApply)
         {
             using var disabled = ImRaii.Disabled(_locked);
@@ -33,7 +31,7 @@ public partial class CustomizationDrawer
         }
 
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted($"{gender} & {clan}");
+        ImGui.TextUnformatted("Gender & Clan");
     }
 
     private void DrawGenderSelector()

@@ -200,7 +200,7 @@ public partial class CustomizationDrawer : IDisposable
     private void UpdateSizes()
     {
         _spacing = ImGui.GetStyle().ItemSpacing with { X = ImGui.GetStyle().ItemInnerSpacing.X };
-        _iconSize = new Vector2(ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 2 * ImGui.GetStyle().FramePadding.Y);
+        _iconSize = new Vector2(ImGui.GetTextLineHeight() * 2 + _spacing.Y + 2 * ImGui.GetStyle().FramePadding.Y);
         _framedIconSize = _iconSize + 2 * ImGui.GetStyle().FramePadding;
         _inputIntSize = 2 * _framedIconSize.X + 1 * _spacing.X;
         _inputIntSizeNoButtons = _inputIntSize - 2 * _spacing.X - 2 * ImGui.GetFrameHeight();

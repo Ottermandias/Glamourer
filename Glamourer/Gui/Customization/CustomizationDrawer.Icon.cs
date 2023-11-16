@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using Dalamud.Interface.Utility;
 using Glamourer.Customization;
 using ImGuiNET;
@@ -113,8 +114,32 @@ public partial class CustomizationDrawer
             ImGui.SameLine();
             ApplyCheckbox(CustomizeIndex.FacialFeature4);
         }
+        else
+        {
+            ImGui.Dummy(new Vector2(ImGui.GetFrameHeight()));
+        }
 
-        PercentageInputInt();
+        var oldValue = _customize.Data.At(_currentIndex.ToByteAndMask().ByteIdx);
+        var tmp      = (int)oldValue;
+        ImGui.SetNextItemWidth(_inputIntSize);
+        if (ImGui.InputInt("##text", ref tmp, 1, 1))
+        {
+            tmp = Math.Clamp(tmp, 0, byte.MaxValue);
+            if (tmp != oldValue)
+            {
+                _customize.Data.Set(_currentIndex.ToByteAndMask().ByteIdx, (byte)tmp);
+                var changes = (byte)tmp ^ oldValue;
+                Changed |= ((changes & 0x01) == 0x01 ? CustomizeFlag.FacialFeature1 : 0)
+                  | ((changes & 0x02) == 0x02 ? CustomizeFlag.FacialFeature2 : 0)
+                  | ((changes & 0x04) == 0x04 ? CustomizeFlag.FacialFeature3 : 0)
+                  | ((changes & 0x08) == 0x08 ? CustomizeFlag.FacialFeature4 : 0)
+                  | ((changes & 0x10) == 0x10 ? CustomizeFlag.FacialFeature5 : 0)
+                  | ((changes & 0x20) == 0x20 ? CustomizeFlag.FacialFeature6 : 0)
+                  | ((changes & 0x40) == 0x40 ? CustomizeFlag.FacialFeature7 : 0)
+                  | ((changes & 0x80) == 0x80 ? CustomizeFlag.LegacyTattoo : 0);
+            }
+        }
+
         if (_set.DataByValue(CustomizeIndex.Face, _customize.Face, out _, _customize.Face) < 0)
         {
             ImGui.SameLine();
@@ -127,7 +152,7 @@ public partial class CustomizationDrawer
         ImGui.AlignTextToFramePadding();
         using (var _ = ImRaii.Enabled())
         {
-            ImGui.TextUnformatted(_set.Option(CustomizeIndex.LegacyTattoo));
+            ImGui.TextUnformatted("Facial Features & Tattoos");
         }
 
         if (_withApply)

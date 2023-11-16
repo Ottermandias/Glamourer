@@ -111,14 +111,14 @@ public static class CustomizationExtensions
             CustomizeIndex.Clan              => "Clan",
             CustomizeIndex.Face              => "Head Style",
             CustomizeIndex.Hairstyle         => "Hair Style",
-            CustomizeIndex.Highlights        => "Highlights",
+            CustomizeIndex.Highlights        => "Enable Highlights",
             CustomizeIndex.SkinColor         => "Skin Color",
-            CustomizeIndex.EyeColorRight     => "Right Eye Color",
+            CustomizeIndex.EyeColorRight     => "Left Eye", // inverted due to compatibility fuckup.
             CustomizeIndex.HairColor         => "Hair Color",
             CustomizeIndex.HighlightsColor   => "Highlights Color",
             CustomizeIndex.TattooColor       => "Tattoo Color",
             CustomizeIndex.Eyebrows          => "Eyebrow Style",
-            CustomizeIndex.EyeColorLeft      => "Left Eye Color",
+            CustomizeIndex.EyeColorLeft      => "Right Eye", // inverted due to compatibility fuckup.
             CustomizeIndex.EyeShape          => "Small Pupils",
             CustomizeIndex.Nose              => "Nose Style",
             CustomizeIndex.Jaw               => "Jaw Style",
