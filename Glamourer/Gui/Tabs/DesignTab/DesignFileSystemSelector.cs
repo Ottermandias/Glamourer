@@ -24,7 +24,6 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     private readonly Configuration        _config;
     private readonly DesignConverter      _converter;
     private readonly TabSelected          _selectionEvent;
-    private readonly CustomizationService _customizationService;
     private readonly DesignColors         _designColors;
 
     private string? _clipboardText;
@@ -48,8 +47,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     { }
 
     public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, IKeyState keyState, DesignChanged @event,
-        Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log, CustomizationService customizationService,
-        DesignColors designColors)
+        Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log, DesignColors designColors)
         : base(fileSystem, keyState, log, allowMultipleSelection: true)
     {
         _designManager        = designManager;
@@ -57,7 +55,6 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         _config               = config;
         _converter            = converter;
         _selectionEvent       = selectionEvent;
-        _customizationService = customizationService;
         _designColors         = designColors;
         _event.Subscribe(OnDesignChange, DesignChanged.Priority.DesignFileSystemSelector);
         _selectionEvent.Subscribe(OnTabSelected, TabSelected.Priority.DesignSelector);
@@ -216,6 +213,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         FilterTooltip = "Filter designs for those where their full paths or names contain the given substring.\n"
           + "Enter m:[string] to filter for designs with with a mod association containing the string.\n"
           + "Enter t:[string] to filter for designs set to specific tags.\n"
+          + "Enter c:[string] to filter for designs set to specific colors.\n"
           + "Enter i:[string] to filter for designs containing specific items.\n"
           + "Enter n:[string] to filter only for design names and no paths.";
     }
@@ -237,6 +235,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
                     'T' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 3),
                     'i' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 4),
                     'I' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 4),
+                    'c' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 5),
+                    'C' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 5),
                     _   => (new LowerString(filterValue), 0),
                 },
             _ => (new LowerString(filterValue), 0),
@@ -273,6 +273,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
             2  => !design.AssociatedMods.Any(kvp => _designFilter.IsContained(kvp.Key.Name)),
             3  => !design.Tags.Any(_designFilter.IsContained),
             4  => !design.DesignData.ContainsName(_designFilter),
+            5  => !_designFilter.IsContained(design.Color.Length == 0 ? DesignColors.AutomaticName : design.Color),
             _  => false, // Should never happen
         };
     }
