@@ -34,7 +34,7 @@ public class DesignBase
 
     internal DesignBase(DesignBase clone)
     {
-        _designData       = clone._designData;
+        _designData      = clone._designData;
         CustomizationSet = clone.CustomizationSet;
         ApplyCustomize   = clone.ApplyCustomizeRaw;
         ApplyEquip       = clone.ApplyEquip & EquipFlagExtensions.All;
@@ -44,7 +44,7 @@ public class DesignBase
     /// <summary> Ensure that the customization set is updated when the design data changes. </summary>
     internal void SetDesignData(CustomizationService customize, in DesignData other)
     {
-        _designData       = other;
+        _designData      = other;
         CustomizationSet = SetCustomizationSet(customize);
     }
 
@@ -216,7 +216,7 @@ public class DesignBase
 
     private CustomizationSet SetCustomizationSet(CustomizationService customize)
         => !_designData.IsHuman
-            ? customize.AwaitedService.GetList(SubRace.Midlander,         Gender.Male)
+            ? customize.AwaitedService.GetList(SubRace.Midlander,          Gender.Male)
             : customize.AwaitedService.GetList(_designData.Customize.Clan, _designData.Customize.Gender);
 
     #endregion
@@ -400,8 +400,8 @@ public class DesignBase
     {
         if (json == null)
         {
-            design._designData.ModelId   = 0;
-            design._designData.IsHuman   = true;
+            design._designData.ModelId = 0;
+            design._designData.IsHuman = true;
             design.SetCustomize(customizations, Customize.Default);
             Glamourer.Messager.NotificationMessage("The loaded design does not contain any customization data, reset to default.",
                 NotificationType.Warning);
@@ -421,7 +421,8 @@ public class DesignBase
         design.SetApplyWetness(wetness.Enabled);
 
         design._designData.ModelId = json["ModelId"]?.ToObject<uint>() ?? 0;
-        PrintWarning(customizations.ValidateModelId(design._designData.ModelId, out design._designData.ModelId, out design._designData.IsHuman));
+        PrintWarning(customizations.ValidateModelId(design._designData.ModelId, out design._designData.ModelId,
+            out design._designData.IsHuman));
         if (design._designData.ModelId != 0 && forbidNonHuman)
         {
             PrintWarning("Model IDs different from 0 are not currently allowed, reset model id to 0.");
@@ -444,7 +445,7 @@ public class DesignBase
         design._designData.Customize.Race   = race;
         design._designData.Customize.Clan   = clan;
         design._designData.Customize.Gender = gender;
-        design.CustomizationSet            = design.SetCustomizationSet(customizations);
+        design.CustomizationSet             = design.SetCustomizationSet(customizations);
         design.SetApplyCustomize(CustomizeIndex.Race,   json[CustomizeIndex.Race.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
         design.SetApplyCustomize(CustomizeIndex.Clan,   json[CustomizeIndex.Clan.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
         design.SetApplyCustomize(CustomizeIndex.Gender, json[CustomizeIndex.Gender.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
@@ -454,8 +455,9 @@ public class DesignBase
         {
             var tok  = json[idx.ToString()];
             var data = (CustomizeValue)(tok?["Value"]?.ToObject<byte>() ?? 0);
-            PrintWarning(CustomizationService.ValidateCustomizeValue(set, design._designData.Customize.Face, idx, data, out data,
-                allowUnknown));
+            if (set.IsAvailable(idx))
+                PrintWarning(CustomizationService.ValidateCustomizeValue(set, design._designData.Customize.Face, idx, data, out data,
+                    allowUnknown));
             var apply = tok?["Apply"]?.ToObject<bool>() ?? false;
             design._designData.Customize[idx] = data;
             design.SetApplyCustomize(idx, apply);
