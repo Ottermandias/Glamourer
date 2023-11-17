@@ -76,13 +76,13 @@ public class CommandService : IDisposable
                 case "designs":
                 case "design":
                 case "design bar":
-                    _config.ShowDesignQuickBar = !_config.ShowDesignQuickBar;
-                    _config.Save();
+                    _config.Ephemeral.ShowDesignQuickBar = !_config.Ephemeral.ShowDesignQuickBar;
+                    _config.Ephemeral.Save();
                     return;
                 case "lock":
                 case "unlock":
-                    _config.LockMainWindow = !_config.LockMainWindow;
-                    _config.Save();
+                    _config.Ephemeral.LockMainWindow = !_config.Ephemeral.LockMainWindow;
+                    _config.Ephemeral.Save();
                     return;
                 default:
                     _chat.Print("Use without argument to toggle the main window.");

@@ -15,13 +15,13 @@ namespace Glamourer.Gui.Tabs.ActorTab;
 
 public class ActorSelector
 {
-    private readonly Configuration _config;
+    private readonly EphemeralConfig _config;
     private readonly ObjectManager _objects;
     private readonly ActorService  _actors;
 
     private ActorIdentifier _identifier = ActorIdentifier.Invalid;
 
-    public ActorSelector(ObjectManager objects, ActorService actors, Configuration config)
+    public ActorSelector(ObjectManager objects, ActorService actors, EphemeralConfig config)
     {
         _objects = objects;
         _actors  = actors;

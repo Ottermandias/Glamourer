@@ -18,15 +18,15 @@ namespace Glamourer.Gui;
 
 public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>, IDisposable
 {
-    private readonly   Configuration _config;
-    private readonly   DesignChanged _designChanged;
-    private readonly   DesignColors  _designColors;
-    protected readonly TabSelected   TabSelected;
-    protected          float         InnerWidth;
-    private            Design?       _currentDesign;
+    private readonly   EphemeralConfig _config;
+    private readonly   DesignChanged   _designChanged;
+    private readonly   DesignColors    _designColors;
+    protected readonly TabSelected     TabSelected;
+    protected          float           InnerWidth;
+    private            Design?         _currentDesign;
 
     protected DesignComboBase(Func<IReadOnlyList<Tuple<Design, string>>> generator, Logger log, DesignChanged designChanged,
-        TabSelected tabSelected, Configuration config, DesignColors designColors)
+        TabSelected tabSelected, EphemeralConfig config, DesignColors designColors)
         : base(generator, log)
     {
         _designChanged = designChanged;
@@ -136,7 +136,7 @@ public sealed class DesignCombo : DesignComboBase
     private readonly DesignManager _manager;
 
     public DesignCombo(DesignManager designs, DesignFileSystem fileSystem, Logger log, DesignChanged designChanged, TabSelected tabSelected,
-        Configuration config, DesignColors designColors)
+        EphemeralConfig config, DesignColors designColors)
         : base(() => designs.Designs
             .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
             .OrderBy(d => d.Item2)
@@ -180,12 +180,13 @@ public sealed class RevertDesignCombo : DesignComboBase, IDisposable
 
     public RevertDesignCombo(DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected, DesignColors designColors,
         ItemManager items, CustomizationService customize, Logger log, DesignChanged designChanged, AutoDesignManager autoDesignManager,
-        Configuration config)
-        : this(designs, fileSystem, tabSelected, designColors, CreateRevertDesign(customize, items), log, designChanged, autoDesignManager, config)
+        EphemeralConfig config)
+        : this(designs, fileSystem, tabSelected, designColors, CreateRevertDesign(customize, items), log, designChanged, autoDesignManager,
+            config)
     { }
 
     private RevertDesignCombo(DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected, DesignColors designColors,
-        Design revertDesign, Logger log, DesignChanged designChanged, AutoDesignManager autoDesignManager, Configuration config)
+        Design revertDesign, Logger log, DesignChanged designChanged, AutoDesignManager autoDesignManager, EphemeralConfig config)
         : base(() => designs.Designs
             .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
             .OrderBy(d => d.Item2)

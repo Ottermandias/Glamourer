@@ -21,7 +21,7 @@ namespace Glamourer.Gui;
 public class DesignQuickBar : Window, IDisposable
 {
     private ImGuiWindowFlags GetFlags
-        => _config.LockDesignQuickBar
+        => _config.Ephemeral.LockDesignQuickBar
             ? ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoMove
             : ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoFocusOnAppearing;
 
@@ -45,7 +45,7 @@ public class DesignQuickBar : Window, IDisposable
         _keyState           = keyState;
         _objects            = objects;
         _autoDesignApplier  = autoDesignApplier;
-        IsOpen              = _config.ShowDesignQuickBar;
+        IsOpen              = _config.Ephemeral.ShowDesignQuickBar;
         DisableWindowSounds = true;
         Size                = Vector2.Zero;
     }
@@ -56,7 +56,7 @@ public class DesignQuickBar : Window, IDisposable
     public override void PreOpenCheck()
     {
         CheckHotkeys();
-        IsOpen = _config.ShowDesignQuickBar;
+        IsOpen = _config.Ephemeral.ShowDesignQuickBar;
     }
 
     public override void PreDraw()
@@ -133,7 +133,7 @@ public class DesignQuickBar : Window, IDisposable
             if (_playerIdentifier.IsValid && _playerData.Valid)
             {
                 available |= 1;
-                tooltip   =  $"Left-Click: Apply {(_config.IncognitoMode ? design.Incognito : design.Name)} to yourself.";
+                tooltip   =  $"Left-Click: Apply {(_config.Ephemeral.IncognitoMode ? design.Incognito : design.Name)} to yourself.";
             }
 
             if (_targetIdentifier.IsValid && _targetData.Valid)
@@ -141,7 +141,7 @@ public class DesignQuickBar : Window, IDisposable
                 if (available != 0)
                     tooltip += '\n';
                 available |= 2;
-                tooltip   += $"Right-Click: Apply {(_config.IncognitoMode ? design.Incognito : design.Name)} to {_targetIdentifier}.";
+                tooltip   += $"Right-Click: Apply {(_config.Ephemeral.IncognitoMode ? design.Incognito : design.Name)} to {_targetIdentifier}.";
             }
 
             if (available == 0)
@@ -248,9 +248,9 @@ public class DesignQuickBar : Window, IDisposable
         if (_keyboardToggle > DateTime.UtcNow || !CheckKeyState(_config.ToggleQuickDesignBar, false))
             return;
 
-        _keyboardToggle            = DateTime.UtcNow.AddMilliseconds(500);
-        _config.ShowDesignQuickBar = !_config.ShowDesignQuickBar;
-        _config.Save();
+        _keyboardToggle                      = DateTime.UtcNow.AddMilliseconds(500);
+        _config.Ephemeral.ShowDesignQuickBar = !_config.Ephemeral.ShowDesignQuickBar;
+        _config.Ephemeral.Save();
     }
 
     public bool CheckKeyState(ModifiableHotkey key, bool noKey)

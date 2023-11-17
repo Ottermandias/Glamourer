@@ -11,11 +11,11 @@ namespace Glamourer.Gui.Tabs.UnlocksTab;
 
 public class UnlocksTab : Window, ITab
 {
-    private readonly Configuration  _config;
+    private readonly EphemeralConfig  _config;
     private readonly UnlockOverview _overview;
     private readonly UnlockTable    _table;
 
-    public UnlocksTab(Configuration config, UnlockOverview overview, UnlockTable table)
+    public UnlocksTab(EphemeralConfig config, UnlockOverview overview, UnlockTable table)
         : base("Unlocked Equipment")
     {
         _config   = config;

@@ -6,7 +6,6 @@ using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
 using Glamourer.Designs;
 using Glamourer.Events;
-using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -32,11 +31,11 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
 
     public bool IncognitoMode
     {
-        get => _config.IncognitoMode;
+        get => _config.Ephemeral.IncognitoMode;
         set
         {
-            _config.IncognitoMode = value;
-            _config.Save();
+            _config.Ephemeral.IncognitoMode = value;
+            _config.Ephemeral.Save();
         }
     }
 

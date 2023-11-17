@@ -81,7 +81,7 @@ public class MainWindow : Window, IDisposable
 
     public override void PreDraw()
     {
-        Flags = _config.LockMainWindow
+        Flags = _config.Ephemeral.LockMainWindow
             ? Flags | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize
             : Flags & ~(ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize);
     }
@@ -94,9 +94,9 @@ public class MainWindow : Window, IDisposable
         var yPos = ImGui.GetCursorPosY();
         if (TabBar.Draw("##tabs", ImGuiTabBarFlags.None, ToLabel(SelectTab), out var currentTab, () => { }, _tabs))
         {
-            SelectTab           = TabType.None;
-            _config.SelectedTab = FromLabel(currentTab);
-            _config.Save();
+            SelectTab                     = TabType.None;
+            _config.Ephemeral.SelectedTab = FromLabel(currentTab);
+            _config.Ephemeral.Save();
         }
 
         if (_config.ShowQuickBarInTabs)

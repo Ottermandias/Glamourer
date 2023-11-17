@@ -57,6 +57,7 @@ public static class ServiceManager
             .AddSingleton<CodeService>()
             .AddSingleton<ConfigMigrationService>()
             .AddSingleton<Configuration>()
+            .AddSingleton<EphemeralConfig>()
             .AddSingleton<TextureService>()
             .AddSingleton<FavoriteManager>();
 

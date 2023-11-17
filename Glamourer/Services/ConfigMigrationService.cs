@@ -25,7 +25,7 @@ public class ConfigMigrationService
 
     public void Migrate(Configuration config)
     {
-        _config = config; 
+        _config = config;
         if (config.Version >= Configuration.Constants.CurrentVersion || !File.Exists(_saveService.FileNames.ConfigFile))
         {
             AddColors(config, false);
@@ -35,7 +35,26 @@ public class ConfigMigrationService
         _data = JObject.Parse(File.ReadAllText(_saveService.FileNames.ConfigFile));
         MigrateV1To2();
         MigrateV2To4();
+        MigrateV4To5();
         AddColors(config, true);
+    }
+
+    // Ephemeral Config.
+    private void MigrateV4To5()
+    {
+        if (_config.Version > 4)
+            return;
+
+        _config.Ephemeral.IncognitoMode      = _data["IncognitoMode"]?.ToObject<bool>() ?? _config.Ephemeral.IncognitoMode;
+        _config.Ephemeral.UnlockDetailMode   = _data["UnlockDetailMode"]?.ToObject<bool>() ?? _config.Ephemeral.UnlockDetailMode;
+        _config.Ephemeral.ShowDesignQuickBar = _data["ShowDesignQuickBar"]?.ToObject<bool>() ?? _config.Ephemeral.ShowDesignQuickBar;
+        _config.Ephemeral.LockDesignQuickBar = _data["LockDesignQuickBar"]?.ToObject<bool>() ?? _config.Ephemeral.LockDesignQuickBar;
+        _config.Ephemeral.LockMainWindow     = _data["LockMainWindow"]?.ToObject<bool>() ?? _config.Ephemeral.LockMainWindow;
+        _config.Ephemeral.SelectedTab        = _data["SelectedTab"]?.ToObject<MainWindow.TabType>() ?? _config.Ephemeral.SelectedTab;
+        _config.Ephemeral.LastSeenVersion    = _data["LastSeenVersion"]?.ToObject<int>() ?? _config.Ephemeral.LastSeenVersion;
+        _config.Version                      = 5;
+        _config.Ephemeral.Version            = 5;
+        _config.Ephemeral.Save();
     }
 
     private void MigrateV1To2()
@@ -58,7 +77,7 @@ public class ConfigMigrationService
     {
         if (_config.Version > 4)
             return;
-    
+
         _config.Version = 4;
         _config.Codes   = _config.Codes.DistinctBy(c => c.Code).ToList();
     }

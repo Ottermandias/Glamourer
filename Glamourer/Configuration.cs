@@ -19,40 +19,34 @@ namespace Glamourer;
 
 public class Configuration : IPluginConfiguration, ISavable
 {
-    public bool UseRestrictedGearProtection      { get; set; } = false;
-    public bool OpenFoldersByDefault             { get; set; } = false;
-    public bool AutoRedrawEquipOnChanges         { get; set; } = false;
-    public bool EnableAutoDesigns                { get; set; } = true;
-    public bool IncognitoMode                    { get; set; } = false;
-    public bool UnlockDetailMode                 { get; set; } = true;
-    public bool HideApplyCheckmarks              { get; set; } = false;
-    public bool SmallEquip                       { get; set; } = false;
-    public bool UnlockedItemMode                 { get; set; } = false;
-    public byte DisableFestivals                 { get; set; } = 1;
-    public bool EnableGameContextMenu            { get; set; } = true;
-    public bool HideWindowInCutscene             { get; set; } = false;
-    public bool ShowAutomationSetEditing         { get; set; } = true;
-    public bool ShowAllAutomatedApplicationRules { get; set; } = true;
-    public bool ShowUnlockedItemWarnings         { get; set; } = true;
-    public bool RevertManualChangesOnZoneChange  { get; set; } = false;
-    public bool ShowDesignQuickBar               { get; set; } = false;
-    public bool LockDesignQuickBar               { get; set; } = false;
-    public bool ShowQuickBarInTabs               { get; set; } = true;
-    public bool LockMainWindow                   { get; set; } = false;
-    public bool OpenWindowAtStart                { get; set; } = false;
+    [JsonIgnore]
+    public readonly EphemeralConfig Ephemeral;
 
-    public ModifiableHotkey   ToggleQuickDesignBar { get; set; } = new(VirtualKey.NO_KEY);
-    public MainWindow.TabType SelectedTab          { get; set; } = MainWindow.TabType.Settings;
-    public DoubleModifier     DeleteDesignModifier { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
-
-    public int                  LastSeenVersion      { get; set; } = GlamourerChangelog.LastChangelogVersion;
-    public ChangeLogDisplayType ChangeLogDisplayType { get; set; } = ChangeLogDisplayType.New;
+    public bool                 UseRestrictedGearProtection      { get; set; } = false;
+    public bool                 OpenFoldersByDefault             { get; set; } = false;
+    public bool                 AutoRedrawEquipOnChanges         { get; set; } = false;
+    public bool                 EnableAutoDesigns                { get; set; } = true;
+    public bool                 HideApplyCheckmarks              { get; set; } = false;
+    public bool                 SmallEquip                       { get; set; } = false;
+    public bool                 UnlockedItemMode                 { get; set; } = false;
+    public byte                 DisableFestivals                 { get; set; } = 1;
+    public bool                 EnableGameContextMenu            { get; set; } = true;
+    public bool                 HideWindowInCutscene             { get; set; } = false;
+    public bool                 ShowAutomationSetEditing         { get; set; } = true;
+    public bool                 ShowAllAutomatedApplicationRules { get; set; } = true;
+    public bool                 ShowUnlockedItemWarnings         { get; set; } = true;
+    public bool                 RevertManualChangesOnZoneChange  { get; set; } = false;
+    public bool                 ShowQuickBarInTabs               { get; set; } = true;
+    public bool                 OpenWindowAtStart                { get; set; } = false;
+    public ModifiableHotkey     ToggleQuickDesignBar             { get; set; } = new(VirtualKey.NO_KEY);
+    public DoubleModifier       DeleteDesignModifier             { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
+    public ChangeLogDisplayType ChangeLogDisplayType             { get; set; } = ChangeLogDisplayType.New;
 
     [JsonConverter(typeof(SortModeConverter))]
     [JsonProperty(Order = int.MaxValue)]
     public ISortMode<Design> SortMode { get; set; } = ISortMode<Design>.FoldersFirst;
 
-    public List<(string Code, bool Enabled)> Codes { get; set; } = new();
+    public List<(string Code, bool Enabled)> Codes { get; set; } =  [];
 
 #if DEBUG
     public bool DebugMode { get; set; } = true;
@@ -68,9 +62,10 @@ public class Configuration : IPluginConfiguration, ISavable
     [JsonIgnore]
     private readonly SaveService _saveService;
 
-    public Configuration(SaveService saveService, ConfigMigrationService migrator)
+    public Configuration(SaveService saveService, ConfigMigrationService migrator, EphemeralConfig ephemeral)
     {
         _saveService = saveService;
+        Ephemeral    = ephemeral;
         Load(migrator);
     }
 
@@ -120,7 +115,7 @@ public class Configuration : IPluginConfiguration, ISavable
 
     public static class Constants
     {
-        public const int CurrentVersion = 4;
+        public const int CurrentVersion = 5;
 
         public static readonly ISortMode<Design>[] ValidSortModes =
         {

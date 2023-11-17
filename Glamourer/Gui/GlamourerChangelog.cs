@@ -26,24 +26,36 @@ public class GlamourerChangelog
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
-        => (_config.LastSeenVersion, _config.ChangeLogDisplayType);
+        => (_config.Ephemeral.LastSeenVersion, _config.ChangeLogDisplayType);
 
     private void Save(int version, ChangeLogDisplayType type)
     {
-        _config.LastSeenVersion      = version;
-        _config.ChangeLogDisplayType = type;
-        _config.Save();
+        if (_config.Ephemeral.LastSeenVersion != version)
+        {
+            _config.Ephemeral.LastSeenVersion = version;
+            _config.Ephemeral.Save();
+        }
+
+        if (_config.ChangeLogDisplayType != type)
+        {
+            _config.ChangeLogDisplayType = type;
+            _config.Save();
+        }
     }
 
     private static void Add1_0_5_0(Changelog log)
         => log.NextVersion("Version 1.0.5.0")
             .RegisterHighlight("Dyes are can now be favorited the same way equipment pieces can.")
-            .RegisterHighlight("The quick design bar combo can now be scrolled through via mousewheel when hovering over the combo without opening it.")
-            .RegisterEntry("Control-Rightclicking the quick design bar now not only jumps to the corresponding design, but also opens the main window if it is not currently open.")
+            .RegisterHighlight(
+                "The quick design bar combo can now be scrolled through via mousewheel when hovering over the combo without opening it.")
+            .RegisterEntry(
+                "Control-Rightclicking the quick design bar now not only jumps to the corresponding design, but also opens the main window if it is not currently open.")
             .RegisterHighlight("You can now filter for designs containing specific items by using \"i:partial item name\".")
-            .RegisterEntry("When overwriting a saved designs data entirely from clipboard, you can now undo this change and restore the prior design data once via a button top-left.")
+            .RegisterEntry(
+                "When overwriting a saved designs data entirely from clipboard, you can now undo this change and restore the prior design data once via a button top-left.")
             .RegisterEntry("Removed the \"Enabled\" checkbox in the settings since it was barely doing anything but breaking Glamourer.")
-            .RegisterEntry("If you want to disable Glamourers state-tracking and hooking, you will need to disable the entire Plugin via Dalamud now.", 1)
+            .RegisterEntry(
+                "If you want to disable Glamourers state-tracking and hooking, you will need to disable the entire Plugin via Dalamud now.", 1)
             .RegisterEntry("Added a reference to \"/glamour\" in the \"/glamourer help\" section.")
             .RegisterEntry("Updated BNPC Data with new crowd-sourced data from the gubal library.")
             .RegisterEntry("Fixed an issue with the quick design bar when no designs are saved.")

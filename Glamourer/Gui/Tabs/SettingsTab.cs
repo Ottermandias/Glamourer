@@ -105,11 +105,11 @@ public class SettingsTab : ITab
         if (!ImGui.CollapsingHeader("Interface"))
             return;
 
-        Checkbox("Show Quick Design Bar",
+        EphemeralCheckbox("Show Quick Design Bar",
             "Show a bar separate from the main window that allows you to quickly apply designs or revert your character and target.",
-            _config.ShowDesignQuickBar, v => _config.ShowDesignQuickBar = v);
-        Checkbox("Lock Quick Design Bar", "Prevent the quick design bar from being moved and lock it in place.", _config.LockDesignQuickBar,
-            v => _config.LockDesignQuickBar = v);
+            _config.Ephemeral.ShowDesignQuickBar, v => _config.Ephemeral.ShowDesignQuickBar = v);
+        EphemeralCheckbox("Lock Quick Design Bar", "Prevent the quick design bar from being moved and lock it in place.", _config.Ephemeral.LockDesignQuickBar,
+            v => _config.Ephemeral.LockDesignQuickBar = v);
         if (Widget.ModifiableKeySelector("Hotkey to Toggle Quick Design Bar", "Set a hotkey that opens or closes the quick design bar.",
                 100 * ImGuiHelpers.GlobalScale,
                 _config.ToggleQuickDesignBar, v => _config.ToggleQuickDesignBar = v, _validKeys))
@@ -138,8 +138,8 @@ public class SettingsTab : ITab
                 _config.HideWindowInCutscene     = v;
                 _uiBuilder.DisableCutsceneUiHide = !v;
             });
-        Checkbox("Lock Main Window", "Prevent the main window from being moved and lock it in place.", _config.LockMainWindow,
-            v => _config.LockMainWindow = v);
+        EphemeralCheckbox("Lock Main Window", "Prevent the main window from being moved and lock it in place.", _config.Ephemeral.LockMainWindow,
+            v => _config.Ephemeral.LockMainWindow = v);
         Checkbox("Open Main Window at Game Start", "Whether the main Glamourer window should be open or closed after launching the game.",
             _config.OpenWindowAtStart,             v => _config.OpenWindowAtStart = v);
         ImGui.Dummy(Vector2.Zero);
@@ -279,6 +279,21 @@ public class SettingsTab : ITab
         {
             setter(tmp);
             _config.Save();
+        }
+
+        ImGui.SameLine();
+        ImGuiUtil.LabeledHelpMarker(label, tooltip);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private void EphemeralCheckbox(string label, string tooltip, bool current, Action<bool> setter)
+    {
+        using var id  = ImRaii.PushId(label);
+        var       tmp = current;
+        if (ImGui.Checkbox(string.Empty, ref tmp) && tmp != current)
+        {
+            setter(tmp);
+            _config.Ephemeral.Save();
         }
 
         ImGui.SameLine();

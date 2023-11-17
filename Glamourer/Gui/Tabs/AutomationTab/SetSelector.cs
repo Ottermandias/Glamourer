@@ -31,11 +31,11 @@ public class SetSelector : IDisposable
 
     public bool IncognitoMode
     {
-        get => _config.IncognitoMode;
+        get => _config.Ephemeral.IncognitoMode;
         set
         {
-            _config.IncognitoMode = value;
-            _config.Save();
+            _config.Ephemeral.IncognitoMode = value;
+            _config.Ephemeral.Save();
         }
     }
 
