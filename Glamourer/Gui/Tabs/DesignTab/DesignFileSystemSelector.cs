@@ -18,12 +18,12 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public sealed class DesignFileSystemSelector : FileSystemSelector<Design, DesignFileSystemSelector.DesignState>
 {
-    private readonly DesignManager        _designManager;
-    private readonly DesignChanged        _event;
-    private readonly Configuration        _config;
-    private readonly DesignConverter      _converter;
-    private readonly TabSelected          _selectionEvent;
-    private readonly DesignColors         _designColors;
+    private readonly DesignManager   _designManager;
+    private readonly DesignChanged   _event;
+    private readonly Configuration   _config;
+    private readonly DesignConverter _converter;
+    private readonly TabSelected     _selectionEvent;
+    private readonly DesignColors    _designColors;
 
     private string? _clipboardText;
     private Design? _cloneDesign;
@@ -49,12 +49,12 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log, DesignColors designColors)
         : base(fileSystem, keyState, log, allowMultipleSelection: true)
     {
-        _designManager        = designManager;
-        _event                = @event;
-        _config               = config;
-        _converter            = converter;
-        _selectionEvent       = selectionEvent;
-        _designColors         = designColors;
+        _designManager  = designManager;
+        _event          = @event;
+        _config         = config;
+        _converter      = converter;
+        _selectionEvent = selectionEvent;
+        _designColors   = designColors;
         _event.Subscribe(OnDesignChange, DesignChanged.Priority.DesignFileSystemSelector);
         _selectionEvent.Subscribe(OnTabSelected, TabSelected.Priority.DesignSelector);
         _designColors.ColorChanged += SetFilterDirty;
@@ -214,7 +214,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
           + "Enter t:[string] to filter for designs set to specific tags.\n"
           + "Enter c:[string] to filter for designs set to specific colors.\n"
           + "Enter i:[string] to filter for designs containing specific items.\n"
-          + "Enter n:[string] to filter only for design names and no paths.";
+          + "Enter n:[string] to filter only for design names and no paths.\n\n"
+          + "Use None as a placeholder value that only matches empty lists or names.";
     }
 
     /// <summary> Appropriately identify and set the string filter and its type. </summary>
@@ -228,10 +229,10 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
                 {
                     'n' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 1),
                     'N' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 1),
-                    'm' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 2),
-                    'M' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 2),
-                    't' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 3),
-                    'T' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 3),
+                    'm' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 2),
+                    'M' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 2),
+                    't' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 3),
+                    'T' => filterValue.Length == 2 ? (LowerString.Empty, -1) : ParseFilter(filterValue, 3),
                     'i' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 4),
                     'I' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 4),
                     'c' => filterValue.Length == 2 ? (LowerString.Empty, -1) : (new LowerString(filterValue[2..]), 5),
@@ -242,6 +243,15 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         };
 
         return true;
+    }
+
+    private const int EmptyOffset = 128;
+
+    private static (LowerString, int) ParseFilter(string value, int id)
+    {
+        value = value[2..];
+        var lower = new LowerString(value);
+        return (lower, lower.Lower is "none" ? id + EmptyOffset : id);
     }
 
     /// <summary>
@@ -266,14 +276,16 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     {
         return _filterType switch
         {
-            -1 => false,
-            0  => !(_designFilter.IsContained(leaf.FullName()) || design.Name.Contains(_designFilter)),
-            1  => !design.Name.Contains(_designFilter),
-            2  => !design.AssociatedMods.Any(kvp => _designFilter.IsContained(kvp.Key.Name)),
-            3  => !design.Tags.Any(_designFilter.IsContained),
-            4  => !design.DesignData.ContainsName(_designFilter),
-            5  => !_designFilter.IsContained(design.Color.Length == 0 ? DesignColors.AutomaticName : design.Color),
-            _  => false, // Should never happen
+            -1              => false,
+            0               => !(_designFilter.IsContained(leaf.FullName()) || design.Name.Contains(_designFilter)),
+            1               => !design.Name.Contains(_designFilter),
+            2               => !design.AssociatedMods.Any(kvp => _designFilter.IsContained(kvp.Key.Name)),
+            3               => !design.Tags.Any(_designFilter.IsContained),
+            4               => !design.DesignData.ContainsName(_designFilter),
+            5               => !_designFilter.IsContained(design.Color.Length == 0 ? DesignColors.AutomaticName : design.Color),
+            2 + EmptyOffset => design.AssociatedMods.Count > 0,
+            3 + EmptyOffset => design.Tags.Length > 0,
+            _               => false, // Should never happen
         };
     }
 
