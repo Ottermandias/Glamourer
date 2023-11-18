@@ -13,7 +13,6 @@ using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
-using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Structs;
 using ImGuiNET;
@@ -24,37 +23,11 @@ using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class DesignPanel
+public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer _customizationDrawer, DesignManager _manager,
+    ObjectManager _objects, StateManager _state, EquipmentDrawer _equipmentDrawer, ModAssociationsTab _modAssociations,
+    DesignDetailTab _designDetails, DesignConverter _converter, DatFileService _datFileService, MultiDesignPanel _multiDesignPanel)
 {
-    private readonly ObjectManager            _objects;
-    private readonly DesignFileSystemSelector _selector;
-    private readonly DesignManager            _manager;
-    private readonly CustomizationDrawer      _customizationDrawer;
-    private readonly StateManager             _state;
-    private readonly EquipmentDrawer          _equipmentDrawer;
-    private readonly CustomizationService     _customizationService;
-    private readonly ModAssociationsTab       _modAssociations;
-    private readonly DesignDetailTab          _designDetails;
-    private readonly DesignConverter          _converter;
-    private readonly DatFileService           _datFileService;
-    private readonly FileDialogManager        _fileDialog = new();
-
-    public DesignPanel(DesignFileSystemSelector selector, CustomizationDrawer customizationDrawer, DesignManager manager, ObjectManager objects,
-        StateManager state, EquipmentDrawer equipmentDrawer, CustomizationService customizationService, ModAssociationsTab modAssociations,
-        DesignDetailTab designDetails, DesignConverter converter, DatFileService datFileService)
-    {
-        _selector             = selector;
-        _customizationDrawer  = customizationDrawer;
-        _manager              = manager;
-        _objects              = objects;
-        _state                = state;
-        _equipmentDrawer      = equipmentDrawer;
-        _customizationService = customizationService;
-        _modAssociations      = modAssociations;
-        _designDetails        = designDetails;
-        _converter            = converter;
-        _datFileService       = datFileService;
-    }
+    private readonly FileDialogManager _fileDialog = new();
 
     private HeaderDrawer.Button LockButton()
         => _selector.Selected == null
@@ -88,10 +61,10 @@ public class DesignPanel
         => new()
         {
             Description = "Undo the last change if you accidentally overwrote your design with a different one.",
-            Icon     = FontAwesomeIcon.Undo,
-            OnClick  = UndoOverwrite,
-            Visible  = _selector.Selected != null,
-            Disabled = !_manager.CanUndo(_selector.Selected),
+            Icon        = FontAwesomeIcon.Undo,
+            OnClick     = UndoOverwrite,
+            Visible     = _selector.Selected != null,
+            Disabled    = !_manager.CanUndo(_selector.Selected),
         };
 
     private HeaderDrawer.Button ExportToClipboardButton()
@@ -215,7 +188,7 @@ public class DesignPanel
         if (!ImGui.CollapsingHeader("Application Rules"))
             return;
 
-        using (var group1 = ImRaii.Group())
+        using (var _ = ImRaii.Group())
         {
             var set       = _selector.Selected!.CustomizationSet;
             var available = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender;
@@ -247,13 +220,13 @@ public class DesignPanel
         }
 
         ImGui.SameLine(ImGui.GetContentRegionAvail().X / 2);
-        using (var group2 = ImRaii.Group())
+        using (var _ = ImRaii.Group())
         {
-            void ApplyEquip(string label, EquipFlag all, bool stain, IEnumerable<EquipSlot> slots)
+            void ApplyEquip(string label, EquipFlag allFlags, bool stain, IEnumerable<EquipSlot> slots)
             {
-                var flags = (uint)(all & _selector.Selected!.ApplyEquip);
+                var flags = (uint)(allFlags & _selector.Selected!.ApplyEquip);
 
-                var bigChange = ImGui.CheckboxFlags($"Apply All {label}", ref flags, (uint)all);
+                var bigChange = ImGui.CheckboxFlags($"Apply All {label}", ref flags, (uint)allFlags);
                 if (stain)
                     foreach (var slot in slots)
                     {
@@ -316,7 +289,7 @@ public class DesignPanel
         using var group = ImRaii.Group();
         if (_selector.SelectedPaths.Count > 1)
         {
-            DrawMultiSelection();
+            _multiDesignPanel.Draw();
         }
         else
         {
@@ -336,44 +309,6 @@ public class DesignPanel
         }
 
         _datFileService.CreateSource();
-    }
-
-    private void DrawMultiSelection()
-    {
-        if (_selector.SelectedPaths.Count == 0)
-            return;
-
-        var sizeType             = ImGui.GetFrameHeight();
-        var availableSizePercent = (ImGui.GetContentRegionAvail().X - sizeType - 4 * ImGui.GetStyle().CellPadding.X) / 100;
-        var sizeMods             = availableSizePercent * 35;
-        var sizeFolders          = availableSizePercent * 65;
-
-        ImGui.NewLine();
-        ImGui.TextUnformatted("Currently Selected Objects");
-        ImGui.Separator();
-        using var table = ImRaii.Table("mods", 3, ImGuiTableFlags.RowBg);
-        ImGui.TableSetupColumn("type", ImGuiTableColumnFlags.WidthFixed, sizeType);
-        ImGui.TableSetupColumn("mod",  ImGuiTableColumnFlags.WidthFixed, sizeMods);
-        ImGui.TableSetupColumn("path", ImGuiTableColumnFlags.WidthFixed, sizeFolders);
-
-        var i = 0;
-        foreach (var (fullName, path) in _selector.SelectedPaths.Select(p => (p.FullName(), p))
-                     .OrderBy(p => p.Item1, StringComparer.OrdinalIgnoreCase))
-        {
-            using var id = ImRaii.PushId(i++);
-            ImGui.TableNextColumn();
-            var icon = (path is DesignFileSystem.Leaf ? FontAwesomeIcon.FileCircleMinus : FontAwesomeIcon.FolderMinus).ToIconString();
-            if (ImGuiUtil.DrawDisabledButton(icon, new Vector2(sizeType), "Remove from selection.", false, true))
-                _selector.RemovePathFromMultiselection(path);
-
-            ImGui.TableNextColumn();
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(path is DesignFileSystem.Leaf l ? l.Value.Name : string.Empty);
-
-            ImGui.TableNextColumn();
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(fullName);
-        }
     }
 
     private void DrawPanel()
@@ -426,7 +361,8 @@ public class DesignPanel
         }
         catch (Exception ex)
         {
-            Glamourer.Messager.NotificationMessage(ex, $"Could not undo last changes to {_selector.Selected!.Name}.", NotificationType.Error, false);
+            Glamourer.Messager.NotificationMessage(ex, $"Could not undo last changes to {_selector.Selected!.Name}.", NotificationType.Error,
+                false);
         }
     }
 
@@ -481,7 +417,7 @@ public class DesignPanel
 
     private void DrawSaveToDat()
     {
-        var verified = _datFileService.Verify(_selector.Selected!.DesignData.Customize, out var voice);
+        var verified = _datFileService.Verify(_selector.Selected!.DesignData.Customize, out _);
         var tt = verified
             ? "Export the currently configured customizations of this design to a character creation data file."
             : "The current design contains customizations that can not be applied during character creation.";

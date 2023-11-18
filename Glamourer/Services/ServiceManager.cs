@@ -130,6 +130,7 @@ public static class ServiceManager
             .AddSingleton<CustomizationDrawer>()
             .AddSingleton<EquipmentDrawer>()
             .AddSingleton<DesignFileSystemSelector>()
+            .AddSingleton<MultiDesignPanel>()
             .AddSingleton<DesignPanel>()
             .AddSingleton<DesignTab>()
             .AddSingleton<DesignCombo>()

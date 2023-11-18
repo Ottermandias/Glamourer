@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
@@ -13,27 +12,6 @@ using OtterGui.Raii;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
-
-public sealed class DesignColorCombo : FilterComboCache<string>
-{
-    private readonly DesignColors _designColors;
-
-    public DesignColorCombo(DesignColors designColors)
-        : base(designColors.Keys.OrderBy(k => k).Prepend(DesignColors.AutomaticName), Glamourer.Log)
-        => _designColors = designColors;
-
-    protected override bool DrawSelectable(int globalIdx, bool selected)
-    {
-        var       key   = Items[globalIdx];
-        var       color = globalIdx == 0 ? 0 : _designColors[key];
-        using var c     = ImRaii.PushColor(ImGuiCol.Text, color, color != 0);
-        var       ret   = base.DrawSelectable(globalIdx, selected);
-        if (globalIdx == 0)
-            ImGuiUtil.HoverTooltip(
-                "The automatic color uses the colors dependent on the design state, as defined in the regular color definitions.");
-        return ret;
-    }
-}
 
 public class DesignDetailTab
 {
@@ -61,7 +39,7 @@ public class DesignDetailTab
         _manager     = manager;
         _fileSystem  = fileSystem;
         _colors      = colors;
-        _colorCombo  = new DesignColorCombo(_colors);
+        _colorCombo  = new DesignColorCombo(_colors, false);
     }
 
     public void Draw()
