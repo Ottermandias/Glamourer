@@ -31,7 +31,7 @@ public sealed class CharaFile
             ret.ApplyEquip     = ParseEquipment(items, jObj, ref ret.Data);
             return ret;
         }
-        catch (Exception ex)
+        catch
         {
             return null;
         }
