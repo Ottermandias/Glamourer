@@ -36,7 +36,7 @@ public class ActorPanel
     private readonly DesignConverter     _converter;
     private readonly ObjectManager       _objects;
     private readonly DesignManager       _designManager;
-    private readonly DatFileService      _datFileService;
+    private readonly ImportService       _importService;
     private readonly ICondition          _conditions;
 
     private ActorIdentifier _identifier;
@@ -48,7 +48,7 @@ public class ActorPanel
 
     public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer,
         EquipmentDrawer equipmentDrawer, IdentifierService identification, AutoDesignApplier autoDesignApplier,
-        Configuration config, DesignConverter converter, ObjectManager objects, DesignManager designManager, DatFileService datFileService,
+        Configuration config, DesignConverter converter, ObjectManager objects, DesignManager designManager, ImportService importService,
         ICondition conditions)
     {
         _selector            = selector;
@@ -61,7 +61,7 @@ public class ActorPanel
         _converter           = converter;
         _objects             = objects;
         _designManager       = designManager;
-        _datFileService      = datFileService;
+        _importService       = importService;
         _conditions          = conditions;
     }
 
@@ -81,9 +81,21 @@ public class ActorPanel
         if (_state is not { IsLocked: false })
             return;
 
-        if (_datFileService.CreateImGuiTarget(out var dat))
+        if (_importService.CreateDatTarget(out var dat))
+        {
             _stateManager.ChangeCustomize(_state!, dat.Customize, CustomizeApplicationFlags, StateChanged.Source.Manual);
-        _datFileService.CreateSource();
+            Glamourer.Messager.NotificationMessage($"Applied games .dat file {dat.Description} customizations to {_state.Identifier}.",
+                NotificationType.Success, false);
+        }
+        else if (_importService.CreateCharaTarget(out var designBase, out var name))
+        {
+            _stateManager.ApplyDesign(designBase, _state!, StateChanged.Source.Manual);
+            Glamourer.Messager.NotificationMessage($"Applied Anamnesis .chara file {name} to {_state.Identifier}.", NotificationType.Success,
+                false);
+        }
+
+        _importService.CreateDatSource();
+        _importService.CreateCharaSource();
     }
 
     private void DrawHeader()

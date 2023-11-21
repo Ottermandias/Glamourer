@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Xml.Linq;
 using Dalamud.Interface;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Internal.Notifications;
@@ -25,7 +26,7 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer _customizationDrawer, DesignManager _manager,
     ObjectManager _objects, StateManager _state, EquipmentDrawer _equipmentDrawer, ModAssociationsTab _modAssociations,
-    DesignDetailTab _designDetails, DesignConverter _converter, DatFileService _datFileService, MultiDesignPanel _multiDesignPanel)
+    DesignDetailTab _designDetails, DesignConverter _converter, ImportService _importService, MultiDesignPanel _multiDesignPanel)
 {
     private readonly FileDialogManager _fileDialog = new();
 
@@ -299,16 +300,22 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
             if (_selector.Selected == null || _selector.Selected.WriteProtected())
                 return;
 
-            if (_datFileService.CreateImGuiTarget(out var dat))
+            if (_importService.CreateDatTarget(out var dat))
             {
                 _manager.ChangeCustomize(_selector.Selected!, CustomizeIndex.Clan,   dat.Customize[CustomizeIndex.Clan]);
                 _manager.ChangeCustomize(_selector.Selected!, CustomizeIndex.Gender, dat.Customize[CustomizeIndex.Gender]);
                 foreach (var idx in CustomizationExtensions.AllBasic)
                     _manager.ChangeCustomize(_selector.Selected!, idx, dat.Customize[idx]);
+                Glamourer.Messager.NotificationMessage($"Applied games .dat file {dat.Description} customizations to {_selector.Selected.Name}.", NotificationType.Success, false);
+            }
+            else if (_importService.CreateCharaTarget(out var designBase, out var name))
+            {
+                _manager.ApplyDesign(_selector.Selected!, designBase);
+                Glamourer.Messager.NotificationMessage($"Applied Anamnesis .chara file {name} to {_selector.Selected.Name}.", NotificationType.Success, false);
             }
         }
 
-        _datFileService.CreateSource();
+        _importService.CreateDatSource();
     }
 
     private void DrawPanel()
@@ -417,7 +424,7 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
 
     private void DrawSaveToDat()
     {
-        var verified = _datFileService.Verify(_selector.Selected!.DesignData.Customize, out _);
+        var verified = _importService.Verify(_selector.Selected!.DesignData.Customize, out _);
         var tt = verified
             ? "Export the currently configured customizations of this design to a character creation data file."
             : "The current design contains customizations that can not be applied during character creation.";
@@ -428,7 +435,7 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
             _fileDialog.SaveFileDialog("Save File...", ".dat", "FFXIV_CHARA_01.dat", ".dat", (v, path) =>
             {
                 if (v && _selector.Selected != null)
-                    _datFileService.SaveDesign(path, _selector.Selected!.DesignData.Customize, _selector.Selected!.Name);
+                    _importService.SaveDesignAsDat(path, _selector.Selected!.DesignData.Customize, _selector.Selected!.Name);
             }, startPath);
 
         _fileDialog.Draw();

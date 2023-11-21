@@ -1,39 +1,34 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Dalamud.Interface.DragDrop;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Customization;
+using Glamourer.Designs;
 using Glamourer.Services;
-using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui.Classes;
 
 namespace Glamourer.Interop;
 
-public class DatFileService
+public class ImportService(CustomizationService _customizations, IDragDropManager _dragDropManager, ItemManager _items)
 {
-    private readonly CustomizationService   _customizations;
-    private readonly CustomizeUnlockManager _unlocks;
-    private readonly IDragDropManager       _dragDropManager;
-
-    public DatFileService(CustomizationService customizations, CustomizeUnlockManager unlocks, IDragDropManager dragDropManager)
-    {
-        _customizations  = customizations;
-        _unlocks         = unlocks;
-        _dragDropManager = dragDropManager;
-    }
-
-    public void CreateSource()
-    {
-        _dragDropManager.CreateImGuiSource("DatDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".dat"), m =>
+    public void CreateDatSource()
+        => _dragDropManager.CreateImGuiSource("DatDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".dat"), m =>
         {
             ImGui.TextUnformatted($"Dragging {Path.GetFileName(m.Files[0])} to import customizations for Glamourer...");
             return true;
         });
-    }
 
-    public bool CreateImGuiTarget(out DatCharacterFile file)
+    public void CreateCharaSource()
+        => _dragDropManager.CreateImGuiSource("CharaDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".chara"), m =>
+        {
+            ImGui.TextUnformatted($"Dragging {Path.GetFileName(m.Files[0])} to import Anamnesis data for Glamourer...");
+            return true;
+        });
+
+    public bool CreateDatTarget(out DatCharacterFile file)
     {
         if (!_dragDropManager.CreateImGuiTarget("DatDragger", out var files, out _) || files.Count != 1)
         {
@@ -41,10 +36,52 @@ public class DatFileService
             return false;
         }
 
-        return LoadDesign(files[0], out file);
+        return LoadDat(files[0], out file);
     }
 
-    public bool LoadDesign(string path, out DatCharacterFile file)
+    public bool CreateCharaTarget([NotNullWhen(true)] out DesignBase? design, out string name)
+    {
+        if (!_dragDropManager.CreateImGuiTarget("CharaDragger", out var files, out _) || files.Count != 1)
+        {
+            design = null;
+            name   = string.Empty;
+            return false;
+        }
+
+        return LoadChara(files[0], out design, out name);
+    }
+
+    public bool LoadChara(string path, [NotNullWhen(true)] out DesignBase? design, out string name)
+    {
+        if (!File.Exists(path))
+        {
+            design = null;
+            name   = string.Empty;
+            return false;
+        }
+
+        try
+        {
+            var text = File.ReadAllText(path);
+            var file = CharaFile.CharaFile.ParseData(_items, text, Path.GetFileNameWithoutExtension(path));
+            if (file == null)
+                throw new Exception();
+
+            name   = file.Name;
+            design = new DesignBase(_customizations, file.Data, file.ApplyEquip, file.ApplyCustomize);
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Messager.NotificationMessage(ex, $"Could not read .chara file {path}.", NotificationType.Error);
+            design = null;
+            name   = string.Empty;
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool LoadDat(string path, out DatCharacterFile file)
     {
         if (!File.Exists(path))
         {
@@ -70,7 +107,7 @@ public class DatFileService
         return true;
     }
 
-    public bool SaveDesign(string path, in Customize input, string description)
+    public bool SaveDesignAsDat(string path, in Customize input, string description)
     {
         if (!Verify(input, out var voice))
             return false;

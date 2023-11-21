@@ -96,7 +96,7 @@ public static class ServiceManager
             .AddSingleton<JobService>()
             .AddSingleton<CustomizeUnlockManager>()
             .AddSingleton<ItemUnlockManager>()
-            .AddSingleton<DatFileService>()
+            .AddSingleton<ImportService>()
             .AddSingleton<InventoryService>()
             .AddSingleton<ContextMenuService>()
             .AddSingleton<ScalingService>();

@@ -50,7 +50,7 @@ public unsafe class DebugTab : ITab
     private readonly ObjectManager          _objectManager;
     private readonly GlamourerIpc           _ipc;
     private readonly CodeService            _code;
-    private readonly DatFileService         _datFileService;
+    private readonly ImportService         _importService;
 
     private readonly ItemManager            _items;
     private readonly ActorService           _actors;
@@ -81,7 +81,7 @@ public unsafe class DebugTab : ITab
         DesignFileSystem designFileSystem, DesignManager designManager, StateManager state, Configuration config,
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
         AutoDesignManager autoDesignManager, JobService jobs, CodeService code, CustomizeUnlockManager customizeUnlocks,
-        ItemUnlockManager itemUnlocks, DesignConverter designConverter, DatFileService datFileService, InventoryService inventoryService,
+        ItemUnlockManager itemUnlocks, DesignConverter designConverter, ImportService importService, InventoryService inventoryService,
         HumanModelList humans, FunModule funModule)
     {
         _changeCustomizeService = changeCustomizeService;
@@ -107,7 +107,7 @@ public unsafe class DebugTab : ITab
         _customizeUnlocks       = customizeUnlocks;
         _itemUnlocks            = itemUnlocks;
         _designConverter        = designConverter;
-        _datFileService         = datFileService;
+        _importService         = importService;
         _inventoryService       = inventoryService;
         _humans                 = humans;
         _funModule              = funModule;
@@ -284,10 +284,10 @@ public unsafe class DebugTab : ITab
         ImGui.InputTextWithHint("##datFilePath", "Dat File Path...", ref _datFilePath, 256);
         var exists = _datFilePath.Length > 0 && File.Exists(_datFilePath);
         if (ImGuiUtil.DrawDisabledButton("Load##Dat", Vector2.Zero, string.Empty, !exists))
-            _datFile = _datFileService.LoadDesign(_datFilePath, out var tmp) ? tmp : null;
+            _datFile = _importService.LoadDat(_datFilePath, out var tmp) ? tmp : null;
 
         if (ImGuiUtil.DrawDisabledButton("Save##Dat", Vector2.Zero, string.Empty, _datFilePath.Length == 0 || _datFile == null))
-            _datFileService.SaveDesign(_datFilePath, _datFile!.Value.Customize, _datFile!.Value.Description);
+            _importService.SaveDesignAsDat(_datFilePath, _datFile!.Value.Customize, _datFile!.Value.Description);
 
         if (_datFile != null)
         {

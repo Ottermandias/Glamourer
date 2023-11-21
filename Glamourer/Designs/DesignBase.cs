@@ -32,6 +32,16 @@ public class DesignBase
         CustomizationSet = SetCustomizationSet(customize);
     }
 
+    internal DesignBase(CustomizationService customize, in DesignData designData, EquipFlag equipFlags, CustomizeFlag customizeFlags)
+    {
+        _designData      = designData;
+        ApplyCustomize   = customizeFlags & CustomizeFlagExtensions.AllRelevant;
+        ApplyEquip       = equipFlags & EquipFlagExtensions.All;
+        _designFlags     = 0;
+        CustomizationSet = SetCustomizationSet(customize);
+
+    }
+
     internal DesignBase(DesignBase clone)
     {
         _designData      = clone._designData;
