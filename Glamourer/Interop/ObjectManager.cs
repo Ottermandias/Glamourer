@@ -54,20 +54,11 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
         _allWorldIdentifiers.Clear();
         _nonOwnedIdentifiers.Clear();
 
-        for (var i = 0; i < (int)ScreenActor.CutsceneStart; ++i)
+        for (var i = 0; i < (int)ScreenActor.CutsceneEnd; ++i)
         {
             Actor character = _objects.GetObjectAddress(i);
             if (character.Identifier(_actors.AwaitedService, out var identifier))
                 HandleIdentifier(identifier, character);
-        }
-
-        for (var i = (int)ScreenActor.CutsceneStart; i < (int)ScreenActor.CutsceneEnd; ++i)
-        {
-            Actor character = _objects.GetObjectAddress(i);
-            if (!character.Valid)
-                break;
-
-            HandleIdentifier(character.GetIdentifier(_actors.AwaitedService), character);
         }
 
         void AddSpecial(ScreenActor idx, string label)
