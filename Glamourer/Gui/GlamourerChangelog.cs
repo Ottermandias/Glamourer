@@ -23,6 +23,7 @@ public class GlamourerChangelog
         Add1_0_3_0(Changelog);
         Add1_0_4_0(Changelog);
         Add1_0_5_0(Changelog);
+        Add1_0_6_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -42,6 +43,34 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_0_6_0(Changelog log)
+        => log.NextVersion("Version 1.0.6.0")
+            .RegisterHighlight("Added the option to define custom color groups and associate designs with them.")
+            .RegisterEntry("You can create and name design colors in Settings -> Colors -> Custom Design Colors.", 1)
+            .RegisterEntry(
+                "By default, all designs have an automatic coloring corresponding to the current system, that chooses a color dynamically based on application rules.",
+                1)
+            .RegisterEntry(
+                "Example: You create a custom color named 'Test' and make it bright blue. Now you assign 'Test' to some design in its Design Details, and it will always display bright blue in the design list.",
+                1)
+            .RegisterEntry("Design colors are stored by name. If a color can not be found, the design will display the Missing Color instead.",
+                1)
+            .RegisterEntry("You can filter for designs using specific colors via c:", 1)
+            .RegisterHighlight(
+                "You can now filter for the special case 'None' for filters where that makes sense (like Tags or Mod Associations).")
+            .RegisterHighlight(
+                "When selecting multiple designs, you can now add or remove tags from them at once, and set their colors at once.")
+            .RegisterEntry("Improved tri-state checkboxes. The colors of the new symbols can be changed in Color Settings.")
+            .RegisterEntry("Removed half-baked localization of customization names and fixed some names in application rules.")
+            .RegisterEntry("Improved Brio compatibility")
+            .RegisterEntry("Fixed some display issues with text color on locked designs.")
+            .RegisterEntry("Fixed issues with automatic design color display for customization-only designs.")
+            .RegisterEntry("Removed borders from the quick design window regardless of custom styling.")
+            .RegisterEntry("Improved handling of (un)available customization options.")
+            .RegisterEntry(
+                "Some configuration like the currently selected tab states are now stored in a separate file that is not backed up and saved less often.")
+            .RegisterEntry("Added option to open the Glamourer main window at game start independently of Debug Mode.");
 
     private static void Add1_0_5_0(Changelog log)
         => log.NextVersion("Version 1.0.5.0")
