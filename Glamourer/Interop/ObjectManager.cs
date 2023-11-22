@@ -64,7 +64,10 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
         for (var i = (int)ScreenActor.CutsceneStart; i < (int)ScreenActor.CutsceneEnd; ++i)
         {
             Actor character = _objects.GetObjectAddress(i);
-            if (!character.Valid)
+            // Technically the game does not create holes in cutscenes or GPose.
+            // But for Brio compatibility, we allow holes in GPose.
+            // Since GPose always has the event actor in the first cutscene slot, we can still optimize in this case.
+            if (!character.Valid && i == (int)ScreenActor.CutsceneStart)
                 break;
 
             HandleIdentifier(character.GetIdentifier(_actors.AwaitedService), character);
