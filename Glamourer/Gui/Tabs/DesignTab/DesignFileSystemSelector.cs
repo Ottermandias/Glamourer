@@ -118,6 +118,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
             case DesignChanged.Type.ApplyCustomize:
             case DesignChanged.Type.ApplyEquip:
             case DesignChanged.Type.ApplyStain:
+            case DesignChanged.Type.ApplyCrest:
             case DesignChanged.Type.Customize:
             case DesignChanged.Type.Equip:
             case DesignChanged.Type.ChangedColor:

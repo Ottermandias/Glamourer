@@ -99,11 +99,11 @@ public class StateApplier
     }
 
     /// <summary>
-    /// Change a single piece of armor and/or stain depending on slot.
+    /// Change a single piece of armor and/or stain and/or crest visibility depending on slot.
     /// This uses the current customization of the model to potentially prevent restricted gear types from appearing.
     /// This never requires redrawing.
     /// </summary>
-    public void ChangeArmor(ActorData data, EquipSlot slot, CharacterArmor armor, bool checkRestrictions, bool isHatVisible = true)
+    public void ChangeArmor(ActorData data, EquipSlot slot, CharacterArmor armor, bool crest, bool checkRestrictions, bool isHatVisible = true)
     {
         if (slot is EquipSlot.Head && !isHatVisible)
             return;
@@ -118,11 +118,11 @@ public class StateApplier
             {
                 var customize = mdl.GetCustomize();
                 var (_, resolvedItem) = _items.ResolveRestrictedGear(armor, slot, customize.Race, customize.Gender);
-                _updateSlot.UpdateSlot(actor.Model, slot, resolvedItem);
+                _updateSlot.UpdateSlot(actor.Model, slot, resolvedItem, crest);
             }
             else
             {
-                _updateSlot.UpdateSlot(actor.Model, slot, armor);
+                _updateSlot.UpdateSlot(actor.Model, slot, armor, crest);
             }
         }
     }
@@ -133,7 +133,7 @@ public class StateApplier
         // If the source is not IPC we do not want to apply restrictions.
         var data = GetData(state);
         if (apply)
-            ChangeArmor(data, slot, state.ModelData.Armor(slot), state[slot, false] is not StateChanged.Source.Ipc,
+            ChangeArmor(data, slot, state.ModelData.Armor(slot), state.ModelData.Crest(slot), state[slot, ActorState.EquipField.Item] is not StateChanged.Source.Ipc,
                 state.ModelData.IsHatVisible());
 
         return data;
@@ -175,13 +175,47 @@ public class StateApplier
     }
 
 
+    /// <summary>
+    /// Change the crest visibility of a single piece of armor or weapon.
+    /// </summary>
+    public void ChangeCrest(ActorData data, EquipSlot slot, bool visible)
+    {
+        var idx = slot.ToIndex();
+        switch (idx)
+        {
+            case < 10:
+                foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
+                    _updateSlot.UpdateCrest(actor.Model, slot, visible);
+                break;
+            case 10:
+                foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
+                    _weapon.UpdateCrest(actor, EquipSlot.MainHand, visible);
+                break;
+            case 11:
+                foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
+                    _weapon.UpdateCrest(actor, EquipSlot.OffHand, visible);
+                break;
+        }
+    }
+
+    /// <inheritdoc cref="ChangeCrest(ActorData,EquipSlot,bool)"/>
+    public ActorData ChangeCrest(ActorState state, EquipSlot slot, bool apply)
+    {
+        var data = GetData(state);
+        if (apply)
+            ChangeCrest(data, slot, state.ModelData.Crest(slot));
+
+        return data;
+    }
+
+
     /// <summary> Apply a weapon to the appropriate slot. </summary>
-    public void ChangeWeapon(ActorData data, EquipSlot slot, EquipItem item, StainId stain)
+    public void ChangeWeapon(ActorData data, EquipSlot slot, EquipItem item, StainId stain, bool crest)
     {
         if (slot is EquipSlot.MainHand)
-            ChangeMainhand(data, item, stain);
+            ChangeMainhand(data, item, stain, crest);
         else
-            ChangeOffhand(data, item, stain);
+            ChangeOffhand(data, item, stain, crest);
     }
 
     /// <inheritdoc cref="ChangeWeapon(ActorData,EquipSlot,EquipItem,StainId)"/>
@@ -192,7 +226,7 @@ public class StateApplier
             data = data.OnlyGPose();
 
         if (apply)
-            ChangeWeapon(data, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot));
+            ChangeWeapon(data, slot, state.ModelData.Item(slot), state.ModelData.Stain(slot), state.ModelData.Crest(slot));
 
         return data;
     }
@@ -200,19 +234,19 @@ public class StateApplier
     /// <summary>
     /// Apply a weapon to the mainhand. If the weapon type has no associated offhand type, apply both.
     /// </summary>
-    public void ChangeMainhand(ActorData data, EquipItem weapon, StainId stain)
+    public void ChangeMainhand(ActorData data, EquipItem weapon, StainId stain, bool crest)
     {
         var slot = weapon.Type.ValidOffhand() == FullEquipType.Unknown ? EquipSlot.BothHand : EquipSlot.MainHand;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-            _weapon.LoadWeapon(actor, slot, weapon.Weapon().With(stain));
+            _weapon.LoadWeapon(actor, slot, weapon.Weapon().With(stain), crest);
     }
 
     /// <summary> Apply a weapon to the offhand. </summary>
-    public void ChangeOffhand(ActorData data, EquipItem weapon, StainId stain)
+    public void ChangeOffhand(ActorData data, EquipItem weapon, StainId stain, bool crest)
     {
         stain = weapon.ModelId.Id == 0 ? 0 : stain;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-            _weapon.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stain));
+            _weapon.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stain), crest);
     }
 
     /// <summary> Change the visor state of actors only on the draw object. </summary>

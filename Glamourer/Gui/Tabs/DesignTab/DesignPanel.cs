@@ -28,6 +28,8 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
     ObjectManager _objects, StateManager _state, EquipmentDrawer _equipmentDrawer, ModAssociationsTab _modAssociations,
     DesignDetailTab _designDetails, DesignConverter _converter, ImportService _importService, MultiDesignPanel _multiDesignPanel)
 {
+    private static readonly EquipSlot[] CrestSlots = EquipSlotExtensions.FullSlots.Where(EquipmentDrawer.CanHaveCrest).ToArray();
+
     private readonly FileDialogManager _fileDialog = new();
 
     private HeaderDrawer.Button LockButton()
@@ -95,23 +97,28 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
         var usedAllStain = _equipmentDrawer.DrawAllStain(out var newAllStain, _selector.Selected!.WriteProtected());
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var changes = _equipmentDrawer.DrawEquip(slot, _selector.Selected!.DesignData, out var newArmor, out var newStain,
-                _selector.Selected.ApplyEquip, out var newApply, out var newApplyStain, _selector.Selected!.WriteProtected());
+            var changes = _equipmentDrawer.DrawEquip(slot, _selector.Selected!.DesignData, out var newArmor, out var newStain, out var newCrest,
+                _selector.Selected.ApplyEquip, out var newApply, out var newApplyStain, out var newApplyCrest, _selector.Selected!.WriteProtected());
             if (changes.HasFlag(DataChange.Item))
                 _manager.ChangeEquip(_selector.Selected, slot, newArmor);
             if (changes.HasFlag(DataChange.Stain))
                 _manager.ChangeStain(_selector.Selected, slot, newStain);
             else if (usedAllStain)
                 _manager.ChangeStain(_selector.Selected, slot, newAllStain);
+            if (changes.HasFlag(DataChange.Crest))
+                _manager.ChangeCrest(_selector.Selected, slot, newCrest);
             if (changes.HasFlag(DataChange.ApplyItem))
                 _manager.ChangeApplyEquip(_selector.Selected, slot, newApply);
             if (changes.HasFlag(DataChange.ApplyStain))
                 _manager.ChangeApplyStain(_selector.Selected, slot, newApplyStain);
+            if (changes.HasFlag(DataChange.ApplyCrest))
+                _manager.ChangeApplyCrest(_selector.Selected, slot, newApplyCrest);
         }
 
         var weaponChanges = _equipmentDrawer.DrawWeapons(_selector.Selected!.DesignData, out var newMainhand, out var newOffhand,
-            out var newMainhandStain, out var newOffhandStain, _selector.Selected.ApplyEquip, true, out var applyMain, out var applyMainStain,
-            out var applyOff, out var applyOffStain, _selector.Selected!.WriteProtected());
+            out var newMainhandStain, out var newOffhandStain, out var newMainhandCrest, out var newOffhandCrest,
+            _selector.Selected.ApplyEquip, true, out var applyMain, out var applyMainStain, out var applyMainCrest,
+            out var applyOff, out var applyOffStain, out var applyOffCrest, _selector.Selected!.WriteProtected());
 
         if (weaponChanges.HasFlag(DataChange.Item))
             _manager.ChangeWeapon(_selector.Selected, EquipSlot.MainHand, newMainhand);
@@ -119,20 +126,28 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
             _manager.ChangeStain(_selector.Selected, EquipSlot.MainHand, newMainhandStain);
         else if (usedAllStain)
             _manager.ChangeStain(_selector.Selected, EquipSlot.MainHand, newAllStain);
+        if (weaponChanges.HasFlag(DataChange.Crest))
+            _manager.ChangeCrest(_selector.Selected, EquipSlot.MainHand, newMainhandCrest);
         if (weaponChanges.HasFlag(DataChange.ApplyItem))
             _manager.ChangeApplyEquip(_selector.Selected, EquipSlot.MainHand, applyMain);
         if (weaponChanges.HasFlag(DataChange.ApplyStain))
             _manager.ChangeApplyStain(_selector.Selected, EquipSlot.MainHand, applyMainStain);
+        if (weaponChanges.HasFlag(DataChange.ApplyCrest))
+            _manager.ChangeApplyCrest(_selector.Selected, EquipSlot.MainHand, applyMainCrest);
         if (weaponChanges.HasFlag(DataChange.Item2))
             _manager.ChangeWeapon(_selector.Selected, EquipSlot.OffHand, newOffhand);
         if (weaponChanges.HasFlag(DataChange.Stain2))
             _manager.ChangeStain(_selector.Selected, EquipSlot.OffHand, newOffhandStain);
         else if (usedAllStain)
             _manager.ChangeStain(_selector.Selected, EquipSlot.OffHand, newAllStain);
+        if (weaponChanges.HasFlag(DataChange.Crest2))
+            _manager.ChangeCrest(_selector.Selected, EquipSlot.OffHand, newOffhandCrest);
         if (weaponChanges.HasFlag(DataChange.ApplyItem2))
             _manager.ChangeApplyEquip(_selector.Selected, EquipSlot.OffHand, applyOff);
         if (weaponChanges.HasFlag(DataChange.ApplyStain2))
             _manager.ChangeApplyStain(_selector.Selected, EquipSlot.OffHand, applyOffStain);
+        if (weaponChanges.HasFlag(DataChange.ApplyCrest2))
+            _manager.ChangeApplyCrest(_selector.Selected, EquipSlot.OffHand, applyOffCrest);
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
         DrawEquipmentMetaToggles();
@@ -223,42 +238,58 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
         ImGui.SameLine(ImGui.GetContentRegionAvail().X / 2);
         using (var _ = ImRaii.Group())
         {
-            void ApplyEquip(string label, EquipFlag allFlags, bool stain, IEnumerable<EquipSlot> slots)
+            void ApplyEquip(string label, EquipFlag allFlags, ActorState.EquipField equipField, IEnumerable<EquipSlot> slots)
             {
-                var flags = (uint)(allFlags & _selector.Selected!.ApplyEquip);
+                // The flags we may edit with a single "big change" checkbox will always fit in a uint, but the whole bitfield doesn't
+                var shift = (int)equipField;
+                var flags = (uint)((ulong)(allFlags & _selector.Selected!.ApplyEquip) >> shift);
 
-                var bigChange = ImGui.CheckboxFlags($"Apply All {label}", ref flags, (uint)allFlags);
-                if (stain)
-                    foreach (var slot in slots)
-                    {
-                        var apply = bigChange ? ((EquipFlag)flags).HasFlag(slot.ToStainFlag()) : _selector.Selected!.DoApplyStain(slot);
-                        if (ImGui.Checkbox($"Apply {slot.ToName()} Dye", ref apply) || bigChange)
-                            _manager.ChangeApplyStain(_selector.Selected!, slot, apply);
-                    }
-                else
-                    foreach (var slot in slots)
-                    {
-                        var apply = bigChange ? ((EquipFlag)flags).HasFlag(slot.ToFlag()) : _selector.Selected!.DoApplyEquip(slot);
-                        if (ImGui.Checkbox($"Apply {slot.ToName()}", ref apply) || bigChange)
-                            _manager.ChangeApplyEquip(_selector.Selected!, slot, apply);
-                    }
+                var bigChange = ImGui.CheckboxFlags($"Apply All {label}", ref flags, (uint)((ulong)allFlags >> shift));
+
+                var adjustedFlags = (EquipFlag)((ulong)flags << shift);
+                switch (equipField)
+                {
+                    case ActorState.EquipField.Stain:
+                        foreach (var slot in slots)
+                        {
+                            var apply = bigChange ? adjustedFlags.HasFlag(slot.ToStainFlag()) : _selector.Selected!.DoApplyStain(slot);
+                            if (ImGui.Checkbox($"Apply {slot.ToName()} Dye", ref apply) || bigChange)
+                                _manager.ChangeApplyStain(_selector.Selected!, slot, apply);
+                        }
+                        break;
+                    case ActorState.EquipField.Crest:
+                        foreach (var slot in slots)
+                        {
+                            var apply = bigChange ? adjustedFlags.HasFlag(slot.ToCrestFlag()) : _selector.Selected!.DoApplyCrest(slot);
+                            if (ImGui.Checkbox($"Apply {slot.ToName()} Crest Visibility", ref apply) || bigChange)
+                                _manager.ChangeApplyCrest(_selector.Selected!, slot, apply);
+                        }
+                        break;
+                    default:
+                        foreach (var slot in slots)
+                        {
+                            var apply = bigChange ? adjustedFlags.HasFlag(slot.ToFlag()) : _selector.Selected!.DoApplyEquip(slot);
+                            if (ImGui.Checkbox($"Apply {slot.ToName()}", ref apply) || bigChange)
+                                _manager.ChangeApplyEquip(_selector.Selected!, slot, apply);
+                        }
+                        break;
+                }
             }
 
-            ApplyEquip("Weapons", AutoDesign.WeaponFlags, false, new[]
-            {
-                EquipSlot.MainHand,
-                EquipSlot.OffHand,
-            });
+            ApplyEquip("Weapons", AutoDesign.WeaponFlags, ActorState.EquipField.Item, EquipSlotExtensions.WeaponSlots);
 
             ImGui.NewLine();
-            ApplyEquip("Armor", AutoDesign.ArmorFlags, false, EquipSlotExtensions.EquipmentSlots);
+            ApplyEquip("Armor", AutoDesign.ArmorFlags, ActorState.EquipField.Item, EquipSlotExtensions.EquipmentSlots);
 
             ImGui.NewLine();
-            ApplyEquip("Accessories", AutoDesign.AccessoryFlags, false, EquipSlotExtensions.AccessorySlots);
+            ApplyEquip("Accessories", AutoDesign.AccessoryFlags, ActorState.EquipField.Item, EquipSlotExtensions.AccessorySlots);
 
             ImGui.NewLine();
-            ApplyEquip("Dyes", AutoDesign.StainFlags, true,
+            ApplyEquip("Dyes", AutoDesign.StainFlags, ActorState.EquipField.Stain,
                 EquipSlotExtensions.FullSlots);
+
+            ImGui.NewLine();
+            ApplyEquip("Crest Visibilities", AutoDesign.RelevantCrestFlags, ActorState.EquipField.Crest, CrestSlots);
 
             ImGui.NewLine();
             const uint all = 0x0Fu;

@@ -17,7 +17,7 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Gui;
 
 [Flags]
-public enum DataChange : byte
+public enum DataChange : ushort
 {
     None        = 0x00,
     Item        = 0x01,
@@ -28,6 +28,10 @@ public enum DataChange : byte
     Stain2      = 0x20,
     ApplyItem2  = 0x40,
     ApplyStain2 = 0x80,
+    Crest       = 0x100,
+    ApplyCrest  = 0x200,
+    Crest2      = 0x400,
+    ApplyCrest2 = 0x800,
 }
 
 public static class UiHelpers

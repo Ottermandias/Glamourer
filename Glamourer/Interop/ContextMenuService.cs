@@ -119,14 +119,14 @@ public class ContextMenuService : IDisposable
                 return;
 
             var slot = item.Type.ToSlot();
-            _state.ChangeEquip(state, slot, item, 0, StateChanged.Source.Manual);
+            _state.ChangeEquip(state, slot, item, 0, false, StateChanged.Source.Manual);
             if (item.Type.ValidOffhand().IsOffhandType())
             {
                 if (item.ModelId.Id is > 1600 and < 1651
                  && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.Hands, out var gauntlets))
-                    _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, 0, StateChanged.Source.Manual);
+                    _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, 0, false, StateChanged.Source.Manual);
                 if (_items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
-                    _state.ChangeEquip(state, EquipSlot.OffHand, offhand, 0, StateChanged.Source.Manual);
+                    _state.ChangeEquip(state, EquipSlot.OffHand, offhand, 0, false, StateChanged.Source.Manual);
             }
         };
     }
@@ -143,14 +143,14 @@ public class ContextMenuService : IDisposable
                 return;
 
             var slot = item.Type.ToSlot();
-            _state.ChangeEquip(state, slot, item, 0, StateChanged.Source.Manual);
+            _state.ChangeEquip(state, slot, item, 0, false, StateChanged.Source.Manual);
             if (item.Type.ValidOffhand().IsOffhandType())
             {
                 if (item.ModelId.Id is > 1600 and < 1651
                  && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.Hands, out var gauntlets))
-                    _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, 0, StateChanged.Source.Manual);
+                    _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, 0, false, StateChanged.Source.Manual);
                 if (_items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
-                    _state.ChangeEquip(state, EquipSlot.OffHand, offhand, 0, StateChanged.Source.Manual);
+                    _state.ChangeEquip(state, EquipSlot.OffHand, offhand, 0, false, StateChanged.Source.Manual);
             }
         };
     }

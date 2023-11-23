@@ -446,6 +446,31 @@ public class DesignManager
         _event.Invoke(DesignChanged.Type.ApplyStain, design, slot);
     }
 
+    /// <summary> Change the crest visibility for any equipment piece. </summary>
+    public void ChangeCrest(Design design, EquipSlot slot, bool crest)
+    {
+        var oldCrest = design.DesignData.Crest(slot);
+        if (!design.GetDesignDataRef().SetCrest(slot, crest))
+            return;
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set crest visibility of {slot} equipment piece to {crest}.");
+        _event.Invoke(DesignChanged.Type.Crest, design, (oldCrest, crest, slot));
+    }
+
+    /// <summary> Change whether to apply a specific crest visibility. </summary>
+    public void ChangeApplyCrest(Design design, EquipSlot slot, bool value)
+    {
+        if (!design.SetApplyCrest(slot, value))
+            return;
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set applying of crest visibility of {slot} equipment piece to {value}.");
+        _event.Invoke(DesignChanged.Type.ApplyCrest, design, slot);
+    }
+
     /// <summary> Change the bool value of one of the meta flags. </summary>
     public void ChangeMeta(Design design, ActorState.MetaIndex metaIndex, bool value)
     {
@@ -514,6 +539,9 @@ public class DesignManager
 
                 if (other.DoApplyStain(slot))
                     ChangeStain(design, slot, other.DesignData.Stain(slot));
+
+                if (other.DoApplyCrest(slot))
+                    ChangeCrest(design, slot, other.DesignData.Crest(slot));
             }
         }
 
@@ -528,6 +556,12 @@ public class DesignManager
 
         if (other.DoApplyStain(EquipSlot.OffHand))
             ChangeStain(design, EquipSlot.OffHand, other.DesignData.Stain(EquipSlot.OffHand));
+
+        if (other.DoApplyCrest(EquipSlot.MainHand))
+            ChangeCrest(design, EquipSlot.MainHand, other.DesignData.Crest(EquipSlot.MainHand));
+
+        if (other.DoApplyCrest(EquipSlot.OffHand))
+            ChangeCrest(design, EquipSlot.OffHand, other.DesignData.Crest(EquipSlot.OffHand));
     }
 
     public void UndoDesignChange(Design design)

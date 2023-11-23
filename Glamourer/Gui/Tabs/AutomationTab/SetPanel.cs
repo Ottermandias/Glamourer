@@ -141,8 +141,8 @@ public class SetPanel
     {
         var (numCheckboxes, numSpacing) = (_config.ShowAllAutomatedApplicationRules, _config.ShowUnlockedItemWarnings) switch
         {
-            (true, true)   => (9, 14),
-            (true, false)  => (7, 10),
+            (true, true)   => (10, 15),
+            (true, false)  => (8, 11),
             (false, true)  => (4, 4),
             (false, false) => (2, 0),
         };
@@ -173,7 +173,7 @@ public class SetPanel
             ImGui.TableSetupColumn("Design", ImGuiTableColumnFlags.WidthFixed, 220 * ImGuiHelpers.GlobalScale);
             if (_config.ShowAllAutomatedApplicationRules)
                 ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed,
-                    6 * ImGui.GetFrameHeight() + 10 * ImGuiHelpers.GlobalScale);
+                    7 * ImGui.GetFrameHeight() + 11 * ImGuiHelpers.GlobalScale);
             else
                 ImGui.TableSetupColumn("Use", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
         }
@@ -182,7 +182,7 @@ public class SetPanel
             ImGui.TableSetupColumn("Design / Job Restrictions", ImGuiTableColumnFlags.WidthFixed, 250 * ImGuiHelpers.GlobalScale);
             if (_config.ShowAllAutomatedApplicationRules)
                 ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed,
-                    3 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
+                    4 * ImGui.GetFrameHeight() + 5 * ImGuiHelpers.GlobalScale);
             else
                 ImGui.TableSetupColumn("Use", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
         }
@@ -383,14 +383,16 @@ public class SetPanel
             Box(0);
             ImGui.SameLine();
             Box(1);
+            ImGui.SameLine();
+            Box(2);
             if (singleLine)
                 ImGui.SameLine();
 
-            Box(2);
-            ImGui.SameLine();
             Box(3);
             ImGui.SameLine();
             Box(4);
+            ImGui.SameLine();
+            Box(5);
         }
 
         _manager.ChangeApplicationType(set, autoDesignIndex, newType);
@@ -424,6 +426,7 @@ public class SetPanel
         (AutoDesign.Type.Armor, "Apply all armor piece changes that are enabled in this design and that are valid in a fixed design."),
         (AutoDesign.Type.Accessories, "Apply all accessory changes that are enabled in this design and that are valid in a fixed design."),
         (AutoDesign.Type.Stains, "Apply all dye changes that are enabled in this design."),
+        (AutoDesign.Type.Crests, "Apply all crest visibility changes that are enabled in this design."),
         (AutoDesign.Type.Weapons, "Apply all weapon changes that are enabled in this design and that are valid with the current weapon worn."),
     };
 

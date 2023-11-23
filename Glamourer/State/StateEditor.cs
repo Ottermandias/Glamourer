@@ -67,8 +67,9 @@ public class StateEditor
             state[ActorState.MetaIndex.VisorState]  = source;
             foreach (var slot in EquipSlotExtensions.FullSlots)
             {
-                state[slot, true]  = source;
-                state[slot, false] = source;
+                state[slot, ActorState.EquipField.Stain] = source;
+                state[slot, ActorState.EquipField.Item]  = source;
+                state[slot, ActorState.EquipField.Crest] = source;
             }
 
             state[CustomizeIndex.Clan]   = source;
@@ -126,7 +127,7 @@ public class StateEditor
         return true;
     }
 
-    /// <summary> Change a single piece of equipment without stain. </summary>
+    /// <summary> Change a single piece of equipment without stain or crest visibility. </summary>
     public bool ChangeItem(ActorState state, EquipSlot slot, EquipItem item, StateChanged.Source source, out EquipItem oldItem, uint key = 0)
     {
         oldItem = state.ModelData.Item(slot);
@@ -144,44 +145,58 @@ public class StateEditor
             _gPose.AddActionOnLeave(() =>
             {
                 if (old.Type == state.BaseData.Item(slot).Type)
-                    ChangeItem(state, slot, old, state[slot, false], out _, key);
+                    ChangeItem(state, slot, old, state[slot, ActorState.EquipField.Item], out _, key);
             });
         }
 
         state.ModelData.SetItem(slot, item);
-        state[slot, false] = source;
+        state[slot, ActorState.EquipField.Item] = source;
         return true;
     }
 
-    /// <summary> Change a single piece of equipment including stain. </summary>
-    public bool ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainId stain, StateChanged.Source source, out EquipItem oldItem,
-        out StainId oldStain, uint key = 0)
+    /// <summary> Change a single piece of equipment including stain and crest visibility. </summary>
+    public bool ChangeEquip(ActorState state, EquipSlot slot, EquipItem? item, StainId? stain, bool? crest, StateChanged.Source source, out EquipItem oldItem,
+        out StainId oldStain, out bool oldCrest, uint key = 0)
     {
         oldItem  = state.ModelData.Item(slot);
         oldStain = state.ModelData.Stain(slot);
+        oldCrest = state.ModelData.Crest(slot);
+
         if (!state.CanUnlock(key))
             return false;
 
         // Can not change weapon type from expected type in state.
-        if (slot is EquipSlot.MainHand && item.Type != state.BaseData.MainhandType
-         || slot is EquipSlot.OffHand && item.Type != state.BaseData.OffhandType)
+        if (item.HasValue && (slot is EquipSlot.MainHand && item.Value.Type != state.BaseData.MainhandType
+         || slot is EquipSlot.OffHand && item.Value.Type != state.BaseData.OffhandType))
         {
             if (!_gPose.InGPose)
                 return false;
 
             var old  = oldItem;
             var oldS = oldStain;
+            var oldC = oldCrest;
             _gPose.AddActionOnLeave(() =>
             {
                 if (old.Type == state.BaseData.Item(slot).Type)
-                    ChangeEquip(state, slot, old, oldS, state[slot, false], out _, out _, key);
+                    ChangeEquip(state, slot, old, oldS, oldC, state[slot, ActorState.EquipField.Item], out _, out _, out _, key);
             });
         }
 
-        state.ModelData.SetItem(slot, item);
-        state.ModelData.SetStain(slot, stain);
-        state[slot, false] = source;
-        state[slot, true]  = source;
+        if (item.HasValue)
+        {
+            state.ModelData.SetItem(slot, item.Value);
+            state[slot, ActorState.EquipField.Item] = source;
+        }
+        if (stain.HasValue)
+        {
+            state.ModelData.SetStain(slot, stain.Value);
+            state[slot, ActorState.EquipField.Stain] = source;
+        }
+        if (crest.HasValue)
+        {
+            state.ModelData.SetCrest(slot, crest.Value);
+            state[slot, ActorState.EquipField.Crest] = source;
+        }
         return true;
     }
 
@@ -193,7 +208,19 @@ public class StateEditor
             return false;
 
         state.ModelData.SetStain(slot, stain);
-        state[slot, true] = source;
+        state[slot, ActorState.EquipField.Stain] = source;
+        return true;
+    }
+
+    /// <summary> Change only the crest visibility of an equipment piece. </summary>
+    public bool ChangeCrest(ActorState state, EquipSlot slot, bool crest, StateChanged.Source source, out bool oldCrest, uint key = 0)
+    {
+        oldCrest = state.ModelData.Crest(slot);
+        if (!state.CanUnlock(key))
+            return false;
+
+        state.ModelData.SetCrest(slot, crest);
+        state[slot, ActorState.EquipField.Crest] = source;
         return true;
     }
 

@@ -333,7 +333,7 @@ public class AutoDesignApplier : IDisposable
                 var item = design.Item(slot);
                 if (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _))
                 {
-                    if (!respectManual || state[slot, false] is not StateChanged.Source.Manual)
+                    if (!respectManual || state[slot, ActorState.EquipField.Item] is not StateChanged.Source.Manual)
                         _state.ChangeItem(state, slot, item, source);
                     totalEquipFlags |= flag;
                 }
@@ -342,9 +342,17 @@ public class AutoDesignApplier : IDisposable
             var stainFlag = slot.ToStainFlag();
             if (equipFlags.HasFlag(stainFlag))
             {
-                if (!respectManual || state[slot, true] is not StateChanged.Source.Manual)
+                if (!respectManual || state[slot, ActorState.EquipField.Stain] is not StateChanged.Source.Manual)
                     _state.ChangeStain(state, slot, design.Stain(slot), source);
                 totalEquipFlags |= stainFlag;
+            }
+
+            var crestFlag = slot.ToCrestFlag();
+            if (equipFlags.HasFlag(crestFlag))
+            {
+                if (!respectManual || state[slot, ActorState.EquipField.Crest] is not StateChanged.Source.Manual)
+                    _state.ChangeCrest(state, slot, design.Crest(slot), source);
+                totalEquipFlags |= crestFlag;
             }
         }
 
@@ -352,7 +360,7 @@ public class AutoDesignApplier : IDisposable
         {
             var item        = design.Item(EquipSlot.MainHand);
             var checkUnlock = !_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _);
-            var checkState  = !respectManual || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual;
+            var checkState  = !respectManual || state[EquipSlot.MainHand, ActorState.EquipField.Item] is not StateChanged.Source.Manual;
             if (checkUnlock && checkState)
             {
                 if (fromJobChange)
@@ -372,7 +380,7 @@ public class AutoDesignApplier : IDisposable
         {
             var item        = design.Item(EquipSlot.OffHand);
             var checkUnlock = !_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _);
-            var checkState  = !respectManual || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual;
+            var checkState  = !respectManual || state[EquipSlot.OffHand, ActorState.EquipField.Item] is not StateChanged.Source.Manual;
             if (checkUnlock && checkState)
             {
                 if (fromJobChange)
@@ -390,16 +398,30 @@ public class AutoDesignApplier : IDisposable
 
         if (equipFlags.HasFlag(EquipFlag.MainhandStain))
         {
-            if (!respectManual || state[EquipSlot.MainHand, true] is not StateChanged.Source.Manual)
+            if (!respectManual || state[EquipSlot.MainHand, ActorState.EquipField.Stain] is not StateChanged.Source.Manual)
                 _state.ChangeStain(state, EquipSlot.MainHand, design.Stain(EquipSlot.MainHand), source);
             totalEquipFlags |= EquipFlag.MainhandStain;
         }
 
+        if (equipFlags.HasFlag(EquipFlag.MainhandCrest))
+        {
+            if (!respectManual || state[EquipSlot.MainHand, ActorState.EquipField.Crest] is not StateChanged.Source.Manual)
+                _state.ChangeCrest(state, EquipSlot.MainHand, design.Crest(EquipSlot.MainHand), source);
+            totalEquipFlags |= EquipFlag.MainhandCrest;
+        }
+
         if (equipFlags.HasFlag(EquipFlag.OffhandStain))
         {
-            if (!respectManual || state[EquipSlot.OffHand, true] is not StateChanged.Source.Manual)
+            if (!respectManual || state[EquipSlot.OffHand, ActorState.EquipField.Stain] is not StateChanged.Source.Manual)
                 _state.ChangeStain(state, EquipSlot.OffHand, design.Stain(EquipSlot.OffHand), source);
             totalEquipFlags |= EquipFlag.OffhandStain;
+        }
+
+        if (equipFlags.HasFlag(EquipFlag.OffhandCrest))
+        {
+            if (!respectManual || state[EquipSlot.OffHand, ActorState.EquipField.Crest] is not StateChanged.Source.Manual)
+                _state.ChangeCrest(state, EquipSlot.OffHand, design.Crest(EquipSlot.OffHand), source);
+            totalEquipFlags |= EquipFlag.OffhandCrest;
         }
     }
 

@@ -143,10 +143,12 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             ret.Customize = model.GetCustomize();
 
             // We can not use the head slot data from the draw object if the hat is hidden.
-            var head     = ret.IsHatVisible() || ignoreHatState ? model.GetArmor(EquipSlot.Head) : actor.GetArmor(EquipSlot.Head);
-            var headItem = _items.Identify(EquipSlot.Head, head.Set, head.Variant);
+            var head      = ret.IsHatVisible() || ignoreHatState ? model.GetArmor(EquipSlot.Head) : actor.GetArmor(EquipSlot.Head);
+            var headCrest = ret.IsHatVisible() || ignoreHatState ? model.GetCrest(EquipSlot.Head) : actor.GetCrest(EquipSlot.Head);
+            var headItem  = _items.Identify(EquipSlot.Head, head.Set, head.Variant);
             ret.SetItem(EquipSlot.Head, headItem);
             ret.SetStain(EquipSlot.Head, head.Stain);
+            ret.SetCrest(EquipSlot.Head, headCrest);
 
             // The other slots can be used from the draw object.
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Skip(1))
@@ -155,6 +157,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
                 var item  = _items.Identify(slot, armor.Set, armor.Variant);
                 ret.SetItem(slot, item);
                 ret.SetStain(slot, armor.Stain);
+                ret.SetCrest(slot, model.GetCrest(slot));
             }
 
             // Weapons use the draw objects of the weapons, but require the game object either way.
@@ -174,6 +177,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
                 var item  = _items.Identify(slot, armor.Set, armor.Variant);
                 ret.SetItem(slot, item);
                 ret.SetStain(slot, armor.Stain);
+                ret.SetCrest(slot, actor.GetCrest(slot));
             }
 
             main = actor.GetMainhand();
@@ -187,8 +191,10 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         var offItem  = _items.Identify(EquipSlot.OffHand,  off.Set,  off.Type,  off.Variant, mainItem.Type);
         ret.SetItem(EquipSlot.MainHand, mainItem);
         ret.SetStain(EquipSlot.MainHand, main.Stain);
+        ret.SetCrest(EquipSlot.MainHand, actor.GetCrest(EquipSlot.MainHand));
         ret.SetItem(EquipSlot.OffHand, offItem);
         ret.SetStain(EquipSlot.OffHand, off.Stain);
+        ret.SetCrest(EquipSlot.OffHand, actor.GetCrest(EquipSlot.OffHand));
 
         // Wetness can technically only be set in GPose or via external tools.
         // It is only available in the game object.
@@ -257,7 +263,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         _event.Invoke(StateChanged.Type.EntireCustomize, source, state, actors, (old, applied));
     }
 
-    /// <summary> Change a single piece of equipment without stain. </summary>
+    /// <summary> Change a single piece of equipment without stain or crest visibility. </summary>
     /// <remarks> Do not use this in the same frame as ChangeStain, use <see cref="ChangeEquip(ActorState,EquipSlot,EquipItem,StainId,StateChanged.Source,uint)"/> instead. </remarks>
     public void ChangeItem(ActorState state, EquipSlot slot, EquipItem item, StateChanged.Source source, uint key = 0)
     {
@@ -274,21 +280,25 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         _event.Invoke(type, source, state, actors, (old, item, slot));
     }
 
-    /// <summary> Change a single piece of equipment including stain. </summary>
-    public void ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainId stain, StateChanged.Source source, uint key = 0)
+    /// <summary> Change a single piece of equipment including stain and crest visibility. </summary>
+    public void ChangeEquip(ActorState state, EquipSlot slot, EquipItem? item, StainId? stain, bool? crest, StateChanged.Source source, uint key = 0)
     {
-        if (!_editor.ChangeEquip(state, slot, item, stain, source, out var old, out var oldStain, key))
+        if (!_editor.ChangeEquip(state, slot, item, stain, crest, source, out var old, out var oldStain, out var oldCrest, key))
             return;
 
         var type = slot.ToIndex() < 10 ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
         var actors = type is StateChanged.Type.Equip
             ? _applier.ChangeArmor(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
             : _applier.ChangeWeapon(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc,
-                item.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
+                (item ?? old).Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}) and its stain from {oldStain.Id} to {stain.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
-        _event.Invoke(type,                    source, state, actors, (old, item, slot));
-        _event.Invoke(StateChanged.Type.Stain, source, state, actors, (oldStain, stain, slot));
+            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {(item ?? old).Name} ({(item ?? old).ItemId}), its stain from {oldStain.Id} to {(stain ?? oldStain).Id} and its crest visibility from {oldCrest} to {crest ?? oldCrest}. [Affecting {actors.ToLazyString("nothing")}.]");
+        if (item.HasValue)
+            _event.Invoke(type,                    source, state, actors, (old, item.Value, slot));
+        if (stain.HasValue)
+            _event.Invoke(StateChanged.Type.Stain, source, state, actors, (oldStain, stain.Value, slot));
+        if (crest.HasValue)
+            _event.Invoke(StateChanged.Type.Crest, source, state, actors, (oldCrest, crest.Value, slot));
     }
 
     /// <summary> Change only the stain of an equipment piece. </summary>
@@ -302,6 +312,19 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old.Id} to {stain.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Stain, source, state, actors, (old, stain, slot));
+    }
+
+    /// <summary> Change only the crest visibility of an equipment piece. </summary>
+    /// <remarks> Do not use this in the same frame as ChangeEquip, use <see cref="ChangeEquip(ActorState,EquipSlot,EquipItem,StainId,StateChanged.Source,uint)"/> instead. </remarks>
+    public void ChangeCrest(ActorState state, EquipSlot slot, bool crest, StateChanged.Source source, uint key = 0)
+    {
+        if (!_editor.ChangeCrest(state, slot, crest, source, out var old, key))
+            return;
+
+        var actors = _applier.ChangeCrest(state, slot, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
+        Glamourer.Log.Verbose(
+            $"Set {slot.ToName()} crest visibility in state {state.Identifier.Incognito(null)} from {old} to {crest}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Crest, source, state, actors, (old, crest, slot));
     }
 
     /// <summary> Change hat visibility. </summary>
@@ -356,15 +379,16 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
     public void ApplyDesign(DesignBase design, ActorState state, StateChanged.Source source, uint key = 0)
     {
-        void HandleEquip(EquipSlot slot, bool applyPiece, bool applyStain)
+        void HandleEquip(EquipSlot slot, bool applyPiece, bool applyStain, bool applyCrest)
         {
-            var unused = (applyPiece, applyStain) switch
+            var unused = (applyPiece, applyStain, applyCrest) switch
             {
-                (false, false) => false,
-                (true, false)  => _editor.ChangeItem(state, slot, design.DesignData.Item(slot), source, out _, key),
-                (false, true)  => _editor.ChangeStain(state, slot, design.DesignData.Stain(slot), source, out _, key),
-                (true, true) => _editor.ChangeEquip(state, slot, design.DesignData.Item(slot), design.DesignData.Stain(slot), source, out _,
-                    out _, key),
+                (false, false, false) => false,
+                (true, false, false)  => _editor.ChangeItem(state, slot, design.DesignData.Item(slot), source, out _, key),
+                (false, true, false)  => _editor.ChangeStain(state, slot, design.DesignData.Stain(slot), source, out _, key),
+                (false, false, true)  => _editor.ChangeCrest(state, slot, design.DesignData.Crest(slot), source, out _, key),
+                _                     => _editor.ChangeEquip(state, slot, applyPiece ? design.DesignData.Item(slot) : null, applyStain ? design.DesignData.Stain(slot) : null, applyCrest ? design.DesignData.Crest(slot) : null, source, out _,
+                    out _, out _, key),
             };
         }
 
@@ -392,7 +416,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             redraw |= applied.RequiresRedraw();
 
             foreach (var slot in EquipSlotExtensions.FullSlots)
-                HandleEquip(slot, design.DoApplyEquip(slot), design.DoApplyStain(slot));
+                HandleEquip(slot, design.DoApplyEquip(slot), design.DoApplyStain(slot), design.DoApplyCrest(slot));
         }
 
         var actors = ApplyAll(state, redraw, false);
@@ -415,14 +439,14 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             _applier.ChangeCustomize(actors, state.ModelData.Customize);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
-                _applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), state[slot, false] is not StateChanged.Source.Ipc,
+                _applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), state.ModelData.Crest(slot), state[slot, ActorState.EquipField.Item] is not StateChanged.Source.Ipc,
                     state.ModelData.IsHatVisible());
             }
 
             var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
-            _applier.ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
+            _applier.ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand), state.ModelData.Crest(EquipSlot.MainHand));
             var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? actors.OnlyGPose() : actors;
-            _applier.ChangeOffhand(offhandActors, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
+            _applier.ChangeOffhand(offhandActors, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand), state.ModelData.Crest(EquipSlot.OffHand));
         }
 
         if (state.ModelData.IsHuman)
@@ -450,8 +474,9 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         foreach (var slot in EquipSlotExtensions.FullSlots)
         {
-            state[slot, true]  = StateChanged.Source.Game;
-            state[slot, false] = StateChanged.Source.Game;
+            state[slot, ActorState.EquipField.Stain] = StateChanged.Source.Game;
+            state[slot, ActorState.EquipField.Item]  = StateChanged.Source.Game;
+            state[slot, ActorState.EquipField.Crest] = StateChanged.Source.Game;
         }
 
         foreach (var type in Enum.GetValues<ActorState.MetaIndex>())
@@ -478,15 +503,21 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
         foreach (var slot in EquipSlotExtensions.FullSlots)
         {
-            if (state[slot, true] is StateChanged.Source.Fixed)
+            if (state[slot, ActorState.EquipField.Crest] is StateChanged.Source.Fixed)
             {
-                state[slot, true] = StateChanged.Source.Game;
+                state[slot, ActorState.EquipField.Crest] = StateChanged.Source.Game;
+                state.ModelData.SetCrest(slot, state.BaseData.Crest(slot));
+            }
+
+            if (state[slot, ActorState.EquipField.Stain] is StateChanged.Source.Fixed)
+            {
+                state[slot, ActorState.EquipField.Stain] = StateChanged.Source.Game;
                 state.ModelData.SetStain(slot, state.BaseData.Stain(slot));
             }
 
-            if (state[slot, false] is StateChanged.Source.Fixed)
+            if (state[slot, ActorState.EquipField.Item] is StateChanged.Source.Fixed)
             {
-                state[slot, false] = StateChanged.Source.Game;
+                state[slot, ActorState.EquipField.Item] = StateChanged.Source.Game;
                 state.ModelData.SetItem(slot, state.BaseData.Item(slot));
             }
         }

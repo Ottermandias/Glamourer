@@ -82,7 +82,7 @@ public class DesignBase
     internal CustomizeFlag ApplyCustomizeRaw
         => _applyCustomize;
 
-    internal EquipFlag   ApplyEquip   = EquipFlagExtensions.All;
+    internal EquipFlag   ApplyEquip   = EquipFlagExtensions.AllRelevant;
     private  DesignFlags _designFlags = DesignFlags.ApplyHatVisible | DesignFlags.ApplyVisorState | DesignFlags.ApplyWeaponVisible;
 
     public bool SetCustomize(CustomizationService customizationService, Customize customize)
@@ -166,6 +166,9 @@ public class DesignBase
     public bool DoApplyStain(EquipSlot slot)
         => ApplyEquip.HasFlag(slot.ToStainFlag());
 
+    public bool DoApplyCrest(EquipSlot slot)
+        => ApplyEquip.HasFlag(slot.ToCrestFlag());
+
     public bool DoApplyCustomize(CustomizeIndex idx)
         => ApplyCustomize.HasFlag(idx.ToFlag());
 
@@ -182,6 +185,16 @@ public class DesignBase
     internal bool SetApplyStain(EquipSlot slot, bool value)
     {
         var newValue = value ? ApplyEquip | slot.ToStainFlag() : ApplyEquip & ~slot.ToStainFlag();
+        if (newValue == ApplyEquip)
+            return false;
+
+        ApplyEquip = newValue;
+        return true;
+    }
+
+    internal bool SetApplyCrest(EquipSlot slot, bool value)
+    {
+        var newValue = value ? ApplyEquip | slot.ToCrestFlag() : ApplyEquip & ~slot.ToCrestFlag();
         if (newValue == ApplyEquip)
             return false;
 
@@ -246,13 +259,15 @@ public class DesignBase
 
     protected JObject SerializeEquipment()
     {
-        static JObject Serialize(CustomItemId id, StainId stain, bool apply, bool applyStain)
+        static JObject Serialize(CustomItemId id, StainId stain, bool crest, bool apply, bool applyStain, bool applyCrest)
             => new()
             {
                 ["ItemId"]     = id.Id,
                 ["Stain"]      = stain.Id,
+                ["Crest"]      = crest,
                 ["Apply"]      = apply,
                 ["ApplyStain"] = applyStain,
+                ["ApplyCrest"] = applyCrest,
             };
 
         var ret = new JObject();
@@ -262,7 +277,8 @@ public class DesignBase
             {
                 var item  = _designData.Item(slot);
                 var stain = _designData.Stain(slot);
-                ret[slot.ToString()] = Serialize(item.Id, stain, DoApplyEquip(slot), DoApplyStain(slot));
+                var crest = _designData.Crest(slot);
+                ret[slot.ToString()] = Serialize(item.Id, stain, crest, DoApplyEquip(slot), DoApplyStain(slot), DoApplyCrest(slot));
             }
 
             ret["Hat"]    = new QuadBool(_designData.IsHatVisible(),    DoApplyHatVisible()).ToJObject("Show", "Apply");
@@ -345,13 +361,15 @@ public class DesignBase
             return;
         }
 
-        static (CustomItemId, StainId, bool, bool) ParseItem(EquipSlot slot, JToken? item)
+        static (CustomItemId, StainId, bool, bool, bool, bool) ParseItem(EquipSlot slot, JToken? item)
         {
             var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot).Id;
             var stain      = (StainId)(item?["Stain"]?.ToObject<byte>() ?? 0);
+            var crest      = item?["Crest"]?.ToObject<bool>() ?? false;
             var apply      = item?["Apply"]?.ToObject<bool>() ?? false;
             var applyStain = item?["ApplyStain"]?.ToObject<bool>() ?? false;
-            return (id, stain, apply, applyStain);
+            var applyCrest = item?["ApplyCrest"]?.ToObject<bool>() ?? false;
+            return (id, stain, crest, apply, applyStain, applyCrest);
         }
 
         void PrintWarning(string msg)
@@ -362,21 +380,23 @@ public class DesignBase
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var (id, stain, apply, applyStain) = ParseItem(slot, equip[slot.ToString()]);
+            var (id, stain, crest, apply, applyStain, applyCrest) = ParseItem(slot, equip[slot.ToString()]);
 
             PrintWarning(items.ValidateItem(slot, id, out var item, allowUnknown));
             PrintWarning(items.ValidateStain(stain, out stain, allowUnknown));
             design._designData.SetItem(slot, item);
             design._designData.SetStain(slot, stain);
+            design._designData.SetCrest(slot, crest);
             design.SetApplyEquip(slot, apply);
             design.SetApplyStain(slot, applyStain);
+            design.SetApplyCrest(slot, applyCrest);
         }
 
         {
-            var (id, stain, apply, applyStain) = ParseItem(EquipSlot.MainHand, equip[EquipSlot.MainHand.ToString()]);
+            var (id, stain, crest, apply, applyStain, applyCrest) = ParseItem(EquipSlot.MainHand, equip[EquipSlot.MainHand.ToString()]);
             if (id == ItemManager.NothingId(EquipSlot.MainHand))
                 id = items.DefaultSword.ItemId;
-            var (idOff, stainOff, applyOff, applyStainOff) = ParseItem(EquipSlot.OffHand, equip[EquipSlot.OffHand.ToString()]);
+            var (idOff, stainOff, crestOff, applyOff, applyStainOff, applyCrestOff) = ParseItem(EquipSlot.OffHand, equip[EquipSlot.OffHand.ToString()]);
             if (id == ItemManager.NothingId(EquipSlot.OffHand))
                 id = ItemManager.NothingId(FullEquipType.Shield);
 
@@ -387,10 +407,14 @@ public class DesignBase
             design._designData.SetItem(EquipSlot.OffHand,  off);
             design._designData.SetStain(EquipSlot.MainHand, stain);
             design._designData.SetStain(EquipSlot.OffHand,  stainOff);
+            design._designData.SetCrest(EquipSlot.MainHand, crest);
+            design._designData.SetCrest(EquipSlot.OffHand,  crestOff);
             design.SetApplyEquip(EquipSlot.MainHand, apply);
             design.SetApplyEquip(EquipSlot.OffHand,  applyOff);
             design.SetApplyStain(EquipSlot.MainHand, applyStain);
             design.SetApplyStain(EquipSlot.OffHand,  applyStainOff);
+            design.SetApplyCrest(EquipSlot.MainHand, applyCrest);
+            design.SetApplyCrest(EquipSlot.OffHand,  applyCrestOff);
         }
         var metaValue = QuadBool.FromJObject(equip["Hat"], "Show", "Apply", QuadBool.NullFalse);
         design.SetApplyHatVisible(metaValue.Enabled);

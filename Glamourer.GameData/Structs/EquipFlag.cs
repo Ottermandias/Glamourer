@@ -4,7 +4,7 @@ using Penumbra.GameData.Enums;
 namespace Glamourer.Structs;
 
 [Flags]
-public enum EquipFlag : uint
+public enum EquipFlag : ulong
 {
     Head          = 0x00000001,
     Body          = 0x00000002,
@@ -30,12 +30,34 @@ public enum EquipFlag : uint
     LFingerStain  = 0x00200000,
     MainhandStain = 0x00400000,
     OffhandStain  = 0x00800000,
+    HeadCrest     = 0x01000000,
+    BodyCrest     = 0x02000000,
+    HandsCrest    = 0x04000000,
+    LegsCrest     = 0x08000000,
+    FeetCrest     = 0x10000000,
+    EarsCrest     = 0x20000000,
+    NeckCrest     = 0x40000000,
+    WristCrest    = 0x80000000,
+    RFingerCrest  = 0x100000000,
+    LFingerCrest  = 0x200000000,
+    MainhandCrest = 0x400000000,
+    OffhandCrest  = 0x800000000,
 }
 
 public static class EquipFlagExtensions
 {
-    public const EquipFlag All           = (EquipFlag)(((uint)EquipFlag.OffhandStain << 1) - 1);
-    public const int       NumEquipFlags = 24;
+    public const EquipFlag All           = (EquipFlag)(((ulong)EquipFlag.OffhandCrest << 1) - 1);
+    public const EquipFlag AllRelevant   = All
+        & ~EquipFlag.HandsCrest
+        & ~EquipFlag.LegsCrest
+        & ~EquipFlag.FeetCrest
+        & ~EquipFlag.EarsCrest
+        & ~EquipFlag.NeckCrest
+        & ~EquipFlag.WristCrest
+        & ~EquipFlag.RFingerCrest
+        & ~EquipFlag.LFingerCrest
+        & ~EquipFlag.MainhandCrest;
+    public const int       NumEquipFlags = 36;
 
     public static EquipFlag ToFlag(this EquipSlot slot)
         => slot switch
@@ -73,21 +95,39 @@ public static class EquipFlagExtensions
             _                  => 0,
         };
 
+    public static EquipFlag ToCrestFlag(this EquipSlot slot)
+        => slot switch
+        {
+            EquipSlot.MainHand => EquipFlag.MainhandCrest,
+            EquipSlot.OffHand  => EquipFlag.OffhandCrest,
+            EquipSlot.Head     => EquipFlag.HeadCrest,
+            EquipSlot.Body     => EquipFlag.BodyCrest,
+            EquipSlot.Hands    => EquipFlag.HandsCrest,
+            EquipSlot.Legs     => EquipFlag.LegsCrest,
+            EquipSlot.Feet     => EquipFlag.FeetCrest,
+            EquipSlot.Ears     => EquipFlag.EarsCrest,
+            EquipSlot.Neck     => EquipFlag.NeckCrest,
+            EquipSlot.Wrists   => EquipFlag.WristCrest,
+            EquipSlot.RFinger  => EquipFlag.RFingerCrest,
+            EquipSlot.LFinger  => EquipFlag.LFingerCrest,
+            _                  => 0,
+        };
+
     public static EquipFlag ToBothFlags(this EquipSlot slot)
         => slot switch
         {
-            EquipSlot.MainHand => EquipFlag.Mainhand | EquipFlag.MainhandStain,
-            EquipSlot.OffHand  => EquipFlag.Offhand | EquipFlag.OffhandStain,
-            EquipSlot.Head     => EquipFlag.Head | EquipFlag.HeadStain,
-            EquipSlot.Body     => EquipFlag.Body | EquipFlag.BodyStain,
-            EquipSlot.Hands    => EquipFlag.Hands | EquipFlag.HandsStain,
-            EquipSlot.Legs     => EquipFlag.Legs | EquipFlag.LegsStain,
-            EquipSlot.Feet     => EquipFlag.Feet | EquipFlag.FeetStain,
-            EquipSlot.Ears     => EquipFlag.Ears | EquipFlag.EarsStain,
-            EquipSlot.Neck     => EquipFlag.Neck | EquipFlag.NeckStain,
-            EquipSlot.Wrists   => EquipFlag.Wrist | EquipFlag.WristStain,
-            EquipSlot.RFinger  => EquipFlag.RFinger | EquipFlag.RFingerStain,
-            EquipSlot.LFinger  => EquipFlag.LFinger | EquipFlag.LFingerStain,
+            EquipSlot.MainHand => EquipFlag.Mainhand | EquipFlag.MainhandStain | EquipFlag.MainhandCrest,
+            EquipSlot.OffHand  => EquipFlag.Offhand | EquipFlag.OffhandStain | EquipFlag.OffhandCrest,
+            EquipSlot.Head     => EquipFlag.Head | EquipFlag.HeadStain | EquipFlag.HeadCrest,
+            EquipSlot.Body     => EquipFlag.Body | EquipFlag.BodyStain | EquipFlag.BodyCrest,
+            EquipSlot.Hands    => EquipFlag.Hands | EquipFlag.HandsStain | EquipFlag.HandsCrest,
+            EquipSlot.Legs     => EquipFlag.Legs | EquipFlag.LegsStain | EquipFlag.LegsCrest,
+            EquipSlot.Feet     => EquipFlag.Feet | EquipFlag.FeetStain | EquipFlag.FeetCrest,
+            EquipSlot.Ears     => EquipFlag.Ears | EquipFlag.EarsStain | EquipFlag.EarsCrest,
+            EquipSlot.Neck     => EquipFlag.Neck | EquipFlag.NeckStain | EquipFlag.NeckCrest,
+            EquipSlot.Wrists   => EquipFlag.Wrist | EquipFlag.WristStain | EquipFlag.WristCrest,
+            EquipSlot.RFinger  => EquipFlag.RFinger | EquipFlag.RFingerStain | EquipFlag.RFingerCrest,
+            EquipSlot.LFinger  => EquipFlag.LFinger | EquipFlag.LFingerStain | EquipFlag.LFingerCrest,
             _                  => 0,
         };
 }

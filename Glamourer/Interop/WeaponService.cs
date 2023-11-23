@@ -13,6 +13,7 @@ namespace Glamourer.Interop;
 public unsafe class WeaponService : IDisposable
 {
     private readonly WeaponLoading     _event;
+    private readonly UpdateSlotService _updateSlotService;
     private readonly ThreadLocal<bool> _inUpdate = new(() => false);
 
 
@@ -20,9 +21,10 @@ public unsafe class WeaponService : IDisposable
         _original;
 
 
-    public WeaponService(WeaponLoading @event, IGameInteropProvider interop)
+    public WeaponService(WeaponLoading @event, UpdateSlotService updateSlotService, IGameInteropProvider interop)
     {
         _event = @event;
+        _updateSlotService = updateSlotService;
         _loadWeaponHook =
             interop.HookFromAddress<LoadWeaponDelegate>((nint)DrawDataContainer.MemberFunctionPointers.LoadWeapon, LoadWeaponDetour);
         _original =
@@ -83,24 +85,39 @@ public unsafe class WeaponService : IDisposable
     }
 
     // Load a specific weapon for a character by its data and slot.
-    public void LoadWeapon(Actor character, EquipSlot slot, CharacterWeapon weapon)
+    public void LoadWeapon(Actor character, EquipSlot slot, CharacterWeapon weapon, bool? crest)
     {
         switch (slot)
         {
             case EquipSlot.MainHand:
                 _inUpdate.Value = true;
                 _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value, 1, 0, 1, 0);
+                if (crest.HasValue)
+                {
+                    using var _ = _updateSlotService.EnterCrestVisibilityUpdate();
+                    character.Model.GetMainhand().Address.SetFreeCompanyCrestVisibleOnSlot(0, crest.Value);
+                }
                 _inUpdate.Value = false;
                 return;
             case EquipSlot.OffHand:
                 _inUpdate.Value = true;
                 _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, weapon.Value, 1, 0, 1, 0);
+                if (crest.HasValue)
+                {
+                    using var _ = _updateSlotService.EnterCrestVisibilityUpdate();
+                    character.Model.GetOffhand().Address.SetFreeCompanyCrestVisibleOnSlot(0, crest.Value);
+                }
                 _inUpdate.Value = false;
                 return;
             case EquipSlot.BothHand:
                 _inUpdate.Value = true;
                 _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value,                1, 0, 1, 0);
                 _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, CharacterWeapon.Empty.Value, 1, 0, 1, 0);
+                if (crest.HasValue)
+                {
+                    using var _ = _updateSlotService.EnterCrestVisibilityUpdate();
+                    character.Model.GetMainhand().Address.SetFreeCompanyCrestVisibleOnSlot(0, crest.Value);
+                }
                 _inUpdate.Value = false;
                 return;
         }
@@ -112,6 +129,21 @@ public unsafe class WeaponService : IDisposable
         var (_, _, mh, oh) = mdl.GetWeapons(character);
         var value  = slot == EquipSlot.OffHand ? oh : mh;
         var weapon = value.With(value.Set.Id == 0 ? 0 : stain);
-        LoadWeapon(character, slot, weapon);
+        LoadWeapon(character, slot, weapon, null);
+    }
+
+    public void UpdateCrest(Actor character, EquipSlot slot, bool visible)
+    {
+        using var _ = _updateSlotService.EnterCrestVisibilityUpdate();
+        switch (slot)
+        {
+            case EquipSlot.MainHand:
+            case EquipSlot.BothHand:
+                character.Model.GetMainhand().Address.SetFreeCompanyCrestVisibleOnSlot(0, visible);
+                break;
+            case EquipSlot.OffHand:
+                character.Model.GetOffhand().Address.SetFreeCompanyCrestVisibleOnSlot(0, visible);
+                break;
+        }
     }
 }

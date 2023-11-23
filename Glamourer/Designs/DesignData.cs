@@ -34,6 +34,7 @@ public unsafe struct DesignData
     private       FullEquipType _typeMainhand;
     private       FullEquipType _typeOffhand;
     private       byte          _states;
+    public        ushort        CrestVisibility;
     public        bool          IsHuman = true;
 
     public DesignData()
@@ -58,6 +59,15 @@ public unsafe struct DesignData
         var index = slot.ToIndex();
         return index > 11 ? (StainId)0 : _equipmentBytes[4 * index + 3];
     }
+
+    private static ushort CrestMask(EquipSlot slot)
+    {
+        var index = slot.ToIndex();
+        return index <= 11 ? (ushort)(1u << (int)index) : (ushort)0;
+    }
+
+    public readonly bool Crest(EquipSlot slot)
+        => (CrestVisibility & CrestMask(slot)) != 0;
 
     public FullEquipType MainhandType
         => _typeMainhand;
@@ -173,6 +183,16 @@ public unsafe struct DesignData
             _  => false,
         };
 
+    public bool SetCrest(EquipSlot slot, bool visible)
+    {
+        var crestVisibility = CrestVisibility;
+        if (visible)
+            crestVisibility |= CrestMask(slot);
+        else
+            crestVisibility &= (ushort)~CrestMask(slot);
+        return SetIfDifferent(ref CrestVisibility, crestVisibility);
+    }
+
     public readonly bool IsWet()
         => (_states & 0x01) == 0x01;
 
@@ -228,12 +248,15 @@ public unsafe struct DesignData
         {
             SetItem(slot, ItemManager.NothingItem(slot));
             SetStain(slot, 0);
+            SetCrest(slot, false);
         }
 
         SetItem(EquipSlot.MainHand, items.DefaultSword);
         SetStain(EquipSlot.MainHand, 0);
+        SetCrest(EquipSlot.MainHand, false);
         SetItem(EquipSlot.OffHand, ItemManager.NothingItem(FullEquipType.Shield));
         SetStain(EquipSlot.OffHand, 0);
+        SetCrest(EquipSlot.OffHand, false);
     }
 
 

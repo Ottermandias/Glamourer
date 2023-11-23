@@ -176,7 +176,7 @@ public class ActorPanel
         var usedAllStain = _equipmentDrawer.DrawAllStain(out var newAllStain, _state!.IsLocked);
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var changes = _equipmentDrawer.DrawEquip(slot, _state!.ModelData, out var newArmor, out var newStain, null, out _, out _,
+            var changes = _equipmentDrawer.DrawEquip(slot, _state!.ModelData, out var newArmor, out var newStain, out var newCrest, null, out _, out _, out _,
                 _state.IsLocked);
             if (usedAllStain)
             {
@@ -192,14 +192,20 @@ public class ActorPanel
                 case DataChange.Stain:
                     _stateManager.ChangeStain(_state, slot, newStain, StateChanged.Source.Manual);
                     break;
+                case DataChange.Crest:
+                    _stateManager.ChangeCrest(_state, slot, newCrest, StateChanged.Source.Manual);
+                    break;
                 case DataChange.Item | DataChange.Stain:
-                    _stateManager.ChangeEquip(_state, slot, newArmor, newStain, StateChanged.Source.Manual);
+                case DataChange.Item | DataChange.Crest:
+                case DataChange.Stain | DataChange.Crest:
+                case DataChange.Item | DataChange.Stain | DataChange.Crest:
+                    _stateManager.ChangeEquip(_state, slot, changes.HasFlag(DataChange.Item) ? newArmor : null, changes.HasFlag(DataChange.Stain) ? newStain : null, changes.HasFlag(DataChange.Crest) ? newCrest : null, StateChanged.Source.Manual);
                     break;
             }
         }
 
         var weaponChanges = _equipmentDrawer.DrawWeapons(_state!.ModelData, out var newMainhand, out var newOffhand, out var newMainhandStain,
-            out var newOffhandStain, null, GameMain.IsInGPose(), out _, out _, out _, out _, _state.IsLocked);
+            out var newOffhandStain, out var newMainhandCrest, out var newOffhandCrest, null, GameMain.IsInGPose(), out _, out _, out _, out _, out _, out _, _state.IsLocked);
         if (usedAllStain)
         {
             weaponChanges    |= DataChange.Stain | DataChange.Stain2;
@@ -208,20 +214,34 @@ public class ActorPanel
         }
 
         if (weaponChanges.HasFlag(DataChange.Item))
-            if (weaponChanges.HasFlag(DataChange.Stain))
-                _stateManager.ChangeEquip(_state, EquipSlot.MainHand, newMainhand, newMainhandStain, StateChanged.Source.Manual);
+        {
+            if (weaponChanges.HasFlag(DataChange.Stain) || weaponChanges.HasFlag(DataChange.Crest))
+                _stateManager.ChangeEquip(_state, EquipSlot.MainHand, newMainhand, weaponChanges.HasFlag(DataChange.Stain) ? newMainhandStain : null, weaponChanges.HasFlag(DataChange.Crest) ? newMainhandCrest : null, StateChanged.Source.Manual);
             else
                 _stateManager.ChangeItem(_state, EquipSlot.MainHand, newMainhand, StateChanged.Source.Manual);
-        else if (weaponChanges.HasFlag(DataChange.Stain))
-            _stateManager.ChangeStain(_state, EquipSlot.MainHand, newMainhandStain, StateChanged.Source.Manual);
+        }
+        else
+        {
+            if (weaponChanges.HasFlag(DataChange.Stain))
+                _stateManager.ChangeStain(_state, EquipSlot.MainHand, newMainhandStain, StateChanged.Source.Manual);
+            if (weaponChanges.HasFlag(DataChange.Crest))
+                _stateManager.ChangeCrest(_state, EquipSlot.MainHand, newMainhandCrest, StateChanged.Source.Manual);
+        }
 
         if (weaponChanges.HasFlag(DataChange.Item2))
-            if (weaponChanges.HasFlag(DataChange.Stain2))
-                _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOffhand, newOffhandStain, StateChanged.Source.Manual);
+        {
+            if (weaponChanges.HasFlag(DataChange.Stain2) || weaponChanges.HasFlag(DataChange.Crest2))
+                _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOffhand, weaponChanges.HasFlag(DataChange.Stain2) ? newOffhandStain : null, weaponChanges.HasFlag(DataChange.Crest2) ? newOffhandCrest : null, StateChanged.Source.Manual);
             else
                 _stateManager.ChangeItem(_state, EquipSlot.OffHand, newOffhand, StateChanged.Source.Manual);
-        else if (weaponChanges.HasFlag(DataChange.Stain2))
-            _stateManager.ChangeStain(_state, EquipSlot.OffHand, newOffhandStain, StateChanged.Source.Manual);
+        }
+        else
+        {
+            if (weaponChanges.HasFlag(DataChange.Stain2))
+                _stateManager.ChangeStain(_state, EquipSlot.OffHand, newOffhandStain, StateChanged.Source.Manual);
+            if (weaponChanges.HasFlag(DataChange.Crest2))
+                _stateManager.ChangeCrest(_state, EquipSlot.OffHand, newOffhandCrest, StateChanged.Source.Manual);
+        }
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
         if (EquipmentDrawer.DrawHatState(_state!.ModelData.IsHatVisible(), out var newHatState, _state!.IsLocked))

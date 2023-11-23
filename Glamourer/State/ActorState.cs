@@ -22,6 +22,13 @@ public class ActorState
         ModelId,
     }
 
+    public enum EquipField
+    {
+        Item  = 0,
+        Stain = 12,
+        Crest = 24,
+    }
+
     public readonly ActorIdentifier Identifier;
 
     public bool AllowsRedraw(ICondition condition)
@@ -85,8 +92,8 @@ public class ActorState
     internal ActorState(ActorIdentifier identifier)
         => Identifier = identifier.CreatePermanent();
 
-    public ref StateChanged.Source this[EquipSlot slot, bool stain]
-        => ref _sources[slot.ToIndex() + (stain ? EquipFlagExtensions.NumEquipFlags / 2 : 0)];
+    public ref StateChanged.Source this[EquipSlot slot, EquipField field]
+        => ref _sources[slot.ToIndex() + (int)field];
 
     public ref StateChanged.Source this[CustomizeIndex type]
         => ref _sources[EquipFlagExtensions.NumEquipFlags + (int)type];

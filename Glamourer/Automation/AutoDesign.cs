@@ -20,8 +20,9 @@ public class AutoDesign
         Weapons        = 0x04,
         Stains         = 0x08,
         Accessories    = 0x10,
+        Crests         = 0x20,
 
-        All = Armor | Accessories | Customizations | Weapons | Stains,
+        All = Armor | Accessories | Customizations | Weapons | Stains | Crests,
     }
 
     public Design?  Design;
@@ -69,7 +70,8 @@ public class AutoDesign
         var equipFlags = (ApplicationType.HasFlag(Type.Weapons) ? WeaponFlags : 0)
           | (ApplicationType.HasFlag(Type.Armor) ? ArmorFlags : 0)
           | (ApplicationType.HasFlag(Type.Accessories) ? AccessoryFlags : 0)
-          | (ApplicationType.HasFlag(Type.Stains) ? StainFlags : 0);
+          | (ApplicationType.HasFlag(Type.Stains) ? StainFlags : 0)
+          | (ApplicationType.HasFlag(Type.Crests) ? CrestFlags : 0);
         var customizeFlags = ApplicationType.HasFlag(Type.Customizations) ? CustomizeFlagExtensions.All : 0;
 
         if (Revert)
@@ -99,4 +101,21 @@ public class AutoDesign
       | EquipFlag.WristStain
       | EquipFlag.RFingerStain
       | EquipFlag.LFingerStain;
+
+    public const EquipFlag CrestFlags = EquipFlag.MainhandCrest
+      | EquipFlag.OffhandCrest
+      | EquipFlag.HeadCrest
+      | EquipFlag.BodyCrest
+      | EquipFlag.HandsCrest
+      | EquipFlag.LegsCrest
+      | EquipFlag.FeetCrest
+      | EquipFlag.EarsCrest
+      | EquipFlag.NeckCrest
+      | EquipFlag.WristCrest
+      | EquipFlag.RFingerCrest
+      | EquipFlag.LFingerCrest;
+
+    public const EquipFlag RelevantCrestFlags = EquipFlag.OffhandCrest
+      | EquipFlag.HeadCrest
+      | EquipFlag.BodyCrest;
 }

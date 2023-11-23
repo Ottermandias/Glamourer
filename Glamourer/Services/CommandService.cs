@@ -165,8 +165,9 @@ public class CommandService : IDisposable
                 .AddInitialPurple("Customizations, ")
                 .AddInitialPurple("Equipment, ")
                 .AddInitialPurple("Accessories, ")
-                .AddInitialPurple("Dyes and ")
-                .AddInitialPurple("Weapons, where ").AddPurple("CEADW")
+                .AddInitialPurple("Dyes, ")
+                .AddInitialPurple("Free company crest visibilities and ")
+                .AddInitialPurple("Weapons, where ").AddPurple("CEADFW")
                 .AddText(" means everything should be toggled on, and no value means nothing should be toggled on.")
                 .BuiltString);
             return false;
@@ -269,6 +270,9 @@ public class CommandService : IDisposable
                         break;
                     case 'd':
                         applicationFlags |= AutoDesign.Type.Stains;
+                        break;
+                    case 'f':
+                        applicationFlags |= AutoDesign.Type.Crests;
                         break;
                     case 'w':
                         applicationFlags |= AutoDesign.Type.Weapons;

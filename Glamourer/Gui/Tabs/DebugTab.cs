@@ -335,14 +335,15 @@ public unsafe class DebugTab : ITab
             return;
 
         if (ImGui.SmallButton("Hide"))
-            _updateSlotService.UpdateSlot(model, EquipSlot.Head, CharacterArmor.Empty);
+            _updateSlotService.UpdateSlot(model, EquipSlot.Head, CharacterArmor.Empty, null);
         ImGui.SameLine();
         if (ImGui.SmallButton("Show"))
-            _updateSlotService.UpdateSlot(model, EquipSlot.Head, actor.GetArmor(EquipSlot.Head));
+            _updateSlotService.UpdateSlot(model, EquipSlot.Head, actor.GetArmor(EquipSlot.Head), actor.GetCrest(EquipSlot.Head));
         ImGui.SameLine();
         if (ImGui.SmallButton("Toggle"))
             _updateSlotService.UpdateSlot(model, EquipSlot.Head,
-                model.AsHuman->Head.Value == 0 ? actor.GetArmor(EquipSlot.Head) : CharacterArmor.Empty);
+                model.AsHuman->Head.Value == 0 ? actor.GetArmor(EquipSlot.Head) : CharacterArmor.Empty,
+                model.AsHuman->Head.Value == 0 ? actor.GetCrest(EquipSlot.Head) : null);
     }
 
     private void DrawWeaponState(Actor actor, Model model)
@@ -423,8 +424,11 @@ public unsafe class DebugTab : ITab
             if (ImGui.SmallButton("Change Stain"))
                 _updateSlotService.UpdateStain(model, slot, 5);
             ImGui.SameLine();
+            if (ImGui.SmallButton("Toggle Crest"))
+                _updateSlotService.UpdateCrest(model, slot, !model.IsFreeCompanyCrestVisibleOnSlot((byte)slot.ToIndex()));
+            ImGui.SameLine();
             if (ImGui.SmallButton("Reset"))
-                _updateSlotService.UpdateSlot(model, slot, actor.GetArmor(slot));
+                _updateSlotService.UpdateSlot(model, slot, actor.GetArmor(slot), actor.GetCrest(slot));
         }
     }
 
@@ -1146,7 +1150,7 @@ public unsafe class DebugTab : ITab
 
     public void DrawState(ActorData data, ActorState state)
     {
-        using var table = ImRaii.Table("##state", 7, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
+        using var table = ImRaii.Table("##state", 9, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
         if (!table)
             return;
 
@@ -1189,10 +1193,12 @@ public unsafe class DebugTab : ITab
             ImGui.TableNextRow();
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
-                PrintRow(slot.ToName(), ItemString(state.BaseData, slot), ItemString(state.ModelData, slot), state[slot, false]);
+                PrintRow(slot.ToName(), ItemString(state.BaseData, slot), ItemString(state.ModelData, slot), state[slot, ActorState.EquipField.Item]);
                 ImGuiUtil.DrawTableColumn(state.BaseData.Stain(slot).Id.ToString());
                 ImGuiUtil.DrawTableColumn(state.ModelData.Stain(slot).Id.ToString());
-                ImGuiUtil.DrawTableColumn(state[slot, true].ToString());
+                ImGuiUtil.DrawTableColumn(state[slot, ActorState.EquipField.Stain].ToString());
+                ImGuiUtil.DrawTableColumn(state.BaseData.Crest(slot).ToString());
+                ImGuiUtil.DrawTableColumn(state[slot, ActorState.EquipField.Crest].ToString());
             }
 
             foreach (var type in Enum.GetValues<CustomizeIndex>())
@@ -1307,12 +1313,16 @@ public unsafe class DebugTab : ITab
             var apply      = design.DoApplyEquip(slot);
             var stain      = design.DesignData.Stain(slot);
             var applyStain = design.DoApplyStain(slot);
+            var crest      = design.DesignData.Crest(slot);
+            var applyCrest = design.DoApplyCrest(slot);
             ImGuiUtil.DrawTableColumn(slot.ToName());
             ImGuiUtil.DrawTableColumn(item.Name);
             ImGuiUtil.DrawTableColumn(item.ItemId.ToString());
             ImGuiUtil.DrawTableColumn(apply ? "Apply" : "Keep");
             ImGuiUtil.DrawTableColumn(stain.ToString());
             ImGuiUtil.DrawTableColumn(applyStain ? "Apply" : "Keep");
+            ImGuiUtil.DrawTableColumn(crest.ToString());
+            ImGuiUtil.DrawTableColumn(applyCrest ? "Apply" : "Keep");
         }
 
         ImGuiUtil.DrawTableColumn("Hat Visible");

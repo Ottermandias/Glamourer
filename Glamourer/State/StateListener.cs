@@ -32,6 +32,7 @@ public class StateListener : IDisposable
     private readonly CustomizationService      _customizations;
     private readonly PenumbraService           _penumbra;
     private readonly SlotUpdating              _slotUpdating;
+    private readonly CrestVisibilityUpdating   _crestVisibilityUpdating;
     private readonly WeaponLoading             _weaponLoading;
     private readonly HeadGearVisibilityChanged _headGearVisibility;
     private readonly VisorStateChanged         _visorState;
@@ -51,29 +52,30 @@ public class StateListener : IDisposable
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
-        StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gPose,
+        CrestVisibilityUpdating crestVisibilityUpdating, StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gPose,
         ChangeCustomizeService changeCustomizeService, CustomizationService customizations, ICondition condition)
     {
-        _manager                = manager;
-        _items                  = items;
-        _penumbra               = penumbra;
-        _actors                 = actors;
-        _config                 = config;
-        _slotUpdating           = slotUpdating;
-        _weaponLoading          = weaponLoading;
-        _visorState             = visorState;
-        _weaponVisibility       = weaponVisibility;
-        _headGearVisibility     = headGearVisibility;
-        _autoDesignApplier      = autoDesignApplier;
-        _funModule              = funModule;
-        _humans                 = humans;
-        _applier                = applier;
-        _movedEquipment         = movedEquipment;
-        _objects                = objects;
-        _gPose                  = gPose;
-        _changeCustomizeService = changeCustomizeService;
-        _customizations         = customizations;
-        _condition              = condition;
+        _manager                 = manager;
+        _items                   = items;
+        _penumbra                = penumbra;
+        _actors                  = actors;
+        _config                  = config;
+        _slotUpdating            = slotUpdating;
+        _crestVisibilityUpdating = crestVisibilityUpdating;
+        _weaponLoading           = weaponLoading;
+        _visorState              = visorState;
+        _weaponVisibility        = weaponVisibility;
+        _headGearVisibility      = headGearVisibility;
+        _autoDesignApplier       = autoDesignApplier;
+        _funModule               = funModule;
+        _humans                  = humans;
+        _applier                 = applier;
+        _movedEquipment          = movedEquipment;
+        _objects                 = objects;
+        _gPose                   = gPose;
+        _changeCustomizeService  = changeCustomizeService;
+        _customizations          = customizations;
+        _condition               = condition;
         Subscribe();
     }
 
@@ -212,7 +214,7 @@ public class StateListener : IDisposable
          && _manager.TryGetValue(identifier, out var state))
         {
             HandleEquipSlot(actor, state, slot, ref armor.Value);
-            locked = state[slot, false] is StateChanged.Source.Ipc;
+            locked = state[slot, ActorState.EquipField.Item] is StateChanged.Source.Ipc;
         }
 
         _funModule.ApplyFun(actor, ref armor.Value, slot);
@@ -221,6 +223,34 @@ public class StateListener : IDisposable
 
         var customize = model.GetCustomize();
         (_, armor.Value) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
+    }
+
+    private void OnCrestVisibilityUpdating(Model model, EquipSlot slot, Ref<bool> visible)
+    {
+        var actor = _penumbra.GameObjectFromDrawObject(model);
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
+            return;
+
+        if (slot == EquipSlot.BothHand)
+        {
+            var rootModel = actor.Model;
+            var (mainHand, offHand, _, _) = rootModel.GetWeapons(actor);
+            if (model == mainHand)
+                slot = EquipSlot.MainHand;
+            else if (model == offHand)
+                slot = EquipSlot.OffHand;
+            else
+            {
+                Glamourer.Log.Excessive($"Cannot identify weapon slot: got model {model.Address:X}, main hand is {mainHand.Address:X}, off hand is {offHand.Address:X}");
+                return;
+            }
+        }
+
+        if (actor.Identifier(_actors.AwaitedService, out var identifier)
+         && _manager.TryGetValue(identifier, out var state))
+        {
+            HandleCrestVisibility(actor, state, slot, ref visible.Value);
+        }
     }
 
     private void OnMovedEquipment((EquipSlot, uint, StainId)[] items)
@@ -235,11 +265,12 @@ public class StateListener : IDisposable
             var currentItem = state.BaseData.Item(slot);
             var model       = state.ModelData.Weapon(slot);
             var current     = currentItem.Weapon(state.BaseData.Stain(slot));
+            var crest       = state.BaseData.Crest(slot);
             if (model.Value == current.Value || !_items.ItemService.AwaitedService.TryGetValue(item, EquipSlot.MainHand, out var changedItem))
                 continue;
 
             var changed = changedItem.Weapon(stain);
-            if (current.Value == changed.Value && state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+            if (current.Value == changed.Value && state[slot, ActorState.EquipField.Item] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
             {
                 _manager.ChangeItem(state, slot, currentItem, StateChanged.Source.Game);
                 _manager.ChangeStain(state, slot, current.Stain, StateChanged.Source.Game);
@@ -247,10 +278,10 @@ public class StateListener : IDisposable
                 {
                     case EquipSlot.MainHand:
                     case EquipSlot.OffHand:
-                        _applier.ChangeWeapon(objects, slot, currentItem, stain);
+                        _applier.ChangeWeapon(objects, slot, currentItem, stain, crest);
                         break;
                     default:
-                        _applier.ChangeArmor(objects, slot, current.ToArmor(), state[slot, false] is not StateChanged.Source.Ipc,
+                        _applier.ChangeArmor(objects, slot, current.ToArmor(), crest, state[slot, ActorState.EquipField.Item] is not StateChanged.Source.Ipc,
                             state.ModelData.IsHatVisible());
                         break;
                 }
@@ -284,13 +315,18 @@ public class StateListener : IDisposable
             // Do nothing. But this usually can not happen because the hooked function also writes to game objects later.
             case UpdateState.Transformed: break;
             case UpdateState.Change:
-                if (state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                if (state[slot, ActorState.EquipField.Item] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateChanged.Source.Game);
                 else
                     apply = true;
 
-                if (state[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                if (state[slot, ActorState.EquipField.Stain] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Game);
+                else
+                    apply = true;
+
+                if (state[slot, ActorState.EquipField.Crest] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                    _manager.ChangeCrest(state, slot, state.BaseData.Crest(slot), StateChanged.Source.Game);
                 else
                     apply = true;
                 break;
@@ -346,6 +382,7 @@ public class StateListener : IDisposable
                     var item = _items.Identify(slot, actorArmor.Set, actorArmor.Variant);
                     state.BaseData.SetItem(EquipSlot.Head, item);
                     state.BaseData.SetStain(EquipSlot.Head, actorArmor.Stain);
+                    state.BaseData.SetCrest(EquipSlot.Head, actor.GetCrest(slot));
                     return UpdateState.Change;
                 }
 
@@ -374,6 +411,20 @@ public class StateListener : IDisposable
         return change;
     }
 
+    private UpdateState UpdateBaseCrest(Actor actor, ActorState state, EquipSlot slot, bool visible)
+    {
+        if (actor.IsTransformed)
+            return UpdateState.Transformed;
+
+        if (state.BaseData.Crest(slot) != visible)
+        {
+            state.BaseData.SetCrest(slot, visible);
+            return UpdateState.Change;
+        }
+
+        return UpdateState.NoChange;
+    }
+
     /// <summary> Handle a full equip slot update for base data and model data. </summary>
     private void HandleEquipSlot(Actor actor, ActorState state, EquipSlot slot, ref CharacterArmor armor)
     {
@@ -383,12 +434,12 @@ public class StateListener : IDisposable
             // Update model state if not on fixed design.
             case UpdateState.Change:
                 var apply = false;
-                if (state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                if (state[slot, ActorState.EquipField.Item] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateChanged.Source.Game);
                 else
                     apply = true;
 
-                if (state[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                if (state[slot, ActorState.EquipField.Stain] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Game);
                 else
                     apply = true;
@@ -405,6 +456,24 @@ public class StateListener : IDisposable
         }
     }
 
+    private void HandleCrestVisibility(Actor actor, ActorState state, EquipSlot slot, ref bool visible)
+    {
+        switch (UpdateBaseCrest(actor, state, slot, visible))
+        {
+            case UpdateState.Change:
+                if (state[slot, ActorState.EquipField.Crest] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                    _manager.ChangeCrest(state, slot, state.BaseData.Crest(slot), StateChanged.Source.Game);
+                else
+                    visible = state.ModelData.Crest(slot);
+                break;
+            case UpdateState.NoChange:
+            case UpdateState.HatHack:
+                visible = state.ModelData.Crest(slot);
+                break;
+            case UpdateState.Transformed: break;
+        }
+    }
+
     /// <summary> Update base data for a single changed weapon slot. </summary>
     private unsafe UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterWeapon weapon)
     {
@@ -415,6 +484,7 @@ public class StateListener : IDisposable
                 return UpdateState.Transformed;
         }
 
+        var crest    = actor.GetCrest(slot);
         var baseData = state.BaseData.Weapon(slot);
         var change   = UpdateState.NoChange;
 
@@ -610,6 +680,7 @@ public class StateListener : IDisposable
         _penumbra.CreatingCharacterBase += OnCreatingCharacterBase;
         _penumbra.CreatedCharacterBase  += OnCreatedCharacterBase;
         _slotUpdating.Subscribe(OnSlotUpdating, SlotUpdating.Priority.StateListener);
+        _crestVisibilityUpdating.Subscribe(OnCrestVisibilityUpdating, CrestVisibilityUpdating.Priority.StateListener);
         _movedEquipment.Subscribe(OnMovedEquipment, MovedEquipment.Priority.StateListener);
         _weaponLoading.Subscribe(OnWeaponLoading, WeaponLoading.Priority.StateListener);
         _visorState.Subscribe(OnVisorChange, VisorStateChanged.Priority.StateListener);
@@ -623,6 +694,7 @@ public class StateListener : IDisposable
         _penumbra.CreatingCharacterBase -= OnCreatingCharacterBase;
         _penumbra.CreatedCharacterBase  -= OnCreatedCharacterBase;
         _slotUpdating.Unsubscribe(OnSlotUpdating);
+        _crestVisibilityUpdating.Unsubscribe(OnCrestVisibilityUpdating);
         _movedEquipment.Unsubscribe(OnMovedEquipment);
         _weaponLoading.Unsubscribe(OnWeaponLoading);
         _visorState.Unsubscribe(OnVisorChange);

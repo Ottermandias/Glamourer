@@ -13,6 +13,7 @@ using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
@@ -86,13 +87,13 @@ public class EquipmentDrawer
     }
 
 
-    public DataChange DrawEquip(EquipSlot slot, in DesignData designData, out EquipItem rArmor, out StainId rStain, EquipFlag? cApply,
-        out bool rApply, out bool rApplyStain, bool locked)
-        => DrawEquip(slot, designData.Item(slot), out rArmor, designData.Stain(slot), out rStain, cApply, out rApply, out rApplyStain, locked,
+    public DataChange DrawEquip(EquipSlot slot, in DesignData designData, out EquipItem rArmor, out StainId rStain, out bool rCrest, EquipFlag? cApply,
+        out bool rApply, out bool rApplyStain, out bool rApplyCrest, bool locked)
+        => DrawEquip(slot, designData.Item(slot), out rArmor, designData.Stain(slot), out rStain, designData.Crest(slot), out rCrest, cApply, out rApply, out rApplyStain, out rApplyCrest, locked,
             designData.Customize.Gender, designData.Customize.Race);
 
-    public DataChange DrawEquip(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain, EquipFlag? cApply,
-        out bool rApply, out bool rApplyStain, bool locked, Gender gender = Gender.Unknown, Race race = Race.Unknown)
+    public DataChange DrawEquip(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain, bool cCrest, out bool rCrest, EquipFlag? cApply,
+        out bool rApply, out bool rApplyStain, out bool rApplyCrest, bool locked, Gender gender = Gender.Unknown, Race race = Race.Unknown)
     {
         if (_config.HideApplyCheckmarks)
             cApply = null;
@@ -102,24 +103,26 @@ public class EquipmentDrawer
         using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
 
         if (_config.SmallEquip)
-            return DrawEquipSmall(slot, cArmor, out rArmor, cStain, out rStain, cApply, out rApply, out rApplyStain, locked, gender, race);
+            return DrawEquipSmall(slot, cArmor, out rArmor, cStain, out rStain, cCrest, out rCrest, cApply, out rApply, out rApplyStain, out rApplyCrest, locked, gender, race);
 
         if (!locked && _codes.EnabledArtisan)
-            return DrawEquipArtisan(slot, cArmor, out rArmor, cStain, out rStain, cApply, out rApply, out rApplyStain);
+            return DrawEquipArtisan(slot, cArmor, out rArmor, cStain, out rStain, cCrest, out rCrest, cApply, out rApply, out rApplyStain, out rApplyCrest);
 
-        return DrawEquipNormal(slot, cArmor, out rArmor, cStain, out rStain, cApply, out rApply, out rApplyStain, locked, gender, race);
+        return DrawEquipNormal(slot, cArmor, out rArmor, cStain, out rStain, cCrest, out rCrest, cApply, out rApply, out rApplyStain, out rApplyCrest, locked, gender, race);
     }
 
     public DataChange DrawWeapons(in DesignData designData, out EquipItem rMainhand, out EquipItem rOffhand, out StainId rMainhandStain,
-        out StainId rOffhandStain, EquipFlag? cApply, bool allWeapons, out bool rApplyMainhand, out bool rApplyMainhandStain,
-        out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked)
+        out StainId rOffhandStain, out bool rMainhandCrest, out bool rOffhandCrest, EquipFlag? cApply, bool allWeapons, out bool rApplyMainhand, out bool rApplyMainhandStain,
+        out bool rApplyMainhandCrest, out bool rApplyOffhand, out bool rApplyOffhandStain, out bool rApplyOffhandCrest, bool locked)
         => DrawWeapons(designData.Item(EquipSlot.MainHand), out rMainhand, designData.Item(EquipSlot.OffHand), out rOffhand,
-            designData.Stain(EquipSlot.MainHand), out rMainhandStain, designData.Stain(EquipSlot.OffHand), out rOffhandStain, cApply,
-            allWeapons, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked);
+            designData.Stain(EquipSlot.MainHand), out rMainhandStain, designData.Stain(EquipSlot.OffHand), out rOffhandStain,
+            designData.Crest(EquipSlot.MainHand), out rMainhandCrest, designData.Crest(EquipSlot.OffHand), out rOffhandCrest, cApply,
+            allWeapons, out rApplyMainhand, out rApplyMainhandStain, out rApplyMainhandCrest, out rApplyOffhand, out rApplyOffhandStain, out rApplyOffhandCrest, locked);
 
     private DataChange DrawWeapons(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
-        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
-        bool allWeapons, out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain,
+        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain,
+        bool cMainhandCrest, out bool rMainhandCrest, bool cOffhandCrest, out bool rOffhandCrest, EquipFlag? cApply,
+        bool allWeapons, out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyMainhandCrest, out bool rApplyOffhand, out bool rApplyOffhandStain, out bool rApplyOffhandCrest,
         bool locked)
     {
         if (cMainhand.ModelId.Id == 0)
@@ -128,10 +131,14 @@ public class EquipmentDrawer
             rMainhand           = cMainhand;
             rMainhandStain      = cMainhandStain;
             rOffhandStain       = cOffhandStain;
+            rMainhandCrest      = cMainhandCrest;
+            rOffhandCrest       = cOffhandCrest;
             rApplyMainhand      = false;
             rApplyMainhandStain = false;
+            rApplyMainhandCrest = false;
             rApplyOffhand       = false;
             rApplyOffhandStain  = false;
+            rApplyOffhandCrest  = false;
             return DataChange.None;
         }
 
@@ -144,15 +151,18 @@ public class EquipmentDrawer
 
         if (_config.SmallEquip)
             return DrawWeaponsSmall(cMainhand, out rMainhand, cOffhand, out rOffhand, cMainhandStain, out rMainhandStain, cOffhandStain,
-                out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked,
+                out rOffhandStain, cMainhandCrest, out rMainhandCrest, cOffhandCrest, out rOffhandCrest,
+                cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyMainhandCrest, out rApplyOffhand, out rApplyOffhandStain, out rApplyOffhandCrest, locked,
                 allWeapons);
 
         if (!locked && _codes.EnabledArtisan)
             return DrawWeaponsArtisan(cMainhand, out rMainhand, cOffhand, out rOffhand, cMainhandStain, out rMainhandStain, cOffhandStain,
-                out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain);
+                out rOffhandStain, cMainhandCrest, out rMainhandCrest, cOffhandCrest, out rOffhandCrest, 
+                cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyMainhandCrest, out rApplyOffhand, out rApplyOffhandStain, out rApplyOffhandCrest);
 
         return DrawWeaponsNormal(cMainhand, out rMainhand, cOffhand, out rOffhand, cMainhandStain, out rMainhandStain, cOffhandStain,
-            out rOffhandStain, cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyOffhand, out rApplyOffhandStain, locked,
+            out rOffhandStain, cMainhandCrest, out rMainhandCrest, cOffhandCrest, out rOffhandCrest,
+            cApply, out rApplyMainhand, out rApplyMainhandStain, out rApplyMainhandCrest, out rApplyOffhand, out rApplyOffhandStain, out rApplyOffhandCrest, locked,
             allWeapons);
     }
 
@@ -331,6 +341,49 @@ public class EquipmentDrawer
         return change;
     }
 
+    internal static bool CanHaveCrest(EquipSlot slot)
+        => slot is EquipSlot.OffHand or EquipSlot.Head or EquipSlot.Body;
+
+    private DataChange DrawCrest(EquipSlot slot, bool current, EquipFlag? cApply, out bool ret, out bool rApply, bool locked, bool small, bool change2)
+    {
+        var changes = DataChange.None;
+        if (cApply.HasValue)
+        {
+            var apply          = cApply.Value.HasFlag(slot.ToCrestFlag());
+            var flags          = (sbyte)(apply ? current ? 1 : -1 : 0);
+            using var style    = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
+            using (var disabled = ImRaii.Disabled(locked))
+            {
+                if (new TristateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw($"##crest{slot}", flags, out flags))
+                {
+                    (ret, rApply) = flags switch
+                    {
+                        -1 => (false, true),
+                        0  => (current, false),
+                        _  => (true, true),
+                    };
+                }
+                else
+                {
+                    ret    = current;
+                    rApply = apply;
+                }
+            }
+            ImGuiUtil.HoverTooltip($"Display your Free Company crest on this equipment.\n\nThis attribute will be {(apply ? current ? "enabled." : "disabled." : "kept as is.")}");
+            if (ret != current)
+                changes |= change2 ? DataChange.Crest2 : DataChange.Crest;
+            if (rApply != apply)
+                changes |= change2 ? DataChange.ApplyCrest2 : DataChange.ApplyCrest;
+        }
+        else
+        {
+            rApply = false;
+            if (UiHelpers.DrawCheckbox($"##crest{slot}", "Display your Free Company crest on this equipment.", current, out ret, locked))
+                changes |= change2 ? DataChange.Crest2 : DataChange.Crest;
+        }
+        return changes;
+    }
+
     /// <summary> Draw an input for armor that can set arbitrary values instead of choosing items. </summary>
     private bool DrawArmorArtisan(EquipSlot slot, EquipItem current, out EquipItem armor)
     {
@@ -383,8 +436,8 @@ public class EquipmentDrawer
         return false;
     }
 
-    private DataChange DrawEquipArtisan(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain,
-        EquipFlag? cApply, out bool rApply, out bool rApplyStain)
+    private DataChange DrawEquipArtisan(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain, bool cCrest, out bool rCrest,
+        EquipFlag? cApply, out bool rApply, out bool rApplyStain, out bool rApplyCrest)
     {
         var changes = DataChange.None;
         if (DrawStainArtisan(slot, cStain, out rStain))
@@ -392,6 +445,16 @@ public class EquipmentDrawer
         ImGui.SameLine();
         if (DrawArmorArtisan(slot, cArmor, out rArmor))
             changes |= DataChange.Item;
+        if (CanHaveCrest(slot))
+        {
+            ImGui.SameLine();
+            changes |= DrawCrest(slot, cCrest, cApply, out rCrest, out rApplyCrest, false, true, false);
+        }
+        else
+        {
+            rCrest      = cCrest;
+            rApplyCrest = false;
+        }
         if (cApply.HasValue)
         {
             ImGui.SameLine();
@@ -410,8 +473,8 @@ public class EquipmentDrawer
         return changes;
     }
 
-    private DataChange DrawEquipSmall(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain,
-        EquipFlag? cApply, out bool rApply, out bool rApplyStain, bool locked, Gender gender, Race race)
+    private DataChange DrawEquipSmall(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain, bool cCrest, out bool rCrest,
+        EquipFlag? cApply, out bool rApply, out bool rApplyStain, out bool rApplyCrest, bool locked, Gender gender, Race race)
     {
         var changes = DataChange.None;
         if (DrawStain(slot, cStain, out rStain, locked, true))
@@ -419,6 +482,16 @@ public class EquipmentDrawer
         ImGui.SameLine();
         if (DrawItem(slot, cArmor, out rArmor, out var label, locked, true, false, false))
             changes |= DataChange.Item;
+        if (CanHaveCrest(slot))
+        {
+            ImGui.SameLine();
+            changes |= DrawCrest(slot, cCrest, cApply, out rCrest, out rApplyCrest, locked, true, false);
+        }
+        else
+        {
+            rCrest      = cCrest;
+            rApplyCrest = false;
+        }
         if (cApply.HasValue)
         {
             ImGui.SameLine();
@@ -443,8 +516,8 @@ public class EquipmentDrawer
         return changes;
     }
 
-    private DataChange DrawEquipNormal(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain,
-        EquipFlag? cApply, out bool rApply, out bool rApplyStain, bool locked, Gender gender, Race race)
+    private DataChange DrawEquipNormal(EquipSlot slot, EquipItem cArmor, out EquipItem rArmor, StainId cStain, out StainId rStain, bool cCrest, out bool rCrest,
+        EquipFlag? cApply, out bool rApply, out bool rApplyStain, out bool rApplyCrest, bool locked, Gender gender, Race race)
     {
         var changes = DataChange.None;
         cArmor.DrawIcon(_textures, _iconSize, slot);
@@ -479,6 +552,16 @@ public class EquipmentDrawer
         {
             rApplyStain = true;
         }
+        if (CanHaveCrest(slot))
+        {
+            ImGui.SameLine();
+            changes |= DrawCrest(slot, cCrest, cApply, out rCrest, out rApplyCrest, locked, false, false);
+        }
+        else
+        {
+            rCrest      = cCrest;
+            rApplyCrest = true;
+        }
 
         if (VerifyRestrictedGear(slot, rArmor, gender, race))
         {
@@ -506,8 +589,9 @@ public class EquipmentDrawer
     }
 
     private DataChange DrawWeaponsSmall(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
-        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
-        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked,
+        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain,
+        bool cMainhandCrest, out bool rMainhandCrest, bool cOffhandCrest, out bool rOffhandCrest, EquipFlag? cApply,
+        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyMainhandCrest, out bool rApplyOffhand, out bool rApplyOffhandStain, out bool rApplyOffhandCrest, bool locked,
         bool allWeapons)
     {
         var changes = DataChange.None;
@@ -526,6 +610,16 @@ public class EquipmentDrawer
             }
         }
 
+        if (CanHaveCrest(EquipSlot.MainHand))
+        {
+            ImGui.SameLine();
+            changes |= DrawCrest(EquipSlot.MainHand, cMainhandCrest, cApply, out rMainhandCrest, out rApplyMainhandCrest, locked, false, false);
+        }
+        else
+        {
+            rMainhandCrest      = cMainhandCrest;
+            rApplyMainhandCrest = true;
+        }
         if (cApply.HasValue)
         {
             ImGui.SameLine();
@@ -548,8 +642,10 @@ public class EquipmentDrawer
         if (rOffhand.Type is FullEquipType.Unknown)
         {
             rOffhandStain      = cOffhandStain;
+            rOffhandCrest      = cOffhandCrest;
             rApplyOffhand      = false;
             rApplyOffhandStain = false;
+            rApplyOffhandCrest = false;
             return changes;
         }
 
@@ -559,6 +655,17 @@ public class EquipmentDrawer
         ImGui.SameLine();
         if (DrawOffhand(rMainhand, rOffhand, out rOffhand, out var offhandLabel, locked, true, false, false))
             changes |= DataChange.Item2;
+
+        if (CanHaveCrest(EquipSlot.OffHand))
+        {
+            ImGui.SameLine();
+            changes |= DrawCrest(EquipSlot.OffHand, cOffhandCrest, cApply, out rOffhandCrest, out rApplyOffhandCrest, locked, false, true);
+        }
+        else
+        {
+            rOffhandCrest      = cOffhandCrest;
+            rApplyOffhandCrest = true;
+        }
         if (cApply.HasValue)
         {
             ImGui.SameLine();
@@ -580,8 +687,9 @@ public class EquipmentDrawer
     }
 
     private DataChange DrawWeaponsNormal(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
-        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
-        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain, bool locked,
+        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain,
+        bool cMainhandCrest, out bool rMainhandCrest, bool cOffhandCrest, out bool rOffhandCrest, EquipFlag? cApply,
+        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyMainhandCrest, out bool rApplyOffhand, out bool rApplyOffhandStain, out bool rApplyOffhandCrest, bool locked,
         bool allWeapons)
     {
         var changes = DataChange.None;
@@ -630,13 +738,26 @@ public class EquipmentDrawer
             {
                 rApplyMainhandStain = true;
             }
+
+            if (CanHaveCrest(EquipSlot.MainHand))
+            {
+                ImGui.SameLine();
+                changes |= DrawCrest(EquipSlot.MainHand, cMainhandCrest, cApply, out rMainhandCrest, out rApplyMainhandCrest, locked, false, false);
+            }
+            else
+            {
+                rMainhandCrest      = cMainhandCrest;
+                rApplyMainhandCrest = true;
+            }
         }
 
         if (rOffhand.Type is FullEquipType.Unknown)
         {
             rOffhandStain      = cOffhandStain;
+            rOffhandCrest      = cOffhandCrest;
             rApplyOffhand      = false;
             rApplyOffhandStain = false;
+            rApplyOffhandCrest = false;
             return changes;
         }
 
@@ -673,19 +794,31 @@ public class EquipmentDrawer
             {
                 rApplyOffhandStain = true;
             }
+
+            if (CanHaveCrest(EquipSlot.OffHand))
+            {
+                ImGui.SameLine();
+                changes |= DrawCrest(EquipSlot.OffHand, cOffhandCrest, cApply, out rOffhandCrest, out rApplyOffhandCrest, locked, false, true);
+            }
+            else
+            {
+                rOffhandCrest      = cOffhandCrest;
+                rApplyOffhandCrest = true;
+            }
         }
 
         return changes;
     }
 
     private DataChange DrawWeaponsArtisan(EquipItem cMainhand, out EquipItem rMainhand, EquipItem cOffhand, out EquipItem rOffhand,
-        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain, EquipFlag? cApply,
-        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyOffhand, out bool rApplyOffhandStain)
+        StainId cMainhandStain, out StainId rMainhandStain, StainId cOffhandStain, out StainId rOffhandStain,
+        bool cMainhandCrest, out bool rMainhandCrest, bool cOffhandCrest, out bool rOffhandCrest, EquipFlag? cApply,
+        out bool rApplyMainhand, out bool rApplyMainhandStain, out bool rApplyMainhandCrest, out bool rApplyOffhand, out bool rApplyOffhandStain, out bool rApplyOffhandCrest)
     {
         rApplyMainhand      = (cApply ?? 0).HasFlag(EquipFlag.Mainhand);
         rApplyMainhandStain = (cApply ?? 0).HasFlag(EquipFlag.MainhandStain);
         rApplyOffhand       = (cApply ?? 0).HasFlag(EquipFlag.Offhand);
-        rApplyOffhandStain  = (cApply ?? 0).HasFlag(EquipFlag.MainhandStain);
+        rApplyOffhandStain  = (cApply ?? 0).HasFlag(EquipFlag.OffhandStain);
 
         bool DrawWeapon(EquipItem current, out EquipItem ret)
         {
@@ -741,15 +874,35 @@ public class EquipmentDrawer
             ImGui.SameLine();
             if (DrawWeapon(cMainhand, out rMainhand))
                 ret |= DataChange.Item;
+            if (CanHaveCrest(EquipSlot.MainHand))
+            {
+                ImGui.SameLine();
+                ret |= DrawCrest(EquipSlot.MainHand, cMainhandCrest, cApply, out rMainhandCrest, out rApplyMainhandCrest, false, true, false);
+            }
+            else
+            {
+                rMainhandCrest      = cMainhandCrest;
+                rApplyMainhandCrest = true;
+            }
         }
 
         using (var id = ImRaii.PushId(1))
         {
             if (DrawStainArtisan(EquipSlot.OffHand, cOffhandStain, out rOffhandStain))
-                ret |= DataChange.Stain;
+                ret |= DataChange.Stain2;
             ImGui.SameLine();
             if (DrawWeapon(cOffhand, out rOffhand))
-                ret |= DataChange.Item;
+                ret |= DataChange.Item2;
+            if (CanHaveCrest(EquipSlot.OffHand))
+            {
+                ImGui.SameLine();
+                ret |= DrawCrest(EquipSlot.OffHand, cOffhandCrest, cApply, out rOffhandCrest, out rApplyOffhandCrest, false, true, true);
+            }
+            else
+            {
+                rOffhandCrest      = cOffhandCrest;
+                rApplyOffhandCrest = true;
+            }
         }
 
         return ret;
