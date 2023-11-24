@@ -7,17 +7,20 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Glamourer.Events;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Penumbra.String;
 
 namespace Glamourer.Interop;
 
 public unsafe class InventoryService : IDisposable
 {
-    private readonly MovedEquipment                   _event;
+    private readonly MovedEquipment                   _movedItemsEvent;
+    private readonly EquippedGearset                  _gearsetEvent;
     private readonly List<(EquipSlot, uint, StainId)> _itemList = new(12);
 
-    public InventoryService(MovedEquipment @event, IGameInteropProvider interop)
+    public InventoryService(MovedEquipment movedItemsEvent, IGameInteropProvider interop, EquippedGearset gearsetEvent)
     {
-        _event        = @event;
+        _movedItemsEvent = movedItemsEvent;
+        _gearsetEvent    = gearsetEvent;
 
         _moveItemHook = interop.HookFromAddress<MoveItemDelegate>((nint)InventoryManager.MemberFunctionPointers.MoveItemSlot, MoveItemDetour);
         _equipGearsetHook =
@@ -39,7 +42,10 @@ public unsafe class InventoryService : IDisposable
 
     private int EquipGearSetDetour(RaptureGearsetModule* module, int gearsetId, byte glamourPlateId)
     {
-        var ret = _equipGearsetHook.Original(module, gearsetId, glamourPlateId);
+        var prior = module->CurrentGearsetIndex;
+        var ret   = _equipGearsetHook.Original(module, gearsetId, glamourPlateId);
+        var set   = module->GetGearset(gearsetId);
+        _gearsetEvent.Invoke(new ByteString(set->Name).ToString(), gearsetId, prior, glamourPlateId, set->ClassJob);
         Glamourer.Log.Excessive($"[InventoryService] Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
         if (ret == 0)
         {
@@ -107,7 +113,7 @@ public unsafe class InventoryService : IDisposable
                 Add(EquipSlot.LFinger,  ref entry->RingLeft);
             }
 
-            _event.Invoke(_itemList.ToArray());
+            _movedItemsEvent.Invoke(_itemList.ToArray());
         }
 
         return ret;
@@ -127,18 +133,18 @@ public unsafe class InventoryService : IDisposable
         {
             if (InvokeSource(sourceContainer, sourceSlot, out var source))
                 if (InvokeTarget(manager, targetContainer, targetSlot, out var target))
-                    _event.Invoke(new[]
+                    _movedItemsEvent.Invoke(new[]
                     {
                         source,
                         target,
                     });
                 else
-                    _event.Invoke(new[]
+                    _movedItemsEvent.Invoke(new[]
                     {
                         source,
                     });
             else if (InvokeTarget(manager, targetContainer, targetSlot, out var target))
-                _event.Invoke(new[]
+                _movedItemsEvent.Invoke(new[]
                 {
                     target,
                 });

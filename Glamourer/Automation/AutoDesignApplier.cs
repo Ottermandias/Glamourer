@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -26,6 +27,7 @@ public class AutoDesignApplier : IDisposable
     private readonly AutoDesignManager      _manager;
     private readonly StateManager           _state;
     private readonly JobService             _jobs;
+    private readonly EquippedGearset        _equippedGearset;
     private readonly ActorService           _actors;
     private readonly CustomizationService   _customizations;
     private readonly CustomizeUnlockManager _customizeUnlocks;
@@ -49,7 +51,8 @@ public class AutoDesignApplier : IDisposable
 
     public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs,
         CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
-        AutomationChanged @event, ObjectManager objects, WeaponLoading weapons, HumanModelList humans, IClientState clientState)
+        AutomationChanged @event, ObjectManager objects, WeaponLoading weapons, HumanModelList humans, IClientState clientState,
+        EquippedGearset equippedGearset)
     {
         _config           =  config;
         _manager          =  manager;
@@ -64,15 +67,18 @@ public class AutoDesignApplier : IDisposable
         _weapons          =  weapons;
         _humans           =  humans;
         _clientState      =  clientState;
+        _equippedGearset  =  equippedGearset;
         _jobs.JobChanged  += OnJobChange;
         _event.Subscribe(OnAutomationChange, AutomationChanged.Priority.AutoDesignApplier);
         _weapons.Subscribe(OnWeaponLoading, WeaponLoading.Priority.AutoDesignApplier);
+        _equippedGearset.Subscribe(OnEquippedGearset, EquippedGearset.Priority.AutoDesignApplier);
     }
 
     public void Dispose()
     {
         _weapons.Unsubscribe(OnWeaponLoading);
         _event.Unsubscribe(OnAutomationChange);
+        _equippedGearset.Unsubscribe(OnEquippedGearset);
         _jobs.JobChanged -= OnJobChange;
     }
 
@@ -495,5 +501,39 @@ public class AutoDesignApplier : IDisposable
                 _state.ChangeWetness(state, design.IsWet(), source);
             totalMetaFlags |= 0x08;
         }
+    }
+
+    internal static int NewGearsetId = -1;
+
+    private void OnEquippedGearset(string name, int id, int prior, byte _, byte job)
+    {
+        if (!_config.EnableAutoDesigns)
+            return;
+
+        var (player, data) = _objects.PlayerData;
+        if (!player.IsValid)
+            return;
+
+        if (!GetPlayerSet(player, out var set) || !_state.TryGetValue(player, out var state))
+            return;
+
+        var respectManual = prior == id;
+        NewGearsetId = id;
+        Reduce(data.Objects[0], state, set, respectManual, job != state.LastJob);
+        NewGearsetId = -1;
+        foreach (var actor in data.Objects)
+            _state.ReapplyState(actor);
+    }
+
+    public static unsafe bool CheckGearset(short check)
+    {
+        if (NewGearsetId != -1)
+            return check == NewGearsetId;
+
+        var module = RaptureGearsetModule.Instance();
+        if (module == null)
+            return false;
+
+        return check == module->CurrentGearsetIndex;
     }
 }

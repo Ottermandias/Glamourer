@@ -27,6 +27,7 @@ public class AutoDesign
     public Design?  Design;
     public JobGroup Jobs;
     public Type     ApplicationType;
+    public short    GearsetIndex = -1;
 
     public string Name(bool incognito)
         => Revert ? RevertName : incognito ? Design!.Incognito : Design!.Name.Text;
@@ -43,10 +44,22 @@ public class AutoDesign
             Design          = Design,
             ApplicationType = ApplicationType,
             Jobs            = Jobs,
+            GearsetIndex    = GearsetIndex,
         };
 
     public unsafe bool IsActive(Actor actor)
-        => actor.IsCharacter && Jobs.Fits(actor.AsCharacter->CharacterData.ClassJob);
+    {
+        if (!actor.IsCharacter)
+            return false;
+
+        var ret = true;
+        if (GearsetIndex < 0)
+            ret &= Jobs.Fits(actor.AsCharacter->CharacterData.ClassJob);
+        else
+            ret &= AutoDesignApplier.CheckGearset(GearsetIndex);
+
+        return ret;
+    }
 
     public JObject Serialize()
         => new()
@@ -58,9 +71,12 @@ public class AutoDesign
 
     private JObject CreateConditionObject()
     {
-        var ret = new JObject();
-        if (Jobs.Id != 0)
-            ret["JobGroup"] = Jobs.Id;
+        var ret = new JObject
+        {
+            ["Gearset"]  = GearsetIndex,
+            ["JobGroup"] = Jobs.Id,
+        };
+
         return ret;
     }
 

@@ -73,6 +73,7 @@ public static class ServiceManager
             .AddSingleton<ObjectUnlocked>()
             .AddSingleton<TabSelected>()
             .AddSingleton<MovedEquipment>()
+            .AddSingleton<EquippedGearset>()
             .AddSingleton<GPoseService>()
             .AddSingleton<PenumbraReloaded>();
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -29,17 +30,18 @@ public class SetPanel
     private readonly CustomizeUnlockManager _customizeUnlocks;
     private readonly CustomizationService   _customizations;
 
-    private readonly Configuration    _config;
-    private readonly RevertDesignCombo      _designCombo;
-    private readonly JobGroupCombo    _jobGroupCombo;
-    private readonly IdentifierDrawer _identifierDrawer;
+    private readonly Configuration     _config;
+    private readonly RevertDesignCombo _designCombo;
+    private readonly JobGroupCombo     _jobGroupCombo;
+    private readonly IdentifierDrawer  _identifierDrawer;
 
     private string? _tempName;
     private int     _dragIndex = -1;
 
     private Action? _endAction;
 
-    public SetPanel(SetSelector selector, AutoDesignManager manager, JobService jobs, ItemUnlockManager itemUnlocks, RevertDesignCombo designCombo,
+    public SetPanel(SetSelector selector, AutoDesignManager manager, JobService jobs, ItemUnlockManager itemUnlocks,
+        RevertDesignCombo designCombo,
         CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer, Configuration config)
     {
         _selector         = selector;
@@ -216,11 +218,11 @@ public class SetPanel
                 ImGui.TableNextColumn();
                 DrawApplicationTypeBoxes(Selection, design, idx, singleRow);
                 ImGui.TableNextColumn();
-                _jobGroupCombo.Draw(Selection, design, idx);
+                DrawConditions(design, idx);
             }
             else
             {
-                _jobGroupCombo.Draw(Selection, design, idx);
+                DrawConditions(design, idx);
                 ImGui.TableNextColumn();
                 DrawApplicationTypeBoxes(Selection, design, idx, singleRow);
             }
@@ -242,6 +244,38 @@ public class SetPanel
 
         _endAction?.Invoke();
         _endAction = null;
+    }
+
+    private int _tmpGearset = int.MaxValue;
+
+    private void DrawConditions(AutoDesign design, int idx)
+    {
+        var usingGearset = design.GearsetIndex >= 0;
+        if (ImGui.Button($"{(usingGearset ? "Gearset:" : "Jobs:")}##usingGearset"))
+        {
+            usingGearset = !usingGearset;
+            _manager.ChangeGearsetCondition(Selection, idx, (short)(usingGearset ? 0 : -1));
+        }
+
+        ImGuiUtil.HoverTooltip("Click to switch between Job and Gearset restrictions.");
+
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        if (usingGearset)
+        {
+            var set = 1 + (_tmpGearset == int.MaxValue ? design.GearsetIndex : _tmpGearset);
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+            if (ImGui.InputInt("##whichGearset", ref set, 0, 0))
+                _tmpGearset = Math.Clamp(set, 1, 100);
+            if (ImGui.IsItemDeactivatedAfterEdit())
+            {
+                _manager.ChangeGearsetCondition(Selection, idx, (short)(_tmpGearset - 1));
+                _tmpGearset = int.MaxValue;
+            }
+        }
+        else
+        {
+            _jobGroupCombo.Draw(Selection, design, idx);
+        }
     }
 
     private void DrawWarnings(AutoDesign design, int idx)
