@@ -9,8 +9,8 @@ using Glamourer.Unlocks;
 using ImGuiNET;
 using Lumina.Misc;
 using OtterGui;
-using OtterGui.Classes;
 using OtterGui.Raii;
+using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
