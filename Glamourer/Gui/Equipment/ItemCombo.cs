@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Plugin.Services;
 using Glamourer.Services;
@@ -21,6 +22,9 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     public readonly  string          Label;
     private          ItemId          _currentItem;
     private          float           _innerWidth;
+
+    public SetId   CustomSetId   { get; private set; }
+    public Variant CustomVariant { get; private set; }
 
     public ItemCombo(IDataManager gameData, ItemManager items, EquipSlot slot, Logger log, FavoriteManager favorites)
         : base(() => GetItems(favorites, items, slot), log)
@@ -50,8 +54,9 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
 
     public bool Draw(string previewName, ItemId previewIdx, float width, float innerWidth)
     {
-        _innerWidth  = innerWidth;
-        _currentItem = previewIdx;
+        _innerWidth   = innerWidth;
+        _currentItem  = previewIdx;
+        CustomVariant = 0;
         return Draw($"##{Label}", previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
     }
 
@@ -116,5 +121,19 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
         if (slot.IsEquipment())
             enumerable = enumerable.Append(ItemManager.SmallClothesItem(slot));
         return enumerable.OrderByDescending(favorites.Contains).ThenBy(i => i.Name).Prepend(nothing).ToList();
+    }
+
+    protected override void OnClosePopup()
+    {
+        // If holding control while the popup closes, try to parse the input as a full pair of set id and variant, and set a custom item for that.
+        if (!ImGui.GetIO().KeyCtrl)
+            return;
+
+        var split = Filter.Text.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (split.Length != 2 || !ushort.TryParse(split[0], out var setId) || !byte.TryParse(split[1], out var variant))
+            return;
+
+        CustomSetId   = setId;
+        CustomVariant = variant;
     }
 }

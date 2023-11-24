@@ -345,7 +345,7 @@ public class DesignManager
     /// <summary> Change a non-weapon equipment piece. </summary>
     public void ChangeEquip(Design design, EquipSlot slot, EquipItem item)
     {
-        if (!_items.IsItemValid(slot, item.ItemId, out item))
+        if (!_items.IsItemValid(slot, item.Id, out item))
             return;
 
         var old = design.DesignData.Item(slot);

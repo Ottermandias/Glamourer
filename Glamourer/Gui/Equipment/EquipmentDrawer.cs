@@ -263,6 +263,11 @@ public class EquipmentDrawer
         var change = combo.Draw(armor.Name, armor.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength, _requiredComboWidth);
         if (change)
             armor = combo.CurrentSelection;
+        else if (combo.CustomVariant.Id > 0)
+        {
+            armor  = _items.Identify(slot, combo.CustomSetId, combo.CustomVariant);
+            change = true;
+        }
 
         if (!locked && armor.ModelId.Id != 0)
         {
