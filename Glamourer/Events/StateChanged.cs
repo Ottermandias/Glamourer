@@ -37,6 +37,9 @@ public sealed class StateChanged : EventWrapper<Action<StateChanged.Type, StateC
         /// <summary> A characters saved state had a stain changed. Data is the old stain id, the new stain id and the slot [(StainId, StainId, EquipSlot)]. </summary>
         Stain,
 
+        /// <summary> A characters saved state had a crest visibility changed. Data is the old crest visibility, the new crest visibility and the slot [(bool, bool, EquipSlot)]. </summary>
+        Crest,
+
         /// <summary> A characters saved state had a design applied. This means everything may have changed. Data is the applied design. [DesignBase] </summary>
         Design,
 

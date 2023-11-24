@@ -170,7 +170,7 @@ public class DesignBase
         => ApplyCustomize.HasFlag(idx.ToFlag());
 
     public bool DoApplyCrest(EquipSlot slot)
-        => ApplyCrest.HasFlag(slot.ToFlag());
+        => ApplyCrest.HasFlag(slot.ToCrestFlag());
 
     internal bool SetApplyEquip(EquipSlot slot, bool value)
     {
