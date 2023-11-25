@@ -77,4 +77,22 @@ public static class CrestExtensions
             CrestFlag.LFinger  => EquipSlot.LFinger,
             _                  => 0,
         };
+
+    public static string ToLabel(this CrestFlag flag)
+        => flag switch
+        {
+            CrestFlag.Head     => "Head",
+            CrestFlag.Body     => "Chest",
+            CrestFlag.Hands    => "Gauntlets",
+            CrestFlag.Legs     => "Pants",
+            CrestFlag.Feet     => "Boot",
+            CrestFlag.Ears     => "Earrings",
+            CrestFlag.Neck     => "Necklace",
+            CrestFlag.Wrists   => "Bracelet",
+            CrestFlag.RFinger  => "Right Ring",
+            CrestFlag.LFinger  => "Left Ring",
+            CrestFlag.MainHand => "Weapon",
+            CrestFlag.OffHand  => "Shield",
+            _                  => string.Empty,
+        };
 }

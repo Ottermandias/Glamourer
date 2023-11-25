@@ -2,6 +2,8 @@
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.State;
+using Glamourer.Structs;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui;
 
@@ -49,6 +51,29 @@ public ref struct ToggleDrawData
             SetApply           = setApply,
         };
     }
+
+    public static ToggleDrawData CrestFromDesign(EquipSlot slot, DesignManager manager, Design design)
+        => new()
+        {
+            Label              = $"{slot.ToCrestFlag().ToLabel()} Crest",
+            Tooltip            = string.Empty,
+            Locked             = design.WriteProtected(),
+            DisplayApplication = true,
+            CurrentValue       = design.DesignData.Crest(slot),
+            CurrentApply       = design.DoApplyCrest(slot),
+            SetValue           = v => manager.ChangeCrest(design, slot, v),
+            SetApply           = v => manager.ChangeApplyCrest(design, slot, v),
+        };
+
+    public static ToggleDrawData CrestFromState(EquipSlot slot, StateManager manager, ActorState state)
+        => new()
+        {
+            Label        = $"{slot.ToCrestFlag().ToLabel()} Crest",
+            Tooltip      = "Hide or show your free company crest on this piece of gear.",
+            Locked       = state.IsLocked,
+            CurrentValue = state.ModelData.Crest(slot), // TODO
+            SetValue     = v => { },                    //manager.ChangeCrest(state, slot, v, StateChanged.Source.Manual),
+        };
 
     public static ToggleDrawData FromState(ActorState.MetaIndex index, StateManager manager, ActorState state)
     {

@@ -110,11 +110,25 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
 
     private void DrawEquipmentMetaToggles()
     {
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.HatState, _manager, _selector.Selected!));
+        using (var _ = ImRaii.Group())
+        {
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.HatState, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(EquipSlot.Head, _manager, _selector.Selected!));
+        }
+
         ImGui.SameLine();
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.VisorState, _manager, _selector.Selected!));
+        using (var _ = ImRaii.Group())
+        {
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.VisorState, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(EquipSlot.Body, _manager, _selector.Selected!));
+        }
+
         ImGui.SameLine();
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.WeaponState, _manager, _selector.Selected!));
+        using (var _ = ImRaii.Group())
+        {
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.WeaponState, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(EquipSlot.OffHand, _manager, _selector.Selected!));
+        }
     }
 
     private void DrawCustomize()
@@ -140,6 +154,50 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }
 
+    private void DrawCustomizeApplication()
+    {
+        var set       = _selector.Selected!.CustomizationSet;
+        var available = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender;
+        var flags     = _selector.Selected!.ApplyCustomize == 0 ? 0 : (_selector.Selected!.ApplyCustomize & available) == available ? 3 : 1;
+        if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))
+        {
+            var newFlags = flags == 3;
+            _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Clan,   newFlags);
+            _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Gender, newFlags);
+            foreach (var index in CustomizationExtensions.AllBasic)
+                _manager.ChangeApplyCustomize(_selector.Selected!, index, newFlags);
+        }
+
+        var applyClan = _selector.Selected!.DoApplyCustomize(CustomizeIndex.Clan);
+        if (ImGui.Checkbox($"Apply {CustomizeIndex.Clan.ToDefaultName()}", ref applyClan))
+            _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Clan, applyClan);
+
+        var applyGender = _selector.Selected!.DoApplyCustomize(CustomizeIndex.Gender);
+        if (ImGui.Checkbox($"Apply {CustomizeIndex.Gender.ToDefaultName()}", ref applyGender))
+            _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Gender, applyGender);
+
+
+        foreach (var index in CustomizationExtensions.All.Where(set.IsAvailable))
+        {
+            var apply = _selector.Selected!.DoApplyCustomize(index);
+            if (ImGui.Checkbox($"Apply {set.Option(index)}", ref apply))
+                _manager.ChangeApplyCustomize(_selector.Selected!, index, apply);
+        }
+    }
+
+    private void DrawCrestApplication()
+    {
+        var flags     = (uint)_selector.Selected!.ApplyCrest;
+        var bigChange = ImGui.CheckboxFlags("Apply All Crests", ref flags, (uint)CrestExtensions.AllRelevant);
+        foreach (var flag in CrestExtensions.AllRelevantSet)
+        {
+            var slot  = flag.ToSlot();
+            var apply = bigChange ? ((CrestFlag)flags & flag) == flag : _selector.Selected!.DoApplyCrest(slot);
+            if (ImGui.Checkbox($"Apply {flag.ToLabel()} Crest", ref apply) || bigChange)
+                _manager.ChangeApplyCrest(_selector.Selected!, slot, apply);
+        }
+    }
+
     private void DrawApplicationRules()
     {
         if (!ImGui.CollapsingHeader("Application Rules"))
@@ -147,33 +205,9 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
 
         using (var _ = ImRaii.Group())
         {
-            var set       = _selector.Selected!.CustomizationSet;
-            var available = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender;
-            var flags     = _selector.Selected!.ApplyCustomize == 0 ? 0 : (_selector.Selected!.ApplyCustomize & available) == available ? 3 : 1;
-            if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))
-            {
-                var newFlags = flags == 3;
-                _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Clan,   newFlags);
-                _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Gender, newFlags);
-                foreach (var index in CustomizationExtensions.AllBasic)
-                    _manager.ChangeApplyCustomize(_selector.Selected!, index, newFlags);
-            }
-
-            var applyClan = _selector.Selected!.DoApplyCustomize(CustomizeIndex.Clan);
-            if (ImGui.Checkbox($"Apply {CustomizeIndex.Clan.ToDefaultName()}", ref applyClan))
-                _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Clan, applyClan);
-
-            var applyGender = _selector.Selected!.DoApplyCustomize(CustomizeIndex.Gender);
-            if (ImGui.Checkbox($"Apply {CustomizeIndex.Gender.ToDefaultName()}", ref applyGender))
-                _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Gender, applyGender);
-
-
-            foreach (var index in CustomizationExtensions.All.Where(set.IsAvailable))
-            {
-                var apply = _selector.Selected!.DoApplyCustomize(index);
-                if (ImGui.Checkbox($"Apply {set.Option(index)}", ref apply))
-                    _manager.ChangeApplyCustomize(_selector.Selected!, index, apply);
-            }
+            DrawCustomizeApplication();
+            ImGui.NewLine();
+            DrawCrestApplication();
         }
 
         ImGui.SameLine(ImGui.GetContentRegionAvail().X / 2);

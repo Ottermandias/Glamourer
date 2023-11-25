@@ -5,6 +5,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -157,12 +158,31 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
         _equipmentDrawer.DrawWeapons(mainhand, offhand, GameMain.IsInGPose());
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.HatState, _stateManager, _state));
-        ImGui.SameLine();
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.VisorState, _stateManager, _state));
-        ImGui.SameLine();
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.WeaponState, _stateManager, _state));
+        DrawEquipmentMetaToggles();
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+    }
+
+    private void DrawEquipmentMetaToggles()
+    {
+        using (var _ = ImRaii.Group())
+        {
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.HatState, _stateManager, _state!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(EquipSlot.Head, _stateManager, _state!));
+        }
+
+        ImGui.SameLine();
+        using (var _ = ImRaii.Group())
+        {
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.VisorState, _stateManager, _state!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(EquipSlot.Body, _stateManager, _state!));
+        }
+
+        ImGui.SameLine();
+        using (var _ = ImRaii.Group())
+        {
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.WeaponState, _stateManager, _state!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(EquipSlot.OffHand, _stateManager, _state!));
+        }
     }
 
     private void DrawMonsterPanel()
