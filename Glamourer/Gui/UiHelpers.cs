@@ -1,4 +1,3 @@
-using System;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
@@ -15,20 +14,6 @@ using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui;
-
-[Flags]
-public enum DataChange : byte
-{
-    None        = 0x00,
-    Item        = 0x01,
-    Stain       = 0x02,
-    ApplyItem   = 0x04,
-    ApplyStain  = 0x08,
-    Item2       = 0x10,
-    Stain2      = 0x20,
-    ApplyItem2  = 0x40,
-    ApplyStain2 = 0x80,
-}
 
 public static class UiHelpers
 {
