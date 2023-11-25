@@ -70,7 +70,7 @@ public unsafe class InventoryService : IDisposable
                     else if (item.GlamourId != 0)
                         _itemList.Add((slot, item.GlamourId, item.Stain));
                     else
-                        _itemList.Add((slot, item.ItemID, item.Stain));
+                        _itemList.Add((slot, FixId(item.ItemID), item.Stain));
                 }
 
                 var plate = MirageManager.Instance()->GlamourPlatesSpan[glamourPlateId - 1];
@@ -96,7 +96,7 @@ public unsafe class InventoryService : IDisposable
                     else if (item.GlamourId != 0)
                         _itemList.Add((slot, item.GlamourId, item.Stain));
                     else
-                        _itemList.Add((slot, item.ItemID, item.Stain));
+                        _itemList.Add((slot, FixId(item.ItemID), item.Stain));
                 }
 
                 Add(EquipSlot.MainHand, ref entry->MainHand);
@@ -118,6 +118,9 @@ public unsafe class InventoryService : IDisposable
 
         return ret;
     }
+
+    private static uint FixId(uint itemId)
+        => itemId % 50000;
 
     private delegate int MoveItemDelegate(InventoryManager* manager, InventoryType sourceContainer, ushort sourceSlot,
         InventoryType targetContainer, ushort targetSlot, byte unk);
