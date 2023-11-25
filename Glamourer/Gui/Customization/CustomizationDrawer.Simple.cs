@@ -194,14 +194,14 @@ public partial class CustomizationDrawer
         {
             switch (UiHelpers.DrawMetaToggle(_currentIndex.ToDefaultName(), tmp, _currentApply, out var newValue, out var newApply, _locked))
             {
-                case DataChange.Item:
+                case (true, false):
                     _customize.Set(idx, newValue ? CustomizeValue.Max : CustomizeValue.Zero);
                     Changed |= _currentFlag;
                     break;
-                case DataChange.ApplyItem:
+                case (false, true):
                     ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
                     break;
-                case DataChange.Item | DataChange.ApplyItem:
+                case (true, true):
                     ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
                     _customize.Set(idx, newValue ? CustomizeValue.Max : CustomizeValue.Zero);
                     Changed |= _currentFlag;

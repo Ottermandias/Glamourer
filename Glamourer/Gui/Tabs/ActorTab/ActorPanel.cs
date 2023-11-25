@@ -24,21 +24,11 @@ using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
-public class ActorPanel
+public class ActorPanel(ActorSelector _selector, StateManager _stateManager, CustomizationDrawer _customizationDrawer,
+    EquipmentDrawer _equipmentDrawer, IdentifierService _identification, AutoDesignApplier _autoDesignApplier,
+    Configuration _config, DesignConverter _converter, ObjectManager _objects, DesignManager _designManager, ImportService _importService,
+    ICondition _conditions)
 {
-    private readonly ActorSelector       _selector;
-    private readonly StateManager        _stateManager;
-    private readonly CustomizationDrawer _customizationDrawer;
-    private readonly EquipmentDrawer     _equipmentDrawer;
-    private readonly IdentifierService   _identification;
-    private readonly AutoDesignApplier   _autoDesignApplier;
-    private readonly Configuration       _config;
-    private readonly DesignConverter     _converter;
-    private readonly ObjectManager       _objects;
-    private readonly DesignManager       _designManager;
-    private readonly ImportService       _importService;
-    private readonly ICondition          _conditions;
-
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
     private Actor           _actor     = Actor.Null;
@@ -46,29 +36,10 @@ public class ActorPanel
     private ActorState?     _state;
     private bool            _lockedRedraw;
 
-    public ActorPanel(ActorSelector selector, StateManager stateManager, CustomizationDrawer customizationDrawer,
-        EquipmentDrawer equipmentDrawer, IdentifierService identification, AutoDesignApplier autoDesignApplier,
-        Configuration config, DesignConverter converter, ObjectManager objects, DesignManager designManager, ImportService importService,
-        ICondition conditions)
-    {
-        _selector            = selector;
-        _stateManager        = stateManager;
-        _customizationDrawer = customizationDrawer;
-        _equipmentDrawer     = equipmentDrawer;
-        _identification      = identification;
-        _autoDesignApplier   = autoDesignApplier;
-        _config              = config;
-        _converter           = converter;
-        _objects             = objects;
-        _designManager       = designManager;
-        _importService       = importService;
-        _conditions          = conditions;
-    }
-
     private CustomizeFlag CustomizeApplicationFlags
         => _lockedRedraw ? CustomizeFlagExtensions.AllRelevant & ~CustomizeFlagExtensions.RedrawRequired : CustomizeFlagExtensions.AllRelevant;
 
-    public unsafe void Draw()
+    public void Draw()
     {
         using var group = ImRaii.Group();
         (_identifier, _data) = _selector.Selection;
@@ -161,8 +132,7 @@ public class ActorPanel
         if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked, _lockedRedraw))
             _stateManager.ChangeCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, StateChanged.Source.Manual);
 
-        if (_customizationDrawer.DrawWetnessState(_state!.ModelData.IsWet(), out var newWetness, _state.IsLocked))
-            _stateManager.ChangeWetness(_state, newWetness, StateChanged.Source.Manual);
+        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.Wetness, _stateManager, _state));
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }
 
@@ -176,62 +146,22 @@ public class ActorPanel
         var usedAllStain = _equipmentDrawer.DrawAllStain(out var newAllStain, _state!.IsLocked);
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var changes = _equipmentDrawer.DrawEquip(slot, _state!.ModelData, out var newArmor, out var newStain, null, out _, out _,
-                _state.IsLocked);
+            var data = EquipDrawData.FromState(_stateManager, _state!, slot);
+            _equipmentDrawer.DrawEquip(data);
             if (usedAllStain)
-            {
-                changes  |= DataChange.Stain;
-                newStain =  newAllStain;
-            }
-
-            switch (changes)
-            {
-                case DataChange.Item:
-                    _stateManager.ChangeItem(_state, slot, newArmor, StateChanged.Source.Manual);
-                    break;
-                case DataChange.Stain:
-                    _stateManager.ChangeStain(_state, slot, newStain, StateChanged.Source.Manual);
-                    break;
-                case DataChange.Item | DataChange.Stain:
-                    _stateManager.ChangeEquip(_state, slot, newArmor, newStain, StateChanged.Source.Manual);
-                    break;
-            }
+                _stateManager.ChangeStain(_state, slot, newAllStain, StateChanged.Source.Manual);
         }
 
-        var weaponChanges = _equipmentDrawer.DrawWeapons(_state!.ModelData, out var newMainhand, out var newOffhand, out var newMainhandStain,
-            out var newOffhandStain, null, GameMain.IsInGPose(), out _, out _, out _, out _, _state.IsLocked);
-        if (usedAllStain)
-        {
-            weaponChanges    |= DataChange.Stain | DataChange.Stain2;
-            newMainhandStain =  newAllStain;
-            newOffhandStain  =  newAllStain;
-        }
-
-        if (weaponChanges.HasFlag(DataChange.Item))
-            if (weaponChanges.HasFlag(DataChange.Stain))
-                _stateManager.ChangeEquip(_state, EquipSlot.MainHand, newMainhand, newMainhandStain, StateChanged.Source.Manual);
-            else
-                _stateManager.ChangeItem(_state, EquipSlot.MainHand, newMainhand, StateChanged.Source.Manual);
-        else if (weaponChanges.HasFlag(DataChange.Stain))
-            _stateManager.ChangeStain(_state, EquipSlot.MainHand, newMainhandStain, StateChanged.Source.Manual);
-
-        if (weaponChanges.HasFlag(DataChange.Item2))
-            if (weaponChanges.HasFlag(DataChange.Stain2))
-                _stateManager.ChangeEquip(_state, EquipSlot.OffHand, newOffhand, newOffhandStain, StateChanged.Source.Manual);
-            else
-                _stateManager.ChangeItem(_state, EquipSlot.OffHand, newOffhand, StateChanged.Source.Manual);
-        else if (weaponChanges.HasFlag(DataChange.Stain2))
-            _stateManager.ChangeStain(_state, EquipSlot.OffHand, newOffhandStain, StateChanged.Source.Manual);
+        var mainhand = EquipDrawData.FromState(_stateManager, _state, EquipSlot.MainHand);
+        var offhand = EquipDrawData.FromState(_stateManager, _state, EquipSlot.OffHand);
+        _equipmentDrawer.DrawWeapons(mainhand, offhand, GameMain.IsInGPose());
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        if (EquipmentDrawer.DrawHatState(_state!.ModelData.IsHatVisible(), out var newHatState, _state!.IsLocked))
-            _stateManager.ChangeHatState(_state, newHatState, StateChanged.Source.Manual);
+        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.HatState, _stateManager, _state));
         ImGui.SameLine();
-        if (EquipmentDrawer.DrawVisorState(_state!.ModelData.IsVisorToggled(), out var newVisorState, _state!.IsLocked))
-            _stateManager.ChangeVisorState(_state, newVisorState, StateChanged.Source.Manual);
+        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.VisorState, _stateManager, _state));
         ImGui.SameLine();
-        if (EquipmentDrawer.DrawWeaponState(_state!.ModelData.IsWeaponVisible(), out var newWeaponState, _state!.IsLocked))
-            _stateManager.ChangeWeaponState(_state, newWeaponState, StateChanged.Source.Manual);
+        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.WeaponState, _stateManager, _state));
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }
 

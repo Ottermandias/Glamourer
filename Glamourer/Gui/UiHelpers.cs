@@ -71,14 +71,15 @@ public static class UiHelpers
         return ret;
     }
 
-    public static DataChange DrawMetaToggle(string label, bool currentValue, bool currentApply, out bool newValue,
+    public static (bool, bool) DrawMetaToggle(string label, bool currentValue, bool currentApply, out bool newValue,
         out bool newApply, bool locked)
     {
         var       flags = (sbyte)(currentApply ? currentValue ? 1 : -1 : 0);
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
         using (var disabled = ImRaii.Disabled(locked))
         {
-            if (new TristateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw("##" + label, flags, out flags))
+            if (new TristateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw(
+                    "##" + label, flags, out flags))
             {
                 (newValue, newApply) = flags switch
                 {
@@ -99,13 +100,7 @@ public static class UiHelpers
         ImGui.SameLine();
         ImGui.TextUnformatted(label);
 
-        return (currentApply != newApply, currentValue != newValue) switch
-        {
-            (true, true)  => DataChange.ApplyItem | DataChange.Item,
-            (true, false) => DataChange.ApplyItem,
-            (false, true) => DataChange.Item,
-            _             => DataChange.None,
-        };
+        return (currentValue != newValue, currentApply != newApply);
     }
 
     public static (EquipFlag, CustomizeFlag) ConvertKeysToFlags()
