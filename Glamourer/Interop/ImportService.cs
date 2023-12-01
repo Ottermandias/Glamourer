@@ -6,7 +6,9 @@ using Dalamud.Interface.DragDrop;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Customization;
 using Glamourer.Designs;
+using Glamourer.Interop.CharaFile;
 using Glamourer.Services;
+using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui.Classes;
 
@@ -22,9 +24,9 @@ public class ImportService(CustomizationService _customizations, IDragDropManage
         });
 
     public void CreateCharaSource()
-        => _dragDropManager.CreateImGuiSource("CharaDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".chara"), m =>
+        => _dragDropManager.CreateImGuiSource("CharaDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".chara") || m.Extensions.Contains(".cma"), m =>
         {
-            ImGui.TextUnformatted($"Dragging {Path.GetFileName(m.Files[0])} to import Anamnesis data for Glamourer...");
+            ImGui.TextUnformatted($"Dragging {Path.GetFileName(m.Files[0])} to import Anamnesis/CMTool data for Glamourer...");
             return true;
         });
 
@@ -47,8 +49,8 @@ public class ImportService(CustomizationService _customizations, IDragDropManage
             name   = string.Empty;
             return false;
         }
-
-        return LoadChara(files[0], out design, out name);
+        
+        return Path.GetExtension(files[0]) is ".chara" ? LoadChara(files[0], out design, out name) : LoadCma(files[0], out design, out name);
     }
 
     public bool LoadChara(string path, [NotNullWhen(true)] out DesignBase? design, out string name)
@@ -73,6 +75,36 @@ public class ImportService(CustomizationService _customizations, IDragDropManage
         catch (Exception ex)
         {
             Glamourer.Messager.NotificationMessage(ex, $"Could not read .chara file {path}.", NotificationType.Error);
+            design = null;
+            name   = string.Empty;
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool LoadCma(string path, [NotNullWhen(true)] out DesignBase? design, out string name)
+    {
+        if (!File.Exists(path))
+        {
+            design = null;
+            name   = string.Empty;
+            return false;
+        }
+
+        try
+        {
+            var text = File.ReadAllText(path);
+            var file = CmaFile.ParseData(_items, text, Path.GetFileNameWithoutExtension(path));
+            if (file == null)
+                throw new Exception();
+
+            name   = file.Name;
+            design = new DesignBase(_customizations, file.Data, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant);
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Messager.NotificationMessage(ex, $"Could not read .cma file {path}.", NotificationType.Error);
             design = null;
             name   = string.Empty;
             return false;
