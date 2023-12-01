@@ -21,9 +21,7 @@ public unsafe class UpdateSlotService : IDisposable
     }
 
     public void Dispose()
-    {
-        _flagSlotForUpdateHook.Dispose();
-    }
+        => _flagSlotForUpdateHook.Dispose();
 
     public void UpdateSlot(Model drawObject, EquipSlot slot, CharacterArmor data)
     {

@@ -98,6 +98,7 @@ public static class ServiceManager
             .AddSingleton<CustomizeUnlockManager>()
             .AddSingleton<ItemUnlockManager>()
             .AddSingleton<ImportService>()
+            .AddSingleton<CrestService>()
             .AddSingleton<InventoryService>()
             .AddSingleton<ContextMenuService>()
             .AddSingleton<ScalingService>();

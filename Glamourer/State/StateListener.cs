@@ -490,7 +490,7 @@ public class StateListener : IDisposable
     private void OnVisorChange(Model model, Ref<bool> value)
     {
         // Skip updates when in customize update.
-        if (ChangeCustomizeService.InUpdate.IsValueCreated && ChangeCustomizeService.InUpdate.Value)
+        if (ChangeCustomizeService.InUpdate.InMethod)
             return;
 
         // Find appropriate actor and state.

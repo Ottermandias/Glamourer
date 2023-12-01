@@ -23,7 +23,7 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
     private readonly delegate* unmanaged[Stdcall]<Human*, byte*, bool, bool> _original;
 
     /// <summary> Check whether we in a manual customize update, in which case we need to not toggle certain flags. </summary>
-    public static readonly ThreadLocal<bool> InUpdate = new(() => false);
+    public static readonly InMethodChecker InUpdate = new();
 
     public enum Priority
     {
@@ -70,9 +70,8 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
             return false;
 
         Glamourer.Log.Verbose($"[ChangeCustomize] Invoked on 0x{model.Address:X} with {customize}.");
-        InUpdate.Value = true;
-        var ret = _original(model.AsHuman, customize.Data, true);
-        InUpdate.Value = false;
+        using var _   = InUpdate.EnterMethod();
+        var       ret = _original(model.AsHuman, customize.Data, true);
         return ret;
     }
 
@@ -81,7 +80,7 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
 
     private bool ChangeCustomizeDetour(Human* human, byte* data, byte skipEquipment)
     {
-        if (!InUpdate.Value)
+        if (!InUpdate.InMethod)
         {
             var customize = new Ref<Customize>(new Customize(*(CustomizeData*)data));
             Invoke(this, (Model)human, customize);
