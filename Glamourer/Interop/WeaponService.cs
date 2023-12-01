@@ -64,6 +64,9 @@ public unsafe class WeaponService : IDisposable
             // First call the regular function.
             if (equipSlot is not EquipSlot.Unknown)
                 _event.Invoke(actor, equipSlot, ref tmpWeapon);
+            // Sage hack for weapons appearing in animations?
+            else if (weaponValue == actor.GetMainhand().Value)
+                _event.Invoke(actor, EquipSlot.MainHand, ref tmpWeapon);
 
             _loadWeaponHook.Original(drawData, slot, weapon.Value, redrawOnEquality, unk2, skipGameObject, unk4);
             if (tmpWeapon.Value != weapon.Value)
