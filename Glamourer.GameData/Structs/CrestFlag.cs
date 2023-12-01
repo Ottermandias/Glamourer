@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Structs;
@@ -23,23 +22,46 @@ public enum CrestFlag : ushort
     OffHand  = 0x0800,
 }
 
+public enum CrestType : byte
+{
+    None,
+    Human,
+    Mainhand,
+    Offhand,
+};
+
 public static class CrestExtensions
 {
     public const CrestFlag All         = (CrestFlag)(((ulong)EquipFlag.Offhand << 1) - 1);
     public const CrestFlag AllRelevant = CrestFlag.Head | CrestFlag.Body | CrestFlag.OffHand;
 
-    public static readonly IReadOnlyList<CrestFlag> AllRelevantSet = Enum.GetValues<CrestFlag>().Where(f => f.ToRelevantIndex() >= 0).ToArray();
+    public static readonly IReadOnlyList<CrestFlag> AllRelevantSet = Enum.GetValues<CrestFlag>().Where(f => AllRelevant.HasFlag(f)).ToArray();
 
-    public static int ToIndex(this CrestFlag flag)
-        => BitOperations.TrailingZeroCount((uint)flag);
-
-    public static int ToRelevantIndex(this CrestFlag flag)
+    public static int ToInternalIndex(this CrestFlag flag)
         => flag switch
         {
             CrestFlag.Head    => 0,
             CrestFlag.Body    => 1,
             CrestFlag.OffHand => 2,
             _                 => -1,
+        };
+
+    public static (CrestType Type, byte Index) ToIndex(this CrestFlag flag)
+        => flag switch
+        {
+            CrestFlag.Head     => (CrestType.Human, 0),
+            CrestFlag.Body     => (CrestType.Human, 1),
+            CrestFlag.Hands    => (CrestType.Human, 2),
+            CrestFlag.Legs     => (CrestType.Human, 3),
+            CrestFlag.Feet     => (CrestType.Human, 4),
+            CrestFlag.Ears     => (CrestType.None, 0),
+            CrestFlag.Neck     => (CrestType.None, 0),
+            CrestFlag.Wrists   => (CrestType.None, 0),
+            CrestFlag.RFinger  => (CrestType.None, 0),
+            CrestFlag.LFinger  => (CrestType.None, 0),
+            CrestFlag.MainHand => (CrestType.None, 0),
+            CrestFlag.OffHand  => (CrestType.Offhand, 0),
+            _                  => (CrestType.None, 0),
         };
 
     public static CrestFlag ToCrestFlag(this EquipSlot slot)

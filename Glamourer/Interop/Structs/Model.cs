@@ -91,9 +91,6 @@ public readonly unsafe struct Model : IEquatable<Model>
     public CharacterArmor GetArmor(EquipSlot slot)
         => ((CharacterArmor*)&AsHuman->Head)[slot.ToIndex()];
 
-    public bool GetCrest(EquipSlot slot)
-        => IsFreeCompanyCrestVisibleOnSlot(slot);
-
     public Customize GetCustomize()
         => *(Customize*)&AsHuman->Customize;
 
@@ -196,35 +193,6 @@ public readonly unsafe struct Model : IEquatable<Model>
         var discriminator1 = *(ulong*)(first.Address + 0x10);
         var discriminator2 = *(ulong*)(second.Address + 0x10);
         return discriminator1 == 0 && discriminator2 != 0 ? (second, first) : (first, second);
-    }
-
-    // TODO remove these when available in ClientStructs
-    private bool IsFreeCompanyCrestVisibleOnSlot(EquipSlot slot)
-    {
-        if (!IsCharacterBase)
-            return false;
-
-        var index = (byte)slot.ToIndex();
-        if (index >= 12)
-            return false;
-
-        var characterBase = AsCharacterBase;
-        var getter        = (delegate* unmanaged<CharacterBase*, byte, byte>)((nint*)characterBase->VTable)[95];
-        return getter(characterBase, index) != 0;
-    }
-
-    public void SetFreeCompanyCrestVisibleOnSlot(EquipSlot slot, bool visible)
-    {
-        if (!IsCharacterBase)
-            return;
-
-        var index = (byte)slot.ToIndex();
-        if (index >= 12)
-            return;
-
-        var characterBase = AsCharacterBase;
-        var setter        = (delegate* unmanaged<CharacterBase*, byte, byte, void>)((nint*)characterBase->VTable)[96];
-        setter(characterBase, index, visible ? (byte)1 : (byte)0);
     }
 
     public override string ToString()

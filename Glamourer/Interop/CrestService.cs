@@ -2,7 +2,10 @@
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Interop.Structs;
+using Glamourer.Structs;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 
@@ -27,6 +30,7 @@ public sealed unsafe class CrestService : EventWrapper<Action<Model, EquipSlot, 
     public CrestService(IGameInteropProvider interop)
         : base(nameof(CrestService))
     {
+        interop.InitializeFromAttributes(this);
         _humanSetFreeCompanyCrestVisibleOnSlot =
             interop.HookFromAddress<SetCrestDelegateIntern>(_humanVTable[96], HumanSetFreeCompanyCrestVisibleOnSlotDetour);
         _weaponSetFreeCompanyCrestVisibleOnSlot =
@@ -48,10 +52,68 @@ public sealed unsafe class CrestService : EventWrapper<Action<Model, EquipSlot, 
         visible = ret;
     }
 
-    public void UpdateCrest(Model drawObject, EquipSlot slot, bool crest)
+    public static bool GetModelCrest(Actor gameObject, CrestFlag slot)
     {
-        using var _ = _inUpdate.EnterMethod();
-        drawObject.SetFreeCompanyCrestVisibleOnSlot(slot, crest);
+        if (!gameObject.IsCharacter)
+            return false;
+
+        var (type, index) = slot.ToIndex();
+        switch (type)
+        {
+            case CrestType.Human:
+            {
+                var model = gameObject.Model;
+                if (!model.IsHuman)
+                    return false;
+
+                var getter = (delegate* unmanaged<Human*, byte, byte>)((nint*)model.AsCharacterBase->VTable)[95];
+                return getter(model.AsHuman, index) != 0;
+            }
+            case CrestType.Offhand:
+            {
+                var model = (Model)gameObject.AsCharacter->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand).DrawObject;
+                if (!model.IsWeapon)
+                    return false;
+
+                var getter = (delegate* unmanaged<Weapon*, byte, byte>)((nint*)model.AsCharacterBase->VTable)[95];
+                return getter(model.AsWeapon, index) != 0;
+            }
+        }
+
+        return false;
+    }
+
+    public void UpdateCrest(Actor gameObject, CrestFlag slot, bool crest)
+    {
+        if (!gameObject.IsCharacter)
+            return;
+
+        var (type, index) = slot.ToIndex();
+        switch (type)
+        {
+            case CrestType.Human:
+                {
+                var model = gameObject.Model;
+                if (!model.IsHuman)
+                    return;
+
+                using var _      = _inUpdate.EnterMethod();
+                var       setter = (delegate* unmanaged<Human*, byte, byte, void>)((nint*)model.AsCharacterBase->VTable)[96];
+                setter(model.AsHuman, index, crest ? (byte)1 : (byte)0);
+                break;
+            }
+            case CrestType.Offhand:
+                {
+                var model = (Model)gameObject.AsCharacter->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand).DrawObject;
+                if (!model.IsWeapon)
+                    return;
+
+                using var _      = _inUpdate.EnterMethod();
+                var       setter = (delegate* unmanaged<Weapon*, byte, byte, void>)((nint*)model.AsCharacterBase->VTable)[96];
+                setter(model.AsWeapon, index, crest ? (byte)1 : (byte)0);
+                break;
+            }
+        }
     }
 
     private readonly InMethodChecker _inUpdate = new();

@@ -90,7 +90,7 @@ public class ActorState
         => ref _sources[slot.ToIndex() + (stain ? EquipFlagExtensions.NumEquipFlags / 2 : 0)];
 
     public ref StateChanged.Source this[CrestFlag slot]
-        => ref _sources[EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5 + slot.ToRelevantIndex()];
+        => ref _sources[EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5 + slot.ToInternalIndex()];
 
     public ref StateChanged.Source this[CustomizeIndex type]
         => ref _sources[EquipFlagExtensions.NumEquipFlags + (int)type];

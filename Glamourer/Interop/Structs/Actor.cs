@@ -3,6 +3,7 @@ using System;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Customization;
+using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.String;
@@ -106,7 +107,7 @@ public readonly unsafe struct Actor : IEquatable<Actor>
     public CharacterArmor GetArmor(EquipSlot slot)
         => ((CharacterArmor*)&AsCharacter->DrawData.Head)[slot.ToIndex()];
 
-    public bool GetCrest(EquipSlot slot)
+    public bool GetCrest(CrestFlag slot)
         => (GetFreeCompanyCrestBitfield() & CrestMask(slot)) != 0;
 
     public CharacterWeapon GetMainhand()
@@ -122,15 +123,15 @@ public readonly unsafe struct Actor : IEquatable<Actor>
     private byte GetFreeCompanyCrestBitfield()
         => ((byte*)Address)[0x1BBB];
 
-    private static byte CrestMask(EquipSlot slot)
+    private static byte CrestMask(CrestFlag slot)
         => slot switch
         {
-            EquipSlot.OffHand => 0x01,
-            EquipSlot.Head    => 0x02,
-            EquipSlot.Body    => 0x04,
-            EquipSlot.Hands   => 0x08,
-            EquipSlot.Legs    => 0x10,
-            EquipSlot.Feet    => 0x20,
+            CrestFlag.OffHand => 0x01,
+            CrestFlag.Head    => 0x02,
+            CrestFlag.Body    => 0x04,
+            CrestFlag.Hands   => 0x08,
+            CrestFlag.Legs    => 0x10,
+            CrestFlag.Feet    => 0x20,
             _                 => 0x00,
         };
 
