@@ -49,9 +49,9 @@ public unsafe class MetaService : IDisposable
         if (!actor.IsCharacter)
             return;
 
-        // The function seems to not do anything if the head is 0, sometimes?
+        // The function seems to not do anything if the head is 0, but also breaks for carbuncles turned human, sometimes?
         var old = actor.AsCharacter->DrawData.Head.Id;
-        if (old == 0)
+        if (old == 0 && actor.AsCharacter->CharacterData.ModelCharaId == 0)
             actor.AsCharacter->DrawData.Head.Id = 1;
         _hideHatGearHook.Original(&actor.AsCharacter->DrawData, 0, (byte)(value ? 0 : 1));
         actor.AsCharacter->DrawData.Head.Id = old;
