@@ -111,16 +111,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
                         : DesignBase.LoadDesignBase(_customize, _items, jObj2);
                     break;
                 }
-                case Version:
-                {
-                    version = bytes.DecompressToString(out var decompressed);
-                    var jObj2 = JObject.Parse(decompressed);
-                    Debug.Assert(version == Version);
-                    ret = jObj2["Identifier"] != null
-                        ? Design.LoadDesign(_customize, _items, jObj2)
-                        : DesignBase.LoadDesignBase(_customize, _items, jObj2);
-                    break;
-                }
+
                 default: throw new Exception($"Unknown Version {bytes[0]}.");
             }
         }

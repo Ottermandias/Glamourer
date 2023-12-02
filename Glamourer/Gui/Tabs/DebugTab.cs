@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
@@ -483,21 +484,28 @@ public unsafe class DebugTab : ITab
 
     private void DrawCrests(Actor actor, Model model)
     {
-        using var id = ImRaii.PushId("Crests");
+        using var id              = ImRaii.PushId("Crests");
+        CrestFlag whichToggle     = 0;
+        CrestFlag totalModelFlags = 0;
         foreach (var crestFlag in CrestExtensions.AllRelevantSet)
         {
             id.Push((int)crestFlag);
             var modelCrest = CrestService.GetModelCrest(actor, crestFlag);
+            if (modelCrest)
+                totalModelFlags |= crestFlag;
             ImGuiUtil.DrawTableColumn($"{crestFlag.ToLabel()} Crest");
             ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.GetCrest(crestFlag).ToString() : "No Character");
             ImGuiUtil.DrawTableColumn(modelCrest.ToString());
 
             ImGui.TableNextColumn();
             if (model.IsHuman && ImGui.SmallButton("Toggle"))
-                _crestService.UpdateCrest(actor, crestFlag, !modelCrest);
+                whichToggle = crestFlag;
 
             id.Pop();
         }
+
+        if (whichToggle != 0)
+            _crestService.UpdateCrests(actor, totalModelFlags ^ whichToggle);
     }
 
     #endregion
