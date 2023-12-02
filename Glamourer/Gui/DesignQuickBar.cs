@@ -22,8 +22,8 @@ public class DesignQuickBar : Window, IDisposable
 {
     private ImGuiWindowFlags GetFlags
         => _config.Ephemeral.LockDesignQuickBar
-            ? ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoMove
-            : ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoFocusOnAppearing;
+            ? ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoMove
+            : ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing;
 
     private readonly Configuration     _config;
     private readonly DesignCombo       _designCombo;
@@ -37,7 +37,7 @@ public class DesignQuickBar : Window, IDisposable
 
     public DesignQuickBar(Configuration config, DesignCombo designCombo, StateManager stateManager, IKeyState keyState,
         ObjectManager objects, AutoDesignApplier autoDesignApplier)
-        : base("Glamourer Quick Bar", ImGuiWindowFlags.NoDecoration)
+        : base("Glamourer Quick Bar", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking)
     {
         _config             = config;
         _designCombo        = designCombo;
@@ -159,8 +159,8 @@ public class DesignQuickBar : Window, IDisposable
             return;
         }
 
-        var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
-        using var _ = design!.TemporarilyRestrictApplication(applyGear, applyCustomize);
+        var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
+        using var _ = design!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest);
         _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
     }
 

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
@@ -21,6 +22,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
+using Glamourer.Structs;
 using Glamourer.Unlocks;
 using Glamourer.Utility;
 using ImGuiNET;
@@ -43,6 +45,7 @@ public unsafe class DebugTab : ITab
     private readonly VisorService           _visorService;
     private readonly ChangeCustomizeService _changeCustomizeService;
     private readonly UpdateSlotService      _updateSlotService;
+    private readonly CrestService           _crestService;
     private readonly WeaponService          _weaponService;
     private readonly MetaService            _metaService;
     private readonly InventoryService       _inventoryService;
@@ -50,7 +53,7 @@ public unsafe class DebugTab : ITab
     private readonly ObjectManager          _objectManager;
     private readonly GlamourerIpc           _ipc;
     private readonly CodeService            _code;
-    private readonly ImportService         _importService;
+    private readonly ImportService          _importService;
 
     private readonly ItemManager            _items;
     private readonly ActorService           _actors;
@@ -82,7 +85,7 @@ public unsafe class DebugTab : ITab
         PenumbraChangedItemTooltip penumbraTooltip, MetaService metaService, GlamourerIpc ipc, DalamudPluginInterface pluginInterface,
         AutoDesignManager autoDesignManager, JobService jobs, CodeService code, CustomizeUnlockManager customizeUnlocks,
         ItemUnlockManager itemUnlocks, DesignConverter designConverter, ImportService importService, InventoryService inventoryService,
-        HumanModelList humans, FunModule funModule)
+        HumanModelList humans, FunModule funModule, CrestService crestService)
     {
         _changeCustomizeService = changeCustomizeService;
         _visorService           = visorService;
@@ -107,10 +110,11 @@ public unsafe class DebugTab : ITab
         _customizeUnlocks       = customizeUnlocks;
         _itemUnlocks            = itemUnlocks;
         _designConverter        = designConverter;
-        _importService         = importService;
+        _importService          = importService;
         _inventoryService       = inventoryService;
         _humans                 = humans;
         _funModule              = funModule;
+        _crestService           = crestService;
     }
 
     public ReadOnlySpan<byte> Label
@@ -200,6 +204,7 @@ public unsafe class DebugTab : ITab
         DrawWetness(actor, model);
         DrawEquip(actor, model);
         DrawCustomize(actor, model);
+        DrawCrests(actor, model);
     }
 
     private string _objectFilter = string.Empty;
@@ -475,6 +480,32 @@ public unsafe class DebugTab : ITab
                 _changeCustomizeService.UpdateCustomize(model, modelCustomize.Data);
             }
         }
+    }
+
+    private void DrawCrests(Actor actor, Model model)
+    {
+        using var id              = ImRaii.PushId("Crests");
+        CrestFlag whichToggle     = 0;
+        CrestFlag totalModelFlags = 0;
+        foreach (var crestFlag in CrestExtensions.AllRelevantSet)
+        {
+            id.Push((int)crestFlag);
+            var modelCrest = CrestService.GetModelCrest(actor, crestFlag);
+            if (modelCrest)
+                totalModelFlags |= crestFlag;
+            ImGuiUtil.DrawTableColumn($"{crestFlag.ToLabel()} Crest");
+            ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.GetCrest(crestFlag).ToString() : "No Character");
+            ImGuiUtil.DrawTableColumn(modelCrest.ToString());
+
+            ImGui.TableNextColumn();
+            if (model.IsHuman && ImGui.SmallButton("Toggle"))
+                whichToggle = crestFlag;
+
+            id.Pop();
+        }
+
+        if (whichToggle != 0)
+            _crestService.UpdateCrests(actor, totalModelFlags ^ whichToggle);
     }
 
     #endregion

@@ -3,6 +3,7 @@ using System;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Customization;
+using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.String;
@@ -106,6 +107,9 @@ public readonly unsafe struct Actor : IEquatable<Actor>
     public CharacterArmor GetArmor(EquipSlot slot)
         => ((CharacterArmor*)&AsCharacter->DrawData.Head)[slot.ToIndex()];
 
+    public bool GetCrest(CrestFlag slot)
+        => CrestBitfield.HasFlag(slot);
+
     public CharacterWeapon GetMainhand()
         => new(AsCharacter->DrawData.Weapon(DrawDataContainer.WeaponSlot.MainHand).ModelId.Value);
 
@@ -114,6 +118,10 @@ public readonly unsafe struct Actor : IEquatable<Actor>
 
     public Customize GetCustomize()
         => *(Customize*)&AsCharacter->DrawData.CustomizeData;
+
+    // TODO remove this when available in ClientStructs
+    internal ref CrestFlag CrestBitfield
+        => ref *(CrestFlag*)((byte*)Address + 0x1BBB);
 
     public override string ToString()
         => $"0x{Address:X}";

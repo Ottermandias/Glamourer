@@ -62,6 +62,9 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
         /// <summary> An existing design had a stain changed. Data is the old stain id, the new stain id and the slot [(StainId, StainId, EquipSlot)]. </summary>
         Stain,
 
+        /// <summary> An existing design had a crest visibility changed. Data is the old crest visibility, the new crest visibility and the slot [(bool, bool, EquipSlot)]. </summary>
+        Crest,
+
         /// <summary> An existing design changed whether a specific customization is applied. Data is the type of customization [CustomizeIndex]. </summary>
         ApplyCustomize,
 
@@ -70,6 +73,9 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
 
         /// <summary> An existing design changed whether a specific stain is applied. Data is the slot of the equipment [EquipSlot]. </summary>
         ApplyStain,
+
+        /// <summary> An existing design changed whether a specific crest visibility is applied. Data is the slot of the equipment [EquipSlot]. </summary>
+        ApplyCrest,
 
         /// <summary> An existing design changed its write protection status. Data is the new value [bool]. </summary>
         WriteProtection,

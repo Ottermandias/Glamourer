@@ -66,7 +66,7 @@ public class ItemManager : IDisposable
     public static EquipItem SmallClothesItem(EquipSlot slot)
         => new(SmallClothesNpc, SmallclothesId(slot), 0, SmallClothesNpcModel, 0, 1, slot.ToEquipType(), 0, 0, 0);
 
-    public EquipItem Resolve(EquipSlot slot, ItemId itemId)
+    public EquipItem Resolve(EquipSlot slot, CustomItemId itemId)
     {
         slot = slot.ToSlot();
         if (itemId == NothingId(slot))
@@ -74,7 +74,7 @@ public class ItemManager : IDisposable
         if (itemId == SmallclothesId(slot))
             return SmallClothesItem(slot);
 
-        if (!ItemService.AwaitedService.TryGetValue(itemId, slot, out var item))
+        if (!itemId.IsItem || !ItemService.AwaitedService.TryGetValue(itemId.Item, slot, out var item))
             return EquipItem.FromId(itemId);
 
         if (item.Type.ToSlot() != slot)
@@ -151,7 +151,7 @@ public class ItemManager : IDisposable
 
     /// <summary> Returns whether an item id represents a valid item for a slot and gives the item. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public bool IsItemValid(EquipSlot slot, ItemId itemId, out EquipItem item)
+    public bool IsItemValid(EquipSlot slot, CustomItemId itemId, out EquipItem item)
     {
         item = Resolve(slot, itemId);
         return item.Valid;

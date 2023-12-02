@@ -66,7 +66,8 @@ public class EphemeralConfig : ISavable
 
     public void Save(StreamWriter writer)
     {
-        using var jWriter    = new JsonTextWriter(writer) { Formatting = Formatting.Indented };
+        using var jWriter    = new JsonTextWriter(writer);
+        jWriter.Formatting = Formatting.Indented;
         var       serializer = new JsonSerializer { Formatting         = Formatting.Indented };
         serializer.Serialize(jWriter, this);
     }

@@ -1,13 +1,12 @@
 ﻿using System.Linq;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
+using Glamourer.Structs;
 using Penumbra.Api.Enums;
-using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -17,30 +16,9 @@ namespace Glamourer.State;
 /// This class applies changes made to state to actual objects in the game.
 /// It handles applying those changes as well as redrawing the actor if necessary.
 /// </summary>
-public class StateApplier
+public class StateApplier(UpdateSlotService _updateSlot, VisorService _visor, WeaponService _weapon, ChangeCustomizeService _changeCustomize,
+    ItemManager _items, PenumbraService _penumbra, MetaService _metaService, ObjectManager _objects, CrestService _crests)
 {
-    private readonly PenumbraService        _penumbra;
-    private readonly UpdateSlotService      _updateSlot;
-    private readonly VisorService           _visor;
-    private readonly WeaponService          _weapon;
-    private readonly MetaService            _metaService;
-    private readonly ChangeCustomizeService _changeCustomize;
-    private readonly ItemManager            _items;
-    private readonly ObjectManager          _objects;
-
-    public StateApplier(UpdateSlotService updateSlot, VisorService visor, WeaponService weapon, ChangeCustomizeService changeCustomize,
-        ItemManager items, PenumbraService penumbra, MetaService metaService, ObjectManager objects)
-    {
-        _updateSlot      = updateSlot;
-        _visor           = visor;
-        _weapon          = weapon;
-        _changeCustomize = changeCustomize;
-        _items           = items;
-        _penumbra        = penumbra;
-        _metaService     = metaService;
-        _objects         = objects;
-    }
-
     /// <summary> Simply force a redraw regardless of conditions. </summary>
     public void ForceRedraw(ActorData data)
     {
@@ -276,6 +254,22 @@ public class StateApplier
         var data = GetData(state);
         if (apply)
             ChangeWeaponState(data, state.ModelData.IsWeaponVisible());
+        return data;
+    }
+
+    /// <summary> Change the crest state on actors. </summary>
+    public void ChangeCrests(ActorData data, CrestFlag flags)
+    {
+        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
+            _crests.UpdateCrests(actor, flags);
+    }
+
+    /// <inheritdoc cref="ChangeCrests(ActorData, CrestFlag)"/>
+    public ActorData ChangeCrests(ActorState state, bool apply)
+    {
+        var data = GetData(state);
+        if (apply)
+            ChangeCrests(data, state.ModelData.CrestVisibility);
         return data;
     }
 

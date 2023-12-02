@@ -80,13 +80,17 @@ public class ActorState
 
     /// <summary> This contains whether a change to the base data was made by the game, the user via manual input or through automatic application. </summary>
     private readonly StateChanged.Source[] _sources = Enumerable
-        .Repeat(StateChanged.Source.Game, EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5).ToArray();
+        .Repeat(StateChanged.Source.Game,
+            EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5 + CrestExtensions.AllRelevantSet.Count).ToArray();
 
     internal ActorState(ActorIdentifier identifier)
         => Identifier = identifier.CreatePermanent();
 
     public ref StateChanged.Source this[EquipSlot slot, bool stain]
         => ref _sources[slot.ToIndex() + (stain ? EquipFlagExtensions.NumEquipFlags / 2 : 0)];
+
+    public ref StateChanged.Source this[CrestFlag slot]
+        => ref _sources[EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5 + slot.ToInternalIndex()];
 
     public ref StateChanged.Source this[CustomizeIndex type]
         => ref _sources[EquipFlagExtensions.NumEquipFlags + (int)type];

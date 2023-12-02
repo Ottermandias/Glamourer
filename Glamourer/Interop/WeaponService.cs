@@ -5,6 +5,7 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
+using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -13,6 +14,7 @@ namespace Glamourer.Interop;
 public unsafe class WeaponService : IDisposable
 {
     private readonly WeaponLoading     _event;
+    private readonly CrestService      _crestService;
     private readonly ThreadLocal<bool> _inUpdate = new(() => false);
 
 
@@ -20,9 +22,10 @@ public unsafe class WeaponService : IDisposable
         _original;
 
 
-    public WeaponService(WeaponLoading @event, IGameInteropProvider interop)
+    public WeaponService(WeaponLoading @event, IGameInteropProvider interop, CrestService crestService)
     {
-        _event = @event;
+        _event        = @event;
+        _crestService = crestService;
         _loadWeaponHook =
             interop.HookFromAddress<LoadWeaponDelegate>((nint)DrawDataContainer.MemberFunctionPointers.LoadWeapon, LoadWeaponDetour);
         _original =
@@ -64,8 +67,12 @@ public unsafe class WeaponService : IDisposable
             // First call the regular function.
             if (equipSlot is not EquipSlot.Unknown)
                 _event.Invoke(actor, equipSlot, ref tmpWeapon);
+            // Sage hack for weapons appearing in animations?
+            else if (weaponValue == actor.GetMainhand().Value)
+                _event.Invoke(actor, EquipSlot.MainHand, ref tmpWeapon);
 
             _loadWeaponHook.Original(drawData, slot, weapon.Value, redrawOnEquality, unk2, skipGameObject, unk4);
+            
             if (tmpWeapon.Value != weapon.Value)
             {
                 if (tmpWeapon.Set.Id == 0)

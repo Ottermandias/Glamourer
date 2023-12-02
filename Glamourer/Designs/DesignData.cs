@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using Glamourer.Customization;
 using Glamourer.Services;
+using Glamourer.Structs;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -29,6 +30,7 @@ public unsafe struct DesignData
     private fixed byte          _equipmentBytes[48];
     public        Customize     Customize = Customize.Default;
     public        uint          ModelId;
+    public        CrestFlag     CrestVisibility;
     private       WeaponType    _secondaryMainhand;
     private       WeaponType    _secondaryOffhand;
     private       FullEquipType _typeMainhand;
@@ -58,6 +60,10 @@ public unsafe struct DesignData
         var index = slot.ToIndex();
         return index > 11 ? (StainId)0 : _equipmentBytes[4 * index + 3];
     }
+
+    public readonly bool Crest(CrestFlag slot)
+        => CrestVisibility.HasFlag(slot);
+
 
     public FullEquipType MainhandType
         => _typeMainhand;
@@ -173,6 +179,16 @@ public unsafe struct DesignData
             _  => false,
         };
 
+    public bool SetCrest(CrestFlag slot, bool visible)
+    {
+        var newValue = visible ? CrestVisibility | slot : CrestVisibility & ~slot;
+        if (newValue == CrestVisibility)
+            return false;
+
+        CrestVisibility = newValue;
+        return true;
+    }
+
     public readonly bool IsWet()
         => (_states & 0x01) == 0x01;
 
@@ -228,12 +244,15 @@ public unsafe struct DesignData
         {
             SetItem(slot, ItemManager.NothingItem(slot));
             SetStain(slot, 0);
+            SetCrest(slot.ToCrestFlag(), false);
         }
 
         SetItem(EquipSlot.MainHand, items.DefaultSword);
         SetStain(EquipSlot.MainHand, 0);
+        SetCrest(CrestFlag.MainHand, false);
         SetItem(EquipSlot.OffHand, ItemManager.NothingItem(FullEquipType.Shield));
         SetStain(EquipSlot.OffHand, 0);
+        SetCrest(CrestFlag.OffHand, false);
     }
 
 

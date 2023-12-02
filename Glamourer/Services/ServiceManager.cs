@@ -73,6 +73,7 @@ public static class ServiceManager
             .AddSingleton<ObjectUnlocked>()
             .AddSingleton<TabSelected>()
             .AddSingleton<MovedEquipment>()
+            .AddSingleton<EquippedGearset>()
             .AddSingleton<GPoseService>()
             .AddSingleton<PenumbraReloaded>();
 
@@ -97,6 +98,7 @@ public static class ServiceManager
             .AddSingleton<CustomizeUnlockManager>()
             .AddSingleton<ItemUnlockManager>()
             .AddSingleton<ImportService>()
+            .AddSingleton<CrestService>()
             .AddSingleton<InventoryService>()
             .AddSingleton<ContextMenuService>()
             .AddSingleton<ScalingService>();

@@ -1,4 +1,3 @@
-using System;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
@@ -9,26 +8,12 @@ using Glamourer.Unlocks;
 using ImGuiNET;
 using Lumina.Misc;
 using OtterGui;
-using OtterGui.Classes;
 using OtterGui.Raii;
+using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui;
-
-[Flags]
-public enum DataChange : byte
-{
-    None        = 0x00,
-    Item        = 0x01,
-    Stain       = 0x02,
-    ApplyItem   = 0x04,
-    ApplyStain  = 0x08,
-    Item2       = 0x10,
-    Stain2      = 0x20,
-    ApplyItem2  = 0x40,
-    ApplyStain2 = 0x80,
-}
 
 public static class UiHelpers
 {
@@ -71,14 +56,15 @@ public static class UiHelpers
         return ret;
     }
 
-    public static DataChange DrawMetaToggle(string label, bool currentValue, bool currentApply, out bool newValue,
+    public static (bool, bool) DrawMetaToggle(string label, bool currentValue, bool currentApply, out bool newValue,
         out bool newApply, bool locked)
     {
         var       flags = (sbyte)(currentApply ? currentValue ? 1 : -1 : 0);
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
         using (var disabled = ImRaii.Disabled(locked))
         {
-            if (new TristateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw("##" + label, flags, out flags))
+            if (new TristateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw(
+                    "##" + label, flags, out flags))
             {
                 (newValue, newApply) = flags switch
                 {
@@ -99,22 +85,16 @@ public static class UiHelpers
         ImGui.SameLine();
         ImGui.TextUnformatted(label);
 
-        return (currentApply != newApply, currentValue != newValue) switch
-        {
-            (true, true)  => DataChange.ApplyItem | DataChange.Item,
-            (true, false) => DataChange.ApplyItem,
-            (false, true) => DataChange.Item,
-            _             => DataChange.None,
-        };
+        return (currentValue != newValue, currentApply != newApply);
     }
 
-    public static (EquipFlag, CustomizeFlag) ConvertKeysToFlags()
+    public static (EquipFlag, CustomizeFlag, CrestFlag) ConvertKeysToFlags()
         => (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift) switch
         {
-            (false, false) => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant),
-            (true, true)   => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant),
-            (true, false)  => (EquipFlagExtensions.All, (CustomizeFlag)0),
-            (false, true)  => ((EquipFlag)0, CustomizeFlagExtensions.AllRelevant),
+            (false, false) => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All),
+            (true, true)   => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All),
+            (true, false)  => (EquipFlagExtensions.All, (CustomizeFlag)0, CrestExtensions.All),
+            (false, true)  => ((EquipFlag)0, CustomizeFlagExtensions.AllRelevant, 0),
         };
 
     public static (bool, bool) ConvertKeysToBool()

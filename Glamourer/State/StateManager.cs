@@ -10,6 +10,7 @@ using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
+using Glamourer.Structs;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
@@ -17,31 +18,11 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
 
-public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
+public class StateManager(ActorService _actors, ItemManager _items, StateChanged _event, StateApplier _applier, StateEditor _editor,
+        HumanModelList _humans, ICondition _condition, IClientState _clientState)
+    : IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
-    private readonly ActorService   _actors;
-    private readonly ItemManager    _items;
-    private readonly HumanModelList _humans;
-    private readonly StateChanged   _event;
-    private readonly StateApplier   _applier;
-    private readonly StateEditor    _editor;
-    private readonly ICondition      _condition;
-    private readonly IClientState   _clientState;
-
     private readonly Dictionary<ActorIdentifier, ActorState> _states = new();
-
-    public StateManager(ActorService actors, ItemManager items, StateChanged @event, StateApplier applier, StateEditor editor,
-        HumanModelList humans, ICondition condition, IClientState clientState)
-    {
-        _actors      = actors;
-        _items       = items;
-        _event       = @event;
-        _applier     = applier;
-        _editor      = editor;
-        _humans      = humans;
-        _condition   = condition;
-        _clientState = clientState;
-    }
 
     public IEnumerator<KeyValuePair<ActorIdentifier, ActorState>> GetEnumerator()
         => _states.GetEnumerator();
@@ -83,7 +64,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             // and the draw objects data for the model data (where possible).
             state = new ActorState(identifier)
             {
-                ModelData     = FromActor(actor, true, false),
+                ModelData     = FromActor(actor, true,  false),
                 BaseData      = FromActor(actor, false, false),
                 LastJob       = (byte)(actor.IsCharacter ? actor.AsCharacter->CharacterData.ClassJob : 0),
                 LastTerritory = _clientState.TerritoryType,
@@ -162,6 +143,9 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
             // Visor state is a flag on the game object, but we can see the actual state on the draw object.
             ret.SetVisor(VisorService.GetVisorState(model));
+
+            foreach (var slot in CrestExtensions.AllRelevantSet)
+                ret.SetCrest(slot, CrestService.GetModelCrest(actor, slot));
         }
         else
         {
@@ -180,6 +164,9 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             off  = actor.GetOffhand();
             FistWeaponHack(ref ret, ref main, ref off);
             ret.SetVisor(actor.AsCharacter->DrawData.IsVisorToggled);
+
+            foreach (var slot in CrestExtensions.AllRelevantSet)
+                ret.SetCrest(slot, actor.GetCrest(slot));
         }
 
         // Set the weapons regardless of source.
@@ -206,7 +193,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         if (mainhand.Set.Id is < 1601 or >= 1651)
             return;
 
-        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Set, (Variant) offhand.Type.Id);
+        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Set, (Variant)offhand.Type.Id);
         offhand.Set     = (SetId)(mainhand.Set.Id + 50);
         offhand.Variant = mainhand.Variant;
         offhand.Type    = mainhand.Type;
@@ -304,6 +291,18 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
         _event.Invoke(StateChanged.Type.Stain, source, state, actors, (old, stain, slot));
     }
 
+    /// <summary> Change the crest of an equipment piece. </summary>
+    public void ChangeCrest(ActorState state, CrestFlag slot, bool crest, StateChanged.Source source, uint key = 0)
+    {
+        if (!_editor.ChangeCrest(state, slot, crest, source, out var old, key))
+            return;
+
+        var actors = _applier.ChangeCrests(state, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
+        Glamourer.Log.Verbose(
+            $"Set {slot.ToLabel()} crest in state {state.Identifier.Incognito(null)} from {old} to {crest}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Crest, source, state, actors, (old, crest, slot));
+    }
+
     /// <summary> Change hat visibility. </summary>
     public void ChangeHatState(ActorState state, bool value, StateChanged.Source source, uint key = 0)
     {
@@ -356,19 +355,8 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
     public void ApplyDesign(DesignBase design, ActorState state, StateChanged.Source source, uint key = 0)
     {
-        void HandleEquip(EquipSlot slot, bool applyPiece, bool applyStain)
-        {
-            var unused = (applyPiece, applyStain) switch
-            {
-                (false, false) => false,
-                (true, false)  => _editor.ChangeItem(state, slot, design.DesignData.Item(slot), source, out _, key),
-                (false, true)  => _editor.ChangeStain(state, slot, design.DesignData.Stain(slot), source, out _, key),
-                (true, true) => _editor.ChangeEquip(state, slot, design.DesignData.Item(slot), design.DesignData.Stain(slot), source, out _,
-                    out _, key),
-            };
-        }
-
-        if (!_editor.ChangeModelId(state, design.DesignData.ModelId, design.DesignData.Customize, design.GetDesignDataRef().GetEquipmentPtr(), source,
+        if (!_editor.ChangeModelId(state, design.DesignData.ModelId, design.DesignData.Customize, design.GetDesignDataRef().GetEquipmentPtr(),
+                source,
                 out var oldModelId, key))
             return;
 
@@ -393,12 +381,28 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
 
             foreach (var slot in EquipSlotExtensions.FullSlots)
                 HandleEquip(slot, design.DoApplyEquip(slot), design.DoApplyStain(slot));
+
+            foreach (var slot in CrestExtensions.AllRelevantSet.Where(design.DoApplyCrest))
+                _editor.ChangeCrest(state, slot, design.DesignData.Crest(slot), source, out _, key);
         }
 
         var actors = ApplyAll(state, redraw, false);
         Glamourer.Log.Verbose(
             $"Applied design to {state.Identifier.Incognito(null)}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Design, state[ActorState.MetaIndex.Wetness], state, actors, design);
+        return;
+
+        void HandleEquip(EquipSlot slot, bool applyPiece, bool applyStain)
+        {
+            var unused = (applyPiece, applyStain) switch
+            {
+                (false, false) => false,
+                (true, false)  => _editor.ChangeItem(state, slot, design.DesignData.Item(slot), source, out _, key),
+                (false, true)  => _editor.ChangeStain(state, slot, design.DesignData.Stain(slot), source, out _, key),
+                (true, true) => _editor.ChangeEquip(state, slot, design.DesignData.Item(slot), design.DesignData.Stain(slot), source, out _,
+                    out _, key),
+            };
+        }
     }
 
     private ActorData ApplyAll(ActorState state, bool redraw, bool withLock)
@@ -430,6 +434,7 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             _applier.ChangeHatState(actors, state.ModelData.IsHatVisible());
             _applier.ChangeWeaponState(actors, state.ModelData.IsWeaponVisible());
             _applier.ChangeVisor(actors, state.ModelData.IsVisorToggled());
+            _applier.ChangeCrests(actors, state.ModelData.CrestVisibility);
         }
 
         return actors;
@@ -453,9 +458,12 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             state[slot, true]  = StateChanged.Source.Game;
             state[slot, false] = StateChanged.Source.Game;
         }
-
+        
         foreach (var type in Enum.GetValues<ActorState.MetaIndex>())
             state[type] = StateChanged.Source.Game;
+
+        foreach (var slot in CrestExtensions.AllRelevantSet)
+            state[slot] = StateChanged.Source.Game;
 
         var actors = ActorData.Invalid;
         if (source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
@@ -488,6 +496,15 @@ public class StateManager : IReadOnlyDictionary<ActorIdentifier, ActorState>
             {
                 state[slot, false] = StateChanged.Source.Game;
                 state.ModelData.SetItem(slot, state.BaseData.Item(slot));
+            }
+        }
+
+        foreach (var slot in CrestExtensions.AllRelevantSet)
+        {
+            if (state[slot] is StateChanged.Source.Fixed)
+            {
+                state[slot] = StateChanged.Source.Game;
+                state.ModelData.SetCrest(slot, state.BaseData.Crest(slot));
             }
         }
 

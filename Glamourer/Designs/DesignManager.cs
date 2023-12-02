@@ -8,6 +8,7 @@ using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
+using Glamourer.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -345,7 +346,7 @@ public class DesignManager
     /// <summary> Change a non-weapon equipment piece. </summary>
     public void ChangeEquip(Design design, EquipSlot slot, EquipItem item)
     {
-        if (!_items.IsItemValid(slot, item.ItemId, out item))
+        if (!_items.IsItemValid(slot, item.Id, out item))
             return;
 
         var old = design.DesignData.Item(slot);
@@ -446,6 +447,31 @@ public class DesignManager
         _event.Invoke(DesignChanged.Type.ApplyStain, design, slot);
     }
 
+    /// <summary> Change the crest visibility for any equipment piece. </summary>
+    public void ChangeCrest(Design design, CrestFlag slot, bool crest)
+    {
+        var oldCrest = design.DesignData.Crest(slot);
+        if (!design.GetDesignDataRef().SetCrest(slot, crest))
+            return;
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set crest visibility of {slot} equipment piece to {crest}.");
+        _event.Invoke(DesignChanged.Type.Crest, design, (oldCrest, crest, slot));
+    }
+
+    /// <summary> Change whether to apply a specific crest visibility. </summary>
+    public void ChangeApplyCrest(Design design, CrestFlag slot, bool value)
+    {
+        if (!design.SetApplyCrest(slot, value))
+            return;
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set applying of crest visibility of {slot} equipment piece to {value}.");
+        _event.Invoke(DesignChanged.Type.ApplyCrest, design, slot);
+    }
+
     /// <summary> Change the bool value of one of the meta flags. </summary>
     public void ChangeMeta(Design design, ActorState.MetaIndex metaIndex, bool value)
     {
@@ -514,6 +540,12 @@ public class DesignManager
 
                 if (other.DoApplyStain(slot))
                     ChangeStain(design, slot, other.DesignData.Stain(slot));
+            }
+
+            foreach (var slot in Enum.GetValues<CrestFlag>())
+            {
+                if (other.DoApplyCrest(slot))
+                    ChangeCrest(design, slot, other.DesignData.Crest(slot));
             }
         }
 

@@ -14,18 +14,16 @@ using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
 
 namespace Glamourer.Gui.Customization;
 
-public partial class CustomizationDrawer : IDisposable
+public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizationService _service, CodeService _codes, Configuration _config)
+    : IDisposable
 {
-    private readonly CodeService   _codes;
-    private readonly Configuration _config;
-
-    private readonly Vector4              _redTint = new(0.6f, 0.3f, 0.3f, 1f);
-    private readonly IDalamudTextureWrap? _legacyTattoo;
+    private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
+    private readonly IDalamudTextureWrap? _legacyTattoo = GetLegacyTattooIcon(pi);
 
     private Exception? _terminate;
 
-    private Customize        _customize;
-    private CustomizationSet _set = null!;
+    private Customize        _customize = Customize.Default;
+    private CustomizationSet _set       = null!;
 
     public Customize Customize
         => _customize;
@@ -46,21 +44,8 @@ public partial class CustomizationDrawer : IDisposable
     private float         _raceSelectorWidth;
     private bool          _withApply;
 
-    private readonly CustomizationService _service;
-
-    public CustomizationDrawer(DalamudPluginInterface pi, CustomizationService service, CodeService codes, Configuration config)
-    {
-        _service      = service;
-        _codes        = codes;
-        _config       = config;
-        _legacyTattoo = GetLegacyTattooIcon(pi);
-        _customize    = Customize.Default;
-    }
-
     public void Dispose()
-    {
-        _legacyTattoo?.Dispose();
-    }
+        => _legacyTattoo?.Dispose();
 
     public bool Draw(Customize current, bool locked, bool lockedRedraw)
     {
@@ -124,12 +109,6 @@ public partial class CustomizationDrawer : IDisposable
         _customize[_currentIndex] =  value;
         Changed                   |= _currentFlag;
     }
-
-    public bool DrawWetnessState(bool currentValue, out bool newValue, bool locked)
-        => UiHelpers.DrawCheckbox("Force Wetness", "Force the character to be wet or not.", currentValue, out newValue, locked);
-
-    public DataChange DrawWetnessState(bool currentValue, bool currentApply, out bool newValue, out bool newApply, bool locked)
-        => UiHelpers.DrawMetaToggle("Force Wetness", currentValue, currentApply, out newValue, out newApply, locked);
 
     private bool DrawInternal()
     {
@@ -199,13 +178,13 @@ public partial class CustomizationDrawer : IDisposable
 
     private void UpdateSizes()
     {
-        _spacing = ImGui.GetStyle().ItemSpacing with { X = ImGui.GetStyle().ItemInnerSpacing.X };
-        _iconSize = new Vector2(ImGui.GetTextLineHeight() * 2 + _spacing.Y + 2 * ImGui.GetStyle().FramePadding.Y);
-        _framedIconSize = _iconSize + 2 * ImGui.GetStyle().FramePadding;
-        _inputIntSize = 2 * _framedIconSize.X + 1 * _spacing.X;
+        _spacing               = ImGui.GetStyle().ItemSpacing with { X = ImGui.GetStyle().ItemInnerSpacing.X };
+        _iconSize              = new Vector2(ImGui.GetTextLineHeight() * 2 + _spacing.Y + 2 * ImGui.GetStyle().FramePadding.Y);
+        _framedIconSize        = _iconSize + 2 * ImGui.GetStyle().FramePadding;
+        _inputIntSize          = 2 * _framedIconSize.X + 1 * _spacing.X;
         _inputIntSizeNoButtons = _inputIntSize - 2 * _spacing.X - 2 * ImGui.GetFrameHeight();
-        _comboSelectorSize = 4 * _framedIconSize.X + 3 * _spacing.X;
-        _raceSelectorWidth = _inputIntSize + _comboSelectorSize - _framedIconSize.X;
+        _comboSelectorSize     = 4 * _framedIconSize.X + 3 * _spacing.X;
+        _raceSelectorWidth     = _inputIntSize + _comboSelectorSize - _framedIconSize.X;
     }
 
     private static IDalamudTextureWrap? GetLegacyTattooIcon(DalamudPluginInterface pi)

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Dalamud.Interface.Internal.Notifications;
-using Glamourer.Customization;
-using Glamourer.Gui;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Newtonsoft.Json;
@@ -28,8 +26,8 @@ public sealed class Design : DesignBase, ISavable
     internal Design(Design other)
         : base(other)
     {
-        Tags           = Tags.ToArray();
-        Description    = Description;
+        Tags           = other.Tags.ToArray();
+        Description    = other.Description;
         AssociatedMods = new SortedList<Mod, ModSettings>(other.AssociatedMods);
     }
 
@@ -69,8 +67,7 @@ public sealed class Design : DesignBase, ISavable
                 ["Equipment"]      = SerializeEquipment(),
                 ["Customize"]      = SerializeCustomize(),
                 ["Mods"]           = SerializeMods(),
-            }
-            ;
+            };
         return ret;
     }
 

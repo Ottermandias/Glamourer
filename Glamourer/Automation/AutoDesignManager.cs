@@ -306,6 +306,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             return;
 
         var design = set.Designs[which];
+
         if (design.Jobs.Id == jobs.Id)
             return;
 
@@ -314,6 +315,22 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         Save();
         Glamourer.Log.Debug($"Changed job condition from {old.Id} to {jobs.Id} for associated design {which + 1} in design set.");
         _event.Invoke(AutomationChanged.Type.ChangedConditions, set, (which, old, jobs));
+    }
+
+    public void ChangeGearsetCondition(AutoDesignSet set, int which, short index)
+    {
+        if (which >= set.Designs.Count || which < 0)
+            return;
+
+        var design = set.Designs[which];
+        if (design.GearsetIndex == index)
+            return;
+
+        var old = design.GearsetIndex;
+        design.GearsetIndex = index;
+        Save();
+        Glamourer.Log.Debug($"Changed gearset condition from {old} to {index} for associated design {which + 1} in design set.");
+        _event.Invoke(AutomationChanged.Type.ChangedConditions, set, (which, old, index));
     }
 
     public void ChangeApplicationType(AutoDesignSet set, int which, AutoDesign.Type type)
@@ -338,10 +355,8 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
     public void Save(StreamWriter writer)
     {
-        using var j = new JsonTextWriter(writer)
-        {
-            Formatting = Formatting.Indented,
-        };
+        using var j = new JsonTextWriter(writer);
+        j.Formatting = Formatting.Indented;
         Serialize().WriteTo(j);
     }
 
@@ -456,13 +471,16 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         {
             if (designIdentifier.Length == 0)
             {
-                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design for set {setName}: No design specified.", NotificationType.Warning);
+                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design for set {setName}: No design specified.",
+                    NotificationType.Warning);
                 return null;
             }
 
             if (!Guid.TryParse(designIdentifier, out var guid))
             {
-                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design for set {setName}: {designIdentifier} is not a valid GUID.", NotificationType.Warning);
+                Glamourer.Messager.NotificationMessage(
+                    $"Error parsing automatically applied design for set {setName}: {designIdentifier} is not a valid GUID.",
+                    NotificationType.Warning);
 
                 return null;
             }
@@ -471,7 +489,8 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             if (design == null)
             {
                 Glamourer.Messager.NotificationMessage(
-                    $"Error parsing automatically applied design for set {setName}: The specified design {guid} does not exist.", NotificationType.Warning);
+                    $"Error parsing automatically applied design for set {setName}: The specified design {guid} does not exist.",
+                    NotificationType.Warning);
                 return null;
             }
         }
@@ -483,24 +502,31 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             Design          = design,
             ApplicationType = applicationType & AutoDesign.Type.All,
         };
+        return ParseConditions(setName, jObj, ret) ? ret : null;
+    }
 
+    private bool ParseConditions(string setName, JObject jObj, AutoDesign ret)
+    {
         var conditions = jObj["Conditions"];
         if (conditions == null)
-            return ret;
+            return true;
 
         var jobs = conditions["JobGroup"]?.ToObject<int>() ?? -1;
         if (jobs >= 0)
         {
             if (!_jobs.JobGroups.TryGetValue((ushort)jobs, out var jobGroup))
             {
-                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design for set {setName}: The job condition {jobs} does not exist.", NotificationType.Warning);
-                return null;
+                Glamourer.Messager.NotificationMessage(
+                    $"Error parsing automatically applied design for set {setName}: The job condition {jobs} does not exist.",
+                    NotificationType.Warning);
+                return false;
             }
 
             ret.Jobs = jobGroup;
         }
 
-        return ret;
+        ret.GearsetIndex = conditions["Gearset"]?.ToObject<short>() ?? -1;
+        return true;
     }
 
     private void Save()
