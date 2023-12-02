@@ -102,12 +102,22 @@ public class DesignConverter
                         : DesignBase.LoadDesignBase(_customize, _items, jObj2);
                     break;
                 }
-                case Version:
+                case 5:
                 {
                     bytes   = bytes[DesignBase64Migration.Base64SizeV4..];
                     version = bytes.DecompressToString(out var decompressed);
                     var jObj2 = JObject.Parse(decompressed);
-                    Debug.Assert(version == Version);
+                    Debug.Assert(version == 5);
+                    ret = jObj2["Identifier"] != null
+                        ? Design.LoadDesign(_customize, _items, jObj2)
+                        : DesignBase.LoadDesignBase(_customize, _items, jObj2);
+                    break;
+                }
+                case 6:
+                {
+                    version = bytes.DecompressToString(out var decompressed);
+                    var jObj2 = JObject.Parse(decompressed);
+                    Debug.Assert(version == 6);
                     ret = jObj2["Identifier"] != null
                         ? Design.LoadDesign(_customize, _items, jObj2)
                         : DesignBase.LoadDesignBase(_customize, _items, jObj2);
