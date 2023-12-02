@@ -15,13 +15,13 @@ public class AutoDesign
     [Flags]
     public enum Type : byte
     {
-        Armor          = 0x01,
-        Customizations = 0x02,
-        Weapons        = 0x04,
-        Stains         = 0x08,
-        Accessories    = 0x10,
+        Armor             = 0x01,
+        Customizations    = 0x02,
+        Weapons           = 0x04,
+        GearCustomization = 0x08,
+        Accessories       = 0x10,
 
-        All = Armor | Accessories | Customizations | Weapons | Stains,
+        All = Armor | Accessories | Customizations | Weapons | GearCustomization,
     }
 
     public Design?  Design;
@@ -80,19 +80,20 @@ public class AutoDesign
         return ret;
     }
 
-    public (EquipFlag Equip, CustomizeFlag Customize, bool ApplyHat, bool ApplyVisor, bool ApplyWeapon, bool ApplyWet) ApplyWhat()
+    public (EquipFlag Equip, CustomizeFlag Customize, CrestFlag Crest, bool ApplyHat, bool ApplyVisor, bool ApplyWeapon, bool ApplyWet) ApplyWhat()
     {
         var equipFlags = (ApplicationType.HasFlag(Type.Weapons) ? WeaponFlags : 0)
           | (ApplicationType.HasFlag(Type.Armor) ? ArmorFlags : 0)
           | (ApplicationType.HasFlag(Type.Accessories) ? AccessoryFlags : 0)
-          | (ApplicationType.HasFlag(Type.Stains) ? StainFlags : 0);
+          | (ApplicationType.HasFlag(Type.GearCustomization) ? StainFlags : 0);
         var customizeFlags = ApplicationType.HasFlag(Type.Customizations) ? CustomizeFlagExtensions.All : 0;
+        var crestFlag      = ApplicationType.HasFlag(Type.GearCustomization) ? CrestExtensions.AllRelevant : 0;
 
         if (Revert)
-            return (equipFlags, customizeFlags, ApplicationType.HasFlag(Type.Armor), ApplicationType.HasFlag(Type.Armor),
+            return (equipFlags, customizeFlags, crestFlag, ApplicationType.HasFlag(Type.Armor), ApplicationType.HasFlag(Type.Armor),
                 ApplicationType.HasFlag(Type.Weapons), ApplicationType.HasFlag(Type.Customizations));
 
-        return (equipFlags & Design!.ApplyEquip, customizeFlags & Design.ApplyCustomize,
+        return (equipFlags & Design!.ApplyEquip, customizeFlags & Design.ApplyCustomize, crestFlag & Design.ApplyCrest,
             ApplicationType.HasFlag(Type.Armor) && Design.DoApplyHatVisible(),
             ApplicationType.HasFlag(Type.Armor) && Design.DoApplyVisorToggle(),
             ApplicationType.HasFlag(Type.Weapons) && Design.DoApplyWeaponVisible(),

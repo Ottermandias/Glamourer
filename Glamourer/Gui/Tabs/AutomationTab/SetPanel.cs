@@ -286,7 +286,7 @@ public class SetPanel
         var size = new Vector2(ImGui.GetFrameHeight());
         size.X += ImGuiHelpers.GlobalScale;
 
-        var (equipFlags, customizeFlags, _, _, _, _) = design.ApplyWhat();
+        var (equipFlags, customizeFlags, _, _, _, _, _) = design.ApplyWhat();
         var sb = new StringBuilder();
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
         {
@@ -457,7 +457,7 @@ public class SetPanel
             "Apply all customization changes that are enabled in this design and that are valid in a fixed design and for the given race and gender."),
         (AutoDesign.Type.Armor, "Apply all armor piece changes that are enabled in this design and that are valid in a fixed design."),
         (AutoDesign.Type.Accessories, "Apply all accessory changes that are enabled in this design and that are valid in a fixed design."),
-        (AutoDesign.Type.Stains, "Apply all dye changes that are enabled in this design."),
+        (AutoDesign.Type.GearCustomization, "Apply all dye and crest changes that are enabled in this design."),
         (AutoDesign.Type.Weapons, "Apply all weapon changes that are enabled in this design and that are valid with the current weapon worn."),
     };
 

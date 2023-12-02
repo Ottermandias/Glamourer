@@ -5,7 +5,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using Glamourer.Automation;
 using Glamourer.Customization;
 using Glamourer.Designs;
@@ -16,6 +15,7 @@ using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
+using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -167,21 +167,21 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
         using (var _ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.HatState, _stateManager, _state!));
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(EquipSlot.Head, _stateManager, _state!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.Head, _stateManager, _state!));
         }
 
         ImGui.SameLine();
         using (var _ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.VisorState, _stateManager, _state!));
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(EquipSlot.Body, _stateManager, _state!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.Body, _stateManager, _state!));
         }
 
         ImGui.SameLine();
         using (var _ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.WeaponState, _stateManager, _state!));
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(EquipSlot.OffHand, _stateManager, _state!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.OffHand, _stateManager, _state!));
         }
     }
 
@@ -296,8 +296,8 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
     {
         ImGui.OpenPopup("Save as Design");
         _newName                        = _state!.Identifier.ToName();
-        var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
-        _newDesign                      = _converter.Convert(_state, applyGear, applyCustomize);
+        var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
+        _newDesign                      = _converter.Convert(_state, applyGear, applyCustomize, applyCrest);
     }
 
     private void SaveDesignDrawPopup()
@@ -332,8 +332,8 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
     {
         try
         {
-            var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
-            var text = _converter.ShareBase64(_state!, applyGear, applyCustomize);
+            var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
+            var text = _converter.ShareBase64(_state!, applyGear, applyCustomize, applyCrest);
             ImGui.SetClipboardText(text);
         }
         catch (Exception ex)
@@ -372,9 +372,9 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
                 !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0))
             return;
 
-        var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
+        var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
-            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize), state,
+            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize, applyCrest), state,
                 StateChanged.Source.Manual);
     }
 
@@ -390,9 +390,9 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
                 !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0))
             return;
 
-        var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
+        var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
-            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize), state,
+            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize, applyCrest), state,
                 StateChanged.Source.Manual);
     }
 }

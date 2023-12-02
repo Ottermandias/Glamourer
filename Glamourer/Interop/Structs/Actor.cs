@@ -108,7 +108,7 @@ public readonly unsafe struct Actor : IEquatable<Actor>
         => ((CharacterArmor*)&AsCharacter->DrawData.Head)[slot.ToIndex()];
 
     public bool GetCrest(CrestFlag slot)
-        => (GetFreeCompanyCrestBitfield() & CrestMask(slot)) != 0;
+        => CrestBitfield.HasFlag(slot);
 
     public CharacterWeapon GetMainhand()
         => new(AsCharacter->DrawData.Weapon(DrawDataContainer.WeaponSlot.MainHand).ModelId.Value);
@@ -120,20 +120,8 @@ public readonly unsafe struct Actor : IEquatable<Actor>
         => *(Customize*)&AsCharacter->DrawData.CustomizeData;
 
     // TODO remove this when available in ClientStructs
-    private byte GetFreeCompanyCrestBitfield()
-        => ((byte*)Address)[0x1BBB];
-
-    private static byte CrestMask(CrestFlag slot)
-        => slot switch
-        {
-            CrestFlag.OffHand => 0x01,
-            CrestFlag.Head    => 0x02,
-            CrestFlag.Body    => 0x04,
-            CrestFlag.Hands   => 0x08,
-            CrestFlag.Legs    => 0x10,
-            CrestFlag.Feet    => 0x20,
-            _                 => 0x00,
-        };
+    internal ref CrestFlag CrestBitfield
+        => ref *(CrestFlag*)((byte*)Address + 0x1BBB);
 
     public override string ToString()
         => $"0x{Address:X}";

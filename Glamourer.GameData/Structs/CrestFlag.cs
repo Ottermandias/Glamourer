@@ -8,18 +8,18 @@ namespace Glamourer.Structs;
 [Flags]
 public enum CrestFlag : ushort
 {
-    Head     = 0x0001,
-    Body     = 0x0002,
-    Hands    = 0x0004,
-    Legs     = 0x0008,
-    Feet     = 0x0010,
-    Ears     = 0x0020,
-    Neck     = 0x0040,
-    Wrists   = 0x0080,
-    RFinger  = 0x0100,
-    LFinger  = 0x0200,
-    MainHand = 0x0400,
-    OffHand  = 0x0800,
+    OffHand  = 0x0001,
+    Head     = 0x0002,
+    Body     = 0x0004,
+    Hands    = 0x0008,
+    Legs     = 0x0010,
+    Feet     = 0x0020,
+    Ears     = 0x0040,
+    Neck     = 0x0080,
+    Wrists   = 0x0100,
+    RFinger  = 0x0200,
+    LFinger  = 0x0400,
+    MainHand = 0x0800,
 }
 
 public enum CrestType : byte
@@ -32,7 +32,7 @@ public enum CrestType : byte
 
 public static class CrestExtensions
 {
-    public const CrestFlag All         = (CrestFlag)(((ulong)EquipFlag.Offhand << 1) - 1);
+    public const CrestFlag All         = (CrestFlag)(((ulong)EquipFlag.Mainhand << 1) - 1);
     public const CrestFlag AllRelevant = CrestFlag.Head | CrestFlag.Body | CrestFlag.OffHand;
 
     public static readonly IReadOnlyList<CrestFlag> AllRelevantSet = Enum.GetValues<CrestFlag>().Where(f => AllRelevant.HasFlag(f)).ToArray();
@@ -79,24 +79,6 @@ public static class CrestExtensions
             EquipSlot.Wrists   => CrestFlag.Wrists,
             EquipSlot.RFinger  => CrestFlag.RFinger,
             EquipSlot.LFinger  => CrestFlag.LFinger,
-            _                  => 0,
-        };
-
-    public static EquipSlot ToSlot(this CrestFlag flag)
-        => flag switch
-        {
-            CrestFlag.MainHand => EquipSlot.MainHand,
-            CrestFlag.OffHand  => EquipSlot.OffHand,
-            CrestFlag.Head     => EquipSlot.Head,
-            CrestFlag.Body     => EquipSlot.Body,
-            CrestFlag.Hands    => EquipSlot.Hands,
-            CrestFlag.Legs     => EquipSlot.Legs,
-            CrestFlag.Feet     => EquipSlot.Feet,
-            CrestFlag.Ears     => EquipSlot.Ears,
-            CrestFlag.Neck     => EquipSlot.Neck,
-            CrestFlag.Wrists   => EquipSlot.Wrists,
-            CrestFlag.RFinger  => EquipSlot.RFinger,
-            CrestFlag.LFinger  => EquipSlot.LFinger,
             _                  => 0,
         };
 

@@ -8,6 +8,7 @@ using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
+using Glamourer.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -447,7 +448,7 @@ public class DesignManager
     }
 
     /// <summary> Change the crest visibility for any equipment piece. </summary>
-    public void ChangeCrest(Design design, EquipSlot slot, bool crest)
+    public void ChangeCrest(Design design, CrestFlag slot, bool crest)
     {
         var oldCrest = design.DesignData.Crest(slot);
         if (!design.GetDesignDataRef().SetCrest(slot, crest))
@@ -460,7 +461,7 @@ public class DesignManager
     }
 
     /// <summary> Change whether to apply a specific crest visibility. </summary>
-    public void ChangeApplyCrest(Design design, EquipSlot slot, bool value)
+    public void ChangeApplyCrest(Design design, CrestFlag slot, bool value)
     {
         if (!design.SetApplyCrest(slot, value))
             return;
@@ -539,7 +540,10 @@ public class DesignManager
 
                 if (other.DoApplyStain(slot))
                     ChangeStain(design, slot, other.DesignData.Stain(slot));
+            }
 
+            foreach (var slot in Enum.GetValues<CrestFlag>())
+            {
                 if (other.DoApplyCrest(slot))
                     ChangeCrest(design, slot, other.DesignData.Crest(slot));
             }
@@ -556,12 +560,6 @@ public class DesignManager
 
         if (other.DoApplyStain(EquipSlot.OffHand))
             ChangeStain(design, EquipSlot.OffHand, other.DesignData.Stain(EquipSlot.OffHand));
-
-        if (other.DoApplyCrest(EquipSlot.MainHand))
-            ChangeCrest(design, EquipSlot.MainHand, other.DesignData.Crest(EquipSlot.MainHand));
-
-        if (other.DoApplyCrest(EquipSlot.OffHand))
-            ChangeCrest(design, EquipSlot.OffHand, other.DesignData.Crest(EquipSlot.OffHand));
     }
 
     public void UndoDesignChange(Design design)

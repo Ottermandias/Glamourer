@@ -268,6 +268,7 @@ public class AutoDesignApplier : IDisposable
     {
         EquipFlag     totalEquipFlags     = 0;
         CustomizeFlag totalCustomizeFlags = 0;
+        CrestFlag     totalCrestFlags     = 0;
         byte          totalMetaFlags      = 0;
         if (set.BaseState == AutoDesignSet.Base.Game)
             _state.ResetStateFixed(state);
@@ -291,10 +292,11 @@ public class AutoDesignApplier : IDisposable
             if (!data.IsHuman)
                 continue;
 
-            var (equipFlags, customizeFlags, applyHat, applyVisor, applyWeapon, applyWet) = design.ApplyWhat();
+            var (equipFlags, customizeFlags, crestFlags, applyHat, applyVisor, applyWeapon, applyWet) = design.ApplyWhat();
             ReduceMeta(state, data, applyHat, applyVisor, applyWeapon, applyWet, ref totalMetaFlags, respectManual, source);
             ReduceCustomize(state, data, customizeFlags, ref totalCustomizeFlags, respectManual, source);
             ReduceEquip(state, data, equipFlags, ref totalEquipFlags, respectManual, source, fromJobChange);
+            ReduceCrests(state, data, crestFlags, ref totalCrestFlags, respectManual, source);
         }
 
         if (totalCustomizeFlags != 0)
@@ -321,6 +323,24 @@ public class AutoDesignApplier : IDisposable
             default:
                 set = null;
                 return false;
+        }
+    }
+
+    private void ReduceCrests(ActorState state, in DesignData design, CrestFlag crestFlags, ref CrestFlag totalCrestFlags, bool respectManual,
+        StateChanged.Source source)
+    {
+        crestFlags &= ~totalCrestFlags;
+        if (crestFlags == 0)
+            return;
+
+        foreach (var slot in CrestExtensions.AllRelevantSet)
+        {
+            if (!crestFlags.HasFlag(slot))
+                continue;
+
+            if (!respectManual || state[slot] is not StateChanged.Source.Manual)
+                _state.ChangeCrest(state, slot, design.Crest(slot), source);
+            totalCrestFlags |= slot;
         }
     }
 

@@ -159,8 +159,8 @@ public class DesignQuickBar : Window, IDisposable
             return;
         }
 
-        var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
-        using var _ = design!.TemporarilyRestrictApplication(applyGear, applyCustomize);
+        var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
+        using var _ = design!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest);
         _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
     }
 

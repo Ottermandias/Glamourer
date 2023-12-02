@@ -88,13 +88,13 @@ public static class UiHelpers
         return (currentValue != newValue, currentApply != newApply);
     }
 
-    public static (EquipFlag, CustomizeFlag) ConvertKeysToFlags()
+    public static (EquipFlag, CustomizeFlag, CrestFlag) ConvertKeysToFlags()
         => (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift) switch
         {
-            (false, false) => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant),
-            (true, true)   => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant),
-            (true, false)  => (EquipFlagExtensions.All, (CustomizeFlag)0),
-            (false, true)  => ((EquipFlag)0, CustomizeFlagExtensions.AllRelevant),
+            (false, false) => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All),
+            (true, true)   => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All),
+            (true, false)  => (EquipFlagExtensions.All, (CustomizeFlag)0, CrestExtensions.All),
+            (false, true)  => ((EquipFlag)0, CustomizeFlagExtensions.AllRelevant, 0),
         };
 
     public static (bool, bool) ConvertKeysToBool()

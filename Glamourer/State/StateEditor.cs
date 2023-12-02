@@ -4,6 +4,7 @@ using Dalamud.Plugin.Services;
 using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Services;
+using Glamourer.Structs;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -194,6 +195,18 @@ public class StateEditor
 
         state.ModelData.SetStain(slot, stain);
         state[slot, true] = source;
+        return true;
+    }
+
+    /// <summary> Change the crest of an equipment piece. </summary>
+    public bool ChangeCrest(ActorState state, CrestFlag slot, bool crest, StateChanged.Source source, out bool oldCrest, uint key = 0)
+    {
+        oldCrest = state.ModelData.Crest(slot);
+        if (!state.CanUnlock(key))
+            return false;
+
+        state.ModelData.SetCrest(slot, crest);
+        state[slot] = source;
         return true;
     }
 

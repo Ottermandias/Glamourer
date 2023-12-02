@@ -52,10 +52,10 @@ public ref struct ToggleDrawData
         };
     }
 
-    public static ToggleDrawData CrestFromDesign(EquipSlot slot, DesignManager manager, Design design)
+    public static ToggleDrawData CrestFromDesign(CrestFlag slot, DesignManager manager, Design design)
         => new()
         {
-            Label              = $"{slot.ToCrestFlag().ToLabel()} Crest",
+            Label              = $"{slot.ToLabel()} Crest",
             Tooltip            = string.Empty,
             Locked             = design.WriteProtected(),
             DisplayApplication = true,
@@ -65,14 +65,14 @@ public ref struct ToggleDrawData
             SetApply           = v => manager.ChangeApplyCrest(design, slot, v),
         };
 
-    public static ToggleDrawData CrestFromState(EquipSlot slot, StateManager manager, ActorState state)
+    public static ToggleDrawData CrestFromState(CrestFlag slot, StateManager manager, ActorState state)
         => new()
         {
-            Label        = $"{slot.ToCrestFlag().ToLabel()} Crest",
+            Label        = $"{slot.ToLabel()} Crest",
             Tooltip      = "Hide or show your free company crest on this piece of gear.",
             Locked       = state.IsLocked,
-            CurrentValue = state.ModelData.Crest(slot), // TODO
-            SetValue     = v => { },                    //manager.ChangeCrest(state, slot, v, StateChanged.Source.Manual),
+            CurrentValue = state.ModelData.Crest(slot),
+            SetValue     = v => manager.ChangeCrest(state, slot, v, StateChanged.Source.Manual),
         };
 
     public static ToggleDrawData FromState(ActorState.MetaIndex index, StateManager manager, ActorState state)

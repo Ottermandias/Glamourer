@@ -13,6 +13,7 @@ using Penumbra.GameData.Structs;
 using System;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
+using Glamourer.Structs;
 
 namespace Glamourer.State;
 
@@ -42,6 +43,7 @@ public class StateListener : IDisposable
     private readonly MovedEquipment            _movedEquipment;
     private readonly GPoseService              _gPose;
     private readonly ChangeCustomizeService    _changeCustomizeService;
+    private readonly CrestService              _crestService;
     private readonly ICondition                _condition;
 
     private ActorIdentifier _creatingIdentifier = ActorIdentifier.Invalid;
@@ -52,7 +54,7 @@ public class StateListener : IDisposable
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
         StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gPose,
-        ChangeCustomizeService changeCustomizeService, CustomizationService customizations, ICondition condition)
+        ChangeCustomizeService changeCustomizeService, CustomizationService customizations, ICondition condition, CrestService crestService)
     {
         _manager                = manager;
         _items                  = items;
@@ -74,6 +76,7 @@ public class StateListener : IDisposable
         _changeCustomizeService = changeCustomizeService;
         _customizations         = customizations;
         _condition              = condition;
+        _crestService           = crestService;
         Subscribe();
     }
 
@@ -405,6 +408,58 @@ public class StateListener : IDisposable
         }
     }
 
+    private void OnCrestChange(Actor actor, CrestFlag slot, Ref<bool> value)
+    {
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
+            return;
+
+        if (!actor.Identifier(_actors.AwaitedService, out var identifier)
+         || !_manager.TryGetValue(identifier, out var state))
+            return;
+
+        switch (UpdateBaseCrest(actor, state, slot, value.Value))
+        {
+            case UpdateState.Change:
+                if (state[slot] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                    _manager.ChangeCrest(state, slot, state.BaseData.Crest(slot), StateChanged.Source.Game);
+                else
+                    value.Value = state.ModelData.Crest(slot);
+                break;
+            case UpdateState.NoChange:
+            case UpdateState.HatHack:
+                value.Value = state.ModelData.Crest(slot);
+                break;
+            case UpdateState.Transformed: break;
+        }
+    }
+
+    private void OnModelCrestSetup(Model model, CrestFlag slot, ref bool value)
+    {
+        var actor = _penumbra.GameObjectFromDrawObject(model);
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
+            return;
+
+        if (!actor.Identifier(_actors.AwaitedService, out var identifier)
+         || !_manager.TryGetValue(identifier, out var state))
+            return;
+
+        value = state.ModelData.Crest(slot);
+    }
+
+    private static UpdateState UpdateBaseCrest(Actor actor, ActorState state, CrestFlag slot, bool visible)
+    {
+        if (actor.IsTransformed)
+            return UpdateState.Transformed;
+
+        if (state.BaseData.Crest(slot) != visible)
+        {
+            state.BaseData.SetCrest(slot, visible);
+            return UpdateState.Change;
+        }
+
+        return UpdateState.NoChange;
+    }
+
     /// <summary> Update base data for a single changed weapon slot. </summary>
     private unsafe UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterWeapon weapon)
     {
@@ -616,6 +671,8 @@ public class StateListener : IDisposable
         _headGearVisibility.Subscribe(OnHeadGearVisibilityChange, HeadGearVisibilityChanged.Priority.StateListener);
         _weaponVisibility.Subscribe(OnWeaponVisibilityChange, WeaponVisibilityChanged.Priority.StateListener);
         _changeCustomizeService.Subscribe(OnCustomizeChange, ChangeCustomizeService.Priority.StateListener);
+        _crestService.Subscribe(OnCrestChange, CrestService.Priority.StateListener);
+        _crestService.ModelCrestSetup += OnModelCrestSetup;
     }
 
     private void Unsubscribe()
@@ -629,6 +686,8 @@ public class StateListener : IDisposable
         _headGearVisibility.Unsubscribe(OnHeadGearVisibilityChange);
         _weaponVisibility.Unsubscribe(OnWeaponVisibilityChange);
         _changeCustomizeService.Unsubscribe(OnCustomizeChange);
+        _crestService.Unsubscribe(OnCrestChange);
+        _crestService.ModelCrestSetup -= OnModelCrestSetup;
     }
 
     private void OnCreatedCharacterBase(nint gameObject, string _, nint drawObject)
@@ -639,8 +698,9 @@ public class StateListener : IDisposable
         if (_creatingState == null)
             return;
 
-        _applier.ChangeHatState(new ActorData(gameObject,    _creatingIdentifier.ToName()), _creatingState.ModelData.IsHatVisible());
-        _applier.ChangeWeaponState(new ActorData(gameObject, _creatingIdentifier.ToName()), _creatingState.ModelData.IsWeaponVisible());
-        _applier.ChangeWetness(new ActorData(gameObject,     _creatingIdentifier.ToName()), _creatingState.ModelData.IsWet());
+        var data = new ActorData(gameObject, _creatingIdentifier.ToName());
+        _applier.ChangeHatState(data, _creatingState.ModelData.IsHatVisible());
+        _applier.ChangeWeaponState(data, _creatingState.ModelData.IsWeaponVisible());
+        _applier.ChangeWetness(data, _creatingState.ModelData.IsWet());
     }
 }

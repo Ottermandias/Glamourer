@@ -61,8 +61,8 @@ public unsafe struct DesignData
         return index > 11 ? (StainId)0 : _equipmentBytes[4 * index + 3];
     }
 
-    public readonly bool Crest(EquipSlot slot)
-        => CrestVisibility.HasFlag(slot.ToCrestFlag());
+    public readonly bool Crest(CrestFlag slot)
+        => CrestVisibility.HasFlag(slot);
 
 
     public FullEquipType MainhandType
@@ -179,9 +179,9 @@ public unsafe struct DesignData
             _  => false,
         };
 
-    public bool SetCrest(EquipSlot slot, bool visible)
+    public bool SetCrest(CrestFlag slot, bool visible)
     {
-        var newValue = visible ? CrestVisibility | slot.ToCrestFlag() : CrestVisibility & ~slot.ToCrestFlag();
+        var newValue = visible ? CrestVisibility | slot : CrestVisibility & ~slot;
         if (newValue == CrestVisibility)
             return false;
 
@@ -244,15 +244,15 @@ public unsafe struct DesignData
         {
             SetItem(slot, ItemManager.NothingItem(slot));
             SetStain(slot, 0);
-            SetCrest(slot, false);
+            SetCrest(slot.ToCrestFlag(), false);
         }
 
         SetItem(EquipSlot.MainHand, items.DefaultSword);
         SetStain(EquipSlot.MainHand, 0);
-        SetCrest(EquipSlot.MainHand, false);
+        SetCrest(CrestFlag.MainHand, false);
         SetItem(EquipSlot.OffHand, ItemManager.NothingItem(FullEquipType.Shield));
         SetStain(EquipSlot.OffHand, 0);
-        SetCrest(EquipSlot.OffHand, false);
+        SetCrest(CrestFlag.OffHand, false);
     }
 
 

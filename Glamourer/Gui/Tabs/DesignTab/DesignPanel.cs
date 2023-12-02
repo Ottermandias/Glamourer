@@ -113,21 +113,21 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
         using (var _ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.HatState, _manager, _selector.Selected!));
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(EquipSlot.Head, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.Head, _manager, _selector.Selected!));
         }
 
         ImGui.SameLine();
         using (var _ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.VisorState, _manager, _selector.Selected!));
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(EquipSlot.Body, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.Body, _manager, _selector.Selected!));
         }
 
         ImGui.SameLine();
         using (var _ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.WeaponState, _manager, _selector.Selected!));
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(EquipSlot.OffHand, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.OffHand, _manager, _selector.Selected!));
         }
     }
 
@@ -191,10 +191,9 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
         var bigChange = ImGui.CheckboxFlags("Apply All Crests", ref flags, (uint)CrestExtensions.AllRelevant);
         foreach (var flag in CrestExtensions.AllRelevantSet)
         {
-            var slot  = flag.ToSlot();
-            var apply = bigChange ? ((CrestFlag)flags & flag) == flag : _selector.Selected!.DoApplyCrest(slot);
+            var apply = bigChange ? ((CrestFlag)flags & flag) == flag : _selector.Selected!.DoApplyCrest(flag);
             if (ImGui.Checkbox($"Apply {flag.ToLabel()} Crest", ref apply) || bigChange)
-                _manager.ChangeApplyCrest(_selector.Selected!, slot, apply);
+                _manager.ChangeApplyCrest(_selector.Selected!, flag, apply);
         }
     }
 
@@ -389,8 +388,8 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
-            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize);
+            var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
+            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest);
             _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
         }
     }
@@ -408,8 +407,8 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToFlags();
-            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize);
+            var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
+            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest);
             _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
         }
     }

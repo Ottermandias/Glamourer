@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Customization;
 using Glamourer.Services;
 using Glamourer.Structs;
@@ -9,6 +7,8 @@ using OtterGui.Classes;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using System;
+using System.Linq;
 
 namespace Glamourer.Designs;
 
@@ -169,8 +169,8 @@ public class DesignBase
     public bool DoApplyCustomize(CustomizeIndex idx)
         => ApplyCustomize.HasFlag(idx.ToFlag());
 
-    public bool DoApplyCrest(EquipSlot slot)
-        => ApplyCrest.HasFlag(slot.ToCrestFlag());
+    public bool DoApplyCrest(CrestFlag slot)
+        => ApplyCrest.HasFlag(slot);
 
     internal bool SetApplyEquip(EquipSlot slot, bool value)
     {
@@ -202,9 +202,9 @@ public class DesignBase
         return true;
     }
 
-    internal bool SetApplyCrest(EquipSlot slot, bool value)
+    internal bool SetApplyCrest(CrestFlag slot, bool value)
     {
-        var newValue = value ? ApplyCrest | slot.ToCrestFlag() : ApplyCrest & ~slot.ToCrestFlag();
+        var newValue = value ? ApplyCrest | slot : ApplyCrest & ~slot;
         if (newValue == ApplyCrest)
             return false;
 
@@ -212,28 +212,32 @@ public class DesignBase
         return true;
     }
 
-    internal FlagRestrictionResetter TemporarilyRestrictApplication(EquipFlag equipFlags, CustomizeFlag customizeFlags)
-        => new(this, equipFlags, customizeFlags);
+    internal FlagRestrictionResetter TemporarilyRestrictApplication(EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
+        => new(this, equipFlags, customizeFlags, crestFlags);
 
     internal readonly struct FlagRestrictionResetter : IDisposable
     {
         private readonly DesignBase    _design;
         private readonly EquipFlag     _oldEquipFlags;
         private readonly CustomizeFlag _oldCustomizeFlags;
+        private readonly CrestFlag     _oldCrestFlags;
 
-        public FlagRestrictionResetter(DesignBase d, EquipFlag equipFlags, CustomizeFlag customizeFlags)
+        public FlagRestrictionResetter(DesignBase d, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
         {
             _design            =  d;
             _oldEquipFlags     =  d.ApplyEquip;
             _oldCustomizeFlags =  d.ApplyCustomizeRaw;
+            _oldCrestFlags     =  d.ApplyCrest;
             d.ApplyEquip       &= equipFlags;
             d.ApplyCustomize   &= customizeFlags;
+            d.ApplyCrest       &= crestFlags;
         }
 
         public void Dispose()
         {
             _design.ApplyEquip     = _oldEquipFlags;
             _design.ApplyCustomize = _oldCustomizeFlags;
+            _design.ApplyCrest     = _oldCrestFlags;
         }
     }
 
@@ -275,10 +279,11 @@ public class DesignBase
         {
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
-                var item  = _designData.Item(slot);
-                var stain = _designData.Stain(slot);
-                var crest = _designData.Crest(slot);
-                ret[slot.ToString()] = Serialize(item.Id, stain, crest, DoApplyEquip(slot), DoApplyStain(slot), DoApplyCrest(slot));
+                var item      = _designData.Item(slot);
+                var stain     = _designData.Stain(slot);
+                var crestSlot = slot.ToCrestFlag();
+                var crest     = _designData.Crest(crestSlot);
+                ret[slot.ToString()] = Serialize(item.Id, stain, crest, DoApplyEquip(slot), DoApplyStain(slot), DoApplyCrest(crestSlot));
             }
 
             ret["Hat"]    = new QuadBool(_designData.IsHatVisible(),    DoApplyHatVisible()).ToJObject("Show", "Apply");
@@ -365,7 +370,7 @@ public class DesignBase
         {
             var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot).Id;
             var stain      = (StainId)(item?["Stain"]?.ToObject<byte>() ?? 0);
-            var crest      = (item?["Crest"]?.ToObject<bool>() ?? false);
+            var crest      = item?["Crest"]?.ToObject<bool>() ?? false;
             var apply      = item?["Apply"]?.ToObject<bool>() ?? false;
             var applyStain = item?["ApplyStain"]?.ToObject<bool>() ?? false;
             var applyCrest = item?["ApplyCrest"]?.ToObject<bool>() ?? false;
@@ -384,19 +389,21 @@ public class DesignBase
 
             PrintWarning(items.ValidateItem(slot, id, out var item, allowUnknown));
             PrintWarning(items.ValidateStain(stain, out stain, allowUnknown));
+            var crestSlot = slot.ToCrestFlag();
             design._designData.SetItem(slot, item);
             design._designData.SetStain(slot, stain);
-            design._designData.SetCrest(slot, crest);
+            design._designData.SetCrest(crestSlot, crest);
             design.SetApplyEquip(slot, apply);
             design.SetApplyStain(slot, applyStain);
-            design.SetApplyCrest(slot, applyCrest);
+            design.SetApplyCrest(crestSlot, applyCrest);
         }
 
         {
             var (id, stain, crest, apply, applyStain, applyCrest) = ParseItem(EquipSlot.MainHand, equip[EquipSlot.MainHand.ToString()]);
             if (id == ItemManager.NothingId(EquipSlot.MainHand))
                 id = items.DefaultSword.ItemId;
-            var (idOff, stainOff, crestOff, applyOff, applyStainOff, applyCrestOff) = ParseItem(EquipSlot.OffHand, equip[EquipSlot.OffHand.ToString()]);
+            var (idOff, stainOff, crestOff, applyOff, applyStainOff, applyCrestOff) =
+                ParseItem(EquipSlot.OffHand, equip[EquipSlot.OffHand.ToString()]);
             if (id == ItemManager.NothingId(EquipSlot.OffHand))
                 id = ItemManager.NothingId(FullEquipType.Shield);
 
@@ -407,14 +414,14 @@ public class DesignBase
             design._designData.SetItem(EquipSlot.OffHand,  off);
             design._designData.SetStain(EquipSlot.MainHand, stain);
             design._designData.SetStain(EquipSlot.OffHand,  stainOff);
-            design._designData.SetCrest(EquipSlot.MainHand, crest);
-            design._designData.SetCrest(EquipSlot.OffHand,  crestOff);
+            design._designData.SetCrest(CrestFlag.MainHand, crest);
+            design._designData.SetCrest(CrestFlag.OffHand,  crestOff);
             design.SetApplyEquip(EquipSlot.MainHand, apply);
             design.SetApplyEquip(EquipSlot.OffHand,  applyOff);
             design.SetApplyStain(EquipSlot.MainHand, applyStain);
             design.SetApplyStain(EquipSlot.OffHand,  applyStainOff);
-            design.SetApplyCrest(EquipSlot.MainHand, applyCrest);
-            design.SetApplyCrest(EquipSlot.OffHand,  applyCrestOff);
+            design.SetApplyCrest(CrestFlag.MainHand, applyCrest);
+            design.SetApplyCrest(CrestFlag.OffHand,  applyCrestOff);
         }
         var metaValue = QuadBool.FromJObject(equip["Hat"], "Show", "Apply", QuadBool.NullFalse);
         design.SetApplyHatVisible(metaValue.Enabled);

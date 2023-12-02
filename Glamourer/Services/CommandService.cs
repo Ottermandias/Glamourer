@@ -165,7 +165,7 @@ public class CommandService : IDisposable
                 .AddInitialPurple("Customizations, ")
                 .AddInitialPurple("Equipment, ")
                 .AddInitialPurple("Accessories, ")
-                .AddInitialPurple("Dyes and ")
+                .AddInitialPurple("Dyes & Crests and ")
                 .AddInitialPurple("Weapons, where ").AddPurple("CEADW")
                 .AddText(" means everything should be toggled on, and no value means nothing should be toggled on.")
                 .BuiltString);
@@ -268,7 +268,7 @@ public class CommandService : IDisposable
                         applicationFlags |= AutoDesign.Type.Accessories;
                         break;
                     case 'd':
-                        applicationFlags |= AutoDesign.Type.Stains;
+                        applicationFlags |= AutoDesign.Type.GearCustomization;
                         break;
                     case 'w':
                         applicationFlags |= AutoDesign.Type.Weapons;
@@ -472,7 +472,7 @@ public class CommandService : IDisposable
                  && _stateManager.GetOrCreate(identifier, data.Objects[0], out state)))
                 continue;
 
-            var design = _converter.Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant);
+            var design = _converter.Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All);
             _designManager.CreateClone(design, split[0], true);
             return true;
         }

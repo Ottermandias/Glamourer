@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
@@ -19,11 +20,11 @@ namespace Glamourer.Interop;
 ///     <item>Parameter is the whether the crest will be shown. </item>
 /// </list>
 /// </summary>
-public sealed unsafe class CrestService : EventWrapper<Action<Model, EquipSlot, Ref<bool>>, CrestService.Priority>, IDisposable
+public sealed unsafe class CrestService : EventWrapper<Action<Actor, CrestFlag, Ref<bool>>, CrestService.Priority>
 {
     public enum Priority
     {
-        /// <seealso cref="State.StateListener.OnCrestVisibilityUpdating"/>
+        /// <seealso cref="State.StateListener.OnCrestChange"/>
         StateListener = 0,
     }
 
@@ -37,19 +38,51 @@ public sealed unsafe class CrestService : EventWrapper<Action<Model, EquipSlot, 
             interop.HookFromAddress<SetCrestDelegateIntern>(_weaponVTable[96], WeaponSetFreeCompanyCrestVisibleOnSlotDetour);
         _humanSetFreeCompanyCrestVisibleOnSlot.Enable();
         _weaponSetFreeCompanyCrestVisibleOnSlot.Enable();
+        _crestChangeHook.Enable();
     }
+
+    public void UpdateCrests(Actor gameObject, CrestFlag flags)
+    {
+        if (!gameObject.IsCharacter)
+            return;
+
+        flags &= CrestExtensions.AllRelevant;
+        var       currentCrests = gameObject.CrestBitfield;
+        using var update        = _inUpdate.EnterMethod();
+        _crestChangeHook.Original(gameObject.AsCharacter, (byte) flags);
+        gameObject.CrestBitfield = currentCrests;
+    }
+
+    public delegate void DrawObjectCrestUpdateDelegate(Model drawObject, CrestFlag slot, ref bool value);
+
+    public event DrawObjectCrestUpdateDelegate? ModelCrestSetup;
 
     protected override void Dispose(bool _)
     {
         _humanSetFreeCompanyCrestVisibleOnSlot.Dispose();
         _weaponSetFreeCompanyCrestVisibleOnSlot.Dispose();
+        _crestChangeHook.Dispose();
     }
 
-    public void Invoke(Model model, EquipSlot slot, ref bool visible)
+    private delegate void CrestChangeDelegate(Character* character, byte crestFlags);
+
+    [Signature("E8 ?? ?? ?? ?? 48 8B 55 ?? 49 8B CE E8", DetourName = nameof(CrestChangeDetour))]
+    private readonly Hook<CrestChangeDelegate> _crestChangeHook = null!;
+
+    private void CrestChangeDetour(Character* character, byte crestFlags)
     {
-        var ret = new Ref<bool>(visible);
-        Invoke(this, model, slot, ret);
-        visible = ret;
+        var actor = (Actor)character;
+        foreach (var slot in CrestExtensions.AllRelevantSet)
+        {
+            var newValue = new Ref<bool>(((CrestFlag)crestFlags).HasFlag(slot));
+            Invoke(this, actor, slot, newValue);
+            crestFlags = (byte)(newValue.Value ? crestFlags | (byte)slot : crestFlags & (byte)~slot);
+        }
+
+        Glamourer.Log.Information(
+            $"Called CrestChange on {(ulong)character:X} with {crestFlags:X} and prior flags {((Actor)character).CrestBitfield}.");
+        using var _ = _inUpdate.EnterMethod();
+        _crestChangeHook.Original(character, crestFlags);
     }
 
     public static bool GetModelCrest(Actor gameObject, CrestFlag slot)
@@ -83,42 +116,9 @@ public sealed unsafe class CrestService : EventWrapper<Action<Model, EquipSlot, 
         return false;
     }
 
-    public void UpdateCrest(Actor gameObject, CrestFlag slot, bool crest)
-    {
-        if (!gameObject.IsCharacter)
-            return;
-
-        var (type, index) = slot.ToIndex();
-        switch (type)
-        {
-            case CrestType.Human:
-                {
-                var model = gameObject.Model;
-                if (!model.IsHuman)
-                    return;
-
-                using var _      = _inUpdate.EnterMethod();
-                var       setter = (delegate* unmanaged<Human*, byte, byte, void>)((nint*)model.AsCharacterBase->VTable)[96];
-                setter(model.AsHuman, index, crest ? (byte)1 : (byte)0);
-                break;
-            }
-            case CrestType.Offhand:
-                {
-                var model = (Model)gameObject.AsCharacter->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand).DrawObject;
-                if (!model.IsWeapon)
-                    return;
-
-                using var _      = _inUpdate.EnterMethod();
-                var       setter = (delegate* unmanaged<Weapon*, byte, byte, void>)((nint*)model.AsCharacterBase->VTable)[96];
-                setter(model.AsWeapon, index, crest ? (byte)1 : (byte)0);
-                break;
-            }
-        }
-    }
-
     private readonly InMethodChecker _inUpdate = new();
 
-    private delegate void SetCrestDelegateIntern(nint drawObject, byte slot, byte visible);
+    private delegate void SetCrestDelegateIntern(DrawObject* drawObject, byte slot, byte visible);
 
     [Signature(global::Penumbra.GameData.Sigs.HumanVTable, ScanType = ScanType.StaticAddress)]
     private readonly nint* _humanVTable = null!;
@@ -129,26 +129,27 @@ public sealed unsafe class CrestService : EventWrapper<Action<Model, EquipSlot, 
     private readonly Hook<SetCrestDelegateIntern> _humanSetFreeCompanyCrestVisibleOnSlot;
     private readonly Hook<SetCrestDelegateIntern> _weaponSetFreeCompanyCrestVisibleOnSlot;
 
-    private void HumanSetFreeCompanyCrestVisibleOnSlotDetour(nint drawObject, byte slotIdx, byte visible)
+    private void HumanSetFreeCompanyCrestVisibleOnSlotDetour(DrawObject* drawObject, byte slotIdx, byte visible)
     {
-        var slot     = ((uint)slotIdx).ToEquipSlot();
         var rVisible = visible != 0;
         var inUpdate = _inUpdate.InMethod;
+        var slot     = (CrestFlag)((ushort)CrestFlag.Head << slotIdx);
         if (!inUpdate)
-            Invoke(drawObject, slot, ref rVisible);
+            ModelCrestSetup?.Invoke(drawObject, slot, ref rVisible);
+
         Glamourer.Log.Excessive(
-            $"[Human.SetFreeCompanyCrestVisibleOnSlot] Called with 0x{drawObject:X} for slot {slot} with {rVisible} (original: {visible != 0}, in update: {inUpdate}).");
+            $"[Human.SetFreeCompanyCrestVisibleOnSlot] Called with 0x{(ulong)drawObject:X} for slot {slot} with {rVisible} (original: {visible != 0}, in update: {inUpdate}).");
         _humanSetFreeCompanyCrestVisibleOnSlot.Original(drawObject, slotIdx, rVisible ? (byte)1 : (byte)0);
     }
 
-    private void WeaponSetFreeCompanyCrestVisibleOnSlotDetour(nint drawObject, byte slotIdx, byte visible)
+    private void WeaponSetFreeCompanyCrestVisibleOnSlotDetour(DrawObject* drawObject, byte slotIdx, byte visible)
     {
         var rVisible = visible != 0;
         var inUpdate = _inUpdate.InMethod;
-        if (!inUpdate)
-            Invoke(drawObject, EquipSlot.BothHand, ref rVisible);
+        if (!inUpdate && slotIdx == 0)
+            ModelCrestSetup?.Invoke(drawObject, CrestFlag.OffHand, ref rVisible);
         Glamourer.Log.Excessive(
-            $"[Weapon.SetFreeCompanyCrestVisibleOnSlot] Called with 0x{drawObject:X} with {rVisible} (original: {visible != 0}, in update: {inUpdate}).");
+            $"[Weapon.SetFreeCompanyCrestVisibleOnSlot] Called with 0x{(ulong)drawObject:X} with {rVisible} (original: {visible != 0}, in update: {inUpdate}).");
         _weaponSetFreeCompanyCrestVisibleOnSlot.Original(drawObject, slotIdx, rVisible ? (byte)1 : (byte)0);
     }
 }
