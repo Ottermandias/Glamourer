@@ -13,17 +13,12 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public sealed class GlamourerColorCombo : FilterComboColors
+public sealed class GlamourerColorCombo(float _comboWidth, StainData _stains, FavoriteManager _favorites)
+    : FilterComboColors(_comboWidth, CreateFunc(_stains, _favorites), Glamourer.Log)
 {
-    private readonly FavoriteManager _favorites;
-
-    public GlamourerColorCombo(float comboWidth, StainData stains, FavoriteManager favorites)
-        : base(comboWidth, CreateFunc(stains, favorites), Glamourer.Log)
-        => _favorites = favorites;
-
     protected override bool DrawSelectable(int globalIdx, bool selected)
     {
-        using (var space = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGuiHelpers.ScaledVector2(4, 0)))
+        using (var _ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGuiHelpers.ScaledVector2(4, 0)))
         {
             if (globalIdx == 0)
             {
@@ -32,7 +27,7 @@ public sealed class GlamourerColorCombo : FilterComboColors
             }
             else
             {
-                UiHelpers.DrawFavoriteStar(_favorites, (StainId)Items[globalIdx].Key);
+                UiHelpers.DrawFavoriteStar(_favorites, Items[globalIdx].Key);
             }
 
             ImGui.SameLine();
