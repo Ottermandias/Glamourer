@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using Glamourer.Customization;
@@ -10,6 +11,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
@@ -141,5 +143,46 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
         var json       = jObject.ToString(Formatting.None);
         var compressed = json.Compress(Version);
         return System.Convert.ToBase64String(compressed);
+    }
+
+    public IEnumerable<(EquipSlot Slot, EquipItem Item, StainId Stain)> FromDrawData(IReadOnlyList<CharacterArmor> armors,
+        CharacterWeapon mainhand, CharacterWeapon offhand)
+    {
+        if (armors.Count != 10)
+            throw new ArgumentException("Invalid length of armor array.");
+
+        foreach (var slot in EquipSlotExtensions.EqdpSlots)
+        {
+            var index = (int)slot.ToIndex();
+            var armor = armors[index];
+            var item  = _items.Identify(slot, armor.Set, armor.Variant);
+            if (!item.Valid)
+            {
+                Glamourer.Log.Warning($"Appearance data {armor} for slot {slot} invalid, item could not be identified.");
+                item = ItemManager.NothingItem(slot);
+            }
+
+            yield return (slot, item, armor.Stain);
+        }
+
+        var mh = _items.Identify(EquipSlot.MainHand, mainhand.Set, mainhand.Type, mainhand.Variant, FullEquipType.Unknown);
+        if (!mh.Valid)
+        {
+            Glamourer.Log.Warning($"Appearance data {mainhand} for mainhand weapon invalid, item could not be identified.");
+            mh = _items.DefaultSword;
+        }
+
+        yield return (EquipSlot.MainHand, mh, mainhand.Stain);
+
+        var oh = _items.Identify(EquipSlot.OffHand, offhand.Set, offhand.Type, offhand.Variant, mh.Type);
+        if (!oh.Valid)
+        {
+            Glamourer.Log.Warning($"Appearance data {offhand} for offhand weapon invalid, item could not be identified.");
+            oh = _items.GetDefaultOffhand(mh);
+            if (!oh.Valid)
+                oh = ItemManager.NothingItem(FullEquipType.Shield);
+        }
+
+        yield return (EquipSlot.OffHand, oh, offhand.Stain);
     }
 }
