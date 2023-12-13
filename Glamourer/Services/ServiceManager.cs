@@ -1,4 +1,7 @@
-﻿using Dalamud.Plugin;
+﻿using System;
+using System.Linq;
+using System.Reflection;
+using Dalamud.Plugin;
 using Glamourer.Api;
 using Glamourer.Automation;
 using Glamourer.Designs;
@@ -9,6 +12,7 @@ using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Gui.Tabs.AutomationTab;
+using Glamourer.Gui.Tabs.DebugTab;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Interop;
@@ -37,7 +41,8 @@ public static class ServiceManager
             .AddDesigns()
             .AddState()
             .AddUi()
-            .AddApi();
+            .AddApi()
+            .AddDebug();
 
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
     }
@@ -149,7 +154,17 @@ public static class ServiceManager
             .AddSingleton<IdentifierDrawer>()
             .AddSingleton<GlamourerChangelog>()
             .AddSingleton<DesignQuickBar>()
-            .AddSingleton<DesignColorUi>();
+            .AddSingleton<DesignColorUi>()
+            .AddSingleton<NpcCombo>();
+
+    private static IServiceCollection AddDebug(this IServiceCollection services)
+    {
+        services.AddSingleton(p => new DebugTab(p));
+        var iType = typeof(IDebugTabTree);
+        foreach (var type in Assembly.GetAssembly(iType)!.GetTypes().Where(t => !t.IsInterface && iType.IsAssignableFrom(t)))
+            services.AddSingleton(type);
+        return services;
+    }
 
     private static IServiceCollection AddApi(this IServiceCollection services)
         => services.AddSingleton<CommandService>()

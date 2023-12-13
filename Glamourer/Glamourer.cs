@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Dalamud.Plugin;
+using Glamourer.Api;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Services;
@@ -32,11 +33,13 @@ public class Glamourer : IDalamudPlugin
         {
             _services = ServiceManager.CreateProvider(pluginInterface, Log);
             Messager  = _services.GetRequiredService<MessageService>();
+            _services.GetRequiredService<VisorService>();
+            _services.GetRequiredService<WeaponService>();
+            _services.GetRequiredService<ScalingService>();
             _services.GetRequiredService<StateListener>();         // Initialize State Listener.
             _services.GetRequiredService<GlamourerWindowSystem>(); // initialize ui.
             _services.GetRequiredService<CommandService>();        // initialize commands.
-            _services.GetRequiredService<VisorService>();
-            _services.GetRequiredService<ScalingService>();
+            _services.GetRequiredService<GlamourerIpc>();          // initialize IPC.
             Log.Information($"Glamourer v{Version} loaded successfully.");
         }
         catch
