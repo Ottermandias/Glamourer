@@ -64,7 +64,7 @@ internal class FunEquipSet
         new Group(6005, 1, 0058, 1, 6005, 1, 0000, 0, 6005, 1), // Reindeer
         new Group(0231, 1, 0231, 1, 0279, 1, 0231, 1, 0231, 1), // Starlight
         new Group(0231, 1, 6030, 1, 0279, 1, 0231, 1, 0231, 1), // Starlight
-        new Group(0053, 1, 0053, 1, 0279, 1, 0279, 1, 0053, 1), // Sweet Dream
+        new Group(0053, 1, 0053, 1, 0279, 1, 0049, 6, 0053, 1), // Sweet Dream
         new Group(0136, 1, 0136, 1, 0136, 1, 0000, 0, 0000, 0)  // Snowman
     );
 
