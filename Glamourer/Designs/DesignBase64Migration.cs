@@ -121,9 +121,9 @@ public class DesignBase64Migration
                 data.SetStain(slot, mdl.Stain);
             }
 
-            var main = cur[0].X.Id == 0
+            var main = cur[0].Skeleton.Id == 0
                 ? items.DefaultSword
-                : items.Identify(EquipSlot.MainHand, cur[0].X, cur[0].Y, cur[0].Variant);
+                : items.Identify(EquipSlot.MainHand, cur[0].Skeleton, cur[0].Weapon, cur[0].Variant);
             if (!main.Valid)
             {
                 Glamourer.Log.Warning("Base64 string invalid, weapon could not be identified.");
@@ -138,7 +138,7 @@ public class DesignBase64Migration
             if (main.PrimaryId.Id is > 1600 and < 1651 && cur[1].Variant == 0)
             {
                 off = items.Identify(EquipSlot.OffHand, (PrimaryId)(main.PrimaryId.Id + 50), main.SecondaryId, main.Variant, main.Type);
-                var gauntlet = items.Identify(EquipSlot.Hands, cur[1].X, (Variant)cur[1].Y.Id);
+                var gauntlet = items.Identify(EquipSlot.Hands, cur[1].Skeleton, (Variant)cur[1].Weapon.Id);
                 if (gauntlet.Valid)
                 {
                     data.SetItem(EquipSlot.Hands, gauntlet);
@@ -147,9 +147,9 @@ public class DesignBase64Migration
             }
             else
             {
-                off = cur[0].X.Id == 0
+                off = cur[0].Skeleton.Id == 0
                     ? ItemManager.NothingItem(FullEquipType.Shield)
-                    : items.Identify(EquipSlot.OffHand, cur[1].X, cur[1].Y, cur[1].Variant, main.Type);
+                    : items.Identify(EquipSlot.OffHand, cur[1].Skeleton, cur[1].Weapon, cur[1].Variant, main.Type);
             }
 
             if (main.Type.ValidOffhand() != FullEquipType.Unknown && !off.Valid)

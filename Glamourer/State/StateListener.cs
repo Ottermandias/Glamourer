@@ -272,7 +272,7 @@ public class StateListener : IDisposable
             return;
 
         // Fist weapon gauntlet hack.
-        if (slot is EquipSlot.OffHand && weapon.Value.Variant == 0 && weapon.Value.Y.Id != 0 && _lastFistOffhand.Y.Id != 0)
+        if (slot is EquipSlot.OffHand && weapon.Value.Variant == 0 && weapon.Value.Weapon.Id != 0 && _lastFistOffhand.Weapon.Id != 0)
             weapon.Value = _lastFistOffhand;
 
         if (!actor.Identifier(_actors, out var identifier)
@@ -308,13 +308,13 @@ public class StateListener : IDisposable
             var newWeapon = state.ModelData.Weapon(slot);
             if (baseType is FullEquipType.Unknown || baseType == state.ModelData.Item(slot).Type || _gPose.InGPose && actor.IsGPoseOrCutscene)
                 actorWeapon = newWeapon;
-            else if (actorWeapon.X.Id != 0)
+            else if (actorWeapon.Skeleton.Id != 0)
                 actorWeapon = actorWeapon.With(newWeapon.Stain);
         }
 
         // Fist Weapon Offhand hack.
-        if (slot is EquipSlot.MainHand && weapon.Value.X.Id is > 1600 and < 1651)
-            _lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Value.X.Id + 50), weapon.Value.Y, weapon.Value.Variant,
+        if (slot is EquipSlot.MainHand && weapon.Value.Skeleton.Id is > 1600 and < 1651)
+            _lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Value.Skeleton.Id + 50), weapon.Value.Weapon, weapon.Value.Variant,
                 weapon.Value.Stain);
 
         _funModule.ApplyFun(actor, ref weapon.Value, slot);
@@ -329,7 +329,7 @@ public class StateListener : IDisposable
                 return false;
 
             var offhand = actor.GetOffhand();
-            return offhand.Variant == 0 && offhand.Y.Id != 0 && armor.Set.Id == offhand.Y.Id;
+            return offhand.Variant == 0 && offhand.Weapon.Id != 0 && armor.Set.Id == offhand.Weapon.Id;
         }
 
         var actorArmor = actor.GetArmor(slot);
@@ -474,7 +474,7 @@ public class StateListener : IDisposable
         var change   = UpdateState.NoChange;
 
         // Fist weapon bug hack
-        if (slot is EquipSlot.OffHand && weapon.Value == 0 && actor.GetMainhand().X.Id is > 1600 and < 1651)
+        if (slot is EquipSlot.OffHand && weapon.Value == 0 && actor.GetMainhand().Skeleton.Id is > 1600 and < 1651)
             return UpdateState.NoChange;
 
         if (baseData.Stain != weapon.Stain)
@@ -483,9 +483,9 @@ public class StateListener : IDisposable
             change = UpdateState.Change;
         }
 
-        if (baseData.X.Id != weapon.X.Id || baseData.Y.Id != weapon.Y.Id || baseData.Variant != weapon.Variant)
+        if (baseData.Skeleton.Id != weapon.Skeleton.Id || baseData.Weapon.Id != weapon.Weapon.Id || baseData.Variant != weapon.Variant)
         {
-            var item = _items.Identify(slot, weapon.X, weapon.Y, weapon.Variant,
+            var item = _items.Identify(slot, weapon.Skeleton, weapon.Weapon, weapon.Variant,
                 slot is EquipSlot.OffHand ? state.BaseData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
             state.BaseData.SetItem(slot, item);
             change = UpdateState.Change;

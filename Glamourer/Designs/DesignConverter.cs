@@ -165,7 +165,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
             yield return (slot, item, armor.Stain);
         }
 
-        var mh = _items.Identify(EquipSlot.MainHand, mainhand.X, mainhand.Y, mainhand.Variant, FullEquipType.Unknown);
+        var mh = _items.Identify(EquipSlot.MainHand, mainhand.Skeleton, mainhand.Weapon, mainhand.Variant, FullEquipType.Unknown);
         if (!mh.Valid)
         {
             Glamourer.Log.Warning($"Appearance data {mainhand} for mainhand weapon invalid, item could not be identified.");
@@ -174,7 +174,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
 
         yield return (EquipSlot.MainHand, mh, mainhand.Stain);
 
-        var oh = _items.Identify(EquipSlot.OffHand, offhand.X, offhand.Y, offhand.Variant, mh.Type);
+        var oh = _items.Identify(EquipSlot.OffHand, offhand.Skeleton, offhand.Weapon, offhand.Variant, mh.Type);
         if (!oh.Valid)
         {
             Glamourer.Log.Warning($"Appearance data {offhand} for offhand weapon invalid, item could not be identified.");

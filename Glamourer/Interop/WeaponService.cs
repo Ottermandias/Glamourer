@@ -76,7 +76,7 @@ public unsafe class WeaponService : IDisposable
             
             if (tmpWeapon.Value != weapon.Value)
             {
-                if (tmpWeapon.X.Id == 0)
+                if (tmpWeapon.Skeleton.Id == 0)
                     tmpWeapon.Stain = 0;
                 _loadWeaponHook.Original(drawData, slot, tmpWeapon.Value, 1, unk2, 1, unk4);
             }
@@ -119,7 +119,7 @@ public unsafe class WeaponService : IDisposable
         var mdl = character.Model;
         var (_, _, mh, oh) = mdl.GetWeapons(character);
         var value  = slot == EquipSlot.OffHand ? oh : mh;
-        var weapon = value.With(value.X.Id == 0 ? 0 : stain);
+        var weapon = value.With(value.Skeleton.Id == 0 ? 0 : stain);
         LoadWeapon(character, slot, weapon);
     }
 }
