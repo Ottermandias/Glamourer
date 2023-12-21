@@ -3,14 +3,14 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using Glamourer.Interop;
-using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Actors;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class ObjectManagerPanel(ObjectManager _objectManager, ActorService _actors) : IDebugTabTree
+public class ObjectManagerPanel(ObjectManager _objectManager, ActorManager _actors) : IDebugTabTree
 {
     public string Label
         => "Object Manager";
@@ -33,7 +33,7 @@ public class ObjectManagerPanel(ObjectManager _objectManager, ActorService _acto
             ImGui.TableNextColumn();
 
             ImGuiUtil.DrawTableColumn("World");
-            ImGuiUtil.DrawTableColumn(_actors.Valid ? _actors.AwaitedService.Data.ToWorldName(_objectManager.World) : "Service Missing");
+            ImGuiUtil.DrawTableColumn(_actors.Awaiter.IsCompletedSuccessfully ? _actors.Data.ToWorldName(_objectManager.World) : "Service Missing");
             ImGuiUtil.DrawTableColumn(_objectManager.World.ToString());
 
             ImGuiUtil.DrawTableColumn("Player Character");

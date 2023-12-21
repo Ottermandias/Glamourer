@@ -3,13 +3,14 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using Dalamud.Memory;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Customization;
 
 [StructLayout(LayoutKind.Explicit, Size = Size)]
 public unsafe struct DatCharacterFile
 {
-    public const int Size = 4 + 4 + 4 + 4 + Penumbra.GameData.Structs.CustomizeData.Size + 2 + 4 + 41 * 4; // 212
+    public const int Size = 4 + 4 + 4 + 4 + CustomizeArray.Size + 2 + 4 + 41 * 4; // 212
 
     [FieldOffset(0)]
     private fixed byte _data[Size];
@@ -27,12 +28,12 @@ public unsafe struct DatCharacterFile
     private readonly uint _padding = 0;
 
     [FieldOffset(16)]
-    private Penumbra.GameData.Structs.CustomizeData _customize;
+    private CustomizeArray _customize;
 
-    [FieldOffset(16 + Penumbra.GameData.Structs.CustomizeData.Size)]
+    [FieldOffset(16 + CustomizeArray.Size)]
     private ushort _voice;
 
-    [FieldOffset(16 + Penumbra.GameData.Structs.CustomizeData.Size + 2)]
+    [FieldOffset(16 + CustomizeArray.Size + 2)]
     private uint _timeStamp;
 
     [FieldOffset(Size - 41 * 4)]

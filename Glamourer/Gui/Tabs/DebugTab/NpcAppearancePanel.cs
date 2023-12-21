@@ -55,7 +55,7 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
 
         return;
 
-        void Draw(CustomizationNpcOptions.NpcData data)
+        void Draw(NpcData data)
         {
             using var id       = ImRaii.PushId(idx++);
             var       disabled = !_state.GetOrCreate(_objectManager.Player, out var state);

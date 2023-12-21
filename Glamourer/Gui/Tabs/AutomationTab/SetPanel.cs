@@ -333,7 +333,7 @@ public class SetPanel
         if (!design.Design.DesignData.IsHuman)
             sb.AppendLine("The base model id can not be changed automatically to something non-human.");
 
-        var set = _customizations.AwaitedService.GetList(customize.Clan, customize.Gender);
+        var set = _customizations.Service.GetList(customize.Clan, customize.Gender);
         foreach (var type in CustomizationExtensions.All)
         {
             var flag = type.ToFlag();

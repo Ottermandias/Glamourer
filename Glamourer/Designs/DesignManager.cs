@@ -12,7 +12,7 @@ using Glamourer.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 

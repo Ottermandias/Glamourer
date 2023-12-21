@@ -178,11 +178,11 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     {
         var ret   = new Dictionary<CustomizeData, (uint Data, string Name)>();
         var sheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English)!;
-        foreach (var clan in customizations.AwaitedService.Clans)
+        foreach (var clan in customizations.Service.Clans)
         {
-            foreach (var gender in customizations.AwaitedService.Genders)
+            foreach (var gender in customizations.Service.Genders)
             {
-                var list = customizations.AwaitedService.GetList(clan, gender);
+                var list = customizations.Service.GetList(clan, gender);
                 foreach (var hair in list.HairStyles)
                 {
                     var x = sheet.FirstOrDefault(f => f.FeatureID == hair.Value.Value);

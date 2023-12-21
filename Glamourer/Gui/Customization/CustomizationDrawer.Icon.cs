@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Numerics;
-using Dalamud.Interface.Utility;
 using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui;
@@ -28,7 +27,7 @@ public partial class CustomizationDrawer
             npc     = true;
         }
 
-        var icon = _service.AwaitedService.GetIcon(custom!.Value.IconId);
+        var icon = _service.Service.GetIcon(custom!.Value.IconId);
         using (var disabled = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw))
         {
             if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
@@ -68,7 +67,7 @@ public partial class CustomizationDrawer
         for (var i = 0; i < _currentCount; ++i)
         {
             var custom = _set.Data(_currentIndex, i, _customize.Face);
-            var icon   = _service.AwaitedService.GetIcon(custom.IconId);
+            var icon   = _service.Service.GetIcon(custom.IconId);
             using (var _ = ImRaii.Group())
             {
                 using var frameColor = ImRaii.PushColor(ImGuiCol.Button, Colors.SelectedRed, current == i);
@@ -179,8 +178,8 @@ public partial class CustomizationDrawer
             var       enabled = _customize.Get(featureIdx) != CustomizeValue.Zero;
             var       feature = _set.Data(featureIdx, 0, face);
             var icon = featureIdx == CustomizeIndex.LegacyTattoo
-                ? _legacyTattoo ?? _service.AwaitedService.GetIcon(feature.IconId)
-                : _service.AwaitedService.GetIcon(feature.IconId);
+                ? _legacyTattoo ?? _service.Service.GetIcon(feature.IconId)
+                : _service.Service.GetIcon(feature.IconId);
             if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize, Vector2.Zero, Vector2.One, (int)ImGui.GetStyle().FramePadding.X,
                     Vector4.Zero, enabled ? Vector4.One : _redTint))
             {

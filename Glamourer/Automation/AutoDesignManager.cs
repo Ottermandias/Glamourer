@@ -17,6 +17,8 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Filesystem;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Automation;
 
@@ -28,17 +30,17 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
     private readonly JobService        _jobs;
     private readonly DesignManager     _designs;
-    private readonly ActorService      _actors;
+    private readonly ActorManager      _actors;
     private readonly AutomationChanged _event;
     private readonly DesignChanged     _designEvent;
 
-    private readonly List<AutoDesignSet>                        _data    = new();
-    private readonly Dictionary<ActorIdentifier, AutoDesignSet> _enabled = new();
+    private readonly List<AutoDesignSet>                        _data    = [];
+    private readonly Dictionary<ActorIdentifier, AutoDesignSet> _enabled = [];
 
     public IReadOnlyDictionary<ActorIdentifier, AutoDesignSet> EnabledSets
         => _enabled;
 
-    public AutoDesignManager(JobService jobs, ActorService actors, SaveService saveService, DesignManager designs, AutomationChanged @event,
+    public AutoDesignManager(JobService jobs, ActorManager actors, SaveService saveService, DesignManager designs, AutomationChanged @event,
         FixedDesignMigrator migrator, DesignFileSystem fileSystem, DesignChanged designEvent)
     {
         _jobs        = jobs;
@@ -419,7 +421,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
                 continue;
             }
 
-            var id = _actors.AwaitedService.FromJson(obj["Identifier"] as JObject);
+            var id = _actors.FromJson(obj["Identifier"] as JObject);
             if (!IdentifierValid(id, out var group))
             {
                 Glamourer.Messager.NotificationMessage("Skipped loading Automation Set: Invalid Identifier.", NotificationType.Warning);
@@ -562,9 +564,9 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             var name = manager.Data.ToName(identifier.Kind, identifier.DataId);
             var table = identifier.Kind switch
             {
-                ObjectKind.BattleNpc => manager.Data.BNpcs,
+                ObjectKind.BattleNpc => (IReadOnlyDictionary<NpcId, string>)manager.Data.BNpcs,
                 ObjectKind.EventNpc  => manager.Data.ENpcs,
-                _                    => new Dictionary<uint, string>(),
+                _                    => new Dictionary<NpcId, string>(),
             };
             return table.Where(kvp => kvp.Value == name)
                 .Select(kvp => manager.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, identifier.HomeWorld.Id,
@@ -580,12 +582,12 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             },
             IdentifierType.Retainer => new[]
             {
-                _actors.AwaitedService.CreateRetainer(identifier.PlayerName,
+                _actors.CreateRetainer(identifier.PlayerName,
                     identifier.Retainer == ActorIdentifier.RetainerType.Mannequin
                         ? ActorIdentifier.RetainerType.Mannequin
                         : ActorIdentifier.RetainerType.Bell).CreatePermanent(),
             },
-            IdentifierType.Npc => CreateNpcs(_actors.AwaitedService, identifier),
+            IdentifierType.Npc => CreateNpcs(_actors, identifier),
             _                  => Array.Empty<ActorIdentifier>(),
         };
     }

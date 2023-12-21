@@ -68,7 +68,7 @@ public class ContextMenuService : IDisposable
         if (itemId > 500000)
             itemId -= 500000;
 
-        if (!_items.ItemService.AwaitedService.TryGetValue(itemId, EquipSlot.MainHand, out var item))
+        if (!_items.ItemData.TryGetValue(itemId, EquipSlot.MainHand, out var item))
             return null;
 
         return new InventoryContextMenuItem(TryOnString, GetInventoryAction(item));
@@ -80,7 +80,7 @@ public class ContextMenuService : IDisposable
         if (itemId > 500000)
             itemId -= 500000;
 
-        if (!_items.ItemService.AwaitedService.TryGetValue(itemId, EquipSlot.MainHand, out var item))
+        if (!_items.ItemData.TryGetValue(itemId, EquipSlot.MainHand, out var item))
             return null;
 
         return new GameObjectContextMenuItem(TryOnString, GetGameObjectAction(item));
@@ -122,10 +122,10 @@ public class ContextMenuService : IDisposable
             _state.ChangeEquip(state, slot, item, 0, StateChanged.Source.Manual);
             if (item.Type.ValidOffhand().IsOffhandType())
             {
-                if (item.ModelId.Id is > 1600 and < 1651
-                 && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.Hands, out var gauntlets))
+                if (item.PrimaryId.Id is > 1600 and < 1651
+                 && _items.ItemData.TryGetValue(item.ItemId, EquipSlot.Hands, out var gauntlets))
                     _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, 0, StateChanged.Source.Manual);
-                if (_items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
+                if (_items.ItemData.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
                     _state.ChangeEquip(state, EquipSlot.OffHand, offhand, 0, StateChanged.Source.Manual);
             }
         };
@@ -146,10 +146,10 @@ public class ContextMenuService : IDisposable
             _state.ChangeEquip(state, slot, item, 0, StateChanged.Source.Manual);
             if (item.Type.ValidOffhand().IsOffhandType())
             {
-                if (item.ModelId.Id is > 1600 and < 1651
-                 && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.Hands, out var gauntlets))
+                if (item.PrimaryId.Id is > 1600 and < 1651
+                 && _items.ItemData.TryGetValue(item.ItemId, EquipSlot.Hands, out var gauntlets))
                     _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, 0, StateChanged.Source.Manual);
-                if (_items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
+                if (_items.ItemData.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
                     _state.ChangeEquip(state, EquipSlot.OffHand, offhand, 0, StateChanged.Source.Manual);
             }
         };

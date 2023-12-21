@@ -164,20 +164,21 @@ public unsafe class FunModule : IDisposable
         if (!_codes.EnabledEmperor)
             return;
 
-        void SetItem(EquipSlot slot2, ref CharacterArmor armor)
-        {
-            var list = _items.ItemService.AwaitedService[slot2.ToEquipType()];
-            var rng  = _rng.Next(0, list.Count - 1);
-            var item = list[rng];
-            armor.Set     = item.ModelId;
-            armor.Variant = item.Variant;
-        }
-
         if (armors.Length == 1)
             SetItem(slot, ref armors[0]);
         else
             for (var i = 0u; i < armors.Length; ++i)
                 SetItem(i.ToEquipSlot(), ref armors[(int)i]);
+        return;
+
+        void SetItem(EquipSlot slot2, ref CharacterArmor armor)
+        {
+            var list = _items.ItemData.ByType[slot2.ToEquipType()];
+            var rng  = _rng.Next(0, list.Count - 1);
+            var item = list[rng];
+            armor.Set     = item.PrimaryId;
+            armor.Variant = item.Variant;
+        }
     }
 
     public void ApplyOops(ref Customize customize)
@@ -197,7 +198,7 @@ public unsafe class FunModule : IDisposable
         if (!_codes.EnabledIndividual)
             return;
 
-        var set = _customizations.AwaitedService.GetList(customize.Clan, customize.Gender);
+        var set = _customizations.Service.GetList(customize.Clan, customize.Gender);
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {
             if (index is CustomizeIndex.Face || !set.IsAvailable(index))

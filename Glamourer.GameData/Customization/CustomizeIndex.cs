@@ -144,14 +144,14 @@ public static class CustomizationExtensions
         };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static unsafe CustomizeValue Get(this in Penumbra.GameData.Structs.CustomizeData data, CustomizeIndex index)
+    public static unsafe CustomizeValue Get(this in Penumbra.GameData.Structs.CustomizeArray data, CustomizeIndex index)
     {
         var (offset, mask) = index.ToByteAndMask();
         return (CustomizeValue)(data.Data[offset] & mask);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static unsafe bool Set(this ref Penumbra.GameData.Structs.CustomizeData data, CustomizeIndex index, CustomizeValue value)
+    public static unsafe bool Set(this ref Penumbra.GameData.Structs.CustomizeArray data, CustomizeIndex index, CustomizeValue value)
     {
         var (offset, mask) = index.ToByteAndMask();
         return mask != 0xFF

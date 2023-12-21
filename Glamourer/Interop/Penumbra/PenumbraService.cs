@@ -221,8 +221,8 @@ public unsafe class PenumbraService : IDisposable
         => Available ? _drawObjectInfo.Invoke(drawObject.Address).Item1 : Actor.Null;
 
     /// <summary> Obtain the parent of a cutscene actor if it is known. </summary>
-    public int CutsceneParent(int idx)
-        => Available ? _cutsceneParent.Invoke(idx) : -1;
+    public short CutsceneParent(ushort idx)
+        => (short) (Available ? _cutsceneParent.Invoke(idx) : -1);
 
     /// <summary> Try to redraw the given actor. </summary>
     public void RedrawObject(Actor actor, RedrawType settings)

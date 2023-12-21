@@ -12,17 +12,17 @@ using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.Structs;
 using Penumbra.GameData.Actors;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
 
-public class StateManager(ActorService _actors, ItemManager _items, StateChanged _event, StateApplier _applier, StateEditor _editor,
+public class StateManager(ActorManager _actors, ItemManager _items, StateChanged _event, StateApplier _applier, StateEditor _editor,
         HumanModelList _humans, ICondition _condition, IClientState _clientState)
     : IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
-    private readonly Dictionary<ActorIdentifier, ActorState> _states = new();
+    private readonly Dictionary<ActorIdentifier, ActorState> _states = [];
 
     public IEnumerator<KeyValuePair<ActorIdentifier, ActorState>> GetEnumerator()
         => _states.GetEnumerator();
@@ -50,7 +50,7 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
 
     /// <inheritdoc cref="GetOrCreate(ActorIdentifier, Actor, out ActorState?)"/>
     public bool GetOrCreate(Actor actor, [NotNullWhen(true)] out ActorState? state)
-        => GetOrCreate(actor.GetIdentifier(_actors.AwaitedService), actor, out state);
+        => GetOrCreate(actor.GetIdentifier(_actors), actor, out state);
 
     /// <summary> Try to obtain or create a new state for an existing actor. Returns false if no state could be created. </summary>
     public unsafe bool GetOrCreate(ActorIdentifier identifier, Actor actor, [NotNullWhen(true)] out ActorState? state)
@@ -170,8 +170,8 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
         }
 
         // Set the weapons regardless of source.
-        var mainItem = _items.Identify(EquipSlot.MainHand, main.Set, main.Type, main.Variant);
-        var offItem  = _items.Identify(EquipSlot.OffHand,  off.Set,  off.Type,  off.Variant, mainItem.Type);
+        var mainItem = _items.Identify(EquipSlot.MainHand, main.Skeleton, main.Weapon, main.Variant);
+        var offItem  = _items.Identify(EquipSlot.OffHand,  off.Skeleton,  off.Weapon,  off.Variant, mainItem.Type);
         ret.SetItem(EquipSlot.MainHand, mainItem);
         ret.SetStain(EquipSlot.MainHand, main.Stain);
         ret.SetItem(EquipSlot.OffHand, offItem);
@@ -190,13 +190,13 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
     /// <summary> This is hardcoded in the game. </summary>
     private void FistWeaponHack(ref DesignData ret, ref CharacterWeapon mainhand, ref CharacterWeapon offhand)
     {
-        if (mainhand.Set.Id is < 1601 or >= 1651)
+        if (mainhand.Skeleton.Id is < 1601 or >= 1651)
             return;
 
-        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Set, (Variant)offhand.Type.Id);
-        offhand.Set     = (SetId)(mainhand.Set.Id + 50);
+        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Skeleton, (Variant)offhand.Weapon.Id);
+        offhand.Skeleton     = (PrimaryId)(mainhand.Skeleton.Id + 50);
         offhand.Variant = mainhand.Variant;
-        offhand.Type    = mainhand.Type;
+        offhand.Weapon    = mainhand.Weapon;
         ret.SetItem(EquipSlot.Hands, gauntlets);
         ret.SetStain(EquipSlot.Hands, mainhand.Stain);
     }

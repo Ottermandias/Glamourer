@@ -7,11 +7,11 @@ using Dalamud.Interface.Utility;
 using Glamourer.Automation;
 using Glamourer.Events;
 using Glamourer.Interop;
-using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
+using Penumbra.GameData.Actors;
 using Penumbra.String;
 using ImGuiClip = OtterGui.ImGuiClip;
 
@@ -22,9 +22,9 @@ public class SetSelector : IDisposable
     private readonly Configuration              _config;
     private readonly AutoDesignManager          _manager;
     private readonly AutomationChanged          _event;
-    private readonly ActorService               _actors;
+    private readonly ActorManager               _actors;
     private readonly ObjectManager              _objects;
-    private readonly List<(AutoDesignSet, int)> _list = new();
+    private readonly List<(AutoDesignSet, int)> _list = [];
 
     public AutoDesignSet? Selection      { get; private set; }
     public int            SelectionIndex { get; private set; } = -1;
@@ -44,7 +44,7 @@ public class SetSelector : IDisposable
 
     internal int _dragDesignIndex = -1;
 
-    public SetSelector(AutoDesignManager manager, AutomationChanged @event, Configuration config, ActorService actors, ObjectManager objects)
+    public SetSelector(AutoDesignManager manager, AutomationChanged @event, Configuration config, ActorManager actors, ObjectManager objects)
     {
         _manager = manager;
         _event   = @event;
@@ -289,9 +289,9 @@ public class SetSelector : IDisposable
 
     private void NewSetButton(Vector2 size)
     {
-        var id = _actors.AwaitedService.GetCurrentPlayer();
+        var id = _actors.GetCurrentPlayer();
         if (!id.IsValid)
-            id = _actors.AwaitedService.CreatePlayer(ByteString.FromSpanUnsafe("New Design"u8, true, false, true), ushort.MaxValue);
+            id = _actors.CreatePlayer(ByteString.FromSpanUnsafe("New Design"u8, true, false, true), ushort.MaxValue);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), size,
                 $"Create a new Automatic Design Set for {id}. The associated player can be changed later.", !id.IsValid, true))
             _manager.AddDesignSet("New Design", id);

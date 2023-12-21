@@ -41,7 +41,7 @@ public class UnlockOverview
 
         foreach (var type in Enum.GetValues<FullEquipType>())
         {
-            if (type.IsOffhandType() || !_items.ItemService.AwaitedService.TryGetValue(type, out var items) || items.Count == 0)
+            if (type.IsOffhandType() || !_items.ItemData.ByType.TryGetValue(type, out var items) || items.Count == 0)
                 continue;
 
             if (ImGui.Selectable(type.ToName(), _selected1 == type))
@@ -52,11 +52,11 @@ public class UnlockOverview
             }
         }
 
-        foreach (var clan in _customizations.AwaitedService.Clans)
+        foreach (var clan in _customizations.Service.Clans)
         {
-            foreach (var gender in _customizations.AwaitedService.Genders)
+            foreach (var gender in _customizations.Service.Genders)
             {
-                if (_customizations.AwaitedService.GetList(clan, gender).HairStyles.Count == 0)
+                if (_customizations.Service.GetList(clan, gender).HairStyles.Count == 0)
                     continue;
 
                 if (ImGui.Selectable($"{(gender is Gender.Male ? '♂' : '♀')} {clan.ToShortName()} Hair & Paint",
@@ -107,7 +107,7 @@ public class UnlockOverview
 
     private void DrawCustomizations()
     {
-        var set = _customizations.AwaitedService.GetList(_selected2, _selected3);
+        var set = _customizations.Service.GetList(_selected2, _selected3);
 
         var       spacing     = IconSpacing;
         using var style       = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
@@ -121,7 +121,7 @@ public class UnlockOverview
                 continue;
 
             var unlocked = _customizeUnlocks.IsUnlocked(customize, out var time);
-            var icon     = _customizations.AwaitedService.GetIcon(customize.IconId);
+            var icon     = _customizations.Service.GetIcon(customize.IconId);
 
             ImGui.Image(icon.ImGuiHandle, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);
@@ -150,7 +150,7 @@ public class UnlockOverview
 
     private void DrawItems()
     {
-        if (!_items.ItemService.AwaitedService.TryGetValue(_selected1, out var items))
+        if (!_items.ItemData.ByType.TryGetValue(_selected1, out var items))
             return;
 
         var       spacing        = IconSpacing;
@@ -159,6 +159,30 @@ public class UnlockOverview
         var       iconsPerRow    = IconsPerRow(iconSize.X, spacing.X);
         var       numRows        = (items.Count + iconsPerRow - 1) / iconsPerRow;
         var       numVisibleRows = (int)(Math.Ceiling(ImGui.GetContentRegionAvail().Y / (iconSize.Y + spacing.Y)) + 0.5f) + 1;
+
+        var skips   = ImGuiClip.GetNecessarySkips(iconSize.Y + spacing.Y);
+        var end     = Math.Min(numVisibleRows * iconsPerRow + skips * iconsPerRow, items.Count);
+        var counter = 0;
+        for (var idx = skips * iconsPerRow; idx < end; ++idx)
+        {
+            DrawItem(items[idx]);
+            if (counter != iconsPerRow - 1)
+            {
+                ImGui.SameLine();
+                ++counter;
+            }
+            else
+            {
+                counter = 0;
+            }
+        }
+
+        if (ImGui.GetCursorPosX() != 0)
+            ImGui.NewLine();
+        var remainder = numRows - numVisibleRows - skips;
+        if (remainder > 0)
+            ImGuiClip.DrawEndDummy(remainder, iconSize.Y + spacing.Y);
+        return;
 
         void DrawItem(EquipItem item)
         {
@@ -189,7 +213,7 @@ public class UnlockOverview
                 ImGui.TextUnformatted($"{item.Type.ToName()} ({slot.ToName()})");
                 if (item.Type.ValidOffhand().IsOffhandType())
                     ImGui.TextUnformatted(
-                        $"{item.Weapon()}{(_items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand) ? $" | {offhand.Weapon()}" : string.Empty)}");
+                        $"{item.Weapon()}{(_items.ItemData.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand) ? $" | {offhand.Weapon()}" : string.Empty)}");
                 else
                     ImGui.TextUnformatted(slot is EquipSlot.MainHand ? $"{item.Weapon()}" : $"{item.Armor()}");
                 ImGui.TextUnformatted(
@@ -219,29 +243,6 @@ public class UnlockOverview
                 _tooltip.CreateTooltip(item, string.Empty, false);
             }
         }
-
-        var skips   = ImGuiClip.GetNecessarySkips(iconSize.Y + spacing.Y);
-        var end     = Math.Min(numVisibleRows * iconsPerRow + skips * iconsPerRow, items.Count);
-        var counter = 0;
-        for (var idx = skips * iconsPerRow; idx < end; ++idx)
-        {
-            DrawItem(items[idx]);
-            if (counter != iconsPerRow - 1)
-            {
-                ImGui.SameLine();
-                ++counter;
-            }
-            else
-            {
-                counter = 0;
-            }
-        }
-
-        if (ImGui.GetCursorPosX() != 0)
-            ImGui.NewLine();
-        var remainder = numRows - numVisibleRows - skips;
-        if (remainder > 0)
-            ImGuiClip.DrawEndDummy(remainder, iconSize.Y + spacing.Y);
     }
 
     private static Vector2 IconSpacing

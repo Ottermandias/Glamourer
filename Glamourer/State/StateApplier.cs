@@ -188,7 +188,7 @@ public class StateApplier(UpdateSlotService _updateSlot, VisorService _visor, We
     /// <summary> Apply a weapon to the offhand. </summary>
     public void ChangeOffhand(ActorData data, EquipItem weapon, StainId stain)
     {
-        stain = weapon.ModelId.Id == 0 ? 0 : stain;
+        stain = weapon.PrimaryId.Id == 0 ? 0 : stain;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
             _weapon.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stain));
     }

@@ -1,19 +1,34 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Dalamud.Plugin.Services;
 using Glamourer.Customization;
-using Penumbra.GameData.Data;
+using OtterGui.Services;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Services;
 
-public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationManager>
+public sealed class CustomizationService(
+    ITextureProvider textures,
+    IDataManager gameData,
+    HumanModelList humanModels,
+    IPluginLog log,
+    NpcCustomizeSet npcCustomizeSet)
+    : IAsyncService
 {
-    public readonly HumanModelList HumanModels;
+    public readonly HumanModelList HumanModels = humanModels;
 
-    public CustomizationService(ITextureProvider textures, IDataManager gameData, HumanModelList humanModels, IPluginLog log)
-        : base(nameof(CustomizationService), () => CustomizationManager.Create(textures, gameData, log))
-        => HumanModels = humanModels;
+    private ICustomizationManager? _service;
+
+    private readonly Task<ICustomizationManager> _task = Task.WhenAll(humanModels.Awaiter, npcCustomizeSet.Awaiter)
+        .ContinueWith(_ => CustomizationManager.Create(textures, gameData, log, npcCustomizeSet));
+
+    public ICustomizationManager Service
+        => _service ??= _task.Result;
+
+    public Task Awaiter
+        => _task;
 
     public (Customize NewValue, CustomizeFlag Applied, CustomizeFlag Changed) Combine(Customize oldValues, Customize newValues,
         CustomizeFlag applyWhich, bool allowUnknown)
@@ -36,7 +51,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
             }
 
 
-        var set = AwaitedService.GetList(ret.Clan, ret.Gender);
+        var set = Service.GetList(ret.Clan, ret.Gender);
         applyWhich = applyWhich.FixApplication(set);
         foreach (var index in CustomizationExtensions.AllBasic)
         {
@@ -66,38 +81,38 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
             gender = Gender.Male;
         return (gender, race) switch
         {
-            (Gender.Male, SubRace.Midlander)         => AwaitedService.GetName(CustomName.MidlanderM),
-            (Gender.Male, SubRace.Highlander)        => AwaitedService.GetName(CustomName.HighlanderM),
-            (Gender.Male, SubRace.Wildwood)          => AwaitedService.GetName(CustomName.WildwoodM),
-            (Gender.Male, SubRace.Duskwight)         => AwaitedService.GetName(CustomName.DuskwightM),
-            (Gender.Male, SubRace.Plainsfolk)        => AwaitedService.GetName(CustomName.PlainsfolkM),
-            (Gender.Male, SubRace.Dunesfolk)         => AwaitedService.GetName(CustomName.DunesfolkM),
-            (Gender.Male, SubRace.SeekerOfTheSun)    => AwaitedService.GetName(CustomName.SeekerOfTheSunM),
-            (Gender.Male, SubRace.KeeperOfTheMoon)   => AwaitedService.GetName(CustomName.KeeperOfTheMoonM),
-            (Gender.Male, SubRace.Seawolf)           => AwaitedService.GetName(CustomName.SeawolfM),
-            (Gender.Male, SubRace.Hellsguard)        => AwaitedService.GetName(CustomName.HellsguardM),
-            (Gender.Male, SubRace.Raen)              => AwaitedService.GetName(CustomName.RaenM),
-            (Gender.Male, SubRace.Xaela)             => AwaitedService.GetName(CustomName.XaelaM),
-            (Gender.Male, SubRace.Helion)            => AwaitedService.GetName(CustomName.HelionM),
-            (Gender.Male, SubRace.Lost)              => AwaitedService.GetName(CustomName.LostM),
-            (Gender.Male, SubRace.Rava)              => AwaitedService.GetName(CustomName.RavaM),
-            (Gender.Male, SubRace.Veena)             => AwaitedService.GetName(CustomName.VeenaM),
-            (Gender.Female, SubRace.Midlander)       => AwaitedService.GetName(CustomName.MidlanderF),
-            (Gender.Female, SubRace.Highlander)      => AwaitedService.GetName(CustomName.HighlanderF),
-            (Gender.Female, SubRace.Wildwood)        => AwaitedService.GetName(CustomName.WildwoodF),
-            (Gender.Female, SubRace.Duskwight)       => AwaitedService.GetName(CustomName.DuskwightF),
-            (Gender.Female, SubRace.Plainsfolk)      => AwaitedService.GetName(CustomName.PlainsfolkF),
-            (Gender.Female, SubRace.Dunesfolk)       => AwaitedService.GetName(CustomName.DunesfolkF),
-            (Gender.Female, SubRace.SeekerOfTheSun)  => AwaitedService.GetName(CustomName.SeekerOfTheSunF),
-            (Gender.Female, SubRace.KeeperOfTheMoon) => AwaitedService.GetName(CustomName.KeeperOfTheMoonF),
-            (Gender.Female, SubRace.Seawolf)         => AwaitedService.GetName(CustomName.SeawolfF),
-            (Gender.Female, SubRace.Hellsguard)      => AwaitedService.GetName(CustomName.HellsguardF),
-            (Gender.Female, SubRace.Raen)            => AwaitedService.GetName(CustomName.RaenF),
-            (Gender.Female, SubRace.Xaela)           => AwaitedService.GetName(CustomName.XaelaF),
-            (Gender.Female, SubRace.Helion)          => AwaitedService.GetName(CustomName.HelionM),
-            (Gender.Female, SubRace.Lost)            => AwaitedService.GetName(CustomName.LostM),
-            (Gender.Female, SubRace.Rava)            => AwaitedService.GetName(CustomName.RavaF),
-            (Gender.Female, SubRace.Veena)           => AwaitedService.GetName(CustomName.VeenaF),
+            (Gender.Male, SubRace.Midlander)         => Service.GetName(CustomName.MidlanderM),
+            (Gender.Male, SubRace.Highlander)        => Service.GetName(CustomName.HighlanderM),
+            (Gender.Male, SubRace.Wildwood)          => Service.GetName(CustomName.WildwoodM),
+            (Gender.Male, SubRace.Duskwight)         => Service.GetName(CustomName.DuskwightM),
+            (Gender.Male, SubRace.Plainsfolk)        => Service.GetName(CustomName.PlainsfolkM),
+            (Gender.Male, SubRace.Dunesfolk)         => Service.GetName(CustomName.DunesfolkM),
+            (Gender.Male, SubRace.SeekerOfTheSun)    => Service.GetName(CustomName.SeekerOfTheSunM),
+            (Gender.Male, SubRace.KeeperOfTheMoon)   => Service.GetName(CustomName.KeeperOfTheMoonM),
+            (Gender.Male, SubRace.Seawolf)           => Service.GetName(CustomName.SeawolfM),
+            (Gender.Male, SubRace.Hellsguard)        => Service.GetName(CustomName.HellsguardM),
+            (Gender.Male, SubRace.Raen)              => Service.GetName(CustomName.RaenM),
+            (Gender.Male, SubRace.Xaela)             => Service.GetName(CustomName.XaelaM),
+            (Gender.Male, SubRace.Helion)            => Service.GetName(CustomName.HelionM),
+            (Gender.Male, SubRace.Lost)              => Service.GetName(CustomName.LostM),
+            (Gender.Male, SubRace.Rava)              => Service.GetName(CustomName.RavaM),
+            (Gender.Male, SubRace.Veena)             => Service.GetName(CustomName.VeenaM),
+            (Gender.Female, SubRace.Midlander)       => Service.GetName(CustomName.MidlanderF),
+            (Gender.Female, SubRace.Highlander)      => Service.GetName(CustomName.HighlanderF),
+            (Gender.Female, SubRace.Wildwood)        => Service.GetName(CustomName.WildwoodF),
+            (Gender.Female, SubRace.Duskwight)       => Service.GetName(CustomName.DuskwightF),
+            (Gender.Female, SubRace.Plainsfolk)      => Service.GetName(CustomName.PlainsfolkF),
+            (Gender.Female, SubRace.Dunesfolk)       => Service.GetName(CustomName.DunesfolkF),
+            (Gender.Female, SubRace.SeekerOfTheSun)  => Service.GetName(CustomName.SeekerOfTheSunF),
+            (Gender.Female, SubRace.KeeperOfTheMoon) => Service.GetName(CustomName.KeeperOfTheMoonF),
+            (Gender.Female, SubRace.Seawolf)         => Service.GetName(CustomName.SeawolfF),
+            (Gender.Female, SubRace.Hellsguard)      => Service.GetName(CustomName.HellsguardF),
+            (Gender.Female, SubRace.Raen)            => Service.GetName(CustomName.RaenF),
+            (Gender.Female, SubRace.Xaela)           => Service.GetName(CustomName.XaelaF),
+            (Gender.Female, SubRace.Helion)          => Service.GetName(CustomName.HelionM),
+            (Gender.Female, SubRace.Lost)            => Service.GetName(CustomName.LostM),
+            (Gender.Female, SubRace.Rava)            => Service.GetName(CustomName.RavaF),
+            (Gender.Female, SubRace.Veena)           => Service.GetName(CustomName.VeenaF),
             _                                        => "Unknown",
         };
     }
@@ -105,12 +120,12 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     /// <summary> Returns whether a clan is valid. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public bool IsClanValid(SubRace clan)
-        => AwaitedService.Clans.Contains(clan);
+        => Service.Clans.Contains(clan);
 
     /// <summary> Returns whether a gender is valid for the given race. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public bool IsGenderValid(Race race, Gender gender)
-        => race is Race.Hrothgar ? gender == Gender.Male : AwaitedService.Genders.Contains(gender);
+        => race is Race.Hrothgar ? gender == Gender.Male : Service.Genders.Contains(gender);
 
     /// <inheritdoc cref="IsCustomizationValid(CustomizationSet,CustomizeValue,CustomizeIndex,CustomizeValue, out CustomizeData?)"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -126,7 +141,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     /// <summary> Returns whether a customization value is valid for a given clan, gender and face. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public bool IsCustomizationValid(SubRace race, Gender gender, CustomizeValue face, CustomizeIndex type, CustomizeValue value)
-        => IsCustomizationValid(AwaitedService.GetList(race, gender), face, type, value);
+        => IsCustomizationValid(Service.GetList(race, gender), face, type, value);
 
     /// <summary>
     /// Check that the given race and clan are valid.
@@ -145,10 +160,10 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
             return string.Empty;
         }
 
-        if (AwaitedService.Races.Contains(race))
+        if (Service.Races.Contains(race))
         {
             actualRace = race;
-            actualClan = AwaitedService.Clans.FirstOrDefault(c => c.ToRace() == race, SubRace.Unknown);
+            actualClan = Service.Clans.FirstOrDefault(c => c.ToRace() == race, SubRace.Unknown);
             // This should not happen.
             if (actualClan == SubRace.Unknown)
             {
@@ -174,7 +189,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
     /// </summary>
     public string ValidateGender(Race race, Gender gender, out Gender actualGender)
     {
-        if (!AwaitedService.Genders.Contains(gender))
+        if (!Service.Genders.Contains(gender))
         {
             actualGender = Gender.Male;
             return $"The gender {gender.ToName()} is unknown, reset to {Gender.Male.ToName()}.";
@@ -251,7 +266,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
             flags            |= CustomizeFlag.Gender;
         }
 
-        var set = AwaitedService.GetList(customize.Clan, customize.Gender);
+        var set = Service.GetList(customize.Clan, customize.Gender);
         return FixValues(set, ref customize) | flags;
     }
 
@@ -269,7 +284,7 @@ public sealed class CustomizationService : AsyncServiceWrapper<ICustomizationMan
             return 0;
 
         customize.Gender = newGender;
-        var set = AwaitedService.GetList(customize.Clan, customize.Gender);
+        var set = Service.GetList(customize.Clan, customize.Gender);
         return FixValues(set, ref customize) | CustomizeFlag.Gender;
     }
 

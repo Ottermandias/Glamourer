@@ -1,13 +1,14 @@
 ﻿using System;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Customization;
 
 public unsafe struct Customize
 {
-    public Penumbra.GameData.Structs.CustomizeData Data;
+    public CustomizeArray Data;
 
-    public Customize(in Penumbra.GameData.Structs.CustomizeData data)
+    public Customize(in CustomizeArray data)
     {
         Data = data.Clone();
     }

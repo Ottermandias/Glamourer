@@ -13,7 +13,6 @@ using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
-using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Structs;
 using ImGuiNET;
@@ -21,14 +20,24 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
-public class ActorPanel(ActorSelector _selector, StateManager _stateManager, CustomizationDrawer _customizationDrawer,
-    EquipmentDrawer _equipmentDrawer, IdentifierService _identification, AutoDesignApplier _autoDesignApplier,
-    Configuration _config, DesignConverter _converter, ObjectManager _objects, DesignManager _designManager, ImportService _importService,
-    ICondition _conditions)
+public class ActorPanel(
+    ActorSelector _selector,
+    StateManager _stateManager,
+    CustomizationDrawer _customizationDrawer,
+    EquipmentDrawer _equipmentDrawer,
+    AutoDesignApplier _autoDesignApplier,
+    Configuration _config,
+    DesignConverter _converter,
+    ObjectManager _objects,
+    DesignManager _designManager,
+    ImportService _importService,
+    ICondition _conditions,
+    DictModelChara _modelChara)
 {
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -154,7 +163,7 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
         }
 
         var mainhand = EquipDrawData.FromState(_stateManager, _state, EquipSlot.MainHand);
-        var offhand = EquipDrawData.FromState(_stateManager, _state, EquipSlot.OffHand);
+        var offhand  = EquipDrawData.FromState(_stateManager, _state, EquipSlot.OffHand);
         _equipmentDrawer.DrawWeapons(mainhand, offhand, GameMain.IsInGPose());
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
@@ -187,7 +196,7 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
 
     private void DrawMonsterPanel()
     {
-        var names     = _identification.AwaitedService.ModelCharaNames(_state!.ModelData.ModelId);
+        var names     = _modelChara[_state!.ModelData.ModelId];
         var turnHuman = ImGui.Button("Turn Human");
         ImGui.Separator();
         using (var box = ImRaii.ListBox("##MonsterList",
@@ -295,9 +304,9 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
     private void SaveDesignOpen()
     {
         ImGui.OpenPopup("Save as Design");
-        _newName                        = _state!.Identifier.ToName();
+        _newName                                    = _state!.Identifier.ToName();
         var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
-        _newDesign                      = _converter.Convert(_state, applyGear, applyCustomize, applyCrest);
+        _newDesign                                  = _converter.Convert(_state, applyGear, applyCustomize, applyCrest);
     }
 
     private void SaveDesignDrawPopup()

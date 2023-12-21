@@ -1,9 +1,9 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
-using Glamourer.Services;
 using ImGuiNET;
-using OtterGui.Custom;
 using Penumbra.GameData.Actors;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
+using Penumbra.GameData.Gui;
+using Penumbra.GameData.Structs;
 using Penumbra.String;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
@@ -12,7 +12,7 @@ public class IdentifierDrawer
 {
     private readonly WorldCombo    _worldCombo;
     private readonly HumanNpcCombo _humanNpcCombo;
-    private readonly ActorService  _actors;
+    private readonly ActorManager  _actors;
 
     private string _characterName = string.Empty;
 
@@ -21,11 +21,12 @@ public class IdentifierDrawer
     public ActorIdentifier RetainerIdentifier  { get; private set; } = ActorIdentifier.Invalid;
     public ActorIdentifier MannequinIdentifier { get; private set; } = ActorIdentifier.Invalid;
 
-    public IdentifierDrawer(ActorService actors, IdentifierService identifier, HumanModelList humans)
+    public IdentifierDrawer(ActorManager actors, DictWorld dictWorld, DictModelChara dictModelChara, DictBNpcNames bNpcNames, DictBNpc bNpc,
+        HumanModelList humans)
     {
         _actors        = actors;
-        _worldCombo    = new WorldCombo(actors.AwaitedService.Data.Worlds, Glamourer.Log);
-        _humanNpcCombo = new HumanNpcCombo("##npcs", identifier, humans, Glamourer.Log);
+        _worldCombo    = new WorldCombo(dictWorld, Glamourer.Log);
+        _humanNpcCombo = new HumanNpcCombo("##npcs", dictModelChara, bNpcNames, bNpc, humans, Glamourer.Log);
     }
 
     public void DrawName(float width)
@@ -63,13 +64,13 @@ public class IdentifierDrawer
     {
         if (ByteString.FromString(_characterName, out var byteName))
         {
-            PlayerIdentifier    = _actors.AwaitedService.CreatePlayer(byteName, _worldCombo.CurrentSelection.Key);
-            RetainerIdentifier  = _actors.AwaitedService.CreateRetainer(byteName, ActorIdentifier.RetainerType.Bell);
-            MannequinIdentifier = _actors.AwaitedService.CreateRetainer(byteName, ActorIdentifier.RetainerType.Mannequin);
+            PlayerIdentifier    = _actors.CreatePlayer(byteName, _worldCombo.CurrentSelection.Key);
+            RetainerIdentifier  = _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Bell);
+            MannequinIdentifier = _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Mannequin);
         }
 
         NpcIdentifier = _humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc
-            ? _actors.AwaitedService.CreateNpc(_humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0])
+            ? _actors.CreateNpc(_humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0])
             : ActorIdentifier.Invalid;
     }
 }

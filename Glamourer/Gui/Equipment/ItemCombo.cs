@@ -23,8 +23,8 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     private          ItemId          _currentItem;
     private          float           _innerWidth;
 
-    public SetId   CustomSetId   { get; private set; }
-    public Variant CustomVariant { get; private set; }
+    public PrimaryId CustomSetId   { get; private set; }
+    public Variant   CustomVariant { get; private set; }
 
     public ItemCombo(IDataManager gameData, ItemManager items, EquipSlot slot, Logger log, FavoriteManager favorites)
         : base(() => GetItems(favorites, items, slot), log)
@@ -83,7 +83,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     }
 
     protected override bool IsVisible(int globalIndex, LowerString filter)
-        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].ModelId.Id.ToString());
+        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].PrimaryId.Id.ToString());
 
     protected override string ToString(EquipItem obj)
         => obj.Name;
@@ -111,7 +111,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     private static IReadOnlyList<EquipItem> GetItems(FavoriteManager favorites, ItemManager items, EquipSlot slot)
     {
         var nothing = ItemManager.NothingItem(slot);
-        if (!items.ItemService.AwaitedService.TryGetValue(slot.ToEquipType(), out var list))
+        if (!items.ItemData.ByType.TryGetValue(slot.ToEquipType(), out var list))
             return new[]
             {
                 nothing,

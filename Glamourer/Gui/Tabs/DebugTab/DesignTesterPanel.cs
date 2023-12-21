@@ -8,7 +8,7 @@ using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.DebugTab;

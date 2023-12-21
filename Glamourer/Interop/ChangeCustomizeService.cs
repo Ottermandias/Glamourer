@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
@@ -7,7 +6,7 @@ using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using OtterGui.Classes;
-using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
@@ -64,7 +63,7 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
 
     private Hook<ChangeCustomizeDelegate> _changeCustomizeHook;
 
-    public bool UpdateCustomize(Model model, CustomizeData customize)
+    public bool UpdateCustomize(Model model, CustomizeArray customize)
     {
         if (!model.IsHuman)
             return false;
@@ -75,14 +74,14 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
         return ret;
     }
 
-    public bool UpdateCustomize(Actor actor, CustomizeData customize)
+    public bool UpdateCustomize(Actor actor, CustomizeArray customize)
         => UpdateCustomize(actor.Model, customize);
 
     private bool ChangeCustomizeDetour(Human* human, byte* data, byte skipEquipment)
     {
         if (!InUpdate.InMethod)
         {
-            var customize = new Ref<Customize>(new Customize(*(CustomizeData*)data));
+            var customize = new Ref<Customize>(new Customize(*(CustomizeArray*)data));
             Invoke(this, (Model)human, customize);
             ((Customize*)data)->Load(customize.Value);
         }

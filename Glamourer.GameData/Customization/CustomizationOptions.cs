@@ -62,7 +62,7 @@ public partial class CustomizationOptions
     public string GetName(CustomName name)
         => _names[(int)name];
 
-    internal CustomizationOptions(ITextureProvider textures, IDataManager gameData, IPluginLog log)
+    internal CustomizationOptions(ITextureProvider textures, IDataManager gameData, IPluginLog log, NpcCustomizeSet npcCustomizeSet)
     {
         var tmp = new TemporaryData(gameData, this, log);
         _icons = new IconStorage(textures, gameData);
@@ -73,7 +73,7 @@ public partial class CustomizationOptions
                 _customizationSets[ToIndex(race, gender)] = tmp.GetSet(race, gender);
         }
 
-        tmp.SetNpcData(_customizationSets);
+        tmp.SetNpcData(_customizationSets, npcCustomizeSet);
     }
 
     // Obtain localized names of customization options and race names from the game data.
@@ -163,9 +163,9 @@ public partial class CustomizationOptions
             return set;
         }
 
-        public void SetNpcData(CustomizationSet[] sets)
+        public void SetNpcData(CustomizationSet[] sets, NpcCustomizeSet npcCustomizeSet)
         {
-            var data = CustomizationNpcOptions.CreateNpcData(sets, _bnpcCustomize, _enpcBase);
+            var data = CustomizationNpcOptions.CreateNpcData(sets, npcCustomizeSet);
             foreach (var set in sets)
             {
                 if (data.TryGetValue((set.Clan, set.Gender), out var npcData))

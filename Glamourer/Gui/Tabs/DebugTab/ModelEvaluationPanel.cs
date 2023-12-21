@@ -199,7 +199,7 @@ public unsafe class ModelEvaluationPanel(
 
             if (ImGui.SmallButton("Change Piece"))
                 _updateSlotService.UpdateArmor(model, slot,
-                    new CharacterArmor((SetId)(slot == EquipSlot.Hands ? 6064 : slot == EquipSlot.Head ? 6072 : 1), 1, 0));
+                    new CharacterArmor((PrimaryId)(slot == EquipSlot.Hands ? 6064 : slot == EquipSlot.Head ? 6072 : 1), 1, 0));
             ImGui.SameLine();
             if (ImGui.SmallButton("Change Stain"))
                 _updateSlotService.UpdateStain(model, slot, 5);
@@ -213,11 +213,11 @@ public unsafe class ModelEvaluationPanel(
     {
         using var id = ImRaii.PushId("Customize");
         var actorCustomize = new Customize(actor.IsCharacter
-            ? *(Penumbra.GameData.Structs.CustomizeData*)&actor.AsCharacter->DrawData.CustomizeData
-            : new Penumbra.GameData.Structs.CustomizeData());
+            ? *(CustomizeArray*)&actor.AsCharacter->DrawData.CustomizeData
+            : new CustomizeArray());
         var modelCustomize = new Customize(model.IsHuman
-            ? *(Penumbra.GameData.Structs.CustomizeData*)model.AsHuman->Customize.Data
-            : new Penumbra.GameData.Structs.CustomizeData());
+            ? *(CustomizeArray*)model.AsHuman->Customize.Data
+            : new CustomizeArray());
         foreach (var type in Enum.GetValues<CustomizeIndex>())
         {
             using var id2 = ImRaii.PushId((int)type);

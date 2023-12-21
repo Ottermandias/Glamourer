@@ -78,8 +78,8 @@ public sealed class CmaFile
             return;
         }
 
-        var set     = mainhand["Item1"]?.ToObject<ushort>() ?? items.DefaultSword.ModelId;
-        var type    = mainhand["Item2"]?.ToObject<ushort>() ?? items.DefaultSword.WeaponType;
+        var set     = mainhand["Item1"]?.ToObject<ushort>() ?? items.DefaultSword.PrimaryId;
+        var type    = mainhand["Item2"]?.ToObject<ushort>() ?? items.DefaultSword.SecondaryId;
         var variant = mainhand["Item3"]?.ToObject<byte>() ?? items.DefaultSword.Variant;
         var stain   = mainhand["Item4"]?.ToObject<byte>() ?? 0;
         var item    = items.Identify(EquipSlot.MainHand, set, type, variant);
@@ -95,17 +95,17 @@ public sealed class CmaFile
         if (offhand == null)
         {
             data.SetItem(EquipSlot.MainHand, defaultOffhand);
-            data.SetStain(EquipSlot.MainHand, defaultOffhand.ModelId.Id == 0 ? 0 : data.Stain(EquipSlot.MainHand));
+            data.SetStain(EquipSlot.MainHand, defaultOffhand.PrimaryId.Id == 0 ? 0 : data.Stain(EquipSlot.MainHand));
             return;
         }
 
-        var set     = offhand["Item1"]?.ToObject<ushort>() ?? items.DefaultSword.ModelId;
-        var type    = offhand["Item2"]?.ToObject<ushort>() ?? items.DefaultSword.WeaponType;
+        var set     = offhand["Item1"]?.ToObject<ushort>() ?? items.DefaultSword.PrimaryId;
+        var type    = offhand["Item2"]?.ToObject<ushort>() ?? items.DefaultSword.SecondaryId;
         var variant = offhand["Item3"]?.ToObject<byte>() ?? items.DefaultSword.Variant;
         var stain   = offhand["Item4"]?.ToObject<byte>() ?? 0;
         var item    = items.Identify(EquipSlot.OffHand, set, type, variant, data.MainhandType);
 
         data.SetItem(EquipSlot.OffHand, item.Valid ? item : defaultOffhand);
-        data.SetStain(EquipSlot.OffHand, defaultOffhand.ModelId.Id == 0 ? 0 : (StainId)stain);
+        data.SetStain(EquipSlot.OffHand, defaultOffhand.PrimaryId.Id == 0 ? 0 : (StainId)stain);
     }
 }

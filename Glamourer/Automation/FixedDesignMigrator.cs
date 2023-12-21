@@ -20,7 +20,7 @@ public class FixedDesignMigrator
     public FixedDesignMigrator(JobService jobs)
         => _jobs = jobs;
 
-    public void ConsumeMigratedData(ActorService actors, DesignFileSystem designFileSystem, AutoDesignManager autoManager)
+    public void ConsumeMigratedData(ActorManager actors, DesignFileSystem designFileSystem, AutoDesignManager autoManager)
     {
         if (_migratedData == null)
             return;
@@ -35,15 +35,15 @@ public class FixedDesignMigrator
             var id = ActorIdentifier.Invalid;
             if (ByteString.FromString(data.Name, out var byteString, false))
             {
-                id = actors.AwaitedService.CreatePlayer(byteString, ushort.MaxValue);
+                id = actors.CreatePlayer(byteString, ushort.MaxValue);
                 if (!id.IsValid)
-                    id = actors.AwaitedService.CreateRetainer(byteString, ActorIdentifier.RetainerType.Both);
+                    id = actors.CreateRetainer(byteString, ActorIdentifier.RetainerType.Both);
             }
 
             if (!id.IsValid)
             {
                 byteString = ByteString.FromSpanUnsafe("Mig Ration"u8, true, false, true);
-                id         = actors.AwaitedService.CreatePlayer(byteString, actors.AwaitedService.Data.Worlds.First().Key);
+                id         = actors.CreatePlayer(byteString, actors.Data.Worlds.First().Key);
                 if (!id.IsValid)
                 {
                     Glamourer.Messager.NotificationMessage($"Could not migrate fixed design {data.Name}.", NotificationType.Error);

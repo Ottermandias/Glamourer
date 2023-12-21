@@ -278,7 +278,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             ImGuiUtil.RightAlign(item.ModelString);
             if (ImGui.IsItemHovered()
              && item.Type.ValidOffhand().IsOffhandType()
-             && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
+             && _items.ItemData.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
             {
                 using var tt = ImRaii.Tooltip();
                 ImGui.TextUnformatted("Offhand: " + offhand.ModelString);
@@ -297,7 +297,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
                 return true;
 
             if (item.Type.ValidOffhand().IsOffhandType()
-             && _items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
+             && _items.ItemData.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
                 return FilterRegex?.IsMatch(offhand.ModelString)
                  ?? offhand.ModelString.Contains(FilterValue, StringComparison.OrdinalIgnoreCase);
 
@@ -411,21 +411,16 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             => item.Flags.HasFlag(ItemFlags.IsCrestWorthy);
     }
 
-    private sealed class ItemList : IReadOnlyCollection<EquipItem>
+    private sealed class ItemList(ItemManager items) : IReadOnlyCollection<EquipItem>
     {
-        private readonly ItemManager _items;
-
-        public ItemList(ItemManager items)
-            => _items = items;
-
         public IEnumerator<EquipItem> GetEnumerator()
-            => _items.ItemService.AwaitedService.AllItems(true).Select(i => i.Item2).GetEnumerator();
+            => items.ItemData.AllItems(true).Select(i => i.Item2).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator()
             => GetEnumerator();
 
         public int Count
-            => _items.ItemService.AwaitedService.TotalItemCount(true);
+            => items.ItemData.Primary.Count;
     }
 
     private void OnObjectUnlock(ObjectUnlocked.Type _1, uint _2, DateTimeOffset _3)

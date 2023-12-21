@@ -4,11 +4,11 @@ using Glamourer.Services;
 using Glamourer.Structs;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
-using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using System;
 using System.Linq;
+using Penumbra.GameData.DataContainers;
 
 namespace Glamourer.Designs;
 
@@ -91,7 +91,7 @@ public class DesignBase
             return false;
 
         _designData.Customize.Load(customize);
-        CustomizationSet = customizationService.AwaitedService.GetList(customize.Clan, customize.Gender);
+        CustomizationSet = customizationService.Service.GetList(customize.Clan, customize.Gender);
         return true;
     }
 
@@ -243,8 +243,8 @@ public class DesignBase
 
     private CustomizationSet SetCustomizationSet(CustomizationService customize)
         => !_designData.IsHuman
-            ? customize.AwaitedService.GetList(SubRace.Midlander,          Gender.Male)
-            : customize.AwaitedService.GetList(_designData.Customize.Clan, _designData.Customize.Gender);
+            ? customize.Service.GetList(SubRace.Midlander,          Gender.Male)
+            : customize.Service.GetList(_designData.Customize.Clan, _designData.Customize.Gender);
 
     #endregion
 

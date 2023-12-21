@@ -8,6 +8,7 @@ using Glamourer.State;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
 using OtterGui.Log;
+using OtterGui.Services;
 
 namespace Glamourer;
 
@@ -25,21 +26,21 @@ public class Glamourer : IDalamudPlugin
     public static readonly Logger         Log = new();
     public static          MessageService Messager { get; private set; } = null!;
 
-    private readonly ServiceProvider _services;
+    private readonly ServiceManager _services;
 
     public Glamourer(DalamudPluginInterface pluginInterface)
     {
         try
         {
-            _services = ServiceManager.CreateProvider(pluginInterface, Log);
-            Messager  = _services.GetRequiredService<MessageService>();
-            _services.GetRequiredService<VisorService>();
-            _services.GetRequiredService<WeaponService>();
-            _services.GetRequiredService<ScalingService>();
-            _services.GetRequiredService<StateListener>();         // Initialize State Listener.
-            _services.GetRequiredService<GlamourerWindowSystem>(); // initialize ui.
-            _services.GetRequiredService<CommandService>();        // initialize commands.
-            _services.GetRequiredService<GlamourerIpc>();          // initialize IPC.
+            _services = ServiceManagerA.CreateProvider(pluginInterface, Log);
+            Messager  = _services.GetService<MessageService>();
+            _services.GetService<VisorService>();
+            _services.GetService<WeaponService>();
+            _services.GetService<ScalingService>();
+            _services.GetService<StateListener>();         // Initialize State Listener.
+            _services.GetService<GlamourerWindowSystem>(); // initialize ui.
+            _services.GetService<CommandService>();        // initialize commands.
+            _services.GetService<GlamourerIpc>();          // initialize IPC.
             Log.Information($"Glamourer v{Version} loaded successfully.");
         }
         catch

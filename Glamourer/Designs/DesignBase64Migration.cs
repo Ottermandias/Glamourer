@@ -3,7 +3,7 @@ using Glamourer.Customization;
 using Glamourer.Services;
 using Glamourer.Structs;
 using OtterGui;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -121,9 +121,9 @@ public class DesignBase64Migration
                 data.SetStain(slot, mdl.Stain);
             }
 
-            var main = cur[0].Set.Id == 0
+            var main = cur[0].X.Id == 0
                 ? items.DefaultSword
-                : items.Identify(EquipSlot.MainHand, cur[0].Set, cur[0].Type, cur[0].Variant);
+                : items.Identify(EquipSlot.MainHand, cur[0].X, cur[0].Y, cur[0].Variant);
             if (!main.Valid)
             {
                 Glamourer.Log.Warning("Base64 string invalid, weapon could not be identified.");
@@ -135,10 +135,10 @@ public class DesignBase64Migration
 
             EquipItem off;
             // Fist weapon hack
-            if (main.ModelId.Id is > 1600 and < 1651 && cur[1].Variant == 0)
+            if (main.PrimaryId.Id is > 1600 and < 1651 && cur[1].Variant == 0)
             {
-                off = items.Identify(EquipSlot.OffHand, (SetId)(main.ModelId.Id + 50), main.WeaponType, main.Variant, main.Type);
-                var gauntlet = items.Identify(EquipSlot.Hands, cur[1].Set, (Variant)cur[1].Type.Id);
+                off = items.Identify(EquipSlot.OffHand, (PrimaryId)(main.PrimaryId.Id + 50), main.SecondaryId, main.Variant, main.Type);
+                var gauntlet = items.Identify(EquipSlot.Hands, cur[1].X, (Variant)cur[1].Y.Id);
                 if (gauntlet.Valid)
                 {
                     data.SetItem(EquipSlot.Hands, gauntlet);
@@ -147,9 +147,9 @@ public class DesignBase64Migration
             }
             else
             {
-                off = cur[0].Set.Id == 0
+                off = cur[0].X.Id == 0
                     ? ItemManager.NothingItem(FullEquipType.Shield)
-                    : items.Identify(EquipSlot.OffHand, cur[1].Set, cur[1].Type, cur[1].Variant, main.Type);
+                    : items.Identify(EquipSlot.OffHand, cur[1].X, cur[1].Y, cur[1].Variant, main.Type);
             }
 
             if (main.Type.ValidOffhand() != FullEquipType.Unknown && !off.Valid)

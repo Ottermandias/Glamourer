@@ -178,7 +178,7 @@ public class ImportService(CustomizationService _customizations, IDragDropManage
         if (input.BodyType.Value != 1)
             return false;
 
-        var set = _customizations.AwaitedService.GetList(input.Clan, input.Gender);
+        var set = _customizations.Service.GetList(input.Clan, input.Gender);
         voice = set.Voices[0];
         if (inputVoice.HasValue && !set.Voices.Contains(inputVoice.Value))
             return false;

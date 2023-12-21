@@ -15,7 +15,7 @@ using Glamourer.Structs;
 using Glamourer.Unlocks;
 using OtterGui.Classes;
 using Penumbra.GameData.Actors;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -28,7 +28,7 @@ public class AutoDesignApplier : IDisposable
     private readonly StateManager           _state;
     private readonly JobService             _jobs;
     private readonly EquippedGearset        _equippedGearset;
-    private readonly ActorService           _actors;
+    private readonly ActorManager           _actors;
     private readonly CustomizationService   _customizations;
     private readonly CustomizeUnlockManager _customizeUnlocks;
     private readonly ItemUnlockManager      _itemUnlocks;
@@ -50,7 +50,7 @@ public class AutoDesignApplier : IDisposable
     }
 
     public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs,
-        CustomizationService customizations, ActorService actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
+        CustomizationService customizations, ActorManager actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
         AutomationChanged @event, ObjectManager objects, WeaponLoading weapons, HumanModelList humans, IClientState clientState,
         EquippedGearset equippedGearset)
     {
@@ -87,7 +87,7 @@ public class AutoDesignApplier : IDisposable
         if (_jobChangeState == null || !_config.EnableAutoDesigns)
             return;
 
-        var id = actor.GetIdentifier(_actors.AwaitedService);
+        var id = actor.GetIdentifier(_actors);
         if (id == _jobChangeState.Identifier)
         {
             var current = _jobChangeState.BaseData.Item(slot);
@@ -161,7 +161,7 @@ public class AutoDesignApplier : IDisposable
                 {
                     foreach (var actor in data.Objects)
                     {
-                        var specificId = actor.GetIdentifier(_actors.AwaitedService);
+                        var specificId = actor.GetIdentifier(_actors);
                         if (_state.GetOrCreate(specificId, actor, out var state))
                         {
                             Reduce(actor, state, newSet, false, false);
@@ -203,7 +203,7 @@ public class AutoDesignApplier : IDisposable
 
     private void OnJobChange(Actor actor, Job oldJob, Job newJob)
     {
-        if (!_config.EnableAutoDesigns || !actor.Identifier(_actors.AwaitedService, out var id))
+        if (!_config.EnableAutoDesigns || !actor.Identifier(_actors, out var id))
             return;
 
         if (!GetPlayerSet(id, out var set))
@@ -312,13 +312,13 @@ public class AutoDesignApplier : IDisposable
                 if (_manager.EnabledSets.TryGetValue(identifier, out set))
                     return true;
 
-                identifier = _actors.AwaitedService.CreatePlayer(identifier.PlayerName, ushort.MaxValue);
+                identifier = _actors.CreatePlayer(identifier.PlayerName, ushort.MaxValue);
                 return _manager.EnabledSets.TryGetValue(identifier, out set);
             case IdentifierType.Retainer:
             case IdentifierType.Npc:
                 return _manager.EnabledSets.TryGetValue(identifier, out set);
             case IdentifierType.Owned:
-                identifier = _actors.AwaitedService.CreateNpc(identifier.Kind, identifier.DataId);
+                identifier = _actors.CreateNpc(identifier.Kind, identifier.DataId);
                 return _manager.EnabledSets.TryGetValue(identifier, out set);
             default:
                 set = null;
@@ -470,7 +470,7 @@ public class AutoDesignApplier : IDisposable
             totalCustomizeFlags |= CustomizeFlag.Face;
         }
 
-        var set  = _customizations.AwaitedService.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
+        var set  = _customizations.Service.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
         var face = state.ModelData.Customize.Face;
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {

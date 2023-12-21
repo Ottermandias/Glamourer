@@ -10,7 +10,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
-using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
@@ -120,7 +120,7 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
                 return DrawArtisan();
 
             DrawRaceGenderSelector();
-            _set = _service.AwaitedService.GetList(_customize.Clan, _customize.Gender);
+            _set = _service.Service.GetList(_customize.Clan, _customize.Gender);
 
             foreach (var id in _set.Order[CharaMakeParams.MenuType.Percentage])
                 PercentageSelector(id);
@@ -153,7 +153,7 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
 
     private unsafe bool DrawArtisan()
     {
-        for (var i = 0; i < CustomizeData.Size; ++i)
+        for (var i = 0; i < CustomizeArray.Size; ++i)
         {
             using var id    = ImRaii.PushId(i);
             int       value = _customize.Data.Data[i];

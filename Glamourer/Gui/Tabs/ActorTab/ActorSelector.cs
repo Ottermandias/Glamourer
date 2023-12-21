@@ -17,11 +17,11 @@ public class ActorSelector
 {
     private readonly EphemeralConfig _config;
     private readonly ObjectManager _objects;
-    private readonly ActorService  _actors;
+    private readonly ActorManager  _actors;
 
     private ActorIdentifier _identifier = ActorIdentifier.Invalid;
 
-    public ActorSelector(ObjectManager objects, ActorService actors, EphemeralConfig config)
+    public ActorSelector(ObjectManager objects, ActorManager actors, EphemeralConfig config)
     {
         _objects = objects;
         _actors  = actors;
@@ -93,7 +93,7 @@ public class ActorSelector
 
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth
                 , "Select the local player character.", !_objects.Player, true))
-            _identifier = _objects.Player.GetIdentifier(_actors.AwaitedService);
+            _identifier = _objects.Player.GetIdentifier(_actors);
 
         ImGui.SameLine();
         var (id, data) = _objects.TargetData;

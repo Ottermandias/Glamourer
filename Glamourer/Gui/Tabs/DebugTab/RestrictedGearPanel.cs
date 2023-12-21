@@ -32,7 +32,7 @@ public class RestrictedGearPanel(ItemManager _items) : IDebugTabTree
                 foreach (var slot in EquipSlotExtensions.EqdpSlots)
                 {
                     var (replaced, model) =
-                        _items.RestrictedGear.ResolveRestricted(new CharacterArmor((SetId)_setId, (Variant)_variant, 0), slot, race, gender);
+                        _items.RestrictedGear.ResolveRestricted(new CharacterArmor((PrimaryId)_setId, (Variant)_variant, 0), slot, race, gender);
                     if (replaced)
                         ImGui.TextUnformatted($"{race.ToName()} - {gender} - {slot.ToName()} resolves to {model}.");
                 }

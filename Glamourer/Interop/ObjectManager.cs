@@ -5,8 +5,8 @@ using Dalamud.Game.ClientState.Objects;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using Glamourer.Interop.Structs;
-using Glamourer.Services;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Interop;
 
@@ -15,13 +15,13 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
     private readonly IFramework     _framework;
     private readonly IClientState   _clientState;
     private readonly IObjectTable   _objects;
-    private readonly ActorService   _actors;
+    private readonly ActorManager   _actors;
     private readonly ITargetManager _targets;
 
     public IObjectTable Objects
         => _objects;
 
-    public ObjectManager(IFramework framework, IClientState clientState, IObjectTable objects, ActorService actors, ITargetManager targets)
+    public ObjectManager(IFramework framework, IClientState clientState, IObjectTable objects, ActorManager actors, ITargetManager targets)
     {
         _framework   = framework;
         _clientState = clientState;
@@ -57,7 +57,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
         for (var i = 0; i < (int)ScreenActor.CutsceneStart; ++i)
         {
             Actor character = _objects.GetObjectAddress(i);
-            if (character.Identifier(_actors.AwaitedService, out var identifier))
+            if (character.Identifier(_actors, out var identifier))
                 HandleIdentifier(identifier, character);
         }
 
@@ -70,13 +70,13 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
             if (!character.Valid && i == (int)ScreenActor.CutsceneStart)
                 break;
 
-            HandleIdentifier(character.GetIdentifier(_actors.AwaitedService), character);
+            HandleIdentifier(character.GetIdentifier(_actors), character);
         }
 
         void AddSpecial(ScreenActor idx, string label)
         {
             Actor actor = _objects.GetObjectAddress((int)idx);
-            if (actor.Identifier(_actors.AwaitedService, out var ident))
+            if (actor.Identifier(_actors, out var ident))
             {
                 var data = new ActorData(actor, label);
                 _identifiers.Add(ident, data);
@@ -95,7 +95,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
         for (var i = (int)ScreenActor.ScreenEnd; i < _objects.Length; ++i)
         {
             Actor character = _objects.GetObjectAddress(i);
-            if (character.Identifier(_actors.AwaitedService, out var identifier))
+            if (character.Identifier(_actors, out var identifier))
                 HandleIdentifier(identifier, character);
         }
 
@@ -120,7 +120,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
 
         if (identifier.Type is IdentifierType.Player or IdentifierType.Owned)
         {
-            var allWorld = _actors.AwaitedService.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, ushort.MaxValue,
+            var allWorld = _actors.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, ushort.MaxValue,
                 identifier.Kind,
                 identifier.DataId);
 
@@ -137,7 +137,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
 
         if (identifier.Type is IdentifierType.Owned)
         {
-            var nonOwned = _actors.AwaitedService.CreateNpc(identifier.Kind, identifier.DataId);
+            var nonOwned = _actors.CreateNpc(identifier.Kind, identifier.DataId);
             if (!_nonOwnedIdentifiers.TryGetValue(nonOwned, out var nonOwnedData))
             {
                 nonOwnedData                   = new ActorData(character, nonOwned.ToString());
@@ -170,7 +170,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
         get
         {
             Update();
-            return Player.Identifier(_actors.AwaitedService, out var ident) && _identifiers.TryGetValue(ident, out var data)
+            return Player.Identifier(_actors, out var ident) && _identifiers.TryGetValue(ident, out var data)
                 ? (ident, data)
                 : (ident, ActorData.Invalid);
         }
@@ -181,7 +181,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
         get
         {
             Update();
-            return Target.Identifier(_actors.AwaitedService, out var ident) && _identifiers.TryGetValue(ident, out var data)
+            return Target.Identifier(_actors, out var ident) && _identifiers.TryGetValue(ident, out var data)
                 ? (ident, data)
                 : (ident, ActorData.Invalid);
         }

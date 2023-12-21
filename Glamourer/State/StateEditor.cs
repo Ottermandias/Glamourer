@@ -5,7 +5,7 @@ using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Services;
 using Glamourer.Structs;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -74,7 +74,7 @@ public class StateEditor
 
             state[CustomizeIndex.Clan]   = source;
             state[CustomizeIndex.Gender] = source;
-            var set = _customizations.AwaitedService.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
+            var set = _customizations.Service.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
             foreach (var index in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
                 state[index] = source;
         }

@@ -12,9 +12,9 @@ public class CustomizationManager : ICustomizationManager
     private CustomizationManager()
     { }
 
-    public static ICustomizationManager Create(ITextureProvider textures, IDataManager gameData, IPluginLog log)
+    public static ICustomizationManager Create(ITextureProvider textures, IDataManager gameData, IPluginLog log, NpcCustomizeSet npcCustomizeSet)
     {
-        _options ??= new CustomizationOptions(textures, gameData, log);
+        _options ??= new CustomizationOptions(textures, gameData, log, npcCustomizeSet);
         return new CustomizationManager();
     }
 

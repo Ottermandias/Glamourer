@@ -60,12 +60,12 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
         var ret  = ImGui.Selectable(name, selected);
         ImGui.SameLine();
         using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
-        ImGuiUtil.RightAlign($"({obj.ModelId.Id}-{obj.WeaponType.Id}-{obj.Variant})");
+        ImGuiUtil.RightAlign($"({obj.PrimaryId.Id}-{obj.SecondaryId.Id}-{obj.Variant})");
         return ret;
     }
 
     protected override bool IsVisible(int globalIndex, LowerString filter)
-        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].ModelId.Id.ToString());
+        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].PrimaryId.Id.ToString());
 
     protected override string ToString(EquipItem obj)
         => obj.Name;
@@ -80,14 +80,14 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
             var enumerable = Array.Empty<EquipItem>().AsEnumerable();
             foreach (var t in Enum.GetValues<FullEquipType>().Where(e => e.ToSlot() is EquipSlot.MainHand))
             {
-                if (items.ItemService.AwaitedService.TryGetValue(t, out var l))
+                if (items.ItemData.ByType.TryGetValue(t, out var l))
                     enumerable = enumerable.Concat(l);
             }
 
             return enumerable.OrderBy(e => e.Name).ToList();
         }
 
-        if (!items.ItemService.AwaitedService.TryGetValue(type, out var list))
+        if (!items.ItemData.ByType.TryGetValue(type, out var list))
             return Array.Empty<EquipItem>();
 
         if (type.AllowsNothing())

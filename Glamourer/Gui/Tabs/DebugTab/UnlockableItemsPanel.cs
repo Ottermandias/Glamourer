@@ -40,7 +40,7 @@ public class UnlockableItemsPanel(ItemUnlockManager _itemUnlocks, ItemManager _i
         var remainder = ImGuiClip.ClippedDraw(_itemUnlocks.Unlockable, skips, t =>
         {
             ImGuiUtil.DrawTableColumn(t.Key.ToString());
-            if (_items.ItemService.AwaitedService.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
+            if (_items.ItemData.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
             {
                 ImGuiUtil.DrawTableColumn(equip.Name);
                 ImGuiUtil.DrawTableColumn(equip.Type.ToName());

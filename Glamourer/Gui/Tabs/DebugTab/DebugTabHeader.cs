@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using ImGuiNET;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Raii;
+using OtterGui.Services;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public interface IDebugTabTree
+public interface IDebugTabTree : IService
 {
     public string Label { get; }
     public void   Draw();
@@ -54,7 +55,7 @@ public class DebugTabHeader(string label, params IDebugTabTree[] subTrees)
             "Game Data",
             provider.GetRequiredService<IdentifierPanel>(),
             provider.GetRequiredService<RestrictedGearPanel>(),
-            provider.GetRequiredService<ActorServicePanel>(),
+            provider.GetRequiredService<ActorManagerPanel>(),
             provider.GetRequiredService<ItemManagerPanel>(),
             provider.GetRequiredService<StainPanel>(),
             provider.GetRequiredService<CustomizationServicePanel>(),

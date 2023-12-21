@@ -60,7 +60,7 @@ public class SettingsTab : ITab
         if (!child)
             return;
 
-        Checkbox("Enable Auto Designs", "Enable the application of designs associated to characters to be applied automatically.",
+        Checkbox("Enable Auto Designs", "Enable the application of designs associated to characters in the Automation tab to be applied automatically.",
             _config.EnableAutoDesigns,  v => _config.EnableAutoDesigns = v);
         ImGui.NewLine();
         ImGui.NewLine();

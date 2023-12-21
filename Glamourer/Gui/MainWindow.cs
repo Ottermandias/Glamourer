@@ -8,6 +8,7 @@ using Glamourer.Events;
 using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Gui.Tabs.AutomationTab;
+using Glamourer.Gui.Tabs.DebugTab;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Gui.Tabs.UnlocksTab;
 using ImGuiNET;
@@ -65,8 +66,8 @@ public class MainWindow : Window, IDisposable
         Messages   = messages;
         _quickBar  = quickBar;
         _config    = config;
-        _tabs = new ITab[]
-        {
+        _tabs =
+        [
             settings,
             actors,
             designs,
@@ -74,7 +75,7 @@ public class MainWindow : Window, IDisposable
             unlocks,
             messages,
             debugTab,
-        };
+        ];
         _event.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
         IsOpen = _config.OpenWindowAtStart;
     }

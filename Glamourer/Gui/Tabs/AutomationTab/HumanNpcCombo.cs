@@ -3,23 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Utility;
-using Glamourer.Services;
 using ImGuiNET;
 using OtterGui.Custom;
 using OtterGui.Log;
 using OtterGui.Widgets;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public sealed class HumanNpcCombo : FilterComboCache<(string Name, ObjectKind Kind, uint[] Ids)>
+public sealed class HumanNpcCombo(
+    string label,
+    DictModelChara modelCharaDict,
+    DictBNpcNames bNpcNames,
+    DictBNpc bNpcs,
+    HumanModelList humans,
+    Logger log)
+    : FilterComboCache<(string Name, ObjectKind Kind, uint[] Ids)>(() => CreateList(modelCharaDict, bNpcNames, bNpcs, humans), log)
 {
-    private readonly string _label;
-
-    public HumanNpcCombo(string label, IdentifierService service, HumanModelList humans, Logger log)
-        : base(() => CreateList(service, humans), log)
-        => _label = label;
-
     protected override string ToString((string Name, ObjectKind Kind, uint[] Ids) obj)
         => obj.Name;
 
@@ -36,7 +36,8 @@ public sealed class HumanNpcCombo : FilterComboCache<(string Name, ObjectKind Ki
     }
 
     public bool Draw(float width)
-        => Draw(_label, CurrentSelection.Name.IsNullOrEmpty() ? "Human Non-Player-Characters..." : CurrentSelection.Name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
+        => Draw(label, CurrentSelection.Name.IsNullOrEmpty() ? "Human Non-Player-Characters..." : CurrentSelection.Name, string.Empty, width,
+            ImGui.GetTextLineHeightWithSpacing());
 
 
     /// <summary> Compare strings in a way that letters and numbers are sorted before any special symbols. </summary>
@@ -61,15 +62,16 @@ public sealed class HumanNpcCombo : FilterComboCache<(string Name, ObjectKind Ki
         }
     }
 
-    private static IReadOnlyList<(string Name, ObjectKind Kind, uint[] Ids)> CreateList(IdentifierService service, HumanModelList humans)
+    private static IReadOnlyList<(string Name, ObjectKind Kind, uint[] Ids)> CreateList(DictModelChara modelCharaDict, DictBNpcNames bNpcNames,
+        DictBNpc bNpcs, HumanModelList humans)
     {
         var ret = new List<(string Name, ObjectKind Kind, uint Id)>(1024);
-        for (var modelChara = 0u; modelChara < service.AwaitedService.NumModelChara; ++modelChara)
+        for (var modelChara = 0u; modelChara < modelCharaDict.Count; ++modelChara)
         {
             if (!humans.IsHuman(modelChara))
                 continue;
 
-            var list = service.AwaitedService.ModelCharaNames(modelChara);
+            var list = modelCharaDict[modelChara];
             if (list.Count == 0)
                 continue;
 
@@ -78,8 +80,8 @@ public sealed class HumanNpcCombo : FilterComboCache<(string Name, ObjectKind Ki
                 switch (kind)
                 {
                     case ObjectKind.BattleNpc:
-                        var nameIds = service.AwaitedService.GetBnpcNames(id);
-                        ret.AddRange(nameIds.Select(nameId => (service.AwaitedService.Name(ObjectKind.BattleNpc, nameId), kind, nameId.Id)));
+                        var nameIds = bNpcNames[id];
+                        ret.AddRange(nameIds.Select(nameId => (bNpcs[nameId], kind, nameId.Id)));
                         break;
                     case ObjectKind.EventNpc:
                         ret.Add((name, kind, id));

@@ -16,6 +16,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Services;
 
@@ -27,7 +28,7 @@ public class CommandService : IDisposable
     private readonly ICommandManager   _commands;
     private readonly MainWindow        _mainWindow;
     private readonly IChatGui          _chat;
-    private readonly ActorService      _actors;
+    private readonly ActorManager      _actors;
     private readonly ObjectManager     _objects;
     private readonly StateManager      _stateManager;
     private readonly AutoDesignApplier _autoDesignApplier;
@@ -37,7 +38,7 @@ public class CommandService : IDisposable
     private readonly DesignFileSystem  _designFileSystem;
     private readonly Configuration     _config;
 
-    public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorService actors, ObjectManager objects,
+    public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config)
     {
@@ -402,7 +403,7 @@ public class CommandService : IDisposable
             {
                 foreach (var actor in actors.Objects)
                 {
-                    if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors.AwaitedService), actor, out var state))
+                    if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
                         _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
                 }
             }
@@ -537,7 +538,7 @@ public class CommandService : IDisposable
         {
             if (_objects.GetName(argument.ToLowerInvariant(), out var obj))
             {
-                var identifier = _actors.AwaitedService.FromObject(obj.AsObject, out _, true, true, true);
+                var identifier = _actors.FromObject(obj.AsObject, out _, true, true, true);
                 if (!identifier.IsValid)
                 {
                     _chat.Print(new SeStringBuilder().AddText("The placeholder ").AddGreen(argument)
@@ -547,7 +548,7 @@ public class CommandService : IDisposable
                 }
 
                 if (allowIndex && identifier.Type is IdentifierType.Npc)
-                    identifier = _actors.AwaitedService.CreateNpc(identifier.Kind, identifier.DataId, obj.Index);
+                    identifier = _actors.CreateNpc(identifier.Kind, identifier.DataId, obj.Index);
                 identifiers = new[]
                 {
                     identifier,
@@ -555,7 +556,7 @@ public class CommandService : IDisposable
             }
             else
             {
-                identifiers = _actors.AwaitedService.FromUserString(argument, allowIndex);
+                identifiers = _actors.FromUserString(argument, allowIndex);
                 if (!allowAnyWorld
                  && identifiers[0].Type is IdentifierType.Player or IdentifierType.Owned
                  && identifiers[0].HomeWorld == ushort.MaxValue)

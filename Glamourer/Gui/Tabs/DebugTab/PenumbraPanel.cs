@@ -59,7 +59,7 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
         ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
         ImGui.InputInt("##CutsceneIndex", ref _gameObjectIndex, 0, 0);
         ImGuiUtil.DrawTableColumn(_penumbra.Available
-            ? _penumbra.CutsceneParent(_gameObjectIndex).ToString()
+            ? _penumbra.CutsceneParent((ushort) _gameObjectIndex).ToString()
             : "Penumbra Unavailable");
 
         ImGuiUtil.DrawTableColumn("Redraw Object");

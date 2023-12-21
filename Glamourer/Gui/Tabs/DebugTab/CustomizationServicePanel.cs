@@ -13,15 +13,15 @@ public class CustomizationServicePanel(CustomizationService _customization) : ID
         => "Customization Service";
 
     public bool Disabled
-        => !_customization.Valid;
+        => !_customization.Awaiter.IsCompletedSuccessfully;
 
     public void Draw()
     {
-        foreach (var clan in _customization.AwaitedService.Clans)
+        foreach (var clan in _customization.Service.Clans)
         {
-            foreach (var gender in _customization.AwaitedService.Genders)
+            foreach (var gender in _customization.Service.Genders)
             {
-                var set = _customization.AwaitedService.GetList(clan, gender);
+                var set = _customization.Service.GetList(clan, gender);
                 DrawCustomizationInfo(set);
                 DrawNpcCustomizationInfo(set);
             }

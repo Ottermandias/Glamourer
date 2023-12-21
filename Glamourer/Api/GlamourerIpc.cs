@@ -7,10 +7,10 @@ using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
-using Glamourer.Services;
 using Glamourer.State;
 using Penumbra.Api.Helpers;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
 using Penumbra.String;
 
 namespace Glamourer.Api;
@@ -22,11 +22,11 @@ public partial class GlamourerIpc : IDisposable
 
     private readonly StateManager      _stateManager;
     private readonly ObjectManager     _objects;
-    private readonly ActorService      _actors;
+    private readonly ActorManager      _actors;
     private readonly DesignConverter   _designConverter;
     private readonly AutoDesignApplier _autoDesignApplier;
 
-    public GlamourerIpc(DalamudPluginInterface pi, StateManager stateManager, ObjectManager objects, ActorService actors,
+    public GlamourerIpc(DalamudPluginInterface pi, StateManager stateManager, ObjectManager objects, ActorManager actors,
         DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose, AutoDesignApplier autoDesignApplier)
     {
         _stateManager        = stateManager;
@@ -142,7 +142,7 @@ public partial class GlamourerIpc : IDisposable
 
     private IEnumerable<ActorIdentifier> FindActors(Character? character)
     {
-        var id = _actors.AwaitedService.FromObject(character, true, true, false);
+        var id = _actors.FromObject(character, true, true, false);
         if (!id.IsValid)
             yield break;
 
