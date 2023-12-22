@@ -15,7 +15,6 @@ using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
-using Glamourer.Structs;
 using Glamourer.Unlocks;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
@@ -24,6 +23,7 @@ using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Services;

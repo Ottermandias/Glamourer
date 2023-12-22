@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Numerics;
-using Glamourer.Customization;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 

@@ -6,7 +6,9 @@ using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Interop.Structs;
-using Glamourer.Structs;
+using Penumbra.GameData;
+using Penumbra.GameData.DataContainers;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
@@ -14,19 +16,20 @@ public class JobService : IDisposable
 {
     private readonly nint _characterDataOffset;
 
-    public readonly IReadOnlyDictionary<byte, Job>        Jobs;
-    public readonly IReadOnlyDictionary<ushort, JobGroup> JobGroups;
-    public readonly IReadOnlyList<JobGroup>               AllJobGroups;
+    public readonly DictJob      Jobs;
+    public readonly DictJobGroup JobGroups;
+
+    public IReadOnlyList<JobGroup> AllJobGroups
+        => JobGroups.AllJobGroups;
 
     public event Action<Actor, Job, Job>? JobChanged;
 
-    public JobService(IDataManager gameData, IGameInteropProvider interop)
+    public JobService(DictJob jobs, DictJobGroup jobGroups, IDataManager gameData, IGameInteropProvider interop)
     {
         interop.InitializeFromAttributes(this);
         _characterDataOffset = Marshal.OffsetOf<Character>(nameof(Character.CharacterData));
-        Jobs                 = GameData.Jobs(gameData);
-        AllJobGroups         = GameData.AllJobGroups(gameData);
-        JobGroups            = GameData.JobGroups(gameData);
+        Jobs                 = jobs;
+        JobGroups            = jobGroups;
         _changeJobHook.Enable();
     }
 

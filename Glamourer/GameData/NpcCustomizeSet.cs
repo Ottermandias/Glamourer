@@ -11,7 +11,7 @@ using OtterGui.Services;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Structs;
 
-namespace Glamourer.Customization;
+namespace Glamourer.GameData;
 
 public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
 {
@@ -187,83 +187,83 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
         data.VisorToggled = row.Visor;
     }
 
-    private static (bool, Customize) FromBnpcCustomize(BNpcCustomize bnpcCustomize)
+    private static (bool, CustomizeArray) FromBnpcCustomize(BNpcCustomize bnpcCustomize)
     {
-        var customize = new Customize();
-        customize.Data.Set(0,  (byte)bnpcCustomize.Race.Row);
-        customize.Data.Set(1,  bnpcCustomize.Gender);
-        customize.Data.Set(2,  bnpcCustomize.BodyType);
-        customize.Data.Set(3,  bnpcCustomize.Height);
-        customize.Data.Set(4,  (byte)bnpcCustomize.Tribe.Row);
-        customize.Data.Set(5,  bnpcCustomize.Face);
-        customize.Data.Set(6,  bnpcCustomize.HairStyle);
-        customize.Data.Set(7,  bnpcCustomize.HairHighlight);
-        customize.Data.Set(8,  bnpcCustomize.SkinColor);
-        customize.Data.Set(9,  bnpcCustomize.EyeHeterochromia);
-        customize.Data.Set(10, bnpcCustomize.HairColor);
-        customize.Data.Set(11, bnpcCustomize.HairHighlightColor);
-        customize.Data.Set(12, bnpcCustomize.FacialFeature);
-        customize.Data.Set(13, bnpcCustomize.FacialFeatureColor);
-        customize.Data.Set(14, bnpcCustomize.Eyebrows);
-        customize.Data.Set(15, bnpcCustomize.EyeColor);
-        customize.Data.Set(16, bnpcCustomize.EyeShape);
-        customize.Data.Set(17, bnpcCustomize.Nose);
-        customize.Data.Set(18, bnpcCustomize.Jaw);
-        customize.Data.Set(19, bnpcCustomize.Mouth);
-        customize.Data.Set(20, bnpcCustomize.LipColor);
-        customize.Data.Set(21, bnpcCustomize.BustOrTone1);
-        customize.Data.Set(22, bnpcCustomize.ExtraFeature1);
-        customize.Data.Set(23, bnpcCustomize.ExtraFeature2OrBust);
-        customize.Data.Set(24, bnpcCustomize.FacePaint);
-        customize.Data.Set(25, bnpcCustomize.FacePaintColor);
+        var customize = new CustomizeArray();
+        customize.SetByIndex(0,  (CustomizeValue) (byte)bnpcCustomize.Race.Row);
+        customize.SetByIndex(1,  (CustomizeValue) bnpcCustomize.Gender);
+        customize.SetByIndex(2,  (CustomizeValue) bnpcCustomize.BodyType);
+        customize.SetByIndex(3,  (CustomizeValue) bnpcCustomize.Height);
+        customize.SetByIndex(4,  (CustomizeValue) (byte)bnpcCustomize.Tribe.Row);
+        customize.SetByIndex(5,  (CustomizeValue) bnpcCustomize.Face);
+        customize.SetByIndex(6,  (CustomizeValue) bnpcCustomize.HairStyle);
+        customize.SetByIndex(7,  (CustomizeValue) bnpcCustomize.HairHighlight);
+        customize.SetByIndex(8,  (CustomizeValue) bnpcCustomize.SkinColor);
+        customize.SetByIndex(9,  (CustomizeValue) bnpcCustomize.EyeHeterochromia);
+        customize.SetByIndex(10, (CustomizeValue) bnpcCustomize.HairColor);
+        customize.SetByIndex(11, (CustomizeValue) bnpcCustomize.HairHighlightColor);
+        customize.SetByIndex(12, (CustomizeValue) bnpcCustomize.FacialFeature);
+        customize.SetByIndex(13, (CustomizeValue) bnpcCustomize.FacialFeatureColor);
+        customize.SetByIndex(14, (CustomizeValue) bnpcCustomize.Eyebrows);
+        customize.SetByIndex(15, (CustomizeValue) bnpcCustomize.EyeColor);
+        customize.SetByIndex(16, (CustomizeValue) bnpcCustomize.EyeShape);
+        customize.SetByIndex(17, (CustomizeValue) bnpcCustomize.Nose);
+        customize.SetByIndex(18, (CustomizeValue) bnpcCustomize.Jaw);
+        customize.SetByIndex(19, (CustomizeValue) bnpcCustomize.Mouth);
+        customize.SetByIndex(20, (CustomizeValue) bnpcCustomize.LipColor);
+        customize.SetByIndex(21, (CustomizeValue) bnpcCustomize.BustOrTone1);
+        customize.SetByIndex(22, (CustomizeValue) bnpcCustomize.ExtraFeature1);
+        customize.SetByIndex(23, (CustomizeValue) bnpcCustomize.ExtraFeature2OrBust);
+        customize.SetByIndex(24, (CustomizeValue) bnpcCustomize.FacePaint);
+        customize.SetByIndex(25, (CustomizeValue) bnpcCustomize.FacePaintColor);
 
         if (customize.BodyType.Value != 1
          || !CustomizationOptions.Races.Contains(customize.Race)
          || !CustomizationOptions.Clans.Contains(customize.Clan)
          || !CustomizationOptions.Genders.Contains(customize.Gender))
-            return (false, Customize.Default);
+            return (false, CustomizeArray.Default);
 
         return (true, customize);
     }
 
-    private static (bool, Customize) FromEnpcBase(ENpcBase enpcBase)
+    private static (bool, CustomizeArray) FromEnpcBase(ENpcBase enpcBase)
     {
         if (enpcBase.ModelChara.Value?.Type != 1)
-            return (false, Customize.Default);
+            return (false, CustomizeArray.Default);
 
-        var customize = new Customize();
-        customize.Data.Set(0,  (byte)enpcBase.Race.Row);
-        customize.Data.Set(1,  enpcBase.Gender);
-        customize.Data.Set(2,  enpcBase.BodyType);
-        customize.Data.Set(3,  enpcBase.Height);
-        customize.Data.Set(4,  (byte)enpcBase.Tribe.Row);
-        customize.Data.Set(5,  enpcBase.Face);
-        customize.Data.Set(6,  enpcBase.HairStyle);
-        customize.Data.Set(7,  enpcBase.HairHighlight);
-        customize.Data.Set(8,  enpcBase.SkinColor);
-        customize.Data.Set(9,  enpcBase.EyeHeterochromia);
-        customize.Data.Set(10, enpcBase.HairColor);
-        customize.Data.Set(11, enpcBase.HairHighlightColor);
-        customize.Data.Set(12, enpcBase.FacialFeature);
-        customize.Data.Set(13, enpcBase.FacialFeatureColor);
-        customize.Data.Set(14, enpcBase.Eyebrows);
-        customize.Data.Set(15, enpcBase.EyeColor);
-        customize.Data.Set(16, enpcBase.EyeShape);
-        customize.Data.Set(17, enpcBase.Nose);
-        customize.Data.Set(18, enpcBase.Jaw);
-        customize.Data.Set(19, enpcBase.Mouth);
-        customize.Data.Set(20, enpcBase.LipColor);
-        customize.Data.Set(21, enpcBase.BustOrTone1);
-        customize.Data.Set(22, enpcBase.ExtraFeature1);
-        customize.Data.Set(23, enpcBase.ExtraFeature2OrBust);
-        customize.Data.Set(24, enpcBase.FacePaint);
-        customize.Data.Set(25, enpcBase.FacePaintColor);
+        var customize = new CustomizeArray();
+        customize.SetByIndex(0,  (CustomizeValue) (byte)enpcBase.Race.Row);
+        customize.SetByIndex(1,  (CustomizeValue) enpcBase.Gender);
+        customize.SetByIndex(2,  (CustomizeValue) enpcBase.BodyType);
+        customize.SetByIndex(3,  (CustomizeValue) enpcBase.Height);
+        customize.SetByIndex(4,  (CustomizeValue) (byte)enpcBase.Tribe.Row);
+        customize.SetByIndex(5,  (CustomizeValue) enpcBase.Face);
+        customize.SetByIndex(6,  (CustomizeValue) enpcBase.HairStyle);
+        customize.SetByIndex(7,  (CustomizeValue) enpcBase.HairHighlight);
+        customize.SetByIndex(8,  (CustomizeValue) enpcBase.SkinColor);
+        customize.SetByIndex(9,  (CustomizeValue) enpcBase.EyeHeterochromia);
+        customize.SetByIndex(10, (CustomizeValue) enpcBase.HairColor);
+        customize.SetByIndex(11, (CustomizeValue) enpcBase.HairHighlightColor);
+        customize.SetByIndex(12, (CustomizeValue) enpcBase.FacialFeature);
+        customize.SetByIndex(13, (CustomizeValue) enpcBase.FacialFeatureColor);
+        customize.SetByIndex(14, (CustomizeValue) enpcBase.Eyebrows);
+        customize.SetByIndex(15, (CustomizeValue) enpcBase.EyeColor);
+        customize.SetByIndex(16, (CustomizeValue) enpcBase.EyeShape);
+        customize.SetByIndex(17, (CustomizeValue) enpcBase.Nose);
+        customize.SetByIndex(18, (CustomizeValue) enpcBase.Jaw);
+        customize.SetByIndex(19, (CustomizeValue) enpcBase.Mouth);
+        customize.SetByIndex(20, (CustomizeValue) enpcBase.LipColor);
+        customize.SetByIndex(21, (CustomizeValue) enpcBase.BustOrTone1);
+        customize.SetByIndex(22, (CustomizeValue) enpcBase.ExtraFeature1);
+        customize.SetByIndex(23, (CustomizeValue) enpcBase.ExtraFeature2OrBust);
+        customize.SetByIndex(24, (CustomizeValue) enpcBase.FacePaint);
+        customize.SetByIndex(25, (CustomizeValue) enpcBase.FacePaintColor);
 
         if (customize.BodyType.Value != 1
          || !CustomizationOptions.Races.Contains(customize.Race)
          || !CustomizationOptions.Clans.Contains(customize.Clan)
          || !CustomizationOptions.Genders.Contains(customize.Gender))
-            return (false, Customize.Default);
+            return (false, CustomizeArray.Default);
 
         return (true, customize);
     }

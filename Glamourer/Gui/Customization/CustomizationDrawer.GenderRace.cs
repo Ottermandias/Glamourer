@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Dalamud.Interface;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;

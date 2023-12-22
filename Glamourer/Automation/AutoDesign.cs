@@ -1,10 +1,10 @@
 ﻿using System;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
-using Glamourer.Structs;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Automation;
 
@@ -74,7 +74,7 @@ public class AutoDesign
         var ret = new JObject
         {
             ["Gearset"]  = GearsetIndex,
-            ["JobGroup"] = Jobs.Id,
+            ["JobGroup"] = Jobs.Id.Id,
         };
 
         return ret;

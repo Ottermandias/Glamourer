@@ -4,7 +4,7 @@ using System.Reflection;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
@@ -22,13 +22,12 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
 
     private Exception? _terminate;
 
-    private Customize        _customize = Customize.Default;
+    private CustomizeArray   _customize = CustomizeArray.Default;
     private CustomizationSet _set       = null!;
 
-    public Customize Customize
+    public CustomizeArray Customize
         => _customize;
 
-    public CustomizeFlag CurrentFlag { get; private set; }
     public CustomizeFlag Changed     { get; private set; }
     public CustomizeFlag ChangeApply { get; private set; }
 
@@ -47,18 +46,16 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
     public void Dispose()
         => _legacyTattoo?.Dispose();
 
-    public bool Draw(Customize current, bool locked, bool lockedRedraw)
+    public bool Draw(CustomizeArray current, bool locked, bool lockedRedraw)
     {
-        CurrentFlag = CustomizeFlagExtensions.All;
         _withApply  = false;
         Init(current, locked, lockedRedraw);
 
         return DrawInternal();
     }
 
-    public bool Draw(Customize current, CustomizeFlag apply, bool locked, bool lockedRedraw)
+    public bool Draw(CustomizeArray current, CustomizeFlag apply, bool locked, bool lockedRedraw)
     {
-        CurrentFlag   = CustomizeFlagExtensions.All;
         ChangeApply   = apply;
         _initialApply = apply;
         _withApply    = !_config.HideApplyCheckmarks;
@@ -66,12 +63,12 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
         return DrawInternal();
     }
 
-    private void Init(Customize current, bool locked, bool lockedRedraw)
+    private void Init(CustomizeArray current, bool locked, bool lockedRedraw)
     {
         UpdateSizes();
-        _terminate = null;
-        Changed    = 0;
-        _customize.Load(current);
+        _terminate    = null;
+        Changed       = 0;
+        _customize    = current;
         _locked       = locked;
         _lockedRedraw = lockedRedraw;
     }
@@ -156,20 +153,20 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
         for (var i = 0; i < CustomizeArray.Size; ++i)
         {
             using var id    = ImRaii.PushId(i);
-            int       value = _customize.Data.Data[i];
+            int       value = _customize.Data[i];
             ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
             if (ImGui.InputInt(string.Empty, ref value, 0, 0))
             {
                 var newValue = (byte)Math.Clamp(value, 0, byte.MaxValue);
-                if (newValue != _customize.Data.Data[i])
+                if (newValue != _customize.Data[i])
                     foreach (var flag in Enum.GetValues<CustomizeIndex>())
                     {
-                        var (j, mask) = flag.ToByteAndMask();
+                        var (j, _) = flag.ToByteAndMask();
                         if (j == i)
                             Changed |= flag.ToFlag();
                     }
 
-                _customize.Data.Data[i] = newValue;
+                _customize.Data[i] = newValue;
             }
         }
 

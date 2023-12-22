@@ -8,7 +8,6 @@ using Dalamud.Interface.Utility;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Services;
-using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;

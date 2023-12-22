@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Numerics;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
@@ -13,7 +15,7 @@ public partial class CustomizationDrawer
 
     private void DrawIconSelector(CustomizeIndex index)
     {
-        using var _        = SetId(index);
+        using var id       = SetId(index);
         using var bigGroup = ImRaii.Group();
         var       label    = _currentOption;
 
@@ -28,7 +30,7 @@ public partial class CustomizationDrawer
         }
 
         var icon = _service.Service.GetIcon(custom!.Value.IconId);
-        using (var disabled = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw))
+        using (_ = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw))
         {
             if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
                 ImGui.OpenPopup(IconSelectorPopup);
@@ -37,7 +39,7 @@ public partial class CustomizationDrawer
         ImGuiUtil.HoverIconTooltip(icon, _iconSize);
 
         ImGui.SameLine();
-        using (var group = ImRaii.Group())
+        using (_ = ImRaii.Group())
         {
             DataInputInt(current, npc);
             if (_lockedRedraw && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
@@ -118,16 +120,16 @@ public partial class CustomizationDrawer
             ImGui.Dummy(new Vector2(ImGui.GetFrameHeight()));
         }
 
-        var oldValue = _customize.Data.At(_currentIndex.ToByteAndMask().ByteIdx);
-        var tmp      = (int)oldValue;
+        var oldValue = _customize.AtIndex(_currentIndex.ToByteAndMask().ByteIdx);
+        var tmp      = (int)oldValue.Value;
         ImGui.SetNextItemWidth(_inputIntSize);
         if (ImGui.InputInt("##text", ref tmp, 1, 1))
         {
             tmp = Math.Clamp(tmp, 0, byte.MaxValue);
-            if (tmp != oldValue)
+            if (tmp != oldValue.Value)
             {
-                _customize.Data.Set(_currentIndex.ToByteAndMask().ByteIdx, (byte)tmp);
-                var changes = (byte)tmp ^ oldValue;
+                _customize.SetByIndex(_currentIndex.ToByteAndMask().ByteIdx, (CustomizeValue)tmp);
+                var changes = (byte)tmp ^ oldValue.Value;
                 Changed |= ((changes & 0x01) == 0x01 ? CustomizeFlag.FacialFeature1 : 0)
                   | ((changes & 0x02) == 0x02 ? CustomizeFlag.FacialFeature2 : 0)
                   | ((changes & 0x04) == 0x04 ? CustomizeFlag.FacialFeature3 : 0)

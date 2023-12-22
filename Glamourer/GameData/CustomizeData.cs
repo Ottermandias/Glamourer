@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
-namespace Glamourer.Customization;
+namespace Glamourer.GameData;
 
 // Any customization value can be represented in 8 bytes by its ID,
 // a byte value, an optional value-id and an optional icon or color.

@@ -32,7 +32,7 @@ public class JobPanel(JobService _jobs) : IDebugTabTree
 
         foreach (var (id, job) in _jobs.Jobs)
         {
-            ImGuiUtil.DrawTableColumn(id.ToString("D3"));
+            ImGuiUtil.DrawTableColumn(id.Id.ToString("D3"));
             ImGuiUtil.DrawTableColumn(job.Name);
             ImGuiUtil.DrawTableColumn(job.Abbreviation);
         }
@@ -68,7 +68,7 @@ public class JobPanel(JobService _jobs) : IDebugTabTree
 
         foreach (var (id, group) in _jobs.JobGroups)
         {
-            ImGuiUtil.DrawTableColumn(id.ToString("D3"));
+            ImGuiUtil.DrawTableColumn(id.Id.ToString("D3"));
             ImGuiUtil.DrawTableColumn(group.Name);
             ImGuiUtil.DrawTableColumn(group.Count.ToString());
         }

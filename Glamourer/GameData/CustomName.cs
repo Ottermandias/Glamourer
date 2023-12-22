@@ -1,6 +1,6 @@
-﻿namespace Glamourer.Customization;
+﻿namespace Glamourer.GameData;
 
-// Localization from the game files directly.
+/// <summary> For localization from the game files directly. </summary>
 public enum CustomName
 {
     MidlanderM,

@@ -3,12 +3,12 @@ using System.Text;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Penumbra.GameData.Structs;
 
-namespace Glamourer.Customization;
+namespace Glamourer.GameData;
 
 public unsafe struct NpcData
 {
     public        string          Name;
-    public        Customize       Customize;
+    public        CustomizeArray  Customize;
     private fixed byte            _equip[40];
     public        CharacterWeapon Mainhand;
     public        CharacterWeapon Offhand;

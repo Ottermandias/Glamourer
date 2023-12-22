@@ -1,5 +1,4 @@
 ﻿using Glamourer.Automation;
-using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -12,7 +11,6 @@ using Penumbra.GameData.Structs;
 using System;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
-using Glamourer.Structs;
 using Penumbra.GameData.DataContainers;
 
 namespace Glamourer.State;
@@ -114,7 +112,7 @@ public class StateListener : IDisposable
         _creatingIdentifier = actor.GetIdentifier(_actors);
 
         ref var modelId   = ref *(uint*)modelPtr;
-        ref var customize = ref *(Customize*)customizePtr;
+        ref var customize = ref *(CustomizeArray*)customizePtr;
         if (_autoDesignApplier.Reduce(actor, _creatingIdentifier, out _creatingState))
         {
             switch (UpdateBaseData(actor, _creatingState, modelId, customizePtr, equipDataPtr))
@@ -140,7 +138,7 @@ public class StateListener : IDisposable
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
     }
 
-    private unsafe void OnCustomizeChange(Model model, Ref<Customize> customize)
+    private unsafe void OnCustomizeChange(Model model, Ref<CustomizeArray> customize)
     {
         if (!model.IsHuman)
             return;
@@ -156,7 +154,7 @@ public class StateListener : IDisposable
         UpdateCustomize(actor, state, ref customize.Value, false);
     }
 
-    private void UpdateCustomize(Actor actor, ActorState state, ref Customize customize, bool checkTransform)
+    private void UpdateCustomize(Actor actor, ActorState state, ref CustomizeArray customize, bool checkTransform)
     {
         switch (UpdateBaseData(actor, state, customize, checkTransform))
         {
@@ -515,7 +513,7 @@ public class StateListener : IDisposable
         if (isHuman)
             state.BaseData = _manager.FromActor(actor, false, false);
         else
-            state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, equipData);
+            state.BaseData.LoadNonHuman(modelId, *(CustomizeArray*)customizeData, equipData);
 
         return UpdateState.Change;
     }
@@ -526,7 +524,7 @@ public class StateListener : IDisposable
     /// only if we kept track of state of someone who went to the aesthetician,
     /// or if they used other tools to change things.
     /// </summary>
-    private UpdateState UpdateBaseData(Actor actor, ActorState state, Customize customize, bool checkTransform)
+    private UpdateState UpdateBaseData(Actor actor, ActorState state, CustomizeArray customize, bool checkTransform)
     {
         // Customize array does not agree between game object and draw object => transformation.
         if (checkTransform && !actor.GetCustomize().Equals(customize))
@@ -537,7 +535,7 @@ public class StateListener : IDisposable
             return UpdateState.NoChange; // TODO: handle wrong base data.
 
         // Update customize base state.
-        state.BaseData.Customize.Load(customize);
+        state.BaseData.Customize = customize;
         return UpdateState.Change;
     }
 

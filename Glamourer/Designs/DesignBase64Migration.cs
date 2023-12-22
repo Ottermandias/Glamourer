@@ -1,7 +1,5 @@
 ﻿using System;
-using Glamourer.Customization;
 using Glamourer.Services;
-using Glamourer.Structs;
 using OtterGui;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -62,7 +60,7 @@ public class DesignBase64Migration
                 data.SetHatVisible((bytes[90] & 0x01) == 0);
                 data.SetVisor((bytes[90] & 0x10) != 0);
                 data.SetWeaponVisible((bytes[90] & 0x02) == 0);
-                data.ModelId = (uint)bytes[91] | ((uint)bytes[92] << 8) | ((uint)bytes[93] << 16) | ((uint)bytes[94] << 24);
+                data.ModelId = bytes[91] | ((uint)bytes[92] << 8) | ((uint)bytes[93] << 16) | ((uint)bytes[94] << 24);
                 break;
             }
             case 5:
@@ -73,7 +71,7 @@ public class DesignBase64Migration
                 data.SetHatVisible((bytes[90] & 0x01) == 0);
                 data.SetVisor((bytes[90] & 0x10) != 0);
                 data.SetWeaponVisible((bytes[90] & 0x02) == 0);
-                data.ModelId = (uint)bytes[91] | ((uint)bytes[92] << 8) | ((uint)bytes[93] << 16) | ((uint)bytes[94] << 24);
+                data.ModelId = bytes[91] | ((uint)bytes[92] << 8) | ((uint)bytes[93] << 16) | ((uint)bytes[94] << 24);
                 break;
             default: throw new Exception($"Can not parse Base64 string into design for migration:\n\tInvalid Version {bytes[0]}.");
         }
@@ -102,11 +100,11 @@ public class DesignBase64Migration
 
             if (!humans.IsHuman(data.ModelId))
             {
-                data.LoadNonHuman(data.ModelId, *(Customize*)(ptr + 4), (nint)eq);
+                data.LoadNonHuman(data.ModelId, *(CustomizeArray*)(ptr + 4), (nint)eq);
                 return data;
             }
 
-            data.Customize.Load(*(Customize*)(ptr + 4));
+            data.Customize = *(CustomizeArray*)(ptr + 4);
             foreach (var (slot, idx) in EquipSlotExtensions.EqdpSlots.WithIndex())
             {
                 var mdl  = eq[idx];
@@ -187,7 +185,7 @@ public class DesignBase64Migration
           | (equipFlags.HasFlag(EquipFlag.Wrist) ? 0x02 : 0)
           | (equipFlags.HasFlag(EquipFlag.RFinger) ? 0x04 : 0)
           | (equipFlags.HasFlag(EquipFlag.LFinger) ? 0x08 : 0));
-        save.Customize.Write((nint)data + 4);
+        save.Customize.Write(data + 4);
         ((CharacterWeapon*)(data + 30))[0] = save.Item(EquipSlot.MainHand).Weapon(save.Stain(EquipSlot.MainHand));
         ((CharacterWeapon*)(data + 30))[1] = save.Item(EquipSlot.OffHand).Weapon(save.Stain(EquipSlot.OffHand));
         foreach (var slot in EquipSlotExtensions.EqdpSlots)

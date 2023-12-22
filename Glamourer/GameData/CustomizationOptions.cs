@@ -10,9 +10,10 @@ using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 using Race = Penumbra.GameData.Enums.Race;
 
-namespace Glamourer.Customization;
+namespace Glamourer.GameData;
 
 // Generate everything about customization per tribe and gender.
 public partial class CustomizationOptions
@@ -66,7 +67,7 @@ public partial class CustomizationOptions
     {
         var tmp = new TemporaryData(gameData, this, log);
         _icons = new IconStorage(textures, gameData);
-        SetNames(gameData, tmp);
+        SetNames(gameData);
         foreach (var race in Clans)
         {
             foreach (var gender in Genders)
@@ -79,7 +80,7 @@ public partial class CustomizationOptions
     // Obtain localized names of customization options and race names from the game data.
     private readonly string[] _names = new string[Enum.GetValues<CustomName>().Length];
 
-    private void SetNames(IDataManager gameData, TemporaryData tmp)
+    private void SetNames(IDataManager gameData)
     {
         var subRace = gameData.GetExcelSheet<Tribe>()!;
 
@@ -122,9 +123,6 @@ public partial class CustomizationOptions
 
     private class TemporaryData
     {
-        public bool Valid
-            => _cmpFile.Valid;
-
         public CustomizationSet GetSet(SubRace race, Gender gender)
         {
             var (skin, hair) = GetColors(race, gender);
@@ -177,10 +175,8 @@ public partial class CustomizationOptions
         public TemporaryData(IDataManager gameData, CustomizationOptions options, IPluginLog log)
         {
             _options        = options;
-            _cmpFile        = new CmpFile(gameData, log);
+            _cmpFile        = new ColorParameters(gameData, log);
             _customizeSheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English)!;
-            _bnpcCustomize  = gameData.GetExcelSheet<BNpcCustomize>(ClientLanguage.English)!;
-            _enpcBase       = gameData.GetExcelSheet<ENpcBase>(ClientLanguage.English)!;
             Lobby           = gameData.GetExcelSheet<Lobby>(ClientLanguage.English)!;
             var tmp = gameData.Excel.GetType().GetMethod("GetSheet", BindingFlags.Instance | BindingFlags.NonPublic)?
                 .MakeGenericMethod(typeof(CharaMakeParams)).Invoke(gameData.Excel, new object?[]
@@ -204,10 +200,8 @@ public partial class CustomizationOptions
         private readonly ExcelSheet<CharaMakeCustomize> _customizeSheet;
         private readonly ExcelSheet<CharaMakeParams>    _listSheet;
         private readonly ExcelSheet<HairMakeType>       _hairSheet;
-        private readonly ExcelSheet<BNpcCustomize>      _bnpcCustomize;
-        private readonly ExcelSheet<ENpcBase>           _enpcBase;
         public readonly  ExcelSheet<Lobby>              Lobby;
-        private readonly CmpFile                        _cmpFile;
+        private readonly ColorParameters                _cmpFile;
 
         // Those values are shared between all races.
         private readonly CustomizeData[] _highlightPicker;
@@ -222,9 +216,17 @@ public partial class CustomizationOptions
 
 
         private CustomizeData[] CreateColorPicker(CustomizeIndex index, int offset, int num, bool light = false)
-            => _cmpFile.GetSlice(offset, num)
-                .Select((c, i) => new CustomizeData(index, (CustomizeValue)(light ? 128 + i : 0 + i), c, (ushort)(offset + i)))
-                .ToArray();
+        {
+            var ret = new CustomizeData[num];
+            var idx = 0;
+            foreach (var value in _cmpFile.GetSlice(offset, num))
+            {
+                ret[idx] = new CustomizeData(index, (CustomizeValue)(light ? 128 + idx : idx), value, (ushort)(offset + idx));
+                ++idx;
+            }
+
+            return ret;
+        }
 
 
         private void SetHairByFace(CustomizationSet set)
@@ -299,14 +301,8 @@ public partial class CustomizationOptions
         // Set customizations available if they have any options.
         private static void SetAvailability(CustomizationSet set, CharaMakeParams row)
         {
-            if (set.Race == Race.Hrothgar && set.Gender == Gender.Female)
+            if (set is { Race: Race.Hrothgar, Gender: Gender.Female })
                 return;
-
-            void Set(bool available, CustomizeIndex flag)
-            {
-                if (available)
-                    set.SetAvailable(flag);
-            }
 
             Set(true,                                            CustomizeIndex.Height);
             Set(set.Faces.Count > 0,                             CustomizeIndex.Face);
@@ -340,6 +336,13 @@ public partial class CustomizationOptions
             Set(true,                                            CustomizeIndex.SmallIris);
             Set(set.Race != Race.Hrothgar,                       CustomizeIndex.Lipstick);
             Set(set.FacePaints.Count > 0,                        CustomizeIndex.FacePaintReversed);
+            return;
+
+            void Set(bool available, CustomizeIndex flag)
+            {
+                if (available)
+                    set.SetAvailable(flag);
+            }
         }
 
         // Create a list of lists of facial features and the legacy tattoo.
@@ -347,9 +350,6 @@ public partial class CustomizationOptions
         {
             var count = set.Faces.Count;
             set.FacialFeature1 = new List<(CustomizeData, CustomizeData)>(count);
-
-            static (CustomizeData, CustomizeData) Create(CustomizeIndex i, uint data)
-                => (new CustomizeData(i, CustomizeValue.Zero, data, 0), new CustomizeData(i, CustomizeValue.Max, data, 1));
 
             set.LegacyTattoo = Create(CustomizeIndex.LegacyTattoo, 137905);
 
@@ -373,6 +373,10 @@ public partial class CustomizationOptions
             set.FacialFeature5 = tmp[4];
             set.FacialFeature6 = tmp[5];
             set.FacialFeature7 = tmp[6];
+            return;
+
+            static (CustomizeData, CustomizeData) Create(CustomizeIndex i, uint data)
+                => (new CustomizeData(i, CustomizeValue.Zero, data), new CustomizeData(i, CustomizeValue.Max, data, 1));
         }
 
         // Set the names for the given set of parameters.
@@ -414,7 +418,7 @@ public partial class CustomizationOptions
             nameArray[(int)CustomizeIndex.SmallIris]         = CustomizeIndex.SmallIris.ToDefaultName();
             nameArray[(int)CustomizeIndex.Lipstick]          = CustomizeIndex.Lipstick.ToDefaultName();
             nameArray[(int)CustomizeIndex.FacePaintReversed] = CustomizeIndex.FacePaintReversed.ToDefaultName();
-            set.OptionName = nameArray;
+            set.OptionName                                   = nameArray;
         }
 
         // Obtain available skin and hair colors for the given subrace and gender.

@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using Glamourer.Customization;
 using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Structs;
 using Glamourer.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -165,7 +163,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
             yield return (slot, item, armor.Stain);
         }
 
-        var mh = _items.Identify(EquipSlot.MainHand, mainhand.Skeleton, mainhand.Weapon, mainhand.Variant, FullEquipType.Unknown);
+        var mh = _items.Identify(EquipSlot.MainHand, mainhand.Skeleton, mainhand.Weapon, mainhand.Variant);
         if (!mh.Valid)
         {
             Glamourer.Log.Warning($"Appearance data {mainhand} for mainhand weapon invalid, item could not be identified.");

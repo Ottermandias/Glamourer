@@ -3,7 +3,7 @@ using Dalamud.Interface.Internal;
 using Dalamud.Plugin.Services;
 using Penumbra.GameData.Enums;
 
-namespace Glamourer.Customization;
+namespace Glamourer.GameData;
 
 public class CustomizationManager : ICustomizationManager
 {

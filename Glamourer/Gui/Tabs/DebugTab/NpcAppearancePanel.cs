@@ -3,14 +3,15 @@ using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
+using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Enums;
 using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
@@ -24,7 +25,7 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
         => false;
 
     private string _npcFilter       = string.Empty;
-    private bool   _customizeOrGear = false;
+    private bool   _customizeOrGear;
 
     public void Draw()
     {
@@ -48,19 +49,17 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
         ImGui.TableNextRow();
         var idx = 0;
         var remainder = ImGuiClip.FilteredClippedDraw(_npcCombo.Items, skips,
-            d => d.Name.Contains(_npcFilter, StringComparison.OrdinalIgnoreCase), Draw);
+            d => d.Name.Contains(_npcFilter, StringComparison.OrdinalIgnoreCase), DrawData);
         ImGui.TableNextColumn();
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetFrameHeightWithSpacing());
-
-
         return;
 
-        void Draw(NpcData data)
+        void DrawData(NpcData data)
         {
             using var id       = ImRaii.PushId(idx++);
             var       disabled = !_state.GetOrCreate(_objectManager.Player, out var state);
             ImGui.TableNextColumn();
-            if (ImGuiUtil.DrawDisabledButton("Apply", Vector2.Zero, string.Empty, disabled, false))
+            if (ImGuiUtil.DrawDisabledButton("Apply", Vector2.Zero, string.Empty, disabled))
             {
                 foreach (var (slot, item, stain) in _designConverter.FromDrawData(data.Equip.ToArray(), data.Mainhand, data.Offhand))
                     _state.ChangeEquip(state!, slot, item, stain, StateChanged.Source.Manual);
@@ -76,7 +75,7 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
             ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted(data.Kind is ObjectKind.BattleNpc ? "B" : "E");
 
-            using (var icon = ImRaii.PushFont(UiBuilder.IconFont))
+            using (_ = ImRaii.PushFont(UiBuilder.IconFont))
             {
                 ImGui.TableNextColumn();
                 ImGui.AlignTextToFramePadding();
@@ -86,7 +85,7 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
             using var mono = ImRaii.PushFont(UiBuilder.MonoFont);
             ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(_customizeOrGear ? data.Customize.Data.ToString() : data.WriteGear());
+            ImGui.TextUnformatted(_customizeOrGear ? data.Customize.ToString() : data.WriteGear());
         }
     }
 }

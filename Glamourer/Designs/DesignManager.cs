@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Dalamud.Utility;
-using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -25,8 +23,8 @@ public class DesignManager
     private readonly HumanModelList               _humans;
     private readonly SaveService                  _saveService;
     private readonly DesignChanged                _event;
-    private readonly List<Design>                 _designs   = new();
-    private readonly Dictionary<Guid, DesignData> _undoStore = new();
+    private readonly List<Design>                 _designs   = [];
+    private readonly Dictionary<Guid, DesignData> _undoStore = [];
 
     public IReadOnlyList<Design> Designs
         => _designs;
@@ -298,7 +296,7 @@ public class DesignManager
                 return;
             case CustomizeIndex.Clan:
             {
-                var customize = new Customize(design.DesignData.Customize.Data.Clone());
+                var customize = design.DesignData.Customize;
                 if (_customizations.ChangeClan(ref customize, (SubRace)value.Value) == 0)
                     return;
                 if (!design.SetCustomize(_customizations, customize))
@@ -308,7 +306,7 @@ public class DesignManager
             }
             case CustomizeIndex.Gender:
             {
-                var customize = new Customize(design.DesignData.Customize.Data.Clone());
+                var customize = design.DesignData.Customize;
                 if (_customizations.ChangeGender(ref customize, (Gender)(value.Value + 1)) == 0)
                     return;
                 if (!design.SetCustomize(_customizations, customize))

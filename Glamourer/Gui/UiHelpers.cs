@@ -1,9 +1,7 @@
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using Glamourer.Customization;
 using Glamourer.Services;
-using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using Lumina.Misc;
@@ -61,7 +59,7 @@ public static class UiHelpers
     {
         var       flags = (sbyte)(currentApply ? currentValue ? 1 : -1 : 0);
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
-        using (var disabled = ImRaii.Disabled(locked))
+        using (_ = ImRaii.Disabled(locked))
         {
             if (new TristateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw(
                     "##" + label, flags, out flags))

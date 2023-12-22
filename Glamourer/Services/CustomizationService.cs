@@ -2,10 +2,11 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Dalamud.Plugin.Services;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using OtterGui.Services;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Services;
 
@@ -30,13 +31,12 @@ public sealed class CustomizationService(
     public Task Awaiter
         => _task;
 
-    public (Customize NewValue, CustomizeFlag Applied, CustomizeFlag Changed) Combine(Customize oldValues, Customize newValues,
+    public (CustomizeArray NewValue, CustomizeFlag Applied, CustomizeFlag Changed) Combine(CustomizeArray oldValues, CustomizeArray newValues,
         CustomizeFlag applyWhich, bool allowUnknown)
     {
         CustomizeFlag applied = 0;
         CustomizeFlag changed = 0;
-        Customize     ret     = default;
-        ret.Load(oldValues);
+        var           ret     = oldValues;
         if (applyWhich.HasFlag(CustomizeFlag.Clan))
         {
             changed |= ChangeClan(ref ret, newValues.Clan);
@@ -247,7 +247,7 @@ public sealed class CustomizationService(
     }
 
     /// <summary> Change a clan while keeping all other customizations valid. </summary>
-    public CustomizeFlag ChangeClan(ref Customize customize, SubRace newClan)
+    public CustomizeFlag ChangeClan(ref CustomizeArray customize, SubRace newClan)
     {
         if (customize.Clan == newClan)
             return 0;
@@ -271,7 +271,7 @@ public sealed class CustomizationService(
     }
 
     /// <summary> Change a gender while keeping all other customizations valid. </summary>
-    public CustomizeFlag ChangeGender(ref Customize customize, Gender newGender)
+    public CustomizeFlag ChangeGender(ref CustomizeArray customize, Gender newGender)
     {
         if (customize.Gender == newGender)
             return 0;
@@ -288,7 +288,7 @@ public sealed class CustomizationService(
         return FixValues(set, ref customize) | CustomizeFlag.Gender;
     }
 
-    private static CustomizeFlag FixValues(CustomizationSet set, ref Customize customize)
+    private static CustomizeFlag FixValues(CustomizationSet set, ref CustomizeArray customize)
     {
         CustomizeFlag flags = 0;
         foreach (var idx in CustomizationExtensions.AllBasic)

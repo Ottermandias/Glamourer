@@ -1,7 +1,6 @@
 ﻿using Dalamud.Interface.Internal.Notifications;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using Glamourer.Services;
-using Glamourer.Structs;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
@@ -85,12 +84,12 @@ public class DesignBase
     internal CrestFlag   ApplyCrest   = CrestExtensions.AllRelevant;
     private  DesignFlags _designFlags = DesignFlags.ApplyHatVisible | DesignFlags.ApplyVisorState | DesignFlags.ApplyWeaponVisible;
 
-    public bool SetCustomize(CustomizationService customizationService, Customize customize)
+    public bool SetCustomize(CustomizationService customizationService, CustomizeArray customize)
     {
         if (customize.Equals(_designData.Customize))
             return false;
 
-        _designData.Customize.Load(customize);
+        _designData.Customize = customize;
         CustomizationSet = customizationService.Service.GetList(customize.Clan, customize.Gender);
         return true;
     }
@@ -443,7 +442,7 @@ public class DesignBase
         {
             design._designData.ModelId = 0;
             design._designData.IsHuman = true;
-            design.SetCustomize(customizations, Customize.Default);
+            design.SetCustomize(customizations, CustomizeArray.Default);
             Glamourer.Messager.NotificationMessage("The loaded design does not contain any customization data, reset to default.",
                 NotificationType.Warning);
             return;

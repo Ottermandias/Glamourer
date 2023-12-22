@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using Glamourer.Customization;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -126,15 +124,14 @@ public unsafe class ModelEvaluationPanel(
                 model.AsHuman->Head.Value == 0 ? actor.GetArmor(EquipSlot.Head) : CharacterArmor.Empty);
     }
 
-    private void DrawWeaponState(Actor actor, Model model)
+    private static void DrawWeaponState(Actor actor, Model model)
     {
         using var id = ImRaii.PushId("WeaponState");
         ImGuiUtil.DrawTableColumn("Weapon State");
         ImGuiUtil.DrawTableColumn(actor.IsCharacter
             ? actor.AsCharacter->DrawData.IsWeaponHidden ? "Hidden" : "Visible"
             : "No Character");
-        var text = string.Empty;
-
+        string text;
         if (!model.IsHuman)
         {
             text = "No Model";
@@ -146,19 +143,14 @@ public unsafe class ModelEvaluationPanel(
         else
         {
             var weapon = (DrawObject*)model.AsDrawObject->Object.ChildObject;
-            if ((weapon->Flags & 0x09) == 0x09)
-                text = "Visible";
-            else
-                text = "Hidden";
+            text = (weapon->Flags & 0x09) == 0x09 ? "Visible" : "Hidden";
         }
 
         ImGuiUtil.DrawTableColumn(text);
         ImGui.TableNextColumn();
-        if (!model.IsHuman)
-            return;
     }
 
-    private void DrawWetness(Actor actor, Model model)
+    private static void DrawWetness(Actor actor, Model model)
     {
         using var id = ImRaii.PushId("Wetness");
         ImGuiUtil.DrawTableColumn("Wetness");
@@ -212,12 +204,12 @@ public unsafe class ModelEvaluationPanel(
     private void DrawCustomize(Actor actor, Model model)
     {
         using var id = ImRaii.PushId("Customize");
-        var actorCustomize = new Customize(actor.IsCharacter
+        var actorCustomize = actor.IsCharacter
             ? *(CustomizeArray*)&actor.AsCharacter->DrawData.CustomizeData
-            : new CustomizeArray());
-        var modelCustomize = new Customize(model.IsHuman
+            : new CustomizeArray();
+        var modelCustomize = model.IsHuman
             ? *(CustomizeArray*)model.AsHuman->Customize.Data
-            : new CustomizeArray());
+            : new CustomizeArray();
         foreach (var type in Enum.GetValues<CustomizeIndex>())
         {
             using var id2 = ImRaii.PushId((int)type);
@@ -235,7 +227,7 @@ public unsafe class ModelEvaluationPanel(
                 var shift    = BitOperations.TrailingZeroCount(mask);
                 var newValue = value + (1 << shift);
                 modelCustomize.Set(type, (CustomizeValue)newValue);
-                _changeCustomizeService.UpdateCustomize(model, modelCustomize.Data);
+                _changeCustomizeService.UpdateCustomize(model, modelCustomize);
             }
 
             ImGui.SameLine();
@@ -246,14 +238,14 @@ public unsafe class ModelEvaluationPanel(
                 var shift    = BitOperations.TrailingZeroCount(mask);
                 var newValue = value - (1 << shift);
                 modelCustomize.Set(type, (CustomizeValue)newValue);
-                _changeCustomizeService.UpdateCustomize(model, modelCustomize.Data);
+                _changeCustomizeService.UpdateCustomize(model, modelCustomize);
             }
 
             ImGui.SameLine();
             if (ImGui.SmallButton("Reset"))
             {
                 modelCustomize.Set(type, actorCustomize[type]);
-                _changeCustomizeService.UpdateCustomize(model, modelCustomize.Data);
+                _changeCustomizeService.UpdateCustomize(model, modelCustomize);
             }
         }
     }

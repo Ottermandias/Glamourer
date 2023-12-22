@@ -1,4 +1,4 @@
-﻿using Glamourer.Customization;
+﻿using Glamourer.GameData;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs;

@@ -1,11 +1,11 @@
 ﻿using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
-using Penumbra.GameData;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Customization;
 
@@ -15,12 +15,12 @@ public partial class CustomizationDrawer
 
     private void DrawColorPicker(CustomizeIndex index)
     {
-        using var _ = SetId(index);
+        using var id = SetId(index);
         var (current, custom) = GetCurrentCustomization(index);
 
         var color = ImGui.ColorConvertU32ToFloat4(current < 0 ? ImGui.GetColorU32(ImGuiCol.FrameBg) : custom.Color);
 
-        using (var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * ImGuiHelpers.GlobalScale, current < 0))
+        using (_ = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * ImGuiHelpers.GlobalScale, current < 0))
         {
             if (ImGui.ColorButton($"{_customize[index].Value}##color", color, ImGuiColorEditFlags.None, _framedIconSize))
                 ImGui.OpenPopup(ColorPickerPopupName);
@@ -39,7 +39,7 @@ public partial class CustomizationDrawer
 
         ImGui.SameLine();
 
-        using (var group = ImRaii.Group())
+        using (_ = ImRaii.Group())
         {
             DataInputInt(current, npc);
             if (_withApply)
@@ -89,7 +89,7 @@ public partial class CustomizationDrawer
     {
         var current = _set.DataByValue(index, _customize[index], out var custom, _customize.Face);
         if (_set.IsAvailable(index) && current < 0)
-            return (current, new CustomizeData(index, _customize[index], 0, 0));
+            return (current, new CustomizeData(index, _customize[index]));
 
         return (current, custom!.Value);
     }

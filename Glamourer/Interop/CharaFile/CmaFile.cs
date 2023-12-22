@@ -42,7 +42,7 @@ public sealed class CmaFile
         var byteData = Convert.FromHexString(bytes);
         fixed (byte* ptr = byteData)
         {
-            data.Customize.Data.Read(ptr);
+            data.Customize.Read(ptr);
         }
     }
 
@@ -64,7 +64,7 @@ public sealed class CmaFile
                 data.SetStain(slot, armor.Stain);
             }
 
-            data.Customize.Data.Read(ptr);
+            data.Customize.Read(ptr);
         }
     }
 

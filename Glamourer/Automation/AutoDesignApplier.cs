@@ -4,14 +4,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Structs;
 using Glamourer.Unlocks;
 using OtterGui.Classes;
 using Penumbra.GameData.Actors;
@@ -209,7 +207,7 @@ public class AutoDesignApplier : IDisposable
         if (!GetPlayerSet(id, out var set))
         {
             if (_state.TryGetValue(id, out var s))
-                s.LastJob = (byte)newJob.Id;
+                s.LastJob = newJob.Id;
             return;
         }
 

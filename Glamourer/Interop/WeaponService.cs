@@ -5,7 +5,6 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
-using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -14,18 +13,15 @@ namespace Glamourer.Interop;
 public unsafe class WeaponService : IDisposable
 {
     private readonly WeaponLoading     _event;
-    private readonly CrestService      _crestService;
     private readonly ThreadLocal<bool> _inUpdate = new(() => false);
 
 
     private readonly delegate* unmanaged[Stdcall]<DrawDataContainer*, uint, ulong, byte, byte, byte, byte, void>
         _original;
 
-
-    public WeaponService(WeaponLoading @event, IGameInteropProvider interop, CrestService crestService)
+    public WeaponService(WeaponLoading @event, IGameInteropProvider interop)
     {
-        _event        = @event;
-        _crestService = crestService;
+        _event = @event;
         _loadWeaponHook =
             interop.HookFromAddress<LoadWeaponDelegate>((nint)DrawDataContainer.MemberFunctionPointers.LoadWeapon, LoadWeaponDetour);
         _original =
@@ -73,7 +69,7 @@ public unsafe class WeaponService : IDisposable
                 _event.Invoke(actor, EquipSlot.MainHand, ref tmpWeapon);
 
             _loadWeaponHook.Original(drawData, slot, weapon.Value, redrawOnEquality, unk2, skipGameObject, unk4);
-            
+
             if (tmpWeapon.Value != weapon.Value)
             {
                 if (tmpWeapon.Skeleton.Id == 0)

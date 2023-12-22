@@ -7,7 +7,6 @@ using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui.Raii;
 using Penumbra.Api.Enums;
@@ -76,7 +75,7 @@ public class PenumbraChangedItemTooltip : IDisposable
             case EquipSlot.OffHand when !CanApplyWeapon(EquipSlot.OffHand,   item):
                 break;
             case EquipSlot.RFinger:
-                using (var tt = !openTooltip ? null : ImRaii.Tooltip())
+                using (_ = !openTooltip ? null : ImRaii.Tooltip())
                 {
                     ImGui.TextUnformatted($"{prefix}Right-Click to apply to current actor (Right Finger).");
                     ImGui.TextUnformatted($"{prefix}Shift + Right-Click to apply to current actor (Left Finger).");
@@ -92,7 +91,7 @@ public class PenumbraChangedItemTooltip : IDisposable
 
                 break;
             default:
-                using (var tt = !openTooltip ? null : ImRaii.Tooltip())
+                using (_ = !openTooltip ? null : ImRaii.Tooltip())
                 {
                     ImGui.TextUnformatted($"{prefix}Right-Click to apply to current actor.");
                     if (last.Valid)

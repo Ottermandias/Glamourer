@@ -2,7 +2,6 @@
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using OtterGui.Classes;
@@ -15,7 +14,7 @@ namespace Glamourer.Interop;
 /// Changes in Race, body type or Gender are probably ignored.
 /// This operates on draw objects, not game objects.
 /// </summary>
-public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Customize>>, ChangeCustomizeService.Priority>
+public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<CustomizeArray>>, ChangeCustomizeService.Priority>
 {
     private readonly PenumbraReloaded                                        _penumbraReloaded;
     private readonly IGameInteropProvider                                    _interop;
@@ -81,10 +80,11 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
     {
         if (!InUpdate.InMethod)
         {
-            var customize = new Ref<Customize>(new Customize(*(CustomizeArray*)data));
+            var customize = new Ref<CustomizeArray>(*(CustomizeArray*)data);
             Invoke(this, (Model)human, customize);
-            ((Customize*)data)->Load(customize.Value);
+            *(CustomizeArray*)data = customize.Value;
         }
+
         return _changeCustomizeHook.Original(human, data, skipEquipment);
     }
 }

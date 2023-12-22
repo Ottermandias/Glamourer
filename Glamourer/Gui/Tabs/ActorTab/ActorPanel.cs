@@ -6,7 +6,6 @@ using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Automation;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui.Customization;
@@ -14,7 +13,6 @@ using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -173,21 +171,21 @@ public class ActorPanel(
 
     private void DrawEquipmentMetaToggles()
     {
-        using (var _ = ImRaii.Group())
+        using (_ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.HatState, _stateManager, _state!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.Head, _stateManager, _state!));
         }
 
         ImGui.SameLine();
-        using (var _ = ImRaii.Group())
+        using (_ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.VisorState, _stateManager, _state!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.Body, _stateManager, _state!));
         }
 
         ImGui.SameLine();
-        using (var _ = ImRaii.Group())
+        using (_ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.WeaponState, _stateManager, _state!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.OffHand, _stateManager, _state!));
@@ -199,7 +197,7 @@ public class ActorPanel(
         var names     = _modelChara[_state!.ModelData.ModelId];
         var turnHuman = ImGui.Button("Turn Human");
         ImGui.Separator();
-        using (var box = ImRaii.ListBox("##MonsterList",
+        using (_ = ImRaii.ListBox("##MonsterList",
                    new Vector2(ImGui.GetContentRegionAvail().X, 10 * ImGui.GetTextLineHeightWithSpacing())))
         {
             if (names.Count == 0)
@@ -211,14 +209,14 @@ public class ActorPanel(
 
         ImGui.Separator();
         ImGui.TextUnformatted("Customization Data");
-        using (var font = ImRaii.PushFont(UiBuilder.MonoFont))
+        using (_ = ImRaii.PushFont(UiBuilder.MonoFont))
         {
-            foreach (var b in _state.ModelData.Customize.Data)
+            foreach (var b in _state.ModelData.Customize)
             {
-                using (var g = ImRaii.Group())
+                using (_ = ImRaii.Group())
                 {
-                    ImGui.TextUnformatted($" {b:X2}");
-                    ImGui.TextUnformatted($"{b,3}");
+                    ImGui.TextUnformatted($" {b.Value:X2}");
+                    ImGui.TextUnformatted($"{b.Value,3}");
                 }
 
                 ImGui.SameLine();
@@ -232,11 +230,11 @@ public class ActorPanel(
 
         ImGui.Separator();
         ImGui.TextUnformatted("Equipment Data");
-        using (var font = ImRaii.PushFont(UiBuilder.MonoFont))
+        using (_ = ImRaii.PushFont(UiBuilder.MonoFont))
         {
             foreach (var b in _state.ModelData.GetEquipmentBytes())
             {
-                using (var g = ImRaii.Group())
+                using (_ = ImRaii.Group())
                 {
                     ImGui.TextUnformatted($" {b:X2}");
                     ImGui.TextUnformatted($"{b,3}");
@@ -298,8 +296,8 @@ public class ActorPanel(
             BorderColor = ColorId.ActorUnavailable.Value(),
         };
 
-    private string      _newName   = string.Empty;
-    private DesignBase? _newDesign = null;
+    private string      _newName = string.Empty;
+    private DesignBase? _newDesign;
 
     private void SaveDesignOpen()
     {

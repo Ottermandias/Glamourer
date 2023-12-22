@@ -3,7 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Utility;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Unlocks;

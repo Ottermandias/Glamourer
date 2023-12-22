@@ -1,11 +1,9 @@
 ﻿using System.Linq;
-using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
-using Glamourer.Structs;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -40,7 +38,7 @@ public class StateApplier(UpdateSlotService _updateSlot, VisorService _visor, We
     /// Change the customization values of actors either by applying them via update or redrawing,
     /// this depends on whether the changes include changes to Race, Gender, Body Type or Face. 
     /// </summary>
-    public unsafe void ChangeCustomize(ActorData data, in Customize customize, ActorState? state = null)
+    public unsafe void ChangeCustomize(ActorData data, in CustomizeArray customize, ActorState? _ = null)
     {
         foreach (var actor in data.Objects)
         {
@@ -48,15 +46,15 @@ public class StateApplier(UpdateSlotService _updateSlot, VisorService _visor, We
             if (!mdl.IsCharacterBase)
                 continue;
 
-            var flags = Customize.Compare(mdl.GetCustomize(), customize);
+            var flags = CustomizeArray.Compare(mdl.GetCustomize(), customize);
             if (!flags.RequiresRedraw() || !mdl.IsHuman)
             {
-                _changeCustomize.UpdateCustomize(mdl, customize.Data);
+                _changeCustomize.UpdateCustomize(mdl, customize);
             }
             else if (data.Objects.Count > 1 && _objects.IsInGPose && !actor.IsGPoseOrCutscene)
             {
-                var mdlCustomize = (Customize*)&mdl.AsHuman->Customize;
-                mdlCustomize->Load(customize);
+                var mdlCustomize = (CustomizeArray*)&mdl.AsHuman->Customize;
+                *mdlCustomize = customize;
                 _penumbra.RedrawObject(actor, RedrawType.AfterGPose);
             }
             else
@@ -66,7 +64,7 @@ public class StateApplier(UpdateSlotService _updateSlot, VisorService _visor, We
         }
     }
 
-    /// <inheritdoc cref="ChangeCustomize(ActorData, in Customize, ActorState?)"/>
+    /// <inheritdoc cref="ChangeCustomize(ActorData, in CustomizeArray, ActorState?)"/>
     public ActorData ChangeCustomize(ActorState state, bool apply)
     {
         var data = GetData(state);

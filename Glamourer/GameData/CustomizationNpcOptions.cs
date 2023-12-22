@@ -1,12 +1,14 @@
 ﻿using Penumbra.GameData.Enums;
 using System.Collections.Generic;
 using System.Linq;
+using Penumbra.GameData.Structs;
 
-namespace Glamourer.Customization;
+namespace Glamourer.GameData;
 
 public static class CustomizationNpcOptions
 {
-    public static Dictionary<(SubRace, Gender), IReadOnlyList<(CustomizeIndex, CustomizeValue)>> CreateNpcData(CustomizationSet[] sets, NpcCustomizeSet npcCustomizeSet)
+    public static Dictionary<(SubRace, Gender), IReadOnlyList<(CustomizeIndex, CustomizeValue)>> CreateNpcData(CustomizationSet[] sets,
+        NpcCustomizeSet npcCustomizeSet)
     {
         var dict = new Dictionary<(SubRace, Gender), HashSet<(CustomizeIndex, CustomizeValue)>>();
         var customizeIndices = new[]

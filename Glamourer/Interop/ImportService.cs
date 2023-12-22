@@ -4,13 +4,14 @@ using System.IO;
 using System.Linq;
 using Dalamud.Interface.DragDrop;
 using Dalamud.Interface.Internal.Notifications;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Interop.CharaFile;
 using Glamourer.Services;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui.Classes;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Files;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
@@ -139,7 +140,7 @@ public class ImportService(CustomizationService _customizations, IDragDropManage
         return true;
     }
 
-    public bool SaveDesignAsDat(string path, in Customize input, string description)
+    public bool SaveDesignAsDat(string path, in CustomizeArray input, string description)
     {
         if (!Verify(input, out var voice))
             return false;
@@ -168,7 +169,7 @@ public class ImportService(CustomizationService _customizations, IDragDropManage
         }
     }
 
-    public bool Verify(in Customize input, out byte voice, byte? inputVoice = null)
+    public bool Verify(in CustomizeArray input, out byte voice, byte? inputVoice = null)
     {
         voice = 0;
         if (_customizations.ValidateClan(input.Clan, input.Race, out _, out _).Length > 0)

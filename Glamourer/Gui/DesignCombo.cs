@@ -4,7 +4,7 @@ using System.Linq;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Glamourer.Automation;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Services;
@@ -13,6 +13,7 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Log;
 using OtterGui.Widgets;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui;
 

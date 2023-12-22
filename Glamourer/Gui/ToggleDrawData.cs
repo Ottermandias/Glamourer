@@ -2,7 +2,6 @@
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.State;
-using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui;

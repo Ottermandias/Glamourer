@@ -10,7 +10,6 @@ using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Services;
-using Glamourer.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -516,7 +515,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         var jobs = conditions["JobGroup"]?.ToObject<int>() ?? -1;
         if (jobs >= 0)
         {
-            if (!_jobs.JobGroups.TryGetValue((ushort)jobs, out var jobGroup))
+            if (!_jobs.JobGroups.TryGetValue((JobGroupId)jobs, out var jobGroup))
             {
                 Glamourer.Messager.NotificationMessage(
                     $"Error parsing automatically applied design for set {setName}: The job condition {jobs} does not exist.",

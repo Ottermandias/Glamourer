@@ -2,7 +2,6 @@
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.Internal.Notifications;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Interop;
@@ -12,7 +11,7 @@ using ImGuiNET;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using CustomizeIndex = Glamourer.Customization.CustomizeIndex;
+using CustomizeIndex = Penumbra.GameData.Enums.CustomizeIndex;
 
 namespace Glamourer.State;
 
@@ -107,7 +106,7 @@ public unsafe class FunModule : IDisposable
         }
     }
 
-    public void ApplyFun(Actor actor, Span<CharacterArmor> armor, ref Customize customize)
+    public void ApplyFun(Actor actor, Span<CharacterArmor> armor, ref CustomizeArray customize)
     {
         if (!ValidFunTarget(actor))
             return;
@@ -181,7 +180,7 @@ public unsafe class FunModule : IDisposable
         }
     }
 
-    public void ApplyOops(ref Customize customize)
+    public void ApplyOops(ref CustomizeArray customize)
     {
         if (_codes.EnabledOops == Race.Unknown)
             return;
@@ -193,7 +192,7 @@ public unsafe class FunModule : IDisposable
         _customizations.ChangeClan(ref customize, targetClan);
     }
 
-    public void ApplyIndividual(ref Customize customize)
+    public void ApplyIndividual(ref CustomizeArray customize)
     {
         if (!_codes.EnabledIndividual)
             return;
@@ -209,7 +208,7 @@ public unsafe class FunModule : IDisposable
         }
     }
 
-    public void Apply63(ref Customize customize)
+    public void Apply63(ref CustomizeArray customize)
     {
         if (!_codes.Enabled63 || customize.Race is Race.Hrothgar) // TODO Female Hrothgar
             return;
@@ -217,7 +216,7 @@ public unsafe class FunModule : IDisposable
         _customizations.ChangeGender(ref customize, customize.Gender is Gender.Male ? Gender.Female : Gender.Male);
     }
 
-    public void ApplySizing(Actor actor, ref Customize customize)
+    public void ApplySizing(Actor actor, ref CustomizeArray customize)
     {
         if (_codes.EnabledSizing == CodeService.Sizing.None)
             return;

@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;

@@ -4,8 +4,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using OtterGui;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
-namespace Glamourer.Customization;
+namespace Glamourer.GameData;
 
 // Each Subrace and Gender combo has a customization set.
 // This describes the available customizations, their types and their names.
@@ -299,4 +300,11 @@ public class CustomizationSet
 
     private CustomizeValue HrothgarFaceHack(CustomizeValue value)
         => Race == Race.Hrothgar && value.Value is > 4 and < 9 ? value - 4 : value;
+}
+
+public static class CustomizationSetExtensions
+{
+    /// <summary> Return only the available customizations in this set and Clan or Gender. </summary>
+    public static CustomizeFlag FixApplication(this CustomizeFlag flag, CustomizationSet set)
+        => flag & (set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender);
 }

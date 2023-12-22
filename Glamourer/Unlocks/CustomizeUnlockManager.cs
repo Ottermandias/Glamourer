@@ -8,10 +8,11 @@ using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using Glamourer.Events;
 using Glamourer.Services;
 using Lumina.Excel.GeneratedSheets;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Unlocks;
 
@@ -172,7 +173,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         => UnlockDictionaryHelpers.Load(ToFilename(_saveService.FileNames), _unlocked, id => Unlockable.Any(c => c.Value.Data == id),
             "customization");
 
-    /// <summary> Create a list of all unlockable hairstyles and facepaints. </summary>
+    /// <summary> Create a list of all unlockable hairstyles and face paints. </summary>
     private static Dictionary<CustomizeData, (uint Data, string Name)> CreateUnlockableCustomizations(CustomizationService customizations,
         IDataManager gameData)
     {
