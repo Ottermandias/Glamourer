@@ -7,6 +7,7 @@ using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
+using Glamourer.Services;
 using Glamourer.State;
 using Penumbra.Api.Helpers;
 using Penumbra.GameData.Actors;
@@ -15,7 +16,7 @@ using Penumbra.String;
 
 namespace Glamourer.Api;
 
-public partial class GlamourerIpc : IDisposable
+public sealed partial class GlamourerIpc : IDisposable
 {
     public const int CurrentApiVersionMajor = 0;
     public const int CurrentApiVersionMinor = 4;
@@ -25,15 +26,18 @@ public partial class GlamourerIpc : IDisposable
     private readonly ActorManager      _actors;
     private readonly DesignConverter   _designConverter;
     private readonly AutoDesignApplier _autoDesignApplier;
+    private readonly ItemManager       _items;
 
     public GlamourerIpc(DalamudPluginInterface pi, StateManager stateManager, ObjectManager objects, ActorManager actors,
-        DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose, AutoDesignApplier autoDesignApplier)
+        DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose, AutoDesignApplier autoDesignApplier,
+        ItemManager items)
     {
         _stateManager        = stateManager;
         _objects             = objects;
         _actors              = actors;
         _designConverter     = designConverter;
         _autoDesignApplier   = autoDesignApplier;
+        _items               = items;
         _gPose               = gPose;
         _stateChangedEvent   = stateChangedEvent;
         _apiVersionProvider  = new FuncProvider<int>(pi, LabelApiVersion, ApiVersion);
@@ -76,6 +80,11 @@ public partial class GlamourerIpc : IDisposable
         _stateChangedProvider = new EventProvider<StateChanged.Type, nint, Lazy<string>>(pi, LabelStateChanged);
         _gPoseChangedProvider = new EventProvider<bool>(pi, LabelGPoseChanged);
 
+        _setItemProvider = new FuncProvider<Character?, byte, ulong, uint, int>(pi, LabelSetItem,
+            (idx, slot, item, key) => (int)SetItem(idx, (EquipSlot)slot, item, key));
+        _setItemByActorNameProvider = new FuncProvider<string, byte, ulong, uint, int>(pi, LabelSetItemByActorName,
+            (name, slot, item, key) => (int)SetItemByActorName(name, (EquipSlot)slot, item, key));
+
         _stateChangedEvent.Subscribe(OnStateChanged, StateChanged.Priority.GlamourerIpc);
         _gPose.Subscribe(OnGPoseChanged, GPoseService.Priority.GlamourerIpc);
     }
@@ -114,6 +123,9 @@ public partial class GlamourerIpc : IDisposable
         _stateChangedProvider.Dispose();
         _gPose.Unsubscribe(OnGPoseChanged);
         _gPoseChangedProvider.Dispose();
+
+        _setItemProvider.Dispose();
+        _setItemByActorNameProvider.Dispose();
     }
 
     private IEnumerable<ActorIdentifier> FindActors(string actorName)

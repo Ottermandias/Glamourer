@@ -1,10 +1,14 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Glamourer.Api;
 using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
@@ -16,15 +20,20 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
     public bool Disabled
         => false;
 
-    private int    _gameObjectIndex;
-    private string _gameObjectName = string.Empty;
-    private string _base64Apply    = string.Empty;
+    private int                             _gameObjectIndex;
+    private CustomItemId                    _customItemId;
+    private EquipSlot                       _slot           = EquipSlot.Head;
+    private string                          _gameObjectName = string.Empty;
+    private string                          _base64Apply    = string.Empty;
+    private GlamourerIpc.GlamourerErrorCode _setItemEc;
+    private GlamourerIpc.GlamourerErrorCode _setItemByActorNameEc;
 
-    public void Draw()
+    public unsafe void Draw()
     {
         ImGui.InputInt("Game Object Index", ref _gameObjectIndex, 0, 0);
         ImGui.InputTextWithHint("##gameObject", "Character Name...", ref _gameObjectName, 64);
         ImGui.InputTextWithHint("##base64",     "Design Base64...",  ref _base64Apply,    2047);
+        DrawItemIdInput();
         using var table = ImRaii.Table("##ipc", 2, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         if (!table)
             return;
@@ -104,5 +113,36 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         if (ImGui.Button("Revert##CustomizeCharacter"))
             GlamourerIpc.RevertToAutomationCharacterSubscriber(_pluginInterface)
                 .Invoke(_objectManager.Objects[_gameObjectIndex] as Character, 1337);
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelSetItem);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Set##SetItem"))
+            _setItemEc = (GlamourerIpc.GlamourerErrorCode)GlamourerIpc.SetItemSubscriber(_pluginInterface)
+                .Invoke(_objectManager.Objects[_gameObjectIndex] as Character, (byte)_slot, _customItemId.Id, 1337);
+        if (_setItemEc != GlamourerIpc.GlamourerErrorCode.Success)
+        {
+            ImGui.SameLine();
+            ImGui.TextUnformatted(_setItemEc.ToString());
+        }
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelSetItemByActorName);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Set##SetItemByActorName"))
+            _setItemByActorNameEc = (GlamourerIpc.GlamourerErrorCode)GlamourerIpc.SetItemByActorNameSubscriber(_pluginInterface)
+                .Invoke(_gameObjectName, (byte)_slot, _customItemId.Id, 1337);
+        if (_setItemByActorNameEc != GlamourerIpc.GlamourerErrorCode.Success)
+        {
+            ImGui.SameLine();
+            ImGui.TextUnformatted(_setItemByActorNameEc.ToString());
+        }
+    }
+
+    private unsafe void DrawItemIdInput()
+    {
+        var tmp = _customItemId.Id;
+        if (ImGui.InputScalar("Custom Item ID", ImGuiDataType.U64, (nint)(&tmp), nint.Zero, nint.Zero))
+            _customItemId = (CustomItemId)tmp;
+        ImGui.SameLine();
+        EquipSlotCombo.Draw("Equip Slot", string.Empty, 200 * ImGuiHelpers.GlobalScale, ref _slot);
     }
 }
