@@ -15,7 +15,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
-public class ImportService(CustomizationService _customizations, IDragDropManager _dragDropManager, ItemManager _items)
+public class ImportService(CustomizeService _customizations, IDragDropManager _dragDropManager, ItemManager _items)
 {
     public void CreateDatSource()
         => _dragDropManager.CreateImGuiSource("DatDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".dat"), m =>
@@ -179,14 +179,14 @@ public class ImportService(CustomizationService _customizations, IDragDropManage
         if (input.BodyType.Value != 1)
             return false;
 
-        var set = _customizations.Service.GetList(input.Clan, input.Gender);
+        var set = _customizations.Manager.GetSet(input.Clan, input.Gender);
         voice = set.Voices[0];
         if (inputVoice.HasValue && !set.Voices.Contains(inputVoice.Value))
             return false;
 
         foreach (var index in CustomizationExtensions.AllBasic)
         {
-            if (!CustomizationService.IsCustomizationValid(set, input.Face, index, input[index]))
+            if (!CustomizeService.IsCustomizationValid(set, input.Face, index, input[index]))
                 return false;
         }
 

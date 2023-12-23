@@ -180,7 +180,7 @@ public sealed class RevertDesignCombo : DesignComboBase, IDisposable
     private readonly AutoDesignManager _autoDesignManager;
 
     public RevertDesignCombo(DesignManager designs, DesignFileSystem fileSystem, TabSelected tabSelected, DesignColors designColors,
-        ItemManager items, CustomizationService customize, Logger log, DesignChanged designChanged, AutoDesignManager autoDesignManager,
+        ItemManager items, CustomizeService customize, Logger log, DesignChanged designChanged, AutoDesignManager autoDesignManager,
         EphemeralConfig config)
         : this(designs, fileSystem, tabSelected, designColors, CreateRevertDesign(customize, items), log, designChanged, autoDesignManager,
             config)
@@ -210,7 +210,7 @@ public sealed class RevertDesignCombo : DesignComboBase, IDisposable
             _autoDesignManager.AddDesign(set, CurrentSelection!.Item1 == RevertDesign ? null : CurrentSelection!.Item1);
     }
 
-    private static Design CreateRevertDesign(CustomizationService customize, ItemManager items)
+    private static Design CreateRevertDesign(CustomizeService customize, ItemManager items)
         => new(customize, items)
         {
             Index          = RevertDesignIndex,

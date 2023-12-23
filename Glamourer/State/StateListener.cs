@@ -28,7 +28,7 @@ public class StateListener : IDisposable
     private readonly StateManager              _manager;
     private readonly StateApplier              _applier;
     private readonly ItemManager               _items;
-    private readonly CustomizationService      _customizations;
+    private readonly CustomizeService      _customizations;
     private readonly PenumbraService           _penumbra;
     private readonly SlotUpdating              _slotUpdating;
     private readonly WeaponLoading             _weaponLoading;
@@ -52,7 +52,7 @@ public class StateListener : IDisposable
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
         StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gPose,
-        ChangeCustomizeService changeCustomizeService, CustomizationService customizations, ICondition condition, CrestService crestService)
+        ChangeCustomizeService changeCustomizeService, CustomizeService customizations, ICondition condition, CrestService crestService)
     {
         _manager                = manager;
         _items                  = items;
@@ -167,7 +167,7 @@ public class StateListener : IDisposable
                     return;
                 }
 
-                var set = _customizations.Service.GetList(model.Clan, model.Gender);
+                var set = _customizations.Manager.GetSet(model.Clan, model.Gender);
                 foreach (var index in CustomizationExtensions.AllBasic)
                 {
                     if (state[index] is not StateChanged.Source.Fixed)

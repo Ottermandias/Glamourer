@@ -14,7 +14,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
-public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizationService _service, CodeService _codes, Configuration _config)
+public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizeService _service, CodeService _codes, Configuration _config)
     : IDisposable
 {
     private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
@@ -23,7 +23,7 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
     private Exception? _terminate;
 
     private CustomizeArray   _customize = CustomizeArray.Default;
-    private CustomizationSet _set       = null!;
+    private CustomizeSet _set       = null!;
 
     public CustomizeArray Customize
         => _customize;
@@ -117,7 +117,7 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
                 return DrawArtisan();
 
             DrawRaceGenderSelector();
-            _set = _service.Service.GetList(_customize.Clan, _customize.Gender);
+            _set = _service.Manager.GetSet(_customize.Clan, _customize.Gender);
 
             foreach (var id in _set.Order[CharaMakeParams.MenuType.Percentage])
                 PercentageSelector(id);

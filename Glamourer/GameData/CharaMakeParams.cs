@@ -4,9 +4,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace Glamourer.GameData;
 
-/// <summary>
-/// A custom version of CharaMakeParams that is easier to parse.
-/// </summary>
+/// <summary> A custom version of CharaMakeParams that is easier to parse. </summary>
 [Sheet("CharaMakeParams")]
 public class CharaMakeParams : ExcelRow
 {

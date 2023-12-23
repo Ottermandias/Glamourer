@@ -15,7 +15,7 @@ public sealed class Design : DesignBase, ISavable
 {
     #region Data
 
-    internal Design(CustomizationService customize, ItemManager items)
+    internal Design(CustomizeService customize, ItemManager items)
         : base(customize, items)
     { }
 
@@ -98,7 +98,7 @@ public sealed class Design : DesignBase, ISavable
 
     #region Deserialization
 
-    public static Design LoadDesign(CustomizationService customizations, ItemManager items, JObject json)
+    public static Design LoadDesign(CustomizeService customizations, ItemManager items, JObject json)
     {
         var version = json["FileVersion"]?.ToObject<int>() ?? 0;
         return version switch
@@ -108,7 +108,7 @@ public sealed class Design : DesignBase, ISavable
         };
     }
 
-    private static Design LoadDesignV1(CustomizationService customizations, ItemManager items, JObject json)
+    private static Design LoadDesignV1(CustomizeService customizations, ItemManager items, JObject json)
     {
         static string[] ParseTags(JObject json)
         {

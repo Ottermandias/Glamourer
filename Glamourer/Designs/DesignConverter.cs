@@ -13,7 +13,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
-public class DesignConverter(ItemManager _items, DesignManager _designs, CustomizationService _customize, HumanModelList _humans)
+public class DesignConverter(ItemManager _items, DesignManager _designs, CustomizeService _customize, HumanModelList _humans)
 {
     public const byte Version = 6;
 

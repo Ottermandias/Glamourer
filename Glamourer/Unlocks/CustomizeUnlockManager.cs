@@ -29,7 +29,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     public IReadOnlyDictionary<uint, long> Unlocked
         => _unlocked;
 
-    public CustomizeUnlockManager(SaveService saveService, CustomizationService customizations, IDataManager gameData,
+    public CustomizeUnlockManager(SaveService saveService, CustomizeService customizations, IDataManager gameData,
         IClientState clientState, ObjectUnlocked @event, IGameInteropProvider interop)
     {
         interop.InitializeFromAttributes(this);
@@ -174,38 +174,35 @@ public class CustomizeUnlockManager : IDisposable, ISavable
             "customization");
 
     /// <summary> Create a list of all unlockable hairstyles and face paints. </summary>
-    private static Dictionary<CustomizeData, (uint Data, string Name)> CreateUnlockableCustomizations(CustomizationService customizations,
+    private static Dictionary<CustomizeData, (uint Data, string Name)> CreateUnlockableCustomizations(CustomizeService customizations,
         IDataManager gameData)
     {
         var ret   = new Dictionary<CustomizeData, (uint Data, string Name)>();
         var sheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English)!;
-        foreach (var clan in customizations.Service.Clans)
+        foreach (var (clan, gender) in CustomizeManager.AllSets())
         {
-            foreach (var gender in customizations.Service.Genders)
+            var list = customizations.Manager.GetSet(clan, gender);
+            foreach (var hair in list.HairStyles)
             {
-                var list = customizations.Service.GetList(clan, gender);
-                foreach (var hair in list.HairStyles)
+                var x = sheet.FirstOrDefault(f => f.FeatureID == hair.Value.Value);
+                if (x?.IsPurchasable == true)
                 {
-                    var x = sheet.FirstOrDefault(f => f.FeatureID == hair.Value.Value);
-                    if (x?.IsPurchasable == true)
-                    {
-                        var name = x.FeatureID == 61
-                            ? "Eternal Bond"
-                            : x.HintItem.Value?.Name.ToDalamudString().ToString().Replace("Modern Aesthetics - ", string.Empty)
-                         ?? string.Empty;
-                        ret.TryAdd(hair, (x.Data, name));
-                    }
+                    var name = x.FeatureID == 61
+                        ? "Eternal Bond"
+                        : x.HintItem.Value?.Name.ToDalamudString().ToString().Replace("Modern Aesthetics - ", string.Empty)
+                     ?? string.Empty;
+                    ret.TryAdd(hair, (x.Data, name));
                 }
+            }
 
-                foreach (var paint in list.FacePaints)
+            foreach (var paint in list.FacePaints)
+            {
+                var x = sheet.FirstOrDefault(f => f.FeatureID == paint.Value.Value);
+                if (x?.IsPurchasable == true)
                 {
-                    var x = sheet.FirstOrDefault(f => f.FeatureID == paint.Value.Value);
-                    if (x?.IsPurchasable == true)
-                    {
-                        var name = x.HintItem.Value?.Name.ToDalamudString().ToString().Replace("Modern Cosmetics - ", string.Empty)
-                         ?? string.Empty;
-                        ret.TryAdd(paint, (x.Data, name));
-                    }
+                    var name = x.HintItem.Value?.Name.ToDalamudString().ToString().Replace("Modern Cosmetics - ", string.Empty)
+                     ?? string.Empty;
+                    ret.TryAdd(paint, (x.Data, name));
                 }
             }
         }

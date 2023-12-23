@@ -12,12 +12,12 @@ namespace Glamourer.State;
 public class StateEditor
 {
     private readonly ItemManager          _items;
-    private readonly CustomizationService _customizations;
+    private readonly CustomizeService _customizations;
     private readonly HumanModelList       _humans;
     private readonly GPoseService         _gPose;
     private readonly ICondition           _condition;
 
-    public StateEditor(CustomizationService customizations, HumanModelList humans, ItemManager items, GPoseService gPose, ICondition condition)
+    public StateEditor(CustomizeService customizations, HumanModelList humans, ItemManager items, GPoseService gPose, ICondition condition)
     {
         _customizations = customizations;
         _humans         = humans;
@@ -72,7 +72,7 @@ public class StateEditor
 
             state[CustomizeIndex.Clan]   = source;
             state[CustomizeIndex.Gender] = source;
-            var set = _customizations.Service.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
+            var set = _customizations.Manager.GetSet(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
             foreach (var index in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
                 state[index] = source;
         }

@@ -27,7 +27,7 @@ public unsafe class FunModule : IDisposable
 
     private readonly WorldSets            _worldSets = new();
     private readonly ItemManager          _items;
-    private readonly CustomizationService _customizations;
+    private readonly CustomizeService _customizations;
     private readonly Configuration        _config;
     private readonly CodeService          _codes;
     private readonly Random               _rng;
@@ -67,7 +67,7 @@ public unsafe class FunModule : IDisposable
     internal void ResetFestival()
         => OnDayChange(DateTime.Now.Day, DateTime.Now.Month, DateTime.Now.Year);
 
-    public FunModule(CodeService codes, CustomizationService customizations, ItemManager items, Configuration config,
+    public FunModule(CodeService codes, CustomizeService customizations, ItemManager items, Configuration config,
         GenericPopupWindow popupWindow, StateManager stateManager, ObjectManager objects, DesignConverter designConverter,
         DesignManager designManager)
     {
@@ -197,7 +197,7 @@ public unsafe class FunModule : IDisposable
         if (!_codes.EnabledIndividual)
             return;
 
-        var set = _customizations.Service.GetList(customize.Clan, customize.Gender);
+        var set = _customizations.Manager.GetSet(customize.Clan, customize.Gender);
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {
             if (index is CustomizeIndex.Face || !set.IsAvailable(index))

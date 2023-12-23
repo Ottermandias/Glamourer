@@ -19,7 +19,7 @@ public class UnlockOverview
 {
     private readonly ItemManager                _items;
     private readonly ItemUnlockManager          _itemUnlocks;
-    private readonly CustomizationService       _customizations;
+    private readonly CustomizeService           _customizations;
     private readonly CustomizeUnlockManager     _customizeUnlocks;
     private readonly PenumbraChangedItemTooltip _tooltip;
     private readonly TextureService             _textures;
@@ -52,25 +52,22 @@ public class UnlockOverview
             }
         }
 
-        foreach (var clan in _customizations.Service.Clans)
+        foreach (var (clan, gender) in CustomizeManager.AllSets())
         {
-            foreach (var gender in _customizations.Service.Genders)
-            {
-                if (_customizations.Service.GetList(clan, gender).HairStyles.Count == 0)
-                    continue;
+            if (_customizations.Manager.GetSet(clan, gender).HairStyles.Count == 0)
+                continue;
 
-                if (ImGui.Selectable($"{(gender is Gender.Male ? '♂' : '♀')} {clan.ToShortName()} Hair & Paint",
-                        _selected2 == clan && _selected3 == gender))
-                {
-                    _selected1 = FullEquipType.Unknown;
-                    _selected2 = clan;
-                    _selected3 = gender;
-                }
+            if (ImGui.Selectable($"{(gender is Gender.Male ? '♂' : '♀')} {clan.ToShortName()} Hair & Paint",
+                    _selected2 == clan && _selected3 == gender))
+            {
+                _selected1 = FullEquipType.Unknown;
+                _selected2 = clan;
+                _selected3 = gender;
             }
         }
     }
 
-    public UnlockOverview(ItemManager items, CustomizationService customizations, ItemUnlockManager itemUnlocks,
+    public UnlockOverview(ItemManager items, CustomizeService customizations, ItemUnlockManager itemUnlocks,
         CustomizeUnlockManager customizeUnlocks, PenumbraChangedItemTooltip tooltip, TextureService textures, CodeService codes,
         JobService jobs, FavoriteManager favorites)
     {
@@ -107,7 +104,7 @@ public class UnlockOverview
 
     private void DrawCustomizations()
     {
-        var set = _customizations.Service.GetList(_selected2, _selected3);
+        var set = _customizations.Manager.GetSet(_selected2, _selected3);
 
         var       spacing     = IconSpacing;
         using var style       = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
@@ -121,7 +118,7 @@ public class UnlockOverview
                 continue;
 
             var unlocked = _customizeUnlocks.IsUnlocked(customize, out var time);
-            var icon     = _customizations.Service.GetIcon(customize.IconId);
+            var icon     = _customizations.Manager.GetIcon(customize.IconId);
 
             ImGui.Image(icon.ImGuiHandle, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);

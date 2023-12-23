@@ -8,30 +8,27 @@ using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class CustomizationServicePanel(CustomizationService _customization) : IDebugTabTree
+public class CustomizationServicePanel(CustomizeService customize) : IDebugTabTree
 {
     public string Label
         => "Customization Service";
 
     public bool Disabled
-        => !_customization.Awaiter.IsCompletedSuccessfully;
+        => !customize.Awaiter.IsCompletedSuccessfully;
 
     public void Draw()
     {
-        foreach (var clan in _customization.Service.Clans)
+        foreach (var (clan, gender) in CustomizeManager.AllSets())
         {
-            foreach (var gender in _customization.Service.Genders)
-            {
-                var set = _customization.Service.GetList(clan, gender);
-                DrawCustomizationInfo(set);
-                DrawNpcCustomizationInfo(set);
-            }
+            var set = customize.Manager.GetSet(clan, gender);
+            DrawCustomizationInfo(set);
+            DrawNpcCustomizationInfo(set);
         }
     }
 
-    private void DrawCustomizationInfo(CustomizationSet set)
+    private void DrawCustomizationInfo(CustomizeSet set)
     {
-        using var tree = ImRaii.TreeNode($"{_customization.ClanName(set.Clan, set.Gender)} {set.Gender}");
+        using var tree = ImRaii.TreeNode($"{customize.ClanName(set.Clan, set.Gender)} {set.Gender}");
         if (!tree)
             return;
 
@@ -49,9 +46,9 @@ public class CustomizationServicePanel(CustomizationService _customization) : ID
         }
     }
 
-    private void DrawNpcCustomizationInfo(CustomizationSet set)
+    private void DrawNpcCustomizationInfo(CustomizeSet set)
     {
-        using var tree = ImRaii.TreeNode($"{_customization.ClanName(set.Clan, set.Gender)} {set.Gender} (NPC Options)");
+        using var tree = ImRaii.TreeNode($"{customize.ClanName(set.Clan, set.Gender)} {set.Gender} (NPC Options)");
         if (!tree)
             return;
 

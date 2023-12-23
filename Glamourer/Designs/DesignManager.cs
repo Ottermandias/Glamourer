@@ -18,7 +18,7 @@ namespace Glamourer.Designs;
 
 public class DesignManager
 {
-    private readonly CustomizationService         _customizations;
+    private readonly CustomizeService         _customizations;
     private readonly ItemManager                  _items;
     private readonly HumanModelList               _humans;
     private readonly SaveService                  _saveService;
@@ -29,7 +29,7 @@ public class DesignManager
     public IReadOnlyList<Design> Designs
         => _designs;
 
-    public DesignManager(SaveService saveService, ItemManager items, CustomizationService customizations,
+    public DesignManager(SaveService saveService, ItemManager items, CustomizeService customizations,
         DesignChanged @event, HumanModelList humans)
     {
         _saveService    = saveService;

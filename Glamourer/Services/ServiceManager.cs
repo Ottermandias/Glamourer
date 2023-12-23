@@ -84,7 +84,7 @@ public static class ServiceManagerA
         => services.AddSingleton<ObjectIdentification>()
             .AddSingleton<ItemData>()
             .AddSingleton<ActorManager>()
-            .AddSingleton<CustomizationService>()
+            .AddSingleton<CustomizeService>()
             .AddSingleton<ItemManager>()
             .AddSingleton<GamePathParser>()
             .AddSingleton<HumanModelList>();

@@ -154,7 +154,7 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
 
     private void DrawCustomizeApplication()
     {
-        var set       = _selector.Selected!.CustomizationSet;
+        var set       = _selector.Selected!.CustomizeSet;
         var available = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender;
         var flags     = _selector.Selected!.ApplyCustomize == 0 ? 0 : (_selector.Selected!.ApplyCustomize & available) == available ? 3 : 1;
         if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))

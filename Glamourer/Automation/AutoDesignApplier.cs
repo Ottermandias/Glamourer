@@ -27,7 +27,7 @@ public class AutoDesignApplier : IDisposable
     private readonly JobService             _jobs;
     private readonly EquippedGearset        _equippedGearset;
     private readonly ActorManager           _actors;
-    private readonly CustomizationService   _customizations;
+    private readonly CustomizeService   _customizations;
     private readonly CustomizeUnlockManager _customizeUnlocks;
     private readonly ItemUnlockManager      _itemUnlocks;
     private readonly AutomationChanged      _event;
@@ -48,7 +48,7 @@ public class AutoDesignApplier : IDisposable
     }
 
     public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs,
-        CustomizationService customizations, ActorManager actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
+        CustomizeService customizations, ActorManager actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
         AutomationChanged @event, ObjectManager objects, WeaponLoading weapons, HumanModelList humans, IClientState clientState,
         EquippedGearset equippedGearset)
     {
@@ -468,7 +468,7 @@ public class AutoDesignApplier : IDisposable
             totalCustomizeFlags |= CustomizeFlag.Face;
         }
 
-        var set  = _customizations.Service.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
+        var set  = _customizations.Manager.GetSet(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
         var face = state.ModelData.Customize.Face;
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {
@@ -477,7 +477,7 @@ public class AutoDesignApplier : IDisposable
                 continue;
 
             var value = design.Customize[index];
-            if (CustomizationService.IsCustomizationValid(set, face, index, value, out var data))
+            if (CustomizeService.IsCustomizationValid(set, face, index, value, out var data))
             {
                 if (data.HasValue && _config.UnlockedItemMode && !_customizeUnlocks.IsUnlocked(data.Value, out _))
                     continue;

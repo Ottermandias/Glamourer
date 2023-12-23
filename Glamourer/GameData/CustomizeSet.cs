@@ -8,11 +8,13 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.GameData;
 
-// Each Subrace and Gender combo has a customization set.
-// This describes the available customizations, their types and their names.
-public class CustomizationSet
+/// <summary>
+/// Each SubRace and Gender combo has a customization set.
+/// This describes the available customizations, their types and their names.
+/// </summary>
+public class CustomizeSet
 {
-    internal CustomizationSet(SubRace clan, Gender gender)
+    internal CustomizeSet(SubRace clan, Gender gender)
     {
         Gender           = gender;
         Clan             = clan;
@@ -24,6 +26,8 @@ public class CustomizationSet
     public SubRace Clan   { get; }
     public Race    Race   { get; }
 
+    public string Name { get; internal init; } = string.Empty;
+
     public CustomizeFlag SettingAvailable { get; internal set; }
 
     internal void SetAvailable(CustomizeIndex index)
@@ -33,7 +37,7 @@ public class CustomizationSet
         => SettingAvailable.HasFlag(index.ToFlag());
 
     // Meta
-    public IReadOnlyList<string> OptionName { get; internal set; } = null!;
+    public IReadOnlyList<string> OptionName { get; internal init; } = null!;
 
     public string Option(CustomizeIndex index)
         => OptionName[(int)index];
@@ -95,68 +99,6 @@ public class CustomizationSet
     {
         var type = Types[(int)index];
 
-        int GetInteger0(out CustomizeData? custom)
-        {
-            if (value < Count(index))
-            {
-                custom = new CustomizeData(index, value, 0, value.Value);
-                return value.Value;
-            }
-
-            custom = null;
-            return -1;
-        }
-
-        int GetInteger1(out CustomizeData? custom)
-        {
-            if (value > 0 && value < Count(index) + 1)
-            {
-                custom = new CustomizeData(index, value, 0, (ushort)(value.Value - 1));
-                return value.Value;
-            }
-
-            custom = null;
-            return -1;
-        }
-
-        static int GetBool(CustomizeIndex index, CustomizeValue value, out CustomizeData? custom)
-        {
-            if (value == CustomizeValue.Zero)
-            {
-                custom = new CustomizeData(index, CustomizeValue.Zero, 0, 0);
-                return 0;
-            }
-
-            var (_, mask) = index.ToByteAndMask();
-            if (value.Value == mask)
-            {
-                custom = new CustomizeData(index, new CustomizeValue(mask), 0, 1);
-                return 1;
-            }
-
-            custom = null;
-            return -1;
-        }
-
-        static int Invalid(out CustomizeData? custom)
-        {
-            custom = null;
-            return -1;
-        }
-
-        int Get(IEnumerable<CustomizeData> list, CustomizeValue v, out CustomizeData? output)
-        {
-            var (val, idx) = list.Cast<CustomizeData?>().WithIndex().FirstOrDefault(p => p.Item1!.Value.Value == v);
-            if (val == null)
-            {
-                output = null;
-                return -1;
-            }
-
-            output = val;
-            return idx;
-        }
-
         return type switch
         {
             CharaMakeParams.MenuType.ListSelector  => GetInteger0(out custom),
@@ -194,6 +136,68 @@ public class CustomizationSet
             CharaMakeParams.MenuType.Checkmark     => GetBool(index, value, out custom),
             _                                      => Invalid(out custom),
         };
+
+        int Get(IEnumerable<CustomizeData> list, CustomizeValue v, out CustomizeData? output)
+        {
+            var (val, idx) = list.Cast<CustomizeData?>().WithIndex().FirstOrDefault(p => p.Value!.Value.Value == v);
+            if (val == null)
+            {
+                output = null;
+                return -1;
+            }
+
+            output = val;
+            return idx;
+        }
+
+        static int Invalid(out CustomizeData? custom)
+        {
+            custom = null;
+            return -1;
+        }
+
+        static int GetBool(CustomizeIndex index, CustomizeValue value, out CustomizeData? custom)
+        {
+            if (value == CustomizeValue.Zero)
+            {
+                custom = new CustomizeData(index, CustomizeValue.Zero);
+                return 0;
+            }
+
+            var (_, mask) = index.ToByteAndMask();
+            if (value.Value == mask)
+            {
+                custom = new CustomizeData(index, new CustomizeValue(mask), 0, 1);
+                return 1;
+            }
+
+            custom = null;
+            return -1;
+        }
+
+        int GetInteger1(out CustomizeData? custom)
+        {
+            if (value > 0 && value < Count(index) + 1)
+            {
+                custom = new CustomizeData(index, value, 0, (ushort)(value.Value - 1));
+                return value.Value;
+            }
+
+            custom = null;
+            return -1;
+        }
+
+        int GetInteger0(out CustomizeData? custom)
+        {
+            if (value < Count(index))
+            {
+                custom = new CustomizeData(index, value, 0, value.Value);
+                return value.Value;
+            }
+
+            custom = null;
+            return -1;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -244,7 +248,7 @@ public class CustomizationSet
     public CharaMakeParams.MenuType Type(CustomizeIndex index)
         => Types[(int)index];
 
-    internal static IReadOnlyDictionary<CharaMakeParams.MenuType, CustomizeIndex[]> ComputeOrder(CustomizationSet set)
+    internal static IReadOnlyDictionary<CharaMakeParams.MenuType, CustomizeIndex[]> ComputeOrder(CustomizeSet set)
     {
         var ret = Enum.GetValues<CustomizeIndex>().ToArray();
         ret[(int)CustomizeIndex.TattooColor]   = CustomizeIndex.EyeColorLeft;
@@ -305,6 +309,6 @@ public class CustomizationSet
 public static class CustomizationSetExtensions
 {
     /// <summary> Return only the available customizations in this set and Clan or Gender. </summary>
-    public static CustomizeFlag FixApplication(this CustomizeFlag flag, CustomizationSet set)
+    public static CustomizeFlag FixApplication(this CustomizeFlag flag, CustomizeSet set)
         => flag & (set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender);
 }
