@@ -17,7 +17,8 @@ using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectManager _objectManager, DesignConverter _designConverter) : IGameDataDrawer
+public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectManager _objectManager, DesignConverter _designConverter)
+    : IGameDataDrawer
 {
     public string Label
         => "NPC Appearance";
@@ -25,19 +26,22 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
     public bool Disabled
         => false;
 
-    private string _npcFilter       = string.Empty;
+    private string _npcFilter = string.Empty;
     private bool   _customizeOrGear;
 
     public void Draw()
     {
         ImGui.Checkbox("Compare Customize (or Gear)", ref _customizeOrGear);
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-        ImGui.InputTextWithHint("##npcFilter", "Filter...", ref _npcFilter, 64);
+        var resetScroll = ImGui.InputTextWithHint("##npcFilter", "Filter...", ref _npcFilter, 64);
 
         using var table = ImRaii.Table("npcs", 5, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingFixedFit,
             new Vector2(-1, 400 * ImGuiHelpers.GlobalScale));
         if (!table)
             return;
+
+        if (resetScroll)
+            ImGui.SetScrollY(0);
 
         ImGui.TableSetupColumn("Button",  ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Name",    ImGuiTableColumnFlags.WidthFixed, ImGuiHelpers.GlobalScale * 300);

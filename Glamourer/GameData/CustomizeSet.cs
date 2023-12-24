@@ -297,5 +297,5 @@ public static class CustomizationSetExtensions
 {
     /// <summary> Return only the available customizations in this set and Clan or Gender. </summary>
     public static CustomizeFlag FixApplication(this CustomizeFlag flag, CustomizeSet set)
-        => flag & (set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender);
+        => flag & (set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender | CustomizeFlag.BodyType);
 }

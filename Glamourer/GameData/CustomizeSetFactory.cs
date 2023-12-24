@@ -91,7 +91,7 @@ internal class CustomizeSetFactory(
 
         var npcCustomizations = new HashSet<(CustomizeIndex, CustomizeValue)>();
         _npcCustomizeSet.Awaiter.Wait();
-        foreach (var customize in _npcCustomizeSet.Select(s => s.Customize).Where(c => c.Clan == race && c.Gender == gender))
+        foreach (var customize in _npcCustomizeSet.Select(s => s.Customize).Where(c => c.Clan == race && c.Gender == gender && c.BodyType.Value == 1))
         {
             foreach (var customizeIndex in customizeIndices)
             {

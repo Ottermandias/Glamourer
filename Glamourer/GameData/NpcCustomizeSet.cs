@@ -256,8 +256,7 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
         customize.SetByIndex(24, (CustomizeValue)bnpcCustomize.FacePaint);
         customize.SetByIndex(25, (CustomizeValue)bnpcCustomize.FacePaintColor);
 
-        if (customize.BodyType.Value != 1
-         || !CustomizeManager.Races.Contains(customize.Race)
+        if (!CustomizeManager.Races.Contains(customize.Race)
          || !CustomizeManager.Clans.Contains(customize.Clan)
          || !CustomizeManager.Genders.Contains(customize.Gender))
             return (false, CustomizeArray.Default);
@@ -299,8 +298,7 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
         customize.SetByIndex(24, (CustomizeValue)enpcBase.FacePaint);
         customize.SetByIndex(25, (CustomizeValue)enpcBase.FacePaintColor);
 
-        if (customize.BodyType.Value != 1
-         || !CustomizeManager.Races.Contains(customize.Race)
+        if (!CustomizeManager.Races.Contains(customize.Race)
          || !CustomizeManager.Clans.Contains(customize.Clan)
          || !CustomizeManager.Genders.Contains(customize.Gender))
             return (false, CustomizeArray.Default);

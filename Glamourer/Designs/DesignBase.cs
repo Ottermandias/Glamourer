@@ -33,26 +33,26 @@ public class DesignBase
 
     internal DesignBase(CustomizeService customize, in DesignData designData, EquipFlag equipFlags, CustomizeFlag customizeFlags)
     {
-        _designData      = designData;
-        ApplyCustomize   = customizeFlags & CustomizeFlagExtensions.AllRelevant;
-        ApplyEquip       = equipFlags & EquipFlagExtensions.All;
-        _designFlags     = 0;
-        CustomizeSet = SetCustomizationSet(customize);
+        _designData    = designData;
+        ApplyCustomize = customizeFlags & CustomizeFlagExtensions.AllRelevant;
+        ApplyEquip     = equipFlags & EquipFlagExtensions.All;
+        _designFlags   = 0;
+        CustomizeSet   = SetCustomizationSet(customize);
     }
 
     internal DesignBase(DesignBase clone)
     {
-        _designData      = clone._designData;
-        CustomizeSet = clone.CustomizeSet;
-        ApplyCustomize   = clone.ApplyCustomizeRaw;
-        ApplyEquip       = clone.ApplyEquip & EquipFlagExtensions.All;
-        _designFlags     = clone._designFlags & (DesignFlags)0x0F;
+        _designData    = clone._designData;
+        CustomizeSet   = clone.CustomizeSet;
+        ApplyCustomize = clone.ApplyCustomizeRaw;
+        ApplyEquip     = clone.ApplyEquip & EquipFlagExtensions.All;
+        _designFlags   = clone._designFlags & (DesignFlags)0x0F;
     }
 
     /// <summary> Ensure that the customization set is updated when the design data changes. </summary>
     internal void SetDesignData(CustomizeService customize, in DesignData other)
     {
-        _designData      = other;
+        _designData  = other;
         CustomizeSet = SetCustomizationSet(customize);
     }
 
@@ -68,8 +68,8 @@ public class DesignBase
         WriteProtected     = 0x10,
     }
 
-    private CustomizeFlag    _applyCustomize = CustomizeFlagExtensions.AllRelevant;
-    public  CustomizeSet CustomizeSet { get; private set; }
+    private CustomizeFlag _applyCustomize = CustomizeFlagExtensions.AllRelevant;
+    public  CustomizeSet  CustomizeSet { get; private set; }
 
     internal CustomizeFlag ApplyCustomize
     {
@@ -90,7 +90,7 @@ public class DesignBase
             return false;
 
         _designData.Customize = customize;
-        CustomizeSet = customizeService.Manager.GetSet(customize.Clan, customize.Gender);
+        CustomizeSet          = customizeService.Manager.GetSet(customize.Clan, customize.Gender);
         return true;
     }
 
@@ -485,7 +485,7 @@ public class DesignBase
         design._designData.Customize.Race   = race;
         design._designData.Customize.Clan   = clan;
         design._designData.Customize.Gender = gender;
-        design.CustomizeSet             = design.SetCustomizationSet(customizations);
+        design.CustomizeSet                 = design.SetCustomizationSet(customizations);
         design.SetApplyCustomize(CustomizeIndex.Race,   json[CustomizeIndex.Race.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
         design.SetApplyCustomize(CustomizeIndex.Clan,   json[CustomizeIndex.Clan.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
         design.SetApplyCustomize(CustomizeIndex.Gender, json[CustomizeIndex.Gender.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
@@ -495,7 +495,7 @@ public class DesignBase
         {
             var tok  = json[idx.ToString()];
             var data = (CustomizeValue)(tok?["Value"]?.ToObject<byte>() ?? 0);
-            if (set.IsAvailable(idx))
+            if (set.IsAvailable(idx) && design._designData.Customize.BodyType == 1)
                 PrintWarning(CustomizeService.ValidateCustomizeValue(set, design._designData.Customize.Face, idx, data, out data,
                     allowUnknown));
             var apply = tok?["Apply"]?.ToObject<bool>() ?? false;

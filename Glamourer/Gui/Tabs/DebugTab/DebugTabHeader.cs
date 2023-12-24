@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using ImGuiNET;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Raii;
-using OtterGui.Services;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
