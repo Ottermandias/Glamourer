@@ -8,11 +8,12 @@ using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui;
+using Penumbra.GameData.Gui.Debug;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManager _objectManager) : IDebugTabTree
+public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManager _objectManager) : IGameDataDrawer
 {
     public string Label
         => "IPC Tester";
@@ -137,12 +138,12 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         }
     }
 
-    private unsafe void DrawItemIdInput()
+    private void DrawItemIdInput()
     {
         var tmp = _customItemId.Id;
-        if (ImGui.InputScalar("Custom Item ID", ImGuiDataType.U64, (nint)(&tmp), nint.Zero, nint.Zero))
+        if (ImGuiUtil.InputUlong("Custom Item ID", ref tmp))
             _customItemId = (CustomItemId)tmp;
         ImGui.SameLine();
-        EquipSlotCombo.Draw("Equip Slot", string.Empty, 200 * ImGuiHelpers.GlobalScale, ref _slot);
+        EquipSlotCombo.Draw("Equip Slot", string.Empty, ref _slot);
     }
 }

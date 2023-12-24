@@ -12,10 +12,11 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectManager) : IDebugTabTree
+public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectManager) : IGameDataDrawer
 {
     public string Label
         => $"Active Actors ({_stateManager.Count})###Active Actors";

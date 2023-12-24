@@ -24,7 +24,7 @@ public class EquipmentDrawer
 
     private readonly ItemManager                            _items;
     private readonly GlamourerColorCombo                    _stainCombo;
-    private readonly DictStains                             _stainData;
+    private readonly DictStain                             _stainData;
     private readonly ItemCombo[]                            _itemCombo;
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
     private readonly CodeService                            _codes;

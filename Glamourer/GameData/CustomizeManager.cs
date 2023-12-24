@@ -30,7 +30,7 @@ public class CustomizeManager : IAsyncService
     /// <summary> Every tribe and gender has a separate set of available customizations. </summary>
     public CustomizeSet GetSet(SubRace race, Gender gender)
     {
-        if (!Awaiter.IsCompletedSuccessfully)
+        if (!Finished)
             Awaiter.Wait();
         return _customizationSets[ToIndex(race, gender)];
     }
@@ -60,6 +60,10 @@ public class CustomizeManager : IAsyncService
 
     /// <inheritdoc/>
     public Task Awaiter { get; }
+
+    /// <inheritdoc/>
+    public bool Finished
+        => Awaiter.IsCompletedSuccessfully;
 
     private readonly        IconStorage    _icons;
     private static readonly int            ListSize           = Clans.Count * Genders.Count;

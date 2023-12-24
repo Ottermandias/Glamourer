@@ -8,10 +8,11 @@ using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DesignTesterPanel(ItemManager _items, HumanModelList _humans) : IDebugTabTree
+public class DesignTesterPanel(ItemManager _items, HumanModelList _humans) : IGameDataDrawer
 {
     public string Label
         => "Base64 Design Tester";

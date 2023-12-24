@@ -5,16 +5,17 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class CustomizationServicePanel(CustomizeService customize) : IDebugTabTree
+public class CustomizationServicePanel(CustomizeService customize) : IGameDataDrawer
 {
     public string Label
         => "Customization Service";
 
     public bool Disabled
-        => !customize.Awaiter.IsCompletedSuccessfully;
+        => !customize.Finished;
 
     public void Draw()
     {

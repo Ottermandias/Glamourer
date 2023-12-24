@@ -1,9 +1,10 @@
 ﻿using Glamourer.State;
 using ImGuiNET;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class FunPanel(FunModule _funModule, Configuration _config) : IDebugTabTree
+public class FunPanel(FunModule _funModule, Configuration _config) : IGameDataDrawer
 {
     public string Label
         => "Fun Module";

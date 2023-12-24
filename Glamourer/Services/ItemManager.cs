@@ -21,14 +21,14 @@ public class ItemManager
 
     public readonly ObjectIdentification                          ObjectIdentification;
     public readonly ExcelSheet<Lumina.Excel.GeneratedSheets.Item> ItemSheet;
-    public readonly DictStains                                    Stains;
+    public readonly DictStain                                    Stains;
     public readonly ItemData                                      ItemData;
     public readonly RestrictedGear                                RestrictedGear;
 
     public readonly EquipItem DefaultSword;
 
     public ItemManager(Configuration config, IDataManager gameData, ObjectIdentification objectIdentification,
-        ItemData itemData, DictStains stains, RestrictedGear restrictedGear)
+        ItemData itemData, DictStain stains, RestrictedGear restrictedGear)
     {
         _config              = config;
         ItemSheet            = gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;

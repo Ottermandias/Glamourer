@@ -13,7 +13,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public sealed class GlamourerColorCombo(float _comboWidth, DictStains _stains, FavoriteManager _favorites)
+public sealed class GlamourerColorCombo(float _comboWidth, DictStain _stains, FavoriteManager _favorites)
     : FilterComboColors(_comboWidth, CreateFunc(_stains, _favorites), Glamourer.Log)
 {
     protected override bool DrawSelectable(int globalIdx, bool selected)
@@ -40,7 +40,7 @@ public sealed class GlamourerColorCombo(float _comboWidth, DictStains _stains, F
         return base.DrawSelectable(globalIdx, selected);
     }
 
-    private static Func<IReadOnlyList<KeyValuePair<byte, (string Name, uint Color, bool Gloss)>>> CreateFunc(DictStains stains,
+    private static Func<IReadOnlyList<KeyValuePair<byte, (string Name, uint Color, bool Gloss)>>> CreateFunc(DictStain stains,
         FavoriteManager favorites)
         => () => stains.Select(kvp => (kvp, favorites.Contains(kvp.Key))).OrderBy(p => !p.Item2).Select(p => p.kvp)
             .Prepend(new KeyValuePair<StainId, Stain>(Stain.None.RowIndex, Stain.None)).Select(kvp

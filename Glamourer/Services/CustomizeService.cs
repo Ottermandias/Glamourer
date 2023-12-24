@@ -22,6 +22,9 @@ public sealed class CustomizeService(
     public Task Awaiter { get; }
         = Task.WhenAll(humanModels.Awaiter, manager.Awaiter, npcCustomizeSet.Awaiter);
 
+    public bool Finished
+        => Awaiter.IsCompletedSuccessfully;
+
     public (CustomizeArray NewValue, CustomizeFlag Applied, CustomizeFlag Changed) Combine(CustomizeArray oldValues, CustomizeArray newValues,
         CustomizeFlag applyWhich, bool allowUnknown)
     {

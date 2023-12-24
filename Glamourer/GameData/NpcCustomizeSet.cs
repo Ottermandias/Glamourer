@@ -33,6 +33,10 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
     /// <inheritdoc/>
     public Task Awaiter { get; }
 
+    /// <inheritdoc/>
+    public bool Finished
+        => Awaiter.IsCompletedSuccessfully;
+
     /// <summary> The list of data. </summary>
     private readonly List<NpcData> _data = [];
 

@@ -4,10 +4,11 @@ using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DatFilePanel(ImportService _importService) : IDebugTabTree
+public class DatFilePanel(ImportService _importService) : IGameDataDrawer
 {
     public string Label
         => "Character Dat File";

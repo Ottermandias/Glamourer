@@ -7,6 +7,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
@@ -16,7 +17,7 @@ public unsafe class ModelEvaluationPanel(
     VisorService _visorService,
     UpdateSlotService _updateSlotService,
     ChangeCustomizeService _changeCustomizeService,
-    CrestService _crestService) : IDebugTabTree
+    CrestService _crestService) : IGameDataDrawer
 {
     public string Label
         => "Model Evaluation";

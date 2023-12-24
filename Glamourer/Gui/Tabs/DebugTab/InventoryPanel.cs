@@ -2,10 +2,11 @@
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class InventoryPanel : IDebugTabTree
+public unsafe class InventoryPanel : IGameDataDrawer
 {
     public string Label
         => "Inventory";

@@ -7,10 +7,11 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class ObjectManagerPanel(ObjectManager _objectManager, ActorManager _actors) : IDebugTabTree
+public class ObjectManagerPanel(ObjectManager _objectManager, ActorManager _actors) : IGameDataDrawer
 {
     public string Label
         => "Object Manager";
@@ -33,7 +34,7 @@ public class ObjectManagerPanel(ObjectManager _objectManager, ActorManager _acto
             ImGui.TableNextColumn();
 
             ImGuiUtil.DrawTableColumn("World");
-            ImGuiUtil.DrawTableColumn(_actors.Awaiter.IsCompletedSuccessfully ? _actors.Data.ToWorldName(_objectManager.World) : "Service Missing");
+            ImGuiUtil.DrawTableColumn(_actors.Finished ? _actors.Data.ToWorldName(_objectManager.World) : "Service Missing");
             ImGuiUtil.DrawTableColumn(_objectManager.World.ToString());
 
             ImGuiUtil.DrawTableColumn("Player Character");

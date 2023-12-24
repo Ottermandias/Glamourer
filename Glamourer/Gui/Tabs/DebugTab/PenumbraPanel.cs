@@ -10,11 +10,12 @@ using OtterGui;
 using OtterGui.Raii;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItemTooltip _penumbraTooltip) : IDebugTabTree
+public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItemTooltip _penumbraTooltip) : IGameDataDrawer
 {
     public string Label
         => "Penumbra Interop";

@@ -12,11 +12,12 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectManager _objectManager, DesignConverter _designConverter) : IDebugTabTree
+public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectManager _objectManager, DesignConverter _designConverter) : IGameDataDrawer
 {
     public string Label
         => "NPC Appearance";

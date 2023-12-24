@@ -7,11 +7,12 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class ItemUnlockPanel(ItemUnlockManager _itemUnlocks, ItemManager _items) : IDebugTabTree
+public class ItemUnlockPanel(ItemUnlockManager _itemUnlocks, ItemManager _items) : IGameDataDrawer
 {
     public string Label
         => "Unlocked Items";
