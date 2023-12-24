@@ -68,6 +68,7 @@ internal class CustomizeSetFactory(
         SetFacialFeatures(set, row);
         SetHairByFace(set);
         SetNpcData(set, set.Clan, set.Gender);
+        SetOrder(set);
     }
 
     /// <summary> Given a customize set with filled data, find all customizations used by valid NPCs that are not regularly available. </summary>
@@ -303,7 +304,7 @@ internal class CustomizeSetFactory(
     }
 
     /// <summary> Get the manu types for all available options. </summary>
-    private CharaMakeParams.MenuType[] GetMenuTypes(CharaMakeParams row)
+    private static CharaMakeParams.MenuType[] GetMenuTypes(CharaMakeParams row)
     {
         // Set up the menu types for all customizations.
         return Enum.GetValues<CustomizeIndex>().Select(c =>
@@ -392,6 +393,19 @@ internal class CustomizeSetFactory(
             if (available)
                 set.SetAvailable(flag);
         }
+    }
+
+    internal static void SetOrder(CustomizeSet set)
+    {
+        var ret = Enum.GetValues<CustomizeIndex>().ToArray();
+        ret[(int)CustomizeIndex.TattooColor]   = CustomizeIndex.EyeColorLeft;
+        ret[(int)CustomizeIndex.EyeColorLeft]  = CustomizeIndex.EyeColorRight;
+        ret[(int)CustomizeIndex.EyeColorRight] = CustomizeIndex.TattooColor;
+
+        var dict = ret.Skip(2).Where(set.IsAvailable).GroupBy(set.Type).ToDictionary(k => k.Key, k => k.ToArray());
+        foreach (var type in Enum.GetValues<CharaMakeParams.MenuType>())
+            dict.TryAdd(type, []);
+        set.Order = dict;
     }
 
     /// <summary> Set hairstyles per face for Hrothgar and make it simple for non-Hrothgar. </summary>

@@ -248,19 +248,6 @@ public class CustomizeSet
     public CharaMakeParams.MenuType Type(CustomizeIndex index)
         => Types[(int)index];
 
-    internal static IReadOnlyDictionary<CharaMakeParams.MenuType, CustomizeIndex[]> ComputeOrder(CustomizeSet set)
-    {
-        var ret = Enum.GetValues<CustomizeIndex>().ToArray();
-        ret[(int)CustomizeIndex.TattooColor]   = CustomizeIndex.EyeColorLeft;
-        ret[(int)CustomizeIndex.EyeColorLeft]  = CustomizeIndex.EyeColorRight;
-        ret[(int)CustomizeIndex.EyeColorRight] = CustomizeIndex.TattooColor;
-
-        var dict = ret.Skip(2).Where(set.IsAvailable).GroupBy(set.Type).ToDictionary(k => k.Key, k => k.ToArray());
-        foreach (var type in Enum.GetValues<CharaMakeParams.MenuType>())
-            dict.TryAdd(type, Array.Empty<CustomizeIndex>());
-        return dict;
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public int Count(CustomizeIndex index)
         => Count(index, CustomizeValue.Zero);
