@@ -44,6 +44,16 @@ public sealed class CustomizeService(
                 applied |= CustomizeFlag.Gender;
             }
 
+        if (applyWhich.HasFlag(CustomizeFlag.BodyType))
+        {
+            if (oldValues[CustomizeIndex.BodyType] != newValues[CustomizeIndex.BodyType])
+            {
+                ret.Set(CustomizeIndex.BodyType, newValues[CustomizeIndex.BodyType]);
+                changed |= CustomizeFlag.BodyType;
+            }
+
+            applied |= CustomizeFlag.BodyType;
+        }
 
         var set = Manager.GetSet(ret.Clan, ret.Gender);
         applyWhich = applyWhich.FixApplication(set);

@@ -117,6 +117,8 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizeSer
                 return DrawArtisan();
 
             DrawRaceGenderSelector();
+            DrawBodyType();
+
             _set = _service.Manager.GetSet(_customize.Clan, _customize.Gender);
 
             foreach (var id in _set.Order[CharaMakeParams.MenuType.Percentage])
