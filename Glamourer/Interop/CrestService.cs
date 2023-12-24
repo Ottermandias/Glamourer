@@ -77,7 +77,7 @@ public sealed unsafe class CrestService : EventWrapper<Action<Actor, CrestFlag, 
             crestFlags = (byte)(newValue.Value ? crestFlags | (byte)slot : crestFlags & (byte)~slot);
         }
 
-        Glamourer.Log.Information(
+        Glamourer.Log.Verbose(
             $"Called CrestChange on {(ulong)character:X} with {crestFlags:X} and prior flags {((Actor)character).CrestBitfield}.");
         using var _ = _inUpdate.EnterMethod();
         _crestChangeHook.Original(character, crestFlags);
