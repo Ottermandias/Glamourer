@@ -274,7 +274,7 @@ internal class CustomizeSetFactory(
             {
                 // If none exists and the id corresponds to highlights, set the Highlights name.
                 if (c == CustomizeIndex.Highlights)
-                    return _lobbySheet.GetRow(237)?.Text.ToDalamudString().ToString() ?? "Highlights";
+                    return string.Intern(_lobbySheet.GetRow(237)?.Text.ToDalamudString().ToString() ?? "Highlights");
 
                 // Otherwise there is an error and we use the default name.
                 return c.ToDefaultName();
@@ -282,7 +282,7 @@ internal class CustomizeSetFactory(
 
             // Otherwise all is normal, get the menu name or if it does not work the default name.
             var textRow = _lobbySheet.GetRow(menu.Value.Id);
-            return textRow?.Text.ToDalamudString().ToString() ?? c.ToDefaultName();
+            return string.Intern(textRow?.Text.ToDalamudString().ToString() ?? c.ToDefaultName());
         }).ToArray();
 
         // Add names for both eye colors.

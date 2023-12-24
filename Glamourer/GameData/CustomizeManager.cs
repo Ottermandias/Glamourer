@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Dalamud.Interface.Internal;
@@ -12,7 +13,7 @@ using Race = Penumbra.GameData.Enums.Race;
 namespace Glamourer.GameData;
 
 /// <summary> Generate everything about customization per tribe and gender. </summary>
-public class CustomizeManager : IAsyncService
+public class CustomizeManager : IAsyncDataContainer
 {
     /// <summary> All races except for Unknown </summary>
     public static readonly IReadOnlyList<Race> Races = ((Race[])Enum.GetValues(typeof(Race))).Skip(1).ToArray();
@@ -52,10 +53,21 @@ public class CustomizeManager : IAsyncService
     public CustomizeManager(ITextureProvider textures, IDataManager gameData, IPluginLog log, NpcCustomizeSet npcCustomizeSet)
     {
         _icons = new IconStorage(textures, gameData);
-        var tmpTask = Task.Run(() => new CustomizeSetFactory(gameData, log, _icons, npcCustomizeSet));
+        var stopwatch   = new Stopwatch();
+        var tmpTask = Task.Run(() =>
+        {
+            stopwatch.Start();
+            return new CustomizeSetFactory(gameData, log, _icons, npcCustomizeSet);
+        });
         var setTasks = AllSets().Select(p
             => tmpTask.ContinueWith(t => _customizationSets[ToIndex(p.Clan, p.Gender)] = t.Result.CreateSet(p.Clan, p.Gender)));
-        Awaiter = Task.WhenAll(setTasks);
+        Awaiter = Task.WhenAll(setTasks).ContinueWith(_ =>
+        {
+            // This is far too hard to estimate sensibly.
+            TotalCount = 0;
+            Memory     = 0;
+            Time       = stopwatch.ElapsedMilliseconds;
+        });
     }
 
     /// <inheritdoc/>
@@ -78,4 +90,12 @@ public class CustomizeManager : IAsyncService
 
         return idx;
     }
+
+    public long Time   { get; private set; }
+    public long Memory { get; private set; }
+
+    public string Name
+        => nameof(CustomizeManager);
+
+    public int TotalCount { get; private set; }
 }

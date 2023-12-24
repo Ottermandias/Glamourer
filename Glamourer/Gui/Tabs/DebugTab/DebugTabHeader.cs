@@ -45,6 +45,7 @@ public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
         => new
         (
             "Game Data",
+            provider.GetRequiredService<DataServiceDiagnosticsDrawer>(),
             provider.GetRequiredService<IdentificationDrawer>(),
             provider.GetRequiredService<RestrictedGearDrawer>(),
             provider.GetRequiredService<ActorDataDrawer>(),
