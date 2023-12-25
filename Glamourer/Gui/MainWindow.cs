@@ -8,6 +8,7 @@ using Glamourer.Events;
 using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Gui.Tabs.AutomationTab;
+using Glamourer.Gui.Tabs.DebugTab;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Gui.Tabs.UnlocksTab;
 using ImGuiNET;

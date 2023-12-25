@@ -25,9 +25,10 @@ public partial class GlamourerIpc : IDisposable
     private readonly ActorService      _actors;
     private readonly DesignConverter   _designConverter;
     private readonly AutoDesignApplier _autoDesignApplier;
+    private readonly DesignManager     _designManager;
 
     public GlamourerIpc(DalamudPluginInterface pi, StateManager stateManager, ObjectManager objects, ActorService actors,
-        DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose, AutoDesignApplier autoDesignApplier)
+        DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose, AutoDesignApplier autoDesignApplier, DesignManager designManager)
     {
         _stateManager        = stateManager;
         _objects             = objects;
@@ -36,6 +37,7 @@ public partial class GlamourerIpc : IDisposable
         _autoDesignApplier   = autoDesignApplier;
         _gPose               = gPose;
         _stateChangedEvent   = stateChangedEvent;
+        _designManager       = designManager;
         _apiVersionProvider  = new FuncProvider<int>(pi, LabelApiVersion, ApiVersion);
         _apiVersionsProvider = new FuncProvider<(int Major, int Minor)>(pi, LabelApiVersions, ApiVersions);
 
@@ -78,6 +80,11 @@ public partial class GlamourerIpc : IDisposable
 
         _stateChangedEvent.Subscribe(OnStateChanged, StateChanged.Priority.GlamourerIpc);
         _gPose.Subscribe(OnGPoseChanged, GPoseService.Priority.GlamourerIpc);
+
+        _applyByGuidAllProvider = new ActionProvider<Guid, string>(pi, LabelApplyByGuidAll, ApplyByGuidAll);
+        _applyByGuidAllToCharacterProvider = new ActionProvider<Guid, Character?>(pi, LabelApplyByGuidAllToCharacter, ApplyByGuidAllToCharacter);
+
+        _getDesignListProvider = new FuncProvider<DesignListEntry[]>(pi, LabelGetDesignList, GetDesignList);
     }
 
     public void Dispose()
@@ -114,6 +121,10 @@ public partial class GlamourerIpc : IDisposable
         _stateChangedProvider.Dispose();
         _gPose.Unsubscribe(OnGPoseChanged);
         _gPoseChangedProvider.Dispose();
+
+        _applyByGuidAllProvider.Dispose();
+        _applyByGuidAllToCharacterProvider.Dispose();
+        _getDesignListProvider.Dispose();
     }
 
     private IEnumerable<ActorIdentifier> FindActors(string actorName)
