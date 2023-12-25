@@ -24,6 +24,7 @@ public class GlamourerChangelog
         Add1_0_4_0(Changelog);
         Add1_0_5_0(Changelog);
         Add1_0_6_0(Changelog);
+        Add1_0_7_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -43,6 +44,16 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_0_7_0(Changelog log)
+        => log.NextVersion("Version 1.0.7.0")
+            .RegisterHighlight("Glamourer now can set the free company crests on body slots, head slots and shields.")
+            .RegisterEntry("Fixed an issue with tooltips in certain combo selectors.")
+            .RegisterEntry("Fixed some issues with Hide Hat Gear and monsters turned into humans.")
+            .RegisterEntry(
+                "Hopefully fixed issues with icons used by Glamourer that are modified through Penumbra preventing Glamourer to even start in some cases.")
+            .RegisterEntry("Those icons might still not appear if they fail to load, but Glamourer should at least still work.", 1)
+            .RegisterEntry("Pre-emptively fixed a potential issue for the holidays.");
 
     private static void Add1_0_6_0(Changelog log)
         => log.NextVersion("Version 1.0.6.0")

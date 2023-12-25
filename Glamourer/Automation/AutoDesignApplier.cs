@@ -39,8 +39,8 @@ public class AutoDesignApplier : IDisposable
     private readonly IClientState           _clientState;
 
     private          ActorState?                                                 _jobChangeState;
-    private readonly Dictionary<FullEquipType, (EquipItem, StateChanged.Source)> _jobChangeMainhand = new();
-    private readonly Dictionary<FullEquipType, (EquipItem, StateChanged.Source)> _jobChangeOffhand  = new();
+    private readonly Dictionary<FullEquipType, (EquipItem, StateChanged.Source)> _jobChangeMainhand = [];
+    private readonly Dictionary<FullEquipType, (EquipItem, StateChanged.Source)> _jobChangeOffhand  = [];
 
     private void ResetJobChange()
     {

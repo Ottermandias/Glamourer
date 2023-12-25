@@ -37,9 +37,9 @@ public sealed class TextureService : TextureCache, IDisposable
         }
     }
 
-    private static IDalamudTextureWrap[] CreateSlotIcons(UiBuilder uiBuilder)
+    private static IDalamudTextureWrap?[] CreateSlotIcons(UiBuilder uiBuilder)
     {
-        var ret = new IDalamudTextureWrap[12];
+        var ret = new IDalamudTextureWrap?[12];
 
         using var uldWrapper = uiBuilder.LoadUld("ui/uld/ArmouryBoard.uld");
 
@@ -49,20 +49,33 @@ public sealed class TextureService : TextureCache, IDisposable
             return ret;
         }
 
-        ret[0]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 1)!;
-        ret[1]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 2)!;
-        ret[2]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 3)!;
-        ret[3]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 5)!;
-        ret[4]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 6)!;
-        ret[5]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 8)!;
-        ret[6]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 9)!;
-        ret[7]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 10)!;
-        ret[8]  = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 11)!;
-        ret[9]  = ret[8];
-        ret[10] = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 0)!;
-        ret[11] = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", 7)!;
+        SetIcon(EquipSlot.Head,     1);
+        SetIcon(EquipSlot.Body,     2);
+        SetIcon(EquipSlot.Hands,    3);
+        SetIcon(EquipSlot.Legs,     5);
+        SetIcon(EquipSlot.Feet,     6);
+        SetIcon(EquipSlot.Ears,     8);
+        SetIcon(EquipSlot.Neck,     9);
+        SetIcon(EquipSlot.Wrists,   10);
+        SetIcon(EquipSlot.RFinger,  11);
+        SetIcon(EquipSlot.MainHand, 0);
+        SetIcon(EquipSlot.OffHand,  7);
+        ret[EquipSlot.LFinger.ToIndex()] = ret[EquipSlot.RFinger.ToIndex()];
 
-        uldWrapper.Dispose();
         return ret;
+
+        void SetIcon(EquipSlot slot, int index)
+        {
+            try
+            {
+                ret[slot.ToIndex()] = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", index)!;
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Log.Error($"Could not get empty slot texture for {slot.ToName()}, icon will be left empty. "
+                  + $"This may be because of incompatible mods affecting your character screen interface:\n{ex}");
+                ret[slot.ToIndex()] = null;
+            }
+        }
     }
 }
