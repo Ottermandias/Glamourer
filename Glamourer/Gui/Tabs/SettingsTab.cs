@@ -247,22 +247,17 @@ public class SettingsTab : ITab
             if (ImGui.Checkbox(code, ref state))
             {
                 action(state);
-                _config.Codes[i] = (code, state);
-                _codeService.VerifyState();
-                _config.Save();
+                _codeService.SaveState();
             }
         }
 
-        if (_codeService.EnabledCaptain)
-        {
-            if (ImGui.Button("Who am I?!?"))
-                _funModule.WhoAmI();
+        if (ImGui.Button("Who am I?!?"))
+            _funModule.WhoAmI();
 
-            ImGui.SameLine();
+        ImGui.SameLine();
 
-            if (ImGui.Button("Who is that!?!"))
-                _funModule.WhoIsThat();
-        }
+        if (ImGui.Button("Who is that!?!"))
+            _funModule.WhoIsThat();
     }
 
     private void DrawCodeHints()

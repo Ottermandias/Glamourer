@@ -121,7 +121,7 @@ public class UnlockOverview
             var icon     = _customizations.Manager.GetIcon(customize.IconId);
 
             ImGui.Image(icon.ImGuiHandle, iconSize, Vector2.Zero, Vector2.One,
-                unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);
+                unlocked || _codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (ImGui.IsItemHovered())
             {
                 using var tt   = ImRaii.Tooltip();
@@ -189,7 +189,7 @@ public class UnlockOverview
 
             var (icon, size) = (iconHandle.ImGuiHandle, new Vector2(iconHandle.Width, iconHandle.Height));
 
-            ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One, unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);
+            ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One, unlocked || _codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (_favorites.Contains(item))
                 ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
                     2 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * ImGuiHelpers.GlobalScale);

@@ -133,7 +133,7 @@ public class StateListener : IDisposable
             _creatingState.TempUnlock();
         }
 
-        _funModule.ApplyFun(actor, new Span<CharacterArmor>((void*)equipDataPtr, 10), ref customize);
+        _funModule.ApplyFunOnLoad(actor, new Span<CharacterArmor>((void*)equipDataPtr, 10), ref customize);
         if (modelId == 0)
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
     }
@@ -216,7 +216,7 @@ public class StateListener : IDisposable
             locked = state[slot, false] is StateChanged.Source.Ipc;
         }
 
-        _funModule.ApplyFun(actor, ref armor.Value, slot);
+        _funModule.ApplyFunToSlot(actor, ref armor.Value, slot);
         if (!_config.UseRestrictedGearProtection || locked)
             return;
 
@@ -315,7 +315,7 @@ public class StateListener : IDisposable
             _lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Value.Skeleton.Id + 50), weapon.Value.Weapon, weapon.Value.Variant,
                 weapon.Value.Stain);
 
-        _funModule.ApplyFun(actor, ref weapon.Value, slot);
+        _funModule.ApplyFunToWeapon(actor, ref weapon.Value, slot);
     }
 
     /// <summary> Update base data for a single changed equipment slot. </summary>

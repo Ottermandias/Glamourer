@@ -94,7 +94,7 @@ public class EquipmentDrawer
 
         if (_config.SmallEquip)
             DrawEquipSmall(equipDrawData);
-        else if (!equipDrawData.Locked && _codes.EnabledArtisan)
+        else if (!equipDrawData.Locked && _codes.Enabled(CodeService.CodeFlag.Artisan))
             DrawEquipArtisan(equipDrawData);
         else
             DrawEquipNormal(equipDrawData);
@@ -117,7 +117,7 @@ public class EquipmentDrawer
 
         if (_config.SmallEquip)
             DrawWeaponsSmall(mainhand, offhand, allWeapons);
-        else if (!mainhand.Locked && _codes.EnabledArtisan)
+        else if (!mainhand.Locked && _codes.Enabled(CodeService.CodeFlag.Artisan))
             DrawWeaponsArtisan(mainhand, offhand);
         else
             DrawWeaponsNormal(mainhand, offhand, allWeapons);

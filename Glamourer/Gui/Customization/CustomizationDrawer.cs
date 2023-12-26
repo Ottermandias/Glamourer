@@ -113,7 +113,7 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizeSer
 
         try
         {
-            if (_codes.EnabledArtisan)
+            if (_codes.Enabled(CodeService.CodeFlag.Artisan))
                 return DrawArtisan();
 
             DrawRaceGenderSelector();

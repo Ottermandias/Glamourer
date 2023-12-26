@@ -18,7 +18,6 @@ public class VisorService : IDisposable
     {
         Event           = visorStateChanged;
         _setupVisorHook = interop.HookFromAddress<UpdateVisorDelegateInternal>((nint)Human.MemberFunctionPointers.SetupVisor, SetupVisorDetour);
-        interop.InitializeFromAttributes(this);
         _setupVisorHook.Enable();
     }
 

@@ -21,7 +21,7 @@ public class ItemManager
 
     public readonly ObjectIdentification                          ObjectIdentification;
     public readonly ExcelSheet<Lumina.Excel.GeneratedSheets.Item> ItemSheet;
-    public readonly DictStain                                    Stains;
+    public readonly DictStain                                     Stains;
     public readonly ItemData                                      ItemData;
     public readonly RestrictedGear                                RestrictedGear;
 
