@@ -104,6 +104,14 @@ public unsafe class FunModule : IDisposable
             return;
         }
 
+        if (_codes.Enabled(CodeService.CodeFlag.Crown)
+         && actor.OnlineStatus is OnlineStatus.PvEMentor or OnlineStatus.PvPMentor or OnlineStatus.TradeMentor
+         && slot.IsEquipment())
+        {
+            armor = new CharacterArmor(6117, 1, 0);
+            return;
+        }
+
         switch (_codes.Masked(CodeService.GearCodes))
         {
             case CodeService.CodeFlag.Emperor:
@@ -143,6 +151,13 @@ public unsafe class FunModule : IDisposable
         if (IsInFestival)
         {
             _festivalSet!.Apply(_stains, _rng, armor);
+            return;
+        }
+
+        if (_codes.Enabled(CodeService.CodeFlag.Crown)
+         && actor.OnlineStatus is OnlineStatus.Mentor or OnlineStatus.PvEMentor or OnlineStatus.PvPMentor or OnlineStatus.TradeMentor)
+        {
+            SetCrown(armor);
             return;
         }
 
@@ -203,7 +218,7 @@ public unsafe class FunModule : IDisposable
         armor.Variant = item.Variant;
     }
 
-    private void SetElephant(EquipSlot slot, ref CharacterArmor armor)
+    private static void SetElephant(EquipSlot slot, ref CharacterArmor armor)
     {
         armor = slot switch
         {
@@ -211,6 +226,16 @@ public unsafe class FunModule : IDisposable
             EquipSlot.Head => new CharacterArmor(6133, 1, 87),
             _              => armor,
         };
+    }
+
+    private static void SetCrown(Span<CharacterArmor> armor)
+    {
+        var clown = new CharacterArmor(6117, 1, 0);
+        armor[0] = clown;
+        armor[1] = clown;
+        armor[2] = clown;
+        armor[3] = clown;
+        armor[4] = clown;
     }
 
     private void SetRace(ref CustomizeArray customize)
