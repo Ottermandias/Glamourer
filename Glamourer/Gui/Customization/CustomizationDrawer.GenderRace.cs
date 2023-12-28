@@ -82,8 +82,11 @@ public partial class CustomizationDrawer
         if (_customize.BodyType.Value == 1)
             return;
 
-        if (!ImGuiUtil.DrawDisabledButton($"Reset Body Type {_customize.BodyType.Value} to Default",
-                new Vector2(_raceSelectorWidth + _framedIconSize.X + ImGui.GetStyle().ItemSpacing.X, 0), string.Empty, _lockedRedraw))
+        var label = _lockedRedraw
+            ? $"Body Type {_customize.BodyType.Value}"
+            : $"Reset Body Type {_customize.BodyType.Value} to Default";
+        if (!ImGuiUtil.DrawDisabledButton(label, new Vector2(_raceSelectorWidth + _framedIconSize.X + ImGui.GetStyle().ItemSpacing.X, 0),
+                string.Empty, _lockedRedraw))
             return;
 
         Changed             |= CustomizeFlag.BodyType;

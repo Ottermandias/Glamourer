@@ -10,6 +10,7 @@ using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Gui.Tabs.AutomationTab;
 using Glamourer.Gui.Tabs.DebugTab;
 using Glamourer.Gui.Tabs.DesignTab;
+using Glamourer.Gui.Tabs.NpcTab;
 using Glamourer.Gui.Tabs.UnlocksTab;
 using ImGuiNET;
 using OtterGui.Custom;
@@ -29,6 +30,7 @@ public class MainWindow : Window, IDisposable
         Automation = 4,
         Unlocks    = 5,
         Messages   = 6,
+        Npcs       = 7,
     }
 
     private readonly Configuration  _config;
@@ -42,12 +44,14 @@ public class MainWindow : Window, IDisposable
     public readonly DesignTab     Designs;
     public readonly AutomationTab Automation;
     public readonly UnlocksTab    Unlocks;
+    public readonly NpcTab        Npcs;
     public readonly MessagesTab   Messages;
 
     public TabType SelectTab = TabType.None;
 
     public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
-        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, MessagesTab messages, DesignQuickBar quickBar)
+        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, MessagesTab messages, DesignQuickBar quickBar,
+        NpcTab npcs)
         : base(GetLabel())
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -65,6 +69,7 @@ public class MainWindow : Window, IDisposable
         _event     = @event;
         Messages   = messages;
         _quickBar  = quickBar;
+        Npcs       = npcs;
         _config    = config;
         _tabs =
         [
@@ -73,6 +78,7 @@ public class MainWindow : Window, IDisposable
             designs,
             automation,
             unlocks,
+            npcs,
             messages,
             debugTab,
         ];
@@ -117,6 +123,7 @@ public class MainWindow : Window, IDisposable
             TabType.Automation => Automation.Label,
             TabType.Unlocks    => Unlocks.Label,
             TabType.Messages   => Messages.Label,
+            TabType.Npcs       => Npcs.Label,
             _                  => ReadOnlySpan<byte>.Empty,
         };
 
@@ -128,6 +135,7 @@ public class MainWindow : Window, IDisposable
         if (label == Settings.Label)   return TabType.Settings;
         if (label == Automation.Label) return TabType.Automation;
         if (label == Unlocks.Label)    return TabType.Unlocks;
+        if (label == Npcs.Label)       return TabType.Npcs;
         if (label == Messages.Label)   return TabType.Messages;
         if (label == Debug.Label)      return TabType.Debug;
         // @formatter:on

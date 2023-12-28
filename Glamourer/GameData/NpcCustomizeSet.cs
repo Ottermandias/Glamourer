@@ -161,7 +161,7 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
         // Convert the NPCs to a dictionary of lists grouped by name.
         var groups = eNpcEquip.Concat(bNpcEquip).GroupBy(d => d.Name).ToDictionary(g => g.Key, g => g.ToList());
         // Iterate through the sorted list.
-        foreach (var (name, duplicates) in groups.OrderBy(kvp => kvp.Key))
+        foreach (var (_, duplicates) in groups.OrderBy(kvp => kvp.Key))
         {
             // Remove any duplicate entries for a name with identical data.
             for (var i = 0; i < duplicates.Count; ++i)
@@ -177,7 +177,7 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
                 }
             }
 
-            // If there is only a single entry, add that. This does not take additional string memory through interning.
+            // If there is only a single entry, add that. 
             if (duplicates.Count == 1)
             {
                 _data.Add(duplicates[0]);
@@ -185,13 +185,8 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
             }
             else
             {
-                // Add all distinct duplicates with their ID specified in the name.
-                _data.AddRange(duplicates
-                    .Select(duplicate => duplicate with
-                    {
-                        Name = $"{name} ({(duplicate.Kind is ObjectKind.BattleNpc ? 'B' : 'E')}{duplicate.Id})",
-                    }));
-                Memory += 96 * duplicates.Count + duplicates.Sum(d => d.Name.Length * 2);
+                _data.AddRange(duplicates);
+                Memory += 96 * duplicates.Count;
             }
         }
 

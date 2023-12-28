@@ -35,7 +35,7 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         var resetScroll = ImGui.InputTextWithHint("##npcFilter", "Filter...", ref _npcFilter, 64);
 
-        using var table = ImRaii.Table("npcs", 5, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingFixedFit,
+        using var table = ImRaii.Table("npcs", 6, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingFixedFit,
             new Vector2(-1, 400 * ImGuiHelpers.GlobalScale));
         if (!table)
             return;
@@ -46,6 +46,7 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
         ImGui.TableSetupColumn("Button",  ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Name",    ImGuiTableColumnFlags.WidthFixed, ImGuiHelpers.GlobalScale * 300);
         ImGui.TableSetupColumn("Kind",    ImGuiTableColumnFlags.WidthFixed);
+        ImGui.TableSetupColumn("Id",      ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Visor",   ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Compare", ImGuiTableColumnFlags.WidthStretch);
 
@@ -66,7 +67,7 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
             ImGui.TableNextColumn();
             if (ImGuiUtil.DrawDisabledButton("Apply", Vector2.Zero, string.Empty, disabled))
             {
-                foreach (var (slot, item, stain) in _designConverter.FromDrawData(data.Equip.ToArray(), data.Mainhand, data.Offhand))
+                foreach (var (slot, item, stain) in _designConverter.FromDrawData(data.Equip.ToArray(), data.Mainhand, data.Offhand, true))
                     _state.ChangeEquip(state!, slot, item, stain, StateChanged.Source.Manual);
                 _state.ChangeVisorState(state!, data.VisorToggled, StateChanged.Source.Manual);
                 _state.ChangeCustomize(state!, data.Customize, CustomizeFlagExtensions.All, StateChanged.Source.Manual);
@@ -79,6 +80,10 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
             ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted(data.Kind is ObjectKind.BattleNpc ? "B" : "E");
+
+            ImGui.TableNextColumn();
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(data.Id.Id.ToString());
 
             using (_ = ImRaii.PushFont(UiBuilder.IconFont))
             {
