@@ -28,7 +28,7 @@ public class StateListener : IDisposable
     private readonly StateManager              _manager;
     private readonly StateApplier              _applier;
     private readonly ItemManager               _items;
-    private readonly CustomizeService      _customizations;
+    private readonly CustomizeService          _customizations;
     private readonly PenumbraService           _penumbra;
     private readonly SlotUpdating              _slotUpdating;
     private readonly WeaponLoading             _weaponLoading;
@@ -134,7 +134,7 @@ public class StateListener : IDisposable
         }
 
         _funModule.ApplyFunOnLoad(actor, new Span<CharacterArmor>((void*)equipDataPtr, 10), ref customize);
-        if (modelId == 0)
+        if (modelId == 0 && _creatingState is not { IsLocked: true })
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
     }
 
