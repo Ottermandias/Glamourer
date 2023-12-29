@@ -47,14 +47,20 @@ public static class UiHelpers
 
     public static bool DrawCheckbox(string label, string tooltip, bool value, out bool on, bool locked)
     {
+        var  startsWithHash = label.StartsWith("##");
         bool ret;
-        using (var disabled = ImRaii.Disabled(locked))
+        using (_ = ImRaii.Disabled(locked))
         {
-            ret = ImGuiUtil.Checkbox("##" + label, string.Empty, value, v => value = v);
+            ret = ImGuiUtil.Checkbox(startsWithHash ? label : "##" + label, string.Empty, value, v => value = v);
         }
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted(label);
+
+        if (!startsWithHash)
+        {
+            ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(label);
+        }
+
         ImGuiUtil.HoverTooltip(tooltip, ImGuiHoveredFlags.AllowWhenDisabled);
         on = value;
         return ret;
@@ -63,7 +69,7 @@ public static class UiHelpers
     public static (bool, bool) DrawMetaToggle(string label, bool currentValue, bool currentApply, out bool newValue,
         out bool newApply, bool locked)
     {
-        var       flags = (sbyte)(currentApply ? currentValue ? 1 : -1 : 0);
+        var flags = (sbyte)(currentApply ? currentValue ? 1 : -1 : 0);
         using (_ = ImRaii.Disabled(locked))
         {
             if (new TristateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw(
