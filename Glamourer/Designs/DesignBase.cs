@@ -74,8 +74,11 @@ public class DesignBase
     internal CustomizeFlag ApplyCustomize
     {
         get => _applyCustomize.FixApplication(CustomizeSet);
-        set => _applyCustomize = value & CustomizeFlagExtensions.AllRelevant;
+        set => _applyCustomize = (value & CustomizeFlagExtensions.AllRelevant) | CustomizeFlag.BodyType;
     }
+
+    internal CustomizeFlag ApplyCustomizeExcludingBodyType
+        => _applyCustomize.FixApplication(CustomizeSet) & ~CustomizeFlag.BodyType;
 
     internal CustomizeFlag ApplyCustomizeRaw
         => _applyCustomize;

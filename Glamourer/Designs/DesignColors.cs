@@ -282,7 +282,7 @@ public class DesignColors : ISavable, IReadOnlyDictionary<string, uint>
 
     public static uint AutoColor(DesignBase design)
     {
-        var customize = design.ApplyCustomize == 0;
+        var customize = design.ApplyCustomizeExcludingBodyType == 0;
         var equip     = design.ApplyEquip == 0;
         return (customize, equip) switch
         {
