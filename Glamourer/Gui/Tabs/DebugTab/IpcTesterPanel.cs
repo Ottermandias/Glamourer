@@ -5,6 +5,8 @@ using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using System;
+using System.Linq;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
@@ -19,12 +21,14 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
     private int    _gameObjectIndex;
     private string _gameObjectName = string.Empty;
     private string _base64Apply    = string.Empty;
+    private string _designIdentifier    = string.Empty;
 
     public void Draw()
     {
         ImGui.InputInt("Game Object Index", ref _gameObjectIndex, 0, 0);
         ImGui.InputTextWithHint("##gameObject", "Character Name...", ref _gameObjectName, 64);
         ImGui.InputTextWithHint("##base64",     "Design Base64...",  ref _base64Apply,    2047);
+        ImGui.InputTextWithHint("##identifier",     "Design identifier...",  ref _designIdentifier,    36);
         using var table = ImRaii.Table("##ipc", 2, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         if (!table)
             return;
@@ -47,6 +51,15 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
             .Invoke(_objectManager.Objects[_gameObjectIndex] as Character);
         if (base64 != null)
             ImGuiUtil.CopyOnClickSelectable(base64);
+        else
+            ImGui.TextUnformatted("Error");
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelGetDesignList);
+        ImGui.TableNextColumn();
+        var designList = GlamourerIpc.GetDesignListSubscriber(_pluginInterface)
+            .Invoke();
+        if (designList != null)
+            ImGuiUtil.CopyOnClickSelectable(string.Join(", ", designList));
         else
             ImGui.TextUnformatted("Error");
 
@@ -104,5 +117,16 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         if (ImGui.Button("Revert##CustomizeCharacter"))
             GlamourerIpc.RevertToAutomationCharacterSubscriber(_pluginInterface)
                 .Invoke(_objectManager.Objects[_gameObjectIndex] as Character, 1337);
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyByGuid);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Apply##ByGuidName"))
+                GlamourerIpc.ApplyByGuidSubscriber(_pluginInterface).Invoke(Guid.Parse(_designIdentifier), _gameObjectName);
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyByGuidToCharacter);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Apply##ByGuidCharacter"))
+                GlamourerIpc.ApplyByGuidToCharacterSubscriber(_pluginInterface)
+                .Invoke(Guid.Parse(_designIdentifier), _objectManager.Objects[_gameObjectIndex] as Character);
     }
 }

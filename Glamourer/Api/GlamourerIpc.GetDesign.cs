@@ -16,23 +16,11 @@ public partial class GlamourerIpc
 {
     public const string LabelGetDesignList = "Glamourer.GetDesignList";
 
-    private readonly FuncProvider<DesignListEntry[]> _getDesignListProvider;
+    private readonly FuncProvider<(string Name, Guid Identifier)[]> _getDesignListProvider;
 
-    public static FuncSubscriber<DesignListEntry[]> GetDesignListSubscriber(DalamudPluginInterface pi)
+    public static FuncSubscriber<(string Name, Guid Identifier)[]> GetDesignListSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelGetDesignList);
 
-    public DesignListEntry[] GetDesignList()
-        => _designManager.Designs.Select(x => new DesignListEntry(x)).ToArray();
-
-    public record class DesignListEntry
-    {
-        public string Name;
-        public Guid Identifier;
-
-        public DesignListEntry(Design design)
-        {
-            Name = design.Name;
-            Identifier = design.Identifier;
-        }
-    }
+    public (string Name, Guid Identifier)[] GetDesignList()
+        => _designManager.Designs.Select(x => (x.Name.Text, x.Identifier)).ToArray();
 }

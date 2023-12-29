@@ -12,27 +12,27 @@ namespace Glamourer.Api;
 
 public partial class GlamourerIpc
 {
-    public const string LabelApplyByGuidAll = "Glamourer.ApplyByGuidAll";
-    public const string LabelApplyByGuidAllToCharacter = "Glamourer.ApplyByGuidAllToCharacter";
+    public const string LabelApplyByGuid = "Glamourer.ApplyByGuid";
+    public const string LabelApplyByGuidToCharacter = "Glamourer.ApplyByGuidToCharacter";
 
-    private readonly ActionProvider<Guid, string> _applyByGuidAllProvider;
-    private readonly ActionProvider<Guid, Character?> _applyByGuidAllToCharacterProvider;
+    private readonly ActionProvider<Guid, string> _applyByGuidProvider;
+    private readonly ActionProvider<Guid, Character?> _applyByGuidToCharacterProvider;
 
-    public static ActionSubscriber<Guid, string> ApplyByGuidAllSubscriber(DalamudPluginInterface pi)
-        => new(pi, LabelApplyByGuidAll);
+    public static ActionSubscriber<Guid, string> ApplyByGuidSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelApplyByGuid);
 
-    public static ActionSubscriber<Guid, Character?> ApplyByGuidAllToCharacterSubscriber(DalamudPluginInterface pi)
-        => new(pi, LabelApplyByGuidAllToCharacter);
+    public static ActionSubscriber<Guid, Character?> ApplyByGuidToCharacterSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelApplyByGuidToCharacter);
 
-    public void ApplyByGuidAll(Guid GUID, string characterName)
-        => ApplyDesignByGuid(GUID, FindActors(characterName), 0);
+    public void ApplyByGuid(Guid Identifier, string characterName)
+        => ApplyDesignByGuid(Identifier, FindActors(characterName), 0);
 
-    public void ApplyByGuidAllToCharacter(Guid GUID, Character? character)
-        => ApplyDesignByGuid(GUID, FindActors(character), 0);
+    public void ApplyByGuidToCharacter(Guid Identifier, Character? character)
+        => ApplyDesignByGuid(Identifier, FindActors(character), 0);
 
-    private void ApplyDesignByGuid(Guid GUID, IEnumerable<ActorIdentifier> actors, uint lockCode)
+    private void ApplyDesignByGuid(Guid Identifier, IEnumerable<ActorIdentifier> actors, uint lockCode)
     {
-        var design = _designManager.Designs.FirstOrDefault(x => x.Identifier == GUID);
+        var design = _designManager.Designs.FirstOrDefault(x => x.Identifier == Identifier);
         if (design == null)
             return;
 

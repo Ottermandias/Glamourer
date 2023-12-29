@@ -81,10 +81,10 @@ public partial class GlamourerIpc : IDisposable
         _stateChangedEvent.Subscribe(OnStateChanged, StateChanged.Priority.GlamourerIpc);
         _gPose.Subscribe(OnGPoseChanged, GPoseService.Priority.GlamourerIpc);
 
-        _applyByGuidAllProvider = new ActionProvider<Guid, string>(pi, LabelApplyByGuidAll, ApplyByGuidAll);
-        _applyByGuidAllToCharacterProvider = new ActionProvider<Guid, Character?>(pi, LabelApplyByGuidAllToCharacter, ApplyByGuidAllToCharacter);
+        _applyByGuidProvider = new ActionProvider<Guid, string>(pi, LabelApplyByGuid, ApplyByGuid);
+        _applyByGuidToCharacterProvider = new ActionProvider<Guid, Character?>(pi, LabelApplyByGuidToCharacter, ApplyByGuidToCharacter);
 
-        _getDesignListProvider = new FuncProvider<DesignListEntry[]>(pi, LabelGetDesignList, GetDesignList);
+        _getDesignListProvider = new FuncProvider<(string Name, Guid Identifier)[]>(pi, LabelGetDesignList, GetDesignList);
     }
 
     public void Dispose()
@@ -122,8 +122,8 @@ public partial class GlamourerIpc : IDisposable
         _gPose.Unsubscribe(OnGPoseChanged);
         _gPoseChangedProvider.Dispose();
 
-        _applyByGuidAllProvider.Dispose();
-        _applyByGuidAllToCharacterProvider.Dispose();
+        _applyByGuidProvider.Dispose();
+        _applyByGuidToCharacterProvider.Dispose();
         _getDesignListProvider.Dispose();
     }
 
