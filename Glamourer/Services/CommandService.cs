@@ -84,7 +84,8 @@ public class CommandService : IDisposable
                     _config.Ephemeral.Save();
                     return;
                 default:
-                    _chat.Print("Use without argument to toggle the main window.");
+                    _chat.Print("Use without argument to toggle the main w" +
+                        "indow.");
                     _chat.Print(new SeStringBuilder().AddText("Use ").AddPurple("/glamour").AddText(" instead of ").AddRed("/glamourer").AddText(" for application commands.").BuiltString);
                     _chat.Print(new SeStringBuilder().AddCommand("qdb",  "Toggles the quick design bar on or off.").BuiltString);
                     _chat.Print(new SeStringBuilder().AddCommand("lock", "Toggles the lock of the main window on or off.").BuiltString);
@@ -113,6 +114,7 @@ public class CommandService : IDisposable
             "automation"        => SetAutomation(argument),
             "copy"              => CopyState(argument),
             "save"              => SaveState(argument),
+            "delete"            => Delete(argument),
             _                   => PrintHelp(argumentList[0]),
         };
     }
@@ -406,6 +408,39 @@ public class CommandService : IDisposable
                 }
             }
         }
+
+        return true;
+    }
+
+    private bool Delete(string argument)
+    {
+        if (argument.Length == 0)
+        {
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour delete ").AddYellow("[Design Name]").BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText(
+                    "    》 The design name is case-insensitive. If multiple designs of that name up to case exist, the first one is chosen.")
+                .BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText(
+                    "    》 If using the design identifier, you need to specify at least 4 characters for it, and the first one starting with the provided characters is chosen.")
+                .BuiltString);
+            return false;
+        }
+
+        //Design? design = _designManager.Designs.FirstOrDefault(design => design.Name == arguments);
+        var lower = argument.ToLowerInvariant();
+        Design? design = _designManager.Designs.FirstOrDefault(d
+            => d.Name.Lower == lower || lower.Length > 3 && d.Identifier.ToString().StartsWith(lower));
+
+        if (design == null)
+        {
+            _chat.Print(new SeStringBuilder().AddRed("Error with finding the design.").BuiltString);
+            return false;
+        }
+
+        _objects.Update();
+        _designManager.Delete(design);
 
         return true;
     }
