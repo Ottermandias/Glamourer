@@ -427,7 +427,6 @@ public class CommandService : IDisposable
             return false;
         }
 
-        //Design? design = _designManager.Designs.FirstOrDefault(design => design.Name == arguments);
         var lower = argument.ToLowerInvariant();
         Design? design = _designManager.Designs.FirstOrDefault(d
             => d.Name.Lower == lower || lower.Length > 3 && d.Identifier.ToString().StartsWith(lower));
