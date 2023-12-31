@@ -85,7 +85,8 @@ public class CommandService : IDisposable
                     return;
                 default:
                     _chat.Print("Use without argument to toggle the main window.");
-                    _chat.Print(new SeStringBuilder().AddText("Use ").AddPurple("/glamour").AddText(" instead of ").AddRed("/glamourer").AddText(" for application commands.").BuiltString);
+                    _chat.Print(new SeStringBuilder().AddText("Use ").AddPurple("/glamour").AddText(" instead of ").AddRed("/glamourer")
+                        .AddText(" for application commands.").BuiltString);
                     _chat.Print(new SeStringBuilder().AddCommand("qdb",  "Toggles the quick design bar on or off.").BuiltString);
                     _chat.Print(new SeStringBuilder().AddCommand("lock", "Toggles the lock of the main window on or off.").BuiltString);
                     return;
@@ -415,7 +416,7 @@ public class CommandService : IDisposable
     {
         if (argument.Length == 0)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour delete ").AddYellow("[Design Name]").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour delete ").AddYellow("[Design Name, Path or Identifier]").BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText(
                     "    》 The design name is case-insensitive. If multiple designs of that name up to case exist, the first one is chosen.")
@@ -424,21 +425,16 @@ public class CommandService : IDisposable
                 .AddText(
                     "    》 If using the design identifier, you need to specify at least 4 characters for it, and the first one starting with the provided characters is chosen.")
                 .BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》 The design path is the folder path in the selector, with '/' as separators. It is also case-insensitive.")
+                .BuiltString);
             return false;
         }
 
-        var lower = argument.ToLowerInvariant();
-        Design? design = _designManager.Designs.FirstOrDefault(d
-            => d.Name.Lower == lower || lower.Length > 3 && d.Identifier.ToString().StartsWith(lower));
-
-        if (design == null)
-        {
-            _chat.Print(new SeStringBuilder().AddRed("Error with finding the design.").BuiltString);
+        if (!GetDesign(argument, out var designBase, false) || designBase is not Design d)
             return false;
-        }
 
-        _objects.Update();
-        _designManager.Delete(design);
+        _designManager.Delete(d);
 
         return true;
     }
@@ -553,14 +549,13 @@ public class CommandService : IDisposable
                 design = leaf.Value;
         }
 
-        if (design == null)
-        {
-            _chat.Print(new SeStringBuilder().AddText("The token ").AddYellow(argument, true).AddText(" did not resolve to an existing design.")
-                .BuiltString);
-            return false;
-        }
+        if (design != null)
+            return true;
 
-        return true;
+        _chat.Print(new SeStringBuilder().AddText("The token ").AddYellow(argument, true).AddText(" did not resolve to an existing design.")
+            .BuiltString);
+        return false;
+
     }
 
     private unsafe bool IdentifierHandling(string argument, out ActorIdentifier[] identifiers, bool allowAnyWorld, bool allowIndex)
@@ -580,10 +575,10 @@ public class CommandService : IDisposable
 
                 if (allowIndex && identifier.Type is IdentifierType.Npc)
                     identifier = _actors.CreateNpc(identifier.Kind, identifier.DataId, obj.Index);
-                identifiers = new[]
-                {
+                identifiers =
+                [
                     identifier,
-                };
+                ];
             }
             else
             {
@@ -600,7 +595,7 @@ public class CommandService : IDisposable
 
             return true;
         }
-        catch (ActorManager.IdentifierParseError e)
+        catch (ActorIdentifierFactory.IdentifierParseError e)
         {
             _chat.Print(new SeStringBuilder().AddText("The argument ").AddRed(argument, true)
                 .AddText($" could not be converted to an identifier. {e.Message}")
