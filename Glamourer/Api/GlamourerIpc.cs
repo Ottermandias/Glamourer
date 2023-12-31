@@ -80,10 +80,10 @@ public sealed partial class GlamourerIpc : IDisposable
         _stateChangedProvider = new EventProvider<StateChanged.Type, nint, Lazy<string>>(pi, LabelStateChanged);
         _gPoseChangedProvider = new EventProvider<bool>(pi, LabelGPoseChanged);
 
-        _setItemProvider = new FuncProvider<Character?, byte, ulong, uint, int>(pi, LabelSetItem,
-            (idx, slot, item, key) => (int)SetItem(idx, (EquipSlot)slot, item, key));
-        _setItemByActorNameProvider = new FuncProvider<string, byte, ulong, uint, int>(pi, LabelSetItemByActorName,
-            (name, slot, item, key) => (int)SetItemByActorName(name, (EquipSlot)slot, item, key));
+        _setItemProvider = new FuncProvider<Character?, byte, ulong, byte, uint, int>(pi, LabelSetItem,
+            (idx, slot, item, stain, key) => (int)SetItem(idx, (EquipSlot)slot, item, stain, key));
+        _setItemByActorNameProvider = new FuncProvider<string, byte, ulong, byte, uint, int>(pi, LabelSetItemByActorName,
+            (name, slot, item, stain, key) => (int)SetItemByActorName(name, (EquipSlot)slot, item, stain, key));
 
         _stateChangedEvent.Subscribe(OnStateChanged, StateChanged.Priority.GlamourerIpc);
         _gPose.Subscribe(OnGPoseChanged, GPoseService.Priority.GlamourerIpc);

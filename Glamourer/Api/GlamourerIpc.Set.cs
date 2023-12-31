@@ -23,16 +23,16 @@ public partial class GlamourerIpc
     public const string LabelSetItemByActorName = "Glamourer.SetItemByActorName";
 
 
-    private readonly FuncProvider<Character?, byte, ulong, uint, int> _setItemProvider;
-    private readonly FuncProvider<string, byte, ulong, uint, int>     _setItemByActorNameProvider;
+    private readonly FuncProvider<Character?, byte, ulong, byte, uint, int> _setItemProvider;
+    private readonly FuncProvider<string, byte, ulong, byte, uint, int>     _setItemByActorNameProvider;
 
-    public static FuncSubscriber<Character?, byte, ulong, uint, int> SetItemSubscriber(DalamudPluginInterface pi)
+    public static FuncSubscriber<Character?, byte, ulong, byte, uint, int> SetItemSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelSetItem);
 
-    public static FuncSubscriber<string, byte, ulong, uint, int> SetItemByActorNameSubscriber(DalamudPluginInterface pi)
+    public static FuncSubscriber<string, byte, ulong, byte, uint, int> SetItemByActorNameSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelSetItemByActorName);
 
-    private GlamourerErrorCode SetItem(Character? character, EquipSlot slot, CustomItemId itemId, uint key)
+    private GlamourerErrorCode SetItem(Character? character, EquipSlot slot, CustomItemId itemId, StainId stainId, uint key)
     {
         if (itemId.Id == 0)
             itemId = ItemManager.NothingId(slot);
@@ -56,11 +56,11 @@ public partial class GlamourerIpc
         if (!state.ModelData.IsHuman)
             return GlamourerErrorCode.ActorNotHuman;
 
-        _stateManager.ChangeItem(state, slot, item, StateChanged.Source.Ipc, key);
+        _stateManager.ChangeEquip(state, slot, item, stainId, StateChanged.Source.Ipc, key);
         return GlamourerErrorCode.Success;
     }
 
-    private GlamourerErrorCode SetItemByActorName(string name, EquipSlot slot, CustomItemId itemId, uint key)
+    private GlamourerErrorCode SetItemByActorName(string name, EquipSlot slot, CustomItemId itemId, StainId stainId, uint key)
     {
         if (itemId.Id == 0)
             itemId = ItemManager.NothingId(slot);
@@ -83,7 +83,7 @@ public partial class GlamourerIpc
             if (!state.ModelData.IsHuman)
                 return GlamourerErrorCode.ActorNotHuman;
 
-            _stateManager.ChangeItem(state, slot, item, StateChanged.Source.Ipc, key);
+            _stateManager.ChangeEquip(state, slot, item, stainId, StateChanged.Source.Ipc, key);
             found = true;
         }
 
