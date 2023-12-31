@@ -1,9 +1,7 @@
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using Glamourer.Customization;
 using Glamourer.Services;
-using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using Lumina.Misc;
@@ -27,7 +25,7 @@ public static class UiHelpers
 
     public static void DrawIcon(this EquipItem item, TextureService textures, Vector2 size, EquipSlot slot)
     {
-        var isEmpty = item.ModelId.Id == 0;
+        var isEmpty = item.PrimaryId.Id == 0;
         var (ptr, textureSize, empty) = textures.GetIcon(item, slot);
         if (empty)
         {
@@ -49,9 +47,21 @@ public static class UiHelpers
 
     public static bool DrawCheckbox(string label, string tooltip, bool value, out bool on, bool locked)
     {
-        using var disabled = ImRaii.Disabled(locked);
-        var       ret      = ImGuiUtil.Checkbox(label, string.Empty, value, v => value = v);
-        ImGuiUtil.HoverTooltip(tooltip);
+        var  startsWithHash = label.StartsWith("##");
+        bool ret;
+        using (_ = ImRaii.Disabled(locked))
+        {
+            ret = ImGuiUtil.Checkbox(startsWithHash ? label : "##" + label, string.Empty, value, v => value = v);
+        }
+
+        if (!startsWithHash)
+        {
+            ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(label);
+        }
+
+        ImGuiUtil.HoverTooltip(tooltip, ImGuiHoveredFlags.AllowWhenDisabled);
         on = value;
         return ret;
     }
@@ -59,9 +69,8 @@ public static class UiHelpers
     public static (bool, bool) DrawMetaToggle(string label, bool currentValue, bool currentApply, out bool newValue,
         out bool newApply, bool locked)
     {
-        var       flags = (sbyte)(currentApply ? currentValue ? 1 : -1 : 0);
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
-        using (var disabled = ImRaii.Disabled(locked))
+        var flags = (sbyte)(currentApply ? currentValue ? 1 : -1 : 0);
+        using (_ = ImRaii.Disabled(locked))
         {
             if (new TristateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw(
                     "##" + label, flags, out flags))
@@ -82,7 +91,8 @@ public static class UiHelpers
 
         ImGuiUtil.HoverTooltip($"This attribute will be {(currentApply ? currentValue ? "enabled." : "disabled." : "kept as is.")}");
 
-        ImGui.SameLine();
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(label);
 
         return (currentValue != newValue, currentApply != newApply);

@@ -7,7 +7,6 @@ using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui.Raii;
 using Penumbra.Api.Enums;
@@ -76,7 +75,7 @@ public class PenumbraChangedItemTooltip : IDisposable
             case EquipSlot.OffHand when !CanApplyWeapon(EquipSlot.OffHand,   item):
                 break;
             case EquipSlot.RFinger:
-                using (var tt = !openTooltip ? null : ImRaii.Tooltip())
+                using (_ = !openTooltip ? null : ImRaii.Tooltip())
                 {
                     ImGui.TextUnformatted($"{prefix}Right-Click to apply to current actor (Right Finger).");
                     ImGui.TextUnformatted($"{prefix}Shift + Right-Click to apply to current actor (Left Finger).");
@@ -92,7 +91,7 @@ public class PenumbraChangedItemTooltip : IDisposable
 
                 break;
             default:
-                using (var tt = !openTooltip ? null : ImRaii.Tooltip())
+                using (_ = !openTooltip ? null : ImRaii.Tooltip())
                 {
                     ImGui.TextUnformatted($"{prefix}Right-Click to apply to current actor.");
                     if (last.Valid)
@@ -166,7 +165,7 @@ public class PenumbraChangedItemTooltip : IDisposable
         {
             case ChangedItemType.ItemOffhand:
             case ChangedItemType.Item:
-                if (!_items.ItemService.AwaitedService.TryGetValue(id, type is ChangedItemType.Item ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
+                if (!_items.ItemData.TryGetValue(id, type is ChangedItemType.Item ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
                     return;
 
                 CreateTooltip(item, "[Glamourer] ", false);
@@ -177,7 +176,7 @@ public class PenumbraChangedItemTooltip : IDisposable
     private bool CanApplyWeapon(EquipSlot slot, EquipItem item)
     {
         var main     = _objects.Player.GetMainhand();
-        var mainItem = _items.Identify(slot, main.Set, main.Type, main.Variant);
+        var mainItem = _items.Identify(slot, main.Skeleton, main.Weapon, main.Variant);
         if (slot == EquipSlot.MainHand)
             return item.Type == mainItem.Type;
 
@@ -197,7 +196,7 @@ public class PenumbraChangedItemTooltip : IDisposable
                 if (!Player(out var state))
                     return;
 
-                if (!_items.ItemService.AwaitedService.TryGetValue(id, type is ChangedItemType.Item ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
+                if (!_items.ItemData.TryGetValue(id, type is ChangedItemType.Item ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
                     return;
 
                 ApplyItem(state, item);

@@ -12,7 +12,7 @@ using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -24,7 +24,7 @@ public class EquipmentDrawer
 
     private readonly ItemManager                            _items;
     private readonly GlamourerColorCombo                    _stainCombo;
-    private readonly StainData                              _stainData;
+    private readonly DictStain                             _stainData;
     private readonly ItemCombo[]                            _itemCombo;
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
     private readonly CodeService                            _codes;
@@ -66,8 +66,8 @@ public class EquipmentDrawer
         _iconSize    = new Vector2(2 * ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y);
         _comboLength = DefaultWidth * ImGuiHelpers.GlobalScale;
         if (_requiredComboWidthUnscaled == 0)
-            _requiredComboWidthUnscaled = _items.ItemService.AwaitedService.AllItems(true)
-                    .Concat(_items.ItemService.AwaitedService.AllItems(false))
+            _requiredComboWidthUnscaled = _items.ItemData.AllItems(true)
+                    .Concat(_items.ItemData.AllItems(false))
                     .Max(i => ImGui.CalcTextSize($"{i.Item2.Name} ({i.Item2.ModelString})").X)
               / ImGuiHelpers.GlobalScale;
 
@@ -94,7 +94,7 @@ public class EquipmentDrawer
 
         if (_config.SmallEquip)
             DrawEquipSmall(equipDrawData);
-        else if (!equipDrawData.Locked && _codes.EnabledArtisan)
+        else if (!equipDrawData.Locked && _codes.Enabled(CodeService.CodeFlag.Artisan))
             DrawEquipArtisan(equipDrawData);
         else
             DrawEquipNormal(equipDrawData);
@@ -102,7 +102,7 @@ public class EquipmentDrawer
 
     public void DrawWeapons(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
     {
-        if (mainhand.CurrentItem.ModelId.Id == 0)
+        if (mainhand.CurrentItem.PrimaryId.Id == 0)
             return;
 
         if (_config.HideApplyCheckmarks)
@@ -117,7 +117,7 @@ public class EquipmentDrawer
 
         if (_config.SmallEquip)
             DrawWeaponsSmall(mainhand, offhand, allWeapons);
-        else if (!mainhand.Locked && _codes.EnabledArtisan)
+        else if (!mainhand.Locked && _codes.Enabled(CodeService.CodeFlag.Artisan))
             DrawWeaponsArtisan(mainhand, offhand);
         else
             DrawWeaponsNormal(mainhand, offhand, allWeapons);
@@ -202,24 +202,24 @@ public class EquipmentDrawer
 
         void DrawWeapon(in EquipDrawData current)
         {
-            int setId   = current.CurrentItem.ModelId.Id;
-            int type    = current.CurrentItem.WeaponType.Id;
+            int setId   = current.CurrentItem.PrimaryId.Id;
+            int type    = current.CurrentItem.SecondaryId.Id;
             int variant = current.CurrentItem.Variant.Id;
             ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
             if (ImGui.InputInt("##setId", ref setId, 0, 0))
             {
-                var newSetId = (SetId)Math.Clamp(setId, 0, ushort.MaxValue);
-                if (newSetId.Id != current.CurrentItem.ModelId.Id)
-                    current.ItemSetter(_items.Identify(current.Slot, newSetId, current.CurrentItem.WeaponType, current.CurrentItem.Variant));
+                var newSetId = (PrimaryId)Math.Clamp(setId, 0, ushort.MaxValue);
+                if (newSetId.Id != current.CurrentItem.PrimaryId.Id)
+                    current.ItemSetter(_items.Identify(current.Slot, newSetId, current.CurrentItem.SecondaryId, current.CurrentItem.Variant));
             }
 
             ImGui.SameLine();
             ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
             if (ImGui.InputInt("##type", ref type, 0, 0))
             {
-                var newType = (WeaponType)Math.Clamp(type, 0, ushort.MaxValue);
-                if (newType.Id != current.CurrentItem.WeaponType.Id)
-                    current.ItemSetter(_items.Identify(current.Slot, current.CurrentItem.ModelId, newType, current.CurrentItem.Variant));
+                var newType = (SecondaryId)Math.Clamp(type, 0, ushort.MaxValue);
+                if (newType.Id != current.CurrentItem.SecondaryId.Id)
+                    current.ItemSetter(_items.Identify(current.Slot, current.CurrentItem.PrimaryId, newType, current.CurrentItem.Variant));
             }
 
             ImGui.SameLine();
@@ -228,7 +228,8 @@ public class EquipmentDrawer
             {
                 var newVariant = (Variant)Math.Clamp(variant, 0, byte.MaxValue);
                 if (newVariant.Id != current.CurrentItem.Variant.Id)
-                    current.ItemSetter(_items.Identify(current.Slot, current.CurrentItem.ModelId, current.CurrentItem.WeaponType, newVariant));
+                    current.ItemSetter(_items.Identify(current.Slot, current.CurrentItem.PrimaryId, current.CurrentItem.SecondaryId,
+                        newVariant));
             }
         }
     }
@@ -249,13 +250,13 @@ public class EquipmentDrawer
     /// <summary> Draw an input for armor that can set arbitrary values instead of choosing items. </summary>
     private void DrawArmorArtisan(EquipDrawData data)
     {
-        int setId   = data.CurrentItem.ModelId.Id;
+        int setId   = data.CurrentItem.PrimaryId.Id;
         int variant = data.CurrentItem.Variant.Id;
         ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt("##setId", ref setId, 0, 0))
         {
-            var newSetId = (SetId)Math.Clamp(setId, 0, ushort.MaxValue);
-            if (newSetId.Id != data.CurrentItem.ModelId.Id)
+            var newSetId = (PrimaryId)Math.Clamp(setId, 0, ushort.MaxValue);
+            if (newSetId.Id != data.CurrentItem.PrimaryId.Id)
                 data.ItemSetter(_items.Identify(data.Slot, newSetId, data.CurrentItem.Variant));
         }
 
@@ -265,7 +266,7 @@ public class EquipmentDrawer
         {
             var newVariant = (byte)Math.Clamp(variant, 0, byte.MaxValue);
             if (newVariant != data.CurrentItem.Variant)
-                data.ItemSetter(_items.Identify(data.Slot, data.CurrentItem.ModelId, newVariant));
+                data.ItemSetter(_items.Identify(data.Slot, data.CurrentItem.PrimaryId, newVariant));
         }
     }
 
@@ -454,7 +455,7 @@ public class EquipmentDrawer
         else if (combo.CustomVariant.Id > 0)
             data.ItemSetter(_items.Identify(data.Slot, combo.CustomSetId, combo.CustomVariant));
 
-        if (!data.Locked && data.CurrentItem.ModelId.Id != 0)
+        if (!data.Locked && data.CurrentItem.PrimaryId.Id != 0)
         {
             if (clear || ImGui.IsItemClicked(ImGuiMouseButton.Right))
                 data.ItemSetter(ItemManager.NothingItem(data.Slot));

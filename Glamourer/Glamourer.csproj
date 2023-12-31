@@ -84,7 +84,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OtterGui\OtterGui.csproj" />
-    <ProjectReference Include="..\Glamourer.GameData\Glamourer.GameData.csproj" />
     <ProjectReference Include="..\Penumbra.Api\Penumbra.Api.csproj" />
     <ProjectReference Include="..\Penumbra.String\Penumbra.string.csproj" />
     <ProjectReference Include="..\Penumbra.GameData\Penumbra.GameData.csproj" />
@@ -109,8 +108,8 @@
 
   <Target Name="GetGitHash" BeforeTargets="GetAssemblyVersion" Returns="InformationalVersion">
     <Exec Command="git rev-parse --short HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" ContinueOnError="true">
-      <Output TaskParameter="ExitCode" PropertyName="GitCommitHashSuccess"/>
-      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" Condition="$(GitCommitHashSuccess) == 0"/>
+      <Output TaskParameter="ExitCode" PropertyName="GitCommitHashSuccess" />
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" Condition="$(GitCommitHashSuccess) == 0" />
     </Exec>
 
     <PropertyGroup>

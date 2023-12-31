@@ -4,25 +4,30 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Dalamud.Plugin.Services;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
-using Glamourer.Structs;
 using Penumbra.GameData.Actors;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
 
-public class StateManager(ActorService _actors, ItemManager _items, StateChanged _event, StateApplier _applier, StateEditor _editor,
-        HumanModelList _humans, ICondition _condition, IClientState _clientState)
+public class StateManager(
+    ActorManager _actors,
+    ItemManager _items,
+    StateChanged _event,
+    StateApplier _applier,
+    StateEditor _editor,
+    HumanModelList _humans,
+    ICondition _condition,
+    IClientState _clientState)
     : IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
-    private readonly Dictionary<ActorIdentifier, ActorState> _states = new();
+    private readonly Dictionary<ActorIdentifier, ActorState> _states = [];
 
     public IEnumerator<KeyValuePair<ActorIdentifier, ActorState>> GetEnumerator()
         => _states.GetEnumerator();
@@ -50,7 +55,7 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
 
     /// <inheritdoc cref="GetOrCreate(ActorIdentifier, Actor, out ActorState?)"/>
     public bool GetOrCreate(Actor actor, [NotNullWhen(true)] out ActorState? state)
-        => GetOrCreate(actor.GetIdentifier(_actors.AwaitedService), actor, out state);
+        => GetOrCreate(actor.GetIdentifier(_actors), actor, out state);
 
     /// <summary> Try to obtain or create a new state for an existing actor. Returns false if no state could be created. </summary>
     public unsafe bool GetOrCreate(ActorIdentifier identifier, Actor actor, [NotNullWhen(true)] out ActorState? state)
@@ -102,7 +107,7 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
         // TODO reverse search model data to get model id from model.
         if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
         {
-            ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(Customize*)&actor.AsCharacter->DrawData.CustomizeData,
+            ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(CustomizeArray*)&actor.AsCharacter->DrawData.CustomizeData,
                 (nint)(&actor.AsCharacter->DrawData.Head));
             return ret;
         }
@@ -170,8 +175,8 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
         }
 
         // Set the weapons regardless of source.
-        var mainItem = _items.Identify(EquipSlot.MainHand, main.Set, main.Type, main.Variant);
-        var offItem  = _items.Identify(EquipSlot.OffHand,  off.Set,  off.Type,  off.Variant, mainItem.Type);
+        var mainItem = _items.Identify(EquipSlot.MainHand, main.Skeleton, main.Weapon, main.Variant);
+        var offItem  = _items.Identify(EquipSlot.OffHand,  off.Skeleton,  off.Weapon,  off.Variant, mainItem.Type);
         ret.SetItem(EquipSlot.MainHand, mainItem);
         ret.SetStain(EquipSlot.MainHand, main.Stain);
         ret.SetItem(EquipSlot.OffHand, offItem);
@@ -190,13 +195,13 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
     /// <summary> This is hardcoded in the game. </summary>
     private void FistWeaponHack(ref DesignData ret, ref CharacterWeapon mainhand, ref CharacterWeapon offhand)
     {
-        if (mainhand.Set.Id is < 1601 or >= 1651)
+        if (mainhand.Skeleton.Id is < 1601 or >= 1651)
             return;
 
-        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Set, (Variant)offhand.Type.Id);
-        offhand.Set     = (SetId)(mainhand.Set.Id + 50);
-        offhand.Variant = mainhand.Variant;
-        offhand.Type    = mainhand.Type;
+        var gauntlets = _items.Identify(EquipSlot.Hands, offhand.Skeleton, (Variant)offhand.Weapon.Id);
+        offhand.Skeleton = (PrimaryId)(mainhand.Skeleton.Id + 50);
+        offhand.Variant  = mainhand.Variant;
+        offhand.Weapon   = mainhand.Weapon;
         ret.SetItem(EquipSlot.Hands, gauntlets);
         ret.SetStain(EquipSlot.Hands, mainhand.Stain);
     }
@@ -205,10 +210,10 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
 
     /// <summary> Turn an actor human. </summary>
     public void TurnHuman(ActorState state, StateChanged.Source source, uint key = 0)
-        => ChangeModelId(state, 0, Customize.Default, nint.Zero, source, key);
+        => ChangeModelId(state, 0, CustomizeArray.Default, nint.Zero, source, key);
 
     /// <summary> Turn an actor to. </summary>
-    public void ChangeModelId(ActorState state, uint modelId, Customize customize, nint equipData, StateChanged.Source source,
+    public void ChangeModelId(ActorState state, uint modelId, CustomizeArray customize, nint equipData, StateChanged.Source source,
         uint key = 0)
     {
         if (!_editor.ChangeModelId(state, modelId, customize, equipData, source, out var old, key))
@@ -233,7 +238,8 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
     }
 
     /// <summary> Change an entire customization array according to flags. </summary>
-    public void ChangeCustomize(ActorState state, in Customize customizeInput, CustomizeFlag apply, StateChanged.Source source, uint key = 0)
+    public void ChangeCustomize(ActorState state, in CustomizeArray customizeInput, CustomizeFlag apply, StateChanged.Source source,
+        uint key = 0)
     {
         if (!_editor.ChangeHumanCustomize(state, customizeInput, apply, source, out var old, out var applied, key))
             return;
@@ -447,7 +453,7 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
 
         var redraw = state.ModelData.ModelId != state.BaseData.ModelId
          || !state.ModelData.IsHuman
-         || Customize.Compare(state.ModelData.Customize, state.BaseData.Customize).RequiresRedraw();
+         || CustomizeArray.Compare(state.ModelData.Customize, state.BaseData.Customize).RequiresRedraw();
         state.ModelData = state.BaseData;
         state.ModelData.SetIsWet(false);
         foreach (var index in Enum.GetValues<CustomizeIndex>())
@@ -458,7 +464,7 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
             state[slot, true]  = StateChanged.Source.Game;
             state[slot, false] = StateChanged.Source.Game;
         }
-        
+
         foreach (var type in Enum.GetValues<ActorState.MetaIndex>())
             state[type] = StateChanged.Source.Game;
 
@@ -470,7 +476,7 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
             actors = ApplyAll(state, redraw, true);
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Reset, StateChanged.Source.Manual, state, actors, null);
+        _event.Invoke(StateChanged.Type.Reset, StateChanged.Source.Manual, state, actors);
     }
 
     public void ResetStateFixed(ActorState state, uint key = 0)
@@ -538,7 +544,7 @@ public class StateManager(ActorService _actors, ItemManager _items, StateChanged
         if (!GetOrCreate(actor, out var state))
             return;
 
-        ApplyAll(state, !actor.Model.IsHuman || Customize.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(),
+        ApplyAll(state, !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(),
             false);
     }
 

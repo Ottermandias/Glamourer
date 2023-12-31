@@ -8,12 +8,12 @@ using Dalamud.Interface.Utility.Raii;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui.Widgets;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public sealed class GlamourerColorCombo(float _comboWidth, StainData _stains, FavoriteManager _favorites)
+public sealed class GlamourerColorCombo(float _comboWidth, DictStain _stains, FavoriteManager _favorites)
     : FilterComboColors(_comboWidth, CreateFunc(_stains, _favorites), Glamourer.Log)
 {
     protected override bool DrawSelectable(int globalIdx, bool selected)
@@ -40,8 +40,9 @@ public sealed class GlamourerColorCombo(float _comboWidth, StainData _stains, Fa
         return base.DrawSelectable(globalIdx, selected);
     }
 
-    private static Func<IReadOnlyList<KeyValuePair<byte, (string Name, uint Color, bool Gloss)>>> CreateFunc(StainData stains,
+    private static Func<IReadOnlyList<KeyValuePair<byte, (string Name, uint Color, bool Gloss)>>> CreateFunc(DictStain stains,
         FavoriteManager favorites)
-        => () => stains.Data.Select(kvp => (kvp, favorites.Contains((StainId)kvp.Key))).OrderBy(p => !p.Item2).Select(p => p.kvp)
-            .Prepend(new KeyValuePair<byte, (string Name, uint Dye, bool Gloss)>(0, ("None", 0, false))).ToList();
+        => () => stains.Select(kvp => (kvp, favorites.Contains(kvp.Key))).OrderBy(p => !p.Item2).Select(p => p.kvp)
+            .Prepend(new KeyValuePair<StainId, Stain>(Stain.None.RowIndex, Stain.None)).Select(kvp
+                => new KeyValuePair<byte, (string, uint, bool)>(kvp.Key.Id, (kvp.Value.Name, kvp.Value.RgbaColor, kvp.Value.Gloss))).ToList();
 }

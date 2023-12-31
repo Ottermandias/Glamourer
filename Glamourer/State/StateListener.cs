@@ -1,5 +1,4 @@
 ﻿using Glamourer.Automation;
-using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -7,13 +6,12 @@ using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using OtterGui.Classes;
 using Penumbra.GameData.Actors;
-using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using System;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
-using Glamourer.Structs;
+using Penumbra.GameData.DataContainers;
 
 namespace Glamourer.State;
 
@@ -25,12 +23,12 @@ namespace Glamourer.State;
 public class StateListener : IDisposable
 {
     private readonly Configuration             _config;
-    private readonly ActorService              _actors;
+    private readonly ActorManager              _actors;
     private readonly ObjectManager             _objects;
     private readonly StateManager              _manager;
     private readonly StateApplier              _applier;
     private readonly ItemManager               _items;
-    private readonly CustomizationService      _customizations;
+    private readonly CustomizeService          _customizations;
     private readonly PenumbraService           _penumbra;
     private readonly SlotUpdating              _slotUpdating;
     private readonly WeaponLoading             _weaponLoading;
@@ -50,11 +48,11 @@ public class StateListener : IDisposable
     private ActorState?     _creatingState;
     private CharacterWeapon _lastFistOffhand = CharacterWeapon.Empty;
 
-    public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorService actors, Configuration config,
+    public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorManager actors, Configuration config,
         SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
         StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gPose,
-        ChangeCustomizeService changeCustomizeService, CustomizationService customizations, ICondition condition, CrestService crestService)
+        ChangeCustomizeService changeCustomizeService, CustomizeService customizations, ICondition condition, CrestService crestService)
     {
         _manager                = manager;
         _items                  = items;
@@ -111,10 +109,10 @@ public class StateListener : IDisposable
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
-        _creatingIdentifier = actor.GetIdentifier(_actors.AwaitedService);
+        _creatingIdentifier = actor.GetIdentifier(_actors);
 
         ref var modelId   = ref *(uint*)modelPtr;
-        ref var customize = ref *(Customize*)customizePtr;
+        ref var customize = ref *(CustomizeArray*)customizePtr;
         if (_autoDesignApplier.Reduce(actor, _creatingIdentifier, out _creatingState))
         {
             switch (UpdateBaseData(actor, _creatingState, modelId, customizePtr, equipDataPtr))
@@ -135,12 +133,12 @@ public class StateListener : IDisposable
             _creatingState.TempUnlock();
         }
 
-        _funModule.ApplyFun(actor, new Span<CharacterArmor>((void*)equipDataPtr, 10), ref customize);
-        if (modelId == 0)
+        _funModule.ApplyFunOnLoad(actor, new Span<CharacterArmor>((void*)equipDataPtr, 10), ref customize);
+        if (modelId == 0 && _creatingState is not { IsLocked: true })
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
     }
 
-    private unsafe void OnCustomizeChange(Model model, Ref<Customize> customize)
+    private unsafe void OnCustomizeChange(Model model, Ref<CustomizeArray> customize)
     {
         if (!model.IsHuman)
             return;
@@ -149,14 +147,14 @@ public class StateListener : IDisposable
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier)
+        if (!actor.Identifier(_actors, out var identifier)
          || !_manager.TryGetValue(identifier, out var state))
             return;
 
         UpdateCustomize(actor, state, ref customize.Value, false);
     }
 
-    private void UpdateCustomize(Actor actor, ActorState state, ref Customize customize, bool checkTransform)
+    private void UpdateCustomize(Actor actor, ActorState state, ref CustomizeArray customize, bool checkTransform)
     {
         switch (UpdateBaseData(actor, state, customize, checkTransform))
         {
@@ -169,7 +167,7 @@ public class StateListener : IDisposable
                     return;
                 }
 
-                var set = _customizations.AwaitedService.GetList(model.Clan, model.Gender);
+                var set = _customizations.Manager.GetSet(model.Clan, model.Gender);
                 foreach (var index in CustomizationExtensions.AllBasic)
                 {
                     if (state[index] is not StateChanged.Source.Fixed)
@@ -211,14 +209,14 @@ public class StateListener : IDisposable
         // then we do not want to use our restricted gear protection
         // since we assume the player has that gear modded to availability.
         var locked = false;
-        if (actor.Identifier(_actors.AwaitedService, out var identifier)
+        if (actor.Identifier(_actors, out var identifier)
          && _manager.TryGetValue(identifier, out var state))
         {
             HandleEquipSlot(actor, state, slot, ref armor.Value);
             locked = state[slot, false] is StateChanged.Source.Ipc;
         }
 
-        _funModule.ApplyFun(actor, ref armor.Value, slot);
+        _funModule.ApplyFunToSlot(actor, ref armor.Value, slot);
         if (!_config.UseRestrictedGearProtection || locked)
             return;
 
@@ -238,7 +236,7 @@ public class StateListener : IDisposable
             var currentItem = state.BaseData.Item(slot);
             var model       = state.ModelData.Weapon(slot);
             var current     = currentItem.Weapon(state.BaseData.Stain(slot));
-            if (model.Value == current.Value || !_items.ItemService.AwaitedService.TryGetValue(item, EquipSlot.MainHand, out var changedItem))
+            if (model.Value == current.Value || !_items.ItemData.TryGetValue(item, EquipSlot.MainHand, out var changedItem))
                 continue;
 
             var changed = changedItem.Weapon(stain);
@@ -272,10 +270,10 @@ public class StateListener : IDisposable
             return;
 
         // Fist weapon gauntlet hack.
-        if (slot is EquipSlot.OffHand && weapon.Value.Variant == 0 && weapon.Value.Set.Id != 0 && _lastFistOffhand.Set.Id != 0)
+        if (slot is EquipSlot.OffHand && weapon.Value.Variant == 0 && weapon.Value.Weapon.Id != 0 && _lastFistOffhand.Weapon.Id != 0)
             weapon.Value = _lastFistOffhand;
 
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier)
+        if (!actor.Identifier(_actors, out var identifier)
          || !_manager.TryGetValue(identifier, out var state))
             return;
 
@@ -308,16 +306,16 @@ public class StateListener : IDisposable
             var newWeapon = state.ModelData.Weapon(slot);
             if (baseType is FullEquipType.Unknown || baseType == state.ModelData.Item(slot).Type || _gPose.InGPose && actor.IsGPoseOrCutscene)
                 actorWeapon = newWeapon;
-            else if (actorWeapon.Set.Id != 0)
+            else if (actorWeapon.Skeleton.Id != 0)
                 actorWeapon = actorWeapon.With(newWeapon.Stain);
         }
 
         // Fist Weapon Offhand hack.
-        if (slot is EquipSlot.MainHand && weapon.Value.Set.Id is > 1600 and < 1651)
-            _lastFistOffhand = new CharacterWeapon((SetId)(weapon.Value.Set.Id + 50), weapon.Value.Type, weapon.Value.Variant,
+        if (slot is EquipSlot.MainHand && weapon.Value.Skeleton.Id is > 1600 and < 1651)
+            _lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Value.Skeleton.Id + 50), weapon.Value.Weapon, weapon.Value.Variant,
                 weapon.Value.Stain);
 
-        _funModule.ApplyFun(actor, ref weapon.Value, slot);
+        _funModule.ApplyFunToWeapon(actor, ref weapon.Value, slot);
     }
 
     /// <summary> Update base data for a single changed equipment slot. </summary>
@@ -329,7 +327,7 @@ public class StateListener : IDisposable
                 return false;
 
             var offhand = actor.GetOffhand();
-            return offhand.Variant == 0 && offhand.Set.Id != 0 && armor.Set.Id == offhand.Set.Id;
+            return offhand.Variant == 0 && offhand.Weapon.Id != 0 && armor.Set.Id == offhand.Weapon.Id;
         }
 
         var actorArmor = actor.GetArmor(slot);
@@ -413,7 +411,7 @@ public class StateListener : IDisposable
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier)
+        if (!actor.Identifier(_actors, out var identifier)
          || !_manager.TryGetValue(identifier, out var state))
             return;
 
@@ -439,7 +437,7 @@ public class StateListener : IDisposable
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier)
+        if (!actor.Identifier(_actors, out var identifier)
          || !_manager.TryGetValue(identifier, out var state))
             return;
 
@@ -474,7 +472,7 @@ public class StateListener : IDisposable
         var change   = UpdateState.NoChange;
 
         // Fist weapon bug hack
-        if (slot is EquipSlot.OffHand && weapon.Value == 0 && actor.GetMainhand().Set.Id is > 1600 and < 1651)
+        if (slot is EquipSlot.OffHand && weapon.Value == 0 && actor.GetMainhand().Skeleton.Id is > 1600 and < 1651)
             return UpdateState.NoChange;
 
         if (baseData.Stain != weapon.Stain)
@@ -483,9 +481,9 @@ public class StateListener : IDisposable
             change = UpdateState.Change;
         }
 
-        if (baseData.Set.Id != weapon.Set.Id || baseData.Type.Id != weapon.Type.Id || baseData.Variant != weapon.Variant)
+        if (baseData.Skeleton.Id != weapon.Skeleton.Id || baseData.Weapon.Id != weapon.Weapon.Id || baseData.Variant != weapon.Variant)
         {
-            var item = _items.Identify(slot, weapon.Set, weapon.Type, weapon.Variant,
+            var item = _items.Identify(slot, weapon.Skeleton, weapon.Weapon, weapon.Variant,
                 slot is EquipSlot.OffHand ? state.BaseData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
             state.BaseData.SetItem(slot, item);
             change = UpdateState.Change;
@@ -515,7 +513,7 @@ public class StateListener : IDisposable
         if (isHuman)
             state.BaseData = _manager.FromActor(actor, false, false);
         else
-            state.BaseData.LoadNonHuman(modelId, *(Customize*)customizeData, equipData);
+            state.BaseData.LoadNonHuman(modelId, *(CustomizeArray*)customizeData, equipData);
 
         return UpdateState.Change;
     }
@@ -526,7 +524,7 @@ public class StateListener : IDisposable
     /// only if we kept track of state of someone who went to the aesthetician,
     /// or if they used other tools to change things.
     /// </summary>
-    private UpdateState UpdateBaseData(Actor actor, ActorState state, Customize customize, bool checkTransform)
+    private UpdateState UpdateBaseData(Actor actor, ActorState state, CustomizeArray customize, bool checkTransform)
     {
         // Customize array does not agree between game object and draw object => transformation.
         if (checkTransform && !actor.GetCustomize().Equals(customize))
@@ -537,7 +535,7 @@ public class StateListener : IDisposable
             return UpdateState.NoChange; // TODO: handle wrong base data.
 
         // Update customize base state.
-        state.BaseData.Customize.Load(customize);
+        state.BaseData.Customize = customize;
         return UpdateState.Change;
     }
 
@@ -555,7 +553,7 @@ public class StateListener : IDisposable
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
+        if (!actor.Identifier(_actors, out var identifier))
             return;
 
         if (!_manager.TryGetValue(identifier, out var state))
@@ -588,7 +586,7 @@ public class StateListener : IDisposable
         // We do not need to handle fixed designs,
         // if there is no model that caused a fixed design to exist yet,
         // we also do not care about the invisible model.
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
+        if (!actor.Identifier(_actors, out var identifier))
             return;
 
         if (!_manager.TryGetValue(identifier, out var state))
@@ -621,7 +619,7 @@ public class StateListener : IDisposable
         // We do not need to handle fixed designs,
         // if there is no model that caused a fixed design to exist yet,
         // we also do not care about the invisible model.
-        if (!actor.Identifier(_actors.AwaitedService, out var identifier))
+        if (!actor.Identifier(_actors, out var identifier))
             return;
 
         if (!_manager.TryGetValue(identifier, out var state))

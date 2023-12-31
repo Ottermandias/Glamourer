@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Numerics;
-using Glamourer.Customization;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class CustomizationUnlockPanel(CustomizeUnlockManager _customizeUnlocks) : IDebugTabTree
+public class CustomizationUnlockPanel(CustomizeUnlockManager _customizeUnlocks) : IGameDataDrawer
 {
     public string Label
         => "Customizations";

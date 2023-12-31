@@ -4,17 +4,17 @@ using System.Reflection;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
-using CustomizeData = Penumbra.GameData.Structs.CustomizeData;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
-public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizationService _service, CodeService _codes, Configuration _config)
+public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizeService _service, CodeService _codes, Configuration _config)
     : IDisposable
 {
     private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
@@ -22,13 +22,12 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
 
     private Exception? _terminate;
 
-    private Customize        _customize = Customize.Default;
-    private CustomizationSet _set       = null!;
+    private CustomizeArray   _customize = CustomizeArray.Default;
+    private CustomizeSet _set       = null!;
 
-    public Customize Customize
+    public CustomizeArray Customize
         => _customize;
 
-    public CustomizeFlag CurrentFlag { get; private set; }
     public CustomizeFlag Changed     { get; private set; }
     public CustomizeFlag ChangeApply { get; private set; }
 
@@ -47,18 +46,16 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
     public void Dispose()
         => _legacyTattoo?.Dispose();
 
-    public bool Draw(Customize current, bool locked, bool lockedRedraw)
+    public bool Draw(CustomizeArray current, bool locked, bool lockedRedraw)
     {
-        CurrentFlag = CustomizeFlagExtensions.All;
         _withApply  = false;
         Init(current, locked, lockedRedraw);
 
         return DrawInternal();
     }
 
-    public bool Draw(Customize current, CustomizeFlag apply, bool locked, bool lockedRedraw)
+    public bool Draw(CustomizeArray current, CustomizeFlag apply, bool locked, bool lockedRedraw)
     {
-        CurrentFlag   = CustomizeFlagExtensions.All;
         ChangeApply   = apply;
         _initialApply = apply;
         _withApply    = !_config.HideApplyCheckmarks;
@@ -66,12 +63,12 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
         return DrawInternal();
     }
 
-    private void Init(Customize current, bool locked, bool lockedRedraw)
+    private void Init(CustomizeArray current, bool locked, bool lockedRedraw)
     {
         UpdateSizes();
-        _terminate = null;
-        Changed    = 0;
-        _customize.Load(current);
+        _terminate    = null;
+        Changed       = 0;
+        _customize    = current;
         _locked       = locked;
         _lockedRedraw = lockedRedraw;
     }
@@ -116,11 +113,13 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
 
         try
         {
-            if (_codes.EnabledArtisan)
+            if (_codes.Enabled(CodeService.CodeFlag.Artisan))
                 return DrawArtisan();
 
             DrawRaceGenderSelector();
-            _set = _service.AwaitedService.GetList(_customize.Clan, _customize.Gender);
+            DrawBodyType();
+
+            _set = _service.Manager.GetSet(_customize.Clan, _customize.Gender);
 
             foreach (var id in _set.Order[CharaMakeParams.MenuType.Percentage])
                 PercentageSelector(id);
@@ -153,23 +152,23 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, Customizatio
 
     private unsafe bool DrawArtisan()
     {
-        for (var i = 0; i < CustomizeData.Size; ++i)
+        for (var i = 0; i < CustomizeArray.Size; ++i)
         {
             using var id    = ImRaii.PushId(i);
-            int       value = _customize.Data.Data[i];
+            int       value = _customize.Data[i];
             ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
             if (ImGui.InputInt(string.Empty, ref value, 0, 0))
             {
                 var newValue = (byte)Math.Clamp(value, 0, byte.MaxValue);
-                if (newValue != _customize.Data.Data[i])
+                if (newValue != _customize.Data[i])
                     foreach (var flag in Enum.GetValues<CustomizeIndex>())
                     {
-                        var (j, mask) = flag.ToByteAndMask();
+                        var (j, _) = flag.ToByteAndMask();
                         if (j == i)
                             Changed |= flag.ToFlag();
                     }
 
-                _customize.Data.Data[i] = newValue;
+                _customize.Data[i] = newValue;
             }
         }
 

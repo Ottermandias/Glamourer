@@ -6,29 +6,36 @@ using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Automation;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
-using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
-public class ActorPanel(ActorSelector _selector, StateManager _stateManager, CustomizationDrawer _customizationDrawer,
-    EquipmentDrawer _equipmentDrawer, IdentifierService _identification, AutoDesignApplier _autoDesignApplier,
-    Configuration _config, DesignConverter _converter, ObjectManager _objects, DesignManager _designManager, ImportService _importService,
-    ICondition _conditions)
+public class ActorPanel(
+    ActorSelector _selector,
+    StateManager _stateManager,
+    CustomizationDrawer _customizationDrawer,
+    EquipmentDrawer _equipmentDrawer,
+    AutoDesignApplier _autoDesignApplier,
+    Configuration _config,
+    DesignConverter _converter,
+    ObjectManager _objects,
+    DesignManager _designManager,
+    ImportService _importService,
+    ICondition _conditions,
+    DictModelChara _modelChara)
 {
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -154,7 +161,7 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
         }
 
         var mainhand = EquipDrawData.FromState(_stateManager, _state, EquipSlot.MainHand);
-        var offhand = EquipDrawData.FromState(_stateManager, _state, EquipSlot.OffHand);
+        var offhand  = EquipDrawData.FromState(_stateManager, _state, EquipSlot.OffHand);
         _equipmentDrawer.DrawWeapons(mainhand, offhand, GameMain.IsInGPose());
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
@@ -164,21 +171,21 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
 
     private void DrawEquipmentMetaToggles()
     {
-        using (var _ = ImRaii.Group())
+        using (_ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.HatState, _stateManager, _state!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.Head, _stateManager, _state!));
         }
 
         ImGui.SameLine();
-        using (var _ = ImRaii.Group())
+        using (_ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.VisorState, _stateManager, _state!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.Body, _stateManager, _state!));
         }
 
         ImGui.SameLine();
-        using (var _ = ImRaii.Group())
+        using (_ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(ActorState.MetaIndex.WeaponState, _stateManager, _state!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.OffHand, _stateManager, _state!));
@@ -187,10 +194,10 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
 
     private void DrawMonsterPanel()
     {
-        var names     = _identification.AwaitedService.ModelCharaNames(_state!.ModelData.ModelId);
+        var names     = _modelChara[_state!.ModelData.ModelId];
         var turnHuman = ImGui.Button("Turn Human");
         ImGui.Separator();
-        using (var box = ImRaii.ListBox("##MonsterList",
+        using (_ = ImRaii.ListBox("##MonsterList",
                    new Vector2(ImGui.GetContentRegionAvail().X, 10 * ImGui.GetTextLineHeightWithSpacing())))
         {
             if (names.Count == 0)
@@ -202,14 +209,14 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
 
         ImGui.Separator();
         ImGui.TextUnformatted("Customization Data");
-        using (var font = ImRaii.PushFont(UiBuilder.MonoFont))
+        using (_ = ImRaii.PushFont(UiBuilder.MonoFont))
         {
-            foreach (var b in _state.ModelData.Customize.Data)
+            foreach (var b in _state.ModelData.Customize)
             {
-                using (var g = ImRaii.Group())
+                using (_ = ImRaii.Group())
                 {
-                    ImGui.TextUnformatted($" {b:X2}");
-                    ImGui.TextUnformatted($"{b,3}");
+                    ImGui.TextUnformatted($" {b.Value:X2}");
+                    ImGui.TextUnformatted($"{b.Value,3}");
                 }
 
                 ImGui.SameLine();
@@ -223,11 +230,11 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
 
         ImGui.Separator();
         ImGui.TextUnformatted("Equipment Data");
-        using (var font = ImRaii.PushFont(UiBuilder.MonoFont))
+        using (_ = ImRaii.PushFont(UiBuilder.MonoFont))
         {
             foreach (var b in _state.ModelData.GetEquipmentBytes())
             {
-                using (var g = ImRaii.Group())
+                using (_ = ImRaii.Group())
                 {
                     ImGui.TextUnformatted($" {b:X2}");
                     ImGui.TextUnformatted($"{b,3}");
@@ -289,15 +296,15 @@ public class ActorPanel(ActorSelector _selector, StateManager _stateManager, Cus
             BorderColor = ColorId.ActorUnavailable.Value(),
         };
 
-    private string      _newName   = string.Empty;
-    private DesignBase? _newDesign = null;
+    private string      _newName = string.Empty;
+    private DesignBase? _newDesign;
 
     private void SaveDesignOpen()
     {
         ImGui.OpenPopup("Save as Design");
-        _newName                        = _state!.Identifier.ToName();
+        _newName                                    = _state!.Identifier.ToName();
         var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
-        _newDesign                      = _converter.Convert(_state, applyGear, applyCustomize, applyCrest);
+        _newDesign                                  = _converter.Convert(_state, applyGear, applyCustomize, applyCrest);
     }
 
     private void SaveDesignDrawPopup()

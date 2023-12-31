@@ -1,8 +1,6 @@
 ﻿using System;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Services;
-using Glamourer.Structs;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -70,7 +68,7 @@ public sealed class CharaFile
             return;
 
         data.SetItem(slot, item);
-        data.SetStain(slot, (StainId)dye);
+        data.SetStain(slot, dye);
         flags |= slot.ToFlag();
         flags |= slot.ToStainFlag();
     }
@@ -94,7 +92,7 @@ public sealed class CharaFile
         flags |= slot.ToStainFlag();
     }
 
-    private static CustomizeFlag ParseCustomize(JObject jObj, ref Customize customize)
+    private static CustomizeFlag ParseCustomize(JObject jObj, ref CustomizeArray customize)
     {
         CustomizeFlag ret = 0;
         customize.Race   = ParseRace(jObj, ref ret);
@@ -149,7 +147,7 @@ public sealed class CharaFile
         return id;
     }
 
-    private static void ParseFacial(JObject jObj, ref Customize customize, ref CustomizeFlag application)
+    private static void ParseFacial(JObject jObj, ref CustomizeArray customize, ref CustomizeFlag application)
     {
         var jTok = jObj["FacialFeatures"];
         if (jTok == null)
@@ -186,7 +184,7 @@ public sealed class CharaFile
             customize[CustomizeIndex.LegacyTattoo] = CustomizeValue.Max;
     }
 
-    private static void ParseHighlights(JObject jObj, ref Customize customize, ref CustomizeFlag application)
+    private static void ParseHighlights(JObject jObj, ref CustomizeArray customize, ref CustomizeFlag application)
     {
         var jTok = jObj["EnableHighlights"];
         if (jTok == null)
@@ -242,15 +240,15 @@ public sealed class CharaFile
             throw new Exception($"Age {age} != Normal is not supported.");
     }
 
-    private static unsafe void ParseByte(JObject jObj, string property, CustomizeIndex idx, ref Customize customize,
+    private static unsafe void ParseByte(JObject jObj, string property, CustomizeIndex idx, ref CustomizeArray customize,
         ref CustomizeFlag application)
     {
         var jTok = jObj[property];
         if (jTok == null)
             return;
 
-        customize.Data.Data[idx.ToByteAndMask().ByteIdx] =  jTok.ToObject<byte>();
-        application                                      |= idx.ToFlag();
+        customize.Data[idx.ToByteAndMask().ByteIdx] =  jTok.ToObject<byte>();
+        application                                 |= idx.ToFlag();
     }
 
     private static SubRace ParseTribe(JObject jObj, ref CustomizeFlag application)

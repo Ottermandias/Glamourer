@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
@@ -12,10 +12,11 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectManager) : IDebugTabTree
+public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectManager) : IGameDataDrawer
 {
     public string Label
         => $"Active Actors ({_stateManager.Count})###Active Actors";
@@ -69,7 +70,7 @@ public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectM
         static string ItemString(in DesignData data, EquipSlot slot)
         {
             var item = data.Item(slot);
-            return $"{item.Name} ({item.ModelId.Id}{(item.WeaponType != 0 ? $"-{item.WeaponType.Id}" : string.Empty)}-{item.Variant})";
+            return $"{item.Name} ({item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
         }
 
         PrintRow("Model ID", state.BaseData.ModelId, state.ModelData.ModelId, state[ActorState.MetaIndex.ModelId]);

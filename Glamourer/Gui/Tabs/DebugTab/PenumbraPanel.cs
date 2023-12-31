@@ -1,8 +1,5 @@
 ﻿using System;
-using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using Glamourer.Gui.Tabs.DebugTab;
-using Glamourer.Gui;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using ImGuiNET;
@@ -10,11 +7,12 @@ using OtterGui;
 using OtterGui.Raii;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItemTooltip _penumbraTooltip) : IDebugTabTree
+public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItemTooltip _penumbraTooltip) : IGameDataDrawer
 {
     public string Label
         => "Penumbra Interop";
@@ -27,9 +25,6 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
 
     public void Draw()
     {
-        if (!ImGui.CollapsingHeader("Penumbra"))
-            return;
-
         using var table = ImRaii.Table("##PenumbraTable", 3, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         if (!table)
             return;
@@ -59,7 +54,7 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
         ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
         ImGui.InputInt("##CutsceneIndex", ref _gameObjectIndex, 0, 0);
         ImGuiUtil.DrawTableColumn(_penumbra.Available
-            ? _penumbra.CutsceneParent(_gameObjectIndex).ToString()
+            ? _penumbra.CutsceneParent((ushort) _gameObjectIndex).ToString()
             : "Penumbra Unavailable");
 
         ImGuiUtil.DrawTableColumn("Redraw Object");
@@ -67,7 +62,7 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
         ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
         ImGui.InputInt("##redrawObject", ref _gameObjectIndex, 0, 0);
         ImGui.TableNextColumn();
-        using (var disabled = ImRaii.Disabled(!_penumbra.Available))
+        using (_ = ImRaii.Disabled(!_penumbra.Available))
         {
             if (ImGui.SmallButton("Redraw"))
                 _penumbra.RedrawObject((ObjectIndex)_gameObjectIndex, RedrawType.Redraw);

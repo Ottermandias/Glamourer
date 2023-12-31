@@ -5,17 +5,16 @@ using Dalamud.Game.Command;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.State;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Services;
 
@@ -27,7 +26,7 @@ public class CommandService : IDisposable
     private readonly ICommandManager   _commands;
     private readonly MainWindow        _mainWindow;
     private readonly IChatGui          _chat;
-    private readonly ActorService      _actors;
+    private readonly ActorManager      _actors;
     private readonly ObjectManager     _objects;
     private readonly StateManager      _stateManager;
     private readonly AutoDesignApplier _autoDesignApplier;
@@ -37,7 +36,7 @@ public class CommandService : IDisposable
     private readonly DesignFileSystem  _designFileSystem;
     private readonly Configuration     _config;
 
-    public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorService actors, ObjectManager objects,
+    public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config)
     {
@@ -86,7 +85,8 @@ public class CommandService : IDisposable
                     return;
                 default:
                     _chat.Print("Use without argument to toggle the main window.");
-                    _chat.Print(new SeStringBuilder().AddText("Use ").AddPurple("/glamour").AddText(" instead of ").AddRed("/glamourer").AddText(" for application commands.").BuiltString);
+                    _chat.Print(new SeStringBuilder().AddText("Use ").AddPurple("/glamour").AddText(" instead of ").AddRed("/glamourer")
+                        .AddText(" for application commands.").BuiltString);
                     _chat.Print(new SeStringBuilder().AddCommand("qdb",  "Toggles the quick design bar on or off.").BuiltString);
                     _chat.Print(new SeStringBuilder().AddCommand("lock", "Toggles the lock of the main window on or off.").BuiltString);
                     return;
@@ -114,6 +114,7 @@ public class CommandService : IDisposable
             "automation"        => SetAutomation(argument),
             "copy"              => CopyState(argument),
             "save"              => SaveState(argument),
+            "delete"            => Delete(argument),
             _                   => PrintHelp(argumentList[0]),
         };
     }
@@ -402,11 +403,38 @@ public class CommandService : IDisposable
             {
                 foreach (var actor in actors.Objects)
                 {
-                    if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors.AwaitedService), actor, out var state))
+                    if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
                         _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
                 }
             }
         }
+
+        return true;
+    }
+
+    private bool Delete(string argument)
+    {
+        if (argument.Length == 0)
+        {
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour delete ").AddYellow("[Design Name, Path or Identifier]").BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText(
+                    "    》 The design name is case-insensitive. If multiple designs of that name up to case exist, the first one is chosen.")
+                .BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText(
+                    "    》 If using the design identifier, you need to specify at least 4 characters for it, and the first one starting with the provided characters is chosen.")
+                .BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》 The design path is the folder path in the selector, with '/' as separators. It is also case-insensitive.")
+                .BuiltString);
+            return false;
+        }
+
+        if (!GetDesign(argument, out var designBase, false) || designBase is not Design d)
+            return false;
+
+        _designManager.Delete(d);
 
         return true;
     }
@@ -521,14 +549,13 @@ public class CommandService : IDisposable
                 design = leaf.Value;
         }
 
-        if (design == null)
-        {
-            _chat.Print(new SeStringBuilder().AddText("The token ").AddYellow(argument, true).AddText(" did not resolve to an existing design.")
-                .BuiltString);
-            return false;
-        }
+        if (design != null)
+            return true;
 
-        return true;
+        _chat.Print(new SeStringBuilder().AddText("The token ").AddYellow(argument, true).AddText(" did not resolve to an existing design.")
+            .BuiltString);
+        return false;
+
     }
 
     private unsafe bool IdentifierHandling(string argument, out ActorIdentifier[] identifiers, bool allowAnyWorld, bool allowIndex)
@@ -537,7 +564,7 @@ public class CommandService : IDisposable
         {
             if (_objects.GetName(argument.ToLowerInvariant(), out var obj))
             {
-                var identifier = _actors.AwaitedService.FromObject(obj.AsObject, out _, true, true, true);
+                var identifier = _actors.FromObject(obj.AsObject, out _, true, true, true);
                 if (!identifier.IsValid)
                 {
                     _chat.Print(new SeStringBuilder().AddText("The placeholder ").AddGreen(argument)
@@ -547,15 +574,15 @@ public class CommandService : IDisposable
                 }
 
                 if (allowIndex && identifier.Type is IdentifierType.Npc)
-                    identifier = _actors.AwaitedService.CreateNpc(identifier.Kind, identifier.DataId, obj.Index);
-                identifiers = new[]
-                {
+                    identifier = _actors.CreateNpc(identifier.Kind, identifier.DataId, obj.Index);
+                identifiers =
+                [
                     identifier,
-                };
+                ];
             }
             else
             {
-                identifiers = _actors.AwaitedService.FromUserString(argument, allowIndex);
+                identifiers = _actors.FromUserString(argument, allowIndex);
                 if (!allowAnyWorld
                  && identifiers[0].Type is IdentifierType.Player or IdentifierType.Owned
                  && identifiers[0].HomeWorld == ushort.MaxValue)
@@ -568,7 +595,7 @@ public class CommandService : IDisposable
 
             return true;
         }
-        catch (ActorManager.IdentifierParseError e)
+        catch (ActorIdentifierFactory.IdentifierParseError e)
         {
             _chat.Print(new SeStringBuilder().AddText("The argument ").AddRed(argument, true)
                 .AddText($" could not be converted to an identifier. {e.Message}")

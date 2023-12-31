@@ -7,11 +7,12 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class UnlockableItemsPanel(ItemUnlockManager _itemUnlocks, ItemManager _items) : IDebugTabTree
+public class UnlockableItemsPanel(ItemUnlockManager _itemUnlocks, ItemManager _items) : IGameDataDrawer
 {
     public string Label
         => "Unlockable Items";
@@ -40,7 +41,7 @@ public class UnlockableItemsPanel(ItemUnlockManager _itemUnlocks, ItemManager _i
         var remainder = ImGuiClip.ClippedDraw(_itemUnlocks.Unlockable, skips, t =>
         {
             ImGuiUtil.DrawTableColumn(t.Key.ToString());
-            if (_items.ItemService.AwaitedService.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
+            if (_items.ItemData.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
             {
                 ImGuiUtil.DrawTableColumn(equip.Name);
                 ImGuiUtil.DrawTableColumn(equip.Type.ToName());

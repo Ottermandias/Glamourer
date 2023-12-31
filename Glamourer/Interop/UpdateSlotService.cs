@@ -4,6 +4,7 @@ using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
+using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 

@@ -26,9 +26,9 @@ public class DesignColorUi
 
     public DesignColorUi(DesignColors colors, DesignManager designs, Configuration config)
     {
-        _colors      = colors;
-        _designs     = designs;
-        _config = config;
+        _colors  = colors;
+        _designs = designs;
+        _config  = config;
     }
 
     public void Draw()
@@ -78,7 +78,7 @@ public class DesignColorUi
         {
             using var id = ImRaii.PushId(idx);
             ImGui.TableNextColumn();
-            
+
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), buttonSize, tt, disabled, true))
             {
                 changeString = name;
@@ -119,7 +119,7 @@ public class DesignColorUi
             changeString = _newName;
             changeValue  = 0xFFFFFFFF;
         }
-        
+
 
         if (changeString.Length > 0)
         {
@@ -139,6 +139,7 @@ public class DesignColorUi
             newColor = color;
             return false;
         }
+
         ImGuiUtil.HoverTooltip(tooltip);
 
         newColor = ImGui.ColorConvertFloat4ToU32(vec);
@@ -148,12 +149,12 @@ public class DesignColorUi
 
 public class DesignColors : ISavable, IReadOnlyDictionary<string, uint>
 {
-    public const string AutomaticName    = "Automatic";
+    public const string AutomaticName       = "Automatic";
     public const string MissingColorName    = "Missing Color";
     public const uint   MissingColorDefault = 0xFF0000D0;
 
     private readonly SaveService              _saveService;
-    private readonly Dictionary<string, uint> _colors = new();
+    private readonly Dictionary<string, uint> _colors = [];
     public           uint                     MissingColor { get; private set; } = MissingColorDefault;
 
     public event Action? ColorChanged;
@@ -281,7 +282,7 @@ public class DesignColors : ISavable, IReadOnlyDictionary<string, uint>
 
     public static uint AutoColor(DesignBase design)
     {
-        var customize = design.ApplyCustomize == 0;
+        var customize = design.ApplyCustomizeExcludingBodyType == 0;
         var equip     = design.ApplyEquip == 0;
         return (customize, equip) switch
         {

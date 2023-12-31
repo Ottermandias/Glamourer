@@ -2,20 +2,18 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using Glamourer.Customization;
 using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Structs;
 using Glamourer.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
-public class DesignConverter(ItemManager _items, DesignManager _designs, CustomizationService _customize, HumanModelList _humans)
+public class DesignConverter(ItemManager _items, DesignManager _designs, CustomizeService _customize, HumanModelList _humans)
 {
     public const byte Version = 6;
 
@@ -41,12 +39,18 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
         => ShareBase64(state, EquipFlagExtensions.All, CustomizeFlagExtensions.All, CrestExtensions.All);
 
     public string ShareBase64(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
+        => ShareBase64(state.ModelData, equipFlags, customizeFlags, crestFlags);
+
+    public string ShareBase64(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
     {
-        var design = Convert(state, equipFlags, customizeFlags, crestFlags);
+        var design = Convert(data, equipFlags, customizeFlags, crestFlags);
         return ShareBase64(ShareJObject(design));
     }
 
     public DesignBase Convert(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
+        => Convert(state.ModelData, equipFlags, customizeFlags, crestFlags);
+
+    public DesignBase Convert(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
     {
         var design = _designs.CreateTemporary();
         design.ApplyEquip     = equipFlags & EquipFlagExtensions.All;
@@ -56,7 +60,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
         design.SetApplyVisorToggle(design.DoApplyEquip(EquipSlot.Head));
         design.SetApplyWeaponVisible(design.DoApplyEquip(EquipSlot.MainHand) || design.DoApplyEquip(EquipSlot.OffHand));
         design.SetApplyWetness(true);
-        design.SetDesignData(_customize, state.ModelData);
+        design.SetDesignData(_customize, data);
         return design;
     }
 
@@ -146,7 +150,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
     }
 
     public IEnumerable<(EquipSlot Slot, EquipItem Item, StainId Stain)> FromDrawData(IReadOnlyList<CharacterArmor> armors,
-        CharacterWeapon mainhand, CharacterWeapon offhand)
+        CharacterWeapon mainhand, CharacterWeapon offhand, bool skipWarnings)
     {
         if (armors.Count != 10)
             throw new ArgumentException("Invalid length of armor array.");
@@ -158,15 +162,16 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
             var item  = _items.Identify(slot, armor.Set, armor.Variant);
             if (!item.Valid)
             {
-                Glamourer.Log.Warning($"Appearance data {armor} for slot {slot} invalid, item could not be identified.");
+                if (!skipWarnings)
+                    Glamourer.Log.Warning($"Appearance data {armor} for slot {slot} invalid, item could not be identified.");
                 item = ItemManager.NothingItem(slot);
             }
 
             yield return (slot, item, armor.Stain);
         }
 
-        var mh = _items.Identify(EquipSlot.MainHand, mainhand.Set, mainhand.Type, mainhand.Variant, FullEquipType.Unknown);
-        if (!mh.Valid)
+        var mh = _items.Identify(EquipSlot.MainHand, mainhand.Skeleton, mainhand.Weapon, mainhand.Variant);
+        if (!skipWarnings && !mh.Valid)
         {
             Glamourer.Log.Warning($"Appearance data {mainhand} for mainhand weapon invalid, item could not be identified.");
             mh = _items.DefaultSword;
@@ -174,8 +179,8 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
 
         yield return (EquipSlot.MainHand, mh, mainhand.Stain);
 
-        var oh = _items.Identify(EquipSlot.OffHand, offhand.Set, offhand.Type, offhand.Variant, mh.Type);
-        if (!oh.Valid)
+        var oh = _items.Identify(EquipSlot.OffHand, offhand.Skeleton, offhand.Weapon, offhand.Variant, mh.Type);
+        if (!skipWarnings && !oh.Valid)
         {
             Glamourer.Log.Warning($"Appearance data {offhand} for offhand weapon invalid, item could not be identified.");
             oh = _items.GetDefaultOffhand(mh);

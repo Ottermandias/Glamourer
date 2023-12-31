@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Linq;
 using Dalamud.Interface;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Services;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DesignTesterPanel(ItemManager _items, HumanModelList _humans) : IDebugTabTree
+public class DesignTesterPanel(ItemManager _items, HumanModelList _humans) : IGameDataDrawer
 {
     public string Label
         => "Base64 Design Tester";
@@ -85,7 +84,7 @@ public class DesignTesterPanel(ItemManager _items, HumanModelList _humans) : IDe
         DrawDesignData(_parse64);
         using var font = ImRaii.PushFont(UiBuilder.MonoFont);
         ImGui.TextUnformatted(_base64);
-        using (var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing with { X = 0 }))
+        using (_ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing with { X = 0 }))
         {
             foreach (var (c1, c2) in _restore.Zip(_base64))
             {
@@ -99,7 +98,7 @@ public class DesignTesterPanel(ItemManager _items, HumanModelList _humans) : IDe
 
         foreach (var ((b1, b2), idx) in _base64Bytes.Zip(_restoreBytes).WithIndex())
         {
-            using (var group = ImRaii.Group())
+            using (_ = ImRaii.Group())
             {
                 ImGui.TextUnformatted(idx.ToString("D2"));
                 ImGui.TextUnformatted(b1.ToString("X2"));
@@ -121,7 +120,7 @@ public class DesignTesterPanel(ItemManager _items, HumanModelList _humans) : IDe
         using var font = ImRaii.PushFont(UiBuilder.MonoFont);
         foreach (var (b, idx) in _base64Bytes.WithIndex())
         {
-            using (var group = ImRaii.Group())
+            using (_ = ImRaii.Group())
             {
                 ImGui.TextUnformatted(idx.ToString("D2"));
                 ImGui.TextUnformatted(b.ToString("X2"));

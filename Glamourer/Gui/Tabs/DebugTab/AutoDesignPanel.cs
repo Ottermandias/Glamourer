@@ -2,10 +2,11 @@
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class AutoDesignPanel(AutoDesignManager _autoDesignManager) : IDebugTabTree
+public class AutoDesignPanel(AutoDesignManager _autoDesignManager) : IGameDataDrawer
 {
     public string Label
         => "Auto Designs";

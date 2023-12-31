@@ -4,17 +4,18 @@ using System.IO;
 using System.Linq;
 using Dalamud.Interface.DragDrop;
 using Dalamud.Interface.Internal.Notifications;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Interop.CharaFile;
 using Glamourer.Services;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui.Classes;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Files;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
-public class ImportService(CustomizationService _customizations, IDragDropManager _dragDropManager, ItemManager _items)
+public class ImportService(CustomizeService _customizations, IDragDropManager _dragDropManager, ItemManager _items)
 {
     public void CreateDatSource()
         => _dragDropManager.CreateImGuiSource("DatDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".dat"), m =>
@@ -139,7 +140,7 @@ public class ImportService(CustomizationService _customizations, IDragDropManage
         return true;
     }
 
-    public bool SaveDesignAsDat(string path, in Customize input, string description)
+    public bool SaveDesignAsDat(string path, in CustomizeArray input, string description)
     {
         if (!Verify(input, out var voice))
             return false;
@@ -168,7 +169,7 @@ public class ImportService(CustomizationService _customizations, IDragDropManage
         }
     }
 
-    public bool Verify(in Customize input, out byte voice, byte? inputVoice = null)
+    public bool Verify(in CustomizeArray input, out byte voice, byte? inputVoice = null)
     {
         voice = 0;
         if (_customizations.ValidateClan(input.Clan, input.Race, out _, out _).Length > 0)
@@ -178,14 +179,14 @@ public class ImportService(CustomizationService _customizations, IDragDropManage
         if (input.BodyType.Value != 1)
             return false;
 
-        var set = _customizations.AwaitedService.GetList(input.Clan, input.Gender);
+        var set = _customizations.Manager.GetSet(input.Clan, input.Gender);
         voice = set.Voices[0];
         if (inputVoice.HasValue && !set.Voices.Contains(inputVoice.Value))
             return false;
 
         foreach (var index in CustomizationExtensions.AllBasic)
         {
-            if (!CustomizationService.IsCustomizationValid(set, input.Face, index, input[index]))
+            if (!CustomizeService.IsCustomizationValid(set, input.Face, index, input[index]))
                 return false;
         }
 

@@ -1,18 +1,20 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Dalamud.Utility;
-using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -20,18 +22,18 @@ namespace Glamourer.Designs;
 
 public class DesignManager
 {
-    private readonly CustomizationService         _customizations;
+    private readonly CustomizeService             _customizations;
     private readonly ItemManager                  _items;
     private readonly HumanModelList               _humans;
     private readonly SaveService                  _saveService;
     private readonly DesignChanged                _event;
-    private readonly List<Design>                 _designs   = new();
-    private readonly Dictionary<Guid, DesignData> _undoStore = new();
+    private readonly List<Design>                 _designs   = [];
+    private readonly Dictionary<Guid, DesignData> _undoStore = [];
 
     public IReadOnlyList<Design> Designs
         => _designs;
 
-    public DesignManager(SaveService saveService, ItemManager items, CustomizationService customizations,
+    public DesignManager(SaveService saveService, ItemManager items, CustomizeService customizations,
         DesignChanged @event, HumanModelList humans)
     {
         _saveService    = saveService;
@@ -50,29 +52,44 @@ public class DesignManager
     /// </summary>
     public void LoadDesigns()
     {
+        _humans.Awaiter.Wait();
+        _customizations.Awaiter.Wait();
+        _items.ItemData.Awaiter.Wait();
+
+        var stopwatch = Stopwatch.StartNew();
         _designs.Clear();
-        List<(Design, string)> invalidNames = new();
-        var                    skipped      = 0;
-        foreach (var file in _saveService.FileNames.Designs())
+        var                                 skipped = 0;
+        ThreadLocal<List<(Design, string)>> designs = new(() => [], true);
+        Parallel.ForEach(_saveService.FileNames.Designs(), (f, _) =>
         {
             try
             {
-                var text   = File.ReadAllText(file.FullName);
+                var text   = File.ReadAllText(f.FullName);
                 var data   = JObject.Parse(text);
                 var design = Design.LoadDesign(_customizations, _items, data);
-                if (design.Identifier.ToString() != Path.GetFileNameWithoutExtension(file.Name))
-                    invalidNames.Add((design, file.FullName));
-                if (_designs.Any(f => f.Identifier == design.Identifier))
-                    throw new Exception($"Identifier {design.Identifier} was not unique.");
-
-                design.Index = _designs.Count;
-                _designs.Add(design);
+                designs.Value!.Add((design, f.FullName));
             }
             catch (Exception ex)
             {
                 Glamourer.Log.Error($"Could not load design, skipped:\n{ex}");
-                ++skipped;
+                Interlocked.Increment(ref skipped);
             }
+        });
+
+        List<(Design, string)> invalidNames = [];
+        foreach (var (design, path) in designs.Values.SelectMany(v => v))
+        {
+            if (design.Identifier.ToString() != Path.GetFileNameWithoutExtension(path))
+                invalidNames.Add((design, path));
+            if (_designs.Any(d => d.Identifier == design.Identifier))
+            {
+                Glamourer.Log.Error($"Could not load design, skipped: Identifier {design.Identifier} was not unique.");
+                ++skipped;
+                continue;
+            }
+
+            design.Index = _designs.Count;
+            _designs.Add(design);
         }
 
         var failed = MoveInvalidNames(invalidNames);
@@ -81,7 +98,7 @@ public class DesignManager
                 $"Moved {invalidNames.Count - failed} designs to correct names.{(failed > 0 ? $" Failed to move {failed} designs to correct names." : string.Empty)}");
 
         Glamourer.Log.Information(
-            $"Loaded {_designs.Count} designs.{(skipped > 0 ? $" Skipped loading {skipped} designs due to errors." : string.Empty)}");
+            $"Loaded {_designs.Count} designs in {stopwatch.ElapsedMilliseconds} ms.{(skipped > 0 ? $" Skipped loading {skipped} designs due to errors." : string.Empty)}");
         _event.Invoke(DesignChanged.Type.ReloadedAll, null!);
     }
 
@@ -193,10 +210,10 @@ public class DesignManager
     public void ChangeColor(Design design, string newColor)
     {
         var oldColor = design.Color;
-        if (oldColor == newColor) 
+        if (oldColor == newColor)
             return;
 
-        design.Color = newColor;
+        design.Color    = newColor;
         design.LastEdit = DateTimeOffset.UtcNow;
         _saveService.QueueSave(design);
         Glamourer.Log.Debug($"Changed color of design {design.Identifier}.");
@@ -298,7 +315,7 @@ public class DesignManager
                 return;
             case CustomizeIndex.Clan:
             {
-                var customize = new Customize(design.DesignData.Customize.Data.Clone());
+                var customize = design.DesignData.Customize;
                 if (_customizations.ChangeClan(ref customize, (SubRace)value.Value) == 0)
                     return;
                 if (!design.SetCustomize(_customizations, customize))
@@ -308,7 +325,7 @@ public class DesignManager
             }
             case CustomizeIndex.Gender:
             {
-                var customize = new Customize(design.DesignData.Customize.Data.Clone());
+                var customize = design.DesignData.Customize;
                 if (_customizations.ChangeGender(ref customize, (Gender)(value.Value + 1)) == 0)
                     return;
                 if (!design.SetCustomize(_customizations, customize))

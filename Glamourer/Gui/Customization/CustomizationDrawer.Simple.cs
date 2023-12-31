@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Numerics;
-using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
@@ -91,10 +91,10 @@ public partial class CustomizationDrawer
 
     private void DrawListSelector(CustomizeIndex index, bool indexedBy1)
     {
-        using var _        = SetId(index);
+        using var id        = SetId(index);
         using var bigGroup = ImRaii.Group();
 
-        using (var disabled = ImRaii.Disabled(_locked))
+        using (_ = ImRaii.Disabled(_locked))
         {
             if (indexedBy1)
             {
@@ -210,7 +210,7 @@ public partial class CustomizationDrawer
         }
         else
         {
-            using (var disabled = ImRaii.Disabled(_locked))
+            using (_ = ImRaii.Disabled(_locked))
             {
                 if (ImGui.Checkbox("##toggle", ref tmp))
                 {

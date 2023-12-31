@@ -8,10 +8,11 @@ using ImGuiNET;
 using Newtonsoft.Json.Linq;
 using OtterGui;
 using OtterGui.Raii;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DesignConverterPanel(DesignConverter _designConverter) : IDebugTabTree
+public class DesignConverterPanel(DesignConverter _designConverter) : IGameDataDrawer
 {
     public string Label
         => "Design Converter";

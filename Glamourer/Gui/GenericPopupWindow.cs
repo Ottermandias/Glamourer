@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
@@ -61,7 +62,7 @@ public class GenericPopupWindow : Window
     private void DrawFestivalPopup()
     {
         var viewportSize = ImGui.GetWindowViewport().Size;
-        ImGui.SetNextWindowSize(new Vector2(viewportSize.X / 5, viewportSize.Y / 7));
+        ImGui.SetNextWindowSize(new Vector2(Math.Max(viewportSize.X / 5, 400), Math.Max(viewportSize.Y / 7, 150)));
         ImGui.SetNextWindowPos(viewportSize / 2, ImGuiCond.Always, new Vector2(0.5f));
         using var popup = ImRaii.Popup("FestivalPopup", ImGuiWindowFlags.Modal);
         if (!popup)

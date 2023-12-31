@@ -1,13 +1,11 @@
-﻿using Glamourer.Customization;
-using Glamourer.Designs;
+﻿using Glamourer.Designs;
 using Glamourer.Events;
-using Glamourer.Structs;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using System.Linq;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
-using CustomizeIndex = Glamourer.Customization.CustomizeIndex;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
 
@@ -34,7 +32,7 @@ public class ActorState
     public DesignData ModelData;
 
     /// <summary> The last seen job. </summary>
-    public byte LastJob;
+    public JobId LastJob;
 
     /// <summary> The Lock-Key locking this state. </summary>
     public uint Combination;

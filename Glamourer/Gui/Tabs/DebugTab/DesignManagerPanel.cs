@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Linq;
 using Dalamud.Interface;
-using Glamourer.Customization;
 using Glamourer.Designs;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _designFileSystem) : IDebugTabTree
+public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _designFileSystem) : IGameDataDrawer
 {
     public string Label
         => $"Design Manager ({_designManager.Designs.Count} Designs)###Design Manager";

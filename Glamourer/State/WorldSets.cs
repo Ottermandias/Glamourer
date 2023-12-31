@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Glamourer.Interop.Structs;
-using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -303,12 +302,12 @@ public class WorldSets
 
     private (FunEquipSet.Group, CharacterWeapon, CharacterWeapon)? GetGroup(byte level, byte job, Race race, Gender gender, Random rng)
     {
-        const int weight50      = 1200;
-        const int weight60      = 1500;
-        const int weight70      = 1700;
-        const int weight80      = 1800;
-        const int weight90      = 1900;
-        const int weight100     = 2000;
+        const int weight50      = 200;
+        const int weight60      = 500;
+        const int weight70      = 700;
+        const int weight80      = 800;
+        const int weight90      = 900;
+        const int weight100     = 1000;
 
         if (job >= StarterWeapons.Length)
             return null;

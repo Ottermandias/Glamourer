@@ -2,7 +2,6 @@
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.State;
-using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui;
@@ -99,6 +98,25 @@ public ref struct ToggleDrawData
             Locked       = state.IsLocked,
             CurrentValue = value,
             SetValue     = setValue,
+        };
+    }
+
+    public static ToggleDrawData FromValue(ActorState.MetaIndex index, bool value)
+    {
+        var (label, tooltip) = index switch
+        {
+            ActorState.MetaIndex.HatState    => ("Hat Visible", "Hide or show the characters head gear."),
+            ActorState.MetaIndex.VisorState  => ("Visor Toggled", "Toggle the visor state of the characters head gear."),
+            ActorState.MetaIndex.WeaponState => ("Weapon Visible", "Hide or show the characters weapons when not drawn."),
+            ActorState.MetaIndex.Wetness     => ("Force Wetness", "Force the character to be wet or not."),
+            _                                => throw new Exception("Unsupported meta index."),
+        };
+        return new ToggleDrawData
+        {
+            Label        = label,
+            Tooltip      = tooltip,
+            Locked       = true,
+            CurrentValue = value,
         };
     }
 }

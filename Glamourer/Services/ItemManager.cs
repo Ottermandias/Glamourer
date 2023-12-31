@@ -1,17 +1,17 @@
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Lumina.Excel;
 using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Race = Penumbra.GameData.Enums.Race;
 
 namespace Glamourer.Services;
 
-public class ItemManager : IDisposable
+public class ItemManager
 {
     public const string Nothing              = "Nothing";
     public const string SmallClothesNpc      = "Smallclothes (NPC)";
@@ -19,30 +19,24 @@ public class ItemManager : IDisposable
 
     private readonly Configuration _config;
 
-    public readonly IdentifierService                             IdentifierService;
+    public readonly ObjectIdentification                          ObjectIdentification;
     public readonly ExcelSheet<Lumina.Excel.GeneratedSheets.Item> ItemSheet;
-    public readonly StainData                                     Stains;
-    public readonly ItemService                                   ItemService;
+    public readonly DictStain                                     Stains;
+    public readonly ItemData                                      ItemData;
     public readonly RestrictedGear                                RestrictedGear;
 
     public readonly EquipItem DefaultSword;
 
-    public ItemManager(Configuration config, DalamudPluginInterface pi, IDataManager gameData, IdentifierService identifierService,
-        ItemService itemService, IPluginLog log)
+    public ItemManager(Configuration config, IDataManager gameData, ObjectIdentification objectIdentification,
+        ItemData itemData, DictStain stains, RestrictedGear restrictedGear)
     {
-        _config           = config;
-        ItemSheet         = gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;
-        IdentifierService = identifierService;
-        Stains            = new StainData(pi, gameData, gameData.Language, log);
-        ItemService       = itemService;
-        RestrictedGear    = new RestrictedGear(pi, gameData.Language, gameData, log);
-        DefaultSword      = EquipItem.FromMainhand(ItemSheet.GetRow(1601)!); // Weathered Shortsword
-    }
-
-    public void Dispose()
-    {
-        Stains.Dispose();
-        RestrictedGear.Dispose();
+        _config              = config;
+        ItemSheet            = gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;
+        ObjectIdentification = objectIdentification;
+        ItemData             = itemData;
+        Stains               = stains;
+        RestrictedGear       = restrictedGear;
+        DefaultSword         = EquipItem.FromMainhand(ItemSheet.GetRow(1601)!); // Weathered Shortsword
     }
 
     public (bool, CharacterArmor) ResolveRestrictedGear(CharacterArmor armor, EquipSlot slot, Race race, Gender gender)
@@ -74,11 +68,12 @@ public class ItemManager : IDisposable
         if (itemId == SmallclothesId(slot))
             return SmallClothesItem(slot);
 
-        if (!itemId.IsItem || !ItemService.AwaitedService.TryGetValue(itemId.Item, slot, out var item))
+        if (!itemId.IsItem || !ItemData.TryGetValue(itemId.Item, slot, out var item))
             return EquipItem.FromId(itemId);
 
         if (item.Type.ToSlot() != slot)
-            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0, 0, 0,
+            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.PrimaryId, item.SecondaryId, item.Variant, 0, 0,
+                0,
                 0);
 
         return item;
@@ -89,12 +84,13 @@ public class ItemManager : IDisposable
         if (itemId == NothingId(type))
             return NothingItem(type);
 
-        if (!ItemService.AwaitedService.TryGetValue(itemId, type is FullEquipType.Shield ? EquipSlot.MainHand : EquipSlot.OffHand,
+        if (!ItemData.TryGetValue(itemId, type is FullEquipType.Shield ? EquipSlot.MainHand : EquipSlot.OffHand,
                 out var item))
             return EquipItem.FromId(itemId);
 
         if (item.Type != type)
-            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.ModelId, item.WeaponType, item.Variant, 0, 0, 0,
+            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.PrimaryId, item.SecondaryId, item.Variant, 0, 0,
+                0,
                 0);
 
         return item;
@@ -103,7 +99,7 @@ public class ItemManager : IDisposable
     public EquipItem Resolve(FullEquipType type, CustomItemId id)
         => id.IsItem ? Resolve(type, id.Item) : EquipItem.FromId(id);
 
-    public EquipItem Identify(EquipSlot slot, SetId id, Variant variant)
+    public EquipItem Identify(EquipSlot slot, PrimaryId id, Variant variant)
     {
         slot = slot.ToSlot();
         if (slot.ToIndex() == uint.MaxValue)
@@ -114,7 +110,7 @@ public class ItemManager : IDisposable
             case 0:                    return NothingItem(slot);
             case SmallClothesNpcModel: return SmallClothesItem(slot);
             default:
-                var item = IdentifierService.AwaitedService.Identify(id, variant, slot).FirstOrDefault();
+                var item = ObjectIdentification.Identify(id, 0, variant, slot).FirstOrDefault();
                 return item.Valid
                     ? item
                     : EquipItem.FromIds(0, 0, id, 0, variant, slot.ToEquipType());
@@ -131,7 +127,8 @@ public class ItemManager : IDisposable
         return NothingItem(offhandType);
     }
 
-    public EquipItem Identify(EquipSlot slot, SetId id, WeaponType type, Variant variant, FullEquipType mainhandType = FullEquipType.Unknown)
+    public EquipItem Identify(EquipSlot slot, PrimaryId id, SecondaryId type, Variant variant,
+        FullEquipType mainhandType = FullEquipType.Unknown)
     {
         if (slot is EquipSlot.OffHand)
         {
@@ -143,7 +140,7 @@ public class ItemManager : IDisposable
         if (slot is not EquipSlot.MainHand and not EquipSlot.OffHand)
             return new EquipItem($"Invalid ({id.Id}-{type.Id}-{variant})", 0, 0, id, type, variant, 0, 0, 0, 0);
 
-        var item = IdentifierService.AwaitedService.Identify(id, type, variant, slot).FirstOrDefault(i => i.Type.ToSlot() == slot);
+        var item = ObjectIdentification.Identify(id, type, variant, slot).FirstOrDefault(i => i.Type.ToSlot() == slot);
         return item.Valid
             ? item
             : EquipItem.FromIds(0, 0, id, type, variant, slot.ToEquipType());

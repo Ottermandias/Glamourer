@@ -7,14 +7,12 @@ using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Glamourer.Automation;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
 using Glamourer.State;
-using Glamourer.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -156,9 +154,9 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
 
     private void DrawCustomizeApplication()
     {
-        var set       = _selector.Selected!.CustomizationSet;
-        var available = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender;
-        var flags     = _selector.Selected!.ApplyCustomize == 0 ? 0 : (_selector.Selected!.ApplyCustomize & available) == available ? 3 : 1;
+        var set           = _selector.Selected!.CustomizeSet;
+        var available     = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender | CustomizeFlag.BodyType;
+        var flags         = _selector.Selected!.ApplyCustomizeExcludingBodyType == 0 ? 0 : (_selector.Selected!.ApplyCustomize & available) == available ? 3 : 1;
         if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))
         {
             var newFlags = flags == 3;

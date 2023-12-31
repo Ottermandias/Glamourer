@@ -1,14 +1,14 @@
 ﻿using System.IO;
 using System.Numerics;
-using Glamourer.Customization;
 using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui;
-using OtterGui.Raii;
+using Penumbra.GameData.Files;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DatFilePanel(ImportService _importService) : IDebugTabTree
+public class DatFilePanel(ImportService _importService) : IGameDataDrawer
 {
     public string Label
         => "Character Dat File";
@@ -35,7 +35,7 @@ public class DatFilePanel(ImportService _importService) : IDebugTabTree
             ImGui.TextUnformatted(_datFile.Value.Version.ToString());
             ImGui.TextUnformatted(_datFile.Value.Time.LocalDateTime.ToString("g"));
             ImGui.TextUnformatted(_datFile.Value.Voice.ToString());
-            ImGui.TextUnformatted(_datFile.Value.Customize.Data.ToString());
+            ImGui.TextUnformatted(_datFile.Value.Customize.ToString());
             ImGui.TextUnformatted(_datFile.Value.Description);
         }
     }

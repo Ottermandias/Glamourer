@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Linq;
 using Dalamud.Plugin.Services;
-using Glamourer.Customization;
 using Glamourer.Events;
 using Glamourer.Services;
-using Glamourer.Structs;
-using Penumbra.GameData.Data;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -14,12 +12,12 @@ namespace Glamourer.State;
 public class StateEditor
 {
     private readonly ItemManager          _items;
-    private readonly CustomizationService _customizations;
+    private readonly CustomizeService _customizations;
     private readonly HumanModelList       _humans;
     private readonly GPoseService         _gPose;
     private readonly ICondition           _condition;
 
-    public StateEditor(CustomizationService customizations, HumanModelList humans, ItemManager items, GPoseService gPose, ICondition condition)
+    public StateEditor(CustomizeService customizations, HumanModelList humans, ItemManager items, GPoseService gPose, ICondition condition)
     {
         _customizations = customizations;
         _humans         = humans;
@@ -30,7 +28,7 @@ public class StateEditor
 
     /// <summary> Change the model id. If the actor is changed from a human to another human, customize and equipData are unused. </summary>
     /// <remarks> We currently only allow changing things to humans, not humans to monsters. </remarks>
-    public bool ChangeModelId(ActorState state, uint modelId, in Customize customize, nint equipData, StateChanged.Source source,
+    public bool ChangeModelId(ActorState state, uint modelId, in CustomizeArray customize, nint equipData, StateChanged.Source source,
         out uint oldModelId, uint key = 0)
     {
         oldModelId = state.ModelData.ModelId;
@@ -57,7 +55,7 @@ public class StateEditor
                 return false;
 
             // Fix up everything else to make sure the result is a valid human.
-            state.ModelData.Customize = Customize.Default;
+            state.ModelData.Customize = CustomizeArray.Default;
             state.ModelData.SetDefaultEquipment(_items);
             state.ModelData.SetHatVisible(true);
             state.ModelData.SetWeaponVisible(true);
@@ -74,7 +72,7 @@ public class StateEditor
 
             state[CustomizeIndex.Clan]   = source;
             state[CustomizeIndex.Gender] = source;
-            var set = _customizations.AwaitedService.GetList(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
+            var set = _customizations.Manager.GetSet(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
             foreach (var index in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
                 state[index] = source;
         }
@@ -104,8 +102,8 @@ public class StateEditor
     }
 
     /// <summary> Change an entire customization array according to flags. </summary>
-    public bool ChangeHumanCustomize(ActorState state, in Customize customizeInput, CustomizeFlag applyWhich, StateChanged.Source source,
-        out Customize old, out CustomizeFlag changed, uint key = 0)
+    public bool ChangeHumanCustomize(ActorState state, in CustomizeArray customizeInput, CustomizeFlag applyWhich, StateChanged.Source source,
+        out CustomizeArray old, out CustomizeFlag changed, uint key = 0)
     {
         old     = state.ModelData.Customize;
         changed = 0;

@@ -8,10 +8,11 @@ using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using Glamourer.Events;
 using Glamourer.Services;
 using Lumina.Excel.GeneratedSheets;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Unlocks;
 
@@ -28,7 +29,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     public IReadOnlyDictionary<uint, long> Unlocked
         => _unlocked;
 
-    public CustomizeUnlockManager(SaveService saveService, CustomizationService customizations, IDataManager gameData,
+    public CustomizeUnlockManager(SaveService saveService, CustomizeService customizations, IDataManager gameData,
         IClientState clientState, ObjectUnlocked @event, IGameInteropProvider interop)
     {
         interop.InitializeFromAttributes(this);
@@ -172,39 +173,36 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         => UnlockDictionaryHelpers.Load(ToFilename(_saveService.FileNames), _unlocked, id => Unlockable.Any(c => c.Value.Data == id),
             "customization");
 
-    /// <summary> Create a list of all unlockable hairstyles and facepaints. </summary>
-    private static Dictionary<CustomizeData, (uint Data, string Name)> CreateUnlockableCustomizations(CustomizationService customizations,
+    /// <summary> Create a list of all unlockable hairstyles and face paints. </summary>
+    private static Dictionary<CustomizeData, (uint Data, string Name)> CreateUnlockableCustomizations(CustomizeService customizations,
         IDataManager gameData)
     {
         var ret   = new Dictionary<CustomizeData, (uint Data, string Name)>();
         var sheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English)!;
-        foreach (var clan in customizations.AwaitedService.Clans)
+        foreach (var (clan, gender) in CustomizeManager.AllSets())
         {
-            foreach (var gender in customizations.AwaitedService.Genders)
+            var list = customizations.Manager.GetSet(clan, gender);
+            foreach (var hair in list.HairStyles)
             {
-                var list = customizations.AwaitedService.GetList(clan, gender);
-                foreach (var hair in list.HairStyles)
+                var x = sheet.FirstOrDefault(f => f.FeatureID == hair.Value.Value);
+                if (x?.IsPurchasable == true)
                 {
-                    var x = sheet.FirstOrDefault(f => f.FeatureID == hair.Value.Value);
-                    if (x?.IsPurchasable == true)
-                    {
-                        var name = x.FeatureID == 61
-                            ? "Eternal Bond"
-                            : x.HintItem.Value?.Name.ToDalamudString().ToString().Replace("Modern Aesthetics - ", string.Empty)
-                         ?? string.Empty;
-                        ret.TryAdd(hair, (x.Data, name));
-                    }
+                    var name = x.FeatureID == 61
+                        ? "Eternal Bond"
+                        : x.HintItem.Value?.Name.ToDalamudString().ToString().Replace("Modern Aesthetics - ", string.Empty)
+                     ?? string.Empty;
+                    ret.TryAdd(hair, (x.Data, name));
                 }
+            }
 
-                foreach (var paint in list.FacePaints)
+            foreach (var paint in list.FacePaints)
+            {
+                var x = sheet.FirstOrDefault(f => f.FeatureID == paint.Value.Value);
+                if (x?.IsPurchasable == true)
                 {
-                    var x = sheet.FirstOrDefault(f => f.FeatureID == paint.Value.Value);
-                    if (x?.IsPurchasable == true)
-                    {
-                        var name = x.HintItem.Value?.Name.ToDalamudString().ToString().Replace("Modern Cosmetics - ", string.Empty)
-                         ?? string.Empty;
-                        ret.TryAdd(paint, (x.Data, name));
-                    }
+                    var name = x.HintItem.Value?.Name.ToDalamudString().ToString().Replace("Modern Cosmetics - ", string.Empty)
+                     ?? string.Empty;
+                    ret.TryAdd(paint, (x.Data, name));
                 }
             }
         }

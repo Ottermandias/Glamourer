@@ -2,8 +2,6 @@
 using System;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using Glamourer.Customization;
-using Glamourer.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.String;
@@ -116,8 +114,8 @@ public readonly unsafe struct Actor : IEquatable<Actor>
     public CharacterWeapon GetOffhand()
         => new(AsCharacter->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand).ModelId.Value);
 
-    public Customize GetCustomize()
-        => *(Customize*)&AsCharacter->DrawData.CustomizeData;
+    public CustomizeArray GetCustomize()
+        => *(CustomizeArray*)&AsCharacter->DrawData.CustomizeData;
 
     // TODO remove this when available in ClientStructs
     internal ref CrestFlag CrestBitfield
@@ -125,4 +123,21 @@ public readonly unsafe struct Actor : IEquatable<Actor>
 
     public override string ToString()
         => $"0x{Address:X}";
+
+    public OnlineStatus OnlineStatus
+        => (OnlineStatus)AsCharacter->CharacterData.OnlineStatus;
+}
+
+public enum OnlineStatus : byte
+{
+    Normal          = 0x00,
+    Mentor          = 0x1B,
+    PvEMentor       = 0x1C,
+    TradeMentor     = 0x1D,
+    PvPMentor       = 0x1E,
+    Busy            = 0x0C,
+    Away            = 0x11,
+    MeldMateria     = 0x15,
+    RolePlaying     = 0x16,
+    LookingForGroup = 0x17,
 }

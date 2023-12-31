@@ -6,10 +6,8 @@ using System.Text;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Glamourer.Automation;
-using Glamourer.Customization;
 using Glamourer.Interop;
 using Glamourer.Services;
-using Glamourer.Structs;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
@@ -17,43 +15,28 @@ using OtterGui.Log;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 using Action = System.Action;
-using CustomizeIndex = Glamourer.Customization.CustomizeIndex;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public class SetPanel
+public class SetPanel(
+    SetSelector _selector,
+    AutoDesignManager _manager,
+    JobService _jobs,
+    ItemUnlockManager _itemUnlocks,
+    RevertDesignCombo _designCombo,
+    CustomizeUnlockManager _customizeUnlocks,
+    CustomizeService _customizations,
+    IdentifierDrawer _identifierDrawer,
+    Configuration _config)
 {
-    private readonly AutoDesignManager      _manager;
-    private readonly SetSelector            _selector;
-    private readonly ItemUnlockManager      _itemUnlocks;
-    private readonly CustomizeUnlockManager _customizeUnlocks;
-    private readonly CustomizationService   _customizations;
-
-    private readonly Configuration     _config;
-    private readonly RevertDesignCombo _designCombo;
-    private readonly JobGroupCombo     _jobGroupCombo;
-    private readonly IdentifierDrawer  _identifierDrawer;
+    private readonly JobGroupCombo _jobGroupCombo = new(_manager, _jobs, Glamourer.Log);
 
     private string? _tempName;
     private int     _dragIndex = -1;
 
     private Action? _endAction;
-
-    public SetPanel(SetSelector selector, AutoDesignManager manager, JobService jobs, ItemUnlockManager itemUnlocks,
-        RevertDesignCombo designCombo,
-        CustomizeUnlockManager customizeUnlocks, CustomizationService customizations, IdentifierDrawer identifierDrawer, Configuration config)
-    {
-        _selector         = selector;
-        _manager          = manager;
-        _itemUnlocks      = itemUnlocks;
-        _customizeUnlocks = customizeUnlocks;
-        _customizations   = customizations;
-        _identifierDrawer = identifierDrawer;
-        _config           = config;
-        _designCombo      = designCombo;
-        _jobGroupCombo    = new JobGroupCombo(manager, jobs, Glamourer.Log);
-    }
 
     private AutoDesignSet Selection
         => _selector.Selection!;
@@ -77,7 +60,7 @@ public class SetPanel
 
         var spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
 
-        using (var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
+        using (_ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
         {
             var enabled = Selection.Enabled;
             if (ImGui.Checkbox("##Enabled", ref enabled))
@@ -87,7 +70,7 @@ public class SetPanel
         }
 
         ImGui.SameLine();
-        using (var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
+        using (_ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
         {
             var useGame = _selector.Selection!.BaseState is AutoDesignSet.Base.Game;
             if (ImGui.Checkbox("##gameState", ref useGame))
@@ -98,7 +81,7 @@ public class SetPanel
         }
 
         ImGui.SameLine();
-        using (var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
+        using (_ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
         {
             var editing = _config.ShowAutomationSetEditing;
             if (ImGui.Checkbox("##Show Editing", ref editing))
@@ -230,7 +213,7 @@ public class SetPanel
             if (_config.ShowUnlockedItemWarnings)
             {
                 ImGui.TableNextColumn();
-                DrawWarnings(design, idx);
+                DrawWarnings(design);
             }
         }
 
@@ -278,7 +261,7 @@ public class SetPanel
         }
     }
 
-    private void DrawWarnings(AutoDesign design, int idx)
+    private void DrawWarnings(AutoDesign design)
     {
         if (design.Revert)
             return;
@@ -301,27 +284,6 @@ public class SetPanel
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * ImGuiHelpers.GlobalScale, 0));
 
-
-        static void DrawWarning(StringBuilder sb, uint color, Vector2 size, string suffix, string good)
-        {
-            using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
-            if (sb.Length > 0)
-            {
-                sb.Append(suffix);
-                using (var font = ImRaii.PushFont(UiBuilder.IconFont))
-                {
-                    ImGuiUtil.DrawTextButton(FontAwesomeIcon.ExclamationCircle.ToIconString(), size, color);
-                }
-
-                ImGuiUtil.HoverTooltip(sb.ToString());
-            }
-            else
-            {
-                ImGuiUtil.DrawTextButton(string.Empty, size, 0);
-                ImGuiUtil.HoverTooltip(good);
-            }
-        }
-
         var tt = _config.UnlockedItemMode
             ? "\nThese items will be skipped when applied automatically.\n\nTo change this, disable the Obtained Item Mode setting."
             : string.Empty;
@@ -333,7 +295,7 @@ public class SetPanel
         if (!design.Design.DesignData.IsHuman)
             sb.AppendLine("The base model id can not be changed automatically to something non-human.");
 
-        var set = _customizations.AwaitedService.GetList(customize.Clan, customize.Gender);
+        var set = _customizations.Manager.GetSet(customize.Clan, customize.Gender);
         foreach (var type in CustomizationExtensions.All)
         {
             var flag = type.ToFlag();
@@ -355,6 +317,27 @@ public class SetPanel
             : string.Empty;
         DrawWarning(sb2, _config.UnlockedItemMode ? 0xA03030F0 : 0x0, size, tt, "All customizations to be applied are unlocked.");
         ImGui.SameLine();
+        return;
+
+        static void DrawWarning(StringBuilder sb, uint color, Vector2 size, string suffix, string good)
+        {
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
+            if (sb.Length > 0)
+            {
+                sb.Append(suffix);
+                using (_ = ImRaii.PushFont(UiBuilder.IconFont))
+                {
+                    ImGuiUtil.DrawTextButton(FontAwesomeIcon.ExclamationCircle.ToIconString(), size, color);
+                }
+
+                ImGuiUtil.HoverTooltip(sb.ToString());
+            }
+            else
+            {
+                ImGuiUtil.DrawTextButton(string.Empty, size, 0);
+                ImGuiUtil.HoverTooltip(good);
+            }
+        }
     }
 
     private void DrawDragDrop(AutoDesignSet set, int index)
@@ -394,7 +377,7 @@ public class SetPanel
         var       newType    = design.ApplicationType;
         var       newTypeInt = (uint)newType;
         style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
-        using (var c = ImRaii.PushColor(ImGuiCol.Border, ColorId.FolderLine.Value()))
+        using (_ = ImRaii.PushColor(ImGuiCol.Border, ColorId.FolderLine.Value()))
         {
             if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)AutoDesign.Type.All))
                 newType = (AutoDesign.Type)newTypeInt;

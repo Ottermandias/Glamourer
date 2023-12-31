@@ -2,9 +2,9 @@
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 
-namespace Glamourer.Customization;
+namespace Glamourer.GameData;
 
-// A custom version of CharaMakeParams that is easier to parse.
+/// <summary> A custom version of CharaMakeParams that is easier to parse. </summary>
 [Sheet("CharaMakeParams")]
 public class CharaMakeParams : ExcelRow
 {
@@ -64,7 +64,7 @@ public class CharaMakeParams : ExcelRow
         Race     = new LazyRow<Race>(gameData, parser.ReadColumn<uint>(0), language);
         Tribe    = new LazyRow<Tribe>(gameData, parser.ReadColumn<uint>(1), language);
         Gender   = parser.ReadColumn<sbyte>(2);
-        var currentOffset = 0;
+        int currentOffset;
         for (var i = 0; i < NumMenus; ++i)
         {
             currentOffset      = 3 + i;

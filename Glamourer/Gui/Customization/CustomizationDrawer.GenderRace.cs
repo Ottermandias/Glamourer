@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Linq;
+using System.Numerics;
 using Dalamud.Interface;
-using Glamourer.Customization;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
@@ -74,5 +75,21 @@ public partial class CustomizationDrawer
 
         if (_lockedRedraw && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("The race can not be changed as this requires a redraw of the character, which is not supported for this actor.");
+    }
+
+    private void DrawBodyType()
+    {
+        if (_customize.BodyType.Value == 1)
+            return;
+
+        var label = _lockedRedraw
+            ? $"Body Type {_customize.BodyType.Value}"
+            : $"Reset Body Type {_customize.BodyType.Value} to Default";
+        if (!ImGuiUtil.DrawDisabledButton(label, new Vector2(_raceSelectorWidth + _framedIconSize.X + ImGui.GetStyle().ItemSpacing.X, 0),
+                string.Empty, _lockedRedraw))
+            return;
+
+        Changed             |= CustomizeFlag.BodyType;
+        _customize.BodyType =  (CustomizeValue)1;
     }
 }

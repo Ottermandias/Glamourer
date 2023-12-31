@@ -28,6 +28,8 @@ public enum ColorId
     TriStateCheck,
     TriStateCross,
     TriStateNeutral,
+    BattleNpc,
+    EventNpc,
 }
 
 public static class Colors
@@ -60,7 +62,9 @@ public static class Colors
             ColorId.QuickDesignBg              => (0x00F0F0F0, "Quick Design Bar Window Background", "The color of the window background in the quick design bar."                                               ),
             ColorId.TriStateCheck              => (0xFF00D000, "Checkmark in Tri-State Checkboxes",  "The color of the checkmark indicating positive change in tri-state checkboxes."                            ),
             ColorId.TriStateCross              => (0xFF0000D0, "Cross in Tri-State Checkboxes",      "The color of the cross indicating negative change in tri-state checkboxes."                                ),
-            ColorId.TriStateNeutral            => (0xFFD0D0D0, "Dot in Tri-State Checkboxes",        "The color of the dot indicating no change in tri-state checkboxes"                                         ),
+            ColorId.TriStateNeutral            => (0xFFD0D0D0, "Dot in Tri-State Checkboxes",        "The color of the dot indicating no change in tri-state checkboxes."                                        ),
+            ColorId.BattleNpc                  => (0xFFFFFFFF, "Battle NPC in NPC Tab",              "The color of the names of battle NPCs in the NPC tab that do not have a more specific color assigned."     ),
+            ColorId.EventNpc                   => (0xFFFFFFFF, "Event NPC in NPC Tab",               "The color of the names of event NPCs in the NPC tab that do not have a more specific color assigned."      ),
             _                                  => (0x00000000, string.Empty,                         string.Empty                                                                                                ),
             // @formatter:on
         };

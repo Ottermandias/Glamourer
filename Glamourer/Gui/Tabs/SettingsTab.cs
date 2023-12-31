@@ -60,7 +60,7 @@ public class SettingsTab : ITab
         if (!child)
             return;
 
-        Checkbox("Enable Auto Designs", "Enable the application of designs associated to characters to be applied automatically.",
+        Checkbox("Enable Auto Designs", "Enable the application of designs associated to characters in the Automation tab to be applied automatically.",
             _config.EnableAutoDesigns,  v => _config.EnableAutoDesigns = v);
         ImGui.NewLine();
         ImGui.NewLine();
@@ -247,22 +247,17 @@ public class SettingsTab : ITab
             if (ImGui.Checkbox(code, ref state))
             {
                 action(state);
-                _config.Codes[i] = (code, state);
-                _codeService.VerifyState();
-                _config.Save();
+                _codeService.SaveState();
             }
         }
 
-        if (_codeService.EnabledCaptain)
-        {
-            if (ImGui.Button("Who am I?!?"))
-                _funModule.WhoAmI();
+        if (ImGui.Button("Who am I?!?"))
+            _funModule.WhoAmI();
 
-            ImGui.SameLine();
+        ImGui.SameLine();
 
-            if (ImGui.Button("Who is that!?!"))
-                _funModule.WhoIsThat();
-        }
+        if (ImGui.Button("Who is that!?!"))
+            _funModule.WhoIsThat();
     }
 
     private void DrawCodeHints()

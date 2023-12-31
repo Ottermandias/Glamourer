@@ -2,17 +2,17 @@
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.Internal.Notifications;
-using Glamourer.Customization;
 using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using ImGuiNET;
+using OtterGui;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using CustomizeIndex = Glamourer.Customization.CustomizeIndex;
+using CustomizeIndex = Penumbra.GameData.Enums.CustomizeIndex;
 
 namespace Glamourer.State;
 
@@ -26,18 +26,18 @@ public unsafe class FunModule : IDisposable
         AprilFirst,
     }
 
-    private readonly WorldSets            _worldSets = new();
-    private readonly ItemManager          _items;
-    private readonly CustomizationService _customizations;
-    private readonly Configuration        _config;
-    private readonly CodeService          _codes;
-    private readonly Random               _rng;
-    private readonly GenericPopupWindow   _popupWindow;
-    private readonly StateManager         _stateManager;
-    private readonly DesignConverter      _designConverter;
-    private readonly DesignManager        _designManager;
-    private readonly ObjectManager        _objects;
-    private readonly StainId[]            _stains;
+    private readonly WorldSets          _worldSets = new();
+    private readonly ItemManager        _items;
+    private readonly CustomizeService   _customizations;
+    private readonly Configuration      _config;
+    private readonly CodeService        _codes;
+    private readonly Random             _rng;
+    private readonly GenericPopupWindow _popupWindow;
+    private readonly StateManager       _stateManager;
+    private readonly DesignConverter    _designConverter;
+    private readonly DesignManager      _designManager;
+    private readonly ObjectManager      _objects;
+    private readonly StainId[]          _stains;
 
     public  FestivalType CurrentFestival { get; private set; } = FestivalType.None;
     private FunEquipSet? _festivalSet;
@@ -68,7 +68,7 @@ public unsafe class FunModule : IDisposable
     internal void ResetFestival()
         => OnDayChange(DateTime.Now.Day, DateTime.Now.Month, DateTime.Now.Year);
 
-    public FunModule(CodeService codes, CustomizationService customizations, ItemManager items, Configuration config,
+    public FunModule(CodeService codes, CustomizeService customizations, ItemManager items, Configuration config,
         GenericPopupWindow popupWindow, StateManager stateManager, ObjectManager objects, DesignConverter designConverter,
         DesignManager designManager)
     {
@@ -90,54 +90,107 @@ public unsafe class FunModule : IDisposable
     public void Dispose()
         => DayChangeTracker.DayChanged -= OnDayChange;
 
-    public void ApplyFun(Actor actor, ref CharacterArmor armor, EquipSlot slot)
+    private bool IsInFestival
+        => _config.DisableFestivals == 0 && _festivalSet != null;
+
+    public void ApplyFunToSlot(Actor actor, ref CharacterArmor armor, EquipSlot slot)
     {
         if (!ValidFunTarget(actor))
             return;
 
-        if (_config.DisableFestivals == 0 && _festivalSet != null
-         || _codes.EnabledWorld && actor.Index != 0)
+        if (IsInFestival)
         {
-            armor = actor.Model.Valid ? actor.Model.GetArmor(slot) : armor;
+            KeepOldArmor(actor, slot, ref armor);
+            return;
         }
-        else
+
+        if (_codes.Enabled(CodeService.CodeFlag.Crown)
+         && actor.OnlineStatus is OnlineStatus.PvEMentor or OnlineStatus.PvPMentor or OnlineStatus.TradeMentor
+         && slot.IsEquipment())
         {
-            ApplyEmperor(new Span<CharacterArmor>(ref armor), slot);
-            ApplyClown(new Span<CharacterArmor>(ref armor));
+            armor = new CharacterArmor(6117, 1, 0);
+            return;
+        }
+
+        switch (_codes.Masked(CodeService.GearCodes))
+        {
+            case CodeService.CodeFlag.Emperor:
+                SetRandomItem(slot, ref armor);
+                break;
+            case CodeService.CodeFlag.Elephants:
+                SetElephant(slot, ref armor);
+                break;
+            case CodeService.CodeFlag.World when actor.Index != 0:
+                KeepOldArmor(actor, slot, ref armor);
+                break;
+        }
+
+        switch (_codes.Masked(CodeService.DyeCodes))
+        {
+            case CodeService.CodeFlag.Clown:
+                SetRandomDye(ref armor);
+                break;
         }
     }
 
-    public void ApplyFun(Actor actor, Span<CharacterArmor> armor, ref Customize customize)
+    public void ApplyFunOnLoad(Actor actor, Span<CharacterArmor> armor, ref CustomizeArray customize)
     {
         if (!ValidFunTarget(actor))
             return;
 
-        if (_config.DisableFestivals == 0 && _festivalSet != null)
+        // First set the race, if any.
+        SetRace(ref customize);
+        // Now apply the gender.
+        SetGender(ref customize);
+        // Randomize customizations inside the race and gender combo.
+        RandomizeCustomize(ref customize);
+        // Finally, apply forced sizes.
+        SetSize(actor, ref customize);
+
+        // Apply the festival gear with priority over all gear codes.
+        if (IsInFestival)
         {
-            _festivalSet.Apply(_stains, _rng, armor);
-        }
-        else if (_codes.EnabledWorld && actor.Index != 0)
-        {
-            _worldSets.Apply(actor, _rng, armor);
-        }
-        else
-        {
-            ApplyEmperor(armor);
-            ApplyClown(armor);
+            _festivalSet!.Apply(_stains, _rng, armor);
+            return;
         }
 
-        ApplyOops(ref customize);
-        Apply63(ref customize);
-        ApplyIndividual(ref customize);
-        ApplySizing(actor, ref customize);
+        if (_codes.Enabled(CodeService.CodeFlag.Crown)
+         && actor.OnlineStatus is OnlineStatus.Mentor or OnlineStatus.PvEMentor or OnlineStatus.PvPMentor or OnlineStatus.TradeMentor)
+        {
+            SetCrown(armor);
+            return;
+        }
+
+        switch (_codes.Masked(CodeService.GearCodes))
+        {
+            case CodeService.CodeFlag.Emperor:
+                foreach (var (slot, idx) in EquipSlotExtensions.EqdpSlots.WithIndex())
+                    SetRandomItem(slot, ref armor[idx]);
+                break;
+            case CodeService.CodeFlag.Elephants:
+                SetElephant(EquipSlot.Body, ref armor[1]);
+                SetElephant(EquipSlot.Head, ref armor[0]);
+                break;
+            case CodeService.CodeFlag.World when actor.Index != 0:
+                _worldSets.Apply(actor, _rng, armor);
+                break;
+        }
+
+        switch (_codes.Masked(CodeService.DyeCodes))
+        {
+            case CodeService.CodeFlag.Clown:
+                foreach (ref var piece in armor)
+                    SetRandomDye(ref piece);
+                break;
+        }
     }
 
-    public void ApplyFun(Actor actor, ref CharacterWeapon weapon, EquipSlot slot)
+    public void ApplyFunToWeapon(Actor actor, ref CharacterWeapon weapon, EquipSlot slot)
     {
         if (!ValidFunTarget(actor))
             return;
 
-        if (_codes.EnabledWorld)
+        if (_codes.Enabled(CodeService.CodeFlag.World) && actor.Index != 0)
             _worldSets.Apply(actor, _rng, ref weapon, slot);
     }
 
@@ -147,57 +200,71 @@ public unsafe class FunModule : IDisposable
          && !actor.IsTransformed
          && actor.AsCharacter->CharacterData.ModelCharaId == 0;
 
-    public void ApplyClown(Span<CharacterArmor> armors)
-    {
-        if (!_codes.EnabledClown)
-            return;
+    private static void KeepOldArmor(Actor actor, EquipSlot slot, ref CharacterArmor armor)
+        => armor = actor.Model.Valid ? actor.Model.GetArmor(slot) : armor;
 
-        foreach (ref var armor in armors)
-        {
-            var stainIdx = _rng.Next(0, _stains.Length - 1);
-            armor.Stain = _stains[stainIdx];
-        }
+    private void SetRandomDye(ref CharacterArmor armor)
+    {
+        var stainIdx = _rng.Next(0, _stains.Length - 1);
+        armor.Stain = _stains[stainIdx];
     }
 
-    public void ApplyEmperor(Span<CharacterArmor> armors, EquipSlot slot = EquipSlot.Unknown)
+    private void SetRandomItem(EquipSlot slot, ref CharacterArmor armor)
     {
-        if (!_codes.EnabledEmperor)
-            return;
-
-        void SetItem(EquipSlot slot2, ref CharacterArmor armor)
-        {
-            var list = _items.ItemService.AwaitedService[slot2.ToEquipType()];
-            var rng  = _rng.Next(0, list.Count - 1);
-            var item = list[rng];
-            armor.Set     = item.ModelId;
-            armor.Variant = item.Variant;
-        }
-
-        if (armors.Length == 1)
-            SetItem(slot, ref armors[0]);
-        else
-            for (var i = 0u; i < armors.Length; ++i)
-                SetItem(i.ToEquipSlot(), ref armors[(int)i]);
+        var list = _items.ItemData.ByType[slot.ToEquipType()];
+        var rng  = _rng.Next(0, list.Count - 1);
+        var item = list[rng];
+        armor.Set     = item.PrimaryId;
+        armor.Variant = item.Variant;
     }
 
-    public void ApplyOops(ref Customize customize)
+    private static void SetElephant(EquipSlot slot, ref CharacterArmor armor)
     {
-        if (_codes.EnabledOops == Race.Unknown)
+        armor = slot switch
+        {
+            EquipSlot.Body => new CharacterArmor(6133, 1, 87),
+            EquipSlot.Head => new CharacterArmor(6133, 1, 87),
+            _              => armor,
+        };
+    }
+
+    private static void SetCrown(Span<CharacterArmor> armor)
+    {
+        var clown = new CharacterArmor(6117, 1, 0);
+        armor[0] = clown;
+        armor[1] = clown;
+        armor[2] = clown;
+        armor[3] = clown;
+        armor[4] = clown;
+    }
+
+    private void SetRace(ref CustomizeArray customize)
+    {
+        var race = _codes.GetRace();
+        if (race == Race.Unknown)
             return;
 
-        var targetClan = (SubRace)((int)_codes.EnabledOops * 2 - (int)customize.Clan % 2);
+        var targetClan = (SubRace)((int)race * 2 - (int)customize.Clan % 2);
         // TODO Female Hrothgar
-        if (_codes.EnabledOops is Race.Hrothgar && customize.Gender is Gender.Female)
+        if (race is Race.Hrothgar && customize.Gender is Gender.Female)
             targetClan = targetClan is SubRace.Lost ? SubRace.Seawolf : SubRace.Hellsguard;
         _customizations.ChangeClan(ref customize, targetClan);
     }
 
-    public void ApplyIndividual(ref Customize customize)
+    private void SetGender(ref CustomizeArray customize)
     {
-        if (!_codes.EnabledIndividual)
+        if (!_codes.Enabled(CodeService.CodeFlag.SixtyThree) || customize.Race is Race.Hrothgar) // TODO Female Hrothgar
             return;
 
-        var set = _customizations.AwaitedService.GetList(customize.Clan, customize.Gender);
+        _customizations.ChangeGender(ref customize, customize.Gender is Gender.Male ? Gender.Female : Gender.Male);
+    }
+
+    private void RandomizeCustomize(ref CustomizeArray customize)
+    {
+        if (!_codes.Enabled(CodeService.CodeFlag.Individual))
+            return;
+
+        var set = _customizations.Manager.GetSet(customize.Clan, customize.Gender);
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {
             if (index is CustomizeIndex.Face || !set.IsAvailable(index))
@@ -208,27 +275,18 @@ public unsafe class FunModule : IDisposable
         }
     }
 
-    public void Apply63(ref Customize customize)
+    private void SetSize(Actor actor, ref CustomizeArray customize)
     {
-        if (!_codes.Enabled63 || customize.Race is Race.Hrothgar) // TODO Female Hrothgar
-            return;
-
-        _customizations.ChangeGender(ref customize, customize.Gender is Gender.Male ? Gender.Female : Gender.Male);
-    }
-
-    public void ApplySizing(Actor actor, ref Customize customize)
-    {
-        if (_codes.EnabledSizing == CodeService.Sizing.None)
-            return;
-
-        var size = _codes.EnabledSizing switch
+        var size = _codes.Masked(CodeService.SizeCodes) switch
         {
-            CodeService.Sizing.Dwarf when actor.Index == 0 => 0,
-            CodeService.Sizing.Dwarf when actor.Index != 0 => 100,
-            CodeService.Sizing.Giant when actor.Index == 0 => 100,
-            CodeService.Sizing.Giant when actor.Index != 0 => 0,
-            _                                              => 0,
+            CodeService.CodeFlag.Dwarf when actor.Index == 0 => (byte)0,
+            CodeService.CodeFlag.Dwarf                       => (byte)100,
+            CodeService.CodeFlag.Giant when actor.Index == 0 => (byte)100,
+            CodeService.CodeFlag.Giant                       => (byte)0,
+            _                                                => byte.MaxValue,
         };
+        if (size == byte.MaxValue)
+            return;
 
         if (customize.Gender is Gender.Female)
             customize[CustomizeIndex.BustSize] = (CustomizeValue)size;

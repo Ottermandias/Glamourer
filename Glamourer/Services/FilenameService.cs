@@ -18,6 +18,7 @@ public class FilenameService
     public readonly string FavoriteFile;
     public readonly string DesignColorFile;
     public readonly string EphemeralConfigFile;
+    public readonly string NpcAppearanceFile;
 
     public FilenameService(DalamudPluginInterface pi)
     {
@@ -32,8 +33,8 @@ public class FilenameService
         FavoriteFile        = Path.Combine(ConfigDirectory, "favorites.json");
         DesignColorFile     = Path.Combine(ConfigDirectory, "design_colors.json");
         EphemeralConfigFile = Path.Combine(ConfigDirectory, "ephemeral_config.json");
+        NpcAppearanceFile   = Path.Combine(ConfigDirectory, "npc_appearance_data.json");
     }
-
 
     public IEnumerable<FileInfo> Designs()
     {

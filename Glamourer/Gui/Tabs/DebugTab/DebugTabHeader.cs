@@ -3,21 +3,14 @@ using System.Collections.Generic;
 using ImGuiNET;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Raii;
+using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public interface IDebugTabTree
+public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
 {
-    public string Label { get; }
-    public void   Draw();
-
-    public bool Disabled { get; }
-}
-
-public class DebugTabHeader(string label, params IDebugTabTree[] subTrees)
-{
-    public string                       Label    { get; } = label;
-    public IReadOnlyList<IDebugTabTree> SubTrees { get; } = subTrees;
+    public string                         Label    { get; } = label;
+    public IReadOnlyList<IGameDataDrawer> SubTrees { get; } = subTrees;
 
     public void Draw()
     {
@@ -26,14 +19,13 @@ public class DebugTabHeader(string label, params IDebugTabTree[] subTrees)
 
         foreach (var subTree in SubTrees)
         {
-            using (var disabled = ImRaii.Disabled(subTree.Disabled))
+            using var disabled = ImRaii.Disabled(subTree.Disabled);
+            using var tree     = ImRaii.TreeNode(subTree.Label);
+            if (tree)
             {
-                using var tree = ImRaii.TreeNode(subTree.Label);
-                if (!tree)
-                    continue;
+                disabled.Dispose();
+                subTree.Draw();
             }
-
-            subTree.Draw();
         }
     }
 
@@ -52,13 +44,15 @@ public class DebugTabHeader(string label, params IDebugTabTree[] subTrees)
         => new
         (
             "Game Data",
-            provider.GetRequiredService<IdentifierPanel>(),
-            provider.GetRequiredService<RestrictedGearPanel>(),
-            provider.GetRequiredService<ActorServicePanel>(),
-            provider.GetRequiredService<ItemManagerPanel>(),
-            provider.GetRequiredService<StainPanel>(),
+            provider.GetRequiredService<DataServiceDiagnosticsDrawer>(),
+            provider.GetRequiredService<IdentificationDrawer>(),
+            provider.GetRequiredService<RestrictedGearDrawer>(),
+            provider.GetRequiredService<ActorDataDrawer>(),
+            provider.GetRequiredService<ItemDataDrawer>(),
+            provider.GetRequiredService<DictStainDrawer>(),
             provider.GetRequiredService<CustomizationServicePanel>(),
-            provider.GetRequiredService<JobPanel>(),
+            provider.GetRequiredService<DictJobDrawer>(),
+            provider.GetRequiredService<DictJobGroupDrawer>(),
             provider.GetRequiredService<NpcAppearancePanel>()
         );
 

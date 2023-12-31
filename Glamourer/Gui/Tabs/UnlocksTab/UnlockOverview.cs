@@ -3,7 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Utility;
-using Glamourer.Customization;
+using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Unlocks;
@@ -19,7 +19,7 @@ public class UnlockOverview
 {
     private readonly ItemManager                _items;
     private readonly ItemUnlockManager          _itemUnlocks;
-    private readonly CustomizationService       _customizations;
+    private readonly CustomizeService           _customizations;
     private readonly CustomizeUnlockManager     _customizeUnlocks;
     private readonly PenumbraChangedItemTooltip _tooltip;
     private readonly TextureService             _textures;
@@ -41,7 +41,7 @@ public class UnlockOverview
 
         foreach (var type in Enum.GetValues<FullEquipType>())
         {
-            if (type.IsOffhandType() || !_items.ItemService.AwaitedService.TryGetValue(type, out var items) || items.Count == 0)
+            if (type.IsOffhandType() || !_items.ItemData.ByType.TryGetValue(type, out var items) || items.Count == 0)
                 continue;
 
             if (ImGui.Selectable(type.ToName(), _selected1 == type))
@@ -52,25 +52,22 @@ public class UnlockOverview
             }
         }
 
-        foreach (var clan in _customizations.AwaitedService.Clans)
+        foreach (var (clan, gender) in CustomizeManager.AllSets())
         {
-            foreach (var gender in _customizations.AwaitedService.Genders)
-            {
-                if (_customizations.AwaitedService.GetList(clan, gender).HairStyles.Count == 0)
-                    continue;
+            if (_customizations.Manager.GetSet(clan, gender).HairStyles.Count == 0)
+                continue;
 
-                if (ImGui.Selectable($"{(gender is Gender.Male ? '♂' : '♀')} {clan.ToShortName()} Hair & Paint",
-                        _selected2 == clan && _selected3 == gender))
-                {
-                    _selected1 = FullEquipType.Unknown;
-                    _selected2 = clan;
-                    _selected3 = gender;
-                }
+            if (ImGui.Selectable($"{(gender is Gender.Male ? '♂' : '♀')} {clan.ToShortName()} Hair & Paint",
+                    _selected2 == clan && _selected3 == gender))
+            {
+                _selected1 = FullEquipType.Unknown;
+                _selected2 = clan;
+                _selected3 = gender;
             }
         }
     }
 
-    public UnlockOverview(ItemManager items, CustomizationService customizations, ItemUnlockManager itemUnlocks,
+    public UnlockOverview(ItemManager items, CustomizeService customizations, ItemUnlockManager itemUnlocks,
         CustomizeUnlockManager customizeUnlocks, PenumbraChangedItemTooltip tooltip, TextureService textures, CodeService codes,
         JobService jobs, FavoriteManager favorites)
     {
@@ -107,7 +104,7 @@ public class UnlockOverview
 
     private void DrawCustomizations()
     {
-        var set = _customizations.AwaitedService.GetList(_selected2, _selected3);
+        var set = _customizations.Manager.GetSet(_selected2, _selected3);
 
         var       spacing     = IconSpacing;
         using var style       = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
@@ -121,10 +118,10 @@ public class UnlockOverview
                 continue;
 
             var unlocked = _customizeUnlocks.IsUnlocked(customize, out var time);
-            var icon     = _customizations.AwaitedService.GetIcon(customize.IconId);
+            var icon     = _customizations.Manager.GetIcon(customize.IconId);
 
             ImGui.Image(icon.ImGuiHandle, iconSize, Vector2.Zero, Vector2.One,
-                unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);
+                unlocked || _codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (ImGui.IsItemHovered())
             {
                 using var tt   = ImRaii.Tooltip();
@@ -150,7 +147,7 @@ public class UnlockOverview
 
     private void DrawItems()
     {
-        if (!_items.ItemService.AwaitedService.TryGetValue(_selected1, out var items))
+        if (!_items.ItemData.ByType.TryGetValue(_selected1, out var items))
             return;
 
         var       spacing        = IconSpacing;
@@ -160,6 +157,30 @@ public class UnlockOverview
         var       numRows        = (items.Count + iconsPerRow - 1) / iconsPerRow;
         var       numVisibleRows = (int)(Math.Ceiling(ImGui.GetContentRegionAvail().Y / (iconSize.Y + spacing.Y)) + 0.5f) + 1;
 
+        var skips   = ImGuiClip.GetNecessarySkips(iconSize.Y + spacing.Y);
+        var end     = Math.Min(numVisibleRows * iconsPerRow + skips * iconsPerRow, items.Count);
+        var counter = 0;
+        for (var idx = skips * iconsPerRow; idx < end; ++idx)
+        {
+            DrawItem(items[idx]);
+            if (counter != iconsPerRow - 1)
+            {
+                ImGui.SameLine();
+                ++counter;
+            }
+            else
+            {
+                counter = 0;
+            }
+        }
+
+        if (ImGui.GetCursorPosX() != 0)
+            ImGui.NewLine();
+        var remainder = numRows - numVisibleRows - skips;
+        if (remainder > 0)
+            ImGuiClip.DrawEndDummy(remainder, iconSize.Y + spacing.Y);
+        return;
+
         void DrawItem(EquipItem item)
         {
             var unlocked = _itemUnlocks.IsUnlocked(item.Id, out var time);
@@ -168,7 +189,7 @@ public class UnlockOverview
 
             var (icon, size) = (iconHandle.ImGuiHandle, new Vector2(iconHandle.Width, iconHandle.Height));
 
-            ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One, unlocked || _codes.EnabledShirts ? Vector4.One : UnavailableTint);
+            ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One, unlocked || _codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (_favorites.Contains(item))
                 ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
                     2 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * ImGuiHelpers.GlobalScale);
@@ -189,7 +210,7 @@ public class UnlockOverview
                 ImGui.TextUnformatted($"{item.Type.ToName()} ({slot.ToName()})");
                 if (item.Type.ValidOffhand().IsOffhandType())
                     ImGui.TextUnformatted(
-                        $"{item.Weapon()}{(_items.ItemService.AwaitedService.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand) ? $" | {offhand.Weapon()}" : string.Empty)}");
+                        $"{item.Weapon()}{(_items.ItemData.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand) ? $" | {offhand.Weapon()}" : string.Empty)}");
                 else
                     ImGui.TextUnformatted(slot is EquipSlot.MainHand ? $"{item.Weapon()}" : $"{item.Armor()}");
                 ImGui.TextUnformatted(
@@ -219,29 +240,6 @@ public class UnlockOverview
                 _tooltip.CreateTooltip(item, string.Empty, false);
             }
         }
-
-        var skips   = ImGuiClip.GetNecessarySkips(iconSize.Y + spacing.Y);
-        var end     = Math.Min(numVisibleRows * iconsPerRow + skips * iconsPerRow, items.Count);
-        var counter = 0;
-        for (var idx = skips * iconsPerRow; idx < end; ++idx)
-        {
-            DrawItem(items[idx]);
-            if (counter != iconsPerRow - 1)
-            {
-                ImGui.SameLine();
-                ++counter;
-            }
-            else
-            {
-                counter = 0;
-            }
-        }
-
-        if (ImGui.GetCursorPosX() != 0)
-            ImGui.NewLine();
-        var remainder = numRows - numVisibleRows - skips;
-        if (remainder > 0)
-            ImGuiClip.DrawEndDummy(remainder, iconSize.Y + spacing.Y);
     }
 
     private static Vector2 IconSpacing
