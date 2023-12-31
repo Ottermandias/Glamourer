@@ -28,7 +28,8 @@ public partial class GlamourerIpc : IDisposable
     private readonly DesignManager     _designManager;
 
     public GlamourerIpc(DalamudPluginInterface pi, StateManager stateManager, ObjectManager objects, ActorService actors,
-        DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose, AutoDesignApplier autoDesignApplier, DesignManager designManager)
+        DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose, AutoDesignApplier autoDesignApplier,
+        DesignManager designManager)
     {
         _stateManager        = stateManager;
         _objects             = objects;
@@ -65,6 +66,9 @@ public partial class GlamourerIpc : IDisposable
         _applyOnlyCustomizationToCharacterProviderLock =
             new ActionProvider<string, Character?, uint>(pi, LabelApplyOnlyCustomizationToCharacterLock, ApplyOnlyCustomizationToCharacterLock);
 
+        _applyByGuidProvider            = new ActionProvider<Guid, string>(pi, LabelApplyByGuid, ApplyByGuid);
+        _applyByGuidToCharacterProvider = new ActionProvider<Guid, Character?>(pi, LabelApplyByGuidToCharacter, ApplyByGuidToCharacter);
+
         _revertProvider              = new ActionProvider<string>(pi, LabelRevert, Revert);
         _revertCharacterProvider     = new ActionProvider<Character?>(pi, LabelRevertCharacter, RevertCharacter);
         _revertProviderLock          = new ActionProvider<string, uint>(pi, LabelRevertLock, RevertLock);
@@ -80,9 +84,6 @@ public partial class GlamourerIpc : IDisposable
 
         _stateChangedEvent.Subscribe(OnStateChanged, StateChanged.Priority.GlamourerIpc);
         _gPose.Subscribe(OnGPoseChanged, GPoseService.Priority.GlamourerIpc);
-
-        _applyByGuidProvider = new ActionProvider<Guid, string>(pi, LabelApplyByGuid, ApplyByGuid);
-        _applyByGuidToCharacterProvider = new ActionProvider<Guid, Character?>(pi, LabelApplyByGuidToCharacter, ApplyByGuidToCharacter);
 
         _getDesignListProvider = new FuncProvider<(string Name, Guid Identifier)[]>(pi, LabelGetDesignList, GetDesignList);
     }
@@ -107,6 +108,8 @@ public partial class GlamourerIpc : IDisposable
         _applyOnlyEquipmentToCharacterProviderLock.Dispose();
         _applyOnlyCustomizationProviderLock.Dispose();
         _applyOnlyCustomizationToCharacterProviderLock.Dispose();
+        _applyByGuidProvider.Dispose();
+        _applyByGuidToCharacterProvider.Dispose();
 
         _revertProvider.Dispose();
         _revertCharacterProvider.Dispose();
@@ -122,8 +125,6 @@ public partial class GlamourerIpc : IDisposable
         _gPose.Unsubscribe(OnGPoseChanged);
         _gPoseChangedProvider.Dispose();
 
-        _applyByGuidProvider.Dispose();
-        _applyByGuidToCharacterProvider.Dispose();
         _getDesignListProvider.Dispose();
     }
 

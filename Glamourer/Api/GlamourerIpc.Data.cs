@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Buffers.Text;
-using System.Collections.Generic;
 using System.Linq;
-using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
-using Glamourer.Customization;
-using Glamourer.Designs;
-using Glamourer.Structs;
 using Penumbra.Api.Helpers;
-using Penumbra.GameData.Actors;
 
 namespace Glamourer.Api;
 

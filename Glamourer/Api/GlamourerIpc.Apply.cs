@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
 using Glamourer.Designs;
@@ -25,6 +27,9 @@ public partial class GlamourerIpc
     public const string LabelApplyOnlyCustomizationLock            = "Glamourer.ApplyOnlyCustomizationLock";
     public const string LabelApplyOnlyCustomizationToCharacterLock = "Glamourer.ApplyOnlyCustomizationToCharacterLock";
 
+    public const string LabelApplyByGuid            = "Glamourer.ApplyByGuid";
+    public const string LabelApplyByGuidToCharacter = "Glamourer.ApplyByGuidToCharacter";
+
     private readonly ActionProvider<string, string>     _applyAllProvider;
     private readonly ActionProvider<string, Character?> _applyAllToCharacterProvider;
     private readonly ActionProvider<string, string>     _applyOnlyEquipmentProvider;
@@ -38,6 +43,9 @@ public partial class GlamourerIpc
     private readonly ActionProvider<string, Character?, uint> _applyOnlyEquipmentToCharacterProviderLock;
     private readonly ActionProvider<string, string, uint>     _applyOnlyCustomizationProviderLock;
     private readonly ActionProvider<string, Character?, uint> _applyOnlyCustomizationToCharacterProviderLock;
+
+    private readonly ActionProvider<Guid, string>     _applyByGuidProvider;
+    private readonly ActionProvider<Guid, Character?> _applyByGuidToCharacterProvider;
 
     public static ActionSubscriber<string, string> ApplyAllSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApplyAll);
@@ -56,6 +64,12 @@ public partial class GlamourerIpc
 
     public static ActionSubscriber<string, Character?> ApplyOnlyCustomizationToCharacterSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApplyOnlyCustomizationToCharacter);
+
+    public static ActionSubscriber<Guid, string> ApplyByGuidSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelApplyByGuid);
+
+    public static ActionSubscriber<Guid, Character?> ApplyByGuidToCharacterSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelApplyByGuidToCharacter);
 
     public void ApplyAll(string base64, string characterName)
         => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(characterName), version, 0);
@@ -95,6 +109,12 @@ public partial class GlamourerIpc
         => ApplyDesign(_designConverter.FromBase64(base64, true, false, out var version), FindActors(character), version, lockCode);
 
 
+    public void ApplyByGuid(Guid identifier, string characterName)
+        => ApplyDesignByGuid(identifier, FindActors(characterName), 0);
+
+    public void ApplyByGuidToCharacter(Guid identifier, Character? character)
+        => ApplyDesignByGuid(identifier, FindActors(character), 0);
+
     private void ApplyDesign(DesignBase? design, IEnumerable<ActorIdentifier> actors, byte version, uint lockCode)
     {
         if (design == null)
@@ -118,4 +138,7 @@ public partial class GlamourerIpc
             }
         }
     }
+
+    private void ApplyDesignByGuid(Guid identifier, IEnumerable<ActorIdentifier> actors, uint lockCode)
+        => ApplyDesign(_designManager.Designs.FirstOrDefault(x => x.Identifier == identifier), actors, DesignConverter.Version, lockCode);
 }
