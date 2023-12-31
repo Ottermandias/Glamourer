@@ -1,8 +1,5 @@
 ﻿using System;
-using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using Glamourer.Gui.Tabs.DebugTab;
-using Glamourer.Gui;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using ImGuiNET;
@@ -28,9 +25,6 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
 
     public void Draw()
     {
-        if (!ImGui.CollapsingHeader("Penumbra"))
-            return;
-
         using var table = ImRaii.Table("##PenumbraTable", 3, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         if (!table)
             return;
@@ -68,7 +62,7 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
         ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
         ImGui.InputInt("##redrawObject", ref _gameObjectIndex, 0, 0);
         ImGui.TableNextColumn();
-        using (var disabled = ImRaii.Disabled(!_penumbra.Available))
+        using (_ = ImRaii.Disabled(!_penumbra.Available))
         {
             if (ImGui.SmallButton("Redraw"))
                 _penumbra.RedrawObject((ObjectIndex)_gameObjectIndex, RedrawType.Redraw);
