@@ -113,6 +113,7 @@ public class CommandService : IDisposable
             "automation"        => SetAutomation(argument),
             "copy"              => CopyState(argument),
             "save"              => SaveState(argument),
+            "delete"            => Delete(argument),
             _                   => PrintHelp(argumentList[0]),
         };
     }
@@ -406,6 +407,38 @@ public class CommandService : IDisposable
                 }
             }
         }
+
+        return true;
+    }
+
+    private bool Delete(string argument)
+    {
+        if (argument.Length == 0)
+        {
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour delete ").AddYellow("[Design Name]").BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText(
+                    "    》 The design name is case-insensitive. If multiple designs of that name up to case exist, the first one is chosen.")
+                .BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText(
+                    "    》 If using the design identifier, you need to specify at least 4 characters for it, and the first one starting with the provided characters is chosen.")
+                .BuiltString);
+            return false;
+        }
+
+        var lower = argument.ToLowerInvariant();
+        Design? design = _designManager.Designs.FirstOrDefault(d
+            => d.Name.Lower == lower || lower.Length > 3 && d.Identifier.ToString().StartsWith(lower));
+
+        if (design == null)
+        {
+            _chat.Print(new SeStringBuilder().AddRed("Error with finding the design.").BuiltString);
+            return false;
+        }
+
+        _objects.Update();
+        _designManager.Delete(design);
 
         return true;
     }
