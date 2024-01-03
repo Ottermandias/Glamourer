@@ -4,6 +4,7 @@ using System.Linq;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Utility;
 using ImGuiNET;
+using OtterGui;
 using OtterGui.Custom;
 using OtterGui.Log;
 using OtterGui.Widgets;
@@ -80,8 +81,10 @@ public sealed class HumanNpcCombo(
                 switch (kind)
                 {
                     case ObjectKind.BattleNpc:
-                        var nameIds = bNpcNames[id];
-                        ret.AddRange(nameIds.Select(nameId => (bNpcs[nameId], kind, nameId.Id)));
+                        if (!bNpcNames.TryGetValue(id, out var nameIds))
+                            continue;
+
+                        ret.AddRange(nameIds.SelectWhere(nameId => (bNpcs.TryGetValue(nameId, out var s), (s!, kind, nameId.Id))));
                         break;
                     case ObjectKind.EventNpc:
                         ret.Add((name, kind, id));
