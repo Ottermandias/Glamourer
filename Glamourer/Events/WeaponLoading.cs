@@ -1,4 +1,3 @@
-using System;
 using Glamourer.Interop.Structs;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
@@ -14,7 +13,8 @@ namespace Glamourer.Events;
 ///     <item>Parameter is the model values to change the weapon to. </item>
 /// </list>
 /// </summary>
-public sealed class WeaponLoading : EventWrapper<Action<Actor, EquipSlot, Ref<CharacterWeapon>>, WeaponLoading.Priority>
+public sealed class WeaponLoading()
+    : EventWrapperRef3<Actor, EquipSlot, CharacterWeapon, WeaponLoading.Priority>(nameof(WeaponLoading))
 {
     public enum Priority
     {
@@ -23,16 +23,5 @@ public sealed class WeaponLoading : EventWrapper<Action<Actor, EquipSlot, Ref<Ch
 
         /// <seealso cref="Automation.AutoDesignApplier.OnWeaponLoading"/>
         AutoDesignApplier = -1,
-    }
-
-    public WeaponLoading()
-        : base(nameof(WeaponLoading))
-    { }
-
-    public void Invoke(Actor actor, EquipSlot slot, ref CharacterWeapon weapon)
-    {
-        var value = new Ref<CharacterWeapon>(weapon);
-        Invoke(this, actor, slot, value);
-        weapon = value;
     }
 }

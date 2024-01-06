@@ -33,7 +33,7 @@ public static class ServiceManagerA
 {
     public static ServiceManager CreateProvider(DalamudPluginInterface pi, Logger log)
     {
-        EventWrapper.ChangeLogger(log);
+        EventWrapperBase.ChangeLogger(log);
         var services = new ServiceManager(log)
             .AddExistingService(log)
             .AddMeta()

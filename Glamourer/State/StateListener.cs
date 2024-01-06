@@ -138,7 +138,7 @@ public class StateListener : IDisposable
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
     }
 
-    private unsafe void OnCustomizeChange(Model model, Ref<CustomizeArray> customize)
+    private unsafe void OnCustomizeChange(Model model, ref CustomizeArray customize)
     {
         if (!model.IsHuman)
             return;
@@ -151,7 +151,7 @@ public class StateListener : IDisposable
          || !_manager.TryGetValue(identifier, out var state))
             return;
 
-        UpdateCustomize(actor, state, ref customize.Value, false);
+        UpdateCustomize(actor, state, ref customize, false);
     }
 
     private void UpdateCustomize(Actor actor, ActorState state, ref CustomizeArray customize, bool checkTransform)
@@ -199,7 +199,7 @@ public class StateListener : IDisposable
     /// A draw model loads a new equipment piece.
     /// Update base data, apply or update model data, and protect against restricted gear.
     /// </summary>
-    private void OnSlotUpdating(Model model, EquipSlot slot, Ref<CharacterArmor> armor, Ref<ulong> returnValue)
+    private void OnSlotUpdating(Model model, EquipSlot slot, ref CharacterArmor armor, ref ulong returnValue)
     {
         var actor = _penumbra.GameObjectFromDrawObject(model);
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
@@ -212,16 +212,16 @@ public class StateListener : IDisposable
         if (actor.Identifier(_actors, out var identifier)
          && _manager.TryGetValue(identifier, out var state))
         {
-            HandleEquipSlot(actor, state, slot, ref armor.Value);
+            HandleEquipSlot(actor, state, slot, ref armor);
             locked = state[slot, false] is StateChanged.Source.Ipc;
         }
 
-        _funModule.ApplyFunToSlot(actor, ref armor.Value, slot);
+        _funModule.ApplyFunToSlot(actor, ref armor, slot);
         if (!_config.UseRestrictedGearProtection || locked)
             return;
 
         var customize = model.GetCustomize();
-        (_, armor.Value) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
+        (_, armor) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
     }
 
     private void OnMovedEquipment((EquipSlot, uint, StainId)[] items)
@@ -264,20 +264,20 @@ public class StateListener : IDisposable
     /// Update base data, apply or update model data.
     /// Verify consistent weapon types.
     /// </summary>
-    private void OnWeaponLoading(Actor actor, EquipSlot slot, Ref<CharacterWeapon> weapon)
+    private void OnWeaponLoading(Actor actor, EquipSlot slot, ref CharacterWeapon weapon)
     {
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
         // Fist weapon gauntlet hack.
-        if (slot is EquipSlot.OffHand && weapon.Value.Variant == 0 && weapon.Value.Weapon.Id != 0 && _lastFistOffhand.Weapon.Id != 0)
-            weapon.Value = _lastFistOffhand;
+        if (slot is EquipSlot.OffHand && weapon.Variant == 0 && weapon.Weapon.Id != 0 && _lastFistOffhand.Weapon.Id != 0)
+            weapon = _lastFistOffhand;
 
         if (!actor.Identifier(_actors, out var identifier)
          || !_manager.TryGetValue(identifier, out var state))
             return;
 
-        ref var actorWeapon = ref weapon.Value;
+        ref var actorWeapon = ref weapon;
         var     baseType    = state.BaseData.Item(slot).Type;
         var     apply       = false;
         switch (UpdateBaseData(actor, state, slot, actorWeapon))
@@ -311,25 +311,16 @@ public class StateListener : IDisposable
         }
 
         // Fist Weapon Offhand hack.
-        if (slot is EquipSlot.MainHand && weapon.Value.Skeleton.Id is > 1600 and < 1651)
-            _lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Value.Skeleton.Id + 50), weapon.Value.Weapon, weapon.Value.Variant,
-                weapon.Value.Stain);
+        if (slot is EquipSlot.MainHand && weapon.Skeleton.Id is > 1600 and < 1651)
+            _lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Skeleton.Id + 50), weapon.Weapon, weapon.Variant,
+                weapon.Stain);
 
-        _funModule.ApplyFunToWeapon(actor, ref weapon.Value, slot);
+        _funModule.ApplyFunToWeapon(actor, ref weapon, slot);
     }
 
     /// <summary> Update base data for a single changed equipment slot. </summary>
     private UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterArmor armor)
     {
-        bool FistWeaponGauntletHack()
-        {
-            if (slot is not EquipSlot.Hands)
-                return false;
-
-            var offhand = actor.GetOffhand();
-            return offhand.Variant == 0 && offhand.Weapon.Id != 0 && armor.Set.Id == offhand.Weapon.Id;
-        }
-
         var actorArmor = actor.GetArmor(slot);
         var fistWeapon = FistWeaponGauntletHack();
 
@@ -373,6 +364,15 @@ public class StateListener : IDisposable
         }
 
         return change;
+
+        bool FistWeaponGauntletHack()
+        {
+            if (slot is not EquipSlot.Hands)
+                return false;
+
+            var offhand = actor.GetOffhand();
+            return offhand.Variant == 0 && offhand.Weapon.Id != 0 && armor.Set.Id == offhand.Weapon.Id;
+        }
     }
 
     /// <summary> Handle a full equip slot update for base data and model data. </summary>
@@ -406,7 +406,7 @@ public class StateListener : IDisposable
         }
     }
 
-    private void OnCrestChange(Actor actor, CrestFlag slot, Ref<bool> value)
+    private void OnCrestChange(Actor actor, CrestFlag slot, ref bool value)
     {
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
@@ -415,17 +415,17 @@ public class StateListener : IDisposable
          || !_manager.TryGetValue(identifier, out var state))
             return;
 
-        switch (UpdateBaseCrest(actor, state, slot, value.Value))
+        switch (UpdateBaseCrest(actor, state, slot, value))
         {
             case UpdateState.Change:
                 if (state[slot] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeCrest(state, slot, state.BaseData.Crest(slot), StateChanged.Source.Game);
                 else
-                    value.Value = state.ModelData.Crest(slot);
+                    value = state.ModelData.Crest(slot);
                 break;
             case UpdateState.NoChange:
             case UpdateState.HatHack:
-                value.Value = state.ModelData.Crest(slot);
+                value = state.ModelData.Crest(slot);
                 break;
             case UpdateState.Transformed: break;
         }
@@ -540,7 +540,7 @@ public class StateListener : IDisposable
     }
 
     /// <summary> Handle visor state changes made by the game. </summary>
-    private void OnVisorChange(Model model, Ref<bool> value)
+    private void OnVisorChange(Model model, ref bool value)
     {
         // Skip updates when in customize update.
         if (ChangeCustomizeService.InUpdate.InMethod)
@@ -565,19 +565,19 @@ public class StateListener : IDisposable
             // if base state changed, either overwrite the actual value if we have fixed values,
             // or overwrite the stored model state with the new one.
             if (state[ActorState.MetaIndex.VisorState] is StateChanged.Source.Fixed or StateChanged.Source.Ipc)
-                value.Value = state.ModelData.IsVisorToggled();
+                value = state.ModelData.IsVisorToggled();
             else
                 _manager.ChangeVisorState(state, value, StateChanged.Source.Game);
         }
         else
         {
             // if base state did not change, overwrite the value with the model state one.
-            value.Value = state.ModelData.IsVisorToggled();
+            value = state.ModelData.IsVisorToggled();
         }
     }
 
     /// <summary> Handle Hat Visibility changes. These act on the game object. </summary>
-    private void OnHeadGearVisibilityChange(Actor actor, Ref<bool> value)
+    private void OnHeadGearVisibilityChange(Actor actor, ref bool value)
     {
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
@@ -598,19 +598,19 @@ public class StateListener : IDisposable
             // if base state changed, either overwrite the actual value if we have fixed values,
             // or overwrite the stored model state with the new one.
             if (state[ActorState.MetaIndex.HatState] is StateChanged.Source.Fixed or StateChanged.Source.Ipc)
-                value.Value = state.ModelData.IsHatVisible();
+                value = state.ModelData.IsHatVisible();
             else
                 _manager.ChangeHatState(state, value, StateChanged.Source.Game);
         }
         else
         {
             // if base state did not change, overwrite the value with the model state one.
-            value.Value = state.ModelData.IsHatVisible();
+            value = state.ModelData.IsHatVisible();
         }
     }
 
     /// <summary> Handle Weapon Visibility changes. These act on the game object. </summary>
-    private void OnWeaponVisibilityChange(Actor actor, Ref<bool> value)
+    private void OnWeaponVisibilityChange(Actor actor, ref bool value)
     {
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
@@ -631,14 +631,14 @@ public class StateListener : IDisposable
             // if base state changed, either overwrite the actual value if we have fixed values,
             // or overwrite the stored model state with the new one.
             if (state[ActorState.MetaIndex.WeaponState] is StateChanged.Source.Fixed or StateChanged.Source.Ipc)
-                value.Value = state.ModelData.IsWeaponVisible();
+                value = state.ModelData.IsWeaponVisible();
             else
                 _manager.ChangeWeaponState(state, value, StateChanged.Source.Game);
         }
         else
         {
             // if base state did not change, overwrite the value with the model state one.
-            value.Value = state.ModelData.IsWeaponVisible();
+            value = state.ModelData.IsWeaponVisible();
         }
     }
 

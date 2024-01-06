@@ -11,7 +11,8 @@ namespace Glamourer.Events;
 ///     <item>Parameter is the timestamp of the unlock. </item>
 /// </list>
 /// </summary>
-public sealed class ObjectUnlocked : EventWrapper<Action<ObjectUnlocked.Type, uint, DateTimeOffset>, ObjectUnlocked.Priority>
+public sealed class ObjectUnlocked()
+    : EventWrapper<ObjectUnlocked.Type, uint, DateTimeOffset, ObjectUnlocked.Priority>(nameof(ObjectUnlocked))
 {
     public enum Type
     {
@@ -25,11 +26,4 @@ public sealed class ObjectUnlocked : EventWrapper<Action<ObjectUnlocked.Type, ui
         /// <remarks> Currently used as a hack to make the unlock table dirty in it. If anything else starts using this, rework. </remarks>
         UnlockTable = 0,
     }
-
-    public ObjectUnlocked()
-        : base(nameof(ObjectUnlocked))
-    { }
-
-    public void Invoke(Type type, uint id, DateTimeOffset timestamp)
-        => Invoke(this, type, id, timestamp);
 }

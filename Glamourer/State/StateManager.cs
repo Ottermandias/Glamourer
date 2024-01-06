@@ -476,7 +476,7 @@ public class StateManager(
             actors = ApplyAll(state, redraw, true);
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Reset, StateChanged.Source.Manual, state, actors);
+        _event.Invoke(StateChanged.Type.Reset, StateChanged.Source.Manual, state, actors, null);
     }
 
     public void ResetStateFixed(ActorState state, uint key = 0)

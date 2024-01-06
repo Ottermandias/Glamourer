@@ -5,7 +5,7 @@ using OtterGui.Classes;
 
 namespace Glamourer.Events;
 
-public sealed class GPoseService : EventWrapper<Action<bool>, GPoseService.Priority>
+public sealed class GPoseService : EventWrapper<bool, GPoseService.Priority>
 {
     private readonly IFramework   _framework;
     private readonly IClientState _state;
@@ -56,7 +56,7 @@ public sealed class GPoseService : EventWrapper<Action<bool>, GPoseService.Prior
             return;
 
         InGPose = inGPose;
-        Invoke(this, InGPose);
+        Invoke(InGPose);
         var actions = InGPose ? _onEnter : _onLeave;
         foreach (var action in actions)
         {

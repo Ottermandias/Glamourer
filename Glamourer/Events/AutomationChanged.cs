@@ -1,5 +1,4 @@
-﻿using System;
-using Glamourer.Automation;
+﻿using Glamourer.Automation;
 using OtterGui.Classes;
 
 namespace Glamourer.Events;
@@ -12,8 +11,8 @@ namespace Glamourer.Events;
 ///     <item>Parameter is additional data depending on the type of change. </item>
 /// </list>
 /// </summary>
-public sealed class AutomationChanged : EventWrapper<Action<AutomationChanged.Type, AutoDesignSet?, object?>,
-    AutomationChanged.Priority>
+public sealed class AutomationChanged()
+    : EventWrapper<AutomationChanged.Type, AutoDesignSet?, object?, AutomationChanged.Priority>(nameof(AutomationChanged))
 {
     public enum Type
     {
@@ -65,11 +64,4 @@ public sealed class AutomationChanged : EventWrapper<Action<AutomationChanged.Ty
         /// <seealso cref="AutoDesignApplier.OnAutomationChange"/>
         AutoDesignApplier,
     }
-
-    public AutomationChanged()
-        : base(nameof(AutomationChanged))
-    { }
-
-    public void Invoke(Type type, AutoDesignSet? set, object? data)
-        => Invoke(this, type, set, data);
 }

@@ -1,4 +1,3 @@
-using System;
 using Glamourer.Interop.Structs;
 using OtterGui.Classes;
 
@@ -12,22 +11,12 @@ namespace Glamourer.Events;
 ///     <item>Parameter is whether to call the original function. </item>
 /// </list>
 /// </summary>
-public sealed class VisorStateChanged : EventWrapper<Action<Model, Ref<bool>>, VisorStateChanged.Priority>
+public sealed class VisorStateChanged()
+    : EventWrapperRef2<Model, bool, VisorStateChanged.Priority>(nameof(VisorStateChanged))
 {
     public enum Priority
     {
         /// <seealso cref="State.StateListener.OnVisorChange"/>
         StateListener = 0,
-    }
-
-    public VisorStateChanged()
-        : base(nameof(VisorStateChanged))
-    { }
-
-    public void Invoke(Model model, ref bool state)
-    {
-        var value    = new Ref<bool>(state);
-        Invoke(this, model, value);
-        state        = value;
     }
 }

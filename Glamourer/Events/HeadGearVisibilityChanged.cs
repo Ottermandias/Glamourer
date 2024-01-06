@@ -1,4 +1,3 @@
-using System;
 using Glamourer.Interop.Structs;
 using OtterGui.Classes;
 
@@ -11,22 +10,12 @@ namespace Glamourer.Events;
 ///     <item>Parameter is the new state. </item>
 /// </list>
 /// </summary>
-public sealed class HeadGearVisibilityChanged : EventWrapper<Action<Actor, Ref<bool>>, HeadGearVisibilityChanged.Priority>
+public sealed class HeadGearVisibilityChanged()
+    : EventWrapperRef2<Actor, bool, HeadGearVisibilityChanged.Priority>(nameof(HeadGearVisibilityChanged))
 {
     public enum Priority
     {
         /// <seealso cref="State.StateListener.OnHeadGearVisibilityChange"/>
         StateListener = 0,
-    }
-
-    public HeadGearVisibilityChanged()
-        : base(nameof(HeadGearVisibilityChanged))
-    { }
-
-    public void Invoke(Actor actor, ref bool state)
-    {
-        var value = new Ref<bool>(state);
-        Invoke(this, actor, value);
-        state = value;
     }
 }

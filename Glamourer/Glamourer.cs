@@ -5,7 +5,6 @@ using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.State;
-using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
 using OtterGui.Log;
 using OtterGui.Services;
@@ -34,6 +33,8 @@ public class Glamourer : IDalamudPlugin
         {
             _services = ServiceManagerA.CreateProvider(pluginInterface, Log);
             Messager  = _services.GetService<MessageService>();
+            _services.EnsureRequiredServices();
+
             _services.GetService<VisorService>();
             _services.GetService<WeaponService>();
             _services.GetService<ScalingService>();

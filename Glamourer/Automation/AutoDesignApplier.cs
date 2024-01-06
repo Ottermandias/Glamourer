@@ -11,7 +11,6 @@ using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Unlocks;
-using OtterGui.Classes;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -27,7 +26,7 @@ public class AutoDesignApplier : IDisposable
     private readonly JobService             _jobs;
     private readonly EquippedGearset        _equippedGearset;
     private readonly ActorManager           _actors;
-    private readonly CustomizeService   _customizations;
+    private readonly CustomizeService       _customizations;
     private readonly CustomizeUnlockManager _customizeUnlocks;
     private readonly ItemUnlockManager      _itemUnlocks;
     private readonly AutomationChanged      _event;
@@ -80,7 +79,7 @@ public class AutoDesignApplier : IDisposable
         _jobs.JobChanged -= OnJobChange;
     }
 
-    private void OnWeaponLoading(Actor actor, EquipSlot slot, Ref<CharacterWeapon> weapon)
+    private void OnWeaponLoading(Actor actor, EquipSlot slot, ref CharacterWeapon weapon)
     {
         if (_jobChangeState == null || !_config.EnableAutoDesigns)
             return;
@@ -89,27 +88,33 @@ public class AutoDesignApplier : IDisposable
         if (id == _jobChangeState.Identifier)
         {
             var current = _jobChangeState.BaseData.Item(slot);
-            if (slot is EquipSlot.MainHand)
+            switch (slot)
             {
-                if (_jobChangeMainhand.TryGetValue(current.Type, out var data))
+                case EquipSlot.MainHand:
                 {
-                    Glamourer.Log.Verbose(
-                        $"Changing Mainhand from {_jobChangeState.ModelData.Weapon(EquipSlot.MainHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{actor.Address:X}.");
-                    _state.ChangeItem(_jobChangeState, EquipSlot.MainHand, data.Item1, data.Item2);
-                    weapon.Value = _jobChangeState.ModelData.Weapon(EquipSlot.MainHand);
-                }
-            }
-            else if (slot is EquipSlot.OffHand && current.Type == _jobChangeState.BaseData.MainhandType.Offhand())
-            {
-                if (_jobChangeOffhand.TryGetValue(current.Type, out var data))
-                {
-                    Glamourer.Log.Verbose(
-                        $"Changing Offhand from {_jobChangeState.ModelData.Weapon(EquipSlot.OffHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{actor.Address:X}.");
-                    _state.ChangeItem(_jobChangeState, EquipSlot.OffHand, data.Item1, data.Item2);
-                    weapon.Value = _jobChangeState.ModelData.Weapon(EquipSlot.OffHand);
-                }
+                    if (_jobChangeMainhand.TryGetValue(current.Type, out var data))
+                    {
+                        Glamourer.Log.Verbose(
+                            $"Changing Mainhand from {_jobChangeState.ModelData.Weapon(EquipSlot.MainHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{actor.Address:X}.");
+                        _state.ChangeItem(_jobChangeState, EquipSlot.MainHand, data.Item1, data.Item2);
+                        weapon = _jobChangeState.ModelData.Weapon(EquipSlot.MainHand);
+                    }
 
-                ResetJobChange();
+                    break;
+                }
+                case EquipSlot.OffHand when current.Type == _jobChangeState.BaseData.MainhandType.Offhand():
+                {
+                    if (_jobChangeOffhand.TryGetValue(current.Type, out var data))
+                    {
+                        Glamourer.Log.Verbose(
+                            $"Changing Offhand from {_jobChangeState.ModelData.Weapon(EquipSlot.OffHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{actor.Address:X}.");
+                        _state.ChangeItem(_jobChangeState, EquipSlot.OffHand, data.Item1, data.Item2);
+                        weapon = _jobChangeState.ModelData.Weapon(EquipSlot.OffHand);
+                    }
+
+                    ResetJobChange();
+                    break;
+                }
             }
         }
         else
@@ -123,20 +128,31 @@ public class AutoDesignApplier : IDisposable
         if (!_config.EnableAutoDesigns || set == null)
             return;
 
-        void RemoveOld(ActorIdentifier[]? identifiers)
+        switch (type)
         {
-            if (identifiers == null)
-                return;
-
-            foreach (var id in identifiers)
-            {
-                if (id.Type is IdentifierType.Player && id.HomeWorld == WorldId.AnyWorld)
-                    foreach (var state in _state.Where(kvp => kvp.Key.PlayerName == id.PlayerName).Select(kvp => kvp.Value))
-                        state.RemoveFixedDesignSources();
-                else if (_state.TryGetValue(id, out var state))
-                    state.RemoveFixedDesignSources();
-            }
+            case AutomationChanged.Type.ToggleSet when !set.Enabled:
+            case AutomationChanged.Type.DeletedDesign when set.Enabled:
+                // The automation set was disabled or deleted, no other for those identifiers can be enabled, remove existing Fixed Locks.
+                RemoveOld(set.Identifiers);
+                break;
+            case AutomationChanged.Type.ChangeIdentifier when set.Enabled:
+                // Remove fixed state from the old identifiers assigned and the old enabled set, if any.
+                var (oldIds, _, oldSet) = ((ActorIdentifier[], ActorIdentifier, AutoDesignSet?))bonusData!;
+                RemoveOld(oldIds);
+                ApplyNew(set); // Does not need to disable oldSet because same identifiers.
+                break;
+            case AutomationChanged.Type.ToggleSet: // Does not need to disable old states because same identifiers.
+            case AutomationChanged.Type.ChangedBase:
+            case AutomationChanged.Type.AddedDesign:
+            case AutomationChanged.Type.MovedDesign:
+            case AutomationChanged.Type.ChangedDesign:
+            case AutomationChanged.Type.ChangedConditions:
+            case AutomationChanged.Type.ChangedType:
+                ApplyNew(set);
+                break;
         }
+
+        return;
 
         void ApplyNew(AutoDesignSet? newSet)
         {
@@ -174,28 +190,19 @@ public class AutoDesignApplier : IDisposable
             }
         }
 
-        switch (type)
+        void RemoveOld(ActorIdentifier[]? identifiers)
         {
-            case AutomationChanged.Type.ToggleSet when !set.Enabled:
-            case AutomationChanged.Type.DeletedDesign when set.Enabled:
-                // The automation set was disabled or deleted, no other for those identifiers can be enabled, remove existing Fixed Locks.
-                RemoveOld(set.Identifiers);
-                break;
-            case AutomationChanged.Type.ChangeIdentifier when set.Enabled:
-                // Remove fixed state from the old identifiers assigned and the old enabled set, if any.
-                var (oldIds, _, oldSet) = ((ActorIdentifier[], ActorIdentifier, AutoDesignSet?))bonusData!;
-                RemoveOld(oldIds);
-                ApplyNew(set); // Does not need to disable oldSet because same identifiers.
-                break;
-            case AutomationChanged.Type.ToggleSet: // Does not need to disable old states because same identifiers.
-            case AutomationChanged.Type.ChangedBase:
-            case AutomationChanged.Type.AddedDesign:
-            case AutomationChanged.Type.MovedDesign:
-            case AutomationChanged.Type.ChangedDesign:
-            case AutomationChanged.Type.ChangedConditions:
-            case AutomationChanged.Type.ChangedType:
-                ApplyNew(set);
-                break;
+            if (identifiers == null)
+                return;
+
+            foreach (var id in identifiers)
+            {
+                if (id.Type is IdentifierType.Player && id.HomeWorld == WorldId.AnyWorld)
+                    foreach (var state in _state.Where(kvp => kvp.Key.PlayerName == id.PlayerName).Select(kvp => kvp.Value))
+                        state.RemoveFixedDesignSources();
+                else if (_state.TryGetValue(id, out var state))
+                    state.RemoveFixedDesignSources();
+            }
         }
     }
 

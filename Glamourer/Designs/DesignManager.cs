@@ -99,7 +99,7 @@ public class DesignManager
 
         Glamourer.Log.Information(
             $"Loaded {_designs.Count} designs in {stopwatch.ElapsedMilliseconds} ms.{(skipped > 0 ? $" Skipped loading {skipped} designs due to errors." : string.Empty)}");
-        _event.Invoke(DesignChanged.Type.ReloadedAll, null!);
+        _event.Invoke(DesignChanged.Type.ReloadedAll, null!, null);
     }
 
     /// <summary> Whether an Undo for the given design is possible. </summary>
@@ -176,7 +176,7 @@ public class DesignManager
             --d.Index;
         _designs.RemoveAt(design.Index);
         _saveService.ImmediateDelete(design);
-        _event.Invoke(DesignChanged.Type.Deleted, design);
+        _event.Invoke(DesignChanged.Type.Deleted, design, null);
     }
 
     /// <summary> Rename a design. </summary>
@@ -723,7 +723,7 @@ public class DesignManager
         if (!message.IsNullOrEmpty())
             Glamourer.Log.Debug(message);
         _saveService.ImmediateSave(design);
-        _event.Invoke(DesignChanged.Type.Created, design);
+        _event.Invoke(DesignChanged.Type.Created, design, null);
         return true;
     }
 

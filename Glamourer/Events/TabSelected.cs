@@ -1,5 +1,4 @@
-﻿using System;
-using Glamourer.Designs;
+﻿using Glamourer.Designs;
 using Glamourer.Gui;
 using OtterGui.Classes;
 
@@ -12,8 +11,8 @@ namespace Glamourer.Events;
 ///     <item>Parameter is the design to select if the tab is the designs tab. </item>
 /// </list>
 /// </summary>
-public sealed class TabSelected : EventWrapper<Action<MainWindow.TabType, Design?>,
-    TabSelected.Priority>
+public sealed class TabSelected()
+    : EventWrapper<MainWindow.TabType, Design?, TabSelected.Priority>(nameof(TabSelected))
 {
     public enum Priority
     {
@@ -23,11 +22,4 @@ public sealed class TabSelected : EventWrapper<Action<MainWindow.TabType, Design
         /// <seealso cref="Gui.MainWindow.OnTabSelected"/>
         MainWindow = 1,
     }
-
-    public TabSelected()
-        : base(nameof(TabSelected))
-    { }
-
-    public void Invoke(MainWindow.TabType type, Design? design)
-        => Invoke(this, type, design);
 }

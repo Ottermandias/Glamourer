@@ -1,4 +1,3 @@
-using System;
 using Glamourer.Designs;
 using Glamourer.Gui;
 using OtterGui.Classes;
@@ -13,7 +12,8 @@ namespace Glamourer.Events;
 ///     <item>Parameter is any additional data depending on the type of change. </item>
 /// </list>
 /// </summary>
-public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Design, object?>, DesignChanged.Priority>
+public sealed class DesignChanged() 
+    : EventWrapper<DesignChanged.Type, Design, object?, DesignChanged.Priority>(nameof(DesignChanged))
 {
     public enum Type
     {
@@ -98,11 +98,4 @@ public sealed class DesignChanged : EventWrapper<Action<DesignChanged.Type, Desi
         /// <seealso cref="RevertDesignCombo.OnDesignChange"/>
         DesignCombo = -2,
     }
-
-    public DesignChanged()
-        : base(nameof(DesignChanged))
-    { }
-
-    public void Invoke(Type type, Design design, object? data = null)
-        => Invoke(this, type, design, data);
 }

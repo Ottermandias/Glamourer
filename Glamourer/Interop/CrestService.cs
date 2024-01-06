@@ -1,5 +1,4 @@
-﻿using System;
-using Dalamud.Hooking;
+﻿using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
@@ -15,10 +14,10 @@ namespace Glamourer.Interop;
 /// <list type="number">
 ///     <item>Parameter is the model with an update. </item>
 ///     <item>Parameter is the equipment slot changed. </item>
-///     <item>Parameter is the whether the crest will be shown. </item>
+///     <item>Parameter is whether the crest will be shown. </item>
 /// </list>
 /// </summary>
-public sealed unsafe class CrestService : EventWrapper<Action<Actor, CrestFlag, Ref<bool>>, CrestService.Priority>
+public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, bool, CrestService.Priority>
 {
     public enum Priority
     {
@@ -72,9 +71,9 @@ public sealed unsafe class CrestService : EventWrapper<Action<Actor, CrestFlag, 
         var actor = (Actor)character;
         foreach (var slot in CrestExtensions.AllRelevantSet)
         {
-            var newValue = new Ref<bool>(((CrestFlag)crestFlags).HasFlag(slot));
-            Invoke(this, actor, slot, newValue);
-            crestFlags = (byte)(newValue.Value ? crestFlags | (byte)slot : crestFlags & (byte)~slot);
+            var newValue = ((CrestFlag)crestFlags).HasFlag(slot);
+            Invoke(actor, slot, ref newValue);
+            crestFlags = (byte)(newValue ? crestFlags | (byte)slot : crestFlags & (byte)~slot);
         }
 
         Glamourer.Log.Verbose(

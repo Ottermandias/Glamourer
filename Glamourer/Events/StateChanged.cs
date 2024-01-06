@@ -1,8 +1,6 @@
-using System;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using OtterGui.Classes;
-using Penumbra.GameData.Actors;
 
 namespace Glamourer.Events;
 
@@ -15,7 +13,8 @@ namespace Glamourer.Events;
 ///     <item>Parameter is any additional data depending on the type of change. </item>
 /// </list>
 /// </summary>
-public sealed class StateChanged : EventWrapper<Action<StateChanged.Type, StateChanged.Source, ActorState, ActorData, object?>, StateChanged.Priority>
+public sealed class StateChanged()
+    : EventWrapper<StateChanged.Type, StateChanged.Source, ActorState, ActorData, object?, StateChanged.Priority>(nameof(StateChanged))
 {
     public enum Type
     {
@@ -62,11 +61,4 @@ public sealed class StateChanged : EventWrapper<Action<StateChanged.Type, StateC
     {
         GlamourerIpc = int.MinValue,
     }
-
-    public StateChanged()
-        : base(nameof(StateChanged))
-    { }
-
-    public void Invoke(Type type, Source source, ActorState state, ActorData actors, object? data = null)
-        => Invoke(this, type, source, state, actors, data);
 }

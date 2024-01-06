@@ -14,7 +14,7 @@ namespace Glamourer.Interop;
 /// Changes in Race, body type or Gender are probably ignored.
 /// This operates on draw objects, not game objects.
 /// </summary>
-public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<CustomizeArray>>, ChangeCustomizeService.Priority>
+public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeArray, ChangeCustomizeService.Priority>
 {
     private readonly PenumbraReloaded                                        _penumbraReloaded;
     private readonly IGameInteropProvider                                    _interop;
@@ -79,11 +79,7 @@ public unsafe class ChangeCustomizeService : EventWrapper<Action<Model, Ref<Cust
     private bool ChangeCustomizeDetour(Human* human, byte* data, byte skipEquipment)
     {
         if (!InUpdate.InMethod)
-        {
-            var customize = new Ref<CustomizeArray>(*(CustomizeArray*)data);
-            Invoke(this, (Model)human, customize);
-            *(CustomizeArray*)data = customize.Value;
-        }
+            Invoke(human, ref *(CustomizeArray*)data);
 
         return _changeCustomizeHook.Original(human, data, skipEquipment);
     }
