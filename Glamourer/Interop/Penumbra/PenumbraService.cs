@@ -148,7 +148,8 @@ public unsafe class PenumbraService : IDisposable
     public void OpenModPage(Mod mod)
     {
         if (_openModPage.Invoke(TabType.Mods, mod.DirectoryName, mod.Name) == PenumbraApiEc.ModMissing)
-            Glamourer.Messager.NotificationMessage($"Could not open the mod {mod.Name}, no fitting mod was found in your Penumbra install.", NotificationType.Info, false);
+            Glamourer.Messager.NotificationMessage($"Could not open the mod {mod.Name}, no fitting mod was found in your Penumbra install.",
+                NotificationType.Info, false);
     }
 
     public string CurrentCollection
@@ -158,7 +159,7 @@ public unsafe class PenumbraService : IDisposable
     /// Try to set all mod settings as desired. Only sets when the mod should be enabled.
     /// If it is disabled, ignore all other settings.
     /// </summary>
-    public string SetMod(Mod mod, ModSettings settings)
+    public string SetMod(Mod mod, ModSettings settings, string? collection = null)
     {
         if (!Available)
             return "Penumbra is not available.";
@@ -166,12 +167,13 @@ public unsafe class PenumbraService : IDisposable
         var sb = new StringBuilder();
         try
         {
-            var collection = _currentCollection.Invoke(ApiCollectionType.Current);
-            var ec         = _setMod.Invoke(collection, mod.DirectoryName, mod.Name, settings.Enabled);
-            if (ec is PenumbraApiEc.ModMissing)
-                return $"The mod {mod.Name} [{mod.DirectoryName}] could not be found.";
-
-            Debug.Assert(ec is not PenumbraApiEc.CollectionMissing, "Missing collection should not be possible.");
+            collection ??= _currentCollection.Invoke(ApiCollectionType.Current);
+            var ec       = _setMod.Invoke(collection, mod.DirectoryName, mod.Name, settings.Enabled);
+            switch (ec)
+            {
+                case PenumbraApiEc.ModMissing:        return $"The mod {mod.Name} [{mod.DirectoryName}] could not be found.";
+                case PenumbraApiEc.CollectionMissing: return $"The collection {collection} could not be found.";
+            }
 
             if (!settings.Enabled)
                 return string.Empty;
@@ -216,13 +218,23 @@ public unsafe class PenumbraService : IDisposable
         return valid ? name : string.Empty;
     }
 
+    /// <summary> Obtain the name of the collection currently assigned to the given actor. </summary>
+    public string GetActorCollection(Actor actor)
+    {
+        if (!Available)
+            return string.Empty;
+
+        var (valid, _, name) = _objectCollection.Invoke(actor.Index.Index);
+        return valid ? name : string.Empty;
+    }
+
     /// <summary> Obtain the game object corresponding to a draw object. </summary>
     public Actor GameObjectFromDrawObject(Model drawObject)
         => Available ? _drawObjectInfo.Invoke(drawObject.Address).Item1 : Actor.Null;
 
     /// <summary> Obtain the parent of a cutscene actor if it is known. </summary>
     public short CutsceneParent(ushort idx)
-        => (short) (Available ? _cutsceneParent.Invoke(idx) : -1);
+        => (short)(Available ? _cutsceneParent.Invoke(idx) : -1);
 
     /// <summary> Try to redraw the given actor. </summary>
     public void RedrawObject(Actor actor, RedrawType settings)

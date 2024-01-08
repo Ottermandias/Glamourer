@@ -279,10 +279,10 @@ public class DesignBase
     {
         var ret = new JObject
         {
-            ["FileVersion"]    = FileVersion,
-            ["Equipment"]      = SerializeEquipment(),
-            ["Customize"]      = SerializeCustomize(),
-            ["Parameters"] = SerializeParameters(),
+            ["FileVersion"] = FileVersion,
+            ["Equipment"]   = SerializeEquipment(),
+            ["Customize"]   = SerializeCustomize(),
+            ["Parameters"]  = SerializeParameters(),
         };
         return ret;
     }

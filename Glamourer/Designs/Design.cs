@@ -66,7 +66,7 @@ public sealed class Design : DesignBase, ISavable
             ["WriteProtected"] = WriteProtected(),
             ["Equipment"]      = SerializeEquipment(),
             ["Customize"]      = SerializeCustomize(),
-            ["Parameters"] = SerializeParameters(),
+            ["Parameters"]     = SerializeParameters(),
             ["Mods"]           = SerializeMods(),
         };
         return ret;

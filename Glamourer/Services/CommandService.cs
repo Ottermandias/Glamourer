@@ -10,6 +10,8 @@ using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Gui;
 using Glamourer.Interop;
+using Glamourer.Interop.Penumbra;
+using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
@@ -36,10 +38,11 @@ public class CommandService : IDisposable
     private readonly DesignConverter   _converter;
     private readonly DesignFileSystem  _designFileSystem;
     private readonly Configuration     _config;
+    private readonly PenumbraService   _penumbra;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
-        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config)
+        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, PenumbraService penumbra)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -53,6 +56,7 @@ public class CommandService : IDisposable
         _designFileSystem  = designFileSystem;
         _autoDesignManager = autoDesignManager;
         _config            = config;
+        _penumbra          = penumbra;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -368,11 +372,14 @@ public class CommandService : IDisposable
     private bool Apply(string arguments)
     {
         var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (split.Length != 2)
+        if (split.Length is not 2)
         {
             _chat.Print(new SeStringBuilder().AddText("Use with /glamour apply ").AddYellow("[Design Name, Path or Identifier, or Clipboard]")
                 .AddText(" | ")
-                .AddGreen("[Character Identifier]").BuiltString);
+                .AddGreen("[Character Identifier]")
+                .AddText("; ")
+                .AddBlue("<Apply Mods>")
+                .BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText(
                     "    》 The design name is case-insensitive. If multiple designs of that name up to case exist, the first one is chosen.")
@@ -386,10 +393,27 @@ public class CommandService : IDisposable
                 .BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 Clipboard as a single word will try to apply a design string currently in your clipboard.").BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》 ").AddBlue("<Enable Mods>").AddText(" is optional and can be omitted (together with the ;), ").AddBlue("true")
+                .AddText(" or ").AddBlue("false").AddText(".").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("If ").AddBlue("true")
+                .AddText(", it will try to apply mod associations to the collection assigned to the identified character.").BuiltString);
             PlayerIdentifierHelp(false, true);
         }
 
-        if (!GetDesign(split[0], out var design, true) || !IdentifierHandling(split[1], out var identifiers, false, true))
+        var split2 = split[1].Split(';', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var applyMods = split2.Length == 2
+         && split2[1].ToLowerInvariant() switch
+            {
+                "true" => true,
+                "1"    => true,
+                "t"    => true,
+                "yes"  => true,
+                "y"    => true,
+                _      => false,
+            };
+        if (!GetDesign(split[0], out var design, true) || !IdentifierHandling(split2[0], out var identifiers, false, true))
             return false;
 
         _objects.Update();
@@ -405,12 +429,38 @@ public class CommandService : IDisposable
                 foreach (var actor in actors.Objects)
                 {
                     if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
+                    {
+                        ApplyModSettings(design, actor, applyMods);
                         _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
+                    }
                 }
             }
         }
 
         return true;
+    }
+
+    private void ApplyModSettings(DesignBase design, Actor actor, bool applyMods)
+    {
+        if (!applyMods || design is not Design d)
+            return;
+
+        var collection = _penumbra.GetActorCollection(actor);
+        if (collection.Length <= 0)
+            return;
+
+        var appliedMods = 0;
+        foreach (var (mod, setting) in d.AssociatedMods)
+        {
+            var message = _penumbra.SetMod(mod, setting, collection);
+            if (message.Length > 0)
+                Glamourer.Messager.Chat.Print($"Error applying mod settings: {message}");
+            else
+                ++appliedMods;
+        }
+
+        if (appliedMods > 0)
+            Glamourer.Messager.Chat.Print($"Applied {appliedMods} mod settings to {collection}.");
     }
 
     private bool Delete(string argument)
@@ -501,7 +551,8 @@ public class CommandService : IDisposable
                  && _stateManager.GetOrCreate(identifier, data.Objects[0], out state)))
                 continue;
 
-            var design = _converter.Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All, CustomizeParameterExtensions.All);
+            var design = _converter.Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All,
+                CustomizeParameterExtensions.All);
             _designManager.CreateClone(design, split[0], true);
             return true;
         }
@@ -556,7 +607,6 @@ public class CommandService : IDisposable
         _chat.Print(new SeStringBuilder().AddText("The token ").AddYellow(argument, true).AddText(" did not resolve to an existing design.")
             .BuiltString);
         return false;
-
     }
 
     private unsafe bool IdentifierHandling(string argument, out ActorIdentifier[] identifiers, bool allowAnyWorld, bool allowIndex)
