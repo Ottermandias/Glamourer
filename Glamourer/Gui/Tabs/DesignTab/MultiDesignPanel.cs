@@ -52,7 +52,7 @@ public class MultiDesignPanel(DesignFileSystemSelector _selector, DesignManager 
                 ImGui.TableNextColumn();
                 var icon = (path is DesignFileSystem.Leaf ? FontAwesomeIcon.FileCircleMinus : FontAwesomeIcon.FolderMinus).ToIconString();
                 if (ImGuiUtil.DrawDisabledButton(icon, new Vector2(sizeType), "Remove from selection.", false, true))
-                    _selector.RemovePathFromMultiselection(path);
+                    _selector.RemovePathFromMultiSelection(path);
 
                 ImGui.TableNextColumn();
                 ImGui.AlignTextToFramePadding();
