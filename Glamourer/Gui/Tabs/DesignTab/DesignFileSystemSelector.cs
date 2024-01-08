@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Numerics;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
 using Glamourer.Designs;

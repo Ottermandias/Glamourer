@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
-using Glamourer.GameData;
+﻿using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Utility;

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Dalamud.Plugin.Services;
+﻿using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using Glamourer.Events;
 using Glamourer.GameData;
@@ -8,6 +6,7 @@ using Glamourer.Services;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Vector3 = FFXIVClientStructs.FFXIV.Common.Math.Vector3;
 
 namespace Glamourer.State;
 

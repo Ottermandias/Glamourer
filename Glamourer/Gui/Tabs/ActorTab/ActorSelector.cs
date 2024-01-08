@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;

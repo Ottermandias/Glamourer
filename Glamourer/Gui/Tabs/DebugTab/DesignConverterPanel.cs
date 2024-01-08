@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Glamourer.Designs;
 using Glamourer.Utility;
 using ImGuiNET;

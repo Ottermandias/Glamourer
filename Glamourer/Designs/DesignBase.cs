@@ -5,10 +5,6 @@ using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Numerics;
 using Penumbra.GameData.DataContainers;
 
 namespace Glamourer.Designs;

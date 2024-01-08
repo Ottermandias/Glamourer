@@ -1,6 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using Dalamud.Game.ClientState.Objects.Enums;
+﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;

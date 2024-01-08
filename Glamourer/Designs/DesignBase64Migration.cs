@@ -1,5 +1,4 @@
-﻿using System;
-using Glamourer.Services;
+﻿using Glamourer.Services;
 using OtterGui;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;

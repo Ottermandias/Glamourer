@@ -1,7 +1,4 @@
-﻿using System;
-using System.Numerics;
-using System.Reflection;
-using Dalamud.Interface.Internal;
+﻿using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Glamourer.GameData;

@@ -1,5 +1,4 @@
-﻿using System;
-using Dalamud.ContextMenu;
+﻿using Dalamud.ContextMenu;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin;

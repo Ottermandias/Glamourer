@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
-using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Events;
 using Glamourer.Services;
 using Newtonsoft.Json;

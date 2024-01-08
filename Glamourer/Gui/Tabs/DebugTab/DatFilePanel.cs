@@ -1,6 +1,4 @@
-﻿using System.IO;
-using System.Numerics;
-using Glamourer.Interop;
+﻿using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui;
 using Penumbra.GameData.Files;

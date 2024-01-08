@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Actors;
 
 namespace Glamourer.Automation;

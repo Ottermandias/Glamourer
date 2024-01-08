@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Dalamud.Game.ClientState.Objects.Types;
+﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
 using Glamourer.Events;
 using Penumbra.Api.Helpers;

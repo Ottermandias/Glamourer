@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Dalamud.Plugin;
+﻿using Dalamud.Plugin;
 using Glamourer.Api;
 using Glamourer.Gui;
 using Glamourer.Interop;

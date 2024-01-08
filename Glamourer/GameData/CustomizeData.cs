@@ -1,6 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using Penumbra.GameData.Enums;
+﻿using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.GameData;

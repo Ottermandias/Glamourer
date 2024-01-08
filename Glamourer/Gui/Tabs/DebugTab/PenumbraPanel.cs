@@ -1,5 +1,4 @@
-﻿using System;
-using Dalamud.Interface.Utility;
+﻿using Dalamud.Interface.Utility;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using ImGuiNET;

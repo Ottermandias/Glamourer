@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Glamourer.Designs;
 using ImGuiNET;
 using OtterGui;

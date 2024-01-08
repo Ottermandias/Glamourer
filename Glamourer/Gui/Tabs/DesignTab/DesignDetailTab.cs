@@ -1,7 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Numerics;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
 using Glamourer.Services;

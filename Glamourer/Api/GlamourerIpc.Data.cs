@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Dalamud.Plugin;
+﻿using Dalamud.Plugin;
 using Penumbra.Api.Helpers;
 
 namespace Glamourer.Api;

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using Dalamud.Plugin.Services;
+﻿using Dalamud.Plugin.Services;
 using OtterGui.Classes;
 
 namespace Glamourer.Events;

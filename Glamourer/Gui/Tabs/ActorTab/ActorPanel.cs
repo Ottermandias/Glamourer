@@ -1,6 +1,4 @@
-﻿using System;
-using System.Numerics;
-using Dalamud.Game.ClientState.Conditions;
+﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;

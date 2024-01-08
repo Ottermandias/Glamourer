@@ -1,8 +1,4 @@
-﻿using System;
-using System.Globalization;
-using System.Linq;
-using System.Numerics;
-using Glamourer.Interop;
+﻿using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using Dalamud.Game.Text.SeStringHandling;
+﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Utility;
 using Glamourer.Events;
 using Glamourer.Interop;

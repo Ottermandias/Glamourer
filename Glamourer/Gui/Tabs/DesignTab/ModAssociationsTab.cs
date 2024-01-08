@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility;

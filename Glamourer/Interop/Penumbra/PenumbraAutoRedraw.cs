@@ -1,5 +1,4 @@
-﻿using System;
-using Glamourer.State;
+﻿using Glamourer.State;
 using Penumbra.Api.Enums;
 
 namespace Glamourer.Interop.Penumbra;

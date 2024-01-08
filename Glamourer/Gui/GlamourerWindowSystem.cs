@@ -1,5 +1,4 @@
-﻿using System;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using Glamourer.Gui.Tabs.UnlocksTab;
 

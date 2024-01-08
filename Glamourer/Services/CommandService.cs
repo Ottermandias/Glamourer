@@ -1,7 +1,4 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using Dalamud.Game.Command;
+﻿using Dalamud.Game.Command;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;

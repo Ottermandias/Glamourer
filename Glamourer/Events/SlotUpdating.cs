@@ -1,4 +1,3 @@
-using System;
 using Glamourer.Interop.Structs;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;

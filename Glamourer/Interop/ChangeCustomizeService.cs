@@ -1,5 +1,4 @@
-﻿using System;
-using Dalamud.Hooking;
+﻿using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Events;

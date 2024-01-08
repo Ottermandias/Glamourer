@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Numerics;
-using Dalamud.Game.Text.SeStringHandling;
+﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Utility;
 using Glamourer.GameData;
 using Glamourer.Interop;

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Newtonsoft.Json;

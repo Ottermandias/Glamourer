@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Glamourer.Interop;
+﻿using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using OtterGui.Raii;

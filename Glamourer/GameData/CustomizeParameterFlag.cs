@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-
-namespace Glamourer.GameData;
+﻿namespace Glamourer.GameData;
 
 [Flags]
 public enum CustomizeParameterFlag : ushort

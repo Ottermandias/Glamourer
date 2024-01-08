@@ -1,8 +1,4 @@
-﻿using System;
-using System.IO;
-using System.IO.Compression;
-using System.Text;
-using Penumbra.String.Functions;
+﻿using Penumbra.String.Functions;
 
 namespace Glamourer.Utility;
 

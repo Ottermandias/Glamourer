@@ -1,8 +1,4 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
-using Dalamud.Interface.DragDrop;
+﻿using Dalamud.Interface.DragDrop;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
 using Glamourer.Interop.CharaFile;

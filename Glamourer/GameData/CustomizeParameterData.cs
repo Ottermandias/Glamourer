@@ -1,7 +1,4 @@
-﻿using System;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using FFXIVClientStructs.FFXIV.Shader;
+﻿using FFXIVClientStructs.FFXIV.Shader;
 
 namespace Glamourer.GameData;
 

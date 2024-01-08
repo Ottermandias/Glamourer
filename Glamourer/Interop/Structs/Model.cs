@@ -1,5 +1,4 @@
-﻿using System;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;

@@ -1,5 +1,4 @@
-﻿using System;
-using Glamourer.Events;
+﻿using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using Penumbra.Api.Helpers;

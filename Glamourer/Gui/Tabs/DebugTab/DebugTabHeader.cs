@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using ImGuiNET;
+﻿using ImGuiNET;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Raii;
 using Penumbra.GameData.Gui.Debug;

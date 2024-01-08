@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Dalamud.Game.ClientState.Objects.Types;
+﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
 using Penumbra.Api.Helpers;
 using Penumbra.GameData.Actors;

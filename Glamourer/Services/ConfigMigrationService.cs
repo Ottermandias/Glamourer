@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using Glamourer.Automation;
+﻿using Glamourer.Automation;
 using Glamourer.Gui;
 using Newtonsoft.Json.Linq;
 

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Numerics;
-using Dalamud.Interface.Components;
+﻿using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using Glamourer.Events;

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Numerics;
-using Glamourer.Designs;
+﻿using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.State;

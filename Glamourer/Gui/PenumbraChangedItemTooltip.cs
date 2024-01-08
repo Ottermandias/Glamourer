@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using Glamourer.Events;
+﻿using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;

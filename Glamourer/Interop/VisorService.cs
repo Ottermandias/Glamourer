@@ -1,6 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using Dalamud.Hooking;
+﻿using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;

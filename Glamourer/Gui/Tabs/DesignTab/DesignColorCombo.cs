@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Glamourer.Designs;
+﻿using Glamourer.Designs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;

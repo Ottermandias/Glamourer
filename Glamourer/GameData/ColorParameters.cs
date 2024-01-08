@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using Dalamud.Plugin.Services;
+﻿using Dalamud.Plugin.Services;
 using Penumbra.String.Functions;
 
 namespace Glamourer.GameData;

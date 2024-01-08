@@ -1,8 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Events;

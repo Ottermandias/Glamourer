@@ -1,6 +1,4 @@
-﻿using System;
-using System.Numerics;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Shader;
 using Glamourer.GameData;
 using Glamourer.Interop;

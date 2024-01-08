@@ -1,6 +1,4 @@
-﻿using System;
-using System.Numerics;
-using Glamourer.GameData;
+﻿using Glamourer.GameData;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;

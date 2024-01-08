@@ -1,6 +1,4 @@
-﻿using System;
-using System.Numerics;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;

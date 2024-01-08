@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using Dalamud.Interface.Internal;
+﻿using Dalamud.Interface.Internal;
 using Dalamud.Plugin.Services;
 using OtterGui.Classes;
 using OtterGui.Services;

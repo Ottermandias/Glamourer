@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Numerics;
-using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
-using Dalamud.Utility;
+﻿using Dalamud.Utility;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Penumbra;
@@ -20,7 +10,6 @@ using OtterGui;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using static Glamourer.State.ActorState;
 
 namespace Glamourer.Designs;
 

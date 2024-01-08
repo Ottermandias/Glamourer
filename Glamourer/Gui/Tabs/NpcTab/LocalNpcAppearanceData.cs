@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Services;

@@ -1,5 +1,4 @@
-﻿using System;
-using Glamourer.GameData;
+﻿using Glamourer.GameData;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;

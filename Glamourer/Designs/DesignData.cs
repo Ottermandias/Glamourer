@@ -1,6 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using Glamourer.GameData;
+﻿using Glamourer.GameData;
 using Glamourer.Services;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;

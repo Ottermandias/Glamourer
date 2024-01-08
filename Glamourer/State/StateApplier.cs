@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using FFXIVClientStructs.FFXIV.Shader;
+﻿using FFXIVClientStructs.FFXIV.Shader;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;

@@ -2,7 +2,6 @@
 using Glamourer.Events;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
-using System.Linq;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
 using Glamourer.GameData;

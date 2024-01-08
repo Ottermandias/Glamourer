@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Dalamud;
+﻿using Dalamud;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;

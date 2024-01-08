@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Dalamud.Plugin.Services;
+﻿using Dalamud.Plugin.Services;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;

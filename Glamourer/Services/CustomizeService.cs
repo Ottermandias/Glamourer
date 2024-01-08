@@ -1,6 +1,3 @@
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using Glamourer.GameData;
 using OtterGui.Services;
 using Penumbra.GameData.DataContainers;

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using Dalamud.Game.ClientState.Objects;
+﻿using Dalamud.Game.ClientState.Objects;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using Glamourer.Interop.Structs;

@@ -1,5 +1,4 @@
-﻿using System;
-using Glamourer.Designs;
+﻿using Glamourer.Designs;
 using Glamourer.Services;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;

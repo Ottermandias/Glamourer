@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Glamourer.Interop.Structs;
+﻿using Glamourer.Interop.Structs;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 

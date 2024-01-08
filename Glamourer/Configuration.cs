@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Dalamud.Configuration;
+﻿using Dalamud.Configuration;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;

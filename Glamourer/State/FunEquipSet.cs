@@ -1,5 +1,4 @@
-﻿using System;
-using Glamourer.Interop.Structs;
+﻿using Glamourer.Interop.Structs;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;

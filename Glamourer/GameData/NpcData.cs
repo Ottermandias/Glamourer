@@ -1,6 +1,4 @@
-﻿using System;
-using System.Text;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.GameData;

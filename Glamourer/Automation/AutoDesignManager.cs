@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
-using Dalamud.Game.ClientState.Objects.Enums;
+﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
 using Glamourer.Events;

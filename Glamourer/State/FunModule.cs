@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Dalamud.Game.ClientState.Objects.Enums;
+﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
 using Glamourer.Gui;

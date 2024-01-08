@@ -1,5 +1,4 @@
-﻿using System;
-using OtterGui.Classes;
+﻿using OtterGui.Classes;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs;

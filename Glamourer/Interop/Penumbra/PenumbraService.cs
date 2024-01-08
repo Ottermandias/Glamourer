@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using Dalamud.Interface.Internal.Notifications;
-using Dalamud.Logging;
+﻿using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;

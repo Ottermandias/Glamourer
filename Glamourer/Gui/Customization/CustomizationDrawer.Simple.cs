@@ -1,6 +1,4 @@
-﻿using System;
-using System.Numerics;
-using ImGuiNET;
+﻿using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
