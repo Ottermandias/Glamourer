@@ -6,7 +6,9 @@ using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using Penumbra.GameData.DataContainers;
 
 namespace Glamourer.Designs;
@@ -70,6 +72,8 @@ public class DesignBase
 
     private CustomizeFlag _applyCustomize = CustomizeFlagExtensions.AllRelevant;
     public  CustomizeSet  CustomizeSet { get; private set; }
+
+    public CustomizeParameterFlag ApplyParameters { get; private set; }
 
     internal CustomizeFlag ApplyCustomize
     {
@@ -174,6 +178,9 @@ public class DesignBase
     public bool DoApplyCrest(CrestFlag slot)
         => ApplyCrest.HasFlag(slot);
 
+    public bool DoApplyParameter(CustomizeParameterFlag flag)
+        => ApplyParameters.HasFlag(flag);
+
     internal bool SetApplyEquip(EquipSlot slot, bool value)
     {
         var newValue = value ? ApplyEquip | slot.ToFlag() : ApplyEquip & ~slot.ToFlag();
@@ -214,32 +221,48 @@ public class DesignBase
         return true;
     }
 
-    internal FlagRestrictionResetter TemporarilyRestrictApplication(EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
-        => new(this, equipFlags, customizeFlags, crestFlags);
+    internal bool SetApplyParameter(CustomizeParameterFlag flag, bool value)
+    {
+        var newValue = value ? ApplyParameters | flag : ApplyParameters & ~flag;
+        if (newValue == ApplyParameters)
+            return false;
+
+        ApplyParameters = newValue;
+        return true;
+    }
+
+    internal FlagRestrictionResetter TemporarilyRestrictApplication(EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags,
+        CustomizeParameterFlag parameterFlags)
+        => new(this, equipFlags, customizeFlags, crestFlags, parameterFlags);
 
     internal readonly struct FlagRestrictionResetter : IDisposable
     {
-        private readonly DesignBase    _design;
-        private readonly EquipFlag     _oldEquipFlags;
-        private readonly CustomizeFlag _oldCustomizeFlags;
-        private readonly CrestFlag     _oldCrestFlags;
+        private readonly DesignBase             _design;
+        private readonly EquipFlag              _oldEquipFlags;
+        private readonly CustomizeFlag          _oldCustomizeFlags;
+        private readonly CrestFlag              _oldCrestFlags;
+        private readonly CustomizeParameterFlag _oldParameterFlags;
 
-        public FlagRestrictionResetter(DesignBase d, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
+        public FlagRestrictionResetter(DesignBase d, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags,
+            CustomizeParameterFlag parameterFlags)
         {
             _design            =  d;
             _oldEquipFlags     =  d.ApplyEquip;
             _oldCustomizeFlags =  d.ApplyCustomizeRaw;
             _oldCrestFlags     =  d.ApplyCrest;
+            _oldParameterFlags =  d.ApplyParameters;
             d.ApplyEquip       &= equipFlags;
             d.ApplyCustomize   &= customizeFlags;
             d.ApplyCrest       &= crestFlags;
+            d.ApplyParameters  &= parameterFlags;
         }
 
         public void Dispose()
         {
-            _design.ApplyEquip     = _oldEquipFlags;
-            _design.ApplyCustomize = _oldCustomizeFlags;
-            _design.ApplyCrest     = _oldCrestFlags;
+            _design.ApplyEquip      = _oldEquipFlags;
+            _design.ApplyCustomize  = _oldCustomizeFlags;
+            _design.ApplyCrest      = _oldCrestFlags;
+            _design.ApplyParameters = _oldParameterFlags;
         }
     }
 
@@ -256,26 +279,16 @@ public class DesignBase
     {
         var ret = new JObject
         {
-            ["FileVersion"] = FileVersion,
-            ["Equipment"]   = SerializeEquipment(),
-            ["Customize"]   = SerializeCustomize(),
+            ["FileVersion"]    = FileVersion,
+            ["Equipment"]      = SerializeEquipment(),
+            ["Customize"]      = SerializeCustomize(),
+            ["Parameters"] = SerializeParameters(),
         };
         return ret;
     }
 
     protected JObject SerializeEquipment()
     {
-        static JObject Serialize(CustomItemId id, StainId stain, bool crest, bool apply, bool applyStain, bool applyCrest)
-            => new()
-            {
-                ["ItemId"]     = id.Id,
-                ["Stain"]      = stain.Id,
-                ["Crest"]      = crest,
-                ["Apply"]      = apply,
-                ["ApplyStain"] = applyStain,
-                ["ApplyCrest"] = applyCrest,
-            };
-
         var ret = new JObject();
         if (_designData.IsHuman)
         {
@@ -298,6 +311,17 @@ public class DesignBase
         }
 
         return ret;
+
+        static JObject Serialize(CustomItemId id, StainId stain, bool crest, bool apply, bool applyStain, bool applyCrest)
+            => new()
+            {
+                ["ItemId"]     = id.Id,
+                ["Stain"]      = stain.Id,
+                ["Crest"]      = crest,
+                ["Apply"]      = apply,
+                ["ApplyStain"] = applyStain,
+                ["ApplyCrest"] = applyCrest,
+            };
     }
 
     protected JObject SerializeCustomize()
@@ -329,6 +353,42 @@ public class DesignBase
         return ret;
     }
 
+    protected JObject SerializeParameters()
+    {
+        var ret = new JObject();
+
+        foreach (var flag in CustomizeParameterExtensions.ValueFlags)
+        {
+            ret[flag.ToString()] = new JObject()
+            {
+                ["Value"] = DesignData.Parameters[flag][0],
+                ["Apply"] = DoApplyParameter(flag),
+            };
+        }
+
+        foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
+        {
+            ret[flag.ToString()] = new JObject()
+            {
+                ["Percentage"] = DesignData.Parameters[flag][0],
+                ["Apply"]      = DoApplyParameter(flag),
+            };
+        }
+
+        foreach (var flag in CustomizeParameterExtensions.TripleFlags)
+        {
+            ret[flag.ToString()] = new JObject()
+            {
+                ["Red"]   = DesignData.Parameters[flag][0],
+                ["Green"] = DesignData.Parameters[flag][1],
+                ["Blue"]  = DesignData.Parameters[flag][2],
+                ["Apply"] = DoApplyParameter(flag),
+            };
+        }
+
+        return ret;
+    }
+
     #endregion
 
     #region Deserialization
@@ -348,7 +408,66 @@ public class DesignBase
         var ret = new DesignBase(customizations, items);
         LoadCustomize(customizations, json["Customize"], ret, "Temporary Design", false, true);
         LoadEquip(items, json["Equipment"], ret, "Temporary Design", true);
+        LoadParameters(json["Parameters"], ret, "Temporary Design");
         return ret;
+    }
+
+    protected static void LoadParameters(JToken? parameters, DesignBase design, string name)
+    {
+        if (parameters == null)
+        {
+            design.ApplyParameters               = 0;
+            design.GetDesignDataRef().Parameters = default;
+            return;
+        }
+
+
+        foreach (var flag in CustomizeParameterExtensions.ValueFlags)
+        {
+            if (!TryGetToken(flag, out var token))
+                continue;
+
+            var value = token["Value"]?.ToObject<float>() ?? 0f;
+            design.GetDesignDataRef().Parameters[flag] = new Vector3(value);
+        }
+
+        foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
+        {
+            if (!TryGetToken(flag, out var token))
+                continue;
+
+            var value = Math.Clamp(token["Percentage"]?.ToObject<float>() ?? 0f, 0f, 1f);
+            design.GetDesignDataRef().Parameters[flag] = new Vector3(value);
+        }
+
+        foreach (var flag in CustomizeParameterExtensions.TripleFlags)
+        {
+            if (!TryGetToken(flag, out var token))
+                continue;
+
+            var r = Math.Clamp(token["Red"]?.ToObject<float>() ?? 0f,   0, 1);
+            var g = Math.Clamp(token["Green"]?.ToObject<float>() ?? 0f, 0, 1);
+            var b = Math.Clamp(token["Blue"]?.ToObject<float>() ?? 0f,  0, 1);
+            design.GetDesignDataRef().Parameters[flag] = new Vector3(r, g, b);
+        }
+
+        return;
+
+        // Load the token and set application.
+        bool TryGetToken(CustomizeParameterFlag flag, [NotNullWhen(true)] out JToken? token)
+        {
+            token = parameters![flag.ToString()];
+            if (token != null)
+            {
+                var apply = token["Apply"]?.ToObject<bool>() ?? false;
+                design.SetApplyParameter(flag, apply);
+                return true;
+            }
+
+            design.ApplyParameters                     &= ~flag;
+            design.GetDesignDataRef().Parameters[flag] =  Vector3.Zero;
+            return false;
+        }
     }
 
     protected static void LoadEquip(ItemManager items, JToken? equip, DesignBase design, string name, bool allowUnknown)
@@ -514,8 +633,10 @@ public class DesignBase
             _designData = DesignBase64Migration.MigrateBase64(items, humans, base64, out var equipFlags, out var customizeFlags,
                 out var writeProtected,
                 out var applyHat, out var applyVisor, out var applyWeapon);
-            ApplyEquip     = equipFlags;
-            ApplyCustomize = customizeFlags;
+            ApplyEquip      = equipFlags;
+            ApplyCustomize  = customizeFlags;
+            ApplyParameters = 0;
+            ApplyCrest      = 0;
             SetWriteProtected(writeProtected);
             SetApplyHatVisible(applyHat);
             SetApplyVisorToggle(applyVisor);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Utility;
@@ -23,9 +24,9 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
     public JObject ShareJObject(Design design)
         => design.JsonSerialize();
 
-    public JObject ShareJObject(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
+    public JObject ShareJObject(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
     {
-        var design = Convert(state, equipFlags, customizeFlags, crestFlags);
+        var design = Convert(state, equipFlags, customizeFlags, crestFlags, parameterFlags);
         return ShareJObject(design);
     }
 
@@ -36,21 +37,21 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
         => ShareBase64(ShareJObject(design));
 
     public string ShareBase64(ActorState state)
-        => ShareBase64(state, EquipFlagExtensions.All, CustomizeFlagExtensions.All, CrestExtensions.All);
+        => ShareBase64(state, EquipFlagExtensions.All, CustomizeFlagExtensions.All, CrestExtensions.All, CustomizeParameterExtensions.All);
 
-    public string ShareBase64(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
-        => ShareBase64(state.ModelData, equipFlags, customizeFlags, crestFlags);
+    public string ShareBase64(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
+        => ShareBase64(state.ModelData, equipFlags, customizeFlags, crestFlags, parameterFlags);
 
-    public string ShareBase64(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
+    public string ShareBase64(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
     {
-        var design = Convert(data, equipFlags, customizeFlags, crestFlags);
+        var design = Convert(data, equipFlags, customizeFlags, crestFlags, parameterFlags);
         return ShareBase64(ShareJObject(design));
     }
 
-    public DesignBase Convert(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
-        => Convert(state.ModelData, equipFlags, customizeFlags, crestFlags);
+    public DesignBase Convert(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
+        => Convert(state.ModelData, equipFlags, customizeFlags, crestFlags, parameterFlags);
 
-    public DesignBase Convert(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags)
+    public DesignBase Convert(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
     {
         var design = _designs.CreateTemporary();
         design.ApplyEquip     = equipFlags & EquipFlagExtensions.All;

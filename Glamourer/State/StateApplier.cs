@@ -1,5 +1,7 @@
 ﻿using System.Linq;
+using FFXIVClientStructs.FFXIV.Shader;
 using Glamourer.Events;
+using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
@@ -14,8 +16,17 @@ namespace Glamourer.State;
 /// This class applies changes made to state to actual objects in the game.
 /// It handles applying those changes as well as redrawing the actor if necessary.
 /// </summary>
-public class StateApplier(UpdateSlotService _updateSlot, VisorService _visor, WeaponService _weapon, ChangeCustomizeService _changeCustomize,
-    ItemManager _items, PenumbraService _penumbra, MetaService _metaService, ObjectManager _objects, CrestService _crests)
+public class StateApplier(
+    UpdateSlotService _updateSlot,
+    VisorService _visor,
+    WeaponService _weapon,
+    ChangeCustomizeService _changeCustomize,
+    ItemManager _items,
+    PenumbraService _penumbra,
+    MetaService _metaService,
+    ObjectManager _objects,
+    CrestService _crests,
+    Configuration _config)
 {
     /// <summary> Simply force a redraw regardless of conditions. </summary>
     public void ForceRedraw(ActorData data)
@@ -268,6 +279,35 @@ public class StateApplier(UpdateSlotService _updateSlot, VisorService _visor, We
         var data = GetData(state);
         if (apply)
             ChangeCrests(data, state.ModelData.CrestVisibility);
+        return data;
+    }
+
+    /// <summary> Change the customize parameters on models. Can change multiple at once. </summary>
+    public unsafe void ChangeParameters(ActorData data, CustomizeParameterFlag flags, in CustomizeParameterData values)
+    {
+        if (!_config.UseAdvancedParameters)
+            return;
+
+        foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))
+        {
+            var buffer = actor.Model.AsHuman->CustomizeParameterCBuffer;
+            if (buffer == null)
+                continue;
+
+            var ptr = (CustomizeParameter*)buffer->UnsafeSourcePointer;
+            if (ptr == null)
+                continue;
+
+            values.Apply(ref *ptr, flags);
+        }
+    }
+
+    /// <inheritdoc cref="ChangeParameters(ActorData,CustomizeParameterFlag,in CustomizeParameterData)"/>
+    public ActorData ChangeParameters(ActorState state, CustomizeParameterFlag flags, bool apply)
+    {
+        var data = GetData(state);
+        if (apply)
+            ChangeParameters(data, flags, state.ModelData.Parameters);
         return data;
     }
 

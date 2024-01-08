@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using Glamourer.GameData;
 using Glamourer.Services;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
@@ -10,30 +11,31 @@ namespace Glamourer.Designs;
 
 public unsafe struct DesignData
 {
-    private       string         _nameHead     = string.Empty;
-    private       string         _nameBody     = string.Empty;
-    private       string         _nameHands    = string.Empty;
-    private       string         _nameLegs     = string.Empty;
-    private       string         _nameFeet     = string.Empty;
-    private       string         _nameEars     = string.Empty;
-    private       string         _nameNeck     = string.Empty;
-    private       string         _nameWrists   = string.Empty;
-    private       string         _nameRFinger  = string.Empty;
-    private       string         _nameLFinger  = string.Empty;
-    private       string         _nameMainhand = string.Empty;
-    private       string         _nameOffhand  = string.Empty;
-    private fixed uint           _itemIds[12];
-    private fixed ushort         _iconIds[12];
-    private fixed byte           _equipmentBytes[48];
-    public        CustomizeArray Customize = CustomizeArray.Default;
-    public        uint           ModelId;
-    public        CrestFlag      CrestVisibility;
-    private       SecondaryId    _secondaryMainhand;
-    private       SecondaryId    _secondaryOffhand;
-    private       FullEquipType  _typeMainhand;
-    private       FullEquipType  _typeOffhand;
-    private       byte           _states;
-    public        bool           IsHuman = true;
+    private       string                 _nameHead     = string.Empty;
+    private       string                 _nameBody     = string.Empty;
+    private       string                 _nameHands    = string.Empty;
+    private       string                 _nameLegs     = string.Empty;
+    private       string                 _nameFeet     = string.Empty;
+    private       string                 _nameEars     = string.Empty;
+    private       string                 _nameNeck     = string.Empty;
+    private       string                 _nameWrists   = string.Empty;
+    private       string                 _nameRFinger  = string.Empty;
+    private       string                 _nameLFinger  = string.Empty;
+    private       string                 _nameMainhand = string.Empty;
+    private       string                 _nameOffhand  = string.Empty;
+    private fixed uint                   _itemIds[12];
+    private fixed ushort                 _iconIds[12];
+    private fixed byte                   _equipmentBytes[48];
+    public        CustomizeParameterData Parameters;
+    public        CustomizeArray         Customize = CustomizeArray.Default;
+    public        uint                   ModelId;
+    public        CrestFlag              CrestVisibility;
+    private       SecondaryId            _secondaryMainhand;
+    private       SecondaryId            _secondaryOffhand;
+    private       FullEquipType          _typeMainhand;
+    private       FullEquipType          _typeOffhand;
+    private       byte                   _states;
+    public        bool                   IsHuman = true;
 
     public DesignData()
     { }

@@ -65,6 +65,9 @@ public sealed class DesignChanged()
         /// <summary> An existing design had a crest visibility changed. Data is the old crest visibility, the new crest visibility and the slot [(bool, bool, EquipSlot)]. </summary>
         Crest,
 
+        /// <summary> An existing design had a customize parameter changed. Data is the old value, the new value and the flag [(Vector3, Vector3, CustomizeParameterFlag)]. </summary>
+        Parameter,
+
         /// <summary> An existing design changed whether a specific customization is applied. Data is the type of customization [CustomizeIndex]. </summary>
         ApplyCustomize,
 
@@ -76,6 +79,9 @@ public sealed class DesignChanged()
 
         /// <summary> An existing design changed whether a specific crest visibility is applied. Data is the slot of the equipment [EquipSlot]. </summary>
         ApplyCrest,
+
+        /// <summary> An existing design changed whether a specific customize parameter is applied. Data is the flag for the parameter [CustomizeParameterFlag]. </summary>
+        ApplyParameter,
 
         /// <summary> An existing design changed its write protection status. Data is the new value [bool]. </summary>
         WriteProtection,

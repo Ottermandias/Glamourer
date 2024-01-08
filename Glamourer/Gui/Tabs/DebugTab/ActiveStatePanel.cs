@@ -101,6 +101,18 @@ public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectM
                 PrintRow(type.ToDefaultName(), state.BaseData.Customize[type].Value, state.ModelData.Customize[type].Value, state[type]);
                 ImGui.TableNextRow();
             }
+
+            foreach (var crest in CrestExtensions.AllRelevantSet)
+            {
+                PrintRow(crest.ToLabel(), state.BaseData.Crest(crest), state.ModelData.Crest(crest), state[crest]);
+                ImGui.TableNextRow();
+            }
+
+            foreach (var flag in CustomizeParameterExtensions.AllFlags)
+            {
+                PrintRow(flag.ToString(), state.BaseData.Parameters[flag], state.ModelData.Parameters[flag], state[flag]);
+                ImGui.TableNextRow();
+            }
         }
         else
         {

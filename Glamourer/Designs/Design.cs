@@ -54,20 +54,21 @@ public sealed class Design : DesignBase, ISavable
     public new JObject JsonSerialize()
     {
         var ret = new JObject()
-            {
-                ["FileVersion"]    = FileVersion,
-                ["Identifier"]     = Identifier,
-                ["CreationDate"]   = CreationDate,
-                ["LastEdit"]       = LastEdit,
-                ["Name"]           = Name.Text,
-                ["Description"]    = Description,
-                ["Color"]          = Color,
-                ["Tags"]           = JArray.FromObject(Tags),
-                ["WriteProtected"] = WriteProtected(),
-                ["Equipment"]      = SerializeEquipment(),
-                ["Customize"]      = SerializeCustomize(),
-                ["Mods"]           = SerializeMods(),
-            };
+        {
+            ["FileVersion"]    = FileVersion,
+            ["Identifier"]     = Identifier,
+            ["CreationDate"]   = CreationDate,
+            ["LastEdit"]       = LastEdit,
+            ["Name"]           = Name.Text,
+            ["Description"]    = Description,
+            ["Color"]          = Color,
+            ["Tags"]           = JArray.FromObject(Tags),
+            ["WriteProtected"] = WriteProtected(),
+            ["Equipment"]      = SerializeEquipment(),
+            ["Customize"]      = SerializeCustomize(),
+            ["Parameters"] = SerializeParameters(),
+            ["Mods"]           = SerializeMods(),
+        };
         return ret;
     }
 
@@ -133,7 +134,8 @@ public sealed class Design : DesignBase, ISavable
         LoadCustomize(customizations, json["Customize"], design, design.Name, true, false);
         LoadEquip(items, json["Equipment"], design, design.Name, true);
         LoadMods(json["Mods"], design);
-        design.Color = json["Color"]?.ToObject<string>() ?? string.Empty; 
+        LoadParameters(json["Parameters"], design, design.Name);
+        design.Color = json["Color"]?.ToObject<string>() ?? string.Empty;
         return design;
     }
 

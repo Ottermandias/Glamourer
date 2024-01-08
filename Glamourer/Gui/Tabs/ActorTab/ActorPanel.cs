@@ -35,7 +35,8 @@ public class ActorPanel(
     DesignManager _designManager,
     ImportService _importService,
     ICondition _conditions,
-    DictModelChara _modelChara)
+    DictModelChara _modelChara,
+    CustomizeParameterDrawer _parameterDrawer)
 {
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -127,6 +128,7 @@ public class ActorPanel(
     {
         DrawCustomizationsHeader();
         DrawEquipmentHeader();
+        DrawParameterHeader();
     }
 
     private void DrawCustomizationsHeader()
@@ -167,6 +169,14 @@ public class ActorPanel(
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
         DrawEquipmentMetaToggles();
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+    }
+
+    private void DrawParameterHeader()
+    {
+        if (!_config.UseAdvancedParameters || !ImGui.CollapsingHeader("Advanced Customizations"))
+            return;
+
+        _parameterDrawer.Draw(_stateManager, _state!);
     }
 
     private void DrawEquipmentMetaToggles()
@@ -302,9 +312,9 @@ public class ActorPanel(
     private void SaveDesignOpen()
     {
         ImGui.OpenPopup("Save as Design");
-        _newName                                    = _state!.Identifier.ToName();
-        var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
-        _newDesign                                  = _converter.Convert(_state, applyGear, applyCustomize, applyCrest);
+        _newName                                                     = _state!.Identifier.ToName();
+        var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
+        _newDesign                                                   = _converter.Convert(_state, applyGear, applyCustomize, applyCrest, applyParameters);
     }
 
     private void SaveDesignDrawPopup()
@@ -339,8 +349,8 @@ public class ActorPanel(
     {
         try
         {
-            var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
-            var text = _converter.ShareBase64(_state!, applyGear, applyCustomize, applyCrest);
+            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
+            var text = _converter.ShareBase64(_state!, applyGear, applyCustomize, applyCrest, applyParameters);
             ImGui.SetClipboardText(text);
         }
         catch (Exception ex)
@@ -379,9 +389,9 @@ public class ActorPanel(
                 !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0))
             return;
 
-        var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
+        var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
-            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize, applyCrest), state,
+            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize, applyCrest, applyParameters), state,
                 StateChanged.Source.Manual);
     }
 
@@ -397,9 +407,9 @@ public class ActorPanel(
                 !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0))
             return;
 
-        var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
+        var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
-            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize, applyCrest), state,
+            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize, applyCrest, applyParameters), state,
                 StateChanged.Source.Manual);
     }
 }

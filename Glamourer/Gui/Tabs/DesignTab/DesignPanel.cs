@@ -9,6 +9,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Events;
+using Glamourer.GameData;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
@@ -21,9 +22,20 @@ using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer _customizationDrawer, DesignManager _manager,
-    ObjectManager _objects, StateManager _state, EquipmentDrawer _equipmentDrawer, ModAssociationsTab _modAssociations,
-    DesignDetailTab _designDetails, DesignConverter _converter, ImportService _importService, MultiDesignPanel _multiDesignPanel)
+public class DesignPanel(
+    DesignFileSystemSelector _selector,
+    CustomizationDrawer _customizationDrawer,
+    DesignManager _manager,
+    ObjectManager _objects,
+    StateManager _state,
+    EquipmentDrawer _equipmentDrawer,
+    ModAssociationsTab _modAssociations,
+    Configuration _config,
+    DesignDetailTab _designDetails,
+    DesignConverter _converter,
+    ImportService _importService,
+    MultiDesignPanel _multiDesignPanel,
+    CustomizeParameterDrawer _parameterDrawer)
 {
     private readonly FileDialogManager _fileDialog = new();
 
@@ -152,11 +164,20 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }
 
+    private void DrawCustomizeParameters()
+    {
+        if (!_config.UseAdvancedParameters || !ImGui.CollapsingHeader("Advanced Customization"))
+            return;
+
+        _parameterDrawer.Draw(_manager, _selector.Selected!);
+    }
+
     private void DrawCustomizeApplication()
     {
-        var set           = _selector.Selected!.CustomizeSet;
-        var available     = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender | CustomizeFlag.BodyType;
-        var flags         = _selector.Selected!.ApplyCustomizeExcludingBodyType == 0 ? 0 : (_selector.Selected!.ApplyCustomize & available) == available ? 3 : 1;
+        var set       = _selector.Selected!.CustomizeSet;
+        var available = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender | CustomizeFlag.BodyType;
+        var flags = _selector.Selected!.ApplyCustomizeExcludingBodyType == 0 ? 0 :
+            (_selector.Selected!.ApplyCustomize & available) == available    ? 3 : 1;
         if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))
         {
             var newFlags = flags == 3;
@@ -205,6 +226,9 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
             DrawCustomizeApplication();
             ImGui.NewLine();
             DrawCrestApplication();
+            ImGui.NewLine();
+            if (_config.UseAdvancedParameters)
+                DrawMetaApplication();
         }
 
         ImGui.SameLine(ImGui.GetContentRegionAvail().X / 2);
@@ -248,27 +272,47 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
                 EquipSlotExtensions.FullSlots);
 
             ImGui.NewLine();
-            const uint all = 0x0Fu;
-            var flags = (_selector.Selected!.DoApplyHatVisible() ? 0x01u : 0x00)
-              | (_selector.Selected!.DoApplyVisorToggle() ? 0x02u : 0x00)
-              | (_selector.Selected!.DoApplyWeaponVisible() ? 0x04u : 0x00)
-              | (_selector.Selected!.DoApplyWetness() ? 0x08u : 0x00);
-            var bigChange = ImGui.CheckboxFlags("Apply All Meta Changes", ref flags, all);
-            var apply     = bigChange ? (flags & 0x01) == 0x01 : _selector.Selected!.DoApplyHatVisible();
-            if (ImGui.Checkbox("Apply Hat Visibility", ref apply) || bigChange)
-                _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.HatState, apply);
+            if (_config.UseAdvancedParameters)
+                DrawParameterApplication();
+            else
+                DrawMetaApplication();
+        }
+    }
 
-            apply = bigChange ? (flags & 0x02) == 0x02 : _selector.Selected!.DoApplyVisorToggle();
-            if (ImGui.Checkbox("Apply Visor State", ref apply) || bigChange)
-                _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.VisorState, apply);
+    private void DrawMetaApplication()
+    {
+        const uint all = 0x0Fu;
+        var flags = (_selector.Selected!.DoApplyHatVisible() ? 0x01u : 0x00)
+          | (_selector.Selected!.DoApplyVisorToggle() ? 0x02u : 0x00)
+          | (_selector.Selected!.DoApplyWeaponVisible() ? 0x04u : 0x00)
+          | (_selector.Selected!.DoApplyWetness() ? 0x08u : 0x00);
+        var bigChange = ImGui.CheckboxFlags("Apply All Meta Changes", ref flags, all);
+        var apply     = bigChange ? (flags & 0x01) == 0x01 : _selector.Selected!.DoApplyHatVisible();
+        if (ImGui.Checkbox("Apply Hat Visibility", ref apply) || bigChange)
+            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.HatState, apply);
 
-            apply = bigChange ? (flags & 0x04) == 0x04 : _selector.Selected!.DoApplyWeaponVisible();
-            if (ImGui.Checkbox("Apply Weapon Visibility", ref apply) || bigChange)
-                _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.WeaponState, apply);
+        apply = bigChange ? (flags & 0x02) == 0x02 : _selector.Selected!.DoApplyVisorToggle();
+        if (ImGui.Checkbox("Apply Visor State", ref apply) || bigChange)
+            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.VisorState, apply);
 
-            apply = bigChange ? (flags & 0x08) == 0x08 : _selector.Selected!.DoApplyWetness();
-            if (ImGui.Checkbox("Apply Wetness", ref apply) || bigChange)
-                _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.Wetness, apply);
+        apply = bigChange ? (flags & 0x04) == 0x04 : _selector.Selected!.DoApplyWeaponVisible();
+        if (ImGui.Checkbox("Apply Weapon Visibility", ref apply) || bigChange)
+            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.WeaponState, apply);
+
+        apply = bigChange ? (flags & 0x08) == 0x08 : _selector.Selected!.DoApplyWetness();
+        if (ImGui.Checkbox("Apply Wetness", ref apply) || bigChange)
+            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.Wetness, apply);
+    }
+
+    private void DrawParameterApplication()
+    {
+        var flags     = (uint)_selector.Selected!.ApplyParameters;
+        var bigChange = ImGui.CheckboxFlags("Apply All Customize Parameters", ref flags, (uint)CustomizeParameterExtensions.All);
+        foreach (var flag in CustomizeParameterExtensions.AllFlags)
+        {
+            var apply = bigChange ? ((CustomizeParameterFlag)flags).HasFlag(flag) : _selector.Selected!.DoApplyParameter(flag);
+            if (ImGui.Checkbox($"Apply {flag}", ref apply) || bigChange)
+                _manager.ChangeApplyParameter(_selector.Selected!, flag, apply);
         }
     }
 
@@ -316,6 +360,7 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
         DrawButtonRow();
         DrawCustomize();
         DrawEquipment();
+        DrawCustomizeParameters();
         _designDetails.Draw();
         DrawApplicationRules();
         _modAssociations.Draw();
@@ -386,8 +431,8 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
-            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest);
+            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
+            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
             _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
         }
     }
@@ -405,8 +450,8 @@ public class DesignPanel(DesignFileSystemSelector _selector, CustomizationDrawer
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
-            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest);
+            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
+            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
             _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
         }
     }

@@ -7,6 +7,7 @@ using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Events;
+using Glamourer.GameData;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.State;
@@ -500,7 +501,7 @@ public class CommandService : IDisposable
                  && _stateManager.GetOrCreate(identifier, data.Objects[0], out state)))
                 continue;
 
-            var design = _converter.Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All);
+            var design = _converter.Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All, CustomizeParameterExtensions.All);
             _designManager.CreateClone(design, split[0], true);
             return true;
         }

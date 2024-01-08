@@ -5,6 +5,7 @@ using Penumbra.GameData.Enums;
 using System.Linq;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
+using Glamourer.GameData;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
@@ -79,7 +80,11 @@ public class ActorState
     /// <summary> This contains whether a change to the base data was made by the game, the user via manual input or through automatic application. </summary>
     private readonly StateChanged.Source[] _sources = Enumerable
         .Repeat(StateChanged.Source.Game,
-            EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5 + CrestExtensions.AllRelevantSet.Count).ToArray();
+            EquipFlagExtensions.NumEquipFlags
+          + CustomizationExtensions.NumIndices
+          + 5
+          + CrestExtensions.AllRelevantSet.Count
+          + CustomizeParameterExtensions.AllFlags.Count).ToArray();
 
     internal ActorState(ActorIdentifier identifier)
         => Identifier = identifier.CreatePermanent();
@@ -96,6 +101,13 @@ public class ActorState
     public ref StateChanged.Source this[MetaIndex index]
         => ref _sources[(int)index];
 
+    public ref StateChanged.Source this[CustomizeParameterFlag flag]
+        => ref _sources[
+            EquipFlagExtensions.NumEquipFlags
+          + CustomizationExtensions.NumIndices + 5
+          + CrestExtensions.AllRelevantSet.Count
+          + flag.ToInternalIndex()];
+
     public void RemoveFixedDesignSources()
     {
         for (var i = 0; i < _sources.Length; ++i)
@@ -104,6 +116,9 @@ public class ActorState
                 _sources[i] = StateChanged.Source.Manual;
         }
     }
+
+    public CustomizeParameterFlag OnlyChangedParameters()
+        => CustomizeParameterExtensions.AllFlags.Where(f => this[f] is not StateChanged.Source.Game).Aggregate((CustomizeParameterFlag) 0, (a, b) => a | b);
 
     public bool UpdateTerritory(ushort territory)
     {

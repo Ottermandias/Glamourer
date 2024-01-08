@@ -60,8 +60,9 @@ public class SettingsTab : ITab
         if (!child)
             return;
 
-        Checkbox("Enable Auto Designs", "Enable the application of designs associated to characters in the Automation tab to be applied automatically.",
-            _config.EnableAutoDesigns,  v => _config.EnableAutoDesigns = v);
+        Checkbox("Enable Auto Designs",
+            "Enable the application of designs associated to characters in the Automation tab to be applied automatically.",
+            _config.EnableAutoDesigns, v => _config.EnableAutoDesigns = v);
         ImGui.NewLine();
         ImGui.NewLine();
         ImGui.NewLine();
@@ -97,6 +98,8 @@ public class SettingsTab : ITab
         Checkbox("Revert Manual Changes on Zone Change",
             "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone.",
             _config.RevertManualChangesOnZoneChange, v => _config.RevertManualChangesOnZoneChange = v);
+        Checkbox("Enable Advanced Customization Options", "Enable the display and editing of advanced customization options like arbitrary colors.", 
+            _config.UseAdvancedParameters, v => _config.UseAdvancedParameters = v);
         ImGui.NewLine();
     }
 
@@ -108,7 +111,8 @@ public class SettingsTab : ITab
         EphemeralCheckbox("Show Quick Design Bar",
             "Show a bar separate from the main window that allows you to quickly apply designs or revert your character and target.",
             _config.Ephemeral.ShowDesignQuickBar, v => _config.Ephemeral.ShowDesignQuickBar = v);
-        EphemeralCheckbox("Lock Quick Design Bar", "Prevent the quick design bar from being moved and lock it in place.", _config.Ephemeral.LockDesignQuickBar,
+        EphemeralCheckbox("Lock Quick Design Bar", "Prevent the quick design bar from being moved and lock it in place.",
+            _config.Ephemeral.LockDesignQuickBar,
             v => _config.Ephemeral.LockDesignQuickBar = v);
         if (Widget.ModifiableKeySelector("Hotkey to Toggle Quick Design Bar", "Set a hotkey that opens or closes the quick design bar.",
                 100 * ImGuiHelpers.GlobalScale,
@@ -138,7 +142,8 @@ public class SettingsTab : ITab
                 _config.HideWindowInCutscene     = v;
                 _uiBuilder.DisableCutsceneUiHide = !v;
             });
-        EphemeralCheckbox("Lock Main Window", "Prevent the main window from being moved and lock it in place.", _config.Ephemeral.LockMainWindow,
+        EphemeralCheckbox("Lock Main Window", "Prevent the main window from being moved and lock it in place.",
+            _config.Ephemeral.LockMainWindow,
             v => _config.Ephemeral.LockMainWindow = v);
         Checkbox("Open Main Window at Game Start", "Whether the main Glamourer window should be open or closed after launching the game.",
             _config.OpenWindowAtStart,             v => _config.OpenWindowAtStart = v);

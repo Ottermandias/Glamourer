@@ -1,6 +1,7 @@
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
+using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
@@ -98,13 +99,13 @@ public static class UiHelpers
         return (currentValue != newValue, currentApply != newApply);
     }
 
-    public static (EquipFlag, CustomizeFlag, CrestFlag) ConvertKeysToFlags()
+    public static (EquipFlag, CustomizeFlag, CrestFlag, CustomizeParameterFlag) ConvertKeysToFlags()
         => (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift) switch
         {
-            (false, false) => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All),
-            (true, true)   => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All),
-            (true, false)  => (EquipFlagExtensions.All, (CustomizeFlag)0, CrestExtensions.All),
-            (false, true)  => ((EquipFlag)0, CustomizeFlagExtensions.AllRelevant, 0),
+            (false, false) => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All, CustomizeParameterExtensions.All),
+            (true, true)   => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All, CustomizeParameterExtensions.All),
+            (true, false)  => (EquipFlagExtensions.All, (CustomizeFlag)0, CrestExtensions.All, 0),
+            (false, true)  => ((EquipFlag)0, CustomizeFlagExtensions.AllRelevant, 0, CustomizeParameterExtensions.All),
         };
 
     public static (bool, bool) ConvertKeysToBool()

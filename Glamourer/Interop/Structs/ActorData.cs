@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using OtterGui.Log;
-using Penumbra.GameData.Actors;
 
 namespace Glamourer.Interop.Structs;
 

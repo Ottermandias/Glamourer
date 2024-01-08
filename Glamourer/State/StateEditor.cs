@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Common.Math;
 using Glamourer.Events;
+using Glamourer.GameData;
 using Glamourer.Services;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -11,11 +13,11 @@ namespace Glamourer.State;
 
 public class StateEditor
 {
-    private readonly ItemManager          _items;
+    private readonly ItemManager      _items;
     private readonly CustomizeService _customizations;
-    private readonly HumanModelList       _humans;
-    private readonly GPoseService         _gPose;
-    private readonly ICondition           _condition;
+    private readonly HumanModelList   _humans;
+    private readonly GPoseService     _gPose;
+    private readonly ICondition       _condition;
 
     public StateEditor(CustomizeService customizations, HumanModelList humans, ItemManager items, GPoseService gPose, ICondition condition)
     {
@@ -205,6 +207,19 @@ public class StateEditor
 
         state.ModelData.SetCrest(slot, crest);
         state[slot] = source;
+        return true;
+    }
+
+    /// <summary> Change the customize flags of a character. </summary>
+    public bool ChangeParameter(ActorState state, CustomizeParameterFlag flag, Vector3 value, StateChanged.Source source, out Vector3 oldValue,
+        uint key = 0)
+    {
+        oldValue = state.ModelData.Parameters[flag];
+        if (!state.CanUnlock(key))
+            return false;
+
+        state.ModelData.Parameters.Set(flag, value);
+        state[flag] = source;
         return true;
     }
 

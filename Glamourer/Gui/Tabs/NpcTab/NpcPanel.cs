@@ -89,9 +89,9 @@ public class NpcPanel(
     {
         try
         {
-            var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
+            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
             var data = ToDesignData();
-            var text = _converter.ShareBase64(data, applyGear, applyCustomize, applyCrest);
+            var text = _converter.ShareBase64(data, applyGear, applyCustomize, applyCrest, applyParameters);
             ImGui.SetClipboardText(text);
         }
         catch (Exception ex)
@@ -105,11 +105,11 @@ public class NpcPanel(
     private void SaveDesignOpen()
     {
         ImGui.OpenPopup("Save as Design");
-        _newName                                    = _selector.Selection.Name;
-        var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
+        _newName                                                     = _selector.Selection.Name;
+        var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
 
         var data = ToDesignData();
-        _newDesign = _converter.Convert(data, applyGear, applyCustomize, applyCrest);
+        _newDesign = _converter.Convert(data, applyGear, applyCustomize, applyCrest, applyParameters);
     }
 
     private void SaveDesignDrawPopup()
@@ -198,8 +198,8 @@ public class NpcPanel(
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
-            var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, applyCrest);
+            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
+            var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, applyCrest, applyParameters);
             _state.ApplyDesign(design, state, StateChanged.Source.Manual);
         }
     }
@@ -217,8 +217,8 @@ public class NpcPanel(
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize, applyCrest) = UiHelpers.ConvertKeysToFlags();
-            var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, applyCrest);
+            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
+            var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, applyCrest, applyParameters);
             _state.ApplyDesign(design, state, StateChanged.Source.Manual);
         }
     }

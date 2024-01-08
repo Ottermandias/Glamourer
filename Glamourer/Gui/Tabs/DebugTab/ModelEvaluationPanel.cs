@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using FFXIVClientStructs.FFXIV.Shader;
+using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using ImGuiNET;
@@ -78,6 +80,28 @@ public unsafe class ModelEvaluationPanel(
         DrawEquip(actor, model);
         DrawCustomize(actor, model);
         DrawCrests(actor, model);
+        DrawParameters(actor, model);
+    }
+
+    private void DrawParameters(Actor actor, Model model)
+    {
+        if (!model.IsHuman)
+            return;
+        if (model.AsHuman->CustomizeParameterCBuffer == null)
+            return;
+
+        var ptr     = (CustomizeParameter*)model.AsHuman->CustomizeParameterCBuffer->UnsafeSourcePointer;
+        if (ptr == null)
+            return;
+
+        var convert = CustomizeParameterData.FromParameters(*ptr);
+        foreach (var flag in CustomizeParameterExtensions.AllFlags)
+        {
+            ImGuiUtil.DrawTableColumn(flag.ToString());
+            ImGuiUtil.DrawTableColumn(string.Empty);
+            ImGuiUtil.DrawTableColumn(convert[flag].ToString());
+            ImGui.TableNextColumn();
+        }
     }
 
     private void DrawVisor(Actor actor, Model model)

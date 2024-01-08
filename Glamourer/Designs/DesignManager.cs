@@ -4,10 +4,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Utility;
 using Glamourer.Events;
+using Glamourer.GameData;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
@@ -17,6 +20,7 @@ using OtterGui;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using static Glamourer.State.ActorState;
 
 namespace Glamourer.Designs;
 
@@ -424,6 +428,20 @@ public class DesignManager
         }
     }
 
+    /// <summary> Change a customize parameter. </summary>
+    public void ChangeCustomizeParameter(Design design, CustomizeParameterFlag flag, Vector3 value)
+    {
+        var old = design.DesignData.Parameters[flag];
+        if (!design.GetDesignDataRef().Parameters.Set(flag, value))
+            return;
+
+        var @new = design.DesignData.Parameters[flag];
+        design.LastEdit = DateTimeOffset.UtcNow;
+        Glamourer.Log.Debug($"Set customize parameter {flag} in design {design.Identifier} from {old} to {@new}.");
+        _saveService.QueueSave(design);
+        _event.Invoke(DesignChanged.Type.Parameter, design, (old, @new, flag));
+    }
+
     /// <summary> Change whether to apply a specific equipment piece. </summary>
     public void ChangeApplyEquip(Design design, EquipSlot slot, bool value)
     {
@@ -527,6 +545,18 @@ public class DesignManager
         _saveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of {metaIndex} to {value}.");
         _event.Invoke(DesignChanged.Type.Other, design, (metaIndex, true, value));
+    }
+
+    /// <summary> Change the application value of a customize parameter. </summary>
+    public void ChangeApplyParameter(Design design, CustomizeParameterFlag flag, bool value)
+    {
+        if (!design.SetApplyParameter(flag, value))
+            return;
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        _saveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set applying of parameter {flag} to {value}.");
+        _event.Invoke(DesignChanged.Type.ApplyParameter, design, flag);
     }
 
     /// <summary> Apply an entire design based on its appliance rules piece by piece. </summary>

@@ -3,9 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Shader;
 using Glamourer.Designs;
 using Glamourer.Events;
+using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
@@ -189,6 +192,14 @@ public class StateManager(
         // Weapon visibility could technically be inferred from the weapon draw objects, 
         // but since we use hat visibility from the game object we can also use weapon visibility from it.
         ret.SetWeaponVisible(!actor.AsCharacter->DrawData.IsWeaponHidden);
+
+        if (model.IsHuman && model.AsHuman->CustomizeParameterCBuffer != null)
+        {
+            var ptr = model.AsHuman->CustomizeParameterCBuffer->UnsafeSourcePointer;
+            if (ptr != null)
+                ret.Parameters = CustomizeParameterData.FromParameters(*(CustomizeParameter*)ptr);
+        }
+
         return ret;
     }
 
@@ -309,6 +320,19 @@ public class StateManager(
         _event.Invoke(StateChanged.Type.Crest, source, state, actors, (old, crest, slot));
     }
 
+    /// <summary> Change the crest of an equipment piece. </summary>
+    public void ChangeCustomizeParameter(ActorState state, CustomizeParameterFlag flag, Vector3 value, StateChanged.Source source, uint key = 0)
+    {
+        if (!_editor.ChangeParameter(state, flag, value, source, out var old, key))
+            return;
+
+        var @new   = state.ModelData.Parameters[flag];
+        var actors = _applier.ChangeParameters(state, flag, source is StateChanged.Source.Manual or StateChanged.Source.Ipc);
+        Glamourer.Log.Verbose(
+            $"Set {flag} crest in state {state.Identifier.Incognito(null)} from {old} to {@new}. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Parameter, source, state, actors, (old, @new, flag));
+    }
+
     /// <summary> Change hat visibility. </summary>
     public void ChangeHatState(ActorState state, bool value, StateChanged.Source source, uint key = 0)
     {
@@ -390,6 +414,9 @@ public class StateManager(
 
             foreach (var slot in CrestExtensions.AllRelevantSet.Where(design.DoApplyCrest))
                 _editor.ChangeCrest(state, slot, design.DesignData.Crest(slot), source, out _, key);
+
+            foreach (var flag in CustomizeParameterExtensions.AllFlags.Where(design.DoApplyParameter))
+                _editor.ChangeParameter(state, flag, design.DesignData.Parameters[flag], source, out _, key);
         }
 
         var actors = ApplyAll(state, redraw, false);
@@ -441,6 +468,7 @@ public class StateManager(
             _applier.ChangeWeaponState(actors, state.ModelData.IsWeaponVisible());
             _applier.ChangeVisor(actors, state.ModelData.IsVisorToggled());
             _applier.ChangeCrests(actors, state.ModelData.CrestVisibility);
+            _applier.ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters);
         }
 
         return actors;
@@ -454,6 +482,7 @@ public class StateManager(
         var redraw = state.ModelData.ModelId != state.BaseData.ModelId
          || !state.ModelData.IsHuman
          || CustomizeArray.Compare(state.ModelData.Customize, state.BaseData.Customize).RequiresRedraw();
+
         state.ModelData = state.BaseData;
         state.ModelData.SetIsWet(false);
         foreach (var index in Enum.GetValues<CustomizeIndex>())
@@ -471,9 +500,13 @@ public class StateManager(
         foreach (var slot in CrestExtensions.AllRelevantSet)
             state[slot] = StateChanged.Source.Game;
 
+        foreach (var flag in CustomizeParameterExtensions.AllFlags)
+            state[flag] = StateChanged.Source.Game;
+
         var actors = ActorData.Invalid;
         if (source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
             actors = ApplyAll(state, redraw, true);
+
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Reset, StateChanged.Source.Manual, state, actors, null);
@@ -511,6 +544,15 @@ public class StateManager(
             {
                 state[slot] = StateChanged.Source.Game;
                 state.ModelData.SetCrest(slot, state.BaseData.Crest(slot));
+            }
+        }
+
+        foreach (var flag in CustomizeParameterExtensions.AllFlags)
+        {
+            if (state[flag] is StateChanged.Source.Fixed)
+            {
+                state[flag]                      = StateChanged.Source.Game;
+                state.ModelData.Parameters[flag] = state.BaseData.Parameters[flag];
             }
         }
 

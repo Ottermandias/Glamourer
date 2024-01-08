@@ -6,6 +6,7 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Glamourer.Designs;
 using Glamourer.Events;
+using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
@@ -271,10 +272,11 @@ public class AutoDesignApplier : IDisposable
 
     private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual, bool fromJobChange)
     {
-        EquipFlag     totalEquipFlags     = 0;
-        CustomizeFlag totalCustomizeFlags = 0;
-        CrestFlag     totalCrestFlags     = 0;
-        byte          totalMetaFlags      = 0;
+        EquipFlag              totalEquipFlags     = 0;
+        CustomizeFlag          totalCustomizeFlags = 0;
+        CrestFlag              totalCrestFlags     = 0;
+        CustomizeParameterFlag totalParameterFlags = 0;
+        byte                   totalMetaFlags      = 0;
         if (set.BaseState == AutoDesignSet.Base.Game)
             _state.ResetStateFixed(state);
         else if (!respectManual)
@@ -297,18 +299,19 @@ public class AutoDesignApplier : IDisposable
             if (!data.IsHuman)
                 continue;
 
-            var (equipFlags, customizeFlags, crestFlags, applyHat, applyVisor, applyWeapon, applyWet) = design.ApplyWhat();
+            var (equipFlags, customizeFlags, crestFlags, parameterFlags, applyHat, applyVisor, applyWeapon, applyWet) = design.ApplyWhat();
             ReduceMeta(state, data, applyHat, applyVisor, applyWeapon, applyWet, ref totalMetaFlags, respectManual, source);
             ReduceCustomize(state, data, customizeFlags, ref totalCustomizeFlags, respectManual, source);
             ReduceEquip(state, data, equipFlags, ref totalEquipFlags, respectManual, source, fromJobChange);
             ReduceCrests(state, data, crestFlags, ref totalCrestFlags, respectManual, source);
+            ReduceParameters(state, data, parameterFlags, ref totalParameterFlags, respectManual, source);
         }
 
         if (totalCustomizeFlags != 0)
             state.ModelData.ModelId = 0;
     }
 
-    /// <summary> Get world-specific first and all-world afterwards. </summary>
+    /// <summary> Get world-specific first and all-world afterward. </summary>
     private bool GetPlayerSet(ActorIdentifier identifier, [NotNullWhen(true)] out AutoDesignSet? set)
     {
         switch (identifier.Type)
@@ -346,6 +349,24 @@ public class AutoDesignApplier : IDisposable
             if (!respectManual || state[slot] is not StateChanged.Source.Manual)
                 _state.ChangeCrest(state, slot, design.Crest(slot), source);
             totalCrestFlags |= slot;
+        }
+    }
+
+    private void ReduceParameters(ActorState state, in DesignData design, CustomizeParameterFlag parameterFlags,
+        ref CustomizeParameterFlag totalParameterFlags, bool respectManual, StateChanged.Source source)
+    {
+        parameterFlags &= ~totalParameterFlags;
+        if (parameterFlags == 0)
+            return;
+
+        foreach (var flag in CustomizeParameterExtensions.AllFlags)
+        {
+            if (!parameterFlags.HasFlag(flag))
+                continue;
+
+            if (!respectManual || state[flag] is not StateChanged.Source.Manual)
+                _state.ChangeCustomizeParameter(state, flag, design.Parameters[flag], source);
+            totalParameterFlags |= flag;
         }
     }
 

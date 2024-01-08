@@ -4,13 +4,14 @@ using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
-using OtterGui.Classes;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using System;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Shader;
+using Glamourer.GameData;
 using Penumbra.GameData.DataContainers;
 
 namespace Glamourer.State;
@@ -46,6 +47,7 @@ public class StateListener : IDisposable
 
     private ActorIdentifier _creatingIdentifier = ActorIdentifier.Invalid;
     private ActorState?     _creatingState;
+    private ActorState?     _customizeState;
     private CharacterWeapon _lastFistOffhand = CharacterWeapon.Empty;
 
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorManager actors, Configuration config,
@@ -148,10 +150,10 @@ public class StateListener : IDisposable
             return;
 
         if (!actor.Identifier(_actors, out var identifier)
-         || !_manager.TryGetValue(identifier, out var state))
+         || !_manager.TryGetValue(identifier, out _customizeState))
             return;
 
-        UpdateCustomize(actor, state, ref customize, false);
+        UpdateCustomize(actor, _customizeState, ref customize, false);
     }
 
     private void UpdateCustomize(Actor actor, ActorState state, ref CustomizeArray customize, bool checkTransform)
@@ -671,6 +673,7 @@ public class StateListener : IDisposable
         _changeCustomizeService.Subscribe(OnCustomizeChange, ChangeCustomizeService.Priority.StateListener);
         _crestService.Subscribe(OnCrestChange, CrestService.Priority.StateListener);
         _crestService.ModelCrestSetup += OnModelCrestSetup;
+        _changeCustomizeService.Subscribe(OnCustomizeChanged, ChangeCustomizeService.Post.Priority.StateListener);
     }
 
     private void Unsubscribe()
@@ -686,6 +689,7 @@ public class StateListener : IDisposable
         _changeCustomizeService.Unsubscribe(OnCustomizeChange);
         _crestService.Unsubscribe(OnCrestChange);
         _crestService.ModelCrestSetup -= OnModelCrestSetup;
+        _changeCustomizeService.Unsubscribe(OnCustomizeChanged);
     }
 
     private void OnCreatedCharacterBase(nint gameObject, string _, nint drawObject)
@@ -700,5 +704,58 @@ public class StateListener : IDisposable
         _applier.ChangeHatState(data, _creatingState.ModelData.IsHatVisible());
         _applier.ChangeWeaponState(data, _creatingState.ModelData.IsWeaponVisible());
         _applier.ChangeWetness(data, _creatingState.ModelData.IsWet());
+
+        ApplyParameters(_creatingState, drawObject);
+    }
+
+    private void OnCustomizeChanged(Model model)
+    {
+        if (_customizeState == null)
+        {
+            var actor = _penumbra.GameObjectFromDrawObject(model);
+            if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
+                return;
+
+            if (!actor.Identifier(_actors, out var identifier)
+             || !_manager.TryGetValue(identifier, out _customizeState))
+                return;
+        }
+
+        ApplyParameters(_customizeState, model);
+        _customizeState = null;
+    }
+
+    private unsafe void ApplyParameters(ActorState state, Model model)
+    {
+        if (!model.IsHuman)
+            return;
+
+        var cBuffer = model.AsHuman->CustomizeParameterCBuffer;
+        if (cBuffer == null)
+            return;
+
+        var ptr = (CustomizeParameter*)cBuffer->UnsafeSourcePointer;
+        if (ptr == null)
+            return;
+
+        foreach (var flag in CustomizeParameterExtensions.AllFlags)
+        {
+            var newValue = CustomizeParameterData.FromParameter(*ptr, flag);
+
+            switch (state[flag])
+            {
+                case StateChanged.Source.Game:
+                case StateChanged.Source.Manual:
+                    if (state.BaseData.Parameters.Set(flag, newValue))
+                        _manager.ChangeCustomizeParameter(state, flag, newValue, StateChanged.Source.Game);
+                    break;
+                case StateChanged.Source.Fixed:
+                case StateChanged.Source.Ipc:
+                    state.BaseData.Parameters.Set(flag, newValue);
+                    if (_config.UseAdvancedParameters)
+                        state.ModelData.Parameters.ApplySingle(ref *ptr, flag);
+                    break;
+            }
+        }
     }
 }

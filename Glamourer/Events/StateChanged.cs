@@ -39,6 +39,9 @@ public sealed class StateChanged()
         /// <summary> A characters saved state had a crest visibility changed. Data is the old crest visibility, the new crest visibility and the slot [(bool, bool, EquipSlot)]. </summary>
         Crest,
 
+        /// <summary> A characters saved state had its customize parameter changed. Data is the old value, the new value and the type [(Vector3, Vector3, CustomizeParameterFlag)]. </summary>
+        Parameter,
+
         /// <summary> A characters saved state had a design applied. This means everything may have changed. Data is the applied design. [DesignBase] </summary>
         Design,
 

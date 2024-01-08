@@ -19,6 +19,8 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
     private readonly PenumbraReloaded                                        _penumbraReloaded;
     private readonly IGameInteropProvider                                    _interop;
     private readonly delegate* unmanaged[Stdcall]<Human*, byte*, bool, bool> _original;
+    private readonly Post                                                    _postEvent = new();
+    
 
     /// <summary> Check whether we in a manual customize update, in which case we need to not toggle certain flags. </summary>
     public static readonly InMethodChecker InUpdate = new();
@@ -36,6 +38,7 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
         _interop             = interop;
         _changeCustomizeHook = Create();
         _original            = Human.MemberFunctionPointers.UpdateDrawData;
+        interop.InitializeFromAttributes(this);
         _penumbraReloaded.Subscribe(Restore, PenumbraReloaded.Priority.ChangeCustomizeService);
     }
 
@@ -81,6 +84,23 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
         if (!InUpdate.InMethod)
             Invoke(human, ref *(CustomizeArray*)data);
 
-        return _changeCustomizeHook.Original(human, data, skipEquipment);
+        var ret = _changeCustomizeHook.Original(human, data, skipEquipment);
+        _postEvent.Invoke(human);
+        return ret;
+    }
+
+    public void Subscribe(Action<Model> action, Post.Priority priority)
+        => _postEvent.Subscribe(action, priority);
+
+    public void Unsubscribe(Action<Model> action)
+        => _postEvent.Unsubscribe(action);
+
+    public sealed class Post() : EventWrapper<Model, Post.Priority>(nameof(ChangeCustomizeService) + '.' + nameof(Post))
+    {
+        public enum Priority
+        {
+            /// <seealso cref="State.StateListener.OnCustomizeChanged"/>
+            StateListener = 0,
+        }
     }
 }
