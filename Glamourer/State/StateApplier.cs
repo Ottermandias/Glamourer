@@ -281,9 +281,9 @@ public class StateApplier(
     }
 
     /// <summary> Change the customize parameters on models. Can change multiple at once. </summary>
-    public void ChangeParameters(ActorData data, CustomizeParameterFlag flags, in CustomizeParameterData values)
+    public void ChangeParameters(ActorData data, CustomizeParameterFlag flags, in CustomizeParameterData values, bool force)
     {
-        if (!_config.UseAdvancedParameters || flags == 0)
+        if (!force && !_config.UseAdvancedParameters || flags == 0)
             return;
 
         foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))
@@ -295,7 +295,7 @@ public class StateApplier(
     {
         var data = GetData(state);
         if (apply)
-            ChangeParameters(data, flags, state.ModelData.Parameters);
+            ChangeParameters(data, flags, state.ModelData.Parameters, state.IsLocked);
         return data;
     }
 

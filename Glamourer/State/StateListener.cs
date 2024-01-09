@@ -746,10 +746,13 @@ public class StateListener : IDisposable
                         model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;
                 case StateChanged.Source.Fixed:
-                case StateChanged.Source.Ipc:
                     state.BaseData.Parameters.Set(flag, newValue);
                     if (_config.UseAdvancedParameters)
                         model.ApplySingleParameterData(flag, state.ModelData.Parameters);
+                    break;
+                case StateChanged.Source.Ipc:
+                    state.BaseData.Parameters.Set(flag, newValue);
+                    model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;
             }
         }
