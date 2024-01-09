@@ -19,7 +19,7 @@ public class EquipmentDrawer
 
     private readonly ItemManager                            _items;
     private readonly GlamourerColorCombo                    _stainCombo;
-    private readonly DictStain                             _stainData;
+    private readonly DictStain                              _stainData;
     private readonly ItemCombo[]                            _itemCombo;
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
     private readonly CodeService                            _codes;
@@ -424,13 +424,8 @@ public class EquipmentDrawer
             else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
                 data.StainSetter(Stain.None.RowIndex);
 
-        if (!data.Locked && data.CurrentStain != Stain.None.RowIndex)
-        {
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                data.StainSetter(Stain.None.RowIndex);
-
-            ImGuiUtil.HoverTooltip("Right-click to clear.");
-        }
+        if (ResetOrClear(data.Locked, false, data.AllowRevert, true, data.CurrentStain, data.GameStain, Stain.None.RowIndex, out var id))
+            data.StainSetter(Stain.None.RowIndex);
     }
 
     private void DrawItem(in EquipDrawData data, out string label, bool small, bool clear, bool open)
@@ -450,13 +445,35 @@ public class EquipmentDrawer
         else if (combo.CustomVariant.Id > 0)
             data.ItemSetter(_items.Identify(data.Slot, combo.CustomSetId, combo.CustomVariant));
 
-        if (!data.Locked && data.CurrentItem.PrimaryId.Id != 0)
-        {
-            if (clear || ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                data.ItemSetter(ItemManager.NothingItem(data.Slot));
+        if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, ItemManager.NothingItem(data.Slot),
+                out var item))
+            data.ItemSetter(item);
+    }
 
-            ImGuiUtil.HoverTooltip("Right-click to clear.");
+    private static bool ResetOrClear<T>(bool locked, bool clicked, bool allowRevert, bool allowClear,
+        in T currentItem, in T revertItem, in T clearItem, out T? item) where T : IEquatable<T>
+    {
+        if (locked)
+        {
+            item = default;
+            return false;
         }
+
+        clicked = clicked || ImGui.IsItemClicked(ImGuiMouseButton.Right);
+
+        (var tt, item, var valid) = (allowRevert && !revertItem.Equals(currentItem), allowClear && !clearItem.Equals(currentItem),
+                ImGui.GetIO().KeyCtrl) switch
+            {
+                (true, true, true)   => ("Right-click to clear. Control and Right-Click to revert to game.", revertItem, true),
+                (true, true, false)  => ("Right-click to clear. Control and Right-Click to revert to game.", clearItem, true),
+                (true, false, true)  => ("Control and Right-Click to revert to game.", revertItem, true),
+                (true, false, false) => ("Control and Right-Click to revert to game.", (T?)default, false),
+                (false, true, _)     => ("Right-click to clear.", clearItem, true),
+                (false, false, _)    => (string.Empty, (T?)default, false),
+            };
+        ImGuiUtil.HoverTooltip(tt);
+
+        return clicked && valid;
     }
 
     private void DrawMainhand(ref EquipDrawData mainhand, ref EquipDrawData offhand, out string label, bool drawAll, bool small,
@@ -469,23 +486,30 @@ public class EquipmentDrawer
         }
 
         label = combo.Label;
-        var       unknown = !_gPose.InGPose && mainhand.CurrentItem.Type is FullEquipType.Unknown;
-        using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
+        var        unknown     = !_gPose.InGPose && mainhand.CurrentItem.Type is FullEquipType.Unknown;
+        using var  style       = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
+        EquipItem? changedItem = null;
         using (var _ = ImRaii.Disabled(mainhand.Locked | unknown))
         {
             if (!mainhand.Locked && open)
                 UiHelpers.OpenCombo($"##{label}");
             if (combo.Draw(mainhand.CurrentItem.Name, mainhand.CurrentItem.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
                     _requiredComboWidth))
+                changedItem = combo.CurrentSelection;
+            else if (ResetOrClear(mainhand.Locked || unknown, open, mainhand.AllowRevert, false, mainhand.CurrentItem, mainhand.GameItem,
+                         default,                             out var c))
+                changedItem = c;
+
+            if (changedItem != null)
             {
-                mainhand.ItemSetter(combo.CurrentSelection);
-                if (combo.CurrentSelection.Type.ValidOffhand() != mainhand.CurrentItem.Type.ValidOffhand())
+                mainhand.ItemSetter(changedItem.Value);
+                if (changedItem.Value.Type.ValidOffhand() != mainhand.CurrentItem.Type.ValidOffhand())
                 {
-                    offhand.CurrentItem = _items.GetDefaultOffhand(combo.CurrentSelection);
+                    offhand.CurrentItem = _items.GetDefaultOffhand(changedItem.Value);
                     offhand.ItemSetter(offhand.CurrentItem);
                 }
 
-                mainhand.CurrentItem = combo.CurrentSelection;
+                mainhand.CurrentItem = changedItem.Value;
             }
         }
 
@@ -511,16 +535,9 @@ public class EquipmentDrawer
                 _requiredComboWidth))
             offhand.ItemSetter(combo.CurrentSelection);
 
-        if (locked)
-            return;
-
         var defaultOffhand = _items.GetDefaultOffhand(mainhand.CurrentItem);
-        if (defaultOffhand.Id == offhand.CurrentItem.Id)
-            return;
-
-        ImGuiUtil.HoverTooltip("Right-click to set to Default.");
-        if (clear || ImGui.IsItemClicked(ImGuiMouseButton.Right))
-            offhand.ItemSetter(defaultOffhand);
+        if (ResetOrClear(locked, open, offhand.AllowRevert, true, offhand.CurrentItem, offhand.GameItem, defaultOffhand, out var item))
+            offhand.ItemSetter(item);
     }
 
     private static void DrawApply(in EquipDrawData data)

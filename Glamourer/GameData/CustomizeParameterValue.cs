@@ -44,4 +44,7 @@ public readonly struct CustomizeParameterValue
 
     public float this[int idx]
         => _data[idx];
+
+    public override string ToString()
+        => _data.ToString();
 }
