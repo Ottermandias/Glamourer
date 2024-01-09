@@ -56,7 +56,7 @@ public sealed class GPoseService : EventWrapper<bool, GPoseService.Priority>
         InGPose = inGPose;
         Invoke(InGPose);
         var actions = InGPose ? _onEnter : _onLeave;
-        foreach (var action in actions)
+        while (actions.TryDequeue(out var action))
         {
             try
             {
