@@ -1,9 +1,9 @@
 ﻿using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.State;
-using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Raii;
 using OtterGui.Services;
 
 namespace Glamourer.Gui.Customization;
@@ -12,6 +12,7 @@ public class CustomizeParameterDrawer(Configuration config) : IService
 {
     public void Draw(DesignManager designManager, Design design)
     {
+        using var _ = EnsureSize();
         foreach (var flag in CustomizeParameterExtensions.RgbFlags)
             DrawColorInput3(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
 
@@ -25,8 +26,16 @@ public class CustomizeParameterDrawer(Configuration config) : IService
             DrawValueInput(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
     }
 
+    private ImRaii.IEndObject EnsureSize()
+    {
+        var iconSize = ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 4 * ImGui.GetStyle().FramePadding.Y;
+        var width    = 6 * iconSize + 4 * ImGui.GetStyle().ItemInnerSpacing.X;
+        return ImRaii.ItemWidth(width);
+    }
+
     public void Draw(StateManager stateManager, ActorState state)
     {
+        using var _ = EnsureSize();
         foreach (var flag in CustomizeParameterExtensions.RgbFlags)
             DrawColorInput3(CustomizeParameterDrawData.FromState(stateManager, state, flag));
 
@@ -49,6 +58,7 @@ public class CustomizeParameterDrawer(Configuration config) : IService
             if (ImGui.ColorEdit3("##value", ref value, ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR | ImGuiColorEditFlags.NoOptions))
                 data.ValueSetter(new CustomizeParameterValue(value));
         }
+
         DrawRevert(data);
 
         DrawApplyAndLabel(data);
@@ -63,6 +73,7 @@ public class CustomizeParameterDrawer(Configuration config) : IService
             if (ImGui.ColorEdit4("##value", ref value, ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR | ImGuiColorEditFlags.NoOptions))
                 data.ValueSetter(new CustomizeParameterValue(value));
         }
+
         DrawRevert(data);
 
         DrawApplyAndLabel(data);
@@ -78,6 +89,7 @@ public class CustomizeParameterDrawer(Configuration config) : IService
             if (ImGui.InputFloat("##value", ref value, 0.1f, 0.5f))
                 data.ValueSetter(new CustomizeParameterValue(value));
         }
+
         DrawRevert(data);
 
         DrawApplyAndLabel(data);
@@ -126,6 +138,6 @@ public class CustomizeParameterDrawer(Configuration config) : IService
         }
 
         ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
-        ImGui.TextUnformatted(data.Flag.ToString());
+        ImGui.TextUnformatted(data.Flag.ToName());
     }
 }

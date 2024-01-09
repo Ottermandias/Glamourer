@@ -69,7 +69,7 @@ public class DesignBase
     private CustomizeFlag _applyCustomize = CustomizeFlagExtensions.AllRelevant;
     public  CustomizeSet  CustomizeSet { get; private set; }
 
-    public CustomizeParameterFlag ApplyParameters { get; private set; }
+    public CustomizeParameterFlag ApplyParameters { get; internal set; }
 
     internal CustomizeFlag ApplyCustomize
     {

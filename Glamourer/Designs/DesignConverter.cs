@@ -50,9 +50,10 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
     public DesignBase Convert(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
     {
         var design = _designs.CreateTemporary();
-        design.ApplyEquip     = equipFlags & EquipFlagExtensions.All;
-        design.ApplyCustomize = customizeFlags & CustomizeFlagExtensions.AllRelevant;
-        design.ApplyCrest     = crestFlags & CrestExtensions.All;
+        design.ApplyEquip      = equipFlags & EquipFlagExtensions.All;
+        design.ApplyCustomize  = customizeFlags & CustomizeFlagExtensions.AllRelevant;
+        design.ApplyCrest      = crestFlags & CrestExtensions.All;
+        design.ApplyParameters = parameterFlags & CustomizeParameterExtensions.All;
         design.SetApplyHatVisible(design.DoApplyEquip(EquipSlot.Head));
         design.SetApplyVisorToggle(design.DoApplyEquip(EquipSlot.Head));
         design.SetApplyWeaponVisible(design.DoApplyEquip(EquipSlot.MainHand) || design.DoApplyEquip(EquipSlot.OffHand));

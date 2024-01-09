@@ -44,4 +44,24 @@ public static class CustomizeParameterExtensions
 
     public static int ToInternalIndex(this CustomizeParameterFlag flag)
         => BitOperations.TrailingZeroCount((uint)flag);
+
+    public static string ToName(this CustomizeParameterFlag flag)
+        => flag switch
+        {
+            CustomizeParameterFlag.SkinDiffuse           => "Skin Color",
+            CustomizeParameterFlag.MuscleTone            => "Muscle Tone",
+            CustomizeParameterFlag.SkinSpecular          => "Skin Shine",
+            CustomizeParameterFlag.LipDiffuse            => "Lip Color",
+            CustomizeParameterFlag.LipOpacity            => "Lip Opacity",
+            CustomizeParameterFlag.HairDiffuse           => "Hair Color",
+            CustomizeParameterFlag.HairSpecular          => "Hair Shine",
+            CustomizeParameterFlag.HairHighlight         => "Hair Highlights",
+            CustomizeParameterFlag.LeftEye               => "Left Eye Color",
+            CustomizeParameterFlag.RightEye              => "Right Eye Color",
+            CustomizeParameterFlag.FeatureColor          => "Tattoo Color",
+            CustomizeParameterFlag.FacePaintUvMultiplier => "Face Paint Orientation",
+            CustomizeParameterFlag.FacePaintUvOffset     => "Face Paint Offset",
+            CustomizeParameterFlag.DecalColor            => "Face Paint Color",
+            _                                            => string.Empty,
+        };
 }
