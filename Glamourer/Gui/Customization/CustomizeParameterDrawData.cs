@@ -10,11 +10,13 @@ public ref struct CustomizeParameterDrawData(CustomizeParameterFlag flag, in Des
     public readonly CustomizeParameterFlag Flag = flag;
     public          bool                   Locked;
     public          bool                   DisplayApplication;
+    public          bool                   AllowRevert;
 
-    public Action<Vector3> ValueSetter  = null!;
-    public Action<bool>    ApplySetter  = null!;
-    public Vector3         CurrentValue = data.Parameters[flag];
-    public bool            CurrentApply;
+    public Action<CustomizeParameterValue> ValueSetter  = null!;
+    public Action<bool>                    ApplySetter  = null!;
+    public CustomizeParameterValue         CurrentValue = data.Parameters[flag];
+    public CustomizeParameterValue         GameValue;
+    public bool                            CurrentApply;
 
     public static CustomizeParameterDrawData FromDesign(DesignManager manager, Design design, CustomizeParameterFlag flag)
         => new(flag, design.DesignData)
@@ -32,5 +34,7 @@ public ref struct CustomizeParameterDrawData(CustomizeParameterFlag flag, in Des
             Locked             = state.IsLocked,
             DisplayApplication = false,
             ValueSetter        = v => manager.ChangeCustomizeParameter(state, flag, v, StateChanged.Source.Manual),
+            GameValue          = state.BaseData.Parameters[flag],
+            AllowRevert        = true,
         };
 }

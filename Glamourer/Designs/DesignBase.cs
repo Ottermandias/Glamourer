@@ -371,13 +371,25 @@ public class DesignBase
             };
         }
 
-        foreach (var flag in CustomizeParameterExtensions.TripleFlags)
+        foreach (var flag in CustomizeParameterExtensions.RgbFlags)
         {
             ret[flag.ToString()] = new JObject()
             {
                 ["Red"]   = DesignData.Parameters[flag][0],
                 ["Green"] = DesignData.Parameters[flag][1],
                 ["Blue"]  = DesignData.Parameters[flag][2],
+                ["Apply"] = DoApplyParameter(flag),
+            };
+        }
+
+        foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
+        {
+            ret[flag.ToString()] = new JObject()
+            {
+                ["Red"]   = DesignData.Parameters[flag][0],
+                ["Green"] = DesignData.Parameters[flag][1],
+                ["Blue"]  = DesignData.Parameters[flag][2],
+                ["Alpha"] = DesignData.Parameters[flag][3],
                 ["Apply"] = DoApplyParameter(flag),
             };
         }
@@ -424,7 +436,7 @@ public class DesignBase
                 continue;
 
             var value = token["Value"]?.ToObject<float>() ?? 0f;
-            design.GetDesignDataRef().Parameters[flag] = new Vector3(value);
+            design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(value);
         }
 
         foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
@@ -433,10 +445,10 @@ public class DesignBase
                 continue;
 
             var value = Math.Clamp(token["Percentage"]?.ToObject<float>() ?? 0f, 0f, 1f);
-            design.GetDesignDataRef().Parameters[flag] = new Vector3(value);
+            design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(value);
         }
 
-        foreach (var flag in CustomizeParameterExtensions.TripleFlags)
+        foreach (var flag in CustomizeParameterExtensions.RgbFlags)
         {
             if (!TryGetToken(flag, out var token))
                 continue;
@@ -444,7 +456,19 @@ public class DesignBase
             var r = Math.Clamp(token["Red"]?.ToObject<float>() ?? 0f,   0, 1);
             var g = Math.Clamp(token["Green"]?.ToObject<float>() ?? 0f, 0, 1);
             var b = Math.Clamp(token["Blue"]?.ToObject<float>() ?? 0f,  0, 1);
-            design.GetDesignDataRef().Parameters[flag] = new Vector3(r, g, b);
+            design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(r, g, b);
+        }
+
+        foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
+        {
+            if (!TryGetToken(flag, out var token))
+                continue;
+
+            var r = Math.Clamp(token["Red"]?.ToObject<float>() ?? 0f,   0, 1);
+            var g = Math.Clamp(token["Green"]?.ToObject<float>() ?? 0f, 0, 1);
+            var b = Math.Clamp(token["Blue"]?.ToObject<float>() ?? 0f,  0, 1);
+            var a = Math.Clamp(token["Alpha"]?.ToObject<float>() ?? 0f, 0, 1);
+            design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(r, g, b, a);
         }
 
         return;
@@ -461,7 +485,7 @@ public class DesignBase
             }
 
             design.ApplyParameters                     &= ~flag;
-            design.GetDesignDataRef().Parameters[flag] =  Vector3.Zero;
+            design.GetDesignDataRef().Parameters[flag] =  CustomizeParameterValue.Zero;
             return false;
         }
     }

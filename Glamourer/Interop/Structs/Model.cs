@@ -1,5 +1,7 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using FFXIVClientStructs.FFXIV.Shader;
+using Glamourer.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Object = FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Object;
@@ -157,6 +159,65 @@ public readonly unsafe struct Model : IEquatable<Model>
         else
             off = Null;
         return (main, off, mainData, offData);
+    }
+
+    public CustomizeParameterData GetParameterData()
+    {
+        if (!IsHuman)
+            return default;
+
+        var cBuffer1 = AsHuman->CustomizeParameterCBuffer;
+        var cBuffer2 = AsHuman->DecalColorCBuffer;
+        var ptr1     = (CustomizeParameter*)(cBuffer1 == null ? null : cBuffer1->UnsafeSourcePointer);
+        var ptr2     = (DecalParameters*)(cBuffer2 == null ? null : cBuffer2->UnsafeSourcePointer);
+        return CustomizeParameterData.FromParameters(ptr1 != null ? *ptr1 : default, ptr2 != null ? *ptr2 : default);
+    }
+
+    public void ApplyParameterData(CustomizeParameterFlag flags, in CustomizeParameterData data)
+    {
+        if (!IsHuman)
+            return;
+
+        if (flags.HasFlag(CustomizeParameterFlag.DecalColor))
+        {
+            var cBufferDecal = AsHuman->DecalColorCBuffer;
+            var ptrDecal     = (DecalParameters*)(cBufferDecal == null ? null : cBufferDecal->UnsafeSourcePointer);
+            if (ptrDecal != null)
+                data.Apply(ref *ptrDecal);
+        }
+
+        flags &= ~CustomizeParameterFlag.DecalColor;
+        var cBuffer = AsHuman->CustomizeParameterCBuffer;
+        var ptr     = (CustomizeParameter*)(cBuffer == null ? null : cBuffer->UnsafeSourcePointer);
+        if (ptr != null)
+            data.Apply(ref *ptr, flags);
+    }
+
+    public bool ApplySingleParameterData(CustomizeParameterFlag flag, in CustomizeParameterData data)
+    {
+        if (!IsHuman)
+            return false;
+
+        if (flag is CustomizeParameterFlag.DecalColor)
+        {
+            var cBuffer = AsHuman->DecalColorCBuffer;
+            var ptr     = (DecalParameters*)(cBuffer == null ? null : cBuffer->UnsafeSourcePointer);
+            if (ptr == null)
+                return false;
+
+            data.Apply(ref *ptr);
+            return true;
+        }
+        else
+        {
+            var cBuffer = AsHuman->CustomizeParameterCBuffer;
+            var ptr     = (CustomizeParameter*)(cBuffer == null ? null : cBuffer->UnsafeSourcePointer);
+            if (ptr == null)
+                return false;
+
+            data.ApplySingle(ref *ptr, flag);
+            return true;
+        }
     }
 
     private (Model, Model, int) GetChildrenWeapons()

@@ -186,13 +186,7 @@ public class StateManager(
         // Weapon visibility could technically be inferred from the weapon draw objects, 
         // but since we use hat visibility from the game object we can also use weapon visibility from it.
         ret.SetWeaponVisible(!actor.AsCharacter->DrawData.IsWeaponHidden);
-
-        if (model.IsHuman && model.AsHuman->CustomizeParameterCBuffer != null)
-        {
-            var ptr = model.AsHuman->CustomizeParameterCBuffer->UnsafeSourcePointer;
-            if (ptr != null)
-                ret.Parameters = CustomizeParameterData.FromParameters(*(CustomizeParameter*)ptr);
-        }
+        ret.Parameters = model.GetParameterData();
 
         return ret;
     }
@@ -315,7 +309,7 @@ public class StateManager(
     }
 
     /// <summary> Change the crest of an equipment piece. </summary>
-    public void ChangeCustomizeParameter(ActorState state, CustomizeParameterFlag flag, Vector3 value, StateChanged.Source source, uint key = 0)
+    public void ChangeCustomizeParameter(ActorState state, CustomizeParameterFlag flag, CustomizeParameterValue value, StateChanged.Source source, uint key = 0)
     {
         if (!_editor.ChangeParameter(state, flag, value, source, out var old, key))
             return;

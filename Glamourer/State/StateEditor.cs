@@ -210,7 +210,7 @@ public class StateEditor
     }
 
     /// <summary> Change the customize flags of a character. </summary>
-    public bool ChangeParameter(ActorState state, CustomizeParameterFlag flag, Vector3 value, StateChanged.Source source, out Vector3 oldValue,
+    public bool ChangeParameter(ActorState state, CustomizeParameterFlag flag, CustomizeParameterValue value, StateChanged.Source source, out CustomizeParameterValue oldValue,
         uint key = 0)
     {
         oldValue = state.ModelData.Parameters[flag];

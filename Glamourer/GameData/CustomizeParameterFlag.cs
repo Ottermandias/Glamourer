@@ -16,28 +16,28 @@ public enum CustomizeParameterFlag : ushort
     FeatureColor          = 0x0400,
     FacePaintUvMultiplier = 0x0800,
     FacePaintUvOffset     = 0x1000,
+    DecalColor            = 0x2000,
 }
 
 public static class CustomizeParameterExtensions
 {
-    public const CustomizeParameterFlag All = (CustomizeParameterFlag)0x1FFF;
+    public const CustomizeParameterFlag All = (CustomizeParameterFlag)0x3FFF;
 
-    public const CustomizeParameterFlag Triples = All
-      & ~(CustomizeParameterFlag.MuscleTone
-          | CustomizeParameterFlag.LipOpacity
-          | CustomizeParameterFlag.FacePaintUvOffset
-          | CustomizeParameterFlag.FacePaintUvMultiplier);
+    public const CustomizeParameterFlag RgbTriples = All
+      & ~(RgbaQuadruples | Percentages | Values);
 
+    public const CustomizeParameterFlag RgbaQuadruples = CustomizeParameterFlag.DecalColor;
     public const CustomizeParameterFlag Percentages = CustomizeParameterFlag.MuscleTone | CustomizeParameterFlag.LipOpacity;
-    public const CustomizeParameterFlag Values      = CustomizeParameterFlag.FacePaintUvOffset | CustomizeParameterFlag.FacePaintUvMultiplier;
+    public const CustomizeParameterFlag Values = CustomizeParameterFlag.FacePaintUvOffset | CustomizeParameterFlag.FacePaintUvMultiplier;
 
     public static readonly IReadOnlyList<CustomizeParameterFlag> AllFlags        = [.. Enum.GetValues<CustomizeParameterFlag>()];
-    public static readonly IReadOnlyList<CustomizeParameterFlag> TripleFlags     = AllFlags.Where(f => Triples.HasFlag(f)).ToArray();
+    public static readonly IReadOnlyList<CustomizeParameterFlag> RgbaFlags       = AllFlags.Where(f => RgbaQuadruples.HasFlag(f)).ToArray();
+    public static readonly IReadOnlyList<CustomizeParameterFlag> RgbFlags        = AllFlags.Where(f => RgbTriples.HasFlag(f)).ToArray();
     public static readonly IReadOnlyList<CustomizeParameterFlag> PercentageFlags = AllFlags.Where(f => Percentages.HasFlag(f)).ToArray();
     public static readonly IReadOnlyList<CustomizeParameterFlag> ValueFlags      = AllFlags.Where(f => Values.HasFlag(f)).ToArray();
 
     public static int Count(this CustomizeParameterFlag flag)
-        => Triples.HasFlag(flag) ? 3 : 1;
+        => RgbaQuadruples.HasFlag(flag) ? 4 : RgbTriples.HasFlag(flag) ? 3 : 1;
 
     public static IEnumerable<CustomizeParameterFlag> Iterate(this CustomizeParameterFlag flags)
         => AllFlags.Where(f => flags.HasFlag(f));

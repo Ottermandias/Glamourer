@@ -3,6 +3,7 @@ using Glamourer.GameData;
 using Glamourer.State;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
+using OtterGui;
 using OtterGui.Services;
 
 namespace Glamourer.Gui.Customization;
@@ -11,8 +12,11 @@ public class CustomizeParameterDrawer(Configuration config) : IService
 {
     public void Draw(DesignManager designManager, Design design)
     {
-        foreach (var flag in CustomizeParameterExtensions.TripleFlags)
-            DrawColorInput(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
+        foreach (var flag in CustomizeParameterExtensions.RgbFlags)
+            DrawColorInput3(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
+
+        foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
+            DrawColorInput4(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
 
         foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
             DrawPercentageInput(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
@@ -23,8 +27,11 @@ public class CustomizeParameterDrawer(Configuration config) : IService
 
     public void Draw(StateManager stateManager, ActorState state)
     {
-        foreach (var flag in CustomizeParameterExtensions.TripleFlags)
-            DrawColorInput(CustomizeParameterDrawData.FromState(stateManager, state, flag));
+        foreach (var flag in CustomizeParameterExtensions.RgbFlags)
+            DrawColorInput3(CustomizeParameterDrawData.FromState(stateManager, state, flag));
+
+        foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
+            DrawColorInput4(CustomizeParameterDrawData.FromState(stateManager, state, flag));
 
         foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
             DrawPercentageInput(CustomizeParameterDrawData.FromState(stateManager, state, flag));
@@ -33,15 +40,30 @@ public class CustomizeParameterDrawer(Configuration config) : IService
             DrawValueInput(CustomizeParameterDrawData.FromState(stateManager, state, flag));
     }
 
-    private void DrawColorInput(in CustomizeParameterDrawData data)
+    private void DrawColorInput3(in CustomizeParameterDrawData data)
     {
         using var id    = ImRaii.PushId((int)data.Flag);
-        var       value = data.CurrentValue;
+        var       value = data.CurrentValue.InternalTriple;
         using (_ = ImRaii.Disabled(data.Locked))
         {
-            if (ImGui.ColorEdit3("##value", ref value, ImGuiColorEditFlags.Float))
-                data.ValueSetter(value);
+            if (ImGui.ColorEdit3("##value", ref value, ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR | ImGuiColorEditFlags.NoOptions))
+                data.ValueSetter(new CustomizeParameterValue(value));
         }
+        DrawRevert(data);
+
+        DrawApplyAndLabel(data);
+    }
+
+    private void DrawColorInput4(in CustomizeParameterDrawData data)
+    {
+        using var id    = ImRaii.PushId((int)data.Flag);
+        var       value = data.CurrentValue.InternalQuadruple;
+        using (_ = ImRaii.Disabled(data.Locked))
+        {
+            if (ImGui.ColorEdit4("##value", ref value, ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR | ImGuiColorEditFlags.NoOptions))
+                data.ValueSetter(new CustomizeParameterValue(value));
+        }
+        DrawRevert(data);
 
         DrawApplyAndLabel(data);
     }
@@ -54,8 +76,9 @@ public class CustomizeParameterDrawer(Configuration config) : IService
         using (_ = ImRaii.Disabled(data.Locked))
         {
             if (ImGui.InputFloat("##value", ref value, 0.1f, 0.5f))
-                data.ValueSetter(new Vector3(value));
+                data.ValueSetter(new CustomizeParameterValue(value));
         }
+        DrawRevert(data);
 
         DrawApplyAndLabel(data);
     }
@@ -67,11 +90,24 @@ public class CustomizeParameterDrawer(Configuration config) : IService
 
         using (_ = ImRaii.Disabled(data.Locked))
         {
-            if (ImGui.SliderFloat("##value", ref value, 0, 100, "%.2f", ImGuiSliderFlags.AlwaysClamp))
-                data.ValueSetter(new Vector3(value / 100f));
+            if (ImGui.SliderFloat("##value", ref value, -1000f, 1000f, "%.2f"))
+                data.ValueSetter(new CustomizeParameterValue(value / 100f));
         }
 
+        DrawRevert(data);
+
         DrawApplyAndLabel(data);
+    }
+
+    private static void DrawRevert(in CustomizeParameterDrawData data)
+    {
+        if (data.Locked || !data.AllowRevert)
+            return;
+
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyCtrl)
+            data.ValueSetter(data.GameValue);
+
+        ImGuiUtil.HoverTooltip("Hold Control and Right-click to revert to game values.");
     }
 
     private static void DrawApply(in CustomizeParameterDrawData data)

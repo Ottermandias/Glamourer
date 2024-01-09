@@ -13,55 +13,58 @@ public struct CustomizeParameterData
     public Vector3 LeftEye;
     public Vector3 RightEye;
     public Vector3 FeatureColor;
+    public Vector4 DecalColor;
     public float   FacePaintUvMultiplier;
     public float   FacePaintUvOffset;
     public float   MuscleTone;
     public float   LipOpacity;
 
-    public Vector3 this[CustomizeParameterFlag flag]
+    public CustomizeParameterValue this[CustomizeParameterFlag flag]
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         readonly get
         {
             return flag switch
             {
-                CustomizeParameterFlag.SkinDiffuse           => SkinDiffuse,
-                CustomizeParameterFlag.MuscleTone            => new Vector3(MuscleTone, 0, 0),
-                CustomizeParameterFlag.SkinSpecular          => SkinSpecular,
-                CustomizeParameterFlag.LipDiffuse            => LipDiffuse,
-                CustomizeParameterFlag.LipOpacity            => new Vector3(LipOpacity, 0, 0),
-                CustomizeParameterFlag.HairDiffuse           => HairDiffuse,
-                CustomizeParameterFlag.HairSpecular          => HairSpecular,
-                CustomizeParameterFlag.HairHighlight         => HairHighlight,
-                CustomizeParameterFlag.LeftEye               => LeftEye,
-                CustomizeParameterFlag.RightEye              => RightEye,
-                CustomizeParameterFlag.FeatureColor          => FeatureColor,
-                CustomizeParameterFlag.FacePaintUvMultiplier => new Vector3(FacePaintUvMultiplier, 0, 0),
-                CustomizeParameterFlag.FacePaintUvOffset     => new Vector3(FacePaintUvOffset,     0, 0),
-                _                                            => Vector3.Zero,
+                CustomizeParameterFlag.SkinDiffuse           => new CustomizeParameterValue(SkinDiffuse),
+                CustomizeParameterFlag.MuscleTone            => new CustomizeParameterValue(MuscleTone),
+                CustomizeParameterFlag.SkinSpecular          => new CustomizeParameterValue(SkinSpecular),
+                CustomizeParameterFlag.LipDiffuse            => new CustomizeParameterValue(LipDiffuse),
+                CustomizeParameterFlag.LipOpacity            => new CustomizeParameterValue(LipOpacity),
+                CustomizeParameterFlag.HairDiffuse           => new CustomizeParameterValue(HairDiffuse),
+                CustomizeParameterFlag.HairSpecular          => new CustomizeParameterValue(HairSpecular),
+                CustomizeParameterFlag.HairHighlight         => new CustomizeParameterValue(HairHighlight),
+                CustomizeParameterFlag.LeftEye               => new CustomizeParameterValue(LeftEye),
+                CustomizeParameterFlag.RightEye              => new CustomizeParameterValue(RightEye),
+                CustomizeParameterFlag.FeatureColor          => new CustomizeParameterValue(FeatureColor),
+                CustomizeParameterFlag.DecalColor            => new CustomizeParameterValue(DecalColor),
+                CustomizeParameterFlag.FacePaintUvMultiplier => new CustomizeParameterValue(FacePaintUvMultiplier),
+                CustomizeParameterFlag.FacePaintUvOffset     => new CustomizeParameterValue(FacePaintUvOffset),
+                _                                            => CustomizeParameterValue.Zero,
             };
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         set => Set(flag, value);
     }
 
-    public bool Set(CustomizeParameterFlag flag, Vector3 value)
+    public bool Set(CustomizeParameterFlag flag, CustomizeParameterValue value)
     {
         return flag switch
         {
-            CustomizeParameterFlag.SkinDiffuse           => SetIfDifferent(ref SkinDiffuse,           value),
-            CustomizeParameterFlag.MuscleTone            => SetIfDifferent(ref MuscleTone,            Math.Clamp(value[0], -100, 100)),
-            CustomizeParameterFlag.SkinSpecular          => SetIfDifferent(ref SkinSpecular,          value),
-            CustomizeParameterFlag.LipDiffuse            => SetIfDifferent(ref LipDiffuse,            value),
-            CustomizeParameterFlag.LipOpacity            => SetIfDifferent(ref LipOpacity,            Math.Clamp(value[0], -100, 100)),
-            CustomizeParameterFlag.HairDiffuse           => SetIfDifferent(ref HairDiffuse,           value),
-            CustomizeParameterFlag.HairSpecular          => SetIfDifferent(ref HairSpecular,          value),
-            CustomizeParameterFlag.HairHighlight         => SetIfDifferent(ref HairHighlight,         value),
-            CustomizeParameterFlag.LeftEye               => SetIfDifferent(ref LeftEye,               value),
-            CustomizeParameterFlag.RightEye              => SetIfDifferent(ref RightEye,              value),
-            CustomizeParameterFlag.FeatureColor          => SetIfDifferent(ref FeatureColor,          value),
-            CustomizeParameterFlag.FacePaintUvMultiplier => SetIfDifferent(ref FacePaintUvMultiplier, value[0]),
-            CustomizeParameterFlag.FacePaintUvOffset     => SetIfDifferent(ref FacePaintUvOffset,     value[0]),
+            CustomizeParameterFlag.SkinDiffuse           => SetIfDifferent(ref SkinDiffuse,           value.InternalTriple),
+            CustomizeParameterFlag.MuscleTone            => SetIfDifferent(ref MuscleTone,            value.Single),
+            CustomizeParameterFlag.SkinSpecular          => SetIfDifferent(ref SkinSpecular,          value.InternalTriple),
+            CustomizeParameterFlag.LipDiffuse            => SetIfDifferent(ref LipDiffuse,            value.InternalTriple),
+            CustomizeParameterFlag.LipOpacity            => SetIfDifferent(ref LipOpacity,            value.Single),
+            CustomizeParameterFlag.HairDiffuse           => SetIfDifferent(ref HairDiffuse,           value.InternalTriple),
+            CustomizeParameterFlag.HairSpecular          => SetIfDifferent(ref HairSpecular,          value.InternalTriple),
+            CustomizeParameterFlag.HairHighlight         => SetIfDifferent(ref HairHighlight,         value.InternalTriple),
+            CustomizeParameterFlag.LeftEye               => SetIfDifferent(ref LeftEye,               value.InternalTriple),
+            CustomizeParameterFlag.RightEye              => SetIfDifferent(ref RightEye,              value.InternalTriple),
+            CustomizeParameterFlag.FeatureColor          => SetIfDifferent(ref FeatureColor,          value.InternalTriple),
+            CustomizeParameterFlag.DecalColor            => SetIfDifferent(ref DecalColor,            value.InternalQuadruple),
+            CustomizeParameterFlag.FacePaintUvMultiplier => SetIfDifferent(ref FacePaintUvMultiplier, value.Single),
+            CustomizeParameterFlag.FacePaintUvOffset     => SetIfDifferent(ref FacePaintUvOffset,     value.Single),
             _                                            => false,
         };
     }
@@ -69,32 +72,55 @@ public struct CustomizeParameterData
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public readonly void Apply(ref CustomizeParameter parameters, CustomizeParameterFlag flags = CustomizeParameterExtensions.All)
     {
-        if (flags.HasFlag(CustomizeParameterFlag.SkinDiffuse))
-            parameters.SkinColor = Convert(SkinDiffuse, parameters.SkinColor.W);
-        if (flags.HasFlag(CustomizeParameterFlag.MuscleTone))
-            parameters.SkinColor.W = MuscleTone;
+        parameters.SkinColor = (flags & (CustomizeParameterFlag.SkinDiffuse | CustomizeParameterFlag.MuscleTone)) switch
+        {
+            0                                  => parameters.SkinColor,
+            CustomizeParameterFlag.SkinDiffuse => new CustomizeParameterValue(SkinDiffuse, parameters.SkinColor.W).XivQuadruple,
+            CustomizeParameterFlag.MuscleTone  => parameters.SkinColor with { W = MuscleTone },
+            _                                  => new CustomizeParameterValue(SkinDiffuse, MuscleTone).XivQuadruple,
+        };
+
+        parameters.LipColor = (flags & (CustomizeParameterFlag.LipDiffuse | CustomizeParameterFlag.LipOpacity)) switch
+        {
+            0                                 => parameters.LipColor,
+            CustomizeParameterFlag.LipDiffuse => new CustomizeParameterValue(LipDiffuse, parameters.LipColor.W).XivQuadruple,
+            CustomizeParameterFlag.LipOpacity => parameters.LipColor with { W = LipOpacity },
+            _                                 => new CustomizeParameterValue(LipDiffuse, LipOpacity).XivQuadruple,
+        };
+
+        parameters.LeftColor = (flags & (CustomizeParameterFlag.LeftEye | CustomizeParameterFlag.FacePaintUvMultiplier)) switch
+        {
+            0                                            => parameters.LeftColor,
+            CustomizeParameterFlag.LeftEye               => new CustomizeParameterValue(LeftEye, parameters.LeftColor.W).XivQuadruple,
+            CustomizeParameterFlag.FacePaintUvMultiplier => parameters.LeftColor with { W = FacePaintUvMultiplier },
+            _                                            => new CustomizeParameterValue(LeftEye, FacePaintUvMultiplier).XivQuadruple,
+        };
+
+        parameters.RightColor = (flags & (CustomizeParameterFlag.RightEye | CustomizeParameterFlag.FacePaintUvOffset)) switch
+        {
+            0                                        => parameters.RightColor,
+            CustomizeParameterFlag.RightEye          => new CustomizeParameterValue(RightEye, parameters.RightColor.W).XivQuadruple,
+            CustomizeParameterFlag.FacePaintUvOffset => parameters.RightColor with { W = FacePaintUvOffset },
+            _                                        => new CustomizeParameterValue(RightEye, FacePaintUvOffset).XivQuadruple,
+        };
+
         if (flags.HasFlag(CustomizeParameterFlag.SkinSpecular))
-            parameters.SkinFresnelValue0 = Convert(SkinSpecular, 0);
-        if (flags.HasFlag(CustomizeParameterFlag.LipDiffuse))
-            parameters.LipColor = Convert(LipDiffuse, parameters.LipColor.W);
-        if (flags.HasFlag(CustomizeParameterFlag.LipOpacity))
-            parameters.LipColor.W = LipOpacity;
+            parameters.SkinFresnelValue0 = new CustomizeParameterValue(SkinDiffuse).XivQuadruple;
         if (flags.HasFlag(CustomizeParameterFlag.HairDiffuse))
-            parameters.MainColor = Convert(HairDiffuse);
+            parameters.MainColor = new CustomizeParameterValue(HairDiffuse).XivTriple;
         if (flags.HasFlag(CustomizeParameterFlag.HairSpecular))
-            parameters.HairFresnelValue0 = Convert(HairSpecular);
+            parameters.HairFresnelValue0 = new CustomizeParameterValue(HairSpecular).XivTriple;
         if (flags.HasFlag(CustomizeParameterFlag.HairHighlight))
-            parameters.MeshColor = Convert(HairHighlight);
-        if (flags.HasFlag(CustomizeParameterFlag.LeftEye))
-            parameters.LeftColor = Convert(LeftEye, parameters.LeftColor.W);
-        if (flags.HasFlag(CustomizeParameterFlag.RightEye))
-            parameters.RightColor = Convert(RightEye, parameters.RightColor.W);
+            parameters.MeshColor = new CustomizeParameterValue(HairHighlight).XivTriple;
         if (flags.HasFlag(CustomizeParameterFlag.FeatureColor))
-            parameters.OptionColor = Convert(FeatureColor);
-        if (flags.HasFlag(CustomizeParameterFlag.FacePaintUvMultiplier))
-            parameters.LeftColor.W = FacePaintUvMultiplier;
-        if (flags.HasFlag(CustomizeParameterFlag.FacePaintUvOffset))
-            parameters.RightColor.W = FacePaintUvOffset;
+            parameters.OptionColor = new CustomizeParameterValue(FeatureColor).XivTriple;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public readonly void Apply(ref DecalParameters parameters, CustomizeParameterFlag flags = CustomizeParameterExtensions.All)
+    {
+        if (flags.HasFlag(CustomizeParameterFlag.DecalColor))
+            parameters.Color = new CustomizeParameterValue(DecalColor).XivQuadruple;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -103,37 +129,37 @@ public struct CustomizeParameterData
         switch (flag)
         {
             case CustomizeParameterFlag.SkinDiffuse:
-                parameters.SkinColor = Convert(SkinDiffuse, parameters.SkinColor.W);
+                parameters.SkinColor = new CustomizeParameterValue(SkinDiffuse, parameters.SkinColor.W).XivQuadruple;
                 break;
             case CustomizeParameterFlag.MuscleTone:
                 parameters.SkinColor.W = MuscleTone;
                 break;
             case CustomizeParameterFlag.SkinSpecular:
-                parameters.SkinFresnelValue0 = Convert(SkinSpecular, 0);
+                parameters.SkinFresnelValue0 = new CustomizeParameterValue(SkinSpecular).XivQuadruple;
                 break;
             case CustomizeParameterFlag.LipDiffuse:
-                parameters.LipColor = Convert(LipDiffuse, parameters.LipColor.W);
+                parameters.LipColor = new CustomizeParameterValue(LipDiffuse, parameters.LipColor.W).XivQuadruple;
                 break;
             case CustomizeParameterFlag.LipOpacity:
                 parameters.LipColor.W = LipOpacity;
                 break;
             case CustomizeParameterFlag.HairDiffuse:
-                parameters.MainColor = Convert(HairDiffuse);
+                parameters.MainColor = new CustomizeParameterValue(HairDiffuse).XivTriple;
                 break;
             case CustomizeParameterFlag.HairSpecular:
-                parameters.HairFresnelValue0 = Convert(HairSpecular);
+                parameters.HairFresnelValue0 = new CustomizeParameterValue(HairSpecular).XivTriple;
                 break;
             case CustomizeParameterFlag.HairHighlight:
-                parameters.MeshColor = Convert(HairHighlight);
+                parameters.MeshColor = new CustomizeParameterValue(HairHighlight).XivTriple;
                 break;
             case CustomizeParameterFlag.LeftEye:
-                parameters.LeftColor = Convert(LeftEye, parameters.LeftColor.W);
+                parameters.LeftColor = new CustomizeParameterValue(LeftEye, parameters.LeftColor.W).XivQuadruple;
                 break;
             case CustomizeParameterFlag.RightEye:
-                parameters.RightColor = Convert(RightEye, parameters.RightColor.W);
+                parameters.RightColor = new CustomizeParameterValue(RightEye, parameters.RightColor.W).XivQuadruple;
                 break;
             case CustomizeParameterFlag.FeatureColor:
-                parameters.OptionColor = Convert(FeatureColor);
+                parameters.OptionColor = new CustomizeParameterValue(FeatureColor).XivTriple;
                 break;
             case CustomizeParameterFlag.FacePaintUvMultiplier:
                 parameters.LeftColor.W = FacePaintUvMultiplier;
@@ -144,61 +170,49 @@ public struct CustomizeParameterData
         }
     }
 
-    public static CustomizeParameterData FromParameters(in CustomizeParameter parameter)
+    public static CustomizeParameterData FromParameters(in CustomizeParameter parameter, in DecalParameters decal)
         => new()
         {
             FacePaintUvOffset     = parameter.RightColor.W,
             FacePaintUvMultiplier = parameter.LeftColor.W,
             MuscleTone            = parameter.SkinColor.W,
             LipOpacity            = parameter.LipColor.W,
-            SkinDiffuse           = Convert(parameter.SkinColor),
-            SkinSpecular          = Convert(parameter.SkinFresnelValue0),
-            LipDiffuse            = Convert(parameter.LipColor),
-            HairDiffuse           = Convert(parameter.MainColor),
-            HairSpecular          = Convert(parameter.HairFresnelValue0),
-            HairHighlight         = Convert(parameter.MeshColor),
-            LeftEye               = Convert(parameter.LeftColor),
-            RightEye              = Convert(parameter.RightColor),
-            FeatureColor          = Convert(parameter.OptionColor),
+            SkinDiffuse           = new CustomizeParameterValue(parameter.SkinColor).InternalTriple,
+            SkinSpecular          = new CustomizeParameterValue(parameter.SkinFresnelValue0).InternalTriple,
+            LipDiffuse            = new CustomizeParameterValue(parameter.LipColor).InternalTriple,
+            HairDiffuse           = new CustomizeParameterValue(parameter.MainColor).InternalTriple,
+            HairSpecular          = new CustomizeParameterValue(parameter.HairFresnelValue0).InternalTriple,
+            HairHighlight         = new CustomizeParameterValue(parameter.MeshColor).InternalTriple,
+            LeftEye               = new CustomizeParameterValue(parameter.LeftColor).InternalTriple,
+            RightEye              = new CustomizeParameterValue(parameter.RightColor).InternalTriple,
+            FeatureColor          = new CustomizeParameterValue(parameter.OptionColor).InternalTriple,
+            DecalColor            = FromParameter(decal),
         };
 
-    public static Vector3 FromParameter(in CustomizeParameter parameter, CustomizeParameterFlag flag)
+    public static CustomizeParameterValue FromParameter(in CustomizeParameter parameter, CustomizeParameterFlag flag)
         => flag switch
         {
-            CustomizeParameterFlag.SkinDiffuse           => Convert(parameter.SkinColor),
-            CustomizeParameterFlag.MuscleTone            => new Vector3(parameter.SkinColor.W),
-            CustomizeParameterFlag.SkinSpecular          => Convert(parameter.SkinFresnelValue0),
-            CustomizeParameterFlag.LipDiffuse            => Convert(parameter.LipColor),
-            CustomizeParameterFlag.LipOpacity            => new Vector3(parameter.LipColor.W),
-            CustomizeParameterFlag.HairDiffuse           => Convert(parameter.MainColor),
-            CustomizeParameterFlag.HairSpecular          => Convert(parameter.HairFresnelValue0),
-            CustomizeParameterFlag.HairHighlight         => Convert(parameter.MeshColor),
-            CustomizeParameterFlag.LeftEye               => Convert(parameter.LeftColor),
-            CustomizeParameterFlag.RightEye              => Convert(parameter.RightColor),
-            CustomizeParameterFlag.FeatureColor          => Convert(parameter.OptionColor),
-            CustomizeParameterFlag.FacePaintUvMultiplier => new Vector3(parameter.LeftColor.W),
-            CustomizeParameterFlag.FacePaintUvOffset     => new Vector3(parameter.RightColor.W),
-            _                                            => Vector3.Zero,
+            CustomizeParameterFlag.SkinDiffuse           => new CustomizeParameterValue(parameter.SkinColor),
+            CustomizeParameterFlag.MuscleTone            => new CustomizeParameterValue(parameter.SkinColor.W),
+            CustomizeParameterFlag.SkinSpecular          => new CustomizeParameterValue(parameter.SkinFresnelValue0),
+            CustomizeParameterFlag.LipDiffuse            => new CustomizeParameterValue(parameter.LipColor),
+            CustomizeParameterFlag.LipOpacity            => new CustomizeParameterValue(parameter.LipColor.W),
+            CustomizeParameterFlag.HairDiffuse           => new CustomizeParameterValue(parameter.MainColor),
+            CustomizeParameterFlag.HairSpecular          => new CustomizeParameterValue(parameter.HairFresnelValue0),
+            CustomizeParameterFlag.HairHighlight         => new CustomizeParameterValue(parameter.MeshColor),
+            CustomizeParameterFlag.LeftEye               => new CustomizeParameterValue(parameter.LeftColor),
+            CustomizeParameterFlag.RightEye              => new CustomizeParameterValue(parameter.RightColor),
+            CustomizeParameterFlag.FeatureColor          => new CustomizeParameterValue(parameter.OptionColor),
+            CustomizeParameterFlag.FacePaintUvMultiplier => new CustomizeParameterValue(parameter.LeftColor.W),
+            CustomizeParameterFlag.FacePaintUvOffset     => new CustomizeParameterValue(parameter.RightColor.W),
+            _                                            => CustomizeParameterValue.Zero,
         };
 
-    private static FFXIVClientStructs.FFXIV.Common.Math.Vector4 Convert(Vector3 value, float w)
-        => new(value.X * value.X, value.Y * value.Y, value.Z * value.Z, w);
-
-    private static Vector3 Convert(FFXIVClientStructs.FFXIV.Common.Math.Vector3 value)
-        => new((float)Math.Sqrt(value.X), (float)Math.Sqrt(value.Y), (float)Math.Sqrt(value.Z));
-
-    private static Vector3 Convert(FFXIVClientStructs.FFXIV.Common.Math.Vector4 value)
-        => new((float)Math.Sqrt(value.X), (float)Math.Sqrt(value.Y), (float)Math.Sqrt(value.Z));
-
-    private static FFXIVClientStructs.FFXIV.Common.Math.Vector3 Convert(Vector3 value)
-        => new(value.X * value.X, value.Y * value.Y, value.Z * value.Z);
+    public static Vector4 FromParameter(in DecalParameters parameter)
+        => new CustomizeParameterValue(parameter.Color).InternalQuadruple;
 
     private static bool SetIfDifferent(ref Vector3 val, Vector3 @new)
     {
-        @new.X = Math.Clamp(@new.X, 0, 1);
-        @new.Y = Math.Clamp(@new.Y, 0, 1);
-        @new.Z = Math.Clamp(@new.Z, 0, 1);
-
         if (@new == val)
             return false;
 
@@ -206,7 +220,16 @@ public struct CustomizeParameterData
         return true;
     }
 
-    private static bool SetIfDifferent<T>(ref T val, T @new) where T : IEqualityOperators<T, T, bool>
+    private static bool SetIfDifferent(ref float val, float @new)
+    {
+        if (@new == val)
+            return false;
+
+        val = @new;
+        return true;
+    }
+
+    private static bool SetIfDifferent(ref Vector4 val, Vector4 @new)
     {
         if (@new == val)
             return false;

@@ -418,7 +418,7 @@ public class DesignManager
     }
 
     /// <summary> Change a customize parameter. </summary>
-    public void ChangeCustomizeParameter(Design design, CustomizeParameterFlag flag, Vector3 value)
+    public void ChangeCustomizeParameter(Design design, CustomizeParameterFlag flag, CustomizeParameterValue value)
     {
         var old = design.DesignData.Parameters[flag];
         if (!design.GetDesignDataRef().Parameters.Set(flag, value))

@@ -85,19 +85,13 @@ public unsafe class ModelEvaluationPanel(
     {
         if (!model.IsHuman)
             return;
-        if (model.AsHuman->CustomizeParameterCBuffer == null)
-            return;
 
-        var ptr     = (CustomizeParameter*)model.AsHuman->CustomizeParameterCBuffer->UnsafeSourcePointer;
-        if (ptr == null)
-            return;
-
-        var convert = CustomizeParameterData.FromParameters(*ptr);
+        var convert = model.GetParameterData();
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
         {
             ImGuiUtil.DrawTableColumn(flag.ToString());
             ImGuiUtil.DrawTableColumn(string.Empty);
-            ImGuiUtil.DrawTableColumn(convert[flag].ToString());
+            ImGuiUtil.DrawTableColumn(convert[flag].InternalQuadruple.ToString());
             ImGui.TableNextColumn();
         }
     }

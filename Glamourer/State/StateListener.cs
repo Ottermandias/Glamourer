@@ -729,30 +729,27 @@ public class StateListener : IDisposable
         if (!model.IsHuman)
             return;
 
-        var cBuffer = model.AsHuman->CustomizeParameterCBuffer;
-        if (cBuffer == null)
-            return;
-
-        var ptr = (CustomizeParameter*)cBuffer->UnsafeSourcePointer;
-        if (ptr == null)
-            return;
-
+        var data = model.GetParameterData();
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
         {
-            var newValue = CustomizeParameterData.FromParameter(*ptr, flag);
-
+            var newValue = data[flag];
             switch (state[flag])
             {
                 case StateChanged.Source.Game:
+                    if (state.BaseData.Parameters.Set(flag, newValue))
+                        _manager.ChangeCustomizeParameter(state, flag, newValue, StateChanged.Source.Game);
+                    break;
                 case StateChanged.Source.Manual:
                     if (state.BaseData.Parameters.Set(flag, newValue))
                         _manager.ChangeCustomizeParameter(state, flag, newValue, StateChanged.Source.Game);
+                    else if (_config.UseAdvancedParameters)
+                        model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;
                 case StateChanged.Source.Fixed:
                 case StateChanged.Source.Ipc:
                     state.BaseData.Parameters.Set(flag, newValue);
                     if (_config.UseAdvancedParameters)
-                        state.ModelData.Parameters.ApplySingle(ref *ptr, flag);
+                        model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;
             }
         }

@@ -1,5 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Shader;
-using Glamourer.Events;
+﻿using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -282,23 +281,13 @@ public class StateApplier(
     }
 
     /// <summary> Change the customize parameters on models. Can change multiple at once. </summary>
-    public unsafe void ChangeParameters(ActorData data, CustomizeParameterFlag flags, in CustomizeParameterData values)
+    public void ChangeParameters(ActorData data, CustomizeParameterFlag flags, in CustomizeParameterData values)
     {
-        if (!_config.UseAdvancedParameters)
+        if (!_config.UseAdvancedParameters || flags == 0)
             return;
 
         foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))
-        {
-            var buffer = actor.Model.AsHuman->CustomizeParameterCBuffer;
-            if (buffer == null)
-                continue;
-
-            var ptr = (CustomizeParameter*)buffer->UnsafeSourcePointer;
-            if (ptr == null)
-                continue;
-
-            values.Apply(ref *ptr, flags);
-        }
+            actor.Model.ApplyParameterData(flags, values);
     }
 
     /// <inheritdoc cref="ChangeParameters(ActorData,CustomizeParameterFlag,in CustomizeParameterData)"/>
