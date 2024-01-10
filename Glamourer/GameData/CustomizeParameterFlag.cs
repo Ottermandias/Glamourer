@@ -7,27 +7,26 @@ public enum CustomizeParameterFlag : ushort
     MuscleTone            = 0x0002,
     SkinSpecular          = 0x0004,
     LipDiffuse            = 0x0008,
-    LipOpacity            = 0x0010,
-    HairDiffuse           = 0x0020,
-    HairSpecular          = 0x0040,
-    HairHighlight         = 0x0080,
-    LeftEye               = 0x0100,
-    RightEye              = 0x0200,
-    FeatureColor          = 0x0400,
-    FacePaintUvMultiplier = 0x0800,
-    FacePaintUvOffset     = 0x1000,
-    DecalColor            = 0x2000,
+    HairDiffuse           = 0x0010,
+    HairSpecular          = 0x0020,
+    HairHighlight         = 0x0040,
+    LeftEye               = 0x0080,
+    RightEye              = 0x0100,
+    FeatureColor          = 0x0200,
+    FacePaintUvMultiplier = 0x0400,
+    FacePaintUvOffset     = 0x0800,
+    DecalColor            = 0x1000,
 }
 
 public static class CustomizeParameterExtensions
 {
-    public const CustomizeParameterFlag All = (CustomizeParameterFlag)0x3FFF;
+    public const CustomizeParameterFlag All = (CustomizeParameterFlag)0x1FFF;
 
     public const CustomizeParameterFlag RgbTriples = All
       & ~(RgbaQuadruples | Percentages | Values);
 
-    public const CustomizeParameterFlag RgbaQuadruples = CustomizeParameterFlag.DecalColor;
-    public const CustomizeParameterFlag Percentages = CustomizeParameterFlag.MuscleTone | CustomizeParameterFlag.LipOpacity;
+    public const CustomizeParameterFlag RgbaQuadruples = CustomizeParameterFlag.DecalColor | CustomizeParameterFlag.LipDiffuse;
+    public const CustomizeParameterFlag Percentages = CustomizeParameterFlag.MuscleTone;
     public const CustomizeParameterFlag Values = CustomizeParameterFlag.FacePaintUvOffset | CustomizeParameterFlag.FacePaintUvMultiplier;
 
     public static readonly IReadOnlyList<CustomizeParameterFlag> AllFlags        = [.. Enum.GetValues<CustomizeParameterFlag>()];
@@ -52,7 +51,6 @@ public static class CustomizeParameterExtensions
             CustomizeParameterFlag.MuscleTone            => "Muscle Tone",
             CustomizeParameterFlag.SkinSpecular          => "Skin Shine",
             CustomizeParameterFlag.LipDiffuse            => "Lip Color",
-            CustomizeParameterFlag.LipOpacity            => "Lip Opacity",
             CustomizeParameterFlag.HairDiffuse           => "Hair Color",
             CustomizeParameterFlag.HairSpecular          => "Hair Shine",
             CustomizeParameterFlag.HairHighlight         => "Hair Highlights",
