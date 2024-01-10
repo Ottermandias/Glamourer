@@ -456,7 +456,7 @@ public class StateManager(
             _applier.ChangeWeaponState(actors, state.ModelData.IsWeaponVisible());
             _applier.ChangeVisor(actors, state.ModelData.IsVisorToggled());
             _applier.ChangeCrests(actors, state.ModelData.CrestVisibility);
-            _applier.ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters);
+            _applier.ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters, state.IsLocked);
         }
 
         return actors;

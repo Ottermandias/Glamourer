@@ -134,7 +134,8 @@ public class ActorPanel(
         var header = _state!.ModelData.ModelId == 0
             ? "Customization"
             : $"Customization (Model Id #{_state.ModelData.ModelId})###Customization";
-        if (!ImGui.CollapsingHeader(header))
+        using var h = ImRaii.CollapsingHeader(header);
+        if (!h)
             return;
 
         if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked, _lockedRedraw))
@@ -146,7 +147,8 @@ public class ActorPanel(
 
     private void DrawEquipmentHeader()
     {
-        if (!ImGui.CollapsingHeader("Equipment"))
+        using var h = ImRaii.CollapsingHeader("Equipment");
+        if (!h)
             return;
 
         _equipmentDrawer.Prepare();
@@ -171,7 +173,11 @@ public class ActorPanel(
 
     private void DrawParameterHeader()
     {
-        if (!_config.UseAdvancedParameters || !ImGui.CollapsingHeader("Advanced Customizations"))
+        if (!_config.UseAdvancedParameters)
+            return;
+
+        using var h = ImRaii.CollapsingHeader("Advanced Customizations");
+        if (!h)
             return;
 
         _parameterDrawer.Draw(_stateManager, _state!);

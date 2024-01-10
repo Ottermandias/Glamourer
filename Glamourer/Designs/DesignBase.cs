@@ -444,7 +444,7 @@ public class DesignBase
             if (!TryGetToken(flag, out var token))
                 continue;
 
-            var value = Math.Clamp(token["Percentage"]?.ToObject<float>() ?? 0f, 0f, 1f);
+            var value = token["Percentage"]?.ToObject<float>() ?? 0f;
             design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(value);
         }
 
@@ -453,9 +453,9 @@ public class DesignBase
             if (!TryGetToken(flag, out var token))
                 continue;
 
-            var r = Math.Clamp(token["Red"]?.ToObject<float>() ?? 0f,   0, 1);
-            var g = Math.Clamp(token["Green"]?.ToObject<float>() ?? 0f, 0, 1);
-            var b = Math.Clamp(token["Blue"]?.ToObject<float>() ?? 0f,  0, 1);
+            var r = token["Red"]?.ToObject<float>() ?? 0f;
+            var g = token["Green"]?.ToObject<float>() ?? 0f;
+            var b = token["Blue"]?.ToObject<float>() ?? 0f;
             design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(r, g, b);
         }
 
@@ -464,10 +464,10 @@ public class DesignBase
             if (!TryGetToken(flag, out var token))
                 continue;
 
-            var r = Math.Clamp(token["Red"]?.ToObject<float>() ?? 0f,   0, 1);
-            var g = Math.Clamp(token["Green"]?.ToObject<float>() ?? 0f, 0, 1);
-            var b = Math.Clamp(token["Blue"]?.ToObject<float>() ?? 0f,  0, 1);
-            var a = Math.Clamp(token["Alpha"]?.ToObject<float>() ?? 0f, 0, 1);
+            var r = token["Red"]?.ToObject<float>() ?? 0f;
+            var g = token["Green"]?.ToObject<float>() ?? 0f;
+            var b = token["Blue"]?.ToObject<float>() ?? 0f;
+            var a = token["Alpha"]?.ToObject<float>() ?? 0f;
             design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(r, g, b, a);
         }
 

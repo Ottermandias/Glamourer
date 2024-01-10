@@ -92,7 +92,8 @@ public class DesignPanel(
 
     private void DrawEquipment()
     {
-        if (!ImGui.CollapsingHeader("Equipment"))
+        using var h = ImRaii.CollapsingHeader("Equipment");
+        if (!h)
             return;
 
         _equipmentDrawer.Prepare();
@@ -142,7 +143,8 @@ public class DesignPanel(
         var header = _selector.Selected!.DesignData.ModelId == 0
             ? "Customization"
             : $"Customization (Model Id #{_selector.Selected!.DesignData.ModelId})###Customization";
-        if (!ImGui.CollapsingHeader(header))
+        using var h = ImRaii.CollapsingHeader(header);
+        if (!h)
             return;
 
         if (_customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.ApplyCustomizeRaw,
@@ -162,7 +164,10 @@ public class DesignPanel(
 
     private void DrawCustomizeParameters()
     {
-        if (!_config.UseAdvancedParameters || !ImGui.CollapsingHeader("Advanced Customization"))
+        if (!_config.UseAdvancedParameters)
+            return;
+        using var h = ImRaii.CollapsingHeader("Advanced Customizations");
+        if (!h)
             return;
 
         _parameterDrawer.Draw(_manager, _selector.Selected!);
@@ -214,7 +219,8 @@ public class DesignPanel(
 
     private void DrawApplicationRules()
     {
-        if (!ImGui.CollapsingHeader("Application Rules"))
+        using var h = ImRaii.CollapsingHeader("Application Rules");
+        if (!h)
             return;
 
         using (var _ = ImRaii.Group())

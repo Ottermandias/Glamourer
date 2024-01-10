@@ -41,7 +41,8 @@ public class DesignDetailTab
 
     public void Draw()
     {
-        if (!ImGui.CollapsingHeader("Design Details"))
+        using var h = ImRaii.CollapsingHeader("Design Details");
+        if (!h)
             return;
 
         DrawDesignInfoTable();

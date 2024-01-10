@@ -40,7 +40,7 @@ public readonly struct CustomizeParameterValue
         => x < 0 ? -x * x : x * x;
 
     private static float Root(float x)
-        => x < 0 ? -(float)Math.Sqrt(-x) : x;
+        => x < 0 ? -(float)Math.Sqrt(-x) : (float)Math.Sqrt(x);
 
     public float this[int idx]
         => _data[idx];

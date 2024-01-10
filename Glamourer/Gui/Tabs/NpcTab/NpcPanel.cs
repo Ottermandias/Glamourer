@@ -141,7 +141,8 @@ public class NpcPanel(
 
     private void DrawCustomization()
     {
-        if (!ImGui.CollapsingHeader("Customization"))
+        using var h = ImRaii.CollapsingHeader("Customization");
+        if (!h)
             return;
 
         _customizeDrawer.Draw(_selector.Selection.Customize, true, true);
@@ -150,7 +151,8 @@ public class NpcPanel(
 
     private void DrawEquipment()
     {
-        if (!ImGui.CollapsingHeader("Equipment"))
+        using var h = ImRaii.CollapsingHeader("Equipment");
+        if (!h)
             return;
 
         _equipDrawer.Prepare();
@@ -223,7 +225,8 @@ public class NpcPanel(
 
     private void DrawAppearanceInfo()
     {
-        if (!ImGui.CollapsingHeader("Appearance Details"))
+        using var h = ImRaii.CollapsingHeader("Appearance Details");
+        if (!h)
             return;
 
         using var table = ImRaii.Table("Details", 2);

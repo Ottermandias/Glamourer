@@ -28,13 +28,13 @@ public class ModAssociationsTab
 
     public void Draw()
     {
-        var headerOpen = ImGui.CollapsingHeader("Mod Associations");
+        using var h          = ImRaii.CollapsingHeader("Mod Associations");
         ImGuiUtil.HoverTooltip(
             "This tab can store information about specific mods associated with this design.\n\n"
           + "It does NOT change any mod settings automatically, though there is functionality to apply desired mod settings manually.\n"
           + "You can also use it to quickly open the associated mod page in Penumbra.\n\n"
           + "It is not feasible to apply those changes automatically in general cases, since there would be no way to revert those changes, handle multiple designs applying at once, etc.");
-        if (!headerOpen)
+        if (!h)
             return;
 
         DrawApplyAllButton();

@@ -105,7 +105,7 @@ public struct CustomizeParameterData
         };
 
         if (flags.HasFlag(CustomizeParameterFlag.SkinSpecular))
-            parameters.SkinFresnelValue0 = new CustomizeParameterValue(SkinDiffuse).XivQuadruple;
+            parameters.SkinFresnelValue0 = new CustomizeParameterValue(SkinSpecular).XivQuadruple;
         if (flags.HasFlag(CustomizeParameterFlag.HairDiffuse))
             parameters.MainColor = new CustomizeParameterValue(HairDiffuse).XivTriple;
         if (flags.HasFlag(CustomizeParameterFlag.HairSpecular))

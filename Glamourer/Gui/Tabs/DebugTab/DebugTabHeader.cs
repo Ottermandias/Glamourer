@@ -12,7 +12,8 @@ public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
 
     public void Draw()
     {
-        if (!ImGui.CollapsingHeader(Label))
+        using var h = ImRaii.CollapsingHeader(Label);
+        if (!h)
             return;
 
         foreach (var subTree in SubTrees)

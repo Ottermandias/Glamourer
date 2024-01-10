@@ -55,7 +55,7 @@ public class CustomizeParameterDrawer(Configuration config) : IService
         var       value = data.CurrentValue.InternalTriple;
         using (_ = ImRaii.Disabled(data.Locked))
         {
-            if (ImGui.ColorEdit3("##value", ref value, ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR | ImGuiColorEditFlags.NoOptions))
+            if (ImGui.ColorEdit3("##value", ref value, GetFlags()))
                 data.ValueSetter(new CustomizeParameterValue(value));
         }
 
@@ -70,7 +70,7 @@ public class CustomizeParameterDrawer(Configuration config) : IService
         var       value = data.CurrentValue.InternalQuadruple;
         using (_ = ImRaii.Disabled(data.Locked))
         {
-            if (ImGui.ColorEdit4("##value", ref value, ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR | ImGuiColorEditFlags.NoOptions))
+            if (ImGui.ColorEdit4("##value", ref value, GetFlags()))
                 data.ValueSetter(new CustomizeParameterValue(value));
         }
 
@@ -140,4 +140,9 @@ public class CustomizeParameterDrawer(Configuration config) : IService
         ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
         ImGui.TextUnformatted(data.Flag.ToName());
     }
+
+    private static ImGuiColorEditFlags GetFlags()
+        => ImGui.GetIO().KeyCtrl
+            ? ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR | ImGuiColorEditFlags.NoOptions
+            : ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR;
 }
