@@ -471,6 +471,7 @@ public class DesignBase
             design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(r, g, b, a);
         }
 
+        MigrateLipOpacity();
         return;
 
         // Load the token and set application.
@@ -487,6 +488,14 @@ public class DesignBase
             design.ApplyParameters                     &= ~flag;
             design.GetDesignDataRef().Parameters[flag] =  CustomizeParameterValue.Zero;
             return false;
+        }
+
+        void MigrateLipOpacity()
+        {
+            var token       = parameters!["LipOpacity"]?["Percentage"]?.ToObject<float>();
+            var actualToken = parameters![CustomizeParameterFlag.LipDiffuse]?["Alpha"];
+            if (token != null && actualToken == null)
+                design.GetDesignDataRef().Parameters.LipDiffuse.W = token.Value;
         }
     }
 
