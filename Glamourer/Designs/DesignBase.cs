@@ -493,7 +493,7 @@ public class DesignBase
         void MigrateLipOpacity()
         {
             var token       = parameters!["LipOpacity"]?["Percentage"]?.ToObject<float>();
-            var actualToken = parameters![CustomizeParameterFlag.LipDiffuse]?["Alpha"];
+            var actualToken = parameters![CustomizeParameterFlag.LipDiffuse.ToString()]?["Alpha"];
             if (token != null && actualToken == null)
                 design.GetDesignDataRef().Parameters.LipDiffuse.W = token.Value;
         }
