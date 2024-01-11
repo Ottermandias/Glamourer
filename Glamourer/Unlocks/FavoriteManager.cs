@@ -2,22 +2,42 @@
 using Glamourer.Services;
 using Newtonsoft.Json;
 using OtterGui.Classes;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Unlocks;
 
 public class FavoriteManager : ISavable
 {
-    private const    int              CurrentVersion = 1;
-    private readonly SaveService      _saveService;
-    private readonly HashSet<ItemId>  _favorites      = new();
-    private readonly HashSet<StainId> _favoriteColors = new();
+    private readonly record struct FavoriteHairStyle(Gender Gender, SubRace Race, CustomizeIndex Type, CustomizeValue Id)
+    {
+        public uint ToValue()
+            => (uint)Id.Value | ((uint)Type << 8) | ((uint)Race << 16) | ((uint)Gender << 24);
+
+        public FavoriteHairStyle(uint value)
+            : this((Gender)((value >> 24) & 0xFF), (SubRace)((value >> 16) & 0xFF), (CustomizeIndex)((value >> 8) & 0xFF), (CustomizeValue)(value & 0xFF))
+        { }
+    }
+
+    private const    int                        CurrentVersion = 1;
+    private readonly SaveService                _saveService;
+    private readonly HashSet<ItemId>            _favorites          = [];
+    private readonly HashSet<StainId>           _favoriteColors     = [];
+    private readonly HashSet<FavoriteHairStyle> _favoriteHairStyles = [];
 
     public FavoriteManager(SaveService saveService)
     {
         _saveService = saveService;
         Load();
     }
+
+    public static bool TypeAllowed(CustomizeIndex type)
+        => type switch
+        {
+            CustomizeIndex.Hairstyle => true,
+            CustomizeIndex.FacePaint => true,
+            _                        => false,
+        };
 
     private void Load()
     {
@@ -40,7 +60,9 @@ public class FavoriteManager : ISavable
                     case 1:
                         _favorites.UnionWith(load.FavoriteItems.Select(i => (ItemId)i));
                         _favoriteColors.UnionWith(load.FavoriteColors.Select(i => (StainId)i));
+                        _favoriteHairStyles.UnionWith(load.FavoriteHairStyles.Select(t => new FavoriteHairStyle(t)));
                         break;
+
                     default: throw new Exception($"Unknown Version {load.Version}");
                 }
             }
@@ -53,7 +75,7 @@ public class FavoriteManager : ISavable
 
     private void LoadV0(string text)
     {
-        var array = JsonConvert.DeserializeObject<uint[]>(text) ?? Array.Empty<uint>();
+        var array = JsonConvert.DeserializeObject<uint[]>(text) ?? [];
         _favorites.UnionWith(array.Select(i => (ItemId)i));
         Save();
     }
@@ -66,10 +88,8 @@ public class FavoriteManager : ISavable
 
     public void Save(StreamWriter writer)
     {
-        using var j = new JsonTextWriter(writer)
-        {
-            Formatting = Formatting.Indented,
-        };
+        using var j = new JsonTextWriter(writer);
+        j.Formatting = Formatting.Indented;
         j.WriteStartObject();
         j.WritePropertyName(nameof(LoadStruct.Version));
         j.WriteValue(CurrentVersion);
@@ -82,6 +102,11 @@ public class FavoriteManager : ISavable
         j.WriteStartArray();
         foreach (var stain in _favoriteColors)
             j.WriteValue(stain.Id);
+        j.WriteEndArray();
+        j.WritePropertyName(nameof(LoadStruct.FavoriteHairStyles));
+        j.WriteStartArray();
+        foreach (var hairStyle in _favoriteHairStyles)
+            j.WriteValue(hairStyle.ToValue());
         j.WriteEndArray();
         j.WriteEndObject();
     }
@@ -104,6 +129,15 @@ public class FavoriteManager : ISavable
     public bool TryAdd(StainId stain)
     {
         if (stain.Id == 0 || !_favoriteColors.Add(stain))
+            return false;
+
+        Save();
+        return true;
+    }
+
+    public bool TryAdd(Gender gender, SubRace race, CustomizeIndex type, CustomizeValue value)
+    {
+        if (!TypeAllowed(type) || !_favoriteHairStyles.Add(new FavoriteHairStyle(gender, race, type, value)))
             return false;
 
         Save();
@@ -134,6 +168,15 @@ public class FavoriteManager : ISavable
         return true;
     }
 
+    public bool Remove(Gender gender, SubRace race, CustomizeIndex type, CustomizeValue value)
+    {
+        if (!_favoriteHairStyles.Remove(new FavoriteHairStyle(gender, race, type, value)))
+            return false;
+
+        Save();
+        return true;
+    }
+
     public bool Contains(EquipItem item)
         => _favorites.Contains(item.ItemId);
 
@@ -146,11 +189,15 @@ public class FavoriteManager : ISavable
     public bool Contains(StainId stain)
         => _favoriteColors.Contains(stain);
 
+    public bool Contains(Gender gender, SubRace race, CustomizeIndex type, CustomizeValue value)
+        => _favoriteHairStyles.Contains(new FavoriteHairStyle(gender, race, type, value));
+
     private struct LoadStruct
     {
-        public int    Version = CurrentVersion;
-        public uint[] FavoriteItems  = Array.Empty<uint>();
-        public byte[] FavoriteColors = Array.Empty<byte>();
+        public int    Version            = CurrentVersion;
+        public uint[] FavoriteItems      = [];
+        public byte[] FavoriteColors     = [];
+        public uint[] FavoriteHairStyles = [];
 
         public LoadStruct()
         { }

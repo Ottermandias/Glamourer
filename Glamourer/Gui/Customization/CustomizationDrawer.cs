@@ -3,6 +3,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Glamourer.GameData;
 using Glamourer.Services;
+using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -11,7 +12,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
-public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizeService _service, CodeService _codes, Configuration _config)
+public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizeService _service, CodeService _codes, Configuration _config, FavoriteManager _favorites)
     : IDisposable
 {
     private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);

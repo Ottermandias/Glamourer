@@ -1,4 +1,5 @@
 ﻿using Glamourer.GameData;
+using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -70,7 +71,10 @@ public partial class CustomizationDrawer
             var icon   = _service.Manager.GetIcon(custom.IconId);
             using (var _ = ImRaii.Group())
             {
-                using var frameColor = ImRaii.PushColor(ImGuiCol.Button, Colors.SelectedRed, current == i);
+                var isFavorite = _favorites.Contains(_set.Gender, _set.Clan, _currentIndex, custom.Value);
+                using var frameColor = current == i
+                    ? ImRaii.PushColor(ImGuiCol.Button, Colors.SelectedRed)
+                    : ImRaii.PushColor(ImGuiCol.Button, ColorId.FavoriteStarOn.Value(), isFavorite);
 
                 if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
                 {
@@ -78,7 +82,14 @@ public partial class CustomizationDrawer
                     ImGui.CloseCurrentPopup();
                 }
 
-                ImGuiUtil.HoverIconTooltip(icon, _iconSize);
+                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                    if (isFavorite)
+                        _favorites.Remove(_set.Gender, _set.Clan, _currentIndex, custom.Value);
+                    else
+                        _favorites.TryAdd(_set.Gender, _set.Clan, _currentIndex, custom.Value);
+
+                ImGuiUtil.HoverIconTooltip(icon, _iconSize,
+                    FavoriteManager.TypeAllowed(_currentIndex) ? "Right-Click to toggle favorite." : string.Empty);
 
                 var text      = custom.Value.ToString();
                 var textWidth = ImGui.CalcTextSize(text).X;

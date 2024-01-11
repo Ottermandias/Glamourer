@@ -119,6 +119,11 @@ public class UnlockOverview
 
             ImGui.Image(icon.ImGuiHandle, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || _codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
+
+            if (_favorites.Contains(_selected3, _selected2, customize.Index, customize.Value))
+                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
+                    12 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 6 * ImGuiHelpers.GlobalScale);
+
             if (ImGui.IsItemHovered())
             {
                 using var tt   = ImRaii.Tooltip();
