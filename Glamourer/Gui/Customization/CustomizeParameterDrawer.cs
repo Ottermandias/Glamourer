@@ -1,5 +1,6 @@
 ﻿using Glamourer.Designs;
 using Glamourer.GameData;
+using Glamourer.Interop.PalettePlus;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
@@ -8,11 +9,19 @@ using OtterGui.Services;
 
 namespace Glamourer.Gui.Customization;
 
-public class CustomizeParameterDrawer(Configuration config) : IService
+public class CustomizeParameterDrawer(Configuration config, PaletteImport import) : IService
 {
+    private readonly Dictionary<Design, CustomizeParameterData> _lastData    = [];
+    private          string                                     _paletteName = string.Empty;
+    private          CustomizeParameterData                     _data;
+    private          float                                      _width;
+    private          bool                                       _foundPalette;
+
+
     public void Draw(DesignManager designManager, Design design)
     {
         using var _ = EnsureSize();
+        DrawPaletteImport(designManager, design);
         foreach (var flag in CustomizeParameterExtensions.RgbFlags)
             DrawColorInput3(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
 
@@ -26,11 +35,54 @@ public class CustomizeParameterDrawer(Configuration config) : IService
             DrawValueInput(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
     }
 
-    private ImRaii.IEndObject EnsureSize()
+    private void DrawPaletteImport(DesignManager manager, Design design)
     {
-        var iconSize = ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 4 * ImGui.GetStyle().FramePadding.Y;
-        var width    = 6 * iconSize + 4 * ImGui.GetStyle().ItemInnerSpacing.X;
-        return ImRaii.ItemWidth(width);
+        if (!config.ShowPalettePlusImport)
+            return;
+
+        var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
+
+        if (ImGui.InputTextWithHint("##import", "Palette Name...", ref _paletteName, 256))
+        {
+            _data         = design.DesignData.Parameters;
+            _foundPalette = import.TryRead(_paletteName, ref _data);
+        }
+
+        ImGui.SameLine(0, spacing);
+        var value = true;
+        if (ImGui.Checkbox("Show Import", ref value))
+        {
+            config.ShowPalettePlusImport = false;
+            config.Save();
+        }
+
+        ImGuiUtil.HoverTooltip("Hide the Palette+ Import bar from all designs. You can re-enable it in Glamourers interface settings.");
+
+        var buttonWidth = new Vector2((_width - spacing) / 2, 0);
+        var tt = _foundPalette
+            ? $"Apply the imported data from the Palette+ palette [{_paletteName}] to this design."
+            : $"The palette [{_paletteName}] could not be imported from your Palette+ configuration.";
+        if (ImGuiUtil.DrawDisabledButton("Apply Import", buttonWidth, tt, !_foundPalette || design.WriteProtected()))
+        {
+            // Reload Data in case anything changed since entering text.
+            _data             = design.DesignData.Parameters;
+            _foundPalette     = import.TryRead(_paletteName, ref _data);
+            _lastData[design] = design.DesignData.Parameters;
+            foreach (var parameter in CustomizeParameterExtensions.AllFlags)
+                manager.ChangeCustomizeParameter(design, parameter, _data[parameter]);
+        }
+
+        ImGui.SameLine(0, spacing);
+        var enabled = _lastData.TryGetValue(design, out var oldData);
+        tt = enabled
+            ? $"Revert to the last set of advanced customization parameters of [{design.Name}] before importing."
+            : $"You have not imported any data that could be reverted for [{design.Name}].";
+        if (ImGuiUtil.DrawDisabledButton("Revert Import", buttonWidth, tt, !enabled || design.WriteProtected()))
+        {
+            _lastData.Remove(design);
+            foreach (var parameter in CustomizeParameterExtensions.AllFlags)
+                manager.ChangeCustomizeParameter(design, parameter, oldData[parameter]);
+        }
     }
 
     public void Draw(StateManager stateManager, ActorState state)
@@ -145,4 +197,12 @@ public class CustomizeParameterDrawer(Configuration config) : IService
         => ImGui.GetIO().KeyCtrl
             ? ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR | ImGuiColorEditFlags.NoOptions
             : ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR;
+
+
+    private ImRaii.IEndObject EnsureSize()
+    {
+        var iconSize = ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 4 * ImGui.GetStyle().FramePadding.Y;
+        _width = 6 * iconSize + 4 * ImGui.GetStyle().ItemInnerSpacing.X;
+        return ImRaii.ItemWidth(_width);
+    }
 }

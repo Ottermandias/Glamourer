@@ -35,6 +35,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool                 ShowQuickBarInTabs               { get; set; } = true;
     public bool                 OpenWindowAtStart                { get; set; } = false;
     public bool                 UseAdvancedParameters            { get; set; } = false;
+    public bool                 ShowPalettePlusImport            { get; set; } = true;
     public ModifiableHotkey     ToggleQuickDesignBar             { get; set; } = new(VirtualKey.NO_KEY);
     public DoubleModifier       DeleteDesignModifier             { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
     public ChangeLogDisplayType ChangeLogDisplayType             { get; set; } = ChangeLogDisplayType.New;

@@ -94,7 +94,8 @@ public class SettingsTab : ITab
         Checkbox("Revert Manual Changes on Zone Change",
             "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone.",
             _config.RevertManualChangesOnZoneChange, v => _config.RevertManualChangesOnZoneChange = v);
-        Checkbox("Enable Advanced Customization Options", "Enable the display and editing of advanced customization options like arbitrary colors.", 
+        Checkbox("Enable Advanced Customization Options",
+            "Enable the display and editing of advanced customization options like arbitrary colors.",
             _config.UseAdvancedParameters, v => _config.UseAdvancedParameters = v);
         ImGui.NewLine();
     }
@@ -171,6 +172,10 @@ public class SettingsTab : ITab
         Checkbox("Show Unobtained Item Warnings",
             "Show information whether you have unlocked all items and customizations in your automated design or not.",
             _config.ShowUnlockedItemWarnings, v => _config.ShowUnlockedItemWarnings = v);
+        if (_config.UseAdvancedParameters)
+            Checkbox("Show Palette+ Import Button",
+                "Show the import button that allows you to import Palette+ palettes onto a design in the Advanced Customization options section for designs.",
+                _config.ShowPalettePlusImport, v => _config.ShowPalettePlusImport = v);
         Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general.", _config.DebugMode,
             v => _config.DebugMode = v);
         ImGui.NewLine();
