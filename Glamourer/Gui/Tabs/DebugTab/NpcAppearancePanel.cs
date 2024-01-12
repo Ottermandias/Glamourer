@@ -33,7 +33,7 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         var resetScroll = ImGui.InputTextWithHint("##npcFilter", "Filter...", ref _npcFilter, 64);
 
-        using var table = ImRaii.Table("npcs", 6, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingFixedFit,
+        using var table = ImRaii.Table("npcs", 7, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingFixedFit,
             new Vector2(-1, 400 * ImGuiHelpers.GlobalScale));
         if (!table)
             return;
@@ -45,6 +45,7 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
         ImGui.TableSetupColumn("Name",    ImGuiTableColumnFlags.WidthFixed, ImGuiHelpers.GlobalScale * 300);
         ImGui.TableSetupColumn("Kind",    ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Id",      ImGuiTableColumnFlags.WidthFixed);
+        ImGui.TableSetupColumn("Model",      ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Visor",   ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Compare", ImGuiTableColumnFlags.WidthStretch);
 
@@ -82,6 +83,10 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
             ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted(data.Id.Id.ToString());
+
+            ImGui.TableNextColumn();
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(data.ModelId.ToString());
 
             using (_ = ImRaii.PushFont(UiBuilder.IconFont))
             {

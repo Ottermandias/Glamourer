@@ -72,6 +72,7 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
             {
                 Name      = name,
                 Customize = customize,
+                ModelId   = row.ModelChara.Row,
                 Id        = id,
                 Kind      = ObjectKind.EventNpc,
             };
@@ -132,6 +133,7 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
             var ret = new NpcData
             {
                 Customize = customize,
+                ModelId   = baseRow.ModelChara.Row,
                 Id        = baseRow.RowId,
                 Kind      = ObjectKind.BattleNpc,
             };

@@ -141,7 +141,10 @@ public class NpcPanel(
 
     private void DrawCustomization()
     {
-        using var h = ImRaii.CollapsingHeader("Customization");
+        var header = _selector.Selection.ModelId == 0
+            ? "Customization"
+            : $"Customization (Model Id #{_selector.Selection.ModelId})###Customization";
+        using var h = ImRaii.CollapsingHeader(header);
         if (!h)
             return;
 
@@ -197,8 +200,8 @@ public class NpcPanel(
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
-            var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, applyCrest, applyParameters);
+            var (applyGear, applyCustomize, _, _) = UiHelpers.ConvertKeysToFlags();
+            var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, 0, 0);
             _state.ApplyDesign(design, state, StateChanged.Source.Manual);
         }
     }

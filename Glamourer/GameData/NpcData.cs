@@ -24,6 +24,9 @@ public unsafe struct NpcData
     /// <summary> The data ID of the NPC, either event NPC or battle NPC name. </summary>
     public NpcId Id;
 
+    /// <summary> The Model ID of the NPC. </summary>
+    public uint ModelId;
+
     /// <summary> Whether the NPCs visor is toggled. </summary>
     public bool VisorToggled;
 
@@ -87,6 +90,9 @@ public unsafe struct NpcData
     /// <summary> Check if the appearance data, excluding ID and Name, of two NpcData is equal. </summary>
     public bool DataEquals(in NpcData other)
     {
+        if (ModelId != other.ModelId)
+            return false;
+
         if (VisorToggled != other.VisorToggled)
             return false;
 
