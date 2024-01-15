@@ -9,7 +9,6 @@ using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Shader;
 using Glamourer.GameData;
 using Penumbra.GameData.DataContainers;
 

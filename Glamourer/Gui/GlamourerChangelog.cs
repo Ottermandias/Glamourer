@@ -25,6 +25,7 @@ public class GlamourerChangelog
         Add1_0_5_0(Changelog);
         Add1_0_6_0(Changelog);
         Add1_0_7_0(Changelog);
+        Add1_1_0_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -44,6 +45,24 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_1_0_0(Changelog log)
+        => log.NextVersion("Version 1.1.0.0")
+            .RegisterHighlight("Added a new tab to browse, apply or copy (human) NPC appearances.")
+            .RegisterHighlight("A characters body type can now be changed when copying state or saving designs from certain NPCs.")
+            .RegisterHighlight("Added support for picking advanced colors for your characters customizations.")
+            .RegisterEntry("The display and application of those can be toggled off in Glamourers behaviour settings.", 1)
+            .RegisterEntry("This provides the same functionality as Palette+, and Palette+ will probably be discontinued soonish (in accordance with Chirp).", 1)
+            .RegisterEntry("An option to import existing palettes from Palette+ by name is provided for designs, and can be toggled off in the settings.", 1)
+            .RegisterHighlight("Advanced colors, equipment and dyes can now be reset to their game state separately by Control-Rightclicking them.")
+            .RegisterHighlight("Hairstyles and face paints can now be made favourites.")
+            .RegisterEntry("Added a new command '/glamour delete' to delete saved designs by name or identifier.")
+            .RegisterEntry("Added an optional parameter to the '/glamour apply' command that makes it apply the associated mod settings for a design to the collection associated with the identified character.")
+            .RegisterEntry("Fixed changing weapons in Designs not working correctly.")
+            .RegisterEntry("Fixed restricted gear protection breaking outfits for Mare pairs.")
+            .RegisterEntry("Improved the handling of some cheat codes and added new ones.")
+            .RegisterEntry("Added IPC to set single items or stains on characters.")
+            .RegisterEntry("Added IPC to apply designs by GUID, and obtain a list of designs.");
 
     private static void Add1_0_7_0(Changelog log)
         => log.NextVersion("Version 1.0.7.0")

@@ -34,7 +34,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool                 RevertManualChangesOnZoneChange  { get; set; } = false;
     public bool                 ShowQuickBarInTabs               { get; set; } = true;
     public bool                 OpenWindowAtStart                { get; set; } = false;
-    public bool                 UseAdvancedParameters            { get; set; } = false;
+    public bool                 UseAdvancedParameters            { get; set; } = true;
     public bool                 ShowPalettePlusImport            { get; set; } = true;
     public ModifiableHotkey     ToggleQuickDesignBar             { get; set; } = new(VirtualKey.NO_KEY);
     public DoubleModifier       DeleteDesignModifier             { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
