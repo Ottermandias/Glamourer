@@ -58,6 +58,8 @@ public sealed class StateChanged()
         Manual,
         Fixed,
         Ipc,
+        // Only used for CustomizeParameters.
+        Outstanding,
     }
 
     public enum Priority

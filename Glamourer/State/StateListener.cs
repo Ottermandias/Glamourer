@@ -753,6 +753,15 @@ public class StateListener : IDisposable
                     state.BaseData.Parameters.Set(flag, newValue);
                     model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;
+                case StateChanged.Source.Outstanding:
+                    state.BaseData.Parameters.Set(flag, newValue);
+                    if (_config.UseAdvancedParameters)
+                    {
+                        model.ApplySingleParameterData(flag, state.ModelData.Parameters);
+                        state[flag] = StateChanged.Source.Manual;
+                    }
+
+                    break;
             }
         }
     }

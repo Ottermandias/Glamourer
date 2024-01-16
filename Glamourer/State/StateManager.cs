@@ -403,8 +403,12 @@ public class StateManager(
             foreach (var slot in CrestExtensions.AllRelevantSet.Where(design.DoApplyCrest))
                 _editor.ChangeCrest(state, slot, design.DesignData.Crest(slot), source, out _, key);
 
+            var paramSource = source is StateChanged.Source.Manual && redraw
+                ? StateChanged.Source.Outstanding
+                : source;
+
             foreach (var flag in CustomizeParameterExtensions.AllFlags.Where(design.DoApplyParameter))
-                _editor.ChangeParameter(state, flag, design.DesignData.Parameters[flag], source, out _, key);
+                _editor.ChangeParameter(state, flag, design.DesignData.Parameters[flag], paramSource, out _, key);
         }
 
         var actors = ApplyAll(state, redraw, false);
