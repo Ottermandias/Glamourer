@@ -15,7 +15,8 @@ public class FavoriteManager : ISavable
             => (uint)Id.Value | ((uint)Type << 8) | ((uint)Race << 16) | ((uint)Gender << 24);
 
         public FavoriteHairStyle(uint value)
-            : this((Gender)((value >> 24) & 0xFF), (SubRace)((value >> 16) & 0xFF), (CustomizeIndex)((value >> 8) & 0xFF), (CustomizeValue)(value & 0xFF))
+            : this((Gender)((value >> 24) & 0xFF), (SubRace)((value >> 16) & 0xFF), (CustomizeIndex)((value >> 8) & 0xFF),
+                (CustomizeValue)(value & 0xFF))
         { }
     }
 
@@ -54,7 +55,7 @@ public class FavoriteManager : ISavable
             }
             else
             {
-                var load = JsonConvert.DeserializeObject<LoadStruct>(text);
+                var load = JsonConvert.DeserializeObject<LoadIntermediary>(text);
                 switch (load.Version)
                 {
                     case 1:
@@ -91,19 +92,19 @@ public class FavoriteManager : ISavable
         using var j = new JsonTextWriter(writer);
         j.Formatting = Formatting.Indented;
         j.WriteStartObject();
-        j.WritePropertyName(nameof(LoadStruct.Version));
+        j.WritePropertyName(nameof(LoadIntermediary.Version));
         j.WriteValue(CurrentVersion);
-        j.WritePropertyName(nameof(LoadStruct.FavoriteItems));
+        j.WritePropertyName(nameof(LoadIntermediary.FavoriteItems));
         j.WriteStartArray();
         foreach (var item in _favorites)
             j.WriteValue(item.Id);
         j.WriteEndArray();
-        j.WritePropertyName(nameof(LoadStruct.FavoriteColors));
+        j.WritePropertyName(nameof(LoadIntermediary.FavoriteColors));
         j.WriteStartArray();
         foreach (var stain in _favoriteColors)
             j.WriteValue(stain.Id);
         j.WriteEndArray();
-        j.WritePropertyName(nameof(LoadStruct.FavoriteHairStyles));
+        j.WritePropertyName(nameof(LoadIntermediary.FavoriteHairStyles));
         j.WriteStartArray();
         foreach (var hairStyle in _favoriteHairStyles)
             j.WriteValue(hairStyle.ToValue());
@@ -192,14 +193,11 @@ public class FavoriteManager : ISavable
     public bool Contains(Gender gender, SubRace race, CustomizeIndex type, CustomizeValue value)
         => _favoriteHairStyles.Contains(new FavoriteHairStyle(gender, race, type, value));
 
-    private struct LoadStruct
+    private class LoadIntermediary
     {
         public int    Version            = CurrentVersion;
         public uint[] FavoriteItems      = [];
         public byte[] FavoriteColors     = [];
         public uint[] FavoriteHairStyles = [];
-
-        public LoadStruct()
-        { }
     }
 }
