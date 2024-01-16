@@ -40,11 +40,12 @@ public class DesignBase
 
     internal DesignBase(DesignBase clone)
     {
-        _designData    = clone._designData;
-        CustomizeSet   = clone.CustomizeSet;
-        ApplyCustomize = clone.ApplyCustomizeRaw;
-        ApplyEquip     = clone.ApplyEquip & EquipFlagExtensions.All;
-        _designFlags   = clone._designFlags & (DesignFlags)0x0F;
+        _designData     = clone._designData;
+        CustomizeSet    = clone.CustomizeSet;
+        ApplyCustomize  = clone.ApplyCustomizeRaw;
+        ApplyEquip      = clone.ApplyEquip & EquipFlagExtensions.All;
+        ApplyParameters = clone.ApplyParameters & CustomizeParameterExtensions.All;
+        _designFlags    = clone._designFlags & (DesignFlags)0x0F;
     }
 
     /// <summary> Ensure that the customization set is updated when the design data changes. </summary>

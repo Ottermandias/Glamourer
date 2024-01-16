@@ -22,7 +22,7 @@ public sealed class Design : DesignBase, ISavable
     internal Design(Design other)
         : base(other)
     {
-        Tags           = other.Tags.ToArray();
+        Tags           = [.. other.Tags];
         Description    = other.Description;
         AssociatedMods = new SortedList<Mod, ModSettings>(other.AssociatedMods);
     }
