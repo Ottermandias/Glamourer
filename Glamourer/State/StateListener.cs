@@ -371,7 +371,7 @@ public class StateListener : IDisposable
                 return false;
 
             var offhand = actor.GetOffhand();
-            return offhand.Variant == 0 && offhand.Weapon.Id != 0 && armor.Set.Id == offhand.Weapon.Id;
+            return offhand.Variant == 0 && offhand.Weapon.Id != 0 && armor.Set.Id == offhand.Skeleton.Id;
         }
     }
 
