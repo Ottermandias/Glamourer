@@ -165,10 +165,10 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
         using (_ = ImRaii.Disabled(data.Locked))
         {
-            if (ImGui.SliderFloat("##value", ref value, -1000f, 1000f, "%.2f"))
+            if (ImGui.SliderFloat("##value", ref value, -100f, 200f, "%.2f"))
                 data.ValueSetter(new CustomizeParameterValue(value / 100f));
+            ImGuiUtil.HoverTooltip("You can control-click this to enter arbitrary values by hand instead of dragging.");
         }
-
         DrawRevert(data);
 
         DrawApplyAndLabel(data);
