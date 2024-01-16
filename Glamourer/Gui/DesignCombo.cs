@@ -81,9 +81,13 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
     {
         _currentDesign = currentDesign;
         InnerWidth     = 400 * ImGuiHelpers.GlobalScale;
-        var name = label ?? "Select Design Here...";
-        var ret = Draw("##design", name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing())
-         && CurrentSelection != null;
+        var  name = label ?? "Select Design Here...";
+        bool ret;
+        using (_ = currentDesign != null ? ImRaii.PushColor(ImGuiCol.Text, _designColors.GetColor(currentDesign)) : null)
+        {
+            ret = Draw("##design", name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing())
+             && CurrentSelection != null;
+        }
 
         if (currentDesign != null)
         {
@@ -194,7 +198,6 @@ public sealed class RevertDesignCombo : DesignComboBase, IDisposable
         RevertDesign       = revertDesign;
         _autoDesignManager = autoDesignManager;
     }
-
 
     public void Draw(AutoDesignSet set, AutoDesign? design, int autoDesignIndex)
     {
