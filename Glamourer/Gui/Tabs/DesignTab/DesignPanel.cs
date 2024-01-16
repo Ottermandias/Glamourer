@@ -313,7 +313,7 @@ public class DesignPanel(
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
         {
             var apply = bigChange ? ((CustomizeParameterFlag)flags).HasFlag(flag) : _selector.Selected!.DoApplyParameter(flag);
-            if (ImGui.Checkbox($"Apply {flag}", ref apply) || bigChange)
+            if (ImGui.Checkbox($"Apply {flag.ToName()}", ref apply) || bigChange)
                 _manager.ChangeApplyParameter(_selector.Selected!, flag, apply);
         }
     }
