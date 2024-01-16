@@ -56,15 +56,15 @@ public class FavoriteManager : ISavable
             else
             {
                 var load = JsonConvert.DeserializeObject<LoadIntermediary>(text);
-                switch (load.Version)
+                switch (load?.Version ?? 0)
                 {
                     case 1:
-                        _favorites.UnionWith(load.FavoriteItems.Select(i => (ItemId)i));
-                        _favoriteColors.UnionWith(load.FavoriteColors.Select(i => (StainId)i));
-                        _favoriteHairStyles.UnionWith(load.FavoriteHairStyles.Select(t => new FavoriteHairStyle(t)));
+                        _favorites.UnionWith(load!.FavoriteItems.Select(i => (ItemId)i));
+                        _favoriteColors.UnionWith(load!.FavoriteColors.Select(i => (StainId)i));
+                        _favoriteHairStyles.UnionWith(load!.FavoriteHairStyles.Select(t => new FavoriteHairStyle(t)));
                         break;
 
-                    default: throw new Exception($"Unknown Version {load.Version}");
+                    default: throw new Exception($"Unknown Version {load?.Version ?? 0}");
                 }
             }
         }

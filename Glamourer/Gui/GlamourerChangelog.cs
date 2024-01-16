@@ -26,6 +26,7 @@ public class GlamourerChangelog
         Add1_0_6_0(Changelog);
         Add1_0_7_0(Changelog);
         Add1_1_0_0(Changelog);
+        Add1_1_0_2(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -45,6 +46,16 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_1_0_2(Changelog log)
+        => log.NextVersion("Version 1.1.0.2")
+            .RegisterEntry("Added design colors in the preview of combos (in the quick bar and the automation panel).")
+            .RegisterHighlight("Improved Palette+ import options: Instead of entering a name, you can now select from available palettes.")
+            .RegisterHighlight("In the settings tab, there is also a button to import ALL palettes from Palette+ as separate designs.", 1)
+            .RegisterEntry("Fixed an issue with the favourites file not loading.")
+            .RegisterEntry("Fixed the name of the advanced parameters in the application panel.")
+            .RegisterEntry("Fixed design clones not respecting advanced parameter application rules.");
+            
 
     private static void Add1_1_0_0(Changelog log)
         => log.NextVersion("Version 1.1.0.0")
