@@ -52,6 +52,8 @@ public class GlamourerChangelog
             .RegisterEntry("Added design colors in the preview of combos (in the quick bar and the automation panel).")
             .RegisterHighlight("Improved Palette+ import options: Instead of entering a name, you can now select from available palettes.")
             .RegisterHighlight("In the settings tab, there is also a button to import ALL palettes from Palette+ as separate designs.", 1)
+            .RegisterEntry("Added a tooltip that you can enter numeric values to drag sliders by control-clicking for the muscle slider, also used slightly more useful caps.")
+            .RegisterEntry("Fixed issues with monk weapons, again.")
             .RegisterEntry("Fixed an issue with the favourites file not loading.")
             .RegisterEntry("Fixed the name of the advanced parameters in the application panel.")
             .RegisterEntry("Fixed design clones not respecting advanced parameter application rules.");
