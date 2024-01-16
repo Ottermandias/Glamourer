@@ -14,8 +14,8 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     private readonly Dictionary<Design, CustomizeParameterData> _lastData    = [];
     private          string                                     _paletteName = string.Empty;
     private          CustomizeParameterData                     _data;
+    private          CustomizeParameterFlag                     _flags;
     private          float                                      _width;
-    private          bool                                       _foundPalette;
 
 
     public void Draw(DesignManager designManager, Design design)
@@ -35,6 +35,24 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
             DrawValueInput(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
     }
 
+    private void DrawPaletteCombo()
+    {
+        using var id    = ImRaii.PushId("Palettes");
+        using var combo = ImRaii.Combo("##import", _paletteName.Length > 0 ? _paletteName : "Select Palette...");
+        if (!combo)
+            return;
+
+        foreach (var (name, (palette, flags)) in import.Data)
+        {
+            if (!ImGui.Selectable(name, _paletteName == name))
+                continue;
+
+            _paletteName = name;
+            _data        = palette;
+            _flags       = flags;
+        }
+    }
+
     private void DrawPaletteImport(DesignManager manager, Design design)
     {
         if (!config.ShowPalettePlusImport)
@@ -42,11 +60,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
         var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
 
-        if (ImGui.InputTextWithHint("##import", "Palette Name...", ref _paletteName, 256))
-        {
-            _data         = design.DesignData.Parameters;
-            _foundPalette = import.TryRead(_paletteName, ref _data);
-        }
+        DrawPaletteCombo();
 
         ImGui.SameLine(0, spacing);
         var value = true;
@@ -59,16 +73,13 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         ImGuiUtil.HoverTooltip("Hide the Palette+ Import bar from all designs. You can re-enable it in Glamourers interface settings.");
 
         var buttonWidth = new Vector2((_width - spacing) / 2, 0);
-        var tt = _foundPalette
+        var tt = _paletteName.Length > 0
             ? $"Apply the imported data from the Palette+ palette [{_paletteName}] to this design."
-            : $"The palette [{_paletteName}] could not be imported from your Palette+ configuration.";
-        if (ImGuiUtil.DrawDisabledButton("Apply Import", buttonWidth, tt, !_foundPalette || design.WriteProtected()))
+            : "Please select a palette first.";
+        if (ImGuiUtil.DrawDisabledButton("Apply Import", buttonWidth, tt, _paletteName.Length == 0 || design.WriteProtected()))
         {
-            // Reload Data in case anything changed since entering text.
-            _data             = design.DesignData.Parameters;
-            _foundPalette     = import.TryRead(_paletteName, ref _data);
             _lastData[design] = design.DesignData.Parameters;
-            foreach (var parameter in CustomizeParameterExtensions.AllFlags)
+            foreach (var parameter in _flags.Iterate())
                 manager.ChangeCustomizeParameter(design, parameter, _data[parameter]);
         }
 
