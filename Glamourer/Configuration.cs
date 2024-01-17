@@ -3,6 +3,7 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
 using Glamourer.Gui;
+using Glamourer.Gui.Customization;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using OtterGui;
@@ -37,6 +38,9 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool                 UseAdvancedParameters              { get; set; } = true;
     public bool                 ShowRevertAdvancedParametersButton { get; set; } = true;
     public bool                 ShowPalettePlusImport              { get; set; } = true;
+    public bool                 UseFloatForColors                  { get; set; } = true;
+    public bool                 UseRgbForColors                    { get; set; } = true;
+    public bool                 ShowColorConfig                    { get; set; } = true;
     public ModifiableHotkey     ToggleQuickDesignBar               { get; set; } = new(VirtualKey.NO_KEY);
     public DoubleModifier       DeleteDesignModifier               { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
     public ChangeLogDisplayType ChangeLogDisplayType               { get; set; } = ChangeLogDisplayType.New;
@@ -45,7 +49,7 @@ public class Configuration : IPluginConfiguration, ISavable
     [JsonProperty(Order = int.MaxValue)]
     public ISortMode<Design> SortMode { get; set; } = ISortMode<Design>.FoldersFirst;
 
-    public List<(string Code, bool Enabled)> Codes { get; set; } =  [];
+    public List<(string Code, bool Enabled)> Codes { get; set; } = [];
 
 #if DEBUG
     public bool DebugMode { get; set; } = true;

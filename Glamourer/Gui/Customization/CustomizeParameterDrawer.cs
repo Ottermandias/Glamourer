@@ -22,6 +22,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     {
         using var _ = EnsureSize();
         DrawPaletteImport(designManager, design);
+        DrawConfig(true);
         foreach (var flag in CustomizeParameterExtensions.RgbFlags)
             DrawColorInput3(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
 
@@ -99,6 +100,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     public void Draw(StateManager stateManager, ActorState state)
     {
         using var _ = EnsureSize();
+        DrawConfig(false);
         foreach (var flag in CustomizeParameterExtensions.RgbFlags)
             DrawColorInput3(CustomizeParameterDrawData.FromState(stateManager, state, flag));
 
@@ -110,6 +112,68 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
         foreach (var flag in CustomizeParameterExtensions.ValueFlags)
             DrawValueInput(CustomizeParameterDrawData.FromState(stateManager, state, flag));
+    }
+
+    public void DrawConfig(bool withApply)
+    {
+        if (!config.ShowColorConfig)
+            return;
+
+        DrawColorDisplayOptions();
+        DrawColorFormatOptions(withApply);
+        var value = config.ShowColorConfig;
+        ImGui.SameLine();
+        if (ImGui.Checkbox("Show Config", ref value))
+        {
+            config.ShowColorConfig = value;
+            config.Save();
+        }
+
+        ImGuiUtil.HoverTooltip(
+            "Hide the color configuration options from the Advanced Customization panel. You can re-enable it in Glamourers interface settings.");
+    }
+
+    public void DrawColorDisplayOptions()
+    {
+        using var group = ImRaii.Group();
+        if (ImGui.RadioButton("RGB", config.UseRgbForColors) && !config.UseRgbForColors)
+        {
+            config.UseRgbForColors = true;
+            config.Save();
+        }
+
+        ImGui.SameLine();
+        if (ImGui.RadioButton("HSV", !config.UseRgbForColors) && config.UseRgbForColors)
+        {
+            config.UseRgbForColors = false;
+            config.Save();
+        }
+    }
+
+    public void DrawColorFormatOptions(bool withApply)
+    {
+        var width = _width
+          - (ImGui.CalcTextSize("Float").X
+              + ImGui.CalcTextSize("Integer").X
+              + 2 * (ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.X)
+              + ImGui.GetStyle().ItemInnerSpacing.X
+              + ImGui.GetItemRectSize().X);
+        if (!withApply)
+            width -= ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X;
+
+        ImGui.SameLine(0, width);
+        if (ImGui.RadioButton("Float", config.UseFloatForColors) && !config.UseFloatForColors)
+        {
+            config.UseFloatForColors = true;
+            config.Save();
+        }
+
+        ImGui.SameLine();
+        if (ImGui.RadioButton("Integer", !config.UseFloatForColors) && config.UseFloatForColors)
+        {
+            config.UseFloatForColors = false;
+            config.Save();
+        }
     }
 
     private void DrawColorInput3(in CustomizeParameterDrawData data)
@@ -169,6 +233,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
                 data.ValueSetter(new CustomizeParameterValue(value / 100f));
             ImGuiUtil.HoverTooltip("You can control-click this to enter arbitrary values by hand instead of dragging.");
         }
+
         DrawRevert(data);
 
         DrawApplyAndLabel(data);
@@ -204,11 +269,14 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         ImGui.TextUnformatted(data.Flag.ToName());
     }
 
-    private static ImGuiColorEditFlags GetFlags()
-        => ImGui.GetIO().KeyCtrl
-            ? ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR | ImGuiColorEditFlags.NoOptions
-            : ImGuiColorEditFlags.Float | ImGuiColorEditFlags.HDR;
+    private ImGuiColorEditFlags GetFlags()
+        => Format | Display | ImGuiColorEditFlags.HDR | ImGuiColorEditFlags.NoOptions;
 
+    private ImGuiColorEditFlags Format
+        => config.UseFloatForColors ? ImGuiColorEditFlags.Float : ImGuiColorEditFlags.Uint8;
+
+    private ImGuiColorEditFlags Display
+        => config.UseRgbForColors ? ImGuiColorEditFlags.DisplayRGB : ImGuiColorEditFlags.DisplayHSV;
 
     private ImRaii.IEndObject EnsureSize()
     {

@@ -167,6 +167,8 @@ public class SettingsTab(
             Checkbox("Show Revert Advanced Customizations Button in Quick Design Bar",
                 "Show a button to revert only advanced customizations on your character or a target in the quick design bar.",
                 config.ShowRevertAdvancedParametersButton, v => config.ShowRevertAdvancedParametersButton = v);
+            Checkbox("Show Color Display Config", "Show the Color Display configuration options in the Advanced Customization panels.",
+                config.ShowColorConfig,           v => config.ShowColorConfig = v);
             Checkbox("Show Palette+ Import Button",
                 "Show the import button that allows you to import Palette+ palettes onto a design in the Advanced Customization options section for designs.",
                 config.ShowPalettePlusImport, v => config.ShowPalettePlusImport = v);
