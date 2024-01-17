@@ -27,6 +27,7 @@ public class GlamourerChangelog
         Add1_0_7_0(Changelog);
         Add1_1_0_0(Changelog);
         Add1_1_0_2(Changelog);
+        Add1_1_0_4(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -46,6 +47,19 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_1_0_4(Changelog log)
+        => log.NextVersion("Version 1.1.0.4")
+            .RegisterEntry("Added a check and warning for a lingering Palette+ installation.")
+            .RegisterHighlight("Added a button to only revert advanced customizations to game state to the quick design bar. This can be toggled off in the interface settings.")
+            .RegisterEntry("Added visible configuration options for color display for the advanced customizations.")
+            .RegisterEntry("Updated Battle NPC data from Gubal for 6.55.")
+            .RegisterEntry("Fixed issues with advanced customizations not resetting correctly with Use Game State as Base.")
+            .RegisterEntry("Fixed an issues with non-standard body type customizations not transmitting through Mare.")
+            .RegisterEntry("Fixed issues with application rule checkboxes not working for advanced parameters.")
+            .RegisterEntry("Fixed an issue with fist weapons, again again.")
+            .RegisterEntry("Fixed multiple issues with advanced parameters not applying after certain other changes.")
+            .RegisterEntry("Fixed another wrong restricted item.");
 
     private static void Add1_1_0_2(Changelog log)
         => log.NextVersion("Version 1.1.0.2")
