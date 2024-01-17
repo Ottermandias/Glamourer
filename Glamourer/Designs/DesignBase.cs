@@ -634,13 +634,16 @@ public class DesignBase
         PrintWarning(customizations.ValidateClan(clan, race, out race, out clan));
         var gender = (Gender)((json[CustomizeIndex.Gender.ToString()]?["Value"]?.ToObject<byte>() ?? 0) + 1);
         PrintWarning(customizations.ValidateGender(race, gender, out gender));
-        design._designData.Customize.Race   = race;
-        design._designData.Customize.Clan   = clan;
-        design._designData.Customize.Gender = gender;
-        design.CustomizeSet                 = design.SetCustomizationSet(customizations);
-        design.SetApplyCustomize(CustomizeIndex.Race,   json[CustomizeIndex.Race.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
-        design.SetApplyCustomize(CustomizeIndex.Clan,   json[CustomizeIndex.Clan.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
-        design.SetApplyCustomize(CustomizeIndex.Gender, json[CustomizeIndex.Gender.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
+        var bodyType = (CustomizeValue)(json[CustomizeIndex.BodyType.ToString()]?["Value"]?.ToObject<byte>() ?? 1);
+        design._designData.Customize.Race     = race;
+        design._designData.Customize.Clan     = clan;
+        design._designData.Customize.Gender   = gender;
+        design._designData.Customize.BodyType = bodyType;
+        design.CustomizeSet                   = design.SetCustomizationSet(customizations);
+        design.SetApplyCustomize(CustomizeIndex.Race,     json[CustomizeIndex.Race.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
+        design.SetApplyCustomize(CustomizeIndex.Clan,     json[CustomizeIndex.Clan.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
+        design.SetApplyCustomize(CustomizeIndex.Gender,   json[CustomizeIndex.Gender.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
+        design.SetApplyCustomize(CustomizeIndex.BodyType, bodyType != 0);
         var set = design.CustomizeSet;
 
         foreach (var idx in CustomizationExtensions.AllBasic)
