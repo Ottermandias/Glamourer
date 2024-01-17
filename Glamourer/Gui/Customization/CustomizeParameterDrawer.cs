@@ -197,7 +197,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         var       value = data.CurrentValue.InternalQuadruple;
         using (_ = ImRaii.Disabled(data.Locked))
         {
-            if (ImGui.ColorEdit4("##value", ref value, GetFlags()))
+            if (ImGui.ColorEdit4("##value", ref value, GetFlags() | ImGuiColorEditFlags.AlphaPreviewHalf))
                 data.ValueSetter(new CustomizeParameterValue(value));
         }
 
