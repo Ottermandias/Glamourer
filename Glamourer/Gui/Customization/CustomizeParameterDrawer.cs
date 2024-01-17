@@ -1,4 +1,5 @@
-﻿using Glamourer.Designs;
+﻿using Dalamud.Interface;
+using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Interop.PalettePlus;
 using Glamourer.State;
@@ -17,23 +18,46 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     private          CustomizeParameterFlag                     _flags;
     private          float                                      _width;
 
-
     public void Draw(DesignManager designManager, Design design)
     {
-        using var _ = EnsureSize();
+        using var generalSize = EnsureSize();
         DrawPaletteImport(designManager, design);
         DrawConfig(true);
-        foreach (var flag in CustomizeParameterExtensions.RgbFlags)
-            DrawColorInput3(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
 
-        foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
-            DrawColorInput4(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
+        using (_ = ImRaii.ItemWidth(_width - 2 * ImGui.GetFrameHeight() - 2 * ImGui.GetStyle().ItemInnerSpacing.X))
+        {
+            foreach (var flag in CustomizeParameterExtensions.RgbFlags)
+                DrawColorInput3(CustomizeParameterDrawData.FromDesign(designManager, design, flag), true);
+
+            foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
+                DrawColorInput4(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
+        }
 
         foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
             DrawPercentageInput(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
 
         foreach (var flag in CustomizeParameterExtensions.ValueFlags)
             DrawValueInput(CustomizeParameterDrawData.FromDesign(designManager, design, flag));
+    }
+
+    public void Draw(StateManager stateManager, ActorState state)
+    {
+        using var _ = EnsureSize();
+        DrawConfig(false);
+        using (_ = ImRaii.ItemWidth(_width - 2 * ImGui.GetFrameHeight() - 2 * ImGui.GetStyle().ItemInnerSpacing.X))
+        {
+            foreach (var flag in CustomizeParameterExtensions.RgbFlags)
+                DrawColorInput3(CustomizeParameterDrawData.FromState(stateManager, state, flag), state.ModelData.Customize.Highlights);
+
+            foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
+                DrawColorInput4(CustomizeParameterDrawData.FromState(stateManager, state, flag));
+        }
+
+        foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
+            DrawPercentageInput(CustomizeParameterDrawData.FromState(stateManager, state, flag));
+
+        foreach (var flag in CustomizeParameterExtensions.ValueFlags)
+            DrawValueInput(CustomizeParameterDrawData.FromState(stateManager, state, flag));
     }
 
     private void DrawPaletteCombo()
@@ -97,24 +121,8 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         }
     }
 
-    public void Draw(StateManager stateManager, ActorState state)
-    {
-        using var _ = EnsureSize();
-        DrawConfig(false);
-        foreach (var flag in CustomizeParameterExtensions.RgbFlags)
-            DrawColorInput3(CustomizeParameterDrawData.FromState(stateManager, state, flag));
 
-        foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
-            DrawColorInput4(CustomizeParameterDrawData.FromState(stateManager, state, flag));
-
-        foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
-            DrawPercentageInput(CustomizeParameterDrawData.FromState(stateManager, state, flag));
-
-        foreach (var flag in CustomizeParameterExtensions.ValueFlags)
-            DrawValueInput(CustomizeParameterDrawData.FromState(stateManager, state, flag));
-    }
-
-    public void DrawConfig(bool withApply)
+    private void DrawConfig(bool withApply)
     {
         if (!config.ShowColorConfig)
             return;
@@ -133,7 +141,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
             "Hide the color configuration options from the Advanced Customization panel. You can re-enable it in Glamourers interface settings.");
     }
 
-    public void DrawColorDisplayOptions()
+    private void DrawColorDisplayOptions()
     {
         using var group = ImRaii.Group();
         if (ImGui.RadioButton("RGB", config.UseRgbForColors) && !config.UseRgbForColors)
@@ -150,7 +158,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         }
     }
 
-    public void DrawColorFormatOptions(bool withApply)
+    private void DrawColorFormatOptions(bool withApply)
     {
         var width = _width
           - (ImGui.CalcTextSize("Float").X
@@ -176,15 +184,21 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         }
     }
 
-    private void DrawColorInput3(in CustomizeParameterDrawData data)
+    private void DrawColorInput3(in CustomizeParameterDrawData data, bool allowHighlights)
     {
-        using var id    = ImRaii.PushId((int)data.Flag);
-        var       value = data.CurrentValue.InternalTriple;
-        using (_ = ImRaii.Disabled(data.Locked))
+        using var id           = ImRaii.PushId((int)data.Flag);
+        var       value        = data.CurrentValue.InternalTriple;
+        var       noHighlights = !allowHighlights && data.Flag is CustomizeParameterFlag.HairHighlight;
+        DrawCopyPasteButtons(data, data.Locked || noHighlights);
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        using (_ = ImRaii.Disabled(data.Locked || noHighlights))
         {
             if (ImGui.ColorEdit3("##value", ref value, GetFlags()))
                 data.ValueSetter(new CustomizeParameterValue(value));
         }
+
+        if (noHighlights)
+            ImGuiUtil.HoverTooltip("Highlights are disabled in your regular customizations.", ImGuiHoveredFlags.AllowWhenDisabled);
 
         DrawRevert(data);
 
@@ -195,6 +209,8 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     {
         using var id    = ImRaii.PushId((int)data.Flag);
         var       value = data.CurrentValue.InternalQuadruple;
+        DrawCopyPasteButtons(data, data.Locked);
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
         using (_ = ImRaii.Disabled(data.Locked))
         {
             if (ImGui.ColorEdit4("##value", ref value, GetFlags() | ImGuiColorEditFlags.AlphaPreviewHalf))
@@ -229,7 +245,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
         using (_ = ImRaii.Disabled(data.Locked))
         {
-            if (ImGui.SliderFloat("##value", ref value, -100f, 200f, "%.2f"))
+            if (ImGui.SliderFloat("##value", ref value, -100f, 300, "%.2f"))
                 data.ValueSetter(new CustomizeParameterValue(value / 100f));
             ImGuiUtil.HoverTooltip("You can control-click this to enter arbitrary values by hand instead of dragging.");
         }
@@ -281,7 +297,29 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     private ImRaii.IEndObject EnsureSize()
     {
         var iconSize = ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 4 * ImGui.GetStyle().FramePadding.Y;
-        _width = 6 * iconSize + 4 * ImGui.GetStyle().ItemInnerSpacing.X;
+        _width = 7 * iconSize + 4 * ImGui.GetStyle().ItemInnerSpacing.X;
         return ImRaii.ItemWidth(_width);
+    }
+
+    private static void DrawCopyPasteButtons(in CustomizeParameterDrawData data, bool locked)
+    {
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Copy.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
+                "Copy this color to clipboard.", false, true))
+            ImGui.SetClipboardText(data.CurrentValue.ToJson());
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
+                "Try to paste this color from clipboard", locked, true))
+            return;
+
+        try
+        {
+            var text = ImGui.GetClipboardText();
+            if (CustomizeParameterValue.FromJson(text, out var v))
+                data.ValueSetter(v);
+        }
+        catch
+        {
+            // ignored
+        }
     }
 }

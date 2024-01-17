@@ -312,6 +312,10 @@ public class StateManager(
     public void ChangeCustomizeParameter(ActorState state, CustomizeParameterFlag flag, CustomizeParameterValue value,
         StateChanged.Source source, uint key = 0)
     {
+        // Also apply main color to highlights when highlights is off.
+        if (!state.ModelData.Customize.Highlights && flag is CustomizeParameterFlag.HairDiffuse)
+            ChangeCustomizeParameter(state, CustomizeParameterFlag.HairHighlight, value, source, key);
+
         if (!_editor.ChangeParameter(state, flag, value, source, out var old, key))
             return;
 
@@ -410,6 +414,12 @@ public class StateManager(
 
             foreach (var flag in CustomizeParameterExtensions.AllFlags.Where(design.DoApplyParameter))
                 _editor.ChangeParameter(state, flag, design.DesignData.Parameters[flag], paramSource, out _, key);
+
+            // Do not apply highlights from a design if highlights is unchecked.
+            if (!state.ModelData.Customize.Highlights)
+                _editor.ChangeParameter(state, CustomizeParameterFlag.HairHighlight,
+                    state.ModelData.Parameters[CustomizeParameterFlag.HairDiffuse],
+                    state[CustomizeParameterFlag.HairDiffuse], out _, key);
         }
 
         var actors = ApplyAll(state, redraw, false);

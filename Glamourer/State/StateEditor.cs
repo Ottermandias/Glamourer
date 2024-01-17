@@ -210,8 +210,8 @@ public class StateEditor
     }
 
     /// <summary> Change the customize flags of a character. </summary>
-    public bool ChangeParameter(ActorState state, CustomizeParameterFlag flag, CustomizeParameterValue value, StateChanged.Source source, out CustomizeParameterValue oldValue,
-        uint key = 0)
+    public bool ChangeParameter(ActorState state, CustomizeParameterFlag flag, CustomizeParameterValue value, StateChanged.Source source,
+        out CustomizeParameterValue oldValue, uint key = 0)
     {
         oldValue = state.ModelData.Parameters[flag];
         if (!state.CanUnlock(key))
@@ -219,6 +219,7 @@ public class StateEditor
 
         state.ModelData.Parameters.Set(flag, value);
         state[flag] = source;
+
         return true;
     }
 
