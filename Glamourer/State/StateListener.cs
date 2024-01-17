@@ -755,12 +755,9 @@ public class StateListener : IDisposable
                     break;
                 case StateChanged.Source.Pending:
                     state.BaseData.Parameters.Set(flag, newValue);
+                    state[flag] = StateChanged.Source.Manual;
                     if (_config.UseAdvancedParameters)
-                    {
                         model.ApplySingleParameterData(flag, state.ModelData.Parameters);
-                        state[flag] = StateChanged.Source.Manual;
-                    }
-
                     break;
             }
         }

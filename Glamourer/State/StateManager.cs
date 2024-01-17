@@ -404,7 +404,7 @@ public class StateManager(
             foreach (var slot in CrestExtensions.AllRelevantSet.Where(design.DoApplyCrest))
                 _editor.ChangeCrest(state, slot, design.DesignData.Crest(slot), source, out _, key);
 
-            var paramSource = source is StateChanged.Source.Manual && redraw
+            var paramSource = source is StateChanged.Source.Manual
                 ? StateChanged.Source.Pending
                 : source;
 
