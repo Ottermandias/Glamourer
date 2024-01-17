@@ -105,10 +105,7 @@ public class MainWindow : Window, IDisposable
         }
 
         if (_config.ShowQuickBarInTabs)
-        {
-            ImGui.SetCursorPos(new Vector2(ImGui.GetWindowContentRegionMax().X - 10 * ImGui.GetFrameHeight(), yPos - ImGuiHelpers.GlobalScale));
-            _quickBar.Draw();
-        }
+            _quickBar.DrawAtEnd(yPos);
     }
 
     private ReadOnlySpan<byte> ToLabel(TabType type)

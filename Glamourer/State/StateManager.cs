@@ -309,7 +309,8 @@ public class StateManager(
     }
 
     /// <summary> Change the crest of an equipment piece. </summary>
-    public void ChangeCustomizeParameter(ActorState state, CustomizeParameterFlag flag, CustomizeParameterValue value, StateChanged.Source source, uint key = 0)
+    public void ChangeCustomizeParameter(ActorState state, CustomizeParameterFlag flag, CustomizeParameterValue value,
+        StateChanged.Source source, uint key = 0)
     {
         if (!_editor.ChangeParameter(state, flag, value, source, out var old, key))
             return;
@@ -501,7 +502,25 @@ public class StateManager(
 
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
-        _event.Invoke(StateChanged.Type.Reset, StateChanged.Source.Manual, state, actors, null);
+        _event.Invoke(StateChanged.Type.Reset, source, state, actors, null);
+    }
+
+    public void ResetAdvancedState(ActorState state, StateChanged.Source source, uint key = 0)
+    {
+        if (!state.Unlock(key) || !state.ModelData.IsHuman)
+            return;
+
+        state.ModelData.Parameters = state.BaseData.Parameters;
+
+        foreach (var flag in CustomizeParameterExtensions.AllFlags)
+            state[flag] = StateChanged.Source.Game;
+
+        var actors = ActorData.Invalid;
+        if (source is StateChanged.Source.Manual or StateChanged.Source.Ipc)
+            actors = _applier.ChangeParameters(state, CustomizeParameterExtensions.All, true);
+        Glamourer.Log.Verbose(
+            $"Reset advanced customization state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
+        _event.Invoke(StateChanged.Type.Reset, source, state, actors, null);
     }
 
     public void ResetStateFixed(ActorState state, bool respectManualPalettes, uint key = 0)

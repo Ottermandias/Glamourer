@@ -16,7 +16,7 @@ using Penumbra.GameData.Actors;
 
 namespace Glamourer.Gui;
 
-public class DesignQuickBar : Window, IDisposable
+public sealed class DesignQuickBar : Window, IDisposable
 {
     private ImGuiWindowFlags GetFlags
         => _config.Ephemeral.LockDesignQuickBar
@@ -32,6 +32,7 @@ public class DesignQuickBar : Window, IDisposable
     private readonly ImRaii.Style      _windowPadding  = new();
     private readonly ImRaii.Color      _windowColor    = new();
     private          DateTime          _keyboardToggle = DateTime.UnixEpoch;
+    private          int               _numButtons     = 0;
 
     public DesignQuickBar(Configuration config, DesignCombo designCombo, StateManager stateManager, IKeyState keyState,
         ObjectManager objects, AutoDesignApplier autoDesignApplier)
@@ -60,7 +61,7 @@ public class DesignQuickBar : Window, IDisposable
     public override void PreDraw()
     {
         Flags = GetFlags;
-        Size  = new Vector2(12 * ImGui.GetFrameHeight(), ImGui.GetFrameHeight());
+        UpdateWidth();
 
         _windowPadding.Push(ImGuiStyleVar.WindowPadding, new Vector2(ImGuiHelpers.GlobalScale * 4))
             .Push(ImGuiStyleVar.WindowBorderSize, 0);
@@ -75,6 +76,12 @@ public class DesignQuickBar : Window, IDisposable
         _windowColor.Dispose();
     }
 
+    public void DrawAtEnd(float yPos)
+    {
+        var width = UpdateWidth();
+        ImGui.SetCursorPos(new Vector2(ImGui.GetWindowContentRegionMax().X - width, yPos - ImGuiHelpers.GlobalScale));
+        Draw();
+    }
 
     public override void Draw()
         => Draw(ImGui.GetContentRegionAvail().X);
@@ -82,20 +89,19 @@ public class DesignQuickBar : Window, IDisposable
     private void Draw(float width)
     {
         _objects.Update();
-        using var group         = ImRaii.Group();
-        var       spacing       = ImGui.GetStyle().ItemInnerSpacing;
-        using var style         = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
-        var       contentRegion = width;
-        var       buttonSize    = new Vector2(ImGui.GetFrameHeight());
-        var       comboSize     = contentRegion - 3 * buttonSize.X - 3 * spacing.X;
+        using var group      = ImRaii.Group();
+        var       spacing    = ImGui.GetStyle().ItemInnerSpacing;
+        using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
+        var       buttonSize = new Vector2(ImGui.GetFrameHeight());
+        var       comboSize  = width - _numButtons * (buttonSize.X + spacing.X);
         _designCombo.Draw(comboSize);
         PrepareButtons();
         ImGui.SameLine();
         DrawApplyButton(buttonSize);
         ImGui.SameLine();
         DrawRevertButton(buttonSize);
-        ImGui.SameLine();
         DrawRevertAutomationButton(buttonSize);
+        DrawRevertAdvancedCustomization(buttonSize);
     }
 
     private ActorIdentifier _playerIdentifier;
@@ -111,10 +117,8 @@ public class DesignQuickBar : Window, IDisposable
         _objects.Update();
         (_playerIdentifier, _playerData) = _objects.PlayerData;
         (_targetIdentifier, _targetData) = _objects.TargetData;
-        if (!_stateManager.TryGetValue(_playerIdentifier, out _playerState))
-            _playerState = null;
-        if (!_stateManager.TryGetValue(_targetIdentifier, out _targetState))
-            _targetState = null;
+        _playerState                     = _stateManager.GetValueOrDefault(_playerIdentifier);
+        _targetState                     = _stateManager.GetValueOrDefault(_targetIdentifier);
     }
 
     private void DrawApplyButton(Vector2 size)
@@ -183,50 +187,77 @@ public class DesignQuickBar : Window, IDisposable
         if (available == 0)
             tooltip = "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.";
 
-        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, tooltip, available);
+        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, tooltip, available);
         if (clicked)
             _stateManager.ResetState(state!, StateChanged.Source.Manual);
     }
 
     public void DrawRevertAutomationButton(Vector2 buttonSize)
     {
+        if (!_config.EnableAutoDesigns)
+            return;
+
         var available = 0;
         var tooltip   = string.Empty;
-        if (!_config.EnableAutoDesigns)
-        {
-            tooltip = "Automation is not enabled, you can not reset to automation state.";
-        }
-        else
-        {
-            if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
-            {
-                available |= 1;
-                tooltip   =  "Left-Click: Revert the player character to their automation state.";
-            }
 
-            if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
-            {
-                if (available != 0)
-                    tooltip += '\n';
-                available |= 2;
-                tooltip   += $"Right-Click: Revert {_targetIdentifier} to their automation state.";
-            }
-
-            if (available == 0)
-                tooltip = "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.";
+        if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
+        {
+            available |= 1;
+            tooltip   =  "Left-Click: Revert the player character to their automation state.";
         }
 
+        if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
+        {
+            if (available != 0)
+                tooltip += '\n';
+            available |= 2;
+            tooltip   += $"Right-Click: Revert {_targetIdentifier} to their automation state.";
+        }
+
+        if (available == 0)
+            tooltip = "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.";
+
+        ImGui.SameLine();
         var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.SyncAlt, buttonSize, tooltip, available);
         if (!clicked)
-        { }
-        else
+            return;
+
+        foreach (var actor in data.Objects)
         {
-            foreach (var actor in data.Objects)
-            {
-                _autoDesignApplier.ReapplyAutomation(actor, id, state!);
-                _stateManager.ReapplyState(actor);
-            }
+            _autoDesignApplier.ReapplyAutomation(actor, id, state!);
+            _stateManager.ReapplyState(actor);
         }
+    }
+
+    public void DrawRevertAdvancedCustomization(Vector2 buttonSize)
+    {
+        if (!_config.ShowRevertAdvancedParametersButton || !_config.UseAdvancedParameters)
+            return;
+
+        var available = 0;
+        var tooltip   = string.Empty;
+
+        if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
+        {
+            available |= 1;
+            tooltip   =  "Left-Click: Revert the advanced customizations of the player character to their game state.";
+        }
+
+        if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
+        {
+            if (available != 0)
+                tooltip += '\n';
+            available |= 2;
+            tooltip   += $"Right-Click: Revert the advanced customizations of {_targetIdentifier} to their game state.";
+        }
+
+        if (available == 0)
+            tooltip = "Neither player character nor target are available or their state is locked.";
+
+        ImGui.SameLine();
+        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Palette, buttonSize, tooltip, available);
+        if (clicked)
+            _stateManager.ResetAdvancedState(state!, StateChanged.Source.Manual);
     }
 
     private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(FontAwesomeIcon icon, Vector2 buttonSize, string tooltip,
@@ -251,11 +282,24 @@ public class DesignQuickBar : Window, IDisposable
         _config.Ephemeral.Save();
     }
 
-    public bool CheckKeyState(ModifiableHotkey key, bool noKey)
+    private bool CheckKeyState(ModifiableHotkey key, bool noKey)
     {
         if (key.Hotkey == VirtualKey.NO_KEY)
             return noKey;
 
         return _keyState[key.Hotkey] && key.Modifier1.IsActive() && key.Modifier2.IsActive();
+    }
+
+    private float UpdateWidth()
+    {
+        _numButtons = (_config.EnableAutoDesigns, _config is { ShowRevertAdvancedParametersButton: true, UseAdvancedParameters: true }) switch
+        {
+            (true, true)   => 4,
+            (false, true)  => 3,
+            (true, false)  => 3,
+            (false, false) => 2,
+        };
+        Size = new Vector2((7 + _numButtons) * ImGui.GetFrameHeight() + _numButtons * ImGui.GetStyle().ItemInnerSpacing.X, ImGui.GetFrameHeight());
+        return Size.Value.X;
     }
 }
