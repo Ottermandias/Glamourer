@@ -59,7 +59,7 @@ public sealed class StateChanged()
         Fixed,
         Ipc,
         // Only used for CustomizeParameters.
-        Outstanding,
+        Pending,
     }
 
     public enum Priority

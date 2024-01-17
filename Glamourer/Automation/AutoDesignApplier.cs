@@ -360,7 +360,7 @@ public class AutoDesignApplier : IDisposable
             if (!parameterFlags.HasFlag(flag))
                 continue;
 
-            if (!respectManual || state[flag] is not StateChanged.Source.Manual)
+            if (!respectManual || state[flag] is not StateChanged.Source.Manual and not StateChanged.Source.Pending)
                 _state.ChangeCustomizeParameter(state, flag, design.Parameters[flag], source);
             totalParameterFlags |= flag;
         }

@@ -404,7 +404,7 @@ public class StateManager(
                 _editor.ChangeCrest(state, slot, design.DesignData.Crest(slot), source, out _, key);
 
             var paramSource = source is StateChanged.Source.Manual && redraw
-                ? StateChanged.Source.Outstanding
+                ? StateChanged.Source.Pending
                 : source;
 
             foreach (var flag in CustomizeParameterExtensions.AllFlags.Where(design.DoApplyParameter))
