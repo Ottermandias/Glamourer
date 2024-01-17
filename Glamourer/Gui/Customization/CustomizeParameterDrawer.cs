@@ -17,6 +17,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     private          CustomizeParameterData                     _data;
     private          CustomizeParameterFlag                     _flags;
     private          float                                      _width;
+    private          CustomizeParameterValue?                   _copy;
 
     public void Draw(DesignManager designManager, Design design)
     {
@@ -301,25 +302,14 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         return ImRaii.ItemWidth(_width);
     }
 
-    private static void DrawCopyPasteButtons(in CustomizeParameterDrawData data, bool locked)
+    private void DrawCopyPasteButtons(in CustomizeParameterDrawData data, bool locked)
     {
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Copy.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                "Copy this color to clipboard.", false, true))
-            ImGui.SetClipboardText(data.CurrentValue.ToJson());
+                "Copy this color for later use.", false, true))
+            _copy = data.CurrentValue;
         ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
-        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                "Try to paste this color from clipboard", locked, true))
-            return;
-
-        try
-        {
-            var text = ImGui.GetClipboardText();
-            if (CustomizeParameterValue.FromJson(text, out var v))
-                data.ValueSetter(v);
-        }
-        catch
-        {
-            // ignored
-        }
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
+                _copy.HasValue ? "Paste the currently copied value." : "No value copied yet.", locked || !_copy.HasValue, true))
+            data.ValueSetter(_copy!.Value);
     }
 }

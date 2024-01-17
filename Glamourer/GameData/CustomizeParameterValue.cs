@@ -49,30 +49,4 @@ public readonly struct CustomizeParameterValue
 
     public override string ToString()
         => _data.ToString();
-
-    public string ToJson()
-    {
-        try
-        {
-            return JsonConvert.SerializeObject(_data, Formatting.None);
-        }
-        catch
-        {
-            return string.Empty;
-        }
-    }
-
-    public static bool FromJson(string input, out CustomizeParameterValue value)
-    {
-        try
-        {
-            value = new CustomizeParameterValue(JsonConvert.DeserializeObject<Vector4>(input));
-            return true;
-        }
-        catch
-        {
-            value = default;
-            return false;
-        }
-    }
 }
