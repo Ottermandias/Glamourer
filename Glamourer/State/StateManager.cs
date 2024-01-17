@@ -504,7 +504,7 @@ public class StateManager(
         _event.Invoke(StateChanged.Type.Reset, StateChanged.Source.Manual, state, actors, null);
     }
 
-    public void ResetStateFixed(ActorState state, uint key = 0)
+    public void ResetStateFixed(ActorState state, bool respectManualPalettes, uint key = 0)
     {
         if (!state.Unlock(key))
             return;
@@ -541,10 +541,13 @@ public class StateManager(
 
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
         {
-            if (state[flag] is StateChanged.Source.Fixed)
+            switch (state[flag])
             {
-                state[flag]                      = StateChanged.Source.Game;
-                state.ModelData.Parameters[flag] = state.BaseData.Parameters[flag];
+                case StateChanged.Source.Fixed:
+                case StateChanged.Source.Manual when !respectManualPalettes:
+                    state[flag]                      = StateChanged.Source.Game;
+                    state.ModelData.Parameters[flag] = state.BaseData.Parameters[flag];
+                    break;
             }
         }
 

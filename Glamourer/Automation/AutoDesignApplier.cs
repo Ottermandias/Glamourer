@@ -274,7 +274,7 @@ public class AutoDesignApplier : IDisposable
         CustomizeParameterFlag totalParameterFlags = 0;
         byte                   totalMetaFlags      = 0;
         if (set.BaseState == AutoDesignSet.Base.Game)
-            _state.ResetStateFixed(state);
+            _state.ResetStateFixed(state, respectManual);
         else if (!respectManual)
             state.RemoveFixedDesignSources();
 
