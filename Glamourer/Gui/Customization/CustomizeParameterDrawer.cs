@@ -42,7 +42,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
     public void Draw(StateManager stateManager, ActorState state)
     {
-        using var _ = EnsureSize();
+        using var generalSize = EnsureSize();
         DrawConfig(false);
         using (_ = ImRaii.ItemWidth(_width - 2 * ImGui.GetFrameHeight() - 2 * ImGui.GetStyle().ItemInnerSpacing.X))
         {

@@ -57,8 +57,8 @@ public static class CustomizeParameterExtensions
             CustomizeParameterFlag.LeftEye               => "Left Eye Color",
             CustomizeParameterFlag.RightEye              => "Right Eye Color",
             CustomizeParameterFlag.FeatureColor          => "Tattoo Color",
-            CustomizeParameterFlag.FacePaintUvMultiplier => "Face Paint Orientation",
-            CustomizeParameterFlag.FacePaintUvOffset     => "Face Paint Offset",
+            CustomizeParameterFlag.FacePaintUvMultiplier => "Multiplier for Face Paint",
+            CustomizeParameterFlag.FacePaintUvOffset     => "Offset of Face Paint",
             CustomizeParameterFlag.DecalColor            => "Face Paint Color",
             _                                            => string.Empty,
         };
