@@ -175,8 +175,9 @@ public class DesignPanel(
 
     private void DrawCustomizeApplication()
     {
-        var set       = _selector.Selected!.CustomizeSet;
-        var available = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender | CustomizeFlag.BodyType;
+        using var id        = ImRaii.PushId("Customizations");
+        var       set       = _selector.Selected!.CustomizeSet;
+        var       available = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender | CustomizeFlag.BodyType;
         var flags = _selector.Selected!.ApplyCustomizeExcludingBodyType == 0 ? 0 :
             (_selector.Selected!.ApplyCustomize & available) == available    ? 3 : 1;
         if (ImGui.CheckboxFlags("Apply All Customizations", ref flags, 3))
@@ -207,8 +208,9 @@ public class DesignPanel(
 
     private void DrawCrestApplication()
     {
-        var flags     = (uint)_selector.Selected!.ApplyCrest;
-        var bigChange = ImGui.CheckboxFlags("Apply All Crests", ref flags, (uint)CrestExtensions.AllRelevant);
+        using var id        = ImRaii.PushId("Crests");
+        var       flags     = (uint)_selector.Selected!.ApplyCrest;
+        var       bigChange = ImGui.CheckboxFlags("Apply All Crests", ref flags, (uint)CrestExtensions.AllRelevant);
         foreach (var flag in CrestExtensions.AllRelevantSet)
         {
             var apply = bigChange ? ((CrestFlag)flags & flag) == flag : _selector.Selected!.DoApplyCrest(flag);
@@ -238,9 +240,9 @@ public class DesignPanel(
         {
             void ApplyEquip(string label, EquipFlag allFlags, bool stain, IEnumerable<EquipSlot> slots)
             {
-                var flags = (uint)(allFlags & _selector.Selected!.ApplyEquip);
-
-                var bigChange = ImGui.CheckboxFlags($"Apply All {label}", ref flags, (uint)allFlags);
+                var       flags     = (uint)(allFlags & _selector.Selected!.ApplyEquip);
+                using var id        = ImRaii.PushId(label);
+                var       bigChange = ImGui.CheckboxFlags($"Apply All {label}", ref flags, (uint)allFlags);
                 if (stain)
                     foreach (var slot in slots)
                     {
@@ -283,6 +285,7 @@ public class DesignPanel(
 
     private void DrawMetaApplication()
     {
+        using var  id  = ImRaii.PushId("Meta");
         const uint all = 0x0Fu;
         var flags = (_selector.Selected!.DoApplyHatVisible() ? 0x01u : 0x00)
           | (_selector.Selected!.DoApplyVisorToggle() ? 0x02u : 0x00)
@@ -308,8 +311,9 @@ public class DesignPanel(
 
     private void DrawParameterApplication()
     {
-        var flags     = (uint)_selector.Selected!.ApplyParameters;
-        var bigChange = ImGui.CheckboxFlags("Apply All Customize Parameters", ref flags, (uint)CustomizeParameterExtensions.All);
+        using var id        = ImRaii.PushId("Parameter");
+        var       flags     = (uint)_selector.Selected!.ApplyParameters;
+        var       bigChange = ImGui.CheckboxFlags("Apply All Customize Parameters", ref flags, (uint)CustomizeParameterExtensions.All);
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
         {
             var apply = bigChange ? ((CustomizeParameterFlag)flags).HasFlag(flag) : _selector.Selected!.DoApplyParameter(flag);
