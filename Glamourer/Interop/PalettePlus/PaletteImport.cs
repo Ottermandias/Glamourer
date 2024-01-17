@@ -164,14 +164,4 @@ public class PaletteImport(DalamudPluginInterface pluginInterface, DesignManager
             Glamourer.Log.Error($"Could not read Palette+ configuration:\n{ex}");
         }
     }
-
-    public bool TryRead(string name, ref CustomizeParameterData data)
-    {
-        if (!Data.TryGetValue(name, out var t))
-            return false;
-
-        foreach (var flag in t.Item2.Iterate())
-            data[flag] = t.Item1[flag];
-        return true;
-    }
 }

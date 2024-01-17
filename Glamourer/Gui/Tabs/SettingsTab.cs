@@ -28,7 +28,8 @@ public class SettingsTab(
     FunModule funModule,
     IKeyState keys,
     DesignColorUi designColorUi,
-    PaletteImport paletteImport)
+    PaletteImport paletteImport,
+    PalettePlusChecker paletteChecker)
     : ITab
 {
     private readonly VirtualKey[] _validKeys = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
@@ -84,7 +85,7 @@ public class SettingsTab(
             config.RevertManualChangesOnZoneChange, v => config.RevertManualChangesOnZoneChange = v);
         Checkbox("Enable Advanced Customization Options",
             "Enable the display and editing of advanced customization options like arbitrary colors.",
-            config.UseAdvancedParameters, v => config.UseAdvancedParameters = v);
+            config.UseAdvancedParameters, paletteChecker.SetAdvancedParameters);
         PaletteImportButton();
         ImGui.NewLine();
     }
