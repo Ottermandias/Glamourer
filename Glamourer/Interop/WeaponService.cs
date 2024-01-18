@@ -42,7 +42,6 @@ public unsafe class WeaponService : IDisposable
 
     private readonly Hook<LoadWeaponDelegate> _loadWeaponHook;
 
-
     private void LoadWeaponDetour(DrawDataContainer* drawData, uint slot, ulong weaponValue, byte redrawOnEquality, byte unk2,
         byte skipGameObject, byte unk4)
     {
@@ -80,7 +79,7 @@ public unsafe class WeaponService : IDisposable
         }
         else
         {
-            _original(drawData, slot, weaponValue, redrawOnEquality, unk2, skipGameObject, unk4);
+            _loadWeaponHook.Original(drawData, slot, weaponValue, redrawOnEquality, unk2, skipGameObject, unk4);
         }
     }
 
@@ -91,18 +90,18 @@ public unsafe class WeaponService : IDisposable
         {
             case EquipSlot.MainHand:
                 _inUpdate.Value = true;
-                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value, 1, 0, 1, 0);
+                _original(&character.AsCharacter->DrawData, 0, weapon.Value, 1, 0, 1, 0);
                 _inUpdate.Value = false;
                 return;
             case EquipSlot.OffHand:
                 _inUpdate.Value = true;
-                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, weapon.Value, 1, 0, 1, 0);
+                _original(&character.AsCharacter->DrawData, 1, weapon.Value, 1, 0, 1, 0);
                 _inUpdate.Value = false;
                 return;
             case EquipSlot.BothHand:
                 _inUpdate.Value = true;
-                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 0, weapon.Value,                1, 0, 1, 0);
-                _loadWeaponHook.Original(&character.AsCharacter->DrawData, 1, CharacterWeapon.Empty.Value, 1, 0, 1, 0);
+                _original(&character.AsCharacter->DrawData, 0, weapon.Value,                1, 0, 1, 0);
+                _original(&character.AsCharacter->DrawData, 1, CharacterWeapon.Empty.Value, 1, 0, 1, 0);
                 _inUpdate.Value = false;
                 return;
         }
