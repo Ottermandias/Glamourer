@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Glamourer.GameData;
+﻿namespace Glamourer.GameData;
 
 public readonly struct CustomizeParameterValue
 {

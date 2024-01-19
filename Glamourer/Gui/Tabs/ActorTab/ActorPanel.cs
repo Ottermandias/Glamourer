@@ -8,6 +8,7 @@ using Glamourer.Designs;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
+using Glamourer.Interop.Material;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
@@ -97,6 +98,12 @@ public class ActorPanel(
         return (_selector.IncognitoMode ? _identifier.Incognito(null) : _identifier.ToString(), Actor.Null);
     }
 
+    private Vector3                            _test;
+    private int                                _rowId;
+    private MaterialValueIndex.ColorTableIndex _index;
+    private int                                _materialId;
+    private int                                _slotId;
+
     private unsafe void DrawPanel()
     {
         using var child = ImRaii.Child("##Panel", -Vector2.One, true);
@@ -113,6 +120,17 @@ public class ActorPanel(
         DrawApplyToTarget();
 
         RevertButtons();
+
+        ImGui.InputInt("Row", ref _rowId);
+        ImGui.InputInt("Material", ref _materialId);
+        ImGui.InputInt("Slot", ref _slotId);
+        ImGuiUtil.GenericEnumCombo("Value", 300, _index, out _index);
+
+        var index = new MaterialValueIndex(MaterialValueIndex.DrawObjectType.Human, (byte) _slotId, (byte) _materialId, (byte)_rowId, _index);
+        index.TryGetValue(_actor, out _test);
+        if (ImGui.ColorPicker3("TestPicker", ref _test) && _actor.Valid)
+            MaterialService.Test(_actor, index, _test);
+
 
         using var disabled = ImRaii.Disabled(transformationId != 0);
         if (_state.ModelData.IsHuman)
