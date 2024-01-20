@@ -116,8 +116,6 @@ public unsafe class FunModule : IDisposable
                 SetRandomItem(slot, ref armor);
                 break;
             case CodeService.CodeFlag.Elephants:
-                SetElephant(slot, ref armor);
-                break;
             case CodeService.CodeFlag.World when actor.Index != 0:
                 KeepOldArmor(actor, slot, ref armor);
                 break;
@@ -166,8 +164,9 @@ public unsafe class FunModule : IDisposable
                     SetRandomItem(slot, ref armor[idx]);
                 break;
             case CodeService.CodeFlag.Elephants:
-                SetElephant(EquipSlot.Body, ref armor[1]);
-                SetElephant(EquipSlot.Head, ref armor[0]);
+                var stainId = ElephantStains[_rng.Next(0, ElephantStains.Length)];
+                SetElephant(EquipSlot.Body, ref armor[1], stainId);
+                SetElephant(EquipSlot.Head, ref armor[0], stainId);
                 break;
             case CodeService.CodeFlag.World when actor.Index != 0:
                 _worldSets.Apply(actor, _rng, armor);
@@ -216,12 +215,24 @@ public unsafe class FunModule : IDisposable
         armor.Variant = item.Variant;
     }
 
-    private static void SetElephant(EquipSlot slot, ref CharacterArmor armor)
+    private static ReadOnlySpan<byte> ElephantStains
+        =>
+        [
+            87, 87, 87, 87, 87, // Cherry Pink
+            83, 83, 83,         // Colibri Pink 
+            80,                 // Iris Purple
+            85,                 // Regal Purple
+            103,                // Pastel Pink
+            82, 82, 82,         // Lotus Pink
+            7,                  // Rose Pink
+        ];
+
+    private void SetElephant(EquipSlot slot, ref CharacterArmor armor, StainId stainId)
     {
         armor = slot switch
         {
-            EquipSlot.Body => new CharacterArmor(6133, 1, 87),
-            EquipSlot.Head => new CharacterArmor(6133, 1, 87),
+            EquipSlot.Body => new CharacterArmor(6133, 1, stainId),
+            EquipSlot.Head => new CharacterArmor(6133, 1, stainId),
             _              => armor,
         };
     }
