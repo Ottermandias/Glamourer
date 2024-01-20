@@ -1,6 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Glamourer.Designs;
+using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;
@@ -15,7 +16,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Automation;
 
-public class AutoDesignApplier : IDisposable
+public sealed class AutoDesignApplier : IDisposable
 {
     private readonly Configuration          _config;
     private readonly AutoDesignManager      _manager;
@@ -30,6 +31,7 @@ public class AutoDesignApplier : IDisposable
     private readonly ObjectManager          _objects;
     private readonly WeaponLoading          _weapons;
     private readonly HumanModelList         _humans;
+    private readonly DesignMerger           _designMerger;
     private readonly IClientState           _clientState;
 
     private          ActorState?                                                 _jobChangeState;
@@ -182,7 +184,7 @@ public class AutoDesignApplier : IDisposable
                 }
                 else if (_state.TryGetValue(id, out var state))
                 {
-                    state.RemoveFixedDesignSources();
+                    state.Source.RemoveFixedDesignSources();
                 }
             }
         }
@@ -196,9 +198,9 @@ public class AutoDesignApplier : IDisposable
             {
                 if (id.Type is IdentifierType.Player && id.HomeWorld == WorldId.AnyWorld)
                     foreach (var state in _state.Where(kvp => kvp.Key.PlayerName == id.PlayerName).Select(kvp => kvp.Value))
-                        state.RemoveFixedDesignSources();
+                        state.Source.RemoveFixedDesignSources();
                 else if (_state.TryGetValue(id, out var state))
-                    state.RemoveFixedDesignSources();
+                    state.Source.RemoveFixedDesignSources();
             }
         }
     }
@@ -276,7 +278,7 @@ public class AutoDesignApplier : IDisposable
         if (set.BaseState == AutoDesignSet.Base.Game)
             _state.ResetStateFixed(state, respectManual);
         else if (!respectManual)
-            state.RemoveFixedDesignSources();
+            state.Source.RemoveFixedDesignSources();
 
         if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
             return;
@@ -286,7 +288,7 @@ public class AutoDesignApplier : IDisposable
             if (!design.IsActive(actor))
                 continue;
 
-            if (design.ApplicationType is 0)
+            if (design.Type is 0)
                 continue;
 
             ref readonly var data   = ref design.GetDesignData(state);
@@ -342,7 +344,7 @@ public class AutoDesignApplier : IDisposable
             if (!crestFlags.HasFlag(slot))
                 continue;
 
-            if (!respectManual || state[slot] is not StateChanged.Source.Manual)
+            if (!respectManual || state.Source[slot] is not StateChanged.Source.Manual)
                 _state.ChangeCrest(state, slot, design.Crest(slot), source);
             totalCrestFlags |= slot;
         }
@@ -360,7 +362,7 @@ public class AutoDesignApplier : IDisposable
             if (!parameterFlags.HasFlag(flag))
                 continue;
 
-            if (!respectManual || state[flag] is not StateChanged.Source.Manual and not StateChanged.Source.Pending)
+            if (!respectManual || state.Source[flag] is not StateChanged.Source.Manual and not StateChanged.Source.Pending)
                 _state.ChangeCustomizeParameter(state, flag, design.Parameters[flag], source);
             totalParameterFlags |= flag;
         }
@@ -381,7 +383,7 @@ public class AutoDesignApplier : IDisposable
                 var item = design.Item(slot);
                 if (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _))
                 {
-                    if (!respectManual || state[slot, false] is not StateChanged.Source.Manual)
+                    if (!respectManual || state.Source[slot, false] is not StateChanged.Source.Manual)
                         _state.ChangeItem(state, slot, item, source);
                     totalEquipFlags |= flag;
                 }
@@ -390,7 +392,7 @@ public class AutoDesignApplier : IDisposable
             var stainFlag = slot.ToStainFlag();
             if (equipFlags.HasFlag(stainFlag))
             {
-                if (!respectManual || state[slot, true] is not StateChanged.Source.Manual)
+                if (!respectManual || state.Source[slot, true] is not StateChanged.Source.Manual)
                     _state.ChangeStain(state, slot, design.Stain(slot), source);
                 totalEquipFlags |= stainFlag;
             }
@@ -400,7 +402,7 @@ public class AutoDesignApplier : IDisposable
         {
             var item        = design.Item(EquipSlot.MainHand);
             var checkUnlock = !_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _);
-            var checkState  = !respectManual || state[EquipSlot.MainHand, false] is not StateChanged.Source.Manual;
+            var checkState  = !respectManual || state.Source[EquipSlot.MainHand, false] is not StateChanged.Source.Manual;
             if (checkUnlock && checkState)
             {
                 if (fromJobChange)
@@ -420,7 +422,7 @@ public class AutoDesignApplier : IDisposable
         {
             var item        = design.Item(EquipSlot.OffHand);
             var checkUnlock = !_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _);
-            var checkState  = !respectManual || state[EquipSlot.OffHand, false] is not StateChanged.Source.Manual;
+            var checkState  = !respectManual || state.Source[EquipSlot.OffHand, false] is not StateChanged.Source.Manual;
             if (checkUnlock && checkState)
             {
                 if (fromJobChange)
@@ -438,14 +440,14 @@ public class AutoDesignApplier : IDisposable
 
         if (equipFlags.HasFlag(EquipFlag.MainhandStain))
         {
-            if (!respectManual || state[EquipSlot.MainHand, true] is not StateChanged.Source.Manual)
+            if (!respectManual || state.Source[EquipSlot.MainHand, true] is not StateChanged.Source.Manual)
                 _state.ChangeStain(state, EquipSlot.MainHand, design.Stain(EquipSlot.MainHand), source);
             totalEquipFlags |= EquipFlag.MainhandStain;
         }
 
         if (equipFlags.HasFlag(EquipFlag.OffhandStain))
         {
-            if (!respectManual || state[EquipSlot.OffHand, true] is not StateChanged.Source.Manual)
+            if (!respectManual || state.Source[EquipSlot.OffHand, true] is not StateChanged.Source.Manual)
                 _state.ChangeStain(state, EquipSlot.OffHand, design.Stain(EquipSlot.OffHand), source);
             totalEquipFlags |= EquipFlag.OffhandStain;
         }
@@ -467,7 +469,7 @@ public class AutoDesignApplier : IDisposable
 
         if (customizeFlags.HasFlag(CustomizeFlag.Clan))
         {
-            if (!respectManual || state[CustomizeIndex.Clan] is not StateChanged.Source.Manual)
+            if (!respectManual || state.Source[CustomizeIndex.Clan] is not StateChanged.Source.Manual)
                 fixFlags |= _customizations.ChangeClan(ref customize, design.Customize.Clan);
             customizeFlags      &= ~(CustomizeFlag.Clan | CustomizeFlag.Race);
             totalCustomizeFlags |= CustomizeFlag.Clan | CustomizeFlag.Race;
@@ -475,7 +477,7 @@ public class AutoDesignApplier : IDisposable
 
         if (customizeFlags.HasFlag(CustomizeFlag.Gender))
         {
-            if (!respectManual || state[CustomizeIndex.Gender] is not StateChanged.Source.Manual)
+            if (!respectManual || state.Source[CustomizeIndex.Gender] is not StateChanged.Source.Manual)
                 fixFlags |= _customizations.ChangeGender(ref customize, design.Customize.Gender);
             customizeFlags      &= ~CustomizeFlag.Gender;
             totalCustomizeFlags |= CustomizeFlag.Gender;
@@ -486,7 +488,7 @@ public class AutoDesignApplier : IDisposable
 
         if (customizeFlags.HasFlag(CustomizeFlag.Face))
         {
-            if (!respectManual || state[CustomizeIndex.Face] is not StateChanged.Source.Manual)
+            if (!respectManual || state.Source[CustomizeIndex.Face] is not StateChanged.Source.Manual)
                 _state.ChangeCustomize(state, CustomizeIndex.Face, design.Customize.Face, source);
             customizeFlags      &= ~CustomizeFlag.Face;
             totalCustomizeFlags |= CustomizeFlag.Face;
@@ -506,7 +508,7 @@ public class AutoDesignApplier : IDisposable
                 if (data.HasValue && _config.UnlockedItemMode && !_customizeUnlocks.IsUnlocked(data.Value, out _))
                     continue;
 
-                if (!respectManual || state[index] is not StateChanged.Source.Manual)
+                if (!respectManual || state.Source[index] is not StateChanged.Source.Manual)
                     _state.ChangeCustomize(state, index, value, source);
                 totalCustomizeFlags |= flag;
             }
@@ -518,28 +520,28 @@ public class AutoDesignApplier : IDisposable
     {
         if (applyHat && (totalMetaFlags & 0x01) == 0)
         {
-            if (!respectManual || state[ActorState.MetaIndex.HatState] is not StateChanged.Source.Manual)
+            if (!respectManual || state.Source[MetaIndex.HatState] is not StateChanged.Source.Manual)
                 _state.ChangeHatState(state, design.IsHatVisible(), source);
             totalMetaFlags |= 0x01;
         }
 
         if (applyVisor && (totalMetaFlags & 0x02) == 0)
         {
-            if (!respectManual || state[ActorState.MetaIndex.VisorState] is not StateChanged.Source.Manual)
+            if (!respectManual || state.Source[MetaIndex.VisorState] is not StateChanged.Source.Manual)
                 _state.ChangeVisorState(state, design.IsVisorToggled(), source);
             totalMetaFlags |= 0x02;
         }
 
         if (applyWeapon && (totalMetaFlags & 0x04) == 0)
         {
-            if (!respectManual || state[ActorState.MetaIndex.WeaponState] is not StateChanged.Source.Manual)
+            if (!respectManual || state.Source[MetaIndex.WeaponState] is not StateChanged.Source.Manual)
                 _state.ChangeWeaponState(state, design.IsWeaponVisible(), source);
             totalMetaFlags |= 0x04;
         }
 
         if (applyWet && (totalMetaFlags & 0x08) == 0)
         {
-            if (!respectManual || state[ActorState.MetaIndex.Wetness] is not StateChanged.Source.Manual)
+            if (!respectManual || state.Source[MetaIndex.Wetness] is not StateChanged.Source.Manual)
                 _state.ChangeWetness(state, design.IsWet(), source);
             totalMetaFlags |= 0x08;
         }

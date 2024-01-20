@@ -255,26 +255,26 @@ public class CommandService : IDisposable
         }
 
         --designIdx;
-        AutoDesign.Type applicationFlags = 0;
+        ApplicationType applicationFlags = 0;
         if (split2.Length == 2)
             foreach (var character in split2[1])
             {
                 switch (char.ToLowerInvariant(character))
                 {
                     case 'c':
-                        applicationFlags |= AutoDesign.Type.Customizations;
+                        applicationFlags |= ApplicationType.Customizations;
                         break;
                     case 'e':
-                        applicationFlags |= AutoDesign.Type.Armor;
+                        applicationFlags |= ApplicationType.Armor;
                         break;
                     case 'a':
-                        applicationFlags |= AutoDesign.Type.Accessories;
+                        applicationFlags |= ApplicationType.Accessories;
                         break;
                     case 'd':
-                        applicationFlags |= AutoDesign.Type.GearCustomization;
+                        applicationFlags |= ApplicationType.GearCustomization;
                         break;
                     case 'w':
-                        applicationFlags |= AutoDesign.Type.Weapons;
+                        applicationFlags |= ApplicationType.Weapons;
                         break;
                     default:
                         _chat.Print(new SeStringBuilder().AddText("The value ").AddPurple(split2[1], true)

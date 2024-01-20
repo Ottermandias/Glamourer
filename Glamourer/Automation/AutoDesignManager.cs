@@ -232,7 +232,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         var newDesign = new AutoDesign()
         {
             Design          = design,
-            ApplicationType = AutoDesign.Type.All,
+            Type = ApplicationType.All,
             Jobs            = _jobs.JobGroups[1],
         };
         set.Designs.Add(newDesign);
@@ -328,21 +328,21 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         _event.Invoke(AutomationChanged.Type.ChangedConditions, set, (which, old, index));
     }
 
-    public void ChangeApplicationType(AutoDesignSet set, int which, AutoDesign.Type type)
+    public void ChangeApplicationType(AutoDesignSet set, int which, ApplicationType applicationType)
     {
         if (which >= set.Designs.Count || which < 0)
             return;
 
-        type &= AutoDesign.Type.All;
+        applicationType &= ApplicationType.All;
         var design = set.Designs[which];
-        if (design.ApplicationType == type)
+        if (design.Type == applicationType)
             return;
 
-        var old = design.ApplicationType;
-        design.ApplicationType = type;
+        var old = design.Type;
+        design.Type = applicationType;
         Save();
-        Glamourer.Log.Debug($"Changed application type from {old} to {type} for associated design {which + 1} in design set.");
-        _event.Invoke(AutomationChanged.Type.ChangedType, set, (which, old, type));
+        Glamourer.Log.Debug($"Changed application type from {old} to {applicationType} for associated design {which + 1} in design set.");
+        _event.Invoke(AutomationChanged.Type.ChangedType, set, (which, old, applicationType));
     }
 
     public string ToFilename(FilenameService fileNames)
@@ -490,12 +490,13 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             }
         }
 
-        var applicationType = (AutoDesign.Type)(jObj["ApplicationType"]?.ToObject<uint>() ?? 0);
+        // ApplicationType is a migration from an older property name.
+        var applicationType = (ApplicationType)(jObj["Type"]?.ToObject<uint>() ?? jObj["ApplicationType"]?.ToObject<uint>() ?? 0);
 
-        var ret = new AutoDesign()
+        var ret = new AutoDesign
         {
             Design          = design,
-            ApplicationType = applicationType & AutoDesign.Type.All,
+            Type = applicationType & ApplicationType.All,
         };
         return ParseConditions(setName, jObj, ret) ? ret : null;
     }
@@ -550,7 +551,24 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
     private ActorIdentifier[] GetGroup(ActorIdentifier identifier)
     {
         if (!identifier.IsValid)
-            return Array.Empty<ActorIdentifier>();
+            return [];
+
+        return identifier.Type switch
+        {
+            IdentifierType.Player =>
+            [
+                identifier.CreatePermanent(),
+            ],
+            IdentifierType.Retainer =>
+            [
+                _actors.CreateRetainer(identifier.PlayerName,
+                    identifier.Retainer == ActorIdentifier.RetainerType.Mannequin
+                        ? ActorIdentifier.RetainerType.Mannequin
+                        : ActorIdentifier.RetainerType.Bell).CreatePermanent(),
+            ],
+            IdentifierType.Npc => CreateNpcs(_actors, identifier),
+            _                  => [],
+        };
 
         static ActorIdentifier[] CreateNpcs(ActorManager manager, ActorIdentifier identifier)
         {
@@ -566,23 +584,6 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
                     identifier.Kind,
                     kvp.Key)).ToArray();
         }
-
-        return identifier.Type switch
-        {
-            IdentifierType.Player => new[]
-            {
-                identifier.CreatePermanent(),
-            },
-            IdentifierType.Retainer => new[]
-            {
-                _actors.CreateRetainer(identifier.PlayerName,
-                    identifier.Retainer == ActorIdentifier.RetainerType.Mannequin
-                        ? ActorIdentifier.RetainerType.Mannequin
-                        : ActorIdentifier.RetainerType.Bell).CreatePermanent(),
-            },
-            IdentifierType.Npc => CreateNpcs(_actors, identifier),
-            _                  => Array.Empty<ActorIdentifier>(),
-        };
     }
 
     private void OnDesignChange(DesignChanged.Type type, Design design, object? data)

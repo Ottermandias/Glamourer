@@ -369,13 +369,13 @@ public class SetPanel(
     private void DrawApplicationTypeBoxes(AutoDesignSet set, AutoDesign design, int autoDesignIndex, bool singleLine)
     {
         using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * ImGuiHelpers.GlobalScale));
-        var       newType    = design.ApplicationType;
+        var       newType    = design.Type;
         var       newTypeInt = (uint)newType;
         style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
         using (_ = ImRaii.PushColor(ImGuiCol.Border, ColorId.FolderLine.Value()))
         {
-            if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)AutoDesign.Type.All))
-                newType = (AutoDesign.Type)newTypeInt;
+            if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)ApplicationType.All))
+                newType = (ApplicationType)newTypeInt;
         }
 
         style.Pop();
@@ -385,7 +385,7 @@ public class SetPanel(
             void Box(int idx)
             {
                 var (type, description) = Types[idx];
-                var value = design.ApplicationType.HasFlag(type);
+                var value = design.Type.HasFlag(type);
                 if (ImGui.Checkbox($"##{(byte)type}", ref value))
                     newType = value ? newType | type : newType & ~type;
                 ImGuiUtil.HoverTooltip(description);
@@ -429,14 +429,14 @@ public class SetPanel(
     }
 
 
-    private static readonly IReadOnlyList<(AutoDesign.Type, string)> Types = new[]
+    private static readonly IReadOnlyList<(ApplicationType, string)> Types = new[]
     {
-        (AutoDesign.Type.Customizations,
+        (ApplicationType.Customizations,
             "Apply all customization changes that are enabled in this design and that are valid in a fixed design and for the given race and gender."),
-        (AutoDesign.Type.Armor, "Apply all armor piece changes that are enabled in this design and that are valid in a fixed design."),
-        (AutoDesign.Type.Accessories, "Apply all accessory changes that are enabled in this design and that are valid in a fixed design."),
-        (AutoDesign.Type.GearCustomization, "Apply all dye and crest changes that are enabled in this design."),
-        (AutoDesign.Type.Weapons, "Apply all weapon changes that are enabled in this design and that are valid with the current weapon worn."),
+        (ApplicationType.Armor, "Apply all armor piece changes that are enabled in this design and that are valid in a fixed design."),
+        (ApplicationType.Accessories, "Apply all accessory changes that are enabled in this design and that are valid in a fixed design."),
+        (ApplicationType.GearCustomization, "Apply all dye and crest changes that are enabled in this design."),
+        (ApplicationType.Weapons, "Apply all weapon changes that are enabled in this design and that are valid with the current weapon worn."),
     };
 
     private sealed class JobGroupCombo : FilterComboCache<JobGroup>

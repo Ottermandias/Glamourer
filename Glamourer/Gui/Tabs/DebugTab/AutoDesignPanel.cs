@@ -42,7 +42,7 @@ public class AutoDesignPanel(AutoDesignManager _autoDesignManager) : IGameDataDr
             foreach (var (design, designIdx) in set.Designs.WithIndex())
             {
                 ImGuiUtil.DrawTableColumn($"{design.Name(false)} ({designIdx})");
-                ImGuiUtil.DrawTableColumn($"{design.ApplicationType} {design.Jobs.Name}");
+                ImGuiUtil.DrawTableColumn($"{design.Type} {design.Jobs.Name}");
             }
         }
     }

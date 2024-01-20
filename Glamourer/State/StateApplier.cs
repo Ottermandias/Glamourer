@@ -118,7 +118,7 @@ public class StateApplier(
         // If the source is not IPC we do not want to apply restrictions.
         var data = GetData(state);
         if (apply)
-            ChangeArmor(data, slot, state.ModelData.Armor(slot), state[slot, false] is not StateChanged.Source.Ipc,
+            ChangeArmor(data, slot, state.ModelData.Armor(slot), state.Source[slot, false] is not StateChanged.Source.Ipc,
                 state.ModelData.IsHatVisible());
 
         return data;

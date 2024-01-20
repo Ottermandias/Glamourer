@@ -1,4 +1,5 @@
 ﻿using Dalamud.Utility;
+using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Penumbra;
@@ -20,30 +21,33 @@ public class DesignManager
     private readonly HumanModelList               _humans;
     private readonly SaveService                  _saveService;
     private readonly DesignChanged                _event;
-    private readonly List<Design>                 _designs   = [];
+    private readonly DesignStorage                _designs;
     private readonly Dictionary<Guid, DesignData> _undoStore = [];
 
     public IReadOnlyList<Design> Designs
         => _designs;
 
     public DesignManager(SaveService saveService, ItemManager items, CustomizeService customizations,
-        DesignChanged @event, HumanModelList humans)
+        DesignChanged @event, HumanModelList humans, DesignStorage storage, DesignLinkLoader designLinkLoader)
     {
-        _saveService    = saveService;
-        _items          = items;
-        _customizations = customizations;
-        _event          = @event;
-        _humans         = humans;
+        _designs          = storage;
+        _saveService      = saveService;
+        _items            = items;
+        _customizations   = customizations;
+        _event            = @event;
+        _humans           = humans;
+
+        LoadDesigns(designLinkLoader);
         CreateDesignFolder(saveService);
-        LoadDesigns();
         MigrateOldDesigns();
+        designLinkLoader.SetAllObjects();
     }
 
     /// <summary>
     /// Clear currently loaded designs and load all designs anew from file.
     /// Invalid data is fixed, but changes are not saved until manual changes.
     /// </summary>
-    public void LoadDesigns()
+    public void LoadDesigns(DesignLinkLoader linkLoader)
     {
         _humans.Awaiter.Wait();
         _customizations.Awaiter.Wait();
@@ -59,7 +63,7 @@ public class DesignManager
             {
                 var text   = File.ReadAllText(f.FullName);
                 var data   = JObject.Parse(text);
-                var design = Design.LoadDesign(_customizations, _items, data);
+                var design = Design.LoadDesign(_customizations, _items, linkLoader, data);
                 designs.Value!.Add((design, f.FullName));
             }
             catch (Exception ex)
@@ -497,14 +501,14 @@ public class DesignManager
     }
 
     /// <summary> Change the bool value of one of the meta flags. </summary>
-    public void ChangeMeta(Design design, ActorState.MetaIndex metaIndex, bool value)
+    public void ChangeMeta(Design design, MetaIndex metaIndex, bool value)
     {
         var change = metaIndex switch
         {
-            ActorState.MetaIndex.Wetness     => design.GetDesignDataRef().SetIsWet(value),
-            ActorState.MetaIndex.HatState    => design.GetDesignDataRef().SetHatVisible(value),
-            ActorState.MetaIndex.VisorState  => design.GetDesignDataRef().SetVisor(value),
-            ActorState.MetaIndex.WeaponState => design.GetDesignDataRef().SetWeaponVisible(value),
+            MetaIndex.Wetness     => design.GetDesignDataRef().SetIsWet(value),
+            MetaIndex.HatState    => design.GetDesignDataRef().SetHatVisible(value),
+            MetaIndex.VisorState  => design.GetDesignDataRef().SetVisor(value),
+            MetaIndex.WeaponState => design.GetDesignDataRef().SetWeaponVisible(value),
             _                                => throw new ArgumentOutOfRangeException(nameof(metaIndex), metaIndex, null),
         };
         if (!change)
@@ -517,14 +521,14 @@ public class DesignManager
     }
 
     /// <summary> Change the application value of one of the meta flags. </summary>
-    public void ChangeApplyMeta(Design design, ActorState.MetaIndex metaIndex, bool value)
+    public void ChangeApplyMeta(Design design, MetaIndex metaIndex, bool value)
     {
         var change = metaIndex switch
         {
-            ActorState.MetaIndex.Wetness     => design.SetApplyWetness(value),
-            ActorState.MetaIndex.HatState    => design.SetApplyHatVisible(value),
-            ActorState.MetaIndex.VisorState  => design.SetApplyVisorToggle(value),
-            ActorState.MetaIndex.WeaponState => design.SetApplyWeaponVisible(value),
+            MetaIndex.Wetness     => design.SetApplyWetness(value),
+            MetaIndex.HatState    => design.SetApplyHatVisible(value),
+            MetaIndex.VisorState  => design.SetApplyVisorToggle(value),
+            MetaIndex.WeaponState => design.SetApplyWeaponVisible(value),
             _                                => throw new ArgumentOutOfRangeException(nameof(metaIndex), metaIndex, null),
         };
         if (!change)

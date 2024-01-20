@@ -70,44 +70,44 @@ public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectM
             return $"{item.Name} ({item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
         }
 
-        PrintRow("Model ID", state.BaseData.ModelId, state.ModelData.ModelId, state[ActorState.MetaIndex.ModelId]);
+        PrintRow("Model ID", state.BaseData.ModelId, state.ModelData.ModelId, state.Source[MetaIndex.ModelId]);
         ImGui.TableNextRow();
-        PrintRow("Wetness", state.BaseData.IsWet(), state.ModelData.IsWet(), state[ActorState.MetaIndex.Wetness]);
+        PrintRow("Wetness", state.BaseData.IsWet(), state.ModelData.IsWet(), state.Source[MetaIndex.Wetness]);
         ImGui.TableNextRow();
 
         if (state.BaseData.IsHuman && state.ModelData.IsHuman)
         {
-            PrintRow("Hat Visible", state.BaseData.IsHatVisible(), state.ModelData.IsHatVisible(), state[ActorState.MetaIndex.HatState]);
+            PrintRow("Hat Visible", state.BaseData.IsHatVisible(), state.ModelData.IsHatVisible(), state.Source[MetaIndex.HatState]);
             ImGui.TableNextRow();
             PrintRow("Visor Toggled", state.BaseData.IsVisorToggled(), state.ModelData.IsVisorToggled(),
-                state[ActorState.MetaIndex.VisorState]);
+                state.Source[MetaIndex.VisorState]);
             ImGui.TableNextRow();
             PrintRow("Weapon Visible", state.BaseData.IsWeaponVisible(), state.ModelData.IsWeaponVisible(),
-                state[ActorState.MetaIndex.WeaponState]);
+                state.Source[MetaIndex.WeaponState]);
             ImGui.TableNextRow();
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
-                PrintRow(slot.ToName(), ItemString(state.BaseData, slot), ItemString(state.ModelData, slot), state[slot, false]);
+                PrintRow(slot.ToName(), ItemString(state.BaseData, slot), ItemString(state.ModelData, slot), state.Source[slot, false]);
                 ImGuiUtil.DrawTableColumn(state.BaseData.Stain(slot).Id.ToString());
                 ImGuiUtil.DrawTableColumn(state.ModelData.Stain(slot).Id.ToString());
-                ImGuiUtil.DrawTableColumn(state[slot, true].ToString());
+                ImGuiUtil.DrawTableColumn(state.Source[slot, true].ToString());
             }
 
             foreach (var type in Enum.GetValues<CustomizeIndex>())
             {
-                PrintRow(type.ToDefaultName(), state.BaseData.Customize[type].Value, state.ModelData.Customize[type].Value, state[type]);
+                PrintRow(type.ToDefaultName(), state.BaseData.Customize[type].Value, state.ModelData.Customize[type].Value, state.Source[type]);
                 ImGui.TableNextRow();
             }
 
             foreach (var crest in CrestExtensions.AllRelevantSet)
             {
-                PrintRow(crest.ToLabel(), state.BaseData.Crest(crest), state.ModelData.Crest(crest), state[crest]);
+                PrintRow(crest.ToLabel(), state.BaseData.Crest(crest), state.ModelData.Crest(crest), state.Source[crest]);
                 ImGui.TableNextRow();
             }
 
             foreach (var flag in CustomizeParameterExtensions.AllFlags)
             {
-                PrintRow(flag.ToString(), state.BaseData.Parameters[flag], state.ModelData.Parameters[flag], state[flag]);
+                PrintRow(flag.ToString(), state.BaseData.Parameters[flag], state.ModelData.Parameters[flag], state.Source[flag]);
                 ImGui.TableNextRow();
             }
         }

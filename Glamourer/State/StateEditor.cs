@@ -61,21 +61,21 @@ public class StateEditor
             state.ModelData.SetHatVisible(true);
             state.ModelData.SetWeaponVisible(true);
             state.ModelData.SetVisor(false);
-            state[ActorState.MetaIndex.ModelId]     = source;
-            state[ActorState.MetaIndex.HatState]    = source;
-            state[ActorState.MetaIndex.WeaponState] = source;
-            state[ActorState.MetaIndex.VisorState]  = source;
+            state.Source[MetaIndex.ModelId]     = source;
+            state.Source[MetaIndex.HatState]    = source;
+            state.Source[MetaIndex.WeaponState] = source;
+            state.Source[MetaIndex.VisorState]  = source;
             foreach (var slot in EquipSlotExtensions.FullSlots)
             {
-                state[slot, true]  = source;
-                state[slot, false] = source;
+                state.Source[slot, true]  = source;
+                state.Source[slot, false] = source;
             }
 
-            state[CustomizeIndex.Clan]   = source;
-            state[CustomizeIndex.Gender] = source;
+            state.Source[CustomizeIndex.Clan]   = source;
+            state.Source[CustomizeIndex.Gender] = source;
             var set = _customizations.Manager.GetSet(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
             foreach (var index in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
-                state[index] = source;
+                state.Source[index] = source;
         }
         else
         {
@@ -83,7 +83,7 @@ public class StateEditor
                 return false;
 
             state.ModelData.LoadNonHuman(modelId, customize, equipData);
-            state[ActorState.MetaIndex.ModelId] = source;
+            state.Source[MetaIndex.ModelId] = source;
         }
 
         return true;
@@ -98,7 +98,7 @@ public class StateEditor
             return false;
 
         state.ModelData.Customize[idx] = value;
-        state[idx]                     = source;
+        state.Source[idx]              = source;
         return true;
     }
 
@@ -120,7 +120,7 @@ public class StateEditor
         foreach (var type in Enum.GetValues<CustomizeIndex>())
         {
             if (applied.HasFlag(type.ToFlag()))
-                state[type] = source;
+                state.Source[type] = source;
         }
 
         return true;
@@ -144,12 +144,12 @@ public class StateEditor
             _gPose.AddActionOnLeave(() =>
             {
                 if (old.Type == state.BaseData.Item(slot).Type)
-                    ChangeItem(state, slot, old, state[slot, false], out _, key);
+                    ChangeItem(state, slot, old, state.Source[slot, false], out _, key);
             });
         }
 
         state.ModelData.SetItem(slot, item);
-        state[slot, false] = source;
+        state.Source[slot, false] = source;
         return true;
     }
 
@@ -174,14 +174,14 @@ public class StateEditor
             _gPose.AddActionOnLeave(() =>
             {
                 if (old.Type == state.BaseData.Item(slot).Type)
-                    ChangeEquip(state, slot, old, oldS, state[slot, false], out _, out _, key);
+                    ChangeEquip(state, slot, old, oldS, state.Source[slot, false], out _, out _, key);
             });
         }
 
         state.ModelData.SetItem(slot, item);
         state.ModelData.SetStain(slot, stain);
-        state[slot, false] = source;
-        state[slot, true]  = source;
+        state.Source[slot, false] = source;
+        state.Source[slot, true]  = source;
         return true;
     }
 
@@ -193,7 +193,7 @@ public class StateEditor
             return false;
 
         state.ModelData.SetStain(slot, stain);
-        state[slot, true] = source;
+        state.Source[slot, true] = source;
         return true;
     }
 
@@ -205,7 +205,7 @@ public class StateEditor
             return false;
 
         state.ModelData.SetCrest(slot, crest);
-        state[slot] = source;
+        state.Source[slot] = source;
         return true;
     }
 
@@ -218,20 +218,20 @@ public class StateEditor
             return false;
 
         state.ModelData.Parameters.Set(flag, value);
-        state[flag] = source;
+        state.Source[flag] = source;
 
         return true;
     }
 
-    public bool ChangeMetaState(ActorState state, ActorState.MetaIndex index, bool value, StateChanged.Source source, out bool oldValue,
+    public bool ChangeMetaState(ActorState state, MetaIndex index, bool value, StateChanged.Source source, out bool oldValue,
         uint key = 0)
     {
         (var setter, oldValue) = index switch
         {
-            ActorState.MetaIndex.Wetness    => ((Func<bool, bool>)(v => state.ModelData.SetIsWet(v)), state.ModelData.IsWet()),
-            ActorState.MetaIndex.HatState   => ((Func<bool, bool>)(v => state.ModelData.SetHatVisible(v)), state.ModelData.IsHatVisible()),
-            ActorState.MetaIndex.VisorState => ((Func<bool, bool>)(v => state.ModelData.SetVisor(v)), state.ModelData.IsVisorToggled()),
-            ActorState.MetaIndex.WeaponState => ((Func<bool, bool>)(v => state.ModelData.SetWeaponVisible(v)),
+            MetaIndex.Wetness    => ((Func<bool, bool>)(v => state.ModelData.SetIsWet(v)), state.ModelData.IsWet()),
+            MetaIndex.HatState   => ((Func<bool, bool>)(v => state.ModelData.SetHatVisible(v)), state.ModelData.IsHatVisible()),
+            MetaIndex.VisorState => ((Func<bool, bool>)(v => state.ModelData.SetVisor(v)), state.ModelData.IsVisorToggled()),
+            MetaIndex.WeaponState => ((Func<bool, bool>)(v => state.ModelData.SetWeaponVisible(v)),
                 state.ModelData.IsWeaponVisible()),
             _ => throw new Exception("Invalid MetaIndex."),
         };
@@ -240,7 +240,7 @@ public class StateEditor
             return false;
 
         setter(value);
-        state[index] = source;
+        state.Source[index] = source;
         return true;
     }
 }

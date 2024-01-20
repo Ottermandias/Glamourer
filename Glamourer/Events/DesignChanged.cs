@@ -12,7 +12,7 @@ namespace Glamourer.Events;
 ///     <item>Parameter is any additional data depending on the type of change. </item>
 /// </list>
 /// </summary>
-public sealed class DesignChanged() 
+public sealed class DesignChanged()
     : EventWrapper<DesignChanged.Type, Design, object?, DesignChanged.Priority>(nameof(DesignChanged))
 {
     public enum Type
@@ -49,6 +49,9 @@ public sealed class DesignChanged()
 
         /// <summary> An existing design had an existing associated mod removed. Data is the Mod and its Settings [(Mod, ModSettings)]. </summary>
         RemovedMod,
+
+        /// <summary> An existing design had a link to a different design added, removed or moved. Data is null. </summary>
+        ChangedLink,
 
         /// <summary> An existing design had a customization changed. Data is the old value, the new value and the type [(CustomizeValue, CustomizeValue, CustomizeIndex)]. </summary>
         Customize,
@@ -92,6 +95,9 @@ public sealed class DesignChanged()
 
     public enum Priority
     {
+        /// <seealso cref="Designs.Links.DesignLinkManager.OnDesignChange"/>
+        DesignLinkManager = 1,
+
         /// <seealso cref="Automation.AutoDesignManager.OnDesignChange"/>
         AutoDesignManager = 1,
 

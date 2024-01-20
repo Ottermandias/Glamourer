@@ -1,4 +1,5 @@
-﻿using Glamourer.GameData;
+﻿using Glamourer.Designs.Links;
+using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Utility;
@@ -10,7 +11,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
-public class DesignConverter(ItemManager _items, DesignManager _designs, CustomizeService _customize, HumanModelList _humans)
+public class DesignConverter(ItemManager _items, DesignManager _designs, CustomizeService _customize, HumanModelList _humans, DesignLinkLoader _linkLoader)
 {
     public const byte Version = 6;
 
@@ -75,7 +76,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
                 case (byte)'{':
                     var jObj1 = JObject.Parse(Encoding.UTF8.GetString(bytes));
                     ret = jObj1["Identifier"] != null
-                        ? Design.LoadDesign(_customize, _items, jObj1)
+                        ? Design.LoadDesign(_customize, _items, _linkLoader, jObj1)
                         : DesignBase.LoadDesignBase(_customize, _items, jObj1);
                     break;
                 case 1:
@@ -90,7 +91,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
                     var jObj2 = JObject.Parse(decompressed);
                     Debug.Assert(version == 3);
                     ret = jObj2["Identifier"] != null
-                        ? Design.LoadDesign(_customize, _items, jObj2)
+                        ? Design.LoadDesign(_customize, _items, _linkLoader, jObj2)
                         : DesignBase.LoadDesignBase(_customize, _items, jObj2);
                     break;
                 }
@@ -101,7 +102,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
                     var jObj2 = JObject.Parse(decompressed);
                     Debug.Assert(version == 5);
                     ret = jObj2["Identifier"] != null
-                        ? Design.LoadDesign(_customize, _items, jObj2)
+                        ? Design.LoadDesign(_customize, _items, _linkLoader, jObj2)
                         : DesignBase.LoadDesignBase(_customize, _items, jObj2);
                     break;
                 }
@@ -111,7 +112,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
                     var jObj2 = JObject.Parse(decompressed);
                     Debug.Assert(version == 6);
                     ret = jObj2["Identifier"] != null
-                        ? Design.LoadDesign(_customize, _items, jObj2)
+                        ? Design.LoadDesign(_customize, _items, _linkLoader, jObj2)
                         : DesignBase.LoadDesignBase(_customize, _items, jObj2);
                     break;
                 }

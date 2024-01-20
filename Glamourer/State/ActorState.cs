@@ -11,15 +11,6 @@ namespace Glamourer.State;
 
 public class ActorState
 {
-    public enum MetaIndex
-    {
-        Wetness = EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices,
-        HatState,
-        VisorState,
-        WeaponState,
-        ModelId,
-    }
-
     public readonly ActorIdentifier Identifier;
 
     public bool AllowsRedraw(ICondition condition)
@@ -77,47 +68,14 @@ public class ActorState
         => Unlock(1337);
 
     /// <summary> This contains whether a change to the base data was made by the game, the user via manual input or through automatic application. </summary>
-    private readonly StateChanged.Source[] _sources = Enumerable
-        .Repeat(StateChanged.Source.Game,
-            EquipFlagExtensions.NumEquipFlags
-          + CustomizationExtensions.NumIndices
-          + 5
-          + CrestExtensions.AllRelevantSet.Count
-          + CustomizeParameterExtensions.AllFlags.Count).ToArray();
+    public readonly StateSource Source = new();
 
     internal ActorState(ActorIdentifier identifier)
         => Identifier = identifier.CreatePermanent();
 
-    public ref StateChanged.Source this[EquipSlot slot, bool stain]
-        => ref _sources[slot.ToIndex() + (stain ? EquipFlagExtensions.NumEquipFlags / 2 : 0)];
-
-    public ref StateChanged.Source this[CrestFlag slot]
-        => ref _sources[EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5 + slot.ToInternalIndex()];
-
-    public ref StateChanged.Source this[CustomizeIndex type]
-        => ref _sources[EquipFlagExtensions.NumEquipFlags + (int)type];
-
-    public ref StateChanged.Source this[MetaIndex index]
-        => ref _sources[(int)index];
-
-    public ref StateChanged.Source this[CustomizeParameterFlag flag]
-        => ref _sources[
-            EquipFlagExtensions.NumEquipFlags
-          + CustomizationExtensions.NumIndices + 5
-          + CrestExtensions.AllRelevantSet.Count
-          + flag.ToInternalIndex()];
-
-    public void RemoveFixedDesignSources()
-    {
-        for (var i = 0; i < _sources.Length; ++i)
-        {
-            if (_sources[i] is StateChanged.Source.Fixed)
-                _sources[i] = StateChanged.Source.Manual;
-        }
-    }
-
     public CustomizeParameterFlag OnlyChangedParameters()
-        => CustomizeParameterExtensions.AllFlags.Where(f => this[f] is not StateChanged.Source.Game).Aggregate((CustomizeParameterFlag) 0, (a, b) => a | b);
+        => CustomizeParameterExtensions.AllFlags.Where(f => Source[f] is not StateChanged.Source.Game)
+            .Aggregate((CustomizeParameterFlag)0, (a, b) => a | b);
 
     public bool UpdateTerritory(ushort territory)
     {

@@ -3,12 +3,12 @@ using Penumbra.GameData.Actors;
 
 namespace Glamourer.Automation;
 
-public class AutoDesignSet
+public class AutoDesignSet(string name, ActorIdentifier[] identifiers, List<AutoDesign> designs)
 {
-    public readonly List<AutoDesign> Designs;
+    public readonly List<AutoDesign> Designs = designs;
 
-    public string            Name;
-    public ActorIdentifier[] Identifiers;
+    public string            Name        = name;
+    public ActorIdentifier[] Identifiers = identifiers;
     public bool              Enabled;
     public Base              BaseState = Base.Current;
 
@@ -31,13 +31,6 @@ public class AutoDesignSet
     public AutoDesignSet(string name, params ActorIdentifier[] identifiers)
         : this(name, identifiers, new List<AutoDesign>())
     { }
-
-    public AutoDesignSet(string name, ActorIdentifier[] identifiers, List<AutoDesign> designs)
-    {
-        Name        = name;
-        Identifiers = identifiers;
-        Designs     = designs;
-    }
 
     public enum Base : byte
     {

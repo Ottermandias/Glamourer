@@ -170,7 +170,7 @@ public class StateListener : IDisposable
                 var set = _customizations.Manager.GetSet(model.Clan, model.Gender);
                 foreach (var index in CustomizationExtensions.AllBasic)
                 {
-                    if (state[index] is not StateChanged.Source.Fixed)
+                    if (state.Source[index] is not StateChanged.Source.Fixed)
                     {
                         var newValue = customize[index];
                         var oldValue = model[index];
@@ -213,7 +213,7 @@ public class StateListener : IDisposable
          && _manager.TryGetValue(identifier, out var state))
         {
             HandleEquipSlot(actor, state, slot, ref armor);
-            locked = state[slot, false] is StateChanged.Source.Ipc;
+            locked = state.Source[slot, false] is StateChanged.Source.Ipc;
         }
 
         _funModule.ApplyFunToSlot(actor, ref armor, slot);
@@ -240,7 +240,7 @@ public class StateListener : IDisposable
                 continue;
 
             var changed = changedItem.Weapon(stain);
-            if (current.Value == changed.Value && state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+            if (current.Value == changed.Value && state.Source[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
             {
                 _manager.ChangeItem(state, slot, currentItem, StateChanged.Source.Game);
                 _manager.ChangeStain(state, slot, current.Stain, StateChanged.Source.Game);
@@ -251,7 +251,7 @@ public class StateListener : IDisposable
                         _applier.ChangeWeapon(objects, slot, currentItem, stain);
                         break;
                     default:
-                        _applier.ChangeArmor(objects, slot, current.ToArmor(), state[slot, false] is not StateChanged.Source.Ipc,
+                        _applier.ChangeArmor(objects, slot, current.ToArmor(), state.Source[slot, false] is not StateChanged.Source.Ipc,
                             state.ModelData.IsHatVisible());
                         break;
                 }
@@ -285,12 +285,12 @@ public class StateListener : IDisposable
             // Do nothing. But this usually can not happen because the hooked function also writes to game objects later.
             case UpdateState.Transformed: break;
             case UpdateState.Change:
-                if (state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                if (state.Source[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateChanged.Source.Game);
                 else
                     apply = true;
 
-                if (state[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                if (state.Source[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Game);
                 else
                     apply = true;
@@ -384,12 +384,12 @@ public class StateListener : IDisposable
             // Update model state if not on fixed design.
             case UpdateState.Change:
                 var apply = false;
-                if (state[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                if (state.Source[slot, false] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateChanged.Source.Game);
                 else
                     apply = true;
 
-                if (state[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                if (state.Source[slot, true] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateChanged.Source.Game);
                 else
                     apply = true;
@@ -418,7 +418,7 @@ public class StateListener : IDisposable
         switch (UpdateBaseCrest(actor, state, slot, value))
         {
             case UpdateState.Change:
-                if (state[slot] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
+                if (state.Source[slot] is not StateChanged.Source.Fixed and not StateChanged.Source.Ipc)
                     _manager.ChangeCrest(state, slot, state.BaseData.Crest(slot), StateChanged.Source.Game);
                 else
                     value = state.ModelData.Crest(slot);
@@ -564,7 +564,7 @@ public class StateListener : IDisposable
         {
             // if base state changed, either overwrite the actual value if we have fixed values,
             // or overwrite the stored model state with the new one.
-            if (state[ActorState.MetaIndex.VisorState] is StateChanged.Source.Fixed or StateChanged.Source.Ipc)
+            if (state.Source[MetaIndex.VisorState] is StateChanged.Source.Fixed or StateChanged.Source.Ipc)
                 value = state.ModelData.IsVisorToggled();
             else
                 _manager.ChangeVisorState(state, value, StateChanged.Source.Game);
@@ -597,7 +597,7 @@ public class StateListener : IDisposable
         {
             // if base state changed, either overwrite the actual value if we have fixed values,
             // or overwrite the stored model state with the new one.
-            if (state[ActorState.MetaIndex.HatState] is StateChanged.Source.Fixed or StateChanged.Source.Ipc)
+            if (state.Source[MetaIndex.HatState] is StateChanged.Source.Fixed or StateChanged.Source.Ipc)
                 value = state.ModelData.IsHatVisible();
             else
                 _manager.ChangeHatState(state, value, StateChanged.Source.Game);
@@ -630,7 +630,7 @@ public class StateListener : IDisposable
         {
             // if base state changed, either overwrite the actual value if we have fixed values,
             // or overwrite the stored model state with the new one.
-            if (state[ActorState.MetaIndex.WeaponState] is StateChanged.Source.Fixed or StateChanged.Source.Ipc)
+            if (state.Source[MetaIndex.WeaponState] is StateChanged.Source.Fixed or StateChanged.Source.Ipc)
                 value = state.ModelData.IsWeaponVisible();
             else
                 _manager.ChangeWeaponState(state, value, StateChanged.Source.Game);
@@ -732,7 +732,7 @@ public class StateListener : IDisposable
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
         {
             var newValue = data[flag];
-            switch (state[flag])
+            switch (state.Source[flag])
             {
                 case StateChanged.Source.Game:
                     if (state.BaseData.Parameters.Set(flag, newValue))
@@ -755,7 +755,7 @@ public class StateListener : IDisposable
                     break;
                 case StateChanged.Source.Pending:
                     state.BaseData.Parameters.Set(flag, newValue);
-                    state[flag] = StateChanged.Source.Manual;
+                    state.Source[flag] = StateChanged.Source.Manual;
                     if (_config.UseAdvancedParameters)
                         model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;

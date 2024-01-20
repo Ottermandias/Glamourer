@@ -31,7 +31,8 @@ public class DesignPanel(
     DesignConverter _converter,
     ImportService _importService,
     MultiDesignPanel _multiDesignPanel,
-    CustomizeParameterDrawer _parameterDrawer)
+    CustomizeParameterDrawer _parameterDrawer,
+    DesignLinkDrawer _designLinkDrawer)
 {
     private readonly FileDialogManager _fileDialog = new();
 
@@ -119,21 +120,21 @@ public class DesignPanel(
     {
         using (var _ = ImRaii.Group())
         {
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.HatState, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.HatState, _manager, _selector.Selected!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.Head, _manager, _selector.Selected!));
         }
 
         ImGui.SameLine();
         using (var _ = ImRaii.Group())
         {
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.VisorState, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.VisorState, _manager, _selector.Selected!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.Body, _manager, _selector.Selected!));
         }
 
         ImGui.SameLine();
         using (var _ = ImRaii.Group())
         {
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.WeaponState, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.WeaponState, _manager, _selector.Selected!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.OffHand, _manager, _selector.Selected!));
         }
     }
@@ -158,7 +159,7 @@ public class DesignPanel(
                     _manager.ChangeCustomize(_selector.Selected, idx, _customizationDrawer.Customize[idx]);
             }
 
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.Wetness, _manager, _selector.Selected!));
+        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.Wetness, _manager, _selector.Selected!));
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }
 
@@ -166,6 +167,7 @@ public class DesignPanel(
     {
         if (!_config.UseAdvancedParameters)
             return;
+
         using var h = ImRaii.CollapsingHeader("Advanced Customizations");
         if (!h)
             return;
@@ -259,20 +261,20 @@ public class DesignPanel(
                     }
             }
 
-            ApplyEquip("Weapons", AutoDesign.WeaponFlags, false, new[]
+            ApplyEquip("Weapons", ApplicationTypeExtensions.WeaponFlags, false, new[]
             {
                 EquipSlot.MainHand,
                 EquipSlot.OffHand,
             });
 
             ImGui.NewLine();
-            ApplyEquip("Armor", AutoDesign.ArmorFlags, false, EquipSlotExtensions.EquipmentSlots);
+            ApplyEquip("Armor", ApplicationTypeExtensions.ArmorFlags, false, EquipSlotExtensions.EquipmentSlots);
 
             ImGui.NewLine();
-            ApplyEquip("Accessories", AutoDesign.AccessoryFlags, false, EquipSlotExtensions.AccessorySlots);
+            ApplyEquip("Accessories", ApplicationTypeExtensions.AccessoryFlags, false, EquipSlotExtensions.AccessorySlots);
 
             ImGui.NewLine();
-            ApplyEquip("Dyes", AutoDesign.StainFlags, true,
+            ApplyEquip("Dyes", ApplicationTypeExtensions.StainFlags, true,
                 EquipSlotExtensions.FullSlots);
 
             ImGui.NewLine();
@@ -294,19 +296,19 @@ public class DesignPanel(
         var bigChange = ImGui.CheckboxFlags("Apply All Meta Changes", ref flags, all);
         var apply     = bigChange ? (flags & 0x01) == 0x01 : _selector.Selected!.DoApplyHatVisible();
         if (ImGui.Checkbox("Apply Hat Visibility", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.HatState, apply);
+            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.HatState, apply);
 
         apply = bigChange ? (flags & 0x02) == 0x02 : _selector.Selected!.DoApplyVisorToggle();
         if (ImGui.Checkbox("Apply Visor State", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.VisorState, apply);
+            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.VisorState, apply);
 
         apply = bigChange ? (flags & 0x04) == 0x04 : _selector.Selected!.DoApplyWeaponVisible();
         if (ImGui.Checkbox("Apply Weapon Visibility", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.WeaponState, apply);
+            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.WeaponState, apply);
 
         apply = bigChange ? (flags & 0x08) == 0x08 : _selector.Selected!.DoApplyWetness();
         if (ImGui.Checkbox("Apply Wetness", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.Wetness, apply);
+            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.Wetness, apply);
     }
 
     private void DrawParameterApplication()
@@ -370,6 +372,7 @@ public class DesignPanel(
         _designDetails.Draw();
         DrawApplicationRules();
         _modAssociations.Draw();
+        _designLinkDrawer.Draw();
     }
 
     private void DrawButtonRow()

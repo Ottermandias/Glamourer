@@ -14,24 +14,17 @@ public sealed class CharaFile
     public CustomizeFlag ApplyCustomize;
     public EquipFlag     ApplyEquip;
 
-    public static CharaFile? ParseData(ItemManager items, string data, string? name = null)
+    public static CharaFile ParseData(ItemManager items, string data, string? name = null)
     {
-        try
-        {
-            var jObj = JObject.Parse(data);
-            SanityCheck(jObj);
-            var ret = new CharaFile();
-            ret.Data.SetDefaultEquipment(items);
-            ret.Data.ModelId   = ParseModelId(jObj);
-            ret.Name           = jObj["Nickname"]?.ToObject<string>() ?? name ?? "New Design";
-            ret.ApplyCustomize = ParseCustomize(jObj, ref ret.Data.Customize);
-            ret.ApplyEquip     = ParseEquipment(items, jObj, ref ret.Data);
-            return ret;
-        }
-        catch
-        {
-            return null;
-        }
+        var jObj = JObject.Parse(data);
+        SanityCheck(jObj);
+        var ret = new CharaFile();
+        ret.Data.SetDefaultEquipment(items);
+        ret.Data.ModelId   = ParseModelId(jObj);
+        ret.Name           = jObj["Nickname"]?.ToObject<string>() ?? name ?? "New Design";
+        ret.ApplyCustomize = ParseCustomize(jObj, ref ret.Data.Customize);
+        ret.ApplyEquip     = ParseEquipment(items, jObj, ref ret.Data);
+        return ret;
     }
 
     private static EquipFlag ParseEquipment(ItemManager items, JObject jObj, ref DesignData data)
@@ -282,9 +275,6 @@ public sealed class CharaFile
 
     private static void SanityCheck(JObject jObj)
     {
-        if (jObj["TypeName"]?.ToObject<string>() is not "Anamnesis Character File")
-            throw new Exception("Wrong TypeName property set.");
-
         var type = jObj["ObjectKind"]?.ToObject<string>();
         if (type is not "Player")
             throw new Exception($"ObjectKind {type} != Player is not supported.");

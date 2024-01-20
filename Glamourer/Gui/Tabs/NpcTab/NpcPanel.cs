@@ -172,7 +172,7 @@ public class NpcPanel(
         _equipDrawer.DrawWeapons(mainhandData, offhandData, false);
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromValue(ActorState.MetaIndex.VisorState, _selector.Selection.VisorToggled));
+        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromValue(MetaIndex.VisorState, _selector.Selection.VisorToggled));
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }
 

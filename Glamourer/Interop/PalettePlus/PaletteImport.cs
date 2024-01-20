@@ -41,9 +41,9 @@ public class PaletteImport(DalamudPluginInterface pluginInterface, DesignManager
             design.ApplyCustomize = 0;
             design.ApplyEquip     = 0;
             design.ApplyCrest     = 0;
-            designManager.ChangeApplyMeta(design, ActorState.MetaIndex.VisorState, false);
-            designManager.ChangeApplyMeta(design, ActorState.MetaIndex.HatState, false);
-            designManager.ChangeApplyMeta(design, ActorState.MetaIndex.WeaponState, false);
+            designManager.ChangeApplyMeta(design, MetaIndex.VisorState, false);
+            designManager.ChangeApplyMeta(design, MetaIndex.HatState, false);
+            designManager.ChangeApplyMeta(design, MetaIndex.WeaponState, false);
             foreach (var flag in flags.Iterate())
             {
                 designManager.ChangeApplyParameter(design, flag, true);
