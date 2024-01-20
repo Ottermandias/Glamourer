@@ -1,32 +1,15 @@
 ﻿using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Common.Math;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Services;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using Vector3 = FFXIVClientStructs.FFXIV.Common.Math.Vector3;
 
 namespace Glamourer.State;
 
-public class StateEditor
+public class StateEditor(CustomizeService customizations, HumanModelList humans, ItemManager items, GPoseService gPose, ICondition condition)
 {
-    private readonly ItemManager      _items;
-    private readonly CustomizeService _customizations;
-    private readonly HumanModelList   _humans;
-    private readonly GPoseService     _gPose;
-    private readonly ICondition       _condition;
-
-    public StateEditor(CustomizeService customizations, HumanModelList humans, ItemManager items, GPoseService gPose, ICondition condition)
-    {
-        _customizations = customizations;
-        _humans         = humans;
-        _items          = items;
-        _gPose          = gPose;
-        _condition      = condition;
-    }
-
     /// <summary> Change the model id. If the actor is changed from a human to another human, customize and equipData are unused. </summary>
     /// <remarks> We currently only allow changing things to humans, not humans to monsters. </remarks>
     public bool ChangeModelId(ActorState state, uint modelId, in CustomizeArray customize, nint equipData, StateChanged.Source source,
@@ -42,7 +25,7 @@ public class StateEditor
             return false;
 
         var oldIsHuman = state.ModelData.IsHuman;
-        state.ModelData.IsHuman = _humans.IsHuman(modelId);
+        state.ModelData.IsHuman = humans.IsHuman(modelId);
         if (state.ModelData.IsHuman)
         {
             if (oldModelId == modelId)
@@ -52,12 +35,12 @@ public class StateEditor
             if (oldIsHuman)
                 return true;
 
-            if (!state.AllowsRedraw(_condition))
+            if (!state.AllowsRedraw(condition))
                 return false;
 
             // Fix up everything else to make sure the result is a valid human.
             state.ModelData.Customize = CustomizeArray.Default;
-            state.ModelData.SetDefaultEquipment(_items);
+            state.ModelData.SetDefaultEquipment(items);
             state.ModelData.SetHatVisible(true);
             state.ModelData.SetWeaponVisible(true);
             state.ModelData.SetVisor(false);
@@ -73,13 +56,13 @@ public class StateEditor
 
             state.Source[CustomizeIndex.Clan]   = source;
             state.Source[CustomizeIndex.Gender] = source;
-            var set = _customizations.Manager.GetSet(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
+            var set = customizations.Manager.GetSet(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
             foreach (var index in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
                 state.Source[index] = source;
         }
         else
         {
-            if (!state.AllowsRedraw(_condition))
+            if (!state.AllowsRedraw(condition))
                 return false;
 
             state.ModelData.LoadNonHuman(modelId, customize, equipData);
@@ -111,7 +94,7 @@ public class StateEditor
         if (!state.CanUnlock(key))
             return false;
 
-        (var customize, var applied, changed) = _customizations.Combine(state.ModelData.Customize, customizeInput, applyWhich, true);
+        (var customize, var applied, changed) = customizations.Combine(state.ModelData.Customize, customizeInput, applyWhich, true);
         if (changed == 0)
             return false;
 
@@ -137,11 +120,11 @@ public class StateEditor
         if (slot is EquipSlot.MainHand && item.Type != state.BaseData.MainhandType
          || slot is EquipSlot.OffHand && item.Type != state.BaseData.OffhandType)
         {
-            if (!_gPose.InGPose)
+            if (!gPose.InGPose)
                 return false;
 
             var old = oldItem;
-            _gPose.AddActionOnLeave(() =>
+            gPose.AddActionOnLeave(() =>
             {
                 if (old.Type == state.BaseData.Item(slot).Type)
                     ChangeItem(state, slot, old, state.Source[slot, false], out _, key);
@@ -166,12 +149,12 @@ public class StateEditor
         if (slot is EquipSlot.MainHand && item.Type != state.BaseData.MainhandType
          || slot is EquipSlot.OffHand && item.Type != state.BaseData.OffhandType)
         {
-            if (!_gPose.InGPose)
+            if (!gPose.InGPose)
                 return false;
 
             var old  = oldItem;
             var oldS = oldStain;
-            _gPose.AddActionOnLeave(() =>
+            gPose.AddActionOnLeave(() =>
             {
                 if (old.Type == state.BaseData.Item(slot).Type)
                     ChangeEquip(state, slot, old, oldS, state.Source[slot, false], out _, out _, key);
