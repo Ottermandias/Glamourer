@@ -1,5 +1,4 @@
 ﻿using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Shader;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.GameData;

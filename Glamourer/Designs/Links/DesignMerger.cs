@@ -3,6 +3,7 @@ using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.State;
+using Glamourer.Unlocks;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -28,14 +29,38 @@ public sealed class MergedDesign
     public readonly DesignBase  Design;
     public readonly WeaponDict  Weapons = new(4);
     public readonly StateSource Source  = new();
+
+    public StateChanged.Source GetSource(EquipSlot slot, bool stain, StateChanged.Source actualSource)
+        => GetSource(Source[slot, stain], actualSource);
+
+    public StateChanged.Source GetSource(CrestFlag slot, StateChanged.Source actualSource)
+        => GetSource(Source[slot], actualSource);
+
+    public StateChanged.Source GetSource(CustomizeIndex type, StateChanged.Source actualSource)
+        => GetSource(Source[type], actualSource);
+
+    public StateChanged.Source GetSource(MetaIndex index, StateChanged.Source actualSource)
+        => GetSource(Source[index], actualSource);
+
+    public StateChanged.Source GetSource(CustomizeParameterFlag flag, StateChanged.Source actualSource)
+        => GetSource(Source[flag], actualSource);
+
+    public static StateChanged.Source GetSource(StateChanged.Source given, StateChanged.Source actualSource)
+        => given is StateChanged.Source.Game ? StateChanged.Source.Game : actualSource;
 }
 
-public class DesignMerger(DesignManager designManager, CustomizeService _customize)
+public class DesignMerger(
+    DesignManager designManager,
+    CustomizeService _customize,
+    Configuration _config,
+    ItemUnlockManager _itemUnlocks,
+    CustomizeUnlockManager _customizeUnlocks)
 {
-    public MergedDesign Merge(IEnumerable<(DesignBase?, ApplicationType)> designs, in DesignData baseRef)
+    public MergedDesign Merge(IEnumerable<(DesignBase?, ApplicationType)> designs, in DesignData baseRef, bool respectOwnership)
     {
         var           ret      = new MergedDesign(designManager);
         CustomizeFlag fixFlags = 0;
+        respectOwnership &= _config.UnlockedItemMode;
         foreach (var (design, type) in designs)
         {
             if (type is 0)
@@ -49,10 +74,10 @@ public class DesignMerger(DesignManager designManager, CustomizeService _customi
 
             var (equipFlags, customizeFlags, crestFlags, parameterFlags, applyHat, applyVisor, applyWeapon, applyWet) = type.ApplyWhat(design);
             ReduceMeta(data, applyHat, applyVisor, applyWeapon, applyWet, ret, source);
-            ReduceCustomize(data, customizeFlags, ref fixFlags, ret, source);
-            ReduceEquip(data, equipFlags, ret, source);
-            ReduceMainhands(data, equipFlags, ret, source);
-            ReduceOffhands(data, equipFlags, ret, source);
+            ReduceCustomize(data, customizeFlags, ref fixFlags, ret, source, respectOwnership);
+            ReduceEquip(data, equipFlags, ret, source, respectOwnership);
+            ReduceMainhands(data, equipFlags, ret, source, respectOwnership);
+            ReduceOffhands(data, equipFlags, ret, source, respectOwnership);
             ReduceCrests(data, crestFlags, ret, source);
             ReduceParameters(data, parameterFlags, ret, source);
         }
@@ -129,7 +154,8 @@ public class DesignMerger(DesignManager designManager, CustomizeService _customi
         }
     }
 
-    private static void ReduceEquip(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source)
+    private void ReduceEquip(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source,
+        bool respectOwnership)
     {
         equipFlags &= ~ret.Design.ApplyEquip;
         if (equipFlags == 0)
@@ -138,9 +164,12 @@ public class DesignMerger(DesignManager designManager, CustomizeService _customi
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var flag = slot.ToFlag();
+
             if (equipFlags.HasFlag(flag))
             {
-                ret.Design.GetDesignDataRef().SetItem(slot, design.Item(slot));
+                var item = design.Item(slot);
+                if (!respectOwnership || _itemUnlocks.IsUnlocked(item.Id, out _))
+                    ret.Design.GetDesignDataRef().SetItem(slot, item);
                 ret.Design.SetApplyEquip(slot, true);
                 ret.Source[slot, false] = source;
             }
@@ -166,29 +195,45 @@ public class DesignMerger(DesignManager designManager, CustomizeService _customi
         }
     }
 
-    private static void ReduceMainhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source)
+    private void ReduceMainhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source, bool respectOwnership)
     {
         if (!equipFlags.HasFlag(EquipFlag.Mainhand))
             return;
 
-        ret.Design.SetApplyEquip(EquipSlot.MainHand, true);
         var weapon = design.Item(EquipSlot.MainHand);
+        if (respectOwnership && !_itemUnlocks.IsUnlocked(weapon.Id, out _))
+            return;
+
+        if (!ret.Design.DoApplyEquip(EquipSlot.MainHand))
+        {
+            ret.Design.SetApplyEquip(EquipSlot.MainHand, true);
+            ret.Design.GetDesignDataRef().SetItem(EquipSlot.MainHand, weapon);
+        }
+
         ret.Weapons.TryAdd(weapon.Type, (weapon, source));
     }
 
-    private static void ReduceOffhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source)
+    private void ReduceOffhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source, bool respectOwnership)
     {
         if (!equipFlags.HasFlag(EquipFlag.Offhand))
             return;
 
-        ret.Design.SetApplyEquip(EquipSlot.OffHand, true);
         var weapon = design.Item(EquipSlot.OffHand);
+        if (respectOwnership && !_itemUnlocks.IsUnlocked(weapon.Id, out _))
+            return;
+
+        if (!ret.Design.DoApplyEquip(EquipSlot.OffHand))
+        {
+            ret.Design.SetApplyEquip(EquipSlot.OffHand, true);
+            ret.Design.GetDesignDataRef().SetItem(EquipSlot.OffHand, weapon);
+        }
+
         if (weapon.Valid)
             ret.Weapons.TryAdd(weapon.Type, (weapon, source));
     }
 
     private void ReduceCustomize(in DesignData design, CustomizeFlag customizeFlags, ref CustomizeFlag fixFlags, MergedDesign ret,
-        StateChanged.Source source)
+        StateChanged.Source source, bool respectOwnership)
     {
         customizeFlags &= ~ret.Design.ApplyCustomizeRaw;
         if (customizeFlags == 0)
@@ -235,6 +280,9 @@ public class DesignMerger(DesignManager designManager, CustomizeService _customi
 
             var value = design.Customize[index];
             if (!CustomizeService.IsCustomizationValid(set, face, index, value, out var data))
+                continue;
+
+            if (data.HasValue && respectOwnership && !_customizeUnlocks.IsUnlocked(data.Value, out _))
                 continue;
 
             customize[index] = data?.Value ?? value;
