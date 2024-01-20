@@ -4,6 +4,7 @@ using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Unlocks;
+using OtterGui.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -54,7 +55,7 @@ public class DesignMerger(
     CustomizeService _customize,
     Configuration _config,
     ItemUnlockManager _itemUnlocks,
-    CustomizeUnlockManager _customizeUnlocks)
+    CustomizeUnlockManager _customizeUnlocks) : IService
 {
     public MergedDesign Merge(IEnumerable<(DesignBase?, ApplicationType)> designs, in DesignData baseRef, bool respectOwnership)
     {
