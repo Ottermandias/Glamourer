@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Services;

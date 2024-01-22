@@ -186,6 +186,26 @@ public unsafe struct DesignData
         return true;
     }
 
+    public readonly bool GetMeta(MetaIndex index)
+        => index switch
+        {
+            MetaIndex.Wetness     => IsWet(),
+            MetaIndex.HatState    => IsHatVisible(),
+            MetaIndex.VisorState  => IsVisorToggled(),
+            MetaIndex.WeaponState => IsWeaponVisible(),
+            _                     => false,
+        };
+
+    public bool SetMeta(MetaIndex index, bool value)
+        => index switch
+        {
+            MetaIndex.Wetness     => SetIsWet(value),
+            MetaIndex.HatState    => SetHatVisible(value),
+            MetaIndex.VisorState  => SetVisor(value),
+            MetaIndex.WeaponState => SetWeaponVisible(value),
+            _                     => false,
+        };
+
     public readonly bool IsWet()
         => (_states & 0x01) == 0x01;
 

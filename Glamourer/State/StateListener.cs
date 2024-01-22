@@ -11,6 +11,7 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
 using Glamourer.GameData;
 using Penumbra.GameData.DataContainers;
+using Glamourer.Designs;
 
 namespace Glamourer.State;
 

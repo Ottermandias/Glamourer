@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.Internal.Notifications;
 using Glamourer.GameData;
 using Glamourer.Services;
+using Glamourer.State;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
@@ -34,7 +35,7 @@ public class DesignBase
         _designData    = designData;
         ApplyCustomize = customizeFlags & CustomizeFlagExtensions.AllRelevant;
         ApplyEquip     = equipFlags & EquipFlagExtensions.All;
-        _designFlags   = 0;
+        ApplyMeta      = 0;
         CustomizeSet   = SetCustomizationSet(customize);
     }
 
@@ -45,7 +46,7 @@ public class DesignBase
         ApplyCustomize  = clone.ApplyCustomizeRaw;
         ApplyEquip      = clone.ApplyEquip & EquipFlagExtensions.All;
         ApplyParameters = clone.ApplyParameters & CustomizeParameterExtensions.All;
-        _designFlags    = clone._designFlags & (DesignFlags)0x0F;
+        ApplyMeta       = clone.ApplyMeta & MetaExtensions.All;
     }
 
     /// <summary> Ensure that the customization set is updated when the design data changes. </summary>
@@ -56,16 +57,6 @@ public class DesignBase
     }
 
     #region Application Data
-
-    [Flags]
-    private enum DesignFlags : byte
-    {
-        ApplyHatVisible    = 0x01,
-        ApplyVisorState    = 0x02,
-        ApplyWeaponVisible = 0x04,
-        ApplyWetness       = 0x08,
-        WriteProtected     = 0x10,
-    }
 
     private CustomizeFlag _applyCustomize = CustomizeFlagExtensions.AllRelevant;
     public  CustomizeSet  CustomizeSet { get; private set; }
@@ -84,9 +75,10 @@ public class DesignBase
     internal CustomizeFlag ApplyCustomizeRaw
         => _applyCustomize;
 
-    internal EquipFlag   ApplyEquip   = EquipFlagExtensions.All;
-    internal CrestFlag   ApplyCrest   = CrestExtensions.AllRelevant;
-    private  DesignFlags _designFlags = DesignFlags.ApplyHatVisible | DesignFlags.ApplyVisorState | DesignFlags.ApplyWeaponVisible;
+    internal EquipFlag ApplyEquip      = EquipFlagExtensions.All;
+    internal CrestFlag ApplyCrest      = CrestExtensions.AllRelevant;
+    internal MetaFlag  ApplyMeta       = MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.WeaponState;
+    private  bool      _writeProtected;
 
     public bool SetCustomize(CustomizeService customizeService, CustomizeArray customize)
     {
@@ -98,69 +90,30 @@ public class DesignBase
         return true;
     }
 
-    public bool DoApplyHatVisible()
-        => _designFlags.HasFlag(DesignFlags.ApplyHatVisible);
-
-    public bool DoApplyVisorToggle()
-        => _designFlags.HasFlag(DesignFlags.ApplyVisorState);
-
-    public bool DoApplyWeaponVisible()
-        => _designFlags.HasFlag(DesignFlags.ApplyWeaponVisible);
-
-    public bool DoApplyWetness()
-        => _designFlags.HasFlag(DesignFlags.ApplyWetness);
+    public bool DoApplyMeta(MetaIndex index)
+        => ApplyMeta.HasFlag(index.ToFlag());
 
     public bool WriteProtected()
-        => _designFlags.HasFlag(DesignFlags.WriteProtected);
+        => _writeProtected;
 
-    public bool SetApplyHatVisible(bool value)
+    public bool SetApplyMeta(MetaIndex index, bool value)
     {
-        var newFlag = value ? _designFlags | DesignFlags.ApplyHatVisible : _designFlags & ~DesignFlags.ApplyHatVisible;
-        if (newFlag == _designFlags)
+        var newFlag = value ? ApplyMeta | index.ToFlag() : ApplyMeta & ~index.ToFlag();
+        if (newFlag == ApplyMeta)
             return false;
 
-        _designFlags = newFlag;
-        return true;
-    }
-
-    public bool SetApplyVisorToggle(bool value)
-    {
-        var newFlag = value ? _designFlags | DesignFlags.ApplyVisorState : _designFlags & ~DesignFlags.ApplyVisorState;
-        if (newFlag == _designFlags)
-            return false;
-
-        _designFlags = newFlag;
-        return true;
-    }
-
-    public bool SetApplyWeaponVisible(bool value)
-    {
-        var newFlag = value ? _designFlags | DesignFlags.ApplyWeaponVisible : _designFlags & ~DesignFlags.ApplyWeaponVisible;
-        if (newFlag == _designFlags)
-            return false;
-
-        _designFlags = newFlag;
-        return true;
-    }
-
-    public bool SetApplyWetness(bool value)
-    {
-        var newFlag = value ? _designFlags | DesignFlags.ApplyWetness : _designFlags & ~DesignFlags.ApplyWetness;
-        if (newFlag == _designFlags)
-            return false;
-
-        _designFlags = newFlag;
+        ApplyMeta = newFlag;
         return true;
     }
 
     public bool SetWriteProtected(bool value)
     {
-        var newFlag = value ? _designFlags | DesignFlags.WriteProtected : _designFlags & ~DesignFlags.WriteProtected;
-        if (newFlag == _designFlags)
+        if (value == _writeProtected)
             return false;
 
-        _designFlags = newFlag;
+        _writeProtected = value;
         return true;
+
     }
 
     public bool DoApplyEquip(EquipSlot slot)
@@ -298,9 +251,9 @@ public class DesignBase
                 ret[slot.ToString()] = Serialize(item.Id, stain, crest, DoApplyEquip(slot), DoApplyStain(slot), DoApplyCrest(crestSlot));
             }
 
-            ret["Hat"]    = new QuadBool(_designData.IsHatVisible(),    DoApplyHatVisible()).ToJObject("Show", "Apply");
-            ret["Visor"]  = new QuadBool(_designData.IsVisorToggled(),  DoApplyVisorToggle()).ToJObject("IsToggled", "Apply");
-            ret["Weapon"] = new QuadBool(_designData.IsWeaponVisible(), DoApplyWeaponVisible()).ToJObject("Show", "Apply");
+            ret["Hat"]    = new QuadBool(_designData.IsHatVisible(),    DoApplyMeta(MetaIndex.HatState)).ToJObject("Show", "Apply");
+            ret["Visor"]  = new QuadBool(_designData.IsVisorToggled(),  DoApplyMeta(MetaIndex.VisorState)).ToJObject("IsToggled", "Apply");
+            ret["Weapon"] = new QuadBool(_designData.IsWeaponVisible(), DoApplyMeta(MetaIndex.WeaponState)).ToJObject("Show", "Apply");
         }
         else
         {
@@ -344,7 +297,7 @@ public class DesignBase
         ret["Wetness"] = new JObject()
         {
             ["Value"] = _designData.IsWet(),
-            ["Apply"] = DoApplyWetness(),
+            ["Apply"] = DoApplyMeta(MetaIndex.Wetness),
         };
 
         return ret;
@@ -478,7 +431,7 @@ public class DesignBase
         // Load the token and set application.
         bool TryGetToken(CustomizeParameterFlag flag, [NotNullWhen(true)] out JToken? token)
         {
-            token = parameters![flag.ToString()];
+            token = parameters[flag.ToString()];
             if (token != null)
             {
                 var apply = token["Apply"]?.ToObject<bool>() ?? false;
@@ -493,8 +446,8 @@ public class DesignBase
 
         void MigrateLipOpacity()
         {
-            var token       = parameters!["LipOpacity"]?["Percentage"]?.ToObject<float>();
-            var actualToken = parameters![CustomizeParameterFlag.LipDiffuse.ToString()]?["Alpha"];
+            var token       = parameters["LipOpacity"]?["Percentage"]?.ToObject<float>();
+            var actualToken = parameters[CustomizeParameterFlag.LipDiffuse.ToString()]?["Alpha"];
             if (token != null && actualToken == null)
                 design.GetDesignDataRef().Parameters.LipDiffuse.W = token.Value;
         }
@@ -575,15 +528,15 @@ public class DesignBase
             design.SetApplyCrest(CrestFlag.OffHand,  applyCrestOff);
         }
         var metaValue = QuadBool.FromJObject(equip["Hat"], "Show", "Apply", QuadBool.NullFalse);
-        design.SetApplyHatVisible(metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.HatState, metaValue.Enabled);
         design._designData.SetHatVisible(metaValue.ForcedValue);
 
         metaValue = QuadBool.FromJObject(equip["Weapon"], "Show", "Apply", QuadBool.NullFalse);
-        design.SetApplyWeaponVisible(metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.WeaponState, metaValue.Enabled);
         design._designData.SetWeaponVisible(metaValue.ForcedValue);
 
         metaValue = QuadBool.FromJObject(equip["Visor"], "IsToggled", "Apply", QuadBool.NullFalse);
-        design.SetApplyVisorToggle(metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.VisorState, metaValue.Enabled);
         design._designData.SetVisor(metaValue.ForcedValue);
     }
 
@@ -610,7 +563,7 @@ public class DesignBase
 
         var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);
         design._designData.SetIsWet(wetness.ForcedValue);
-        design.SetApplyWetness(wetness.Enabled);
+        design.SetApplyMeta(MetaIndex.Wetness, wetness.Enabled);
 
         design._designData.ModelId = json["ModelId"]?.ToObject<uint>() ?? 0;
         PrintWarning(customizations.ValidateModelId(design._designData.ModelId, out design._designData.ModelId,
@@ -664,17 +617,13 @@ public class DesignBase
         try
         {
             _designData = DesignBase64Migration.MigrateBase64(items, humans, base64, out var equipFlags, out var customizeFlags,
-                out var writeProtected,
-                out var applyHat, out var applyVisor, out var applyWeapon);
+                out var writeProtected, out var applyMeta);
             ApplyEquip      = equipFlags;
             ApplyCustomize  = customizeFlags;
             ApplyParameters = 0;
             ApplyCrest      = 0;
+            ApplyMeta       = applyMeta;
             SetWriteProtected(writeProtected);
-            SetApplyHatVisible(applyHat);
-            SetApplyVisorToggle(applyVisor);
-            SetApplyWeaponVisible(applyWeapon);
-            SetApplyWetness(true);
             CustomizeSet = SetCustomizationSet(customize);
         }
         catch (Exception ex)

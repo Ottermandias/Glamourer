@@ -4,15 +4,6 @@ using static Glamourer.Events.StateChanged;
 
 namespace Glamourer.State;
 
-public enum MetaIndex
-{
-    Wetness = EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices,
-    HatState,
-    VisorState,
-    WeaponState,
-    ModelId,
-}
-
 public readonly struct StateSource
 {
     public static readonly int Size = EquipFlagExtensions.NumEquipFlags

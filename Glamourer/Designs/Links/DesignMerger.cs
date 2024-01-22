@@ -6,49 +6,8 @@ using Glamourer.State;
 using Glamourer.Unlocks;
 using OtterGui.Services;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs.Links;
-
-using WeaponDict = Dictionary<FullEquipType, (EquipItem, StateChanged.Source)>;
-
-public sealed class MergedDesign
-{
-    public MergedDesign(DesignManager designManager)
-    {
-        Design                 = designManager.CreateTemporary();
-        Design.ApplyEquip      = 0;
-        Design.ApplyCustomize  = 0;
-        Design.ApplyCrest      = 0;
-        Design.ApplyParameters = 0;
-        Design.SetApplyWetness(false);
-        Design.SetApplyVisorToggle(false);
-        Design.SetApplyWeaponVisible(false);
-        Design.SetApplyHatVisible(false);
-    }
-
-    public readonly DesignBase  Design;
-    public readonly WeaponDict  Weapons = new(4);
-    public readonly StateSource Source  = new();
-
-    public StateChanged.Source GetSource(EquipSlot slot, bool stain, StateChanged.Source actualSource)
-        => GetSource(Source[slot, stain], actualSource);
-
-    public StateChanged.Source GetSource(CrestFlag slot, StateChanged.Source actualSource)
-        => GetSource(Source[slot], actualSource);
-
-    public StateChanged.Source GetSource(CustomizeIndex type, StateChanged.Source actualSource)
-        => GetSource(Source[type], actualSource);
-
-    public StateChanged.Source GetSource(MetaIndex index, StateChanged.Source actualSource)
-        => GetSource(Source[index], actualSource);
-
-    public StateChanged.Source GetSource(CustomizeParameterFlag flag, StateChanged.Source actualSource)
-        => GetSource(Source[flag], actualSource);
-
-    public static StateChanged.Source GetSource(StateChanged.Source given, StateChanged.Source actualSource)
-        => given is StateChanged.Source.Game ? StateChanged.Source.Game : actualSource;
-}
 
 public class DesignMerger(
     DesignManager designManager,
@@ -57,7 +16,8 @@ public class DesignMerger(
     ItemUnlockManager _itemUnlocks,
     CustomizeUnlockManager _customizeUnlocks) : IService
 {
-    public MergedDesign Merge(IEnumerable<(DesignBase?, ApplicationType)> designs, in DesignData baseRef, bool respectOwnership)
+    public MergedDesign Merge(IEnumerable<(DesignBase?, ApplicationType)> designs, in DesignData baseRef, bool respectOwnership,
+        bool modAssociations)
     {
         var           ret      = new MergedDesign(designManager);
         CustomizeFlag fixFlags = 0;
@@ -81,12 +41,22 @@ public class DesignMerger(
             ReduceOffhands(data, equipFlags, ret, source, respectOwnership);
             ReduceCrests(data, crestFlags, ret, source);
             ReduceParameters(data, parameterFlags, ret, source);
+            ReduceMods(design as Design, ret, modAssociations);
         }
 
         ApplyFixFlags(ret, fixFlags);
         return ret;
     }
 
+
+    private static void ReduceMods(Design? design, MergedDesign ret, bool modAssociations)
+    {
+        if (design == null || !modAssociations)
+            return;
+
+        foreach (var (mod, settings) in design.AssociatedMods)
+            ret.AssociatedMods.TryAdd(mod, settings);
+    }
 
     private static void ReduceMeta(in DesignData design, bool applyHat, bool applyVisor, bool applyWeapon, bool applyWet, MergedDesign ret,
         StateChanged.Source source)
@@ -196,7 +166,8 @@ public class DesignMerger(
         }
     }
 
-    private void ReduceMainhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source, bool respectOwnership)
+    private void ReduceMainhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source,
+        bool respectOwnership)
     {
         if (!equipFlags.HasFlag(EquipFlag.Mainhand))
             return;
@@ -271,7 +242,7 @@ public class DesignMerger(
             ret.Source[CustomizeIndex.Face] =  source;
         }
 
-        var set  = _customize.Manager.GetSet(customize.Clan, customize.Gender);
+        var set  = ret.Design.CustomizeSet;
         var face = customize.Face;
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {
@@ -291,6 +262,8 @@ public class DesignMerger(
             ret.Source[index] =  source;
             fixFlags          &= ~flag;
         }
+
+        ret.Design.SetCustomize(_customize, customize);
     }
 
     private static void ApplyFixFlags(MergedDesign ret, CustomizeFlag fixFlags)

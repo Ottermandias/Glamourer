@@ -1,7 +1,6 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Designs;
 using Glamourer.GameData;
-using Glamourer.State;
 using Newtonsoft.Json.Linq;
 using OtterGui.Services;
 
