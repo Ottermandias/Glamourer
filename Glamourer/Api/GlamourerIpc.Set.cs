@@ -2,6 +2,7 @@
 using Dalamud.Plugin;
 using Glamourer.Events;
 using Glamourer.Services;
+using Glamourer.State;
 using Penumbra.Api.Helpers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -55,7 +56,7 @@ public partial class GlamourerIpc
         if (!state.ModelData.IsHuman)
             return GlamourerErrorCode.ActorNotHuman;
 
-        _stateManager.ChangeEquip(state, slot, item, stainId, StateChanged.Source.Ipc, key);
+        _stateManager.ChangeEquip(state, slot, item, stainId, StateSource.Ipc, key);
         return GlamourerErrorCode.Success;
     }
 
@@ -82,7 +83,7 @@ public partial class GlamourerIpc
             if (!state.ModelData.IsHuman)
                 return GlamourerErrorCode.ActorNotHuman;
 
-            _stateManager.ChangeEquip(state, slot, item, stainId, StateChanged.Source.Ipc, key);
+            _stateManager.ChangeEquip(state, slot, item, stainId, StateSource.Ipc, key);
             found = true;
         }
 

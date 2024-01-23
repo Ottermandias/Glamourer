@@ -287,28 +287,25 @@ public class DesignPanel(
 
     private void DrawMetaApplication()
     {
-        using var  id  = ImRaii.PushId("Meta");
-        const uint all = 0x0Fu;
-        var flags = (_selector.Selected!.DoApplyHatVisible() ? 0x01u : 0x00)
-          | (_selector.Selected!.DoApplyVisorToggle() ? 0x02u : 0x00)
-          | (_selector.Selected!.DoApplyWeaponVisible() ? 0x04u : 0x00)
-          | (_selector.Selected!.DoApplyWetness() ? 0x08u : 0x00);
-        var bigChange = ImGui.CheckboxFlags("Apply All Meta Changes", ref flags, all);
-        var apply     = bigChange ? (flags & 0x01) == 0x01 : _selector.Selected!.DoApplyHatVisible();
-        if (ImGui.Checkbox("Apply Hat Visibility", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.HatState, apply);
+        using var  id        = ImRaii.PushId("Meta");
+        const uint all       = (uint)MetaExtensions.All;
+        var        flags     = (uint)_selector.Selected!.ApplyMeta;
+        var        bigChange = ImGui.CheckboxFlags("Apply All Meta Changes", ref flags, all);
 
-        apply = bigChange ? (flags & 0x02) == 0x02 : _selector.Selected!.DoApplyVisorToggle();
-        if (ImGui.Checkbox("Apply Visor State", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.VisorState, apply);
+        var labels = new[]
+        {
+            "Apply Hat Visibility",
+            "Apply Visor State",
+            "Apply Weapon Visibility",
+            "Apply Wetness",
+        };
 
-        apply = bigChange ? (flags & 0x04) == 0x04 : _selector.Selected!.DoApplyWeaponVisible();
-        if (ImGui.Checkbox("Apply Weapon Visibility", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.WeaponState, apply);
-
-        apply = bigChange ? (flags & 0x08) == 0x08 : _selector.Selected!.DoApplyWetness();
-        if (ImGui.Checkbox("Apply Wetness", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.Wetness, apply);
+        foreach (var (index, label) in MetaExtensions.AllRelevant.Zip(labels))
+        {
+            var apply = bigChange ? ((MetaFlag)flags).HasFlag(index.ToFlag()) : _selector.Selected!.DoApplyMeta(index);
+            if (ImGui.Checkbox(label, ref apply) || bigChange)
+                _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.HatState, apply);
+        }
     }
 
     private void DrawParameterApplication()
@@ -442,7 +439,7 @@ public class DesignPanel(
         {
             var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
             using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-            _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
+            _state.ApplyDesign(_selector.Selected!, state, StateSource.Manual);
         }
     }
 
@@ -461,7 +458,7 @@ public class DesignPanel(
         {
             var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
             using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-            _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
+            _state.ApplyDesign(_selector.Selected!, state, StateSource.Manual);
         }
     }
 

@@ -1,4 +1,5 @@
-﻿using Glamourer.Events;
+﻿using Glamourer.Designs;
+using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -118,7 +119,7 @@ public class StateApplier(
         // If the source is not IPC we do not want to apply restrictions.
         var data = GetData(state);
         if (apply)
-            ChangeArmor(data, slot, state.ModelData.Armor(slot), state.Source[slot, false] is not StateChanged.Source.Ipc,
+            ChangeArmor(data, slot, state.ModelData.Armor(slot), state.Sources[slot, false] is not StateSource.Ipc,
                 state.ModelData.IsHatVisible());
 
         return data;
@@ -200,67 +201,44 @@ public class StateApplier(
             _weapon.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stain));
     }
 
-    /// <summary> Change the visor state of actors only on the draw object. </summary>
-    public void ChangeVisor(ActorData data, bool value)
+    /// <summary> Change a meta state. </summary>
+    public unsafe void ChangeMetaState(ActorData data, MetaIndex index, bool value)
     {
-        foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-            _visor.SetVisorState(actor.Model, value);
+        switch (index)
+        {
+            case MetaIndex.Wetness:
+            {
+                foreach (var actor in data.Objects.Where(a => a.IsCharacter))
+                    actor.AsCharacter->IsGPoseWet = value;
+                return;
+            }
+            case MetaIndex.HatState:
+            {
+                foreach (var actor in data.Objects.Where(a => a.IsCharacter))
+                    _metaService.SetHatState(actor, value);
+                return;
+            }
+            case MetaIndex.WeaponState:
+            {
+                foreach (var actor in data.Objects.Where(a => a.IsCharacter))
+                    _metaService.SetWeaponState(actor, value);
+                return;
+            }
+            case MetaIndex.VisorState:
+            {
+                foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
+                    _visor.SetVisorState(actor.Model, value);
+                return;
+            }
+        }
     }
 
-    /// <inheritdoc cref="ChangeVisor(ActorData, bool)"/>
-    public ActorData ChangeVisor(ActorState state, bool apply)
+    /// <inheritdoc cref="ChangeMetaState(ActorData, MetaIndex, bool)"/>
+    public ActorData ChangeMetaState(ActorState state, MetaIndex index, bool apply)
     {
         var data = GetData(state);
         if (apply)
-            ChangeVisor(data, state.ModelData.IsVisorToggled());
-        return data;
-    }
-
-    /// <summary> Change the forced wetness state on actors. </summary>
-    public unsafe void ChangeWetness(ActorData data, bool value)
-    {
-        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            actor.AsCharacter->IsGPoseWet = value;
-    }
-
-    /// <inheritdoc cref="ChangeWetness(ActorData, bool)"/>
-    public ActorData ChangeWetness(ActorState state, bool apply)
-    {
-        var data = GetData(state);
-        if (apply)
-            ChangeWetness(data, state.ModelData.IsWet());
-        return data;
-    }
-
-    /// <summary> Change the hat-visibility state on actors. </summary>
-    public void ChangeHatState(ActorData data, bool value)
-    {
-        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            _metaService.SetHatState(actor, value);
-    }
-
-    /// <inheritdoc cref="ChangeHatState(ActorData, bool)"/>
-    public ActorData ChangeHatState(ActorState state, bool apply)
-    {
-        var data = GetData(state);
-        if (apply)
-            ChangeHatState(data, state.ModelData.IsHatVisible());
-        return data;
-    }
-
-    /// <summary> Change the weapon-visibility state on actors. </summary>
-    public void ChangeWeaponState(ActorData data, bool value)
-    {
-        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            _metaService.SetWeaponState(actor, value);
-    }
-
-    /// <inheritdoc cref="ChangeWeaponState(ActorData, bool)"/>
-    public ActorData ChangeWeaponState(ActorState state, bool apply)
-    {
-        var data = GetData(state);
-        if (apply)
-            ChangeWeaponState(data, state.ModelData.IsWeaponVisible());
+            ChangeMetaState(data, index, state.ModelData.GetMeta(index));
         return data;
     }
 

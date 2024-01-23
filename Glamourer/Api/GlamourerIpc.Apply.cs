@@ -3,6 +3,7 @@ using Dalamud.Plugin;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
+using Glamourer.State;
 using Penumbra.Api.Helpers;
 using Penumbra.GameData.Actors;
 
@@ -130,7 +131,7 @@ public partial class GlamourerIpc
 
             if ((hasModelId || state.ModelData.ModelId == 0) && state.CanUnlock(lockCode))
             {
-                _stateManager.ApplyDesign(design, state, StateChanged.Source.Ipc, lockCode);
+                _stateManager.ApplyDesign(design, state, StateSource.Ipc, lockCode);
                 state.Lock(lockCode);
             }
         }

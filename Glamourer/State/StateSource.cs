@@ -1,49 +1,75 @@
-﻿using Glamourer.GameData;
-using Penumbra.GameData.Enums;
-using static Glamourer.Events.StateChanged;
+﻿using Penumbra.GameData.Enums;
 
 namespace Glamourer.State;
 
-public readonly struct StateSource
+public enum StateSource : byte
 {
-    public static readonly int Size = EquipFlagExtensions.NumEquipFlags
-      + CustomizationExtensions.NumIndices
-      + 5
-      + CrestExtensions.AllRelevantSet.Count
-      + CustomizeParameterExtensions.AllFlags.Count;
+    Game,
+    Manual,
+    Fixed,
+    Ipc,
+
+    // Only used for CustomizeParameters.
+    Pending,
+}
+
+public unsafe struct StateSources
+{
+    public const  int  Size = (StateIndex.Size + 1) / 2;
+    private fixed byte _data[Size];
 
 
-    private readonly Source[] _data = Enumerable.Repeat(Source.Game, Size).ToArray();
-
-    public StateSource()
+    public StateSources()
     { }
 
-    public ref Source this[EquipSlot slot, bool stain]
-        => ref _data[slot.ToIndex() + (stain ? EquipFlagExtensions.NumEquipFlags / 2 : 0)];
+    public StateSource this[StateIndex index]
+    {
+        get
+        {
+            var val = _data[index.Value / 2];
+            return (StateSource)((index.Value & 1) == 1 ? val >> 4 : val & 0x0F);
+        }
+        set
+        {
+            var val = _data[index.Value / 2];
+            if ((index.Value & 1) == 1)
+                val = (byte)((val & 0x0F) | ((byte)value << 4));
+            else
+                val = (byte)((val & 0xF0) | (byte)value);
+            _data[index.Value / 2] = val;
+        }
+    }
 
-    public ref Source this[CrestFlag slot]
-        => ref _data[EquipFlagExtensions.NumEquipFlags + CustomizationExtensions.NumIndices + 5 + slot.ToInternalIndex()];
-
-    public ref Source this[CustomizeIndex type]
-        => ref _data[EquipFlagExtensions.NumEquipFlags + (int)type];
-
-    public ref Source this[MetaIndex index]
-        => ref _data[(int)index];
-
-    public ref Source this[CustomizeParameterFlag flag]
-        => ref _data[
-            EquipFlagExtensions.NumEquipFlags
-          + CustomizationExtensions.NumIndices
-          + 5
-          + CrestExtensions.AllRelevantSet.Count
-          + flag.ToInternalIndex()];
+    public StateSource this[EquipSlot slot, bool stain]
+    {
+        get => this[slot.ToState(stain)];
+        set => this[slot.ToState(stain)] = value;
+    }
 
     public void RemoveFixedDesignSources()
     {
-        for (var i = 0; i < _data.Length; ++i)
+        for (var i = 0; i < Size; ++i)
         {
-            if (_data[i] is Source.Fixed)
-                _data[i] = Source.Manual;
+            var value = _data[i];
+            switch (value)
+            {
+                case (byte)StateSource.Fixed | ((byte)StateSource.Fixed << 4):
+                    _data[i] = (byte)StateSource.Manual | ((byte)StateSource.Manual << 4);
+                    break;
+
+                case (byte)StateSource.Game | ((byte)StateSource.Fixed << 4):
+                case (byte)StateSource.Manual | ((byte)StateSource.Fixed << 4):
+                case (byte)StateSource.Ipc | ((byte)StateSource.Fixed << 4):
+                case (byte)StateSource.Pending | ((byte)StateSource.Fixed << 4):
+                    _data[i] = (byte)((value & 0x0F) | ((byte)StateSource.Manual << 4));
+                    break;
+                case (byte)StateSource.Fixed:
+                case ((byte)StateSource.Manual << 4) | (byte)StateSource.Fixed:
+                case ((byte)StateSource.Ipc << 4) | (byte)StateSource.Fixed:
+                case ((byte)StateSource.Pending << 4) | (byte)StateSource.Fixed:
+                    _data[i] = (byte)((value & 0xF0) | (byte)StateSource.Manual);
+                    break;
+            }
         }
     }
 }

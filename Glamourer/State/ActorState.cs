@@ -68,13 +68,13 @@ public class ActorState
         => Unlock(1337);
 
     /// <summary> This contains whether a change to the base data was made by the game, the user via manual input or through automatic application. </summary>
-    public readonly StateSource Source = new();
+    public StateSources Sources = new();
 
     internal ActorState(ActorIdentifier identifier)
         => Identifier = identifier.CreatePermanent();
 
     public CustomizeParameterFlag OnlyChangedParameters()
-        => CustomizeParameterExtensions.AllFlags.Where(f => Source[f] is not StateChanged.Source.Game)
+        => CustomizeParameterExtensions.AllFlags.Where(f => Sources[f] is not StateSource.Game)
             .Aggregate((CustomizeParameterFlag)0, (a, b) => a | b);
 
     public bool UpdateTerritory(ushort territory)

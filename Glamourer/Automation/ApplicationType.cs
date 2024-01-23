@@ -18,9 +18,8 @@ public enum ApplicationType : byte
 
 public static class ApplicationTypeExtensions
 {
-    public static (EquipFlag Equip, CustomizeFlag Customize, CrestFlag Crest, CustomizeParameterFlag Parameters, bool ApplyHat, bool ApplyVisor,
-        bool
-        ApplyWeapon, bool ApplyWet) ApplyWhat(this ApplicationType type, DesignBase? design)
+    public static (EquipFlag Equip, CustomizeFlag Customize, CrestFlag Crest, CustomizeParameterFlag Parameters, MetaFlag Meta) ApplyWhat(
+        this ApplicationType type, DesignBase? design)
     {
         var equipFlags = (type.HasFlag(ApplicationType.Weapons) ? WeaponFlags : 0)
           | (type.HasFlag(ApplicationType.Armor) ? ArmorFlags : 0)
@@ -29,18 +28,15 @@ public static class ApplicationTypeExtensions
         var customizeFlags = type.HasFlag(ApplicationType.Customizations) ? CustomizeFlagExtensions.All : 0;
         var parameterFlags = type.HasFlag(ApplicationType.Customizations) ? CustomizeParameterExtensions.All : 0;
         var crestFlag      = type.HasFlag(ApplicationType.GearCustomization) ? CrestExtensions.AllRelevant : 0;
+        var metaFlag = (type.HasFlag(ApplicationType.Armor) ? MetaFlag.HatState | MetaFlag.VisorState : 0)
+          | (type.HasFlag(ApplicationType.Weapons) ? MetaFlag.WeaponState : 0)
+          | (type.HasFlag(ApplicationType.Customizations) ? MetaFlag.Wetness : 0);
 
         if (design == null)
-            return (equipFlags, customizeFlags, crestFlag, parameterFlags, type.HasFlag(ApplicationType.Armor),
-                type.HasFlag(ApplicationType.Armor),
-                type.HasFlag(ApplicationType.Weapons), type.HasFlag(ApplicationType.Customizations));
+            return (equipFlags, customizeFlags, crestFlag, parameterFlags, metaFlag);
 
         return (equipFlags & design!.ApplyEquip, customizeFlags & design.ApplyCustomize, crestFlag & design.ApplyCrest,
-            parameterFlags & design.ApplyParameters,
-            type.HasFlag(ApplicationType.Armor) && design.DoApplyHatVisible(),
-            type.HasFlag(ApplicationType.Armor) && design.DoApplyVisorToggle(),
-            type.HasFlag(ApplicationType.Weapons) && design.DoApplyWeaponVisible(),
-            type.HasFlag(ApplicationType.Customizations) && design.DoApplyWetness());
+            parameterFlags & design.ApplyParameters, metaFlag & design.ApplyMeta);
     }
 
     public const EquipFlag WeaponFlags    = EquipFlag.Mainhand | EquipFlag.Offhand;

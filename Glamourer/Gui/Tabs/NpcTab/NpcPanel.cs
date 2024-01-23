@@ -202,7 +202,7 @@ public class NpcPanel(
         {
             var (applyGear, applyCustomize, _, _) = UiHelpers.ConvertKeysToFlags();
             var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, 0, 0);
-            _state.ApplyDesign(design, state, StateChanged.Source.Manual);
+            _state.ApplyDesign(design, state, StateSource.Manual);
         }
     }
 
@@ -221,7 +221,7 @@ public class NpcPanel(
         {
             var (applyGear, applyCustomize, _, _) = UiHelpers.ConvertKeysToFlags();
             var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, 0, 0);
-            _state.ApplyDesign(design, state, StateChanged.Source.Manual);
+            _state.ApplyDesign(design, state, StateSource.Manual);
         }
     }
 

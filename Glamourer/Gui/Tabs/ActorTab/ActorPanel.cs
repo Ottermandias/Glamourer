@@ -61,13 +61,13 @@ public class ActorPanel(
 
         if (_importService.CreateDatTarget(out var dat))
         {
-            _stateManager.ChangeCustomize(_state!, dat.Customize, CustomizeApplicationFlags, StateChanged.Source.Manual);
+            _stateManager.ChangeCustomize(_state!, dat.Customize, CustomizeApplicationFlags, StateSource.Manual);
             Glamourer.Messager.NotificationMessage($"Applied games .dat file {dat.Description} customizations to {_state.Identifier}.",
                 NotificationType.Success, false);
         }
         else if (_importService.CreateCharaTarget(out var designBase, out var name))
         {
-            _stateManager.ApplyDesign(designBase, _state!, StateChanged.Source.Manual);
+            _stateManager.ApplyDesign(designBase, _state!, StateSource.Manual);
             Glamourer.Messager.NotificationMessage($"Applied Anamnesis .chara file {name} to {_state.Identifier}.", NotificationType.Success,
                 false);
         }
@@ -139,7 +139,7 @@ public class ActorPanel(
             return;
 
         if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked, _lockedRedraw))
-            _stateManager.ChangeCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, StateChanged.Source.Manual);
+            _stateManager.ChangeCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, StateSource.Manual);
 
         EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(MetaIndex.Wetness, _stateManager, _state));
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
@@ -159,7 +159,7 @@ public class ActorPanel(
             var data = EquipDrawData.FromState(_stateManager, _state!, slot);
             _equipmentDrawer.DrawEquip(data);
             if (usedAllStain)
-                _stateManager.ChangeStain(_state, slot, newAllStain, StateChanged.Source.Manual);
+                _stateManager.ChangeStain(_state, slot, newAllStain, StateSource.Manual);
         }
 
         var mainhand = EquipDrawData.FromState(_stateManager, _state, EquipSlot.MainHand);
@@ -264,7 +264,7 @@ public class ActorPanel(
         }
 
         if (turnHuman)
-            _stateManager.TurnHuman(_state, StateChanged.Source.Manual);
+            _stateManager.TurnHuman(_state, StateSource.Manual);
     }
 
     private HeaderDrawer.Button SetFromClipboardButton()
@@ -340,7 +340,7 @@ public class ActorPanel(
             var text = ImGui.GetClipboardText();
             var design = _converter.FromBase64(text, applyCustomize, applyGear, out _)
              ?? throw new Exception("The clipboard did not contain valid data.");
-            _stateManager.ApplyDesign(design, _state!, StateChanged.Source.Manual);
+            _stateManager.ApplyDesign(design, _state!, StateSource.Manual);
         }
         catch (Exception ex)
         {
@@ -368,7 +368,7 @@ public class ActorPanel(
     {
         if (ImGuiUtil.DrawDisabledButton("Revert to Game", Vector2.Zero, "Revert the character to its actual state in the game.",
                 _state!.IsLocked))
-            _stateManager.ResetState(_state!, StateChanged.Source.Manual);
+            _stateManager.ResetState(_state!, StateSource.Manual);
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton("Reapply State", Vector2.Zero, "Try to reapply the configured state if something went wrong.",
@@ -396,7 +396,7 @@ public class ActorPanel(
         var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
             _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize, applyCrest, applyParameters), state,
-                StateChanged.Source.Manual);
+                StateSource.Manual);
     }
 
     private void DrawApplyToTarget()
@@ -414,6 +414,6 @@ public class ActorPanel(
         var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
             _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize, applyCrest, applyParameters), state,
-                StateChanged.Source.Manual);
+                StateSource.Manual);
     }
 }

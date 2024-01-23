@@ -26,14 +26,14 @@ public sealed class MergedDesign
         {
             var weapon = design.DesignData.Item(EquipSlot.MainHand);
             if (weapon.Valid)
-                Weapons.TryAdd(weapon.Type, (weapon, StateChanged.Source.Manual));
+                Weapons.TryAdd(weapon.Type, (weapon, StateSource.Manual));
         }
 
         if (design.DoApplyEquip(EquipSlot.OffHand))
         {
             var weapon = design.DesignData.Item(EquipSlot.OffHand);
             if (weapon.Valid)
-                Weapons.TryAdd(weapon.Type, (weapon, StateChanged.Source.Manual));
+                Weapons.TryAdd(weapon.Type, (weapon, StateSource.Manual));
         }
     }
 
@@ -44,26 +44,26 @@ public sealed class MergedDesign
             AssociatedMods[mod] = settings;
     }
 
-    public readonly DesignBase                                                  Design;
-    public readonly Dictionary<FullEquipType, (EquipItem, StateChanged.Source)> Weapons        = new(4);
-    public readonly StateSource                                                 Source         = new();
-    public readonly SortedList<Mod, ModSettings>                                AssociatedMods = [];
+    public readonly DesignBase                                          Design;
+    public readonly Dictionary<FullEquipType, (EquipItem, StateSource)> Weapons        = new(4);
+    public readonly SortedList<Mod, ModSettings>                        AssociatedMods = [];
+    public          StateSources                                        Sources        = new();
 
-    public StateChanged.Source GetSource(EquipSlot slot, bool stain, StateChanged.Source actualSource)
-        => GetSource(Source[slot, stain], actualSource);
+    public StateSource GetSource(EquipSlot slot, bool stain, StateSource actualSource)
+        => GetSource(Sources[slot, stain], actualSource);
 
-    public StateChanged.Source GetSource(CrestFlag slot, StateChanged.Source actualSource)
-        => GetSource(Source[slot], actualSource);
+    public StateSource GetSource(CrestFlag slot, StateSource actualSource)
+        => GetSource(Sources[slot], actualSource);
 
-    public StateChanged.Source GetSource(CustomizeIndex type, StateChanged.Source actualSource)
-        => GetSource(Source[type], actualSource);
+    public StateSource GetSource(CustomizeIndex type, StateSource actualSource)
+        => GetSource(Sources[type], actualSource);
 
-    public StateChanged.Source GetSource(MetaIndex index, StateChanged.Source actualSource)
-        => GetSource(Source[index], actualSource);
+    public StateSource GetSource(MetaIndex index, StateSource actualSource)
+        => GetSource(Sources[index], actualSource);
 
-    public StateChanged.Source GetSource(CustomizeParameterFlag flag, StateChanged.Source actualSource)
-        => GetSource(Source[flag], actualSource);
+    public StateSource GetSource(CustomizeParameterFlag flag, StateSource actualSource)
+        => GetSource(Sources[flag], actualSource);
 
-    public static StateChanged.Source GetSource(StateChanged.Source given, StateChanged.Source actualSource)
-        => given is StateChanged.Source.Game ? StateChanged.Source.Game : actualSource;
+    public static StateSource GetSource(StateSource given, StateSource actualSource)
+        => given is StateSource.Game ? StateSource.Game : actualSource;
 }

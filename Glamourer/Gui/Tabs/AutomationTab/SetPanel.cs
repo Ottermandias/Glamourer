@@ -264,7 +264,7 @@ public class SetPanel(
         var size = new Vector2(ImGui.GetFrameHeight());
         size.X += ImGuiHelpers.GlobalScale;
 
-        var (equipFlags, customizeFlags, _, _, _, _, _, _) = design.ApplyWhat();
+        var (equipFlags, customizeFlags, _, _, _) = design.ApplyWhat();
         var sb = new StringBuilder();
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
         {

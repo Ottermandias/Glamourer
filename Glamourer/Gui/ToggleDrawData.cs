@@ -1,5 +1,4 @@
 ﻿using Glamourer.Designs;
-using Glamourer.Events;
 using Glamourer.State;
 using Penumbra.GameData.Enums;
 
@@ -23,32 +22,17 @@ public ref struct ToggleDrawData
     { }
 
     public static ToggleDrawData FromDesign(MetaIndex index, DesignManager manager, Design design)
-    {
-        var (label, value, apply, setValue, setApply) = index switch
+        => new()
         {
-            MetaIndex.HatState => ("Hat Visible", design.DesignData.IsHatVisible(), design.DoApplyHatVisible(),
-                (Action<bool>)(b => manager.ChangeMeta(design, index, b)), (Action<bool>)(b => manager.ChangeApplyMeta(design, index, b))),
-            MetaIndex.VisorState => ("Visor Toggled", design.DesignData.IsVisorToggled(), design.DoApplyVisorToggle(),
-                b => manager.ChangeMeta(design, index, b), b => manager.ChangeApplyMeta(design, index, b)),
-            MetaIndex.WeaponState => ("Weapon Visible", design.DesignData.IsWeaponVisible(), design.DoApplyWeaponVisible(),
-                b => manager.ChangeMeta(design, index, b), b => manager.ChangeApplyMeta(design, index, b)),
-            MetaIndex.Wetness => ("Force Wetness", design.DesignData.IsWet(), design.DoApplyWetness(),
-                b => manager.ChangeMeta(design, index, b), b => manager.ChangeApplyMeta(design, index, b)),
-            _ => throw new Exception("Unsupported meta index."),
-        };
-
-        return new ToggleDrawData
-        {
-            Label              = label,
+            Label              = index.ToName(),
             Tooltip            = string.Empty,
             Locked             = design.WriteProtected(),
             DisplayApplication = true,
-            CurrentValue       = value,
-            CurrentApply       = apply,
-            SetValue           = setValue,
-            SetApply           = setApply,
+            CurrentValue       = design.DesignData.GetMeta(index),
+            CurrentApply       = design.DoApplyMeta(index),
+            SetValue           = b => manager.ChangeMeta(design, index, b),
+            SetApply           = b => manager.ChangeApplyMeta(design, index, b),
         };
-    }
 
     public static ToggleDrawData CrestFromDesign(CrestFlag slot, DesignManager manager, Design design)
         => new()
@@ -70,52 +54,27 @@ public ref struct ToggleDrawData
             Tooltip      = "Hide or show your free company crest on this piece of gear.",
             Locked       = state.IsLocked,
             CurrentValue = state.ModelData.Crest(slot),
-            SetValue     = v => manager.ChangeCrest(state, slot, v, StateChanged.Source.Manual),
+            SetValue     = v => manager.ChangeCrest(state, slot, v, StateSource.Manual),
         };
 
     public static ToggleDrawData FromState(MetaIndex index, StateManager manager, ActorState state)
     {
-        var (label, tooltip, value, setValue) = index switch
-        {
-            MetaIndex.HatState => ("Hat Visible", "Hide or show the characters head gear.", state.ModelData.IsHatVisible(),
-                (Action<bool>)(b => manager.ChangeHatState(state, b, StateChanged.Source.Manual))),
-            MetaIndex.VisorState => ("Visor Toggled", "Toggle the visor state of the characters head gear.",
-                state.ModelData.IsVisorToggled(),
-                b => manager.ChangeVisorState(state, b, StateChanged.Source.Manual)),
-            MetaIndex.WeaponState => ("Weapon Visible", "Hide or show the characters weapons when not drawn.",
-                state.ModelData.IsWeaponVisible(),
-                b => manager.ChangeWeaponState(state, b, StateChanged.Source.Manual)),
-            MetaIndex.Wetness => ("Force Wetness", "Force the character to be wet or not.", state.ModelData.IsWet(),
-                b => manager.ChangeWetness(state, b, StateChanged.Source.Manual)),
-            _ => throw new Exception("Unsupported meta index."),
-        };
-
         return new ToggleDrawData
         {
-            Label        = label,
-            Tooltip      = tooltip,
+            Label        = index.ToName(),
+            Tooltip      = index.ToTooltip(),
             Locked       = state.IsLocked,
-            CurrentValue = value,
-            SetValue     = setValue,
+            CurrentValue = state.ModelData.GetMeta(index),
+            SetValue     = b => manager.ChangeMeta(state, index, b, StateSource.Manual),
         };
     }
 
     public static ToggleDrawData FromValue(MetaIndex index, bool value)
-    {
-        var (label, tooltip) = index switch
+        => new()
         {
-            MetaIndex.HatState    => ("Hat Visible", "Hide or show the characters head gear."),
-            MetaIndex.VisorState  => ("Visor Toggled", "Toggle the visor state of the characters head gear."),
-            MetaIndex.WeaponState => ("Weapon Visible", "Hide or show the characters weapons when not drawn."),
-            MetaIndex.Wetness     => ("Force Wetness", "Force the character to be wet or not."),
-            _                                => throw new Exception("Unsupported meta index."),
-        };
-        return new ToggleDrawData
-        {
-            Label        = label,
-            Tooltip      = tooltip,
+            Label        = index.ToName(),
+            Tooltip      = index.ToTooltip(),
             Locked       = true,
             CurrentValue = value,
         };
-    }
 }

@@ -113,22 +113,22 @@ public class PenumbraChangedItemTooltip : IDisposable
                     case (false, false):
                         Glamourer.Log.Information($"Applying {item.Name} to Right Finger.");
                         SetLastItem(EquipSlot.RFinger, item, state);
-                        _stateManager.ChangeItem(state, EquipSlot.RFinger, item, StateChanged.Source.Manual);
+                        _stateManager.ChangeItem(state, EquipSlot.RFinger, item, StateSource.Manual);
                         break;
                     case (false, true):
                         Glamourer.Log.Information($"Applying {item.Name} to Left Finger.");
                         SetLastItem(EquipSlot.LFinger, item, state);
-                        _stateManager.ChangeItem(state, EquipSlot.LFinger, item, StateChanged.Source.Manual);
+                        _stateManager.ChangeItem(state, EquipSlot.LFinger, item, StateSource.Manual);
                         break;
                     case (true, false) when last.Valid:
                         Glamourer.Log.Information($"Re-Applying {last.Name} to Right Finger.");
                         SetLastItem(EquipSlot.RFinger, default, state);
-                        _stateManager.ChangeItem(state, EquipSlot.RFinger, last, StateChanged.Source.Manual);
+                        _stateManager.ChangeItem(state, EquipSlot.RFinger, last, StateSource.Manual);
                         break;
                     case (true, true) when _lastItems[EquipSlot.LFinger.ToIndex()].Valid:
                         Glamourer.Log.Information($"Re-Applying {last.Name} to Left Finger.");
                         SetLastItem(EquipSlot.LFinger, default, state);
-                        _stateManager.ChangeItem(state, EquipSlot.LFinger, last, StateChanged.Source.Manual);
+                        _stateManager.ChangeItem(state, EquipSlot.LFinger, last, StateSource.Manual);
                         break;
                 }
 
@@ -138,13 +138,13 @@ public class PenumbraChangedItemTooltip : IDisposable
                 {
                     Glamourer.Log.Information($"Re-Applying {last.Name} to {slot.ToName()}.");
                     SetLastItem(slot, default, state);
-                    _stateManager.ChangeItem(state, slot, last, StateChanged.Source.Manual);
+                    _stateManager.ChangeItem(state, slot, last, StateSource.Manual);
                 }
                 else
                 {
                     Glamourer.Log.Information($"Applying {item.Name} to {slot.ToName()}.");
                     SetLastItem(slot, item, state);
-                    _stateManager.ChangeItem(state, slot, item, StateChanged.Source.Manual);
+                    _stateManager.ChangeItem(state, slot, item, StateSource.Manual);
                 }
 
                 return;

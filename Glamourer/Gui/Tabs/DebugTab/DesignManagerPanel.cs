@@ -25,9 +25,8 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
                 continue;
 
             DrawDesign(design, _designFileSystem);
-            var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.ApplyEquip, design.ApplyCustomizeRaw,
-                design.DoApplyHatVisible(),
-                design.DoApplyVisorToggle(), design.DoApplyWeaponVisible(), design.WriteProtected());
+            var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.ApplyEquip, design.ApplyCustomizeRaw, design.ApplyMeta,
+                design.WriteProtected());
             using var font = ImRaii.PushFont(UiBuilder.MonoFont);
             ImGuiUtil.TextWrapped(base64);
             if (ImGui.IsItemClicked())
@@ -85,18 +84,12 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
             ImGuiUtil.DrawTableColumn(applyCrest ? "Apply" : "Keep");
         }
 
-        ImGuiUtil.DrawTableColumn("Hat Visible");
-        ImGuiUtil.DrawTableColumn(design.DesignData.IsHatVisible().ToString());
-        ImGuiUtil.DrawTableColumn(design.DoApplyHatVisible() ? "Apply" : "Keep");
-        ImGui.TableNextRow();
-        ImGuiUtil.DrawTableColumn("Visor Toggled");
-        ImGuiUtil.DrawTableColumn(design.DesignData.IsVisorToggled().ToString());
-        ImGuiUtil.DrawTableColumn(design.DoApplyVisorToggle() ? "Apply" : "Keep");
-        ImGui.TableNextRow();
-        ImGuiUtil.DrawTableColumn("Weapon Visible");
-        ImGuiUtil.DrawTableColumn(design.DesignData.IsWeaponVisible().ToString());
-        ImGuiUtil.DrawTableColumn(design.DoApplyWeaponVisible() ? "Apply" : "Keep");
-        ImGui.TableNextRow();
+        foreach (var index in MetaExtensions.AllRelevant)
+        {
+            ImGuiUtil.DrawTableColumn(index.ToName());
+            ImGuiUtil.DrawTableColumn(design.DesignData.GetMeta(index).ToString());
+            ImGuiUtil.DrawTableColumn(design.DoApplyMeta(index) ? "Apply" : "Keep");
+        }
 
         ImGuiUtil.DrawTableColumn("Model ID");
         ImGuiUtil.DrawTableColumn(design.DesignData.ModelId.ToString());
@@ -111,9 +104,5 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
             ImGuiUtil.DrawTableColumn(apply ? "Apply" : "Keep");
             ImGui.TableNextRow();
         }
-
-        ImGuiUtil.DrawTableColumn("Is Wet");
-        ImGuiUtil.DrawTableColumn(design.DesignData.IsWet().ToString());
-        ImGui.TableNextRow();
     }
 }

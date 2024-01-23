@@ -55,10 +55,10 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
         design.ApplyCustomize  = customizeFlags & CustomizeFlagExtensions.AllRelevant;
         design.ApplyCrest      = crestFlags & CrestExtensions.All;
         design.ApplyParameters = parameterFlags & CustomizeParameterExtensions.All;
-        design.SetApplyHatVisible(design.DoApplyEquip(EquipSlot.Head));
-        design.SetApplyVisorToggle(design.DoApplyEquip(EquipSlot.Head));
-        design.SetApplyWeaponVisible(design.DoApplyEquip(EquipSlot.MainHand) || design.DoApplyEquip(EquipSlot.OffHand));
-        design.SetApplyWetness(true);
+        design.SetApplyMeta(MetaIndex.HatState, design.DoApplyEquip(EquipSlot.Head));
+        design.SetApplyMeta(MetaIndex.VisorState, design.DoApplyEquip(EquipSlot.Head));
+        design.SetApplyMeta(MetaIndex.WeaponState, design.DoApplyEquip(EquipSlot.MainHand) || design.DoApplyEquip(EquipSlot.OffHand));
+        design.SetApplyMeta(MetaIndex.Wetness, true);
         design.SetDesignData(_customize, data);
         return design;
     }
@@ -126,16 +126,14 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
             return null;
         }
 
-        ret.SetApplyWetness(customize);
+        ret.SetApplyMeta(MetaIndex.Wetness, customize);
         ret.ApplyCustomize = customize ? CustomizeFlagExtensions.AllRelevant : 0;
 
         if (!equip)
         {
-            ret.ApplyEquip = 0;
-            ret.ApplyCrest = 0;
-            ret.SetApplyHatVisible(false);
-            ret.SetApplyWeaponVisible(false);
-            ret.SetApplyVisorToggle(false);
+            ret.ApplyEquip =  0;
+            ret.ApplyCrest =  0;
+            ret.ApplyMeta  &= ~(MetaFlag.HatState | MetaFlag.WeaponState | MetaFlag.VisorState);
         }
 
         return ret;

@@ -68,7 +68,6 @@ public class AutoDesign
         return ret;
     }
 
-    public (EquipFlag Equip, CustomizeFlag Customize, CrestFlag Crest, CustomizeParameterFlag Parameters, bool ApplyHat, bool ApplyVisor, bool
-        ApplyWeapon, bool ApplyWet) ApplyWhat()
+    public (EquipFlag Equip, CustomizeFlag Customize, CrestFlag Crest, CustomizeParameterFlag Parameters, MetaFlag Meta) ApplyWhat()
         => Type.ApplyWhat(Design);
 }

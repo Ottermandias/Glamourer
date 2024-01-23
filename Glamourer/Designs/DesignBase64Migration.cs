@@ -163,16 +163,15 @@ public class DesignBase64Migration
         }
     }
 
-    public static unsafe string CreateOldBase64(in DesignData save, EquipFlag equipFlags, CustomizeFlag customizeFlags,
-        bool setHat, bool setVisor, bool setWeapon, bool writeProtected, float alpha = 1.0f)
+    public static unsafe string CreateOldBase64(in DesignData save, EquipFlag equipFlags, CustomizeFlag customizeFlags, MetaFlag meta, bool writeProtected, float alpha = 1.0f)
     {
         var data = stackalloc byte[Base64SizeV4];
         data[0] = 5;
         data[1] = (byte)((customizeFlags == CustomizeFlagExtensions.All ? 0x01 : 0)
           | (save.IsWet() ? 0x02 : 0)
-          | (setHat ? 0x04 : 0)
-          | (setWeapon ? 0x08 : 0)
-          | (setVisor ? 0x10 : 0)
+          | (meta.HasFlag(MetaFlag.HatState) ? 0x04 : 0)
+          | (meta.HasFlag(MetaFlag.WeaponState) ? 0x08 : 0)
+          | (meta.HasFlag(MetaFlag.VisorState) ? 0x10 : 0)
           | (writeProtected ? 0x20 : 0));
         data[2] = (byte)((equipFlags.HasFlag(EquipFlag.Mainhand) ? 0x01 : 0)
           | (equipFlags.HasFlag(EquipFlag.Offhand) ? 0x02 : 0)

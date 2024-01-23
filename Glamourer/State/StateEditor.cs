@@ -13,7 +13,7 @@ public class StateEditor(CustomizeService customizations, HumanModelList humans,
 {
     /// <summary> Change the model id. If the actor is changed from a human to another human, customize and equipData are unused. </summary>
     /// <remarks> We currently only allow changing things to humans, not humans to monsters. </remarks>
-    public bool ChangeModelId(ActorState state, uint modelId, in CustomizeArray customize, nint equipData, StateChanged.Source source,
+    public bool ChangeModelId(ActorState state, uint modelId, in CustomizeArray customize, nint equipData, StateSource source,
         out uint oldModelId, uint key = 0)
     {
         oldModelId = state.ModelData.ModelId;
@@ -45,21 +45,21 @@ public class StateEditor(CustomizeService customizations, HumanModelList humans,
             state.ModelData.SetHatVisible(true);
             state.ModelData.SetWeaponVisible(true);
             state.ModelData.SetVisor(false);
-            state.Source[MetaIndex.ModelId]     = source;
-            state.Source[MetaIndex.HatState]    = source;
-            state.Source[MetaIndex.WeaponState] = source;
-            state.Source[MetaIndex.VisorState]  = source;
+            state.Sources[MetaIndex.ModelId]     = source;
+            state.Sources[MetaIndex.HatState]    = source;
+            state.Sources[MetaIndex.WeaponState] = source;
+            state.Sources[MetaIndex.VisorState]  = source;
             foreach (var slot in EquipSlotExtensions.FullSlots)
             {
-                state.Source[slot, true]  = source;
-                state.Source[slot, false] = source;
+                state.Sources[slot, true]  = source;
+                state.Sources[slot, false] = source;
             }
 
-            state.Source[CustomizeIndex.Clan]   = source;
-            state.Source[CustomizeIndex.Gender] = source;
+            state.Sources[CustomizeIndex.Clan]   = source;
+            state.Sources[CustomizeIndex.Gender] = source;
             var set = customizations.Manager.GetSet(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
             foreach (var index in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
-                state.Source[index] = source;
+                state.Sources[index] = source;
         }
         else
         {
@@ -67,14 +67,14 @@ public class StateEditor(CustomizeService customizations, HumanModelList humans,
                 return false;
 
             state.ModelData.LoadNonHuman(modelId, customize, equipData);
-            state.Source[MetaIndex.ModelId] = source;
+            state.Sources[MetaIndex.ModelId] = source;
         }
 
         return true;
     }
 
     /// <summary> Change a customization value. </summary>
-    public bool ChangeCustomize(ActorState state, CustomizeIndex idx, CustomizeValue value, StateChanged.Source source,
+    public bool ChangeCustomize(ActorState state, CustomizeIndex idx, CustomizeValue value, StateSource source,
         out CustomizeValue old, uint key = 0)
     {
         old = state.ModelData.Customize[idx];
@@ -82,12 +82,12 @@ public class StateEditor(CustomizeService customizations, HumanModelList humans,
             return false;
 
         state.ModelData.Customize[idx] = value;
-        state.Source[idx]              = source;
+        state.Sources[idx]             = source;
         return true;
     }
 
     /// <summary> Change an entire customization array according to flags. </summary>
-    public bool ChangeHumanCustomize(ActorState state, in CustomizeArray customizeInput, CustomizeFlag applyWhich, StateChanged.Source source,
+    public bool ChangeHumanCustomize(ActorState state, in CustomizeArray customizeInput, CustomizeFlag applyWhich, StateSource source,
         out CustomizeArray old, out CustomizeFlag changed, uint key = 0)
     {
         old     = state.ModelData.Customize;
@@ -104,14 +104,14 @@ public class StateEditor(CustomizeService customizations, HumanModelList humans,
         foreach (var type in Enum.GetValues<CustomizeIndex>())
         {
             if (applied.HasFlag(type.ToFlag()))
-                state.Source[type] = source;
+                state.Sources[type] = source;
         }
 
         return true;
     }
 
     /// <summary> Change a single piece of equipment without stain. </summary>
-    public bool ChangeItem(ActorState state, EquipSlot slot, EquipItem item, StateChanged.Source source, out EquipItem oldItem, uint key = 0)
+    public bool ChangeItem(ActorState state, EquipSlot slot, EquipItem item, StateSource source, out EquipItem oldItem, uint key = 0)
     {
         oldItem = state.ModelData.Item(slot);
         if (!state.CanUnlock(key))
@@ -128,17 +128,17 @@ public class StateEditor(CustomizeService customizations, HumanModelList humans,
             gPose.AddActionOnLeave(() =>
             {
                 if (old.Type == state.BaseData.Item(slot).Type)
-                    ChangeItem(state, slot, old, state.Source[slot, false], out _, key);
+                    ChangeItem(state, slot, old, state.Sources[slot, false], out _, key);
             });
         }
 
         state.ModelData.SetItem(slot, item);
-        state.Source[slot, false] = source;
+        state.Sources[slot, false] = source;
         return true;
     }
 
     /// <summary> Change a single piece of equipment including stain. </summary>
-    public bool ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainId stain, StateChanged.Source source, out EquipItem oldItem,
+    public bool ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainId stain, StateSource source, out EquipItem oldItem,
         out StainId oldStain, uint key = 0)
     {
         oldItem  = state.ModelData.Item(slot);
@@ -158,43 +158,43 @@ public class StateEditor(CustomizeService customizations, HumanModelList humans,
             gPose.AddActionOnLeave(() =>
             {
                 if (old.Type == state.BaseData.Item(slot).Type)
-                    ChangeEquip(state, slot, old, oldS, state.Source[slot, false], out _, out _, key);
+                    ChangeEquip(state, slot, old, oldS, state.Sources[slot, false], out _, out _, key);
             });
         }
 
         state.ModelData.SetItem(slot, item);
         state.ModelData.SetStain(slot, stain);
-        state.Source[slot, false] = source;
-        state.Source[slot, true]  = source;
+        state.Sources[slot, false] = source;
+        state.Sources[slot, true]  = source;
         return true;
     }
 
     /// <summary> Change only the stain of an equipment piece. </summary>
-    public bool ChangeStain(ActorState state, EquipSlot slot, StainId stain, StateChanged.Source source, out StainId oldStain, uint key = 0)
+    public bool ChangeStain(ActorState state, EquipSlot slot, StainId stain, StateSource source, out StainId oldStain, uint key = 0)
     {
         oldStain = state.ModelData.Stain(slot);
         if (!state.CanUnlock(key))
             return false;
 
         state.ModelData.SetStain(slot, stain);
-        state.Source[slot, true] = source;
+        state.Sources[slot, true] = source;
         return true;
     }
 
     /// <summary> Change the crest of an equipment piece. </summary>
-    public bool ChangeCrest(ActorState state, CrestFlag slot, bool crest, StateChanged.Source source, out bool oldCrest, uint key = 0)
+    public bool ChangeCrest(ActorState state, CrestFlag slot, bool crest, StateSource source, out bool oldCrest, uint key = 0)
     {
         oldCrest = state.ModelData.Crest(slot);
         if (!state.CanUnlock(key))
             return false;
 
         state.ModelData.SetCrest(slot, crest);
-        state.Source[slot] = source;
+        state.Sources[slot] = source;
         return true;
     }
 
     /// <summary> Change the customize flags of a character. </summary>
-    public bool ChangeParameter(ActorState state, CustomizeParameterFlag flag, CustomizeParameterValue value, StateChanged.Source source,
+    public bool ChangeParameter(ActorState state, CustomizeParameterFlag flag, CustomizeParameterValue value, StateSource source,
         out CustomizeParameterValue oldValue, uint key = 0)
     {
         oldValue = state.ModelData.Parameters[flag];
@@ -202,29 +202,20 @@ public class StateEditor(CustomizeService customizations, HumanModelList humans,
             return false;
 
         state.ModelData.Parameters.Set(flag, value);
-        state.Source[flag] = source;
+        state.Sources[flag] = source;
 
         return true;
     }
 
-    public bool ChangeMetaState(ActorState state, MetaIndex index, bool value, StateChanged.Source source, out bool oldValue,
+    public bool ChangeMetaState(ActorState state, MetaIndex index, bool value, StateSource source, out bool oldValue,
         uint key = 0)
     {
-        (var setter, oldValue) = index switch
-        {
-            MetaIndex.Wetness    => ((Func<bool, bool>)(v => state.ModelData.SetIsWet(v)), state.ModelData.IsWet()),
-            MetaIndex.HatState   => ((Func<bool, bool>)(v => state.ModelData.SetHatVisible(v)), state.ModelData.IsHatVisible()),
-            MetaIndex.VisorState => ((Func<bool, bool>)(v => state.ModelData.SetVisor(v)), state.ModelData.IsVisorToggled()),
-            MetaIndex.WeaponState => ((Func<bool, bool>)(v => state.ModelData.SetWeaponVisible(v)),
-                state.ModelData.IsWeaponVisible()),
-            _ => throw new Exception("Invalid MetaIndex."),
-        };
-
+        oldValue = state.ModelData.GetMeta(index);
         if (!state.CanUnlock(key))
             return false;
 
-        setter(value);
-        state.Source[index] = source;
+        state.ModelData.SetMeta(index, value);
+        state.Sources[index] = source;
         return true;
     }
 }

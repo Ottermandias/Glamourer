@@ -1,5 +1,4 @@
 ﻿using Glamourer.Automation;
-using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.State;
@@ -28,13 +27,13 @@ public class DesignMerger(
                 continue;
 
             ref readonly var data   = ref design == null ? ref baseRef : ref design.GetDesignDataRef();
-            var              source = design == null ? StateChanged.Source.Game : StateChanged.Source.Manual;
+            var              source = design == null ? StateSource.Game : StateSource.Manual;
 
             if (!data.IsHuman)
                 continue;
 
-            var (equipFlags, customizeFlags, crestFlags, parameterFlags, applyHat, applyVisor, applyWeapon, applyWet) = type.ApplyWhat(design);
-            ReduceMeta(data, applyHat, applyVisor, applyWeapon, applyWet, ret, source);
+            var (equipFlags, customizeFlags, crestFlags, parameterFlags, applyMeta) = type.ApplyWhat(design);
+            ReduceMeta(data, applyMeta, ret, source);
             ReduceCustomize(data, customizeFlags, ref fixFlags, ret, source, respectOwnership);
             ReduceEquip(data, equipFlags, ret, source, respectOwnership);
             ReduceMainhands(data, equipFlags, ret, source, respectOwnership);
@@ -58,39 +57,22 @@ public class DesignMerger(
             ret.AssociatedMods.TryAdd(mod, settings);
     }
 
-    private static void ReduceMeta(in DesignData design, bool applyHat, bool applyVisor, bool applyWeapon, bool applyWet, MergedDesign ret,
-        StateChanged.Source source)
+    private static void ReduceMeta(in DesignData design, MetaFlag applyMeta, MergedDesign ret, StateSource source)
     {
-        if (applyHat && !ret.Design.DoApplyHatVisible())
-        {
-            ret.Design.SetApplyHatVisible(true);
-            ret.Design.GetDesignDataRef().SetHatVisible(design.IsHatVisible());
-            ret.Source[MetaIndex.HatState] = source;
-        }
+        applyMeta &= ~ret.Design.ApplyMeta;
 
-        if (applyVisor && !ret.Design.DoApplyVisorToggle())
+        foreach (var index in MetaExtensions.AllRelevant)
         {
-            ret.Design.SetApplyVisorToggle(true);
-            ret.Design.GetDesignDataRef().SetVisor(design.IsVisorToggled());
-            ret.Source[MetaIndex.VisorState] = source;
-        }
+            if (!applyMeta.HasFlag(index.ToFlag()))
+                continue;
 
-        if (applyWeapon && !ret.Design.DoApplyWeaponVisible())
-        {
-            ret.Design.SetApplyWeaponVisible(true);
-            ret.Design.GetDesignDataRef().SetWeaponVisible(design.IsWeaponVisible());
-            ret.Source[MetaIndex.WeaponState] = source;
-        }
-
-        if (applyWet && !ret.Design.DoApplyWetness())
-        {
-            ret.Design.SetApplyWetness(true);
-            ret.Design.GetDesignDataRef().SetIsWet(design.IsWet());
-            ret.Source[MetaIndex.Wetness] = source;
+            ret.Design.SetApplyMeta(index, true);
+            ret.Design.GetDesignDataRef().SetMeta(index, design.GetMeta(index));
+            ret.Sources[index] = source;
         }
     }
 
-    private static void ReduceCrests(in DesignData design, CrestFlag crestFlags, MergedDesign ret, StateChanged.Source source)
+    private static void ReduceCrests(in DesignData design, CrestFlag crestFlags, MergedDesign ret, StateSource source)
     {
         crestFlags &= ~ret.Design.ApplyCrest;
         if (crestFlags == 0)
@@ -103,12 +85,12 @@ public class DesignMerger(
 
             ret.Design.GetDesignDataRef().SetCrest(slot, design.Crest(slot));
             ret.Design.SetApplyCrest(slot, true);
-            ret.Source[slot] = source;
+            ret.Sources[slot] = source;
         }
     }
 
     private static void ReduceParameters(in DesignData design, CustomizeParameterFlag parameterFlags, MergedDesign ret,
-        StateChanged.Source source)
+        StateSource source)
     {
         parameterFlags &= ~ret.Design.ApplyParameters;
         if (parameterFlags == 0)
@@ -121,11 +103,11 @@ public class DesignMerger(
 
             ret.Design.GetDesignDataRef().Parameters.Set(flag, design.Parameters[flag]);
             ret.Design.SetApplyParameter(flag, true);
-            ret.Source[flag] = source;
+            ret.Sources[flag] = source;
         }
     }
 
-    private void ReduceEquip(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source,
+    private void ReduceEquip(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateSource source,
         bool respectOwnership)
     {
         equipFlags &= ~ret.Design.ApplyEquip;
@@ -142,7 +124,7 @@ public class DesignMerger(
                 if (!respectOwnership || _itemUnlocks.IsUnlocked(item.Id, out _))
                     ret.Design.GetDesignDataRef().SetItem(slot, item);
                 ret.Design.SetApplyEquip(slot, true);
-                ret.Source[slot, false] = source;
+                ret.Sources[slot, false] = source;
             }
 
             var stainFlag = slot.ToStainFlag();
@@ -150,7 +132,7 @@ public class DesignMerger(
             {
                 ret.Design.GetDesignDataRef().SetStain(slot, design.Stain(slot));
                 ret.Design.SetApplyStain(slot, true);
-                ret.Source[slot, true] = source;
+                ret.Sources[slot, true] = source;
             }
         }
 
@@ -161,12 +143,12 @@ public class DesignMerger(
             {
                 ret.Design.GetDesignDataRef().SetStain(slot, design.Stain(slot));
                 ret.Design.SetApplyStain(slot, true);
-                ret.Source[slot, true] = source;
+                ret.Sources[slot, true] = source;
             }
         }
     }
 
-    private void ReduceMainhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source,
+    private void ReduceMainhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateSource source,
         bool respectOwnership)
     {
         if (!equipFlags.HasFlag(EquipFlag.Mainhand))
@@ -185,7 +167,7 @@ public class DesignMerger(
         ret.Weapons.TryAdd(weapon.Type, (weapon, source));
     }
 
-    private void ReduceOffhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateChanged.Source source, bool respectOwnership)
+    private void ReduceOffhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateSource source, bool respectOwnership)
     {
         if (!equipFlags.HasFlag(EquipFlag.Offhand))
             return;
@@ -205,7 +187,7 @@ public class DesignMerger(
     }
 
     private void ReduceCustomize(in DesignData design, CustomizeFlag customizeFlags, ref CustomizeFlag fixFlags, MergedDesign ret,
-        StateChanged.Source source, bool respectOwnership)
+        StateSource source, bool respectOwnership)
     {
         customizeFlags &= ~ret.Design.ApplyCustomizeRaw;
         if (customizeFlags == 0)
@@ -221,25 +203,25 @@ public class DesignMerger(
             fixFlags |= _customize.ChangeClan(ref customize, design.Customize.Clan);
             ret.Design.SetApplyCustomize(CustomizeIndex.Clan, true);
             ret.Design.SetApplyCustomize(CustomizeIndex.Race, true);
-            customizeFlags                  &= ~(CustomizeFlag.Clan | CustomizeFlag.Race);
-            ret.Source[CustomizeIndex.Clan] =  source;
-            ret.Source[CustomizeIndex.Race] =  source;
+            customizeFlags                   &= ~(CustomizeFlag.Clan | CustomizeFlag.Race);
+            ret.Sources[CustomizeIndex.Clan] =  source;
+            ret.Sources[CustomizeIndex.Race] =  source;
         }
 
         if (customizeFlags.HasFlag(CustomizeFlag.Gender))
         {
             fixFlags |= _customize.ChangeGender(ref customize, design.Customize.Gender);
             ret.Design.SetApplyCustomize(CustomizeIndex.Gender, true);
-            customizeFlags                    &= ~CustomizeFlag.Gender;
-            ret.Source[CustomizeIndex.Gender] =  source;
+            customizeFlags                     &= ~CustomizeFlag.Gender;
+            ret.Sources[CustomizeIndex.Gender] =  source;
         }
 
         if (customizeFlags.HasFlag(CustomizeFlag.Face))
         {
             customize[CustomizeIndex.Face] = design.Customize.Face;
             ret.Design.SetApplyCustomize(CustomizeIndex.Face, true);
-            customizeFlags                  &= ~CustomizeFlag.Face;
-            ret.Source[CustomizeIndex.Face] =  source;
+            customizeFlags                   &= ~CustomizeFlag.Face;
+            ret.Sources[CustomizeIndex.Face] =  source;
         }
 
         var set  = ret.Design.CustomizeSet;
@@ -259,8 +241,8 @@ public class DesignMerger(
 
             customize[index] = data?.Value ?? value;
             ret.Design.SetApplyCustomize(index, true);
-            ret.Source[index] =  source;
-            fixFlags          &= ~flag;
+            ret.Sources[index] =  source;
+            fixFlags           &= ~flag;
         }
 
         ret.Design.SetCustomize(_customize, customize);
@@ -272,15 +254,15 @@ public class DesignMerger(
             return;
 
         var source = ret.Design.DoApplyCustomize(CustomizeIndex.Clan)
-            ? ret.Source[CustomizeIndex.Clan]
-            : ret.Source[CustomizeIndex.Gender];
+            ? ret.Sources[CustomizeIndex.Clan]
+            : ret.Sources[CustomizeIndex.Gender];
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {
             var flag = index.ToFlag();
             if (!fixFlags.HasFlag(flag))
                 continue;
 
-            ret.Source[index] = source;
+            ret.Sources[index] = source;
             ret.Design.SetApplyCustomize(index, true);
         }
     }

@@ -523,15 +523,7 @@ public class DesignManager
     /// <summary> Change the application value of one of the meta flags. </summary>
     public void ChangeApplyMeta(Design design, MetaIndex metaIndex, bool value)
     {
-        var change = metaIndex switch
-        {
-            MetaIndex.Wetness     => design.SetApplyWetness(value),
-            MetaIndex.HatState    => design.SetApplyHatVisible(value),
-            MetaIndex.VisorState  => design.SetApplyVisorToggle(value),
-            MetaIndex.WeaponState => design.SetApplyWeaponVisible(value),
-            _                                => throw new ArgumentOutOfRangeException(nameof(metaIndex), metaIndex, null),
-        };
-        if (!change)
+        if (!design.SetApplyMeta(metaIndex, value))
             return;
 
         design.LastEdit = DateTimeOffset.UtcNow;
@@ -556,14 +548,8 @@ public class DesignManager
     public void ApplyDesign(Design design, DesignBase other)
     {
         _undoStore[design.Identifier] = design.DesignData;
-        if (other.DoApplyWetness())
-            design.GetDesignDataRef().SetIsWet(other.DesignData.IsWet());
-        if (other.DoApplyHatVisible())
-            design.GetDesignDataRef().SetHatVisible(other.DesignData.IsHatVisible());
-        if (other.DoApplyVisorToggle())
-            design.GetDesignDataRef().SetVisor(other.DesignData.IsVisorToggled());
-        if (other.DoApplyWeaponVisible())
-            design.GetDesignDataRef().SetWeaponVisible(other.DesignData.IsWeaponVisible());
+        foreach (var index in MetaExtensions.AllRelevant.Where(other.DoApplyMeta))
+            design.GetDesignDataRef().SetMeta(index, other.DesignData.GetMeta(index));
 
         if (design.DesignData.IsHuman)
         {

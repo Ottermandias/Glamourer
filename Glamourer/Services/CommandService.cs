@@ -333,7 +333,7 @@ public class CommandService : IDisposable
         foreach (var identifier in identifiers)
         {
             if (_stateManager.TryGetValue(identifier, out var state))
-                _stateManager.ResetState(state, StateChanged.Source.Manual);
+                _stateManager.ResetState(state, StateSource.Manual);
         }
 
 
@@ -419,7 +419,7 @@ public class CommandService : IDisposable
             if (!_objects.TryGetValue(identifier, out var actors))
             {
                 if (_stateManager.TryGetValue(identifier, out var state))
-                    _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
+                    _stateManager.ApplyDesign(design, state, StateSource.Manual);
             }
             else
             {
@@ -428,7 +428,7 @@ public class CommandService : IDisposable
                     if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
                     {
                         ApplyModSettings(design, actor, applyMods);
-                        _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
+                        _stateManager.ApplyDesign(design, state, StateSource.Manual);
                     }
                 }
             }

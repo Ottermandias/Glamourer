@@ -163,7 +163,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         using var _ = design!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-        _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
+        _stateManager.ApplyDesign(design, state, StateSource.Manual);
     }
 
     public void DrawRevertButton(Vector2 buttonSize)
@@ -189,7 +189,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, tooltip, available);
         if (clicked)
-            _stateManager.ResetState(state!, StateChanged.Source.Manual);
+            _stateManager.ResetState(state!, StateSource.Manual);
     }
 
     public void DrawRevertAutomationButton(Vector2 buttonSize)
@@ -257,7 +257,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         ImGui.SameLine();
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Palette, buttonSize, tooltip, available);
         if (clicked)
-            _stateManager.ResetAdvancedState(state!, StateChanged.Source.Manual);
+            _stateManager.ResetAdvancedState(state!, StateSource.Manual);
     }
 
     private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(FontAwesomeIcon icon, Vector2 buttonSize, string tooltip,

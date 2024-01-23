@@ -67,9 +67,9 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
             if (ImGuiUtil.DrawDisabledButton("Apply", Vector2.Zero, string.Empty, disabled))
             {
                 foreach (var (slot, item, stain) in _designConverter.FromDrawData(data.Equip.ToArray(), data.Mainhand, data.Offhand, true))
-                    _state.ChangeEquip(state!, slot, item, stain, StateChanged.Source.Manual);
-                _state.ChangeVisorState(state!, data.VisorToggled, StateChanged.Source.Manual);
-                _state.ChangeCustomize(state!, data.Customize, CustomizeFlagExtensions.All, StateChanged.Source.Manual);
+                    _state.ChangeEquip(state!, slot, item, stain, StateSource.Manual);
+                _state.ChangeMeta(state!, MetaIndex.VisorState, data.VisorToggled, StateSource.Manual);
+                _state.ChangeCustomize(state!, data.Customize, CustomizeFlagExtensions.All, StateSource.Manual);
             }
 
             ImGui.TableNextColumn();
