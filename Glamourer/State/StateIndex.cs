@@ -199,6 +199,227 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
     public const int ParamDecalColor            = 80;
 
     public const int Size = 81;
+
+    public IEnumerable<StateIndex> All
+        => Enumerable.Range(0, Size - 1).Select(i => new StateIndex(i));
+
+    public bool GetApply(DesignBase data)
+        => GetFlag() switch
+        {
+            EquipFlag e              => data.ApplyEquip.HasFlag(e),
+            CustomizeFlag c          => data.ApplyCustomize.HasFlag(c),
+            MetaFlag m               => data.ApplyMeta.HasFlag(m),
+            CrestFlag c              => data.ApplyCrest.HasFlag(c),
+            CustomizeParameterFlag c => data.ApplyParameters.HasFlag(c),
+            bool v                   => v,
+            _                        => false,
+        };
+
+    public string ToName()
+        => GetFlag() switch
+        {
+            EquipFlag e              => GetName(e),
+            CustomizeFlag c          => c.ToIndex().ToDefaultName(),
+            MetaFlag m               => m.ToIndex().ToName(),
+            CrestFlag c              => c.ToLabel(),
+            CustomizeParameterFlag c => c.ToName(),
+            bool v                   => "Model ID",
+            _                        => "Unknown",
+        };
+
+    public object GetFlag()
+        => Value switch
+        {
+            EquipHead     => EquipFlag.Head,
+            EquipBody     => EquipFlag.Body,
+            EquipHands    => EquipFlag.Hands,
+            EquipLegs     => EquipFlag.Legs,
+            EquipFeet     => EquipFlag.Feet,
+            EquipEars     => EquipFlag.Ears,
+            EquipNeck     => EquipFlag.Neck,
+            EquipWrist    => EquipFlag.Wrist,
+            EquipRFinger  => EquipFlag.RFinger,
+            EquipLFinger  => EquipFlag.LFinger,
+            EquipMainhand => EquipFlag.Mainhand,
+            EquipOffhand  => EquipFlag.Offhand,
+
+            StainHead     => EquipFlag.HeadStain,
+            StainBody     => EquipFlag.BodyStain,
+            StainHands    => EquipFlag.HandsStain,
+            StainLegs     => EquipFlag.LegsStain,
+            StainFeet     => EquipFlag.FeetStain,
+            StainEars     => EquipFlag.EarsStain,
+            StainNeck     => EquipFlag.NeckStain,
+            StainWrist    => EquipFlag.WristStain,
+            StainRFinger  => EquipFlag.RFingerStain,
+            StainLFinger  => EquipFlag.LFingerStain,
+            StainMainhand => EquipFlag.MainhandStain,
+            StainOffhand  => EquipFlag.OffhandStain,
+
+            CustomizeRace              => CustomizeFlag.Race,
+            CustomizeGender            => CustomizeFlag.Gender,
+            CustomizeBodyType          => CustomizeFlag.BodyType,
+            CustomizeHeight            => CustomizeFlag.Height,
+            CustomizeClan              => CustomizeFlag.Clan,
+            CustomizeFace              => CustomizeFlag.Face,
+            CustomizeHairstyle         => CustomizeFlag.Hairstyle,
+            CustomizeHighlights        => CustomizeFlag.Highlights,
+            CustomizeSkinColor         => CustomizeFlag.SkinColor,
+            CustomizeEyeColorRight     => CustomizeFlag.EyeColorRight,
+            CustomizeHairColor         => CustomizeFlag.HairColor,
+            CustomizeHighlightsColor   => CustomizeFlag.HighlightsColor,
+            CustomizeFacialFeature1    => CustomizeFlag.FacialFeature1,
+            CustomizeFacialFeature2    => CustomizeFlag.FacialFeature2,
+            CustomizeFacialFeature3    => CustomizeFlag.FacialFeature3,
+            CustomizeFacialFeature4    => CustomizeFlag.FacialFeature4,
+            CustomizeFacialFeature5    => CustomizeFlag.FacialFeature5,
+            CustomizeFacialFeature6    => CustomizeFlag.FacialFeature6,
+            CustomizeFacialFeature7    => CustomizeFlag.FacialFeature7,
+            CustomizeLegacyTattoo      => CustomizeFlag.LegacyTattoo,
+            CustomizeTattooColor       => CustomizeFlag.TattooColor,
+            CustomizeEyebrows          => CustomizeFlag.Eyebrows,
+            CustomizeEyeColorLeft      => CustomizeFlag.EyeColorLeft,
+            CustomizeEyeShape          => CustomizeFlag.EyeShape,
+            CustomizeSmallIris         => CustomizeFlag.SmallIris,
+            CustomizeNose              => CustomizeFlag.Nose,
+            CustomizeJaw               => CustomizeFlag.Jaw,
+            CustomizeMouth             => CustomizeFlag.Mouth,
+            CustomizeLipstick          => CustomizeFlag.Lipstick,
+            CustomizeLipColor          => CustomizeFlag.LipColor,
+            CustomizeMuscleMass        => CustomizeFlag.MuscleMass,
+            CustomizeTailShape         => CustomizeFlag.TailShape,
+            CustomizeBustSize          => CustomizeFlag.BustSize,
+            CustomizeFacePaint         => CustomizeFlag.FacePaint,
+            CustomizeFacePaintReversed => CustomizeFlag.FacePaintReversed,
+            CustomizeFacePaintColor    => CustomizeFlag.FacePaintColor,
+
+            MetaWetness     => MetaFlag.Wetness,
+            MetaHatState    => MetaFlag.HatState,
+            MetaVisorState  => MetaFlag.VisorState,
+            MetaWeaponState => MetaFlag.WeaponState,
+            MetaModelId     => true,
+
+            CrestHead    => CrestFlag.Head,
+            CrestBody    => CrestFlag.Body,
+            CrestOffhand => CrestFlag.OffHand,
+
+            ParamSkinDiffuse           => CustomizeParameterFlag.SkinDiffuse,
+            ParamMuscleTone            => CustomizeParameterFlag.MuscleTone,
+            ParamSkinSpecular          => CustomizeParameterFlag.SkinSpecular,
+            ParamLipDiffuse            => CustomizeParameterFlag.LipDiffuse,
+            ParamHairDiffuse           => CustomizeParameterFlag.HairDiffuse,
+            ParamHairSpecular          => CustomizeParameterFlag.HairSpecular,
+            ParamHairHighlight         => CustomizeParameterFlag.HairHighlight,
+            ParamLeftEye               => CustomizeParameterFlag.LeftEye,
+            ParamRightEye              => CustomizeParameterFlag.RightEye,
+            ParamFeatureColor          => CustomizeParameterFlag.FeatureColor,
+            ParamFacePaintUvMultiplier => CustomizeParameterFlag.FacePaintUvMultiplier,
+            ParamFacePaintUvOffset     => CustomizeParameterFlag.FacePaintUvOffset,
+            ParamDecalColor            => CustomizeParameterFlag.DecalColor,
+
+            _ => -1,
+        };
+
+    public object? GetValue(in DesignData data)
+    {
+        return Value switch
+        {
+            EquipHead     => data.Item(EquipSlot.Head),
+            EquipBody     => data.Item(EquipSlot.Body),
+            EquipHands    => data.Item(EquipSlot.Hands),
+            EquipLegs     => data.Item(EquipSlot.Legs),
+            EquipFeet     => data.Item(EquipSlot.Feet),
+            EquipEars     => data.Item(EquipSlot.Ears),
+            EquipNeck     => data.Item(EquipSlot.Neck),
+            EquipWrist    => data.Item(EquipSlot.Wrists),
+            EquipRFinger  => data.Item(EquipSlot.RFinger),
+            EquipLFinger  => data.Item(EquipSlot.LFinger),
+            EquipMainhand => data.Item(EquipSlot.MainHand),
+            EquipOffhand  => data.Item(EquipSlot.OffHand),
+
+            StainHead     => data.Stain(EquipSlot.Head),
+            StainBody     => data.Stain(EquipSlot.Body),
+            StainHands    => data.Stain(EquipSlot.Hands),
+            StainLegs     => data.Stain(EquipSlot.Legs),
+            StainFeet     => data.Stain(EquipSlot.Feet),
+            StainEars     => data.Stain(EquipSlot.Ears),
+            StainNeck     => data.Stain(EquipSlot.Neck),
+            StainWrist    => data.Stain(EquipSlot.Wrists),
+            StainRFinger  => data.Stain(EquipSlot.RFinger),
+            StainLFinger  => data.Stain(EquipSlot.LFinger),
+            StainMainhand => data.Stain(EquipSlot.MainHand),
+            StainOffhand  => data.Stain(EquipSlot.OffHand),
+
+            CustomizeRace              => data.Customize[CustomizeIndex.Race],
+            CustomizeGender            => data.Customize[CustomizeIndex.Gender],
+            CustomizeBodyType          => data.Customize[CustomizeIndex.BodyType],
+            CustomizeHeight            => data.Customize[CustomizeIndex.Height],
+            CustomizeClan              => data.Customize[CustomizeIndex.Clan],
+            CustomizeFace              => data.Customize[CustomizeIndex.Face],
+            CustomizeHairstyle         => data.Customize[CustomizeIndex.Hairstyle],
+            CustomizeHighlights        => data.Customize[CustomizeIndex.Highlights],
+            CustomizeSkinColor         => data.Customize[CustomizeIndex.SkinColor],
+            CustomizeEyeColorRight     => data.Customize[CustomizeIndex.EyeColorRight],
+            CustomizeHairColor         => data.Customize[CustomizeIndex.HairColor],
+            CustomizeHighlightsColor   => data.Customize[CustomizeIndex.HighlightsColor],
+            CustomizeFacialFeature1    => data.Customize[CustomizeIndex.FacialFeature1],
+            CustomizeFacialFeature2    => data.Customize[CustomizeIndex.FacialFeature2],
+            CustomizeFacialFeature3    => data.Customize[CustomizeIndex.FacialFeature3],
+            CustomizeFacialFeature4    => data.Customize[CustomizeIndex.FacialFeature4],
+            CustomizeFacialFeature5    => data.Customize[CustomizeIndex.FacialFeature5],
+            CustomizeFacialFeature6    => data.Customize[CustomizeIndex.FacialFeature6],
+            CustomizeFacialFeature7    => data.Customize[CustomizeIndex.FacialFeature7],
+            CustomizeLegacyTattoo      => data.Customize[CustomizeIndex.LegacyTattoo],
+            CustomizeTattooColor       => data.Customize[CustomizeIndex.TattooColor],
+            CustomizeEyebrows          => data.Customize[CustomizeIndex.Eyebrows],
+            CustomizeEyeColorLeft      => data.Customize[CustomizeIndex.EyeColorLeft],
+            CustomizeEyeShape          => data.Customize[CustomizeIndex.EyeShape],
+            CustomizeSmallIris         => data.Customize[CustomizeIndex.SmallIris],
+            CustomizeNose              => data.Customize[CustomizeIndex.Nose],
+            CustomizeJaw               => data.Customize[CustomizeIndex.Jaw],
+            CustomizeMouth             => data.Customize[CustomizeIndex.Mouth],
+            CustomizeLipstick          => data.Customize[CustomizeIndex.Lipstick],
+            CustomizeLipColor          => data.Customize[CustomizeIndex.LipColor],
+            CustomizeMuscleMass        => data.Customize[CustomizeIndex.MuscleMass],
+            CustomizeTailShape         => data.Customize[CustomizeIndex.TailShape],
+            CustomizeBustSize          => data.Customize[CustomizeIndex.BustSize],
+            CustomizeFacePaint         => data.Customize[CustomizeIndex.FacePaint],
+            CustomizeFacePaintReversed => data.Customize[CustomizeIndex.FacePaintReversed],
+            CustomizeFacePaintColor    => data.Customize[CustomizeIndex.FacePaintColor],
+
+            MetaWetness     => data.GetMeta(MetaIndex.Wetness),
+            MetaHatState    => data.GetMeta(MetaIndex.HatState),
+            MetaVisorState  => data.GetMeta(MetaIndex.VisorState),
+            MetaWeaponState => data.GetMeta(MetaIndex.WeaponState),
+            MetaModelId     => data.ModelId,
+
+            CrestHead    => data.Crest(CrestFlag.Head),
+            CrestBody    => data.Crest(CrestFlag.Body),
+            CrestOffhand => data.Crest(CrestFlag.OffHand),
+
+            ParamSkinDiffuse           => data.Parameters[CustomizeParameterFlag.SkinDiffuse],
+            ParamMuscleTone            => data.Parameters[CustomizeParameterFlag.MuscleTone],
+            ParamSkinSpecular          => data.Parameters[CustomizeParameterFlag.SkinSpecular],
+            ParamLipDiffuse            => data.Parameters[CustomizeParameterFlag.LipDiffuse],
+            ParamHairDiffuse           => data.Parameters[CustomizeParameterFlag.HairDiffuse],
+            ParamHairSpecular          => data.Parameters[CustomizeParameterFlag.HairSpecular],
+            ParamHairHighlight         => data.Parameters[CustomizeParameterFlag.HairHighlight],
+            ParamLeftEye               => data.Parameters[CustomizeParameterFlag.LeftEye],
+            ParamRightEye              => data.Parameters[CustomizeParameterFlag.RightEye],
+            ParamFeatureColor          => data.Parameters[CustomizeParameterFlag.FeatureColor],
+            ParamFacePaintUvMultiplier => data.Parameters[CustomizeParameterFlag.FacePaintUvMultiplier],
+            ParamFacePaintUvOffset     => data.Parameters[CustomizeParameterFlag.FacePaintUvOffset],
+            ParamDecalColor            => data.Parameters[CustomizeParameterFlag.DecalColor],
+
+            _ => null,
+        };
+    }
+
+    private static string GetName(EquipFlag flag)
+    {
+        var slot = flag.ToSlot(out var stain);
+        return stain ? $"{slot.ToName()} Stain" : slot.ToName();
+    }
 }
 
 public static class StateExtensions

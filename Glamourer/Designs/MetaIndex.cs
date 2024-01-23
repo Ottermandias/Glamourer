@@ -37,6 +37,16 @@ public static class MetaExtensions
             _                     => (MetaFlag)byte.MaxValue,
         };
 
+    public static MetaIndex ToIndex(this MetaFlag index)
+        => index switch
+        {
+            MetaFlag.Wetness     => MetaIndex.Wetness,
+            MetaFlag.HatState    => MetaIndex.HatState,
+            MetaFlag.VisorState  => MetaIndex.VisorState,
+            MetaFlag.WeaponState => MetaIndex.WeaponState,
+            _                    => (MetaIndex)byte.MaxValue,
+        };
+
     public static string ToName(this MetaIndex index)
         => index switch
         {
