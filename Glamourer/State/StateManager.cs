@@ -20,7 +20,8 @@ public class StateManager(
     StateEditor _editor,
     HumanModelList _humans,
     ICondition _condition,
-    IClientState _clientState)
+    IClientState _clientState,
+    Configuration _config)
     : IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
     private readonly Dictionary<ActorIdentifier, ActorState> _states = [];
@@ -260,6 +261,10 @@ public class StateManager(
             ? _applier.ChangeArmor(state, slot, source is StateSource.Manual or StateSource.Ipc)
             : _applier.ChangeWeapon(state, slot, source is StateSource.Manual or StateSource.Ipc,
                 item.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
+
+        if (slot is EquipSlot.MainHand)
+            ApplyMainhandPeriphery(state, item, source, key);
+
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}). [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(type, source, state, actors, (old, item, slot));
@@ -276,6 +281,10 @@ public class StateManager(
             ? _applier.ChangeArmor(state, slot, source is StateSource.Manual or StateSource.Ipc)
             : _applier.ChangeWeapon(state, slot, source is StateSource.Manual or StateSource.Ipc,
                 item.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
+
+        if (slot is EquipSlot.MainHand)
+            ApplyMainhandPeriphery(state, item, source, key);
+
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}) and its stain from {oldStain.Id} to {stain.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(type,                    source, state, actors, (old, item, slot));
@@ -290,6 +299,7 @@ public class StateManager(
             return;
 
         var actors = _applier.ChangeStain(state, slot, source is StateSource.Manual or StateSource.Ipc);
+
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old.Id} to {stain.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
         _event.Invoke(StateChanged.Type.Stain, source, state, actors, (old, stain, slot));
@@ -430,9 +440,9 @@ public class StateManager(
 
         if (state.ModelData.IsHuman)
         {
-            _applier.ChangeMetaState(actors, MetaIndex.HatState, state.ModelData.IsHatVisible());
+            _applier.ChangeMetaState(actors, MetaIndex.HatState,    state.ModelData.IsHatVisible());
             _applier.ChangeMetaState(actors, MetaIndex.WeaponState, state.ModelData.IsWeaponVisible());
-            _applier.ChangeMetaState(actors, MetaIndex.VisorState, state.ModelData.IsVisorToggled());
+            _applier.ChangeMetaState(actors, MetaIndex.VisorState,  state.ModelData.IsVisorToggled());
             _applier.ChangeCrests(actors, state.ModelData.CrestVisibility);
             _applier.ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters, state.IsLocked);
         }
@@ -503,7 +513,7 @@ public class StateManager(
 
         foreach (var index in Enum.GetValues<CustomizeIndex>().Where(i => state.Sources[i] is StateSource.Fixed))
         {
-            state.Sources[index]                     = StateSource.Game;
+            state.Sources[index]             = StateSource.Game;
             state.ModelData.Customize[index] = state.BaseData.Customize[index];
         }
 
@@ -537,7 +547,7 @@ public class StateManager(
             {
                 case StateSource.Fixed:
                 case StateSource.Manual when !respectManualPalettes:
-                    state.Sources[flag]                      = StateSource.Game;
+                    state.Sources[flag]              = StateSource.Game;
                     state.ModelData.Parameters[flag] = state.BaseData.Parameters[flag];
                     break;
             }
@@ -579,4 +589,20 @@ public class StateManager(
 
     public void DeleteState(ActorIdentifier identifier)
         => _states.Remove(identifier);
+
+    /// <summary> Apply offhand item and potentially gauntlets if configured. </summary>
+    private void ApplyMainhandPeriphery(ActorState state, EquipItem? newMainhand, StateSource source, uint key = 0)
+    {
+        if (!_config.ChangeEntireItem || source is not StateSource.Manual)
+            return;
+
+        var mh      = newMainhand ?? state.ModelData.Item(EquipSlot.MainHand);
+        var offhand = newMainhand != null ? _items.GetDefaultOffhand(mh) : state.ModelData.Item(EquipSlot.OffHand);
+        if (offhand.Valid)
+            ChangeEquip(state, EquipSlot.OffHand, offhand, state.ModelData.Stain(EquipSlot.OffHand), source, key);
+
+        if (mh is { Type: FullEquipType.Fists } && _items.ItemData.Tertiary.TryGetValue(mh.ItemId, out var gauntlets))
+            ChangeEquip(state, EquipSlot.Hands, newMainhand != null ? gauntlets : state.ModelData.Item(EquipSlot.Hands),
+                state.ModelData.Stain(EquipSlot.Hands), source, key);
+    }
 }

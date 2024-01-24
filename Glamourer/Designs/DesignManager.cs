@@ -4,7 +4,6 @@ using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
-using Glamourer.State;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -17,6 +16,7 @@ namespace Glamourer.Designs;
 public class DesignManager
 {
     private readonly CustomizeService             _customizations;
+    private readonly Configuration                _config;
     private readonly ItemManager                  _items;
     private readonly HumanModelList               _humans;
     private readonly SaveService                  _saveService;
@@ -28,14 +28,15 @@ public class DesignManager
         => _designs;
 
     public DesignManager(SaveService saveService, ItemManager items, CustomizeService customizations,
-        DesignChanged @event, HumanModelList humans, DesignStorage storage, DesignLinkLoader designLinkLoader)
+        DesignChanged @event, HumanModelList humans, DesignStorage storage, DesignLinkLoader designLinkLoader, Configuration config)
     {
-        _designs          = storage;
-        _saveService      = saveService;
-        _items            = items;
-        _customizations   = customizations;
-        _event            = @event;
-        _humans           = humans;
+        _designs        = storage;
+        _config         = config;
+        _saveService    = saveService;
+        _items          = items;
+        _customizations = customizations;
+        _event          = @event;
+        _humans         = humans;
 
         LoadDesigns(designLinkLoader);
         CreateDesignFolder(saveService);
@@ -382,26 +383,18 @@ public class DesignManager
         switch (slot)
         {
             case EquipSlot.MainHand:
-                var newOff = currentOff;
+
                 if (!_items.IsItemValid(EquipSlot.MainHand, item.ItemId, out item))
                     return;
 
-                if (item.Type != currentMain.Type)
-                {
-                    var defaultOffhand = _items.GetDefaultOffhand(item);
-                    if (!_items.IsOffhandValid(item, defaultOffhand.ItemId, out newOff))
-                        return;
-                }
-
-                if (!(design.GetDesignDataRef().SetItem(EquipSlot.MainHand,  item)
-                      | design.GetDesignDataRef().SetItem(EquipSlot.OffHand, newOff)))
+                if (!ChangeMainhandPeriphery(design, currentMain, currentOff, item, out var newOff, out var newGauntlets))
                     return;
 
                 design.LastEdit = DateTimeOffset.UtcNow;
                 _saveService.QueueSave(design);
                 Glamourer.Log.Debug(
                     $"Set {EquipSlot.MainHand.ToName()} weapon in design {design.Identifier} from {currentMain.Name} ({currentMain.ItemId}) to {item.Name} ({item.ItemId}).");
-                _event.Invoke(DesignChanged.Type.Weapon, design, (currentMain, currentOff, item, newOff));
+                _event.Invoke(DesignChanged.Type.Weapon, design, (currentMain, currentOff, item, newOff, newGauntlets));
 
                 return;
             case EquipSlot.OffHand:
@@ -415,7 +408,7 @@ public class DesignManager
                 _saveService.QueueSave(design);
                 Glamourer.Log.Debug(
                     $"Set {EquipSlot.OffHand.ToName()} weapon in design {design.Identifier} from {currentOff.Name} ({currentOff.ItemId}) to {item.Name} ({item.ItemId}).");
-                _event.Invoke(DesignChanged.Type.Weapon, design, (currentMain, currentOff, currentMain, item));
+                _event.Invoke(DesignChanged.Type.Weapon, design, (currentMain, currentOff, currentMain, item, (EquipItem?)null));
                 return;
             default: return;
         }
@@ -503,15 +496,7 @@ public class DesignManager
     /// <summary> Change the bool value of one of the meta flags. </summary>
     public void ChangeMeta(Design design, MetaIndex metaIndex, bool value)
     {
-        var change = metaIndex switch
-        {
-            MetaIndex.Wetness     => design.GetDesignDataRef().SetIsWet(value),
-            MetaIndex.HatState    => design.GetDesignDataRef().SetHatVisible(value),
-            MetaIndex.VisorState  => design.GetDesignDataRef().SetVisor(value),
-            MetaIndex.WeaponState => design.GetDesignDataRef().SetWeaponVisible(value),
-            _                                => throw new ArgumentOutOfRangeException(nameof(metaIndex), metaIndex, null),
-        };
-        if (!change)
+        if (!design.GetDesignDataRef().SetMeta(metaIndex, value))
             return;
 
         design.LastEdit = DateTimeOffset.UtcNow;
@@ -752,5 +737,47 @@ public class DesignManager
         }
 
         return (actualName, path);
+    }
+
+    /// <summary> Change a mainhand weapon and either fix or apply appropriate offhand and potentially gauntlets. </summary>
+    private bool ChangeMainhandPeriphery(Design design, EquipItem currentMain, EquipItem currentOff, EquipItem newMain, out EquipItem? newOff, out EquipItem? newGauntlets)
+    {
+        newOff    = null;
+        newGauntlets = null;
+        if (newMain.Type != currentMain.Type)
+        {
+            var defaultOffhand = _items.GetDefaultOffhand(newMain);
+            if (!_items.IsOffhandValid(newMain, defaultOffhand.ItemId, out var o))
+                return false;
+
+            newOff = o;
+        }
+        else if (_config.ChangeEntireItem)
+        {
+            var defaultOffhand = _items.GetDefaultOffhand(newMain);
+            if (_items.IsOffhandValid(newMain, defaultOffhand.ItemId, out var o))
+                newOff = o;
+
+            if (newMain.Type is FullEquipType.Fists && _items.ItemData.Tertiary.TryGetValue(newMain.ItemId, out var g))
+                newGauntlets = g;
+        }
+
+        if (!design.GetDesignDataRef().SetItem(EquipSlot.MainHand, newMain))
+            return false;
+
+        if (newOff.HasValue && !design.GetDesignDataRef().SetItem(EquipSlot.OffHand, newOff.Value))
+        {
+            design.GetDesignDataRef().SetItem(EquipSlot.MainHand, currentMain);
+            return false;
+        }
+
+        if (newGauntlets.HasValue && !design.GetDesignDataRef().SetItem(EquipSlot.Hands, newGauntlets.Value))
+        {
+            design.GetDesignDataRef().SetItem(EquipSlot.MainHand, currentMain);
+            design.GetDesignDataRef().SetItem(EquipSlot.OffHand,  currentOff);
+            return false;
+        }
+
+        return true;
     }
 }
