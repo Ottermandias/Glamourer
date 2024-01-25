@@ -30,7 +30,7 @@ public ref struct ToggleDrawData
             DisplayApplication = true,
             CurrentValue       = design.DesignData.GetMeta(index),
             CurrentApply       = design.DoApplyMeta(index),
-            SetValue           = b => manager.ChangeMeta(design, index, b),
+            SetValue           = b => manager.ChangeMetaState(design, index, b),
             SetApply           = b => manager.ChangeApplyMeta(design, index, b),
         };
 

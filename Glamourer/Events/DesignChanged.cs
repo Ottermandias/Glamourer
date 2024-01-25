@@ -56,6 +56,9 @@ public sealed class DesignChanged()
         /// <summary> An existing design had a customization changed. Data is the old value, the new value and the type [(CustomizeValue, CustomizeValue, CustomizeIndex)]. </summary>
         Customize,
 
+        /// <summary> An existing design had its entire customize array changed. Data is the old array, the applied flags and the changed flags. [(CustomizeArray, CustomizeFlag, CustomizeFlag)]. </summary>
+        EntireCustomize,
+
         /// <summary> An existing design had an equipment piece changed. Data is the old value, the new value and the slot [(EquipItem, EquipItem, EquipSlot)]. </summary>
         Equip,
 

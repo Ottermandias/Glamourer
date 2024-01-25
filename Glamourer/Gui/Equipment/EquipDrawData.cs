@@ -31,9 +31,7 @@ public ref struct EquipDrawData(EquipSlot slot, in DesignData designData)
     public static EquipDrawData FromDesign(DesignManager manager, Design design, EquipSlot slot)
         => new(slot, design.DesignData)
         {
-            ItemSetter = slot.IsEquipment() || slot.IsAccessory()
-                ? i => manager.ChangeEquip(design, slot, i)
-                : i => manager.ChangeWeapon(design, slot, i),
+            ItemSetter         = i => manager.ChangeItem(design, slot, i),
             StainSetter        = i => manager.ChangeStain(design, slot, i),
             ApplySetter        = b => manager.ChangeApplyEquip(design, slot, b),
             ApplyStainSetter   = b => manager.ChangeApplyStain(design, slot, b),
