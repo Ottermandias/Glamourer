@@ -21,16 +21,14 @@ public class DesignManager
     private readonly HumanModelList               _humans;
     private readonly SaveService                  _saveService;
     private readonly DesignChanged                _event;
-    private readonly DesignStorage                _designs;
     private readonly Dictionary<Guid, DesignData> _undoStore = [];
 
-    public IReadOnlyList<Design> Designs
-        => _designs;
+    public DesignStorage Designs { get; }
 
     public DesignManager(SaveService saveService, ItemManager items, CustomizeService customizations,
         DesignChanged @event, HumanModelList humans, DesignStorage storage, DesignLinkLoader designLinkLoader, Configuration config)
     {
-        _designs        = storage;
+        Designs         = storage;
         _config         = config;
         _saveService    = saveService;
         _items          = items;
@@ -55,7 +53,7 @@ public class DesignManager
         _items.ItemData.Awaiter.Wait();
 
         var stopwatch = Stopwatch.StartNew();
-        _designs.Clear();
+        Designs.Clear();
         var                                 skipped = 0;
         ThreadLocal<List<(Design, string)>> designs = new(() => [], true);
         Parallel.ForEach(_saveService.FileNames.Designs(), (f, _) =>
@@ -79,15 +77,15 @@ public class DesignManager
         {
             if (design.Identifier.ToString() != Path.GetFileNameWithoutExtension(path))
                 invalidNames.Add((design, path));
-            if (_designs.Any(d => d.Identifier == design.Identifier))
+            if (Designs.Contains(design.Identifier))
             {
                 Glamourer.Log.Error($"Could not load design, skipped: Identifier {design.Identifier} was not unique.");
                 ++skipped;
                 continue;
             }
 
-            design.Index = _designs.Count;
-            _designs.Add(design);
+            design.Index = Designs.Count;
+            Designs.Add(design);
         }
 
         var failed = MoveInvalidNames(invalidNames);
@@ -96,7 +94,7 @@ public class DesignManager
                 $"Moved {invalidNames.Count - failed} designs to correct names.{(failed > 0 ? $" Failed to move {failed} designs to correct names." : string.Empty)}");
 
         Glamourer.Log.Information(
-            $"Loaded {_designs.Count} designs in {stopwatch.ElapsedMilliseconds} ms.{(skipped > 0 ? $" Skipped loading {skipped} designs due to errors." : string.Empty)}");
+            $"Loaded {Designs.Count} designs in {stopwatch.ElapsedMilliseconds} ms.{(skipped > 0 ? $" Skipped loading {skipped} designs due to errors." : string.Empty)}");
         _event.Invoke(DesignChanged.Type.ReloadedAll, null!, null);
     }
 
@@ -118,9 +116,9 @@ public class DesignManager
             LastEdit     = DateTimeOffset.UtcNow,
             Identifier   = CreateNewGuid(),
             Name         = actualName,
-            Index        = _designs.Count,
+            Index        = Designs.Count,
         };
-        _designs.Add(design);
+        Designs.Add(design);
         Glamourer.Log.Debug($"Added new design {design.Identifier}.");
         _saveService.ImmediateSave(design);
         _event.Invoke(DesignChanged.Type.Created, design, path);
@@ -137,10 +135,10 @@ public class DesignManager
             LastEdit     = DateTimeOffset.UtcNow,
             Identifier   = CreateNewGuid(),
             Name         = actualName,
-            Index        = _designs.Count,
+            Index        = Designs.Count,
         };
 
-        _designs.Add(design);
+        Designs.Add(design);
         Glamourer.Log.Debug($"Added new design {design.Identifier} by cloning Temporary Design.");
         _saveService.ImmediateSave(design);
         _event.Invoke(DesignChanged.Type.Created, design, path);
@@ -157,9 +155,9 @@ public class DesignManager
             LastEdit     = DateTimeOffset.UtcNow,
             Identifier   = CreateNewGuid(),
             Name         = actualName,
-            Index        = _designs.Count,
+            Index        = Designs.Count,
         };
-        _designs.Add(design);
+        Designs.Add(design);
         Glamourer.Log.Debug(
             $"Added new design {design.Identifier} by cloning {clone.Identifier.ToString()}.");
         _saveService.ImmediateSave(design);
@@ -170,9 +168,9 @@ public class DesignManager
     /// <summary> Delete a design. </summary>
     public void Delete(Design design)
     {
-        foreach (var d in _designs.Skip(design.Index + 1))
+        foreach (var d in Designs.Skip(design.Index + 1))
             --d.Index;
-        _designs.RemoveAt(design.Index);
+        Designs.RemoveAt(design.Index);
         _saveService.ImmediateDelete(design);
         _event.Invoke(DesignChanged.Type.Deleted, design, null);
     }
@@ -591,7 +589,7 @@ public class DesignManager
         var errors     = 0;
         var skips      = 0;
         var successes  = 0;
-        var oldDesigns = _designs.ToList();
+        var oldDesigns = Designs.ToList();
         try
         {
             var text                    = File.ReadAllText(_saveService.FileNames.MigrationDesignFile);
@@ -697,7 +695,7 @@ public class DesignManager
         while (true)
         {
             var guid = Guid.NewGuid();
-            if (_designs.All(d => d.Identifier != guid))
+            if (!Designs.Contains(guid))
                 return guid;
         }
     }
@@ -709,11 +707,11 @@ public class DesignManager
     /// </summary>
     private bool Add(Design design, string? message)
     {
-        if (_designs.Any(d => d == design || d.Identifier == design.Identifier))
+        if (Designs.Any(d => d == design || d.Identifier == design.Identifier))
             return false;
 
-        design.Index = _designs.Count;
-        _designs.Add(design);
+        design.Index = Designs.Count;
+        Designs.Add(design);
         if (!message.IsNullOrEmpty())
             Glamourer.Log.Debug(message);
         _saveService.ImmediateSave(design);
@@ -740,9 +738,10 @@ public class DesignManager
     }
 
     /// <summary> Change a mainhand weapon and either fix or apply appropriate offhand and potentially gauntlets. </summary>
-    private bool ChangeMainhandPeriphery(Design design, EquipItem currentMain, EquipItem currentOff, EquipItem newMain, out EquipItem? newOff, out EquipItem? newGauntlets)
+    private bool ChangeMainhandPeriphery(Design design, EquipItem currentMain, EquipItem currentOff, EquipItem newMain, out EquipItem? newOff,
+        out EquipItem? newGauntlets)
     {
-        newOff    = null;
+        newOff       = null;
         newGauntlets = null;
         if (newMain.Type != currentMain.Type)
         {

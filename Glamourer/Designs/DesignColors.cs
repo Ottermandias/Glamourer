@@ -11,20 +11,9 @@ using OtterGui.Classes;
 
 namespace Glamourer.Designs;
 
-public class DesignColorUi
+public class DesignColorUi(DesignColors colors, Configuration config)
 {
-    private readonly DesignColors  _colors;
-    private readonly DesignManager _designs;
-    private readonly Configuration _config;
-
     private string _newName = string.Empty;
-
-    public DesignColorUi(DesignColors colors, DesignManager designs, Configuration config)
-    {
-        _colors  = colors;
-        _designs = designs;
-        _config  = config;
-    }
 
     public void Draw()
     {
@@ -44,7 +33,7 @@ public class DesignColorUi
 
         ImGui.TableNextColumn();
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Recycle.ToIconString(), buttonSize,
-                "Revert the color used for missing design colors to its default.", _colors.MissingColor == DesignColors.MissingColorDefault,
+                "Revert the color used for missing design colors to its default.", colors.MissingColor == DesignColors.MissingColorDefault,
                 true))
         {
             changeString = DesignColors.MissingColorName;
@@ -52,7 +41,7 @@ public class DesignColorUi
         }
 
         ImGui.TableNextColumn();
-        if (DrawColorButton(DesignColors.MissingColorName, _colors.MissingColor, out var newColor))
+        if (DrawColorButton(DesignColors.MissingColorName, colors.MissingColor, out var newColor))
         {
             changeString = DesignColors.MissingColorName;
             changeValue  = newColor;
@@ -64,12 +53,12 @@ public class DesignColorUi
         ImGuiUtil.HoverTooltip("This color is used when the color specified in a design is not available.");
 
 
-        var disabled = !_config.DeleteDesignModifier.IsActive();
+        var disabled = !config.DeleteDesignModifier.IsActive();
         var tt       = "Delete this color. This does not remove it from designs using it.";
         if (disabled)
-            tt += $"\nHold {_config.DeleteDesignModifier} to delete.";
+            tt += $"\nHold {config.DeleteDesignModifier} to delete.";
 
-        foreach (var ((name, color), idx) in _colors.WithIndex())
+        foreach (var ((name, color), idx) in colors.WithIndex())
         {
             using var id = ImRaii.PushId(idx);
             ImGui.TableNextColumn();
@@ -97,7 +86,7 @@ public class DesignColorUi
             ? ("Specify a name for a new color first.", true)
             : _newName is DesignColors.MissingColorName or DesignColors.AutomaticName
                 ? ($"You can not use the name {DesignColors.MissingColorName} or {DesignColors.AutomaticName}, choose a different one.", true)
-                : _colors.ContainsKey(_newName)
+                : colors.ContainsKey(_newName)
                     ? ($"The color {_newName} already exists, please choose a different name.", true)
                     : ($"Add a new color {_newName} to your list.", false);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), buttonSize, tt, disabled, true))
@@ -119,9 +108,9 @@ public class DesignColorUi
         if (changeString.Length > 0)
         {
             if (!changeValue.HasValue)
-                _colors.DeleteColor(changeString);
+                colors.DeleteColor(changeString);
             else
-                _colors.SetColor(changeString, changeValue.Value);
+                colors.SetColor(changeString, changeValue.Value);
         }
     }
 

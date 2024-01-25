@@ -1,7 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
 using Glamourer.Designs;
-using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using Penumbra.Api.Helpers;
@@ -138,5 +137,5 @@ public partial class GlamourerIpc
     }
 
     private void ApplyDesignByGuid(Guid identifier, IEnumerable<ActorIdentifier> actors, uint lockCode)
-        => ApplyDesign(_designManager.Designs.FirstOrDefault(x => x.Identifier == identifier), actors, DesignConverter.Version, lockCode);
+        => ApplyDesign(_designManager.Designs.ByIdentifier(identifier), actors, DesignConverter.Version, lockCode);
 }

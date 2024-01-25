@@ -587,7 +587,7 @@ public class CommandService : IDisposable
 
         if (Guid.TryParse(argument, out var guid))
         {
-            design = _designManager.Designs.FirstOrDefault(d => d.Identifier == guid);
+            design = _designManager.Designs.ByIdentifier(guid);
         }
         else
         {

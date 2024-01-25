@@ -480,8 +480,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
                 return null;
             }
 
-            design = _designs.Designs.FirstOrDefault(d => d.Identifier == guid);
-            if (design == null)
+            if (!_designs.Designs.TryGetValue(guid, out design))
             {
                 Glamourer.Messager.NotificationMessage(
                     $"Error parsing automatically applied design for set {setName}: The specified design {guid} does not exist.",
