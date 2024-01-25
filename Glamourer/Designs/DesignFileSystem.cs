@@ -105,7 +105,8 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
                     }
                     catch (Exception ex)
                     {
-                        Glamourer.Messager.NotificationMessage(ex, $"Could not move design to {path} because the folder could not be created.", NotificationType.Error);
+                        Glamourer.Messager.NotificationMessage(ex, $"Could not move design to {path} because the folder could not be created.",
+                            NotificationType.Error);
                     }
 
                 CreateDuplicateLeaf(parent, design.Name.Text, design);

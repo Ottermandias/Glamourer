@@ -62,10 +62,10 @@ public unsafe struct DesignData
         => CrestVisibility.HasFlag(slot);
 
 
-    public FullEquipType MainhandType
+    public readonly FullEquipType MainhandType
         => _typeMainhand;
 
-    public FullEquipType OffhandType
+    public readonly FullEquipType OffhandType
         => _typeOffhand;
 
     public readonly EquipItem Item(EquipSlot slot)

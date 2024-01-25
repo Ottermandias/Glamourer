@@ -231,9 +231,9 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
     {
         var newDesign = new AutoDesign()
         {
-            Design          = design,
-            Type = ApplicationType.All,
-            Jobs            = _jobs.JobGroups[1],
+            Design = design,
+            Type   = ApplicationType.All,
+            Jobs   = _jobs.JobGroups[1],
         };
         set.Designs.Add(newDesign);
         Save();
@@ -494,8 +494,8 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
         var ret = new AutoDesign
         {
-            Design          = design,
-            Type = applicationType & ApplicationType.All,
+            Design = design,
+            Type   = applicationType & ApplicationType.All,
         };
         return ParseConditions(setName, jObj, ret) ? ret : null;
     }
