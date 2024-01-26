@@ -1,4 +1,5 @@
 ﻿using Glamourer.Services;
+using Glamourer.State;
 using OtterGui;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -13,7 +14,7 @@ public class DesignBase64Migration
     public const int Base64SizeV4 = 95;
 
     public static unsafe DesignData MigrateBase64(ItemManager items, HumanModelList humans, string base64, out EquipFlag equipFlags,
-        out CustomizeFlag customizeFlags, out bool writeProtected, out bool applyHat, out bool applyVisor, out bool applyWeapon)
+        out CustomizeFlag customizeFlags, out bool writeProtected, out MetaFlag metaFlags)
     {
         static void CheckSize(int length, int requiredLength)
         {
@@ -25,9 +26,7 @@ public class DesignBase64Migration
         byte   applicationFlags;
         ushort equipFlagsS;
         var    bytes = Convert.FromBase64String(base64);
-        applyHat    = false;
-        applyVisor  = false;
-        applyWeapon = false;
+        metaFlags = MetaFlag.Wetness;
         var data = new DesignData();
         switch (bytes[0])
         {
@@ -77,9 +76,12 @@ public class DesignBase64Migration
 
         customizeFlags = (applicationFlags & 0x01) != 0 ? CustomizeFlagExtensions.All : 0;
         data.SetIsWet((applicationFlags & 0x02) != 0);
-        applyHat       = (applicationFlags & 0x04) != 0;
-        applyWeapon    = (applicationFlags & 0x08) != 0;
-        applyVisor     = (applicationFlags & 0x10) != 0;
+        if ((applicationFlags & 0x04) != 0)
+            metaFlags |= MetaFlag.HatState;
+        if ((applicationFlags & 0x08) != 0)
+            metaFlags |= MetaFlag.WeaponState;
+        if ((applicationFlags & 0x10) != 0)
+            metaFlags |= MetaFlag.VisorState;
         writeProtected = (applicationFlags & 0x20) != 0;
 
         equipFlags =  0;
@@ -161,16 +163,15 @@ public class DesignBase64Migration
         }
     }
 
-    public static unsafe string CreateOldBase64(in DesignData save, EquipFlag equipFlags, CustomizeFlag customizeFlags,
-        bool setHat, bool setVisor, bool setWeapon, bool writeProtected, float alpha = 1.0f)
+    public static unsafe string CreateOldBase64(in DesignData save, EquipFlag equipFlags, CustomizeFlag customizeFlags, MetaFlag meta, bool writeProtected, float alpha = 1.0f)
     {
         var data = stackalloc byte[Base64SizeV4];
         data[0] = 5;
         data[1] = (byte)((customizeFlags == CustomizeFlagExtensions.All ? 0x01 : 0)
           | (save.IsWet() ? 0x02 : 0)
-          | (setHat ? 0x04 : 0)
-          | (setWeapon ? 0x08 : 0)
-          | (setVisor ? 0x10 : 0)
+          | (meta.HasFlag(MetaFlag.HatState) ? 0x04 : 0)
+          | (meta.HasFlag(MetaFlag.WeaponState) ? 0x08 : 0)
+          | (meta.HasFlag(MetaFlag.VisorState) ? 0x10 : 0)
           | (writeProtected ? 0x20 : 0));
         data[2] = (byte)((equipFlags.HasFlag(EquipFlag.Mainhand) ? 0x01 : 0)
           | (equipFlags.HasFlag(EquipFlag.Offhand) ? 0x02 : 0)

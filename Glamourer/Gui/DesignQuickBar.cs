@@ -5,7 +5,7 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
-using Glamourer.Events;
+using Glamourer.Designs;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
@@ -32,7 +32,7 @@ public sealed class DesignQuickBar : Window, IDisposable
     private readonly ImRaii.Style      _windowPadding  = new();
     private readonly ImRaii.Color      _windowColor    = new();
     private          DateTime          _keyboardToggle = DateTime.UnixEpoch;
-    private          int               _numButtons     = 0;
+    private          int               _numButtons;
 
     public DesignQuickBar(Configuration config, DesignCombo designCombo, StateManager stateManager, IKeyState keyState,
         ObjectManager objects, AutoDesignApplier autoDesignApplier)
@@ -163,7 +163,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         using var _ = design!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-        _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
+        _stateManager.ApplyDesign(state, design, ApplySettings.Manual);
     }
 
     public void DrawRevertButton(Vector2 buttonSize)
@@ -189,7 +189,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, tooltip, available);
         if (clicked)
-            _stateManager.ResetState(state!, StateChanged.Source.Manual);
+            _stateManager.ResetState(state!, StateSource.Manual);
     }
 
     public void DrawRevertAutomationButton(Vector2 buttonSize)
@@ -257,7 +257,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         ImGui.SameLine();
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Palette, buttonSize, tooltip, available);
         if (clicked)
-            _stateManager.ResetAdvancedState(state!, StateChanged.Source.Manual);
+            _stateManager.ResetAdvancedState(state!, StateSource.Manual);
     }
 
     private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(FontAwesomeIcon icon, Vector2 buttonSize, string tooltip,

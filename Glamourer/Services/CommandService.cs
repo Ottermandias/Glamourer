@@ -255,26 +255,26 @@ public class CommandService : IDisposable
         }
 
         --designIdx;
-        AutoDesign.Type applicationFlags = 0;
+        ApplicationType applicationFlags = 0;
         if (split2.Length == 2)
             foreach (var character in split2[1])
             {
                 switch (char.ToLowerInvariant(character))
                 {
                     case 'c':
-                        applicationFlags |= AutoDesign.Type.Customizations;
+                        applicationFlags |= ApplicationType.Customizations;
                         break;
                     case 'e':
-                        applicationFlags |= AutoDesign.Type.Armor;
+                        applicationFlags |= ApplicationType.Armor;
                         break;
                     case 'a':
-                        applicationFlags |= AutoDesign.Type.Accessories;
+                        applicationFlags |= ApplicationType.Accessories;
                         break;
                     case 'd':
-                        applicationFlags |= AutoDesign.Type.GearCustomization;
+                        applicationFlags |= ApplicationType.GearCustomization;
                         break;
                     case 'w':
-                        applicationFlags |= AutoDesign.Type.Weapons;
+                        applicationFlags |= ApplicationType.Weapons;
                         break;
                     default:
                         _chat.Print(new SeStringBuilder().AddText("The value ").AddPurple(split2[1], true)
@@ -333,7 +333,7 @@ public class CommandService : IDisposable
         foreach (var identifier in identifiers)
         {
             if (_stateManager.TryGetValue(identifier, out var state))
-                _stateManager.ResetState(state, StateChanged.Source.Manual);
+                _stateManager.ResetState(state, StateSource.Manual);
         }
 
 
@@ -419,7 +419,7 @@ public class CommandService : IDisposable
             if (!_objects.TryGetValue(identifier, out var actors))
             {
                 if (_stateManager.TryGetValue(identifier, out var state))
-                    _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
+                    _stateManager.ApplyDesign(state, design, ApplySettings.Manual with { MergeLinks = true });
             }
             else
             {
@@ -428,7 +428,7 @@ public class CommandService : IDisposable
                     if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
                     {
                         ApplyModSettings(design, actor, applyMods);
-                        _stateManager.ApplyDesign(design, state, StateChanged.Source.Manual);
+                        _stateManager.ApplyDesign(state, design, ApplySettings.Manual with { MergeLinks = true });
                     }
                 }
             }
@@ -587,7 +587,7 @@ public class CommandService : IDisposable
 
         if (Guid.TryParse(argument, out var guid))
         {
-            design = _designManager.Designs.FirstOrDefault(d => d.Identifier == guid);
+            design = _designManager.Designs.ByIdentifier(guid);
         }
         else
         {

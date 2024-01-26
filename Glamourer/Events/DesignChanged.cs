@@ -12,7 +12,7 @@ namespace Glamourer.Events;
 ///     <item>Parameter is any additional data depending on the type of change. </item>
 /// </list>
 /// </summary>
-public sealed class DesignChanged() 
+public sealed class DesignChanged()
     : EventWrapper<DesignChanged.Type, Design, object?, DesignChanged.Priority>(nameof(DesignChanged))
 {
     public enum Type
@@ -50,13 +50,19 @@ public sealed class DesignChanged()
         /// <summary> An existing design had an existing associated mod removed. Data is the Mod and its Settings [(Mod, ModSettings)]. </summary>
         RemovedMod,
 
+        /// <summary> An existing design had a link to a different design added, removed or moved. Data is null. </summary>
+        ChangedLink,
+
         /// <summary> An existing design had a customization changed. Data is the old value, the new value and the type [(CustomizeValue, CustomizeValue, CustomizeIndex)]. </summary>
         Customize,
+
+        /// <summary> An existing design had its entire customize array changed. Data is the old array, the applied flags and the changed flags. [(CustomizeArray, CustomizeFlag, CustomizeFlag)]. </summary>
+        EntireCustomize,
 
         /// <summary> An existing design had an equipment piece changed. Data is the old value, the new value and the slot [(EquipItem, EquipItem, EquipSlot)]. </summary>
         Equip,
 
-        /// <summary> An existing design had its weapons changed. Data is the old mainhand, the old offhand, the new mainhand and the new offhand [(EquipItem, EquipItem, EquipItem, EquipItem)]. </summary>
+        /// <summary> An existing design had its weapons changed. Data is the old mainhand, the old offhand, the new mainhand, the new offhand (if any) and the new gauntlets (if any). [(EquipItem, EquipItem, EquipItem, EquipItem?, EquipItem?)]. </summary>
         Weapon,
 
         /// <summary> An existing design had a stain changed. Data is the old stain id, the new stain id and the slot [(StainId, StainId, EquipSlot)]. </summary>
@@ -92,6 +98,9 @@ public sealed class DesignChanged()
 
     public enum Priority
     {
+        /// <seealso cref="Designs.Links.DesignLinkManager.OnDesignChange"/>
+        DesignLinkManager = 1,
+
         /// <seealso cref="Automation.AutoDesignManager.OnDesignChange"/>
         AutoDesignManager = 1,
 

@@ -205,7 +205,7 @@ public class EquipmentDrawer
             {
                 var newSetId = (PrimaryId)Math.Clamp(setId, 0, ushort.MaxValue);
                 if (newSetId.Id != current.CurrentItem.PrimaryId.Id)
-                    current.ItemSetter(_items.Identify(current.Slot, newSetId, current.CurrentItem.SecondaryId, current.CurrentItem.Variant));
+                    current.SetItem(_items.Identify(current.Slot, newSetId, current.CurrentItem.SecondaryId, current.CurrentItem.Variant));
             }
 
             ImGui.SameLine();
@@ -214,7 +214,7 @@ public class EquipmentDrawer
             {
                 var newType = (SecondaryId)Math.Clamp(type, 0, ushort.MaxValue);
                 if (newType.Id != current.CurrentItem.SecondaryId.Id)
-                    current.ItemSetter(_items.Identify(current.Slot, current.CurrentItem.PrimaryId, newType, current.CurrentItem.Variant));
+                    current.SetItem(_items.Identify(current.Slot, current.CurrentItem.PrimaryId, newType, current.CurrentItem.Variant));
             }
 
             ImGui.SameLine();
@@ -223,7 +223,7 @@ public class EquipmentDrawer
             {
                 var newVariant = (Variant)Math.Clamp(variant, 0, byte.MaxValue);
                 if (newVariant.Id != current.CurrentItem.Variant.Id)
-                    current.ItemSetter(_items.Identify(current.Slot, current.CurrentItem.PrimaryId, current.CurrentItem.SecondaryId,
+                    current.SetItem(_items.Identify(current.Slot, current.CurrentItem.PrimaryId, current.CurrentItem.SecondaryId,
                         newVariant));
             }
         }
@@ -239,7 +239,7 @@ public class EquipmentDrawer
 
         var newStainId = (StainId)Math.Clamp(stainId, 0, byte.MaxValue);
         if (newStainId != data.CurrentStain.Id)
-            data.StainSetter(newStainId);
+            data.SetStain(newStainId);
     }
 
     /// <summary> Draw an input for armor that can set arbitrary values instead of choosing items. </summary>
@@ -252,7 +252,7 @@ public class EquipmentDrawer
         {
             var newSetId = (PrimaryId)Math.Clamp(setId, 0, ushort.MaxValue);
             if (newSetId.Id != data.CurrentItem.PrimaryId.Id)
-                data.ItemSetter(_items.Identify(data.Slot, newSetId, data.CurrentItem.Variant));
+                data.SetItem(_items.Identify(data.Slot, newSetId, data.CurrentItem.Variant));
         }
 
         ImGui.SameLine();
@@ -261,7 +261,7 @@ public class EquipmentDrawer
         {
             var newVariant = (byte)Math.Clamp(variant, 0, byte.MaxValue);
             if (newVariant != data.CurrentItem.Variant)
-                data.ItemSetter(_items.Identify(data.Slot, data.CurrentItem.PrimaryId, newVariant));
+                data.SetItem(_items.Identify(data.Slot, data.CurrentItem.PrimaryId, newVariant));
         }
     }
 
@@ -365,7 +365,7 @@ public class EquipmentDrawer
         mainhand.CurrentItem.DrawIcon(_textures, _iconSize, EquipSlot.MainHand);
         var left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();
-        using (var group = ImRaii.Group())
+        using (ImRaii.Group())
         {
             DrawMainhand(ref mainhand, ref offhand, out var mainhandLabel, allWeapons, false, left);
             if (mainhand.DisplayApplication)
@@ -391,7 +391,7 @@ public class EquipmentDrawer
         var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
         left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();
-        using (var group = ImRaii.Group())
+        using (ImRaii.Group())
         {
             DrawOffhand(mainhand, offhand, out var offhandLabel, false, right, left);
             if (offhand.DisplayApplication)
@@ -420,12 +420,12 @@ public class EquipmentDrawer
             : _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss, _comboLength);
         if (change)
             if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
-                data.StainSetter(stain.RowIndex);
+                data.SetStain(stain.RowIndex);
             else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
-                data.StainSetter(Stain.None.RowIndex);
+                data.SetStain(Stain.None.RowIndex);
 
-        if (ResetOrClear(data.Locked, false, data.AllowRevert, true, data.CurrentStain, data.GameStain, Stain.None.RowIndex, out var id))
-            data.StainSetter(Stain.None.RowIndex);
+        if (ResetOrClear(data.Locked, false, data.AllowRevert, true, data.CurrentStain, data.GameStain, Stain.None.RowIndex, out _))
+            data.SetStain(Stain.None.RowIndex);
     }
 
     private void DrawItem(in EquipDrawData data, out string label, bool small, bool clear, bool open)
@@ -441,13 +441,13 @@ public class EquipmentDrawer
         var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
             _requiredComboWidth);
         if (change)
-            data.ItemSetter(combo.CurrentSelection);
+            data.SetItem(combo.CurrentSelection);
         else if (combo.CustomVariant.Id > 0)
-            data.ItemSetter(_items.Identify(data.Slot, combo.CustomSetId, combo.CustomVariant));
+            data.SetItem(_items.Identify(data.Slot, combo.CustomSetId, combo.CustomVariant));
 
         if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, ItemManager.NothingItem(data.Slot),
                 out var item))
-            data.ItemSetter(item);
+            data.SetItem(item);
     }
 
     private static bool ResetOrClear<T>(bool locked, bool clicked, bool allowRevert, bool allowClear,
@@ -467,9 +467,9 @@ public class EquipmentDrawer
                 (true, true, true)   => ("Right-click to clear. Control and Right-Click to revert to game.", revertItem, true),
                 (true, true, false)  => ("Right-click to clear. Control and Right-Click to revert to game.", clearItem, true),
                 (true, false, true)  => ("Control and Right-Click to revert to game.", revertItem, true),
-                (true, false, false) => ("Control and Right-Click to revert to game.", (T?)default, false),
+                (true, false, false) => ("Control and Right-Click to revert to game.", default, false),
                 (false, true, _)     => ("Right-click to clear.", clearItem, true),
-                (false, false, _)    => (string.Empty, (T?)default, false),
+                (false, false, _)    => (string.Empty, default, false),
             };
         ImGuiUtil.HoverTooltip(tt);
 
@@ -502,11 +502,11 @@ public class EquipmentDrawer
 
             if (changedItem != null)
             {
-                mainhand.ItemSetter(changedItem.Value);
+                mainhand.SetItem(changedItem.Value);
                 if (changedItem.Value.Type.ValidOffhand() != mainhand.CurrentItem.Type.ValidOffhand())
                 {
                     offhand.CurrentItem = _items.GetDefaultOffhand(changedItem.Value);
-                    offhand.ItemSetter(offhand.CurrentItem);
+                    offhand.SetItem(offhand.CurrentItem);
                 }
 
                 mainhand.CurrentItem = changedItem.Value;
@@ -533,18 +533,18 @@ public class EquipmentDrawer
             UiHelpers.OpenCombo($"##{combo.Label}");
         if (combo.Draw(offhand.CurrentItem.Name, offhand.CurrentItem.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
                 _requiredComboWidth))
-            offhand.ItemSetter(combo.CurrentSelection);
+            offhand.SetItem(combo.CurrentSelection);
 
         var defaultOffhand = _items.GetDefaultOffhand(mainhand.CurrentItem);
-        if (ResetOrClear(locked, open, offhand.AllowRevert, true, offhand.CurrentItem, offhand.GameItem, defaultOffhand, out var item))
-            offhand.ItemSetter(item);
+        if (ResetOrClear(locked, clear, offhand.AllowRevert, true, offhand.CurrentItem, offhand.GameItem, defaultOffhand, out var item))
+            offhand.SetItem(item);
     }
 
     private static void DrawApply(in EquipDrawData data)
     {
         if (UiHelpers.DrawCheckbox($"##apply{data.Slot}", "Apply this item when applying the Design.", data.CurrentApply, out var enabled,
                 data.Locked))
-            data.ApplySetter(enabled);
+            data.SetApplyItem(enabled);
     }
 
     private static void DrawApplyStain(in EquipDrawData data)
@@ -552,7 +552,7 @@ public class EquipmentDrawer
         if (UiHelpers.DrawCheckbox($"##applyStain{data.Slot}", "Apply this item when applying the Design.", data.CurrentApplyStain,
                 out var enabled,
                 data.Locked))
-            data.ApplyStainSetter(enabled);
+            data.SetApplyStain(enabled);
     }
 
     #endregion

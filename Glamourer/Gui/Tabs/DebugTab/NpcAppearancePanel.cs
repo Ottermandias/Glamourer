@@ -2,7 +2,6 @@
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;
-using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.State;
@@ -67,9 +66,9 @@ public class NpcAppearancePanel(NpcCombo _npcCombo, StateManager _state, ObjectM
             if (ImGuiUtil.DrawDisabledButton("Apply", Vector2.Zero, string.Empty, disabled))
             {
                 foreach (var (slot, item, stain) in _designConverter.FromDrawData(data.Equip.ToArray(), data.Mainhand, data.Offhand, true))
-                    _state.ChangeEquip(state!, slot, item, stain, StateChanged.Source.Manual);
-                _state.ChangeVisorState(state!, data.VisorToggled, StateChanged.Source.Manual);
-                _state.ChangeCustomize(state!, data.Customize, CustomizeFlagExtensions.All, StateChanged.Source.Manual);
+                    _state.ChangeEquip(state!, slot, item, stain, ApplySettings.Manual);
+                _state.ChangeMetaState(state!, MetaIndex.VisorState, data.VisorToggled, ApplySettings.Manual);
+                _state.ChangeEntireCustomize(state!, data.Customize, CustomizeFlagExtensions.All, ApplySettings.Manual);
             }
 
             ImGui.TableNextColumn();

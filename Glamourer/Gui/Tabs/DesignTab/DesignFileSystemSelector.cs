@@ -128,7 +128,11 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     {
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), size, "Create a new design with default configuration.", false,
                 true))
+        {
+            _cloneDesign   = null;
+            _clipboardText = null;
             ImGui.OpenPopup("##NewDesign");
+        }
     }
 
     private void ImportDesignButton(Vector2 size)
@@ -139,6 +143,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
 
         try
         {
+            _cloneDesign   = null;
             _clipboardText = ImGui.GetClipboardText();
             ImGui.OpenPopup("##NewDesign");
         }
@@ -156,7 +161,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clone.ToIconString(), size, tt, SelectedLeaf == null, true))
             return;
 
-        _cloneDesign = Selected!;
+        _clipboardText = null;
+        _cloneDesign   = Selected!;
         ImGui.OpenPopup("##NewDesign");
     }
 

@@ -2,14 +2,12 @@
 using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;
-using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
-using Lumina.Data.Parsing.Scd;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
@@ -172,7 +170,7 @@ public class NpcPanel(
         _equipDrawer.DrawWeapons(mainhandData, offhandData, false);
 
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromValue(ActorState.MetaIndex.VisorState, _selector.Selection.VisorToggled));
+        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromValue(MetaIndex.VisorState, _selector.Selection.VisorToggled));
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }
 
@@ -202,7 +200,7 @@ public class NpcPanel(
         {
             var (applyGear, applyCustomize, _, _) = UiHelpers.ConvertKeysToFlags();
             var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, 0, 0);
-            _state.ApplyDesign(design, state, StateChanged.Source.Manual);
+            _state.ApplyDesign(state, design, ApplySettings.Manual);
         }
     }
 
@@ -219,9 +217,9 @@ public class NpcPanel(
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
-            var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, applyCrest, applyParameters);
-            _state.ApplyDesign(design, state, StateChanged.Source.Manual);
+            var (applyGear, applyCustomize, _, _) = UiHelpers.ConvertKeysToFlags();
+            var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, 0, 0);
+            _state.ApplyDesign(state, design, ApplySettings.Manual);
         }
     }
 

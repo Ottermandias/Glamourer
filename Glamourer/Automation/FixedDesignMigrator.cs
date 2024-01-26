@@ -56,7 +56,7 @@ public class FixedDesignMigrator(JobService jobs)
 
                 autoManager.AddDesign(set, leaf.Value);
                 autoManager.ChangeJobCondition(set, set.Designs.Count - 1, design.Item2);
-                autoManager.ChangeApplicationType(set, set.Designs.Count - 1, design.Item3 ? AutoDesign.Type.All : 0);
+                autoManager.ChangeApplicationType(set, set.Designs.Count - 1, design.Item3 ? ApplicationType.All : 0);
             }
         }
     }

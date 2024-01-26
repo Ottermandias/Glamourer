@@ -63,8 +63,6 @@ public class ImportService(CustomizeService _customizations, IDragDropManager _d
         {
             var text = File.ReadAllText(path);
             var file = CharaFile.CharaFile.ParseData(_items, text, Path.GetFileNameWithoutExtension(path));
-            if (file == null)
-                throw new Exception();
 
             name   = file.Name;
             design = new DesignBase(_customizations, file.Data, file.ApplyEquip, file.ApplyCustomize);

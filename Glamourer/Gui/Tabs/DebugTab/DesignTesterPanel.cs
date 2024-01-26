@@ -55,10 +55,8 @@ public class DesignTesterPanel(ItemManager _items, HumanModelList _humans) : IGa
 
         try
         {
-            _parse64 = DesignBase64Migration.MigrateBase64(_items, _humans, _base64, out var ef, out var cf, out var wp, out var ah,
-                out var av,
-                out var aw);
-            _restore      = DesignBase64Migration.CreateOldBase64(in _parse64, ef, cf, ah, av, aw, wp);
+            _parse64 = DesignBase64Migration.MigrateBase64(_items, _humans, _base64, out var ef, out var cf, out var wp, out var meta);
+            _restore      = DesignBase64Migration.CreateOldBase64(in _parse64, ef, cf, meta, wp);
             _restoreBytes = Convert.FromBase64String(_restore);
         }
         catch (Exception ex)

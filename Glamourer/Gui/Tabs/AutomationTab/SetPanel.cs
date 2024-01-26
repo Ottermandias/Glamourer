@@ -264,7 +264,7 @@ public class SetPanel(
         var size = new Vector2(ImGui.GetFrameHeight());
         size.X += ImGuiHelpers.GlobalScale;
 
-        var (equipFlags, customizeFlags, _, _, _, _, _, _) = design.ApplyWhat();
+        var (equipFlags, customizeFlags, _, _, _) = design.ApplyWhat();
         var sb = new StringBuilder();
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
         {
@@ -369,13 +369,13 @@ public class SetPanel(
     private void DrawApplicationTypeBoxes(AutoDesignSet set, AutoDesign design, int autoDesignIndex, bool singleLine)
     {
         using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * ImGuiHelpers.GlobalScale));
-        var       newType    = design.ApplicationType;
+        var       newType    = design.Type;
         var       newTypeInt = (uint)newType;
         style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
         using (_ = ImRaii.PushColor(ImGuiCol.Border, ColorId.FolderLine.Value()))
         {
-            if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)AutoDesign.Type.All))
-                newType = (AutoDesign.Type)newTypeInt;
+            if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)ApplicationType.All))
+                newType = (ApplicationType)newTypeInt;
         }
 
         style.Pop();
@@ -384,8 +384,8 @@ public class SetPanel(
         {
             void Box(int idx)
             {
-                var (type, description) = Types[idx];
-                var value = design.ApplicationType.HasFlag(type);
+                var (type, description) = ApplicationTypeExtensions.Types[idx];
+                var value = design.Type.HasFlag(type);
                 if (ImGui.Checkbox($"##{(byte)type}", ref value))
                     newType = value ? newType | type : newType & ~type;
                 ImGuiUtil.HoverTooltip(description);
@@ -428,40 +428,20 @@ public class SetPanel(
             _manager.ChangeIdentifier(setIndex, _identifierDrawer.MannequinIdentifier);
     }
 
-
-    private static readonly IReadOnlyList<(AutoDesign.Type, string)> Types = new[]
+    private sealed class JobGroupCombo(AutoDesignManager manager, JobService jobs, Logger log)
+        : FilterComboCache<JobGroup>(() => jobs.JobGroups.Values.ToList(), log)
     {
-        (AutoDesign.Type.Customizations,
-            "Apply all customization changes that are enabled in this design and that are valid in a fixed design and for the given race and gender."),
-        (AutoDesign.Type.Armor, "Apply all armor piece changes that are enabled in this design and that are valid in a fixed design."),
-        (AutoDesign.Type.Accessories, "Apply all accessory changes that are enabled in this design and that are valid in a fixed design."),
-        (AutoDesign.Type.GearCustomization, "Apply all dye and crest changes that are enabled in this design."),
-        (AutoDesign.Type.Weapons, "Apply all weapon changes that are enabled in this design and that are valid with the current weapon worn."),
-    };
-
-    private sealed class JobGroupCombo : FilterComboCache<JobGroup>
-    {
-        private readonly AutoDesignManager _manager;
-        private readonly JobService        _jobs;
-
-        public JobGroupCombo(AutoDesignManager manager, JobService jobs, Logger log)
-            : base(() => jobs.JobGroups.Values.ToList(), log)
-        {
-            _manager = manager;
-            _jobs    = jobs;
-        }
-
         public void Draw(AutoDesignSet set, AutoDesign design, int autoDesignIndex)
         {
             CurrentSelection    = design.Jobs;
-            CurrentSelectionIdx = _jobs.JobGroups.Values.IndexOf(j => j.Id == design.Jobs.Id);
+            CurrentSelectionIdx = jobs.JobGroups.Values.IndexOf(j => j.Id == design.Jobs.Id);
             if (Draw("##JobGroups", design.Jobs.Name,
                     "Select for which job groups this design should be applied.\nControl + Right-Click to set to all classes.",
                     ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeightWithSpacing())
              && CurrentSelectionIdx >= 0)
-                _manager.ChangeJobCondition(set, autoDesignIndex, CurrentSelection);
+                manager.ChangeJobCondition(set, autoDesignIndex, CurrentSelection);
             else if (ImGui.GetIO().KeyCtrl && ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                _manager.ChangeJobCondition(set, autoDesignIndex, _jobs.JobGroups[1]);
+                manager.ChangeJobCondition(set, autoDesignIndex, jobs.JobGroups[1]);
         }
 
         protected override string ToString(JobGroup obj)

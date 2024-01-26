@@ -68,6 +68,9 @@ public class SettingsTab(
         if (!ImGui.CollapsingHeader("Glamourer Behavior"))
             return;
 
+        Checkbox("Always Apply Entire Weapon for Mainhand",
+            "When manually applying a mainhand item, will also apply a corresponding offhand and potentially gauntlets for certain fist weapons.",
+            config.ChangeEntireItem, v => config.ChangeEntireItem = v);
         Checkbox("Use Replacement Gear for Gear Unavailable to Your Race or Gender",
             "Use different gender- and race-appropriate models as a substitute when detecting certain items not available for a characters current gender and race.",
             config.UseRestrictedGearProtection, v => config.UseRestrictedGearProtection = v);

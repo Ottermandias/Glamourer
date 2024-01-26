@@ -1,4 +1,6 @@
 ﻿using Dalamud.Interface.Internal.Notifications;
+using Glamourer.Automation;
+using Glamourer.Designs.Links;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Newtonsoft.Json;
@@ -35,13 +37,17 @@ public sealed class Design : DesignBase, ISavable
     public DateTimeOffset               LastEdit       { get; internal set; }
     public LowerString                  Name           { get; internal set; } = LowerString.Empty;
     public string                       Description    { get; internal set; } = string.Empty;
-    public string[]                     Tags           { get; internal set; } = Array.Empty<string>();
+    public string[]                     Tags           { get; internal set; } = [];
     public int                          Index          { get; internal set; }
     public string                       Color          { get; internal set; } = string.Empty;
-    public SortedList<Mod, ModSettings> AssociatedMods { get; private set; }  = new();
+    public SortedList<Mod, ModSettings> AssociatedMods { get; private set; }  = [];
+    public LinkContainer                Links          { get; private set; }  = [];
 
     public string Incognito
         => Identifier.ToString()[..8];
+
+    public IEnumerable<(DesignBase? Design, ApplicationType Flags)> AllLinks
+        => LinkContainer.GetAllLinks(this).Select(t => ((DesignBase?)t.Link.Link, t.Link.Type));
 
     #endregion
 
@@ -64,6 +70,7 @@ public sealed class Design : DesignBase, ISavable
             ["Customize"]      = SerializeCustomize(),
             ["Parameters"]     = SerializeParameters(),
             ["Mods"]           = SerializeMods(),
+            ["Links"]          = Links.Serialize(),
         };
         return ret;
     }
@@ -95,24 +102,18 @@ public sealed class Design : DesignBase, ISavable
 
     #region Deserialization
 
-    public static Design LoadDesign(CustomizeService customizations, ItemManager items, JObject json)
+    public static Design LoadDesign(CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader, JObject json)
     {
         var version = json["FileVersion"]?.ToObject<int>() ?? 0;
         return version switch
         {
-            FileVersion => LoadDesignV1(customizations, items, json),
+            FileVersion => LoadDesignV1(customizations, items, linkLoader, json),
             _           => throw new Exception("The design to be loaded has no valid Version."),
         };
     }
 
-    private static Design LoadDesignV1(CustomizeService customizations, ItemManager items, JObject json)
+    private static Design LoadDesignV1(CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader, JObject json)
     {
-        static string[] ParseTags(JObject json)
-        {
-            var tags = json["Tags"]?.ToObject<string[]>() ?? Array.Empty<string>();
-            return tags.OrderBy(t => t).Distinct().ToArray();
-        }
-
         var creationDate = json["CreationDate"]?.ToObject<DateTimeOffset>() ?? throw new ArgumentNullException("CreationDate");
 
         var design = new Design(customizations, items)
@@ -131,8 +132,15 @@ public sealed class Design : DesignBase, ISavable
         LoadEquip(items, json["Equipment"], design, design.Name, true);
         LoadMods(json["Mods"], design);
         LoadParameters(json["Parameters"], design, design.Name);
+        LoadLinks(linkLoader, json["Links"], design);
         design.Color = json["Color"]?.ToObject<string>() ?? string.Empty;
         return design;
+
+        static string[] ParseTags(JObject json)
+        {
+            var tags = json["Tags"]?.ToObject<string[]>() ?? Array.Empty<string>();
+            return tags.OrderBy(t => t).Distinct().ToArray();
+        }
     }
 
     private static void LoadMods(JToken? mods, Design design)
@@ -158,6 +166,29 @@ public sealed class Design : DesignBase, ISavable
             var priority = tok["Priority"]?.ToObject<int>() ?? 0;
             if (!design.AssociatedMods.TryAdd(new Mod(name, directory), new ModSettings(settings, priority, enabled.Value)))
                 Glamourer.Messager.NotificationMessage("The loaded design contains a mod more than once, skipped.", NotificationType.Warning);
+        }
+    }
+
+    private static void LoadLinks(DesignLinkLoader linkLoader, JToken? links, Design design)
+    {
+        if (links is not JObject obj)
+            return;
+
+        Parse(obj["Before"] as JArray, LinkOrder.Before);
+        Parse(obj["After"] as JArray,  LinkOrder.After);
+        return;
+
+        void Parse(JArray? array, LinkOrder order)
+        {
+            if (array == null)
+                return;
+
+            foreach (var obj in array.OfType<JObject>())
+            {
+                var identifier = obj["Design"]?.ToObject<Guid>() ?? throw new ArgumentNullException("Design");
+                var type       = (ApplicationType)(obj["Type"]?.ToObject<uint>() ?? 0);
+                linkLoader.AddObject(design, new LinkData(identifier, type, order));
+            }
         }
     }
 

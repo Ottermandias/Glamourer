@@ -195,7 +195,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         using (_ = ImRaii.Disabled(data.Locked || noHighlights))
         {
             if (ImGui.ColorEdit3("##value", ref value, GetFlags()))
-                data.ValueSetter(new CustomizeParameterValue(value));
+                data.ChangeParameter(new CustomizeParameterValue(value));
         }
 
         if (noHighlights)
@@ -215,7 +215,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         using (_ = ImRaii.Disabled(data.Locked))
         {
             if (ImGui.ColorEdit4("##value", ref value, GetFlags() | ImGuiColorEditFlags.AlphaPreviewHalf))
-                data.ValueSetter(new CustomizeParameterValue(value));
+                data.ChangeParameter(new CustomizeParameterValue(value));
         }
 
         DrawRevert(data);
@@ -231,7 +231,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         using (_ = ImRaii.Disabled(data.Locked))
         {
             if (ImGui.InputFloat("##value", ref value, 0.1f, 0.5f))
-                data.ValueSetter(new CustomizeParameterValue(value));
+                data.ChangeParameter(new CustomizeParameterValue(value));
         }
 
         DrawRevert(data);
@@ -247,7 +247,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         using (_ = ImRaii.Disabled(data.Locked))
         {
             if (ImGui.SliderFloat("##value", ref value, -100f, 300, "%.2f"))
-                data.ValueSetter(new CustomizeParameterValue(value / 100f));
+                data.ChangeParameter(new CustomizeParameterValue(value / 100f));
             ImGuiUtil.HoverTooltip("You can control-click this to enter arbitrary values by hand instead of dragging.");
         }
 
@@ -262,7 +262,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
             return;
 
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyCtrl)
-            data.ValueSetter(data.GameValue);
+            data.ChangeParameter(data.GameValue);
 
         ImGuiUtil.HoverTooltip("Hold Control and Right-click to revert to game values.");
     }
@@ -271,7 +271,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     {
         if (UiHelpers.DrawCheckbox("##apply", "Apply this custom parameter when applying the Design.", data.CurrentApply, out var enabled,
                 data.Locked))
-            data.ApplySetter(enabled);
+            data.ChangeApplyParameter(enabled);
     }
 
     private void DrawApplyAndLabel(in CustomizeParameterDrawData data)
@@ -310,6 +310,6 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
                 _copy.HasValue ? "Paste the currently copied value." : "No value copied yet.", locked || !_copy.HasValue, true))
-            data.ValueSetter(_copy!.Value);
+            data.ChangeParameter(_copy!.Value);
     }
 }

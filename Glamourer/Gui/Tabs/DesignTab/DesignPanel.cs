@@ -4,7 +4,6 @@ using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Glamourer.Automation;
 using Glamourer.Designs;
-using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
@@ -31,7 +30,8 @@ public class DesignPanel(
     DesignConverter _converter,
     ImportService _importService,
     MultiDesignPanel _multiDesignPanel,
-    CustomizeParameterDrawer _parameterDrawer)
+    CustomizeParameterDrawer _parameterDrawer,
+    DesignLinkDrawer _designLinkDrawer)
 {
     private readonly FileDialogManager _fileDialog = new();
 
@@ -119,21 +119,21 @@ public class DesignPanel(
     {
         using (var _ = ImRaii.Group())
         {
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.HatState, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.HatState, _manager, _selector.Selected!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.Head, _manager, _selector.Selected!));
         }
 
         ImGui.SameLine();
         using (var _ = ImRaii.Group())
         {
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.VisorState, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.VisorState, _manager, _selector.Selected!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.Body, _manager, _selector.Selected!));
         }
 
         ImGui.SameLine();
         using (var _ = ImRaii.Group())
         {
-            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.WeaponState, _manager, _selector.Selected!));
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.WeaponState, _manager, _selector.Selected!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.OffHand, _manager, _selector.Selected!));
         }
     }
@@ -158,7 +158,7 @@ public class DesignPanel(
                     _manager.ChangeCustomize(_selector.Selected, idx, _customizationDrawer.Customize[idx]);
             }
 
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(ActorState.MetaIndex.Wetness, _manager, _selector.Selected!));
+        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.Wetness, _manager, _selector.Selected!));
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
     }
 
@@ -166,6 +166,7 @@ public class DesignPanel(
     {
         if (!_config.UseAdvancedParameters)
             return;
+
         using var h = ImRaii.CollapsingHeader("Advanced Customizations");
         if (!h)
             return;
@@ -255,24 +256,24 @@ public class DesignPanel(
                     {
                         var apply = bigChange ? ((EquipFlag)flags).HasFlag(slot.ToFlag()) : _selector.Selected!.DoApplyEquip(slot);
                         if (ImGui.Checkbox($"Apply {slot.ToName()}", ref apply) || bigChange)
-                            _manager.ChangeApplyEquip(_selector.Selected!, slot, apply);
+                            _manager.ChangeApplyItem(_selector.Selected!, slot, apply);
                     }
             }
 
-            ApplyEquip("Weapons", AutoDesign.WeaponFlags, false, new[]
+            ApplyEquip("Weapons", ApplicationTypeExtensions.WeaponFlags, false, new[]
             {
                 EquipSlot.MainHand,
                 EquipSlot.OffHand,
             });
 
             ImGui.NewLine();
-            ApplyEquip("Armor", AutoDesign.ArmorFlags, false, EquipSlotExtensions.EquipmentSlots);
+            ApplyEquip("Armor", ApplicationTypeExtensions.ArmorFlags, false, EquipSlotExtensions.EquipmentSlots);
 
             ImGui.NewLine();
-            ApplyEquip("Accessories", AutoDesign.AccessoryFlags, false, EquipSlotExtensions.AccessorySlots);
+            ApplyEquip("Accessories", ApplicationTypeExtensions.AccessoryFlags, false, EquipSlotExtensions.AccessorySlots);
 
             ImGui.NewLine();
-            ApplyEquip("Dyes", AutoDesign.StainFlags, true,
+            ApplyEquip("Dyes", ApplicationTypeExtensions.StainFlags, true,
                 EquipSlotExtensions.FullSlots);
 
             ImGui.NewLine();
@@ -285,28 +286,25 @@ public class DesignPanel(
 
     private void DrawMetaApplication()
     {
-        using var  id  = ImRaii.PushId("Meta");
-        const uint all = 0x0Fu;
-        var flags = (_selector.Selected!.DoApplyHatVisible() ? 0x01u : 0x00)
-          | (_selector.Selected!.DoApplyVisorToggle() ? 0x02u : 0x00)
-          | (_selector.Selected!.DoApplyWeaponVisible() ? 0x04u : 0x00)
-          | (_selector.Selected!.DoApplyWetness() ? 0x08u : 0x00);
-        var bigChange = ImGui.CheckboxFlags("Apply All Meta Changes", ref flags, all);
-        var apply     = bigChange ? (flags & 0x01) == 0x01 : _selector.Selected!.DoApplyHatVisible();
-        if (ImGui.Checkbox("Apply Hat Visibility", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.HatState, apply);
+        using var  id        = ImRaii.PushId("Meta");
+        const uint all       = (uint)MetaExtensions.All;
+        var        flags     = (uint)_selector.Selected!.ApplyMeta;
+        var        bigChange = ImGui.CheckboxFlags("Apply All Meta Changes", ref flags, all);
 
-        apply = bigChange ? (flags & 0x02) == 0x02 : _selector.Selected!.DoApplyVisorToggle();
-        if (ImGui.Checkbox("Apply Visor State", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.VisorState, apply);
+        var labels = new[]
+        {
+            "Apply Hat Visibility",
+            "Apply Visor State",
+            "Apply Weapon Visibility",
+            "Apply Wetness",
+        };
 
-        apply = bigChange ? (flags & 0x04) == 0x04 : _selector.Selected!.DoApplyWeaponVisible();
-        if (ImGui.Checkbox("Apply Weapon Visibility", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.WeaponState, apply);
-
-        apply = bigChange ? (flags & 0x08) == 0x08 : _selector.Selected!.DoApplyWetness();
-        if (ImGui.Checkbox("Apply Wetness", ref apply) || bigChange)
-            _manager.ChangeApplyMeta(_selector.Selected!, ActorState.MetaIndex.Wetness, apply);
+        foreach (var (index, label) in MetaExtensions.AllRelevant.Zip(labels))
+        {
+            var apply = bigChange ? ((MetaFlag)flags).HasFlag(index.ToFlag()) : _selector.Selected!.DoApplyMeta(index);
+            if (ImGui.Checkbox(label, ref apply) || bigChange)
+                _manager.ChangeApplyMeta(_selector.Selected!, index, apply);
+        }
     }
 
     private void DrawParameterApplication()
@@ -370,6 +368,7 @@ public class DesignPanel(
         _designDetails.Draw();
         DrawApplicationRules();
         _modAssociations.Draw();
+        _designLinkDrawer.Draw();
     }
 
     private void DrawButtonRow()
@@ -439,7 +438,7 @@ public class DesignPanel(
         {
             var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
             using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-            _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
+            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.Manual with { MergeLinks = true });
         }
     }
 
@@ -458,7 +457,7 @@ public class DesignPanel(
         {
             var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
             using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-            _state.ApplyDesign(_selector.Selected!, state, StateChanged.Source.Manual);
+            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.Manual with {MergeLinks = true});
         }
     }
 
