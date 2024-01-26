@@ -1,17 +1,27 @@
-﻿namespace Glamourer.Interop.Material;
+﻿global using StateMaterialManager = Glamourer.Interop.Material.MaterialValueManager<Glamourer.Interop.Material.MaterialValueState>;
+global using DesignMaterialManager = Glamourer.Interop.Material.MaterialValueManager<System.Numerics.Vector3>;
+using Glamourer.State;
 
-public readonly struct MaterialValueManager
+
+namespace Glamourer.Interop.Material;
+
+public record struct MaterialValueState(Vector3 Game, Vector3 Model, StateSource Source);
+
+public readonly struct MaterialValueManager<T>
 {
-    private readonly List<(uint Key, Vector3 Value)> _values = [];
+    private readonly List<(uint Key, T Value)> _values = [];
 
     public MaterialValueManager()
     { }
 
-    public bool TryGetValue(MaterialValueIndex index, out Vector3 value)
+    public void Clear()
+        => _values.Clear();
+
+    public bool TryGetValue(MaterialValueIndex index, out T value)
     {
         if (_values.Count == 0)
         {
-            value = Vector3.Zero;
+            value = default!;
             return false;
         }
 
@@ -22,11 +32,11 @@ public readonly struct MaterialValueManager
             return true;
         }
 
-        value = Vector3.Zero;
+        value = default!;
         return false;
     }
 
-    public bool TryAddValue(MaterialValueIndex index, in Vector3 value)
+    public bool TryAddValue(MaterialValueIndex index, in T value)
     {
         var key = index.Key;
         var idx = Search(key);
@@ -50,7 +60,7 @@ public readonly struct MaterialValueManager
         return true;
     }
 
-    public void AddOrUpdateValue(MaterialValueIndex index, in Vector3 value)
+    public void AddOrUpdateValue(MaterialValueIndex index, in T value)
     {
         var key = index.Key;
         var idx = Search(key);
@@ -60,11 +70,11 @@ public readonly struct MaterialValueManager
             _values[idx] = (key, value);
     }
 
-    public bool UpdateValue(MaterialValueIndex index, in Vector3 value, out Vector3 oldValue)
+    public bool UpdateValue(MaterialValueIndex index, in T value, out T oldValue)
     {
         if (_values.Count == 0)
         {
-            oldValue = Vector3.Zero;
+            oldValue = default!;
             return false;
         }
 
@@ -72,7 +82,7 @@ public readonly struct MaterialValueManager
         var idx = Search(key);
         if (idx < 0)
         {
-            oldValue = Vector3.Zero;
+            oldValue = default!;
             return false;
         }
 
@@ -80,6 +90,9 @@ public readonly struct MaterialValueManager
         _values[idx] = (key, value);
         return true;
     }
+
+    public IReadOnlyList<(uint Key, T Value)> Values
+        => _values;
 
     public int RemoveValues(MaterialValueIndex min, MaterialValueIndex max)
     {
@@ -92,21 +105,21 @@ public readonly struct MaterialValueManager
         return count;
     }
 
-    public ReadOnlySpan<(uint key, Vector3 Value)> GetValues(MaterialValueIndex min, MaterialValueIndex max)
+    public ReadOnlySpan<(uint key, T Value)> GetValues(MaterialValueIndex min, MaterialValueIndex max)
         => Filter(CollectionsMarshal.AsSpan(_values), min, max);
 
-    public static ReadOnlySpan<(uint Key, Vector3 Value)> Filter(ReadOnlySpan<(uint Key, Vector3 Value)> values, MaterialValueIndex min,
+    public static ReadOnlySpan<(uint Key, T Value)> Filter(ReadOnlySpan<(uint Key, T Value)> values, MaterialValueIndex min,
         MaterialValueIndex max)
     {
         var (minIdx, maxIdx) = GetMinMax(values, min.Key, max.Key);
-        return minIdx < 0 ? [] : values[minIdx..(maxIdx - minIdx)];
+        return minIdx < 0 ? [] : values[minIdx..(maxIdx - minIdx + 1)];
     }
 
     /// <summary> Obtain the minimum index and maximum index for a minimum and maximum key. </summary>
-    private static (int MinIdx, int MaxIdx) GetMinMax(ReadOnlySpan<(uint Key, Vector3 Value)> values, uint minKey, uint maxKey)
+    private static (int MinIdx, int MaxIdx) GetMinMax(ReadOnlySpan<(uint Key, T Value)> values, uint minKey, uint maxKey)
     {
         // Find the minimum index by binary search.
-        var idx    = values.BinarySearch((minKey, Vector3.Zero), Comparer.Instance);
+        var idx    = values.BinarySearch((minKey, default!), Comparer.Instance);
         var minIdx = idx;
 
         // If the key does not exist, check if it is an invalid range or set it correctly.
@@ -131,7 +144,7 @@ public readonly struct MaterialValueManager
 
 
         // Do pretty much the same but in the other direction with the maximum key.
-        var maxIdx = values[idx..].BinarySearch((maxKey, Vector3.Zero), Comparer.Instance);
+        var maxIdx = values[idx..].BinarySearch((maxKey, default!), Comparer.Instance);
         if (maxIdx < 0)
         {
             maxIdx = ~maxIdx;
@@ -149,14 +162,14 @@ public readonly struct MaterialValueManager
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private int Search(uint key)
-        => _values.BinarySearch((key, Vector3.Zero), Comparer.Instance);
+        => _values.BinarySearch((key, default!), Comparer.Instance);
 
-    private class Comparer : IComparer<(uint Key, Vector3 Value)>
+    private class Comparer : IComparer<(uint Key, T Value)>
     {
         public static readonly Comparer Instance = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public int Compare((uint Key, Vector3 Value) x, (uint Key, Vector3 Value) y)
+        int IComparer<(uint Key, T Value)>.Compare((uint Key, T Value) x, (uint Key, T Value) y)
             => x.Key.CompareTo(y.Key);
     }
 }

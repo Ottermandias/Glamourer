@@ -7,6 +7,7 @@ using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
+using Glamourer.Gui.Materials;
 using Glamourer.Interop;
 using Glamourer.Interop.Material;
 using Glamourer.Interop.Structs;
@@ -34,7 +35,8 @@ public class ActorPanel(
     ImportService _importService,
     ICondition _conditions,
     DictModelChara _modelChara,
-    CustomizeParameterDrawer _parameterDrawer)
+    CustomizeParameterDrawer _parameterDrawer,
+    MaterialDrawer _materialDrawer)
 {
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -121,16 +123,36 @@ public class ActorPanel(
 
         RevertButtons();
 
+
+        if (ImGui.CollapsingHeader("Material Shit"))
+            _materialDrawer.DrawPanel(_actor);
         ImGui.InputInt("Row", ref _rowId);
         ImGui.InputInt("Material", ref _materialId);
         ImGui.InputInt("Slot", ref _slotId);
         ImGuiUtil.GenericEnumCombo("Value", 300, _index, out _index);
 
         var index = new MaterialValueIndex(MaterialValueIndex.DrawObjectType.Human, (byte) _slotId, (byte) _materialId, (byte)_rowId, _index);
-        index.TryGetValue(_actor, out _test);
+        index.TryGetValue(_actor, out var current);
+        _test = current;
         if (ImGui.ColorPicker3("TestPicker", ref _test) && _actor.Valid)
-            MaterialService.Test(_actor, index, _test);
+            _state.Materials.AddOrUpdateValue(index, new MaterialValueState(current, _test, StateSource.Manual));
 
+        if (ImGui.ColorPicker3("TestPicker2", ref _test) && _actor.Valid)
+            _state.Materials.AddOrUpdateValue(index, new MaterialValueState(current, _test, StateSource.Fixed));
+
+        foreach (var value in _state.Materials.Values)
+        {
+            var id = MaterialValueIndex.FromKey(value.Key);
+            ImGui.TextUnformatted($"{id.DrawObject} {id.SlotIndex} {id.MaterialIndex} {id.RowIndex} {id.DataIndex} ");
+            ImGui.SameLine(0, 0);
+            var game = ImGui.ColorConvertFloat4ToU32(new Vector4(value.Value.Game, 1));
+            ImGuiUtil.DrawTextButton("   ", Vector2.Zero, game);
+            ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X);
+            var model = ImGui.ColorConvertFloat4ToU32(new Vector4(value.Value.Model, 1));
+            ImGuiUtil.DrawTextButton("   ", Vector2.Zero, model);
+            ImGui.SameLine(0, 0);
+            ImGui.TextUnformatted($" {value.Value.Source}");
+        }
 
         using var disabled = ImRaii.Disabled(transformationId != 0);
         if (_state.ModelData.IsHuman)

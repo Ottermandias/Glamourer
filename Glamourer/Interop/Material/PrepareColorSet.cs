@@ -9,7 +9,6 @@ using Glamourer.State;
 using OtterGui.Classes;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
-using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
 using Penumbra.GameData.Structs;
 
@@ -58,28 +57,18 @@ public sealed unsafe class PrepareColorSet
         return _task.Result.Original(characterBase, material, stainId);
     }
 
-    public static MtrlFile.ColorTable GetColorTable(CharacterBase* characterBase, MaterialResourceHandle* material, StainId stainId)
+    public static bool TryGetColorTable(CharacterBase* characterBase, MaterialResourceHandle* material, StainId stainId, out MtrlFile.ColorTable table)
     {
-        var table = new MtrlFile.ColorTable();
-        characterBase->ReadStainingTemplate(material, stainId.Id, (Half*)(&table));
-        return table;
-    }
-
-    public static bool TryGetColorTable(Model model, byte slotIdx, out MtrlFile.ColorTable table)
-    {
-        var table2 = new MtrlFile.ColorTable();
-        if (!model.IsCharacterBase || slotIdx < model.AsCharacterBase->SlotCount)
-            return false;
-
-        var resource = (MaterialResourceHandle*)model.AsCharacterBase->Materials[slotIdx];
-        var stain = model.AsCharacterBase->GetModelType() switch
+        if (material->ColorTable == null)
         {
-            CharacterBase.ModelType.Human  => model.GetArmor(EquipSlotExtensions.ToEquipSlot(slotIdx)).Stain,
-            CharacterBase.ModelType.Weapon => (StainId)model.AsWeapon->ModelUnknown,
-            _                              => (StainId)0,
-        };
-        model.AsCharacterBase->ReadStainingTemplate(resource, stain.Id, (Half*)(&table2));
-        table = table2;
+            table = default;
+            return false;
+        }
+
+        var newTable = *(MtrlFile.ColorTable*)material->ColorTable;
+        if(stainId.Id != 0)
+            characterBase->ReadStainingTemplate(material, stainId.Id, (Half*)(&newTable));
+        table = newTable;
         return true;
     }
 }
@@ -111,10 +100,6 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         var actor     = _penumbra.GameObjectFromDrawObject(characterBase);
         var validType = FindType(characterBase, actor, out var type);
         var (slotId, materialId) = FindMaterial(characterBase, material);
-        Glamourer.Log.Information(
-            $" Triggered with 0x{(nint)characterBase:X} 0x{(nint)material:X} {stain.Id} --- Actor: 0x{actor.Address:X} Slot: {slotId} Material: {materialId} DrawObject: {type}.");
-        var table = PrepareColorSet.GetColorTable(characterBase, material, stain);
-        Glamourer.Log.Information($"{table[15].Diffuse}");
 
         if (!validType
          || slotId == byte.MaxValue
@@ -122,12 +107,49 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
          || !_stateManager.TryGetValue(identifier, out var state))
             return;
 
+
         var min     = MaterialValueIndex.Min(type, slotId, materialId);
         var max     = MaterialValueIndex.Max(type, slotId, materialId);
-        var manager = new MaterialValueManager();
-        var values  = manager.GetValues(min, max);
-        foreach (var (key, value) in values)
-            ;
+        var values  = state.Materials.GetValues(min, max);
+        if (values.Length == 0)
+            return;
+
+        if (!PrepareColorSet.TryGetColorTable(characterBase, material, stain, out var baseColorSet))
+            return;
+
+        for (var i = 0; i < values.Length; ++i)
+        {
+            var idx = MaterialValueIndex.FromKey(values[i].key);
+            var (oldGame, model, source) = values[i].Value;
+            ref var row = ref baseColorSet[idx.RowIndex];
+            if (!idx.DataIndex.TryGetValue(row, out var newGame))
+                continue;
+
+            if (newGame == oldGame)
+            {
+                idx.DataIndex.SetValue(ref row, model);
+            }
+            else
+            {
+                switch (source)
+                {
+                    case StateSource.Manual: 
+                    case StateSource.Pending: 
+                        state.Materials.RemoveValue(idx);
+                        --i;
+                        break;
+                    case StateSource.Ipc:
+                    case StateSource.Fixed: 
+                        idx.DataIndex.SetValue(ref row, model);
+                        state.Materials.UpdateValue(idx, new MaterialValueState(newGame, model, source), out _);
+                        break;
+                    
+                }
+            }
+        }
+
+        if (MaterialService.GenerateNewColorTable(baseColorSet, out var texture))
+            ret = (nint)texture;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

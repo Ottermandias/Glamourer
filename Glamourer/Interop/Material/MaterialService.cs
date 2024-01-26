@@ -1,43 +1,11 @@
-﻿using Dalamud.Interface.Utility.Raii;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using Glamourer.Interop.Structs;
-using ImGuiNET;
 using Lumina.Data.Files;
-using OtterGui;
-using OtterGui.Services;
-using Penumbra.GameData.Actors;
-using Penumbra.GameData.Enums;
 using static Penumbra.GameData.Files.MtrlFile;
 using Texture = FFXIVClientStructs.FFXIV.Client.Graphics.Kernel.Texture;
 
 namespace Glamourer.Interop.Material;
-
-
-public class MaterialServiceDrawer(ActorManager actors) : IService
-{
-    private ActorIdentifier _openIdentifier;
-    private uint            _openSlotIndex;
-
-    public unsafe void PopupButton(Actor actor, EquipSlot slot)
-    {
-        var slotIndex = slot.ToIndex();
-
-        var identifier = actor.GetIdentifier(actors);
-        var buttonActive = actor.Valid
-         && identifier.IsValid
-         && actor.Model.IsCharacterBase
-         && slotIndex < actor.Model.AsCharacterBase->SlotCount
-         && (actor.Model.AsCharacterBase->HasModelInSlotLoaded & (1 << (int)slotIndex)) != 0;
-        using var id = ImRaii.PushId((int)slot);
-        if (ImGuiUtil.DrawDisabledButton("Advanced", Vector2.Zero, "Open advanced window.", !buttonActive))
-        {
-            _openIdentifier = identifier;
-            _openSlotIndex  = slotIndex;
-            ImGui.OpenPopup($"Popup{slot}");
-        }
-    }
-}
 
 public static unsafe class MaterialService
 {
@@ -49,7 +17,7 @@ public static unsafe class MaterialService
     /// <param name="original"> The original texture that will be replaced with a new one. </param>
     /// <param name="colorTable"> The input color table. </param>
     /// <returns> Success or failure. </returns>
-    public static bool GenerateColorTable(Texture** original, in ColorTable colorTable)
+    public static bool ReplaceColorTable(Texture** original, in ColorTable colorTable)
     {
         if (original == null)
             return false;
@@ -63,7 +31,7 @@ public static unsafe class MaterialService
         if (texture.IsInvalid)
             return false;
 
-        fixed(ColorTable* ptr = &colorTable)
+        fixed (ColorTable* ptr = &colorTable)
         {
             if (!texture.Texture->InitializeContents(ptr))
                 return false;
@@ -73,6 +41,22 @@ public static unsafe class MaterialService
         return true;
     }
 
+    public static bool GenerateNewColorTable(in ColorTable colorTable, out Texture* texture)
+    {
+        var textureSize = stackalloc int[2];
+        textureSize[0] = TextureWidth;
+        textureSize[1] = TextureHeight;
+
+        texture = Device.Instance()->CreateTexture2D(textureSize, 1, (uint)TexFile.TextureFormat.R16G16B16A16F,
+            (uint)(TexFile.Attribute.TextureType2D | TexFile.Attribute.Managed | TexFile.Attribute.Immutable), 7);
+        if (texture == null)
+            return false;
+
+        fixed (ColorTable* ptr = &colorTable)
+        {
+            return texture->InitializeContents(ptr);
+        }
+    }
 
     /// <summary> Obtain a pointer to the models pointer to a specific color table texture. </summary>
     /// <param name="model"></param>
@@ -111,20 +95,5 @@ public static unsafe class MaterialService
             return null;
 
         return (ColorTable*)material->ColorTable;
-    }
-
-    public static void Test(Actor actor, MaterialValueIndex index, Vector3 value)
-    {
-        if (!index.TryGetColorTable(actor, out var table))
-            return;
-
-        ref var row = ref table[index.RowIndex];
-        if (!index.DataIndex.SetValue(ref row, value))
-            return;
-
-        var texture = GetColorTableTexture(index.TryGetModel(actor, out var model) ? model : Model.Null, index.SlotIndex,
-            index.MaterialIndex);
-        if (texture != null)
-            GenerateColorTable(texture, table);
     }
 }

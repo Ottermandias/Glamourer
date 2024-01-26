@@ -30,6 +30,9 @@ public class ActorState
     /// <summary> The territory the draw object was created last. </summary>
     public ushort LastTerritory;
 
+    /// <summary> State for specific material values. </summary>
+    public readonly StateMaterialManager Materials = new();
+
     /// <summary> Whether the State is locked at all. </summary>
     public bool IsLocked
         => Combination != 0;

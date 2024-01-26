@@ -240,6 +240,8 @@ public sealed class StateManager(
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
             state.Sources[flag] = StateSource.Game;
 
+        state.Materials.Clear();
+
         var actors = ActorData.Invalid;
         if (source is StateSource.Manual or StateSource.Ipc)
             actors = Applier.ApplyAll(state, redraw, true);
