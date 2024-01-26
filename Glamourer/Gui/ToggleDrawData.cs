@@ -54,7 +54,7 @@ public ref struct ToggleDrawData
             Tooltip      = "Hide or show your free company crest on this piece of gear.",
             Locked       = state.IsLocked,
             CurrentValue = state.ModelData.Crest(slot),
-            SetValue     = v => manager.ChangeCrest(state, slot, v, StateSource.Manual),
+            SetValue     = v => manager.ChangeCrest(state, slot, v, ApplySettings.Manual),
         };
 
     public static ToggleDrawData FromState(MetaIndex index, StateManager manager, ActorState state)
@@ -65,7 +65,7 @@ public ref struct ToggleDrawData
             Tooltip      = index.ToTooltip(),
             Locked       = state.IsLocked,
             CurrentValue = state.ModelData.GetMeta(index),
-            SetValue     = b => manager.ChangeMeta(state, index, b, StateSource.Manual),
+            SetValue     = b => manager.ChangeMetaState(state, index, b, ApplySettings.Manual),
         };
     }
 

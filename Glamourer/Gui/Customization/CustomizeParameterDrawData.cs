@@ -33,7 +33,7 @@ public ref struct CustomizeParameterDrawData(CustomizeParameterFlag flag, in Des
         {
             Locked             = state.IsLocked,
             DisplayApplication = false,
-            ValueSetter        = v => manager.ChangeCustomizeParameter(state, flag, v, StateSource.Manual),
+            ValueSetter        = v => manager.ChangeCustomizeParameter(state, flag, v, ApplySettings.Manual),
             GameValue          = state.BaseData.Parameters[flag],
             AllowRevert        = true,
         };

@@ -254,12 +254,11 @@ public class DesignEditor(
         _forceFullItemOff = true;
         foreach (var slot in EquipSlotExtensions.FullSlots)
         {
-            if (other.DoApplyEquip(slot))
-                ChangeItem(design, slot, other.DesignData.Item(slot));
-
-            if (other.DoApplyStain(slot))
-                ChangeStain(design, slot, other.DesignData.Stain(slot));
+            ChangeEquip(design, slot,
+                other.DoApplyEquip(slot) ? other.DesignData.Item(slot) : null,
+                other.DoApplyStain(slot) ? other.DesignData.Stain(slot) : null);
         }
+
         _forceFullItemOff = false;
 
         foreach (var slot in Enum.GetValues<CrestFlag>().Where(other.DoApplyCrest))

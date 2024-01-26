@@ -2,14 +2,12 @@
 using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;
-using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
-using Lumina.Data.Parsing.Scd;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
@@ -202,7 +200,7 @@ public class NpcPanel(
         {
             var (applyGear, applyCustomize, _, _) = UiHelpers.ConvertKeysToFlags();
             var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, 0, 0);
-            _state.ApplyDesign(design, state, StateSource.Manual);
+            _state.ApplyDesign(state, design, ApplySettings.Manual);
         }
     }
 
@@ -221,7 +219,7 @@ public class NpcPanel(
         {
             var (applyGear, applyCustomize, _, _) = UiHelpers.ConvertKeysToFlags();
             var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, 0, 0);
-            _state.ApplyDesign(design, state, StateSource.Manual);
+            _state.ApplyDesign(state, design, ApplySettings.Manual);
         }
     }
 

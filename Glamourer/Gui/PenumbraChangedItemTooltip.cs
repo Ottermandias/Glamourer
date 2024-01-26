@@ -1,4 +1,4 @@
-﻿using Glamourer.Events;
+﻿using Glamourer.Designs;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
@@ -11,7 +11,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui;
 
-public class PenumbraChangedItemTooltip : IDisposable
+public sealed class PenumbraChangedItemTooltip : IDisposable
 {
     private readonly PenumbraService _penumbra;
     private readonly StateManager    _stateManager;
@@ -111,24 +111,24 @@ public class PenumbraChangedItemTooltip : IDisposable
                 switch (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift)
                 {
                     case (false, false):
-                        Glamourer.Log.Information($"Applying {item.Name} to Right Finger.");
+                        Glamourer.Log.Debug($"Applying {item.Name} to Right Finger.");
                         SetLastItem(EquipSlot.RFinger, item, state);
-                        _stateManager.ChangeItem(state, EquipSlot.RFinger, item, StateSource.Manual);
+                        _stateManager.ChangeItem(state, EquipSlot.RFinger, item, ApplySettings.Manual);
                         break;
                     case (false, true):
-                        Glamourer.Log.Information($"Applying {item.Name} to Left Finger.");
+                        Glamourer.Log.Debug($"Applying {item.Name} to Left Finger.");
                         SetLastItem(EquipSlot.LFinger, item, state);
-                        _stateManager.ChangeItem(state, EquipSlot.LFinger, item, StateSource.Manual);
+                        _stateManager.ChangeItem(state, EquipSlot.LFinger, item, ApplySettings.Manual);
                         break;
                     case (true, false) when last.Valid:
-                        Glamourer.Log.Information($"Re-Applying {last.Name} to Right Finger.");
+                        Glamourer.Log.Debug($"Re-Applying {last.Name} to Right Finger.");
                         SetLastItem(EquipSlot.RFinger, default, state);
-                        _stateManager.ChangeItem(state, EquipSlot.RFinger, last, StateSource.Manual);
+                        _stateManager.ChangeItem(state, EquipSlot.RFinger, last, ApplySettings.Manual);
                         break;
                     case (true, true) when _lastItems[EquipSlot.LFinger.ToIndex()].Valid:
-                        Glamourer.Log.Information($"Re-Applying {last.Name} to Left Finger.");
+                        Glamourer.Log.Debug($"Re-Applying {last.Name} to Left Finger.");
                         SetLastItem(EquipSlot.LFinger, default, state);
-                        _stateManager.ChangeItem(state, EquipSlot.LFinger, last, StateSource.Manual);
+                        _stateManager.ChangeItem(state, EquipSlot.LFinger, last, ApplySettings.Manual);
                         break;
                 }
 
@@ -136,15 +136,15 @@ public class PenumbraChangedItemTooltip : IDisposable
             default:
                 if (ImGui.GetIO().KeyCtrl && last.Valid)
                 {
-                    Glamourer.Log.Information($"Re-Applying {last.Name} to {slot.ToName()}.");
+                    Glamourer.Log.Debug($"Re-Applying {last.Name} to {slot.ToName()}.");
                     SetLastItem(slot, default, state);
-                    _stateManager.ChangeItem(state, slot, last, StateSource.Manual);
+                    _stateManager.ChangeItem(state, slot, last, ApplySettings.Manual);
                 }
                 else
                 {
-                    Glamourer.Log.Information($"Applying {item.Name} to {slot.ToName()}.");
+                    Glamourer.Log.Debug($"Applying {item.Name} to {slot.ToName()}.");
                     SetLastItem(slot, item, state);
-                    _stateManager.ChangeItem(state, slot, item, StateSource.Manual);
+                    _stateManager.ChangeItem(state, slot, item, ApplySettings.Manual);
                 }
 
                 return;

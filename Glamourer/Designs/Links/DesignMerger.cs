@@ -224,7 +224,7 @@ public class DesignMerger(
             ret.Sources[CustomizeIndex.Face] =  source;
         }
 
-        var set  = ret.Design.CustomizeSet;
+        var set  = _customize.Manager.GetSet(customize.Clan, customize.Gender);
         var face = customize.Face;
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {

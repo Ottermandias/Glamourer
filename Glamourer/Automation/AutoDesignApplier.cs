@@ -3,12 +3,9 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
-using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
-using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Unlocks;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -18,52 +15,39 @@ namespace Glamourer.Automation;
 
 public sealed class AutoDesignApplier : IDisposable
 {
-    private readonly Configuration          _config;
-    private readonly AutoDesignManager      _manager;
-    private readonly StateManager           _state;
-    private readonly JobService             _jobs;
-    private readonly EquippedGearset        _equippedGearset;
-    private readonly ActorManager           _actors;
-    private readonly CustomizeService       _customizations;
-    private readonly CustomizeUnlockManager _customizeUnlocks;
-    private readonly ItemUnlockManager      _itemUnlocks;
-    private readonly AutomationChanged      _event;
-    private readonly ObjectManager          _objects;
-    private readonly WeaponLoading          _weapons;
-    private readonly HumanModelList         _humans;
-    private readonly DesignMerger           _designMerger;
-    private readonly IClientState           _clientState;
+    private readonly Configuration     _config;
+    private readonly AutoDesignManager _manager;
+    private readonly StateManager      _state;
+    private readonly JobService        _jobs;
+    private readonly EquippedGearset   _equippedGearset;
+    private readonly ActorManager      _actors;
+    private readonly AutomationChanged _event;
+    private readonly ObjectManager     _objects;
+    private readonly WeaponLoading     _weapons;
+    private readonly HumanModelList    _humans;
+    private readonly DesignMerger      _designMerger;
+    private readonly IClientState      _clientState;
 
-    private          ActorState?                                                 _jobChangeState;
-    private readonly Dictionary<FullEquipType, (EquipItem, StateSource)> _jobChange = [];
+    private readonly JobChangeState _jobChangeState;
 
-    private void ResetJobChange()
-    {
-        _jobChangeState = null;
-        _jobChange.Clear();
-    }
-
-    public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs,
-        CustomizeService customizations, ActorManager actors, ItemUnlockManager itemUnlocks, CustomizeUnlockManager customizeUnlocks,
+    public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs, ActorManager actors,
         AutomationChanged @event, ObjectManager objects, WeaponLoading weapons, HumanModelList humans, IClientState clientState,
-        EquippedGearset equippedGearset, DesignMerger designMerger)
+        EquippedGearset equippedGearset, DesignMerger designMerger, JobChangeState jobChangeState)
     {
-        _config           =  config;
-        _manager          =  manager;
-        _state            =  state;
-        _jobs             =  jobs;
-        _customizations   =  customizations;
-        _actors           =  actors;
-        _itemUnlocks      =  itemUnlocks;
-        _customizeUnlocks =  customizeUnlocks;
-        _event            =  @event;
-        _objects          =  objects;
-        _weapons          =  weapons;
-        _humans           =  humans;
-        _clientState      =  clientState;
-        _equippedGearset  =  equippedGearset;
-        _designMerger     =  designMerger;
-        _jobs.JobChanged  += OnJobChange;
+        _config          =  config;
+        _manager         =  manager;
+        _state           =  state;
+        _jobs            =  jobs;
+        _actors          =  actors;
+        _event           =  @event;
+        _objects         =  objects;
+        _weapons         =  weapons;
+        _humans          =  humans;
+        _clientState     =  clientState;
+        _equippedGearset =  equippedGearset;
+        _designMerger    =  designMerger;
+        _jobChangeState  =  jobChangeState;
+        _jobs.JobChanged += OnJobChange;
         _event.Subscribe(OnAutomationChange, AutomationChanged.Priority.AutoDesignApplier);
         _weapons.Subscribe(OnWeaponLoading, WeaponLoading.Priority.AutoDesignApplier);
         _equippedGearset.Subscribe(OnEquippedGearset, EquippedGearset.Priority.AutoDesignApplier);
@@ -79,45 +63,46 @@ public sealed class AutoDesignApplier : IDisposable
 
     private void OnWeaponLoading(Actor actor, EquipSlot slot, ref CharacterWeapon weapon)
     {
-        if (_jobChangeState == null || !_config.EnableAutoDesigns)
+        if (!_jobChangeState.HasState || !_config.EnableAutoDesigns)
             return;
 
         var id = actor.GetIdentifier(_actors);
         if (id == _jobChangeState.Identifier)
         {
-            var current = _jobChangeState.BaseData.Item(slot);
+            var state   = _jobChangeState.State!;
+            var current = state.BaseData.Item(slot);
             switch (slot)
             {
                 case EquipSlot.MainHand:
                 {
-                    if (_jobChange.TryGetValue(current.Type, out var data))
+                    if (_jobChangeState.TryGetValue(current.Type, out var data))
                     {
                         Glamourer.Log.Verbose(
-                            $"Changing Mainhand from {_jobChangeState.ModelData.Weapon(EquipSlot.MainHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{actor.Address:X}.");
-                        _state.ChangeItem(_jobChangeState, EquipSlot.MainHand, data.Item1, data.Item2);
-                        weapon = _jobChangeState.ModelData.Weapon(EquipSlot.MainHand);
+                            $"Changing Mainhand from {state.ModelData.Weapon(EquipSlot.MainHand)} | {state.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{actor.Address:X}.");
+                        _state.ChangeItem(_jobChangeState, EquipSlot.MainHand, data.Item1, new ApplySettings(Source: data.Item2));
+                        weapon = state.ModelData.Weapon(EquipSlot.MainHand);
                     }
 
                     break;
                 }
-                case EquipSlot.OffHand when current.Type == _jobChangeState.BaseData.MainhandType.Offhand():
+                case EquipSlot.OffHand when current.Type == state.BaseData.MainhandType.Offhand():
                 {
-                    if (_jobChange.TryGetValue(current.Type, out var data))
+                    if (_jobChangeState.TryGetValue(current.Type, out var data))
                     {
                         Glamourer.Log.Verbose(
-                            $"Changing Offhand from {_jobChangeState.ModelData.Weapon(EquipSlot.OffHand)} | {_jobChangeState.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{actor.Address:X}.");
-                        _state.ChangeItem(_jobChangeState, EquipSlot.OffHand, data.Item1, data.Item2);
-                        weapon = _jobChangeState.ModelData.Weapon(EquipSlot.OffHand);
+                            $"Changing Offhand from {state.ModelData.Weapon(EquipSlot.OffHand)} | {state.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{actor.Address:X}.");
+                        _state.ChangeItem(_jobChangeState, EquipSlot.OffHand, data.Item1, new ApplySettings(Source: data.Item2));
+                        weapon = state.ModelData.Weapon(EquipSlot.OffHand);
                     }
 
-                    ResetJobChange();
+                    _jobChangeState.Reset();
                     break;
                 }
             }
         }
         else
         {
-            ResetJobChange();
+            _jobChangeState.Reset();
         }
     }
 
@@ -135,7 +120,7 @@ public sealed class AutoDesignApplier : IDisposable
                 break;
             case AutomationChanged.Type.ChangeIdentifier when set.Enabled:
                 // Remove fixed state from the old identifiers assigned and the old enabled set, if any.
-                var (oldIds, _, oldSet) = ((ActorIdentifier[], ActorIdentifier, AutoDesignSet?))bonusData!;
+                var (oldIds, _, _) = ((ActorIdentifier[], ActorIdentifier, AutoDesignSet?))bonusData!;
                 RemoveOld(oldIds);
                 ApplyNew(set); // Does not need to disable oldSet because same identifiers.
                 break;
@@ -277,8 +262,9 @@ public sealed class AutoDesignApplier : IDisposable
         if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
             return;
 
-        var mergedDesign = _designMerger.Merge(set.Designs.Where(d => d.IsActive(actor)).Select(d => ((DesignBase?) d.Design, d.Type)), state.ModelData, true, false);
-        ApplyToState(state, mergedDesign, respectManual, fromJobChange, StateSource.Fixed);
+        var mergedDesign = _designMerger.Merge(set.Designs.Where(d => d.IsActive(actor)).Select(d => ((DesignBase?)d.Design, d.Type)),
+            state.ModelData, true, false);
+        _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false));
     }
 
     /// <summary> Get world-specific first and all-world afterward. </summary>
@@ -301,218 +287,6 @@ public sealed class AutoDesignApplier : IDisposable
             default:
                 set = null;
                 return false;
-        }
-    }
-
-    private void ApplyToState(ActorState state, MergedDesign mergedDesign, bool respectManual, bool fromJobChange, StateSource source)
-    {
-        foreach (var slot in CrestExtensions.AllRelevantSet.Where(mergedDesign.Design.DoApplyCrest))
-            if (!respectManual || state.Sources[slot] is not StateSource.Manual)
-                _state.ChangeCrest(state, slot, mergedDesign.Design.DesignData.Crest(slot), mergedDesign.GetSource(slot, source));
-
-        foreach (var parameter in mergedDesign.Design.ApplyParameters.Iterate())
-            if (!respectManual || state.Sources[parameter] is not StateSource.Manual and not StateSource.Pending)
-                _state.ChangeCustomizeParameter(state, parameter, mergedDesign.Design.DesignData.Parameters[parameter], mergedDesign.GetSource(parameter, source));
-
-        foreach (var slot in EquipSlotExtensions.EqdpSlots)
-        {
-            if (mergedDesign.Design.DoApplyEquip(slot))
-            {
-                if (!respectManual || state.Sources[slot, false] is not StateSource.Manual)
-                    _state.ChangeItem(state, slot, mergedDesign.Design.DesignData.Item(slot), mergedDesign.GetSource(slot, false, source));
-            }
-
-            if (mergedDesign.Design.DoApplyStain(slot))
-            {
-                if (!respectManual || state.Sources[slot, true] is not StateSource.Manual)
-                    _state.ChangeStain(state, slot, mergedDesign.Design.DesignData.Stain(slot), mergedDesign.GetSource(slot, true, source));
-            }
-        }
-
-        foreach (var weaponSlot in EquipSlotExtensions.WeaponSlots)
-        {
-            if (mergedDesign.Design.DoApplyStain(weaponSlot))
-            {
-                if (!respectManual || state.Sources[weaponSlot, true] is not StateSource.Manual)
-                    _state.ChangeStain(state, weaponSlot, mergedDesign.Design.DesignData.Stain(weaponSlot), mergedDesign.GetSource(weaponSlot, true, source));
-            }
-
-            if (!mergedDesign.Design.DoApplyEquip(weaponSlot))
-                continue;
-
-            if (respectManual && state.Sources[weaponSlot, false] is StateSource.Manual)
-                continue;
-
-            var currentType = state.ModelData.Item(weaponSlot).Type;
-            if (fromJobChange)
-            {
-                foreach (var (key, (weapon, weaponSource)) in mergedDesign.Weapons)
-                    if (key.ToSlot() == weaponSlot)
-                        _jobChange.TryAdd(key, (weapon, MergedDesign.GetSource(weaponSource, source)));
-                _jobChangeState = state;
-            }
-            else if (mergedDesign.Weapons.TryGetValue(currentType, out var weapon))
-            {
-                _state.ChangeItem(state, weaponSlot, weapon.Item1, MergedDesign.GetSource(weapon.Item2, source));
-            }
-        }
-    }
-
-    private void ReduceEquip(ActorState state, in DesignData design, EquipFlag equipFlags, ref EquipFlag totalEquipFlags, bool respectManual,
-        StateSource source, bool fromJobChange)
-    {
-        equipFlags &= ~totalEquipFlags;
-        if (equipFlags == 0)
-            return;
-
-        foreach (var slot in EquipSlotExtensions.EqdpSlots)
-        {
-            var flag = slot.ToFlag();
-            if (equipFlags.HasFlag(flag))
-            {
-                var item = design.Item(slot);
-                if (!_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _))
-                {
-                    if (!respectManual || state.Sources[slot, false] is not StateSource.Manual)
-                        _state.ChangeItem(state, slot, item, source);
-                    totalEquipFlags |= flag;
-                }
-            }
-
-            var stainFlag = slot.ToStainFlag();
-            if (equipFlags.HasFlag(stainFlag))
-            {
-                if (!respectManual || state.Sources[slot, true] is not StateSource.Manual)
-                    _state.ChangeStain(state, slot, design.Stain(slot), source);
-                totalEquipFlags |= stainFlag;
-            }
-        }
-
-        if (equipFlags.HasFlag(EquipFlag.Mainhand))
-        {
-            var item        = design.Item(EquipSlot.MainHand);
-            var checkUnlock = !_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _);
-            var checkState  = !respectManual || state.Sources[EquipSlot.MainHand, false] is not StateSource.Manual;
-            if (checkUnlock && checkState)
-            {
-                if (fromJobChange)
-                {
-                    _jobChange.TryAdd(item.Type, (item, source));
-                    _jobChangeState = state;
-                }
-                else if (state.ModelData.Item(EquipSlot.MainHand).Type == item.Type)
-                {
-                    _state.ChangeItem(state, EquipSlot.MainHand, item, source);
-                    totalEquipFlags |= EquipFlag.Mainhand;
-                }
-            }
-        }
-
-        if (equipFlags.HasFlag(EquipFlag.Offhand))
-        {
-            var item        = design.Item(EquipSlot.OffHand);
-            var checkUnlock = !_config.UnlockedItemMode || _itemUnlocks.IsUnlocked(item.Id, out _);
-            var checkState  = !respectManual || state.Sources[EquipSlot.OffHand, false] is not StateSource.Manual;
-            if (checkUnlock && checkState)
-            {
-                if (fromJobChange)
-                {
-                    _jobChange.TryAdd(item.Type, (item, source));
-                    _jobChangeState = state;
-                }
-                else if (state.ModelData.Item(EquipSlot.OffHand).Type == item.Type)
-                {
-                    _state.ChangeItem(state, EquipSlot.OffHand, item, source);
-                    totalEquipFlags |= EquipFlag.Offhand;
-                }
-            }
-        }
-
-        if (equipFlags.HasFlag(EquipFlag.MainhandStain))
-        {
-            if (!respectManual || state.Sources[EquipSlot.MainHand, true] is not StateSource.Manual)
-                _state.ChangeStain(state, EquipSlot.MainHand, design.Stain(EquipSlot.MainHand), source);
-            totalEquipFlags |= EquipFlag.MainhandStain;
-        }
-
-        if (equipFlags.HasFlag(EquipFlag.OffhandStain))
-        {
-            if (!respectManual || state.Sources[EquipSlot.OffHand, true] is not StateSource.Manual)
-                _state.ChangeStain(state, EquipSlot.OffHand, design.Stain(EquipSlot.OffHand), source);
-            totalEquipFlags |= EquipFlag.OffhandStain;
-        }
-    }
-
-    private void ReduceCustomize(ActorState state, in DesignData design, CustomizeFlag customizeFlags, ref CustomizeFlag totalCustomizeFlags,
-        bool respectManual, StateSource source)
-    {
-        customizeFlags &= ~totalCustomizeFlags;
-        if (customizeFlags == 0)
-            return;
-
-        var           customize = state.ModelData.Customize;
-        CustomizeFlag fixFlags  = 0;
-
-        // Skip anything not human.
-        if (!state.ModelData.IsHuman || !design.IsHuman)
-            return;
-
-        if (customizeFlags.HasFlag(CustomizeFlag.Clan))
-        {
-            if (!respectManual || state.Sources[CustomizeIndex.Clan] is not StateSource.Manual)
-                fixFlags |= _customizations.ChangeClan(ref customize, design.Customize.Clan);
-            customizeFlags      &= ~(CustomizeFlag.Clan | CustomizeFlag.Race);
-            totalCustomizeFlags |= CustomizeFlag.Clan | CustomizeFlag.Race;
-        }
-
-        if (customizeFlags.HasFlag(CustomizeFlag.Gender))
-        {
-            if (!respectManual || state.Sources[CustomizeIndex.Gender] is not StateSource.Manual)
-                fixFlags |= _customizations.ChangeGender(ref customize, design.Customize.Gender);
-            customizeFlags      &= ~CustomizeFlag.Gender;
-            totalCustomizeFlags |= CustomizeFlag.Gender;
-        }
-
-        if (fixFlags != 0)
-            _state.ChangeCustomize(state, customize, fixFlags, source);
-
-        if (customizeFlags.HasFlag(CustomizeFlag.Face))
-        {
-            if (!respectManual || state.Sources[CustomizeIndex.Face] is not StateSource.Manual)
-                _state.ChangeCustomize(state, CustomizeIndex.Face, design.Customize.Face, source);
-            customizeFlags      &= ~CustomizeFlag.Face;
-            totalCustomizeFlags |= CustomizeFlag.Face;
-        }
-
-        var set  = _customizations.Manager.GetSet(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
-        var face = state.ModelData.Customize.Face;
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
-        {
-            var flag = index.ToFlag();
-            if (!customizeFlags.HasFlag(flag))
-                continue;
-
-            var value = design.Customize[index];
-            if (CustomizeService.IsCustomizationValid(set, face, index, value, out var data))
-            {
-                if (data.HasValue && _config.UnlockedItemMode && !_customizeUnlocks.IsUnlocked(data.Value, out _))
-                    continue;
-
-                if (!respectManual || state.Sources[index] is not StateSource.Manual)
-                    _state.ChangeCustomize(state, index, value, source);
-                totalCustomizeFlags |= flag;
-            }
-        }
-    }
-
-    private void ReduceMeta(ActorState state, in DesignData design, MetaFlag apply, ref MetaFlag totalMetaFlags, bool respectManual, StateSource source)
-    {
-        apply &= ~totalMetaFlags;
-        foreach (var index in MetaExtensions.AllRelevant)
-        {
-            if (!respectManual || state.Sources[index] is not StateSource.Manual)
-                _state.ChangeMeta(state, index, design.GetMeta(index), source);
-            totalMetaFlags |= index.ToFlag();
         }
     }
 

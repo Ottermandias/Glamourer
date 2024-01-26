@@ -121,7 +121,7 @@ public static class ServiceManagerA
     private static ServiceManager AddState(this ServiceManager services)
         => services.AddSingleton<StateManager>()
             .AddSingleton<StateApplier>()
-            .AddSingleton<StateEditor>()
+            .AddSingleton<InternalStateEditor>()
             .AddSingleton<StateListener>()
             .AddSingleton<FunModule>();
 

@@ -4,7 +4,6 @@ using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Glamourer.Automation;
 using Glamourer.Designs;
-using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
@@ -439,7 +438,7 @@ public class DesignPanel(
         {
             var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
             using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-            _state.ApplyDesign(_selector.Selected!, state, StateSource.Manual);
+            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.Manual);
         }
     }
 
@@ -458,7 +457,7 @@ public class DesignPanel(
         {
             var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
             using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-            _state.ApplyDesign(_selector.Selected!, state, StateSource.Manual);
+            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.Manual);
         }
     }
 

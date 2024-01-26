@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
+using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Services;
 using Glamourer.State;
@@ -56,7 +57,7 @@ public partial class GlamourerIpc
         if (!state.ModelData.IsHuman)
             return GlamourerErrorCode.ActorNotHuman;
 
-        _stateManager.ChangeEquip(state, slot, item, stainId, StateSource.Ipc, key);
+        _stateManager.ChangeEquip(state, slot, item, stainId, new ApplySettings(Source: StateSource.Ipc, Key:key));
         return GlamourerErrorCode.Success;
     }
 
@@ -83,7 +84,7 @@ public partial class GlamourerIpc
             if (!state.ModelData.IsHuman)
                 return GlamourerErrorCode.ActorNotHuman;
 
-            _stateManager.ChangeEquip(state, slot, item, stainId, StateSource.Ipc, key);
+            _stateManager.ChangeEquip(state, slot, item, stainId, new ApplySettings(Source: StateSource.Ipc, Key: key));
             found = true;
         }
 

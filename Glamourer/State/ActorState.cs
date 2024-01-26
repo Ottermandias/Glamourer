@@ -1,5 +1,4 @@
 ﻿using Glamourer.Designs;
-using Glamourer.Events;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Dalamud.Game.ClientState.Conditions;

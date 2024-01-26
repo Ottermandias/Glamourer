@@ -44,8 +44,8 @@ public ref struct EquipDrawData(EquipSlot slot, in DesignData designData)
     public static EquipDrawData FromState(StateManager manager, ActorState state, EquipSlot slot)
         => new(slot, state.ModelData)
         {
-            ItemSetter         = i => manager.ChangeItem(state, slot, i, StateSource.Manual),
-            StainSetter        = i => manager.ChangeStain(state, slot, i, StateSource.Manual),
+            ItemSetter         = i => manager.ChangeItem(state, slot, i, ApplySettings.Manual),
+            StainSetter        = i => manager.ChangeStain(state, slot, i, ApplySettings.Manual),
             Locked             = state.IsLocked,
             DisplayApplication = false,
             GameItem           = state.BaseData.Item(slot),

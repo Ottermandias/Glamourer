@@ -139,7 +139,7 @@ public class StateListener : IDisposable
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
     }
 
-    private unsafe void OnCustomizeChange(Model model, ref CustomizeArray customize)
+    private void OnCustomizeChange(Model model, ref CustomizeArray customize)
     {
         if (!model.IsHuman)
             return;
@@ -164,7 +164,7 @@ public class StateListener : IDisposable
                 var model = state.ModelData.Customize;
                 if (customize.Gender != model.Gender || customize.Clan != model.Clan)
                 {
-                    _manager.ChangeCustomize(state, in customize, CustomizeFlagExtensions.AllRelevant, StateSource.Game);
+                    _manager.ChangeEntireCustomize(state, in customize, CustomizeFlagExtensions.All, ApplySettings.Game);
                     return;
                 }
 
@@ -178,7 +178,7 @@ public class StateListener : IDisposable
                         if (newValue != oldValue)
                         {
                             if (set.Validate(index, newValue, out _, model.Face))
-                                _manager.ChangeCustomize(state, index, newValue, StateSource.Game);
+                                _manager.ChangeCustomize(state, index, newValue, ApplySettings.Game);
                             else
                                 customize[index] = oldValue;
                         }
@@ -243,8 +243,8 @@ public class StateListener : IDisposable
             var changed = changedItem.Weapon(stain);
             if (current.Value == changed.Value && state.Sources[slot, false] is not StateSource.Fixed and not StateSource.Ipc)
             {
-                _manager.ChangeItem(state, slot, currentItem, StateSource.Game);
-                _manager.ChangeStain(state, slot, current.Stain, StateSource.Game);
+                _manager.ChangeItem(state, slot, currentItem, ApplySettings.Game);
+                _manager.ChangeStain(state, slot, current.Stain, ApplySettings.Game);
                 switch (slot)
                 {
                     case EquipSlot.MainHand:
@@ -287,12 +287,12 @@ public class StateListener : IDisposable
             case UpdateState.Transformed: break;
             case UpdateState.Change:
                 if (state.Sources[slot, false] is not StateSource.Fixed and not StateSource.Ipc)
-                    _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateSource.Game);
+                    _manager.ChangeItem(state, slot, state.BaseData.Item(slot), ApplySettings.Game);
                 else
                     apply = true;
 
                 if (state.Sources[slot, true] is not StateSource.Fixed and not StateSource.Ipc)
-                    _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateSource.Game);
+                    _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), ApplySettings.Game);
                 else
                     apply = true;
                 break;
@@ -386,12 +386,12 @@ public class StateListener : IDisposable
             case UpdateState.Change:
                 var apply = false;
                 if (state.Sources[slot, false] is not StateSource.Fixed and not StateSource.Ipc)
-                    _manager.ChangeItem(state, slot, state.BaseData.Item(slot), StateSource.Game);
+                    _manager.ChangeItem(state, slot, state.BaseData.Item(slot), ApplySettings.Game);
                 else
                     apply = true;
 
                 if (state.Sources[slot, true] is not StateSource.Fixed and not StateSource.Ipc)
-                    _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), StateSource.Game);
+                    _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), ApplySettings.Game);
                 else
                     apply = true;
 
@@ -420,7 +420,7 @@ public class StateListener : IDisposable
         {
             case UpdateState.Change:
                 if (state.Sources[slot] is not StateSource.Fixed and not StateSource.Ipc)
-                    _manager.ChangeCrest(state, slot, state.BaseData.Crest(slot), StateSource.Game);
+                    _manager.ChangeCrest(state, slot, state.BaseData.Crest(slot), ApplySettings.Game);
                 else
                     value = state.ModelData.Crest(slot);
                 break;
@@ -568,7 +568,7 @@ public class StateListener : IDisposable
             if (state.Sources[MetaIndex.VisorState] is StateSource.Fixed or StateSource.Ipc)
                 value = state.ModelData.IsVisorToggled();
             else
-                _manager.ChangeMeta(state, MetaIndex.VisorState, value, StateSource.Game);
+                _manager.ChangeMetaState(state, MetaIndex.VisorState, value, ApplySettings.Game);
         }
         else
         {
@@ -601,7 +601,7 @@ public class StateListener : IDisposable
             if (state.Sources[MetaIndex.HatState] is StateSource.Fixed or StateSource.Ipc)
                 value = state.ModelData.IsHatVisible();
             else
-                _manager.ChangeMeta(state, MetaIndex.HatState, value, StateSource.Game);
+                _manager.ChangeMetaState(state, MetaIndex.HatState, value, ApplySettings.Game);
         }
         else
         {
@@ -634,7 +634,7 @@ public class StateListener : IDisposable
             if (state.Sources[MetaIndex.WeaponState] is StateSource.Fixed or StateSource.Ipc)
                 value = state.ModelData.IsWeaponVisible();
             else
-                _manager.ChangeMeta(state, MetaIndex.WeaponState, value, StateSource.Game);
+                _manager.ChangeMetaState(state, MetaIndex.WeaponState, value, ApplySettings.Game);
         }
         else
         {
@@ -724,7 +724,7 @@ public class StateListener : IDisposable
         _customizeState = null;
     }
 
-    private unsafe void ApplyParameters(ActorState state, Model model)
+    private void ApplyParameters(ActorState state, Model model)
     {
         if (!model.IsHuman)
             return;
@@ -737,11 +737,11 @@ public class StateListener : IDisposable
             {
                 case StateSource.Game:
                     if (state.BaseData.Parameters.Set(flag, newValue))
-                        _manager.ChangeCustomizeParameter(state, flag, newValue, StateSource.Game);
+                        _manager.ChangeCustomizeParameter(state, flag, newValue, ApplySettings.Game);
                     break;
                 case StateSource.Manual:
                     if (state.BaseData.Parameters.Set(flag, newValue))
-                        _manager.ChangeCustomizeParameter(state, flag, newValue, StateSource.Game);
+                        _manager.ChangeCustomizeParameter(state, flag, newValue, ApplySettings.Game);
                     else if (_config.UseAdvancedParameters)
                         model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;

@@ -11,7 +11,26 @@ public readonly record struct ApplySettings(
     StateSource Source = StateSource.Manual,
     bool RespectManual = false,
     bool FromJobChange = false,
-    bool UseSingleSource = false);
+    bool UseSingleSource = false)
+{
+    public static readonly ApplySettings Manual = new()
+    {
+        Key             = 0,
+        Source          = StateSource.Manual,
+        FromJobChange   = false,
+        RespectManual   = false,
+        UseSingleSource = false,
+    };
+
+    public static readonly ApplySettings Game = new()
+    {
+        Key             = 0,
+        Source          = StateSource.Game,
+        FromJobChange   = false,
+        RespectManual   = false,
+        UseSingleSource = false,
+    };
+}
 
 public interface IDesignEditor
 {

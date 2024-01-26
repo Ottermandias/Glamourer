@@ -12,7 +12,7 @@ using Penumbra.GameData.Enums;
 
 namespace Glamourer.Designs;
 
-public class DesignManager : DesignEditor
+public sealed class DesignManager : DesignEditor
 {
     public readonly  DesignStorage  Designs;
     private readonly HumanModelList _humans;

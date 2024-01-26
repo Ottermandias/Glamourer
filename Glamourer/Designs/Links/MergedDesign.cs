@@ -48,22 +48,4 @@ public sealed class MergedDesign
     public readonly Dictionary<FullEquipType, (EquipItem, StateSource)> Weapons        = new(4);
     public readonly SortedList<Mod, ModSettings>                        AssociatedMods = [];
     public          StateSources                                        Sources        = new();
-
-    public StateSource GetSource(EquipSlot slot, bool stain, StateSource actualSource)
-        => GetSource(Sources[slot, stain], actualSource);
-
-    public StateSource GetSource(CrestFlag slot, StateSource actualSource)
-        => GetSource(Sources[slot], actualSource);
-
-    public StateSource GetSource(CustomizeIndex type, StateSource actualSource)
-        => GetSource(Sources[type], actualSource);
-
-    public StateSource GetSource(MetaIndex index, StateSource actualSource)
-        => GetSource(Sources[index], actualSource);
-
-    public StateSource GetSource(CustomizeParameterFlag flag, StateSource actualSource)
-        => GetSource(Sources[flag], actualSource);
-
-    public static StateSource GetSource(StateSource given, StateSource actualSource)
-        => given is StateSource.Game ? StateSource.Game : actualSource;
 }

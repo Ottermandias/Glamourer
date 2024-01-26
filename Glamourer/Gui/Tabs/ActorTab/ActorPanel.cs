@@ -5,7 +5,6 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Automation;
 using Glamourer.Designs;
-using Glamourer.Events;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Interop;
@@ -61,13 +60,13 @@ public class ActorPanel(
 
         if (_importService.CreateDatTarget(out var dat))
         {
-            _stateManager.ChangeCustomize(_state!, dat.Customize, CustomizeApplicationFlags, StateSource.Manual);
+            _stateManager.ChangeEntireCustomize(_state!, dat.Customize, CustomizeApplicationFlags, ApplySettings.Manual);
             Glamourer.Messager.NotificationMessage($"Applied games .dat file {dat.Description} customizations to {_state.Identifier}.",
                 NotificationType.Success, false);
         }
         else if (_importService.CreateCharaTarget(out var designBase, out var name))
         {
-            _stateManager.ApplyDesign(designBase, _state!, StateSource.Manual);
+            _stateManager.ApplyDesign(_state!, designBase, ApplySettings.Manual);
             Glamourer.Messager.NotificationMessage($"Applied Anamnesis .chara file {name} to {_state.Identifier}.", NotificationType.Success,
                 false);
         }
@@ -139,7 +138,7 @@ public class ActorPanel(
             return;
 
         if (_customizationDrawer.Draw(_state!.ModelData.Customize, _state.IsLocked, _lockedRedraw))
-            _stateManager.ChangeCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, StateSource.Manual);
+            _stateManager.ChangeEntireCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, ApplySettings.Manual);
 
         EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(MetaIndex.Wetness, _stateManager, _state));
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
@@ -159,7 +158,7 @@ public class ActorPanel(
             var data = EquipDrawData.FromState(_stateManager, _state!, slot);
             _equipmentDrawer.DrawEquip(data);
             if (usedAllStain)
-                _stateManager.ChangeStain(_state, slot, newAllStain, StateSource.Manual);
+                _stateManager.ChangeStain(_state, slot, newAllStain, ApplySettings.Manual);
         }
 
         var mainhand = EquipDrawData.FromState(_stateManager, _state, EquipSlot.MainHand);
@@ -316,9 +315,9 @@ public class ActorPanel(
     private void SaveDesignOpen()
     {
         ImGui.OpenPopup("Save as Design");
-        _newName                                                     = _state!.Identifier.ToName();
+        _newName = _state!.Identifier.ToName();
         var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
-        _newDesign                                                   = _converter.Convert(_state, applyGear, applyCustomize, applyCrest, applyParameters);
+        _newDesign = _converter.Convert(_state, applyGear, applyCustomize, applyCrest, applyParameters);
     }
 
     private void SaveDesignDrawPopup()
@@ -340,7 +339,7 @@ public class ActorPanel(
             var text = ImGui.GetClipboardText();
             var design = _converter.FromBase64(text, applyCustomize, applyGear, out _)
              ?? throw new Exception("The clipboard did not contain valid data.");
-            _stateManager.ApplyDesign(design, _state!, StateSource.Manual);
+            _stateManager.ApplyDesign(_state!, design, ApplySettings.Manual);
         }
         catch (Exception ex)
         {
@@ -395,8 +394,8 @@ public class ActorPanel(
 
         var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
-            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize, applyCrest, applyParameters), state,
-                StateSource.Manual);
+            _stateManager.ApplyDesign(state, _converter.Convert(_state!, applyGear, applyCustomize, applyCrest, applyParameters),
+                ApplySettings.Manual);
     }
 
     private void DrawApplyToTarget()
@@ -413,7 +412,7 @@ public class ActorPanel(
 
         var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
-            _stateManager.ApplyDesign(_converter.Convert(_state!, applyGear, applyCustomize, applyCrest, applyParameters), state,
-                StateSource.Manual);
+            _stateManager.ApplyDesign(state, _converter.Convert(_state!, applyGear, applyCustomize, applyCrest, applyParameters),
+                ApplySettings.Manual);
     }
 }

@@ -1,5 +1,4 @@
 ﻿using Glamourer.Designs;
-using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -275,6 +274,47 @@ public class StateApplier(
         if (apply)
             ChangeParameters(data, flags, state.ModelData.Parameters, state.IsLocked);
         return data;
+    }
+
+    /// <summary> Apply the entire state of an actor to all relevant actors, either via immediate redraw or piecewise. </summary>
+    /// <param name="state"> The state to apply. </param>
+    /// <param name="redraw"> Whether a redraw should be forced. </param>
+    /// <param name="withLock"> Whether a temporary lock should be applied for the redraw. </param>
+    /// <returns> The actor data for the actors who got changed. </returns>
+    public ActorData ApplyAll(ActorState state, bool redraw, bool withLock)
+    {
+        var actors = ChangeMetaState(state, MetaIndex.Wetness, true);
+        if (redraw)
+        {
+            if (withLock)
+                state.TempLock();
+            ForceRedraw(actors);
+        }
+        else
+        {
+            ChangeCustomize(actors, state.ModelData.Customize);
+            foreach (var slot in EquipSlotExtensions.EqdpSlots)
+            {
+                ChangeArmor(actors, slot, state.ModelData.Armor(slot), state.Sources[slot, false] is not StateSource.Ipc,
+                    state.ModelData.IsHatVisible());
+            }
+
+            var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
+            ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
+            var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? actors.OnlyGPose() : actors;
+            ChangeOffhand(offhandActors, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
+        }
+
+        if (state.ModelData.IsHuman)
+        {
+            ChangeMetaState(actors, MetaIndex.HatState,    state.ModelData.IsHatVisible());
+            ChangeMetaState(actors, MetaIndex.WeaponState, state.ModelData.IsWeaponVisible());
+            ChangeMetaState(actors, MetaIndex.VisorState,  state.ModelData.IsVisorToggled());
+            ChangeCrests(actors, state.ModelData.CrestVisibility);
+            ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters, state.IsLocked);
+        }
+
+        return actors;
     }
 
     private ActorData GetData(ActorState state)

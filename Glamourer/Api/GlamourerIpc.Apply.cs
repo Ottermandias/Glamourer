@@ -130,7 +130,7 @@ public partial class GlamourerIpc
 
             if ((hasModelId || state.ModelData.ModelId == 0) && state.CanUnlock(lockCode))
             {
-                _stateManager.ApplyDesign(design, state, StateSource.Ipc, lockCode);
+                _stateManager.ApplyDesign(state, design, new ApplySettings(Source:StateSource.Ipc, Key:lockCode));
                 state.Lock(lockCode);
             }
         }
