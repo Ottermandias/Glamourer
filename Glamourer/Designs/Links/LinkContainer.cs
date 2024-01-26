@@ -57,29 +57,45 @@ public sealed class LinkContainer : List<DesignLink>
         return true;
     }
 
+    public bool ChangeApplicationRules(int idx, LinkOrder order, ApplicationType type, out ApplicationType old)
+    {
+        var list = order switch
+        {
+            LinkOrder.Before => Before,
+            LinkOrder.After  => After,
+            _                => throw new ArgumentException("Invalid link order."),
+        };
+        old = list[idx].Type;
+        if (idx < 0 || idx >= list.Count || old == type)
+            return false;
+
+        list[idx] = list[idx] with { Type = type };
+        return true;
+    }
+
     public static bool CanAddLink(Design parent, Design child, LinkOrder order, out string error)
     {
         if (parent == child)
         {
-            error = $"Can not link {parent.Identifier} with itself.";
+            error = $"Can not link {parent.Incognito} with itself.";
             return false;
         }
 
         if (parent.Links.Contains(child))
         {
-            error = $"Design {parent.Identifier} already contains a direct link to {child.Identifier}.";
+            error = $"Design {parent.Incognito} already contains a direct link to {child.Incognito}.";
             return false;
         }
 
         if (GetAllLinks(parent).Any(l => l.Link.Link == child && l.Order != order))
         {
-            error = $"Adding {child.Identifier} to {parent.Identifier}s links would create a circle, the parent already links to the child in the opposite direction.";
+            error = $"Adding {child.Incognito} to {parent.Incognito}s links would create a circle, the parent already links to the child in the opposite direction.";
             return false;
         }
 
         if (GetAllLinks(child).Any(l => l.Link.Link == parent && l.Order == order))
         {
-            error = $"Adding {child.Identifier} to {parent.Identifier}s links would create a circle, the child already links to the parent in the opposite direction.";
+            error = $"Adding {child.Incognito} to {parent.Incognito}s links would create a circle, the child already links to the parent in the opposite direction.";
             return false;
         }
 
@@ -161,7 +177,7 @@ public sealed class LinkContainer : List<DesignLink>
         var after = new JArray();
         foreach (var link in After)
         {
-            before.Add(new JObject
+            after.Add(new JObject
             {
                 ["Design"] = link.Link.Identifier,
                 ["Type"]   = (uint)link.Type,

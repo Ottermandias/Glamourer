@@ -303,7 +303,7 @@ public class DesignPanel(
         {
             var apply = bigChange ? ((MetaFlag)flags).HasFlag(index.ToFlag()) : _selector.Selected!.DoApplyMeta(index);
             if (ImGui.Checkbox(label, ref apply) || bigChange)
-                _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.HatState, apply);
+                _manager.ChangeApplyMeta(_selector.Selected!, index, apply);
         }
     }
 

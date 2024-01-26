@@ -18,6 +18,16 @@ public enum ApplicationType : byte
 
 public static class ApplicationTypeExtensions
 {
+    public static readonly IReadOnlyList<(ApplicationType, string)> Types = new[]
+    {
+        (ApplicationType.Customizations,
+            "Apply all customization changes that are enabled in this design and that are valid in a fixed design and for the given race and gender."),
+        (ApplicationType.Armor, "Apply all armor piece changes that are enabled in this design and that are valid in a fixed design."),
+        (ApplicationType.Accessories, "Apply all accessory changes that are enabled in this design and that are valid in a fixed design."),
+        (ApplicationType.GearCustomization, "Apply all dye and crest changes that are enabled in this design."),
+        (ApplicationType.Weapons, "Apply all weapon changes that are enabled in this design and that are valid with the current weapon worn."),
+    };
+
     public static (EquipFlag Equip, CustomizeFlag Customize, CrestFlag Crest, CustomizeParameterFlag Parameters, MetaFlag Meta) ApplyWhat(
         this ApplicationType type, DesignBase? design)
     {

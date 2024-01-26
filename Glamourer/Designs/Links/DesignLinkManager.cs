@@ -56,6 +56,17 @@ public sealed class DesignLinkManager : IService, IDisposable
         _event.Invoke(DesignChanged.Type.ChangedLink, parent, null);
     }
 
+    public void ChangeApplicationType(Design parent, int idx, LinkOrder order, ApplicationType applicationType)
+    {
+        applicationType &= ApplicationType.All;
+        if (!parent.Links.ChangeApplicationRules(idx, order, applicationType, out var old))
+            return;
+
+        _saveService.QueueSave(parent);
+        Glamourer.Log.Debug($"Changed link application type from {old} to {applicationType} for design link {order} {idx + 1} in design {parent.Identifier}.");
+        _event.Invoke(DesignChanged.Type.ChangedLink, parent, null);
+    }
+
     private void OnDesignChanged(DesignChanged.Type type, Design deletedDesign, object? _)
     {
         if (type is not DesignChanged.Type.Deleted)
@@ -63,12 +74,12 @@ public sealed class DesignLinkManager : IService, IDisposable
 
         foreach (var design in _storage)
         {
-            if (design.Links.Remove(deletedDesign))
-            {
-                design.LastEdit = DateTimeOffset.UtcNow;
-                Glamourer.Log.Debug($"Removed {deletedDesign.Identifier} from {design.Identifier} links due to deletion.");
-                _saveService.QueueSave(design);
-            }
+            if (!design.Links.Remove(deletedDesign))
+                continue;
+
+            design.LastEdit = DateTimeOffset.UtcNow;
+            Glamourer.Log.Debug($"Removed {deletedDesign.Identifier} from {design.Identifier} links due to deletion.");
+            _saveService.QueueSave(design);
         }
     }
 }

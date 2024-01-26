@@ -15,4 +15,5 @@ public enum LinkOrder : byte
     Self,
     After,
     Before,
+    None,
 };
