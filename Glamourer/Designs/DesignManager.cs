@@ -301,7 +301,7 @@ public sealed class DesignManager : DesignEditor
     }
 
     /// <summary> Change whether to apply a specific equipment piece. </summary>
-    public void ChangeApplyEquip(Design design, EquipSlot slot, bool value)
+    public void ChangeApplyItem(Design design, EquipSlot slot, bool value)
     {
         if (!design.SetApplyEquip(slot, value))
             return;

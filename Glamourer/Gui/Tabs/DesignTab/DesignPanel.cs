@@ -256,7 +256,7 @@ public class DesignPanel(
                     {
                         var apply = bigChange ? ((EquipFlag)flags).HasFlag(slot.ToFlag()) : _selector.Selected!.DoApplyEquip(slot);
                         if (ImGui.Checkbox($"Apply {slot.ToName()}", ref apply) || bigChange)
-                            _manager.ChangeApplyEquip(_selector.Selected!, slot, apply);
+                            _manager.ChangeApplyItem(_selector.Selected!, slot, apply);
                     }
             }
 

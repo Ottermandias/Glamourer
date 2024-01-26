@@ -39,9 +39,7 @@ public class StateEditor(
     /// <inheritdoc/>
     public void ChangeCustomize(object data, CustomizeIndex idx, CustomizeValue value, ApplySettings settings)
     {
-        if (data is not ActorState state)
-            return;
-
+        var state = (ActorState)data;
         if (!Editor.ChangeCustomize(state, idx, value, settings.Source, out var old, settings.Key))
             return;
 
@@ -54,9 +52,7 @@ public class StateEditor(
     /// <inheritdoc/>
     public void ChangeEntireCustomize(object data, in CustomizeArray customizeInput, CustomizeFlag apply, ApplySettings settings)
     {
-        if (data is not ActorState state)
-            return;
-
+        var state = (ActorState)data;
         if (!Editor.ChangeHumanCustomize(state, customizeInput, apply, _ => settings.Source, out var old, out var applied, settings.Key))
             return;
 
@@ -69,9 +65,7 @@ public class StateEditor(
     /// <inheritdoc/>
     public void ChangeItem(object data, EquipSlot slot, EquipItem item, ApplySettings settings = default)
     {
-        if (data is not ActorState state)
-            return;
-
+        var state = (ActorState)data;
         if (!Editor.ChangeItem(state, slot, item, settings.Source, out var old, settings.Key))
             return;
 
@@ -103,9 +97,7 @@ public class StateEditor(
                 return;
         }
 
-        if (data is not ActorState state)
-            return;
-
+        var state = (ActorState)data;
         if (!Editor.ChangeEquip(state, slot, item ?? state.ModelData.Item(slot), stain ?? state.ModelData.Stain(slot), settings.Source,
                 out var old, out var oldStain, settings.Key))
             return;
@@ -128,9 +120,7 @@ public class StateEditor(
     /// <inheritdoc/>
     public void ChangeStain(object data, EquipSlot slot, StainId stain, ApplySettings settings)
     {
-        if (data is not ActorState state)
-            return;
-
+        var state = (ActorState)data;
         if (!Editor.ChangeStain(state, slot, stain, settings.Source, out var old, settings.Key))
             return;
 
@@ -143,9 +133,7 @@ public class StateEditor(
     /// <inheritdoc/>
     public void ChangeCrest(object data, CrestFlag slot, bool crest, ApplySettings settings)
     {
-        if (data is not ActorState state)
-            return;
-
+        var state = (ActorState)data;
         if (!Editor.ChangeCrest(state, slot, crest, settings.Source, out var old, settings.Key))
             return;
 
@@ -178,9 +166,7 @@ public class StateEditor(
     /// <inheritdoc/>
     public void ChangeMetaState(object data, MetaIndex index, bool value, ApplySettings settings)
     {
-        if (data is not ActorState state)
-            return;
-
+        var state = (ActorState)data;
         if (!Editor.ChangeMetaState(state, index, value, settings.Source, out var old, settings.Key))
             return;
 
@@ -193,9 +179,7 @@ public class StateEditor(
     /// <inheritdoc/>
     public void ApplyDesign(object data, MergedDesign mergedDesign, ApplySettings settings)
     {
-        if (data is not ActorState state)
-            return;
-
+        var state = (ActorState)data;
         if (!Editor.ChangeModelId(state, mergedDesign.Design.DesignData.ModelId, mergedDesign.Design.DesignData.Customize,
                 mergedDesign.Design.GetDesignDataRef().GetEquipmentPtr(), settings.Source, out var oldModelId, settings.Key))
             return;

@@ -2,6 +2,7 @@ using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Services;
+using Glamourer.State;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -22,7 +23,7 @@ public class DesignEditor(
     protected readonly Configuration                Config         = config;
     protected readonly Dictionary<Guid, DesignData> UndoStore      = [];
 
-    private bool _forceFullItemOff = false;
+    private bool _forceFullItemOff;
 
     /// <summary> Whether an Undo for the given design is possible. </summary>
     public bool CanUndo(Design? design)
@@ -31,11 +32,8 @@ public class DesignEditor(
     /// <inheritdoc/>
     public void ChangeCustomize(object data, CustomizeIndex idx, CustomizeValue value, ApplySettings _ = default)
     {
-        if (data is not Design design)
-            return;
-
+        var design = (Design)data;
         var oldValue = design.DesignData.Customize[idx];
-
         switch (idx)
         {
             case CustomizeIndex.Race:
@@ -80,9 +78,7 @@ public class DesignEditor(
     /// <inheritdoc/>
     public void ChangeEntireCustomize(object data, in CustomizeArray customize, CustomizeFlag apply, ApplySettings _ = default)
     {
-        if (data is not Design design)
-            return;
-
+        var design = (Design)data;
         var (newCustomize, applied, changed) = Customizations.Combine(design.DesignData.Customize, customize, apply, true);
         if (changed == 0)
             return;
@@ -98,9 +94,7 @@ public class DesignEditor(
     /// <inheritdoc/>
     public void ChangeCustomizeParameter(object data, CustomizeParameterFlag flag, CustomizeParameterValue value, ApplySettings _ = default)
     {
-        if (data is not Design design)
-            return;
-
+        var design = (Design)data;
         var old = design.DesignData.Parameters[flag];
         if (!design.GetDesignDataRef().Parameters.Set(flag, value))
             return;
@@ -115,9 +109,7 @@ public class DesignEditor(
     /// <inheritdoc/>
     public void ChangeItem(object data, EquipSlot slot, EquipItem item, ApplySettings _ = default)
     {
-        if (data is not Design design)
-            return;
-
+        var design = (Design)data;
         switch (slot)
         {
             case EquipSlot.MainHand:
@@ -176,9 +168,7 @@ public class DesignEditor(
     /// <inheritdoc/>
     public void ChangeStain(object data, EquipSlot slot, StainId stain, ApplySettings _ = default)
     {
-        if (data is not Design design)
-            return;
-
+        var design = (Design)data;
         if (Items.ValidateStain(stain, out var _, false).Length > 0)
             return;
 
@@ -204,9 +194,7 @@ public class DesignEditor(
     /// <inheritdoc/>
     public void ChangeCrest(object data, CrestFlag slot, bool crest, ApplySettings _ = default)
     {
-        if (data is not Design design)
-            return;
-
+        var design   = (Design)data;
         var oldCrest = design.DesignData.Crest(slot);
         if (!design.GetDesignDataRef().SetCrest(slot, crest))
             return;
@@ -220,9 +208,7 @@ public class DesignEditor(
     /// <inheritdoc/>
     public void ChangeMetaState(object data, MetaIndex metaIndex, bool value, ApplySettings _ = default)
     {
-        if (data is not Design design)
-            return;
-
+        var design = (Design)data;
         if (!design.GetDesignDataRef().SetMeta(metaIndex, value))
             return;
 
@@ -239,9 +225,7 @@ public class DesignEditor(
     /// <inheritdoc/>
     public void ApplyDesign(object data, DesignBase other, ApplySettings _ = default)
     {
-        if (data is not Design design)
-            return;
-
+        var design = (Design)data;
         UndoStore[design.Identifier] = design.DesignData;
         foreach (var index in MetaExtensions.AllRelevant.Where(other.DoApplyMeta))
             design.GetDesignDataRef().SetMeta(index, other.DesignData.GetMeta(index));
@@ -269,7 +253,7 @@ public class DesignEditor(
     }
 
     /// <summary> Change a mainhand weapon and either fix or apply appropriate offhand and potentially gauntlets. </summary>
-    private bool ChangeMainhandPeriphery(Design design, EquipItem currentMain, EquipItem currentOff, EquipItem newMain, out EquipItem? newOff,
+    private bool ChangeMainhandPeriphery(DesignBase design, EquipItem currentMain, EquipItem currentOff, EquipItem newMain, out EquipItem? newOff,
         out EquipItem? newGauntlets)
     {
         newOff       = null;
