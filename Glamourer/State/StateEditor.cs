@@ -15,7 +15,8 @@ public class StateEditor(
     StateChanged stateChanged,
     JobChangeState jobChange,
     Configuration config,
-    ItemManager items) : IDesignEditor
+    ItemManager items,
+    DesignMerger merger) : IDesignEditor
 {
     protected readonly InternalStateEditor Editor       = editor;
     protected readonly StateApplier        Applier      = applier;
@@ -293,12 +294,19 @@ public class StateEditor(
     }
 
     public void ApplyDesign(object data, DesignBase design, ApplySettings settings)
-        => ApplyDesign(data, new MergedDesign(design), settings with
+    {
+        var merged = settings.MergeLinks && design is Design d
+            ? merger.Merge(d.AllLinks, ((ActorState)data).ModelData, false, false)
+            : new MergedDesign(design);
+
+        ApplyDesign(data, merged, settings with
         {
             FromJobChange = false,
             RespectManual = false,
             UseSingleSource = true,
         });
+    }
+
 
     /// <summary> Apply offhand item and potentially gauntlets if configured. </summary>
     private void ApplyMainhandPeriphery(ActorState state, EquipItem? newMainhand, ApplySettings settings)

@@ -438,7 +438,7 @@ public class DesignPanel(
         {
             var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
             using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.Manual);
+            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.Manual with { MergeLinks = true });
         }
     }
 
@@ -457,7 +457,7 @@ public class DesignPanel(
         {
             var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
             using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.Manual);
+            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.Manual with {MergeLinks = true});
         }
     }
 

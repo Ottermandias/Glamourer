@@ -262,7 +262,8 @@ public sealed class AutoDesignApplier : IDisposable
         if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
             return;
 
-        var mergedDesign = _designMerger.Merge(set.Designs.Where(d => d.IsActive(actor)).Select(d => ((DesignBase?)d.Design, d.Type)),
+        var mergedDesign = _designMerger.Merge(
+            set.Designs.Where(d => d.IsActive(actor)).SelectMany(d => d.Design?.AllLinks ?? [(d.Design, d.Type)]),
             state.ModelData, true, false);
         _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false));
     }

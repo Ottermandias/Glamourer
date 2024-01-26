@@ -1,5 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Glamourer.Designs;
+using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;
@@ -21,8 +22,9 @@ public sealed class StateManager(
     HumanModelList _humans,
     IClientState _clientState,
     Configuration config,
-    JobChangeState jobChange)
-    : StateEditor(editor, applier, @event, jobChange, config, items), IReadOnlyDictionary<ActorIdentifier, ActorState>
+    JobChangeState jobChange,
+    DesignMerger merger)
+    : StateEditor(editor, applier, @event, jobChange, config, items, merger), IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
     private readonly Dictionary<ActorIdentifier, ActorState> _states = [];
 

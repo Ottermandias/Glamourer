@@ -11,7 +11,8 @@ public readonly record struct ApplySettings(
     StateSource Source = StateSource.Manual,
     bool RespectManual = false,
     bool FromJobChange = false,
-    bool UseSingleSource = false)
+    bool UseSingleSource = false,
+    bool MergeLinks = false)
 {
     public static readonly ApplySettings Manual = new()
     {
@@ -20,6 +21,7 @@ public readonly record struct ApplySettings(
         FromJobChange   = false,
         RespectManual   = false,
         UseSingleSource = false,
+        MergeLinks      = false,
     };
 
     public static readonly ApplySettings Game = new()
@@ -29,6 +31,7 @@ public readonly record struct ApplySettings(
         FromJobChange   = false,
         RespectManual   = false,
         UseSingleSource = false,
+        MergeLinks      = false,
     };
 }
 

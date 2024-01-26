@@ -46,6 +46,9 @@ public sealed class Design : DesignBase, ISavable
     public string Incognito
         => Identifier.ToString()[..8];
 
+    public IEnumerable<(DesignBase? Design, ApplicationType Flags)> AllLinks
+        => LinkContainer.GetAllLinks(this).Select(t => ((DesignBase?)t.Link.Link, t.Link.Type));
+
     #endregion
 
     #region Serialization

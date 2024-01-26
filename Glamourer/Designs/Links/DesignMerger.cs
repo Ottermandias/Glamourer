@@ -15,6 +15,9 @@ public class DesignMerger(
     ItemUnlockManager _itemUnlocks,
     CustomizeUnlockManager _customizeUnlocks) : IService
 {
+    public MergedDesign Merge(LinkContainer designs, in DesignData baseRef, bool respectOwnership, bool modAssociations)
+        => Merge(designs.Select(d => ((DesignBase?) d.Link, d.Type)), baseRef, respectOwnership, modAssociations);
+
     public MergedDesign Merge(IEnumerable<(DesignBase?, ApplicationType)> designs, in DesignData baseRef, bool respectOwnership,
         bool modAssociations)
     {
