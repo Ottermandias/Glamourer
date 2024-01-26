@@ -1,4 +1,5 @@
-﻿using Dalamud.Hooking;
+﻿using Dalamud.Game;
+using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
@@ -8,6 +9,8 @@ using Glamourer.State;
 using OtterGui.Classes;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Files;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop.Material;
@@ -54,6 +57,31 @@ public sealed unsafe class PrepareColorSet
 
         return _task.Result.Original(characterBase, material, stainId);
     }
+
+    public static MtrlFile.ColorTable GetColorTable(CharacterBase* characterBase, MaterialResourceHandle* material, StainId stainId)
+    {
+        var table = new MtrlFile.ColorTable();
+        characterBase->ReadStainingTemplate(material, stainId.Id, (Half*)(&table));
+        return table;
+    }
+
+    public static bool TryGetColorTable(Model model, byte slotIdx, out MtrlFile.ColorTable table)
+    {
+        var table2 = new MtrlFile.ColorTable();
+        if (!model.IsCharacterBase || slotIdx < model.AsCharacterBase->SlotCount)
+            return false;
+
+        var resource = (MaterialResourceHandle*)model.AsCharacterBase->Materials[slotIdx];
+        var stain = model.AsCharacterBase->GetModelType() switch
+        {
+            CharacterBase.ModelType.Human  => model.GetArmor(EquipSlotExtensions.ToEquipSlot(slotIdx)).Stain,
+            CharacterBase.ModelType.Weapon => (StainId)model.AsWeapon->ModelUnknown,
+            _                              => (StainId)0,
+        };
+        model.AsCharacterBase->ReadStainingTemplate(resource, stain.Id, (Half*)(&table2));
+        table = table2;
+        return true;
+    }
 }
 
 public sealed unsafe class MaterialManager : IRequiredService, IDisposable
@@ -85,6 +113,9 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         var (slotId, materialId) = FindMaterial(characterBase, material);
         Glamourer.Log.Information(
             $" Triggered with 0x{(nint)characterBase:X} 0x{(nint)material:X} {stain.Id} --- Actor: 0x{actor.Address:X} Slot: {slotId} Material: {materialId} DrawObject: {type}.");
+        var table = PrepareColorSet.GetColorTable(characterBase, material, stain);
+        Glamourer.Log.Information($"{table[15].Diffuse}");
+
         if (!validType
          || slotId == byte.MaxValue
          || !actor.Identifier(_actors, out var identifier)
