@@ -2,6 +2,7 @@ using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Penumbra.GameData.Enums;
@@ -16,7 +17,8 @@ public class StateEditor(
     JobChangeState jobChange,
     Configuration config,
     ItemManager items,
-    DesignMerger merger) : IDesignEditor
+    DesignMerger merger,
+    ModSettingApplier modApplier) : IDesignEditor
 {
     protected readonly InternalStateEditor Editor       = editor;
     protected readonly StateApplier        Applier      = applier;
@@ -181,6 +183,7 @@ public class StateEditor(
     public void ApplyDesign(object data, MergedDesign mergedDesign, ApplySettings settings)
     {
         var state = (ActorState)data;
+        modApplier.HandleStateApplication(state, mergedDesign);
         if (!Editor.ChangeModelId(state, mergedDesign.Design.DesignData.ModelId, mergedDesign.Design.DesignData.Customize,
                 mergedDesign.Design.GetDesignDataRef().GetEquipmentPtr(), settings.Source, out var oldModelId, settings.Key))
             return;
@@ -294,7 +297,7 @@ public class StateEditor(
     public void ApplyDesign(object data, DesignBase design, ApplySettings settings)
     {
         var merged = settings.MergeLinks && design is Design d
-            ? merger.Merge(d.AllLinks, ((ActorState)data).ModelData, false, false)
+            ? merger.Merge(d.AllLinks, ((ActorState)data).ModelData, false, Config.AlwaysApplyAssociatedMods)
             : new MergedDesign(design);
 
         ApplyDesign(data, merged, settings with

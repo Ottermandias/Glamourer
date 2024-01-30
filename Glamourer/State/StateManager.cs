@@ -4,6 +4,7 @@ using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Penumbra.GameData.Actors;
@@ -23,8 +24,9 @@ public sealed class StateManager(
     IClientState _clientState,
     Configuration config,
     JobChangeState jobChange,
-    DesignMerger merger)
-    : StateEditor(editor, applier, @event, jobChange, config, items, merger), IReadOnlyDictionary<ActorIdentifier, ActorState>
+    DesignMerger merger,
+    ModSettingApplier modApplier)
+    : StateEditor(editor, applier, @event, jobChange, config, items, merger, modApplier), IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
     private readonly Dictionary<ActorIdentifier, ActorState> _states = [];
 

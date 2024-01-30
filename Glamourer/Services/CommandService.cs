@@ -33,11 +33,11 @@ public class CommandService : IDisposable
     private readonly DesignConverter   _converter;
     private readonly DesignFileSystem  _designFileSystem;
     private readonly Configuration     _config;
-    private readonly PenumbraService   _penumbra;
+    private readonly ModSettingApplier _modApplier;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
-        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, PenumbraService penumbra)
+        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -51,7 +51,7 @@ public class CommandService : IDisposable
         _designFileSystem  = designFileSystem;
         _autoDesignManager = autoDesignManager;
         _config            = config;
-        _penumbra          = penumbra;
+        _modApplier        = modApplier;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -440,19 +440,10 @@ public class CommandService : IDisposable
         if (!applyMods || design is not Design d)
             return;
 
-        var collection = _penumbra.GetActorCollection(actor);
-        if (collection.Length <= 0)
-            return;
+        var (messages, appliedMods, collection) = _modApplier.ApplyModSettings(d.AssociatedMods, actor);
 
-        var appliedMods = 0;
-        foreach (var (mod, setting) in d.AssociatedMods)
-        {
-            var message = _penumbra.SetMod(mod, setting, collection);
-            if (message.Length > 0)
-                Glamourer.Messager.Chat.Print($"Error applying mod settings: {message}");
-            else
-                ++appliedMods;
-        }
+        foreach (var message in messages)
+            Glamourer.Messager.Chat.Print($"Error applying mod settings: {message}");
 
         if (appliedMods > 0)
             Glamourer.Messager.Chat.Print($"Applied {appliedMods} mod settings to {collection}.");
