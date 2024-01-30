@@ -118,8 +118,7 @@ public class StateApplier(
         // If the source is not IPC we do not want to apply restrictions.
         var data = GetData(state);
         if (apply)
-            ChangeArmor(data, slot, state.ModelData.Armor(slot), state.Sources[slot, false] is not StateSource.Ipc,
-                state.ModelData.IsHatVisible());
+            ChangeArmor(data, slot, state.ModelData.Armor(slot), !state.Sources[slot, false].IsIpc(), state.ModelData.IsHatVisible());
 
         return data;
     }
@@ -267,7 +266,7 @@ public class StateApplier(
             actor.Model.ApplyParameterData(flags, values);
     }
 
-    /// <inheritdoc cref="ChangeParameters(ActorData,CustomizeParameterFlag,in CustomizeParameterData)"/>
+    /// <inheritdoc cref="ChangeParameters(ActorData,CustomizeParameterFlag,in CustomizeParameterData,bool)"/>
     public ActorData ChangeParameters(ActorState state, CustomizeParameterFlag flags, bool apply)
     {
         var data = GetData(state);
@@ -294,10 +293,7 @@ public class StateApplier(
         {
             ChangeCustomize(actors, state.ModelData.Customize);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            {
-                ChangeArmor(actors, slot, state.ModelData.Armor(slot), state.Sources[slot, false] is not StateSource.Ipc,
-                    state.ModelData.IsHatVisible());
-            }
+                ChangeArmor(actors, slot, state.ModelData.Armor(slot), !state.Sources[slot, false].IsIpc(), state.ModelData.IsHatVisible());
 
             var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
             ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));

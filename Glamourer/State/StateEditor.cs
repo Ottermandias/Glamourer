@@ -31,7 +31,7 @@ public class StateEditor(
         if (!Editor.ChangeModelId(state, modelId, customize, equipData, source, out var old, key))
             return;
 
-        var actors = Applier.ForceRedraw(state, source is StateSource.Manual or StateSource.Ipc);
+        var actors = Applier.ForceRedraw(state, source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set model id in state {state.Identifier.Incognito(null)} from {old} to {modelId}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.Model, source, state, actors, (old, modelId));
@@ -44,7 +44,7 @@ public class StateEditor(
         if (!Editor.ChangeCustomize(state, idx, value, settings.Source, out var old, settings.Key))
             return;
 
-        var actors = Applier.ChangeCustomize(state, settings.Source is StateSource.Manual or StateSource.Ipc);
+        var actors = Applier.ChangeCustomize(state, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {idx.ToDefaultName()} customizations in state {state.Identifier.Incognito(null)} from {old.Value} to {value.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.Customize, settings.Source, state, actors, (old, value, idx));
@@ -57,7 +57,7 @@ public class StateEditor(
         if (!Editor.ChangeHumanCustomize(state, customizeInput, apply, _ => settings.Source, out var old, out var applied, settings.Key))
             return;
 
-        var actors = Applier.ChangeCustomize(state, settings.Source is StateSource.Manual or StateSource.Ipc);
+        var actors = Applier.ChangeCustomize(state, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {applied} customizations in state {state.Identifier.Incognito(null)} from {old} to {customizeInput}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.EntireCustomize, settings.Source, state, actors, (old, applied));
@@ -72,8 +72,8 @@ public class StateEditor(
 
         var type = slot.ToIndex() < 10 ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
         var actors = type is StateChanged.Type.Equip
-            ? Applier.ChangeArmor(state, slot, settings.Source is StateSource.Manual or StateSource.Ipc)
-            : Applier.ChangeWeapon(state, slot, settings.Source is StateSource.Manual or StateSource.Ipc,
+            ? Applier.ChangeArmor(state, slot, settings.Source.RequiresChange())
+            : Applier.ChangeWeapon(state, slot, settings.Source.RequiresChange(),
                 item.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
 
         if (slot is EquipSlot.MainHand)
@@ -105,8 +105,8 @@ public class StateEditor(
 
         var type = slot.ToIndex() < 10 ? StateChanged.Type.Equip : StateChanged.Type.Weapon;
         var actors = type is StateChanged.Type.Equip
-            ? Applier.ChangeArmor(state, slot, settings.Source is StateSource.Manual or StateSource.Ipc)
-            : Applier.ChangeWeapon(state, slot, settings.Source is StateSource.Manual or StateSource.Ipc,
+            ? Applier.ChangeArmor(state, slot, settings.Source.RequiresChange())
+            : Applier.ChangeWeapon(state, slot, settings.Source.RequiresChange(),
                 item!.Value.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
 
         if (slot is EquipSlot.MainHand)
@@ -125,7 +125,7 @@ public class StateEditor(
         if (!Editor.ChangeStain(state, slot, stain, settings.Source, out var old, settings.Key))
             return;
 
-        var actors = Applier.ChangeStain(state, slot, settings.Source is StateSource.Manual or StateSource.Ipc);
+        var actors = Applier.ChangeStain(state, slot, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old.Id} to {stain.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.Stain, settings.Source, state, actors, (old, stain, slot));
@@ -138,7 +138,7 @@ public class StateEditor(
         if (!Editor.ChangeCrest(state, slot, crest, settings.Source, out var old, settings.Key))
             return;
 
-        var actors = Applier.ChangeCrests(state, settings.Source is StateSource.Manual or StateSource.Ipc);
+        var actors = Applier.ChangeCrests(state, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {slot.ToLabel()} crest in state {state.Identifier.Incognito(null)} from {old} to {crest}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.Crest, settings.Source, state, actors, (old, crest, slot));
@@ -158,7 +158,7 @@ public class StateEditor(
             return;
 
         var @new   = state.ModelData.Parameters[flag];
-        var actors = Applier.ChangeParameters(state, flag, settings.Source is StateSource.Manual or StateSource.Ipc);
+        var actors = Applier.ChangeParameters(state, flag, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {flag} crest in state {state.Identifier.Incognito(null)} from {old} to {@new}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.Parameter, settings.Source, state, actors, (old, @new, flag));
@@ -171,7 +171,7 @@ public class StateEditor(
         if (!Editor.ChangeMetaState(state, index, value, settings.Source, out var old, settings.Key))
             return;
 
-        var actors = Applier.ChangeMetaState(state, index, settings.Source is StateSource.Manual or StateSource.Ipc);
+        var actors = Applier.ChangeMetaState(state, index, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set Head Gear Visibility in state {state.Identifier.Incognito(null)} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.Other, settings.Source, state, actors, (old, value, MetaIndex.HatState));
@@ -191,7 +191,7 @@ public class StateEditor(
         {
             foreach (var slot in CrestExtensions.AllRelevantSet.Where(mergedDesign.Design.DoApplyCrest))
             {
-                if (!settings.RespectManual || state.Sources[slot] is not StateSource.Manual)
+                if (!settings.RespectManual || !state.Sources[slot].IsManual())
                     Editor.ChangeCrest(state, slot, mergedDesign.Design.DesignData.Crest(slot), Source(slot),
                         out _, settings.Key);
             }
@@ -201,7 +201,7 @@ public class StateEditor(
                 customizeFlags |= CustomizeFlag.Race;
 
             Func<CustomizeIndex, bool> applyWhich = settings.RespectManual
-                ? i => customizeFlags.HasFlag(i.ToFlag()) && state.Sources[i] is not StateSource.Manual
+                ? i => customizeFlags.HasFlag(i.ToFlag()) && !state.Sources[i].IsManual()
                 : i => customizeFlags.HasFlag(i.ToFlag());
 
             if (Editor.ChangeHumanCustomize(state, mergedDesign.Design.DesignData.Customize, applyWhich, i => Source(i), out _, out var changed,
@@ -210,12 +210,10 @@ public class StateEditor(
 
             foreach (var parameter in mergedDesign.Design.ApplyParameters.Iterate())
             {
-                if (settings.RespectManual && state.Sources[parameter] is StateSource.Manual or StateSource.Pending)
+                if (settings.RespectManual && state.Sources[parameter].IsManual())
                     continue;
 
-                var source = Source(parameter);
-                if (source is StateSource.Manual)
-                    source = StateSource.Pending;
+                var source = Source(parameter).SetPending();
                 Editor.ChangeParameter(state, parameter, mergedDesign.Design.DesignData.Parameters[parameter], source, out _, settings.Key);
             }
 
@@ -228,12 +226,12 @@ public class StateEditor(
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
                 if (mergedDesign.Design.DoApplyEquip(slot))
-                    if (!settings.RespectManual || state.Sources[slot, false] is not StateSource.Manual)
+                    if (!settings.RespectManual || !state.Sources[slot, false].IsManual())
                         Editor.ChangeItem(state, slot, mergedDesign.Design.DesignData.Item(slot),
                             Source(slot.ToState()), out _, settings.Key);
 
                 if (mergedDesign.Design.DoApplyStain(slot))
-                    if (!settings.RespectManual || state.Sources[slot, true] is not StateSource.Manual)
+                    if (!settings.RespectManual || !state.Sources[slot, true].IsManual())
                         Editor.ChangeStain(state, slot, mergedDesign.Design.DesignData.Stain(slot),
                             Source(slot.ToState(true)), out _, settings.Key);
             }
@@ -241,14 +239,14 @@ public class StateEditor(
             foreach (var weaponSlot in EquipSlotExtensions.WeaponSlots)
             {
                 if (mergedDesign.Design.DoApplyStain(weaponSlot))
-                    if (!settings.RespectManual || state.Sources[weaponSlot, true] is not StateSource.Manual)
+                    if (!settings.RespectManual || !state.Sources[weaponSlot, true].IsManual())
                         Editor.ChangeStain(state, weaponSlot, mergedDesign.Design.DesignData.Stain(weaponSlot),
                             Source(weaponSlot.ToState(true)), out _, settings.Key);
 
                 if (!mergedDesign.Design.DoApplyEquip(weaponSlot))
                     continue;
 
-                if (settings.RespectManual && state.Sources[weaponSlot, false] is StateSource.Manual)
+                if (settings.RespectManual && !state.Sources[weaponSlot, false].IsManual())
                     continue;
 
                 var currentType = state.ModelData.Item(weaponSlot).Type;
@@ -268,12 +266,12 @@ public class StateEditor(
 
             foreach (var meta in MetaExtensions.AllRelevant)
             {
-                if (!settings.RespectManual || state.Sources[meta] is not StateSource.Manual)
+                if (!settings.RespectManual || !state.Sources[meta].IsManual())
                     Editor.ChangeMetaState(state, meta, mergedDesign.Design.DesignData.GetMeta(meta), Source(meta), out _, settings.Key);
             }
         }
 
-        var actors = settings.Source is StateSource.Manual or StateSource.Ipc
+        var actors = settings.Source.RequiresChange()
             ? Applier.ApplyAll(state, requiresRedraw, false)
             : ActorData.Invalid;
 
@@ -311,7 +309,7 @@ public class StateEditor(
     /// <summary> Apply offhand item and potentially gauntlets if configured. </summary>
     private void ApplyMainhandPeriphery(ActorState state, EquipItem? newMainhand, ApplySettings settings)
     {
-        if (!Config.ChangeEntireItem || settings.Source is not StateSource.Manual)
+        if (!Config.ChangeEntireItem || !settings.Source.IsManual())
             return;
 
         var mh      = newMainhand ?? state.ModelData.Item(EquipSlot.MainHand);

@@ -28,7 +28,9 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
     private string                          _base64Apply      = string.Empty;
     private string                          _designIdentifier = string.Empty;
     private GlamourerIpc.GlamourerErrorCode _setItemEc;
+    private GlamourerIpc.GlamourerErrorCode _setItemOnceEc;
     private GlamourerIpc.GlamourerErrorCode _setItemByActorNameEc;
+    private GlamourerIpc.GlamourerErrorCode _setItemOnceByActorNameEc;
 
     public unsafe void Draw()
     {
@@ -77,10 +79,21 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         if (ImGui.Button("Apply##AllName"))
             GlamourerIpc.ApplyAllSubscriber(_pluginInterface).Invoke(_base64Apply, _gameObjectName);
 
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyAllOnce);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Apply Once##AllName"))
+            GlamourerIpc.ApplyAllOnceSubscriber(_pluginInterface).Invoke(_base64Apply, _gameObjectName);
+
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyAllToCharacter);
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##AllCharacter"))
             GlamourerIpc.ApplyAllToCharacterSubscriber(_pluginInterface)
+                .Invoke(_base64Apply, _objectManager.Objects[_gameObjectIndex] as Character);
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyAllOnceToCharacter);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Apply Once##AllCharacter"))
+            GlamourerIpc.ApplyAllOnceToCharacterSubscriber(_pluginInterface)
                 .Invoke(_base64Apply, _objectManager.Objects[_gameObjectIndex] as Character);
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyOnlyEquipment);
@@ -111,11 +124,22 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         if (ImGui.Button("Apply##ByGuidName") && Guid.TryParse(_designIdentifier, out var guid1))
             GlamourerIpc.ApplyByGuidSubscriber(_pluginInterface).Invoke(guid1, _gameObjectName);
 
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyByGuidOnce);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Apply Once##ByGuidName") && Guid.TryParse(_designIdentifier, out var guid1Once))
+            GlamourerIpc.ApplyByGuidOnceSubscriber(_pluginInterface).Invoke(guid1Once, _gameObjectName);
+
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyByGuidToCharacter);
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##ByGuidCharacter") && Guid.TryParse(_designIdentifier, out var guid2))
             GlamourerIpc.ApplyByGuidToCharacterSubscriber(_pluginInterface)
                 .Invoke(guid2, _objectManager.Objects[_gameObjectIndex] as Character);
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyByGuidOnceToCharacter);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Apply Once##ByGuidCharacter") && Guid.TryParse(_designIdentifier, out var guid2Once))
+            GlamourerIpc.ApplyByGuidOnceToCharacterSubscriber(_pluginInterface)
+                .Invoke(guid2Once, _objectManager.Objects[_gameObjectIndex] as Character);
 
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelUnlock);
@@ -149,6 +173,17 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
             ImGui.TextUnformatted(_setItemEc.ToString());
         }
 
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelSetItemOnce);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Set Once##SetItem"))
+            _setItemOnceEc = (GlamourerIpc.GlamourerErrorCode)GlamourerIpc.SetItemOnceSubscriber(_pluginInterface)
+                .Invoke(_objectManager.Objects[_gameObjectIndex] as Character, (byte)_slot, _customItemId.Id, _stainId.Id, 1337);
+        if (_setItemOnceEc != GlamourerIpc.GlamourerErrorCode.Success)
+        {
+            ImGui.SameLine();
+            ImGui.TextUnformatted(_setItemOnceEc.ToString());
+        }
+
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelSetItemByActorName);
         ImGui.TableNextColumn();
         if (ImGui.Button("Set##SetItemByActorName"))
@@ -158,6 +193,17 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         {
             ImGui.SameLine();
             ImGui.TextUnformatted(_setItemByActorNameEc.ToString());
+        }
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelSetItemOnceByActorName);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Set Once##SetItemByActorName"))
+            _setItemOnceByActorNameEc = (GlamourerIpc.GlamourerErrorCode)GlamourerIpc.SetItemOnceByActorNameSubscriber(_pluginInterface)
+                .Invoke(_gameObjectName, (byte)_slot, _customItemId.Id, _stainId.Id, 1337);
+        if (_setItemOnceByActorNameEc != GlamourerIpc.GlamourerErrorCode.Success)
+        {
+            ImGui.SameLine();
+            ImGui.TextUnformatted(_setItemOnceByActorNameEc.ToString());
         }
     }
 

@@ -20,20 +20,30 @@ public partial class GlamourerIpc
         ItemInvalid,
     }
 
-    public const string LabelSetItem            = "Glamourer.SetItem";
-    public const string LabelSetItemByActorName = "Glamourer.SetItemByActorName";
+    public const string LabelSetItem                = "Glamourer.SetItem";
+    public const string LabelSetItemOnce            = "Glamourer.SetItemOnce";
+    public const string LabelSetItemByActorName     = "Glamourer.SetItemByActorName";
+    public const string LabelSetItemOnceByActorName = "Glamourer.SetItemOnceByActorName";
 
 
     private readonly FuncProvider<Character?, byte, ulong, byte, uint, int> _setItemProvider;
+    private readonly FuncProvider<Character?, byte, ulong, byte, uint, int> _setItemOnceProvider;
     private readonly FuncProvider<string, byte, ulong, byte, uint, int>     _setItemByActorNameProvider;
+    private readonly FuncProvider<string, byte, ulong, byte, uint, int>     _setItemOnceByActorNameProvider;
 
     public static FuncSubscriber<Character?, byte, ulong, byte, uint, int> SetItemSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelSetItem);
 
+    public static FuncSubscriber<Character?, byte, ulong, byte, uint, int> SetItemOnceSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelSetItemOnce);
+
     public static FuncSubscriber<string, byte, ulong, byte, uint, int> SetItemByActorNameSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelSetItemByActorName);
 
-    private GlamourerErrorCode SetItem(Character? character, EquipSlot slot, CustomItemId itemId, StainId stainId, uint key)
+    public static FuncSubscriber<string, byte, ulong, byte, uint, int> SetItemOnceByActorNameSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelSetItemOnceByActorName);
+
+    private GlamourerErrorCode SetItem(Character? character, EquipSlot slot, CustomItemId itemId, StainId stainId, uint key, bool once)
     {
         if (itemId.Id == 0)
             itemId = ItemManager.NothingId(slot);
@@ -57,11 +67,12 @@ public partial class GlamourerIpc
         if (!state.ModelData.IsHuman)
             return GlamourerErrorCode.ActorNotHuman;
 
-        _stateManager.ChangeEquip(state, slot, item, stainId, new ApplySettings(Source: StateSource.Ipc, Key:key));
+        _stateManager.ChangeEquip(state, slot, item, stainId,
+            new ApplySettings(Source: once ? StateSource.IpcManual : StateSource.IpcFixed, Key: key));
         return GlamourerErrorCode.Success;
     }
 
-    private GlamourerErrorCode SetItemByActorName(string name, EquipSlot slot, CustomItemId itemId, StainId stainId, uint key)
+    private GlamourerErrorCode SetItemByActorName(string name, EquipSlot slot, CustomItemId itemId, StainId stainId, uint key, bool once)
     {
         if (itemId.Id == 0)
             itemId = ItemManager.NothingId(slot);
@@ -84,7 +95,8 @@ public partial class GlamourerIpc
             if (!state.ModelData.IsHuman)
                 return GlamourerErrorCode.ActorNotHuman;
 
-            _stateManager.ChangeEquip(state, slot, item, stainId, new ApplySettings(Source: StateSource.Ipc, Key: key));
+            _stateManager.ChangeEquip(state, slot, item, stainId,
+                new ApplySettings(Source: once ? StateSource.IpcManual : StateSource.IpcFixed, Key: key));
             found = true;
         }
 

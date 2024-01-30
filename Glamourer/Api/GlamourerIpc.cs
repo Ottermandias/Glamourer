@@ -46,9 +46,11 @@ public sealed partial class GlamourerIpc : IDisposable
         _getAllCustomizationFromCharacterProvider =
             new FuncProvider<Character?, string?>(pi, LabelGetAllCustomizationFromCharacter, GetAllCustomizationFromCharacter);
 
-        _applyAllProvider            = new ActionProvider<string, string>(pi, LabelApplyAll, ApplyAll);
-        _applyAllToCharacterProvider = new ActionProvider<string, Character?>(pi, LabelApplyAllToCharacter, ApplyAllToCharacter);
-        _applyOnlyEquipmentProvider  = new ActionProvider<string, string>(pi, LabelApplyOnlyEquipment, ApplyOnlyEquipment);
+        _applyAllProvider                = new ActionProvider<string, string>(pi, LabelApplyAll, ApplyAll);
+        _applyAllOnceProvider            = new ActionProvider<string, string>(pi, LabelApplyAll, ApplyAllOnce);
+        _applyAllToCharacterProvider     = new ActionProvider<string, Character?>(pi, LabelApplyAllToCharacter, ApplyAllToCharacter);
+        _applyAllOnceToCharacterProvider = new ActionProvider<string, Character?>(pi, LabelApplyAllToCharacter, ApplyAllOnceToCharacter);
+        _applyOnlyEquipmentProvider      = new ActionProvider<string, string>(pi, LabelApplyOnlyEquipment, ApplyOnlyEquipment);
         _applyOnlyEquipmentToCharacterProvider =
             new ActionProvider<string, Character?>(pi, LabelApplyOnlyEquipmentToCharacter, ApplyOnlyEquipmentToCharacter);
         _applyOnlyCustomizationProvider = new ActionProvider<string, string>(pi, LabelApplyOnlyCustomization, ApplyOnlyCustomization);
@@ -66,8 +68,11 @@ public sealed partial class GlamourerIpc : IDisposable
         _applyOnlyCustomizationToCharacterProviderLock =
             new ActionProvider<string, Character?, uint>(pi, LabelApplyOnlyCustomizationToCharacterLock, ApplyOnlyCustomizationToCharacterLock);
 
-        _applyByGuidProvider            = new ActionProvider<Guid, string>(pi, LabelApplyByGuid, ApplyByGuid);
+        _applyByGuidProvider            = new ActionProvider<Guid, string>(pi, LabelApplyByGuid,     ApplyByGuid);
+        _applyByGuidOnceProvider        = new ActionProvider<Guid, string>(pi, LabelApplyByGuidOnce, ApplyByGuidOnce);
         _applyByGuidToCharacterProvider = new ActionProvider<Guid, Character?>(pi, LabelApplyByGuidToCharacter, ApplyByGuidToCharacter);
+        _applyByGuidOnceToCharacterProvider =
+            new ActionProvider<Guid, Character?>(pi, LabelApplyByGuidOnceToCharacter, ApplyByGuidOnceToCharacter);
 
         _revertProvider              = new ActionProvider<string>(pi, LabelRevert, Revert);
         _revertCharacterProvider     = new ActionProvider<Character?>(pi, LabelRevertCharacter, RevertCharacter);
@@ -83,9 +88,14 @@ public sealed partial class GlamourerIpc : IDisposable
         _gPoseChangedProvider = new EventProvider<bool>(pi, LabelGPoseChanged);
 
         _setItemProvider = new FuncProvider<Character?, byte, ulong, byte, uint, int>(pi, LabelSetItem,
-            (idx, slot, item, stain, key) => (int)SetItem(idx, (EquipSlot)slot, item, stain, key));
-        _setItemByActorNameProvider = new FuncProvider<string, byte, ulong, byte, uint, int>(pi, LabelSetItemByActorName,
-            (name, slot, item, stain, key) => (int)SetItemByActorName(name, (EquipSlot)slot, item, stain, key));
+            (idx, slot, item, stain, key) => (int)SetItem(idx, (EquipSlot)slot, item, stain, key, false));
+        _setItemOnceProvider = new FuncProvider<Character?, byte, ulong, byte, uint, int>(pi, LabelSetItem,
+            (idx, slot, item, stain, key) => (int)SetItem(idx, (EquipSlot)slot, item, stain, key, true));
+
+        _setItemByActorNameProvider = new FuncProvider<string, byte, ulong, byte, uint, int>(pi, LabelSetItemOnceByActorName,
+            (name, slot, item, stain, key) => (int)SetItemByActorName(name, (EquipSlot)slot, item, stain, key, false));
+        _setItemOnceByActorNameProvider = new FuncProvider<string, byte, ulong, byte, uint, int>(pi, LabelSetItemOnceByActorName,
+            (name, slot, item, stain, key) => (int)SetItemByActorName(name, (EquipSlot)slot, item, stain, key, true));
 
         _stateChangedEvent.Subscribe(OnStateChanged, StateChanged.Priority.GlamourerIpc);
         _gPose.Subscribe(OnGPoseChanged, GPoseService.Priority.GlamourerIpc);
@@ -102,7 +112,9 @@ public sealed partial class GlamourerIpc : IDisposable
         _getAllCustomizationFromCharacterProvider.Dispose();
 
         _applyAllProvider.Dispose();
+        _applyAllOnceProvider.Dispose();
         _applyAllToCharacterProvider.Dispose();
+        _applyAllOnceToCharacterProvider.Dispose();
         _applyOnlyEquipmentProvider.Dispose();
         _applyOnlyEquipmentToCharacterProvider.Dispose();
         _applyOnlyCustomizationProvider.Dispose();
@@ -113,8 +125,11 @@ public sealed partial class GlamourerIpc : IDisposable
         _applyOnlyEquipmentToCharacterProviderLock.Dispose();
         _applyOnlyCustomizationProviderLock.Dispose();
         _applyOnlyCustomizationToCharacterProviderLock.Dispose();
+
         _applyByGuidProvider.Dispose();
+        _applyByGuidOnceProvider.Dispose();
         _applyByGuidToCharacterProvider.Dispose();
+        _applyByGuidOnceToCharacterProvider.Dispose();
 
         _revertProvider.Dispose();
         _revertCharacterProvider.Dispose();
@@ -133,7 +148,9 @@ public sealed partial class GlamourerIpc : IDisposable
         _getDesignListProvider.Dispose();
 
         _setItemProvider.Dispose();
+        _setItemOnceProvider.Dispose();
         _setItemByActorNameProvider.Dispose();
+        _setItemOnceByActorNameProvider.Dispose();
     }
 
     private IEnumerable<ActorIdentifier> FindActors(string actorName)

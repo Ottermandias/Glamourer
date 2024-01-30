@@ -95,9 +95,13 @@ public class DesignDetailTab
                     Glamourer.Messager.NotificationMessage(ex, $"Could not open file {fileName}.", $"Could not open file {fileName}",
                         NotificationType.Warning);
                 }
+
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                ImGui.SetClipboardText(identifier);
         }
 
-        ImGuiUtil.HoverTooltip($"Open the file\n\t{fileName}\ncontaining this design in the .json-editor of your choice.");
+        ImGuiUtil.HoverTooltip(
+            $"Open the file\n\t{fileName}\ncontaining this design in the .json-editor of your choice.\n\nRight-Click to copy identifier to clipboard.");
 
         ImGuiUtil.DrawFrameColumn("Full Selector Path");
         ImGui.TableNextColumn();
@@ -131,9 +135,10 @@ public class DesignDetailTab
             colorName = _colorCombo.CurrentSelection is DesignColors.AutomaticName ? string.Empty : _colorCombo.CurrentSelection;
             _manager.ChangeColor(_selector.Selected!, colorName);
         }
+
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             _manager.ChangeColor(_selector.Selected!, string.Empty);
-        
+
         if (_colors.TryGetValue(_selector.Selected!.Color, out var currentColor))
         {
             ImGui.SameLine();

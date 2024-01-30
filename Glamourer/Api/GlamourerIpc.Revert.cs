@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
-using Glamourer.Events;
 using Glamourer.State;
 using Penumbra.Api.Helpers;
 using Penumbra.GameData.Actors;
@@ -83,7 +82,7 @@ public partial class GlamourerIpc
         foreach (var id in actors)
         {
             if (_stateManager.TryGetValue(id, out var state))
-                _stateManager.ResetState(state, StateSource.Ipc, lockCode);
+                _stateManager.ResetState(state, StateSource.IpcFixed, lockCode);
         }
     }
 

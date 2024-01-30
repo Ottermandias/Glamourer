@@ -131,19 +131,16 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             }
             else
             {
-                switch (source)
+                switch (source.Base())
                 {
                     case StateSource.Manual: 
-                    case StateSource.Pending: 
                         state.Materials.RemoveValue(idx);
                         --i;
                         break;
-                    case StateSource.Ipc:
                     case StateSource.Fixed: 
                         idx.DataIndex.SetValue(ref row, model);
                         state.Materials.UpdateValue(idx, new MaterialValueState(newGame, model, source), out _);
                         break;
-                    
                 }
             }
         }
