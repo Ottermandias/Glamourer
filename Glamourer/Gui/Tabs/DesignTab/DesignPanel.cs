@@ -293,10 +293,10 @@ public class DesignPanel(
 
         var labels = new[]
         {
+            "Apply Wetness",
             "Apply Hat Visibility",
             "Apply Visor State",
             "Apply Weapon Visibility",
-            "Apply Wetness",
         };
 
         foreach (var (index, label) in MetaExtensions.AllRelevant.Zip(labels))
