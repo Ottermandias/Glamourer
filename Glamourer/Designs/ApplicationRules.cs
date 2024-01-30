@@ -75,7 +75,7 @@ public readonly struct ApplicationRules(
         {
             var modelValue = model.Parameters[flag];
             var gameValue  = game.Parameters[flag];
-            if ((modelValue.InternalQuadruple - gameValue.InternalQuadruple).LengthSquared() > 1e-9f)
+            if ((modelValue.InternalQuadruple - gameValue.InternalQuadruple).LengthSquared() < 1e-9f)
                 baseFlags &= ~flag;
         }
 
