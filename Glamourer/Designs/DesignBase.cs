@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface.Internal.Notifications;
 using Glamourer.GameData;
+using Glamourer.Interop.Material;
 using Glamourer.Services;
-using Glamourer.State;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
@@ -14,7 +14,16 @@ public class DesignBase
 {
     public const int FileVersion = 1;
 
-    private DesignData _designData = new();
+    private DesignData            _designData = new();
+    private readonly DesignMaterialManager _materials  = new();
+
+    /// <summary> For read-only information about custom material color changes. </summary>
+    public IReadOnlyList<(uint, MaterialValueDesign)> Materials
+        => _materials.Values;
+
+    /// <summary> To make it clear something is edited here. </summary>
+    public DesignMaterialManager GetMaterialDataRef()
+        => _materials;
 
     /// <summary> For read-only information about the actual design. </summary>
     public ref readonly DesignData DesignData
@@ -30,6 +39,7 @@ public class DesignBase
         CustomizeSet = SetCustomizationSet(customize);
     }
 
+    /// <summary> Used when importing .cma or .chara files. </summary>
     internal DesignBase(CustomizeService customize, in DesignData designData, EquipFlag equipFlags, CustomizeFlag customizeFlags)
     {
         _designData    = designData;
@@ -42,6 +52,7 @@ public class DesignBase
     internal DesignBase(DesignBase clone)
     {
         _designData     = clone._designData;
+        _materials      = clone._materials.Clone();
         CustomizeSet    = clone.CustomizeSet;
         ApplyCustomize  = clone.ApplyCustomizeRaw;
         ApplyEquip      = clone.ApplyEquip & EquipFlagExtensions.All;

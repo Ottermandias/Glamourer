@@ -3,8 +3,6 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Designs;
-using Glamourer.Events;
-using Glamourer.GameData;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -509,7 +507,7 @@ public class CommandService : IDisposable
 
             try
             {
-                var text = _converter.ShareBase64(state);
+                var text = _converter.ShareBase64(state, ApplicationRules.AllButParameters(state));
                 ImGui.SetClipboardText(text);
                 return true;
             }
@@ -548,8 +546,7 @@ public class CommandService : IDisposable
                  && _stateManager.GetOrCreate(identifier, data.Objects[0], out state)))
                 continue;
 
-            var design = _converter.Convert(state, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All,
-                CustomizeParameterExtensions.All);
+            var design = _converter.Convert(state, ApplicationRules.FromModifiers(state));
             _designManager.CreateClone(design, split[0], true);
             return true;
         }

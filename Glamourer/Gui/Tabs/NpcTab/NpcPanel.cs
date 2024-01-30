@@ -84,9 +84,8 @@ public class NpcPanel(
     {
         try
         {
-            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
             var data = ToDesignData();
-            var text = _converter.ShareBase64(data, applyGear, applyCustomize, applyCrest, applyParameters);
+            var text = _converter.ShareBase64(data, ApplicationRules.NpcFromModifiers());
             ImGui.SetClipboardText(text);
         }
         catch (Exception ex)
@@ -100,11 +99,9 @@ public class NpcPanel(
     private void SaveDesignOpen()
     {
         ImGui.OpenPopup("Save as Design");
-        _newName                                                     = _selector.Selection.Name;
-        var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
-
+        _newName = _selector.Selection.Name;
         var data = ToDesignData();
-        _newDesign = _converter.Convert(data, applyGear, applyCustomize, applyCrest, applyParameters);
+        _newDesign = _converter.Convert(data, ApplicationRules.NpcFromModifiers());
     }
 
     private void SaveDesignDrawPopup()
@@ -198,8 +195,7 @@ public class NpcPanel(
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize, _, _) = UiHelpers.ConvertKeysToFlags();
-            var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, 0, 0);
+            var design = _converter.Convert(ToDesignData(), ApplicationRules.NpcFromModifiers());
             _state.ApplyDesign(state, design, ApplySettings.Manual);
         }
     }
@@ -217,8 +213,7 @@ public class NpcPanel(
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize, _, _) = UiHelpers.ConvertKeysToFlags();
-            var design = _converter.Convert(ToDesignData(), applyGear, applyCustomize, 0, 0);
+            var design = _converter.Convert(ToDesignData(), ApplicationRules.NpcFromModifiers());
             _state.ApplyDesign(state, design, ApplySettings.Manual);
         }
     }

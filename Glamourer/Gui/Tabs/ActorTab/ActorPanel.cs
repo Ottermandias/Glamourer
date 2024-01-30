@@ -356,8 +356,7 @@ public class ActorPanel(
     {
         ImGui.OpenPopup("Save as Design");
         _newName = _state!.Identifier.ToName();
-        var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
-        _newDesign = _converter.Convert(_state, applyGear, applyCustomize, applyCrest, applyParameters);
+        _newDesign = _converter.Convert(_state, ApplicationRules.FromModifiers(_state));
     }
 
     private void SaveDesignDrawPopup()
@@ -392,8 +391,7 @@ public class ActorPanel(
     {
         try
         {
-            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
-            var text = _converter.ShareBase64(_state!, applyGear, applyCustomize, applyCrest, applyParameters);
+            var text = _converter.ShareBase64(_state!, ApplicationRules.FromModifiers(_state!));
             ImGui.SetClipboardText(text);
         }
         catch (Exception ex)
@@ -432,9 +430,8 @@ public class ActorPanel(
                 !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0))
             return;
 
-        var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
-            _stateManager.ApplyDesign(state, _converter.Convert(_state!, applyGear, applyCustomize, applyCrest, applyParameters),
+            _stateManager.ApplyDesign(state, _converter.Convert(_state!, ApplicationRules.FromModifiers(_state!)),
                 ApplySettings.Manual);
     }
 
@@ -450,9 +447,8 @@ public class ActorPanel(
                 !data.Valid || id == _identifier || _state!.ModelData.ModelId != 0))
             return;
 
-        var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
-            _stateManager.ApplyDesign(state, _converter.Convert(_state!, applyGear, applyCustomize, applyCrest, applyParameters),
+            _stateManager.ApplyDesign(state, _converter.Convert(_state!, ApplicationRules.FromModifiers(_state!)),
                 ApplySettings.Manual);
     }
 }

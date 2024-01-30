@@ -1,5 +1,4 @@
 ﻿using Glamourer.Designs.Links;
-using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Utility;
@@ -11,7 +10,12 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
-public class DesignConverter(ItemManager _items, DesignManager _designs, CustomizeService _customize, HumanModelList _humans, DesignLinkLoader _linkLoader)
+public class DesignConverter(
+    ItemManager _items,
+    DesignManager _designs,
+    CustomizeService _customize,
+    HumanModelList _humans,
+    DesignLinkLoader _linkLoader)
 {
     public const byte Version = 6;
 
@@ -21,9 +25,9 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
     public JObject ShareJObject(Design design)
         => design.JsonSerialize();
 
-    public JObject ShareJObject(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
+    public JObject ShareJObject(ActorState state, in ApplicationRules rules)
     {
-        var design = Convert(state, equipFlags, customizeFlags, crestFlags, parameterFlags);
+        var design = Convert(state, rules);
         return ShareJObject(design);
     }
 
@@ -33,32 +37,22 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
     public string ShareBase64(DesignBase design)
         => ShareBase64(ShareJObject(design));
 
-    public string ShareBase64(ActorState state)
-        => ShareBase64(state, EquipFlagExtensions.All, CustomizeFlagExtensions.All, CrestExtensions.All, CustomizeParameterExtensions.All);
+    public string ShareBase64(ActorState state, in ApplicationRules rules)
+        => ShareBase64(state.ModelData, rules);
 
-    public string ShareBase64(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
-        => ShareBase64(state.ModelData, equipFlags, customizeFlags, crestFlags, parameterFlags);
-
-    public string ShareBase64(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
+    public string ShareBase64(in DesignData data, in ApplicationRules rules)
     {
-        var design = Convert(data, equipFlags, customizeFlags, crestFlags, parameterFlags);
+        var design = Convert(data, rules);
         return ShareBase64(ShareJObject(design));
     }
 
-    public DesignBase Convert(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
-        => Convert(state.ModelData, equipFlags, customizeFlags, crestFlags, parameterFlags);
+    public DesignBase Convert(ActorState state, in ApplicationRules rules)
+        => Convert(state.ModelData, rules);
 
-    public DesignBase Convert(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
+    public DesignBase Convert(in DesignData data, in ApplicationRules rules)
     {
         var design = _designs.CreateTemporary();
-        design.ApplyEquip      = equipFlags & EquipFlagExtensions.All;
-        design.ApplyCustomize  = customizeFlags & CustomizeFlagExtensions.AllRelevant;
-        design.ApplyCrest      = crestFlags & CrestExtensions.All;
-        design.ApplyParameters = parameterFlags & CustomizeParameterExtensions.All;
-        design.SetApplyMeta(MetaIndex.HatState, design.DoApplyEquip(EquipSlot.Head));
-        design.SetApplyMeta(MetaIndex.VisorState, design.DoApplyEquip(EquipSlot.Head));
-        design.SetApplyMeta(MetaIndex.WeaponState, design.DoApplyEquip(EquipSlot.MainHand) || design.DoApplyEquip(EquipSlot.OffHand));
-        design.SetApplyMeta(MetaIndex.Wetness, true);
+        rules.Apply(design);
         design.SetDesignData(_customize, data);
         return design;
     }
@@ -139,7 +133,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
         return ret;
     }
 
-    private static string ShareBase64(JObject jObject)
+    private static string ShareBase64(JToken jObject)
     {
         var json       = jObject.ToString(Formatting.None);
         var compressed = json.Compress(Version);
