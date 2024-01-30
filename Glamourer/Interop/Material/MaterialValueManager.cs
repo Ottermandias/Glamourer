@@ -1,10 +1,11 @@
 ﻿global using StateMaterialManager = Glamourer.Interop.Material.MaterialValueManager<Glamourer.Interop.Material.MaterialValueState>;
-global using DesignMaterialManager = Glamourer.Interop.Material.MaterialValueManager<System.Numerics.Vector3>;
+global using DesignMaterialManager = Glamourer.Interop.Material.MaterialValueManager<Glamourer.Interop.Material.MaterialValueDesign>;
 using Glamourer.State;
 
 
 namespace Glamourer.Interop.Material;
 
+public record struct MaterialValueDesign(Vector3 Value, bool Enabled);
 public record struct MaterialValueState(Vector3 Game, Vector3 Model, StateSource Source);
 
 public readonly struct MaterialValueManager<T>
@@ -16,6 +17,13 @@ public readonly struct MaterialValueManager<T>
 
     public void Clear()
         => _values.Clear();
+
+    public MaterialValueManager<T> Clone()
+    {
+        var ret = new MaterialValueManager<T>();
+        ret._values.AddRange(_values);
+        return ret;
+    }
 
     public bool TryGetValue(MaterialValueIndex index, out T value)
     {
