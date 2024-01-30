@@ -112,7 +112,7 @@ public partial class GlamourerIpc
     public void ApplyByGuidToCharacter(Guid identifier, Character? character)
         => ApplyDesignByGuid(identifier, FindActors(character), 0);
 
-    private void ApplyDesign(DesignBase? design, IEnumerable<ActorIdentifier> actors, byte version, uint lockCode)
+    private void ApplyDesign(DesignBase? design, IEnumerable<ActorIdentifier> actors, byte version, uint lockCode, StateSource source = StateSource.Ipc)
     {
         if (design == null)
             return;
@@ -130,12 +130,12 @@ public partial class GlamourerIpc
 
             if ((hasModelId || state.ModelData.ModelId == 0) && state.CanUnlock(lockCode))
             {
-                _stateManager.ApplyDesign(state, design, new ApplySettings(Source:StateSource.Ipc, Key:lockCode));
+                _stateManager.ApplyDesign(state, design, new ApplySettings(Source:source, Key:lockCode));
                 state.Lock(lockCode);
             }
         }
     }
 
     private void ApplyDesignByGuid(Guid identifier, IEnumerable<ActorIdentifier> actors, uint lockCode)
-        => ApplyDesign(_designManager.Designs.ByIdentifier(identifier), actors, DesignConverter.Version, lockCode);
+        => ApplyDesign(_designManager.Designs.ByIdentifier(identifier), actors, DesignConverter.Version, lockCode, StateSource.Manual);
 }
