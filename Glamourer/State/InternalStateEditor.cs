@@ -2,6 +2,7 @@
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.GameData;
+using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -218,6 +219,39 @@ public class InternalStateEditor(
         state.Sources[flag] = source;
 
         return true;
+    }
+
+    /// <summary> Change the value of a single material color table entry. </summary>
+    public bool ChangeMaterialValue(ActorState state, MaterialValueIndex index, Vector3 value, Vector3 gameValue, StateSource source, out Vector3 oldValue,
+        uint key = 0)
+    {
+        // We already have an existing value.
+        if (state.Materials.TryGetValue(index, out var old))
+        {
+            oldValue = old.Model;
+            if (!state.CanUnlock(key))
+                return false;
+
+            // Remove if overwritten by a game value.
+            if (source is StateSource.Game)
+            {
+                state.Materials.RemoveValue(index);
+                return true;
+            }
+
+            // Update if edited.
+            state.Materials.UpdateValue(index, new MaterialValueState(gameValue, value, source), out _);
+            return true;
+        }
+
+        // We do not have an existing value.
+        oldValue = gameValue;
+        // Do not do anything if locked or if the game value updates, because then we do not need to add an entry.
+        if (!state.CanUnlock(key) || source is StateSource.Game)
+            return false;
+
+        // Only add an entry if it is sufficiently different from the game value.
+        return !value.NearEqual(gameValue) && state.Materials.TryAddValue(index, new MaterialValueState(gameValue, value, source));
     }
 
     public bool ChangeMetaState(ActorState state, MetaIndex index, bool value, StateSource source, out bool oldValue,

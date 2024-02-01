@@ -2,6 +2,7 @@ using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
+using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
@@ -149,9 +150,7 @@ public class StateEditor(
     /// <inheritdoc/>
     public void ChangeCustomizeParameter(object data, CustomizeParameterFlag flag, CustomizeParameterValue value, ApplySettings settings)
     {
-        if (data is not ActorState state)
-            return;
-
+        var state = (ActorState)data;
         // Also apply main color to highlights when highlights is off.
         if (!state.ModelData.Customize.Highlights && flag is CustomizeParameterFlag.HairDiffuse)
             ChangeCustomizeParameter(state, CustomizeParameterFlag.HairHighlight, value, settings);
@@ -164,6 +163,17 @@ public class StateEditor(
         Glamourer.Log.Verbose(
             $"Set {flag} crest in state {state.Identifier.Incognito(null)} from {old} to {@new}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.Parameter, settings.Source, state, actors, (old, @new, flag));
+    }
+
+    public void ChangeMaterialValue(object data, MaterialValueIndex index, Vector3 value, Vector3 gameValue, ApplySettings settings)
+    {
+        var state = (ActorState)data;
+        if (!Editor.ChangeMaterialValue(state, index, value, gameValue, settings.Source, out var oldValue, settings.Key))
+            return;
+
+        var actors = Applier.ChangeMaterialValue(state, index, settings.Source.RequiresChange());
+        Glamourer.Log.Verbose($"Set material value in state {state.Identifier.Incognito(null)} from {oldValue} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
+        StateChanged.Invoke(StateChanged.Type.MaterialValue, settings.Source, state, actors, (oldValue, value, index));
     }
 
     /// <inheritdoc/>

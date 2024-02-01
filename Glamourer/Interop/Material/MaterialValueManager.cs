@@ -104,7 +104,7 @@ public readonly struct MaterialValueManager<T>
 
     public int RemoveValues(MaterialValueIndex min, MaterialValueIndex max)
     {
-        var (minIdx, maxIdx) = GetMinMax(CollectionsMarshal.AsSpan(_values), min.Key, max.Key);
+        var (minIdx, maxIdx) = MaterialValueManager.GetMinMax<T>(CollectionsMarshal.AsSpan(_values), min.Key, max.Key);
         if (minIdx < 0)
             return 0;
 
@@ -114,20 +114,49 @@ public readonly struct MaterialValueManager<T>
     }
 
     public ReadOnlySpan<(uint key, T Value)> GetValues(MaterialValueIndex min, MaterialValueIndex max)
-        => Filter(CollectionsMarshal.AsSpan(_values), min, max);
+        => MaterialValueManager.Filter<T>(CollectionsMarshal.AsSpan(_values), min, max);
 
-    public static ReadOnlySpan<(uint Key, T Value)> Filter(ReadOnlySpan<(uint Key, T Value)> values, MaterialValueIndex min,
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private int Search(uint key)
+        => _values.BinarySearch((key, default!), MaterialValueManager.Comparer<T>.Instance);
+}
+
+public static class MaterialValueManager
+{
+    internal class Comparer<T> : IComparer<(uint Key, T Value)>
+    {
+        public static readonly Comparer<T> Instance = new();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        int IComparer<(uint Key, T Value)>.Compare((uint Key, T Value) x, (uint Key, T Value) y)
+            => x.Key.CompareTo(y.Key);
+    }
+
+    public static bool GetSpecific<T>(ReadOnlySpan<(uint Key, T Value)> values, MaterialValueIndex index, out T ret)
+    {
+        var idx = values.BinarySearch((index.Key, default!), Comparer<T>.Instance);
+        if (idx < 0)
+        {
+            ret = default!;
+            return false;
+        }
+
+        ret = values[idx].Value;
+        return true;
+    }
+
+    public static ReadOnlySpan<(uint Key, T Value)> Filter<T>(ReadOnlySpan<(uint Key, T Value)> values, MaterialValueIndex min,
         MaterialValueIndex max)
     {
         var (minIdx, maxIdx) = GetMinMax(values, min.Key, max.Key);
-        return minIdx < 0 ? [] : values[minIdx..(maxIdx - minIdx + 1)];
+        return minIdx < 0 ? [] : values[minIdx..(maxIdx + 1)];
     }
 
     /// <summary> Obtain the minimum index and maximum index for a minimum and maximum key. </summary>
-    private static (int MinIdx, int MaxIdx) GetMinMax(ReadOnlySpan<(uint Key, T Value)> values, uint minKey, uint maxKey)
+    internal static (int MinIdx, int MaxIdx) GetMinMax<T>(ReadOnlySpan<(uint Key, T Value)> values, uint minKey, uint maxKey)
     {
         // Find the minimum index by binary search.
-        var idx    = values.BinarySearch((minKey, default!), Comparer.Instance);
+        var idx    = values.BinarySearch((minKey, default!), Comparer<T>.Instance);
         var minIdx = idx;
 
         // If the key does not exist, check if it is an invalid range or set it correctly.
@@ -152,12 +181,13 @@ public readonly struct MaterialValueManager<T>
 
 
         // Do pretty much the same but in the other direction with the maximum key.
-        var maxIdx = values[idx..].BinarySearch((maxKey, default!), Comparer.Instance);
+        var maxIdx = values[idx..].BinarySearch((maxKey, default!), Comparer<T>.Instance);
         if (maxIdx < 0)
         {
-            maxIdx = ~maxIdx;
+            maxIdx = ~maxIdx + idx;
             return maxIdx > minIdx ? (minIdx, maxIdx - 1) : (-1, -1);
         }
+        maxIdx += idx;
 
         while (maxIdx < values.Length - 1 && values[maxIdx + 1].Key <= maxKey)
             ++maxIdx;
@@ -166,18 +196,5 @@ public readonly struct MaterialValueManager<T>
             return (-1, -1);
 
         return (minIdx, maxIdx);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private int Search(uint key)
-        => _values.BinarySearch((key, default!), Comparer.Instance);
-
-    private class Comparer : IComparer<(uint Key, T Value)>
-    {
-        public static readonly Comparer Instance = new();
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        int IComparer<(uint Key, T Value)>.Compare((uint Key, T Value) x, (uint Key, T Value) y)
-            => x.Key.CompareTo(y.Key);
     }
 }

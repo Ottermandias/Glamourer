@@ -1,6 +1,7 @@
 ﻿using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Interop;
+using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
@@ -272,6 +273,41 @@ public class StateApplier(
         var data = GetData(state);
         if (apply)
             ChangeParameters(data, flags, state.ModelData.Parameters, state.IsLocked);
+        return data;
+    }
+
+    public unsafe void ChangeMaterialValue(ActorData data, MaterialValueIndex index, Vector3? value, bool force)
+    {
+        if (!force && !_config.UseAdvancedParameters)
+            return;
+
+        foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))
+        {
+            if (!index.TryGetTexture(actor, out var texture))
+                continue;
+
+            if (!index.TryGetColorTable(texture, out var table))
+                continue;
+
+            Vector3 actualValue;
+            if (value.HasValue)
+                actualValue = value.Value;
+            else if (!PrepareColorSet.TryGetColorTable(actor, index, out var baseTable)
+                  || !index.DataIndex.TryGetValue(baseTable[index.RowIndex], out actualValue))
+                continue;
+
+            if (!index.DataIndex.SetValue(ref table[index.RowIndex], actualValue))
+                continue;
+
+            MaterialService.ReplaceColorTable(texture, table);
+        }
+    }
+
+    public ActorData ChangeMaterialValue(ActorState state, MaterialValueIndex index, bool apply)
+    {
+        var data = GetData(state);
+        if (apply)
+            ChangeMaterialValue(data, index, state.Materials.TryGetValue(index, out var v) ? v.Model : null, state.IsLocked);
         return data;
     }
 

@@ -1,16 +1,18 @@
-﻿using Dalamud.Interface.Utility;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Glamourer.Interop.Structs;
+using Glamourer.State;
 using ImGuiNET;
 using OtterGui.Services;
 using Penumbra.GameData.Files;
 
 namespace Glamourer.Gui.Materials;
 
-public unsafe class MaterialDrawer : IService
+public unsafe class MaterialDrawer(StateManager _stateManager) : IService
 {
     private static readonly IReadOnlyList<MaterialValueIndex.DrawObjectType> Types =
     [
@@ -19,9 +21,11 @@ public unsafe class MaterialDrawer : IService
         MaterialValueIndex.DrawObjectType.Offhand,
     ];
 
+    private ActorState? _state;
+
     public void DrawPanel(Actor actor)
     {
-        if (!actor.IsCharacter)
+        if (!actor.IsCharacter || !_stateManager.GetOrCreate(actor, out _state))
             return;
 
         foreach (var type in Types)
@@ -64,11 +68,11 @@ public unsafe class MaterialDrawer : IService
             if (!DirectXTextureHelper.TryGetColorTable(*texture, out var table))
                 continue;
 
-            DrawMaterial(ref table, texture, index);
+            DrawMaterial(ref table, index);
         }
     }
 
-    private void DrawMaterial(ref MtrlFile.ColorTable table, Texture** texture, MaterialValueIndex sourceIndex)
+    private void DrawMaterial(ref MtrlFile.ColorTable table, MaterialValueIndex sourceIndex)
     {
         using var tree = ImRaii.TreeNode($"Material {sourceIndex.MaterialIndex + 1}");
         if (!tree)
@@ -76,55 +80,78 @@ public unsafe class MaterialDrawer : IService
 
         for (byte i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
         {
-            var index = sourceIndex with { RowIndex = i };
+            var     index = sourceIndex with { RowIndex = i };
             ref var row   = ref table[i];
-            DrawRow(ref table, ref row, texture, index);
+            DrawRow(ref row, index);
         }
     }
 
-    private void DrawRow(ref MtrlFile.ColorTable table, ref MtrlFile.ColorTable.Row row, Texture** texture, MaterialValueIndex sourceIndex)
+    private void DrawRow(ref MtrlFile.ColorTable.Row row, MaterialValueIndex sourceIndex)
     {
-        using var id               = ImRaii.PushId(sourceIndex.RowIndex);
-        var       diffuse          = row.Diffuse;
-        var       specular         = row.Specular;
-        var       emissive         = row.Emissive;
-        var       glossStrength    = row.GlossStrength;
-        var       specularStrength = row.SpecularStrength;
-        if (ImGui.ColorEdit3("Diffuse", ref diffuse, ImGuiColorEditFlags.NoInputs))
+        var r = _state!.Materials.GetValues(
+            MaterialValueIndex.Min(sourceIndex.DrawObject, sourceIndex.SlotIndex, sourceIndex.MaterialIndex, sourceIndex.RowIndex),
+            MaterialValueIndex.Max(sourceIndex.DrawObject, sourceIndex.SlotIndex, sourceIndex.MaterialIndex, sourceIndex.RowIndex));
+
+        var highlightColor = ColorId.FavoriteStarOn.Value();
+
+        using var id    = ImRaii.PushId(sourceIndex.RowIndex);
+        var       index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.Diffuse };
+        var (diffuse, diffuseGame, changed) = MaterialValueManager.GetSpecific(r, index, out var d)
+            ? (d.Model, d.Game, true)
+            : (row.Diffuse, row.Diffuse, false);
+        using (ImRaii.PushColor(ImGuiCol.Text, highlightColor, changed))
         {
-            var index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.Diffuse };
-            row.Diffuse = diffuse;
-            MaterialService.ReplaceColorTable(texture, table);
+            if (ImGui.ColorEdit3("Diffuse", ref diffuse, ImGuiColorEditFlags.NoInputs))
+                _stateManager.ChangeMaterialValue(_state!, index, diffuse, diffuseGame, ApplySettings.Manual);
         }
+
+
+        index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.Specular };
+        (var specular, var specularGame, changed) = MaterialValueManager.GetSpecific(r, index, out var s)
+            ? (s.Model, s.Game, true)
+            : (row.Specular, row.Specular, false);
         ImGui.SameLine();
-        if (ImGui.ColorEdit3("Specular", ref specular, ImGuiColorEditFlags.NoInputs))
+        using (ImRaii.PushColor(ImGuiCol.Text, highlightColor, changed))
         {
-            var index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.Specular };
-            row.Specular = specular;
-            MaterialService.ReplaceColorTable(texture, table);
+            if (ImGui.ColorEdit3("Specular", ref specular, ImGuiColorEditFlags.NoInputs))
+                _stateManager.ChangeMaterialValue(_state!, index, specular, specularGame, ApplySettings.Manual);
         }
+
+        index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.Emissive };
+        (var emissive, var emissiveGame, changed) = MaterialValueManager.GetSpecific(r, index, out var e)
+            ? (e.Model, e.Game, true)
+            : (row.Emissive, row.Emissive, false);
         ImGui.SameLine();
-        if (ImGui.ColorEdit3("Emissive", ref emissive, ImGuiColorEditFlags.NoInputs))
+        using (ImRaii.PushColor(ImGuiCol.Text, highlightColor, changed))
         {
-            var index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.Emissive };
-            row.Emissive = emissive;
-            MaterialService.ReplaceColorTable(texture, table);
+            if (ImGui.ColorEdit3("Emissive", ref emissive, ImGuiColorEditFlags.NoInputs))
+                _stateManager.ChangeMaterialValue(_state!, index, emissive, emissiveGame, ApplySettings.Manual);
         }
+
+        index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.GlossStrength };
+        (var glossStrength, var glossStrengthGame, changed) = MaterialValueManager.GetSpecific(r, index, out var g)
+            ? (g.Model.X, g.Game.X, true)
+            : (row.GlossStrength, row.GlossStrength, false);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        if (ImGui.DragFloat("Gloss", ref glossStrength, 0.1f))
+        using (ImRaii.PushColor(ImGuiCol.Text, highlightColor, changed))
         {
-            var index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.GlossStrength };
-            row.GlossStrength = glossStrength;
-            MaterialService.ReplaceColorTable(texture, table);
+            if (ImGui.DragFloat("Gloss", ref glossStrength, 0.1f))
+                _stateManager.ChangeMaterialValue(_state!, index, new Vector3(glossStrength), new Vector3(glossStrengthGame),
+                    ApplySettings.Manual);
         }
+
+        index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.SpecularStrength };
+        (var specularStrength, var specularStrengthGame, changed) = MaterialValueManager.GetSpecific(r, index, out var ss)
+            ? (ss.Model.X, ss.Game.X, true)
+            : (row.SpecularStrength, row.SpecularStrength, false);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        if (ImGui.DragFloat("Specular Strength", ref specularStrength, 0.1f))
+        using (ImRaii.PushColor(ImGuiCol.Text, highlightColor, changed))
         {
-            var index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.SpecularStrength };
-            row.SpecularStrength = specularStrength;
-            MaterialService.ReplaceColorTable(texture, table);
+            if (ImGui.DragFloat("Specular Strength", ref specularStrength, 0.1f))
+                _stateManager.ChangeMaterialValue(_state!, index, new Vector3(specularStrength), new Vector3(specularStrengthGame),
+                    ApplySettings.Manual);
         }
     }
 

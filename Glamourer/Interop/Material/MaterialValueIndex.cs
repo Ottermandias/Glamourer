@@ -59,26 +59,42 @@ public readonly record struct MaterialValueIndex(
         return true;
     }
 
-    public unsafe bool TryGetTexture(Actor actor, out Texture* texture)
+    public unsafe bool TryGetTexture(Actor actor, out Texture** texture)
     {
-        if (!TryGetTextures(actor, out var textures) || MaterialIndex >= MaterialService.MaterialsPerModel)
+        if (TryGetTextures(actor, out var textures))
+            return TryGetTexture(textures, out texture);
+
+        texture = null;
+        return false;
+    }
+
+    public unsafe bool TryGetTexture(ReadOnlySpan<Pointer<Texture>> textures, out Texture** texture)
+    {
+        if (MaterialIndex >= textures.Length || textures[MaterialIndex].Value == null)
         {
             texture = null;
             return false;
         }
 
-        texture = textures[MaterialIndex].Value;
-        return texture != null;
+        fixed (Pointer<Texture>* ptr = textures)
+        {
+            texture = (Texture**)ptr + MaterialIndex;
+        }
+
+        return true;
     }
 
     public unsafe bool TryGetColorTable(Actor actor, out MtrlFile.ColorTable table)
     {
         if (TryGetTexture(actor, out var texture))
-            return DirectXTextureHelper.TryGetColorTable(texture, out table);
+            return TryGetColorTable(texture, out table);
 
         table = default;
         return false;
     }
+
+    public unsafe bool TryGetColorTable(Texture** texture, out MtrlFile.ColorTable table)
+        => DirectXTextureHelper.TryGetColorTable(*texture, out table);
 
     public unsafe bool TryGetColorRow(Actor actor, out MtrlFile.ColorTable.Row row)
     {
