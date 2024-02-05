@@ -17,7 +17,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
     private         float  _innerWidth;
 
     public WeaponCombo(ItemManager items, FullEquipType type, Logger log)
-        : base(() => GetWeapons(items, type), log)
+        : base(() => GetWeapons(items, type), MouseWheelType.Unmodified, log)
     {
         Label         = GetLabel(type);
         SearchByParts = true;

@@ -1,7 +1,6 @@
 ﻿using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Glamourer.Automation;
-using Glamourer.GameData;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Services;
@@ -25,7 +24,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
 
     protected DesignComboBase(Func<IReadOnlyList<Tuple<Design, string>>> generator, Logger log, DesignChanged designChanged,
         TabSelected tabSelected, EphemeralConfig config, DesignColors designColors)
-        : base(generator, log)
+        : base(generator, MouseWheelType.Unmodified, log)
     {
         _designChanged = designChanged;
         TabSelected    = tabSelected;
@@ -38,7 +37,10 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
         => _config.IncognitoMode;
 
     void IDisposable.Dispose()
-        => _designChanged.Unsubscribe(OnDesignChange);
+    {
+        _designChanged.Unsubscribe(OnDesignChange);
+        GC.SuppressFinalize(this);
+    }
 
     protected override bool DrawSelectable(int globalIdx, bool selected)
     {
@@ -118,63 +120,87 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
         {
             case DesignChanged.Type.Created:
             case DesignChanged.Type.Renamed:
-                Cleanup();
-                break;
+            case DesignChanged.Type.ChangedColor:
             case DesignChanged.Type.Deleted:
-                Cleanup();
-                if (CurrentSelection?.Item1 == design)
+            case DesignChanged.Type.QuickDesignBar:
+                var priorState = IsInitialized;
+                if (priorState)
+                    Cleanup();
+                CurrentSelectionIdx = Items.IndexOf(s => ReferenceEquals(s.Item1, CurrentSelection?.Item1));
+                if (CurrentSelectionIdx >= 0)
                 {
-                    CurrentSelectionIdx = Items.Count > 0 ? 0 : -1;
-                    CurrentSelection    = Items[CurrentSelectionIdx];
+                    CurrentSelection = Items[CurrentSelectionIdx];
+                }
+                else if (Items.Count > 0)
+                {
+                    CurrentSelectionIdx = 0;
+                    CurrentSelection    = Items[0];
+                }
+                else
+                {
+                    CurrentSelection = null;
                 }
 
+                if (!priorState)
+                    Cleanup();
                 break;
         }
     }
 }
 
-public sealed class DesignCombo : DesignComboBase
+public abstract class DesignCombo : DesignComboBase
 {
-    private readonly DesignManager _manager;
-
-    public DesignCombo(DesignManager designs, DesignFileSystem fileSystem, Logger log, DesignChanged designChanged, TabSelected tabSelected,
-        EphemeralConfig config, DesignColors designColors)
-        : base(() => designs.Designs
-            .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
-            .OrderBy(d => d.Item2)
-            .ToList(), log, designChanged, tabSelected, config, designColors)
+    protected DesignCombo(Logger log, DesignChanged designChanged, TabSelected tabSelected,
+        EphemeralConfig config, DesignColors designColors, Func<IReadOnlyList<Tuple<Design, string>>> generator)
+        : base(generator, log, designChanged, tabSelected, config, designColors)
     {
-        _manager = designs;
-        if (designs.Designs.Count == 0)
+        if (Items.Count == 0)
             return;
 
         CurrentSelection    = Items[0];
         CurrentSelectionIdx = 0;
+        base.Cleanup();
     }
 
     public Design? Design
         => CurrentSelection?.Item1;
 
     public void Draw(float width)
-    {
-        Draw(Design, (Incognito ? Design?.Incognito : Design?.Name.Text) ?? string.Empty, width);
-        if (ImGui.IsItemHovered() && _manager.Designs.Count > 1)
-        {
-            var mouseWheel = -(int)ImGui.GetIO().MouseWheel % _manager.Designs.Count;
-            CurrentSelectionIdx = mouseWheel switch
-            {
-                < 0 when CurrentSelectionIdx < 0 => _manager.Designs.Count - 1 + mouseWheel,
-                < 0                              => (CurrentSelectionIdx + _manager.Designs.Count + mouseWheel) % _manager.Designs.Count,
-                > 0 when CurrentSelectionIdx < 0 => mouseWheel,
-                > 0                              => (CurrentSelectionIdx + mouseWheel) % _manager.Designs.Count,
-                _                                => CurrentSelectionIdx,
-            };
-            CurrentSelection = Items[CurrentSelectionIdx];
-        }
-    }
+        => Draw(Design, (Incognito ? Design?.Incognito : Design?.Name.Text) ?? string.Empty, width);
 }
 
-public sealed class RevertDesignCombo : DesignComboBase, IDisposable
+public sealed class QuickDesignCombo(
+    DesignManager designs,
+    DesignFileSystem fileSystem,
+    Logger log,
+    DesignChanged designChanged,
+    TabSelected tabSelected,
+    EphemeralConfig config,
+    DesignColors designColors)
+    : DesignCombo(log, designChanged, tabSelected, config, designColors, () =>
+    [
+        .. designs.Designs
+            .Where(d => d.QuickDesign)
+            .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
+            .OrderBy(d => d.Item2),
+    ]);
+
+public sealed class LinkDesignCombo(
+    DesignManager designs,
+    DesignFileSystem fileSystem,
+    Logger log,
+    DesignChanged designChanged,
+    TabSelected tabSelected,
+    EphemeralConfig config,
+    DesignColors designColors)
+    : DesignCombo(log, designChanged, tabSelected, config, designColors, () =>
+    [
+        .. designs.Designs
+            .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
+            .OrderBy(d => d.Item2),
+    ]);
+
+public sealed class RevertDesignCombo : DesignComboBase
 {
     public const     int               RevertDesignIndex = -1228;
     public readonly  Design            RevertDesign;

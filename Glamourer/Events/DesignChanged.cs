@@ -92,6 +92,9 @@ public sealed class DesignChanged()
         /// <summary> An existing design changed its write protection status. Data is the new value [bool]. </summary>
         WriteProtection,
 
+        /// <summary> An existing design changed its display status for the quick design bar. Data is the new value [bool]. </summary>
+        QuickDesignBar,
+
         /// <summary> An existing design changed one of the meta flags. Data is the flag, whether it was about their applying and the new value [(MetaFlag, bool, bool)]. </summary>
         Other,
     }

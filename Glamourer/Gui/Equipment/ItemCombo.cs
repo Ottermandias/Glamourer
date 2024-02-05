@@ -24,7 +24,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     public Variant   CustomVariant { get; private set; }
 
     public ItemCombo(IDataManager gameData, ItemManager items, EquipSlot slot, Logger log, FavoriteManager favorites)
-        : base(() => GetItems(favorites, items, slot), log)
+        : base(() => GetItems(favorites, items, slot), MouseWheelType.Unmodified, log)
     {
         _favorites    = favorites;
         Label         = GetLabel(gameData, slot);

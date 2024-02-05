@@ -125,10 +125,23 @@ public class DesignDetailTab
                 Glamourer.Messager.NotificationMessage(ex, ex.Message, "Could not rename or move design", NotificationType.Error);
             }
 
+        ImGuiUtil.DrawFrameColumn("Quick Design Bar");
+        ImGui.TableNextColumn();
+        if (ImGui.RadioButton("Display##qdb", _selector.Selected.QuickDesign))
+            _manager.SetQuickDesign(_selector.Selected!, true);
+        var hovered = ImGui.IsItemHovered();
+        ImGui.SameLine();
+        if (ImGui.RadioButton("Hide##qdb", !_selector.Selected.QuickDesign))
+            _manager.SetQuickDesign(_selector.Selected!, false);
+        if (hovered || ImGui.IsItemHovered())
+            ImGui.SetTooltip("Display or hide this design in your quick design bar.");
+
         ImGuiUtil.DrawFrameColumn("Color");
         var colorName = _selector.Selected!.Color.Length == 0 ? DesignColors.AutomaticName : _selector.Selected!.Color;
         ImGui.TableNextColumn();
-        if (_colorCombo.Draw("##colorCombo", colorName, "Associate a color with this design. Right-Click to revert to automatic coloring.",
+        if (_colorCombo.Draw("##colorCombo", colorName, "Associate a color with this design.\n"
+              + "Right-Click to revert to automatic coloring.\n"
+              + "Hold Control and scroll the mousewheel to scroll.",
                 width.X - ImGui.GetStyle().ItemSpacing.X - ImGui.GetFrameHeight(), ImGui.GetTextLineHeight())
          && _colorCombo.CurrentSelection != null)
         {

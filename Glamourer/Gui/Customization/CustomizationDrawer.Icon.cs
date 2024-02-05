@@ -18,8 +18,9 @@ public partial class CustomizationDrawer
         using var bigGroup = ImRaii.Group();
         var       label    = _currentOption;
 
-        var current = _set.DataByValue(index, _currentByte, out var custom, _customize.Face);
-        var npc     = false;
+        var current         = _set.DataByValue(index, _currentByte, out var custom, _customize.Face);
+        var originalCurrent = current;
+        var npc             = false;
         if (current < 0)
         {
             label   = $"{_currentOption} (NPC)";
@@ -32,7 +33,14 @@ public partial class CustomizationDrawer
         using (_ = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw))
         {
             if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
+            {
                 ImGui.OpenPopup(IconSelectorPopup);
+            }
+            else if (originalCurrent >= 0 && CaptureMouseWheel(ref current, 0, _currentCount))
+            {
+                var data = _set.Data(_currentIndex, current, _customize.Face);
+                UpdateValue(data.Value);
+            }
         }
 
         ImGuiUtil.HoverIconTooltip(icon, _iconSize);

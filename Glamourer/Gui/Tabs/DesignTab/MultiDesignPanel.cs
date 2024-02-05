@@ -3,6 +3,7 @@ using Dalamud.Interface.Utility;
 using Glamourer.Designs;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Filesystem;
 using OtterGui.Raii;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
@@ -21,6 +22,7 @@ public class MultiDesignPanel(DesignFileSystemSelector _selector, DesignManager 
         DrawDesignList();
         var offset = DrawMultiTagger(width);
         DrawMultiColor(width, offset);
+        DrawMultiQuickDesignBar(offset);
     }
 
     private void DrawDesignList()
@@ -35,6 +37,8 @@ public class MultiDesignPanel(DesignFileSystemSelector _selector, DesignManager 
         var sizeMods             = availableSizePercent * 35;
         var sizeFolders          = availableSizePercent * 65;
 
+        _numQuickDesignEnabled = 0;
+        _numDesigns = 0;
         using (var table = ImRaii.Table("mods", 3, ImGuiTableFlags.RowBg))
         {
             if (!table)
@@ -61,15 +65,24 @@ public class MultiDesignPanel(DesignFileSystemSelector _selector, DesignManager 
                 ImGui.TableNextColumn();
                 ImGui.AlignTextToFramePadding();
                 ImGui.TextUnformatted(fullName);
+
+                if (path is not DesignFileSystem.Leaf l2)
+                    continue;
+
+                ++_numDesigns;
+                if (l2.Value.QuickDesign)
+                    ++_numQuickDesignEnabled;
             }
         }
 
         ImGui.Separator();
     }
 
-    private          string              _tag           = string.Empty;
-    private readonly List<Design>        _addDesigns    =  [];
-    private readonly List<(Design, int)> _removeDesigns =  [];
+    private          string              _tag = string.Empty;
+    private          int                 _numQuickDesignEnabled;
+    private          int                 _numDesigns;
+    private readonly List<Design>        _addDesigns    = [];
+    private readonly List<(Design, int)> _removeDesigns = [];
 
     private float DrawMultiTagger(Vector2 width)
     {
@@ -108,6 +121,30 @@ public class MultiDesignPanel(DesignFileSystemSelector _selector, DesignManager 
                 _editor.RemoveTag(design, index);
         ImGui.Separator();
         return offset;
+    }
+
+    private void DrawMultiQuickDesignBar(float offset)
+    {
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Multi QDB:");
+        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
+        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        var diff        = _numDesigns - _numQuickDesignEnabled;
+        var tt = diff == 0
+            ? $"All {_numDesigns} selected designs are already displayed in the quick design bar."
+            : $"Display all {_numDesigns} selected designs in the quick design bar. Changes {diff} designs.";
+        if (ImGuiUtil.DrawDisabledButton("Display Selected Designs in QDB", buttonWidth, tt, diff == 0))
+            foreach(var design in _selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+                _editor.SetQuickDesign(design.Value, true);
+
+        ImGui.SameLine();
+        tt = _numQuickDesignEnabled == 0
+            ? $"All {_numDesigns} selected designs are already hidden in the quick design bar."
+            : $"Hide all {_numDesigns} selected designs in the quick design bar. Changes {_numQuickDesignEnabled} designs.";
+        if (ImGuiUtil.DrawDisabledButton("Hide Selected Designs in QDB", buttonWidth, tt, _numQuickDesignEnabled == 0))
+            foreach (var design in _selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+                _editor.SetQuickDesign(design.Value, false);
+        ImGui.Separator();
     }
 
     private void DrawMultiColor(Vector2 width, float offset)

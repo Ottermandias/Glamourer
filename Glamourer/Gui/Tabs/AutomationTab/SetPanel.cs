@@ -429,7 +429,7 @@ public class SetPanel(
     }
 
     private sealed class JobGroupCombo(AutoDesignManager manager, JobService jobs, Logger log)
-        : FilterComboCache<JobGroup>(() => jobs.JobGroups.Values.ToList(), log)
+        : FilterComboCache<JobGroup>(() => jobs.JobGroups.Values.ToList(), MouseWheelType.None, log)
     {
         public void Draw(AutoDesignSet set, AutoDesign design, int autoDesignIndex)
         {

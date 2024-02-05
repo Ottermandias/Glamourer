@@ -10,8 +10,15 @@ public sealed class DesignColorCombo(DesignColors _designColors, bool _skipAutom
     FilterComboCache<string>(_skipAutomatic
             ? _designColors.Keys.OrderBy(k => k)
             : _designColors.Keys.OrderBy(k => k).Prepend(DesignColors.AutomaticName),
-        Glamourer.Log)
+        MouseWheelType.Shift, Glamourer.Log)
 {
+    protected override void OnMouseWheel(string preview, ref int current, int steps)
+    {
+        if (CurrentSelectionIdx < 0)
+            CurrentSelectionIdx = Items.IndexOf(preview);
+        base.OnMouseWheel(preview, ref current, steps);
+    }
+
     protected override bool DrawSelectable(int globalIdx, bool selected)
     {
         var       isAutomatic = !_skipAutomatic && globalIdx == 0;
