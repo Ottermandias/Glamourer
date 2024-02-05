@@ -116,6 +116,7 @@ public unsafe class FunModule : IDisposable
                 SetRandomItem(slot, ref armor);
                 break;
             case CodeService.CodeFlag.Elephants:
+            case CodeService.CodeFlag.Dolphins:
             case CodeService.CodeFlag.World when actor.Index != 0:
                 KeepOldArmor(actor, slot, ref armor);
                 break;
@@ -167,6 +168,10 @@ public unsafe class FunModule : IDisposable
                 var stainId = ElephantStains[_rng.Next(0, ElephantStains.Length)];
                 SetElephant(EquipSlot.Body, ref armor[1], stainId);
                 SetElephant(EquipSlot.Head, ref armor[0], stainId);
+                break;
+            case CodeService.CodeFlag.Dolphins:
+                SetDolphin(EquipSlot.Body, ref armor[1]);
+                SetDolphin(EquipSlot.Head, ref armor[0]); 
                 break;
             case CodeService.CodeFlag.World when actor.Index != 0:
                 _worldSets.Apply(actor, _rng, armor);
@@ -226,6 +231,32 @@ public unsafe class FunModule : IDisposable
             82, 82, 82,         // Lotus Pink
             7,                  // Rose Pink
         ];
+
+    private static IReadOnlyList<CharacterArmor> DolphinBodies
+        =>
+        [
+            new CharacterArmor(6089, 1, 4), // Toad
+            new CharacterArmor(6089, 1, 4), // Toad
+            new CharacterArmor(6089, 1, 4), // Toad
+            new CharacterArmor(6023, 1, 4), // Swine
+            new CharacterArmor(6023, 1, 4), // Swine
+            new CharacterArmor(6023, 1, 4), // Swine
+            new CharacterArmor(6133, 1, 4), // Gaja
+            new CharacterArmor(6182, 1, 3), // Imp
+            new CharacterArmor(6182, 1, 3), // Imp
+            new CharacterArmor(6182, 1, 4), // Imp
+            new CharacterArmor(6182, 1, 4), // Imp
+        ];
+
+    private void SetDolphin(EquipSlot slot, ref CharacterArmor armor)
+    {
+        armor = slot switch
+        {
+            EquipSlot.Body => DolphinBodies[_rng.Next(0, DolphinBodies.Count - 1)],
+            EquipSlot.Head => new CharacterArmor(5040, 1, 0),
+            _              => armor,
+        };
+    }
 
     private void SetElephant(EquipSlot slot, ref CharacterArmor armor, StainId stainId)
     {
