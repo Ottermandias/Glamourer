@@ -10,7 +10,7 @@ using OtterGui.Services;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSelector _selector, LinkDesignCombo _combo) : IUiService
+public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSelector _selector, LinkDesignCombo _combo, DesignColors _colorManager) : IUiService
 {
     private int       _dragDropIndex       = -1;
     private LinkOrder _dragDropOrder       = LinkOrder.None;
@@ -20,6 +20,10 @@ public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSe
     public void Draw()
     {
         using var header = ImRaii.CollapsingHeader("Design Links");
+        ImGuiUtil.HoverTooltip(
+            "Design links are links to other designs that will be applied to characters or during automation according to the rules set.\n"
+          + "They apply from top to bottom just like automated design sets, so anything set by an earlier design will not not be set again by later designs, and order is important.\n"
+          + "If a linked design links to other designs, they will also be applied, so circular links are prohibited. ");
         if (!header)
             return;
 
@@ -82,11 +86,30 @@ public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSe
     {
         using var id = ImRaii.PushId((int)LinkOrder.Self);
         ImGui.TableNextColumn();
+        var color = _colorManager.GetColor(_selector.Selected!);
+        using (ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            using var c = ImRaii.PushColor(ImGuiCol.Text, color);
+            ImGui.AlignTextToFramePadding();
+            ImGuiUtil.RightAlign(FontAwesomeIcon.ArrowRightLong.ToIconString());
+        }
+
         ImGui.TableNextColumn();
-        ImGui.AlignTextToFramePadding();
-        ImGui.Selectable(_selector.IncognitoMode ? _selector.Selected!.Incognito : _selector.Selected!.Name.Text);
+        using (ImRaii.PushColor(ImGuiCol.Text, color))
+        {
+            ImGui.AlignTextToFramePadding();
+            ImGui.Selectable(_selector.IncognitoMode ? _selector.Selected!.Incognito : _selector.Selected!.Name.Text);
+        }
+
+        ImGuiUtil.HoverTooltip("Current Design");
         DrawDragDrop(_selector.Selected!, LinkOrder.Self, 0);
         ImGui.TableNextColumn();
+        using (ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            using var c = ImRaii.PushColor(ImGuiCol.Text, color);
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(FontAwesomeIcon.ArrowLeftLong.ToIconString());
+        }
     }
 
     private void DrawSubList(IReadOnlyList<DesignLink> list, LinkOrder order)
@@ -103,8 +126,12 @@ public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSe
             var (design, flags) = list[i];
             ImGui.TableNextColumn();
 
-            ImGui.AlignTextToFramePadding();
-            ImGui.Selectable(_selector.IncognitoMode ? design.Incognito : design.Name.Text);
+            using (ImRaii.PushColor(ImGuiCol.Text, _colorManager.GetColor(design)))
+            {
+                ImGui.AlignTextToFramePadding();
+                ImGui.Selectable(_selector.IncognitoMode ? design.Incognito : design.Name.Text);
+            }
+
             DrawDragDrop(design, order, i);
 
             ImGui.TableNextColumn();
