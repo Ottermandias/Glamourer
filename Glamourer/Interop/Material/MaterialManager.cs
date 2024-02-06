@@ -30,7 +30,8 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         _penumbra     = penumbra;
         _event        = prepareColorSet;
 
-        _event.Subscribe(OnPrepareColorSet, PrepareColorSet.Priority.MaterialManager);
+        // TODO Material
+        //_event.Subscribe(OnPrepareColorSet, PrepareColorSet.Priority.MaterialManager);
     }
 
     public void Dispose()

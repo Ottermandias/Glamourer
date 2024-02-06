@@ -384,7 +384,7 @@ public class DesignPanel(
         DrawCustomize();
         DrawEquipment();
         DrawCustomizeParameters();
-        DrawMaterialValues();
+        //DrawMaterialValues(); TODO Materials
         _designDetails.Draw();
         DrawApplicationRules();
         _modAssociations.Draw();
