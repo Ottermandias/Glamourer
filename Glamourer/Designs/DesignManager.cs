@@ -284,6 +284,18 @@ public sealed class DesignManager : DesignEditor
         DesignChanged.Invoke(DesignChanged.Type.WriteProtection, design, value);
     }
 
+    /// <summary> Set the quick design bar display status of a design. </summary>
+    public void SetQuickDesign(Design design, bool value)
+    {
+        if (value == design.QuickDesign)
+            return;
+
+        design.QuickDesign = value;
+        SaveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set design {design.Identifier} to {(!value ? "no longer be " : string.Empty)} displayed in the quick design bar.");
+        DesignChanged.Invoke(DesignChanged.Type.QuickDesignBar, design, value);
+    }
+
     #endregion
 
     #region Edit Application Rules

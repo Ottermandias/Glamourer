@@ -20,6 +20,7 @@ using Glamourer.Unlocks;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
 using OtterGui.Log;
+using OtterGui.Raii;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
@@ -47,7 +48,7 @@ public static class ServiceManagerA
         DalamudServices.AddServices(services, pi);
         services.AddIServices(typeof(EquipItem).Assembly);
         services.AddIServices(typeof(Glamourer).Assembly);
-        services.AddIServices(typeof(EquipFlag).Assembly);
+        services.AddIServices(typeof(ImRaii).Assembly);
         services.CreateProvider();
         return services;
     }
@@ -145,7 +146,8 @@ public static class ServiceManagerA
             .AddSingleton<MultiDesignPanel>()
             .AddSingleton<DesignPanel>()
             .AddSingleton<DesignTab>()
-            .AddSingleton<DesignCombo>()
+            .AddSingleton<QuickDesignCombo>()
+            .AddSingleton<LinkDesignCombo>()
             .AddSingleton<RevertDesignCombo>()
             .AddSingleton<ModAssociationsTab>()
             .AddSingleton<DesignDetailTab>()

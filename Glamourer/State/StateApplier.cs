@@ -1,6 +1,7 @@
 ﻿using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Interop;
+using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
@@ -118,8 +119,7 @@ public class StateApplier(
         // If the source is not IPC we do not want to apply restrictions.
         var data = GetData(state);
         if (apply)
-            ChangeArmor(data, slot, state.ModelData.Armor(slot), state.Sources[slot, false] is not StateSource.Ipc,
-                state.ModelData.IsHatVisible());
+            ChangeArmor(data, slot, state.ModelData.Armor(slot), !state.Sources[slot, false].IsIpc(), state.ModelData.IsHatVisible());
 
         return data;
     }
@@ -267,12 +267,44 @@ public class StateApplier(
             actor.Model.ApplyParameterData(flags, values);
     }
 
-    /// <inheritdoc cref="ChangeParameters(ActorData,CustomizeParameterFlag,in CustomizeParameterData)"/>
+    /// <inheritdoc cref="ChangeParameters(ActorData,CustomizeParameterFlag,in CustomizeParameterData,bool)"/>
     public ActorData ChangeParameters(ActorState state, CustomizeParameterFlag flags, bool apply)
     {
         var data = GetData(state);
         if (apply)
             ChangeParameters(data, flags, state.ModelData.Parameters, state.IsLocked);
+        return data;
+    }
+
+    public unsafe void ChangeMaterialValue(ActorData data, MaterialValueIndex index, ColorRow? value, bool force)
+    {
+        if (!force && !_config.UseAdvancedParameters)
+            return;
+
+        foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))
+        {
+            if (!index.TryGetTexture(actor, out var texture))
+                continue;
+
+            if (!index.TryGetColorTable(texture, out var table))
+                continue;
+
+            if (value.HasValue)
+                value.Value.Apply(ref table[index.RowIndex]);
+            else if (PrepareColorSet.TryGetColorTable(actor, index, out var baseTable))
+                table[index.RowIndex] = baseTable[index.RowIndex];
+            else
+                continue;
+
+            MaterialService.ReplaceColorTable(texture, table);
+        }
+    }
+
+    public ActorData ChangeMaterialValue(ActorState state, MaterialValueIndex index, bool apply)
+    {
+        var data = GetData(state);
+        if (apply)
+            ChangeMaterialValue(data, index, state.Materials.TryGetValue(index, out var v) ? v.Model : null, state.IsLocked);
         return data;
     }
 
@@ -294,10 +326,7 @@ public class StateApplier(
         {
             ChangeCustomize(actors, state.ModelData.Customize);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            {
-                ChangeArmor(actors, slot, state.ModelData.Armor(slot), state.Sources[slot, false] is not StateSource.Ipc,
-                    state.ModelData.IsHatVisible());
-            }
+                ChangeArmor(actors, slot, state.ModelData.Armor(slot), !state.Sources[slot, false].IsIpc(), state.ModelData.IsHatVisible());
 
             var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
             ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));

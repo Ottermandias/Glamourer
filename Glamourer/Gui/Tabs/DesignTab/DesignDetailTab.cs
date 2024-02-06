@@ -95,9 +95,13 @@ public class DesignDetailTab
                     Glamourer.Messager.NotificationMessage(ex, $"Could not open file {fileName}.", $"Could not open file {fileName}",
                         NotificationType.Warning);
                 }
+
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                ImGui.SetClipboardText(identifier);
         }
 
-        ImGuiUtil.HoverTooltip($"Open the file\n\t{fileName}\ncontaining this design in the .json-editor of your choice.");
+        ImGuiUtil.HoverTooltip(
+            $"Open the file\n\t{fileName}\ncontaining this design in the .json-editor of your choice.\n\nRight-Click to copy identifier to clipboard.");
 
         ImGuiUtil.DrawFrameColumn("Full Selector Path");
         ImGui.TableNextColumn();
@@ -121,19 +125,33 @@ public class DesignDetailTab
                 Glamourer.Messager.NotificationMessage(ex, ex.Message, "Could not rename or move design", NotificationType.Error);
             }
 
+        ImGuiUtil.DrawFrameColumn("Quick Design Bar");
+        ImGui.TableNextColumn();
+        if (ImGui.RadioButton("Display##qdb", _selector.Selected.QuickDesign))
+            _manager.SetQuickDesign(_selector.Selected!, true);
+        var hovered = ImGui.IsItemHovered();
+        ImGui.SameLine();
+        if (ImGui.RadioButton("Hide##qdb", !_selector.Selected.QuickDesign))
+            _manager.SetQuickDesign(_selector.Selected!, false);
+        if (hovered || ImGui.IsItemHovered())
+            ImGui.SetTooltip("Display or hide this design in your quick design bar.");
+
         ImGuiUtil.DrawFrameColumn("Color");
         var colorName = _selector.Selected!.Color.Length == 0 ? DesignColors.AutomaticName : _selector.Selected!.Color;
         ImGui.TableNextColumn();
-        if (_colorCombo.Draw("##colorCombo", colorName, "Associate a color with this design. Right-Click to revert to automatic coloring.",
+        if (_colorCombo.Draw("##colorCombo", colorName, "Associate a color with this design.\n"
+              + "Right-Click to revert to automatic coloring.\n"
+              + "Hold Control and scroll the mousewheel to scroll.",
                 width.X - ImGui.GetStyle().ItemSpacing.X - ImGui.GetFrameHeight(), ImGui.GetTextLineHeight())
          && _colorCombo.CurrentSelection != null)
         {
             colorName = _colorCombo.CurrentSelection is DesignColors.AutomaticName ? string.Empty : _colorCombo.CurrentSelection;
             _manager.ChangeColor(_selector.Selected!, colorName);
         }
+
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             _manager.ChangeColor(_selector.Selected!, string.Empty);
-        
+
         if (_colors.TryGetValue(_selector.Selected!.Color, out var currentColor))
         {
             ImGui.SameLine();

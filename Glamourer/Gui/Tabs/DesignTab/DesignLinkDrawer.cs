@@ -10,7 +10,7 @@ using OtterGui.Services;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSelector _selector, DesignCombo _combo) : IUiService
+public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSelector _selector, LinkDesignCombo _combo) : IUiService
 {
     private int       _dragDropIndex       = -1;
     private LinkOrder _dragDropOrder       = LinkOrder.None;

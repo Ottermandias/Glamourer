@@ -1,6 +1,7 @@
 ﻿using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using OtterGuiInternal;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -34,7 +35,8 @@ public partial class CustomizationDrawer
     {
         var tmp = (int)_currentByte.Value;
         ImGui.SetNextItemWidth(_comboSelectorSize);
-        if (ImGui.SliderInt("##slider", ref tmp, 0, _currentCount - 1, "%i", ImGuiSliderFlags.AlwaysClamp))
+        if (ImGui.SliderInt("##slider", ref tmp, 0, _currentCount - 1, "%i", ImGuiSliderFlags.AlwaysClamp)
+         || CaptureMouseWheel(ref tmp, 0, _currentCount - 1))
             UpdateValue((CustomizeValue)tmp);
     }
 
@@ -42,11 +44,10 @@ public partial class CustomizationDrawer
     {
         var tmp = (int)_currentByte.Value;
         ImGui.SetNextItemWidth(_inputIntSize);
+        var cap = ImGui.GetIO().KeyCtrl ? byte.MaxValue : _currentCount - 1;
         if (ImGui.InputInt("##text", ref tmp, 1, 1))
         {
-            var newValue = (CustomizeValue)(ImGui.GetIO().KeyCtrl
-                ? Math.Clamp(tmp, 0, byte.MaxValue)
-                : Math.Clamp(tmp, 0, _currentCount - 1));
+            var newValue = (CustomizeValue)Math.Clamp(tmp, 0, cap);
             UpdateValue(newValue);
         }
 
@@ -73,6 +74,10 @@ public partial class CustomizationDrawer
             else if (ImGui.GetIO().KeyCtrl)
                 UpdateValue((CustomizeValue)value);
         }
+        else
+        {
+            CheckWheel();
+        }
 
         if (!_withApply)
             ImGuiUtil.HoverTooltip("Hold Control to force updates with invalid/unknown options at your own risk.");
@@ -81,15 +86,29 @@ public partial class CustomizationDrawer
         if (ImGuiUtil.DrawDisabledButton("-", new Vector2(ImGui.GetFrameHeight()), "Select the previous available option in order.",
                 currentIndex <= 0))
             UpdateValue(_set.Data(_currentIndex, currentIndex - 1, _customize.Face).Value);
+        else
+            CheckWheel();
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton("+", new Vector2(ImGui.GetFrameHeight()), "Select the next available option in order.",
                 currentIndex >= _currentCount - 1 || npc))
             UpdateValue(_set.Data(_currentIndex, currentIndex + 1, _customize.Face).Value);
+        else
+            CheckWheel();
+        return;
+
+        void CheckWheel()
+        {
+            if (currentIndex < 0 || !CaptureMouseWheel(ref currentIndex, 0, _currentCount))
+                return;
+
+            var data = _set.Data(_currentIndex, currentIndex, _customize.Face);
+            UpdateValue(data.Value);
+        }
     }
 
     private void DrawListSelector(CustomizeIndex index, bool indexedBy1)
     {
-        using var id        = SetId(index);
+        using var id       = SetId(index);
         using var bigGroup = ImRaii.Group();
 
         using (_ = ImRaii.Disabled(_locked))
@@ -122,29 +141,31 @@ public partial class CustomizationDrawer
     private void ListCombo0()
     {
         ImGui.SetNextItemWidth(_comboSelectorSize * ImGui.GetIO().FontGlobalScale);
-        var       current = _currentByte.Value;
-        using var combo   = ImRaii.Combo("##combo", $"{_currentOption} #{current + 1}");
-
-        if (!combo)
-            return;
-
-        for (var i = 0; i < _currentCount; ++i)
+        var current = (int)_currentByte.Value;
+        using (var combo = ImRaii.Combo("##combo", $"{_currentOption} #{current + 1}"))
         {
-            if (ImGui.Selectable($"{_currentOption} #{i + 1}##combo", i == current))
-                UpdateValue((CustomizeValue)i);
+            if (combo)
+
+                for (var i = 0; i < _currentCount; ++i)
+                {
+                    if (ImGui.Selectable($"{_currentOption} #{i + 1}##combo", i == current))
+                        UpdateValue((CustomizeValue)i);
+                }
         }
+
+        if (CaptureMouseWheel(ref current, 0, _currentCount))
+            UpdateValue((CustomizeValue)current);
     }
 
     private void ListInputInt0()
     {
         var tmp = _currentByte.Value + 1;
         ImGui.SetNextItemWidth(_inputIntSize);
+        var cap = ImGui.GetIO().KeyCtrl ? byte.MaxValue + 1 : _currentCount;
         if (ImGui.InputInt("##text", ref tmp, 1, 1))
         {
-            var newValue = (CustomizeValue)(ImGui.GetIO().KeyCtrl
-                ? Math.Clamp(tmp, 1, byte.MaxValue + 1)
-                : Math.Clamp(tmp, 1, _currentCount));
-            UpdateValue(newValue - 1);
+            var newValue = Math.Clamp(tmp, 1, cap);
+            UpdateValue((CustomizeValue)(newValue - 1));
         }
 
         ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]\n"
@@ -154,33 +175,54 @@ public partial class CustomizationDrawer
     private void ListCombo1()
     {
         ImGui.SetNextItemWidth(_comboSelectorSize * ImGui.GetIO().FontGlobalScale);
-        var       current = _currentByte.Value;
-        using var combo   = ImRaii.Combo("##combo", $"{_currentOption} #{current}");
-
-        if (!combo)
-            return;
-
-        for (var i = 1; i <= _currentCount; ++i)
+        var current = (int)_currentByte.Value;
+        using (var combo = ImRaii.Combo("##combo", $"{_currentOption} #{current}"))
         {
-            if (ImGui.Selectable($"{_currentOption} #{i}##combo", i == current))
-                UpdateValue((CustomizeValue)i);
+            if (combo)
+                for (var i = 1; i <= _currentCount; ++i)
+                {
+                    if (ImGui.Selectable($"{_currentOption} #{i}##combo", i == current))
+                        UpdateValue((CustomizeValue)i);
+                }
         }
+
+        if (CaptureMouseWheel(ref current, 1, _currentCount))
+            UpdateValue((CustomizeValue)current);
     }
 
     private void ListInputInt1()
     {
         var tmp = (int)_currentByte.Value;
         ImGui.SetNextItemWidth(_inputIntSize);
+        var (offset, cap) = ImGui.GetIO().KeyCtrl ? (0, byte.MaxValue) : (1, _currentCount);
         if (ImGui.InputInt("##text", ref tmp, 1, 1))
         {
-            var newValue = (CustomizeValue)(ImGui.GetIO().KeyCtrl
-                ? Math.Clamp(tmp, 0, byte.MaxValue)
-                : Math.Clamp(tmp, 1, _currentCount));
+            var newValue = (CustomizeValue)Math.Clamp(tmp, offset, cap);
             UpdateValue(newValue);
         }
 
         ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]\n"
           + "Hold Control to force updates with invalid/unknown options at your own risk.");
+    }
+
+    private static bool CaptureMouseWheel(ref int value, int offset, int cap)
+    {
+        if (!ImGui.IsItemHovered() || !ImGui.GetIO().KeyCtrl)
+            return false;
+
+        ImGuiInternal.ItemSetUsingMouseWheel();
+
+        var mw = (int)ImGui.GetIO().MouseWheel;
+        if (mw == 0)
+            return false;
+
+        value -= offset;
+        value = mw switch
+        {
+            < 0 => offset + (value + cap + mw) % cap,
+            _   => offset + (value + mw) % cap,
+        };
+        return true;
     }
 
     // Draw a customize checkbox.

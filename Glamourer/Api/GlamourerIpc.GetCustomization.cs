@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
+using Glamourer.Designs;
 using Penumbra.Api.Helpers;
 using Penumbra.GameData.Actors;
 
@@ -40,6 +41,6 @@ public partial class GlamourerIpc
                 return null;
         }
 
-        return _designConverter.ShareBase64(state);
+        return _designConverter.ShareBase64(state, ApplicationRules.AllButParameters(state));
     }
 }

@@ -7,10 +7,46 @@ public enum StateSource : byte
     Game,
     Manual,
     Fixed,
-    Ipc,
+    IpcFixed,
+    IpcManual,
 
     // Only used for CustomizeParameters.
     Pending,
+}
+
+public static class StateSourceExtensions
+{
+    public static StateSource Base(this StateSource source)
+        => source switch
+        {
+            StateSource.Manual or StateSource.IpcManual or StateSource.Pending => StateSource.Manual,
+            StateSource.Fixed or StateSource.IpcFixed                          => StateSource.Fixed,
+            _                                                                  => StateSource.Game,
+        };
+
+    public static bool IsGame(this StateSource source)
+        => source.Base() is StateSource.Game;
+
+    public static bool IsManual(this StateSource source)
+        => source.Base() is StateSource.Manual;
+
+    public static bool IsFixed(this StateSource source)
+        => source.Base() is StateSource.Fixed;
+
+    public static StateSource SetPending(this StateSource source)
+        => source is StateSource.Manual ? StateSource.Pending : source;
+
+    public static bool RequiresChange(this StateSource source)
+        => source switch
+        {
+            StateSource.Manual    => true,
+            StateSource.IpcFixed  => true,
+            StateSource.IpcManual => true,
+            _                     => false,
+        };
+
+    public static bool IsIpc(this StateSource source)
+        => source is StateSource.IpcManual or StateSource.IpcFixed;
 }
 
 public unsafe struct StateSources
@@ -59,14 +95,16 @@ public unsafe struct StateSources
 
                 case (byte)StateSource.Game | ((byte)StateSource.Fixed << 4):
                 case (byte)StateSource.Manual | ((byte)StateSource.Fixed << 4):
-                case (byte)StateSource.Ipc | ((byte)StateSource.Fixed << 4):
+                case (byte)StateSource.IpcFixed | ((byte)StateSource.Fixed << 4):
                 case (byte)StateSource.Pending | ((byte)StateSource.Fixed << 4):
+                case (byte)StateSource.IpcManual | ((byte)StateSource.Fixed << 4):
                     _data[i] = (byte)((value & 0x0F) | ((byte)StateSource.Manual << 4));
                     break;
                 case (byte)StateSource.Fixed:
                 case ((byte)StateSource.Manual << 4) | (byte)StateSource.Fixed:
-                case ((byte)StateSource.Ipc << 4) | (byte)StateSource.Fixed:
+                case ((byte)StateSource.IpcFixed << 4) | (byte)StateSource.Fixed:
                 case ((byte)StateSource.Pending << 4) | (byte)StateSource.Fixed:
+                case ((byte)StateSource.IpcManual << 4) | (byte)StateSource.Fixed:
                     _data[i] = (byte)((value & 0xF0) | (byte)StateSource.Manual);
                     break;
             }

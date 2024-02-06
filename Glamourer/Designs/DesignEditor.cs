@@ -1,6 +1,7 @@
 using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
+using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
 using Penumbra.GameData.Enums;
@@ -250,6 +251,14 @@ public class DesignEditor(
 
         foreach (var parameter in CustomizeParameterExtensions.AllFlags.Where(other.DoApplyParameter))
             ChangeCustomizeParameter(design, parameter, other.DesignData.Parameters[parameter]);
+
+        foreach (var (key, value) in other.Materials)
+        {
+            if (!value.Enabled)
+                continue;
+
+            design.GetMaterialDataRef().AddOrUpdateValue(MaterialValueIndex.FromKey(key), value);
+        }
     }
 
     /// <summary> Change a mainhand weapon and either fix or apply appropriate offhand and potentially gauntlets. </summary>

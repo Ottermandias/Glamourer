@@ -16,7 +16,7 @@ public sealed class HumanNpcCombo(
     DictBNpc bNpcs,
     HumanModelList humans,
     Logger log)
-    : FilterComboCache<(string Name, ObjectKind Kind, uint[] Ids)>(() => CreateList(modelCharaDict, bNpcNames, bNpcs, humans), log)
+    : FilterComboCache<(string Name, ObjectKind Kind, uint[] Ids)>(() => CreateList(modelCharaDict, bNpcNames, bNpcs, humans), MouseWheelType.None, log)
 {
     protected override string ToString((string Name, ObjectKind Kind, uint[] Ids) obj)
         => obj.Name;

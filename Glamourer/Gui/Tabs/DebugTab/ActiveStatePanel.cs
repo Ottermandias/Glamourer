@@ -1,7 +1,6 @@
 ﻿using Dalamud.Interface;
 using Glamourer.GameData;
 using Glamourer.Designs;
-using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Glamourer.State;

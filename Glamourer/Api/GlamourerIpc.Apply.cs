@@ -11,7 +11,9 @@ namespace Glamourer.Api;
 public partial class GlamourerIpc
 {
     public const string LabelApplyAll                          = "Glamourer.ApplyAll";
+    public const string LabelApplyAllOnce                      = "Glamourer.ApplyAllOnce";
     public const string LabelApplyAllToCharacter               = "Glamourer.ApplyAllToCharacter";
+    public const string LabelApplyAllOnceToCharacter           = "Glamourer.ApplyAllOnceToCharacter";
     public const string LabelApplyOnlyEquipment                = "Glamourer.ApplyOnlyEquipment";
     public const string LabelApplyOnlyEquipmentToCharacter     = "Glamourer.ApplyOnlyEquipmentToCharacter";
     public const string LabelApplyOnlyCustomization            = "Glamourer.ApplyOnlyCustomization";
@@ -24,11 +26,15 @@ public partial class GlamourerIpc
     public const string LabelApplyOnlyCustomizationLock            = "Glamourer.ApplyOnlyCustomizationLock";
     public const string LabelApplyOnlyCustomizationToCharacterLock = "Glamourer.ApplyOnlyCustomizationToCharacterLock";
 
-    public const string LabelApplyByGuid            = "Glamourer.ApplyByGuid";
-    public const string LabelApplyByGuidToCharacter = "Glamourer.ApplyByGuidToCharacter";
+    public const string LabelApplyByGuid                = "Glamourer.ApplyByGuid";
+    public const string LabelApplyByGuidOnce            = "Glamourer.ApplyByGuidOnce";
+    public const string LabelApplyByGuidToCharacter     = "Glamourer.ApplyByGuidToCharacter";
+    public const string LabelApplyByGuidOnceToCharacter = "Glamourer.ApplyByGuidOnceToCharacter";
 
     private readonly ActionProvider<string, string>     _applyAllProvider;
+    private readonly ActionProvider<string, string>     _applyAllOnceProvider;
     private readonly ActionProvider<string, Character?> _applyAllToCharacterProvider;
+    private readonly ActionProvider<string, Character?> _applyAllOnceToCharacterProvider;
     private readonly ActionProvider<string, string>     _applyOnlyEquipmentProvider;
     private readonly ActionProvider<string, Character?> _applyOnlyEquipmentToCharacterProvider;
     private readonly ActionProvider<string, string>     _applyOnlyCustomizationProvider;
@@ -42,13 +48,21 @@ public partial class GlamourerIpc
     private readonly ActionProvider<string, Character?, uint> _applyOnlyCustomizationToCharacterProviderLock;
 
     private readonly ActionProvider<Guid, string>     _applyByGuidProvider;
+    private readonly ActionProvider<Guid, string>     _applyByGuidOnceProvider;
     private readonly ActionProvider<Guid, Character?> _applyByGuidToCharacterProvider;
+    private readonly ActionProvider<Guid, Character?> _applyByGuidOnceToCharacterProvider;
 
     public static ActionSubscriber<string, string> ApplyAllSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApplyAll);
 
+    public static ActionSubscriber<string, string> ApplyAllOnceSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelApplyAllOnce);
+
     public static ActionSubscriber<string, Character?> ApplyAllToCharacterSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApplyAllToCharacter);
+
+    public static ActionSubscriber<string, Character?> ApplyAllOnceToCharacterSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelApplyAllOnceToCharacter);
 
     public static ActionSubscriber<string, string> ApplyOnlyEquipmentSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApplyOnlyEquipment);
@@ -65,14 +79,26 @@ public partial class GlamourerIpc
     public static ActionSubscriber<Guid, string> ApplyByGuidSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApplyByGuid);
 
+    public static ActionSubscriber<Guid, string> ApplyByGuidOnceSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelApplyByGuidOnce);
+
     public static ActionSubscriber<Guid, Character?> ApplyByGuidToCharacterSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApplyByGuidToCharacter);
+
+    public static ActionSubscriber<Guid, Character?> ApplyByGuidOnceToCharacterSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelApplyByGuidOnceToCharacter);
 
     public void ApplyAll(string base64, string characterName)
         => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(characterName), version, 0);
 
+    public void ApplyAllOnce(string base64, string characterName)
+        => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(characterName), version, 0, true);
+
     public void ApplyAllToCharacter(string base64, Character? character)
         => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(character), version, 0);
+
+    public void ApplyAllOnceToCharacter(string base64, Character? character)
+        => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(character), version, 0, true);
 
     public void ApplyOnlyEquipment(string base64, string characterName)
         => ApplyDesign(_designConverter.FromBase64(base64, false, true, out var version), FindActors(characterName), version, 0);
@@ -107,12 +133,18 @@ public partial class GlamourerIpc
 
 
     public void ApplyByGuid(Guid identifier, string characterName)
-        => ApplyDesignByGuid(identifier, FindActors(characterName), 0);
+        => ApplyDesignByGuid(identifier, FindActors(characterName), 0, false);
+
+    public void ApplyByGuidOnce(Guid identifier, string characterName)
+        => ApplyDesignByGuid(identifier, FindActors(characterName), 0, true);
 
     public void ApplyByGuidToCharacter(Guid identifier, Character? character)
-        => ApplyDesignByGuid(identifier, FindActors(character), 0);
+        => ApplyDesignByGuid(identifier, FindActors(character), 0, false);
 
-    private void ApplyDesign(DesignBase? design, IEnumerable<ActorIdentifier> actors, byte version, uint lockCode)
+    public void ApplyByGuidOnceToCharacter(Guid identifier, Character? character)
+        => ApplyDesignByGuid(identifier, FindActors(character), 0, true);
+
+    private void ApplyDesign(DesignBase? design, IEnumerable<ActorIdentifier> actors, byte version, uint lockCode, bool once = false)
     {
         if (design == null)
             return;
@@ -130,12 +162,13 @@ public partial class GlamourerIpc
 
             if ((hasModelId || state.ModelData.ModelId == 0) && state.CanUnlock(lockCode))
             {
-                _stateManager.ApplyDesign(state, design, new ApplySettings(Source:StateSource.Ipc, Key:lockCode));
+                _stateManager.ApplyDesign(state, design,
+                    new ApplySettings(Source: once ? StateSource.IpcManual : StateSource.IpcFixed, Key: lockCode));
                 state.Lock(lockCode);
             }
         }
     }
 
-    private void ApplyDesignByGuid(Guid identifier, IEnumerable<ActorIdentifier> actors, uint lockCode)
-        => ApplyDesign(_designManager.Designs.ByIdentifier(identifier), actors, DesignConverter.Version, lockCode);
+    private void ApplyDesignByGuid(Guid identifier, IEnumerable<ActorIdentifier> actors, uint lockCode, bool once)
+        => ApplyDesign(_designManager.Designs.ByIdentifier(identifier), actors, DesignConverter.Version, lockCode, once);
 }

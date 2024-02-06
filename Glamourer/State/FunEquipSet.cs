@@ -77,7 +77,8 @@ internal class FunEquipSet
         new Group(0000, 0, 0137, 2, 0000, 0, 0000, 0, 0000, 0), // Wailing Spirit
         new Group(0232, 1, 0232, 1, 0279, 1, 0232, 1, 0232, 1), // Eerie Attire
         new Group(0232, 1, 6036, 1, 0279, 1, 0232, 1, 0232, 1), // Vampire
-        new Group(0505, 6, 0505, 6, 0505, 6, 0505, 6, 0505, 6)  // Manusya Casting
+        new Group(0505, 6, 0505, 6, 0505, 6, 0505, 6, 0505, 6), // Manusya Casting
+        new Group(6147, 1, 6147, 1, 6147, 1, 6147, 1, 6147, 1)  // Tonberry
     );
 
     public static readonly FunEquipSet AprilFirst = new
@@ -94,7 +95,13 @@ internal class FunEquipSet
         new Group(0159, 1, 0000, 0, 0000, 0, 0000, 0, 0000, 0), // Slime Crown
         new Group(6117, 1, 6117, 1, 6117, 1, 6117, 1, 6117, 1), // Clown
         new Group(6169, 3, 6169, 3, 0279, 1, 6169, 3, 6169, 3), // Chocobo Pajama
-        new Group(6169, 2, 6169, 2, 0279, 2, 6169, 2, 6169, 2)  // Cactuar Pajama
+        new Group(6169, 2, 6169, 2, 0279, 2, 6169, 2, 6169, 2), // Cactuar Pajama
+        new Group(6023, 1, 6023, 1, 0000, 0, 0000, 0, 0000, 0), // Swine
+        new Group(5040, 1, 0000, 0, 0000, 0, 0000, 0, 0000, 0), // Namazu only
+        new Group(5040, 1, 6023, 1, 0000, 0, 0000, 0, 0000, 0), // Namazu lean
+        new Group(5040, 1, 6023, 1, 0000, 0, 0000, 0, 0000, 0), // Namazu chonk
+        new Group(6182, 1, 6182, 1, 0000, 0, 0000, 0, 0000, 0), // Imp
+        new Group(6147, 1, 6147, 1, 6147, 1, 6147, 1, 6147, 1)  // Tonberry
     );
 
     private FunEquipSet(params Group[] groups)

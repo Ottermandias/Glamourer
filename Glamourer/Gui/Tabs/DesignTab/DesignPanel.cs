@@ -174,6 +174,25 @@ public class DesignPanel(
         _parameterDrawer.Draw(_manager, _selector.Selected!);
     }
 
+    private void DrawMaterialValues()
+    {
+        if (!_config.UseAdvancedParameters)
+            return;
+
+        using var h = ImRaii.CollapsingHeader("Advanced Dyes");
+        if (!h)
+            return;
+
+        foreach (var ((key, value), i) in _selector.Selected!.Materials.WithIndex())
+        {
+            using var id = ImRaii.PushId(i);
+            ImGui.TextUnformatted($"{key:X16}");
+            ImGui.SameLine();
+            var enabled = value.Enabled;
+            ImGui.Checkbox("Enabled", ref enabled);
+        }
+    }
+
     private void DrawCustomizeApplication()
     {
         using var id        = ImRaii.PushId("Customizations");
@@ -293,10 +312,10 @@ public class DesignPanel(
 
         var labels = new[]
         {
+            "Apply Wetness",
             "Apply Hat Visibility",
             "Apply Visor State",
             "Apply Weapon Visibility",
-            "Apply Wetness",
         };
 
         foreach (var (index, label) in MetaExtensions.AllRelevant.Zip(labels))
@@ -365,6 +384,7 @@ public class DesignPanel(
         DrawCustomize();
         DrawEquipment();
         DrawCustomizeParameters();
+        //DrawMaterialValues(); TODO Materials
         _designDetails.Draw();
         DrawApplicationRules();
         _modAssociations.Draw();

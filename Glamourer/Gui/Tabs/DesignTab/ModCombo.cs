@@ -11,7 +11,7 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings)>
 {
     public ModCombo(PenumbraService penumbra, Logger log)
-        : base(penumbra.GetMods, log)
+        : base(penumbra.GetMods, MouseWheelType.None, log)
     {
         SearchByParts = false;
     }

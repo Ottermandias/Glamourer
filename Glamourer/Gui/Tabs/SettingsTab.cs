@@ -90,6 +90,11 @@ public class SettingsTab(
             "Enable the display and editing of advanced customization options like arbitrary colors.",
             config.UseAdvancedParameters, paletteChecker.SetAdvancedParameters);
         PaletteImportButton();
+        Checkbox("Always Apply Associated Mods",
+            "Whenever a design is applied to a character (including via automation), Glamourer will try to apply its associated mod settings to the collection currently associated with that character, if it is available.\n\n"
+          + "Glamourer will NOT revert these applied settings automatically. This may mess up your collection and configuration.\n\n"
+          + "If you enable this setting, you are aware that any resulting misconfiguration is your own fault.",
+            config.AlwaysApplyAssociatedMods, v => config.AlwaysApplyAssociatedMods = v);
         ImGui.NewLine();
     }
 

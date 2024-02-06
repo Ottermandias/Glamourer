@@ -26,6 +26,7 @@ public sealed class Design : DesignBase, ISavable
     {
         Tags           = [.. other.Tags];
         Description    = other.Description;
+        QuickDesign    = other.QuickDesign;
         AssociatedMods = new SortedList<Mod, ModSettings>(other.AssociatedMods);
     }
 
@@ -39,6 +40,7 @@ public sealed class Design : DesignBase, ISavable
     public string                       Description    { get; internal set; } = string.Empty;
     public string[]                     Tags           { get; internal set; } = [];
     public int                          Index          { get; internal set; }
+    public bool                         QuickDesign    { get; internal set; } = true;
     public string                       Color          { get; internal set; } = string.Empty;
     public SortedList<Mod, ModSettings> AssociatedMods { get; private set; }  = [];
     public LinkContainer                Links          { get; private set; }  = [];
@@ -64,11 +66,13 @@ public sealed class Design : DesignBase, ISavable
             ["Name"]           = Name.Text,
             ["Description"]    = Description,
             ["Color"]          = Color,
+            ["QuickDesign"]    = QuickDesign,
             ["Tags"]           = JArray.FromObject(Tags),
             ["WriteProtected"] = WriteProtected(),
             ["Equipment"]      = SerializeEquipment(),
             ["Customize"]      = SerializeCustomize(),
             ["Parameters"]     = SerializeParameters(),
+            ["Materials"]      = SerializeMaterials(),
             ["Mods"]           = SerializeMods(),
             ["Links"]          = Links.Serialize(),
         };
@@ -124,6 +128,7 @@ public sealed class Design : DesignBase, ISavable
             Description  = json["Description"]?.ToObject<string>() ?? string.Empty,
             Tags         = ParseTags(json),
             LastEdit     = json["LastEdit"]?.ToObject<DateTimeOffset>() ?? creationDate,
+            QuickDesign  = json["QuickDesign"]?.ToObject<bool>() ?? true,
         };
         if (design.LastEdit < creationDate)
             design.LastEdit = creationDate;
@@ -132,6 +137,7 @@ public sealed class Design : DesignBase, ISavable
         LoadEquip(items, json["Equipment"], design, design.Name, true);
         LoadMods(json["Mods"], design);
         LoadParameters(json["Parameters"], design, design.Name);
+        LoadMaterials(json["Materials"], design, design.Name);
         LoadLinks(linkLoader, json["Links"], design);
         design.Color = json["Color"]?.ToObject<string>() ?? string.Empty;
         return design;

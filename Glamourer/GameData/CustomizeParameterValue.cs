@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Glamourer.GameData;
+﻿namespace Glamourer.GameData;
 
 public readonly struct CustomizeParameterValue
 {
@@ -49,4 +47,26 @@ public readonly struct CustomizeParameterValue
 
     public override string ToString()
         => _data.ToString();
+}
+
+public static class VectorExtensions
+{
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    public static bool NearEqual(this Vector3 lhs, Vector3 rhs, float eps = 1e-9f)
+        => (lhs - rhs).LengthSquared() < eps;
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    public static bool NearEqual(this Vector4 lhs, Vector4 rhs, float eps = 1e-9f)
+        => (lhs - rhs).LengthSquared() < eps;
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    public static bool NearEqual(this CustomizeParameterValue lhs, CustomizeParameterValue rhs, float eps = 1e-9f)
+        => NearEqual(lhs.InternalQuadruple, rhs.InternalQuadruple, eps);
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    public static bool NearEqual(this float lhs, float rhs, float eps = 1e-5f)
+    {
+        var diff = lhs - rhs;
+        return diff < 0 ? diff > -eps : diff < eps;
+    }
 }

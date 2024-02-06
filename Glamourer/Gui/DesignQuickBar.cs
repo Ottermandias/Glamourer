@@ -24,7 +24,7 @@ public sealed class DesignQuickBar : Window, IDisposable
             : ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing;
 
     private readonly Configuration     _config;
-    private readonly DesignCombo       _designCombo;
+    private readonly QuickDesignCombo  _designCombo;
     private readonly StateManager      _stateManager;
     private readonly AutoDesignApplier _autoDesignApplier;
     private readonly ObjectManager     _objects;
@@ -34,7 +34,7 @@ public sealed class DesignQuickBar : Window, IDisposable
     private          DateTime          _keyboardToggle = DateTime.UnixEpoch;
     private          int               _numButtons;
 
-    public DesignQuickBar(Configuration config, DesignCombo designCombo, StateManager stateManager, IKeyState keyState,
+    public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
         ObjectManager objects, AutoDesignApplier autoDesignApplier)
         : base("Glamourer Quick Bar", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking)
     {
@@ -299,7 +299,8 @@ public sealed class DesignQuickBar : Window, IDisposable
             (true, false)  => 3,
             (false, false) => 2,
         };
-        Size = new Vector2((7 + _numButtons) * ImGui.GetFrameHeight() + _numButtons * ImGui.GetStyle().ItemInnerSpacing.X, ImGui.GetFrameHeight());
+        Size = new Vector2((7 + _numButtons) * ImGui.GetFrameHeight() + _numButtons * ImGui.GetStyle().ItemInnerSpacing.X,
+            ImGui.GetFrameHeight());
         return Size.Value.X;
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Glamourer.Designs.Links;
-using Glamourer.GameData;
+using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Utility;
@@ -7,11 +7,17 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Files;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
-public class DesignConverter(ItemManager _items, DesignManager _designs, CustomizeService _customize, HumanModelList _humans, DesignLinkLoader _linkLoader)
+public class DesignConverter(
+    ItemManager _items,
+    DesignManager _designs,
+    CustomizeService _customize,
+    HumanModelList _humans,
+    DesignLinkLoader _linkLoader)
 {
     public const byte Version = 6;
 
@@ -21,9 +27,9 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
     public JObject ShareJObject(Design design)
         => design.JsonSerialize();
 
-    public JObject ShareJObject(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
+    public JObject ShareJObject(ActorState state, in ApplicationRules rules)
     {
-        var design = Convert(state, equipFlags, customizeFlags, crestFlags, parameterFlags);
+        var design = Convert(state, rules);
         return ShareJObject(design);
     }
 
@@ -33,33 +39,24 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
     public string ShareBase64(DesignBase design)
         => ShareBase64(ShareJObject(design));
 
-    public string ShareBase64(ActorState state)
-        => ShareBase64(state, EquipFlagExtensions.All, CustomizeFlagExtensions.All, CrestExtensions.All, CustomizeParameterExtensions.All);
+    public string ShareBase64(ActorState state, in ApplicationRules rules)
+        => ShareBase64(state.ModelData, state.Materials, rules);
 
-    public string ShareBase64(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
-        => ShareBase64(state.ModelData, equipFlags, customizeFlags, crestFlags, parameterFlags);
-
-    public string ShareBase64(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
+    public string ShareBase64(in DesignData data, in StateMaterialManager materials, in ApplicationRules rules)
     {
-        var design = Convert(data, equipFlags, customizeFlags, crestFlags, parameterFlags);
+        var design = Convert(data, materials, rules);
         return ShareBase64(ShareJObject(design));
     }
 
-    public DesignBase Convert(ActorState state, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
-        => Convert(state.ModelData, equipFlags, customizeFlags, crestFlags, parameterFlags);
+    public DesignBase Convert(ActorState state, in ApplicationRules rules)
+        => Convert(state.ModelData, state.Materials, rules);
 
-    public DesignBase Convert(in DesignData data, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags, CustomizeParameterFlag parameterFlags)
+    public DesignBase Convert(in DesignData data, in StateMaterialManager materials, in ApplicationRules rules)
     {
         var design = _designs.CreateTemporary();
-        design.ApplyEquip      = equipFlags & EquipFlagExtensions.All;
-        design.ApplyCustomize  = customizeFlags & CustomizeFlagExtensions.AllRelevant;
-        design.ApplyCrest      = crestFlags & CrestExtensions.All;
-        design.ApplyParameters = parameterFlags & CustomizeParameterExtensions.All;
-        design.SetApplyMeta(MetaIndex.HatState, design.DoApplyEquip(EquipSlot.Head));
-        design.SetApplyMeta(MetaIndex.VisorState, design.DoApplyEquip(EquipSlot.Head));
-        design.SetApplyMeta(MetaIndex.WeaponState, design.DoApplyEquip(EquipSlot.MainHand) || design.DoApplyEquip(EquipSlot.OffHand));
-        design.SetApplyMeta(MetaIndex.Wetness, true);
+        rules.Apply(design);
         design.SetDesignData(_customize, data);
+        ComputeMaterials(design.GetMaterialDataRef(), materials, rules.Equip);
         return design;
     }
 
@@ -139,7 +136,7 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
         return ret;
     }
 
-    private static string ShareBase64(JObject jObject)
+    private static string ShareBase64(JToken jObject)
     {
         var json       = jObject.ToString(Formatting.None);
         var compressed = json.Compress(Version);
@@ -186,5 +183,30 @@ public class DesignConverter(ItemManager _items, DesignManager _designs, Customi
         }
 
         yield return (EquipSlot.OffHand, oh, offhand.Stain);
+    }
+
+    private static void ComputeMaterials(DesignMaterialManager manager, in StateMaterialManager materials,
+        EquipFlag equipFlags = EquipFlagExtensions.All)
+    {
+        foreach (var (key, value) in materials.Values)
+        {
+            var idx = MaterialValueIndex.FromKey(key);
+            if (idx.RowIndex >= MtrlFile.ColorTable.NumRows)
+                continue;
+            if (idx.MaterialIndex >= MaterialService.MaterialsPerModel)
+                continue;
+
+            var slot = idx.DrawObject switch
+            {
+                MaterialValueIndex.DrawObjectType.Human => idx.SlotIndex < 10 ? ((uint)idx.SlotIndex).ToEquipSlot() : EquipSlot.Unknown,
+                MaterialValueIndex.DrawObjectType.Mainhand when idx.SlotIndex == 0 => EquipSlot.MainHand,
+                MaterialValueIndex.DrawObjectType.Offhand when idx.SlotIndex == 0 => EquipSlot.OffHand,
+                _ => EquipSlot.Unknown,
+            };
+            if (slot is EquipSlot.Unknown || (slot.ToBothFlags() & equipFlags) == 0)
+                continue;
+
+            manager.AddOrUpdateValue(idx, value.Convert());
+        }
     }
 }

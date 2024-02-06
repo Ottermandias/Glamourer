@@ -23,6 +23,11 @@ public partial class CustomizationDrawer
         {
             if (ImGui.ColorButton($"{_customize[index].Value}##color", color, ImGuiColorEditFlags.None, _framedIconSize))
                 ImGui.OpenPopup(ColorPickerPopupName);
+            else if (current >= 0 && CaptureMouseWheel(ref current, 0, _currentCount))
+            {
+                var data = _set.Data(_currentIndex, current, _customize.Face);
+                UpdateValue(data.Value);
+            }
         }
 
         var npc = false;

@@ -4,6 +4,7 @@ using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Penumbra.GameData.Actors;
@@ -23,8 +24,9 @@ public sealed class StateManager(
     IClientState _clientState,
     Configuration config,
     JobChangeState jobChange,
-    DesignMerger merger)
-    : StateEditor(editor, applier, @event, jobChange, config, items, merger), IReadOnlyDictionary<ActorIdentifier, ActorState>
+    DesignMerger merger,
+    ModSettingApplier modApplier)
+    : StateEditor(editor, applier, @event, jobChange, config, items, merger, modApplier), IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
     private readonly Dictionary<ActorIdentifier, ActorState> _states = [];
 
@@ -240,8 +242,10 @@ public sealed class StateManager(
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
             state.Sources[flag] = StateSource.Game;
 
+        state.Materials.Clear();
+
         var actors = ActorData.Invalid;
-        if (source is StateSource.Manual or StateSource.Ipc)
+        if (source is not StateSource.Game)
             actors = Applier.ApplyAll(state, redraw, true);
 
         Glamourer.Log.Verbose(
@@ -260,7 +264,7 @@ public sealed class StateManager(
             state.Sources[flag] = StateSource.Game;
 
         var actors = ActorData.Invalid;
-        if (source is StateSource.Manual or StateSource.Ipc)
+        if (source is not StateSource.Game)
             actors = Applier.ChangeParameters(state, CustomizeParameterExtensions.All, true);
         Glamourer.Log.Verbose(
             $"Reset advanced customization state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
@@ -314,28 +318,10 @@ public sealed class StateManager(
             }
         }
 
-        if (state.Sources[MetaIndex.HatState] is StateSource.Fixed)
+        foreach (var meta in MetaExtensions.AllRelevant.Where(f => state.Sources[f] is StateSource.Fixed))
         {
-            state.Sources[MetaIndex.HatState] = StateSource.Game;
-            state.ModelData.SetHatVisible(state.BaseData.IsHatVisible());
-        }
-
-        if (state.Sources[MetaIndex.VisorState] is StateSource.Fixed)
-        {
-            state.Sources[MetaIndex.VisorState] = StateSource.Game;
-            state.ModelData.SetVisor(state.BaseData.IsVisorToggled());
-        }
-
-        if (state.Sources[MetaIndex.WeaponState] is StateSource.Fixed)
-        {
-            state.Sources[MetaIndex.WeaponState] = StateSource.Game;
-            state.ModelData.SetWeaponVisible(state.BaseData.IsWeaponVisible());
-        }
-
-        if (state.Sources[MetaIndex.Wetness] is StateSource.Fixed)
-        {
-            state.Sources[MetaIndex.Wetness] = StateSource.Game;
-            state.ModelData.SetIsWet(state.BaseData.IsWet());
+            state.Sources[meta] = StateSource.Game;
+            state.ModelData.SetMeta(meta, state.BaseData.GetMeta(meta));
         }
     }
 
