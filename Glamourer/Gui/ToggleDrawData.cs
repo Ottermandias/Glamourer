@@ -27,8 +27,8 @@ public struct ToggleDrawData
     {
         switch (_index.GetFlag())
         {
-            case MetaIndex index:
-                _editor.ChangeMetaState(_data, index, value, ApplySettings.Manual);
+            case MetaFlag flag:
+                _editor.ChangeMetaState(_data, flag.ToIndex(), value, ApplySettings.Manual);
                 break;
             case CrestFlag flag:
                 _editor.ChangeCrest(_data, flag, value, ApplySettings.Manual);
@@ -42,8 +42,8 @@ public struct ToggleDrawData
         var design  = (Design)_data;
         switch (_index.GetFlag())
         {
-            case MetaIndex index:
-                manager.ChangeApplyMeta(design, index, value);
+            case MetaFlag flag:
+                manager.ChangeApplyMeta(design, flag.ToIndex(), value);
                 break;
             case CrestFlag flag:
                 manager.ChangeApplyCrest(design, flag, value);

@@ -3,7 +3,6 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
 using Glamourer.Gui;
-using Glamourer.Gui.Customization;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using OtterGui;
