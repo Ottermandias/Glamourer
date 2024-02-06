@@ -7,6 +7,7 @@ using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using OtterGui.Widgets;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -139,7 +140,7 @@ public class EquipmentDrawer
     public bool DrawAllStain(out StainId ret, bool locked)
     {
         using var disabled = ImRaii.Disabled(locked);
-        var       change   = _stainCombo.Draw("Dye All Slots", Stain.None.RgbaColor, string.Empty, false, false);
+        var       change   = _stainCombo.Draw("Dye All Slots", Stain.None.RgbaColor, string.Empty, false, false, MouseWheelType.None);
         ret = Stain.None.RowIndex;
         if (change)
             if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out var stain))
@@ -464,12 +465,12 @@ public class EquipmentDrawer
         (var tt, item, var valid) = (allowRevert && !revertItem.Equals(currentItem), allowClear && !clearItem.Equals(currentItem),
                 ImGui.GetIO().KeyCtrl) switch
             {
-                (true, true, true)   => ("Right-click to clear. Control and Right-Click to revert to game.", revertItem, true),
-                (true, true, false)  => ("Right-click to clear. Control and Right-Click to revert to game.", clearItem, true),
-                (true, false, true)  => ("Control and Right-Click to revert to game.", revertItem, true),
-                (true, false, false) => ("Control and Right-Click to revert to game.", default, false),
-                (false, true, _)     => ("Right-click to clear.", clearItem, true),
-                (false, false, _)    => (string.Empty, default, false),
+                (true, true, true)   => ("Right-click to clear. Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.", revertItem, true),
+                (true, true, false)  => ("Right-click to clear. Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.", clearItem, true),
+                (true, false, true)  => ("Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.", revertItem, true),
+                (true, false, false) => ("Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.", default, false),
+                (false, true, _)     => ("Right-click to clear.\nControl and mouse wheel to scroll.", clearItem, true),
+                (false, false, _)    => ("Control and mouse wheel to scroll.", default, false),
             };
         ImGuiUtil.HoverTooltip(tt);
 

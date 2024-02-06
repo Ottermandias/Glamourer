@@ -36,9 +36,6 @@ public sealed class GlamourerColorCombo(float _comboWidth, DictStain _stains, Fa
         return base.DrawSelectable(globalIdx, selected);
     }
 
-    public override bool Draw(string label, uint color, string name, bool found, bool gloss, float previewWidth)
-        => base.Draw(label, color, name, found, gloss, previewWidth);
-
     private static Func<IReadOnlyList<KeyValuePair<byte, (string Name, uint Color, bool Gloss)>>> CreateFunc(DictStain stains,
         FavoriteManager favorites)
         => () => stains.Select(kvp => (kvp, favorites.Contains(kvp.Key))).OrderBy(p => !p.Item2).Select(p => p.kvp)

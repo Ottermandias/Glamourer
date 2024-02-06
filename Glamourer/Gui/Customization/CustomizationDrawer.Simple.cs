@@ -36,7 +36,7 @@ public partial class CustomizationDrawer
         var tmp = (int)_currentByte.Value;
         ImGui.SetNextItemWidth(_comboSelectorSize);
         if (ImGui.SliderInt("##slider", ref tmp, 0, _currentCount - 1, "%i", ImGuiSliderFlags.AlwaysClamp)
-         || CaptureMouseWheel(ref tmp, 0, _currentCount - 1))
+         || CaptureMouseWheel(ref tmp, 0, _currentCount))
             UpdateValue((CustomizeValue)tmp);
     }
 
