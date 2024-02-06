@@ -165,15 +165,15 @@ public class StateEditor(
         StateChanged.Invoke(StateChanged.Type.Parameter, settings.Source, state, actors, (old, @new, flag));
     }
 
-    public void ChangeMaterialValue(object data, MaterialValueIndex index, Vector3 value, Vector3 gameValue, ApplySettings settings)
+    public void ChangeMaterialValue(object data, MaterialValueIndex index, in MaterialValueState newValue, ApplySettings settings)
     {
         var state = (ActorState)data;
-        if (!Editor.ChangeMaterialValue(state, index, value, gameValue, settings.Source, out var oldValue, settings.Key))
+        if (!Editor.ChangeMaterialValue(state, index, newValue, settings.Source, out var oldValue, settings.Key))
             return;
 
         var actors = Applier.ChangeMaterialValue(state, index, settings.Source.RequiresChange());
-        Glamourer.Log.Verbose($"Set material value in state {state.Identifier.Incognito(null)} from {oldValue} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChanged.Type.MaterialValue, settings.Source, state, actors, (oldValue, value, index));
+        Glamourer.Log.Verbose($"Set material value in state {state.Identifier.Incognito(null)} from {oldValue} to {newValue.Game}. [Affecting {actors.ToLazyString("nothing")}.]");
+        StateChanged.Invoke(StateChanged.Type.MaterialValue, settings.Source, state, actors, (oldValue, newValue.Game, index));
     }
 
     /// <inheritdoc/>
@@ -281,6 +281,20 @@ public class StateEditor(
             {
                 if (!settings.RespectManual || !state.Sources[meta].IsManual())
                     Editor.ChangeMetaState(state, meta, mergedDesign.Design.DesignData.GetMeta(meta), Source(meta), out _, settings.Key);
+            }
+
+            foreach (var (key, value) in mergedDesign.Design.Materials)
+            {
+                if (!value.Enabled)
+                    continue;
+
+                var idx = MaterialValueIndex.FromKey(key);
+                // TODO
+                //if (state.Materials.TryGetValue(idx, out var materialState))
+                //{
+                //    if (!settings.RespectManual || materialState.Source.IsManual())
+                //        Editor.ChangeMaterialValue(state, idx, new MaterialValueState(materialState.Game, value.Value, materialState.DrawData));
+                //}
             }
         }
 

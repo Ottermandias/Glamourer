@@ -1,12 +1,242 @@
 ﻿global using StateMaterialManager = Glamourer.Interop.Material.MaterialValueManager<Glamourer.Interop.Material.MaterialValueState>;
 global using DesignMaterialManager = Glamourer.Interop.Material.MaterialValueManager<Glamourer.Interop.Material.MaterialValueDesign>;
+using Glamourer.GameData;
 using Glamourer.State;
+using Penumbra.GameData.Files;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Structs;
 
 
 namespace Glamourer.Interop.Material;
 
-public record struct MaterialValueDesign(Vector3 Value, bool Enabled);
-public record struct MaterialValueState(Vector3 Game, Vector3 Model, StateSource Source);
+[JsonConverter(typeof(Converter))]
+public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, float specularStrength, float glossStrength)
+{
+    public static readonly ColorRow Empty = new(Vector3.Zero, Vector3.Zero, Vector3.Zero, 0, 0);
+
+    public Vector3 Diffuse          = diffuse;
+    public Vector3 Specular         = specular;
+    public Vector3 Emissive         = emissive;
+    public float   SpecularStrength = specularStrength;
+    public float   GlossStrength    = glossStrength;
+
+    public ColorRow(in MtrlFile.ColorTable.Row row)
+        : this(row.Diffuse, row.Specular, row.Emissive, row.SpecularStrength, row.GlossStrength)
+    { }
+
+    public readonly bool NearEqual(in ColorRow rhs)
+        => Diffuse.NearEqual(rhs.Diffuse)
+         && Specular.NearEqual(rhs.Specular)
+         && Emissive.NearEqual(rhs.Emissive)
+         && SpecularStrength.NearEqual(rhs.SpecularStrength)
+         && GlossStrength.NearEqual(rhs.GlossStrength);
+
+    public readonly bool Apply(ref MtrlFile.ColorTable.Row row)
+    {
+        var ret = false;
+        if (!row.Diffuse.NearEqual(Diffuse))
+        {
+            row.Diffuse = Diffuse;
+            ret         = true;
+        }
+
+        if (!row.Specular.NearEqual(Specular))
+        {
+            row.Specular = Specular;
+            ret          = true;
+        }
+
+        if (!row.Emissive.NearEqual(Emissive))
+        {
+            row.Emissive = Emissive;
+            ret          = true;
+        }
+
+        if (!row.SpecularStrength.NearEqual(SpecularStrength))
+        {
+            row.SpecularStrength = SpecularStrength;
+            ret                  = true;
+        }
+
+        if (!row.GlossStrength.NearEqual(GlossStrength))
+        {
+            row.GlossStrength = GlossStrength;
+            ret               = true;
+        }
+
+        return ret;
+    }
+
+    private class Converter : JsonConverter<ColorRow>
+    {
+        public override void WriteJson(JsonWriter writer, ColorRow value, JsonSerializer serializer)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("DiffuseR");
+            writer.WriteValue(value.Diffuse.X);
+            writer.WritePropertyName("DiffuseG");
+            writer.WriteValue(value.Diffuse.Y);
+            writer.WritePropertyName("DiffuseB");
+            writer.WriteValue(value.Diffuse.Z);
+            writer.WritePropertyName("SpecularR");
+            writer.WriteValue(value.Specular.X);
+            writer.WritePropertyName("SpecularG");
+            writer.WriteValue(value.Specular.Y);
+            writer.WritePropertyName("SpecularB");
+            writer.WriteValue(value.Specular.Z);
+            writer.WritePropertyName("SpecularA");
+            writer.WriteValue(value.SpecularStrength);
+            writer.WritePropertyName("EmissiveR");
+            writer.WriteValue(value.Emissive.X);
+            writer.WritePropertyName("EmissiveG");
+            writer.WriteValue(value.Emissive.Y);
+            writer.WritePropertyName("EmissiveB");
+            writer.WriteValue(value.Emissive.Z);
+            writer.WritePropertyName("Gloss");
+            writer.WriteValue(value.GlossStrength);
+            writer.WriteEndObject();
+        }
+
+        public override ColorRow ReadJson(JsonReader reader, Type objectType, ColorRow existingValue, bool hasExistingValue,
+            JsonSerializer serializer)
+        {
+            var obj = JObject.Load(reader);
+            Set(ref existingValue.Diffuse.X,        obj["DiffuseR"]?.Value<float>());
+            Set(ref existingValue.Diffuse.Y,        obj["DiffuseG"]?.Value<float>());
+            Set(ref existingValue.Diffuse.Z,        obj["DiffuseB"]?.Value<float>());
+            Set(ref existingValue.Specular.X,       obj["SpecularR"]?.Value<float>());
+            Set(ref existingValue.Specular.Y,       obj["SpecularG"]?.Value<float>());
+            Set(ref existingValue.Specular.Z,       obj["SpecularB"]?.Value<float>());
+            Set(ref existingValue.SpecularStrength, obj["SpecularA"]?.Value<float>());
+            Set(ref existingValue.Emissive.X,       obj["EmissiveR"]?.Value<float>());
+            Set(ref existingValue.Emissive.Y,       obj["EmissiveG"]?.Value<float>());
+            Set(ref existingValue.Emissive.Z,       obj["EmissiveB"]?.Value<float>());
+            Set(ref existingValue.GlossStrength,    obj["Gloss"]?.Value<float>());
+            return existingValue;
+
+            static void Set<T>(ref T target, T? value)
+                where T : struct
+            {
+                if (value.HasValue)
+                    target = value.Value;
+            }
+        }
+    }
+}
+
+[JsonConverter(typeof(Converter))]
+public struct MaterialValueDesign(ColorRow value, bool enabled)
+{
+    public ColorRow Value   = value;
+    public bool     Enabled = enabled;
+
+    public readonly bool Apply(ref MaterialValueState state)
+    {
+        if (!Enabled)
+            return false;
+
+        if (state.Model.NearEqual(Value))
+            return false;
+
+        state.Model = Value;
+        return true;
+    }
+
+    private class Converter : JsonConverter<MaterialValueDesign>
+    {
+        public override void WriteJson(JsonWriter writer, MaterialValueDesign value, JsonSerializer serializer)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("DiffuseR");
+            writer.WriteValue(value.Value.Diffuse.X);
+            writer.WritePropertyName("DiffuseG");
+            writer.WriteValue(value.Value.Diffuse.Y);
+            writer.WritePropertyName("DiffuseB");
+            writer.WriteValue(value.Value.Diffuse.Z);
+            writer.WritePropertyName("SpecularR");
+            writer.WriteValue(value.Value.Specular.X);
+            writer.WritePropertyName("SpecularG");
+            writer.WriteValue(value.Value.Specular.Y);
+            writer.WritePropertyName("SpecularB");
+            writer.WriteValue(value.Value.Specular.Z);
+            writer.WritePropertyName("SpecularA");
+            writer.WriteValue(value.Value.SpecularStrength);
+            writer.WritePropertyName("EmissiveR");
+            writer.WriteValue(value.Value.Emissive.X);
+            writer.WritePropertyName("EmissiveG");
+            writer.WriteValue(value.Value.Emissive.Y);
+            writer.WritePropertyName("EmissiveB");
+            writer.WriteValue(value.Value.Emissive.Z);
+            writer.WritePropertyName("Gloss");
+            writer.WriteValue(value.Value.GlossStrength);
+            writer.WritePropertyName("Enabled");
+            writer.WriteValue(value.Enabled);
+            writer.WriteEndObject();
+        }
+
+        public override MaterialValueDesign ReadJson(JsonReader reader, Type objectType, MaterialValueDesign existingValue,
+            bool hasExistingValue,
+            JsonSerializer serializer)
+        {
+            var obj = JObject.Load(reader);
+            Set(ref existingValue.Value.Diffuse.X,        obj["DiffuseR"]?.Value<float>());
+            Set(ref existingValue.Value.Diffuse.Y,        obj["DiffuseG"]?.Value<float>());
+            Set(ref existingValue.Value.Diffuse.Z,        obj["DiffuseB"]?.Value<float>());
+            Set(ref existingValue.Value.Specular.X,       obj["SpecularR"]?.Value<float>());
+            Set(ref existingValue.Value.Specular.Y,       obj["SpecularG"]?.Value<float>());
+            Set(ref existingValue.Value.Specular.Z,       obj["SpecularB"]?.Value<float>());
+            Set(ref existingValue.Value.SpecularStrength, obj["SpecularA"]?.Value<float>());
+            Set(ref existingValue.Value.Emissive.X,       obj["EmissiveR"]?.Value<float>());
+            Set(ref existingValue.Value.Emissive.Y,       obj["EmissiveG"]?.Value<float>());
+            Set(ref existingValue.Value.Emissive.Z,       obj["EmissiveB"]?.Value<float>());
+            Set(ref existingValue.Value.GlossStrength,    obj["Gloss"]?.Value<float>());
+            existingValue.Enabled = obj["Enabled"]?.Value<bool>() ?? false;
+            return existingValue;
+
+            static void Set<T>(ref T target, T? value)
+                where T : struct
+            {
+                if (value.HasValue)
+                    target = value.Value;
+            }
+        }
+    }
+}
+
+[StructLayout(LayoutKind.Explicit)]
+public struct MaterialValueState(
+    in ColorRow game,
+    in ColorRow model,
+    CharacterWeapon drawData,
+    StateSource source)
+{
+    public MaterialValueState(in ColorRow gameRow, in ColorRow modelRow, CharacterArmor armor, StateSource source)
+        : this(gameRow, modelRow, armor.ToWeapon(0), source)
+    { }
+
+    [FieldOffset(0)]
+    public ColorRow Game = game;
+
+    [FieldOffset(44)]
+    public ColorRow Model = model;
+
+    [FieldOffset(88)]
+    public readonly CharacterWeapon DrawData = drawData;
+
+    [FieldOffset(95)]
+    public readonly StateSource Source = source;
+
+    public readonly bool EqualGame(in ColorRow rhsRow, CharacterWeapon rhsData)
+        => DrawData.Skeleton == rhsData.Skeleton
+         && DrawData.Weapon == rhsData.Weapon
+         && DrawData.Variant == rhsData.Variant
+         && DrawData.Stain == rhsData.Stain
+         && Game.NearEqual(rhsRow);
+
+    public readonly MaterialValueDesign Convert()
+        => new(Model, true);
+}
 
 public readonly struct MaterialValueManager<T>
 {
@@ -113,7 +343,7 @@ public readonly struct MaterialValueManager<T>
         return count;
     }
 
-    public ReadOnlySpan<(uint key, T Value)> GetValues(MaterialValueIndex min, MaterialValueIndex max)
+    public ReadOnlySpan<(uint Key, T Value)> GetValues(MaterialValueIndex min, MaterialValueIndex max)
         => MaterialValueManager.Filter<T>(CollectionsMarshal.AsSpan(_values), min, max);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -187,6 +417,7 @@ public static class MaterialValueManager
             maxIdx = ~maxIdx + idx;
             return maxIdx > minIdx ? (minIdx, maxIdx - 1) : (-1, -1);
         }
+
         maxIdx += idx;
 
         while (maxIdx < values.Length - 1 && values[maxIdx + 1].Key <= maxKey)

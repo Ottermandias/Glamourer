@@ -72,6 +72,7 @@ public sealed class Design : DesignBase, ISavable
             ["Equipment"]      = SerializeEquipment(),
             ["Customize"]      = SerializeCustomize(),
             ["Parameters"]     = SerializeParameters(),
+            ["Materials"]      = SerializeMaterials(),
             ["Mods"]           = SerializeMods(),
             ["Links"]          = Links.Serialize(),
         };
@@ -136,6 +137,7 @@ public sealed class Design : DesignBase, ISavable
         LoadEquip(items, json["Equipment"], design, design.Name, true);
         LoadMods(json["Mods"], design);
         LoadParameters(json["Parameters"], design, design.Name);
+        LoadMaterials(json["Materials"], design, design.Name);
         LoadLinks(linkLoader, json["Links"], design);
         design.Color = json["Color"]?.ToObject<string>() ?? string.Empty;
         return design;

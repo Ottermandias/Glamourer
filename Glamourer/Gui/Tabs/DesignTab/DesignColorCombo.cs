@@ -10,7 +10,7 @@ public sealed class DesignColorCombo(DesignColors _designColors, bool _skipAutom
     FilterComboCache<string>(_skipAutomatic
             ? _designColors.Keys.OrderBy(k => k)
             : _designColors.Keys.OrderBy(k => k).Prepend(DesignColors.AutomaticName),
-        MouseWheelType.Shift, Glamourer.Log)
+        MouseWheelType.Control, Glamourer.Log)
 {
     protected override void OnMouseWheel(string preview, ref int current, int steps)
     {

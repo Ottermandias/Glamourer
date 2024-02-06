@@ -207,7 +207,7 @@ public partial class CustomizationDrawer
 
     private static bool CaptureMouseWheel(ref int value, int offset, int cap)
     {
-        if (!ImGui.IsItemHovered())
+        if (!ImGui.IsItemHovered() || !ImGui.GetIO().KeyCtrl)
             return false;
 
         ImGuiInternal.ItemSetUsingMouseWheel();

@@ -222,7 +222,7 @@ public class InternalStateEditor(
     }
 
     /// <summary> Change the value of a single material color table entry. </summary>
-    public bool ChangeMaterialValue(ActorState state, MaterialValueIndex index, Vector3 value, Vector3 gameValue, StateSource source, out Vector3 oldValue,
+    public bool ChangeMaterialValue(ActorState state, MaterialValueIndex index, in MaterialValueState newValue, StateSource source, out ColorRow? oldValue,
         uint key = 0)
     {
         // We already have an existing value.
@@ -240,18 +240,18 @@ public class InternalStateEditor(
             }
 
             // Update if edited.
-            state.Materials.UpdateValue(index, new MaterialValueState(gameValue, value, source), out _);
+            state.Materials.UpdateValue(index, newValue, out _);
             return true;
         }
 
         // We do not have an existing value.
-        oldValue = gameValue;
+        oldValue = null;
         // Do not do anything if locked or if the game value updates, because then we do not need to add an entry.
         if (!state.CanUnlock(key) || source is StateSource.Game)
             return false;
 
-        // Only add an entry if it is sufficiently different from the game value.
-        return !value.NearEqual(gameValue) && state.Materials.TryAddValue(index, new MaterialValueState(gameValue, value, source));
+        // Only add an entry if it is different from the game value.
+        return state.Materials.TryAddValue(index, newValue);
     }
 
     public bool ChangeMetaState(ActorState state, MetaIndex index, bool value, StateSource source, out bool oldValue,

@@ -85,7 +85,7 @@ public class NpcPanel(
         try
         {
             var data = ToDesignData();
-            var text = _converter.ShareBase64(data, ApplicationRules.NpcFromModifiers());
+            var text = _converter.ShareBase64(data, new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
             ImGui.SetClipboardText(text);
         }
         catch (Exception ex)
@@ -101,7 +101,7 @@ public class NpcPanel(
         ImGui.OpenPopup("Save as Design");
         _newName = _selector.Selection.Name;
         var data = ToDesignData();
-        _newDesign = _converter.Convert(data, ApplicationRules.NpcFromModifiers());
+        _newDesign = _converter.Convert(data, new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
     }
 
     private void SaveDesignDrawPopup()
@@ -195,7 +195,7 @@ public class NpcPanel(
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var design = _converter.Convert(ToDesignData(), ApplicationRules.NpcFromModifiers());
+            var design = _converter.Convert(ToDesignData(), new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
             _state.ApplyDesign(state, design, ApplySettings.Manual);
         }
     }
@@ -213,7 +213,7 @@ public class NpcPanel(
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var design = _converter.Convert(ToDesignData(), ApplicationRules.NpcFromModifiers());
+            var design = _converter.Convert(ToDesignData(), new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
             _state.ApplyDesign(state, design, ApplySettings.Manual);
         }
     }
@@ -247,7 +247,9 @@ public class NpcPanel(
         var colorName = color.Length == 0 ? DesignColors.AutomaticName : color;
         ImGui.TableNextColumn();
         if (_colorCombo.Draw("##colorCombo", colorName,
-                "Associate a color with this NPC appearance. Right-Click to revert to automatic coloring.",
+                "Associate a color with this NPC appearance.\n"
+              + "Right-Click to revert to automatic coloring.\n"
+              + "Hold Control and scroll the mousewheel to scroll.",
                 width - ImGui.GetStyle().ItemSpacing.X - ImGui.GetFrameHeight(), ImGui.GetTextLineHeight())
          && _colorCombo.CurrentSelection != null)
         {

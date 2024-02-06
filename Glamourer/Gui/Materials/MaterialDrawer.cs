@@ -1,18 +1,20 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
+using OtterGui;
 using OtterGui.Services;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Materials;
 
-public unsafe class MaterialDrawer(StateManager _stateManager) : IService
+public unsafe class MaterialDrawer(StateManager _stateManager, DesignManager _designManager) : IService
 {
     private static readonly IReadOnlyList<MaterialValueIndex.DrawObjectType> Types =
     [
@@ -23,135 +25,94 @@ public unsafe class MaterialDrawer(StateManager _stateManager) : IService
 
     private ActorState? _state;
 
-    public void DrawPanel(Actor actor)
+    public void DrawActorPanel(Actor actor)
     {
         if (!actor.IsCharacter || !_stateManager.GetOrCreate(actor, out _state))
             return;
 
-        foreach (var type in Types)
-        {
-            var index = new MaterialValueIndex(type, 0, 0, 0, 0);
-            if (index.TryGetModel(actor, out var model))
-                DrawModelType(model, index);
-        }
-    }
-
-    private void DrawModelType(Model model, MaterialValueIndex sourceIndex)
-    {
-        using var tree = ImRaii.TreeNode(sourceIndex.DrawObject.ToString());
-        if (!tree)
+        var model = actor.Model;
+        if (!model.IsHuman)
             return;
 
-        var names = model.AsCharacterBase->GetModelType() is CharacterBase.ModelType.Human
-            ? SlotNamesHuman
-            : SlotNames;
-        for (byte i = 0; i < model.AsCharacterBase->SlotCount; ++i)
-        {
-            var index = sourceIndex with { SlotIndex = i };
-            DrawSlot(model, names, index);
-        }
-    }
-
-    private void DrawSlot(Model model, IReadOnlyList<string> names, MaterialValueIndex sourceIndex)
-    {
-        using var tree = ImRaii.TreeNode(names[sourceIndex.SlotIndex]);
-        if (!tree)
+        if (model.AsCharacterBase->SlotCount < 10)
             return;
 
-        for (byte i = 0; i < MaterialService.MaterialsPerModel; ++i)
+        // Humans should have at least 10 slots for the equipment types. Technically more.
+        foreach (var (slot, idx) in EquipSlotExtensions.EqdpSlots.WithIndex())
         {
-            var index   = sourceIndex with { MaterialIndex = i };
-            var texture = model.AsCharacterBase->ColorTableTextures + index.SlotIndex * MaterialService.MaterialsPerModel + i;
+            var item = model.GetArmor(slot).ToWeapon(0);
+            DrawSlotMaterials(model, slot.ToName(), item, new MaterialValueIndex(MaterialValueIndex.DrawObjectType.Human, (byte) idx, 0, 0));
+        }
+
+        var (mainhand, offhand, mh, oh) = actor.Model.GetWeapons(actor);
+        if (mainhand.IsWeapon && mainhand.AsCharacterBase->SlotCount > 0)
+            DrawSlotMaterials(mainhand, EquipSlot.MainHand.ToName(), mh, new MaterialValueIndex(MaterialValueIndex.DrawObjectType.Mainhand, 0, 0, 0));
+        if (offhand.IsWeapon && offhand.AsCharacterBase->SlotCount > 0)
+            DrawSlotMaterials(offhand, EquipSlot.OffHand.ToName(), oh, new MaterialValueIndex(MaterialValueIndex.DrawObjectType.Offhand, 0, 0, 0));
+    }
+
+
+    private void DrawSlotMaterials(Model model, string name, CharacterWeapon drawData, MaterialValueIndex index)
+    {
+        var drawnMaterial = 1;
+        for (byte materialIndex = 0; materialIndex < MaterialService.MaterialsPerModel; ++materialIndex)
+        {
+            var texture = model.AsCharacterBase->ColorTableTextures + index.SlotIndex * MaterialService.MaterialsPerModel + materialIndex;
             if (*texture == null)
                 continue;
 
             if (!DirectXTextureHelper.TryGetColorTable(*texture, out var table))
                 continue;
 
-            DrawMaterial(ref table, index);
+            using var tree = ImRaii.TreeNode($"{name} Material #{drawnMaterial++}###{name}{materialIndex}");
+            if (!tree)
+                continue;
+
+            DrawMaterial(ref table, drawData, index with { MaterialIndex = materialIndex} );
         }
     }
 
-    private void DrawMaterial(ref MtrlFile.ColorTable table, MaterialValueIndex sourceIndex)
+    private void DrawMaterial(ref MtrlFile.ColorTable table, CharacterWeapon drawData, MaterialValueIndex sourceIndex)
     {
-        using var tree = ImRaii.TreeNode($"Material {sourceIndex.MaterialIndex + 1}");
-        if (!tree)
-            return;
-
         for (byte i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
         {
             var     index = sourceIndex with { RowIndex = i };
             ref var row   = ref table[i];
-            DrawRow(ref row, index);
+            DrawRow(ref row, drawData, index);
         }
     }
 
-    private void DrawRow(ref MtrlFile.ColorTable.Row row, MaterialValueIndex sourceIndex)
+    private void DrawRow(ref MtrlFile.ColorTable.Row row, CharacterWeapon drawData, MaterialValueIndex index)
     {
-        var r = _state!.Materials.GetValues(
-            MaterialValueIndex.Min(sourceIndex.DrawObject, sourceIndex.SlotIndex, sourceIndex.MaterialIndex, sourceIndex.RowIndex),
-            MaterialValueIndex.Max(sourceIndex.DrawObject, sourceIndex.SlotIndex, sourceIndex.MaterialIndex, sourceIndex.RowIndex));
-
-        var highlightColor = ColorId.FavoriteStarOn.Value();
-
-        using var id    = ImRaii.PushId(sourceIndex.RowIndex);
-        var       index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.Diffuse };
-        var (diffuse, diffuseGame, changed) = MaterialValueManager.GetSpecific(r, index, out var d)
-            ? (d.Model, d.Game, true)
-            : (row.Diffuse, row.Diffuse, false);
-        using (ImRaii.PushColor(ImGuiCol.Text, highlightColor, changed))
+        using var id      = ImRaii.PushId(index.RowIndex);
+        var       changed = _state!.Materials.TryGetValue(index, out var value);
+        if (!changed)
         {
-            if (ImGui.ColorEdit3("Diffuse", ref diffuse, ImGuiColorEditFlags.NoInputs))
-                _stateManager.ChangeMaterialValue(_state!, index, diffuse, diffuseGame, ApplySettings.Manual);
+            var internalRow = new ColorRow(row);
+            value = new MaterialValueState(internalRow, internalRow, drawData, StateSource.Manual);
         }
 
-
-        index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.Specular };
-        (var specular, var specularGame, changed) = MaterialValueManager.GetSpecific(r, index, out var s)
-            ? (s.Model, s.Game, true)
-            : (row.Specular, row.Specular, false);
+        var applied = ImGui.ColorEdit3("Diffuse", ref value.Model.Diffuse, ImGuiColorEditFlags.NoInputs);
         ImGui.SameLine();
-        using (ImRaii.PushColor(ImGuiCol.Text, highlightColor, changed))
-        {
-            if (ImGui.ColorEdit3("Specular", ref specular, ImGuiColorEditFlags.NoInputs))
-                _stateManager.ChangeMaterialValue(_state!, index, specular, specularGame, ApplySettings.Manual);
-        }
-
-        index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.Emissive };
-        (var emissive, var emissiveGame, changed) = MaterialValueManager.GetSpecific(r, index, out var e)
-            ? (e.Model, e.Game, true)
-            : (row.Emissive, row.Emissive, false);
+        applied |= ImGui.ColorEdit3("Specular", ref value.Model.Specular, ImGuiColorEditFlags.NoInputs);
         ImGui.SameLine();
-        using (ImRaii.PushColor(ImGuiCol.Text, highlightColor, changed))
-        {
-            if (ImGui.ColorEdit3("Emissive", ref emissive, ImGuiColorEditFlags.NoInputs))
-                _stateManager.ChangeMaterialValue(_state!, index, emissive, emissiveGame, ApplySettings.Manual);
-        }
-
-        index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.GlossStrength };
-        (var glossStrength, var glossStrengthGame, changed) = MaterialValueManager.GetSpecific(r, index, out var g)
-            ? (g.Model.X, g.Game.X, true)
-            : (row.GlossStrength, row.GlossStrength, false);
+        applied |= ImGui.ColorEdit3("Emissive", ref value.Model.Emissive, ImGuiColorEditFlags.NoInputs);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        using (ImRaii.PushColor(ImGuiCol.Text, highlightColor, changed))
-        {
-            if (ImGui.DragFloat("Gloss", ref glossStrength, 0.1f))
-                _stateManager.ChangeMaterialValue(_state!, index, new Vector3(glossStrength), new Vector3(glossStrengthGame),
-                    ApplySettings.Manual);
-        }
-
-        index = sourceIndex with { DataIndex = MaterialValueIndex.ColorTableIndex.SpecularStrength };
-        (var specularStrength, var specularStrengthGame, changed) = MaterialValueManager.GetSpecific(r, index, out var ss)
-            ? (ss.Model.X, ss.Game.X, true)
-            : (row.SpecularStrength, row.SpecularStrength, false);
+        applied |= ImGui.DragFloat("Gloss", ref value.Model.GlossStrength, 0.1f);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        using (ImRaii.PushColor(ImGuiCol.Text, highlightColor, changed))
+        applied |= ImGui.DragFloat("Specular Strength", ref value.Model.SpecularStrength, 0.1f);
+        if (applied)
+            _stateManager.ChangeMaterialValue(_state!, index, value, ApplySettings.Manual);
+        if (changed)
         {
-            if (ImGui.DragFloat("Specular Strength", ref specularStrength, 0.1f))
-                _stateManager.ChangeMaterialValue(_state!, index, new Vector3(specularStrength), new Vector3(specularStrengthGame),
-                    ApplySettings.Manual);
+            ImGui.SameLine();
+            using (ImRaii.PushFont(UiBuilder.IconFont))
+            {
+                using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.FavoriteStarOn.Value());
+                ImGui.TextUnformatted(FontAwesomeIcon.UserEdit.ToIconString());
+            }
         }
     }
 

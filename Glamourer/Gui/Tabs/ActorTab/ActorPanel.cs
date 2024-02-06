@@ -119,7 +119,7 @@ public class ActorPanel(
 
 
         if (ImGui.CollapsingHeader("Material Shit"))
-            _materialDrawer.DrawPanel(_actor);
+            _materialDrawer.DrawActorPanel(_actor);
         using var disabled = ImRaii.Disabled(transformationId != 0);
         if (_state.ModelData.IsHuman)
             DrawHumanPanel();

@@ -276,7 +276,7 @@ public class StateApplier(
         return data;
     }
 
-    public unsafe void ChangeMaterialValue(ActorData data, MaterialValueIndex index, Vector3? value, bool force)
+    public unsafe void ChangeMaterialValue(ActorData data, MaterialValueIndex index, ColorRow? value, bool force)
     {
         if (!force && !_config.UseAdvancedParameters)
             return;
@@ -289,14 +289,11 @@ public class StateApplier(
             if (!index.TryGetColorTable(texture, out var table))
                 continue;
 
-            Vector3 actualValue;
             if (value.HasValue)
-                actualValue = value.Value;
-            else if (!PrepareColorSet.TryGetColorTable(actor, index, out var baseTable)
-                  || !index.DataIndex.TryGetValue(baseTable[index.RowIndex], out actualValue))
-                continue;
-
-            if (!index.DataIndex.SetValue(ref table[index.RowIndex], actualValue))
+                value.Value.Apply(ref table[index.RowIndex]);
+            else if (PrepareColorSet.TryGetColorTable(actor, index, out var baseTable))
+                table[index.RowIndex] = baseTable[index.RowIndex];
+            else
                 continue;
 
             MaterialService.ReplaceColorTable(texture, table);

@@ -10,7 +10,7 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Gui.Equipment;
 
 public sealed class GlamourerColorCombo(float _comboWidth, DictStain _stains, FavoriteManager _favorites)
-    : FilterComboColors(_comboWidth, MouseWheelType.Unmodified, CreateFunc(_stains, _favorites), Glamourer.Log)
+    : FilterComboColors(_comboWidth, MouseWheelType.Control, CreateFunc(_stains, _favorites), Glamourer.Log)
 {
     protected override bool DrawSelectable(int globalIdx, bool selected)
     {

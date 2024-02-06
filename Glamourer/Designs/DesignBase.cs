@@ -14,7 +14,7 @@ public class DesignBase
 {
     public const int FileVersion = 1;
 
-    private DesignData            _designData = new();
+    private          DesignData            _designData = new();
     private readonly DesignMaterialManager _materials  = new();
 
     /// <summary> For read-only information about custom material color changes. </summary>
@@ -86,9 +86,9 @@ public class DesignBase
     internal CustomizeFlag ApplyCustomizeRaw
         => _applyCustomize;
 
-    internal EquipFlag ApplyEquip      = EquipFlagExtensions.All;
-    internal CrestFlag ApplyCrest      = CrestExtensions.AllRelevant;
-    internal MetaFlag  ApplyMeta       = MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.WeaponState;
+    internal EquipFlag ApplyEquip = EquipFlagExtensions.All;
+    internal CrestFlag ApplyCrest = CrestExtensions.AllRelevant;
+    internal MetaFlag  ApplyMeta  = MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.WeaponState;
     private  bool      _writeProtected;
 
     public bool SetCustomize(CustomizeService customizeService, CustomizeArray customize)
@@ -124,7 +124,6 @@ public class DesignBase
 
         _writeProtected = value;
         return true;
-
     }
 
     public bool DoApplyEquip(EquipSlot slot)
@@ -244,6 +243,7 @@ public class DesignBase
             ["Equipment"]   = SerializeEquipment(),
             ["Customize"]   = SerializeCustomize(),
             ["Parameters"]  = SerializeParameters(),
+            ["Materials"]   = SerializeMaterials(),
         };
         return ret;
     }
@@ -362,6 +362,45 @@ public class DesignBase
         return ret;
     }
 
+    protected JObject SerializeMaterials()
+    {
+        var ret = new JObject();
+        foreach (var (key, value) in Materials)
+            ret[key.ToString("X16")] = JToken.FromObject(value);
+        return ret;
+    }
+
+    protected static void LoadMaterials(JToken? materials, DesignBase design, string name)
+    {
+        if (materials is not JObject obj)
+            return;
+
+        design.GetMaterialDataRef().Clear();
+        foreach (var (key, value) in obj.Properties().Zip(obj.PropertyValues()))
+        {
+            try
+            {
+                var k = uint.Parse(key.Name, NumberStyles.HexNumber);
+                var v = value.ToObject<MaterialValueDesign>();
+                if (!MaterialValueIndex.FromKey(k, out var idx))
+                {
+                    Glamourer.Messager.NotificationMessage($"Invalid material value key {k} for design {name}, skipped.",
+                        NotificationType.Warning);
+                    continue;
+                }
+
+                if (!design.GetMaterialDataRef().TryAddValue(MaterialValueIndex.FromKey(k), v))
+                    Glamourer.Messager.NotificationMessage($"Duplicate material value key {k} for design {name}, skipped.",
+                        NotificationType.Warning);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Error parsing material value for design {name}, skipped",
+                    NotificationType.Warning);
+            }
+        }
+    }
+
     #endregion
 
     #region Deserialization
@@ -382,6 +421,7 @@ public class DesignBase
         LoadCustomize(customizations, json["Customize"], ret, "Temporary Design", false, true);
         LoadEquip(items, json["Equipment"], ret, "Temporary Design", true);
         LoadParameters(json["Parameters"], ret, "Temporary Design");
+        LoadMaterials(json["Materials"], ret, "Temporary Design");
         return ret;
     }
 

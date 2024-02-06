@@ -1,4 +1,5 @@
 ﻿using Glamourer.Designs.Links;
+using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Utility;
@@ -6,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Files;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
@@ -38,22 +40,23 @@ public class DesignConverter(
         => ShareBase64(ShareJObject(design));
 
     public string ShareBase64(ActorState state, in ApplicationRules rules)
-        => ShareBase64(state.ModelData, rules);
+        => ShareBase64(state.ModelData, state.Materials, rules);
 
-    public string ShareBase64(in DesignData data, in ApplicationRules rules)
+    public string ShareBase64(in DesignData data, in StateMaterialManager materials, in ApplicationRules rules)
     {
-        var design = Convert(data, rules);
+        var design = Convert(data, materials, rules);
         return ShareBase64(ShareJObject(design));
     }
 
     public DesignBase Convert(ActorState state, in ApplicationRules rules)
-        => Convert(state.ModelData, rules);
+        => Convert(state.ModelData, state.Materials, rules);
 
-    public DesignBase Convert(in DesignData data, in ApplicationRules rules)
+    public DesignBase Convert(in DesignData data, in StateMaterialManager materials, in ApplicationRules rules)
     {
         var design = _designs.CreateTemporary();
         rules.Apply(design);
         design.SetDesignData(_customize, data);
+        ComputeMaterials(design.GetMaterialDataRef(), materials, rules.Equip);
         return design;
     }
 
@@ -180,5 +183,30 @@ public class DesignConverter(
         }
 
         yield return (EquipSlot.OffHand, oh, offhand.Stain);
+    }
+
+    private static void ComputeMaterials(DesignMaterialManager manager, in StateMaterialManager materials,
+        EquipFlag equipFlags = EquipFlagExtensions.All)
+    {
+        foreach (var (key, value) in materials.Values)
+        {
+            var idx = MaterialValueIndex.FromKey(key);
+            if (idx.RowIndex >= MtrlFile.ColorTable.NumRows)
+                continue;
+            if (idx.MaterialIndex >= MaterialService.MaterialsPerModel)
+                continue;
+
+            var slot = idx.DrawObject switch
+            {
+                MaterialValueIndex.DrawObjectType.Human => idx.SlotIndex < 10 ? ((uint)idx.SlotIndex).ToEquipSlot() : EquipSlot.Unknown,
+                MaterialValueIndex.DrawObjectType.Mainhand when idx.SlotIndex == 0 => EquipSlot.MainHand,
+                MaterialValueIndex.DrawObjectType.Offhand when idx.SlotIndex == 0 => EquipSlot.OffHand,
+                _ => EquipSlot.Unknown,
+            };
+            if (slot is EquipSlot.Unknown || (slot.ToBothFlags() & equipFlags) == 0)
+                continue;
+
+            manager.AddOrUpdateValue(idx, value.Convert());
+        }
     }
 }
