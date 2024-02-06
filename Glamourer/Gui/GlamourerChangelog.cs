@@ -28,6 +28,7 @@ public class GlamourerChangelog
         Add1_1_0_0(Changelog);
         Add1_1_0_2(Changelog);
         Add1_1_0_4(Changelog);
+        Add1_1_0_5(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -47,6 +48,25 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_1_0_5(Changelog log)
+        => log.NextVersion("Version 1.1.0.5")
+            .RegisterHighlight("Added the option to link to other designs in a design, causing all of them to be applied at once.")
+            .RegisterEntry("This required reworking the handling for applying multiple designs at once (i.e.merging them).", 1)
+            .RegisterEntry("This was a considerable backend change on both automation sets and design application. I may have messed up and introduced bugs. Please let me know if something does not work right anymore.", 1)
+            .RegisterHighlight("Added an option so that manual application of a mainhand weapon will also automatically apply its associated offhand (and gloves, for certain fist weapons). This is off by default.")
+            .RegisterHighlight("Added an option that always tries to apply associated mod settings for designs to the Penumbra collection associated with the character the design is applied to.")
+            .RegisterEntry("This is off by default and I strongly recommend AGAINST using it, since Glamourer has no way to revert such changes. You are responsible for keeping your collection in order.", 1)
+            .RegisterHighlight("Added mouse wheel scrolling to many selectors, e.g. for equipment, dyes or customizations. You need to hold Control while ")
+            .RegisterEntry("Improved handling for highlights with advanced customization colors and normal customization settings.")
+            .RegisterEntry("Added copy/paste buttons for advanced customization colors.")
+            .RegisterEntry("Added alpha preview to advanced customization colors.")
+            .RegisterEntry("Updated a few fun module things. Now there are Pink elephants on parade!")
+            .RegisterEntry("Split up the IPC source state so IPC consumers can apply designs without them sticking around.")
+            .RegisterEntry("Fixed an issue with weapon loading being dependant on the order of loading Penumbra and Glamourer.")
+            .RegisterEntry("Fixed an issue with buttons sharing state and switching from design duplication to creating new ones caused errors.")
+            .RegisterEntry("Fixed an issue where actors leaving during cutscenes or GPose caused Glamourer to throw a fit.")
+            .RegisterEntry("Fixed an issue with NPC designs applying advanced customizations to targets and coloring them entirely black.");
 
     private static void Add1_1_0_4(Changelog log)
         => log.NextVersion("Version 1.1.0.4")
