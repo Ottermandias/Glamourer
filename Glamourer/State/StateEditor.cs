@@ -259,7 +259,7 @@ public class StateEditor(
                 if (!mergedDesign.Design.DoApplyEquip(weaponSlot))
                     continue;
 
-                if (settings.RespectManual && !state.Sources[weaponSlot, false].IsManual())
+                if (settings.RespectManual && state.Sources[weaponSlot, false].IsManual())
                     continue;
 
                 var currentType = state.ModelData.Item(weaponSlot).Type;
