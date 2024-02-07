@@ -57,6 +57,7 @@ public class DesignBase
         ApplyCustomize  = clone.ApplyCustomizeRaw;
         ApplyEquip      = clone.ApplyEquip & EquipFlagExtensions.All;
         ApplyParameters = clone.ApplyParameters & CustomizeParameterExtensions.All;
+        ApplyCrest      = clone.ApplyCrest & CrestExtensions.All;
         ApplyMeta       = clone.ApplyMeta & MetaExtensions.All;
     }
 
