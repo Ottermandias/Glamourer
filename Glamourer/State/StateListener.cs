@@ -564,7 +564,7 @@ public class StateListener : IDisposable
         {
             // if base state changed, either overwrite the actual value if we have fixed values,
             // or overwrite the stored model state with the new one.
-            if (!state.Sources[MetaIndex.VisorState].IsFixed())
+            if (state.Sources[MetaIndex.VisorState].IsFixed())
                 value = state.ModelData.IsVisorToggled();
             else
                 _manager.ChangeMetaState(state, MetaIndex.VisorState, value, ApplySettings.Game);
@@ -597,7 +597,7 @@ public class StateListener : IDisposable
         {
             // if base state changed, either overwrite the actual value if we have fixed values,
             // or overwrite the stored model state with the new one.
-            if (!state.Sources[MetaIndex.HatState].IsFixed())
+            if (state.Sources[MetaIndex.HatState].IsFixed())
                 value = state.ModelData.IsHatVisible();
             else
                 _manager.ChangeMetaState(state, MetaIndex.HatState, value, ApplySettings.Game);
@@ -630,7 +630,7 @@ public class StateListener : IDisposable
         {
             // if base state changed, either overwrite the actual value if we have fixed values,
             // or overwrite the stored model state with the new one.
-            if (!state.Sources[MetaIndex.WeaponState].IsFixed())
+            if (state.Sources[MetaIndex.WeaponState].IsFixed())
                 value = state.ModelData.IsWeaponVisible();
             else
                 _manager.ChangeMetaState(state, MetaIndex.WeaponState, value, ApplySettings.Game);
