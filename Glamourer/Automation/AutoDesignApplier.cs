@@ -79,7 +79,7 @@ public sealed class AutoDesignApplier : IDisposable
                     {
                         Glamourer.Log.Verbose(
                             $"Changing Mainhand from {state.ModelData.Weapon(EquipSlot.MainHand)} | {state.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{actor.Address:X}.");
-                        _state.ChangeItem(_jobChangeState, EquipSlot.MainHand, data.Item1, new ApplySettings(Source: data.Item2));
+                        _state.ChangeItem(state, EquipSlot.MainHand, data.Item1, new ApplySettings(Source: data.Item2));
                         weapon = state.ModelData.Weapon(EquipSlot.MainHand);
                     }
 
@@ -91,7 +91,7 @@ public sealed class AutoDesignApplier : IDisposable
                     {
                         Glamourer.Log.Verbose(
                             $"Changing Offhand from {state.ModelData.Weapon(EquipSlot.OffHand)} | {state.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{actor.Address:X}.");
-                        _state.ChangeItem(_jobChangeState, EquipSlot.OffHand, data.Item1, new ApplySettings(Source: data.Item2));
+                        _state.ChangeItem(state, EquipSlot.OffHand, data.Item1, new ApplySettings(Source: data.Item2));
                         weapon = state.ModelData.Weapon(EquipSlot.OffHand);
                     }
 
@@ -264,7 +264,7 @@ public sealed class AutoDesignApplier : IDisposable
 
         var mergedDesign = _designMerger.Merge(
             set.Designs.Where(d => d.IsActive(actor)).SelectMany(d => d.Design?.AllLinks.Select(l => (l.Design, l.Flags & d.Type)) ?? [(d.Design, d.Type)]),
-            state.ModelData, true, _config.AlwaysApplyAssociatedMods);
+            state.BaseData, true, _config.AlwaysApplyAssociatedMods);
         _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false));
     }
 
