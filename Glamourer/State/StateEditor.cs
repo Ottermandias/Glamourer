@@ -277,7 +277,7 @@ public class StateEditor(
                     (m.Item1, settings.UseSingleSource ? settings.Source :
                         m.Item2 is StateSource.Game    ? StateSource.Game : m.Item2)));
 
-            foreach (var meta in MetaExtensions.AllRelevant)
+            foreach (var meta in MetaExtensions.AllRelevant.Where(mergedDesign.Design.DoApplyMeta))
             {
                 if (!settings.RespectManual || !state.Sources[meta].IsManual())
                     Editor.ChangeMetaState(state, meta, mergedDesign.Design.DesignData.GetMeta(meta), Source(meta), out _, settings.Key);

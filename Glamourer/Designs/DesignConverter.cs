@@ -124,7 +124,8 @@ public class DesignConverter(
         }
 
         ret.SetApplyMeta(MetaIndex.Wetness, customize);
-        ret.ApplyCustomize = customize ? CustomizeFlagExtensions.AllRelevant : 0;
+        if (!customize)
+            ret.ApplyCustomize = 0;
 
         if (!equip)
         {

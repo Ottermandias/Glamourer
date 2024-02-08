@@ -227,7 +227,7 @@ public class DesignMerger(
             ret.Sources[CustomizeIndex.Face] =  source;
         }
 
-        var set  = _customize.Manager.GetSet(customize.Clan, customize.Gender);
+        var set  = _customize.Manager.GetSet(ret.Design.DesignData.Customize.Clan, ret.Design.DesignData.Customize.Gender);
         var face = customize.Face;
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {
@@ -248,7 +248,7 @@ public class DesignMerger(
             fixFlags           &= ~flag;
         }
 
-        ret.Design.SetCustomize(_customize, customize);
+        ret.Design.SetCustomize(_customize, customize, set);
     }
 
     private static void ApplyFixFlags(MergedDesign ret, CustomizeFlag fixFlags)

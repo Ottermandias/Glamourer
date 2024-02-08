@@ -24,7 +24,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<Design, string>>,
 
     protected DesignComboBase(Func<IReadOnlyList<Tuple<Design, string>>> generator, Logger log, DesignChanged designChanged,
         TabSelected tabSelected, EphemeralConfig config, DesignColors designColors)
-        : base(generator, MouseWheelType.Unmodified, log)
+        : base(generator, MouseWheelType.Control, log)
     {
         _designChanged = designChanged;
         TabSelected    = tabSelected;
@@ -169,21 +169,24 @@ public abstract class DesignCombo : DesignComboBase
         => Draw(Design, (Incognito ? Design?.Incognito : Design?.Name.Text) ?? string.Empty, width);
 }
 
-public sealed class QuickDesignCombo(
-    DesignManager designs,
-    DesignFileSystem fileSystem,
-    Logger log,
-    DesignChanged designChanged,
-    TabSelected tabSelected,
-    EphemeralConfig config,
-    DesignColors designColors)
-    : DesignCombo(log, designChanged, tabSelected, config, designColors, () =>
-    [
-        .. designs.Designs
-            .Where(d => d.QuickDesign)
-            .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
-            .OrderBy(d => d.Item2),
-    ]);
+public sealed class QuickDesignCombo : DesignCombo
+{
+    public QuickDesignCombo(DesignManager designs,
+        DesignFileSystem fileSystem,
+        Logger log,
+        DesignChanged designChanged,
+        TabSelected tabSelected,
+        EphemeralConfig config,
+        DesignColors designColors)
+        : base(log, designChanged, tabSelected, config, designColors, () =>
+        [
+            .. designs.Designs
+                .Where(d => d.QuickDesign)
+                .Select(d => new Tuple<Design, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
+                .OrderBy(d => d.Item2),
+        ])
+        => AllowMouseWheel = MouseWheelType.Unmodified;
+}
 
 public sealed class LinkDesignCombo(
     DesignManager designs,
