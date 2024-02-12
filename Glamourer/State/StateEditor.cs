@@ -321,7 +321,7 @@ public class StateEditor(
     public void ApplyDesign(object data, DesignBase design, ApplySettings settings)
     {
         var merged = settings.MergeLinks && design is Design d
-            ? merger.Merge(d.AllLinks, ((ActorState)data).BaseData, false, Config.AlwaysApplyAssociatedMods)
+            ? merger.Merge(d.AllLinks, ((ActorState)data).ModelData.Customize, ((ActorState)data).BaseData, false, Config.AlwaysApplyAssociatedMods)
             : new MergedDesign(design);
 
         ApplyDesign(data, merged, settings with

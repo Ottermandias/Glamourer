@@ -78,6 +78,8 @@ public class DesignConverterPanel(DesignConverter _designConverter) : IGameDataD
         {
             using var f = ImRaii.PushFont(UiBuilder.MonoFont);
             ImGuiUtil.TextWrapped(_textUncompressed);
+            if (ImGui.IsItemClicked())
+                ImGui.SetClipboardText(_textUncompressed);
         }
 
         if (_json != null)

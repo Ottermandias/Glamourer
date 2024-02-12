@@ -92,15 +92,13 @@ public class DesignBase
     internal MetaFlag  ApplyMeta  = MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.WeaponState;
     private  bool      _writeProtected;
 
-    public bool SetCustomize(CustomizeService customizeService, CustomizeArray customize, CustomizeSet? set = null)
+    public bool SetCustomize(CustomizeService customizeService, CustomizeArray customize)
     {
         if (customize.Equals(_designData.Customize))
             return false;
 
-        set                   ??= customizeService.Manager.GetSet(customize.Clan, customize.Gender);
-        Debug.Assert(set.Clan == customize.Clan && set.Gender == customize.Gender, "Invalid CustomizeSet provided.");
-        _designData.Customize =   customize;
-        CustomizeSet          =   set;
+        _designData.Customize = customize;
+        CustomizeSet          = customizeService.Manager.GetSet(customize.Clan, customize.Gender);
         return true;
     }
 

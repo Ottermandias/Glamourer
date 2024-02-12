@@ -5,6 +5,7 @@ using Glamourer.State;
 using Glamourer.Unlocks;
 using OtterGui.Services;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs.Links;
 
@@ -15,13 +16,14 @@ public class DesignMerger(
     ItemUnlockManager _itemUnlocks,
     CustomizeUnlockManager _customizeUnlocks) : IService
 {
-    public MergedDesign Merge(LinkContainer designs, in DesignData baseRef, bool respectOwnership, bool modAssociations)
-        => Merge(designs.Select(d => ((DesignBase?) d.Link, d.Type)), baseRef, respectOwnership, modAssociations);
+    public MergedDesign Merge(LinkContainer designs, in CustomizeArray currentCustomize, in DesignData baseRef, bool respectOwnership, bool modAssociations)
+        => Merge(designs.Select(d => ((DesignBase?) d.Link, d.Type)), currentCustomize, baseRef, respectOwnership, modAssociations);
 
-    public MergedDesign Merge(IEnumerable<(DesignBase?, ApplicationType)> designs, in DesignData baseRef, bool respectOwnership,
+    public MergedDesign Merge(IEnumerable<(DesignBase?, ApplicationType)> designs, in CustomizeArray currentCustomize, in DesignData baseRef, bool respectOwnership,
         bool modAssociations)
     {
         var           ret      = new MergedDesign(designManager);
+        ret.Design.SetCustomize(_customize, currentCustomize);
         CustomizeFlag fixFlags = 0;
         respectOwnership &= _config.UnlockedItemMode;
         foreach (var (design, type) in designs)
@@ -63,6 +65,8 @@ public class DesignMerger(
     private static void ReduceMeta(in DesignData design, MetaFlag applyMeta, MergedDesign ret, StateSource source)
     {
         applyMeta &= ~ret.Design.ApplyMeta;
+        if (applyMeta == 0)
+            return;
 
         foreach (var index in MetaExtensions.AllRelevant)
         {
@@ -227,7 +231,7 @@ public class DesignMerger(
             ret.Sources[CustomizeIndex.Face] =  source;
         }
 
-        var set  = _customize.Manager.GetSet(ret.Design.DesignData.Customize.Clan, ret.Design.DesignData.Customize.Gender);
+        var set = _customize.Manager.GetSet(customize.Clan, customize.Gender);
         var face = customize.Face;
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {
@@ -248,7 +252,7 @@ public class DesignMerger(
             fixFlags           &= ~flag;
         }
 
-        ret.Design.SetCustomize(_customize, customize, set);
+        ret.Design.SetCustomize(_customize, customize);
     }
 
     private static void ApplyFixFlags(MergedDesign ret, CustomizeFlag fixFlags)
