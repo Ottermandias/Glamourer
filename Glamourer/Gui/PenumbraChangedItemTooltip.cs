@@ -1,4 +1,5 @@
-﻿using Glamourer.Designs;
+﻿using Dalamud;
+using Glamourer.Designs;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
@@ -13,10 +14,11 @@ namespace Glamourer.Gui;
 
 public sealed class PenumbraChangedItemTooltip : IDisposable
 {
-    private readonly PenumbraService _penumbra;
-    private readonly StateManager    _stateManager;
-    private readonly ItemManager     _items;
-    private readonly ObjectManager   _objects;
+    private readonly PenumbraService  _penumbra;
+    private readonly StateManager     _stateManager;
+    private readonly ItemManager      _items;
+    private readonly ObjectManager    _objects;
+    private readonly CustomizeService _customize;
 
     private readonly EquipItem[] _lastItems = new EquipItem[EquipFlagExtensions.NumEquipFlags / 2];
 
@@ -27,12 +29,14 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
     public DateTime LastTooltip { get; private set; } = DateTime.MinValue;
     public DateTime LastClick   { get; private set; } = DateTime.MinValue;
 
-    public PenumbraChangedItemTooltip(PenumbraService penumbra, StateManager stateManager, ItemManager items, ObjectManager objects)
+    public PenumbraChangedItemTooltip(PenumbraService penumbra, StateManager stateManager, ItemManager items, ObjectManager objects,
+        CustomizeService customize)
     {
         _penumbra         =  penumbra;
         _stateManager     =  stateManager;
         _items            =  items;
         _objects          =  objects;
+        _customize        =  customize;
         _penumbra.Tooltip += OnPenumbraTooltip;
         _penumbra.Click   += OnPenumbraClick;
     }
@@ -166,6 +170,16 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
 
                 CreateTooltip(item, "[Glamourer] ", false);
                 return;
+            case ChangedItemType.Customization:
+                var (race, gender, index, value) = ChangedItemExtensions.Split(id);
+                if (!_objects.Player.Model.IsHuman)
+                    return;
+
+                var customize = _objects.Player.Model.GetCustomize();
+                if (CheckGenderRace(customize, race, gender) && VerifyValue(customize, index, value))
+                    ImGui.TextUnformatted("[Glamourer] Right-Click to apply to current actor.");
+
+                return;
         }
     }
 
@@ -182,20 +196,26 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
     private void OnPenumbraClick(MouseButton button, ChangedItemType type, uint id)
     {
         LastClick = DateTime.UtcNow;
+        if (button is not MouseButton.Right)
+            return;
+
+        if (!Player(out var state))
+            return;
+
         switch (type)
         {
             case ChangedItemType.Item:
             case ChangedItemType.ItemOffhand:
-                if (button is not MouseButton.Right)
-                    return;
-
-                if (!Player(out var state))
-                    return;
-
                 if (!_items.ItemData.TryGetValue(id, type is ChangedItemType.Item ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
                     return;
 
                 ApplyItem(state, item);
+                return;
+            case ChangedItemType.Customization:
+                var (race, gender, index, value) = ChangedItemExtensions.Split(id);
+                var customize = state.ModelData.Customize;
+                if (CheckGenderRace(customize, race, gender) && VerifyValue(customize, index, value))
+                    _stateManager.ChangeCustomize(state, index, value, ApplySettings.Manual);
                 return;
         }
     }
@@ -214,4 +234,21 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
                 _lastItems[slot.ToIndex()] = oldItem;
         }
     }
+
+    private static bool CheckGenderRace(in CustomizeArray customize, ModelRace race, Gender gender)
+    {
+        if (race is ModelRace.Unknown && gender is Gender.Unknown)
+            return true;
+        if (gender != customize.Gender)
+            return false;
+        if (race.ToRace() != customize.Race)
+            return false;
+        if (race is ModelRace.Highlander && customize.Clan is not SubRace.Highlander)
+            return false;
+
+        return true;
+    }
+
+    private bool VerifyValue(in CustomizeArray customize, CustomizeIndex index, CustomizeValue value)
+        => _customize.IsCustomizationValid(customize.Clan, customize.Gender, customize.Face, index, value);
 }
