@@ -46,10 +46,10 @@ public sealed partial class GlamourerIpc : IDisposable
         _getAllCustomizationFromCharacterProvider =
             new FuncProvider<Character?, string?>(pi, LabelGetAllCustomizationFromCharacter, GetAllCustomizationFromCharacter);
 
-        _applyAllProvider                = new ActionProvider<string, string>(pi, LabelApplyAll, ApplyAll);
-        _applyAllOnceProvider            = new ActionProvider<string, string>(pi, LabelApplyAll, ApplyAllOnce);
-        _applyAllToCharacterProvider     = new ActionProvider<string, Character?>(pi, LabelApplyAllToCharacter, ApplyAllToCharacter);
-        _applyAllOnceToCharacterProvider = new ActionProvider<string, Character?>(pi, LabelApplyAllToCharacter, ApplyAllOnceToCharacter);
+        _applyAllProvider                = new ActionProvider<string, string>(pi, LabelApplyAll,     ApplyAll);
+        _applyAllOnceProvider            = new ActionProvider<string, string>(pi, LabelApplyAllOnce, ApplyAllOnce);
+        _applyAllToCharacterProvider     = new ActionProvider<string, Character?>(pi, LabelApplyAllToCharacter,     ApplyAllToCharacter);
+        _applyAllOnceToCharacterProvider = new ActionProvider<string, Character?>(pi, LabelApplyAllOnceToCharacter, ApplyAllOnceToCharacter);
         _applyOnlyEquipmentProvider      = new ActionProvider<string, string>(pi, LabelApplyOnlyEquipment, ApplyOnlyEquipment);
         _applyOnlyEquipmentToCharacterProvider =
             new ActionProvider<string, Character?>(pi, LabelApplyOnlyEquipmentToCharacter, ApplyOnlyEquipmentToCharacter);
@@ -89,10 +89,10 @@ public sealed partial class GlamourerIpc : IDisposable
 
         _setItemProvider = new FuncProvider<Character?, byte, ulong, byte, uint, int>(pi, LabelSetItem,
             (idx, slot, item, stain, key) => (int)SetItem(idx, (EquipSlot)slot, item, stain, key, false));
-        _setItemOnceProvider = new FuncProvider<Character?, byte, ulong, byte, uint, int>(pi, LabelSetItem,
+        _setItemOnceProvider = new FuncProvider<Character?, byte, ulong, byte, uint, int>(pi, LabelSetItemOnce,
             (idx, slot, item, stain, key) => (int)SetItem(idx, (EquipSlot)slot, item, stain, key, true));
 
-        _setItemByActorNameProvider = new FuncProvider<string, byte, ulong, byte, uint, int>(pi, LabelSetItemOnceByActorName,
+        _setItemByActorNameProvider = new FuncProvider<string, byte, ulong, byte, uint, int>(pi, LabelSetItemByActorName,
             (name, slot, item, stain, key) => (int)SetItemByActorName(name, (EquipSlot)slot, item, stain, key, false));
         _setItemOnceByActorNameProvider = new FuncProvider<string, byte, ulong, byte, uint, int>(pi, LabelSetItemOnceByActorName,
             (name, slot, item, stain, key) => (int)SetItemByActorName(name, (EquipSlot)slot, item, stain, key, true));
