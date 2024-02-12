@@ -163,7 +163,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
         using var _ = design!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
-        _stateManager.ApplyDesign(state, design, ApplySettings.Manual);
+        _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks);
     }
 
     public void DrawRevertButton(Vector2 buttonSize)

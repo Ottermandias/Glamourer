@@ -24,6 +24,16 @@ public readonly record struct ApplySettings(
         MergeLinks      = false,
     };
 
+    public static readonly ApplySettings ManualWithLinks = new()
+    {
+        Key             = 0,
+        Source          = StateSource.Manual,
+        FromJobChange   = false,
+        RespectManual   = false,
+        UseSingleSource = false,
+        MergeLinks      = true,
+    };
+
     public static readonly ApplySettings Game = new()
     {
         Key             = 0,

@@ -417,7 +417,7 @@ public class CommandService : IDisposable
             if (!_objects.TryGetValue(identifier, out var actors))
             {
                 if (_stateManager.TryGetValue(identifier, out var state))
-                    _stateManager.ApplyDesign(state, design, ApplySettings.Manual with { MergeLinks = true });
+                    _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks);
             }
             else
             {
@@ -426,7 +426,7 @@ public class CommandService : IDisposable
                     if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
                     {
                         ApplyModSettings(design, actor, applyMods);
-                        _stateManager.ApplyDesign(state, design, ApplySettings.Manual with { MergeLinks = true });
+                        _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks);
                     }
                 }
             }

@@ -344,7 +344,7 @@ public class ActorPanel(
             var text = ImGui.GetClipboardText();
             var design = _converter.FromBase64(text, applyCustomize, applyGear, out _)
              ?? throw new Exception("The clipboard did not contain valid data.");
-            _stateManager.ApplyDesign(_state!, design, ApplySettings.Manual with { MergeLinks = true });
+            _stateManager.ApplyDesign(_state!, design, ApplySettings.ManualWithLinks);
         }
         catch (Exception ex)
         {
