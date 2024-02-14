@@ -278,7 +278,7 @@ public class StateApplier(
 
     public unsafe void ChangeMaterialValue(ActorData data, MaterialValueIndex index, ColorRow? value, bool force)
     {
-        if (!force && !_config.UseAdvancedParameters)
+        if (!force && !_config.UseAdvancedDyes)
             return;
 
         foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))

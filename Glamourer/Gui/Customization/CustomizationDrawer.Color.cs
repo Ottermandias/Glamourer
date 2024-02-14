@@ -80,7 +80,7 @@ public partial class CustomizationDrawer
             {
                 var size = ImGui.GetItemRectSize();
                 ImGui.GetWindowDrawList()
-                    .AddCircleFilled(ImGui.GetItemRectMin() + size / 2, size.X / 4, ImGuiUtil.ContrastColorBW(custom.Color));
+                    .AddCircleFilled(ImGui.GetItemRectMin() + size / 2, size.X / 4, ImGuiUtil.ContrastColorBw(custom.Color));
             }
 
             if (i % 8 != 7)

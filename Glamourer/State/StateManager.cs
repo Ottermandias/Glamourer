@@ -4,6 +4,7 @@ using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop;
+using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
@@ -11,6 +12,7 @@ using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using System;
 
 namespace Glamourer.State;
 
@@ -265,9 +267,16 @@ public sealed class StateManager(
 
         var actors = ActorData.Invalid;
         if (source is not StateSource.Game)
+        {
             actors = Applier.ChangeParameters(state, CustomizeParameterExtensions.All, true);
+            foreach (var (idx, mat) in state.Materials.Values)
+                Applier.ChangeMaterialValue(actors, MaterialValueIndex.FromKey(idx), mat.Game, true);
+        }
+
+        state.Materials.Clear();
+
         Glamourer.Log.Verbose(
-            $"Reset advanced customization state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.Reset, source, state, actors, null);
     }
 

@@ -240,7 +240,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
         {
             available |= 1;
-            tooltip   =  "Left-Click: Revert the advanced customizations of the player character to their game state.";
+            tooltip   =  "Left-Click: Revert the advanced customizations and dyes of the player character to their game state.";
         }
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
@@ -248,7 +248,7 @@ public sealed class DesignQuickBar : Window, IDisposable
             if (available != 0)
                 tooltip += '\n';
             available |= 2;
-            tooltip   += $"Right-Click: Revert the advanced customizations of {_targetIdentifier} to their game state.";
+            tooltip   += $"Right-Click: Revert the advanced customizations and dyes of {_targetIdentifier} to their game state.";
         }
 
         if (available == 0)

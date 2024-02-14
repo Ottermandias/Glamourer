@@ -1,5 +1,6 @@
 ﻿using Glamourer.Automation;
 using Glamourer.GameData;
+using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Unlocks;
@@ -46,12 +47,22 @@ public class DesignMerger(
             ReduceCrests(data, crestFlags, ret, source);
             ReduceParameters(data, parameterFlags, ret, source);
             ReduceMods(design as Design, ret, modAssociations);
+            ReduceMaterials(design, ret);
         }
 
         ApplyFixFlags(ret, fixFlags);
         return ret;
     }
 
+
+    private static void ReduceMaterials(DesignBase? design, MergedDesign ret)
+    {
+        if (design == null)
+            return;
+        var materials = ret.Design.GetMaterialDataRef();
+        foreach (var (key, value) in design.Materials.Where(p => p.Item2.Enabled))
+            materials.TryAddValue(MaterialValueIndex.FromKey(key), value);
+    }
 
     private static void ReduceMods(Design? design, MergedDesign ret, bool modAssociations)
     {

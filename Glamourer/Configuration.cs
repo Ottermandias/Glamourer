@@ -35,6 +35,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool                 ShowQuickBarInTabs                 { get; set; } = true;
     public bool                 OpenWindowAtStart                  { get; set; } = false;
     public bool                 UseAdvancedParameters              { get; set; } = true;
+    public bool                 UseAdvancedDyes                    { get; set; } = false;
     public bool                 ShowRevertAdvancedParametersButton { get; set; } = true;
     public bool                 ShowPalettePlusImport              { get; set; } = true;
     public bool                 UseFloatForColors                  { get; set; } = true;

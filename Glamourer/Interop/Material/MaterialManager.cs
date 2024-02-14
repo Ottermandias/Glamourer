@@ -18,20 +18,21 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     private readonly StateManager    _stateManager;
     private readonly PenumbraService _penumbra;
     private readonly ActorManager    _actors;
+    private readonly Configuration   _config;
 
     private int _lastSlot;
 
     private readonly ThreadLocal<List<MaterialValueIndex>> _deleteList = new(() => []);
 
-    public MaterialManager(PrepareColorSet prepareColorSet, StateManager stateManager, ActorManager actors, PenumbraService penumbra)
+    public MaterialManager(PrepareColorSet prepareColorSet, StateManager stateManager, ActorManager actors, PenumbraService penumbra,
+        Configuration config)
     {
         _stateManager = stateManager;
         _actors       = actors;
         _penumbra     = penumbra;
+        _config       = config;
         _event        = prepareColorSet;
-
-        // TODO Material
-        //_event.Subscribe(OnPrepareColorSet, PrepareColorSet.Priority.MaterialManager);
+        _event.Subscribe(OnPrepareColorSet, PrepareColorSet.Priority.MaterialManager);
     }
 
     public void Dispose()
@@ -39,6 +40,9 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
 
     private void OnPrepareColorSet(CharacterBase* characterBase, MaterialResourceHandle* material, ref StainId stain, ref nint ret)
     {
+        if (!_config.UseAdvancedDyes)
+            return;
+
         var actor     = _penumbra.GameObjectFromDrawObject(characterBase);
         var validType = FindType(characterBase, actor, out var type);
         var (slotId, materialId) = FindMaterial(characterBase, material);
@@ -176,7 +180,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     }
 
     /// <summary> We need to get the temporary set, variant and stain that is currently being set if it is available. </summary>
-    private CharacterWeapon GetTempSlot(Human* human, byte slotId)
+    private static CharacterWeapon GetTempSlot(Human* human, byte slotId)
     {
         if (human->ChangedEquipData == null)
             return ((Model)human).GetArmor(((uint)slotId).ToEquipSlot()).ToWeapon(0);
@@ -188,7 +192,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     /// We need to get the temporary set, variant and stain that is currently being set if it is available.
     /// Weapons do not change in skeleton id without being reconstructed, so this is not changeable data.
     /// </summary>
-    private CharacterWeapon GetTempSlot(Weapon* weapon)
+    private static CharacterWeapon GetTempSlot(Weapon* weapon)
     {
         var changedData = *(void**)((byte*)weapon + 0x918);
         if (changedData == null)

@@ -126,15 +126,25 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
 }
 
 [JsonConverter(typeof(Converter))]
-public struct MaterialValueDesign(ColorRow value, bool enabled)
+public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert)
 {
     public ColorRow Value   = value;
     public bool     Enabled = enabled;
+    public bool     Revert  = revert;
 
     public readonly bool Apply(ref MaterialValueState state)
     {
         if (!Enabled)
             return false;
+
+        if (revert)
+        {
+            if (state.Model.NearEqual(state.Game))
+                return false;
+
+            state.Model = state.Game;
+            return true;
+        }
 
         if (state.Model.NearEqual(Value))
             return false;
@@ -148,6 +158,8 @@ public struct MaterialValueDesign(ColorRow value, bool enabled)
         public override void WriteJson(JsonWriter writer, MaterialValueDesign value, JsonSerializer serializer)
         {
             writer.WriteStartObject();
+            writer.WritePropertyName("Revert");
+            writer.WriteValue(value.Revert);
             writer.WritePropertyName("DiffuseR");
             writer.WriteValue(value.Value.Diffuse.X);
             writer.WritePropertyName("DiffuseG");
@@ -180,6 +192,7 @@ public struct MaterialValueDesign(ColorRow value, bool enabled)
             JsonSerializer serializer)
         {
             var obj = JObject.Load(reader);
+            Set(ref existingValue.Revert,                 obj["Revert"]?.Value<bool>());
             Set(ref existingValue.Value.Diffuse.X,        obj["DiffuseR"]?.Value<float>());
             Set(ref existingValue.Value.Diffuse.Y,        obj["DiffuseG"]?.Value<float>());
             Set(ref existingValue.Value.Diffuse.Z,        obj["DiffuseB"]?.Value<float>());
@@ -235,7 +248,7 @@ public struct MaterialValueState(
          && Game.NearEqual(rhsRow);
 
     public readonly MaterialValueDesign Convert()
-        => new(Model, true);
+        => new(Model, true, false);
 }
 
 public readonly struct MaterialValueManager<T>

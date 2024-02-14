@@ -33,7 +33,7 @@ public class DesignEditor(
     /// <inheritdoc/>
     public void ChangeCustomize(object data, CustomizeIndex idx, CustomizeValue value, ApplySettings _ = default)
     {
-        var design = (Design)data;
+        var design   = (Design)data;
         var oldValue = design.DesignData.Customize[idx];
         switch (idx)
         {
@@ -96,7 +96,7 @@ public class DesignEditor(
     public void ChangeCustomizeParameter(object data, CustomizeParameterFlag flag, CustomizeParameterValue value, ApplySettings _ = default)
     {
         var design = (Design)data;
-        var old = design.DesignData.Parameters[flag];
+        var old    = design.DesignData.Parameters[flag];
         if (!design.GetDesignDataRef().Parameters.Set(flag, value))
             return;
 
@@ -219,6 +219,68 @@ public class DesignEditor(
         DesignChanged.Invoke(DesignChanged.Type.Other, design, (metaIndex, false, value));
     }
 
+    public void ChangeMaterialRevert(Design design, MaterialValueIndex index, bool revert)
+    {
+        var materials = design.GetMaterialDataRef();
+        if (!materials.TryGetValue(index, out var oldValue))
+            return;
+
+        materials.AddOrUpdateValue(index, oldValue with { Revert = revert });
+        Glamourer.Log.Debug($"Changed advanced dye value for {index} to {(revert ? "Revert." : "no longer Revert.")}");
+        design.LastEdit = DateTimeOffset.UtcNow;
+        SaveService.QueueSave(design);
+        DesignChanged.Invoke(DesignChanged.Type.MaterialRevert, design, index);
+    }
+
+    public void ChangeMaterialValue(Design design, MaterialValueIndex index, ColorRow? row)
+    {
+        var materials = design.GetMaterialDataRef();
+        if (materials.TryGetValue(index, out var oldValue))
+        {
+            if (!row.HasValue)
+            {
+                materials.RemoveValue(index);
+                Glamourer.Log.Debug($"Removed advanced dye value for {index}.");
+            }
+            else if (!row.Value.NearEqual(oldValue.Value))
+            {
+                materials.UpdateValue(index, new MaterialValueDesign(row.Value, oldValue.Enabled, oldValue.Revert), out _);
+                Glamourer.Log.Debug($"Updated advanced dye value for {index} to new value.");
+            }
+            else
+            {
+                return;
+            }
+        }
+        else
+        {
+            if (!row.HasValue)
+                return;
+            if (!materials.TryAddValue(index, new MaterialValueDesign(row.Value, true, false)))
+                return;
+
+            Glamourer.Log.Debug($"Added new advanced dye value for {index}.");
+        }
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        SaveService.DelaySave(design);
+        DesignChanged.Invoke(DesignChanged.Type.Material, design, (oldValue, row, index));
+    }
+
+    public void ChangeApplyMaterialValue(Design design, MaterialValueIndex index, bool value)
+    {
+        var materials = design.GetMaterialDataRef();
+        if (!materials.TryGetValue(index, out var oldValue) || oldValue.Enabled == value)
+            return;
+
+        materials.AddOrUpdateValue(index, oldValue with { Enabled = value });
+        Glamourer.Log.Debug($"Changed application of advanced dye for {index} to {value}.");
+        design.LastEdit = DateTimeOffset.UtcNow;
+        SaveService.QueueSave(design);
+        DesignChanged.Invoke(DesignChanged.Type.ApplyMaterial, design, index);
+    }
+
+
     /// <inheritdoc/>
     public void ApplyDesign(object data, MergedDesign other, ApplySettings _ = default)
         => ApplyDesign(data, other.Design);
@@ -262,7 +324,8 @@ public class DesignEditor(
     }
 
     /// <summary> Change a mainhand weapon and either fix or apply appropriate offhand and potentially gauntlets. </summary>
-    private bool ChangeMainhandPeriphery(DesignBase design, EquipItem currentMain, EquipItem currentOff, EquipItem newMain, out EquipItem? newOff,
+    private bool ChangeMainhandPeriphery(DesignBase design, EquipItem currentMain, EquipItem currentOff, EquipItem newMain,
+        out EquipItem? newOff,
         out EquipItem? newGauntlets)
     {
         newOff       = null;

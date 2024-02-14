@@ -2,6 +2,7 @@
 using FFXIVClientStructs.Interop;
 using Glamourer.Interop.Structs;
 using Newtonsoft.Json;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
 
 namespace Glamourer.Interop.Material;
@@ -149,6 +150,16 @@ public readonly record struct MaterialValueIndex(
     private MaterialValueIndex(uint key)
         : this((DrawObjectType)(key >> 24), (byte)(key >> 16), (byte)(key >> 8), (byte)key)
     { }
+
+    public override string ToString()
+        => DrawObject switch
+        {
+            DrawObjectType.Human when SlotIndex < 10 =>
+                $"{((uint)SlotIndex).ToEquipSlot().ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Mainhand when SlotIndex == 0 => $"{EquipSlot.MainHand.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Offhand when SlotIndex == 0  => $"{EquipSlot.OffHand.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            _                                           => $"{DrawObject} Slot {SlotIndex} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+        };
 
     private class Converter : JsonConverter<MaterialValueIndex>
     {

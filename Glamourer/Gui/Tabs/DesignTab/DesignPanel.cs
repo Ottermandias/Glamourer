@@ -7,6 +7,7 @@ using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
+using Glamourer.Gui.Materials;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
@@ -31,7 +32,8 @@ public class DesignPanel(
     ImportService _importService,
     MultiDesignPanel _multiDesignPanel,
     CustomizeParameterDrawer _parameterDrawer,
-    DesignLinkDrawer _designLinkDrawer)
+    DesignLinkDrawer _designLinkDrawer,
+    MaterialDrawer _materials)
 {
     private readonly FileDialogManager _fileDialog = new();
 
@@ -176,21 +178,14 @@ public class DesignPanel(
 
     private void DrawMaterialValues()
     {
-        if (!_config.UseAdvancedParameters)
+        if (!_config.UseAdvancedDyes)
             return;
 
         using var h = ImRaii.CollapsingHeader("Advanced Dyes");
         if (!h)
             return;
 
-        foreach (var ((key, value), i) in _selector.Selected!.Materials.WithIndex())
-        {
-            using var id = ImRaii.PushId(i);
-            ImGui.TextUnformatted($"{key:X16}");
-            ImGui.SameLine();
-            var enabled = value.Enabled;
-            ImGui.Checkbox("Enabled", ref enabled);
-        }
+        _materials.DrawDesignPanel(_selector.Selected!);
     }
 
     private void DrawCustomizeApplication()
@@ -384,7 +379,7 @@ public class DesignPanel(
         DrawCustomize();
         DrawEquipment();
         DrawCustomizeParameters();
-        //DrawMaterialValues(); TODO Materials
+        DrawMaterialValues();
         _designDetails.Draw();
         DrawApplicationRules();
         _modAssociations.Draw();

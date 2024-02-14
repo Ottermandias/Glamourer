@@ -74,10 +74,16 @@ public sealed class DesignChanged()
         /// <summary> An existing design had a customize parameter changed. Data is the old value, the new value and the flag [(CustomizeParameterValue, CustomizeParameterValue, CustomizeParameterFlag)]. </summary>
         Parameter,
 
+        /// <summary> An existing design had an advanced dye row added, changed, or deleted. Data is the old value, the new value and the index [(ColorRow?, ColorRow?, MaterialValueIndex)]. </summary>
+        Material,
+
+        /// <summary> An existing design had an advanced dye rows Revert state changed. Data is the index [MaterialValueIndex]. </summary>
+        MaterialRevert,
+
         /// <summary> An existing design changed whether a specific customization is applied. Data is the type of customization [CustomizeIndex]. </summary>
         ApplyCustomize,
 
-        /// <summary> An existing design changed whether a specific equipment is applied. Data is the slot of the equipment [EquipSlot]. </summary>
+        /// <summary> An existing design changed whether a specific equipment piece is applied. Data is the slot of the equipment [EquipSlot]. </summary>
         ApplyEquip,
 
         /// <summary> An existing design changed whether a specific stain is applied. Data is the slot of the equipment [EquipSlot]. </summary>
@@ -88,6 +94,9 @@ public sealed class DesignChanged()
 
         /// <summary> An existing design changed whether a specific customize parameter is applied. Data is the flag for the parameter [CustomizeParameterFlag]. </summary>
         ApplyParameter,
+
+        /// <summary> An existing design changed whether an advanced dye row is applied. Data is the index [MaterialValueIndex]. </summary>
+        ApplyMaterial,
 
         /// <summary> An existing design changed its write protection status. Data is the new value [bool]. </summary>
         WriteProtection,

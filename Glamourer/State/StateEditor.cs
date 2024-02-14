@@ -172,7 +172,8 @@ public class StateEditor(
             return;
 
         var actors = Applier.ChangeMaterialValue(state, index, settings.Source.RequiresChange());
-        Glamourer.Log.Verbose($"Set material value in state {state.Identifier.Incognito(null)} from {oldValue} to {newValue.Game}. [Affecting {actors.ToLazyString("nothing")}.]");
+        Glamourer.Log.Verbose(
+            $"Set material value in state {state.Identifier.Incognito(null)} from {oldValue} to {newValue.Game}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.MaterialValue, settings.Source, state, actors, (oldValue, newValue.Game, index));
     }
 
@@ -288,13 +289,25 @@ public class StateEditor(
                 if (!value.Enabled)
                     continue;
 
-                var idx = MaterialValueIndex.FromKey(key);
-                // TODO
-                //if (state.Materials.TryGetValue(idx, out var materialState))
-                //{
-                //    if (!settings.RespectManual || materialState.Source.IsManual())
-                //        Editor.ChangeMaterialValue(state, idx, new MaterialValueState(materialState.Game, value.Value, materialState.DrawData));
-                //}
+                var idx    = MaterialValueIndex.FromKey(key);
+                var source = settings.Source.SetPending();
+                if (state.Materials.TryGetValue(idx, out var materialState))
+                {
+                    if (settings.RespectManual && !materialState.Source.IsManual())
+                        continue;
+
+                    if (value.Revert)
+                        Editor.ChangeMaterialValue(state, idx, default, StateSource.Game, out _, settings.Key);
+                    else
+                        Editor.ChangeMaterialValue(state, idx,
+                            new MaterialValueState(materialState.Game, value.Value, materialState.DrawData, source), settings.Source, out _,
+                            settings.Key);
+                }
+                else if (!value.Revert)
+                {
+                    Editor.ChangeMaterialValue(state, idx, new MaterialValueState(ColorRow.Empty, value.Value, CharacterWeapon.Empty, source),
+                        settings.Source, out _, settings.Key);
+                }
             }
         }
 
@@ -321,7 +334,8 @@ public class StateEditor(
     public void ApplyDesign(object data, DesignBase design, ApplySettings settings)
     {
         var merged = settings.MergeLinks && design is Design d
-            ? merger.Merge(d.AllLinks, ((ActorState)data).ModelData.Customize, ((ActorState)data).BaseData, false, Config.AlwaysApplyAssociatedMods)
+            ? merger.Merge(d.AllLinks, ((ActorState)data).ModelData.Customize, ((ActorState)data).BaseData, false,
+                Config.AlwaysApplyAssociatedMods)
             : new MergedDesign(design);
 
         ApplyDesign(data, merged, settings with

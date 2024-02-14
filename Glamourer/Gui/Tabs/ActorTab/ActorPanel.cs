@@ -117,9 +117,8 @@ public class ActorPanel(
 
         RevertButtons();
 
-        // TODO Materials
-        //if (ImGui.CollapsingHeader("Material Shit"))
-        //    _materialDrawer.DrawActorPanel(_actor);
+        if (_config.UseAdvancedDyes && ImGui.CollapsingHeader("Material Shit"))
+            _materialDrawer.DrawActorPanel(_actor);
         using var disabled = ImRaii.Disabled(transformationId != 0);
         if (_state.ModelData.IsHuman)
             DrawHumanPanel();
