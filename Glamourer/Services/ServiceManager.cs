@@ -12,6 +12,7 @@ using Glamourer.Gui.Tabs.AutomationTab;
 using Glamourer.Gui.Tabs.DebugTab;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Gui.Tabs.NpcTab;
+using Glamourer.Gui.Tabs.SettingsTab;
 using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;

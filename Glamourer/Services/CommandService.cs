@@ -440,13 +440,13 @@ public class CommandService : IDisposable
         if (!applyMods || design is not Design d)
             return;
 
-        var (messages, appliedMods, collection) = _modApplier.ApplyModSettings(d.AssociatedMods, actor);
+        var (messages, appliedMods, collection, overridden) = _modApplier.ApplyModSettings(d.AssociatedMods, actor);
 
         foreach (var message in messages)
             Glamourer.Messager.Chat.Print($"Error applying mod settings: {message}");
 
         if (appliedMods > 0)
-            Glamourer.Messager.Chat.Print($"Applied {appliedMods} mod settings to {collection}.");
+            Glamourer.Messager.Chat.Print($"Applied {appliedMods} mod settings to {collection}{(overridden ? " (overridden by settings)" : string.Empty)}.");
     }
 
     private bool Delete(string argument)

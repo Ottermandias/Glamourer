@@ -7,13 +7,10 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Services;
 
-public sealed class TextureService : TextureCache, IDisposable
+public sealed class TextureService(UiBuilder uiBuilder, IDataManager dataManager, ITextureProvider textureProvider)
+    : TextureCache(dataManager, textureProvider), IDisposable
 {
-    public TextureService(UiBuilder uiBuilder, IDataManager dataManager, ITextureProvider textureProvider)
-        : base(dataManager, textureProvider)
-        => _slotIcons = CreateSlotIcons(uiBuilder);
-
-    private readonly IDalamudTextureWrap?[] _slotIcons;
+    private readonly IDalamudTextureWrap?[] _slotIcons = CreateSlotIcons(uiBuilder);
 
     public (nint, Vector2, bool) GetIcon(EquipItem item, EquipSlot slot)
     {

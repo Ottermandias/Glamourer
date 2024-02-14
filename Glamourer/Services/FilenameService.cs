@@ -17,21 +17,23 @@ public class FilenameService
     public readonly string DesignColorFile;
     public readonly string EphemeralConfigFile;
     public readonly string NpcAppearanceFile;
+    public readonly string CollectionOverrideFile;
 
     public FilenameService(DalamudPluginInterface pi)
     {
-        ConfigDirectory     = pi.ConfigDirectory.FullName;
-        ConfigFile          = pi.ConfigFile.FullName;
-        AutomationFile      = Path.Combine(ConfigDirectory, "automation.json");
-        DesignFileSystem    = Path.Combine(ConfigDirectory, "sort_order.json");
-        MigrationDesignFile = Path.Combine(ConfigDirectory, "Designs.json");
-        UnlockFileCustomize = Path.Combine(ConfigDirectory, "unlocks_customize.json");
-        UnlockFileItems     = Path.Combine(ConfigDirectory, "unlocks_items.json");
-        DesignDirectory     = Path.Combine(ConfigDirectory, "designs");
-        FavoriteFile        = Path.Combine(ConfigDirectory, "favorites.json");
-        DesignColorFile     = Path.Combine(ConfigDirectory, "design_colors.json");
-        EphemeralConfigFile = Path.Combine(ConfigDirectory, "ephemeral_config.json");
-        NpcAppearanceFile   = Path.Combine(ConfigDirectory, "npc_appearance_data.json");
+        ConfigDirectory        = pi.ConfigDirectory.FullName;
+        ConfigFile             = pi.ConfigFile.FullName;
+        AutomationFile         = Path.Combine(ConfigDirectory, "automation.json");
+        DesignFileSystem       = Path.Combine(ConfigDirectory, "sort_order.json");
+        MigrationDesignFile    = Path.Combine(ConfigDirectory, "Designs.json");
+        UnlockFileCustomize    = Path.Combine(ConfigDirectory, "unlocks_customize.json");
+        UnlockFileItems        = Path.Combine(ConfigDirectory, "unlocks_items.json");
+        DesignDirectory        = Path.Combine(ConfigDirectory, "designs");
+        FavoriteFile           = Path.Combine(ConfigDirectory, "favorites.json");
+        DesignColorFile        = Path.Combine(ConfigDirectory, "design_colors.json");
+        EphemeralConfigFile    = Path.Combine(ConfigDirectory, "ephemeral_config.json");
+        NpcAppearanceFile      = Path.Combine(ConfigDirectory, "npc_appearance_data.json");
+        CollectionOverrideFile = Path.Combine(ConfigDirectory, "collection_overrides.json");
     }
 
     public IEnumerable<FileInfo> Designs()

@@ -15,7 +15,7 @@ using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 
-namespace Glamourer.Gui.Tabs;
+namespace Glamourer.Gui.Tabs.SettingsTab;
 
 public class SettingsTab(
     Configuration config,
@@ -29,7 +29,8 @@ public class SettingsTab(
     IKeyState keys,
     DesignColorUi designColorUi,
     PaletteImport paletteImport,
-    PalettePlusChecker paletteChecker)
+    PalettePlusChecker paletteChecker,
+    CollectionOverrideDrawer overrides)
     : ITab
 {
     private readonly VirtualKey[] _validKeys = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
@@ -57,6 +58,7 @@ public class SettingsTab(
             DrawBehaviorSettings();
             DrawInterfaceSettings();
             DrawColorSettings();
+            overrides.Draw();
             DrawCodes();
         }
 
@@ -90,6 +92,9 @@ public class SettingsTab(
             "Enable the display and editing of advanced customization options like arbitrary colors.",
             config.UseAdvancedParameters, paletteChecker.SetAdvancedParameters);
         PaletteImportButton();
+        Checkbox("Enable Advanced Dye Options",
+            "Enable the display and editing of advanced dyes (color sets) for all equipment",
+            config.UseAdvancedDyes, v => config.UseAdvancedDyes = v);
         Checkbox("Always Apply Associated Mods",
             "Whenever a design is applied to a character (including via automation), Glamourer will try to apply its associated mod settings to the collection currently associated with that character, if it is available.\n\n"
           + "Glamourer will NOT revert these applied settings automatically. This may mess up your collection and configuration.\n\n"
@@ -188,6 +193,7 @@ public class SettingsTab(
             v => config.DebugMode = v);
         ImGui.NewLine();
     }
+
 
     private void PaletteImportButton()
     {

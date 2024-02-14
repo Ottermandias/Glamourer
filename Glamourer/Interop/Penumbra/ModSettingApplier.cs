@@ -1,11 +1,13 @@
 ﻿using Glamourer.Designs.Links;
 using Glamourer.Interop.Structs;
+using Glamourer.Services;
 using Glamourer.State;
 using OtterGui.Services;
 
 namespace Glamourer.Interop.Penumbra;
 
-public class ModSettingApplier(PenumbraService penumbra, Configuration config, ObjectManager objects) : IService
+public class ModSettingApplier(PenumbraService penumbra, Configuration config, ObjectManager objects, CollectionOverrideService overrides)
+    : IService
 {
     public void HandleStateApplication(ActorState state, MergedDesign design)
     {
@@ -24,7 +26,7 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
 
         foreach (var actor in data.Objects)
         {
-            var collection = penumbra.GetActorCollection(actor);
+            var (collection, overridden) = overrides.GetCollection(actor, state.Identifier);
             if (collection.Length == 0)
             {
                 Glamourer.Log.Verbose($"[Mod Applier] Could not obtain associated collection for {actor.Utf8Name}.");
@@ -40,16 +42,17 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
                 if (message.Length > 0)
                     Glamourer.Log.Verbose($"[Mod Applier] Error applying mod settings: {message}");
                 else
-                    Glamourer.Log.Verbose($"[Mod Applier] Set mod settings for {mod.DirectoryName} in {collection}.");
+                    Glamourer.Log.Verbose(
+                        $"[Mod Applier] Set mod settings for {mod.DirectoryName} in {collection}{(overridden ? " (overridden by settings)" : string.Empty)}.");
             }
         }
     }
 
-    public (List<string> Messages, int Applied, string Collection) ApplyModSettings(IReadOnlyDictionary<Mod, ModSettings> settings, Actor actor)
+    public (List<string> Messages, int Applied, string Collection, bool Overridden) ApplyModSettings(IReadOnlyDictionary<Mod, ModSettings> settings, Actor actor)
     {
-        var collection = penumbra.GetActorCollection(actor);
+        var (collection, overridden) = overrides.GetCollection(actor);
         if (collection.Length <= 0)
-            return ([$"Could not obtain associated collection for {actor.Utf8Name}."], 0, string.Empty);
+            return ([$"Could not obtain associated collection for {actor.Utf8Name}."], 0, string.Empty, false);
 
         var messages    = new List<string>();
         var appliedMods = 0;
@@ -62,6 +65,6 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
                 ++appliedMods;
         }
 
-        return (messages, appliedMods, collection);
+        return (messages, appliedMods, collection, overridden);
     }
 }
