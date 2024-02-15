@@ -124,7 +124,7 @@ public class ModAssociationsTab
             ImGui.Separator();
             var namesDifferent = mod.Name != mod.DirectoryName;
             ImGui.Dummy(new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
-            using (var group = ImRaii.Group())
+            using (ImRaii.Group())
             {
                 if (namesDifferent)
                     ImGui.TextUnformatted("Directory Name");
@@ -134,7 +134,7 @@ public class ModAssociationsTab
             }
 
             ImGui.SameLine(Math.Max(ImGui.GetItemRectSize().X + 3 * ImGui.GetStyle().ItemSpacing.X, 150 * ImGuiHelpers.GlobalScale));
-            using (var group = ImRaii.Group())
+            using (ImRaii.Group())
             {
                 if (namesDifferent)
                     ImGui.TextUnformatted(mod.DirectoryName);
@@ -211,6 +211,6 @@ public class ModAssociationsTab
             _manager.AddMod(_selector.Selected!, _modCombo.CurrentSelection.Mod, _modCombo.CurrentSelection.Settings);
         ImGui.TableNextColumn();
         _modCombo.Draw("##new", currentName.IsNullOrEmpty() ? "Select new Mod..." : currentName, string.Empty,
-            200 * ImGuiHelpers.GlobalScale, ImGui.GetTextLineHeight());
+            ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeight());
     }
 }

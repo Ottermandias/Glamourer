@@ -10,7 +10,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop.Material;
 
-[JsonConverter(typeof(Converter))]
+/// <summary> Values are not squared. </summary>
 public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, float specularStrength, float glossStrength)
 {
     public static readonly ColorRow Empty = new(Vector3.Zero, Vector3.Zero, Vector3.Zero, 0, 0);
@@ -22,7 +22,7 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     public float   GlossStrength    = glossStrength;
 
     public ColorRow(in MtrlFile.ColorTable.Row row)
-        : this(row.Diffuse, row.Specular, row.Emissive, row.SpecularStrength, row.GlossStrength)
+        : this(Root(row.Diffuse), Root(row.Specular), Root(row.Emissive), row.SpecularStrength, row.GlossStrength)
     { }
 
     public readonly bool NearEqual(in ColorRow rhs)
@@ -32,24 +32,39 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
          && SpecularStrength.NearEqual(rhs.SpecularStrength)
          && GlossStrength.NearEqual(rhs.GlossStrength);
 
+    private static Vector3 Square(Vector3 value)
+        => new(Square(value.X), Square(value.Y), Square(value.Z));
+
+    private static float Square(float value)
+        => value < 0 ? -value * value : value * value;
+
+    private static Vector3 Root(Vector3 value)
+        => new(Root(value.X), Root(value.Y), Root(value.Z));
+
+    private static float Root(float value)
+        => value < 0 ? MathF.Sqrt(-value) : MathF.Sqrt(value);
+
     public readonly bool Apply(ref MtrlFile.ColorTable.Row row)
     {
         var ret = false;
-        if (!row.Diffuse.NearEqual(Diffuse))
+        var d   = Square(Diffuse);
+        if (!row.Diffuse.NearEqual(d))
         {
-            row.Diffuse = Diffuse;
+            row.Diffuse = d;
             ret         = true;
         }
 
-        if (!row.Specular.NearEqual(Specular))
+        var s = Square(Specular);
+        if (!row.Specular.NearEqual(s))
         {
-            row.Specular = Specular;
+            row.Specular = s;
             ret          = true;
         }
 
-        if (!row.Emissive.NearEqual(Emissive))
+        var e = Square(Emissive);
+        if (!row.Emissive.NearEqual(e))
         {
-            row.Emissive = Emissive;
+            row.Emissive = e;
             ret          = true;
         }
 
@@ -67,62 +82,6 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
 
         return ret;
     }
-
-    private class Converter : JsonConverter<ColorRow>
-    {
-        public override void WriteJson(JsonWriter writer, ColorRow value, JsonSerializer serializer)
-        {
-            writer.WriteStartObject();
-            writer.WritePropertyName("DiffuseR");
-            writer.WriteValue(value.Diffuse.X);
-            writer.WritePropertyName("DiffuseG");
-            writer.WriteValue(value.Diffuse.Y);
-            writer.WritePropertyName("DiffuseB");
-            writer.WriteValue(value.Diffuse.Z);
-            writer.WritePropertyName("SpecularR");
-            writer.WriteValue(value.Specular.X);
-            writer.WritePropertyName("SpecularG");
-            writer.WriteValue(value.Specular.Y);
-            writer.WritePropertyName("SpecularB");
-            writer.WriteValue(value.Specular.Z);
-            writer.WritePropertyName("SpecularA");
-            writer.WriteValue(value.SpecularStrength);
-            writer.WritePropertyName("EmissiveR");
-            writer.WriteValue(value.Emissive.X);
-            writer.WritePropertyName("EmissiveG");
-            writer.WriteValue(value.Emissive.Y);
-            writer.WritePropertyName("EmissiveB");
-            writer.WriteValue(value.Emissive.Z);
-            writer.WritePropertyName("Gloss");
-            writer.WriteValue(value.GlossStrength);
-            writer.WriteEndObject();
-        }
-
-        public override ColorRow ReadJson(JsonReader reader, Type objectType, ColorRow existingValue, bool hasExistingValue,
-            JsonSerializer serializer)
-        {
-            var obj = JObject.Load(reader);
-            Set(ref existingValue.Diffuse.X,        obj["DiffuseR"]?.Value<float>());
-            Set(ref existingValue.Diffuse.Y,        obj["DiffuseG"]?.Value<float>());
-            Set(ref existingValue.Diffuse.Z,        obj["DiffuseB"]?.Value<float>());
-            Set(ref existingValue.Specular.X,       obj["SpecularR"]?.Value<float>());
-            Set(ref existingValue.Specular.Y,       obj["SpecularG"]?.Value<float>());
-            Set(ref existingValue.Specular.Z,       obj["SpecularB"]?.Value<float>());
-            Set(ref existingValue.SpecularStrength, obj["SpecularA"]?.Value<float>());
-            Set(ref existingValue.Emissive.X,       obj["EmissiveR"]?.Value<float>());
-            Set(ref existingValue.Emissive.Y,       obj["EmissiveG"]?.Value<float>());
-            Set(ref existingValue.Emissive.Z,       obj["EmissiveB"]?.Value<float>());
-            Set(ref existingValue.GlossStrength,    obj["Gloss"]?.Value<float>());
-            return existingValue;
-
-            static void Set<T>(ref T target, T? value)
-                where T : struct
-            {
-                if (value.HasValue)
-                    target = value.Value;
-            }
-        }
-    }
 }
 
 [JsonConverter(typeof(Converter))]
@@ -137,7 +96,7 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert)
         if (!Enabled)
             return false;
 
-        if (revert)
+        if (Revert)
         {
             if (state.Model.NearEqual(state.Game))
                 return false;
