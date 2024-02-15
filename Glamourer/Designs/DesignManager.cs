@@ -273,6 +273,16 @@ public sealed class DesignManager : DesignEditor
         DesignChanged.Invoke(DesignChanged.Type.RemovedMod, design, (mod, settings));
     }
 
+    public void UpdateMod(Design design, Mod mod, ModSettings settings) {
+        if (!design.AssociatedMods.ContainsKey(mod))
+            return;
+        design.AssociatedMods[mod] = settings;
+        design.LastEdit            = DateTimeOffset.UtcNow;
+        SaveService.QueueSave(design);
+        Glamourer.Log.Debug($"Updated associated mod {mod.DirectoryName} from design {design.Identifier}.");
+        DesignChanged.Invoke(DesignChanged.Type.AddedMod, design, (mod, settings));
+    }
+
     /// <summary> Set the write protection status of a design. </summary>
     public void SetWriteProtection(Design design, bool value)
     {
