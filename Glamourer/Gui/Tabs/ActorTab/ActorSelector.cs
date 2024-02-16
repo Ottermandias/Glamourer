@@ -1,7 +1,6 @@
 ﻿using Dalamud.Interface;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
-using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -10,28 +9,17 @@ using Penumbra.GameData.Actors;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
-public class ActorSelector
+public class ActorSelector(ObjectManager objects, ActorManager actors, EphemeralConfig config)
 {
-    private readonly EphemeralConfig _config;
-    private readonly ObjectManager _objects;
-    private readonly ActorManager  _actors;
-
     private ActorIdentifier _identifier = ActorIdentifier.Invalid;
-
-    public ActorSelector(ObjectManager objects, ActorManager actors, EphemeralConfig config)
-    {
-        _objects = objects;
-        _actors  = actors;
-        _config  = config;
-    }
 
     public bool IncognitoMode
     {
-        get => _config.IncognitoMode;
+        get => config.IncognitoMode;
         set
         {
-            _config.IncognitoMode = value;
-            _config.Save();
+            config.IncognitoMode = value;
+            config.Save();
         }
     }
 
@@ -40,7 +28,7 @@ public class ActorSelector
     private float       _width;
 
     public (ActorIdentifier Identifier, ActorData Data) Selection
-        => _objects.TryGetValue(_identifier, out var data) ? (_identifier, data) : (_identifier, ActorData.Invalid);
+        => objects.TryGetValue(_identifier, out var data) ? (_identifier, data) : (_identifier, ActorData.Invalid);
 
     public bool HasSelection
         => _identifier.IsValid;
@@ -65,10 +53,10 @@ public class ActorSelector
         if (!child)
             return;
 
-        _objects.Update();
+        objects.Update();
         using var style     = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
         var       skips     = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
-        var       remainder = ImGuiClip.FilteredClippedDraw(_objects, skips, CheckFilter, DrawSelectable);
+        var       remainder = ImGuiClip.FilteredClippedDraw(objects, skips, CheckFilter, DrawSelectable);
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
     }
 
@@ -89,14 +77,14 @@ public class ActorSelector
         var buttonWidth = new Vector2(_width / 2, 0);
 
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth
-                , "Select the local player character.", !_objects.Player, true))
-            _identifier = _objects.Player.GetIdentifier(_actors);
+                , "Select the local player character.", !objects.Player, true))
+            _identifier = objects.Player.GetIdentifier(actors);
 
         ImGui.SameLine();
-        var (id, data) = _objects.TargetData;
+        var (id, data) = objects.TargetData;
         var tt = data.Valid ? $"Select the current target {id} in the list." :
             id.IsValid      ? $"The target {id} is not in the list." : "No target selected.";
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth, tt, _objects.IsInGPose || !data.Valid, true))
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth, tt, objects.IsInGPose || !data.Valid, true))
             _identifier = id;
     }
 }

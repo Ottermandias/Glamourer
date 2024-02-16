@@ -32,15 +32,12 @@ public unsafe class MaterialDrawer(StateManager _stateManager, DesignManager _de
             if (!table)
                 return;
 
-
             ImGui.TableSetupColumn("button",  ImGuiTableColumnFlags.WidthFixed, buttonSize.X);
             ImGui.TableSetupColumn("enabled", ImGuiTableColumnFlags.WidthFixed, buttonSize.X);
             ImGui.TableSetupColumn("values",  ImGuiTableColumnFlags.WidthFixed, ImGui.GetStyle().ItemInnerSpacing.X * 4 + 3 * buttonSize.X + 220 * ImGuiHelpers.GlobalScale);
             ImGui.TableSetupColumn("revert",  ImGuiTableColumnFlags.WidthFixed, buttonSize.X + ImGui.CalcTextSize("Revertm").X);
             ImGui.TableSetupColumn("slot",    ImGuiTableColumnFlags.WidthStretch);
             
-            
-
             for (var i = 0; i < design.Materials.Count; ++i)
             {
                 var (idx, value) = design.Materials[i];

@@ -34,15 +34,16 @@ public class EquipmentDrawer
     public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, CodeService codes, TextureService textures,
         Configuration config, GPoseService gPose)
     {
-        _items       = items;
-        _codes       = codes;
-        _textures    = textures;
-        _config      = config;
-        _gPose       = gPose;
-        _stainData   = items.Stains;
-        _stainCombo  = new GlamourerColorCombo(DefaultWidth - 20, _stainData, favorites);
-        _itemCombo   = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log, favorites)).ToArray();
-        _weaponCombo = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
+        _items        = items;
+        _codes        = codes;
+        _textures     = textures;
+        _config       = config;
+        _gPose        = gPose;
+        _advancedDyes = advancedDyes;
+        _stainData    = items.Stains;
+        _stainCombo   = new GlamourerColorCombo(DefaultWidth - 20, _stainData, favorites);
+        _itemCombo    = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log, favorites)).ToArray();
+        _weaponCombo  = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
         foreach (var type in Enum.GetValues<FullEquipType>())
         {
             if (type.ToSlot() is EquipSlot.MainHand)
@@ -465,8 +466,10 @@ public class EquipmentDrawer
         (var tt, item, var valid) = (allowRevert && !revertItem.Equals(currentItem), allowClear && !clearItem.Equals(currentItem),
                 ImGui.GetIO().KeyCtrl) switch
             {
-                (true, true, true)   => ("Right-click to clear. Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.", revertItem, true),
-                (true, true, false)  => ("Right-click to clear. Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.", clearItem, true),
+                (true, true, true) => ("Right-click to clear. Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.",
+                    revertItem, true),
+                (true, true, false) => ("Right-click to clear. Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.",
+                    clearItem, true),
                 (true, false, true)  => ("Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.", revertItem, true),
                 (true, false, false) => ("Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.", default, false),
                 (false, true, _)     => ("Right-click to clear.\nControl and mouse wheel to scroll.", clearItem, true),

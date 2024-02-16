@@ -14,6 +14,7 @@ public readonly record struct MaterialValueIndex(
     byte MaterialIndex,
     byte RowIndex)
 {
+    public static readonly MaterialValueIndex Invalid = new(DrawObjectType.Invalid, 0, 0, 0);
     public uint Key
         => ToKey(DrawObject, SlotIndex, MaterialIndex, RowIndex);
 
@@ -121,13 +122,14 @@ public readonly record struct MaterialValueIndex(
 
     public enum DrawObjectType : byte
     {
+        Invalid,
         Human,
         Mainhand,
         Offhand,
     };
 
     public static bool Validate(DrawObjectType type)
-        => Enum.IsDefined(type);
+        => type is not DrawObjectType.Invalid && Enum.IsDefined(type);
 
     public static bool ValidateSlot(byte slotIndex)
         => slotIndex < 10;
