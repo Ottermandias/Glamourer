@@ -36,7 +36,8 @@ public class ActorPanel(
     ICondition _conditions,
     DictModelChara _modelChara,
     CustomizeParameterDrawer _parameterDrawer,
-    MaterialDrawer _materialDrawer)
+    MaterialDrawer _materialDrawer,
+    AdvancedDyePopup _advancedDyes)
 {
     private ActorIdentifier _identifier;
     private string          _actorName = string.Empty;
@@ -117,13 +118,12 @@ public class ActorPanel(
 
         RevertButtons();
 
-        if (_config.UseAdvancedDyes && ImGui.CollapsingHeader("Material Shit"))
-            _materialDrawer.DrawActorPanel(_actor);
         using var disabled = ImRaii.Disabled(transformationId != 0);
         if (_state.ModelData.IsHuman)
             DrawHumanPanel();
         else
             DrawMonsterPanel();
+        _advancedDyes.Draw(_actor, _state);
     }
 
     private void DrawHumanPanel()
@@ -320,7 +320,7 @@ public class ActorPanel(
     private void SaveDesignOpen()
     {
         ImGui.OpenPopup("Save as Design");
-        _newName = _state!.Identifier.ToName();
+        _newName   = _state!.Identifier.ToName();
         _newDesign = _converter.Convert(_state, ApplicationRules.FromModifiers(_state));
     }
 

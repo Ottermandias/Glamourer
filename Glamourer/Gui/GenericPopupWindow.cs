@@ -2,6 +2,7 @@
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
+using Glamourer.Gui.Materials;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -10,12 +11,13 @@ namespace Glamourer.Gui;
 
 public class GenericPopupWindow : Window
 {
-    private readonly Configuration _config;
-    private readonly ICondition    _condition;
-    private readonly IClientState  _state;
-    public           bool          OpenFestivalPopup { get; internal set; } = false;
+    private readonly Configuration    _config;
+    private readonly AdvancedDyePopup _advancedDye;
+    private readonly ICondition       _condition;
+    private readonly IClientState     _state;
+    public           bool             OpenFestivalPopup { get; internal set; } = false;
 
-    public GenericPopupWindow(Configuration config, IClientState state, ICondition condition)
+    public GenericPopupWindow(Configuration config, IClientState state, ICondition condition, AdvancedDyePopup advancedDye)
         : base("Glamourer Popups",
             ImGuiWindowFlags.NoBringToFrontOnFocus
           | ImGuiWindowFlags.NoDecoration
@@ -29,6 +31,7 @@ public class GenericPopupWindow : Window
         _config             = config;
         _state              = state;
         _condition          = condition;
+        _advancedDye        = advancedDye;
         DisableWindowSounds = true;
         IsOpen              = true;
     }
@@ -42,6 +45,7 @@ public class GenericPopupWindow : Window
         }
 
         DrawFestivalPopup();
+        //_advancedDye.Draw();
     }
 
     private bool CheckFestivalPopupConditions()

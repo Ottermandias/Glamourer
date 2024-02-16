@@ -177,6 +177,18 @@ public class StateEditor(
         StateChanged.Invoke(StateChanged.Type.MaterialValue, settings.Source, state, actors, (oldValue, newValue.Game, index));
     }
 
+    public void ResetMaterialValue(object data, MaterialValueIndex index, ApplySettings settings)
+    {
+        var state = (ActorState)data;
+        if (!Editor.ResetMaterialValue(state, index, settings.Key))
+            return;
+
+        var actors = Applier.ChangeMaterialValue(state, index, true);
+        Glamourer.Log.Verbose(
+            $"Reset material value in state {state.Identifier.Incognito(null)} to game value. [Affecting {actors.ToLazyString("nothing")}.]");
+        StateChanged.Invoke(StateChanged.Type.MaterialValue, settings.Source, state, actors, index);
+    }
+
     /// <inheritdoc/>
     public void ChangeMetaState(object data, MetaIndex index, bool value, ApplySettings settings)
     {

@@ -2,6 +2,7 @@
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using Glamourer.Events;
+using Glamourer.Gui.Materials;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
@@ -27,12 +28,13 @@ public class EquipmentDrawer
     private readonly TextureService                         _textures;
     private readonly Configuration                          _config;
     private readonly GPoseService                           _gPose;
+    private readonly AdvancedDyePopup                       _advancedDyes;
 
     private float _requiredComboWidthUnscaled;
     private float _requiredComboWidth;
 
     public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, CodeService codes, TextureService textures,
-        Configuration config, GPoseService gPose)
+        Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes)
     {
         _items        = items;
         _codes        = codes;
@@ -283,6 +285,10 @@ public class EquipmentDrawer
             ImGui.SameLine();
             DrawApplyStain(equipDrawData);
         }
+        else
+        {
+            _advancedDyes.DrawButton(equipDrawData.Slot);
+        }
 
         if (VerifyRestrictedGear(equipDrawData))
             label += " (Restricted)";
@@ -303,6 +309,10 @@ public class EquipmentDrawer
             ImGui.SameLine();
             DrawApplyStain(mainhand);
         }
+        else
+        {
+            _advancedDyes.DrawButton(EquipSlot.MainHand);
+        }
 
         if (allWeapons)
             mainhandLabel += $" ({mainhand.CurrentItem.Type.ToName()})";
@@ -320,6 +330,10 @@ public class EquipmentDrawer
             DrawApply(offhand);
             ImGui.SameLine();
             DrawApplyStain(offhand);
+        }
+        else
+        {
+            _advancedDyes.DrawButton(EquipSlot.OffHand);
         }
 
         WeaponHelpMarker(offhandLabel);
@@ -350,6 +364,10 @@ public class EquipmentDrawer
         {
             ImGui.SameLine();
             DrawApplyStain(equipDrawData);
+        }
+        else
+        {
+            _advancedDyes.DrawButton(equipDrawData.Slot);
         }
 
         if (VerifyRestrictedGear(equipDrawData))
@@ -384,6 +402,10 @@ public class EquipmentDrawer
                 ImGui.SameLine();
                 DrawApplyStain(mainhand);
             }
+            else
+            {
+                _advancedDyes.DrawButton(EquipSlot.MainHand);
+            }
         }
 
         if (offhand.CurrentItem.Type is FullEquipType.Unknown)
@@ -409,6 +431,10 @@ public class EquipmentDrawer
             {
                 ImGui.SameLine();
                 DrawApplyStain(offhand);
+            }
+            else
+            {
+                _advancedDyes.DrawButton(EquipSlot.OffHand);
             }
         }
     }

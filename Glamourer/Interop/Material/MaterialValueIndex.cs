@@ -15,6 +15,7 @@ public readonly record struct MaterialValueIndex(
     byte RowIndex)
 {
     public static readonly MaterialValueIndex Invalid = new(DrawObjectType.Invalid, 0, 0, 0);
+
     public uint Key
         => ToKey(DrawObject, SlotIndex, MaterialIndex, RowIndex);
 
@@ -26,6 +27,29 @@ public readonly record struct MaterialValueIndex(
         index = new MaterialValueIndex(key);
         return index.Valid;
     }
+
+    public static MaterialValueIndex FromSlot(EquipSlot slot)
+    {
+        if (slot is EquipSlot.MainHand)
+            return new MaterialValueIndex(DrawObjectType.Mainhand, 0, 0, 0);
+        if (slot is EquipSlot.OffHand)
+            return new MaterialValueIndex(DrawObjectType.Offhand, 0, 0, 0);
+
+        var idx = slot.ToIndex();
+        if (idx < 10)
+            return new MaterialValueIndex(DrawObjectType.Human, (byte)idx, 0, 0);
+
+        return Invalid;
+    }
+
+    public EquipSlot ToSlot()
+        => DrawObject switch
+        {
+            DrawObjectType.Human when SlotIndex < 10    => ((uint)SlotIndex).ToEquipSlot(),
+            DrawObjectType.Mainhand when SlotIndex == 0 => EquipSlot.MainHand,
+            DrawObjectType.Offhand when SlotIndex == 0  => EquipSlot.OffHand,
+            _                                           => EquipSlot.Unknown,
+        };
 
     public unsafe bool TryGetModel(Actor actor, out Model model)
     {
@@ -154,14 +178,12 @@ public readonly record struct MaterialValueIndex(
     { }
 
     public override string ToString()
-        => DrawObject switch
-        {
-            DrawObjectType.Human when SlotIndex < 10 =>
-                $"{((uint)SlotIndex).ToEquipSlot().ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            DrawObjectType.Mainhand when SlotIndex == 0 => $"{EquipSlot.MainHand.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            DrawObjectType.Offhand when SlotIndex == 0  => $"{EquipSlot.OffHand.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            _                                           => $"{DrawObject} Slot {SlotIndex} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-        };
+    {
+        var slot = ToSlot();
+        return slot is EquipSlot.Unknown
+            ? $"{DrawObject} Slot {SlotIndex} Material #{MaterialIndex + 1} Row #{RowIndex + 1}" 
+            : $"{slot.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}";
+    }
 
     private class Converter : JsonConverter<MaterialValueIndex>
     {

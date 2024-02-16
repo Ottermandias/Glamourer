@@ -110,7 +110,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         }
 
         foreach (var idx in deleteList)
-            _stateManager.ChangeMaterialValue(state, idx, default, ApplySettings.Game);
+            _stateManager.ResetMaterialValue(state, idx, ApplySettings.Game);
     }
 
     /// <summary>

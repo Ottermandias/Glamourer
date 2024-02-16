@@ -32,12 +32,13 @@ public unsafe class MaterialDrawer(StateManager _stateManager, DesignManager _de
             if (!table)
                 return;
 
-            ImGui.TableSetupColumn("button",  ImGuiTableColumnFlags.WidthFixed, buttonSize.X);
+            ImGui.TableSetupColumn("buttons", ImGuiTableColumnFlags.WidthFixed, buttonSize.X * 3 + 2 * ImGui.GetStyle().ItemInnerSpacing.X);
             ImGui.TableSetupColumn("enabled", ImGuiTableColumnFlags.WidthFixed, buttonSize.X);
-            ImGui.TableSetupColumn("values",  ImGuiTableColumnFlags.WidthFixed, ImGui.GetStyle().ItemInnerSpacing.X * 4 + 3 * buttonSize.X + 220 * ImGuiHelpers.GlobalScale);
-            ImGui.TableSetupColumn("revert",  ImGuiTableColumnFlags.WidthFixed, buttonSize.X + ImGui.CalcTextSize("Revertm").X);
-            ImGui.TableSetupColumn("slot",    ImGuiTableColumnFlags.WidthStretch);
-            
+            ImGui.TableSetupColumn("values", ImGuiTableColumnFlags.WidthFixed,
+                ImGui.GetStyle().ItemInnerSpacing.X * 4 + 3 * buttonSize.X + 220 * ImGuiHelpers.GlobalScale);
+            ImGui.TableSetupColumn("revert", ImGuiTableColumnFlags.WidthFixed, buttonSize.X + ImGui.CalcTextSize("Revertm").X);
+            ImGui.TableSetupColumn("slot",   ImGuiTableColumnFlags.WidthStretch);
+
             for (var i = 0; i < design.Materials.Count; ++i)
             {
                 var (idx, value) = design.Materials[i];
@@ -63,6 +64,17 @@ public unsafe class MaterialDrawer(StateManager _stateManager, DesignManager _de
                     _designManager.ChangeMaterialValue(design, key, null);
                     --i;
                 }
+
+                ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+                if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), buttonSize, "Export this row to your clipboard.",
+                        false,
+                        true))
+                    ColorRowClipboard.Row = value.Value;
+
+                ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+                if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), buttonSize,
+                        "Import an exported row from your clipboard onto this row.", !ColorRowClipboard.IsSet, true))
+                    _designManager.ChangeMaterialValue(design, key, ColorRowClipboard.Row);
 
                 ImGui.TableNextColumn();
                 var enabled = value.Enabled;
@@ -233,16 +245,20 @@ public unsafe class MaterialDrawer(StateManager _stateManager, DesignManager _de
         }
 
         ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 2);
-        var applied = ImGuiUtil.ColorPicker("##diffuse", "Change the diffuse value for this row.", value.Model.Diffuse, v => value.Model.Diffuse = v, "D");
+        var applied = ImGuiUtil.ColorPicker("##diffuse", "Change the diffuse value for this row.", value.Model.Diffuse,
+            v => value.Model.Diffuse = v, "D");
 
         var spacing = ImGui.GetStyle().ItemInnerSpacing;
         ImGui.SameLine(0, spacing.X);
-        applied |= ImGuiUtil.ColorPicker("##specular", "Change the specular value for this row.", value.Model.Specular, v => value.Model.Specular = v, "S");
+        applied |= ImGuiUtil.ColorPicker("##specular", "Change the specular value for this row.", value.Model.Specular,
+            v => value.Model.Specular = v, "S");
         ImGui.SameLine(0, spacing.X);
-        applied |= ImGuiUtil.ColorPicker("##emissive", "Change the emissive value for this row.", value.Model.Emissive, v => value.Model.Emissive = v, "E");
+        applied |= ImGuiUtil.ColorPicker("##emissive", "Change the emissive value for this row.", value.Model.Emissive,
+            v => value.Model.Emissive = v, "E");
         ImGui.SameLine(0, spacing.X);
         ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        applied |= ImGui.DragFloat("##Gloss", ref value.Model.GlossStrength, 0.01f, 0.001f, float.MaxValue, "%.3f G") && value.Model.GlossStrength > 0;
+        applied |= ImGui.DragFloat("##Gloss", ref value.Model.GlossStrength, 0.01f, 0.001f, float.MaxValue, "%.3f G")
+         && value.Model.GlossStrength > 0;
         ImGuiUtil.HoverTooltip("Change the gloss strength for this row.");
         ImGui.SameLine(0, spacing.X);
         ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);

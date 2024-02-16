@@ -42,7 +42,7 @@ namespace Glamourer.Events
             /// <summary> A characters saved state had its customize parameter changed. Data is the old value, the new value and the type [(CustomizeParameterValue, CustomizeParameterValue, CustomizeParameterFlag)]. </summary>
             Parameter,
 
-            /// <summary> A characters saved state had a material color table value changed. Data is the old value, the new value and the index [(Vector3, Vector3, MaterialValueIndex)]. </summary>
+            /// <summary> A characters saved state had a material color table value changed. Data is the old value, the new value and the index [(Vector3, Vector3, MaterialValueIndex)] or just the index for resets. </summary>
             MaterialValue,
 
             /// <summary> A characters saved state had a design applied. This means everything may have changed. Data is the applied design. [DesignBase] </summary>

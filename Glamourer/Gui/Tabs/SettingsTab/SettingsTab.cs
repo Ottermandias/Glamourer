@@ -189,6 +189,11 @@ public class SettingsTab(
             PaletteImportButton();
         }
 
+        if (config.UseAdvancedDyes)
+            Checkbox("Keep Advanced Dye Window Attached",
+                "Keeps the advanced dye window expansion attached to the main window, or makes it freely movable.",
+                config.KeepAdvancedDyesAttached, v => config.KeepAdvancedDyesAttached = v);
+
         Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general.", config.DebugMode,
             v => config.DebugMode = v);
         ImGui.NewLine();

@@ -13,9 +13,17 @@ using Glamourer.Gui.Tabs.SettingsTab;
 using Glamourer.Gui.Tabs.UnlocksTab;
 using ImGuiNET;
 using OtterGui.Custom;
+using OtterGui.Services;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui;
+
+public class MainWindowPosition : IService
+{
+    public bool    IsOpen   { get; set; }
+    public Vector2 Position { get; set; }
+    public Vector2 Size     { get; set; }
+}
 
 public class MainWindow : Window, IDisposable
 {
@@ -32,10 +40,11 @@ public class MainWindow : Window, IDisposable
         Npcs       = 7,
     }
 
-    private readonly Configuration  _config;
-    private readonly DesignQuickBar _quickBar;
-    private readonly TabSelected    _event;
-    private readonly ITab[]         _tabs;
+    private readonly Configuration      _config;
+    private readonly DesignQuickBar     _quickBar;
+    private readonly TabSelected        _event;
+    private readonly MainWindowPosition _position;
+    private readonly ITab[]             _tabs;
 
     public readonly SettingsTab   Settings;
     public readonly ActorTab      Actors;
@@ -50,7 +59,7 @@ public class MainWindow : Window, IDisposable
 
     public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
         DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, MessagesTab messages, DesignQuickBar quickBar,
-        NpcTab npcs)
+        NpcTab npcs, MainWindowPosition position)
         : base(GetLabel())
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -69,6 +78,7 @@ public class MainWindow : Window, IDisposable
         Messages   = messages;
         _quickBar  = quickBar;
         Npcs       = npcs;
+        _position  = position;
         _config    = config;
         _tabs =
         [
@@ -90,6 +100,7 @@ public class MainWindow : Window, IDisposable
         Flags = _config.Ephemeral.LockMainWindow
             ? Flags | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize
             : Flags & ~(ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize);
+        _position.IsOpen = IsOpen;
     }
 
     public void Dispose()
@@ -98,9 +109,14 @@ public class MainWindow : Window, IDisposable
     public override void Draw()
     {
         var yPos = ImGui.GetCursorPosY();
+        _position.Size     = ImGui.GetWindowSize();
+        _position.Position = ImGui.GetWindowPos();
         if (TabBar.Draw("##tabs", ImGuiTabBarFlags.None, ToLabel(SelectTab), out var currentTab, () => { }, _tabs))
+            SelectTab = TabType.None;
+        var tab = FromLabel(currentTab);
+
+        if (tab != _config.Ephemeral.SelectedTab)
         {
-            SelectTab                     = TabType.None;
             _config.Ephemeral.SelectedTab = FromLabel(currentTab);
             _config.Ephemeral.Save();
         }

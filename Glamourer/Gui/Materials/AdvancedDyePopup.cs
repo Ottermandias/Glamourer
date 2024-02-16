@@ -1,7 +1,9 @@
-﻿using Dalamud.Interface;
+﻿using System.Reflection.Metadata.Ecma335;
+using Dalamud.Interface;
 using Dalamud.Interface.Utility;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.Interop;
 using Glamourer.Designs;
-using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Interop.Material;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
@@ -9,148 +11,145 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;
-using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
-using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Materials;
 
 public sealed unsafe class AdvancedDyePopup(
-    MainWindowPosition mainPosition,
     Configuration config,
     StateManager stateManager,
-    ActorSelector actorSelector,
-    MaterialDrawer materials,
     LiveColorTablePreviewer preview) : IService
 {
     private MaterialValueIndex? _drawIndex;
-    private ActorIdentifier     _identifier;
-    private ActorState?         _state;
+    private ActorState          _state = null!;
     private Actor               _actor;
     private byte                _selectedMaterial = byte.MaxValue;
 
     private bool ShouldBeDrawn()
     {
-        if (!mainPosition.IsOpen)
-            return false;
-
         if (!config.UseAdvancedDyes)
             return false;
 
-        if (config.Ephemeral.SelectedTab is not MainWindow.TabType.Actors)
+        if (_drawIndex is not { Valid: true })
             return false;
 
-        if (!_drawIndex.HasValue)
-            return false;
-
-        if (actorSelector.Selection.Identifier != _identifier || !_identifier.IsValid)
-            return false;
-
-        if (_state == null)
-            return false;
-
-        _actor = actorSelector.Selection.Data.Valid ? actorSelector.Selection.Data.Objects[0] : Actor.Null;
-        if (!_actor.Valid || !_actor.Model.IsCharacterBase)
+        if (!_actor.IsCharacter || !_state.ModelData.IsHuman || !_actor.Model.IsHuman)
             return false;
 
         return true;
     }
 
-    public void DrawButton(ActorIdentifier identifier, ActorState state, MaterialValueIndex index)
-    {
-        using var id     = ImRaii.PushId(index.SlotIndex | ((int)index.DrawObject << 8));
-        var       isOpen = identifier == _identifier && state == _state && index == _drawIndex;
-        using (ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ButtonActive), isOpen))
-        {
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Palette.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                    "Open advanced dyes for this slot.", false, true))
-            {
-                if (isOpen)
-                {
-                    _drawIndex        = null;
-                    _identifier       = ActorIdentifier.Invalid;
-                    _state            = null;
-                    _selectedMaterial = byte.MaxValue;
-                }
-                else
-                {
-                    _drawIndex        = index;
-                    _identifier       = identifier;
-                    _state            = state;
-                    _selectedMaterial = byte.MaxValue;
-                }
-            }
-        }
-    }
+    public void DrawButton(EquipSlot slot)
+        => DrawButton(MaterialValueIndex.FromSlot(slot));
 
-    public unsafe void Draw()
+    private void DrawButton(MaterialValueIndex index)
     {
-        if (!ShouldBeDrawn())
+        if (!config.UseAdvancedDyes)
             return;
 
-        var position = mainPosition.Position;
-        position.X += mainPosition.Size.X;
-        position.Y += ImGui.GetFrameHeightWithSpacing() * 3;
-        var size = new Vector2(3 * ImGui.GetFrameHeight() + 300 * ImGuiHelpers.GlobalScale, 18.5f * ImGui.GetFrameHeightWithSpacing());
-        ImGui.SetNextWindowPos(position);
-        ImGui.SetNextWindowSize(size);
-        var window = ImGui.Begin("###Glamourer Advanced Dyes",
-            ImGuiWindowFlags.NoFocusOnAppearing
+        ImGui.SameLine();
+        using var id     = ImRaii.PushId(index.SlotIndex | ((int)index.DrawObject << 8));
+        var       isOpen = index == _drawIndex;
+
+        using (ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ButtonActive), isOpen)
+                   .Push(ImGuiCol.Text,   ColorId.HeaderButtons.Value(), isOpen)
+                   .Push(ImGuiCol.Border, ColorId.HeaderButtons.Value(), isOpen))
+        {
+            using var frame = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * ImGuiHelpers.GlobalScale, isOpen);
+            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Palette.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
+                    string.Empty, false, true))
+            {
+                _selectedMaterial = byte.MaxValue;
+                _drawIndex        = isOpen ? null : index;
+            }
+        }
+
+        ImGuiUtil.HoverTooltip("Open advanced dyes for this slot.");
+    }
+
+
+    private void DrawTabBar(ReadOnlySpan<Pointer<Texture>> textures, ref bool firstAvailable)
+    {
+        using var bar = ImRaii.TabBar("tabs");
+        if (!bar)
+            return;
+
+        for (byte i = 0; i < MaterialService.MaterialsPerModel; ++i)
+        {
+            var index     = _drawIndex!.Value with { MaterialIndex = i };
+            var available = index.TryGetTexture(textures, out var texture) && index.TryGetColorTable(texture, out var table);
+            if (index == preview.LastValueIndex with { RowIndex = 0 })
+                table = preview.LastOriginalColorTable;
+
+            using var disable = ImRaii.Disabled(!available);
+            var select = available && firstAvailable && _selectedMaterial == byte.MaxValue
+                ? ImGuiTabItemFlags.SetSelected
+                : ImGuiTabItemFlags.None;
+
+            if (available)
+                firstAvailable = false;
+
+            using var tab = _label.TabItem(i, select);
+            if (!available)
+            {
+                using var disabled = ImRaii.Enabled();
+                ImGuiUtil.HoverTooltip("This material does not exist or does not have an associated color set.",
+                    ImGuiHoveredFlags.AllowWhenDisabled);
+            }
+
+            if ((tab.Success || select is ImGuiTabItemFlags.SetSelected) && available)
+            {
+                _selectedMaterial = i;
+                DrawTable(index, table);
+            }
+        }
+
+        using (ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            if (ImGui.TabItemButton($"{FontAwesomeIcon.Times.ToIconString()} ", ImGuiTabItemFlags.NoTooltip))
+                _drawIndex = null;
+        }
+
+        ImGuiUtil.HoverTooltip("Close the advanced dye window.");
+    }
+
+    private void DrawContent(ReadOnlySpan<Pointer<Texture>> textures)
+    {
+        var firstAvailable = true;
+        DrawTabBar(textures, ref firstAvailable);
+
+        if (firstAvailable)
+            ImGui.TextUnformatted("No Editable Materials available.");
+    }
+
+    private void DrawWindow(ReadOnlySpan<Pointer<Texture>> textures)
+    {
+        var flags = ImGuiWindowFlags.NoFocusOnAppearing
           | ImGuiWindowFlags.NoCollapse
           | ImGuiWindowFlags.NoDecoration
-          | ImGuiWindowFlags.NoMove
-          | ImGuiWindowFlags.NoResize);
+          | ImGuiWindowFlags.NoResize;
+
+        // Set position to the right of the main window when attached
+        // The downwards offset is implicit through child position.
+        if (config.KeepAdvancedDyesAttached)
+        {
+            var position = ImGui.GetWindowPos();
+            position.X += ImGui.GetWindowSize().X;
+            ImGui.SetNextWindowPos(position);
+            flags |= ImGuiWindowFlags.NoMove;
+        }
+
+        var size = new Vector2(7 * ImGui.GetFrameHeight() + 3 * ImGui.GetStyle().ItemInnerSpacing.X + 300 * ImGuiHelpers.GlobalScale,
+            17f * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y);
+        ImGui.SetNextWindowSize(size);
+
+
+        var window = ImGui.Begin("###Glamourer Advanced Dyes", flags);
         try
         {
-            if (!window)
-                return;
-
-            using var bar = ImRaii.TabBar("tabs");
-            if (!bar)
-                return;
-
-            var        model          = _actor.Model.AsCharacterBase;
-            var        firstAvailable = true;
-            Span<byte> label          = stackalloc byte[12];
-            label[0]  = (byte)'M';
-            label[1]  = (byte)'a';
-            label[2]  = (byte)'t';
-            label[3]  = (byte)'e';
-            label[4]  = (byte)'r';
-            label[5]  = (byte)'i';
-            label[6]  = (byte)'a';
-            label[7]  = (byte)'l';
-            label[8]  = (byte)' ';
-            label[9]  = (byte)'#';
-            label[11] = 0;
-
-            for (byte i = 0; i < MaterialService.MaterialsPerModel; ++i)
-            {
-                var texture   = model->ColorTableTextures + _drawIndex!.Value.SlotIndex * MaterialService.MaterialsPerModel + i;
-                var index     = _drawIndex!.Value with { MaterialIndex = i };
-                var available = *texture != null && DirectXTextureHelper.TryGetColorTable(*texture, out var table);
-                if (index == preview.LastValueIndex with {RowIndex = 0})
-                    table = preview.LastOriginalColorTable;
-
-                using var disable = ImRaii.Disabled(!available);
-                label[10] = (byte)('1' + i);
-                var select = available && (_selectedMaterial == i || firstAvailable && _selectedMaterial == byte.MaxValue)
-                    ? ImGuiTabItemFlags.SetSelected
-                    : ImGuiTabItemFlags.None;
-
-                if (available)
-                    firstAvailable = false;
-                if (select is ImGuiTabItemFlags.SetSelected)
-                    _selectedMaterial = i;
-
-
-                fixed (byte* labelPtr = label)
-                {
-                    using var tab = ImRaii.TabItem(labelPtr, select);
-                    if (tab.Success && available)
-                        DrawTable(index, table);
-                }
-            }
+            if (window)
+                DrawContent(textures);
         }
         finally
         {
@@ -158,36 +157,54 @@ public sealed unsafe class AdvancedDyePopup(
         }
     }
 
+    public unsafe void Draw(Actor actor, ActorState state)
+    {
+        _actor = actor;
+        _state = state;
+        if (!ShouldBeDrawn())
+            return;
+
+        if (_drawIndex!.Value.TryGetTextures(actor, out var textures))
+            DrawWindow(textures);
+    }
+
     private void DrawTable(MaterialValueIndex materialIndex, in MtrlFile.ColorTable table)
     {
+        using var disabled = ImRaii.Disabled(_state.IsLocked);
         for (byte i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
         {
             var     index = materialIndex with { RowIndex = i };
             ref var row   = ref table[i];
-            DrawRow(ref row, CharacterWeapon.Empty, index, table);
+            DrawRow(ref row, index, table);
         }
     }
 
-    private void DrawRow(ref MtrlFile.ColorTable.Row row, CharacterWeapon drawData, MaterialValueIndex index, in MtrlFile.ColorTable table)
+    private void DrawRow(ref MtrlFile.ColorTable.Row row, MaterialValueIndex index, in MtrlFile.ColorTable table)
     {
         using var id      = ImRaii.PushId(index.RowIndex);
         var       changed = _state!.Materials.TryGetValue(index, out var value);
         if (!changed)
         {
             var internalRow = new ColorRow(row);
-            value = new MaterialValueState(internalRow, internalRow, drawData, StateSource.Manual);
+            var slot        = index.ToSlot();
+            var weapon = slot is EquipSlot.MainHand or EquipSlot.OffHand
+                ? _state.ModelData.Weapon(slot)
+                : _state.ModelData.Armor(slot).ToWeapon(0);
+            value = new MaterialValueState(internalRow, internalRow, weapon, StateSource.Manual);
         }
 
+        var buttonSize = new Vector2(ImGui.GetFrameHeight());
+        ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Crosshairs.ToIconString(), buttonSize, "Highlight the affected colors on the character.",
+            false, true);
+        if (ImGui.IsItemHovered())
+            preview.OnHover(index, _actor.Index, table);
+
+        ImGui.SameLine();
         ImGui.AlignTextToFramePadding();
         using (ImRaii.PushFont(UiBuilder.MonoFont))
         {
             ImGui.TextUnformatted($"Row {index.RowIndex + 1:D2}");
         }
-
-        ImGui.SameLine();
-        ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Crosshairs.ToIconString(), new Vector2(ImGui.GetFrameHeight()), "Locate", false, true);
-        if (ImGui.IsItemHovered())
-            preview.OnHover(index, _actor.Index, table);
 
         ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 2);
         var applied = ImGuiUtil.ColorPicker("##diffuse", "Change the diffuse value for this row.", value.Model.Diffuse,
@@ -209,16 +226,54 @@ public sealed unsafe class AdvancedDyePopup(
         ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
         applied |= ImGui.DragFloat("##Specular Strength", ref value.Model.SpecularStrength, 0.01f, float.MinValue, float.MaxValue, "%.3f SS");
         ImGuiUtil.HoverTooltip("Change the specular strength for this row.");
+        ImGui.SameLine(0, spacing.X);
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), buttonSize, "Export this row to your clipboard.", false,
+                true))
+            ColorRowClipboard.Row = value.Model;
+        ImGui.SameLine(0, spacing.X);
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), buttonSize,
+                "Import an exported row from your clipboard onto this row.", !ColorRowClipboard.IsSet, true))
+        {
+            value.Model = ColorRowClipboard.Row;
+            applied     = true;
+        }
+
+        ImGui.SameLine(0, spacing.X);
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UndoAlt.ToIconString(), buttonSize, "Reset this row to game state.", !changed, true))
+            stateManager.ResetMaterialValue(_state, index, ApplySettings.Game);
+
         if (applied)
             stateManager.ChangeMaterialValue(_state!, index, value, ApplySettings.Manual);
-        if (changed)
+    }
+
+    private LabelStruct _label = new();
+
+    private struct LabelStruct
+    {
+        private fixed byte _label[12];
+
+        public ImRaii.IEndObject TabItem(byte materialIndex, ImGuiTabItemFlags flags)
         {
-            ImGui.SameLine(0, spacing.X);
-            using (ImRaii.PushFont(UiBuilder.IconFont))
+            _label[10] = (byte)('1' + materialIndex);
+            fixed (byte* ptr = _label)
             {
-                using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.FavoriteStarOn.Value());
-                ImGui.TextUnformatted(FontAwesomeIcon.UserEdit.ToIconString());
+                return ImRaii.TabItem(ptr, flags | ImGuiTabItemFlags.NoTooltip);
             }
+        }
+
+        public LabelStruct()
+        {
+            _label[0]  = (byte)'M';
+            _label[1]  = (byte)'a';
+            _label[2]  = (byte)'t';
+            _label[3]  = (byte)'e';
+            _label[4]  = (byte)'r';
+            _label[5]  = (byte)'i';
+            _label[6]  = (byte)'a';
+            _label[7]  = (byte)'l';
+            _label[8]  = (byte)' ';
+            _label[9]  = (byte)'#';
+            _label[11] = 0;
         }
     }
 }

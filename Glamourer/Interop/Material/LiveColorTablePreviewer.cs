@@ -69,7 +69,6 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
 
         if (_valueIndex.TryGetTexture(actor, out var texture))
         {
-            Glamourer.Log.Information($"Set {_objectIndex} {_valueIndex}");
             var diffuse = CalculateDiffuse();
             var table   = LastOriginalColorTable;
             table[_valueIndex.RowIndex].Diffuse  = diffuse;
