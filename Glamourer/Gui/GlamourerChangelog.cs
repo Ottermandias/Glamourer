@@ -28,7 +28,8 @@ public class GlamourerChangelog
         Add1_1_0_0(Changelog);
         Add1_1_0_2(Changelog);
         Add1_1_0_4(Changelog);
-        Add1_1_0_5(Changelog);
+        AddDummy(Changelog);
+        Add1_2_0_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -49,29 +50,55 @@ public class GlamourerChangelog
         }
     }
 
-    private static void Add1_1_0_5(Changelog log)
-        => log.NextVersion("Version 1.1.0.5")
+    private static void Add1_2_0_0(Changelog log)
+        => log.NextVersion("Version 1.2.0.0")
             .RegisterHighlight("Added the option to link to other designs in a design, causing all of them to be applied at once.")
             .RegisterEntry("This required reworking the handling for applying multiple designs at once (i.e.merging them).", 1)
-            .RegisterEntry("This was a considerable backend change on both automation sets and design application. I may have messed up and introduced bugs. Please let me know if something does not work right anymore.", 1)
-            .RegisterHighlight("Added an option so that manual application of a mainhand weapon will also automatically apply its associated offhand (and gloves, for certain fist weapons). This is off by default.")
-            .RegisterHighlight("Added an option that always tries to apply associated mod settings for designs to the Penumbra collection associated with the character the design is applied to.")
-            .RegisterEntry("This is off by default and I strongly recommend AGAINST using it, since Glamourer has no way to revert such changes. You are responsible for keeping your collection in order.", 1)
-            .RegisterHighlight("Added mouse wheel scrolling to many selectors, e.g. for equipment, dyes or customizations. You need to hold Control while ")
+            .RegisterEntry(
+                "This was a considerable backend change on both automation sets and design application. I may have messed up and introduced bugs. Please let me know if something does not work right anymore.",
+                1)
+            .RegisterHighlight("Added advanced dye options for equipment. You can now runtime-edit the color sets of your gear.")
+            .RegisterEntry(
+                "The logic for this is very complicated and may interfere with other options or not update correctly, it will need a lot of testing.",
+                1)
+            .RegisterEntry("Like Advanced Customization options, this can be turned off in the behaviour settings.", 1)
+            .RegisterEntry(
+                "To access the options, click the palette buttons in the Equipment Panel - the popup can also be detached from the main window in the settings.",
+                1)
+            .RegisterEntry("In designs, only actually changed rows will be stored. You can manually add rows, too.", 1)
+            .RegisterHighlight(
+                "Added an option so that manual application of a mainhand weapon will also automatically apply its associated offhand (and gloves, for certain fist weapons). This is off by default.")
+            .RegisterHighlight(
+                "Added an option that always tries to apply associated mod settings for designs to the Penumbra collection associated with the character the design is applied to.")
+            .RegisterEntry(
+                "This is off by default and I strongly recommend AGAINST using it, since Glamourer has no way to revert such changes. You are responsible for keeping your collection in order.",
+                1)
+            .RegisterHighlight(
+                "Added mouse wheel scrolling to many selectors, e.g. for equipment, dyes or customizations. You need to hold Control while ")
             .RegisterEntry("Improved handling for highlights with advanced customization colors and normal customization settings.")
+            .RegisterHighlight(
+                "Changed Item Customizations in Penumbra can now be right-clicked to preview them on your character, if you have the correct Gender/Race combo on them.")
+            .RegisterHighlight(
+                "Add the option to override associated collections for characters, so that automatically applied mod associations affect the overriden collection.")
             .RegisterEntry("Added copy/paste buttons for advanced customization colors.")
             .RegisterEntry("Added alpha preview to advanced customization colors.")
+            .RegisterEntry("Added a button to update the settings for an associated mod from their current settings.")
             .RegisterEntry("Updated a few fun module things. Now there are Pink elephants on parade!")
             .RegisterEntry("Split up the IPC source state so IPC consumers can apply designs without them sticking around.")
             .RegisterEntry("Fixed an issue with weapon loading being dependant on the order of loading Penumbra and Glamourer.")
-            .RegisterEntry("Fixed an issue with buttons sharing state and switching from design duplication to creating new ones caused errors.")
+            .RegisterEntry(
+                "Fixed an issue with buttons sharing state and switching from design duplication to creating new ones caused errors.")
             .RegisterEntry("Fixed an issue where actors leaving during cutscenes or GPose caused Glamourer to throw a fit.")
             .RegisterEntry("Fixed an issue with NPC designs applying advanced customizations to targets and coloring them entirely black.");
+
+    private static void AddDummy(Changelog log)
+        => log.NextVersion(string.Empty);
 
     private static void Add1_1_0_4(Changelog log)
         => log.NextVersion("Version 1.1.0.4")
             .RegisterEntry("Added a check and warning for a lingering Palette+ installation.")
-            .RegisterHighlight("Added a button to only revert advanced customizations to game state to the quick design bar. This can be toggled off in the interface settings.")
+            .RegisterHighlight(
+                "Added a button to only revert advanced customizations to game state to the quick design bar. This can be toggled off in the interface settings.")
             .RegisterEntry("Added visible configuration options for color display for the advanced customizations.")
             .RegisterEntry("Updated Battle NPC data from Gubal for 6.55.")
             .RegisterEntry("Fixed issues with advanced customizations not resetting correctly with Use Game State as Base.")
@@ -86,12 +113,13 @@ public class GlamourerChangelog
             .RegisterEntry("Added design colors in the preview of combos (in the quick bar and the automation panel).")
             .RegisterHighlight("Improved Palette+ import options: Instead of entering a name, you can now select from available palettes.")
             .RegisterHighlight("In the settings tab, there is also a button to import ALL palettes from Palette+ as separate designs.", 1)
-            .RegisterEntry("Added a tooltip that you can enter numeric values to drag sliders by control-clicking for the muscle slider, also used slightly more useful caps.")
+            .RegisterEntry(
+                "Added a tooltip that you can enter numeric values to drag sliders by control-clicking for the muscle slider, also used slightly more useful caps.")
             .RegisterEntry("Fixed issues with monk weapons, again.")
             .RegisterEntry("Fixed an issue with the favourites file not loading.")
             .RegisterEntry("Fixed the name of the advanced parameters in the application panel.")
             .RegisterEntry("Fixed design clones not respecting advanced parameter application rules.");
-            
+
 
     private static void Add1_1_0_0(Changelog log)
         => log.NextVersion("Version 1.1.0.0")
@@ -99,12 +127,18 @@ public class GlamourerChangelog
             .RegisterHighlight("A characters body type can now be changed when copying state or saving designs from certain NPCs.")
             .RegisterHighlight("Added support for picking advanced colors for your characters customizations.")
             .RegisterEntry("The display and application of those can be toggled off in Glamourers behaviour settings.", 1)
-            .RegisterEntry("This provides the same functionality as Palette+, and Palette+ will probably be discontinued soonish (in accordance with Chirp).", 1)
-            .RegisterEntry("An option to import existing palettes from Palette+ by name is provided for designs, and can be toggled off in the settings.", 1)
-            .RegisterHighlight("Advanced colors, equipment and dyes can now be reset to their game state separately by Control-Rightclicking them.")
+            .RegisterEntry(
+                "This provides the same functionality as Palette+, and Palette+ will probably be discontinued soonish (in accordance with Chirp).",
+                1)
+            .RegisterEntry(
+                "An option to import existing palettes from Palette+ by name is provided for designs, and can be toggled off in the settings.",
+                1)
+            .RegisterHighlight(
+                "Advanced colors, equipment and dyes can now be reset to their game state separately by Control-Rightclicking them.")
             .RegisterHighlight("Hairstyles and face paints can now be made favourites.")
             .RegisterEntry("Added a new command '/glamour delete' to delete saved designs by name or identifier.")
-            .RegisterEntry("Added an optional parameter to the '/glamour apply' command that makes it apply the associated mod settings for a design to the collection associated with the identified character.")
+            .RegisterEntry(
+                "Added an optional parameter to the '/glamour apply' command that makes it apply the associated mod settings for a design to the collection associated with the identified character.")
             .RegisterEntry("Fixed changing weapons in Designs not working correctly.")
             .RegisterEntry("Fixed restricted gear protection breaking outfits for Mare pairs.")
             .RegisterEntry("Improved the handling of some cheat codes and added new ones.")
