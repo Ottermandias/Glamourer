@@ -185,7 +185,7 @@ public class DesignPanel(
         if (!h)
             return;
 
-        _materials.DrawDesignPanel(_selector.Selected!);
+        _materials.Draw(_selector.Selected!);
     }
 
     private void DrawCustomizeApplication()

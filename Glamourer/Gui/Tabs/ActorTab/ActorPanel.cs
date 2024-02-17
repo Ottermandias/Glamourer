@@ -9,7 +9,6 @@ using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Materials;
 using Glamourer.Interop;
-using Glamourer.Interop.Material;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
@@ -36,7 +35,6 @@ public class ActorPanel(
     ICondition _conditions,
     DictModelChara _modelChara,
     CustomizeParameterDrawer _parameterDrawer,
-    MaterialDrawer _materialDrawer,
     AdvancedDyePopup _advancedDyes)
 {
     private ActorIdentifier _identifier;

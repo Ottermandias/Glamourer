@@ -53,8 +53,6 @@ public unsafe class ModelEvaluationPanel(
                 ImGui.TextUnformatted($"Transformation Id: {actor.AsCharacter->CharacterData.TransformationId}");
             if (actor.AsCharacter->CharacterData.ModelCharaId_2 != -1)
                 ImGui.TextUnformatted($"ModelChara2 {actor.AsCharacter->CharacterData.ModelCharaId_2}");
-            if (actor.AsCharacter->CharacterData.StatusEffectVFXId != 0)
-                ImGui.TextUnformatted($"Status Id: {actor.AsCharacter->CharacterData.StatusEffectVFXId}");
         }
 
         ImGuiUtil.DrawTableColumn("Mainhand");
