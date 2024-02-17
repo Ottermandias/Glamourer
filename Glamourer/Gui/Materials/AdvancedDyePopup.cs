@@ -1,7 +1,7 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using FFXIVClientStructs.Interop;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
@@ -13,6 +13,7 @@ using OtterGui.Raii;
 using OtterGui.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
+using Penumbra.String;
 
 namespace Glamourer.Gui.Materials;
 
@@ -68,6 +69,20 @@ public sealed unsafe class AdvancedDyePopup(
         ImGuiUtil.HoverTooltip("Open advanced dyes for this slot.");
     }
 
+    private (string Path, string GamePath) ResourceName(MaterialValueIndex index)
+    {
+        var materialHandle = (MaterialResourceHandle*)_actor.Model.AsCharacterBase->MaterialsSpan[
+            index.MaterialIndex + index.SlotIndex * MaterialService.MaterialsPerModel].Value;
+        var model       = _actor.Model.AsCharacterBase->ModelsSpan[index.SlotIndex].Value;
+        var modelHandle = model == null ? null : model->ModelResourceHandle;
+        var path = materialHandle == null
+            ? string.Empty
+            : ByteString.FromSpanUnsafe(materialHandle->ResourceHandle.FileName.AsSpan(), true).ToString();
+        var gamePath = modelHandle == null
+            ? string.Empty
+            : modelHandle->GetMaterialFileNameBySlotAsString(index.MaterialIndex);
+        return (path, gamePath);
+    }
 
     private void DrawTabBar(ReadOnlySpan<Pointer<Texture>> textures, ref bool firstAvailable)
     {
@@ -79,6 +94,7 @@ public sealed unsafe class AdvancedDyePopup(
         {
             var index     = _drawIndex!.Value with { MaterialIndex = i };
             var available = index.TryGetTexture(textures, out var texture) && index.TryGetColorTable(texture, out var table);
+
             if (index == preview.LastValueIndex with { RowIndex = 0 })
                 table = preview.LastOriginalColorTable;
 
@@ -91,11 +107,16 @@ public sealed unsafe class AdvancedDyePopup(
                 firstAvailable = false;
 
             using var tab = _label.TabItem(i, select);
-            if (!available)
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             {
-                using var disabled = ImRaii.Enabled();
-                ImGuiUtil.HoverTooltip("This material does not exist or does not have an associated color set.",
-                    ImGuiHoveredFlags.AllowWhenDisabled);
+                using var enabled = ImRaii.Enabled();
+                var (path, gamePath) = ResourceName(index);
+                if (gamePath.Length == 0 || path.Length == 0)
+                    ImGui.SetTooltip("This material does not exist.");
+                else if (!available)
+                    ImGui.SetTooltip($"This material does not have an associated color set.\n\n{gamePath}\n{path}");
+                else
+                    ImGui.SetTooltip($"{gamePath}\n{path}");
             }
 
             if ((tab.Success || select is ImGuiTabItemFlags.SetSelected) && available)
@@ -186,7 +207,7 @@ public sealed unsafe class AdvancedDyePopup(
         if (!changed)
         {
             var internalRow = new ColorRow(row);
-            var slot        = index.ToSlot();
+            var slot        = index.ToEquipSlot();
             var weapon = slot is EquipSlot.MainHand or EquipSlot.OffHand
                 ? _state.ModelData.Weapon(slot)
                 : _state.ModelData.Armor(slot).ToWeapon(0);

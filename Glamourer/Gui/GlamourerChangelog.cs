@@ -57,7 +57,7 @@ public class GlamourerChangelog
             .RegisterEntry(
                 "This was a considerable backend change on both automation sets and design application. I may have messed up and introduced bugs. Please let me know if something does not work right anymore.",
                 1)
-            .RegisterHighlight("Added advanced dye options for equipment. You can now runtime-edit the color sets of your gear.")
+            .RegisterHighlight("Added advanced dye options for equipment. You can now live-edit the color sets of your gear.")
             .RegisterEntry(
                 "The logic for this is very complicated and may interfere with other options or not update correctly, it will need a lot of testing.",
                 1)

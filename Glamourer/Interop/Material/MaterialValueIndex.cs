@@ -20,7 +20,7 @@ public readonly record struct MaterialValueIndex(
         => ToKey(DrawObject, SlotIndex, MaterialIndex, RowIndex);
 
     public bool Valid
-        => Validate(DrawObject) && ValidateSlot(SlotIndex) && ValidateMaterial(MaterialIndex) && ValidateRow(RowIndex);
+        => Validate(DrawObject) && ValidateSlot(DrawObject, SlotIndex) && ValidateMaterial(MaterialIndex) && ValidateRow(RowIndex);
 
     public static bool FromKey(uint key, out MaterialValueIndex index)
     {
@@ -42,7 +42,7 @@ public readonly record struct MaterialValueIndex(
         return Invalid;
     }
 
-    public EquipSlot ToSlot()
+    public EquipSlot ToEquipSlot()
         => DrawObject switch
         {
             DrawObjectType.Human when SlotIndex < 10    => ((uint)SlotIndex).ToEquipSlot(),
@@ -155,8 +155,14 @@ public readonly record struct MaterialValueIndex(
     public static bool Validate(DrawObjectType type)
         => type is not DrawObjectType.Invalid && Enum.IsDefined(type);
 
-    public static bool ValidateSlot(byte slotIndex)
-        => slotIndex < 10;
+    public static bool ValidateSlot(DrawObjectType type, byte slotIndex)
+        => type switch
+        {
+            DrawObjectType.Human    => slotIndex < 14,
+            DrawObjectType.Mainhand => slotIndex == 0,
+            DrawObjectType.Offhand  => slotIndex == 0,
+            _                       => false,
+        };
 
     public static bool ValidateMaterial(byte materialIndex)
         => materialIndex < MaterialService.MaterialsPerModel;
@@ -178,12 +184,19 @@ public readonly record struct MaterialValueIndex(
     { }
 
     public override string ToString()
-    {
-        var slot = ToSlot();
-        return slot is EquipSlot.Unknown
-            ? $"{DrawObject} Slot {SlotIndex} Material #{MaterialIndex + 1} Row #{RowIndex + 1}" 
-            : $"{slot.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}";
-    }
+        => DrawObject switch
+        {
+            DrawObjectType.Invalid => "Invalid",
+            DrawObjectType.Human when SlotIndex < 10 =>
+                $"{((uint)SlotIndex).ToEquipSlot().ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Human when SlotIndex == 10 => $"BodySlot.Hair.ToString() Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Human when SlotIndex == 11 => $"BodySlot.Face.ToString() Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Human when SlotIndex == 12 => $"{BodySlot.Tail} / {BodySlot.Ear} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Human when SlotIndex == 13 => $"Connectors Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Mainhand when SlotIndex == 0 => $"{EquipSlot.MainHand.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Offhand when SlotIndex == 0 => $"{EquipSlot.OffHand.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            _ => $"{DrawObject} Slot {SlotIndex} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+        };
 
     private class Converter : JsonConverter<MaterialValueIndex>
     {
