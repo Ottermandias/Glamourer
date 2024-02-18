@@ -21,7 +21,6 @@ public class SettingsTab(
     Configuration config,
     DesignFileSystemSelector selector,
     CodeService codeService,
-    PenumbraAutoRedraw autoRedraw,
     ContextMenuService contextMenuService,
     UiBuilder uiBuilder,
     GlamourerChangelog changelog,
@@ -84,7 +83,7 @@ public class SettingsTab(
             config.DisableFestivals == 0, v => config.DisableFestivals = v ? (byte)0 : (byte)2);
         Checkbox("Auto-Reload Gear",
             "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection.",
-            config.AutoRedrawEquipOnChanges, autoRedraw.SetState);
+            config.AutoRedrawEquipOnChanges, v => config.AutoRedrawEquipOnChanges = v);
         Checkbox("Revert Manual Changes on Zone Change",
             "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone.",
             config.RevertManualChangesOnZoneChange, v => config.RevertManualChangesOnZoneChange = v);
