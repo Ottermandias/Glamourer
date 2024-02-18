@@ -53,6 +53,9 @@ namespace Glamourer.Events
 
             /// <summary> A characters saved state had a meta toggle changed. Data is the old stain id, the new stain id and the slot [(StainId, StainId, EquipSlot)]. </summary>
             Other,
+
+            /// <summary> A characters state was reapplied. Data is null. </summary>
+            Reapply,
         }
 
         public enum Priority

@@ -373,7 +373,7 @@ public class ActorPanel(
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton("Reapply State", Vector2.Zero, "Try to reapply the configured state if something went wrong.",
                 _state!.IsLocked))
-            _stateManager.ReapplyState(_actor);
+            _stateManager.ReapplyState(_actor, StateSource.Manual);
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton("Reapply Automation", Vector2.Zero,
@@ -381,7 +381,7 @@ public class ActorPanel(
                 !_config.EnableAutoDesigns || _state!.IsLocked))
         {
             _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!);
-            _stateManager.ReapplyState(_actor);
+            _stateManager.ReapplyState(_actor, StateSource.Manual);
         }
     }
 

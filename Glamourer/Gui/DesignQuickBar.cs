@@ -225,7 +225,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         foreach (var actor in data.Objects)
         {
             _autoDesignApplier.ReapplyAutomation(actor, id, state!);
-            _stateManager.ReapplyState(actor);
+            _stateManager.ReapplyState(actor, StateSource.Manual);
         }
     }
 

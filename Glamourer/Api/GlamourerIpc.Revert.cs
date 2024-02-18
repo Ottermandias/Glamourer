@@ -110,7 +110,7 @@ public partial class GlamourerIpc
                     foreach (var obj in data.Objects)
                     {
                         _autoDesignApplier.ReapplyAutomation(obj, state.Identifier, state);
-                        _stateManager.ReapplyState(obj);
+                        _stateManager.ReapplyState(obj, StateSource.IpcManual);
                     }
             }
         }

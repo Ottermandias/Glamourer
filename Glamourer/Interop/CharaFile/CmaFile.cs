@@ -1,4 +1,4 @@
-﻿using Glamourer.Designs;
+using Glamourer.Designs;
 using Glamourer.Services;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
@@ -54,9 +54,10 @@ public sealed class CmaFile
         {
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {
-                var idx   = slot.ToIndex();
+                var idx = slot.ToIndex();
                 if (idx * 4 + 3 >= byteData.Length)
                     continue;
+
                 var armor = ((CharacterArmor*)ptr)[idx];
                 var item  = items.Identify(slot, armor.Set, armor.Variant);
                 data.SetItem(slot, item);

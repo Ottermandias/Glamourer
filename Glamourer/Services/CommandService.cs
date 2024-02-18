@@ -308,7 +308,7 @@ public class CommandService : IDisposable
                 if (_stateManager.GetOrCreate(identifier, actor, out var state))
                 {
                     _autoDesignApplier.ReapplyAutomation(actor, identifier, state);
-                    _stateManager.ReapplyState(actor);
+                    _stateManager.ReapplyState(actor, StateSource.Manual);
                 }
             }
         }
@@ -357,7 +357,7 @@ public class CommandService : IDisposable
                 return true;
 
             foreach (var actor in data.Objects)
-                _stateManager.ReapplyState(actor);
+                _stateManager.ReapplyState(actor, StateSource.Manual);
         }
 
 

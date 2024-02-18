@@ -341,6 +341,8 @@ public class StateApplier(
             ChangeMetaState(actors, MetaIndex.VisorState,  state.ModelData.IsVisorToggled());
             ChangeCrests(actors, state.ModelData.CrestVisibility);
             ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters, state.IsLocked);
+            foreach (var material in state.Materials.Values)
+                ChangeMaterialValue(actors, MaterialValueIndex.FromKey(material.Key), material.Value.Model, state.IsLocked);
         }
 
         return actors;

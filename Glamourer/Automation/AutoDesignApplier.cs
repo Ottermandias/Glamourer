@@ -151,7 +151,7 @@ public sealed class AutoDesignApplier : IDisposable
                     {
                         Reduce(data.Objects[0], state, newSet, false, false);
                         foreach (var actor in data.Objects)
-                            _state.ReapplyState(actor);
+                            _state.ReapplyState(actor, StateSource.Fixed);
                     }
                 }
                 else if (_objects.TryGetValueAllWorld(id, out data) || _objects.TryGetValueNonOwned(id, out data))
@@ -162,7 +162,7 @@ public sealed class AutoDesignApplier : IDisposable
                         if (_state.GetOrCreate(specificId, actor, out var state))
                         {
                             Reduce(actor, state, newSet, false, false);
-                            _state.ReapplyState(actor);
+                            _state.ReapplyState(actor, StateSource.Fixed);
                         }
                     }
                 }
@@ -210,7 +210,7 @@ public sealed class AutoDesignApplier : IDisposable
         var respectManual = state.LastJob == newJob.Id;
         state.LastJob = actor.Job;
         Reduce(actor, state, set, respectManual, true);
-        _state.ReapplyState(actor);
+        _state.ReapplyState(actor, StateSource.Fixed);
     }
 
     public void ReapplyAutomation(Actor actor, ActorIdentifier identifier, ActorState state)
@@ -310,7 +310,7 @@ public sealed class AutoDesignApplier : IDisposable
         Reduce(data.Objects[0], state, set, respectManual, job != state.LastJob);
         NewGearsetId = -1;
         foreach (var actor in data.Objects)
-            _state.ReapplyState(actor);
+            _state.ReapplyState(actor, StateSource.Fixed);
     }
 
     public static unsafe bool CheckGearset(short check)

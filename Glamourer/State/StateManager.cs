@@ -334,14 +334,14 @@ public sealed class StateManager(
         }
     }
 
-    public void ReapplyState(Actor actor)
+    public void ReapplyState(Actor actor, StateSource source)
     {
         if (!GetOrCreate(actor, out var state))
             return;
 
-        Applier.ApplyAll(state,
-            !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(),
-            false);
+        var data = Applier.ApplyAll(state,
+            !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
+        StateChanged.Invoke(StateChanged.Type.Reapply, source, state, data, null);
     }
 
     public void DeleteState(ActorIdentifier identifier)
