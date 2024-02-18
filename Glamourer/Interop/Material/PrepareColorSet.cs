@@ -74,15 +74,16 @@ public sealed unsafe class PrepareColorSet
     public static bool TryGetColorTable(Actor actor, MaterialValueIndex index, out MtrlFile.ColorTable table)
     {
         var idx    = index.SlotIndex * MaterialService.MaterialsPerModel + index.MaterialIndex;
-        var model  = actor.Model.AsCharacterBase;
-        var handle = (MaterialResourceHandle*)model->Materials[idx];
+        if (!index.TryGetModel(actor, out var model))
+            return false;
+        var handle = (MaterialResourceHandle*)model.AsCharacterBase->Materials[idx];
         if (handle == null)
         {
             table = default;
             return false;
         }
 
-        return TryGetColorTable(model, handle, GetStain(), out table);
+        return TryGetColorTable(model.AsCharacterBase, handle, GetStain(), out table);
 
         StainId GetStain()
         {

@@ -29,21 +29,20 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
 
     private void Reset()
     {
-        if (!LastValueIndex.Valid || _lastObjectIndex == ObjectIndex.AnyIndex)
+        if (LastValueIndex.DrawObject is MaterialValueIndex.DrawObjectType.Invalid || _lastObjectIndex == ObjectIndex.AnyIndex)
             return;
 
         var actor = (Actor)_objects.GetObjectAddress(_lastObjectIndex.Index);
         if (actor.IsCharacter && LastValueIndex.TryGetTexture(actor, out var texture))
             MaterialService.ReplaceColorTable(texture, LastOriginalColorTable);
 
-        Glamourer.Log.Information($"Reset {_lastObjectIndex} {LastValueIndex}");
         LastValueIndex   = MaterialValueIndex.Invalid;
         _lastObjectIndex = ObjectIndex.AnyIndex;
     }
 
     private void OnFramework(IFramework _)
     {
-        if (!_valueIndex.Valid || _objectIndex == ObjectIndex.AnyIndex)
+        if (_valueIndex.DrawObject is MaterialValueIndex.DrawObjectType.Invalid || _objectIndex == ObjectIndex.AnyIndex)
         {
             Reset();
             _valueIndex  = MaterialValueIndex.Invalid;
@@ -69,10 +68,24 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
 
         if (_valueIndex.TryGetTexture(actor, out var texture))
         {
-            var diffuse = CalculateDiffuse();
-            var table   = LastOriginalColorTable;
-            table[_valueIndex.RowIndex].Diffuse  = diffuse;
-            table[_valueIndex.RowIndex].Emissive = diffuse / 8;
+            var diffuse  = CalculateDiffuse();
+            var emissive = diffuse / 8;
+            var table    = LastOriginalColorTable;
+            if (_valueIndex.RowIndex != byte.MaxValue)
+            {
+                table[_valueIndex.RowIndex].Diffuse  = diffuse;
+                table[_valueIndex.RowIndex].Emissive = emissive;
+            }
+            else
+            {
+                
+                for (var i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
+                {
+                    table[i].Diffuse = diffuse;
+                    table[i].Emissive = emissive;
+                }
+            }
+
             MaterialService.ReplaceColorTable(texture, table);
         }
 
@@ -82,12 +95,12 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
 
     public void OnHover(MaterialValueIndex index, ObjectIndex objectIndex, MtrlFile.ColorTable table)
     {
-        if (_valueIndex.Valid)
+        if (_valueIndex.DrawObject is not MaterialValueIndex.DrawObjectType.Invalid)
             return;
 
         _valueIndex  = index;
         _objectIndex = objectIndex;
-        if (!LastValueIndex.Valid
+        if (LastValueIndex.DrawObject is MaterialValueIndex.DrawObjectType.Invalid
          || _lastObjectIndex == ObjectIndex.AnyIndex
          || LastValueIndex.MaterialIndex != _valueIndex.MaterialIndex
          || LastValueIndex.DrawObject != _valueIndex.DrawObject

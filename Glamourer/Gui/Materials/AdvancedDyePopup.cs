@@ -26,6 +26,7 @@ public sealed unsafe class AdvancedDyePopup(
     private ActorState          _state = null!;
     private Actor               _actor;
     private byte                _selectedMaterial = byte.MaxValue;
+    private bool                _anyChanged       = false;
 
     private bool ShouldBeDrawn()
     {
@@ -162,7 +163,7 @@ public sealed unsafe class AdvancedDyePopup(
         }
 
         var size = new Vector2(7 * ImGui.GetFrameHeight() + 3 * ImGui.GetStyle().ItemInnerSpacing.X + 300 * ImGuiHelpers.GlobalScale,
-            17f * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y);
+            18 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + ImGui.GetStyle().ItemSpacing.Y);
         ImGui.SetNextWindowSize(size);
 
 
@@ -192,12 +193,57 @@ public sealed unsafe class AdvancedDyePopup(
     private void DrawTable(MaterialValueIndex materialIndex, in MtrlFile.ColorTable table)
     {
         using var disabled = ImRaii.Disabled(_state.IsLocked);
+        _anyChanged = false;
         for (byte i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
         {
             var     index = materialIndex with { RowIndex = i };
             ref var row   = ref table[i];
             DrawRow(ref row, index, table);
         }
+
+        ImGui.Separator();
+        DrawAllRow(materialIndex, table);
+    }
+
+    private void DrawAllRow(MaterialValueIndex materialIndex, in MtrlFile.ColorTable table)
+    {
+        using var id         = ImRaii.PushId(100);
+        var       buttonSize = new Vector2(ImGui.GetFrameHeight());
+        ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Crosshairs.ToIconString(), buttonSize, "Highlight all affected colors on the character.",
+            false, true);
+        if (ImGui.IsItemHovered())
+            preview.OnHover(materialIndex with { RowIndex = byte.MaxValue }, _actor.Index, table);
+        ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
+        using (ImRaii.PushFont(UiBuilder.MonoFont))
+        {
+            ImGui.TextUnformatted("All Color Rows");
+        }
+
+        var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
+        ImGui.SameLine(ImGui.GetWindowSize().X - 3 * buttonSize.X - 3 * spacing);
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), buttonSize, "Export this table to your clipboard.", false,
+                true))
+            ColorRowClipboard.Table = table;
+        ImGui.SameLine(0, spacing);
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), buttonSize,
+                "Import an exported table from your clipboard onto this table.", !ColorRowClipboard.IsTableSet, true))
+            foreach (var (row, idx) in ColorRowClipboard.Table.WithIndex())
+            {
+                var internalRow = new ColorRow(row);
+                var slot        = materialIndex.ToEquipSlot();
+                var weapon = slot is EquipSlot.MainHand or EquipSlot.OffHand
+                    ? _state.ModelData.Weapon(slot)
+                    : _state.ModelData.Armor(slot).ToWeapon(0);
+                var value = new MaterialValueState(internalRow, internalRow, weapon, StateSource.Manual);
+                stateManager.ChangeMaterialValue(_state!, materialIndex with { RowIndex = (byte)idx }, value, ApplySettings.Manual);
+            }
+
+        ImGui.SameLine(0, spacing);
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UndoAlt.ToIconString(), buttonSize, "Reset this table to game state.", !_anyChanged,
+                true))
+            for (byte i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
+                stateManager.ResetMaterialValue(_state, materialIndex with { RowIndex = (byte)i }, ApplySettings.Game);
     }
 
     private void DrawRow(ref MtrlFile.ColorTable.Row row, MaterialValueIndex index, in MtrlFile.ColorTable table)
@@ -212,6 +258,10 @@ public sealed unsafe class AdvancedDyePopup(
                 ? _state.ModelData.Weapon(slot)
                 : _state.ModelData.Armor(slot).ToWeapon(0);
             value = new MaterialValueState(internalRow, internalRow, weapon, StateSource.Manual);
+        }
+        else
+        {
+            _anyChanged = true;
         }
 
         var buttonSize = new Vector2(ImGui.GetFrameHeight());
