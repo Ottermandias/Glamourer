@@ -1,9 +1,10 @@
 ﻿using Glamourer.State;
+using OtterGui.Services;
 using Penumbra.Api.Enums;
 
 namespace Glamourer.Interop.Penumbra;
 
-public class PenumbraAutoRedraw : IDisposable
+public class PenumbraAutoRedraw : IDisposable, IRequiredService
 {
     private readonly Configuration   _config;
     private readonly PenumbraService _penumbra;
@@ -24,11 +25,29 @@ public class PenumbraAutoRedraw : IDisposable
 
     private void OnModSettingChange(ModSettingChange type, string name, string mod, bool inherited)
     {
-        if (!_config.AutoRedrawEquipOnChanges && type is not ModSettingChange.TemporaryMod)
-            return;
+        if (type is ModSettingChange.TemporaryMod)
+        {
+            _objects.Update();
+            foreach (var (id, state) in _state)
+            {
+                if (!_objects.TryGetValue(id, out var actors) || !actors.Valid)
+                    continue;
 
-        var playerName = _penumbra.GetCurrentPlayerCollection();
-        if (playerName == name)
-            _state.ReapplyState(_objects.Player, StateSource.IpcManual);
+                var collection = _penumbra.GetActorCollection(actors.Objects[0]);
+                if (collection != name)
+                    continue;
+
+                foreach (var actor in actors.Objects)
+                    _state.ReapplyState(actor, state, StateSource.IpcManual);
+                Glamourer.Log.Debug($"Automatically applied mod settings of type {type} to {id.Incognito(null)}.");
+            }
+        }
+        else if (_config.AutoRedrawEquipOnChanges)
+        {
+            var playerName = _penumbra.GetCurrentPlayerCollection();
+            if (playerName == name)
+                _state.ReapplyState(_objects.Player, StateSource.IpcManual);
+            Glamourer.Log.Debug($"Automatically applied mod settings of type {type} to {_objects.PlayerData.Identifier.Incognito(null)} (Local Player).");
+        }
     }
 }

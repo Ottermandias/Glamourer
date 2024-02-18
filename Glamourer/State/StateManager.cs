@@ -344,6 +344,13 @@ public sealed class StateManager(
         StateChanged.Invoke(StateChanged.Type.Reapply, source, state, data, null);
     }
 
+    public void ReapplyState(Actor actor, ActorState state, StateSource source)
+    {
+        var data = Applier.ApplyAll(state,
+            !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
+        StateChanged.Invoke(StateChanged.Type.Reapply, source, state, data, null);
+    }
+
     public void DeleteState(ActorIdentifier identifier)
         => _states.Remove(identifier);
 }
