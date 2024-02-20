@@ -13,6 +13,7 @@ using OtterGui;
 using OtterGui.Classes;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Services;
 
@@ -34,10 +35,12 @@ public class CommandService : IDisposable
     private readonly DesignFileSystem  _designFileSystem;
     private readonly Configuration     _config;
     private readonly ModSettingApplier _modApplier;
+    private readonly ItemManager       _items;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
-        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier)
+        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier,
+        ItemManager items)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -52,6 +55,7 @@ public class CommandService : IDisposable
         _autoDesignManager = autoDesignManager;
         _config            = config;
         _modApplier        = modApplier;
+        _items             = items;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -115,6 +119,7 @@ public class CommandService : IDisposable
             "copy"              => CopyState(argument),
             "save"              => SaveState(argument),
             "delete"            => Delete(argument),
+            "applyitem"         => ApplyItem(argument),
             _                   => PrintHelp(argumentList[0]),
         };
     }
@@ -141,6 +146,8 @@ public class CommandService : IDisposable
             .AddCommand("save", "Save the current state of a character to a named design. Use without arguments for help.").BuiltString);
         _chat.Print(new SeStringBuilder()
             .AddCommand("automation", "Change the state of automated design sets. Use without arguments for help.").BuiltString);
+        _chat.Print(new SeStringBuilder()
+            .AddCommand("applyitem", "Apply a specific item to a character. Use without arguments for help.").BuiltString);
         return true;
     }
 
@@ -364,6 +371,78 @@ public class CommandService : IDisposable
         return true;
     }
 
+    private bool ApplyItem(string arguments)
+    {
+        var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (split.Length is not 2)
+        {
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour applyitem ").AddYellow("[Item ID or Item Name]")
+                .AddText(" | ")
+                .AddGreen("[Character Identifier]")
+                .BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText(
+                    "    》 The item name is case-insensitive. Numeric IDs are preferred before item names.")
+                .BuiltString);
+            PlayerIdentifierHelp(false, true);
+            return true;
+        }
+
+        var items = new EquipItem[3];
+        if (uint.TryParse(split[0], out var id))
+        {
+            if (_items.ItemData.Primary.TryGetValue(id, out var main))
+                items[0] = main;
+        }
+        else if (_items.ItemData.Primary.FindFirst(pair => string.Equals(pair.Value.Name, split[0], StringComparison.OrdinalIgnoreCase), out var i))
+        {
+            items[0] = i.Value;
+        }
+
+        if (!items[0].Valid)
+        {
+            _chat.Print(new SeStringBuilder().AddText("The item ").AddYellow(split[0], true)
+                .AddText(" could not be identified as a valid item.").BuiltString);
+            return false;
+        }
+
+        if (_items.ItemData.Secondary.TryGetValue(items[0].ItemId, out var off))
+        {
+            items[1] = off;
+            if (_items.ItemData.Tertiary.TryGetValue(items[0].ItemId, out var gauntlet))
+                items[2] = gauntlet;
+        }
+
+        if (!IdentifierHandling(split[1], out var identifiers, false, true))
+            return false;
+
+        _objects.Update();
+        foreach (var identifier in identifiers)
+        {
+            if (!_objects.TryGetValue(identifier, out var actors))
+            {
+                if (!_stateManager.TryGetValue(identifier, out var state))
+                    continue;
+
+                foreach (var item in items.Where(i => i.Valid))
+                    _stateManager.ChangeItem(state, item.Type.ToSlot(), item, ApplySettings.Manual);
+            }
+            else
+            {
+                foreach (var actor in actors.Objects)
+                {
+                    if (!_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
+                        continue;
+
+                    foreach (var item in items.Where(i => i.Valid))
+                        _stateManager.ChangeItem(state, item.Type.ToSlot(), item, ApplySettings.Manual);
+                }
+            }
+        }
+
+        return true;
+    }
+
     private bool Apply(string arguments)
     {
         var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -394,6 +473,7 @@ public class CommandService : IDisposable
             _chat.Print(new SeStringBuilder().AddText("If ").AddBlue("true")
                 .AddText(", it will try to apply mod associations to the collection assigned to the identified character.").BuiltString);
             PlayerIdentifierHelp(false, true);
+            return true;
         }
 
         var split2 = split[1].Split(';', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -446,7 +526,8 @@ public class CommandService : IDisposable
             Glamourer.Messager.Chat.Print($"Error applying mod settings: {message}");
 
         if (appliedMods > 0)
-            Glamourer.Messager.Chat.Print($"Applied {appliedMods} mod settings to {collection}{(overridden ? " (overridden by settings)" : string.Empty)}.");
+            Glamourer.Messager.Chat.Print(
+                $"Applied {appliedMods} mod settings to {collection}{(overridden ? " (overridden by settings)" : string.Empty)}.");
     }
 
     private bool Delete(string argument)

@@ -77,6 +77,11 @@ public unsafe class ModelEvaluationPanel(
         DrawCustomize(actor, model);
         DrawCrests(actor, model);
         DrawParameters(actor, model);
+
+        ImGuiUtil.DrawTableColumn("Scale");
+        ImGuiUtil.DrawTableColumn(actor.Valid ? actor.AsObject->Scale.ToString(CultureInfo.InvariantCulture) : "No Character");
+        ImGuiUtil.DrawTableColumn(model.Valid ? model.AsDrawObject->Object.Scale.ToString() : "No Model");
+        ImGuiUtil.DrawTableColumn(model.IsCharacterBase ? $"{*(float*)(model.Address + 0x270)} {*(float*)(model.Address + 0x274)}" : "No CharacterBase");
     }
 
     private void DrawParameters(Actor actor, Model model)

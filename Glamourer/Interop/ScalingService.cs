@@ -48,7 +48,6 @@ public unsafe class ScalingService : IDisposable
     [Signature("48 89 5C 24 ?? 55 57 41 57 48 8D 6C 24", DetourName = nameof(PlaceMinionDetour))]
     private readonly Hook<PlaceMinion> _placeMinionHook = null!;
 
-
     private void SetupMountDetour(Character.MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4)
     {
         var (race, clan, gender) = GetScaleRelevantCustomize(&container->OwnerObject->Character);
