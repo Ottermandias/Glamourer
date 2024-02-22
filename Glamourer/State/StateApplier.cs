@@ -301,11 +301,11 @@ public class StateApplier(
         }
     }
 
-    public ActorData ChangeMaterialValues(ActorState state, bool apply)
+    public ActorData ChangeMaterialValue(ActorState state, MaterialValueIndex index, bool apply)
     {
         var data = GetData(state);
         if (apply)
-            ChangeMaterialValues(data, state.Materials, state.IsLocked);
+            ChangeMaterialValue(data, index, state.Materials.TryGetValue(index, out var v) ? v.Model : null, state.IsLocked);
         return data;
     }
 
@@ -326,7 +326,7 @@ public class StateApplier(
                 if (!mainKey.TryGetTexture(actor, out var texture))
                     continue;
 
-                if (!_directX.TryGetColorTable(*texture, out var table))
+                if (!PrepareColorSet.TryGetColorTable(actor, mainKey, out var table))
                     continue;
 
                 foreach (var (key, value) in values)
@@ -335,14 +335,6 @@ public class StateApplier(
                 _directX.ReplaceColorTable(texture, table);
             }
         }
-    }
-
-    public ActorData ChangeMaterialValue(ActorState state, MaterialValueIndex index, bool apply)
-    {
-        var data = GetData(state);
-        if (apply)
-            ChangeMaterialValue(data, index, state.Materials.TryGetValue(index, out var v) ? v.Model : null, state.IsLocked);
-        return data;
     }
 
     /// <summary> Apply the entire state of an actor to all relevant actors, either via immediate redraw or piecewise. </summary>
@@ -377,7 +369,6 @@ public class StateApplier(
                 ChangeMetaState(actors, MetaIndex.VisorState,  state.ModelData.IsVisorToggled());
                 ChangeCrests(actors, state.ModelData.CrestVisibility);
                 ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters, state.IsLocked);
-                // This should never be applied when caused through IPC, then redraw should be true.
                 ChangeMaterialValues(actors, state.Materials, state.IsLocked);
             }
         }

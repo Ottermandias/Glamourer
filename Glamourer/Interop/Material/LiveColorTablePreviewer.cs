@@ -110,11 +110,11 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
 
     private static Vector3 CalculateDiffuse()
     {
-        const int frameLength = 1;
-        const int steps       = 64;
-        var       frame       = ImGui.GetFrameCount();
-        var       hueByte     = frame % (steps * frameLength) / frameLength;
-        var       hue         = (float)hueByte / steps;
+        const long frameLength = TimeSpan.TicksPerMillisecond * 5;
+        const long steps       = 2000;
+        var        frame       = DateTimeOffset.UtcNow.UtcTicks;
+        var        hueByte     = frame % (steps * frameLength) / frameLength;
+        var        hue         = (float)hueByte / steps;
         ImGui.ColorConvertHSVtoRGB(hue, 1, 1, out var r, out var g, out var b);
         return new Vector3(r, g, b);
     }

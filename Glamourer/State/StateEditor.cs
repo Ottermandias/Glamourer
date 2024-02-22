@@ -296,6 +296,9 @@ public class StateEditor(
                     Editor.ChangeMetaState(state, meta, mergedDesign.Design.DesignData.GetMeta(meta), Source(meta), out _, settings.Key);
             }
 
+            if (settings.ResetMaterials)
+                state.Materials.Clear();
+
             foreach (var (key, value) in mergedDesign.Design.Materials)
             {
                 if (!value.Enabled)
@@ -321,8 +324,6 @@ public class StateEditor(
                         settings.Source, out _, settings.Key);
                 }
             }
-
-            requiresRedraw |= mergedDesign.Design.Materials.Count > 0 && settings.Source.IsIpc();
         }
 
         var actors = settings.Source.RequiresChange()
