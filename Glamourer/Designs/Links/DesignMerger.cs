@@ -47,7 +47,8 @@ public class DesignMerger(
             ReduceCrests(data, crestFlags, ret, source);
             ReduceParameters(data, parameterFlags, ret, source);
             ReduceMods(design as Design, ret, modAssociations);
-            ReduceMaterials(design, ret);
+            if (type.HasFlag(ApplicationType.GearCustomization))
+                ReduceMaterials(design, ret);
         }
 
         ApplyFixFlags(ret, fixFlags);
