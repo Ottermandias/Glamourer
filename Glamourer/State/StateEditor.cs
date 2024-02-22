@@ -321,6 +321,8 @@ public class StateEditor(
                         settings.Source, out _, settings.Key);
                 }
             }
+
+            requiresRedraw |= mergedDesign.Design.Materials.Count > 0 && settings.Source.IsIpc();
         }
 
         var actors = settings.Source.RequiresChange()

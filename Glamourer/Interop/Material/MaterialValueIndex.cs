@@ -109,31 +109,6 @@ public readonly record struct MaterialValueIndex(
         return true;
     }
 
-    public unsafe bool TryGetColorTable(Actor actor, out MtrlFile.ColorTable table)
-    {
-        if (TryGetTexture(actor, out var texture))
-            return TryGetColorTable(texture, out table);
-
-        table = default;
-        return false;
-    }
-
-    public unsafe bool TryGetColorTable(Texture** texture, out MtrlFile.ColorTable table)
-        => DirectXTextureHelper.TryGetColorTable(*texture, out table);
-
-    public bool TryGetColorRow(Actor actor, out MtrlFile.ColorTable.Row row)
-    {
-        if (!TryGetColorTable(actor, out var table))
-        {
-            row = default;
-            return false;
-        }
-
-        row = table[RowIndex];
-        return true;
-    }
-
-
     public static MaterialValueIndex FromKey(uint key)
         => new(key);
 

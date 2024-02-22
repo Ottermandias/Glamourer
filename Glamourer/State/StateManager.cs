@@ -224,7 +224,8 @@ public sealed class StateManager(
          || !state.ModelData.IsHuman
          || CustomizeArray.Compare(state.ModelData.Customize, state.BaseData.Customize).RequiresRedraw();
 
-        state.ModelData = state.BaseData;
+        redraw          |= state.Materials.Values.Count > 0 && source.IsIpc();
+        state.ModelData =  state.BaseData;
         state.ModelData.SetIsWet(false);
         foreach (var index in Enum.GetValues<CustomizeIndex>())
             state.Sources[index] = StateSource.Game;
@@ -339,15 +340,13 @@ public sealed class StateManager(
         if (!GetOrCreate(actor, out var state))
             return;
 
-        var data = Applier.ApplyAll(state,
-            !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
-        StateChanged.Invoke(StateChanged.Type.Reapply, source, state, data, null);
+        ReapplyState(actor, state, source);
     }
 
     public void ReapplyState(Actor actor, ActorState state, StateSource source)
     {
         var data = Applier.ApplyAll(state,
-            !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
+            !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw() || state.Materials.Values.Count > 0 && source.IsIpc(), false);
         StateChanged.Invoke(StateChanged.Type.Reapply, source, state, data, null);
     }
 

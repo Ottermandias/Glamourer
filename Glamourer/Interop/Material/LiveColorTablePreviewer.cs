@@ -9,8 +9,9 @@ namespace Glamourer.Interop.Material;
 
 public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
 {
-    private readonly IObjectTable _objects;
-    private readonly IFramework   _framework;
+    private readonly IObjectTable   _objects;
+    private readonly IFramework     _framework;
+    private readonly DirectXService _directXService;
 
     public  MaterialValueIndex  LastValueIndex         { get; private set; } = MaterialValueIndex.Invalid;
     public  MtrlFile.ColorTable LastOriginalColorTable { get; private set; }
@@ -19,11 +20,11 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
     private ObjectIndex         _objectIndex     = ObjectIndex.AnyIndex;
     private MtrlFile.ColorTable _originalColorTable;
 
-
-    public LiveColorTablePreviewer(IObjectTable objects, IFramework framework)
+    public LiveColorTablePreviewer(IObjectTable objects, IFramework framework, DirectXService directXService)
     {
         _objects          =  objects;
         _framework        =  framework;
+        _directXService   =  directXService;
         _framework.Update += OnFramework;
     }
 
@@ -34,7 +35,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
 
         var actor = (Actor)_objects.GetObjectAddress(_lastObjectIndex.Index);
         if (actor.IsCharacter && LastValueIndex.TryGetTexture(actor, out var texture))
-            MaterialService.ReplaceColorTable(texture, LastOriginalColorTable);
+            _directXService.ReplaceColorTable(texture, LastOriginalColorTable);
 
         LastValueIndex   = MaterialValueIndex.Invalid;
         _lastObjectIndex = ObjectIndex.AnyIndex;
@@ -78,15 +79,14 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
             }
             else
             {
-                
                 for (var i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
                 {
-                    table[i].Diffuse = diffuse;
+                    table[i].Diffuse  = diffuse;
                     table[i].Emissive = emissive;
                 }
             }
 
-            MaterialService.ReplaceColorTable(texture, table);
+            _directXService.ReplaceColorTable(texture, table);
         }
 
         _valueIndex  = MaterialValueIndex.Invalid;

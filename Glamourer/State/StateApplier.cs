@@ -25,7 +25,8 @@ public class StateApplier(
     MetaService _metaService,
     ObjectManager _objects,
     CrestService _crests,
-    Configuration _config)
+    Configuration _config,
+    DirectXService _directX)
 {
     /// <summary> Simply force a redraw regardless of conditions. </summary>
     public void ForceRedraw(ActorData data)
@@ -286,7 +287,7 @@ public class StateApplier(
             if (!index.TryGetTexture(actor, out var texture))
                 continue;
 
-            if (!index.TryGetColorTable(texture, out var table))
+            if (!_directX.TryGetColorTable(*texture, out var table))
                 continue;
 
             if (value.HasValue)
@@ -296,7 +297,43 @@ public class StateApplier(
             else
                 continue;
 
-            MaterialService.ReplaceColorTable(texture, table);
+            _directX.ReplaceColorTable(texture, table);
+        }
+    }
+
+    public ActorData ChangeMaterialValues(ActorState state, bool apply)
+    {
+        var data = GetData(state);
+        if (apply)
+            ChangeMaterialValues(data, state.Materials, state.IsLocked);
+        return data;
+    }
+
+    public unsafe void ChangeMaterialValues(ActorData data, in StateMaterialManager materials, bool force)
+    {
+        if (!force && !_config.UseAdvancedDyes)
+            return;
+
+        var groupedMaterialValues = materials.Values.Select(p => (MaterialValueIndex.FromKey(p.Key), p.Value))
+            .GroupBy(p => (p.Item1.DrawObject, p.Item1.SlotIndex, p.Item1.MaterialIndex));
+
+        foreach (var group in groupedMaterialValues)
+        {
+            var values  = group.ToList();
+            var mainKey = values[0].Item1;
+            foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))
+            {
+                if (!mainKey.TryGetTexture(actor, out var texture))
+                    continue;
+
+                if (!_directX.TryGetColorTable(*texture, out var table))
+                    continue;
+
+                foreach (var (key, value) in values)
+                    value.Model.Apply(ref table[key.RowIndex]);
+
+                _directX.ReplaceColorTable(texture, table);
+            }
         }
     }
 
@@ -332,17 +369,17 @@ public class StateApplier(
             ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
             var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? actors.OnlyGPose() : actors;
             ChangeOffhand(offhandActors, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
-        }
 
-        if (state.ModelData.IsHuman)
-        {
-            ChangeMetaState(actors, MetaIndex.HatState,    state.ModelData.IsHatVisible());
-            ChangeMetaState(actors, MetaIndex.WeaponState, state.ModelData.IsWeaponVisible());
-            ChangeMetaState(actors, MetaIndex.VisorState,  state.ModelData.IsVisorToggled());
-            ChangeCrests(actors, state.ModelData.CrestVisibility);
-            ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters, state.IsLocked);
-            foreach (var material in state.Materials.Values)
-                ChangeMaterialValue(actors, MaterialValueIndex.FromKey(material.Key), material.Value.Model, state.IsLocked);
+            if (state.ModelData.IsHuman)
+            {
+                ChangeMetaState(actors, MetaIndex.HatState,    state.ModelData.IsHatVisible());
+                ChangeMetaState(actors, MetaIndex.WeaponState, state.ModelData.IsWeaponVisible());
+                ChangeMetaState(actors, MetaIndex.VisorState,  state.ModelData.IsVisorToggled());
+                ChangeCrests(actors, state.ModelData.CrestVisibility);
+                ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters, state.IsLocked);
+                // This should never be applied when caused through IPC, then redraw should be true.
+                ChangeMaterialValues(actors, state.Materials, state.IsLocked);
+            }
         }
 
         return actors;

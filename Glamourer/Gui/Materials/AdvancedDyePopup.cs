@@ -20,13 +20,14 @@ namespace Glamourer.Gui.Materials;
 public sealed unsafe class AdvancedDyePopup(
     Configuration config,
     StateManager stateManager,
-    LiveColorTablePreviewer preview) : IService
+    LiveColorTablePreviewer preview,
+    DirectXService directX) : IService
 {
     private MaterialValueIndex? _drawIndex;
     private ActorState          _state = null!;
     private Actor               _actor;
     private byte                _selectedMaterial = byte.MaxValue;
-    private bool                _anyChanged       = false;
+    private bool                _anyChanged;
 
     private bool ShouldBeDrawn()
     {
@@ -94,7 +95,7 @@ public sealed unsafe class AdvancedDyePopup(
         for (byte i = 0; i < MaterialService.MaterialsPerModel; ++i)
         {
             var index     = _drawIndex!.Value with { MaterialIndex = i };
-            var available = index.TryGetTexture(textures, out var texture) && index.TryGetColorTable(texture, out var table);
+            var available = index.TryGetTexture(textures, out var texture) && directX.TryGetColorTable(*texture, out var table);
 
             if (index == preview.LastValueIndex with { RowIndex = 0 })
                 table = preview.LastOriginalColorTable;
@@ -179,7 +180,7 @@ public sealed unsafe class AdvancedDyePopup(
         }
     }
 
-    public unsafe void Draw(Actor actor, ActorState state)
+    public void Draw(Actor actor, ActorState state)
     {
         _actor = actor;
         _state = state;
@@ -236,20 +237,20 @@ public sealed unsafe class AdvancedDyePopup(
                     ? _state.ModelData.Weapon(slot)
                     : _state.ModelData.Armor(slot).ToWeapon(0);
                 var value = new MaterialValueState(internalRow, internalRow, weapon, StateSource.Manual);
-                stateManager.ChangeMaterialValue(_state!, materialIndex with { RowIndex = (byte)idx }, value, ApplySettings.Manual);
+                stateManager.ChangeMaterialValue(_state, materialIndex with { RowIndex = (byte)idx }, value, ApplySettings.Manual);
             }
 
         ImGui.SameLine(0, spacing);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UndoAlt.ToIconString(), buttonSize, "Reset this table to game state.", !_anyChanged,
                 true))
             for (byte i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
-                stateManager.ResetMaterialValue(_state, materialIndex with { RowIndex = (byte)i }, ApplySettings.Game);
+                stateManager.ResetMaterialValue(_state, materialIndex with { RowIndex = i }, ApplySettings.Game);
     }
 
     private void DrawRow(ref MtrlFile.ColorTable.Row row, MaterialValueIndex index, in MtrlFile.ColorTable table)
     {
         using var id      = ImRaii.PushId(index.RowIndex);
-        var       changed = _state!.Materials.TryGetValue(index, out var value);
+        var       changed = _state.Materials.TryGetValue(index, out var value);
         if (!changed)
         {
             var internalRow = new ColorRow(row);
@@ -314,7 +315,7 @@ public sealed unsafe class AdvancedDyePopup(
             stateManager.ResetMaterialValue(_state, index, ApplySettings.Game);
 
         if (applied)
-            stateManager.ChangeMaterialValue(_state!, index, value, ApplySettings.Manual);
+            stateManager.ChangeMaterialValue(_state, index, value, ApplySettings.Manual);
     }
 
     private LabelStruct _label = new();

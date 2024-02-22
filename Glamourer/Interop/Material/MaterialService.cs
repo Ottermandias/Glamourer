@@ -13,34 +13,6 @@ public static unsafe class MaterialService
     public const int TextureHeight     = ColorTable.NumRows;
     public const int MaterialsPerModel = 4;
 
-    /// <summary> Generate a color table the way the game does inside the original texture, and release the original. </summary>
-    /// <param name="original"> The original texture that will be replaced with a new one. </param>
-    /// <param name="colorTable"> The input color table. </param>
-    /// <returns> Success or failure. </returns>
-    public static bool ReplaceColorTable(Texture** original, in ColorTable colorTable)
-    {
-        if (original == null)
-            return false;
-
-        var textureSize = stackalloc int[2];
-        textureSize[0] = TextureWidth;
-        textureSize[1] = TextureHeight;
-
-        using var texture = new SafeTextureHandle(Device.Instance()->CreateTexture2D(textureSize, 1, (uint)TexFile.TextureFormat.R16G16B16A16F,
-            (uint)(TexFile.Attribute.TextureType2D | TexFile.Attribute.Managed | TexFile.Attribute.Immutable), 7), false);
-        if (texture.IsInvalid)
-            return false;
-
-        fixed (ColorTable* ptr = &colorTable)
-        {
-            if (!texture.Texture->InitializeContents(ptr))
-                return false;
-        }
-
-        texture.Exchange(ref *(nint*)original);
-        return true;
-    }
-
     public static bool GenerateNewColorTable(in ColorTable colorTable, out Texture* texture)
     {
         var textureSize = stackalloc int[2];
