@@ -61,6 +61,7 @@ namespace Glamourer.Events
         public enum Priority
         {
             GlamourerIpc = int.MinValue,
+            PenumbraAutoRedraw = 0,
         }
     }
 }
