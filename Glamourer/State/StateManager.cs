@@ -27,8 +27,9 @@ public sealed class StateManager(
     Configuration config,
     JobChangeState jobChange,
     DesignMerger merger,
-    ModSettingApplier modApplier)
-    : StateEditor(editor, applier, @event, jobChange, config, items, merger, modApplier), IReadOnlyDictionary<ActorIdentifier, ActorState>
+    ModSettingApplier modApplier,
+    GPoseService gPose)
+    : StateEditor(editor, applier, @event, jobChange, config, items, merger, modApplier, gPose), IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
     private readonly Dictionary<ActorIdentifier, ActorState> _states = [];
 

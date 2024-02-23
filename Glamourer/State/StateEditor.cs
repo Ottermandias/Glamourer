@@ -19,7 +19,8 @@ public class StateEditor(
     Configuration config,
     ItemManager items,
     DesignMerger merger,
-    ModSettingApplier modApplier) : IDesignEditor
+    ModSettingApplier modApplier,
+    GPoseService gPose) : IDesignEditor
 {
     protected readonly InternalStateEditor Editor       = editor;
     protected readonly StateApplier        Applier      = applier;
@@ -276,12 +277,27 @@ public class StateEditor(
                     continue;
 
                 var currentType = state.ModelData.Item(weaponSlot).Type;
-                if (!settings.FromJobChange && mergedDesign.Weapons.TryGetValue(currentType, out var weapon))
+                if (!settings.FromJobChange)
                 {
-                    var source = settings.UseSingleSource ? settings.Source :
-                        weapon.Item2 is StateSource.Game  ? StateSource.Game : weapon.Item2;
-                    Editor.ChangeItem(state, weaponSlot, weapon.Item1, source, out _,
-                        settings.Key);
+                    if (gPose.InGPose)
+                    {
+                        Editor.ChangeItem(state, weaponSlot, mergedDesign.Design.DesignData.Item(weaponSlot),
+                            settings.UseSingleSource ? settings.Source : mergedDesign.Sources[weaponSlot, false], out var old, settings.Key);
+                        var oldSource = state.Sources[weaponSlot, false];
+                        gPose.AddActionOnLeave(() =>
+                        {
+                            if (old.Type == state.BaseData.Item(weaponSlot).Type)
+                                Editor.ChangeItem(state, weaponSlot, old, oldSource, out _, settings.Key);
+                        });
+                    }
+
+                    if (mergedDesign.Weapons.TryGetValue(currentType, out var weapon))
+                    {
+                        var source = settings.UseSingleSource ? settings.Source :
+                            weapon.Item2 is StateSource.Game  ? StateSource.Game : weapon.Item2;
+                        Editor.ChangeItem(state, weaponSlot, weapon.Item1, source, out _,
+                            settings.Key);
+                    }
                 }
             }
 
