@@ -41,6 +41,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
 
     private readonly ConcurrentQueue<(ActorState, Action, int)> _actions = [];
     private readonly ConcurrentSet<ActorState>                  _skips   = [];
+    private          DateTime                                   _frame;
 
     private void OnStateChange(StateChanged.Type type, StateSource source, ActorState state, ActorData _1, object? _2)
     {
@@ -69,6 +70,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
     private void OnModSettingChange(ModSettingChange type, string name, string mod, bool inherited)
     {
         if (type is ModSettingChange.TemporaryMod)
+        {
             _framework.RunOnFrameworkThread(() =>
             {
                 _objects.Update();
@@ -89,7 +91,15 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
                     }, WaitFrames));
                 }
             });
+        }
         else if (_config.AutoRedrawEquipOnChanges)
+        {
+            // Only update once per frame.
+            var currentFrame = _framework.LastUpdateUTC;
+            if (currentFrame == _frame)
+                return;
+
+            _frame = currentFrame;
             _framework.RunOnFrameworkThread(() =>
             {
                 var playerName = _penumbra.GetCurrentPlayerCollection();
@@ -98,5 +108,6 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
                 Glamourer.Log.Debug(
                     $"Automatically applied mod settings of type {type} to {_objects.PlayerData.Identifier.Incognito(null)} (Local Player).");
             });
+        }
     }
 }
