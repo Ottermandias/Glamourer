@@ -1,15 +1,17 @@
 ﻿using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Automation;
 using Glamourer.Designs.Links;
+using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
+using Glamourer.State;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
 
 namespace Glamourer.Designs;
 
-public sealed class Design : DesignBase, ISavable
+public sealed class Design : DesignBase, ISavable, IDesignStandIn
 {
     #region Data
 
@@ -48,8 +50,36 @@ public sealed class Design : DesignBase, ISavable
     public string Incognito
         => Identifier.ToString()[..8];
 
-    public IEnumerable<(DesignBase? Design, ApplicationType Flags)> AllLinks
-        => LinkContainer.GetAllLinks(this).Select(t => ((DesignBase?)t.Link.Link, t.Link.Type));
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags)> AllLinks
+        => LinkContainer.GetAllLinks(this).Select(t => ((IDesignStandIn)t.Link.Link, t.Link.Type));
+
+    #endregion
+
+    #region IDesignStandIn
+
+    public string ResolveName(bool incognito)
+        => incognito ? Incognito : Name.Text;
+
+    public string SerializeName()
+        => Identifier.ToString();
+
+    public ref readonly DesignData GetDesignData(in DesignData baseData)
+        => ref GetDesignDataRef();
+
+    public IReadOnlyList<(uint, MaterialValueDesign)> GetMaterialData()
+        => Materials;
+
+    public bool Equals(IDesignStandIn? other)
+        => other is Design d && d.Identifier == Identifier;
+
+    public StateSource AssociatedSource()
+        => StateSource.Manual;
+
+    public void AddData(JObject _)
+    { }
+
+    public void ParseData(JObject _)
+    { }
 
     #endregion
 

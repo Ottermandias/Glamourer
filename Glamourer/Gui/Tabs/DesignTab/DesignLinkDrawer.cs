@@ -152,32 +152,33 @@ public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSe
         ImGui.TableNextColumn();
         string ttBefore,     ttAfter;
         bool   canAddBefore, canAddAfter;
-        if (_combo.Design == null)
+        var    design = _combo.Design as Design;
+        if (design == null)
         {
             ttAfter      = ttBefore    = "Select a design first.";
             canAddBefore = canAddAfter = false;
         }
         else
         {
-            canAddBefore = LinkContainer.CanAddLink(_selector.Selected!, _combo.Design, LinkOrder.Before, out var error);
+            canAddBefore = LinkContainer.CanAddLink(_selector.Selected!, design, LinkOrder.Before, out var error);
             ttBefore = canAddBefore
-                ? $"Add a link at the top of the list to {_combo.Design.Name}."
-                : $"Can not add a link to {_combo.Design.Name}:\n{error}";
-            canAddAfter = LinkContainer.CanAddLink(_selector.Selected!, _combo.Design, LinkOrder.After, out error);
+                ? $"Add a link at the top of the list to {design.Name}."
+                : $"Can not add a link to {design.Name}:\n{error}";
+            canAddAfter = LinkContainer.CanAddLink(_selector.Selected!, design, LinkOrder.After, out error);
             ttAfter = canAddAfter
-                ? $"Add a link at the bottom of the list to {_combo.Design.Name}."
-                : $"Can not add a link to {_combo.Design.Name}:\n{error}";
+                ? $"Add a link at the bottom of the list to {design.Name}."
+                : $"Can not add a link to {design.Name}:\n{error}";
         }
 
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.ArrowCircleUp.ToIconString(), buttonSize, ttBefore, !canAddBefore, true))
         {
-            _linkManager.AddDesignLink(_selector.Selected!, _combo.Design!, LinkOrder.Before);
+            _linkManager.AddDesignLink(_selector.Selected!, design!, LinkOrder.Before);
             _linkManager.MoveDesignLink(_selector.Selected!, _selector.Selected!.Links.Before.Count - 1, LinkOrder.Before, 0, LinkOrder.Before);
         }
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.ArrowCircleDown.ToIconString(), buttonSize, ttAfter, !canAddAfter, true))
-            _linkManager.AddDesignLink(_selector.Selected!, _combo.Design!, LinkOrder.After);
+            _linkManager.AddDesignLink(_selector.Selected!, design!, LinkOrder.After);
     }
 
     private void DrawDragDrop(Design design, LinkOrder order, int index)

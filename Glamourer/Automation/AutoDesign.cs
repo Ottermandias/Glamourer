@@ -1,7 +1,6 @@
 ﻿using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Interop.Structs;
-using Glamourer.State;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -12,19 +11,10 @@ public class AutoDesign
 {
     public const string RevertName = "Revert";
 
-    public Design?         Design;
+    public IDesignStandIn  Design = new RevertDesign();
     public JobGroup        Jobs;
     public ApplicationType Type;
     public short           GearsetIndex = -1;
-
-    public string Name(bool incognito)
-        => Revert ? RevertName : incognito ? Design!.Incognito : Design!.Name.Text;
-
-    public ref readonly DesignData GetDesignData(ActorState state)
-        => ref Design == null ? ref state.BaseData : ref Design.DesignData;
-
-    public bool Revert
-        => Design == null;
 
     public AutoDesign Clone()
         => new()
@@ -50,12 +40,16 @@ public class AutoDesign
     }
 
     public JObject Serialize()
-        => new()
+    {
+        var ret = new JObject
         {
-            ["Design"]     = Design?.Identifier.ToString(),
+            ["Design"]     = Design.SerializeName(),
             ["Type"]       = (uint)Type,
             ["Conditions"] = CreateConditionObject(),
         };
+        Design.AddData(ret);
+        return ret;
+    }
 
     private JObject CreateConditionObject()
     {

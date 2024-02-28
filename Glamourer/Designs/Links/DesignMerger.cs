@@ -17,13 +17,15 @@ public class DesignMerger(
     ItemUnlockManager _itemUnlocks,
     CustomizeUnlockManager _customizeUnlocks) : IService
 {
-    public MergedDesign Merge(LinkContainer designs, in CustomizeArray currentCustomize, in DesignData baseRef, bool respectOwnership, bool modAssociations)
-        => Merge(designs.Select(d => ((DesignBase?) d.Link, d.Type)), currentCustomize, baseRef, respectOwnership, modAssociations);
+    public MergedDesign Merge(LinkContainer designs, in CustomizeArray currentCustomize, in DesignData baseRef, bool respectOwnership,
+        bool modAssociations)
+        => Merge(designs.Select(d => ((IDesignStandIn)d.Link, d.Type)), currentCustomize, baseRef, respectOwnership, modAssociations);
 
-    public MergedDesign Merge(IEnumerable<(DesignBase?, ApplicationType)> designs, in CustomizeArray currentCustomize, in DesignData baseRef, bool respectOwnership,
+    public MergedDesign Merge(IEnumerable<(IDesignStandIn, ApplicationType)> designs, in CustomizeArray currentCustomize, in DesignData baseRef,
+        bool respectOwnership,
         bool modAssociations)
     {
-        var           ret      = new MergedDesign(designManager);
+        var ret = new MergedDesign(designManager);
         ret.Design.SetCustomize(_customize, currentCustomize);
         CustomizeFlag fixFlags = 0;
         respectOwnership &= _config.UnlockedItemMode;
@@ -32,8 +34,8 @@ public class DesignMerger(
             if (type is 0)
                 continue;
 
-            ref readonly var data   = ref design == null ? ref baseRef : ref design.GetDesignDataRef();
-            var              source = design == null ? StateSource.Game : StateSource.Manual;
+            ref readonly var data   = ref design.GetDesignData(baseRef);
+            var              source = design.AssociatedSource();
 
             if (!data.IsHuman)
                 continue;
@@ -56,10 +58,11 @@ public class DesignMerger(
     }
 
 
-    private static void ReduceMaterials(DesignBase? design, MergedDesign ret)
+    private static void ReduceMaterials(IDesignStandIn designStandIn, MergedDesign ret)
     {
-        if (design == null)
+        if (designStandIn is not DesignBase design)
             return;
+
         var materials = ret.Design.GetMaterialDataRef();
         foreach (var (key, value) in design.Materials.Where(p => p.Item2.Enabled))
             materials.TryAddValue(MaterialValueIndex.FromKey(key), value);
@@ -243,7 +246,7 @@ public class DesignMerger(
             ret.Sources[CustomizeIndex.Face] =  source;
         }
 
-        var set = _customize.Manager.GetSet(customize.Clan, customize.Gender);
+        var set  = _customize.Manager.GetSet(customize.Clan, customize.Gender);
         var face = customize.Face;
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {

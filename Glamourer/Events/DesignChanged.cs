@@ -122,7 +122,7 @@ public sealed class DesignChanged()
         /// <seealso cref="Gui.Tabs.DesignTab.DesignFileSystemSelector.OnDesignChange"/>
         DesignFileSystemSelector = -1,
 
-        /// <seealso cref="RevertDesignCombo.OnDesignChange"/>
+        /// <seealso cref="SpecialDesignCombo.OnDesignChange"/>
         DesignCombo = -2,
     }
 }

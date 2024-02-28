@@ -263,7 +263,7 @@ public sealed class AutoDesignApplier : IDisposable
             return;
 
         var mergedDesign = _designMerger.Merge(
-            set.Designs.Where(d => d.IsActive(actor)).SelectMany(d => d.Design?.AllLinks.Select(l => (l.Design, l.Flags & d.Type)) ?? [(d.Design, d.Type)]),
+            set.Designs.Where(d => d.IsActive(actor)).SelectMany(d => d.Design.AllLinks.Select(l => (l.Design, l.Flags & d.Type))),
             state.ModelData.Customize, state.BaseData, true, _config.AlwaysApplyAssociatedMods);
         _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, set.BaseState is AutoDesignSet.Base.Game));
     }

@@ -149,8 +149,11 @@ public class DesignColors : ISavable, IReadOnlyDictionary<string, uint>
         Load();
     }
 
-    public uint GetColor(Design design)
+    public uint GetColor(Design? design)
     {
+        if (design == null)
+            return ColorId.NormalDesign.Value();
+
         if (design.Color.Length == 0)
             return AutoColor(design);
 

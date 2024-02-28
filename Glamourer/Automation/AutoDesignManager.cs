@@ -21,11 +21,12 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
     private readonly SaveService _saveService;
 
-    private readonly JobService        _jobs;
-    private readonly DesignManager     _designs;
-    private readonly ActorManager      _actors;
-    private readonly AutomationChanged _event;
-    private readonly DesignChanged     _designEvent;
+    private readonly JobService            _jobs;
+    private readonly DesignManager         _designs;
+    private readonly ActorManager          _actors;
+    private readonly AutomationChanged     _event;
+    private readonly DesignChanged         _designEvent;
+    private readonly RandomDesignGenerator _randomDesigns;
 
     private readonly List<AutoDesignSet>                        _data    = [];
     private readonly Dictionary<ActorIdentifier, AutoDesignSet> _enabled = [];
@@ -34,14 +35,15 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         => _enabled;
 
     public AutoDesignManager(JobService jobs, ActorManager actors, SaveService saveService, DesignManager designs, AutomationChanged @event,
-        FixedDesignMigrator migrator, DesignFileSystem fileSystem, DesignChanged designEvent)
+        FixedDesignMigrator migrator, DesignFileSystem fileSystem, DesignChanged designEvent, RandomDesignGenerator randomDesigns)
     {
-        _jobs        = jobs;
-        _actors      = actors;
-        _saveService = saveService;
-        _designs     = designs;
-        _event       = @event;
-        _designEvent = designEvent;
+        _jobs          = jobs;
+        _actors        = actors;
+        _saveService   = saveService;
+        _designs       = designs;
+        _event         = @event;
+        _designEvent   = designEvent;
+        _randomDesigns = randomDesigns;
         _designEvent.Subscribe(OnDesignChange, DesignChanged.Priority.AutoDesignManager);
         Load();
         migrator.ConsumeMigratedData(_actors, fileSystem, this);
@@ -227,7 +229,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         _event.Invoke(AutomationChanged.Type.ChangedBase, set, (old, newBase));
     }
 
-    public void AddDesign(AutoDesignSet set, Design? design)
+    public void AddDesign(AutoDesignSet set, IDesignStandIn design)
     {
         var newDesign = new AutoDesign()
         {
@@ -238,7 +240,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         set.Designs.Add(newDesign);
         Save();
         Glamourer.Log.Debug(
-            $"Added new associated design {design?.Identifier.ToString() ?? "Reverter"} as design {set.Designs.Count} to design set.");
+            $"Added new associated design {design.ResolveName(true)} as design {set.Designs.Count} to design set.");
         _event.Invoke(AutomationChanged.Type.AddedDesign, set, set.Designs.Count - 1);
     }
 
@@ -278,20 +280,20 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         _event.Invoke(AutomationChanged.Type.MovedDesign, set, (from, to));
     }
 
-    public void ChangeDesign(AutoDesignSet set, int which, Design? newDesign)
+    public void ChangeDesign(AutoDesignSet set, int which, IDesignStandIn newDesign)
     {
         if (which >= set.Designs.Count || which < 0)
             return;
 
         var design = set.Designs[which];
-        if (design.Design?.Identifier == newDesign?.Identifier)
+        if (design.Design.Equals(newDesign))
             return;
 
         var old = design.Design;
         design.Design = newDesign;
         Save();
         Glamourer.Log.Debug(
-            $"Changed linked design from {old?.Identifier.ToString() ?? "Reverter"} to {newDesign?.Identifier.ToString() ?? "Reverter"} for associated design {which + 1} in design set.");
+            $"Changed linked design from {old.ResolveName(true)} to {newDesign.ResolveName(true)} for associated design {which + 1} in design set.");
         _event.Invoke(AutomationChanged.Type.ChangedDesign, set, (which, old, newDesign));
     }
 
@@ -450,8 +452,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
                     continue;
                 }
 
-                var design = ToDesignObject(set.Name, j);
-                if (design != null)
+                if (ToDesignObject(set.Name, j) is { } design)
                     set.Designs.Add(design);
             }
         }
@@ -459,10 +460,18 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
     private AutoDesign? ToDesignObject(string setName, JObject jObj)
     {
-        var     designIdentifier = jObj["Design"]?.ToObject<string?>();
-        Design? design           = null;
-        // designIdentifier == null means Revert-Design.
-        if (designIdentifier != null)
+        var             designIdentifier = jObj["Design"]?.ToObject<string?>();
+        IDesignStandIn? design;
+        // designIdentifier == null means Revert-Design for backwards compatibility
+        if (designIdentifier is null or RevertDesign.SerializedName)
+        {
+            design = new RevertDesign();
+        }
+        else if (designIdentifier is RandomDesign.SerializedName)
+        {
+            design = new RandomDesign(_randomDesigns);
+        }
+        else
         {
             if (designIdentifier.Length == 0)
             {
@@ -480,14 +489,17 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
                 return null;
             }
 
-            if (!_designs.Designs.TryGetValue(guid, out design))
+            if (!_designs.Designs.TryGetValue(guid, out var d))
             {
                 Glamourer.Messager.NotificationMessage(
                     $"Error parsing automatically applied design for set {setName}: The specified design {guid} does not exist.",
                     NotificationType.Warning);
                 return null;
             }
+
+            design = d;
         }
+        design.ParseData(jObj);
 
         // ApplicationType is a migration from an older property name.
         var applicationType = (ApplicationType)(jObj["Type"]?.ToObject<uint>() ?? jObj["ApplicationType"]?.ToObject<uint>() ?? 0);

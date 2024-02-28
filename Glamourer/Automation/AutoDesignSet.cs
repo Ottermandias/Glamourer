@@ -29,7 +29,7 @@ public class AutoDesignSet(string name, ActorIdentifier[] identifiers, List<Auto
     }
 
     public AutoDesignSet(string name, params ActorIdentifier[] identifiers)
-        : this(name, identifiers, new List<AutoDesign>())
+        : this(name, identifiers, [])
     { }
 
     public enum Base : byte

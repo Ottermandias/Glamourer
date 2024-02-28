@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Glamourer.Automation;
+using Glamourer.Designs;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Unlocks;
@@ -20,7 +21,7 @@ public class SetPanel(
     AutoDesignManager _manager,
     JobService _jobs,
     ItemUnlockManager _itemUnlocks,
-    RevertDesignCombo _designCombo,
+    SpecialDesignCombo _designCombo,
     CustomizeUnlockManager _customizeUnlocks,
     CustomizeService _customizations,
     IdentifierDrawer _identifierDrawer,
@@ -258,21 +259,22 @@ public class SetPanel(
 
     private void DrawWarnings(AutoDesign design)
     {
-        if (design.Revert)
+        if (design.Design is not DesignBase)
             return;
 
         var size = new Vector2(ImGui.GetFrameHeight());
         size.X += ImGuiHelpers.GlobalScale;
 
         var (equipFlags, customizeFlags, _, _, _) = design.ApplyWhat();
-        var sb = new StringBuilder();
+        var sb   = new StringBuilder();
+        var designData = design.Design.GetDesignData(default);
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
         {
             var flag = slot.ToFlag();
             if (!equipFlags.HasFlag(flag))
                 continue;
 
-            var item = design.Design!.DesignData.Item(slot);
+            var item = designData.Item(slot);
             if (!_itemUnlocks.IsUnlocked(item.Id, out _))
                 sb.AppendLine($"{item.Name} in {slot.ToName()} slot is not unlocked. Consider obtaining it via gameplay means!");
         }
@@ -286,8 +288,8 @@ public class SetPanel(
 
         sb.Clear();
         var sb2       = new StringBuilder();
-        var customize = design.Design!.DesignData.Customize;
-        if (!design.Design.DesignData.IsHuman)
+        var customize = designData.Customize;
+        if (!designData.IsHuman)
             sb.AppendLine("The base model id can not be changed automatically to something non-human.");
 
         var set = _customizations.Manager.GetSet(customize.Clan, customize.Gender);

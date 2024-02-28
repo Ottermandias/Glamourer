@@ -123,7 +123,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     private void DrawApplyButton(Vector2 size)
     {
-        var design    = _designCombo.Design;
+        var design    = _designCombo.Design as Design;
         var available = 0;
         var tooltip   = string.Empty;
         if (design == null)
@@ -135,7 +135,7 @@ public sealed class DesignQuickBar : Window, IDisposable
             if (_playerIdentifier.IsValid && _playerData.Valid)
             {
                 available |= 1;
-                tooltip   =  $"Left-Click: Apply {(_config.Ephemeral.IncognitoMode ? design.Incognito : design.Name)} to yourself.";
+                tooltip   =  $"Left-Click: Apply {design.ResolveName(_config.Ephemeral.IncognitoMode)} to yourself.";
             }
 
             if (_targetIdentifier.IsValid && _targetData.Valid)
@@ -143,7 +143,7 @@ public sealed class DesignQuickBar : Window, IDisposable
                 if (available != 0)
                     tooltip += '\n';
                 available |= 2;
-                tooltip   += $"Right-Click: Apply {(_config.Ephemeral.IncognitoMode ? design.Incognito : design.Name)} to {_targetIdentifier}.";
+                tooltip   += $"Right-Click: Apply {design.ResolveName(_config.Ephemeral.IncognitoMode)} to {_targetIdentifier}.";
             }
 
             if (available == 0)
@@ -157,7 +157,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         if (state == null && !_stateManager.GetOrCreate(id, data.Objects[0], out state))
         {
-            Glamourer.Messager.NotificationMessage($"Could not apply {design!.Incognito} to {id.Incognito(null)}: Failed to create state.");
+            Glamourer.Messager.NotificationMessage($"Could not apply {design!.ResolveName(true)} to {id.Incognito(null)}: Failed to create state.");
             return;
         }
 

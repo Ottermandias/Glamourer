@@ -19,28 +19,30 @@ namespace Glamourer.Services;
 
 public class CommandService : IDisposable
 {
+    private const string RandomString       = "random";
     private const string MainCommandString  = "/glamourer";
     private const string ApplyCommandString = "/glamour";
 
-    private readonly ICommandManager   _commands;
-    private readonly MainWindow        _mainWindow;
-    private readonly IChatGui          _chat;
-    private readonly ActorManager      _actors;
-    private readonly ObjectManager     _objects;
-    private readonly StateManager      _stateManager;
-    private readonly AutoDesignApplier _autoDesignApplier;
-    private readonly AutoDesignManager _autoDesignManager;
-    private readonly DesignManager     _designManager;
-    private readonly DesignConverter   _converter;
-    private readonly DesignFileSystem  _designFileSystem;
-    private readonly Configuration     _config;
-    private readonly ModSettingApplier _modApplier;
-    private readonly ItemManager       _items;
+    private readonly ICommandManager       _commands;
+    private readonly MainWindow            _mainWindow;
+    private readonly IChatGui              _chat;
+    private readonly ActorManager          _actors;
+    private readonly ObjectManager         _objects;
+    private readonly StateManager          _stateManager;
+    private readonly AutoDesignApplier     _autoDesignApplier;
+    private readonly AutoDesignManager     _autoDesignManager;
+    private readonly DesignManager         _designManager;
+    private readonly DesignConverter       _converter;
+    private readonly DesignFileSystem      _designFileSystem;
+    private readonly Configuration         _config;
+    private readonly ModSettingApplier     _modApplier;
+    private readonly ItemManager           _items;
+    private readonly RandomDesignGenerator _randomDesign;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier,
-        ItemManager items)
+        ItemManager items, RandomDesignGenerator randomDesign)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -56,6 +58,7 @@ public class CommandService : IDisposable
         _config            = config;
         _modApplier        = modApplier;
         _items             = items;
+        _randomDesign      = randomDesign;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -394,7 +397,8 @@ public class CommandService : IDisposable
             if (_items.ItemData.Primary.TryGetValue(id, out var main))
                 items[0] = main;
         }
-        else if (_items.ItemData.Primary.FindFirst(pair => string.Equals(pair.Value.Name, split[0], StringComparison.OrdinalIgnoreCase), out var i))
+        else if (_items.ItemData.Primary.FindFirst(pair => string.Equals(pair.Value.Name, split[0], StringComparison.OrdinalIgnoreCase),
+                     out var i))
         {
             items[0] = i.Value;
         }
@@ -448,7 +452,8 @@ public class CommandService : IDisposable
         var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (split.Length is not 2)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour apply ").AddYellow("[Design Name, Path or Identifier, or Clipboard]")
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour apply ")
+                .AddYellow("[Design Name, Path or Identifier, Random, or Clipboard]")
                 .AddText(" | ")
                 .AddGreen("[Character Identifier]")
                 .AddText("; ")
@@ -467,6 +472,13 @@ public class CommandService : IDisposable
                 .BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 Clipboard as a single word will try to apply a design string currently in your clipboard.").BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》 ").AddYellow("Random").AddText(" supports the following restrictions:").BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》》》 ").AddYellow("Random").AddText(", choosing a random design out of all your designs.").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddYellow("Random:{List of [text] or /[text]}").AddText(", containing a list of restrictions within swirly braces, separated by semicolons.").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddYellow("Random:[text]").AddText(", choosing a random design where the path, name or identifier contains 'text' (no brackets).").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddYellow("Random:/[text]").AddText(", choosing a random design where the path starts with 'text' (no brackets).").BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 ").AddBlue("<Enable Mods>").AddText(" is optional and can be omitted (together with the ;), ").AddBlue("true")
                 .AddText(" or ").AddBlue("false").AddText(".").BuiltString);
@@ -628,30 +640,57 @@ public class CommandService : IDisposable
         return false;
     }
 
-    private bool GetDesign(string argument, [NotNullWhen(true)] out DesignBase? design, bool allowClipboard)
+    private bool GetDesign(string argument, [NotNullWhen(true)] out DesignBase? design, bool allowSpecial)
     {
         design = null;
         if (argument.Length == 0)
             return false;
 
-        if (allowClipboard && string.Equals("clipboard", argument, StringComparison.OrdinalIgnoreCase))
+        if (allowSpecial)
         {
-            try
+            if (string.Equals("clipboard", argument, StringComparison.OrdinalIgnoreCase))
             {
-                var clipboardText = ImGui.GetClipboardText();
-                if (clipboardText.Length > 0)
-                    design = _converter.FromBase64(clipboardText, true, true, out _);
-            }
-            catch
-            {
-                // ignored
+                try
+                {
+                    var clipboardText = ImGui.GetClipboardText();
+                    if (clipboardText.Length > 0)
+                        design = _converter.FromBase64(clipboardText, true, true, out _);
+                }
+                catch
+                {
+                    // ignored
+                }
+
+                if (design != null)
+                    return true;
+
+                _chat.Print(new SeStringBuilder().AddText("Your current clipboard did not contain a valid design string.").BuiltString);
+                return false;
             }
 
-            if (design != null)
+            if (argument.StartsWith(RandomString, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    if (argument.Length == RandomString.Length)
+                        design = _randomDesign.Design();
+                    else if (argument[RandomString.Length] == ':')
+                        design = _randomDesign.Design(argument[(RandomString.Length + 1)..]);
+                    if (design == null)
+                    {
+                        _chat.Print(new SeStringBuilder().AddText("No design matched your restrictions.").BuiltString);
+                        return false;
+                    }
+                    _chat.Print($"Chose random design {((Design)design).Name}.");
+                }
+                catch (Exception ex)
+                {
+                    _chat.Print(new SeStringBuilder().AddText($"Error in the restriction string: {ex.Message}").BuiltString);
+                    return false;
+                }
+
                 return true;
-
-            _chat.Print(new SeStringBuilder().AddText("Your current clipboard did not contain a valid design string.").BuiltString);
-            return false;
+            }
         }
 
         if (Guid.TryParse(argument, out var guid))
