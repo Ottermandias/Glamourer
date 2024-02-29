@@ -80,6 +80,7 @@ public class GlamourerChangelog
                 "Changed Item Customizations in Penumbra can now be right-clicked to preview them on your character, if you have the correct Gender/Race combo on them.")
             .RegisterHighlight(
                 "Add the option to override associated collections for characters, so that automatically applied mod associations affect the overriden collection.")
+            .RegisterHighlight("Added the option to apply random designs (with optional restrictions) to characters via slash commands and automation.")
             .RegisterEntry("Added copy/paste buttons for advanced customization colors.")
             .RegisterEntry("Added alpha preview to advanced customization colors.")
             .RegisterEntry("Added a button to update the settings for an associated mod from their current settings.")
