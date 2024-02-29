@@ -3,7 +3,7 @@ using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
 
-namespace Glamourer.Designs;
+namespace Glamourer.Designs.Special;
 
 public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
 {
@@ -11,14 +11,14 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public const string  ResolvedName   = "Random";
     private      Design? _currentDesign;
 
-    public string Restrictions { get; internal set; } = string.Empty;
+    public IReadOnlyList<IDesignPredicate> Predicates { get; private set; } = [];
 
     public string ResolveName(bool _)
         => ResolvedName;
 
     public ref readonly DesignData GetDesignData(in DesignData baseRef)
     {
-        _currentDesign ??= rng.Design(Restrictions);
+        _currentDesign ??= rng.Design(Predicates);
         if (_currentDesign == null)
             return ref baseRef;
 
@@ -27,7 +27,7 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
 
     public IReadOnlyList<(uint, MaterialValueDesign)> GetMaterialData()
     {
-        _currentDesign ??= rng.Design(Restrictions);
+        _currentDesign ??= rng.Design(Predicates);
         if (_currentDesign == null)
             return [];
 
@@ -38,7 +38,9 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
         => SerializedName;
 
     public bool Equals(IDesignStandIn? other)
-        => other is RandomDesign r && string.Equals(r.Restrictions, Restrictions, StringComparison.OrdinalIgnoreCase);
+        => other is RandomDesign r
+         && string.Equals(RandomPredicate.GeneratePredicateString(r.Predicates), RandomPredicate.GeneratePredicateString(Predicates),
+                StringComparison.OrdinalIgnoreCase);
 
     public StateSource AssociatedSource()
         => StateSource.Manual;
@@ -47,7 +49,7 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     {
         get
         {
-            _currentDesign = rng.Design(Restrictions);
+            _currentDesign = rng.Design(Predicates);
             if (_currentDesign == null)
                 yield break;
 
@@ -58,12 +60,21 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
 
     public void AddData(JObject jObj)
     {
-        jObj["Restrictions"] = Restrictions;
+        jObj["Restrictions"] = RandomPredicate.GeneratePredicateString(Predicates);
     }
 
     public void ParseData(JObject jObj)
     {
         var restrictions = jObj["Restrictions"]?.ToObject<string>() ?? string.Empty;
-        Restrictions = restrictions;
+        Predicates = RandomPredicate.GeneratePredicates(restrictions);
+    }
+
+    public bool ChangeData(object data)
+    {
+        if (data is not List<IDesignPredicate> predicates)
+            return false;
+
+        Predicates = predicates;
+        return true;
     }
 }

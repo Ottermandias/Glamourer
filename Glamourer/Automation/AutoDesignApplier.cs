@@ -131,6 +131,7 @@ public sealed class AutoDesignApplier : IDisposable
             case AutomationChanged.Type.ChangedDesign:
             case AutomationChanged.Type.ChangedConditions:
             case AutomationChanged.Type.ChangedType:
+            case AutomationChanged.Type.ChangedData:
                 ApplyNew(set);
                 break;
         }

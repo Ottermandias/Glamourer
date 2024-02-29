@@ -2,6 +2,7 @@
 using Dalamud.Interface.Utility;
 using Glamourer.Automation;
 using Glamourer.Designs;
+using Glamourer.Designs.Special;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Unlocks;
@@ -25,7 +26,8 @@ public class SetPanel(
     CustomizeUnlockManager _customizeUnlocks,
     CustomizeService _customizations,
     IdentifierDrawer _identifierDrawer,
-    Configuration _config)
+    Configuration _config,
+    RandomRestrictionDrawer _randomDrawer)
 {
     private readonly JobGroupCombo _jobGroupCombo = new(_manager, _jobs, Glamourer.Log);
 
@@ -115,6 +117,7 @@ public class SetPanel(
         ImGui.Separator();
         ImGui.Dummy(Vector2.Zero);
         DrawDesignTable();
+        _randomDrawer.Draw();
     }
 
 
@@ -190,6 +193,7 @@ public class SetPanel(
             ImGui.Selectable($"#{idx + 1:D2}");
             DrawDragDrop(Selection, idx);
             ImGui.TableNextColumn();
+            DrawRandomEditing(Selection, design, idx);
             _designCombo.Draw(Selection, design, idx);
             DrawDragDrop(Selection, idx);
             if (singleRow)
@@ -257,6 +261,15 @@ public class SetPanel(
         }
     }
 
+    private void DrawRandomEditing(AutoDesignSet set, AutoDesign design, int designIdx)
+    {
+        if (design.Design is not RandomDesign)
+            return;
+
+        _randomDrawer.DrawButton(set, designIdx);
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+    }
+
     private void DrawWarnings(AutoDesign design)
     {
         if (design.Design is not DesignBase)
@@ -266,7 +279,7 @@ public class SetPanel(
         size.X += ImGuiHelpers.GlobalScale;
 
         var (equipFlags, customizeFlags, _, _, _) = design.ApplyWhat();
-        var sb   = new StringBuilder();
+        var sb         = new StringBuilder();
         var designData = design.Design.GetDesignData(default);
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
         {

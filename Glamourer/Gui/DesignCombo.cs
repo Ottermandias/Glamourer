@@ -2,6 +2,7 @@
 using Dalamud.Interface.Utility.Raii;
 using Glamourer.Automation;
 using Glamourer.Designs;
+using Glamourer.Designs.Special;
 using Glamourer.Events;
 using ImGuiNET;
 using OtterGui;
@@ -206,6 +207,42 @@ public sealed class LinkDesignCombo(
             .Select(d => new Tuple<IDesignStandIn, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
             .OrderBy(d => d.Item2),
     ]);
+
+public sealed class RandomDesignCombo(
+    DesignManager designs,
+    DesignFileSystem fileSystem,
+    Logger log,
+    DesignChanged designChanged,
+    TabSelected tabSelected,
+    EphemeralConfig config,
+    DesignColors designColors)
+    : DesignCombo(log, designChanged, tabSelected, config, designColors, () =>
+    [
+        .. designs.Designs
+            .Select(d => new Tuple<IDesignStandIn, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
+            .OrderBy(d => d.Item2),
+    ])
+{
+    private Design? GetDesign(RandomPredicate.Exact exact)
+    {
+        return exact.Which switch
+        {
+            RandomPredicate.Exact.Type.Name => designs.Designs.FirstOrDefault(d => d.Name == exact.Value),
+            RandomPredicate.Exact.Type.Path => fileSystem.Find(exact.Value.Text, out var c) && c is DesignFileSystem.Leaf l ? l.Value : null,
+            RandomPredicate.Exact.Type.Identifier => designs.Designs.ByIdentifier(Guid.TryParse(exact.Value.Text, out var g) ? g : Guid.Empty),
+            _ => null,
+        };
+    }
+
+    public bool Draw(RandomPredicate.Exact exact, float width)
+    {
+        var design = GetDesign(exact);
+        return Draw(design, design?.ResolveName(Incognito) ?? $"Not Found [{exact.Value.Text}]", width);
+    }
+
+    public bool Draw(IDesignStandIn? design, float width)
+        => Draw(design, design?.ResolveName(Incognito) ?? string.Empty, width);
+}
 
 public sealed class SpecialDesignCombo(
     DesignManager designs,

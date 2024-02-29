@@ -46,7 +46,7 @@ public sealed class AutomationChanged()
         /// <summary> Move a given associated design in the list of a given set. Additional data is the index that got moved and the index it got moved to [(int, int)]. </summary>
         MovedDesign,
 
-        /// <summary> Change the linked design in an associated design for a given set. Additional data is the index of the changed associated design, the old linked design and the new linked design [(int, Design, Design)]. </summary>
+        /// <summary> Change the linked design in an associated design for a given set. Additional data is the index of the changed associated design, the old linked design and the new linked design [(int, IDesignStandIn, IDesignStandIn)]. </summary>
         ChangedDesign,
 
         /// <summary> Change the job condition in an associated design for a given set. Additional data is the index of the changed associated design, the old job group and the new job group [(int, JobGroup, JobGroup)]. </summary>
@@ -54,6 +54,9 @@ public sealed class AutomationChanged()
 
         /// <summary> Change the application type in an associated design for a given set. Additional data is the index of the changed associated design, the old type and the new type. [(int, AutoDesign.Type, AutoDesign.Type)]. </summary>
         ChangedType,
+
+        /// <summary> Change the additional data for a specific design type. Additional data is the index of the changed associated design and the new data. [(int, object)] </summary>
+        ChangedData,
     }
 
     public enum Priority
@@ -62,6 +65,9 @@ public sealed class AutomationChanged()
         SetSelector = 0,
 
         /// <seealso cref="AutoDesignApplier.OnAutomationChange"/>
-        AutoDesignApplier,
+        AutoDesignApplier = 0,
+
+        /// <seealso cref="Gui.Tabs.AutomationTab.RandomRestrictionDrawer.OnAutomationChange"/>
+        RandomRestrictionDrawer = -1,
     }
 }

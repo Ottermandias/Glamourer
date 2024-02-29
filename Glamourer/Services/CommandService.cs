@@ -3,6 +3,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Designs;
+using Glamourer.Designs.Special;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -473,12 +474,7 @@ public class CommandService : IDisposable
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 Clipboard as a single word will try to apply a design string currently in your clipboard.").BuiltString);
             _chat.Print(new SeStringBuilder()
-                .AddText("    》 ").AddYellow("Random").AddText(" supports the following restrictions:").BuiltString);
-            _chat.Print(new SeStringBuilder()
-                .AddText("    》》》 ").AddYellow("Random").AddText(", choosing a random design out of all your designs.").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddYellow("Random:{List of [text] or /[text]}").AddText(", containing a list of restrictions within swirly braces, separated by semicolons.").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddYellow("Random:[text]").AddText(", choosing a random design where the path, name or identifier contains 'text' (no brackets).").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddYellow("Random:/[text]").AddText(", choosing a random design where the path starts with 'text' (no brackets).").BuiltString);
+                .AddText("    》 ").AddYellow("Random").AddText(" supports many restrictions, see the Restriction Builder when adding a Random design to Automations for valid strings.").BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 ").AddBlue("<Enable Mods>").AddText(" is optional and can be omitted (together with the ;), ").AddBlue("true")
                 .AddText(" or ").AddBlue("false").AddText(".").BuiltString);

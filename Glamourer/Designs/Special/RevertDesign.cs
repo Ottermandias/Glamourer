@@ -3,7 +3,7 @@ using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
 
-namespace Glamourer.Designs;
+namespace Glamourer.Designs.Special;
 
 public class RevertDesign : IDesignStandIn
 {
@@ -38,4 +38,7 @@ public class RevertDesign : IDesignStandIn
 
     public void ParseData(JObject jObj)
     { }
+
+    public bool ChangeData(object data)
+        => false;
 }

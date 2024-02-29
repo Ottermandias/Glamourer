@@ -290,7 +290,7 @@ public class SetSelector : IDisposable
             id = _actors.CreatePlayer(ByteString.FromSpanUnsafe("New Design"u8, true, false, true), ushort.MaxValue);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), size,
                 $"Create a new Automatic Design Set for {id}. The associated player can be changed later.", !id.IsValid, true))
-            _manager.AddDesignSet("New Design", id);
+            _manager.AddDesignSet("New Automation Set", id);
     }
 
     private void DuplicateSetButton(Vector2 size)

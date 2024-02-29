@@ -158,15 +158,13 @@ public sealed unsafe class AdvancedDyePopup(
         if (config.KeepAdvancedDyesAttached)
         {
             var position = ImGui.GetWindowPos();
-            position.X += ImGui.GetWindowSize().X;
+            position.X += ImGui.GetWindowSize().X + ImGui.GetStyle().WindowPadding.X;
             ImGui.SetNextWindowPos(position);
             flags |= ImGuiWindowFlags.NoMove;
         }
-
         var size = new Vector2(7 * ImGui.GetFrameHeight() + 3 * ImGui.GetStyle().ItemInnerSpacing.X + 300 * ImGuiHelpers.GlobalScale,
-            18 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + ImGui.GetStyle().ItemSpacing.Y);
+            18 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + 2 * ImGui.GetStyle().ItemSpacing.Y);
         ImGui.SetNextWindowSize(size);
-
 
         var window = ImGui.Begin("###Glamourer Advanced Dyes", flags);
         try

@@ -1,4 +1,5 @@
 ﻿using Glamourer.Designs;
+using Glamourer.Designs.Special;
 using Glamourer.GameData;
 using Glamourer.Interop.Structs;
 using Newtonsoft.Json.Linq;
@@ -9,8 +10,6 @@ namespace Glamourer.Automation;
 
 public class AutoDesign
 {
-    public const string RevertName = "Revert";
-
     public IDesignStandIn  Design = new RevertDesign();
     public JobGroup        Jobs;
     public ApplicationType Type;

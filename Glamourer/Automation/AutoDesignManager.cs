@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
+using Glamourer.Designs.Special;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Services;
@@ -347,6 +348,20 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         _event.Invoke(AutomationChanged.Type.ChangedType, set, (which, old, applicationType));
     }
 
+    public void ChangeData(AutoDesignSet set, int which, object data)
+    {
+        if (which >= set.Designs.Count || which < 0)
+            return;
+
+        var design = set.Designs[which];
+        if (!design.Design.ChangeData(data))
+            return;
+
+        Save();
+        Glamourer.Log.Debug($"Changed additional design data for associated design {which + 1} in design set.");
+        _event.Invoke(AutomationChanged.Type.ChangedData, set, (which, data));
+    }
+
     public string ToFilename(FilenameService fileNames)
         => fileNames.AutomationFile;
 
@@ -499,6 +514,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
             design = d;
         }
+
         design.ParseData(jObj);
 
         // ApplicationType is a migration from an older property name.

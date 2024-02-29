@@ -20,4 +20,6 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
     public void AddData(JObject jObj);
 
     public void ParseData(JObject jObj);
+
+    public bool ChangeData(object data);
 }

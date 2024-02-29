@@ -149,6 +149,7 @@ public static class ServiceManagerA
             .AddSingleton<DesignTab>()
             .AddSingleton<QuickDesignCombo>()
             .AddSingleton<LinkDesignCombo>()
+            .AddSingleton<RandomDesignCombo>()
             .AddSingleton<SpecialDesignCombo>()
             .AddSingleton<ModAssociationsTab>()
             .AddSingleton<DesignDetailTab>()

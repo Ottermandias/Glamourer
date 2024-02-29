@@ -81,6 +81,9 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     public void ParseData(JObject _)
     { }
 
+    public bool ChangeData(object data)
+        => false;
+
     #endregion
 
     #region Serialization
