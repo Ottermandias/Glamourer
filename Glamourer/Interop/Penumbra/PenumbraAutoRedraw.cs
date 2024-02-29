@@ -96,7 +96,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
         {
             // Only update once per frame.
             var playerName = _penumbra.GetCurrentPlayerCollection();
-            if (playerName == name)
+            if (playerName != name)
                 return;
 
             var currentFrame = _framework.LastUpdateUTC;
