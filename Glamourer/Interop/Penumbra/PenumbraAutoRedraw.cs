@@ -95,6 +95,10 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
         else if (_config.AutoRedrawEquipOnChanges)
         {
             // Only update once per frame.
+            var playerName = _penumbra.GetCurrentPlayerCollection();
+            if (playerName == name)
+                return;
+
             var currentFrame = _framework.LastUpdateUTC;
             if (currentFrame == _frame)
                 return;
@@ -102,9 +106,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
             _frame = currentFrame;
             _framework.RunOnFrameworkThread(() =>
             {
-                var playerName = _penumbra.GetCurrentPlayerCollection();
-                if (playerName == name)
-                    _state.ReapplyState(_objects.Player, StateSource.IpcManual);
+                _state.ReapplyState(_objects.Player, StateSource.IpcManual);
                 Glamourer.Log.Debug(
                     $"Automatically applied mod settings of type {type} to {_objects.PlayerData.Identifier.Incognito(null)} (Local Player).");
             });
