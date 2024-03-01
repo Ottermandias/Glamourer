@@ -3,13 +3,14 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Glamourer.Events;
+using OtterGui.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.String;
 
 namespace Glamourer.Interop;
 
-public unsafe class InventoryService : IDisposable
+public unsafe class InventoryService : IDisposable, IRequiredService
 {
     private readonly MovedEquipment                   _movedItemsEvent;
     private readonly EquippedGearset                  _gearsetEvent;
