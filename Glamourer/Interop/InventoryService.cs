@@ -10,7 +10,7 @@ using Penumbra.String;
 
 namespace Glamourer.Interop;
 
-public unsafe class InventoryService : IDisposable, IRequiredService
+public sealed unsafe class InventoryService : IDisposable, IRequiredService
 {
     private readonly MovedEquipment                   _movedItemsEvent;
     private readonly EquippedGearset                  _gearsetEvent;

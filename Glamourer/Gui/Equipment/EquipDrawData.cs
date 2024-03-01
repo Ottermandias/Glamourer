@@ -14,6 +14,12 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
     public          bool          DisplayApplication;
     public          bool          AllowRevert;
 
+    public readonly bool IsDesign
+        => _object is Design;
+
+    public readonly bool IsState
+        => _object is ActorState;
+
     public readonly void SetItem(EquipItem item)
         => _editor.ChangeItem(_object, Slot, item, ApplySettings.Manual);
 

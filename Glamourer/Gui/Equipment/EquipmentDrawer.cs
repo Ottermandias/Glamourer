@@ -285,7 +285,7 @@ public class EquipmentDrawer
             ImGui.SameLine();
             DrawApplyStain(equipDrawData);
         }
-        else
+        else if (equipDrawData.IsState)
         {
             _advancedDyes.DrawButton(equipDrawData.Slot);
         }
@@ -309,7 +309,7 @@ public class EquipmentDrawer
             ImGui.SameLine();
             DrawApplyStain(mainhand);
         }
-        else
+        else if (mainhand.IsState)
         {
             _advancedDyes.DrawButton(EquipSlot.MainHand);
         }
@@ -331,7 +331,7 @@ public class EquipmentDrawer
             ImGui.SameLine();
             DrawApplyStain(offhand);
         }
-        else
+        else if (offhand.IsState)
         {
             _advancedDyes.DrawButton(EquipSlot.OffHand);
         }
@@ -365,7 +365,7 @@ public class EquipmentDrawer
             ImGui.SameLine();
             DrawApplyStain(equipDrawData);
         }
-        else
+        else if (equipDrawData.IsState)
         {
             _advancedDyes.DrawButton(equipDrawData.Slot);
         }
@@ -402,7 +402,7 @@ public class EquipmentDrawer
                 ImGui.SameLine();
                 DrawApplyStain(mainhand);
             }
-            else
+            else if (mainhand.IsState)
             {
                 _advancedDyes.DrawButton(EquipSlot.MainHand);
             }
@@ -432,7 +432,7 @@ public class EquipmentDrawer
                 ImGui.SameLine();
                 DrawApplyStain(offhand);
             }
-            else
+            else if (mainhand.IsState)
             {
                 _advancedDyes.DrawButton(EquipSlot.OffHand);
             }
