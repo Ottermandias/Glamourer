@@ -29,6 +29,7 @@ public class GlamourerChangelog
         Add1_1_0_2(Changelog);
         Add1_1_0_4(Changelog);
         AddDummy(Changelog);
+        AddDummy(Changelog);
         Add1_2_0_0(Changelog);
     }
 
@@ -55,7 +56,9 @@ public class GlamourerChangelog
             .RegisterHighlight("Added the option to link to other designs in a design, causing all of them to be applied at once.")
             .RegisterEntry("This required reworking the handling for applying multiple designs at once (i.e.merging them).", 1)
             .RegisterEntry(
-                "This was a considerable backend change on both automation sets and design application. I may have messed up and introduced bugs. Please let me know if something does not work right anymore.",
+                "This was a considerable backend change on both automation sets and design application. I may have messed up and introduced bugs. "
+              + "The new version was on Testing for multiple weeks, but not many people use it. "
+              + "Please let me know if something does not work right anymore.",
                 1)
             .RegisterHighlight("Added advanced dye options for equipment. You can now live-edit the color sets of your gear.")
             .RegisterEntry(
@@ -80,12 +83,16 @@ public class GlamourerChangelog
                 "Changed Item Customizations in Penumbra can now be right-clicked to preview them on your character, if you have the correct Gender/Race combo on them.")
             .RegisterHighlight(
                 "Add the option to override associated collections for characters, so that automatically applied mod associations affect the overriden collection.")
-            .RegisterHighlight("Added the option to apply random designs (with optional restrictions) to characters via slash commands and automation.")
+            .RegisterHighlight(
+                "Added the option to apply random designs (with optional restrictions) to characters via slash commands and automation.")
             .RegisterEntry("Added copy/paste buttons for advanced customization colors.")
             .RegisterEntry("Added alpha preview to advanced customization colors.")
             .RegisterEntry("Added a button to update the settings for an associated mod from their current settings.")
+            .RegisterHighlight("Added 'Revert Equipment' and 'Revert Customizations' buttons to the Quick Design Bar.")
+            .RegisterEntry("You can now toggle every functionality of the Quick Design Bar on or off separately.")
             .RegisterEntry("Updated a few fun module things. Now there are Pink elephants on parade!")
             .RegisterEntry("Split up the IPC source state so IPC consumers can apply designs without them sticking around.")
+            .RegisterEntry("Fixed an issue with gearset changes not registering in Glamourer for Automation.")
             .RegisterEntry("Fixed an issue with weapon loading being dependant on the order of loading Penumbra and Glamourer.")
             .RegisterEntry(
                 "Fixed an issue with buttons sharing state and switching from design duplication to creating new ones caused errors.")
