@@ -22,8 +22,7 @@ public class DesignMerger(
         => Merge(designs.Select(d => ((IDesignStandIn)d.Link, d.Type)), currentCustomize, baseRef, respectOwnership, modAssociations);
 
     public MergedDesign Merge(IEnumerable<(IDesignStandIn, ApplicationType)> designs, in CustomizeArray currentCustomize, in DesignData baseRef,
-        bool respectOwnership,
-        bool modAssociations)
+        bool respectOwnership, bool modAssociations)
     {
         var ret = new MergedDesign(designManager);
         ret.Design.SetCustomize(_customize, currentCustomize);
@@ -211,7 +210,10 @@ public class DesignMerger(
     private void ReduceCustomize(in DesignData design, CustomizeFlag customizeFlags, ref CustomizeFlag fixFlags, MergedDesign ret,
         StateSource source, bool respectOwnership)
     {
-        customizeFlags &= ~ret.Design.ApplyCustomizeRaw;
+        customizeFlags &= ~ret.Design.ApplyCustomizeExcludingBodyType;
+        if (ret.Design.DesignData.Customize.BodyType != 1)
+            customizeFlags &= ~CustomizeFlag.BodyType;
+
         if (customizeFlags == 0)
             return;
 
@@ -244,6 +246,13 @@ public class DesignMerger(
             ret.Design.SetApplyCustomize(CustomizeIndex.Face, true);
             customizeFlags                   &= ~CustomizeFlag.Face;
             ret.Sources[CustomizeIndex.Face] =  source;
+        }
+
+        if (customizeFlags.HasFlag(CustomizeFlag.BodyType))
+        {
+            customize[CustomizeIndex.BodyType]   =  design.Customize.BodyType;
+            customizeFlags                       &= ~CustomizeFlag.BodyType;
+            ret.Sources[CustomizeIndex.BodyType] =  source;
         }
 
         var set  = _customize.Manager.GetSet(customize.Clan, customize.Gender);
