@@ -61,6 +61,24 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         AddButton(CloneDesignButton,  20);
         AddButton(DeleteButton,       1000);
         SetFilterTooltip();
+
+        if (_config.Ephemeral.SelectedDesign == Guid.Empty)
+            return;
+
+        var design = designManager.Designs.ByIdentifier(_config.Ephemeral.SelectedDesign);
+        if (design != null)
+            SelectByValue(design);
+    }
+
+    protected override void Select(FileSystem<Design>.Leaf? leaf, bool clear, in DesignState storage = default)
+    {
+        base.Select(leaf, clear, storage);
+        var id = SelectedLeaf?.Value.Identifier ?? Guid.Empty;
+        if (id != _config.Ephemeral.SelectedDesign)
+        {
+            _config.Ephemeral.SelectedDesign = id;
+            _config.Ephemeral.Save();
+        }
     }
 
     protected override void DrawPopups()

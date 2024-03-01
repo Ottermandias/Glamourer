@@ -91,6 +91,7 @@ public class MainWindow : Window, IDisposable
             messages,
             debugTab,
         ];
+        SelectTab = _config.Ephemeral.SelectedTab;
         _event.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
         IsOpen = _config.OpenWindowAtStart;
     }
