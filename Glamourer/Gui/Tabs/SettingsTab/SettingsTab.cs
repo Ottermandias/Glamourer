@@ -175,6 +175,9 @@ public class SettingsTab(
         ImGui.Separator();
         ImGui.Dummy(Vector2.Zero);
 
+        Checkbox("Allow Double-Clicking Designs to Apply",
+            "Tries to apply a design to the current player character When double-clicking it in the design selector.",
+            config.AllowDoubleClickToApply, v => config.AllowDoubleClickToApply = v);
         Checkbox("Show all Application Rule Checkboxes for Automation",
             "Show multiple separate application rule checkboxes for automated designs, instead of a single box for enabling or disabling.",
             config.ShowAllAutomatedApplicationRules, v => config.ShowAllAutomatedApplicationRules = v);
@@ -183,9 +186,6 @@ public class SettingsTab(
             config.ShowUnlockedItemWarnings, v => config.ShowUnlockedItemWarnings = v);
         if (config.UseAdvancedParameters)
         {
-            //Checkbox("Show Revert Advanced Customizations Button in Quick Design Bar",
-            //    "Show a button to revert only advanced customizations on your character or a target in the quick design bar.",
-            //    config.ShowRevertAdvancedParametersButton, v => config.ShowRevertAdvancedParametersButton = v);
             Checkbox("Show Color Display Config", "Show the Color Display configuration options in the Advanced Customization panels.",
                 config.ShowColorConfig,           v => config.ShowColorConfig = v);
             Checkbox("Show Palette+ Import Button",
@@ -207,13 +207,14 @@ public class SettingsTab(
 
     private void DrawQuickDesignBoxes()
     {
-        var       showAuto     = config.EnableAutoDesigns;
-        var       showAdvanced = config.UseAdvancedParameters || config.UseAdvancedDyes;
-        var       numColumns   = 6 - (showAuto ? 0 : 1) - (showAdvanced ? 0 : 1);
+        var showAuto     = config.EnableAutoDesigns;
+        var showAdvanced = config.UseAdvancedParameters || config.UseAdvancedDyes;
+        var numColumns   = 6 - (showAuto ? 0 : 1) - (showAdvanced ? 0 : 1);
         ImGui.NewLine();
         ImGui.TextUnformatted("Show the Following Buttons in the Quick Design Bar:");
         ImGui.Dummy(Vector2.Zero);
-        using var table        = ImRaii.Table("##tableQdb", numColumns, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.Borders | ImGuiTableFlags.NoHostExtendX);
+        using var table = ImRaii.Table("##tableQdb", numColumns,
+            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.Borders | ImGuiTableFlags.NoHostExtendX);
         if (!table)
             return;
 

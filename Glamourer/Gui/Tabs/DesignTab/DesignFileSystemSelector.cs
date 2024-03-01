@@ -3,6 +3,7 @@ using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
 using Glamourer.Designs;
 using Glamourer.Events;
+using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -21,6 +22,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     private readonly DesignConverter _converter;
     private readonly TabSelected     _selectionEvent;
     private readonly DesignColors    _designColors;
+    private readonly DesignApplier   _designApplier;
 
     private string? _clipboardText;
     private Design? _cloneDesign;
@@ -43,7 +45,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     { }
 
     public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, IKeyState keyState, DesignChanged @event,
-        Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log, DesignColors designColors)
+        Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log, DesignColors designColors,
+        DesignApplier designApplier)
         : base(fileSystem, keyState, log, allowMultipleSelection: true)
     {
         _designManager  = designManager;
@@ -52,6 +55,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         _converter      = converter;
         _selectionEvent = selectionEvent;
         _designColors   = designColors;
+        _designApplier  = designApplier;
         _event.Subscribe(OnDesignChange, DesignChanged.Priority.DesignFileSystemSelector);
         _selectionEvent.Subscribe(OnTabSelected, TabSelected.Priority.DesignSelector);
         _designColors.ColorChanged += SetFilterDirty;
@@ -92,6 +96,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         var       name  = IncognitoMode ? leaf.Value.Incognito : leaf.Value.Name.Text;
         using var color = ImRaii.PushColor(ImGuiCol.Text, state.Color);
         using var _     = ImRaii.TreeNode(name, flag);
+        if (_config.AllowDoubleClickToApply && ImGui.IsItemHovered() && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
+            _designApplier.ApplyToPlayer(leaf.Value);
     }
 
     public override void Dispose()

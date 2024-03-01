@@ -68,6 +68,9 @@ public sealed class StateManager(
         if (TryGetValue(identifier, out state))
             return true;
 
+        if (!actor.Valid)
+            return false;
+
         try
         {
             // Initial Creation, use the actors data for the base data, 
