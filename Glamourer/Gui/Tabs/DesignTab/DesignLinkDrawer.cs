@@ -230,13 +230,13 @@ public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSe
         ImGui.SameLine();
         Box(4);
         if (newType != current)
-            _linkManager.ChangeApplicationType(_selector.Selected!, idx, order, current);
+            _linkManager.ChangeApplicationType(_selector.Selected!, idx, order, newType);
         return;
 
         void Box(int i)
         {
             var (applicationType, description) = ApplicationTypeExtensions.Types[i];
-            var value = applicationType.HasFlag(applicationType);
+            var value = current.HasFlag(applicationType);
             if (ImGui.Checkbox($"##{(byte)applicationType}", ref value))
                 newType = value ? newType | applicationType : newType & ~applicationType;
             ImGuiUtil.HoverTooltip(description);

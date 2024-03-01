@@ -77,7 +77,7 @@ public class GlamourerChangelog
                 "This is off by default and I strongly recommend AGAINST using it, since Glamourer has no way to revert such changes. You are responsible for keeping your collection in order.",
                 1)
             .RegisterHighlight(
-                "Added mouse wheel scrolling to many selectors, e.g. for equipment, dyes or customizations. You need to hold Control while ")
+                "Added mouse wheel scrolling to many selectors, e.g. for equipment, dyes or customizations. You need to hold Control while scrolling in most places.")
             .RegisterEntry("Improved handling for highlights with advanced customization colors and normal customization settings.")
             .RegisterHighlight(
                 "Changed Item Customizations in Penumbra can now be right-clicked to preview them on your character, if you have the correct Gender/Race combo on them.")
