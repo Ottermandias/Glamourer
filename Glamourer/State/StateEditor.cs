@@ -364,10 +364,13 @@ public class StateEditor(
 
     public void ApplyDesign(object data, DesignBase design, ApplySettings settings)
     {
-        var merged = settings.MergeLinks && design is Design d
-            ? merger.Merge(d.AllLinks, ((ActorState)data).ModelData.Customize, ((ActorState)data).BaseData, false,
-                Config.AlwaysApplyAssociatedMods)
-            : new MergedDesign(design);
+        var          state = (ActorState)data;
+        MergedDesign merged;
+        if (!settings.MergeLinks || design is not Design d)
+            merged = new MergedDesign(design);
+        else
+            merged = merger.Merge(d.AllLinks, state.ModelData.IsHuman ? state.ModelData.Customize : CustomizeArray.Default, state.BaseData,
+                false, Config.AlwaysApplyAssociatedMods);
 
         ApplyDesign(data, merged, settings with
         {
