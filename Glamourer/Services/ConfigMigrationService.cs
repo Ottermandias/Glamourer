@@ -4,36 +4,36 @@ using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Services;
 
-public class ConfigMigrationService
+public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator, BackupService backupService)
 {
-    private readonly SaveService         _saveService;
-    private readonly FixedDesignMigrator _fixedDesignMigrator;
-    private readonly BackupService       _backupService;
-
     private Configuration _config = null!;
     private JObject       _data   = null!;
-
-    public ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator, BackupService backupService)
-    {
-        _saveService         = saveService;
-        _fixedDesignMigrator = fixedDesignMigrator;
-        _backupService       = backupService;
-    }
 
     public void Migrate(Configuration config)
     {
         _config = config;
-        if (config.Version >= Configuration.Constants.CurrentVersion || !File.Exists(_saveService.FileNames.ConfigFile))
+        if (config.Version >= Configuration.Constants.CurrentVersion || !File.Exists(saveService.FileNames.ConfigFile))
         {
             AddColors(config, false);
             return;
         }
 
-        _data = JObject.Parse(File.ReadAllText(_saveService.FileNames.ConfigFile));
+        _data = JObject.Parse(File.ReadAllText(saveService.FileNames.ConfigFile));
         MigrateV1To2();
         MigrateV2To4();
         MigrateV4To5();
+        MigrateV5To6();
         AddColors(config, true);
+    }
+
+    private void MigrateV5To6()
+    {
+        if (_config.Version > 5)
+            return;
+
+        if (_data["ShowRevertAdvancedParametersButton"]?.ToObject<bool>() ?? true)
+            _config.QdbButtons |= QdbButtons.RevertAdvanced;
+        _config.Version = 6;
     }
 
     // Ephemeral Config.
@@ -59,8 +59,8 @@ public class ConfigMigrationService
         if (_config.Version > 1)
             return;
 
-        _backupService.CreateMigrationBackup("pre_v1_to_v2_migration");
-        _fixedDesignMigrator.Migrate(_data["FixedDesigns"]);
+        backupService.CreateMigrationBackup("pre_v1_to_v2_migration");
+        fixedDesignMigrator.Migrate(_data["FixedDesigns"]);
         _config.Version = 2;
         var customizationColor = _data["CustomizationColor"]?.ToObject<uint>() ?? ColorId.CustomizationDesign.Data().DefaultColor;
         _config.Colors[ColorId.CustomizationDesign] = customizationColor;

@@ -16,6 +16,17 @@ using Penumbra.GameData.Actors;
 
 namespace Glamourer.Gui;
 
+[Flags]
+public enum QdbButtons
+{
+    ApplyDesign      = 0x01,
+    RevertAll        = 0x02,
+    RevertAutomation = 0x04,
+    RevertAdvanced   = 0x08,
+    RevertEquip      = 0x10,
+    RevertCustomize  = 0x20,
+}
+
 public sealed class DesignQuickBar : Window, IDisposable
 {
     private ImGuiWindowFlags GetFlags
@@ -55,7 +66,7 @@ public sealed class DesignQuickBar : Window, IDisposable
     public override void PreOpenCheck()
     {
         CheckHotkeys();
-        IsOpen = _config.Ephemeral.ShowDesignQuickBar;
+        IsOpen = _config.Ephemeral.ShowDesignQuickBar && _config.QdbButtons != 0;
     }
 
     public override void PreDraw()
@@ -93,15 +104,20 @@ public sealed class DesignQuickBar : Window, IDisposable
         var       spacing    = ImGui.GetStyle().ItemInnerSpacing;
         using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
         var       buttonSize = new Vector2(ImGui.GetFrameHeight());
-        var       comboSize  = width - _numButtons * (buttonSize.X + spacing.X);
-        _designCombo.Draw(comboSize);
         PrepareButtons();
-        ImGui.SameLine();
-        DrawApplyButton(buttonSize);
-        ImGui.SameLine();
+        if (_config.QdbButtons.HasFlag(QdbButtons.ApplyDesign))
+        {
+            var comboSize = width - _numButtons * (buttonSize.X + spacing.X);
+            _designCombo.Draw(comboSize);
+            ImGui.SameLine();
+            DrawApplyButton(buttonSize);
+        }
+
         DrawRevertButton(buttonSize);
-        DrawRevertAutomationButton(buttonSize);
+        DrawRevertEquipButton(buttonSize);
+        DrawRevertCustomizeButton(buttonSize);
         DrawRevertAdvancedCustomization(buttonSize);
+        DrawRevertAutomationButton(buttonSize);
     }
 
     private ActorIdentifier _playerIdentifier;
@@ -152,12 +168,14 @@ public sealed class DesignQuickBar : Window, IDisposable
 
 
         var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.PlayCircle, size, tooltip, available);
+        ImGui.SameLine();
         if (!clicked)
             return;
 
         if (state == null && !_stateManager.GetOrCreate(id, data.Objects[0], out state))
         {
-            Glamourer.Messager.NotificationMessage($"Could not apply {design!.ResolveName(true)} to {id.Incognito(null)}: Failed to create state.");
+            Glamourer.Messager.NotificationMessage(
+                $"Could not apply {design!.ResolveName(true)} to {id.Incognito(null)}: Failed to create state.");
             return;
         }
 
@@ -166,8 +184,11 @@ public sealed class DesignQuickBar : Window, IDisposable
         _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks);
     }
 
-    public void DrawRevertButton(Vector2 buttonSize)
+    private void DrawRevertButton(Vector2 buttonSize)
     {
+        if (!_config.QdbButtons.HasFlag(QdbButtons.RevertAll))
+            return;
+
         var available = 0;
         var tooltip   = string.Empty;
         if (_playerIdentifier.IsValid && _playerState is { IsLocked: false })
@@ -188,13 +209,17 @@ public sealed class DesignQuickBar : Window, IDisposable
             tooltip = "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.";
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, tooltip, available);
+        ImGui.SameLine();
         if (clicked)
             _stateManager.ResetState(state!, StateSource.Manual);
     }
 
-    public void DrawRevertAutomationButton(Vector2 buttonSize)
+    private void DrawRevertAutomationButton(Vector2 buttonSize)
     {
         if (!_config.EnableAutoDesigns)
+            return;
+
+        if (!_config.QdbButtons.HasFlag(QdbButtons.RevertAutomation))
             return;
 
         var available = 0;
@@ -217,8 +242,8 @@ public sealed class DesignQuickBar : Window, IDisposable
         if (available == 0)
             tooltip = "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.";
 
-        ImGui.SameLine();
         var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.SyncAlt, buttonSize, tooltip, available);
+        ImGui.SameLine();
         if (!clicked)
             return;
 
@@ -229,9 +254,12 @@ public sealed class DesignQuickBar : Window, IDisposable
         }
     }
 
-    public void DrawRevertAdvancedCustomization(Vector2 buttonSize)
+    private void DrawRevertAdvancedCustomization(Vector2 buttonSize)
     {
-        if (!_config.ShowRevertAdvancedParametersButton || !_config.UseAdvancedParameters)
+        if (!_config.UseAdvancedParameters)
+            return;
+
+        if (!_config.QdbButtons.HasFlag(QdbButtons.RevertAdvanced))
             return;
 
         var available = 0;
@@ -254,10 +282,72 @@ public sealed class DesignQuickBar : Window, IDisposable
         if (available == 0)
             tooltip = "Neither player character nor target are available or their state is locked.";
 
-        ImGui.SameLine();
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Palette, buttonSize, tooltip, available);
+        ImGui.SameLine();
         if (clicked)
             _stateManager.ResetAdvancedState(state!, StateSource.Manual);
+    }
+
+    private void DrawRevertCustomizeButton(Vector2 buttonSize)
+    {
+        if (!_config.QdbButtons.HasFlag(QdbButtons.RevertCustomize))
+            return;
+
+        var available = 0;
+        var tooltip   = string.Empty;
+
+        if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
+        {
+            available |= 1;
+            tooltip   =  "Left-Click: Revert the customizations of the player character to their game state.";
+        }
+
+        if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
+        {
+            if (available != 0)
+                tooltip += '\n';
+            available |= 2;
+            tooltip   += $"Right-Click: Revert the customizations of {_targetIdentifier} to their game state.";
+        }
+
+        if (available == 0)
+            tooltip = "Neither player character nor target are available or their state is locked.";
+
+        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.User, buttonSize, tooltip, available);
+        ImGui.SameLine();
+        if (clicked)
+            _stateManager.ResetCustomize(state!, StateSource.Manual);
+    }
+
+    private void DrawRevertEquipButton(Vector2 buttonSize)
+    {
+        if (!_config.QdbButtons.HasFlag(QdbButtons.RevertEquip))
+            return;
+
+        var available = 0;
+        var tooltip   = string.Empty;
+
+        if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
+        {
+            available |= 1;
+            tooltip   =  "Left-Click: Revert the equipment of the player character to its game state.";
+        }
+
+        if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
+        {
+            if (available != 0)
+                tooltip += '\n';
+            available |= 2;
+            tooltip   += $"Right-Click: Revert the equipment of {_targetIdentifier} to its game state.";
+        }
+
+        if (available == 0)
+            tooltip = "Neither player character nor target are available or their state is locked.";
+
+        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Vest, buttonSize, tooltip, available);
+        ImGui.SameLine();
+        if (clicked)
+            _stateManager.ResetEquip(state!, StateSource.Manual);
     }
 
     private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(FontAwesomeIcon icon, Vector2 buttonSize, string tooltip,
@@ -292,15 +382,32 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     private float UpdateWidth()
     {
-        _numButtons = (_config.EnableAutoDesigns, _config is { ShowRevertAdvancedParametersButton: true, UseAdvancedParameters: true }) switch
+        _numButtons = 0;
+        if (_config.QdbButtons.HasFlag(QdbButtons.RevertAll))
+            ++_numButtons;
+        if (_config.EnableAutoDesigns && _config.QdbButtons.HasFlag(QdbButtons.RevertAutomation))
+            ++_numButtons;
+        if ((_config.UseAdvancedParameters || _config.UseAdvancedDyes) && _config.QdbButtons.HasFlag(QdbButtons.RevertAdvanced))
+            ++_numButtons;
+        if (_config.QdbButtons.HasFlag(QdbButtons.RevertCustomize))
+            ++_numButtons;
+        if (_config.QdbButtons.HasFlag(QdbButtons.RevertEquip))
+            ++_numButtons;
+        if (_config.QdbButtons.HasFlag(QdbButtons.ApplyDesign))
         {
-            (true, true)   => 4,
-            (false, true)  => 3,
-            (true, false)  => 3,
-            (false, false) => 2,
-        };
-        Size = new Vector2((7 + _numButtons) * ImGui.GetFrameHeight() + _numButtons * ImGui.GetStyle().ItemInnerSpacing.X,
-            ImGui.GetFrameHeight());
+            ++_numButtons;
+            Size = new Vector2((7 + _numButtons) * ImGui.GetFrameHeight() + _numButtons * ImGui.GetStyle().ItemInnerSpacing.X,
+                ImGui.GetFrameHeight());
+        }
+        else
+        {
+            Size = new Vector2(
+                _numButtons * ImGui.GetFrameHeight()
+              + (_numButtons - 1) * ImGui.GetStyle().ItemInnerSpacing.X
+              + ImGui.GetStyle().WindowPadding.X * 2,
+                ImGui.GetFrameHeight());
+        }
+
         return Size.Value.X;
     }
 }

@@ -29,7 +29,8 @@ public sealed class StateManager(
     DesignMerger merger,
     ModSettingApplier modApplier,
     GPoseService gPose)
-    : StateEditor(editor, applier, @event, jobChange, config, items, merger, modApplier, gPose), IReadOnlyDictionary<ActorIdentifier, ActorState>
+    : StateEditor(editor, applier, @event, jobChange, config, items, merger, modApplier, gPose),
+        IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
     private readonly Dictionary<ActorIdentifier, ActorState> _states = [];
 
@@ -225,7 +226,7 @@ public sealed class StateManager(
          || !state.ModelData.IsHuman
          || CustomizeArray.Compare(state.ModelData.Customize, state.BaseData.Customize).RequiresRedraw();
 
-        state.ModelData =  state.BaseData;
+        state.ModelData = state.BaseData;
         state.ModelData.SetIsWet(false);
         foreach (var index in Enum.GetValues<CustomizeIndex>())
             state.Sources[index] = StateSource.Game;
@@ -279,6 +280,55 @@ public sealed class StateManager(
         Glamourer.Log.Verbose(
             $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChanged.Type.Reset, source, state, actors, null);
+    }
+
+    public void ResetCustomize(ActorState state, StateSource source, uint key = 0)
+    {
+        if (!state.Unlock(key) || !state.ModelData.IsHuman)
+            return;
+
+        foreach (var flag in CustomizationExtensions.All)
+            state.Sources[flag] = StateSource.Game;
+
+        state.ModelData = state.BaseData;
+        var actors = ActorData.Invalid;
+        if (source is not StateSource.Game)
+            actors = Applier.ChangeCustomize(state, true);
+        Glamourer.Log.Verbose(
+            $"Reset customization state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
+    }
+
+    public void ResetEquip(ActorState state, StateSource source, uint key = 0)
+    {
+        if (!state.Unlock(key))
+            return;
+
+        foreach (var slot in EquipSlotExtensions.FullSlots)
+        {
+            state.Sources[slot, true]  = StateSource.Game;
+            state.Sources[slot, false] = StateSource.Game;
+            if (source is not StateSource.Game)
+            {
+                state.ModelData.SetItem(slot, state.BaseData.Item(slot));
+                state.ModelData.SetStain(slot, state.BaseData.Stain(slot));
+            }
+        }
+
+        var actors = ActorData.Invalid;
+        if (source is not StateSource.Game)
+        {
+            actors = Applier.ChangeArmor(state, EquipSlotExtensions.EqdpSlots[0], true);
+            foreach (var slot in EquipSlotExtensions.EqdpSlots.Skip(1))
+                Applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), !state.Sources[slot, false].IsIpc(),
+                    state.ModelData.IsHatVisible());
+
+            var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
+            Applier.ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
+            var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? actors.OnlyGPose() : actors;
+            Applier.ChangeOffhand(offhandActors, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
+        }
+
+        Glamourer.Log.Verbose($"Reset equipment state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
     }
 
     public void ResetStateFixed(ActorState state, bool respectManualPalettes, uint key = 0)

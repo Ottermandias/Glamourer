@@ -159,10 +159,6 @@ public class MainWindow : Window, IDisposable
     {
         var width = ImGui.CalcTextSize("Join Discord for Support").X + ImGui.GetStyle().FramePadding.X * 2;
         var xPos  = ImGui.GetWindowWidth() - width;
-        // Respect the scroll bar width.
-        if (ImGui.GetScrollMaxY() > 0)
-            xPos -= ImGui.GetStyle().ScrollbarSize + ImGui.GetStyle().FramePadding.X;
-
         ImGui.SetCursorPos(new Vector2(xPos, 0));
         CustomGui.DrawDiscordButton(Glamourer.Messager, width);
 

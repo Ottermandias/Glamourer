@@ -120,6 +120,7 @@ public class SettingsTab(
         Checkbox("Show Quick Design Bar in Main Window",
             "Show the quick design bar in the tab selection part of the main window, too.",
             config.ShowQuickBarInTabs, v => config.ShowQuickBarInTabs = v);
+        DrawQuickDesignBoxes();
 
         ImGui.Dummy(Vector2.Zero);
         ImGui.Separator();
@@ -133,6 +134,12 @@ public class SettingsTab(
                     contextMenuService.Enable();
                 else
                     contextMenuService.Disable();
+            });
+        Checkbox("Show Window when UI is Hidden", "Whether to show Glamourer windows even when the games UI is hidden.",
+            config.ShowWindowWhenUiHidden,        v =>
+            {
+                config.ShowWindowWhenUiHidden = v;
+                uiBuilder.DisableUserUiHide   = v;
             });
         Checkbox("Hide Window in Cutscenes", "Whether the main Glamourer window should automatically be hidden when entering cutscenes or not.",
             config.HideWindowInCutscene,
@@ -176,9 +183,9 @@ public class SettingsTab(
             config.ShowUnlockedItemWarnings, v => config.ShowUnlockedItemWarnings = v);
         if (config.UseAdvancedParameters)
         {
-            Checkbox("Show Revert Advanced Customizations Button in Quick Design Bar",
-                "Show a button to revert only advanced customizations on your character or a target in the quick design bar.",
-                config.ShowRevertAdvancedParametersButton, v => config.ShowRevertAdvancedParametersButton = v);
+            //Checkbox("Show Revert Advanced Customizations Button in Quick Design Bar",
+            //    "Show a button to revert only advanced customizations on your character or a target in the quick design bar.",
+            //    config.ShowRevertAdvancedParametersButton, v => config.ShowRevertAdvancedParametersButton = v);
             Checkbox("Show Color Display Config", "Show the Color Display configuration options in the Advanced Customization panels.",
                 config.ShowColorConfig,           v => config.ShowColorConfig = v);
             Checkbox("Show Palette+ Import Button",
@@ -198,6 +205,52 @@ public class SettingsTab(
         ImGui.NewLine();
     }
 
+    private void DrawQuickDesignBoxes()
+    {
+        var       showAuto     = config.EnableAutoDesigns;
+        var       showAdvanced = config.UseAdvancedParameters || config.UseAdvancedDyes;
+        var       numColumns   = 6 - (showAuto ? 0 : 1) - (showAdvanced ? 0 : 1);
+        ImGui.NewLine();
+        ImGui.TextUnformatted("Show the Following Buttons in the Quick Design Bar:");
+        ImGui.Dummy(Vector2.Zero);
+        using var table        = ImRaii.Table("##tableQdb", numColumns, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.Borders | ImGuiTableFlags.NoHostExtendX);
+        if (!table)
+            return;
+
+        var columns = new[]
+        {
+            (" Apply Design ", true, QdbButtons.ApplyDesign),
+            (" Revert All ", true, QdbButtons.RevertAll),
+            (" Revert to Auto ", showAuto, QdbButtons.RevertAutomation),
+            (" Revert Equip ", true, QdbButtons.RevertEquip),
+            (" Revert Customization ", true, QdbButtons.RevertCustomize),
+            (" Revert Advanced ", showAdvanced, QdbButtons.RevertAdvanced),
+        };
+
+        foreach (var (label, _, _) in columns.Where(t => t.Item2))
+        {
+            ImGui.TableNextColumn();
+            ImGui.TableHeader(label);
+        }
+
+        foreach (var (_, _, flag) in columns.Where(t => t.Item2))
+        {
+            using var id = ImRaii.PushId((int)flag);
+            ImGui.TableNextColumn();
+            var offset = (ImGui.GetContentRegionAvail().X - ImGui.GetFrameHeight()) / 2;
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + offset);
+            var value = config.QdbButtons.HasFlag(flag);
+            if (!ImGui.Checkbox(string.Empty, ref value))
+                continue;
+
+            var buttons = value ? config.QdbButtons | flag : config.QdbButtons & ~flag;
+            if (buttons == config.QdbButtons)
+                continue;
+
+            config.QdbButtons = buttons;
+            config.Save();
+        }
+    }
 
     private void PaletteImportButton()
     {

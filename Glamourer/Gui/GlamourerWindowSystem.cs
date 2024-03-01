@@ -25,6 +25,7 @@ public class GlamourerWindowSystem : IDisposable
         _uiBuilder.Draw                  += _windowSystem.Draw;
         _uiBuilder.OpenConfigUi          += _ui.Toggle;
         _uiBuilder.DisableCutsceneUiHide =  !config.HideWindowInCutscene;
+        _uiBuilder.DisableUserUiHide     =  config.ShowWindowWhenUiHidden;
     }
 
     public void Dispose()

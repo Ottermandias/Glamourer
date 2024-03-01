@@ -18,35 +18,38 @@ public class Configuration : IPluginConfiguration, ISavable
     [JsonIgnore]
     public readonly EphemeralConfig Ephemeral;
 
-    public bool                 UseRestrictedGearProtection        { get; set; } = false;
-    public bool                 OpenFoldersByDefault               { get; set; } = false;
-    public bool                 AutoRedrawEquipOnChanges           { get; set; } = false;
-    public bool                 EnableAutoDesigns                  { get; set; } = true;
-    public bool                 HideApplyCheckmarks                { get; set; } = false;
-    public bool                 SmallEquip                         { get; set; } = false;
-    public bool                 UnlockedItemMode                   { get; set; } = false;
-    public byte                 DisableFestivals                   { get; set; } = 1;
-    public bool                 EnableGameContextMenu              { get; set; } = true;
-    public bool                 HideWindowInCutscene               { get; set; } = false;
-    public bool                 ShowAutomationSetEditing           { get; set; } = true;
-    public bool                 ShowAllAutomatedApplicationRules   { get; set; } = true;
-    public bool                 ShowUnlockedItemWarnings           { get; set; } = true;
-    public bool                 RevertManualChangesOnZoneChange    { get; set; } = false;
-    public bool                 ShowQuickBarInTabs                 { get; set; } = true;
-    public bool                 OpenWindowAtStart                  { get; set; } = false;
-    public bool                 UseAdvancedParameters              { get; set; } = true;
-    public bool                 UseAdvancedDyes                    { get; set; } = true;
-    public bool                 KeepAdvancedDyesAttached           { get; set; } = true;
-    public bool                 ShowRevertAdvancedParametersButton { get; set; } = true;
-    public bool                 ShowPalettePlusImport              { get; set; } = true;
-    public bool                 UseFloatForColors                  { get; set; } = true;
-    public bool                 UseRgbForColors                    { get; set; } = true;
-    public bool                 ShowColorConfig                    { get; set; } = true;
-    public bool                 ChangeEntireItem                   { get; set; } = false;
-    public bool                 AlwaysApplyAssociatedMods          { get; set; } = false;
-    public ModifiableHotkey     ToggleQuickDesignBar               { get; set; } = new(VirtualKey.NO_KEY);
-    public DoubleModifier       DeleteDesignModifier               { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
-    public ChangeLogDisplayType ChangeLogDisplayType               { get; set; } = ChangeLogDisplayType.New;
+    public bool                 UseRestrictedGearProtection      { get; set; } = false;
+    public bool                 OpenFoldersByDefault             { get; set; } = false;
+    public bool                 AutoRedrawEquipOnChanges         { get; set; } = false;
+    public bool                 EnableAutoDesigns                { get; set; } = true;
+    public bool                 HideApplyCheckmarks              { get; set; } = false;
+    public bool                 SmallEquip                       { get; set; } = false;
+    public bool                 UnlockedItemMode                 { get; set; } = false;
+    public byte                 DisableFestivals                 { get; set; } = 1;
+    public bool                 EnableGameContextMenu            { get; set; } = true;
+    public bool                 HideWindowInCutscene             { get; set; } = false;
+    public bool                 ShowAutomationSetEditing         { get; set; } = true;
+    public bool                 ShowAllAutomatedApplicationRules { get; set; } = true;
+    public bool                 ShowUnlockedItemWarnings         { get; set; } = true;
+    public bool                 RevertManualChangesOnZoneChange  { get; set; } = false;
+    public bool                 ShowQuickBarInTabs               { get; set; } = true;
+    public bool                 OpenWindowAtStart                { get; set; } = false;
+    public bool                 ShowWindowWhenUiHidden           { get; set; } = false;
+    public bool                 UseAdvancedParameters            { get; set; } = true;
+    public bool                 UseAdvancedDyes                  { get; set; } = true;
+    public bool                 KeepAdvancedDyesAttached         { get; set; } = true;
+    public bool                 ShowPalettePlusImport            { get; set; } = true;
+    public bool                 UseFloatForColors                { get; set; } = true;
+    public bool                 UseRgbForColors                  { get; set; } = true;
+    public bool                 ShowColorConfig                  { get; set; } = true;
+    public bool                 ChangeEntireItem                 { get; set; } = false;
+    public bool                 AlwaysApplyAssociatedMods        { get; set; } = false;
+    public ModifiableHotkey     ToggleQuickDesignBar             { get; set; } = new(VirtualKey.NO_KEY);
+    public DoubleModifier       DeleteDesignModifier             { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
+    public ChangeLogDisplayType ChangeLogDisplayType             { get; set; } = ChangeLogDisplayType.New;
+
+    public QdbButtons QdbButtons { get; set; } =
+        QdbButtons.ApplyDesign | QdbButtons.RevertAll | QdbButtons.RevertAutomation | QdbButtons.RevertAdvanced;
 
     [JsonConverter(typeof(SortModeConverter))]
     [JsonProperty(Order = int.MaxValue)]
@@ -78,15 +81,8 @@ public class Configuration : IPluginConfiguration, ISavable
     public void Save()
         => _saveService.DelaySave(this);
 
-    public void Load(ConfigMigrationService migrator)
+    private void Load(ConfigMigrationService migrator)
     {
-        static void HandleDeserializationError(object? sender, ErrorEventArgs errorArgs)
-        {
-            Glamourer.Log.Error(
-                $"Error parsing Configuration at {errorArgs.ErrorContext.Path}, using default or migrating:\n{errorArgs.ErrorContext.Error}");
-            errorArgs.ErrorContext.Handled = true;
-        }
-
         if (!File.Exists(_saveService.FileNames.ConfigFile))
             return;
 
@@ -107,6 +103,14 @@ public class Configuration : IPluginConfiguration, ISavable
             }
 
         migrator.Migrate(this);
+        return;
+
+        static void HandleDeserializationError(object? sender, ErrorEventArgs errorArgs)
+        {
+            Glamourer.Log.Error(
+                $"Error parsing Configuration at {errorArgs.ErrorContext.Path}, using default or migrating:\n{errorArgs.ErrorContext.Error}");
+            errorArgs.ErrorContext.Handled = true;
+        }
     }
 
     public string ToFilename(FilenameService fileNames)
@@ -114,14 +118,15 @@ public class Configuration : IPluginConfiguration, ISavable
 
     public void Save(StreamWriter writer)
     {
-        using var jWriter    = new JsonTextWriter(writer) { Formatting = Formatting.Indented };
-        var       serializer = new JsonSerializer { Formatting         = Formatting.Indented };
+        using var jWriter = new JsonTextWriter(writer);
+        jWriter.Formatting = Formatting.Indented;
+        var serializer = new JsonSerializer { Formatting = Formatting.Indented };
         serializer.Serialize(jWriter, this);
     }
 
     public static class Constants
     {
-        public const int CurrentVersion = 5;
+        public const int CurrentVersion = 6;
 
         public static readonly ISortMode<Design>[] ValidSortModes =
         {
