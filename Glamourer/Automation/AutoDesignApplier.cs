@@ -263,9 +263,13 @@ public sealed class AutoDesignApplier : IDisposable
         else if (!respectManual)
         {
             state.Sources.RemoveFixedDesignSources();
-            foreach(var (key, value) in state.Materials.Values)
+            for (var i = 0; i < state.Materials.Values.Count; ++i)
+            {
+                var (key, value) = state.Materials.Values[i];
                 if (value.Source is StateSource.Fixed)
-                    state.Materials.UpdateValue(key, new MaterialValueState(value.Game, value.Model, value.DrawData, StateSource.Manual), out _);
+                    state.Materials.UpdateValue(key, new MaterialValueState(value.Game, value.Model, value.DrawData, StateSource.Manual),
+                        out _);
+            }
         }
 
         if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
