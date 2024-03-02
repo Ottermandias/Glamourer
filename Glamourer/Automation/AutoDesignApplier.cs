@@ -4,6 +4,7 @@ using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.Interop;
+using Glamourer.Interop.Material;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using Penumbra.GameData.Actors;
@@ -256,9 +257,16 @@ public sealed class AutoDesignApplier : IDisposable
     private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual, bool fromJobChange)
     {
         if (set.BaseState is AutoDesignSet.Base.Game)
+        {
             _state.ResetStateFixed(state, respectManual);
+        }
         else if (!respectManual)
+        {
             state.Sources.RemoveFixedDesignSources();
+            foreach(var (key, value) in state.Materials.Values)
+                if (value.Source is StateSource.Fixed)
+                    state.Materials.UpdateValue(key, new MaterialValueState(value.Game, value.Model, value.DrawData, StateSource.Manual), out _);
+        }
 
         if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
             return;
@@ -266,7 +274,7 @@ public sealed class AutoDesignApplier : IDisposable
         var mergedDesign = _designMerger.Merge(
             set.Designs.Where(d => d.IsActive(actor)).SelectMany(d => d.Design.AllLinks.Select(l => (l.Design, l.Flags & d.Type))),
             state.ModelData.Customize, state.BaseData, true, _config.AlwaysApplyAssociatedMods);
-        _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, set.BaseState is AutoDesignSet.Base.Game));
+        _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, false));
     }
 
     /// <summary> Get world-specific first and all-world afterward. </summary>

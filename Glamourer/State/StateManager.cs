@@ -322,8 +322,10 @@ public sealed class StateManager(
         {
             actors = Applier.ChangeArmor(state, EquipSlotExtensions.EqdpSlots[0], true);
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Skip(1))
+            {
                 Applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), !state.Sources[slot, false].IsIpc(),
                     state.ModelData.IsHatVisible());
+            }
 
             var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
             Applier.ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
@@ -331,7 +333,8 @@ public sealed class StateManager(
             Applier.ChangeOffhand(offhandActors, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
         }
 
-        Glamourer.Log.Verbose($"Reset equipment state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
+        Glamourer.Log.Verbose(
+            $"Reset equipment state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
     }
 
     public void ResetStateFixed(ActorState state, bool respectManualPalettes, uint key = 0)
@@ -385,6 +388,17 @@ public sealed class StateManager(
         {
             state.Sources[meta] = StateSource.Game;
             state.ModelData.SetMeta(meta, state.BaseData.GetMeta(meta));
+        }
+
+        foreach (var (index, value) in state.Materials.Values.ToList())
+        {
+            switch (value.Source)
+            {
+                case StateSource.Fixed:
+                case StateSource.Manual when !respectManualPalettes:
+                    state.Materials.RemoveValue(index);
+                    break;
+            }
         }
     }
 

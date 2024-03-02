@@ -228,6 +228,9 @@ public readonly struct MaterialValueManager<T>
     }
 
     public bool TryGetValue(MaterialValueIndex index, out T value)
+        => TryGetValue(index.Key, out value);
+
+    public bool TryGetValue(uint key, out T value)
     {
         if (_values.Count == 0)
         {
@@ -235,7 +238,7 @@ public readonly struct MaterialValueManager<T>
             return false;
         }
 
-        var idx = Search(index.Key);
+        var idx = Search(key);
         if (idx >= 0)
         {
             value = _values[idx].Value;
@@ -247,8 +250,10 @@ public readonly struct MaterialValueManager<T>
     }
 
     public bool TryAddValue(MaterialValueIndex index, in T value)
+        => TryAddValue(index.Key, value);
+
+    public bool TryAddValue(uint key, in T value)
     {
-        var key = index.Key;
         var idx = Search(key);
         if (idx >= 0)
             return false;
@@ -258,11 +263,14 @@ public readonly struct MaterialValueManager<T>
     }
 
     public bool RemoveValue(MaterialValueIndex index)
+        => RemoveValue(index.Key);
+
+    public bool RemoveValue(uint key)
     {
         if (_values.Count == 0)
             return false;
 
-        var idx = Search(index.Key);
+        var idx = Search(key);
         if (idx < 0)
             return false;
 
@@ -271,8 +279,10 @@ public readonly struct MaterialValueManager<T>
     }
 
     public void AddOrUpdateValue(MaterialValueIndex index, in T value)
+        => AddOrUpdateValue(index.Key, value);
+
+    public void AddOrUpdateValue(uint key, in T value)
     {
-        var key = index.Key;
         var idx = Search(key);
         if (idx < 0)
             _values.Insert(~idx, (key, value));
@@ -281,6 +291,9 @@ public readonly struct MaterialValueManager<T>
     }
 
     public bool UpdateValue(MaterialValueIndex index, in T value, out T oldValue)
+        => UpdateValue(index.Key, value, out oldValue);
+
+    public bool UpdateValue(uint key, in T value, out T oldValue)
     {
         if (_values.Count == 0)
         {
@@ -288,7 +301,6 @@ public readonly struct MaterialValueManager<T>
             return false;
         }
 
-        var key = index.Key;
         var idx = Search(key);
         if (idx < 0)
         {
