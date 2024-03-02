@@ -26,7 +26,8 @@ public class DesignMerger(
     {
         var ret = new MergedDesign(designManager);
         ret.Design.SetCustomize(_customize, currentCustomize);
-        CustomizeFlag fixFlags = 0;
+        var           startBodyType = currentCustomize.BodyType;
+        CustomizeFlag fixFlags      = 0;
         respectOwnership &= _config.UnlockedItemMode;
         foreach (var (design, type) in designs)
         {
@@ -41,7 +42,7 @@ public class DesignMerger(
 
             var (equipFlags, customizeFlags, crestFlags, parameterFlags, applyMeta) = type.ApplyWhat(design);
             ReduceMeta(data, applyMeta, ret, source);
-            ReduceCustomize(data, customizeFlags, ref fixFlags, ret, source, respectOwnership);
+            ReduceCustomize(data, customizeFlags, ref fixFlags, ret, source, respectOwnership, startBodyType);
             ReduceEquip(data, equipFlags, ret, source, respectOwnership);
             ReduceMainhands(data, equipFlags, ret, source, respectOwnership);
             ReduceOffhands(data, equipFlags, ret, source, respectOwnership);
@@ -208,10 +209,10 @@ public class DesignMerger(
     }
 
     private void ReduceCustomize(in DesignData design, CustomizeFlag customizeFlags, ref CustomizeFlag fixFlags, MergedDesign ret,
-        StateSource source, bool respectOwnership)
+        StateSource source, bool respectOwnership, CustomizeValue startBodyType)
     {
         customizeFlags &= ~ret.Design.ApplyCustomizeExcludingBodyType;
-        if (ret.Design.DesignData.Customize.BodyType != 1)
+        if (ret.Design.DesignData.Customize.BodyType != startBodyType)
             customizeFlags &= ~CustomizeFlag.BodyType;
 
         if (customizeFlags == 0)
