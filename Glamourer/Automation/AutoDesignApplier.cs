@@ -151,7 +151,7 @@ public sealed class AutoDesignApplier : IDisposable
                 {
                     if (_state.GetOrCreate(id, data.Objects[0], out var state))
                     {
-                        Reduce(data.Objects[0], state, newSet, false, false);
+                        Reduce(data.Objects[0], state, newSet, _config.RespectManualOnAutomationUpdate, false);
                         foreach (var actor in data.Objects)
                             _state.ReapplyState(actor, StateSource.Fixed);
                     }
@@ -163,7 +163,7 @@ public sealed class AutoDesignApplier : IDisposable
                         var specificId = actor.GetIdentifier(_actors);
                         if (_state.GetOrCreate(specificId, actor, out var state))
                         {
-                            Reduce(actor, state, newSet, false, false);
+                            Reduce(actor, state, newSet, _config.RespectManualOnAutomationUpdate, false);
                             _state.ReapplyState(actor, StateSource.Fixed);
                         }
                     }

@@ -45,6 +45,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool                 ChangeEntireItem                 { get; set; } = false;
     public bool                 AlwaysApplyAssociatedMods        { get; set; } = false;
     public bool                 AllowDoubleClickToApply          { get; set; } = false;
+    public bool                 RespectManualOnAutomationUpdate  { get; set; } = false;
     public ModifiableHotkey     ToggleQuickDesignBar             { get; set; } = new(VirtualKey.NO_KEY);
     public DoubleModifier       DeleteDesignModifier             { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
     public ChangeLogDisplayType ChangeLogDisplayType             { get; set; } = ChangeLogDisplayType.New;

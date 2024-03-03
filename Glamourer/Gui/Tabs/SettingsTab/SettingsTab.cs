@@ -7,7 +7,6 @@ using Glamourer.Designs;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.PalettePlus;
-using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
 using ImGuiNET;
@@ -78,6 +77,9 @@ public class SettingsTab(
         Checkbox("Do Not Apply Unobtained Items in Automation",
             "Enable this if you want automatically applied designs to only consider items and customizations you have actually unlocked once, and skip those you have not.",
             config.UnlockedItemMode, v => config.UnlockedItemMode = v);
+        Checkbox("Respect Manual Changes When Editing Automation",
+            "Whether changing any currently active automation group will respect manual changes to the character before re-applying the changed automation or not.",
+            config.RespectManualOnAutomationUpdate, v => config.RespectManualOnAutomationUpdate = v);
         Checkbox("Enable Festival Easter-Eggs",
             "Glamourer may do some fun things on specific dates. Disable this if you do not want your experience disrupted by this.",
             config.DisableFestivals == 0, v => config.DisableFestivals = v ? (byte)0 : (byte)2);
