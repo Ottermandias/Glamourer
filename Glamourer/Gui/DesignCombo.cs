@@ -14,9 +14,9 @@ namespace Glamourer.Gui;
 
 public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, string>>, IDisposable
 {
-    private readonly   EphemeralConfig _config;
-    private readonly   DesignChanged   _designChanged;
-    private readonly   DesignColors    _designColors;
+    protected readonly EphemeralConfig Config;
+    protected readonly DesignChanged   DesignChanged;
+    protected readonly DesignColors    DesignColors;
     protected readonly TabSelected     TabSelected;
     protected          float           InnerWidth;
     private            IDesignStandIn? _currentDesign;
@@ -25,19 +25,19 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         TabSelected tabSelected, EphemeralConfig config, DesignColors designColors)
         : base(generator, MouseWheelType.Control, log)
     {
-        _designChanged = designChanged;
-        TabSelected    = tabSelected;
-        _config        = config;
-        _designColors  = designColors;
-        _designChanged.Subscribe(OnDesignChange, DesignChanged.Priority.DesignCombo);
+        DesignChanged = designChanged;
+        TabSelected   = tabSelected;
+        Config        = config;
+        DesignColors  = designColors;
+        DesignChanged.Subscribe(OnDesignChange, DesignChanged.Priority.DesignCombo);
     }
 
     public bool Incognito
-        => _config.IncognitoMode;
+        => Config.IncognitoMode;
 
     void IDisposable.Dispose()
     {
-        _designChanged.Unsubscribe(OnDesignChange);
+        DesignChanged.Unsubscribe(OnDesignChange);
         GC.SuppressFinalize(this);
     }
 
@@ -45,42 +45,47 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
     {
         var (design, path) = Items[globalIdx];
         bool ret;
-        if (design is Design realDesign)
+        switch (design)
         {
-            using var color = ImRaii.PushColor(ImGuiCol.Text, _designColors.GetColor(realDesign));
-            ret = base.DrawSelectable(globalIdx, selected);
+            case Design realDesign:
 
-            if (path.Length > 0 && realDesign.Name != path)
             {
-                var start          = ImGui.GetItemRectMin();
-                var pos            = start.X + ImGui.CalcTextSize(realDesign.Name).X;
-                var maxSize        = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
-                var remainingSpace = maxSize - pos;
-                var requiredSize   = ImGui.CalcTextSize(path).X + ImGui.GetStyle().ItemInnerSpacing.X;
-                var offset         = remainingSpace - requiredSize;
-                if (ImGui.GetScrollMaxY() == 0)
-                    offset -= ImGui.GetStyle().ItemInnerSpacing.X;
-
-                if (offset < ImGui.GetStyle().ItemSpacing.X)
-                    ImGuiUtil.HoverTooltip(path);
-                else
-                    ImGui.GetWindowDrawList().AddText(start with { X = pos + offset },
-                        ImGui.GetColorU32(ImGuiCol.TextDisabled), path);
+                using var color = ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(realDesign));
+                ret = base.DrawSelectable(globalIdx, selected);
+                DrawPath(path, realDesign);
+                return ret;
             }
+            case QuickSelectedDesign quickDesign:
+            {
+                ret = base.DrawSelectable(globalIdx, selected);
+                DrawResolvedDesign(quickDesign);
+                return ret;
+            }
+            default: return base.DrawSelectable(globalIdx, selected);
         }
+    }
+
+    private static void DrawPath(string path, Design realDesign)
+    {
+        if (path.Length <= 0 || realDesign.Name == path)
+            return;
+
+        DrawRightAligned(realDesign.Name, path, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+    }
+
+    private void DrawResolvedDesign(QuickSelectedDesign quickDesign)
+    {
+        var linkedDesign = quickDesign.CurrentDesign;
+        if (linkedDesign != null)
+            DrawRightAligned(quickDesign.ResolveName(false), linkedDesign.Name.Text, DesignColors.GetColor(linkedDesign));
         else
-        {
-            ret = base.DrawSelectable(globalIdx, selected);
-        }
-
-
-        return ret;
+            DrawRightAligned(quickDesign.ResolveName(false), "[Nothing]", DesignColors.MissingColor);
     }
 
     protected override int UpdateCurrentSelected(int currentSelected)
     {
         CurrentSelectionIdx = Items.IndexOf(p => _currentDesign == p.Item1);
-        CurrentSelection    = CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : null;
+        UpdateSelection(CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : null);
         return CurrentSelectionIdx;
     }
 
@@ -90,7 +95,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         InnerWidth     = 400 * ImGuiHelpers.GlobalScale;
         var  name = label ?? "Select Design Here...";
         bool ret;
-        using (_ = currentDesign != null ? ImRaii.PushColor(ImGuiCol.Text, _designColors.GetColor(currentDesign as Design)) : null)
+        using (_ = currentDesign != null ? ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(currentDesign as Design)) : null)
         {
             ret = Draw("##design", name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing())
              && CurrentSelection != null;
@@ -102,6 +107,8 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
                 TabSelected.Invoke(MainWindow.TabType.Designs, design);
             ImGuiUtil.HoverTooltip("Control + Right-Click to move to design.");
         }
+
+        QuickSelectedDesignTooltip(currentDesign);
 
         _currentDesign = null;
         return ret;
@@ -134,22 +141,63 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
                 CurrentSelectionIdx = Items.IndexOf(s => ReferenceEquals(s.Item1, CurrentSelection?.Item1));
                 if (CurrentSelectionIdx >= 0)
                 {
-                    CurrentSelection = Items[CurrentSelectionIdx];
+                    UpdateSelection(Items[CurrentSelectionIdx]);
                 }
                 else if (Items.Count > 0)
                 {
                     CurrentSelectionIdx = 0;
-                    CurrentSelection    = Items[0];
+                    UpdateSelection(Items[0]);
                 }
                 else
                 {
-                    CurrentSelection = null;
+                    UpdateSelection(null);
                 }
 
                 if (!priorState)
                     Cleanup();
                 break;
         }
+    }
+
+    private void QuickSelectedDesignTooltip(IDesignStandIn? design)
+    {
+        if (!ImGui.IsItemHovered())
+            return;
+
+        if (design is not QuickSelectedDesign q)
+            return;
+
+        using var tt           = ImRaii.Tooltip();
+        var       linkedDesign = q.CurrentDesign;
+        if (linkedDesign != null)
+        {
+            ImGui.TextUnformatted("Currently resolving to ");
+            using var color = ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(linkedDesign));
+            ImGui.SameLine(0, 0);
+            ImGui.TextUnformatted(linkedDesign.Name);
+        }
+        else
+        {
+            ImGui.TextUnformatted("No design selected in the Quick Design Bar.");
+        }
+    }
+
+    private static void DrawRightAligned(string leftText, string text, uint color)
+    {
+        var start          = ImGui.GetItemRectMin();
+        var pos            = start.X + ImGui.CalcTextSize(leftText).X;
+        var maxSize        = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
+        var remainingSpace = maxSize - pos;
+        var requiredSize   = ImGui.CalcTextSize(text).X + ImGui.GetStyle().ItemInnerSpacing.X;
+        var offset         = remainingSpace - requiredSize;
+        if (ImGui.GetScrollMaxY() == 0)
+            offset -= ImGui.GetStyle().ItemInnerSpacing.X;
+
+        if (offset < ImGui.GetStyle().ItemSpacing.X)
+            ImGuiUtil.HoverTooltip(text);
+        else
+            ImGui.GetWindowDrawList().AddText(start with { X = pos + offset },
+                color, text);
     }
 }
 
@@ -190,7 +238,41 @@ public sealed class QuickDesignCombo : DesignCombo
                 .Select(d => new Tuple<IDesignStandIn, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
                 .OrderBy(d => d.Item2),
         ])
-        => AllowMouseWheel = MouseWheelType.Unmodified;
+    {
+        if (config.SelectedQuickDesign != Guid.Empty)
+        {
+            CurrentSelectionIdx = Items.IndexOf(t => t.Item1 is Design d && d.Identifier == config.SelectedQuickDesign);
+            if (CurrentSelectionIdx >= 0)
+                CurrentSelection = Items[CurrentSelectionIdx];
+            else if (Items.Count > 0)
+                CurrentSelectionIdx = 0;
+        }
+
+        AllowMouseWheel  =  MouseWheelType.Unmodified;
+        SelectionChanged += OnSelectionChange;
+    }
+
+    private void OnSelectionChange(Tuple<IDesignStandIn, string>? old, Tuple<IDesignStandIn, string>? @new)
+    {
+        if (old == null)
+        {
+            if (@new?.Item1 is not Design d)
+                return;
+
+            Config.SelectedQuickDesign = d.Identifier;
+            Config.Save();
+        }
+        else if (@new?.Item1 is not Design d)
+        {
+            Config.SelectedQuickDesign = Guid.Empty;
+            Config.Save();
+        }
+        else if (!old.Item1.Equals(@new.Item1))
+        {
+            Config.SelectedQuickDesign = d.Identifier;
+            Config.Save();
+        }
+    }
 }
 
 public sealed class LinkDesignCombo(
@@ -253,11 +335,13 @@ public sealed class SpecialDesignCombo(
     DesignChanged designChanged,
     AutoDesignManager autoDesignManager,
     EphemeralConfig config,
-    RandomDesignGenerator rng)
+    RandomDesignGenerator rng,
+    QuickSelectedDesign quickSelectedDesign)
     : DesignComboBase(() => designs.Designs
         .Select(d => new Tuple<IDesignStandIn, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
         .OrderBy(d => d.Item2)
         .Prepend(new Tuple<IDesignStandIn, string>(new RandomDesign(rng), string.Empty))
+        .Prepend(new Tuple<IDesignStandIn, string>(quickSelectedDesign,   string.Empty))
         .Prepend(new Tuple<IDesignStandIn, string>(new RevertDesign(),    string.Empty))
         .ToList(), log, designChanged, tabSelected, config, designColors)
 {

@@ -28,6 +28,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
     private readonly AutomationChanged     _event;
     private readonly DesignChanged         _designEvent;
     private readonly RandomDesignGenerator _randomDesigns;
+    private readonly QuickSelectedDesign   _quickSelectedDesign;
 
     private readonly List<AutoDesignSet>                        _data    = [];
     private readonly Dictionary<ActorIdentifier, AutoDesignSet> _enabled = [];
@@ -36,15 +37,17 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         => _enabled;
 
     public AutoDesignManager(JobService jobs, ActorManager actors, SaveService saveService, DesignManager designs, AutomationChanged @event,
-        FixedDesignMigrator migrator, DesignFileSystem fileSystem, DesignChanged designEvent, RandomDesignGenerator randomDesigns)
+        FixedDesignMigrator migrator, DesignFileSystem fileSystem, DesignChanged designEvent, RandomDesignGenerator randomDesigns,
+        QuickSelectedDesign quickSelectedDesign)
     {
-        _jobs          = jobs;
-        _actors        = actors;
-        _saveService   = saveService;
-        _designs       = designs;
-        _event         = @event;
-        _designEvent   = designEvent;
-        _randomDesigns = randomDesigns;
+        _jobs                = jobs;
+        _actors              = actors;
+        _saveService         = saveService;
+        _designs             = designs;
+        _event               = @event;
+        _designEvent         = designEvent;
+        _randomDesigns       = randomDesigns;
+        _quickSelectedDesign = quickSelectedDesign;
         _designEvent.Subscribe(OnDesignChange, DesignChanged.Priority.AutoDesignManager);
         Load();
         migrator.ConsumeMigratedData(_actors, fileSystem, this);
@@ -485,6 +488,10 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         else if (designIdentifier is RandomDesign.SerializedName)
         {
             design = new RandomDesign(_randomDesigns);
+        }
+        else if (designIdentifier is QuickSelectedDesign.SerializedName)
+        {
+            design = _quickSelectedDesign;
         }
         else
         {

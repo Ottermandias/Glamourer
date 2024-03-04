@@ -9,15 +9,16 @@ namespace Glamourer;
 
 public class EphemeralConfig : ISavable
 {
-    public int                Version            { get; set; } = Configuration.Constants.CurrentVersion;
-    public bool               IncognitoMode      { get; set; } = false;
-    public bool               UnlockDetailMode   { get; set; } = true;
-    public bool               ShowDesignQuickBar { get; set; } = false;
-    public bool               LockDesignQuickBar { get; set; } = false;
-    public bool               LockMainWindow     { get; set; } = false;
-    public MainWindow.TabType SelectedTab        { get; set; } = MainWindow.TabType.Settings;
-    public Guid               SelectedDesign     { get; set; } = Guid.Empty;
-    public int                LastSeenVersion    { get; set; } = GlamourerChangelog.LastChangelogVersion;
+    public int                Version             { get; set; } = Configuration.Constants.CurrentVersion;
+    public bool               IncognitoMode       { get; set; } = false;
+    public bool               UnlockDetailMode    { get; set; } = true;
+    public bool               ShowDesignQuickBar  { get; set; } = false;
+    public bool               LockDesignQuickBar  { get; set; } = false;
+    public bool               LockMainWindow      { get; set; } = false;
+    public MainWindow.TabType SelectedTab         { get; set; } = MainWindow.TabType.Settings;
+    public Guid               SelectedDesign      { get; set; } = Guid.Empty;
+    public Guid               SelectedQuickDesign { get; set; } = Guid.Empty;
+    public int                LastSeenVersion     { get; set; } = GlamourerChangelog.LastChangelogVersion;
 
 
     [JsonIgnore]
