@@ -235,27 +235,41 @@ public class StateListener : IDisposable
         foreach (var (slot, item, stain) in items)
         {
             var currentItem = state.BaseData.Item(slot);
-            var model       = state.ModelData.Weapon(slot);
+            var model       = slot is EquipSlot.MainHand or EquipSlot.OffHand ? state.ModelData.Weapon(slot) : state.ModelData.Armor(slot).ToWeapon(0);
             var current     = currentItem.Weapon(state.BaseData.Stain(slot));
             if (model.Value == current.Value || !_items.ItemData.TryGetValue(item, EquipSlot.MainHand, out var changedItem))
                 continue;
 
             var changed = changedItem.Weapon(stain);
-            if (current.Value == changed.Value && !state.Sources[slot, false].IsFixed())
+            var itemChanged = current.Skeleton == changed.Skeleton
+             && current.Variant == changed.Variant
+             && current.Weapon == changed.Weapon
+             && !state.Sources[slot, false].IsFixed();
+
+            var stainChanged = current.Stain == changed.Stain && !state.Sources[slot, true].IsFixed();
+
+            switch ((itemChanged, stainChanged))
             {
-                _manager.ChangeItem(state, slot, currentItem, ApplySettings.Game);
-                _manager.ChangeStain(state, slot, current.Stain, ApplySettings.Game);
-                switch (slot)
-                {
-                    case EquipSlot.MainHand:
-                    case EquipSlot.OffHand:
-                        _applier.ChangeWeapon(objects, slot, currentItem, stain);
-                        break;
-                    default:
+                case (true, true):
+                    _manager.ChangeEquip(state, slot, currentItem, current.Stain, ApplySettings.Game);
+                    if (slot is EquipSlot.MainHand or EquipSlot.OffHand)
+                        _applier.ChangeWeapon(objects, slot, currentItem, current.Stain);
+                    else
                         _applier.ChangeArmor(objects, slot, current.ToArmor(), !state.Sources[slot, false].IsFixed(),
                             state.ModelData.IsHatVisible());
-                        break;
-                }
+                    break;
+                case (true, false):
+                    _manager.ChangeItem(state, slot, currentItem, ApplySettings.Game);
+                    if (slot is EquipSlot.MainHand or EquipSlot.OffHand)
+                        _applier.ChangeWeapon(objects, slot, currentItem, model.Stain);
+                    else
+                        _applier.ChangeArmor(objects, slot, current.ToArmor(model.Stain), !state.Sources[slot, false].IsFixed(),
+                            state.ModelData.IsHatVisible());
+                    break;
+                case (false, true):
+                    _manager.ChangeStain(state, slot, current.Stain, ApplySettings.Game);
+                    _applier.ChangeStain(objects, slot, current.Stain);
+                    break;
             }
         }
     }
