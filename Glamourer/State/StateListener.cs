@@ -235,8 +235,10 @@ public class StateListener : IDisposable
         foreach (var (slot, item, stain) in items)
         {
             var currentItem = state.BaseData.Item(slot);
-            var model       = slot is EquipSlot.MainHand or EquipSlot.OffHand ? state.ModelData.Weapon(slot) : state.ModelData.Armor(slot).ToWeapon(0);
-            var current     = currentItem.Weapon(state.BaseData.Stain(slot));
+            var model = slot is EquipSlot.MainHand or EquipSlot.OffHand
+                ? state.ModelData.Weapon(slot)
+                : state.ModelData.Armor(slot).ToWeapon(0);
+            var current = currentItem.Weapon(state.BaseData.Stain(slot));
             if (model.Value == current.Value || !_items.ItemData.TryGetValue(item, EquipSlot.MainHand, out var changedItem))
                 continue;
 
@@ -292,8 +294,7 @@ public class StateListener : IDisposable
          || !_manager.TryGetValue(identifier, out var state))
             return;
 
-        var baseType = state.BaseData.Item(slot).Type;
-        var apply    = false;
+        var apply = false;
         switch (UpdateBaseData(actor, state, slot, weapon))
         {
             // Do nothing. But this usually can not happen because the hooked function also writes to game objects later.
@@ -314,14 +315,24 @@ public class StateListener : IDisposable
                 break;
         }
 
+        var baseType  = slot is EquipSlot.OffHand ? state.BaseData.MainhandType.Offhand() : state.BaseData.MainhandType;
+        var modelType = state.ModelData.Item(slot).Type;
         if (apply)
         {
             // Only allow overwriting identical weapons
+            var canApply = baseType == modelType
+             || _gPose.InGPose && actor.IsGPoseOrCutscene;
             var newWeapon = state.ModelData.Weapon(slot);
-            if (baseType is FullEquipType.Unknown || baseType == state.ModelData.Item(slot).Type || _gPose.InGPose && actor.IsGPoseOrCutscene)
+            if (canApply)
+            {
                 weapon = newWeapon;
-            else if (weapon.Skeleton.Id != 0)
-                weapon = weapon.With(newWeapon.Stain);
+            }
+            else
+            {
+                if (weapon.Skeleton.Id != 0)
+                    weapon = weapon.With(newWeapon.Stain);
+                _manager.ChangeItem(state, slot, state.BaseData.Item(slot), ApplySettings.Game);
+            }
         }
 
         // Fist Weapon Offhand hack.
@@ -498,7 +509,7 @@ public class StateListener : IDisposable
         if (baseData.Skeleton.Id != weapon.Skeleton.Id || baseData.Weapon.Id != weapon.Weapon.Id || baseData.Variant != weapon.Variant)
         {
             var item = _items.Identify(slot, weapon.Skeleton, weapon.Weapon, weapon.Variant,
-                slot is EquipSlot.OffHand ? state.BaseData.Item(EquipSlot.MainHand).Type : FullEquipType.Unknown);
+                slot is EquipSlot.OffHand ? state.BaseData.MainhandType : FullEquipType.Unknown);
             state.BaseData.SetItem(slot, item);
             change = UpdateState.Change;
         }
