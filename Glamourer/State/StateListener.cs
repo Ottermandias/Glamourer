@@ -331,7 +331,8 @@ public class StateListener : IDisposable
             {
                 if (weapon.Skeleton.Id != 0)
                     weapon = weapon.With(newWeapon.Stain);
-                _manager.ChangeItem(state, slot, state.BaseData.Item(slot), ApplySettings.Game);
+                // Force unlock if necessary.
+                _manager.ChangeItem(state, slot, state.BaseData.Item(slot), ApplySettings.Game with { Key = state.Combination });
             }
         }
 

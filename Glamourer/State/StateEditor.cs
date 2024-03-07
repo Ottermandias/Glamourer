@@ -276,7 +276,6 @@ public class StateEditor(
                 if (settings.RespectManual && state.Sources[weaponSlot, false].IsManual())
                     continue;
 
-                var currentType = state.ModelData.Item(weaponSlot).Type;
                 if (!settings.FromJobChange)
                 {
                     if (gPose.InGPose)
@@ -291,10 +290,11 @@ public class StateEditor(
                         });
                     }
 
+                    var currentType = state.BaseData.Item(weaponSlot).Type;
                     if (mergedDesign.Weapons.TryGetValue(currentType, out var weapon))
                     {
                         var source = settings.UseSingleSource ? settings.Source :
-                            weapon.Item2 is StateSource.Game  ? StateSource.Game : weapon.Item2;
+                            weapon.Item2 is StateSource.Game  ? StateSource.Game : settings.Source;
                         Editor.ChangeItem(state, weaponSlot, weapon.Item1, source, out _,
                             settings.Key);
                     }
@@ -304,7 +304,7 @@ public class StateEditor(
             if (settings.FromJobChange)
                 jobChange.Set(state, mergedDesign.Weapons.Values.Select(m =>
                     (m.Item1, settings.UseSingleSource ? settings.Source :
-                        m.Item2 is StateSource.Game    ? StateSource.Game : m.Item2)));
+                        m.Item2 is StateSource.Game    ? StateSource.Game : settings.Source)));
 
             foreach (var meta in MetaExtensions.AllRelevant.Where(mergedDesign.Design.DoApplyMeta))
             {

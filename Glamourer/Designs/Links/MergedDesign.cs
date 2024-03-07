@@ -1,6 +1,4 @@
-﻿using Glamourer.Events;
-using Glamourer.GameData;
-using Glamourer.Interop.Penumbra;
+﻿using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
