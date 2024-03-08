@@ -11,8 +11,8 @@ public class RandomDesignGenerator(DesignStorage designs, DesignFileSystem fileS
         if (localDesigns.Count == 0)
             return null;
 
-        var idx = _rng.Next(0, localDesigns.Count - 1);
-        Glamourer.Log.Verbose($"[Random Design] Chose design {idx} out of {localDesigns.Count}: {localDesigns[idx].Incognito}.");
+        var idx = _rng.Next(0, localDesigns.Count);
+        Glamourer.Log.Verbose($"[Random Design] Chose design {idx + 1} out of {localDesigns.Count}: {localDesigns[idx].Incognito}.");
         return localDesigns[idx];
     }
 
