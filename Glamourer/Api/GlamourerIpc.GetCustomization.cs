@@ -41,6 +41,6 @@ public partial class GlamourerIpc
                 return null;
         }
 
-        return _designConverter.ShareBase64(state, ApplicationRules.All);
+        return _designConverter.ShareBase64(state, ApplicationRules.AllWithConfig(_config));
     }
 }

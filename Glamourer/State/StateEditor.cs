@@ -235,6 +235,13 @@ public class StateEditor(
                     settings.Key))
                 requiresRedraw |= changed.RequiresRedraw();
 
+            if (settings.ResetMaterials)
+            {
+                state.ModelData.Parameters = state.BaseData.Parameters;
+                foreach (var parameter in CustomizeParameterExtensions.AllFlags)
+                    state.Sources[parameter] = StateSource.Game;
+            }
+
             foreach (var parameter in mergedDesign.Design.ApplyParameters.Iterate())
             {
                 if (settings.RespectManual && state.Sources[parameter].IsManual())

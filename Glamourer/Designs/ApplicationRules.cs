@@ -10,10 +10,11 @@ public readonly struct ApplicationRules(
     CustomizeFlag customize,
     CrestFlag crest,
     CustomizeParameterFlag parameters,
-    MetaFlag meta)
+    MetaFlag meta,
+    bool materials)
 {
     public static readonly ApplicationRules All = new(EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant,
-        CrestExtensions.AllRelevant, CustomizeParameterExtensions.All, MetaExtensions.All);
+        CrestExtensions.AllRelevant, CustomizeParameterExtensions.All, MetaExtensions.All, true);
 
     public static ApplicationRules FromModifiers(ActorState state)
         => FromModifiers(state, ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift);
@@ -22,14 +23,17 @@ public readonly struct ApplicationRules(
         => NpcFromModifiers(ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift);
 
     public static ApplicationRules AllButParameters(ActorState state)
-        => new(All.Equip, All.Customize, All.Crest, ComputeParameters(state.ModelData, state.BaseData, All.Parameters), All.Meta);
+        => new(All.Equip, All.Customize, All.Crest, ComputeParameters(state.ModelData, state.BaseData, All.Parameters), All.Meta, true);
+
+    public static ApplicationRules AllWithConfig(Configuration config)
+        => new(All.Equip, All.Customize, All.Crest, config.UseAdvancedParameters ? All.Parameters : 0, All.Meta, config.UseAdvancedDyes);
 
     public static ApplicationRules NpcFromModifiers(bool ctrl, bool shift)
         => new(ctrl || !shift ? EquipFlagExtensions.All : 0,
             !ctrl || shift ? CustomizeFlagExtensions.AllRelevant : 0,
             0,
             0,
-            ctrl || !shift ? MetaFlag.VisorState : 0);
+            ctrl || !shift ? MetaFlag.VisorState : 0, false);
 
     public static ApplicationRules FromModifiers(ActorState state, bool ctrl, bool shift)
     {
@@ -41,7 +45,7 @@ public readonly struct ApplicationRules(
         if (equip != 0)
             meta |= MetaFlag.HatState | MetaFlag.WeaponState | MetaFlag.VisorState;
 
-        return new ApplicationRules(equip, customize, crest, ComputeParameters(state.ModelData, state.BaseData, parameters), meta);
+        return new ApplicationRules(equip, customize, crest, ComputeParameters(state.ModelData, state.BaseData, parameters), meta, equip != 0);
     }
 
     public void Apply(DesignBase design)
@@ -68,7 +72,10 @@ public readonly struct ApplicationRules(
     public MetaFlag Meta
         => meta & MetaExtensions.All;
 
-    public static CustomizeParameterFlag ComputeParameters(in DesignData model, in DesignData game,
+    public bool Materials
+        => materials;
+
+    private static CustomizeParameterFlag ComputeParameters(in DesignData model, in DesignData game,
         CustomizeParameterFlag baseFlags = CustomizeParameterExtensions.All)
     {
         foreach (var flag in baseFlags.Iterate())

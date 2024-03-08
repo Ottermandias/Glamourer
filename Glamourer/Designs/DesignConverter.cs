@@ -56,7 +56,8 @@ public class DesignConverter(
         var design = _designs.CreateTemporary();
         rules.Apply(design);
         design.SetDesignData(_customize, data);
-        ComputeMaterials(design.GetMaterialDataRef(), materials, rules.Equip);
+        if (rules.Materials)
+            ComputeMaterials(design.GetMaterialDataRef(), materials, rules.Equip);
         return design;
     }
 

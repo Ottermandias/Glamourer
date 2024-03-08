@@ -25,10 +25,11 @@ public sealed partial class GlamourerIpc : IDisposable
     private readonly AutoDesignApplier _autoDesignApplier;
     private readonly DesignManager     _designManager;
     private readonly ItemManager       _items;
+    private readonly Configuration     _config;
 
     public GlamourerIpc(DalamudPluginInterface pi, StateManager stateManager, ObjectManager objects, ActorManager actors,
         DesignConverter designConverter, StateChanged stateChangedEvent, GPoseService gPose, AutoDesignApplier autoDesignApplier,
-        DesignManager designManager, ItemManager items)
+        DesignManager designManager, ItemManager items, Configuration config)
     {
         _stateManager        = stateManager;
         _objects             = objects;
@@ -36,6 +37,7 @@ public sealed partial class GlamourerIpc : IDisposable
         _designConverter     = designConverter;
         _autoDesignApplier   = autoDesignApplier;
         _items               = items;
+        _config              = config;
         _gPose               = gPose;
         _stateChangedEvent   = stateChangedEvent;
         _designManager       = designManager;
