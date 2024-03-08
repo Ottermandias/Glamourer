@@ -48,7 +48,6 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         switch (design)
         {
             case Design realDesign:
-
             {
                 using var color = ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(realDesign));
                 ret = base.DrawSelectable(globalIdx, selected);
@@ -57,6 +56,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
             }
             case QuickSelectedDesign quickDesign:
             {
+                using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.NormalDesign.Value());
                 ret = base.DrawSelectable(globalIdx, selected);
                 DrawResolvedDesign(quickDesign);
                 return ret;
