@@ -16,6 +16,7 @@ public partial class GlamourerIpc
     public const string LabelRevertToAutomationCharacter = "Glamourer.RevertToAutomationCharacter";
     public const string LabelUnlock                      = "Glamourer.Unlock";
     public const string LabelUnlockName                  = "Glamourer.UnlockName";
+    public const string LabelUnlockAll                   = "Glamourer.UnlockAll";
 
     private readonly ActionProvider<string>     _revertProvider;
     private readonly ActionProvider<Character?> _revertCharacterProvider;
@@ -28,6 +29,8 @@ public partial class GlamourerIpc
 
     private readonly FuncProvider<string, uint, bool>     _unlockNameProvider;
     private readonly FuncProvider<Character?, uint, bool> _unlockProvider;
+
+    private readonly FuncProvider<uint, int>     _unlockAllProvider;
 
     public static ActionSubscriber<string> RevertSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelRevert);
@@ -46,6 +49,9 @@ public partial class GlamourerIpc
 
     public static FuncSubscriber<Character?, uint, bool> UnlockSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelUnlock);
+
+    public static FuncSubscriber<uint, int> UnlockAllSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelUnlockAll);
 
     public static FuncSubscriber<string, uint, bool> RevertToAutomationSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelRevertToAutomation);
@@ -70,6 +76,15 @@ public partial class GlamourerIpc
 
     public bool Unlock(Character? character, uint lockCode)
         => Unlock(FindActors(character), lockCode);
+
+    public int UnlockAll(uint lockCode)
+    {
+        var count = 0;
+        foreach (var state in _stateManager.Values)
+            if (state.Unlock(lockCode))
+                ++count;
+        return count;
+    }
 
     public bool RevertToAutomation(string characterName, uint lockCode)
         => RevertToAutomation(FindActorsRevert(characterName), lockCode);

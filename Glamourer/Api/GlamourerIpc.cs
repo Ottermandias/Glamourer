@@ -16,7 +16,7 @@ namespace Glamourer.Api;
 public sealed partial class GlamourerIpc : IDisposable
 {
     public const int CurrentApiVersionMajor = 0;
-    public const int CurrentApiVersionMinor = 4;
+    public const int CurrentApiVersionMinor = 5;
 
     private readonly StateManager      _stateManager;
     private readonly ObjectManager     _objects;
@@ -47,6 +47,9 @@ public sealed partial class GlamourerIpc : IDisposable
         _getAllCustomizationProvider = new FuncProvider<string, string?>(pi, LabelGetAllCustomization, GetAllCustomization);
         _getAllCustomizationFromCharacterProvider =
             new FuncProvider<Character?, string?>(pi, LabelGetAllCustomizationFromCharacter, GetAllCustomizationFromCharacter);
+        _getAllCustomizationLockedProvider = new FuncProvider<string, uint, string?>(pi, LabelGetAllCustomizationLocked, GetAllCustomization);
+        _getAllCustomizationFromLockedCharacterProvider =
+            new FuncProvider<Character?, uint, string?>(pi, LabelGetAllCustomizationFromLockedCharacter, GetAllCustomizationFromCharacter);
 
         _applyAllProvider                = new ActionProvider<string, string>(pi, LabelApplyAll,     ApplyAll);
         _applyAllOnceProvider            = new ActionProvider<string, string>(pi, LabelApplyAllOnce, ApplyAllOnce);
@@ -82,6 +85,7 @@ public sealed partial class GlamourerIpc : IDisposable
         _revertCharacterProviderLock = new ActionProvider<Character?, uint>(pi, LabelRevertCharacterLock, RevertCharacterLock);
         _unlockNameProvider          = new FuncProvider<string, uint, bool>(pi, LabelUnlockName, Unlock);
         _unlockProvider              = new FuncProvider<Character?, uint, bool>(pi, LabelUnlock, Unlock);
+        _unlockAllProvider           = new FuncProvider<uint, int>(pi, LabelUnlockAll, UnlockAll);
         _revertToAutomationProvider  = new FuncProvider<string, uint, bool>(pi, LabelRevertToAutomation, RevertToAutomation);
         _revertToAutomationCharacterProvider =
             new FuncProvider<Character?, uint, bool>(pi, LabelRevertToAutomationCharacter, RevertToAutomation);
@@ -111,7 +115,9 @@ public sealed partial class GlamourerIpc : IDisposable
         _apiVersionsProvider.Dispose();
 
         _getAllCustomizationProvider.Dispose();
+        _getAllCustomizationLockedProvider.Dispose();
         _getAllCustomizationFromCharacterProvider.Dispose();
+        _getAllCustomizationFromLockedCharacterProvider.Dispose();
 
         _applyAllProvider.Dispose();
         _applyAllOnceProvider.Dispose();
@@ -139,6 +145,7 @@ public sealed partial class GlamourerIpc : IDisposable
         _revertCharacterProviderLock.Dispose();
         _unlockNameProvider.Dispose();
         _unlockProvider.Dispose();
+        _unlockAllProvider.Dispose();
         _revertToAutomationProvider.Dispose();
         _revertToAutomationCharacterProvider.Dispose();
 
@@ -158,7 +165,7 @@ public sealed partial class GlamourerIpc : IDisposable
     private IEnumerable<ActorIdentifier> FindActors(string actorName)
     {
         if (actorName.Length == 0 || !ByteString.FromString(actorName, out var byteString))
-            return Array.Empty<ActorIdentifier>();
+            return [];
 
         _objects.Update();
         return _objects.Where(i => i.Key is { IsValid: true, Type: IdentifierType.Player } && i.Key.PlayerName == byteString)

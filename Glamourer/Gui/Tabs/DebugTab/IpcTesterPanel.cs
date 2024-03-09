@@ -64,6 +64,14 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         else
             ImGui.TextUnformatted("Error");
 
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelGetAllCustomizationFromLockedCharacter);
+        ImGui.TableNextColumn();
+        var base64Locked = GlamourerIpc.GetAllCustomizationFromLockedCharacterSubscriber(_pluginInterface).Invoke(_objectManager.Objects[_gameObjectIndex] as Character, 1337);
+        if (base64Locked != null)
+            ImGuiUtil.CopyOnClickSelectable(base64Locked);
+        else
+            ImGui.TextUnformatted("Error");
+
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelRevert);
         ImGui.TableNextColumn();
         if (ImGui.Button("Revert##Name"))
@@ -118,7 +126,6 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
             GlamourerIpc.ApplyOnlyCustomizationToCharacterSubscriber(_pluginInterface)
                 .Invoke(_base64Apply, _objectManager.Objects[_gameObjectIndex] as Character);
 
-
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyByGuid);
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##ByGuidName") && Guid.TryParse(_designIdentifier, out var guid1))
@@ -141,12 +148,23 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
             GlamourerIpc.ApplyByGuidOnceToCharacterSubscriber(_pluginInterface)
                 .Invoke(guid2Once, _objectManager.Objects[_gameObjectIndex] as Character);
 
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyAllLock);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Apply With Lock##CustomizeCharacter"))
+            GlamourerIpc.ApplyAllToCharacterLockSubscriber(_pluginInterface)
+                .Invoke(_base64Apply, _objectManager.Objects[_gameObjectIndex] as Character, 1337);
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelUnlock);
         ImGui.TableNextColumn();
         if (ImGui.Button("Unlock##CustomizeCharacter"))
             GlamourerIpc.UnlockSubscriber(_pluginInterface)
                 .Invoke(_objectManager.Objects[_gameObjectIndex] as Character, 1337);
+
+        ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelUnlockAll);
+        ImGui.TableNextColumn();
+        if (ImGui.Button("Unlock All##CustomizeCharacter"))
+            GlamourerIpc.UnlockAllSubscriber(_pluginInterface)
+                .Invoke(1337);
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelRevertToAutomation);
         ImGui.TableNextColumn();

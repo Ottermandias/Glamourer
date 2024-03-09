@@ -88,6 +88,12 @@ public partial class GlamourerIpc
     public static ActionSubscriber<Guid, Character?> ApplyByGuidOnceToCharacterSubscriber(DalamudPluginInterface pi)
         => new(pi, LabelApplyByGuidOnceToCharacter);
 
+    public static ActionSubscriber<string, string, uint> ApplyAllLockSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelApplyAllLock);
+
+    public static ActionSubscriber<string, Character?, uint> ApplyAllToCharacterLockSubscriber(DalamudPluginInterface pi)
+        => new(pi, LabelApplyAllToCharacterLock);
+
     public void ApplyAll(string base64, string characterName)
         => ApplyDesign(_designConverter.FromBase64(base64, true, true, out var version), FindActors(characterName), version, 0);
 
