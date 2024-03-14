@@ -4,25 +4,19 @@ using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public class AutomationTab : ITab
+public class AutomationTab(SetSelector selector, SetPanel panel, Configuration config) : ITab
 {
-    private readonly SetSelector _selector;
-    private readonly SetPanel    _panel;
-
-    public AutomationTab(SetSelector selector, SetPanel panel)
-    {
-        _selector = selector;
-        _panel    = panel;
-    }
-
     public ReadOnlySpan<byte> Label
         => "Automation"u8;
 
+    public bool IsVisible
+        => config.EnableAutoDesigns;
+
     public void DrawContent()
     {
-        _selector.Draw(GetSetSelectorSize());
+        selector.Draw(GetSetSelectorSize());
         ImGui.SameLine();
-        _panel.Draw();
+        panel.Draw();
     }
 
     public float GetSetSelectorSize()

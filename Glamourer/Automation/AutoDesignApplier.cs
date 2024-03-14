@@ -223,6 +223,7 @@ public sealed class AutoDesignApplier : IDisposable
         if (!GetPlayerSet(identifier, out var set))
             return;
 
+        _state.ResetState(state, StateSource.Game);
         Reduce(actor, state, set, false, false);
     }
 

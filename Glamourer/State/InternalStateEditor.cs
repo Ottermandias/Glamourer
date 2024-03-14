@@ -223,8 +223,7 @@ public class InternalStateEditor(
 
     /// <summary> Change the value of a single material color table entry. </summary>
     public bool ChangeMaterialValue(ActorState state, MaterialValueIndex index, in MaterialValueState newValue, StateSource source,
-        out ColorRow? oldValue,
-        uint key = 0)
+        out ColorRow? oldValue, uint key = 0)
     {
         // We already have an existing value.
         if (state.Materials.TryGetValue(index, out var old))
