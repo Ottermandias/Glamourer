@@ -331,7 +331,7 @@ public class StateEditor(
                 var source = settings.Source.SetPending();
                 if (state.Materials.TryGetValue(idx, out var materialState))
                 {
-                    if (settings.RespectManual && !materialState.Source.IsManual())
+                    if (settings.RespectManual && materialState.Source.IsManual())
                         continue;
 
                     if (value.Revert)

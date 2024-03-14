@@ -162,6 +162,7 @@ public sealed unsafe class AdvancedDyePopup(
             ImGui.SetNextWindowPos(position);
             flags |= ImGuiWindowFlags.NoMove;
         }
+
         var size = new Vector2(7 * ImGui.GetFrameHeight() + 3 * ImGui.GetStyle().ItemInnerSpacing.X + 300 * ImGuiHelpers.GlobalScale,
             18 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + 2 * ImGui.GetStyle().ItemSpacing.Y);
         ImGui.SetNextWindowSize(size);
@@ -261,6 +262,7 @@ public sealed unsafe class AdvancedDyePopup(
         else
         {
             _anyChanged = true;
+            value       = new MaterialValueState(value.Game, value.Model, value.DrawData, StateSource.Manual);
         }
 
         var buttonSize = new Vector2(ImGui.GetFrameHeight());
