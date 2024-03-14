@@ -1,5 +1,6 @@
 ﻿using Dalamud;
 using Glamourer.Designs;
+using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
@@ -19,6 +20,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
     private readonly ItemManager      _items;
     private readonly ObjectManager    _objects;
     private readonly CustomizeService _customize;
+    private readonly GPoseService     _gpose;
 
     private readonly EquipItem[] _lastItems = new EquipItem[EquipFlagExtensions.NumEquipFlags / 2];
 
@@ -30,13 +32,14 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
     public DateTime LastClick   { get; private set; } = DateTime.MinValue;
 
     public PenumbraChangedItemTooltip(PenumbraService penumbra, StateManager stateManager, ItemManager items, ObjectManager objects,
-        CustomizeService customize)
+        CustomizeService customize, GPoseService gpose)
     {
         _penumbra         =  penumbra;
         _stateManager     =  stateManager;
         _items            =  items;
         _objects          =  objects;
         _customize        =  customize;
+        _gpose            =  gpose;
         _penumbra.Tooltip += OnPenumbraTooltip;
         _penumbra.Click   += OnPenumbraClick;
     }
@@ -185,6 +188,9 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
 
     private bool CanApplyWeapon(EquipSlot slot, EquipItem item)
     {
+        if (_gpose.InGPose && slot is EquipSlot.MainHand)
+            return true;
+
         var main     = _objects.Player.GetMainhand();
         var mainItem = _items.Identify(slot, main.Skeleton, main.Weapon, main.Variant);
         if (slot == EquipSlot.MainHand)
