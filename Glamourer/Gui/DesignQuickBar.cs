@@ -19,12 +19,13 @@ namespace Glamourer.Gui;
 [Flags]
 public enum QdbButtons
 {
-    ApplyDesign      = 0x01,
-    RevertAll        = 0x02,
-    RevertAutomation = 0x04,
-    RevertAdvanced   = 0x08,
-    RevertEquip      = 0x10,
-    RevertCustomize  = 0x20,
+    ApplyDesign       = 0x01,
+    RevertAll         = 0x02,
+    RevertAutomation  = 0x04,
+    RevertAdvanced    = 0x08,
+    RevertEquip       = 0x10,
+    RevertCustomize   = 0x20,
+    ReapplyAutomation = 0x40,
 }
 
 public sealed class DesignQuickBar : Window, IDisposable
@@ -118,6 +119,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         DrawRevertCustomizeButton(buttonSize);
         DrawRevertAdvancedCustomization(buttonSize);
         DrawRevertAutomationButton(buttonSize);
+        DrawReapplyAutomationButton(buttonSize);
     }
 
     private ActorIdentifier _playerIdentifier;
@@ -249,7 +251,47 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         foreach (var actor in data.Objects)
         {
-            _autoDesignApplier.ReapplyAutomation(actor, id, state!);
+            _autoDesignApplier.ReapplyAutomation(actor, id, state!, true);
+            _stateManager.ReapplyState(actor, StateSource.Manual);
+        }
+    }
+
+    private void DrawReapplyAutomationButton(Vector2 buttonSize)
+    {
+        if (!_config.EnableAutoDesigns)
+            return;
+
+        if (!_config.QdbButtons.HasFlag(QdbButtons.ReapplyAutomation))
+            return;
+
+        var available = 0;
+        var tooltip   = string.Empty;
+
+        if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
+        {
+            available |= 1;
+            tooltip   =  "Left-Click: Reapply the player character's current automation on top of their current state.";
+        }
+
+        if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
+        {
+            if (available != 0)
+                tooltip += '\n';
+            available |= 2;
+            tooltip   += $"Right-Click: Reapply {_targetIdentifier}'s current automation on top of their current state.";
+        }
+
+        if (available == 0)
+            tooltip = "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.";
+
+        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.Repeat, buttonSize, tooltip, available);
+        ImGui.SameLine();
+        if (!clicked)
+            return;
+
+        foreach (var actor in data.Objects)
+        {
+            _autoDesignApplier.ReapplyAutomation(actor, id, state!, false);
             _stateManager.ReapplyState(actor, StateSource.Manual);
         }
     }
@@ -385,8 +427,14 @@ public sealed class DesignQuickBar : Window, IDisposable
         _numButtons = 0;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertAll))
             ++_numButtons;
-        if (_config.EnableAutoDesigns && _config.QdbButtons.HasFlag(QdbButtons.RevertAutomation))
-            ++_numButtons;
+        if (_config.EnableAutoDesigns)
+        {
+            if (_config.QdbButtons.HasFlag(QdbButtons.RevertAutomation))
+                ++_numButtons;
+            if (_config.QdbButtons.HasFlag(QdbButtons.ReapplyAutomation))
+                ++_numButtons;
+        }
+
         if ((_config.UseAdvancedParameters || _config.UseAdvancedDyes) && _config.QdbButtons.HasFlag(QdbButtons.RevertAdvanced))
             ++_numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertCustomize))

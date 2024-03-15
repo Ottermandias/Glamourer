@@ -15,79 +15,79 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using System;
+using static Glamourer.Gui.Tabs.HeaderDrawer;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class DesignPanel(
-    DesignFileSystemSelector _selector,
-    CustomizationDrawer _customizationDrawer,
-    DesignManager _manager,
-    ObjectManager _objects,
-    StateManager _state,
-    EquipmentDrawer _equipmentDrawer,
-    ModAssociationsTab _modAssociations,
-    Configuration _config,
-    DesignDetailTab _designDetails,
-    DesignConverter _converter,
-    ImportService _importService,
-    MultiDesignPanel _multiDesignPanel,
-    CustomizeParameterDrawer _parameterDrawer,
-    DesignLinkDrawer _designLinkDrawer,
-    MaterialDrawer _materials)
+public class DesignPanel
 {
-    private readonly FileDialogManager _fileDialog = new();
+    private readonly FileDialogManager        _fileDialog = new();
+    private readonly DesignFileSystemSelector _selector;
+    private readonly CustomizationDrawer      _customizationDrawer;
+    private readonly DesignManager            _manager;
+    private readonly ObjectManager            _objects;
+    private readonly StateManager             _state;
+    private readonly EquipmentDrawer          _equipmentDrawer;
+    private readonly ModAssociationsTab       _modAssociations;
+    private readonly Configuration            _config;
+    private readonly DesignDetailTab          _designDetails;
+    private readonly ImportService            _importService;
+    private readonly DesignConverter          _converter;
+    private readonly MultiDesignPanel         _multiDesignPanel;
+    private readonly CustomizeParameterDrawer _parameterDrawer;
+    private readonly DesignLinkDrawer         _designLinkDrawer;
+    private readonly MaterialDrawer           _materials;
+    private readonly Button[]                _leftButtons;
+    private readonly Button[]                _rightButtons;
 
-    private HeaderDrawer.Button LockButton()
-        => _selector.Selected == null
-            ? HeaderDrawer.Button.Invisible
-            : _selector.Selected.WriteProtected()
-                ? new HeaderDrawer.Button
-                {
-                    Description = "Make this design editable.",
-                    Icon        = FontAwesomeIcon.Lock,
-                    OnClick     = () => _manager.SetWriteProtection(_selector.Selected!, false),
-                }
-                : new HeaderDrawer.Button
-                {
-                    Description = "Write-protect this design.",
-                    Icon        = FontAwesomeIcon.LockOpen,
-                    OnClick     = () => _manager.SetWriteProtection(_selector.Selected!, true),
-                };
 
-    private HeaderDrawer.Button SetFromClipboardButton()
-        => new()
-        {
-            Description =
-                "Try to apply a design from your clipboard over this design.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
-            Icon     = FontAwesomeIcon.Clipboard,
-            OnClick  = SetFromClipboard,
-            Visible  = _selector.Selected != null,
-            Disabled = _selector.Selected?.WriteProtected() ?? true,
-        };
-
-    private HeaderDrawer.Button UndoButton()
-        => new()
-        {
-            Description = "Undo the last change if you accidentally overwrote your design with a different one.",
-            Icon        = FontAwesomeIcon.Undo,
-            OnClick     = UndoOverwrite,
-            Visible     = _selector.Selected != null,
-            Disabled    = !_manager.CanUndo(_selector.Selected),
-        };
-
-    private HeaderDrawer.Button ExportToClipboardButton()
-        => new()
-        {
-            Description = "Copy the current design to your clipboard.",
-            Icon        = FontAwesomeIcon.Copy,
-            OnClick     = ExportToClipboard,
-            Visible     = _selector.Selected != null,
-        };
+    public DesignPanel(DesignFileSystemSelector selector,
+        CustomizationDrawer customizationDrawer,
+        DesignManager manager,
+        ObjectManager objects,
+        StateManager state,
+        EquipmentDrawer equipmentDrawer,
+        ModAssociationsTab modAssociations,
+        Configuration config,
+        DesignDetailTab designDetails,
+        DesignConverter converter,
+        ImportService importService,
+        MultiDesignPanel multiDesignPanel,
+        CustomizeParameterDrawer parameterDrawer,
+        DesignLinkDrawer designLinkDrawer,
+        MaterialDrawer materials)
+    {
+        _selector            = selector;
+        _customizationDrawer = customizationDrawer;
+        _manager             = manager;
+        _objects             = objects;
+        _state               = state;
+        _equipmentDrawer     = equipmentDrawer;
+        _modAssociations     = modAssociations;
+        _config              = config;
+        _designDetails       = designDetails;
+        _importService       = importService;
+        _converter           = converter;
+        _multiDesignPanel    = multiDesignPanel;
+        _parameterDrawer     = parameterDrawer;
+        _designLinkDrawer    = designLinkDrawer;
+        _materials           = materials;
+        _leftButtons =
+        [
+            new SetFromClipboardButton(this),
+            new UndoButton(this),
+            new ExportToClipboardButton(this),
+        ];
+        _rightButtons =
+        [
+            new LockButton(this),
+            new IncognitoButton(_config.Ephemeral),
+        ];
+    }
 
     private void DrawHeader()
-        => HeaderDrawer.Draw(SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg),
-            3, SetFromClipboardButton(), UndoButton(), ExportToClipboardButton(), LockButton(),
-            HeaderDrawer.Button.IncognitoButton(_selector.IncognitoMode, v => _selector.IncognitoMode = v));
+        => HeaderDrawer.Draw(SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg), _leftButtons, _rightButtons);
 
     private string SelectionName
         => _selector.Selected == null ? "No Selection" : _selector.IncognitoMode ? _selector.Selected.Incognito : _selector.Selected.Name.Text;
@@ -397,49 +397,6 @@ public class DesignPanel(
         DrawSaveToDat();
     }
 
-    private void SetFromClipboard()
-    {
-        try
-        {
-            var text = ImGui.GetClipboardText();
-            var (applyEquip, applyCustomize) = UiHelpers.ConvertKeysToBool();
-            var design = _converter.FromBase64(text, applyCustomize, applyEquip, out _)
-             ?? throw new Exception("The clipboard did not contain valid data.");
-            _manager.ApplyDesign(_selector.Selected!, design);
-        }
-        catch (Exception ex)
-        {
-            Glamourer.Messager.NotificationMessage(ex, $"Could not apply clipboard to {_selector.Selected!.Name}.",
-                $"Could not apply clipboard to design {_selector.Selected!.Identifier}", NotificationType.Error, false);
-        }
-    }
-
-    private void UndoOverwrite()
-    {
-        try
-        {
-            _manager.UndoDesignChange(_selector.Selected!);
-        }
-        catch (Exception ex)
-        {
-            Glamourer.Messager.NotificationMessage(ex, $"Could not undo last changes to {_selector.Selected!.Name}.", NotificationType.Error,
-                false);
-        }
-    }
-
-    private void ExportToClipboard()
-    {
-        try
-        {
-            var text = _converter.ShareBase64(_selector.Selected!);
-            ImGui.SetClipboardText(text);
-        }
-        catch (Exception ex)
-        {
-            Glamourer.Messager.NotificationMessage(ex, $"Could not copy {_selector.Selected!.Name} data to clipboard.",
-                $"Could not copy data from design {_selector.Selected!.Identifier} to clipboard", NotificationType.Error, false);
-        }
-    }
 
     private void DrawApplyToSelf()
     {
@@ -497,4 +454,111 @@ public class DesignPanel(
 
     private static unsafe string GetUserPath()
         => Framework.Instance()->UserPath;
+
+
+    private sealed class LockButton(DesignPanel panel) : Button
+    {
+        public override bool Visible
+            => panel._selector.Selected != null;
+
+        protected override string Description
+            => panel._selector.Selected!.WriteProtected()
+                ? "Make this design editable."
+                : "Write-protect this design.";
+
+        protected override FontAwesomeIcon Icon
+            => panel._selector.Selected!.WriteProtected()
+                ? FontAwesomeIcon.Lock
+                : FontAwesomeIcon.LockOpen;
+
+        protected override void OnClick()
+            => panel._manager.SetWriteProtection(panel._selector.Selected!, !panel._selector.Selected!.WriteProtected());
+    }
+
+    private sealed class SetFromClipboardButton(DesignPanel panel) : Button
+    {
+        public override bool Visible
+            => panel._selector.Selected != null;
+
+        protected override bool Disabled
+            => panel._selector.Selected?.WriteProtected() ?? true;
+
+        protected override string Description
+            => "Try to apply a design from your clipboard over this design.\nHold Control to only apply gear.\nHold Shift to only apply customizations.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Clipboard;
+
+        protected override void OnClick()
+        {
+            try
+            {
+                var text = ImGui.GetClipboardText();
+                var (applyEquip, applyCustomize) = UiHelpers.ConvertKeysToBool();
+                var design = panel._converter.FromBase64(text, applyCustomize, applyEquip, out _)
+                 ?? throw new Exception("The clipboard did not contain valid data.");
+                panel._manager.ApplyDesign(panel._selector.Selected!, design);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Could not apply clipboard to {panel._selector.Selected!.Name}.",
+                    $"Could not apply clipboard to design {panel._selector.Selected!.Identifier}", NotificationType.Error, false);
+            }
+        }
+    }
+
+    private sealed class UndoButton(DesignPanel panel) : Button
+    {
+        public override bool Visible
+            => panel._selector.Selected != null;
+
+        protected override bool Disabled
+            => !panel._manager.CanUndo(panel._selector.Selected);
+
+        protected override string Description
+            => "Undo the last change if you accidentally overwrote your design with a different one.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Undo;
+
+        protected override void OnClick()
+        {
+            try
+            {
+                panel._manager.UndoDesignChange(panel._selector.Selected!);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Could not undo last changes to {panel._selector.Selected!.Name}.",
+                    NotificationType.Error,
+                    false);
+            }
+        }
+    }
+
+    private sealed class ExportToClipboardButton(DesignPanel panel) : Button
+    {
+        public override bool Visible
+            => panel._selector.Selected != null;
+
+        protected override string Description
+            => "Copy the current design to your clipboard.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Copy;
+
+        protected override void OnClick()
+        {
+            try
+            {
+                var text = panel._converter.ShareBase64(panel._selector.Selected!);
+                ImGui.SetClipboardText(text);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Could not copy {panel._selector.Selected!.Name} data to clipboard.",
+                    $"Could not copy data from design {panel._selector.Selected!.Identifier} to clipboard", NotificationType.Error, false);
+            }
+        }
+    }
 }

@@ -12,23 +12,57 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
+using static Glamourer.Gui.Tabs.HeaderDrawer;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
 
-public class NpcPanel(
-    NpcSelector _selector,
-    LocalNpcAppearanceData _favorites,
-    CustomizationDrawer _customizeDrawer,
-    EquipmentDrawer _equipDrawer,
-    DesignConverter _converter,
-    DesignManager _designManager,
-    StateManager _state,
-    ObjectManager _objects,
-    DesignColors _colors)
+public class NpcPanel
 {
-    private readonly DesignColorCombo _colorCombo = new(_colors, true);
-    private          string           _newName    = string.Empty;
-    private          DesignBase?      _newDesign;
+    private readonly DesignColorCombo       _colorCombo;
+    private          string                 _newName = string.Empty;
+    private          DesignBase?            _newDesign;
+    private readonly NpcSelector            _selector;
+    private readonly LocalNpcAppearanceData _favorites;
+    private readonly CustomizationDrawer    _customizeDrawer;
+    private readonly EquipmentDrawer        _equipDrawer;
+    private readonly DesignConverter        _converter;
+    private readonly DesignManager          _designManager;
+    private readonly StateManager           _state;
+    private readonly ObjectManager          _objects;
+    private readonly DesignColors           _colors;
+    private readonly Button[]              _leftButtons;
+    private readonly Button[]              _rightButtons;
+
+    public NpcPanel(NpcSelector selector,
+        LocalNpcAppearanceData favorites,
+        CustomizationDrawer customizeDrawer,
+        EquipmentDrawer equipDrawer,
+        DesignConverter converter,
+        DesignManager designManager,
+        StateManager state,
+        ObjectManager objects,
+        DesignColors colors)
+    {
+        _selector        = selector;
+        _favorites       = favorites;
+        _customizeDrawer = customizeDrawer;
+        _equipDrawer     = equipDrawer;
+        _converter       = converter;
+        _designManager   = designManager;
+        _state           = state;
+        _objects         = objects;
+        _colors          = colors;
+        _colorCombo      = new DesignColorCombo(colors, true);
+        _leftButtons =
+        [
+            new ExportToClipboardButton(this),
+            new SaveAsDesignButton(this),
+        ];
+        _rightButtons =
+        [
+            new FavoriteButton(this),
+        ];
+    }
 
     public void Draw()
     {
@@ -41,67 +75,30 @@ public class NpcPanel(
     private void DrawHeader()
     {
         HeaderDrawer.Draw(_selector.HasSelection ? _selector.Selection.Name : "No Selection", ColorId.NormalDesign.Value(),
-            ImGui.GetColorU32(ImGuiCol.FrameBg), 2, ExportToClipboardButton(), SaveAsDesignButton(), FavoriteButton());
+            ImGui.GetColorU32(ImGuiCol.FrameBg), _leftButtons, _rightButtons);
         SaveDesignDrawPopup();
     }
 
-    private HeaderDrawer.Button FavoriteButton()
+    private sealed class FavoriteButton(NpcPanel panel) : Button
     {
-        var (desc, color) = _favorites.IsFavorite(_selector.Selection)
-            ? ("Remove this NPC appearance from your favorites.", ColorId.FavoriteStarOn.Value())
-            : ("Add this NPC Appearance to your favorites.", 0x80000000);
-        return new HeaderDrawer.Button
-        {
-            Icon        = FontAwesomeIcon.Star,
-            OnClick     = () => _favorites.ToggleFavorite(_selector.Selection),
-            Visible     = _selector.HasSelection,
-            Description = desc,
-            TextColor   = color,
-        };
-    }
+        protected override string Description
+            => panel._favorites.IsFavorite(panel._selector.Selection)
+                ? "Remove this NPC appearance from your favorites."
+                : "Add this NPC Appearance to your favorites.";
 
-    private HeaderDrawer.Button ExportToClipboardButton()
-        => new()
-        {
-            Description =
-                "Copy the current NPCs appearance to your clipboard.\nHold Control to disable applying of customizations for the copied design.\nHold Shift to disable applying of gear for the copied design.",
-            Icon    = FontAwesomeIcon.Copy,
-            OnClick = ExportToClipboard,
-            Visible = _selector.HasSelection,
-        };
+        protected override uint TextColor
+            => panel._favorites.IsFavorite(panel._selector.Selection)
+                ? ColorId.FavoriteStarOn.Value()
+                : 0x80000000;
 
-    private HeaderDrawer.Button SaveAsDesignButton()
-        => new()
-        {
-            Description =
-                "Save this NPCs appearance as a design.\nHold Control to disable applying of customizations for the saved design.\nHold Shift to disable applying of gear for the saved design.",
-            Icon    = FontAwesomeIcon.Save,
-            OnClick = SaveDesignOpen,
-            Visible = _selector.HasSelection,
-        };
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Star;
 
-    private void ExportToClipboard()
-    {
-        try
-        {
-            var data = ToDesignData();
-            var text = _converter.ShareBase64(data, new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
-            ImGui.SetClipboardText(text);
-        }
-        catch (Exception ex)
-        {
-            Glamourer.Messager.NotificationMessage(ex, $"Could not copy {_selector.Selection.Name}'s data to clipboard.",
-                $"Could not copy data from NPC appearance {_selector.Selection.Kind} {_selector.Selection.Id.Id} to clipboard",
-                NotificationType.Error);
-        }
-    }
+        public override bool Visible
+            => panel._selector.HasSelection;
 
-    private void SaveDesignOpen()
-    {
-        ImGui.OpenPopup("Save as Design");
-        _newName = _selector.Selection.Name;
-        var data = ToDesignData();
-        _newDesign = _converter.Convert(data, new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
+        protected override void OnClick()
+            => panel._favorites.ToggleFavorite(panel._selector.Selection);
     }
 
     private void SaveDesignDrawPopup()
@@ -287,6 +284,54 @@ public class NpcPanel(
             if (ImGui.Button(text, new Vector2(ImGui.GetContentRegionAvail().X, 0)))
                 ImGui.SetClipboardText(text);
             ImGuiUtil.HoverTooltip("Click to copy to clipboard.");
+        }
+    }
+
+    private sealed class ExportToClipboardButton(NpcPanel panel) : Button
+    {
+        protected override string Description
+            => "Copy the current NPCs appearance to your clipboard.\nHold Control to disable applying of customizations for the copied design.\nHold Shift to disable applying of gear for the copied design.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Copy;
+
+        public override bool Visible
+            => panel._selector.HasSelection;
+
+        protected override void OnClick()
+        {
+            try
+            {
+                var data = panel.ToDesignData();
+                var text = panel._converter.ShareBase64(data, new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
+                ImGui.SetClipboardText(text);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Could not copy {panel._selector.Selection.Name}'s data to clipboard.",
+                    $"Could not copy data from NPC appearance {panel._selector.Selection.Kind} {panel._selector.Selection.Id.Id} to clipboard",
+                    NotificationType.Error);
+            }
+        }
+    }
+
+    private sealed class SaveAsDesignButton(NpcPanel panel) : Button
+    {
+        protected override string Description
+            => "Save this NPCs appearance as a design.\nHold Control to disable applying of customizations for the saved design.\nHold Shift to disable applying of gear for the saved design.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Save;
+
+        public override bool Visible
+            => panel._selector.HasSelection;
+
+        protected override void OnClick()
+        {
+            ImGui.OpenPopup("Save as Design");
+            panel._newName = panel._selector.Selection.Name;
+            var data = panel.ToDesignData();
+            panel._newDesign = panel._converter.Convert(data, new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
         }
     }
 }

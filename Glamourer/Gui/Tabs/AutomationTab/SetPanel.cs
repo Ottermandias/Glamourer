@@ -29,10 +29,10 @@ public class SetPanel(
     Configuration _config,
     RandomRestrictionDrawer _randomDrawer)
 {
-    private readonly JobGroupCombo _jobGroupCombo = new(_manager, _jobs, Glamourer.Log);
-
-    private string? _tempName;
-    private int     _dragIndex = -1;
+    private readonly JobGroupCombo          _jobGroupCombo = new(_manager, _jobs, Glamourer.Log);
+    private readonly HeaderDrawer.Button[] _rightButtons  = [new HeaderDrawer.IncognitoButton(_config.Ephemeral)];
+    private          string?                _tempName;
+    private          int                    _dragIndex = -1;
 
     private Action? _endAction;
 
@@ -47,8 +47,7 @@ public class SetPanel(
     }
 
     private void DrawHeader()
-        => HeaderDrawer.Draw(_selector.SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg), 0,
-            HeaderDrawer.Button.IncognitoButton(_selector.IncognitoMode, v => _selector.IncognitoMode = v));
+        => HeaderDrawer.Draw(_selector.SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg), [], _rightButtons);
 
     private void DrawPanel()
     {

@@ -211,7 +211,7 @@ public class SettingsTab(
     {
         var showAuto     = config.EnableAutoDesigns;
         var showAdvanced = config.UseAdvancedParameters || config.UseAdvancedDyes;
-        var numColumns   = 6 - (showAuto ? 0 : 1) - (showAdvanced ? 0 : 1);
+        var numColumns   = 7 - (showAuto ? 0 : 2) - (showAdvanced ? 0 : 1);
         ImGui.NewLine();
         ImGui.TextUnformatted("Show the Following Buttons in the Quick Design Bar:");
         ImGui.Dummy(Vector2.Zero);
@@ -225,8 +225,9 @@ public class SettingsTab(
             (" Apply Design ", true, QdbButtons.ApplyDesign),
             (" Revert All ", true, QdbButtons.RevertAll),
             (" Revert to Auto ", showAuto, QdbButtons.RevertAutomation),
+            (" Reapply Auto ", showAuto, QdbButtons.ReapplyAutomation),
             (" Revert Equip ", true, QdbButtons.RevertEquip),
-            (" Revert Customization ", true, QdbButtons.RevertCustomize),
+            (" Revert Customize ", true, QdbButtons.RevertCustomize),
             (" Revert Advanced ", showAdvanced, QdbButtons.RevertAdvanced),
         };
 

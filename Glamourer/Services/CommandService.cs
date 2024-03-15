@@ -115,16 +115,17 @@ public class CommandService : IDisposable
         var argument = argumentList.Length == 2 ? argumentList[1] : string.Empty;
         var _ = argumentList[0].ToLowerInvariant() switch
         {
-            "apply"             => Apply(argument),
-            "reapply"           => ReapplyState(argument),
-            "revert"            => Revert(argument),
-            "reapplyautomation" => ReapplyAutomation(argument),
-            "automation"        => SetAutomation(argument),
-            "copy"              => CopyState(argument),
-            "save"              => SaveState(argument),
-            "delete"            => Delete(argument),
-            "applyitem"         => ApplyItem(argument),
-            _                   => PrintHelp(argumentList[0]),
+            "apply"              => Apply(argument),
+            "reapply"            => ReapplyState(argument),
+            "revert"             => Revert(argument),
+            "reapplyautomation"  => ReapplyAutomation(argument, "reapplyautomation", false),
+            "reverttoautomation" => ReapplyAutomation(argument, "reverttoautomation", true),
+            "automation"         => SetAutomation(argument),
+            "copy"               => CopyState(argument),
+            "save"               => SaveState(argument),
+            "delete"             => Delete(argument),
+            "applyitem"          => ApplyItem(argument),
+            _                    => PrintHelp(argumentList[0]),
         };
     }
 
@@ -143,6 +144,8 @@ public class CommandService : IDisposable
         _chat.Print(new SeStringBuilder().AddCommand("revert", "Reverts a given character to its game state. Use without arguments for help.")
             .BuiltString);
         _chat.Print(new SeStringBuilder().AddCommand("reapplyautomation",
+            "Reapplies the current automation state on top of the characters current state.. Use without arguments for help.").BuiltString);
+        _chat.Print(new SeStringBuilder().AddCommand("reverttoautomation",
             "Reverts a given character to its supposed state using automated designs. Use without arguments for help.").BuiltString);
         _chat.Print(new SeStringBuilder()
             .AddCommand("copy", "Copy the current state of a character to clipboard. Use without arguments for help.").BuiltString);
@@ -296,11 +299,11 @@ public class CommandService : IDisposable
         return true;
     }
 
-    private bool ReapplyAutomation(string argument)
+    private bool ReapplyAutomation(string argument, string command, bool revert)
     {
         if (argument.Length == 0)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour reapplyautomation ").AddGreen("[Character Identifier]").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText($"Use with /glamour {command} ").AddGreen("[Character Identifier]").BuiltString);
             PlayerIdentifierHelp(false, true);
             return true;
         }
@@ -318,7 +321,7 @@ public class CommandService : IDisposable
             {
                 if (_stateManager.GetOrCreate(identifier, actor, out var state))
                 {
-                    _autoDesignApplier.ReapplyAutomation(actor, identifier, state);
+                    _autoDesignApplier.ReapplyAutomation(actor, identifier, state, revert);
                     _stateManager.ReapplyState(actor, StateSource.Manual);
                 }
             }
@@ -474,7 +477,10 @@ public class CommandService : IDisposable
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 Clipboard as a single word will try to apply a design string currently in your clipboard.").BuiltString);
             _chat.Print(new SeStringBuilder()
-                .AddText("    》 ").AddYellow("Random").AddText(" supports many restrictions, see the Restriction Builder when adding a Random design to Automations for valid strings.").BuiltString);
+                .AddText("    》 ").AddYellow("Random")
+                .AddText(
+                    " supports many restrictions, see the Restriction Builder when adding a Random design to Automations for valid strings.")
+                .BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 ").AddBlue("<Enable Mods>").AddText(" is optional and can be omitted (together with the ;), ").AddBlue("true")
                 .AddText(" or ").AddBlue("false").AddText(".").BuiltString);
@@ -677,6 +683,7 @@ public class CommandService : IDisposable
                         _chat.Print(new SeStringBuilder().AddText("No design matched your restrictions.").BuiltString);
                         return false;
                     }
+
                     _chat.Print($"Chose random design {((Design)design).Name}.");
                 }
                 catch (Exception ex)

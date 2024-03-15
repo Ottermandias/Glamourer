@@ -55,12 +55,12 @@ public class MainWindow : Window, IDisposable
     public readonly NpcTab        Npcs;
     public readonly MessagesTab   Messages;
 
-    public TabType SelectTab = TabType.None;
+    public TabType SelectTab;
 
     public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
         DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, MessagesTab messages, DesignQuickBar quickBar,
         NpcTab npcs, MainWindowPosition position)
-        : base(GetLabel())
+        : base("GlamourerMainWindow")
     {
         pi.UiBuilder.DisableGposeUiHide = true;
         SizeConstraints = new WindowSizeConstraints()
@@ -102,6 +102,7 @@ public class MainWindow : Window, IDisposable
             ? Flags | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize
             : Flags & ~(ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize);
         _position.IsOpen = IsOpen;
+        WindowName       = GetLabel();
     }
 
     public void Dispose()
@@ -177,8 +178,12 @@ public class MainWindow : Window, IDisposable
         IsOpen    = true;
     }
 
-    private static string GetLabel()
-        => Glamourer.Version.Length == 0
-            ? "Glamourer###GlamourerMainWindow"
-            : $"Glamourer v{Glamourer.Version}###GlamourerMainWindow";
+    private string GetLabel()
+        => (Glamourer.Version.Length == 0, _config.Ephemeral.IncognitoMode) switch
+        {
+            (true, true)   => "Glamourer (Incognito Mode)###GlamourerMainWindow",
+            (true, false)  => "Glamourer###GlamourerMainWindow",
+            (false, false) => $"Glamourer v{Glamourer.Version}###GlamourerMainWindow",
+            (false, true)  => $"Glamourer v{Glamourer.Version} (Incognito Mode)###GlamourerMainWindow",
+        };
 }

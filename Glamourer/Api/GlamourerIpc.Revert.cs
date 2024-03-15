@@ -124,7 +124,7 @@ public partial class GlamourerIpc
                 if (_objects.TryGetValue(id, out var data))
                     foreach (var obj in data.Objects)
                     {
-                        _autoDesignApplier.ReapplyAutomation(obj, state.Identifier, state);
+                        _autoDesignApplier.ReapplyAutomation(obj, state.Identifier, state, true);
                         _stateManager.ReapplyState(obj, StateSource.IpcManual);
                     }
             }

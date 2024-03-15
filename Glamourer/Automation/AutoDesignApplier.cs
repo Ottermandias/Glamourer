@@ -215,7 +215,7 @@ public sealed class AutoDesignApplier : IDisposable
         _state.ReapplyState(actor, StateSource.Fixed);
     }
 
-    public void ReapplyAutomation(Actor actor, ActorIdentifier identifier, ActorState state)
+    public void ReapplyAutomation(Actor actor, ActorIdentifier identifier, ActorState state, bool reset)
     {
         if (!_config.EnableAutoDesigns)
             return;
@@ -223,7 +223,8 @@ public sealed class AutoDesignApplier : IDisposable
         if (!GetPlayerSet(identifier, out var set))
             return;
 
-        _state.ResetState(state, StateSource.Game);
+        if (reset)
+            _state.ResetState(state, StateSource.Game);
         Reduce(actor, state, set, false, false);
     }
 
