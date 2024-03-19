@@ -2,7 +2,7 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
-using Glamourer.Interop.Structs;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop;
 

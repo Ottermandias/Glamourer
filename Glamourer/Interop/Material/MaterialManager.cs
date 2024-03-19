@@ -2,12 +2,12 @@
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop.Material;

@@ -1,12 +1,12 @@
 ﻿using Dalamud.Interface.Utility;
 using Glamourer.Interop.Penumbra;
-using Glamourer.Interop.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;

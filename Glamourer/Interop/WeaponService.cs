@@ -2,8 +2,8 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
-using Glamourer.Interop.Structs;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;

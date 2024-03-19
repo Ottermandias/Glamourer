@@ -2,8 +2,8 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Events;
-using Glamourer.Interop.Structs;
 using OtterGui.Classes;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;

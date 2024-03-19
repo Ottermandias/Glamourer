@@ -1,11 +1,11 @@
 ﻿using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin;
 using Glamourer.Events;
-using Glamourer.Interop.Structs;
 using OtterGui.Classes;
 using Penumbra.Api;
 using Penumbra.Api.Enums;
 using Penumbra.Api.Helpers;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop.Penumbra;

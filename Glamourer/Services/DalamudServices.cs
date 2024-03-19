@@ -26,5 +26,6 @@ public class DalamudServices
         services.AddDalamudService<ITextureProvider>(pi);
         services.AddDalamudService<IPluginLog>(pi);
         services.AddDalamudService<IGameInteropProvider>(pi);
+        services.AddDalamudService<INotificationManager>(pi);
     }
 }

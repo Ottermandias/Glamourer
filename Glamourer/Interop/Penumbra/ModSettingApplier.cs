@@ -1,8 +1,8 @@
 ﻿using Glamourer.Designs.Links;
-using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Glamourer.State;
 using OtterGui.Services;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop.Penumbra;
 

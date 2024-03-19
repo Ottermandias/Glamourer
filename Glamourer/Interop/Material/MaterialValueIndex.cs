@@ -1,9 +1,9 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.Interop;
-using Glamourer.Interop.Structs;
 using Newtonsoft.Json;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop.Material;
 

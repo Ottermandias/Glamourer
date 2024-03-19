@@ -1,5 +1,5 @@
-using Glamourer.Interop.Structs;
 using OtterGui.Classes;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Events;
 

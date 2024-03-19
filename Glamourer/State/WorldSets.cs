@@ -1,5 +1,5 @@
-﻿using Glamourer.Interop.Structs;
-using Penumbra.GameData.Enums;
+﻿using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
@@ -344,10 +344,10 @@ public class WorldSets
     }
 
 
-    private unsafe (byte, byte, Race, Gender) GetData(Actor actor)
+    private static unsafe (byte, byte, Race, Gender) GetData(Actor actor)
     {
-        var customize = actor.GetCustomize();
-        return (actor.AsCharacter->CharacterData.Level, actor.Job, customize.Race, customize.Gender);
+        var customize = actor.Customize;
+        return (actor.AsCharacter->CharacterData.Level, actor.Job, customize->Race, customize->Gender);
     }
 
     public void Apply(Actor actor, Random rng, Span<CharacterArmor> armor)
@@ -356,7 +356,7 @@ public class WorldSets
         Apply(level, job, race, gender, rng, armor);
     }
 
-    public void Apply(byte level, byte job, Race race, Gender gender, Random rng, Span<CharacterArmor> armor)
+    private void Apply(byte level, byte job, Race race, Gender gender, Random rng, Span<CharacterArmor> armor)
     {
         var opt = GetGroup(level, job, race, gender, rng);
         if (opt == null)
@@ -375,7 +375,7 @@ public class WorldSets
         Apply(level, job, race, gender, rng, ref armor, slot);
     }
 
-    public void Apply(byte level, byte job, Race race, Gender gender, Random rng, ref CharacterArmor armor, EquipSlot slot)
+    private void Apply(byte level, byte job, Race race, Gender gender, Random rng, ref CharacterArmor armor, EquipSlot slot)
     {
         var opt = GetGroup(level, job, race, gender, rng);
         if (opt == null)
@@ -398,7 +398,7 @@ public class WorldSets
         Apply(level, job, race, gender, rng, ref weapon, slot);
     }
 
-    public void Apply(byte level, byte job, Race race, Gender gender, Random rng, ref CharacterWeapon weapon, EquipSlot slot)
+    private void Apply(byte level, byte job, Race race, Gender gender, Random rng, ref CharacterWeapon weapon, EquipSlot slot)
     {
         var opt = GetGroup(level, job, race, gender, rng);
         if (opt == null)

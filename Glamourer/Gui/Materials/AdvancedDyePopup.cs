@@ -5,7 +5,6 @@ using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using FFXIVClientStructs.Interop;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
@@ -13,6 +12,7 @@ using OtterGui.Raii;
 using OtterGui.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
+using Penumbra.GameData.Interop;
 using Penumbra.String;
 
 namespace Glamourer.Gui.Materials;

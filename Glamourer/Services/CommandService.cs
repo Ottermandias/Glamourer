@@ -5,16 +5,16 @@ using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Gui;
-using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
+using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.Services;
 

@@ -12,7 +12,7 @@ using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using System;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.State;
 
@@ -163,7 +163,7 @@ public sealed class StateManager(
         else
         {
             // Obtain all data from the game object.
-            ret.Customize = actor.GetCustomize();
+            ret.Customize = *actor.Customize;
 
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
             {

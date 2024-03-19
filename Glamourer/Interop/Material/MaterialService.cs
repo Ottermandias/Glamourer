@@ -1,7 +1,7 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
-using Glamourer.Interop.Structs;
 using Lumina.Data.Files;
+using Penumbra.GameData.Interop;
 using static Penumbra.GameData.Files.MtrlFile;
 using Texture = FFXIVClientStructs.FFXIV.Client.Graphics.Kernel.Texture;
 

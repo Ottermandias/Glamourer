@@ -2,9 +2,9 @@ using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using Glamourer.Interop.Structs;
 using Penumbra.GameData;
 using Penumbra.GameData.DataContainers;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
@@ -21,7 +21,7 @@ public class JobService : IDisposable
 
     public event Action<Actor, Job, Job>? JobChanged;
 
-    public JobService(DictJob jobs, DictJobGroup jobGroups, IDataManager gameData, IGameInteropProvider interop)
+    public JobService(DictJob jobs, DictJobGroup jobGroups, IGameInteropProvider interop)
     {
         interop.InitializeFromAttributes(this);
         _characterDataOffset = Marshal.OffsetOf<Character>(nameof(Character.CharacterData));

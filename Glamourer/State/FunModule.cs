@@ -2,15 +2,15 @@
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
 using Glamourer.Gui;
-using Glamourer.Interop;
-using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 using CustomizeIndex = Penumbra.GameData.Enums.CustomizeIndex;
+using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.State;
 

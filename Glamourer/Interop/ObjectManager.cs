@@ -4,28 +4,15 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using Glamourer.Interop.Structs;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop;
 
-public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
+public class ObjectManager(IFramework framework, IClientState clientState, global::Penumbra.GameData.Interop.ObjectManager objects, ActorManager actors, ITargetManager targets)
+    : IReadOnlyDictionary<ActorIdentifier, ActorData>
 {
-    private readonly IFramework     _framework;
-    private readonly IClientState   _clientState;
-    private readonly IObjectTable   _objects;
-    private readonly ActorManager   _actors;
-    private readonly ITargetManager _targets;
-
-    public IObjectTable Objects
-        => _objects;
-
-    public ObjectManager(IFramework framework, IClientState clientState, IObjectTable objects, ActorManager actors, ITargetManager targets)
-    {
-        _framework   = framework;
-        _clientState = clientState;
-        _objects     = objects;
-        _actors      = actors;
-        _targets     = targets;
-    }
+    public global::Penumbra.GameData.Interop.ObjectManager Objects
+        => objects;
 
     public DateTime LastUpdate { get; private set; }
 
@@ -41,39 +28,39 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
 
     public void Update()
     {
-        var lastUpdate = _framework.LastUpdate;
+        var lastUpdate = framework.LastUpdate;
         if (lastUpdate <= LastUpdate)
             return;
 
         LastUpdate = lastUpdate;
-        World      = (ushort)(_clientState.LocalPlayer?.CurrentWorld.Id ?? 0u);
+        World      = (ushort)(clientState.LocalPlayer?.CurrentWorld.Id ?? 0u);
         _identifiers.Clear();
         _allWorldIdentifiers.Clear();
         _nonOwnedIdentifiers.Clear();
 
         for (var i = 0; i < (int)ScreenActor.CutsceneStart; ++i)
         {
-            Actor character = _objects.GetObjectAddress(i);
-            if (character.Identifier(_actors, out var identifier))
+            var character = objects[i];
+            if (character.Identifier(actors, out var identifier))
                 HandleIdentifier(identifier, character);
         }
 
         for (var i = (int)ScreenActor.CutsceneStart; i < (int)ScreenActor.CutsceneEnd; ++i)
         {
-            Actor character = _objects.GetObjectAddress(i);
+            var character = objects[i];
             // Technically the game does not create holes in cutscenes or GPose.
             // But for Brio compatibility, we allow holes in GPose.
             // Since GPose always has the event actor in the first cutscene slot, we can still optimize in this case.
             if (!character.Valid && i == (int)ScreenActor.CutsceneStart)
                 break;
 
-            HandleIdentifier(character.GetIdentifier(_actors), character);
+            HandleIdentifier(character.GetIdentifier(actors), character);
         }
 
         void AddSpecial(ScreenActor idx, string label)
         {
-            Actor actor = _objects.GetObjectAddress((int)idx);
-            if (actor.Identifier(_actors, out var ident))
+            var actor = objects[(int)idx];
+            if (actor.Identifier(actors, out var ident))
             {
                 var data = new ActorData(actor, label);
                 _identifiers.Add(ident, data);
@@ -89,10 +76,10 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
         AddSpecial(ScreenActor.Card7,           "Card Actor 7");
         AddSpecial(ScreenActor.Card8,           "Card Actor 8");
 
-        for (var i = (int)ScreenActor.ScreenEnd; i < _objects.Length; ++i)
+        for (var i = (int)ScreenActor.ScreenEnd; i < objects.Count; ++i)
         {
-            Actor character = _objects.GetObjectAddress(i);
-            if (character.Identifier(_actors, out var identifier))
+            var character = objects[i];
+            if (character.Identifier(actors, out var identifier))
                 HandleIdentifier(identifier, character);
         }
 
@@ -117,7 +104,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
 
         if (identifier.Type is IdentifierType.Player or IdentifierType.Owned)
         {
-            var allWorld = _actors.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, ushort.MaxValue,
+            var allWorld = actors.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, ushort.MaxValue,
                 identifier.Kind,
                 identifier.DataId);
 
@@ -134,7 +121,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
 
         if (identifier.Type is IdentifierType.Owned)
         {
-            var nonOwned = _actors.CreateNpc(identifier.Kind, identifier.DataId);
+            var nonOwned = actors.CreateNpc(identifier.Kind, identifier.DataId);
             if (!_nonOwnedIdentifiers.TryGetValue(nonOwned, out var nonOwnedData))
             {
                 nonOwnedData                   = new ActorData(character, nonOwned.ToString());
@@ -148,26 +135,26 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
     }
 
     public Actor GPosePlayer
-        => _objects.GetObjectAddress((int)ScreenActor.GPosePlayer);
+        => objects[(int)ScreenActor.GPosePlayer];
 
     public Actor Player
-        => _objects.GetObjectAddress(0);
+        => objects[0];
 
     public unsafe Actor Target
-        => _clientState.IsGPosing ? TargetSystem.Instance()->GPoseTarget : TargetSystem.Instance()->Target;
+        => clientState.IsGPosing ? TargetSystem.Instance()->GPoseTarget : TargetSystem.Instance()->Target;
 
     public Actor Focus
-        => _targets.FocusTarget?.Address ?? nint.Zero;
+        => targets.FocusTarget?.Address ?? nint.Zero;
 
     public Actor MouseOver
-        => _targets.MouseOverTarget?.Address ?? nint.Zero;
+        => targets.MouseOverTarget?.Address ?? nint.Zero;
 
     public (ActorIdentifier Identifier, ActorData Data) PlayerData
     {
         get
         {
             Update();
-            return Player.Identifier(_actors, out var ident) && _identifiers.TryGetValue(ident, out var data)
+            return Player.Identifier(actors, out var ident) && _identifiers.TryGetValue(ident, out var data)
                 ? (ident, data)
                 : (ident, ActorData.Invalid);
         }
@@ -178,7 +165,7 @@ public class ObjectManager : IReadOnlyDictionary<ActorIdentifier, ActorData>
         get
         {
             Update();
-            return Target.Identifier(_actors, out var ident) && _identifiers.TryGetValue(ident, out var data)
+            return Target.Identifier(actors, out var ident) && _identifiers.TryGetValue(ident, out var data)
                 ? (ident, data)
                 : (ident, ActorData.Invalid);
         }

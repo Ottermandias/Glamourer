@@ -1,5 +1,4 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using FFXIVClientStructs.FFXIV.Shader;
 using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
@@ -8,7 +7,9 @@ using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
+using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
@@ -30,7 +31,7 @@ public unsafe class ModelEvaluationPanel(
     public void Draw()
     {
         ImGui.InputInt("Game Object Index", ref _gameObjectIndex, 0, 0);
-        var       actor = (Actor)_objectManager.Objects.GetObjectAddress(_gameObjectIndex);
+        var       actor = _objectManager.Objects[_gameObjectIndex];
         var       model = actor.Model;
         using var table = ImRaii.Table("##evaluationTable", 4, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         ImGui.TableNextColumn();

@@ -3,7 +3,7 @@ using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using Glamourer.Interop.Structs;
+using Penumbra.GameData.Interop;
 using Character = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
 
 namespace Glamourer.Interop;

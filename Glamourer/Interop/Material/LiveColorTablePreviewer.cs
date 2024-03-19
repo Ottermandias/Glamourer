@@ -1,5 +1,4 @@
 ﻿using Dalamud.Plugin.Services;
-using Glamourer.Interop.Structs;
 using ImGuiNET;
 using OtterGui.Services;
 using Penumbra.GameData.Files;
@@ -9,9 +8,9 @@ namespace Glamourer.Interop.Material;
 
 public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
 {
-    private readonly IObjectTable   _objects;
-    private readonly IFramework     _framework;
-    private readonly DirectXService _directXService;
+    private readonly global::Penumbra.GameData.Interop.ObjectManager _objects;
+    private readonly IFramework                                      _framework;
+    private readonly DirectXService                                  _directXService;
 
     public  MaterialValueIndex  LastValueIndex         { get; private set; } = MaterialValueIndex.Invalid;
     public  MtrlFile.ColorTable LastOriginalColorTable { get; private set; }
@@ -20,7 +19,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
     private ObjectIndex         _objectIndex     = ObjectIndex.AnyIndex;
     private MtrlFile.ColorTable _originalColorTable;
 
-    public LiveColorTablePreviewer(IObjectTable objects, IFramework framework, DirectXService directXService)
+    public LiveColorTablePreviewer(global::Penumbra.GameData.Interop.ObjectManager objects, IFramework framework, DirectXService directXService)
     {
         _objects          =  objects;
         _framework        =  framework;
@@ -33,7 +32,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
         if (LastValueIndex.DrawObject is MaterialValueIndex.DrawObjectType.Invalid || _lastObjectIndex == ObjectIndex.AnyIndex)
             return;
 
-        var actor = (Actor)_objects.GetObjectAddress(_lastObjectIndex.Index);
+        var actor = _objects[_lastObjectIndex];
         if (actor.IsCharacter && LastValueIndex.TryGetTexture(actor, out var texture))
             _directXService.ReplaceColorTable(texture, LastOriginalColorTable);
 
@@ -51,7 +50,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
             return;
         }
 
-        var actor = (Actor)_objects.GetObjectAddress(_objectIndex.Index);
+        var actor = _objects[_objectIndex];
         if (!actor.IsCharacter)
         {
             _valueIndex  = MaterialValueIndex.Invalid;

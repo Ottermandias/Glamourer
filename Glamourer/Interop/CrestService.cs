@@ -3,9 +3,9 @@ using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using Glamourer.Interop.Structs;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop;
 

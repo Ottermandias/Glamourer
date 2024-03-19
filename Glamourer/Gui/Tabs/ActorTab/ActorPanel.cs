@@ -18,6 +18,8 @@ using OtterGui.Raii;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
+using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 

@@ -12,6 +12,8 @@ using Dalamud.Plugin.Services;
 using Glamourer.GameData;
 using Penumbra.GameData.DataContainers;
 using Glamourer.Designs;
+using Penumbra.GameData.Interop;
+using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.State;
 
@@ -550,10 +552,10 @@ public class StateListener : IDisposable
     /// only if we kept track of state of someone who went to the aesthetician,
     /// or if they used other tools to change things.
     /// </summary>
-    private UpdateState UpdateBaseData(Actor actor, ActorState state, CustomizeArray customize, bool checkTransform)
+    private unsafe UpdateState UpdateBaseData(Actor actor, ActorState state, CustomizeArray customize, bool checkTransform)
     {
         // Customize array does not agree between game object and draw object => transformation.
-        if (checkTransform && !actor.GetCustomize().Equals(customize))
+        if (checkTransform && !actor.Customize->Equals(customize))
             return UpdateState.Transformed;
 
         // Customize array did not change to stored state.

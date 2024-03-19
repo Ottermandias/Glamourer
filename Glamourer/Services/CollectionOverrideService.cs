@@ -1,11 +1,11 @@
 using Glamourer.Interop.Penumbra;
-using Glamourer.Interop.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
 using OtterGui.Filesystem;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Services;
 

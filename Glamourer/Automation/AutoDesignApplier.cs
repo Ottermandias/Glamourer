@@ -5,12 +5,13 @@ using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Material;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
+using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.Automation;
 

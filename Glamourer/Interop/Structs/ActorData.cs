@@ -1,4 +1,5 @@
 ﻿using OtterGui.Log;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop.Structs;
 
@@ -15,7 +16,7 @@ public readonly struct ActorData
 
     public ActorData(Actor actor, string label)
     {
-        Objects = new List<Actor> { actor };
+        Objects = [actor];
         Label   = label;
     }
 
@@ -23,7 +24,7 @@ public readonly struct ActorData
 
     private ActorData(bool _)
     {
-        Objects = new List<Actor>(0);
+        Objects = [];
         Label   = string.Empty;
     }
 
