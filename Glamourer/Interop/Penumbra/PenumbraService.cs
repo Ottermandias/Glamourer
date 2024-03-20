@@ -162,7 +162,7 @@ public unsafe class PenumbraService : IDisposable
         try
         {
             collection ??= _currentCollection.Invoke(ApiCollectionType.Current);
-            var ec       = _setMod.Invoke(collection, mod.DirectoryName, mod.Name, settings.Enabled);
+            var ec = _setMod.Invoke(collection, mod.DirectoryName, mod.Name, settings.Enabled);
             switch (ec)
             {
                 case PenumbraApiEc.ModMissing:        return $"The mod {mod.Name} [{mod.DirectoryName}] could not be found.";
@@ -188,10 +188,13 @@ public unsafe class PenumbraService : IDisposable
                     case PenumbraApiEc.OptionMissing:
                         sb.AppendLine($"Could not find all desired options in the option group {setting} in mod {mod.Name}.");
                         break;
+                    case PenumbraApiEc.Success:
+                    case PenumbraApiEc.NothingChanged:
+                        break;
+                    default:
+                        sb.AppendLine($"Could not apply options in the option group {setting} in mod {mod.Name} for unknown reason {ec}.");
+                        break;
                 }
-
-                Debug.Assert(ec is PenumbraApiEc.Success or PenumbraApiEc.NothingChanged,
-                    "Missing Mod or Collection should not be possible here.");
             }
 
             return sb.ToString();
