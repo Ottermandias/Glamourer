@@ -1,8 +1,6 @@
-﻿using Dalamud.ContextMenu;
-using Dalamud.Game.Text;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Plugin;
+﻿using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Glamourer.Designs;
 using Glamourer.Services;
 using Glamourer.State;
@@ -16,142 +14,119 @@ public class ContextMenuService : IDisposable
     public const int ItemSearchContextItemId = 0x1738;
     public const int ChatLogContextItemId    = 0x948;
 
-    private readonly ItemManager        _items;
-    private readonly DalamudContextMenu _contextMenu;
-    private readonly StateManager       _state;
-    private readonly ObjectManager      _objects;
-    private readonly IGameGui           _gameGui;
+    private readonly ItemManager   _items;
+    private readonly IContextMenu  _contextMenu;
+    private readonly StateManager  _state;
+    private readonly ObjectManager _objects;
+    private readonly IGameGui      _gameGui;
+    private          EquipItem     _lastItem;
+    private          StainId       _lastStain;
+
+    private readonly MenuItem _inventoryItem;
 
     public ContextMenuService(ItemManager items, StateManager state, ObjectManager objects, IGameGui gameGui, Configuration config,
-        DalamudPluginInterface pi)
+        IContextMenu context)
     {
-        _contextMenu = new DalamudContextMenu(pi);
+        _contextMenu = context;
         _items       = items;
         _state       = state;
         _objects     = objects;
         _gameGui     = gameGui;
         if (config.EnableGameContextMenu)
             Enable();
+
+        _inventoryItem = new MenuItem
+        {
+            IsEnabled   = true,
+            IsReturn    = false,
+            PrefixChar  = 'G',
+            Name        = "Try On",
+            OnClicked   = OnClick,
+            IsSubmenu   = false,
+            PrefixColor = 541,
+        };
     }
 
     public void Enable()
     {
-        _contextMenu.OnOpenGameObjectContextMenu += AddGameObjectItem;
-        _contextMenu.OnOpenInventoryContextMenu  += AddInventoryItem;
+        _contextMenu.OnMenuOpened += OnMenuOpened;
+    }
+
+    private unsafe void OnMenuOpened(MenuOpenedArgs args)
+    {
+        if (args.MenuType is ContextMenuType.Inventory)
+        {
+            var arg = (MenuTargetInventory)args.Target;
+            if (arg.TargetItem.HasValue && HandleItem(arg.TargetItem.Value.ItemId))
+            {
+                _lastStain = arg.TargetItem.Value.Stain;
+                args.AddMenuItem(_inventoryItem);
+            }
+        }
+        else
+        {
+            switch (args.AddonName)
+            {
+                case "ItemSearch" when args.AgentPtr != nint.Zero:
+                {
+                    if (HandleItem((ItemId)AgentContext.Instance()->UpdateCheckerParam))
+                        args.AddMenuItem(_inventoryItem);
+
+                    break;
+                }
+                case "ChatLog":
+                {
+                    var agent = _gameGui.FindAgentInterface("ChatLog");
+                    if (agent == nint.Zero || !ValidateChatLogContext(agent))
+                        return;
+
+                    if (HandleItem(*(ItemId*)(agent + ChatLogContextItemId)))
+                    {
+                        _lastStain = 0;
+                        args.AddMenuItem(_inventoryItem);
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+
+    private bool HandleItem(ItemId id)
+    {
+        var itemId = Math.Clamp(id.Id, 0, 500000u);
+        return _items.ItemData.TryGetValue(itemId, EquipSlot.MainHand, out _lastItem);
     }
 
     public void Disable()
     {
-        _contextMenu.OnOpenGameObjectContextMenu -= AddGameObjectItem;
-        _contextMenu.OnOpenInventoryContextMenu  -= AddInventoryItem;
+        _contextMenu.OnMenuOpened -= OnMenuOpened;
     }
 
     public void Dispose()
     {
         Disable();
-        _contextMenu.Dispose();
     }
 
-    private static readonly SeString TryOnString = new SeStringBuilder().AddUiForeground(SeIconChar.BoxedLetterG.ToIconString(), 541)
-        .AddText(" Try On").AddUiForegroundOff().BuiltString;
-
-    private void AddInventoryItem(InventoryContextMenuOpenArgs args)
+    private void OnClick(MenuItemClickedArgs _)
     {
-        var item = CheckInventoryItem(args.ItemId);
-        if (item != null)
-            args.AddCustomItem(item);
-    }
+        var (id, playerData) = _objects.PlayerData;
+        if (!playerData.Valid)
+            return;
 
-    private InventoryContextMenuItem? CheckInventoryItem(uint itemId)
-    {
-        if (itemId > 500000)
-            itemId -= 500000;
+        if (!_state.GetOrCreate(id, playerData.Objects[0], out var state))
+            return;
 
-        if (!_items.ItemData.TryGetValue(itemId, EquipSlot.MainHand, out var item))
-            return null;
+        var slot = _lastItem.Type.ToSlot();
+        _state.ChangeEquip(state, slot, _lastItem, _lastStain, ApplySettings.Manual);
+        if (!_lastItem.Type.ValidOffhand().IsOffhandType())
+            return;
 
-        return new InventoryContextMenuItem(TryOnString, GetInventoryAction(item));
-    }
-
-
-    private GameObjectContextMenuItem? CheckGameObjectItem(uint itemId)
-    {
-        if (itemId > 500000)
-            itemId -= 500000;
-
-        if (!_items.ItemData.TryGetValue(itemId, EquipSlot.MainHand, out var item))
-            return null;
-
-        return new GameObjectContextMenuItem(TryOnString, GetGameObjectAction(item));
-    }
-
-    private unsafe GameObjectContextMenuItem? CheckGameObjectItem(IntPtr agent, int offset, Func<nint, bool> validate)
-        => agent != IntPtr.Zero && validate(agent) ? CheckGameObjectItem(*(uint*)(agent + offset)) : null;
-
-    private unsafe GameObjectContextMenuItem? CheckGameObjectItem(IntPtr agent, int offset)
-        => agent != IntPtr.Zero ? CheckGameObjectItem(*(uint*)(agent + offset)) : null;
-
-    private GameObjectContextMenuItem? CheckGameObjectItem(string name, int offset, Func<nint, bool> validate)
-        => CheckGameObjectItem(_gameGui.FindAgentInterface(name), offset, validate);
-
-    private void AddGameObjectItem(GameObjectContextMenuOpenArgs args)
-    {
-        var item = args.ParentAddonName switch
-        {
-            "ItemSearch" => CheckGameObjectItem(args.Agent, ItemSearchContextItemId),
-            "ChatLog"    => CheckGameObjectItem("ChatLog",  ChatLogContextItemId, ValidateChatLogContext),
-            _            => null,
-        };
-        if (item != null)
-            args.AddCustomItem(item);
-    }
-
-    private DalamudContextMenu.InventoryContextMenuItemSelectedDelegate GetInventoryAction(EquipItem item)
-    {
-        return _ =>
-        {
-            var (id, playerData) = _objects.PlayerData;
-            if (!playerData.Valid)
-                return;
-
-            if (!_state.GetOrCreate(id, playerData.Objects[0], out var state))
-                return;
-
-            var slot = item.Type.ToSlot();
-            _state.ChangeEquip(state, slot, item, 0, ApplySettings.Manual);
-            if (item.Type.ValidOffhand().IsOffhandType())
-            {
-                if (item.PrimaryId.Id is > 1600 and < 1651
-                 && _items.ItemData.TryGetValue(item.ItemId, EquipSlot.Hands, out var gauntlets))
-                    _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, 0, ApplySettings.Manual);
-                if (_items.ItemData.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
-                    _state.ChangeEquip(state, EquipSlot.OffHand, offhand, 0, ApplySettings.Manual);
-            }
-        };
-    }
-
-    private DalamudContextMenu.GameObjectContextMenuItemSelectedDelegate GetGameObjectAction(EquipItem item)
-    {
-        return _ =>
-        {
-            var (id, playerData) = _objects.PlayerData;
-            if (!playerData.Valid)
-                return;
-
-            if (!_state.GetOrCreate(id, playerData.Objects[0], out var state))
-                return;
-
-            var slot = item.Type.ToSlot();
-            _state.ChangeEquip(state, slot, item, 0, ApplySettings.Manual);
-            if (item.Type.ValidOffhand().IsOffhandType())
-            {
-                if (item.PrimaryId.Id is > 1600 and < 1651
-                 && _items.ItemData.TryGetValue(item.ItemId, EquipSlot.Hands, out var gauntlets))
-                    _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, 0, ApplySettings.Manual);
-                if (_items.ItemData.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand))
-                    _state.ChangeEquip(state, EquipSlot.OffHand, offhand, 0, ApplySettings.Manual);
-            }
-        };
+        if (_lastItem.PrimaryId.Id is > 1600 and < 1651
+         && _items.ItemData.TryGetValue(_lastItem.ItemId, EquipSlot.Hands, out var gauntlets))
+            _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, _lastStain, ApplySettings.Manual);
+        if (_items.ItemData.TryGetValue(_lastItem.ItemId, EquipSlot.OffHand, out var offhand))
+            _state.ChangeEquip(state, EquipSlot.OffHand, offhand, _lastStain, ApplySettings.Manual);
     }
 
     private static unsafe bool ValidateChatLogContext(nint agent)
