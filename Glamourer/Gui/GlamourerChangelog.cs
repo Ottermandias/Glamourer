@@ -31,6 +31,7 @@ public class GlamourerChangelog
         AddDummy(Changelog);
         AddDummy(Changelog);
         Add1_2_0_0(Changelog);
+        Add1_2_1_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -50,6 +51,25 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_2_1_0(Changelog log)
+        => log.NextVersion("Version 1.2.1.0")
+            .RegisterEntry("Updated for .net 8 and FFXIV 6.58, using some new framework options to improve performance and stability.")
+            .RegisterEntry("Previewing changed items in Penumbra now works with all weapons in GPose. (1.2.0.8)")
+            .RegisterEntry("Added a design type selectable for automation that applies the design currently selected in the quick design bar. (1.2.0.4)")
+            .RegisterEntry("Added an option to respect manual changes when changing automation settings. (1.2.0.3)")
+            .RegisterEntry("You can now apply designs to the player character with a double click on them (can be turned off in settings). (1.2.0.1)")
+            .RegisterEntry("The last selected design and tab are now stored and applied on startup. (1.2.0.1)")
+            .RegisterEntry("Fixed behavior of revert to automation to actually revert and not just reapply. (1.2.0.8)")
+            .RegisterEntry("Added Reapply Automation buttons and chat commands with prior behaviour.", 1)
+            .RegisterEntry("Fixed random design never applying the last design in the set. (1.2.0.7)")
+            .RegisterEntry("Fixed colors of special designs. (1.2.0.7)")
+            .RegisterEntry("Fixed issues with weapon tracking. (1.2.0.5, 1.2.0.6)")
+            .RegisterEntry("Fixed issues with moved items and gearset changes not being listened to. (1.2.0.4)")
+            .RegisterEntry("Fixed issues with applying advanced dyes in fixed states. (1.2.0.2)")
+            .RegisterEntry("Fixed issues turning non-humans human. (1.2.0.1)")
+            .RegisterEntry("Fixed issues with body type application. (1.2.0.1, 1.2.0.2)")
+            .RegisterEntry("Fixed issue with design link application rule checkboxes. (1.2.0.1)");
 
     private static void Add1_2_0_0(Changelog log)
         => log.NextVersion("Version 1.2.0.0")
