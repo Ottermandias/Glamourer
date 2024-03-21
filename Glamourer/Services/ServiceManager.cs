@@ -26,12 +26,11 @@ using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
-using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Services;
 
-public static class ServiceManagerA
+public static class StaticServiceManager
 {
     public static ServiceManager CreateProvider(DalamudPluginInterface pi, Logger log)
     {

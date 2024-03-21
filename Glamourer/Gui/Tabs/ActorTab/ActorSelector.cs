@@ -56,7 +56,7 @@ public class ActorSelector(ObjectManager objects, ActorManager actors, Ephemeral
         objects.Update();
         using var style     = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
         var       skips     = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
-        var       remainder = ImGuiClip.FilteredClippedDraw(objects, skips, CheckFilter, DrawSelectable);
+        var       remainder = ImGuiClip.FilteredClippedDraw(objects.Identifiers, skips, CheckFilter, DrawSelectable);
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
     }
 

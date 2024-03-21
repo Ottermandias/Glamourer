@@ -31,7 +31,7 @@ public unsafe class ModelEvaluationPanel(
     public void Draw()
     {
         ImGui.InputInt("Game Object Index", ref _gameObjectIndex, 0, 0);
-        var       actor = _objectManager.Objects[_gameObjectIndex];
+        var       actor = _objectManager[_gameObjectIndex];
         var       model = actor.Model;
         using var table = ImRaii.Table("##evaluationTable", 4, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         ImGui.TableNextColumn();

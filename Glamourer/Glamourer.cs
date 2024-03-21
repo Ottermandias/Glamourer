@@ -30,7 +30,7 @@ public class Glamourer : IDalamudPlugin
     {
         try
         {
-            _services = ServiceManagerA.CreateProvider(pluginInterface, Log);
+            _services = StaticServiceManager.CreateProvider(pluginInterface, Log);
             Messager  = _services.GetService<MessageService>();
             _services.EnsureRequiredServices();
 

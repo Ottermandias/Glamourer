@@ -23,7 +23,7 @@ public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectM
     public void Draw()
     {
         _objectManager.Update();
-        foreach (var (identifier, actors) in _objectManager)
+        foreach (var (identifier, actors) in _objectManager.Identifiers)
         {
             if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Trash.ToIconString()}##{actors.Label}", new Vector2(ImGui.GetFrameHeight()),
                     string.Empty, !_stateManager.ContainsKey(identifier), true))

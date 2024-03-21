@@ -69,7 +69,7 @@ public class ObjectManagerPanel(ObjectManager _objectManager, ActorManager _acto
         var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
         ImGui.TableNextRow();
 
-        var remainder = ImGuiClip.FilteredClippedDraw(_objectManager, skips,
+        var remainder = ImGuiClip.FilteredClippedDraw(_objectManager.Identifiers, skips,
             p => p.Value.Label.Contains(_objectFilter, StringComparison.OrdinalIgnoreCase), p
                 =>
             {

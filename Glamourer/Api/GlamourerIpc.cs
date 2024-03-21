@@ -168,8 +168,7 @@ public sealed partial class GlamourerIpc : IDisposable
             return [];
 
         _objects.Update();
-        return _objects.Where(i => i.Key is { IsValid: true, Type: IdentifierType.Player } && i.Key.PlayerName == byteString)
-            .Select(i => i.Key);
+        return _objects.Keys.Where(i => i is { IsValid: true, Type: IdentifierType.Player } && i.PlayerName == byteString);
     }
 
     private IEnumerable<ActorIdentifier> FindActorsRevert(string actorName)
@@ -178,8 +177,8 @@ public sealed partial class GlamourerIpc : IDisposable
             yield break;
 
         _objects.Update();
-        foreach (var id in _objects.Where(i => i.Key is { IsValid: true, Type: IdentifierType.Player } && i.Key.PlayerName == byteString)
-                     .Select(i => i.Key))
+        foreach (var id in _objects.Keys.Where(i => i is { IsValid: true, Type: IdentifierType.Player } && i.PlayerName == byteString)
+                     .Select(i => i))
             yield return id;
 
         foreach (var id in _stateManager.Keys.Where(s => s.Type is IdentifierType.Player && s.PlayerName == byteString))

@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Plugin;
+﻿using Dalamud.Plugin;
 using Glamourer.Api;
 using Glamourer.Interop;
 using ImGuiNET;
@@ -32,7 +31,7 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
     private GlamourerIpc.GlamourerErrorCode _setItemByActorNameEc;
     private GlamourerIpc.GlamourerErrorCode _setItemOnceByActorNameEc;
 
-    public unsafe void Draw()
+    public void Draw()
     {
         ImGui.InputInt("Game Object Index", ref _gameObjectIndex, 0, 0);
         ImGui.InputTextWithHint("##gameObject", "Character Name...",    ref _gameObjectName,   64);
@@ -58,7 +57,7 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelGetAllCustomizationFromCharacter);
         ImGui.TableNextColumn();
         base64 = GlamourerIpc.GetAllCustomizationFromCharacterSubscriber(_pluginInterface)
-            .Invoke(_objectManager.Objects.GetDalamudCharacter(_gameObjectIndex));
+            .Invoke(_objectManager.GetDalamudCharacter(_gameObjectIndex));
         if (base64 != null)
             ImGuiUtil.CopyOnClickSelectable(base64);
         else
@@ -66,7 +65,7 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelGetAllCustomizationFromLockedCharacter);
         ImGui.TableNextColumn();
-        var base64Locked = GlamourerIpc.GetAllCustomizationFromLockedCharacterSubscriber(_pluginInterface).Invoke(_objectManager.Objects.GetDalamudCharacter(_gameObjectIndex), 1337);
+        var base64Locked = GlamourerIpc.GetAllCustomizationFromLockedCharacterSubscriber(_pluginInterface).Invoke(_objectManager.GetDalamudCharacter(_gameObjectIndex), 1337);
         if (base64Locked != null)
             ImGuiUtil.CopyOnClickSelectable(base64Locked);
         else
@@ -80,7 +79,7 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelRevertCharacter);
         ImGui.TableNextColumn();
         if (ImGui.Button("Revert##Character"))
-            GlamourerIpc.RevertCharacterSubscriber(_pluginInterface).Invoke(_objectManager.Objects.GetDalamudCharacter(_gameObjectIndex));
+            GlamourerIpc.RevertCharacterSubscriber(_pluginInterface).Invoke(_objectManager.GetDalamudCharacter(_gameObjectIndex));
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyAll);
         ImGui.TableNextColumn();
@@ -96,13 +95,13 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##AllCharacter"))
             GlamourerIpc.ApplyAllToCharacterSubscriber(_pluginInterface)
-                .Invoke(_base64Apply, _objectManager.Objects.GetDalamudCharacter(_gameObjectIndex));
+                .Invoke(_base64Apply, _objectManager.GetDalamudCharacter(_gameObjectIndex));
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyAllOnceToCharacter);
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply Once##AllCharacter"))
             GlamourerIpc.ApplyAllOnceToCharacterSubscriber(_pluginInterface)
-                .Invoke(_base64Apply, _objectManager.Objects.GetDalamudCharacter(_gameObjectIndex));
+                .Invoke(_base64Apply, _objectManager.GetDalamudCharacter(_gameObjectIndex));
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyOnlyEquipment);
         ImGui.TableNextColumn();
@@ -113,7 +112,7 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##EquipCharacter"))
             GlamourerIpc.ApplyOnlyEquipmentToCharacterSubscriber(_pluginInterface)
-                .Invoke(_base64Apply, _objectManager.Objects.GetDalamudCharacter(_gameObjectIndex));
+                .Invoke(_base64Apply, _objectManager.GetDalamudCharacter(_gameObjectIndex));
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyOnlyCustomization);
         ImGui.TableNextColumn();
@@ -124,7 +123,7 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##CustomizeCharacter"))
             GlamourerIpc.ApplyOnlyCustomizationToCharacterSubscriber(_pluginInterface)
-                .Invoke(_base64Apply, _objectManager.Objects.GetDalamudCharacter(_gameObjectIndex));
+                .Invoke(_base64Apply, _objectManager.GetDalamudCharacter(_gameObjectIndex));
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyByGuid);
         ImGui.TableNextColumn();
@@ -140,25 +139,25 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply##ByGuidCharacter") && Guid.TryParse(_designIdentifier, out var guid2))
             GlamourerIpc.ApplyByGuidToCharacterSubscriber(_pluginInterface)
-                .Invoke(guid2, _objectManager.Objects.GetDalamudCharacter(_gameObjectIndex));
+                .Invoke(guid2, _objectManager.GetDalamudCharacter(_gameObjectIndex));
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyByGuidOnceToCharacter);
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply Once##ByGuidCharacter") && Guid.TryParse(_designIdentifier, out var guid2Once))
             GlamourerIpc.ApplyByGuidOnceToCharacterSubscriber(_pluginInterface)
-                .Invoke(guid2Once, _objectManager.Objects.GetDalamudCharacter(_gameObjectIndex));
+                .Invoke(guid2Once, _objectManager.GetDalamudCharacter(_gameObjectIndex));
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelApplyAllLock);
         ImGui.TableNextColumn();
         if (ImGui.Button("Apply With Lock##CustomizeCharacter"))
             GlamourerIpc.ApplyAllToCharacterLockSubscriber(_pluginInterface)
-                .Invoke(_base64Apply, _objectManager.Objects.GetDalamudCharacter(_gameObjectIndex), 1337);
+                .Invoke(_base64Apply, _objectManager.GetDalamudCharacter(_gameObjectIndex), 1337);
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelUnlock);
         ImGui.TableNextColumn();
         if (ImGui.Button("Unlock##CustomizeCharacter"))
             GlamourerIpc.UnlockSubscriber(_pluginInterface)
-                .Invoke(_objectManager.Objects.GetDalamudCharacter(_gameObjectIndex), 1337);
+                .Invoke(_objectManager.GetDalamudCharacter(_gameObjectIndex), 1337);
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelUnlockAll);
         ImGui.TableNextColumn();
@@ -170,7 +169,7 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         ImGui.TableNextColumn();
         if (ImGui.Button("Revert##CustomizeCharacter"))
             GlamourerIpc.RevertToAutomationCharacterSubscriber(_pluginInterface)
-                .Invoke(_objectManager.Objects.GetDalamudCharacter(_gameObjectIndex), 1337);
+                .Invoke(_objectManager.GetDalamudCharacter(_gameObjectIndex), 1337);
 
 
         ImGuiUtil.DrawTableColumn(GlamourerIpc.LabelGetDesignList);
@@ -184,7 +183,7 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         ImGui.TableNextColumn();
         if (ImGui.Button("Set##SetItem"))
             _setItemEc = (GlamourerIpc.GlamourerErrorCode)GlamourerIpc.SetItemSubscriber(_pluginInterface)
-                .Invoke(_objectManager.Objects.GetDalamudCharacter(_gameObjectIndex), (byte)_slot, _customItemId.Id, _stainId.Id, 1337);
+                .Invoke(_objectManager.GetDalamudCharacter(_gameObjectIndex), (byte)_slot, _customItemId.Id, _stainId.Id, 1337);
         if (_setItemEc != GlamourerIpc.GlamourerErrorCode.Success)
         {
             ImGui.SameLine();
@@ -195,7 +194,7 @@ public class IpcTesterPanel(DalamudPluginInterface _pluginInterface, ObjectManag
         ImGui.TableNextColumn();
         if (ImGui.Button("Set Once##SetItem"))
             _setItemOnceEc = (GlamourerIpc.GlamourerErrorCode)GlamourerIpc.SetItemOnceSubscriber(_pluginInterface)
-                .Invoke(_objectManager.Objects.GetDalamudCharacter(_gameObjectIndex), (byte)_slot, _customItemId.Id, _stainId.Id, 1337);
+                .Invoke(_objectManager.GetDalamudCharacter(_gameObjectIndex), (byte)_slot, _customItemId.Id, _stainId.Id, 1337);
         if (_setItemOnceEc != GlamourerIpc.GlamourerErrorCode.Success)
         {
             ImGui.SameLine();
