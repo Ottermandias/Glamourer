@@ -47,11 +47,6 @@ public class ContextMenuService : IDisposable
         };
     }
 
-    public void Enable()
-    {
-        _contextMenu.OnMenuOpened += OnMenuOpened;
-    }
-
     private unsafe void OnMenuOpened(MenuOpenedArgs args)
     {
         if (args.MenuType is ContextMenuType.Inventory)
@@ -92,21 +87,14 @@ public class ContextMenuService : IDisposable
         }
     }
 
-    private bool HandleItem(ItemId id)
-    {
-        var itemId = Math.Clamp(id.Id, 0, 500000u);
-        return _items.ItemData.TryGetValue(itemId, EquipSlot.MainHand, out _lastItem);
-    }
+    public void Enable()
+        => _contextMenu.OnMenuOpened += OnMenuOpened;
 
     public void Disable()
-    {
-        _contextMenu.OnMenuOpened -= OnMenuOpened;
-    }
+        => _contextMenu.OnMenuOpened -= OnMenuOpened;
 
     public void Dispose()
-    {
-        Disable();
-    }
+        => Disable();
 
     private void OnClick(MenuItemClickedArgs _)
     {
@@ -127,6 +115,12 @@ public class ContextMenuService : IDisposable
             _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, _lastStain, ApplySettings.Manual);
         if (_items.ItemData.TryGetValue(_lastItem.ItemId, EquipSlot.OffHand, out var offhand))
             _state.ChangeEquip(state, EquipSlot.OffHand, offhand, _lastStain, ApplySettings.Manual);
+    }
+
+    private bool HandleItem(ItemId id)
+    {
+        var itemId = id.Id % 500000u;
+        return _items.ItemData.TryGetValue(itemId, EquipSlot.MainHand, out _lastItem);
     }
 
     private static unsafe bool ValidateChatLogContext(nint agent)
