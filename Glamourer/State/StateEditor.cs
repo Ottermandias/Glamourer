@@ -298,7 +298,7 @@ public class StateEditor(
                     }
 
                     var currentType = state.BaseData.Item(weaponSlot).Type;
-                    if (mergedDesign.Weapons.TryGetValue(currentType, out var weapon))
+                    if (mergedDesign.Weapons.TryGet(currentType, state.LastJob, out var weapon))
                     {
                         var source = settings.UseSingleSource ? settings.Source :
                             weapon.Item2 is StateSource.Game  ? StateSource.Game : settings.Source;
@@ -311,7 +311,7 @@ public class StateEditor(
             if (settings.FromJobChange)
                 jobChange.Set(state, mergedDesign.Weapons.Values.Select(m =>
                     (m.Item1, settings.UseSingleSource ? settings.Source :
-                        m.Item2 is StateSource.Game    ? StateSource.Game : settings.Source)));
+                        m.Item2 is StateSource.Game    ? StateSource.Game : settings.Source, m.Item3)));
 
             foreach (var meta in MetaExtensions.AllRelevant.Where(mergedDesign.Design.DoApplyMeta))
             {

@@ -2,6 +2,7 @@
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs.Special;
 
@@ -28,9 +29,9 @@ public class RevertDesign : IDesignStandIn
     public StateSource AssociatedSource()
         => StateSource.Game;
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags)> AllLinks
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks
     {
-        get { yield return (this, ApplicationType.All); }
+        get { yield return (this, ApplicationType.All, JobFlag.All); }
     }
 
     public void AddData(JObject jObj)

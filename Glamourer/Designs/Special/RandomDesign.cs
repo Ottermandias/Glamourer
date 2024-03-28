@@ -2,6 +2,7 @@
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs.Special;
 
@@ -45,7 +46,7 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public StateSource AssociatedSource()
         => StateSource.Manual;
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags)> AllLinks
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks
     {
         get
         {
@@ -53,8 +54,8 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
             if (_currentDesign == null)
                 yield break;
 
-            foreach (var (link, type) in _currentDesign.AllLinks)
-                yield return (link, type);
+            foreach (var (link, type, jobs) in _currentDesign.AllLinks)
+                yield return (link, type, jobs);
         }
     }
 

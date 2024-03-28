@@ -119,7 +119,7 @@ public class ContextMenuService : IDisposable
 
     private bool HandleItem(ItemId id)
     {
-        var itemId = id.Id % 500000u;
+        var itemId = id.StripModifiers;
         return _items.ItemData.TryGetValue(itemId, EquipSlot.MainHand, out _lastItem);
     }
 

@@ -8,6 +8,7 @@ using Glamourer.State;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
@@ -50,8 +51,8 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     public string Incognito
         => Identifier.ToString()[..8];
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags)> AllLinks
-        => LinkContainer.GetAllLinks(this).Select(t => ((IDesignStandIn)t.Link.Link, t.Link.Type));
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks
+        => LinkContainer.GetAllLinks(this).Select(t => ((IDesignStandIn)t.Link.Link, t.Link.Type, JobFlag.All));
 
     #endregion
 

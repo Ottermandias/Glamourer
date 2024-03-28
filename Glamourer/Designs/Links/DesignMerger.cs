@@ -19,9 +19,9 @@ public class DesignMerger(
 {
     public MergedDesign Merge(LinkContainer designs, in CustomizeArray currentCustomize, in DesignData baseRef, bool respectOwnership,
         bool modAssociations)
-        => Merge(designs.Select(d => ((IDesignStandIn)d.Link, d.Type)), currentCustomize, baseRef, respectOwnership, modAssociations);
+        => Merge(designs.Select(d => ((IDesignStandIn)d.Link, d.Type, JobFlag.All)), currentCustomize, baseRef, respectOwnership, modAssociations);
 
-    public MergedDesign Merge(IEnumerable<(IDesignStandIn, ApplicationType)> designs, in CustomizeArray currentCustomize, in DesignData baseRef,
+    public MergedDesign Merge(IEnumerable<(IDesignStandIn, ApplicationType, JobFlag)> designs, in CustomizeArray currentCustomize, in DesignData baseRef,
         bool respectOwnership, bool modAssociations)
     {
         var ret = new MergedDesign(designManager);
@@ -29,7 +29,7 @@ public class DesignMerger(
         var           startBodyType = currentCustomize.BodyType;
         CustomizeFlag fixFlags      = 0;
         respectOwnership &= _config.UnlockedItemMode;
-        foreach (var (design, type) in designs)
+        foreach (var (design, type, jobs) in designs)
         {
             if (type is 0)
                 continue;
@@ -44,8 +44,8 @@ public class DesignMerger(
             ReduceMeta(data, applyMeta, ret, source);
             ReduceCustomize(data, customizeFlags, ref fixFlags, ret, source, respectOwnership, startBodyType);
             ReduceEquip(data, equipFlags, ret, source, respectOwnership);
-            ReduceMainhands(data, equipFlags, ret, source, respectOwnership);
-            ReduceOffhands(data, equipFlags, ret, source, respectOwnership);
+            ReduceMainhands(data, jobs, equipFlags, ret, source, respectOwnership);
+            ReduceOffhands(data, jobs, equipFlags, ret, source, respectOwnership);
             ReduceCrests(data, crestFlags, ret, source);
             ReduceParameters(data, parameterFlags, ret, source);
             ReduceMods(design as Design, ret, modAssociations);
@@ -170,7 +170,7 @@ public class DesignMerger(
         }
     }
 
-    private void ReduceMainhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateSource source,
+    private void ReduceMainhands(in DesignData design, JobFlag allowedJobs, EquipFlag equipFlags, MergedDesign ret, StateSource source,
         bool respectOwnership)
     {
         if (!equipFlags.HasFlag(EquipFlag.Mainhand))
@@ -186,10 +186,10 @@ public class DesignMerger(
             ret.Design.GetDesignDataRef().SetItem(EquipSlot.MainHand, weapon);
         }
 
-        ret.Weapons.TryAdd(weapon.Type, (weapon, source));
+        ret.Weapons.TryAdd(weapon.Type, weapon, source, allowedJobs);
     }
 
-    private void ReduceOffhands(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateSource source, bool respectOwnership)
+    private void ReduceOffhands(in DesignData design, JobFlag allowedJobs, EquipFlag equipFlags, MergedDesign ret, StateSource source, bool respectOwnership)
     {
         if (!equipFlags.HasFlag(EquipFlag.Offhand))
             return;
@@ -205,7 +205,7 @@ public class DesignMerger(
         }
 
         if (weapon.Valid)
-            ret.Weapons.TryAdd(weapon.Type, (weapon, source));
+            ret.Weapons.TryAdd(weapon.Type, weapon, source, allowedJobs);
     }
 
     private void ReduceCustomize(in DesignData design, CustomizeFlag customizeFlags, ref CustomizeFlag fixFlags, MergedDesign ret,

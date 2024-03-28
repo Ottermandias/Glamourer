@@ -1,18 +1,21 @@
-﻿using OtterGui.Services;
+﻿using Glamourer.Designs.Links;
+using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
 
-public sealed class JobChangeState : Dictionary<FullEquipType, (EquipItem, StateSource)>, IService
+public sealed class JobChangeState : IService
 {
+    private readonly WeaponList _weaponList = new();
+
     public ActorState? State { get; private set; }
 
     public void Reset()
     {
         State = null;
-        Clear();
+        _weaponList.Clear();
     }
 
     public bool HasState
@@ -21,10 +24,13 @@ public sealed class JobChangeState : Dictionary<FullEquipType, (EquipItem, State
     public ActorIdentifier Identifier
         => State?.Identifier ?? ActorIdentifier.Invalid;
 
-    public void Set(ActorState state, IEnumerable<(EquipItem, StateSource)> items)
+    public bool TryGetValue(FullEquipType slot, JobId jobId, out (EquipItem, StateSource) data)
+        => _weaponList.TryGet(slot, jobId, out data);
+
+    public void Set(ActorState state, IEnumerable<(EquipItem, StateSource, JobFlag)> items)
     {
-        foreach (var (item, source) in items.Where(p => p.Item1.Valid))
-            TryAdd(item.Type, (item, source));
+        foreach (var (item, source, flags) in items.Where(p => p.Item1.Valid))
+            _weaponList.TryAdd(item.Type, item, source, flags);
         State = state;
     }
 }

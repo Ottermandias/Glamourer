@@ -4,6 +4,7 @@ using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
 using OtterGui.Services;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs.Special;
 
@@ -38,7 +39,7 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
     public StateSource AssociatedSource()
         => StateSource.Manual;
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags)> AllLinks
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks
         => combo.Design?.AllLinks ?? [];
 
     public void AddData(JObject jObj)
