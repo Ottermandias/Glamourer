@@ -66,12 +66,17 @@ public class ItemManager
             return SmallClothesItem(slot);
 
         if (!itemId.IsItem || !ItemData.TryGetValue(itemId.Item, slot, out var item))
-            return EquipItem.FromId(itemId);
+        {
+            item = EquipItem.FromId(itemId);
+            item = slot is EquipSlot.MainHand or EquipSlot.OffHand 
+                ? Identify(slot, item.PrimaryId, item.SecondaryId, item.Variant) 
+                : Identify(slot, item.PrimaryId, item.Variant);
+            return item;
+        }
 
         if (item.Type.ToSlot() != slot)
-            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.PrimaryId, item.SecondaryId, item.Variant, 0, 0,
-                0,
-                0);
+            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.PrimaryId, item.SecondaryId, item.Variant,
+                0, 0, 0, 0);
 
         return item;
     }
@@ -86,9 +91,8 @@ public class ItemManager
             return EquipItem.FromId(itemId);
 
         if (item.Type != type)
-            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.PrimaryId, item.SecondaryId, item.Variant, 0, 0,
-                0,
-                0);
+            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.PrimaryId, item.SecondaryId, item.Variant,
+                0, 0, 0, 0);
 
         return item;
     }
