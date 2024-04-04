@@ -93,7 +93,7 @@ public unsafe class MetaService : IDisposable
     private void ToggleVisorDetour(DrawDataContainer* drawData, bool value)
     {
         Actor actor = drawData->Parent;
-        _visorEvent.Invoke(actor.Model, ref value);
+        _visorEvent.Invoke(actor.Model, true, ref value);
         Glamourer.Log.Verbose($"[MetaService] Toggle Visor triggered with 0x{(nint)drawData:X} {value} for {actor.Utf8Name}.");
         _toggleVisorHook.Original(drawData, value);
     }

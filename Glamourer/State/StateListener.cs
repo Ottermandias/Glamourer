@@ -568,7 +568,7 @@ public class StateListener : IDisposable
     }
 
     /// <summary> Handle visor state changes made by the game. </summary>
-    private void OnVisorChange(Model model, ref bool value)
+    private unsafe void OnVisorChange(Model model, bool game, ref bool value)
     {
         // Skip updates when in customize update.
         if (ChangeCustomizeService.InUpdate.InMethod)
@@ -578,6 +578,13 @@ public class StateListener : IDisposable
         // We do not need to handle fixed designs,
         // since a fixed design would already have established state-tracking.
         var actor = _penumbra.GameObjectFromDrawObject(model);
+
+        // Only actually change anything if the actor state changed,
+        // when equipping headgear the method is called with the current draw object state,
+        // which corrupts Glamourer's assumed game state otherwise.
+        if (!game && actor.AsCharacter->DrawData.IsVisorToggled != value)
+            return;
+
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
