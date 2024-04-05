@@ -24,7 +24,7 @@ public class GlamourerWindowSystem : IDisposable
         _windowSystem.AddWindow(quick);
         _uiBuilder.OpenMainUi            += _ui.Toggle;
         _uiBuilder.Draw                  += _windowSystem.Draw;
-        _uiBuilder.OpenConfigUi          += _ui.Toggle;
+        _uiBuilder.OpenConfigUi          += _ui.OpenSettings;
         _uiBuilder.DisableCutsceneUiHide =  !config.HideWindowInCutscene;
         _uiBuilder.DisableUserUiHide     =  config.ShowWindowWhenUiHidden;
     }
@@ -33,6 +33,6 @@ public class GlamourerWindowSystem : IDisposable
     {
         _uiBuilder.OpenMainUi   -= _ui.Toggle;
         _uiBuilder.Draw         -= _windowSystem.Draw;
-        _uiBuilder.OpenConfigUi -= _ui.Toggle;
+        _uiBuilder.OpenConfigUi -= _ui.OpenSettings;
     }
 }

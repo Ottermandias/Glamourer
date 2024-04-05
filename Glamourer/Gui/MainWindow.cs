@@ -96,6 +96,12 @@ public class MainWindow : Window, IDisposable
         IsOpen = _config.OpenWindowAtStart;
     }
 
+    public void OpenSettings()
+    {
+        IsOpen    = true;
+        SelectTab = TabType.Settings;
+    }
+
     public override void PreDraw()
     {
         Flags = _config.Ephemeral.LockMainWindow
