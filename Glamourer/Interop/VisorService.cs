@@ -43,21 +43,22 @@ public class VisorService : IDisposable
         return true;
     }
 
-    private delegate void UpdateVisorDelegateInternal(nint humanPtr, ushort modelId, bool on);
+    private delegate void UpdateVisorDelegateInternal(nint humanPtr, ushort modelId, byte on);
 
     private readonly Hook<UpdateVisorDelegateInternal> _setupVisorHook;
 
-    private void SetupVisorDetour(nint human, ushort modelId, bool on)
+    private void SetupVisorDetour(nint human, ushort modelId, byte value)
     {
-        var originalOn = on;
+        var originalOn = value != 0;
+        var on         = originalOn;
         // Invoke an event that can change the requested value
         // and also control whether the function should be called at all.
         Event.Invoke(human, false, ref on);
 
-        Glamourer.Log.Excessive(
-            $"[SetVisorState] Invoked from game on 0x{human:X} switching to {on} (original {originalOn}).");
+        Glamourer.Log.Verbose(
+            $"[SetVisorState] Invoked from game on 0x{human:X} switching to {on} (original {originalOn} from {value} with {modelId}).");
 
-        SetupVisorDetour((Model)human, modelId, on);
+        SetupVisorDetour(human, modelId, on);
     }
 
     /// <summary>
@@ -69,6 +70,6 @@ public class VisorService : IDisposable
     private unsafe void SetupVisorDetour(Model human, ushort modelId, bool on)
     {
         human.AsCharacterBase->VisorToggled = on;
-        _setupVisorHook.Original(human.Address, modelId, on);
+        _setupVisorHook.Original(human.Address, modelId, on ? (byte)1 : (byte)0);
     }
 }
