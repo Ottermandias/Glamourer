@@ -22,6 +22,7 @@ public class GlamourerWindowSystem : IDisposable
         _windowSystem.AddWindow(unlocksTab);
         _windowSystem.AddWindow(changelog.Changelog);
         _windowSystem.AddWindow(quick);
+        _uiBuilder.OpenMainUi            += _ui.Toggle;
         _uiBuilder.Draw                  += _windowSystem.Draw;
         _uiBuilder.OpenConfigUi          += _ui.Toggle;
         _uiBuilder.DisableCutsceneUiHide =  !config.HideWindowInCutscene;
@@ -30,6 +31,7 @@ public class GlamourerWindowSystem : IDisposable
 
     public void Dispose()
     {
+        _uiBuilder.OpenMainUi   -= _ui.Toggle;
         _uiBuilder.Draw         -= _windowSystem.Draw;
         _uiBuilder.OpenConfigUi -= _ui.Toggle;
     }
