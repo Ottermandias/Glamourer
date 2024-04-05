@@ -115,7 +115,7 @@ public class ModAssociationsTab
         
         if (ImGui.IsItemHovered())
         {
-            var (_, newSettings) = _penumbra.GetMods().FirstOrDefault(m => m.Mod == mod);
+            var newSettings = _penumbra.GetModSettings(mod);
             if (ImGui.IsItemClicked())
                 updatedMod = (mod, newSettings);
             

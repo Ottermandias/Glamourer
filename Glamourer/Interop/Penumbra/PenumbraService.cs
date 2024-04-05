@@ -110,17 +110,38 @@ public unsafe class PenumbraService : IDisposable
         remove => _modSettingChanged.Event -= value;
     }
 
+    public ModSettings GetModSettings(in Mod mod)
+    {
+        if (!Available)
+            return ModSettings.Empty;
+
+        try
+        {
+            var collection = _currentCollection.Invoke(ApiCollectionType.Current);
+            var (ec, tuple) = _getCurrentSettings.Invoke(collection, mod.DirectoryName, string.Empty, false);
+            if (ec is not PenumbraApiEc.Success)
+                return ModSettings.Empty;
+
+            return tuple.HasValue ? new ModSettings(tuple.Value.Item3, tuple.Value.Item2, tuple.Value.Item1) : ModSettings.Empty;
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Log.Error($"Error fetching mod settings for {mod.DirectoryName} from Penumbra:\n{ex}");
+            return ModSettings.Empty;
+        }
+    }
+
     public IReadOnlyList<(Mod Mod, ModSettings Settings)> GetMods()
     {
         if (!Available)
-            return Array.Empty<(Mod Mod, ModSettings Settings)>();
+            return [];
 
         try
         {
             var allMods    = _getMods.Invoke();
             var collection = _currentCollection.Invoke(ApiCollectionType.Current);
             return allMods
-                .Select(m => (m.Item1, m.Item2, _getCurrentSettings.Invoke(collection, m.Item1, m.Item2, true)))
+                .Select(m => (m.Item1, m.Item2, _getCurrentSettings.Invoke(collection, m.Item1, m.Item2, false)))
                 .Where(t => t.Item3.Item1 is PenumbraApiEc.Success)
                 .Select(t => (new Mod(t.Item2, t.Item1),
                     !t.Item3.Item2.HasValue
@@ -135,7 +156,7 @@ public unsafe class PenumbraService : IDisposable
         catch (Exception ex)
         {
             Glamourer.Log.Error($"Error fetching mods from Penumbra:\n{ex}");
-            return Array.Empty<(Mod Mod, ModSettings Settings)>();
+            return [];
         }
     }
 
