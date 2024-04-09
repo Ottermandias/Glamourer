@@ -49,12 +49,12 @@ public class EquipmentDrawer
         foreach (var type in Enum.GetValues<FullEquipType>())
         {
             if (type.ToSlot() is EquipSlot.MainHand)
-                _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log));
+                _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log, favorites));
             else if (type.ToSlot() is EquipSlot.OffHand)
-                _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log));
+                _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log, favorites));
         }
 
-        _weaponCombo.Add(FullEquipType.Unknown, new WeaponCombo(items, FullEquipType.Unknown, Glamourer.Log));
+        _weaponCombo.Add(FullEquipType.Unknown, new WeaponCombo(items, FullEquipType.Unknown, Glamourer.Log, favorites));
     }
 
     private Vector2 _iconSize;
