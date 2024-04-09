@@ -168,6 +168,7 @@ public class SettingsTab(
                 "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
                 config.DeleteDesignModifier, v => config.DeleteDesignModifier = v))
             config.Save();
+        DrawRenameSettings();
         Checkbox("Auto-Open Design Folders",
             "Have design folders open or closed as their default state after launching.", config.OpenFoldersByDefault,
             v => config.OpenFoldersByDefault = v);
@@ -410,5 +411,34 @@ public class SettingsTab(
         }
 
         ImGuiUtil.LabeledHelpMarker("Sort Mode", "Choose the sort mode for the mod selector in the designs tab.");
+    }
+
+    private void DrawRenameSettings()
+    {
+        ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
+        using (var combo = ImRaii.Combo("##renameSettings", config.ShowRename.GetData().Name))
+        {
+            if (combo)
+                foreach (var value in Enum.GetValues<RenameField>())
+                {
+                    var (name, desc) = value.GetData();
+                    if (ImGui.Selectable(name, config.ShowRename == value))
+                    {
+                        config.ShowRename = value;
+                        selector.SetRenameSearchPath(value);
+                        config.Save();
+                    }
+
+                    ImGuiUtil.HoverTooltip(desc);
+                }
+        }
+
+        ImGui.SameLine();
+        const string tt =
+            "Select which of the two renaming input fields are visible when opening the right-click context menu of a design in the design selector.";
+        ImGuiComponents.HelpMarker(tt);
+        ImGui.SameLine();
+        ImGui.TextUnformatted("Rename Fields in Design Context Menu");
+        ImGuiUtil.HoverTooltip(tt);
     }
 }

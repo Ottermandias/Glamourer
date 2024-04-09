@@ -3,6 +3,7 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
 using Glamourer.Gui;
+using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using OtterGui;
@@ -46,6 +47,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool                 AlwaysApplyAssociatedMods        { get; set; } = false;
     public bool                 AllowDoubleClickToApply          { get; set; } = false;
     public bool                 RespectManualOnAutomationUpdate  { get; set; } = false;
+    public RenameField          ShowRename                       { get; set; } = RenameField.BothDataPrio;
     public ModifiableHotkey     ToggleQuickDesignBar             { get; set; } = new(VirtualKey.NO_KEY);
     public DoubleModifier       DeleteDesignModifier             { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
     public ChangeLogDisplayType ChangeLogDisplayType             { get; set; } = ChangeLogDisplayType.New;
