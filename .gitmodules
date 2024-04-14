@@ -14,3 +14,7 @@
 	path = Penumbra.Api
 	url = https://github.com/Ottermandias/Penumbra.Api.git
 	branch = main
+[submodule "Glamourer.Api"]
+	path = Glamourer.Api
+	url = git@github.com:Ottermandias/Glamourer.Api.git
+	branch = main
