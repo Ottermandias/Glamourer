@@ -2,6 +2,7 @@
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Glamourer.Api.Enums;
+using Glamourer.Api.Helpers;
 using Glamourer.Api.IpcSubscribers;
 using Glamourer.Designs;
 using ImGuiNET;
@@ -10,7 +11,6 @@ using Newtonsoft.Json.Linq;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;
-using Penumbra.Api.Helpers;
 using Penumbra.GameData.Interop;
 using Penumbra.String;
 

@@ -13,14 +13,14 @@ namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
 public class ItemsIpcTester(DalamudPluginInterface pluginInterface) : IUiService
 {
-    private int                      _gameObjectIndex;
-    private string                   _gameObjectName = string.Empty;
-    private uint                     _key;
-    private ApplyFlag                _flags = ApplyFlagEx.DesignDefault;
-    private CustomItemId             _customItemId;
-    private StainId                  _stainId;
-    private EquipSlot                _slot = EquipSlot.Head;
-    private GlamourerApiEc           _lastError;
+    private int            _gameObjectIndex;
+    private string         _gameObjectName = string.Empty;
+    private uint           _key;
+    private ApplyFlag      _flags = ApplyFlagEx.DesignDefault;
+    private CustomItemId   _customItemId;
+    private StainId        _stainId;
+    private EquipSlot      _slot = EquipSlot.Head;
+    private GlamourerApiEc _lastError;
 
     public void Draw()
     {
@@ -40,11 +40,13 @@ public class ItemsIpcTester(DalamudPluginInterface pluginInterface) : IUiService
 
         IpcTesterHelpers.DrawIntro(SetItem.Label);
         if (ImGui.Button("Set##Idx"))
-            _lastError = new SetItem(pluginInterface).Invoke(_gameObjectIndex, _slot, _customItemId.Id, _stainId.Id, _key, _flags);
+            _lastError = new SetItem(pluginInterface).Invoke(_gameObjectIndex, (ApiEquipSlot)_slot, _customItemId.Id, _stainId.Id, _key,
+                _flags);
 
         IpcTesterHelpers.DrawIntro(SetItemName.Label);
         if (ImGui.Button("Set##Name"))
-            _lastError = new SetItemName(pluginInterface).Invoke(_gameObjectName, _slot, _customItemId.Id, _stainId.Id, _key, _flags);
+            _lastError = new SetItemName(pluginInterface).Invoke(_gameObjectName, (ApiEquipSlot)_slot, _customItemId.Id, _stainId.Id, _key,
+                _flags);
     }
 
     private void DrawItemInput()
