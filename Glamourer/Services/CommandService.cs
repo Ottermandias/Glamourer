@@ -10,6 +10,7 @@ using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
@@ -18,7 +19,7 @@ using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.Services;
 
-public class CommandService : IDisposable
+public class CommandService : IDisposable, IApiService
 {
     private const string RandomString       = "random";
     private const string MainCommandString  = "/glamourer";
@@ -118,7 +119,7 @@ public class CommandService : IDisposable
             "apply"              => Apply(argument),
             "reapply"            => ReapplyState(argument),
             "revert"             => Revert(argument),
-            "reapplyautomation"  => ReapplyAutomation(argument, "reapplyautomation", false),
+            "reapplyautomation"  => ReapplyAutomation(argument, "reapplyautomation",  false),
             "reverttoautomation" => ReapplyAutomation(argument, "reverttoautomation", true),
             "automation"         => SetAutomation(argument),
             "copy"               => CopyState(argument),
@@ -534,14 +535,14 @@ public class CommandService : IDisposable
         if (!applyMods || design is not Design d)
             return;
 
-        var (messages, appliedMods, collection, overridden) = _modApplier.ApplyModSettings(d.AssociatedMods, actor);
+        var (messages, appliedMods, collection, name, overridden) = _modApplier.ApplyModSettings(d.AssociatedMods, actor);
 
         foreach (var message in messages)
             Glamourer.Messager.Chat.Print($"Error applying mod settings: {message}");
 
         if (appliedMods > 0)
             Glamourer.Messager.Chat.Print(
-                $"Applied {appliedMods} mod settings to {collection}{(overridden ? " (overridden by settings)" : string.Empty)}.");
+                $"Applied {appliedMods} mod settings to {name}{(overridden ? " (overridden by settings)" : string.Empty)}.");
     }
 
     private bool Delete(string argument)

@@ -65,20 +65,26 @@ public class ItemManager
         if (itemId == SmallclothesId(slot))
             return SmallClothesItem(slot);
 
-        if (!itemId.IsItem || !ItemData.TryGetValue(itemId.Item, slot, out var item))
+        if (!itemId.IsItem)
         {
-            item = EquipItem.FromId(itemId);
-            item = slot is EquipSlot.MainHand or EquipSlot.OffHand 
-                ? Identify(slot, item.PrimaryId, item.SecondaryId, item.Variant) 
+            var item = EquipItem.FromId(itemId);
+            item = slot is EquipSlot.MainHand or EquipSlot.OffHand
+                ? Identify(slot, item.PrimaryId, item.SecondaryId, item.Variant)
                 : Identify(slot, item.PrimaryId, item.Variant);
             return item;
         }
+        else if (!ItemData.TryGetValue(itemId.Item, slot, out var item))
+        {
+            return EquipItem.FromId(itemId);
+        }
+        else
+        {
+            if (item.Type.ToSlot() != slot)
+                return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.PrimaryId, item.SecondaryId, item.Variant,
+                    0, 0, 0, 0);
 
-        if (item.Type.ToSlot() != slot)
-            return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.PrimaryId, item.SecondaryId, item.Variant,
-                0, 0, 0, 0);
-
-        return item;
+            return item;
+        }
     }
 
     public EquipItem Resolve(FullEquipType type, ItemId itemId)

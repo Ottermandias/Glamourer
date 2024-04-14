@@ -67,7 +67,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
         }
     }
 
-    private void OnModSettingChange(ModSettingChange type, string name, string mod, bool inherited)
+    private void OnModSettingChange(ModSettingChange type, Guid collectionId, string mod, bool inherited)
     {
         if (type is ModSettingChange.TemporaryMod)
         {
@@ -79,8 +79,8 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
                     if (!_objects.TryGetValue(id, out var actors) || !actors.Valid)
                         continue;
 
-                    var collection = _penumbra.GetActorCollection(actors.Objects[0]);
-                    if (collection != name)
+                    var collection = _penumbra.GetActorCollection(actors.Objects[0], out _);
+                    if (collection != collectionId)
                         continue;
 
                     _actions.Enqueue((state, () =>
@@ -96,7 +96,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
         {
             // Only update once per frame.
             var playerName = _penumbra.GetCurrentPlayerCollection();
-            if (playerName != name)
+            if (playerName != collectionId)
                 return;
 
             var currentFrame = _framework.LastUpdateUTC;

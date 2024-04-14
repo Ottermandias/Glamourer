@@ -199,8 +199,8 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
                 continue;
             }
 
-            var settingsDict = tok["Settings"]?.ToObject<Dictionary<string, string[]>>() ?? new Dictionary<string, string[]>();
-            var settings     = new SortedList<string, IList<string>>(settingsDict.Count);
+            var settingsDict = tok["Settings"]?.ToObject<Dictionary<string, List<string>>>() ?? [];
+            var settings     = new Dictionary<string, List<string>>(settingsDict.Count);
             foreach (var (key, value) in settingsDict)
                 settings.Add(key, value);
             var priority = tok["Priority"]?.ToObject<int>() ?? 0;

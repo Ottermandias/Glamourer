@@ -11,24 +11,13 @@ using OtterGui.Raii;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class ModAssociationsTab
+public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelector selector, DesignManager manager)
 {
-    private readonly PenumbraService          _penumbra;
-    private readonly DesignFileSystemSelector _selector;
-    private readonly DesignManager            _manager;
-    private readonly ModCombo                 _modCombo;
-
-    public ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelector selector, DesignManager manager)
-    {
-        _penumbra = penumbra;
-        _selector = selector;
-        _manager  = manager;
-        _modCombo = new ModCombo(penumbra, Glamourer.Log);
-    }
+    private readonly ModCombo _modCombo = new(penumbra, Glamourer.Log);
 
     public void Draw()
     {
-        using var h          = ImRaii.CollapsingHeader("Mod Associations");
+        using var h = ImRaii.CollapsingHeader("Mod Associations");
         ImGuiUtil.HoverTooltip(
             "This tab can store information about specific mods associated with this design.\n\n"
           + "It does NOT change any mod settings automatically, though there is functionality to apply desired mod settings manually.\n"
@@ -43,25 +32,25 @@ public class ModAssociationsTab
 
     private void DrawApplyAllButton()
     {
-        var current = _penumbra.CurrentCollection;
-        if (ImGuiUtil.DrawDisabledButton($"Try Applying All Associated Mods to {current}##applyAll",
-                new Vector2(ImGui.GetContentRegionAvail().X, 0), string.Empty, current is "<Unavailable>"))
+        var (id, name) = penumbra.CurrentCollection;
+        if (ImGuiUtil.DrawDisabledButton($"Try Applying All Associated Mods to {name}##applyAll",
+                new Vector2(ImGui.GetContentRegionAvail().X, 0), string.Empty, id == Guid.Empty))
             ApplyAll();
     }
 
     public void DrawApplyButton()
     {
-        var current = _penumbra.CurrentCollection;
+        var (id, name) = penumbra.CurrentCollection;
         if (ImGuiUtil.DrawDisabledButton("Apply Mod Associations", Vector2.Zero,
-                $"Try to apply all associated mod settings to Penumbras current collection {current}",
-                _selector.Selected!.AssociatedMods.Count == 0 || current is "<Unavailable>"))
+                $"Try to apply all associated mod settings to Penumbras current collection {name}",
+                selector.Selected!.AssociatedMods.Count == 0 || id == Guid.Empty))
             ApplyAll();
     }
 
     public void ApplyAll()
     {
-        foreach (var (mod, settings) in _selector.Selected!.AssociatedMods)
-            _penumbra.SetMod(mod, settings);
+        foreach (var (mod, settings) in selector.Selected!.AssociatedMods)
+            penumbra.SetMod(mod, settings);
     }
 
     private void DrawTable()
@@ -79,9 +68,9 @@ public class ModAssociationsTab
         ImGui.TableSetupColumn("##Options",      ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Try Applyingm").X);
         ImGui.TableHeadersRow();
 
-        Mod? removedMod = null;
+        Mod?                             removedMod = null;
         (Mod mod, ModSettings settings)? updatedMod = null;
-        foreach (var ((mod, settings), idx) in _selector.Selected!.AssociatedMods.WithIndex())
+        foreach (var ((mod, settings), idx) in selector.Selected!.AssociatedMods.WithIndex())
         {
             using var id = ImRaii.PushId(idx);
             DrawAssociatedModRow(mod, settings, out var removedModTmp, out var updatedModTmp);
@@ -94,10 +83,10 @@ public class ModAssociationsTab
         DrawNewModRow();
 
         if (removedMod.HasValue)
-            _manager.RemoveMod(_selector.Selected!, removedMod.Value);
-        
+            manager.RemoveMod(selector.Selected!, removedMod.Value);
+
         if (updatedMod.HasValue)
-            _manager.UpdateMod(_selector.Selected!, updatedMod.Value.mod, updatedMod.Value.settings);
+            manager.UpdateMod(selector.Selected!, updatedMod.Value.mod, updatedMod.Value.settings);
     }
 
     private void DrawAssociatedModRow(Mod mod, ModSettings settings, out Mod? removedMod, out (Mod, ModSettings)? updatedMod)
@@ -112,15 +101,15 @@ public class ModAssociationsTab
         ImGui.TableNextColumn();
         ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.RedoAlt.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
             "Update the settings of this mod association", false, true);
-        
+
         if (ImGui.IsItemHovered())
         {
-            var newSettings = _penumbra.GetModSettings(mod);
+            var newSettings = penumbra.GetModSettings(mod);
             if (ImGui.IsItemClicked())
                 updatedMod = (mod, newSettings);
-            
+
             using var style = ImRaii.PushStyle(ImGuiStyleVar.PopupBorderSize, 2 * ImGuiHelpers.GlobalScale);
-            using var tt = ImRaii.Tooltip();
+            using var tt    = ImRaii.Tooltip();
             ImGui.Separator();
             var namesDifferent = mod.Name != mod.DirectoryName;
             ImGui.Dummy(new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
@@ -143,7 +132,7 @@ public class ModAssociationsTab
                 ModCombo.DrawSettingsRight(newSettings);
             }
         }
-        
+
         ImGui.TableNextColumn();
         var selected = ImGui.Selectable($"{mod.Name}##name");
         var hovered  = ImGui.IsItemHovered();
@@ -151,7 +140,7 @@ public class ModAssociationsTab
         selected |= ImGui.Selectable($"{mod.DirectoryName}##directory");
         hovered  |= ImGui.IsItemHovered();
         if (selected)
-            _penumbra.OpenModPage(mod);
+            penumbra.OpenModPage(mod);
         if (hovered)
             ImGui.SetTooltip("Click to open mod page in Penumbra.");
         ImGui.TableNextColumn();
@@ -164,9 +153,9 @@ public class ModAssociationsTab
         ImGuiUtil.RightAlign(settings.Priority.ToString());
         ImGui.TableNextColumn();
         if (ImGuiUtil.DrawDisabledButton("Try Applying", new Vector2(ImGui.GetContentRegionAvail().X, 0), string.Empty,
-                !_penumbra.Available))
+                !penumbra.Available))
         {
-            var text = _penumbra.SetMod(mod, settings);
+            var text = penumbra.SetMod(mod, settings);
             if (text.Length > 0)
                 Glamourer.Messager.NotificationMessage(text, NotificationType.Warning, false);
         }
@@ -202,13 +191,13 @@ public class ModAssociationsTab
         ImGui.TableNextColumn();
         var tt = currentName.IsNullOrEmpty()
             ? "Please select a mod first."
-            : _selector.Selected!.AssociatedMods.ContainsKey(_modCombo.CurrentSelection.Mod)
+            : selector.Selected!.AssociatedMods.ContainsKey(_modCombo.CurrentSelection.Mod)
                 ? "The design already contains an association with the selected mod."
                 : string.Empty;
 
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), new Vector2(ImGui.GetFrameHeight()), tt, tt.Length > 0,
                 true))
-            _manager.AddMod(_selector.Selected!, _modCombo.CurrentSelection.Mod, _modCombo.CurrentSelection.Settings);
+            manager.AddMod(selector.Selected!, _modCombo.CurrentSelection.Mod, _modCombo.CurrentSelection.Settings);
         ImGui.TableNextColumn();
         _modCombo.Draw("##new", currentName.IsNullOrEmpty() ? "Select new Mod..." : currentName, string.Empty,
             ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeight());

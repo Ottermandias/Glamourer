@@ -1,5 +1,6 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Api;
+using Glamourer.Api.Api;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -43,12 +44,12 @@ public static class StaticServiceManager
             .AddData()
             .AddDesigns()
             .AddState()
-            .AddUi()
-            .AddApi();
+            .AddUi();
         DalamudServices.AddServices(services, pi);
         services.AddIServices(typeof(EquipItem).Assembly);
         services.AddIServices(typeof(Glamourer).Assembly);
         services.AddIServices(typeof(ImRaii).Assembly);
+        services.AddSingleton<IGlamourerApi>(p => p.GetRequiredService<GlamourerApi>());
         services.CreateProvider();
         return services;
     }
@@ -164,8 +165,4 @@ public static class StaticServiceManager
             .AddSingleton<DesignQuickBar>()
             .AddSingleton<DesignColorUi>()
             .AddSingleton<NpcCombo>();
-
-    private static ServiceManager AddApi(this ServiceManager services)
-        => services.AddSingleton<CommandService>()
-            .AddSingleton<GlamourerIpc>();
 }
