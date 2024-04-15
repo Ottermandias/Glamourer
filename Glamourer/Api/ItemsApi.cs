@@ -32,9 +32,9 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         return GlamourerApiEc.Success;
     }
 
-    public GlamourerApiEc SetItemName(string objectName, ApiEquipSlot slot, ulong itemId, byte stain, uint key, ApplyFlag flags)
+    public GlamourerApiEc SetItemName(string playerName, ApiEquipSlot slot, ulong itemId, byte stain, uint key, ApplyFlag flags)
     {
-        var args = ApiHelpers.Args("Name", objectName, "Slot", slot, "ID", itemId, "Stain", stain, "Key", key, "Flags", flags);
+        var args = ApiHelpers.Args("Name", playerName, "Slot", slot, "ID", itemId, "Stain", stain, "Key", key, "Flags", flags);
         if (!ResolveItem(slot, itemId, out var item))
             return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
 
@@ -42,7 +42,7 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         var anyHuman    = false;
         var anyFound    = false;
         var anyUnlocked = false;
-        foreach (var state in helpers.FindStates(objectName))
+        foreach (var state in helpers.FindStates(playerName))
         {
             anyFound = true;
             if (!state.ModelData.IsHuman)

@@ -39,16 +39,16 @@ public class DesignsApi(ApiHelpers helpers, DesignManager designs, StateManager 
         stateManager.ApplyDesign(state, design, settings);
     }
 
-    public GlamourerApiEc ApplyDesignName(Guid designId, string objectName, uint key, ApplyFlag flags)
+    public GlamourerApiEc ApplyDesignName(Guid designId, string playerName, uint key, ApplyFlag flags)
     {
-        var args   = ApiHelpers.Args("Design", designId, "Name", objectName, "Key", key, "Flags", flags);
+        var args   = ApiHelpers.Args("Design", designId, "Name", playerName, "Key", key, "Flags", flags);
         var design = designs.Designs.ByIdentifier(designId);
         if (design == null)
             return ApiHelpers.Return(GlamourerApiEc.DesignNotFound, args);
 
         var any         = false;
         var anyUnlocked = false;
-        foreach (var state in helpers.FindStates(objectName))
+        foreach (var state in helpers.FindStates(playerName))
         {
             any = true;
             if (!state.CanUnlock(key))

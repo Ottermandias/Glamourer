@@ -54,8 +54,14 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     public (GlamourerApiEc, JObject?) GetState(int objectIndex, uint key)
         => Convert(_helpers.FindState(objectIndex), key);
 
-    public (GlamourerApiEc, JObject?) GetStateName(string objectName, uint key)
-        => Convert(_helpers.FindStates(objectName).FirstOrDefault(), key);
+    public (GlamourerApiEc, JObject?) GetStateName(string playerName, uint key)
+        => Convert(_helpers.FindStates(playerName).FirstOrDefault(), key);
+
+    public (GlamourerApiEc, string?) GetStateBase64(int objectIndex, uint key)
+        => ConvertBase64(_helpers.FindState(objectIndex), key);
+
+    public (GlamourerApiEc, string?) GetStateBase64Name(string objectName, uint key)
+        => ConvertBase64(_helpers.FindStates(objectName).FirstOrDefault(), key);
 
     public GlamourerApiEc ApplyState(object applyState, int objectIndex, uint key, ApplyFlag flags)
     {
@@ -76,13 +82,13 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
-    public GlamourerApiEc ApplyStateName(object applyState, string objectName, uint key, ApplyFlag flags)
+    public GlamourerApiEc ApplyStateName(object applyState, string playerName, uint key, ApplyFlag flags)
     {
-        var args = ApiHelpers.Args("Name", objectName, "Key", key, "Flags", flags);
+        var args = ApiHelpers.Args("Name", playerName, "Key", key, "Flags", flags);
         if (Convert(applyState, flags, out var version) is not { } design)
             return ApiHelpers.Return(GlamourerApiEc.InvalidState, args);
 
-        var states = _helpers.FindExistingStates(objectName);
+        var states = _helpers.FindExistingStates(playerName);
 
         var any         = false;
         var anyUnlocked = false;
@@ -129,10 +135,10 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
-    public GlamourerApiEc RevertStateName(string objectName, uint key, ApplyFlag flags)
+    public GlamourerApiEc RevertStateName(string playerName, uint key, ApplyFlag flags)
     {
-        var args   = ApiHelpers.Args("Name", objectName, "Key", key, "Flags", flags);
-        var states = _helpers.FindExistingStates(objectName);
+        var args   = ApiHelpers.Args("Name", playerName, "Key", key, "Flags", flags);
+        var states = _helpers.FindExistingStates(playerName);
 
         var any         = false;
         var anyUnlocked = false;
@@ -170,10 +176,10 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
-    public GlamourerApiEc UnlockStateName(string objectName, uint key)
+    public GlamourerApiEc UnlockStateName(string playerName, uint key)
     {
-        var args   = ApiHelpers.Args("Name", objectName, "Key", key);
-        var states = _helpers.FindExistingStates(objectName);
+        var args   = ApiHelpers.Args("Name", playerName, "Key", key);
+        var states = _helpers.FindExistingStates(playerName);
 
         var any         = false;
         var anyUnlocked = false;
@@ -211,10 +217,10 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
-    public GlamourerApiEc RevertToAutomationName(string objectName, uint key, ApplyFlag flags)
+    public GlamourerApiEc RevertToAutomationName(string playerName, uint key, ApplyFlag flags)
     {
-        var args   = ApiHelpers.Args("Name", objectName, "Key", key, "Flags", flags);
-        var states = _helpers.FindExistingStates(objectName);
+        var args   = ApiHelpers.Args("Name", playerName, "Key", key, "Flags", flags);
+        var states = _helpers.FindExistingStates(playerName);
 
         var any         = false;
         var anyUnlocked = false;
@@ -301,6 +307,12 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
             return (GlamourerApiEc.InvalidKey, null);
 
         return (GlamourerApiEc.Success, _converter.ShareJObject(state, ApplicationRules.AllWithConfig(_config)));
+    }
+
+    private (GlamourerApiEc, string?) ConvertBase64(ActorState? state, uint key)
+    {
+        var (ec, jObj) = Convert(state, key);
+        return (ec, jObj != null ? DesignConverter.ToBase64(jObj) : null);
     }
 
     private DesignBase? Convert(object? state, ApplyFlag flags, out byte version)
