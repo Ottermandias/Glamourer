@@ -28,6 +28,7 @@ public class StateIpcTester : IUiService, IDisposable
     private JObject?       _state;
     private string?        _stateString;
     private string         _base64State = string.Empty;
+    private string?        _getStateString;
 
     public readonly EventSubscriber<nint> StateChanged;
     private         nint                  _lastStateChangeActor;
@@ -92,6 +93,22 @@ public class StateIpcTester : IUiService, IDisposable
             ImGui.OpenPopup("State");
         }
 
+        IpcTesterHelpers.DrawIntro(GetStateBase64.Label);
+        if (ImGui.Button("Get##Base64Idx"))
+        {
+            (_lastError, _getStateString) = new GetStateBase64(_pluginInterface).Invoke(_gameObjectIndex, _key);
+            _stateString                  = _getStateString ?? "No State Available";
+            ImGui.OpenPopup("State");
+        }
+
+        IpcTesterHelpers.DrawIntro(GetStateBase64Name.Label);
+        if (ImGui.Button("Get##Base64Idx"))
+        {
+            (_lastError, _getStateString) = new GetStateBase64Name(_pluginInterface).Invoke(_gameObjectName, _key);
+            _stateString                  = _getStateString ?? "No State Available";
+            ImGui.OpenPopup("State");
+        }
+
         IpcTesterHelpers.DrawIntro(ApplyState.Label);
         if (ImGuiUtil.DrawDisabledButton("Apply Last##Idx", Vector2.Zero, string.Empty, _state == null))
             _lastError = new ApplyState(_pluginInterface).Invoke(_state!, _gameObjectIndex, _key, _flags);
@@ -140,17 +157,24 @@ public class StateIpcTester : IUiService, IDisposable
     private void DrawStatePopup()
     {
         ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(500, 500));
+        if (_stateString == null)
+            return;
+
         using var p = ImRaii.Popup("State");
         if (!p)
             return;
 
         if (ImGui.Button("Copy to Clipboard"))
             ImGui.SetClipboardText(_stateString);
-        ImGui.SameLine();
-        if (ImGui.Button("Copy as Base64") && _state != null)
-            ImGui.SetClipboardText(DesignConverter.ToBase64(_state));
+        if (_stateString[0] is '{')
+        {
+            ImGui.SameLine();
+            if (ImGui.Button("Copy as Base64") && _state != null)
+                ImGui.SetClipboardText(DesignConverter.ToBase64(_state));
+        }
+
         using var font = ImRaii.PushFont(UiBuilder.MonoFont);
-        ImGui.TextUnformatted(_stateString);
+        ImGuiUtil.TextWrapped(_stateString ?? string.Empty);
 
         if (ImGui.Button("Close", -Vector2.UnitX) || !ImGui.IsWindowFocused())
             ImGui.CloseCurrentPopup();

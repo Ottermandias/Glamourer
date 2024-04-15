@@ -29,6 +29,8 @@ public sealed class IpcProviders : IDisposable, IApiService
 
             IpcSubscribers.GetState.Provider(pi, api.State),
             IpcSubscribers.GetStateName.Provider(pi, api.State),
+            IpcSubscribers.GetStateBase64.Provider(pi, api.State),
+            IpcSubscribers.GetStateBase64Name.Provider(pi, api.State),
             IpcSubscribers.ApplyState.Provider(pi, api.State),
             IpcSubscribers.ApplyStateName.Provider(pi, api.State),
             IpcSubscribers.RevertState.Provider(pi, api.State),
