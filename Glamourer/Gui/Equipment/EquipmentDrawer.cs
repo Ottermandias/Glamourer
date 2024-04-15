@@ -579,7 +579,7 @@ public class EquipmentDrawer
 
     private static void DrawApplyStain(in EquipDrawData data)
     {
-        if (UiHelpers.DrawCheckbox($"##applyStain{data.Slot}", "Apply this item when applying the Design.", data.CurrentApplyStain,
+        if (UiHelpers.DrawCheckbox($"##applyStain{data.Slot}", "Apply this dye to the item when applying the Design.", data.CurrentApplyStain,
                 out var enabled,
                 data.Locked))
             data.SetApplyStain(enabled);
