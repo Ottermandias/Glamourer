@@ -81,7 +81,7 @@ public class StateEditor(
                 item.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
 
         if (slot is EquipSlot.MainHand)
-            ApplyMainhandPeriphery(state, item, settings);
+            ApplyMainhandPeriphery(state, item, null, settings);
 
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}). [Affecting {actors.ToLazyString("nothing")}.]");
@@ -114,7 +114,7 @@ public class StateEditor(
                 item!.Value.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
 
         if (slot is EquipSlot.MainHand)
-            ApplyMainhandPeriphery(state, item, settings);
+            ApplyMainhandPeriphery(state, item, stain, settings);
 
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item!.Value.Name} ({item.Value.ItemId}) and its stain from {oldStain.Id} to {stain!.Value.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
@@ -389,18 +389,19 @@ public class StateEditor(
 
 
     /// <summary> Apply offhand item and potentially gauntlets if configured. </summary>
-    private void ApplyMainhandPeriphery(ActorState state, EquipItem? newMainhand, ApplySettings settings)
+    private void ApplyMainhandPeriphery(ActorState state, EquipItem? newMainhand, StainId? newStain, ApplySettings settings)
     {
         if (!Config.ChangeEntireItem || !settings.Source.IsManual())
             return;
 
         var mh      = newMainhand ?? state.ModelData.Item(EquipSlot.MainHand);
         var offhand = newMainhand != null ? Items.GetDefaultOffhand(mh) : state.ModelData.Item(EquipSlot.OffHand);
+        var stain   = newStain ?? state.ModelData.Stain(EquipSlot.MainHand);
         if (offhand.Valid)
-            ChangeEquip(state, EquipSlot.OffHand, offhand, state.ModelData.Stain(EquipSlot.OffHand), settings);
+            ChangeEquip(state, EquipSlot.OffHand, offhand, stain, settings);
 
         if (mh is { Type: FullEquipType.Fists } && Items.ItemData.Tertiary.TryGetValue(mh.ItemId, out var gauntlets))
             ChangeEquip(state, EquipSlot.Hands, newMainhand != null ? gauntlets : state.ModelData.Item(EquipSlot.Hands),
-                state.ModelData.Stain(EquipSlot.Hands), settings);
+                stain, settings);
     }
 }
