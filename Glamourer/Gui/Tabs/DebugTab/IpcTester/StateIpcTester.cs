@@ -46,6 +46,8 @@ public class StateIpcTester : IUiService, IDisposable
         _pluginInterface = pluginInterface;
         StateChanged     = Api.IpcSubscribers.StateChanged.Subscriber(_pluginInterface, OnStateChanged);
         GPoseChanged     = Api.IpcSubscribers.GPoseChanged.Subscriber(_pluginInterface, OnGPoseChange);
+        StateChanged.Disable();
+        GPoseChanged.Disable();
     }
 
     public void Dispose()
