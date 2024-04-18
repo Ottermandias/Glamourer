@@ -12,7 +12,13 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
-public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizeService _service, CodeService _codes, Configuration _config, FavoriteManager _favorites)
+public partial class CustomizationDrawer(
+    DalamudPluginInterface pi,
+    CustomizeService _service,
+    CodeService _codes,
+    Configuration _config,
+    FavoriteManager _favorites,
+    HeightService _heightService)
     : IDisposable
 {
     private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
@@ -20,8 +26,8 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizeSer
 
     private Exception? _terminate;
 
-    private CustomizeArray   _customize = CustomizeArray.Default;
-    private CustomizeSet _set       = null!;
+    private CustomizeArray _customize = CustomizeArray.Default;
+    private CustomizeSet   _set       = null!;
 
     public CustomizeArray Customize
         => _customize;
@@ -46,7 +52,7 @@ public partial class CustomizationDrawer(DalamudPluginInterface pi, CustomizeSer
 
     public bool Draw(CustomizeArray current, bool locked, bool lockedRedraw)
     {
-        _withApply  = false;
+        _withApply = false;
         Init(current, locked, lockedRedraw);
 
         return DrawInternal();

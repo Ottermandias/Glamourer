@@ -29,6 +29,27 @@ public partial class CustomizationDrawer
         ImGui.SameLine();
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(_currentOption);
+        if (_currentIndex is CustomizeIndex.Height)
+            DrawHeight();
+    }
+
+    private void DrawHeight()
+    {
+        if (_config.HeightDisplayType is HeightDisplayType.None)
+            return;
+
+        var height = _heightService.Height(_customize);
+        ImGui.SameLine();
+
+        var heightString = _config.HeightDisplayType switch
+        {
+            HeightDisplayType.Centimetre => $"({height * 100:F1} cm)",
+            HeightDisplayType.Metre      => $"({height:F2} m)",
+            HeightDisplayType.Wrong      => $"({height * 100 / 2.539:F1} in)",
+            HeightDisplayType.WrongFoot  => $"({(int)(height * 100 / 2.539 / 12)}'{(int)(height * 100 / 2.539) % 12}'')",
+            _                            => $"({height})",
+        };
+        ImGui.TextUnformatted(heightString);
     }
 
     private void DrawPercentageSlider()

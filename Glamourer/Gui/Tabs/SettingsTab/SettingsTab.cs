@@ -161,6 +161,7 @@ public class SettingsTab(
 
         Checkbox("Smaller Equip Display", "Use single-line display without icons and small dye buttons instead of double-line display.",
             config.SmallEquip,            v => config.SmallEquip = v);
+        DrawHeightUnitSettings();
         Checkbox("Show Application Checkboxes",
             "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules.",
             !config.HideApplyCheckmarks, v => config.HideApplyCheckmarks = !v);
@@ -441,4 +442,39 @@ public class SettingsTab(
         ImGui.TextUnformatted("Rename Fields in Design Context Menu");
         ImGuiUtil.HoverTooltip(tt);
     }
+
+    private void DrawHeightUnitSettings()
+    {
+        ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
+        using (var combo = ImRaii.Combo("##heightUnit", HeightDisplayTypeName(config.HeightDisplayType)))
+        {
+            if (combo)
+                foreach (var type in Enum.GetValues<HeightDisplayType>())
+                {
+                    if (ImGui.Selectable(HeightDisplayTypeName(type), type == config.HeightDisplayType) && type != config.HeightDisplayType)
+                    {
+                        config.HeightDisplayType = type;
+                        config.Save();
+                    }
+                }
+        }
+
+        ImGui.SameLine();
+        const string tt = "Select how to display the height of characters in real-world units, if at all.";
+        ImGuiComponents.HelpMarker(tt);
+        ImGui.SameLine();
+        ImGui.TextUnformatted("Character Height Display Type");
+        ImGuiUtil.HoverTooltip(tt);
+    }
+
+    private string HeightDisplayTypeName(HeightDisplayType type)
+        => type switch
+        {
+            HeightDisplayType.None       => "Do Not Display",
+            HeightDisplayType.Centimetre => "Centimetres (000.0 cm)",
+            HeightDisplayType.Metre      => "Metres (0.00 m)",
+            HeightDisplayType.Wrong      => "Inches (00.0 in)",
+            HeightDisplayType.WrongFoot  => "Feet (0'00'')",
+            _                            => string.Empty,
+        };
 }
