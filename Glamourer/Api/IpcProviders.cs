@@ -19,6 +19,7 @@ public sealed class IpcProviders : IDisposable, IApiService
         _providers =
         [
             new FuncProvider<(int Major, int Minor)>(pi, "Glamourer.ApiVersions", () => api.ApiVersion), // backward compatibility
+            new FuncProvider<int>(pi, "Glamourer.ApiVersion", () => api.ApiVersion.Major),               // backward compatibility
             IpcSubscribers.ApiVersion.Provider(pi, api),
 
             IpcSubscribers.GetDesignList.Provider(pi, api.Designs),
