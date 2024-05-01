@@ -136,9 +136,9 @@ public unsafe class ScalingService : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void SetHeightCustomize(Character* character, byte gender, byte bodyType, byte clan, byte height)
     {
-        character->DrawData.CustomizeData.Sex                              = gender;
-        character->DrawData.CustomizeData.BodyType                         = bodyType;
-        character->DrawData.CustomizeData.Tribe                            = clan;
-        character->DrawData.CustomizeData.Data[(int)CustomizeIndex.Height] = height;
+        character->DrawData.CustomizeData.Sex      = gender;
+        character->DrawData.CustomizeData.BodyType = bodyType;
+        character->DrawData.CustomizeData.Tribe    = clan;
+        character->DrawData.CustomizeData.Height   = height;
     }
 }
