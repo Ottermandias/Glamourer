@@ -4,6 +4,7 @@ using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
+using Glamourer.GameData;
 using Glamourer.Gui;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
@@ -40,11 +41,12 @@ public class CommandService : IDisposable, IApiService
     private readonly ModSettingApplier     _modApplier;
     private readonly ItemManager           _items;
     private readonly RandomDesignGenerator _randomDesign;
+    private readonly CustomizeService      _customizeService;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier,
-        ItemManager items, RandomDesignGenerator randomDesign)
+        ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -61,6 +63,7 @@ public class CommandService : IDisposable, IApiService
         _modApplier        = modApplier;
         _items             = items;
         _randomDesign      = randomDesign;
+        _customizeService  = customizeService;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -126,6 +129,7 @@ public class CommandService : IDisposable, IApiService
             "save"               => SaveState(argument),
             "delete"             => Delete(argument),
             "applyitem"          => ApplyItem(argument),
+            "applycustomization" => ApplyCustomization(argument),
             _                    => PrintHelp(argumentList[0]),
         };
     }
@@ -156,6 +160,9 @@ public class CommandService : IDisposable, IApiService
             .AddCommand("automation", "Change the state of automated design sets. Use without arguments for help.").BuiltString);
         _chat.Print(new SeStringBuilder()
             .AddCommand("applyitem", "Apply a specific item to a character. Use without arguments for help.").BuiltString);
+        _chat.Print(new SeStringBuilder()
+            .AddCommand("applycustomization", "Apply a specific customization value to a character. Use without arguments for help.")
+            .BuiltString);
         return true;
     }
 
@@ -450,6 +457,152 @@ public class CommandService : IDisposable, IApiService
         }
 
         return true;
+    }
+
+    private bool ApplyCustomization(string arguments)
+    {
+        var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (split.Length is not 2)
+            return PrintCustomizationHelp();
+
+        var customizationSplit = split[0].Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (customizationSplit.Length < 2)
+            return PrintCustomizationHelp();
+
+        if (!Enum.TryParse(customizationSplit[0], true, out CustomizeIndex customizeIndex)
+         || !CustomizationExtensions.AllBasic.Contains(customizeIndex))
+        {
+            if (!int.TryParse(customizationSplit[0], out var customizeInt)
+             || customizeInt < 0
+             || customizeInt >= CustomizationExtensions.AllBasic.Length)
+            {
+                _chat.Print(new SeStringBuilder().AddText("The customization type ").AddYellow(customizationSplit[0], true)
+                    .AddText(" could not be identified as a valid type.").BuiltString);
+                return false;
+            }
+
+            customizeIndex = CustomizationExtensions.AllBasic[customizeInt];
+        }
+
+        var valueString = customizationSplit[1].ToLowerInvariant();
+        var (wrapAround, offset) = valueString switch
+        {
+            "next"     => (true, (sbyte)1),
+            "previous" => (true, (sbyte)-1),
+            "plus"     => (false, (sbyte)1),
+            "minus"    => (false, (sbyte)-1),
+            _          => (false, (sbyte)0),
+        };
+        byte? baseValue = null;
+        if (offset == 0)
+        {
+            if (byte.TryParse(valueString, out var b))
+            {
+                baseValue = b;
+            }
+            else
+            {
+                _chat.Print(new SeStringBuilder().AddText("The customization value ").AddPurple(valueString, true)
+                    .AddText(" could not be parsed.")
+                    .BuiltString);
+                return false;
+            }
+        }
+
+        if (customizationSplit.Length < 3 || !byte.TryParse(customizationSplit[2], out var multiplier))
+            multiplier = 1;
+
+        if (!IdentifierHandling(split[1], out var identifiers, false, true))
+            return false;
+
+        _objects.Update();
+        foreach (var identifier in identifiers)
+        {
+            if (!_objects.TryGetValue(identifier, out var actors))
+            {
+                if (_stateManager.TryGetValue(identifier, out var state))
+                    ApplyToState(state);
+            }
+            else
+            {
+                foreach (var actor in actors.Objects)
+                {
+                    if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
+                        ApplyToState(state);
+                }
+            }
+        }
+
+        return true;
+
+        void ApplyToState(ActorState state)
+        {
+            var customize = state.ModelData.Customize;
+            if (!state.ModelData.IsHuman)
+                return;
+
+            var set = _customizeService.Manager.GetSet(customize.Clan, customize.Gender);
+            if (!set.IsAvailable(customizeIndex))
+                return;
+
+            if (baseValue != null)
+            {
+                var v = baseValue.Value;
+                if (set.Type(customizeIndex) is CharaMakeParams.MenuType.ListSelector)
+                    --v;
+                set.DataByValue(customizeIndex, new CustomizeValue(v), out var data, customize.Face);
+                if (data != null)
+                    _stateManager.ChangeCustomize(state, customizeIndex, data.Value.Value, ApplySettings.Manual);
+            }
+            else
+            {
+                var idx   = set.DataByValue(customizeIndex, customize[customizeIndex], out var data, customize.Face);
+                var count = set.Count(customizeIndex, customize.Face);
+                var m     = multiplier % count;
+                var newIdx = offset is 1
+                    ? idx >= count - m
+                        ? wrapAround
+                            ? m + idx - count
+                            : count - 1
+                        : idx + m
+                    : idx < m
+                        ? wrapAround
+                            ? count - m + idx
+                            : 0
+                        : idx - m;
+                data = set.Data(customizeIndex, newIdx, customize.Face);
+                _stateManager.ChangeCustomize(state, customizeIndex, data.Value.Value, ApplySettings.Manual);
+            }
+        }
+
+        bool PrintCustomizationHelp()
+        {
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour applycustomization ").AddYellow("[Customization Type]")
+                .AddPurple(" [Value, Next, Previous, Minus, or Plus] ")
+                .AddBlue("<Amount>")
+                .AddText(" | ")
+                .AddGreen("[Character Identifier]")
+                .BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》 Valid ").AddPurple("values")
+                .AddText(" depend on the the character's gender, clan, and the customization type.").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》 ").AddPurple("Plus").AddText(" and ").AddPurple("Minus")
+                .AddText(" are the same as pressing the + and - buttons in the UI, times the optional ").AddBlue(" amount").AddText(".")
+                .BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》 ").AddPurple("Next").AddText(" and ").AddPurple("Previous")
+                .AddText(" is similar to Plus and Minus, but with wrap-around on reaching the end.").BuiltString);
+            var builder = new SeStringBuilder().AddText("    》 Available ").AddYellow("Customization Types")
+                .AddText(" are either a number in ")
+                .AddYellow($"[0, {CustomizationExtensions.AllBasic.Length}]")
+                .AddText(" or one of ");
+            foreach (var index in CustomizationExtensions.AllBasic.SkipLast(1))
+                builder.AddYellow(index.ToString()).AddText(", ");
+            _chat.Print(builder.AddYellow(CustomizationExtensions.AllBasic[^1].ToString()).AddText(".").BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》 The item name is case-insensitive. Numeric IDs are preferred before item names.")
+                .BuiltString);
+            PlayerIdentifierHelp(false, true);
+            return true;
+        }
     }
 
     private bool Apply(string arguments)
