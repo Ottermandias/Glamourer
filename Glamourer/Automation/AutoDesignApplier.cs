@@ -152,9 +152,9 @@ public sealed class AutoDesignApplier : IDisposable
                 {
                     if (_state.GetOrCreate(id, data.Objects[0], out var state))
                     {
-                        Reduce(data.Objects[0], state, newSet, _config.RespectManualOnAutomationUpdate, false);
+                        Reduce(data.Objects[0], state, newSet, _config.RespectManualOnAutomationUpdate, false, out var forcedRedraw);
                         foreach (var actor in data.Objects)
-                            _state.ReapplyState(actor, StateSource.Fixed);
+                            _state.ReapplyState(actor, forcedRedraw,StateSource.Fixed);
                     }
                 }
                 else if (_objects.TryGetValueAllWorld(id, out data) || _objects.TryGetValueNonOwned(id, out data))
@@ -164,8 +164,8 @@ public sealed class AutoDesignApplier : IDisposable
                         var specificId = actor.GetIdentifier(_actors);
                         if (_state.GetOrCreate(specificId, actor, out var state))
                         {
-                            Reduce(actor, state, newSet, _config.RespectManualOnAutomationUpdate, false);
-                            _state.ReapplyState(actor, StateSource.Fixed);
+                            Reduce(actor, state, newSet, _config.RespectManualOnAutomationUpdate, false, out var forcedRedraw);
+                            _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
                         }
                     }
                 }
@@ -212,12 +212,13 @@ public sealed class AutoDesignApplier : IDisposable
 
         var respectManual = state.LastJob == newJob.Id;
         state.LastJob = actor.Job;
-        Reduce(actor, state, set, respectManual, true);
-        _state.ReapplyState(actor, StateSource.Fixed);
+        Reduce(actor, state, set, respectManual, true, out var forcedRedraw);
+        _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
     }
 
-    public void ReapplyAutomation(Actor actor, ActorIdentifier identifier, ActorState state, bool reset)
+    public void ReapplyAutomation(Actor actor, ActorIdentifier identifier, ActorState state, bool reset, out bool forcedRedraw)
     {
+        forcedRedraw = false;
         if (!_config.EnableAutoDesigns)
             return;
 
@@ -226,7 +227,7 @@ public sealed class AutoDesignApplier : IDisposable
 
         if (reset)
             _state.ResetState(state, StateSource.Game);
-        Reduce(actor, state, set, false, false);
+        Reduce(actor, state, set, false, false, out forcedRedraw);
     }
 
     public bool Reduce(Actor actor, ActorIdentifier identifier, [NotNullWhen(true)] out ActorState? state)
@@ -253,11 +254,11 @@ public sealed class AutoDesignApplier : IDisposable
         var respectManual = !state.UpdateTerritory(_clientState.TerritoryType) || !_config.RevertManualChangesOnZoneChange;
         if (!respectManual)
             _state.ResetState(state, StateSource.Game);
-        Reduce(actor, state, set, respectManual, false);
+        Reduce(actor, state, set, respectManual, false, out _);
         return true;
     }
 
-    private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual, bool fromJobChange)
+    private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual, bool fromJobChange, out bool forcedRedraw)
     {
         if (set.BaseState is AutoDesignSet.Base.Game)
         {
@@ -275,6 +276,7 @@ public sealed class AutoDesignApplier : IDisposable
             }
         }
 
+        forcedRedraw = false;
         if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
             return;
 
@@ -282,6 +284,7 @@ public sealed class AutoDesignApplier : IDisposable
             set.Designs.Where(d => d.IsActive(actor)).SelectMany(d => d.Design.AllLinks.Select(l => (l.Design, l.Flags & d.Type, d.Jobs.Flags))),
             state.ModelData.Customize, state.BaseData, true, _config.AlwaysApplyAssociatedMods);
         _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, false));
+        forcedRedraw = mergedDesign.ForcedRedraw;
     }
 
     /// <summary> Get world-specific first and all-world afterward. </summary>
@@ -323,10 +326,10 @@ public sealed class AutoDesignApplier : IDisposable
 
         var respectManual = prior == id;
         NewGearsetId = id;
-        Reduce(data.Objects[0], state, set, respectManual, job != state.LastJob);
+        Reduce(data.Objects[0], state, set, respectManual, job != state.LastJob, out var forcedRedraw);
         NewGearsetId = -1;
         foreach (var actor in data.Objects)
-            _state.ReapplyState(actor, StateSource.Fixed);
+            _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
     }
 
     public static unsafe bool CheckGearset(short check)

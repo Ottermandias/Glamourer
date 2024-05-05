@@ -329,8 +329,8 @@ public class CommandService : IDisposable, IApiService
             {
                 if (_stateManager.GetOrCreate(identifier, actor, out var state))
                 {
-                    _autoDesignApplier.ReapplyAutomation(actor, identifier, state, revert);
-                    _stateManager.ReapplyState(actor, StateSource.Manual);
+                    _autoDesignApplier.ReapplyAutomation(actor, identifier, state, revert, out var forcedRedraw);
+                    _stateManager.ReapplyState(actor, forcedRedraw, StateSource.Manual);
                 }
             }
         }
@@ -379,7 +379,7 @@ public class CommandService : IDisposable, IApiService
                 return true;
 
             foreach (var actor in data.Objects)
-                _stateManager.ReapplyState(actor, StateSource.Manual);
+                _stateManager.ReapplyState(actor, false, StateSource.Manual);
         }
 
 
