@@ -212,7 +212,9 @@ public class StateEditor(
                 mergedDesign.Design.GetDesignDataRef().GetEquipmentPtr(), settings.Source, out var oldModelId, settings.Key))
             return;
 
-        var requiresRedraw = oldModelId != mergedDesign.Design.DesignData.ModelId || !mergedDesign.Design.DesignData.IsHuman;
+        var requiresRedraw = mergedDesign.ForcedRedraw
+         || oldModelId != mergedDesign.Design.DesignData.ModelId
+         || !mergedDesign.Design.DesignData.IsHuman;
 
         if (state.ModelData.IsHuman)
         {
@@ -402,6 +404,6 @@ public class StateEditor(
 
         if (mh is { Type: FullEquipType.Fists } && Items.ItemData.Tertiary.TryGetValue(mh.ItemId, out var gauntlets))
             ChangeEquip(state, EquipSlot.Hands, newMainhand != null ? gauntlets : state.ModelData.Item(EquipSlot.Hands),
-                stain, settings);
+                stain,         settings);
     }
 }

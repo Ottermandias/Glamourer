@@ -42,4 +42,7 @@ public class RevertDesign : IDesignStandIn
 
     public bool ChangeData(object data)
         => false;
+
+    public bool ForcedRedraw
+        => false;
 }

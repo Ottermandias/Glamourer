@@ -88,6 +88,8 @@ public sealed class MergedDesign
             if (weapon.Valid)
                 Weapons.TryAdd(weapon.Type, weapon, StateSource.Manual, JobFlag.All);
         }
+
+        ForcedRedraw = design is IDesignStandIn { ForcedRedraw: true };
     }
 
     public MergedDesign(Design design)
@@ -101,4 +103,5 @@ public sealed class MergedDesign
     public readonly WeaponList                   Weapons        = new();
     public readonly SortedList<Mod, ModSettings> AssociatedMods = [];
     public          StateSources                 Sources        = new();
+    public          bool                         ForcedRedraw;
 }

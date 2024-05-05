@@ -193,6 +193,7 @@ public sealed class DesignManager : DesignEditor
         DesignChanged.Invoke(DesignChanged.Type.ChangedDescription, design, oldDescription);
     }
 
+    /// <summary> Change the associated color of a design. </summary>
     public void ChangeColor(Design design, string newColor)
     {
         var oldColor = design.Color;
@@ -310,6 +311,17 @@ public sealed class DesignManager : DesignEditor
     #endregion
 
     #region Edit Application Rules
+
+    public void ChangeForcedRedraw(Design design, bool forcedRedraw)
+    {
+        if (design.ForcedRedraw == forcedRedraw)
+            return;
+
+        design.ForcedRedraw = forcedRedraw;
+        SaveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set {design.Identifier} to {(forcedRedraw ? "not" : string.Empty)} force redraws.");
+        DesignChanged.Invoke(DesignChanged.Type.ForceRedraw, design, null);
+    }
 
     /// <summary> Change whether to apply a specific customize value. </summary>
     public void ChangeApplyCustomize(Design design, CustomizeIndex idx, bool value)

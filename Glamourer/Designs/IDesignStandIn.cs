@@ -23,4 +23,6 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
     public void ParseData(JObject jObj);
 
     public bool ChangeData(object data);
+
+    public bool ForcedRedraw { get; }
 }

@@ -80,6 +80,9 @@ public sealed class DesignChanged()
         /// <summary> An existing design had an advanced dye rows Revert state changed. Data is the index [MaterialValueIndex]. </summary>
         MaterialRevert,
 
+        /// <summary> An existing design had changed whether it always forces a redraw or not. </summary>
+        ForceRedraw,
+
         /// <summary> An existing design changed whether a specific customization is applied. Data is the type of customization [CustomizeIndex]. </summary>
         ApplyCustomize,
 
