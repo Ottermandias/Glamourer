@@ -106,10 +106,10 @@ internal class CustomizeSetFactory(
     }
 
     private readonly ColorParameters                _colorParameters = new(_gameData, _log);
-    private readonly ExcelSheet<CharaMakeCustomize> _customizeSheet  = _gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English)!;
-    private readonly ExcelSheet<Lobby>              _lobbySheet      = _gameData.GetExcelSheet<Lobby>(ClientLanguage.English)!;
-    private readonly ExcelSheet<HairMakeType>       _hairSheet       = _gameData.GetExcelSheet<HairMakeType>(ClientLanguage.English)!;
-    private readonly ExcelSheet<Tribe>              _tribeSheet      = _gameData.GetExcelSheet<Tribe>(ClientLanguage.English)!;
+    private readonly ExcelSheet<CharaMakeCustomize> _customizeSheet  = _gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.Korean)!;
+    private readonly ExcelSheet<Lobby>              _lobbySheet      = _gameData.GetExcelSheet<Lobby>(ClientLanguage.Korean)!;
+    private readonly ExcelSheet<HairMakeType>       _hairSheet       = _gameData.GetExcelSheet<HairMakeType>(ClientLanguage.Korean)!;
+    private readonly ExcelSheet<Tribe>              _tribeSheet      = _gameData.GetExcelSheet<Tribe>(ClientLanguage.Korean)!;
 
     // Those color pickers are shared between all races.
     private readonly CustomizeData[] _highlightPicker           = CreateColors(_colors, CustomizeIndex.HighlightsColor, 256,  192);
