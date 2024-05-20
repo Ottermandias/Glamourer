@@ -100,7 +100,6 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     private void Draw(float width)
     {
-        _objects.Update();
         using var group      = ImRaii.Group();
         var       spacing    = ImGui.GetStyle().ItemInnerSpacing;
         using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
@@ -113,7 +112,7 @@ public sealed class DesignQuickBar : Window, IDisposable
             ImGui.SameLine();
             DrawApplyButton(buttonSize);
         }
-
+        
         DrawRevertButton(buttonSize);
         DrawRevertEquipButton(buttonSize);
         DrawRevertCustomizeButton(buttonSize);
@@ -132,7 +131,6 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     private void PrepareButtons()
     {
-        _objects.Update();
         (_playerIdentifier, _playerData) = _objects.PlayerData;
         (_targetIdentifier, _targetData) = _objects.TargetData;
         _playerState                     = _stateManager.GetValueOrDefault(_playerIdentifier);
