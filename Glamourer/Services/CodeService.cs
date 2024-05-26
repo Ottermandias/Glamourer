@@ -205,4 +205,30 @@ public class CodeService
             CodeFlag.Dolphins     => [ 0x64, 0xC6, 0x2E, 0x7C, 0x22, 0x3A, 0x42, 0xF5, 0xC3, 0x93, 0x4F, 0x70, 0x1F, 0xFD, 0xFA, 0x3C, 0x98, 0xD2, 0x7C, 0xD8, 0x88, 0xA7, 0x3D, 0x1D, 0x0D, 0xD6, 0x70, 0x15, 0x28, 0x2E, 0x79, 0xE7 ],
             _                     => [],
         };
+
+    private static (int CapitalCount, string Punctuation, string Hint, string Effect) GetData(CodeFlag flag)
+    => flag switch
+    {
+        CodeFlag.Clown        => (2, ",.",    "", "Randomizes dyes for every player."),
+        CodeFlag.Emperor      => (1, ".",     "", "Randomizes clothing for every player."),
+        CodeFlag.Individual   => (2, "'!'!",  "", "Randomizes customizations for every player."),
+        CodeFlag.Dwarf        => (1, "!",     "", "Sets the player character to minimum height and all other players to maximum height."),
+        CodeFlag.Giant        => (2, "!",     "", "Sets the player character to maximum height and all other players to minimum height."),
+        CodeFlag.OopsHyur     => (1, "','.",  "", "Turns all players to Hyur."),
+        CodeFlag.OopsElezen   => (1, ".",     "", "Turns all players to Elezen."),
+        CodeFlag.OopsLalafell => (2, ",!",    "", "Turns all players to Lalafell."),
+        CodeFlag.OopsMiqote   => (3, ".",     "", "Turns all players to Miqo'te."),
+        CodeFlag.OopsRoegadyn => (1, "!",     "", "Turns all players to Roegadyn."),
+        CodeFlag.OopsAuRa     => (1, "',.",   "", "Turns all players to Au Ra."),
+        CodeFlag.OopsHrothgar => (1, "',...", "", "Turns all players to Hrothgar."),
+        CodeFlag.OopsViera    => (2, "!'!",   "", "Turns all players to Viera."),
+        CodeFlag.Artisan      => (3, ",,!",   "", "Enable a debugging mode for the UI. Not really useful."),
+        CodeFlag.SixtyThree   => (2, "",      "", "Inverts the gender of every player."),
+        CodeFlag.Shirts       => (1, "-.",    "", "Highlights all items in the Unlocks tab as if they were unlocked."),
+        CodeFlag.World        => (1, ",.",    "", "Sets every player except the player character themselves to job-appropriate gear."),
+        CodeFlag.Elephants    => (1, "!",     "", "Sets every player to the elephant costume in varying shades of pink."),
+        CodeFlag.Crown        => (1, ".",     "", "Sets every player with a mentor symbol enabled to the clown's hat."),
+        CodeFlag.Dolphins     => (5, ",",     "", "Sets every player to a Namazu hat with different costume bodies."),
+        _                     => (0, string.Empty, string.Empty, string.Empty),
+    };
 }

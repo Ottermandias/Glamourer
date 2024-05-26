@@ -15,9 +15,7 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
-using System;
 using static Glamourer.Gui.Tabs.HeaderDrawer;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 

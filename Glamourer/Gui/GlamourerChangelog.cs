@@ -32,6 +32,7 @@ public class GlamourerChangelog
         AddDummy(Changelog);
         Add1_2_0_0(Changelog);
         Add1_2_1_0(Changelog);
+        Add1_2_2_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -51,6 +52,27 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_2_2_0(Changelog log)
+        => log.NextVersion("Version 1.2.2.0")
+            .RegisterHighlight("Added a field to rename designs directly from the mod selector context menu, instead of moving them in the filesystem.")
+            .RegisterEntry("You can choose which rename field (none, either one or both) to display in the settings.", 1)
+            .RegisterEntry("Automatically applied offhand weapons due to mainhand settings now also apply the mainhands dye.")
+            .RegisterHighlight("Added a height display in real-world units next to the height-selector.")
+            .RegisterEntry("This can be configured to use your favourite unit of measurement, even wrong ones, or not display at all.", 1)
+            .RegisterHighlight("Added a chat command '/glamour applycustomization' that can apply single customization values to actors. Use without arguments for help.")
+            .RegisterHighlight("Added an option for designs to always force a redraw when applied to a character, regardless of whether it is necessary or not.")
+            .RegisterHighlight("Added a button to overwrite the selected design with the current player state.")
+            .RegisterEntry("Added some copy/paste functionality for mod associations.")
+            .RegisterEntry("Reworked the API and IPC structure heavily.")
+            .RegisterEntry("Fixed weapon selectors not having a favourite star available.")
+            .RegisterEntry("Fixed issues with items with custom names.")
+            .RegisterEntry("Fixed the labels for eye colors.")
+            .RegisterEntry("Fixed the tooltip for Apply Dye checkboxes.")
+            .RegisterEntry("Fixed an issue when hovering over assigned mod settings.")
+            .RegisterEntry("Made conformant to Dalamud guidelines by adding a button to open the main UI.")
+            .RegisterEntry("Fixed an issue with visor states. (1.2.1.3)")
+            .RegisterEntry("Fixed an issue with identical weapon types and multiple restricted designs. (1.2.1.3)");
 
     private static void Add1_2_1_0(Changelog log)
         => log.NextVersion("Version 1.2.1.0")
