@@ -11,7 +11,7 @@ using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Interop;
 using Penumbra.String;
 
@@ -190,11 +190,11 @@ public sealed unsafe class AdvancedDyePopup(
             DrawWindow(textures);
     }
 
-    private void DrawTable(MaterialValueIndex materialIndex, in MtrlFile.ColorTable table)
+    private void DrawTable(MaterialValueIndex materialIndex, in LegacyColorTable table)
     {
         using var disabled = ImRaii.Disabled(_state.IsLocked);
         _anyChanged = false;
-        for (byte i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
+        for (byte i = 0; i < LegacyColorTable.NumUsedRows; ++i)
         {
             var     index = materialIndex with { RowIndex = i };
             ref var row   = ref table[i];
@@ -205,7 +205,7 @@ public sealed unsafe class AdvancedDyePopup(
         DrawAllRow(materialIndex, table);
     }
 
-    private void DrawAllRow(MaterialValueIndex materialIndex, in MtrlFile.ColorTable table)
+    private void DrawAllRow(MaterialValueIndex materialIndex, in LegacyColorTable table)
     {
         using var id         = ImRaii.PushId(100);
         var       buttonSize = new Vector2(ImGui.GetFrameHeight());
@@ -242,11 +242,11 @@ public sealed unsafe class AdvancedDyePopup(
         ImGui.SameLine(0, spacing);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UndoAlt.ToIconString(), buttonSize, "Reset this table to game state.", !_anyChanged,
                 true))
-            for (byte i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
+            for (byte i = 0; i < LegacyColorTable.NumUsedRows; ++i)
                 stateManager.ResetMaterialValue(_state, materialIndex with { RowIndex = i }, ApplySettings.Game);
     }
 
-    private void DrawRow(ref MtrlFile.ColorTable.Row row, MaterialValueIndex index, in MtrlFile.ColorTable table)
+    private void DrawRow(ref LegacyColorTable.Row row, MaterialValueIndex index, in LegacyColorTable table)
     {
         using var id      = ImRaii.PushId(index.RowIndex);
         var       changed = _state.Materials.TryGetValue(index, out var value);

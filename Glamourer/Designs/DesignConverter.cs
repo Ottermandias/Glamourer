@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
@@ -224,7 +224,7 @@ public class DesignConverter(
         foreach (var (key, value) in materials.Values)
         {
             var idx = MaterialValueIndex.FromKey(key);
-            if (idx.RowIndex >= MtrlFile.ColorTable.NumRows)
+            if (idx.RowIndex >= LegacyColorTable.NumUsedRows)
                 continue;
             if (idx.MaterialIndex >= MaterialService.MaterialsPerModel)
                 continue;

@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
 using ImGuiNET;
 using OtterGui.Services;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop.Material;
@@ -12,12 +12,12 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
     private readonly IFramework                                      _framework;
     private readonly DirectXService                                  _directXService;
 
-    public  MaterialValueIndex  LastValueIndex         { get; private set; } = MaterialValueIndex.Invalid;
-    public  MtrlFile.ColorTable LastOriginalColorTable { get; private set; }
-    private MaterialValueIndex  _valueIndex      = MaterialValueIndex.Invalid;
-    private ObjectIndex         _lastObjectIndex = ObjectIndex.AnyIndex;
-    private ObjectIndex         _objectIndex     = ObjectIndex.AnyIndex;
-    private MtrlFile.ColorTable _originalColorTable;
+    public  MaterialValueIndex LastValueIndex         { get; private set; } = MaterialValueIndex.Invalid;
+    public  LegacyColorTable   LastOriginalColorTable { get; private set; }
+    private MaterialValueIndex _valueIndex      = MaterialValueIndex.Invalid;
+    private ObjectIndex        _lastObjectIndex = ObjectIndex.AnyIndex;
+    private ObjectIndex        _objectIndex     = ObjectIndex.AnyIndex;
+    private LegacyColorTable   _originalColorTable;
 
     public LiveColorTablePreviewer(global::Penumbra.GameData.Interop.ObjectManager objects, IFramework framework, DirectXService directXService)
     {
@@ -78,7 +78,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
             }
             else
             {
-                for (var i = 0; i < MtrlFile.ColorTable.NumRows; ++i)
+                for (var i = 0; i < LegacyColorTable.NumUsedRows; ++i)
                 {
                     table[i].Diffuse  = diffuse;
                     table[i].Emissive = emissive;
@@ -92,7 +92,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
         _objectIndex = ObjectIndex.AnyIndex;
     }
 
-    public void OnHover(MaterialValueIndex index, ObjectIndex objectIndex, MtrlFile.ColorTable table)
+    public void OnHover(MaterialValueIndex index, ObjectIndex objectIndex, LegacyColorTable table)
     {
         if (_valueIndex.DrawObject is not MaterialValueIndex.DrawObjectType.Invalid)
             return;
