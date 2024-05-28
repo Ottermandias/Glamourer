@@ -63,7 +63,10 @@ public unsafe class PenumbraService : IDisposable
 
     private readonly PenumbraReloaded _penumbraReloaded;
 
-    public bool Available { get; private set; }
+    public bool     Available    { get; private set; }
+    public int      CurrentMajor { get; private set; }
+    public int      CurrentMinor { get; private set; }
+    public DateTime AttachTime   { get; private set; }
 
     public PenumbraService(DalamudPluginInterface pi, PenumbraReloaded penumbraReloaded)
     {
@@ -307,10 +310,21 @@ public unsafe class PenumbraService : IDisposable
         {
             Unattach();
 
-            var (breaking, feature) = new global::Penumbra.Api.IpcSubscribers.ApiVersion(_pluginInterface).Invoke();
-            if (breaking != RequiredPenumbraBreakingVersion || feature < RequiredPenumbraFeatureVersion)
+            AttachTime = DateTime.UtcNow;
+            try
+            {
+                (CurrentMajor, CurrentMinor) = new global::Penumbra.Api.IpcSubscribers.ApiVersion(_pluginInterface).Invoke();
+            }
+            catch
+            {
+                CurrentMajor = 0;
+                CurrentMinor = 0;
+                throw;
+            }
+
+            if (CurrentMajor != RequiredPenumbraBreakingVersion || CurrentMinor < RequiredPenumbraFeatureVersion)
                 throw new Exception(
-                    $"Invalid Version {breaking}.{feature:D4}, required major Version {RequiredPenumbraBreakingVersion} with feature greater or equal to {RequiredPenumbraFeatureVersion}.");
+                    $"Invalid Version {CurrentMajor}.{CurrentMinor:D4}, required major Version {RequiredPenumbraBreakingVersion} with feature greater or equal to {RequiredPenumbraFeatureVersion}.");
 
             _tooltipSubscriber.Enable();
             _clickSubscriber.Enable();

@@ -37,6 +37,14 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
         if (ImGui.SmallButton("Reattach"))
             _penumbra.Reattach();
 
+        ImGuiUtil.DrawTableColumn("Version");
+        ImGuiUtil.DrawTableColumn($"{_penumbra.CurrentMajor}.{_penumbra.CurrentMinor}");
+        ImGui.TableNextColumn();
+
+        ImGuiUtil.DrawTableColumn("Attached When");
+        ImGuiUtil.DrawTableColumn(_penumbra.AttachTime.ToLocalTime().ToLongTimeString());
+        ImGui.TableNextColumn();
+
         ImGuiUtil.DrawTableColumn("Draw Object");
         ImGui.TableNextColumn();
         var address = _drawObject.Address;
