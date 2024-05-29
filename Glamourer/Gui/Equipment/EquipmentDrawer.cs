@@ -452,8 +452,8 @@ public class EquipmentDrawer
             else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
                 data.SetStain(Stain.None.RowIndex);
 
-        if (ResetOrClear(data.Locked, false, data.AllowRevert, true, data.CurrentStain, data.GameStain, Stain.None.RowIndex, out _))
-            data.SetStain(Stain.None.RowIndex);
+        if (ResetOrClear(data.Locked, false, data.AllowRevert, true, data.CurrentStain, data.GameStain, Stain.None.RowIndex, out var newStain))
+            data.SetStain(newStain);
     }
 
     private void DrawItem(in EquipDrawData data, out string label, bool small, bool clear, bool open)
