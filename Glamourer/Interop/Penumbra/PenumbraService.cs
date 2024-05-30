@@ -317,9 +317,16 @@ public unsafe class PenumbraService : IDisposable
             }
             catch
             {
-                CurrentMajor = 0;
-                CurrentMinor = 0;
-                throw;
+                try
+                {
+                    (CurrentMajor, CurrentMinor) = new global::Penumbra.Api.IpcSubscribers.Legacy.ApiVersions(_pluginInterface).Invoke();
+                }
+                catch
+                {
+                    CurrentMajor = 0;
+                    CurrentMinor = 0;
+                    throw;
+                }
             }
 
             if (CurrentMajor != RequiredPenumbraBreakingVersion || CurrentMinor < RequiredPenumbraFeatureVersion)
