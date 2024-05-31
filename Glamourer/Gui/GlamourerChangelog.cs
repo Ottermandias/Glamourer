@@ -32,7 +32,8 @@ public class GlamourerChangelog
         AddDummy(Changelog);
         Add1_2_0_0(Changelog);
         Add1_2_1_0(Changelog);
-        Add1_2_2_0(Changelog);
+        AddDummy(Changelog);
+        Add1_2_3_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -53,8 +54,8 @@ public class GlamourerChangelog
         }
     }
 
-    private static void Add1_2_2_0(Changelog log)
-        => log.NextVersion("Version 1.2.2.0")
+    private static void Add1_2_3_0(Changelog log)
+        => log.NextVersion("Version 1.2.3.0")
             .RegisterHighlight("Added a field to rename designs directly from the mod selector context menu, instead of moving them in the filesystem.")
             .RegisterEntry("You can choose which rename field (none, either one or both) to display in the settings.", 1)
             .RegisterEntry("Automatically applied offhand weapons due to mainhand settings now also apply the mainhands dye.")
@@ -65,6 +66,8 @@ public class GlamourerChangelog
             .RegisterHighlight("Added a button to overwrite the selected design with the current player state.")
             .RegisterEntry("Added some copy/paste functionality for mod associations.")
             .RegisterEntry("Reworked the API and IPC structure heavily.")
+            .RegisterEntry("Added warnings if Glamourer can not attach successfully to Penumbra or if Penumbras IPC version is not correct.")
+            .RegisterEntry("Added hints for all of the available cheat codes and improved the cheat code display somewhat.")
             .RegisterEntry("Fixed weapon selectors not having a favourite star available.")
             .RegisterEntry("Fixed issues with items with custom names.")
             .RegisterEntry("Fixed the labels for eye colors.")
