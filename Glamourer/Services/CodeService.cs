@@ -211,7 +211,7 @@ public class CodeService
     => flag switch
     {
         CodeFlag.Clown        => (true,  3, ",.",    "A punchline uttered by Rorschach.",                                                                      "Randomizes dyes for every player."),
-        CodeFlag.Emperor      => (true,  1, ".",     "A truth that only a child can see.",                                                                     "Randomizes clothing for every player."),
+        CodeFlag.Emperor      => (true,  1, ".",     "A truth about clothes that only a child will speak.",                                                    "Randomizes clothing for every player."),
         CodeFlag.Individual   => (true,  2, "'!'!",  "Something an unwilling prophet tries to convince his followers of.",                                     "Randomizes customizations for every player."),
         CodeFlag.Dwarf        => (true,  1, "!",     "A centuries old metaphor about humility and the progress of science.",                                   "Sets the player character to minimum height and all other players to maximum height."),
         CodeFlag.Giant        => (true,  2, "!",     "A Swift renaming of one of the most famous literary openings of all time.",                              "Sets the player character to maximum height and all other players to minimum height."),

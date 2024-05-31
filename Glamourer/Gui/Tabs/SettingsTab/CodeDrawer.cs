@@ -173,6 +173,7 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
             ImUtf8.SameLineInner();
             using (ImUtf8.Group())
             {
+                using var mono = ImRaii.PushFont(UiBuilder.MonoFont);
                 ImUtf8.Text($"{data.CapitalCount}");
                 ImUtf8.Text($"{data.Punctuation}");
             }
