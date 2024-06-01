@@ -105,14 +105,11 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
         };
     }
 
-    private static IReadOnlyList<EquipItem> GetItems(FavoriteManager favorites, ItemManager items, EquipSlot slot)
+    private static List<EquipItem> GetItems(FavoriteManager favorites, ItemManager items, EquipSlot slot)
     {
         var nothing = ItemManager.NothingItem(slot);
         if (!items.ItemData.ByType.TryGetValue(slot.ToEquipType(), out var list))
-            return new[]
-            {
-                nothing,
-            };
+            return [nothing];
 
         var enumerable = list.AsEnumerable();
         if (slot.IsEquipment())

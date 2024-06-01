@@ -193,6 +193,7 @@ public sealed class DesignManager : DesignEditor
         DesignChanged.Invoke(DesignChanged.Type.ChangedDescription, design, oldDescription);
     }
 
+    /// <summary> Change the associated color of a design. </summary>
     public void ChangeColor(Design design, string newColor)
     {
         var oldColor = design.Color;
@@ -273,13 +274,13 @@ public sealed class DesignManager : DesignEditor
         DesignChanged.Invoke(DesignChanged.Type.RemovedMod, design, (mod, settings));
     }
 
-    public void UpdateMod(Design design, Mod mod, ModSettings settings) {
-        if (!design.AssociatedMods.ContainsKey(mod))
-            return;
+    /// <summary> Add or update an associated mod to a design. </summary>
+    public void UpdateMod(Design design, Mod mod, ModSettings settings)
+    {
         design.AssociatedMods[mod] = settings;
         design.LastEdit            = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Updated associated mod {mod.DirectoryName} from design {design.Identifier}.");
+        Glamourer.Log.Debug($"Updated (or added) associated mod {mod.DirectoryName} from design {design.Identifier}.");
         DesignChanged.Invoke(DesignChanged.Type.AddedMod, design, (mod, settings));
     }
 
@@ -302,13 +303,25 @@ public sealed class DesignManager : DesignEditor
 
         design.QuickDesign = value;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Set design {design.Identifier} to {(!value ? "no longer be " : string.Empty)} displayed in the quick design bar.");
+        Glamourer.Log.Debug(
+            $"Set design {design.Identifier} to {(!value ? "no longer be " : string.Empty)} displayed in the quick design bar.");
         DesignChanged.Invoke(DesignChanged.Type.QuickDesignBar, design, value);
     }
 
     #endregion
 
     #region Edit Application Rules
+
+    public void ChangeForcedRedraw(Design design, bool forcedRedraw)
+    {
+        if (design.ForcedRedraw == forcedRedraw)
+            return;
+
+        design.ForcedRedraw = forcedRedraw;
+        SaveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set {design.Identifier} to {(forcedRedraw ? "not" : string.Empty)} force redraws.");
+        DesignChanged.Invoke(DesignChanged.Type.ForceRedraw, design, null);
+    }
 
     /// <summary> Change whether to apply a specific customize value. </summary>
     public void ChangeApplyCustomize(Design design, CustomizeIndex idx, bool value)

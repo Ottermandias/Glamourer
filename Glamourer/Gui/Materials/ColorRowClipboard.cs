@@ -1,18 +1,18 @@
 ﻿using Glamourer.Interop.Material;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 
 namespace Glamourer.Gui.Materials;
 
 public static class ColorRowClipboard
 {
-    private static ColorRow            _row;
-    private static MtrlFile.ColorTable _table;
+    private static ColorRow         _row;
+    private static LegacyColorTable _table;
 
     public static bool IsSet { get; private set; }
 
     public static bool IsTableSet { get; private set; }
 
-    public static MtrlFile.ColorTable Table
+    public static LegacyColorTable Table
     {
         get => _table;
         set

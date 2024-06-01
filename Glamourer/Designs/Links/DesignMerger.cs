@@ -19,9 +19,11 @@ public class DesignMerger(
 {
     public MergedDesign Merge(LinkContainer designs, in CustomizeArray currentCustomize, in DesignData baseRef, bool respectOwnership,
         bool modAssociations)
-        => Merge(designs.Select(d => ((IDesignStandIn)d.Link, d.Type, JobFlag.All)), currentCustomize, baseRef, respectOwnership, modAssociations);
+        => Merge(designs.Select(d => ((IDesignStandIn)d.Link, d.Type, JobFlag.All)), currentCustomize, baseRef, respectOwnership,
+            modAssociations);
 
-    public MergedDesign Merge(IEnumerable<(IDesignStandIn, ApplicationType, JobFlag)> designs, in CustomizeArray currentCustomize, in DesignData baseRef,
+    public MergedDesign Merge(IEnumerable<(IDesignStandIn, ApplicationType, JobFlag)> designs, in CustomizeArray currentCustomize,
+        in DesignData baseRef,
         bool respectOwnership, bool modAssociations)
     {
         var ret = new MergedDesign(designManager);
@@ -51,6 +53,8 @@ public class DesignMerger(
             ReduceMods(design as Design, ret, modAssociations);
             if (type.HasFlag(ApplicationType.GearCustomization))
                 ReduceMaterials(design, ret);
+            if (design.ForcedRedraw)
+                ret.ForcedRedraw = true;
         }
 
         ApplyFixFlags(ret, fixFlags);
@@ -189,7 +193,8 @@ public class DesignMerger(
         ret.Weapons.TryAdd(weapon.Type, weapon, source, allowedJobs);
     }
 
-    private void ReduceOffhands(in DesignData design, JobFlag allowedJobs, EquipFlag equipFlags, MergedDesign ret, StateSource source, bool respectOwnership)
+    private void ReduceOffhands(in DesignData design, JobFlag allowedJobs, EquipFlag equipFlags, MergedDesign ret, StateSource source,
+        bool respectOwnership)
     {
         if (!equipFlags.HasFlag(EquipFlag.Offhand))
             return;

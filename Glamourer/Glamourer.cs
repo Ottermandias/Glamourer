@@ -40,7 +40,7 @@ public class Glamourer : IDalamudPlugin
             _services.GetService<StateListener>();         // Initialize State Listener.
             _services.GetService<GlamourerWindowSystem>(); // initialize ui.
             _services.GetService<CommandService>();        // initialize commands.
-            _services.GetService<GlamourerIpc>();          // initialize IPC.
+            _services.GetService<IpcProviders>();          // initialize IPC.
             Log.Information($"Glamourer v{Version} loaded successfully.");
         }
         catch

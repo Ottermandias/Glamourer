@@ -32,6 +32,8 @@ public class GlamourerChangelog
         AddDummy(Changelog);
         Add1_2_0_0(Changelog);
         Add1_2_1_0(Changelog);
+        AddDummy(Changelog);
+        Add1_2_3_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -52,13 +54,41 @@ public class GlamourerChangelog
         }
     }
 
+    private static void Add1_2_3_0(Changelog log)
+        => log.NextVersion("Version 1.2.3.0")
+            .RegisterHighlight(
+                "Added a field to rename designs directly from the mod selector context menu, instead of moving them in the filesystem.")
+            .RegisterEntry("You can choose which rename field (none, either one or both) to display in the settings.", 1)
+            .RegisterEntry("Automatically applied offhand weapons due to mainhand settings now also apply the mainhands dye.")
+            .RegisterHighlight("Added a height display in real-world units next to the height-selector.")
+            .RegisterEntry("This can be configured to use your favourite unit of measurement, even wrong ones, or not display at all.", 1)
+            .RegisterHighlight(
+                "Added a chat command '/glamour applycustomization' that can apply single customization values to actors. Use without arguments for help.")
+            .RegisterHighlight(
+                "Added an option for designs to always force a redraw when applied to a character, regardless of whether it is necessary or not.")
+            .RegisterHighlight("Added a button to overwrite the selected design with the current player state.")
+            .RegisterEntry("Added some copy/paste functionality for mod associations.")
+            .RegisterEntry("Reworked the API and IPC structure heavily.")
+            .RegisterEntry("Added warnings if Glamourer can not attach successfully to Penumbra or if Penumbras IPC version is not correct.")
+            .RegisterEntry("Added hints for all of the available cheat codes and improved the cheat code display somewhat.")
+            .RegisterEntry("Fixed weapon selectors not having a favourite star available.")
+            .RegisterEntry("Fixed issues with items with custom names.")
+            .RegisterEntry("Fixed the labels for eye colors.")
+            .RegisterEntry("Fixed the tooltip for Apply Dye checkboxes.")
+            .RegisterEntry("Fixed an issue when hovering over assigned mod settings.")
+            .RegisterEntry("Made conformant to Dalamud guidelines by adding a button to open the main UI.")
+            .RegisterEntry("Fixed an issue with visor states. (1.2.1.3)")
+            .RegisterEntry("Fixed an issue with identical weapon types and multiple restricted designs. (1.2.1.3)");
+
     private static void Add1_2_1_0(Changelog log)
         => log.NextVersion("Version 1.2.1.0")
             .RegisterEntry("Updated for .net 8 and FFXIV 6.58, using some new framework options to improve performance and stability.")
             .RegisterEntry("Previewing changed items in Penumbra now works with all weapons in GPose. (1.2.0.8)")
-            .RegisterEntry("Added a design type selectable for automation that applies the design currently selected in the quick design bar. (1.2.0.4)")
+            .RegisterEntry(
+                "Added a design type selectable for automation that applies the design currently selected in the quick design bar. (1.2.0.4)")
             .RegisterEntry("Added an option to respect manual changes when changing automation settings. (1.2.0.3)")
-            .RegisterEntry("You can now apply designs to the player character with a double click on them (can be turned off in settings). (1.2.0.1)")
+            .RegisterEntry(
+                "You can now apply designs to the player character with a double click on them (can be turned off in settings). (1.2.0.1)")
             .RegisterEntry("The last selected design and tab are now stored and applied on startup. (1.2.0.1)")
             .RegisterEntry("Fixed behavior of revert to automation to actually revert and not just reapply. (1.2.0.8)")
             .RegisterEntry("Added Reapply Automation buttons and chat commands with prior behaviour.", 1)

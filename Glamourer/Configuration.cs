@@ -3,6 +3,7 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface.Internal.Notifications;
 using Glamourer.Designs;
 using Glamourer.Gui;
+using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using OtterGui;
@@ -13,42 +14,54 @@ using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace Glamourer;
 
+public enum HeightDisplayType
+{
+    None,
+    Centimetre,
+    Metre,
+    Wrong,
+    WrongFoot,
+}
+
 public class Configuration : IPluginConfiguration, ISavable
 {
     [JsonIgnore]
     public readonly EphemeralConfig Ephemeral;
 
-    public bool                 UseRestrictedGearProtection      { get; set; } = false;
-    public bool                 OpenFoldersByDefault             { get; set; } = false;
-    public bool                 AutoRedrawEquipOnChanges         { get; set; } = false;
-    public bool                 EnableAutoDesigns                { get; set; } = true;
-    public bool                 HideApplyCheckmarks              { get; set; } = false;
-    public bool                 SmallEquip                       { get; set; } = false;
-    public bool                 UnlockedItemMode                 { get; set; } = false;
-    public byte                 DisableFestivals                 { get; set; } = 1;
-    public bool                 EnableGameContextMenu            { get; set; } = true;
-    public bool                 HideWindowInCutscene             { get; set; } = false;
-    public bool                 ShowAutomationSetEditing         { get; set; } = true;
-    public bool                 ShowAllAutomatedApplicationRules { get; set; } = true;
-    public bool                 ShowUnlockedItemWarnings         { get; set; } = true;
-    public bool                 RevertManualChangesOnZoneChange  { get; set; } = false;
-    public bool                 ShowQuickBarInTabs               { get; set; } = true;
-    public bool                 OpenWindowAtStart                { get; set; } = false;
-    public bool                 ShowWindowWhenUiHidden           { get; set; } = false;
-    public bool                 UseAdvancedParameters            { get; set; } = true;
-    public bool                 UseAdvancedDyes                  { get; set; } = true;
-    public bool                 KeepAdvancedDyesAttached         { get; set; } = true;
-    public bool                 ShowPalettePlusImport            { get; set; } = true;
-    public bool                 UseFloatForColors                { get; set; } = true;
-    public bool                 UseRgbForColors                  { get; set; } = true;
-    public bool                 ShowColorConfig                  { get; set; } = true;
-    public bool                 ChangeEntireItem                 { get; set; } = false;
-    public bool                 AlwaysApplyAssociatedMods        { get; set; } = false;
-    public bool                 AllowDoubleClickToApply          { get; set; } = false;
-    public bool                 RespectManualOnAutomationUpdate  { get; set; } = false;
-    public ModifiableHotkey     ToggleQuickDesignBar             { get; set; } = new(VirtualKey.NO_KEY);
-    public DoubleModifier       DeleteDesignModifier             { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
-    public ChangeLogDisplayType ChangeLogDisplayType             { get; set; } = ChangeLogDisplayType.New;
+    public bool UseRestrictedGearProtection      { get; set; } = false;
+    public bool OpenFoldersByDefault             { get; set; } = false;
+    public bool AutoRedrawEquipOnChanges         { get; set; } = false;
+    public bool EnableAutoDesigns                { get; set; } = true;
+    public bool HideApplyCheckmarks              { get; set; } = false;
+    public bool SmallEquip                       { get; set; } = false;
+    public bool UnlockedItemMode                 { get; set; } = false;
+    public byte DisableFestivals                 { get; set; } = 1;
+    public bool EnableGameContextMenu            { get; set; } = true;
+    public bool HideWindowInCutscene             { get; set; } = false;
+    public bool ShowAutomationSetEditing         { get; set; } = true;
+    public bool ShowAllAutomatedApplicationRules { get; set; } = true;
+    public bool ShowUnlockedItemWarnings         { get; set; } = true;
+    public bool RevertManualChangesOnZoneChange  { get; set; } = false;
+    public bool ShowQuickBarInTabs               { get; set; } = true;
+    public bool OpenWindowAtStart                { get; set; } = false;
+    public bool ShowWindowWhenUiHidden           { get; set; } = false;
+    public bool UseAdvancedParameters            { get; set; } = true;
+    public bool UseAdvancedDyes                  { get; set; } = true;
+    public bool KeepAdvancedDyesAttached         { get; set; } = true;
+    public bool ShowPalettePlusImport            { get; set; } = true;
+    public bool UseFloatForColors                { get; set; } = true;
+    public bool UseRgbForColors                  { get; set; } = true;
+    public bool ShowColorConfig                  { get; set; } = true;
+    public bool ChangeEntireItem                 { get; set; } = false;
+    public bool AlwaysApplyAssociatedMods        { get; set; } = false;
+    public bool AllowDoubleClickToApply          { get; set; } = false;
+    public bool RespectManualOnAutomationUpdate  { get; set; } = false;
+
+    public HeightDisplayType    HeightDisplayType    { get; set; } = HeightDisplayType.Centimetre;
+    public RenameField          ShowRename           { get; set; } = RenameField.BothDataPrio;
+    public ModifiableHotkey     ToggleQuickDesignBar { get; set; } = new(VirtualKey.NO_KEY);
+    public DoubleModifier       DeleteDesignModifier { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
+    public ChangeLogDisplayType ChangeLogDisplayType { get; set; } = ChangeLogDisplayType.New;
 
     public QdbButtons QdbButtons { get; set; } =
         QdbButtons.ApplyDesign | QdbButtons.RevertAll | QdbButtons.RevertAutomation | QdbButtons.RevertAdvanced;

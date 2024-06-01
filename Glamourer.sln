@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penumbra.String", "Penumbra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OtterGui", "OtterGui\OtterGui.csproj", "{EF233CE2-F243-449E-BE05-72B9D110E419}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Glamourer.Api", "Glamourer.Api\Glamourer.Api.csproj", "{9B46691B-FAB2-4CC3-9B89-C8B91A590F47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{EF233CE2-F243-449E-BE05-72B9D110E419}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF233CE2-F243-449E-BE05-72B9D110E419}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF233CE2-F243-449E-BE05-72B9D110E419}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B46691B-FAB2-4CC3-9B89-C8B91A590F47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B46691B-FAB2-4CC3-9B89-C8B91A590F47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B46691B-FAB2-4CC3-9B89-C8B91A590F47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B46691B-FAB2-4CC3-9B89-C8B91A590F47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

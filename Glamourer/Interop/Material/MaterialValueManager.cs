@@ -2,9 +2,9 @@
 global using DesignMaterialManager = Glamourer.Interop.Material.MaterialValueManager<Glamourer.Interop.Material.MaterialValueDesign>;
 using Glamourer.GameData;
 using Glamourer.State;
-using Penumbra.GameData.Files;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
 
 
@@ -21,7 +21,7 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     public float   SpecularStrength = specularStrength;
     public float   GlossStrength    = glossStrength;
 
-    public ColorRow(in MtrlFile.ColorTable.Row row)
+    public ColorRow(in LegacyColorTable.Row row)
         : this(Root(row.Diffuse), Root(row.Specular), Root(row.Emissive), row.SpecularStrength, row.GlossStrength)
     { }
 
@@ -44,7 +44,7 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     private static float Root(float value)
         => value < 0 ? MathF.Sqrt(-value) : MathF.Sqrt(value);
 
-    public readonly bool Apply(ref MtrlFile.ColorTable.Row row)
+    public readonly bool Apply(ref LegacyColorTable.Row row)
     {
         var ret = false;
         var d   = Square(Diffuse);

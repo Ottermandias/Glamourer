@@ -49,12 +49,12 @@ public class EquipmentDrawer
         foreach (var type in Enum.GetValues<FullEquipType>())
         {
             if (type.ToSlot() is EquipSlot.MainHand)
-                _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log));
+                _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log, favorites));
             else if (type.ToSlot() is EquipSlot.OffHand)
-                _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log));
+                _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log, favorites));
         }
 
-        _weaponCombo.Add(FullEquipType.Unknown, new WeaponCombo(items, FullEquipType.Unknown, Glamourer.Log));
+        _weaponCombo.Add(FullEquipType.Unknown, new WeaponCombo(items, FullEquipType.Unknown, Glamourer.Log, favorites));
     }
 
     private Vector2 _iconSize;
@@ -452,8 +452,8 @@ public class EquipmentDrawer
             else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
                 data.SetStain(Stain.None.RowIndex);
 
-        if (ResetOrClear(data.Locked, false, data.AllowRevert, true, data.CurrentStain, data.GameStain, Stain.None.RowIndex, out _))
-            data.SetStain(Stain.None.RowIndex);
+        if (ResetOrClear(data.Locked, false, data.AllowRevert, true, data.CurrentStain, data.GameStain, Stain.None.RowIndex, out var newStain))
+            data.SetStain(newStain);
     }
 
     private void DrawItem(in EquipDrawData data, out string label, bool small, bool clear, bool open)
@@ -579,7 +579,7 @@ public class EquipmentDrawer
 
     private static void DrawApplyStain(in EquipDrawData data)
     {
-        if (UiHelpers.DrawCheckbox($"##applyStain{data.Slot}", "Apply this item when applying the Design.", data.CurrentApplyStain,
+        if (UiHelpers.DrawCheckbox($"##applyStain{data.Slot}", "Apply this dye to the item when applying the Design.", data.CurrentApplyStain,
                 out var enabled,
                 data.Locked))
             data.SetApplyStain(enabled);

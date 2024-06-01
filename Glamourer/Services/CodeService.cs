@@ -32,6 +32,9 @@ public class CodeService
         Dolphins     = 0x080000,
     }
 
+    public static readonly CodeFlag AllHintCodes =
+        Enum.GetValues<CodeFlag>().Where(f => GetData(f).Display).Aggregate((CodeFlag)0, (f1, f2) => f1 | f2);
+
     public const CodeFlag DyeCodes  = CodeFlag.Clown | CodeFlag.World | CodeFlag.Elephants | CodeFlag.Dolphins;
     public const CodeFlag GearCodes = CodeFlag.Emperor | CodeFlag.World | CodeFlag.Elephants | CodeFlag.Dolphins;
 
@@ -81,7 +84,7 @@ public class CodeService
         var changes = false;
         for (var i = 0; i < _config.Codes.Count; ++i)
         {
-            var enabled = CheckCode(_config.Codes[i].Code);
+            var enabled = CheckCode(_config.Codes[i].Code).Item1;
             if (enabled == null)
             {
                 _config.Codes.RemoveAt(i--);
@@ -100,7 +103,7 @@ public class CodeService
 
     public bool AddCode(string name)
     {
-        if (CheckCode(name) == null || _config.Codes.Any(p => p.Code == name))
+        if (CheckCode(name).Item1 is null || _config.Codes.Any(p => p.Code == name))
             return false;
 
         _config.Codes.Add((name, false));
@@ -108,16 +111,14 @@ public class CodeService
         return true;
     }
 
-    public Action<bool>? CheckCode(string name)
+    public (Action<bool>?, CodeFlag) CheckCode(string name)
     {
         var flag = GetCode(name);
         if (flag == 0)
-            return null;
+            return (null, 0);
 
         var badFlags = ~GetMutuallyExclusive(flag);
-        return v => _enabled = v ? (_enabled | flag) & badFlags : _enabled & ~flag;
-
-        ;
+        return (v => _enabled = v ? (_enabled | flag) & badFlags : _enabled & ~flag, flag);
     }
 
     public CodeFlag GetCode(string name)
@@ -205,4 +206,30 @@ public class CodeService
             CodeFlag.Dolphins     => [ 0x64, 0xC6, 0x2E, 0x7C, 0x22, 0x3A, 0x42, 0xF5, 0xC3, 0x93, 0x4F, 0x70, 0x1F, 0xFD, 0xFA, 0x3C, 0x98, 0xD2, 0x7C, 0xD8, 0x88, 0xA7, 0x3D, 0x1D, 0x0D, 0xD6, 0x70, 0x15, 0x28, 0x2E, 0x79, 0xE7 ],
             _                     => [],
         };
+
+    public static (bool Display, int CapitalCount, string Punctuation, string Hint, string Effect) GetData(CodeFlag flag)
+    => flag switch
+    {
+        CodeFlag.Clown        => (true,  3, ",.",    "A punchline uttered by Rorschach.",                                                                      "Randomizes dyes for every player."),
+        CodeFlag.Emperor      => (true,  1, ".",     "A truth about clothes that only a child will speak.",                                                    "Randomizes clothing for every player."),
+        CodeFlag.Individual   => (true,  2, "'!'!",  "Something an unwilling prophet tries to convince his followers of.",                                     "Randomizes customizations for every player."),
+        CodeFlag.Dwarf        => (true,  1, "!",     "A centuries old metaphor about humility and the progress of science.",                                   "Sets the player character to minimum height and all other players to maximum height."),
+        CodeFlag.Giant        => (true,  2, "!",     "A Swift renaming of one of the most famous literary openings of all time.",                              "Sets the player character to maximum height and all other players to minimum height."),
+        CodeFlag.OopsHyur     => (true,  1, "','.",  "An alkaline quote attributed to Marilyn Monroe.",                                                        "Turns all players to Hyur."),
+        CodeFlag.OopsElezen   => (true,  1, ".",     "A line from a Futurama song about the far future.",                                                      "Turns all players to Elezen."),
+        CodeFlag.OopsLalafell => (true,  2, ",!",    "The name of a discontinued plugin.",                                                                     "Turns all players to Lalafell."),
+        CodeFlag.OopsMiqote   => (true,  3, ".",     "A Sandman story.",                                                                                       "Turns all players to Miqo'te."),
+        CodeFlag.OopsRoegadyn => (true,  2, "!",     "A line from a Steven Universe song about his desires.",                                                  "Turns all players to Roegadyn."),
+        CodeFlag.OopsAuRa     => (true,  1, "',.",   "Something a plumber hates to hear, made to something a scaly hates to hear and initial Au Ra designs.",  "Turns all players to Au Ra."),
+        CodeFlag.OopsHrothgar => (true,  1, "',...", "A meme about the attractiveness of anthropomorphic animals.",                                            "Turns all players to Hrothgar."),
+        CodeFlag.OopsViera    => (true,  2, "!'!",   "A panicked exclamation about bunny arithmetics.",                                                        "Turns all players to Viera."),
+        CodeFlag.SixtyThree   => (true,  2, "",      "The title of a famous LGBTQ-related french play and movie.",                                             "Inverts the gender of every player."),
+        CodeFlag.Shirts       => (true,  2, "-.",    "A pre-internet meme about disappointing rewards for an adventure, adapted to this specific cheat code.", "Highlights all items in the Unlocks tab as if they were unlocked."),
+        CodeFlag.World        => (true,  1, ",.",    "A quote about being more important than other people.",                                                  "Sets every player except the player character themselves to job-appropriate gear."),
+        CodeFlag.Elephants    => (true,  1, "!",     "Appropriate lyrics that can also be found in Glamourer's changelogs.",                                   "Sets every player to the elephant costume in varying shades of pink."),
+        CodeFlag.Crown        => (true,  1, ".",     "A famous Shakespearean line.",                                                                           "Sets every player with a mentor symbol enabled to the clown's hat."),
+        CodeFlag.Dolphins     => (true,  5, ",",     "The farewell of the second smartest species on Earth.",                                                  "Sets every player to a Namazu hat with different costume bodies."),
+        CodeFlag.Artisan      => (false, 3, ",,!",   string.Empty,                                                                                             "Enable a debugging mode for the UI. Not really useful."),
+        _                     => (false, 0, string.Empty, string.Empty, string.Empty),
+    };
 }

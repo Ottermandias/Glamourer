@@ -2,7 +2,7 @@
 using FFXIVClientStructs.Interop;
 using Newtonsoft.Json;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop.Material;
@@ -143,7 +143,7 @@ public readonly record struct MaterialValueIndex(
         => materialIndex < MaterialService.MaterialsPerModel;
 
     public static bool ValidateRow(byte rowIndex)
-        => rowIndex < MtrlFile.ColorTable.NumRows;
+        => rowIndex < LegacyColorTable.NumUsedRows;
 
     private static uint ToKey(DrawObjectType type, byte slotIndex, byte materialIndex, byte rowIndex)
     {

@@ -15,7 +15,6 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
-using System;
 using static Glamourer.Gui.Tabs.HeaderDrawer;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
@@ -38,8 +37,8 @@ public class DesignPanel
     private readonly CustomizeParameterDrawer _parameterDrawer;
     private readonly DesignLinkDrawer         _designLinkDrawer;
     private readonly MaterialDrawer           _materials;
-    private readonly Button[]                _leftButtons;
-    private readonly Button[]                _rightButtons;
+    private readonly Button[]                 _leftButtons;
+    private readonly Button[]                 _rightButtons;
 
 
     public DesignPanel(DesignFileSystemSelector selector,
@@ -78,6 +77,7 @@ public class DesignPanel
             new SetFromClipboardButton(this),
             new UndoButton(this),
             new ExportToClipboardButton(this),
+            new ApplyCharacterButton(this),
         ];
         _rightButtons =
         [
@@ -558,6 +558,37 @@ public class DesignPanel
             {
                 Glamourer.Messager.NotificationMessage(ex, $"Could not copy {panel._selector.Selected!.Name} data to clipboard.",
                     $"Could not copy data from design {panel._selector.Selected!.Identifier} to clipboard", NotificationType.Error, false);
+            }
+        }
+    }
+
+    private sealed class ApplyCharacterButton(DesignPanel panel) : Button
+    {
+        public override bool Visible
+            => panel._selector.Selected != null && panel._objects.Player.Valid;
+
+        protected override string Description
+            => "Overwrite this design with your character's current state.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.UserEdit;
+
+        protected override void OnClick()
+        {
+            try
+            {
+                var (player, actor) = panel._objects.PlayerData;
+                if (!player.IsValid || !actor.Valid || !panel._state.GetOrCreate(player, actor.Objects[0], out var state))
+                    throw new Exception("No player state available.");
+
+                var design = panel._converter.Convert(state, ApplicationRules.FromModifiers(state))
+                 ?? throw new Exception("The clipboard did not contain valid data.");
+                panel._manager.ApplyDesign(panel._selector.Selected!, design);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Could not apply player state to {panel._selector.Selected!.Name}.",
+                    $"Could not apply player state to design {panel._selector.Selected!.Identifier}", NotificationType.Error, false);
             }
         }
     }

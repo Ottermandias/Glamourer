@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using OtterGui.Classes;
 using OtterGui.Services;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
@@ -55,7 +55,7 @@ public sealed unsafe class PrepareColorSet
     }
 
     public static bool TryGetColorTable(CharacterBase* characterBase, MaterialResourceHandle* material, StainId stainId,
-        out MtrlFile.ColorTable table)
+        out LegacyColorTable table)
     {
         if (material->ColorTable == null)
         {
@@ -63,7 +63,7 @@ public sealed unsafe class PrepareColorSet
             return false;
         }
 
-        var newTable = *(MtrlFile.ColorTable*)material->ColorTable;
+        var newTable = *(LegacyColorTable*)material->ColorTable;
         if (stainId.Id != 0)
             characterBase->ReadStainingTemplate(material, stainId.Id, (Half*)(&newTable));
         table = newTable;
@@ -71,11 +71,12 @@ public sealed unsafe class PrepareColorSet
     }
 
     /// <summary> Assumes the actor is valid. </summary>
-    public static bool TryGetColorTable(Actor actor, MaterialValueIndex index, out MtrlFile.ColorTable table)
+    public static bool TryGetColorTable(Actor actor, MaterialValueIndex index, out LegacyColorTable table)
     {
-        var idx    = index.SlotIndex * MaterialService.MaterialsPerModel + index.MaterialIndex;
+        var idx = index.SlotIndex * MaterialService.MaterialsPerModel + index.MaterialIndex;
         if (!index.TryGetModel(actor, out var model))
             return false;
+
         var handle = (MaterialResourceHandle*)model.AsCharacterBase->Materials[idx];
         if (handle == null)
         {

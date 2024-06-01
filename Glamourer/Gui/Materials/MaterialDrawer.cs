@@ -7,7 +7,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Services;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Gui;
 
 namespace Glamourer.Gui.Materials;
@@ -175,9 +175,9 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
     {
         _newRowIdx += 1;
         ImGui.SetNextItemWidth(ImGui.CalcTextSize("Row #0000").X);
-        if (ImGui.DragInt("##Row", ref _newRowIdx, 0.01f, 1, MtrlFile.ColorTable.NumRows, "Row #%i"))
+        if (ImGui.DragInt("##Row", ref _newRowIdx, 0.01f, 1, LegacyColorTable.NumUsedRows, "Row #%i"))
         {
-            _newRowIdx = Math.Clamp(_newRowIdx, 1, MtrlFile.ColorTable.NumRows);
+            _newRowIdx = Math.Clamp(_newRowIdx, 1, LegacyColorTable.NumUsedRows);
             _newKey    = _newKey with { RowIndex = (byte)(_newRowIdx - 1) };
         }
 

@@ -78,4 +78,7 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
         Predicates = predicates;
         return true;
     }
+
+    public bool ForcedRedraw
+        => false;
 }

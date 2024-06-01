@@ -82,7 +82,9 @@ public unsafe class ModelEvaluationPanel(
         ImGuiUtil.DrawTableColumn("Scale");
         ImGuiUtil.DrawTableColumn(actor.Valid ? actor.AsObject->Scale.ToString(CultureInfo.InvariantCulture) : "No Character");
         ImGuiUtil.DrawTableColumn(model.Valid ? model.AsDrawObject->Object.Scale.ToString() : "No Model");
-        ImGuiUtil.DrawTableColumn(model.IsCharacterBase ? $"{*(float*)(model.Address + 0x270)} {*(float*)(model.Address + 0x274)}" : "No CharacterBase");
+        ImGuiUtil.DrawTableColumn(model.IsCharacterBase
+            ? $"{*(float*)(model.Address + 0x270)} {*(float*)(model.Address + 0x274)}"
+            : "No CharacterBase");
     }
 
     private void DrawParameters(Actor actor, Model model)
@@ -229,7 +231,7 @@ public unsafe class ModelEvaluationPanel(
             ? *(CustomizeArray*)&actor.AsCharacter->DrawData.CustomizeData
             : new CustomizeArray();
         var modelCustomize = model.IsHuman
-            ? *(CustomizeArray*)model.AsHuman->Customize.Data
+            ? *(CustomizeArray*)&model.AsHuman->Customize
             : new CustomizeArray();
         foreach (var type in Enum.GetValues<CustomizeIndex>())
         {

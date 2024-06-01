@@ -22,16 +22,13 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
             return;
         }
 
-        var collections = new HashSet<string>();
+        var collections = new HashSet<Guid>();
 
         foreach (var actor in data.Objects)
         {
-            var (collection, overridden) = overrides.GetCollection(actor, state.Identifier);
-            if (collection.Length == 0)
-            {
-                Glamourer.Log.Verbose($"[Mod Applier] Could not obtain associated collection for {actor.Utf8Name}.");
+            var (collection, _, overridden) = overrides.GetCollection(actor, state.Identifier);
+            if (collection == Guid.Empty)
                 continue;
-            }
 
             if (!collections.Add(collection))
                 continue;
@@ -48,11 +45,11 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
         }
     }
 
-    public (List<string> Messages, int Applied, string Collection, bool Overridden) ApplyModSettings(IReadOnlyDictionary<Mod, ModSettings> settings, Actor actor)
+    public (List<string> Messages, int Applied, Guid Collection, string Name, bool Overridden) ApplyModSettings(IReadOnlyDictionary<Mod, ModSettings> settings, Actor actor)
     {
-        var (collection, overridden) = overrides.GetCollection(actor);
-        if (collection.Length <= 0)
-            return ([$"Could not obtain associated collection for {actor.Utf8Name}."], 0, string.Empty, false);
+        var (collection, name, overridden) = overrides.GetCollection(actor);
+        if (collection == Guid.Empty)
+            return ([$"{actor.Utf8Name} uses no mods."], 0, Guid.Empty, string.Empty, false);
 
         var messages    = new List<string>();
         var appliedMods = 0;
@@ -65,6 +62,6 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
                 ++appliedMods;
         }
 
-        return (messages, appliedMods, collection, overridden);
+        return (messages, appliedMods, collection, name, overridden);
     }
 }

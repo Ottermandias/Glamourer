@@ -136,6 +136,13 @@ public class DesignDetailTab
         if (hovered || ImGui.IsItemHovered())
             ImGui.SetTooltip("Display or hide this design in your quick design bar.");
 
+        var forceRedraw = _selector.Selected!.ForcedRedraw;
+        ImGuiUtil.DrawFrameColumn("Force Redrawing");
+        ImGui.TableNextColumn();
+        if (ImGui.Checkbox("##ForceRedraw", ref forceRedraw))
+            _manager.ChangeForcedRedraw(_selector.Selected!, forceRedraw);
+        ImGuiUtil.HoverTooltip("Set this design to always force a redraw when it is applied through any means.");
+
         ImGuiUtil.DrawFrameColumn("Color");
         var colorName = _selector.Selected!.Color.Length == 0 ? DesignColors.AutomaticName : _selector.Selected!.Color;
         ImGui.TableNextColumn();

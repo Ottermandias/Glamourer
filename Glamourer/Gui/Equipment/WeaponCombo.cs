@@ -1,4 +1,5 @@
 ﻿using Glamourer.Services;
+using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -12,13 +13,15 @@ namespace Glamourer.Gui.Equipment;
 
 public sealed class WeaponCombo : FilterComboCache<EquipItem>
 {
-    public readonly string Label;
-    private         ItemId _currentItemId;
-    private         float  _innerWidth;
+    private readonly FavoriteManager _favorites;
+    public readonly  string          Label;
+    private          ItemId          _currentItem;
+    private          float           _innerWidth;
 
-    public WeaponCombo(ItemManager items, FullEquipType type, Logger log)
-        : base(() => GetWeapons(items, type), MouseWheelType.Control, log)
+    public WeaponCombo(ItemManager items, FullEquipType type, Logger log, FavoriteManager favorites)
+        : base(() => GetWeapons(favorites, items, type), MouseWheelType.Control, log)
     {
+        _favorites    = favorites;
         Label         = GetLabel(type);
         SearchByParts = true;
     }
@@ -32,29 +35,38 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
 
     protected override int UpdateCurrentSelected(int currentSelected)
     {
-        if (CurrentSelection.ItemId == _currentItemId)
+        if (CurrentSelection.ItemId == _currentItem)
             return currentSelected;
 
-        CurrentSelectionIdx = Items.IndexOf(i => i.ItemId == _currentItemId);
+        CurrentSelectionIdx = Items.IndexOf(i => i.ItemId == _currentItem);
         CurrentSelection    = CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : default;
         return base.UpdateCurrentSelected(CurrentSelectionIdx);
+    }
+
+    public bool Draw(string previewName, ItemId previewIdx, float width, float innerWidth)
+    {
+        _innerWidth  = innerWidth;
+        _currentItem = previewIdx;
+        return Draw($"##{Label}", previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
     }
 
     protected override float GetFilterWidth()
         => _innerWidth - 2 * ImGui.GetStyle().FramePadding.X;
 
-    public bool Draw(string previewName, ItemId previewId, float width, float innerWidth)
-    {
-        _currentItemId = previewId;
-        _innerWidth    = innerWidth;
-        return Draw($"##{Label}", previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
-    }
 
     protected override bool DrawSelectable(int globalIdx, bool selected)
     {
         var obj  = Items[globalIdx];
         var name = ToString(obj);
-        var ret  = ImGui.Selectable(name, selected);
+        if (UiHelpers.DrawFavoriteStar(_favorites, obj) && CurrentSelectionIdx == globalIdx)
+        {
+            CurrentSelectionIdx = -1;
+            _currentItem        = obj.ItemId;
+            CurrentSelection    = default;
+        }
+
+        ImGui.SameLine();
+        var ret = ImGui.Selectable(name, selected);
         ImGui.SameLine();
         using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
         ImGuiUtil.RightAlign($"({obj.PrimaryId.Id}-{obj.SecondaryId.Id}-{obj.Variant})");
@@ -70,7 +82,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
     private static string GetLabel(FullEquipType type)
         => type is FullEquipType.Unknown ? "Mainhand" : type.ToName();
 
-    private static IReadOnlyList<EquipItem> GetWeapons(ItemManager items, FullEquipType type)
+    private static IReadOnlyList<EquipItem> GetWeapons(FavoriteManager favorites, ItemManager items, FullEquipType type)
     {
         if (type is FullEquipType.Unknown)
         {
@@ -81,15 +93,15 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
                     enumerable = enumerable.Concat(l);
             }
 
-            return enumerable.OrderBy(e => e.Name).ToList();
+            return [.. enumerable.OrderByDescending(favorites.Contains).ThenBy(e => e.Name)];
         }
 
         if (!items.ItemData.ByType.TryGetValue(type, out var list))
-            return Array.Empty<EquipItem>();
+            return [];
 
         if (type.AllowsNothing())
-            return list.OrderBy(e => e.Name).Prepend(ItemManager.NothingItem(type)).ToList();
+            return [ItemManager.NothingItem(type), .. list.OrderByDescending(favorites.Contains).ThenBy(e => e.Name)];
 
-        return list.OrderBy(e => e.Name).ToList();
+        return [.. list.OrderByDescending(favorites.Contains).ThenBy(e => e.Name)];
     }
 }

@@ -64,6 +64,8 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         AddButton(ImportDesignButton, 10);
         AddButton(CloneDesignButton,  20);
         AddButton(DeleteButton,       1000);
+        UnsubscribeRightClickLeaf(RenameLeaf);
+        SetRenameSearchPath(_config.ShowRename);
         SetFilterTooltip();
 
         if (_config.Ephemeral.SelectedDesign == Guid.Empty)
@@ -72,6 +74,59 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         var design = designManager.Designs.ByIdentifier(_config.Ephemeral.SelectedDesign);
         if (design != null)
             SelectByValue(design);
+    }
+
+    public void SetRenameSearchPath(RenameField value)
+    {
+        switch (value)
+        {
+            case RenameField.RenameSearchPath:
+                SubscribeRightClickLeaf(RenameLeafDesign, 1000);
+                UnsubscribeRightClickLeaf(RenameDesign);
+                break;
+            case RenameField.RenameData:
+                UnsubscribeRightClickLeaf(RenameLeafDesign);
+                SubscribeRightClickLeaf(RenameDesign, 1000);
+                break;
+            case RenameField.BothSearchPathPrio:
+                UnsubscribeRightClickLeaf(RenameLeafDesign);
+                UnsubscribeRightClickLeaf(RenameDesign);
+                SubscribeRightClickLeaf(RenameLeafDesign, 1001);
+                SubscribeRightClickLeaf(RenameDesign,     1000);
+                break;
+            case RenameField.BothDataPrio:
+                UnsubscribeRightClickLeaf(RenameLeafDesign);
+                UnsubscribeRightClickLeaf(RenameDesign);
+                SubscribeRightClickLeaf(RenameLeafDesign, 1000);
+                SubscribeRightClickLeaf(RenameDesign,     1001);
+                break;
+            default:
+                UnsubscribeRightClickLeaf(RenameLeafDesign);
+                UnsubscribeRightClickLeaf(RenameDesign);
+                break;
+        }
+    }
+
+    private void RenameLeafDesign(DesignFileSystem.Leaf leaf)
+    {
+        ImGui.Separator();
+        RenameLeaf(leaf);
+    }
+
+    private void RenameDesign(DesignFileSystem.Leaf leaf)
+    {
+        ImGui.Separator();
+        var currentName = leaf.Value.Name.Text;
+        if (ImGui.IsWindowAppearing())
+            ImGui.SetKeyboardFocusHere(0);
+        ImGui.TextUnformatted("Rename Design:");
+        if (ImGui.InputText("##RenameDesign", ref currentName, 256, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            _designManager.Rename(leaf.Value, currentName);
+            ImGui.CloseCurrentPopup();
+        }
+
+        ImGuiUtil.HoverTooltip("Enter a new name here to rename the changed design.");
     }
 
     protected override void Select(FileSystem<Design>.Leaf? leaf, bool clear, in DesignState storage = default)

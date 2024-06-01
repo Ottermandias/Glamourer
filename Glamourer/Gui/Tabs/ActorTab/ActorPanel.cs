@@ -341,8 +341,8 @@ public class ActorPanel
                 "Reapply the current automation state for the character on top of its current state..",
                 !_config.EnableAutoDesigns || _state!.IsLocked))
         {
-            _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!, false);
-            _stateManager.ReapplyState(_actor, StateSource.Manual);
+            _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!, false, out var forcedRedraw);
+            _stateManager.ReapplyState(_actor, forcedRedraw, StateSource.Manual);
         }
 
         ImGui.SameLine();
@@ -350,15 +350,15 @@ public class ActorPanel
                 "Try to revert the character to the state it would have using automated designs.",
                 !_config.EnableAutoDesigns || _state!.IsLocked))
         {
-            _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!, true);
-            _stateManager.ReapplyState(_actor, StateSource.Manual);
+            _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!, true, out var forcedRedraw);
+            _stateManager.ReapplyState(_actor, forcedRedraw, StateSource.Manual);
         }
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton("Reapply", Vector2.Zero,
                 "Try to reapply the configured state if something went wrong. Should generally not be necessary.",
                 _state!.IsLocked))
-            _stateManager.ReapplyState(_actor, StateSource.Manual);
+            _stateManager.ReapplyState(_actor, false, StateSource.Manual);
     }
 
     private void DrawApplyToSelf()

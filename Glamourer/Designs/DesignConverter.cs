@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
@@ -34,10 +34,10 @@ public class DesignConverter(
     }
 
     public string ShareBase64(Design design)
-        => ShareBase64(ShareJObject(design));
+        => ToBase64(ShareJObject(design));
 
     public string ShareBase64(DesignBase design)
-        => ShareBase64(ShareJObject(design));
+        => ToBase64(ShareJObject(design));
 
     public string ShareBase64(ActorState state, in ApplicationRules rules)
         => ShareBase64(state.ModelData, state.Materials, rules);
@@ -45,7 +45,7 @@ public class DesignConverter(
     public string ShareBase64(in DesignData data, in StateMaterialManager materials, in ApplicationRules rules)
     {
         var design = Convert(data, materials, rules);
-        return ShareBase64(ShareJObject(design));
+        return ToBase64(ShareJObject(design));
     }
 
     public DesignBase Convert(ActorState state, in ApplicationRules rules)
@@ -59,6 +59,37 @@ public class DesignConverter(
         if (rules.Materials)
             ComputeMaterials(design.GetMaterialDataRef(), materials, rules.Equip);
         return design;
+    }
+
+    public DesignBase? FromJObject(JObject? jObject, bool customize, bool equip)
+    {
+        if (jObject == null)
+            return null;
+
+        try
+        {
+            var ret = jObject["Identifier"] != null
+                ? Design.LoadDesign(_customize, _items, _linkLoader, jObject)
+                : DesignBase.LoadDesignBase(_customize, _items, jObject);
+
+            ret.SetApplyMeta(MetaIndex.Wetness, customize);
+            if (!customize)
+                ret.ApplyCustomize = 0;
+
+            if (!equip)
+            {
+                ret.ApplyEquip =  0;
+                ret.ApplyCrest =  0;
+                ret.ApplyMeta  &= ~(MetaFlag.HatState | MetaFlag.WeaponState | MetaFlag.VisorState);
+            }
+
+            return ret;
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Log.Warning($"Failure to parse JObject to design:\n{ex}");
+            return null;
+        }
     }
 
     public DesignBase? FromBase64(string base64, bool customize, bool equip, out byte version)
@@ -138,7 +169,7 @@ public class DesignConverter(
         return ret;
     }
 
-    private static string ShareBase64(JToken jObject)
+    public static string ToBase64(JToken jObject)
     {
         var json       = jObject.ToString(Formatting.None);
         var compressed = json.Compress(Version);
@@ -193,7 +224,7 @@ public class DesignConverter(
         foreach (var (key, value) in materials.Values)
         {
             var idx = MaterialValueIndex.FromKey(key);
-            if (idx.RowIndex >= MtrlFile.ColorTable.NumRows)
+            if (idx.RowIndex >= LegacyColorTable.NumUsedRows)
                 continue;
             if (idx.MaterialIndex >= MaterialService.MaterialsPerModel)
                 continue;

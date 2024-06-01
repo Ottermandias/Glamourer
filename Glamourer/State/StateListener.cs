@@ -106,7 +106,7 @@ public class StateListener : IDisposable
     /// Weapons and meta flags are updated independently.
     /// We also need to apply fixed designs here.
     /// </summary>
-    private unsafe void OnCreatingCharacterBase(nint actorPtr, string _, nint modelPtr, nint customizePtr, nint equipDataPtr)
+    private unsafe void OnCreatingCharacterBase(nint actorPtr, Guid _, nint modelPtr, nint customizePtr, nint equipDataPtr)
     {
         var actor = (Actor)actorPtr;
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
@@ -725,7 +725,7 @@ public class StateListener : IDisposable
         _changeCustomizeService.Unsubscribe(OnCustomizeChanged);
     }
 
-    private void OnCreatedCharacterBase(nint gameObject, string _, nint drawObject)
+    private void OnCreatedCharacterBase(nint gameObject, Guid _, nint drawObject)
     {
         if (_condition[ConditionFlag.CreatingCharacter])
             return;

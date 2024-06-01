@@ -1,5 +1,4 @@
-﻿using Dalamud.Interface.Utility;
-using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -11,9 +10,13 @@ using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Gui.Tabs.NpcTab;
 using Glamourer.Gui.Tabs.SettingsTab;
 using Glamourer.Gui.Tabs.UnlocksTab;
+using Glamourer.Interop.Penumbra;
 using ImGuiNET;
+using OtterGui;
 using OtterGui.Custom;
+using OtterGui.Raii;
 using OtterGui.Services;
+using OtterGui.Text;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui;
@@ -41,10 +44,12 @@ public class MainWindow : Window, IDisposable
     }
 
     private readonly Configuration      _config;
+    private readonly PenumbraService    _penumbra;
     private readonly DesignQuickBar     _quickBar;
     private readonly TabSelected        _event;
     private readonly MainWindowPosition _position;
     private readonly ITab[]             _tabs;
+    private          bool               _ignorePenumbra = false;
 
     public readonly SettingsTab   Settings;
     public readonly ActorTab      Actors;
@@ -59,7 +64,7 @@ public class MainWindow : Window, IDisposable
 
     public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
         DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, MessagesTab messages, DesignQuickBar quickBar,
-        NpcTab npcs, MainWindowPosition position)
+        NpcTab npcs, MainWindowPosition position, PenumbraService penumbra)
         : base("GlamourerMainWindow")
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -80,6 +85,7 @@ public class MainWindow : Window, IDisposable
         Npcs       = npcs;
         _position  = position;
         _config    = config;
+        _penumbra  = penumbra;
         _tabs =
         [
             settings,
@@ -94,6 +100,12 @@ public class MainWindow : Window, IDisposable
         SelectTab = _config.Ephemeral.SelectedTab;
         _event.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
         IsOpen = _config.OpenWindowAtStart;
+    }
+
+    public void OpenSettings()
+    {
+        IsOpen    = true;
+        SelectTab = TabType.Settings;
     }
 
     public override void PreDraw()
@@ -113,18 +125,34 @@ public class MainWindow : Window, IDisposable
         var yPos = ImGui.GetCursorPosY();
         _position.Size     = ImGui.GetWindowSize();
         _position.Position = ImGui.GetWindowPos();
-        if (TabBar.Draw("##tabs", ImGuiTabBarFlags.None, ToLabel(SelectTab), out var currentTab, () => { }, _tabs))
-            SelectTab = TabType.None;
-        var tab = FromLabel(currentTab);
 
-        if (tab != _config.Ephemeral.SelectedTab)
+        if (!_penumbra.Available && !_ignorePenumbra)
         {
-            _config.Ephemeral.SelectedTab = FromLabel(currentTab);
-            _config.Ephemeral.Save();
+            if (_penumbra.CurrentMajor == 0)
+                DrawProblemWindow(
+                    "Could not attach to Penumbra. Please make sure Penumbra is installed and running.\n\nPenumbra is required for Glamourer to work properly.");
+            else if (_penumbra is { CurrentMajor: PenumbraService.RequiredPenumbraBreakingVersion, CurrentMinor: >= PenumbraService.RequiredPenumbraFeatureVersion })
+                DrawProblemWindow(
+                    $"You are currently not attached to Penumbra, seemingly by manually detaching from it.\n\nPenumbra's last API Version was {_penumbra.CurrentMajor}.{_penumbra.CurrentMinor}.\n\nPenumbra is required for Glamourer to work properly.");
+            else
+                DrawProblemWindow(
+                    $"Attaching to Penumbra failed.\n\nPenumbra's API Version was {_penumbra.CurrentMajor}.{_penumbra.CurrentMinor}, but Glamourer requires a version of {PenumbraService.RequiredPenumbraBreakingVersion}.{PenumbraService.RequiredPenumbraFeatureVersion}, where the major version has to match exactly, and the minor version has to be greater or equal.\nYou may need to update Penumbra or enable Testing Builds for it for this version of Glamourer.\n\nPenumbra is required for Glamourer to work properly.");
         }
+        else
+        {
+            if (TabBar.Draw("##tabs", ImGuiTabBarFlags.None, ToLabel(SelectTab), out var currentTab, () => { }, _tabs))
+                SelectTab = TabType.None;
+            var tab = FromLabel(currentTab);
 
-        if (_config.ShowQuickBarInTabs)
-            _quickBar.DrawAtEnd(yPos);
+            if (tab != _config.Ephemeral.SelectedTab)
+            {
+                _config.Ephemeral.SelectedTab = FromLabel(currentTab);
+                _config.Ephemeral.Save();
+            }
+
+            if (_config.ShowQuickBarInTabs)
+                _quickBar.DrawAtEnd(yPos);
+        }
     }
 
     private ReadOnlySpan<byte> ToLabel(TabType type)
@@ -186,4 +214,31 @@ public class MainWindow : Window, IDisposable
             (false, false) => $"Glamourer v{Glamourer.Version}###GlamourerMainWindow",
             (false, true)  => $"Glamourer v{Glamourer.Version} (Incognito Mode)###GlamourerMainWindow",
         };
+
+    private void DrawProblemWindow(string text)
+    {
+        using var color = ImRaii.PushColor(ImGuiCol.Text, Colors.SelectedRed);
+        ImGui.NewLine();
+        ImGui.NewLine();
+        ImGuiUtil.TextWrapped(text);
+        color.Pop();
+
+        ImGui.NewLine();
+        if (ImUtf8.Button("Try Attaching Again"u8))
+            _penumbra.Reattach();
+
+        var ignoreAllowed = _config.DeleteDesignModifier.IsActive();
+        ImGui.SameLine();
+        if (ImUtf8.ButtonEx("Ignore Penumbra This Time"u8,
+                $"Some functionality, like automation or retaining state, will not work correctly without Penumbra.\n\nIgnore this at your own risk!{(ignoreAllowed ? string.Empty : $"\n\nHold {_config.DeleteDesignModifier} while clicking to enable this button.")}",
+                default, !ignoreAllowed))
+            _ignorePenumbra = true;
+
+        ImGui.NewLine();
+        ImGui.NewLine();
+        CustomGui.DrawDiscordButton(Glamourer.Messager, 0);
+        ImGui.SameLine();
+        ImGui.NewLine();
+        ImGui.NewLine();
+    }
 }

@@ -6,7 +6,7 @@ using Glamourer.State;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
@@ -76,7 +76,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
 
     /// <summary> Update and apply the glamourer state of an actor according to the application sources when updated by the game. </summary>
     private void UpdateMaterialValues(ActorState state, ReadOnlySpan<(uint Key, MaterialValueState Value)> values, CharacterWeapon drawData,
-        ref MtrlFile.ColorTable colorTable)
+        ref LegacyColorTable colorTable)
     {
         var deleteList = _deleteList.Value!;
         deleteList.Clear();

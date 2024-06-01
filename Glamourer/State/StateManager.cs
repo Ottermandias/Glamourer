@@ -402,18 +402,18 @@ public sealed class StateManager(
         }
     }
 
-    public void ReapplyState(Actor actor, StateSource source)
+    public void ReapplyState(Actor actor, bool forceRedraw, StateSource source)
     {
         if (!GetOrCreate(actor, out var state))
             return;
 
-        ReapplyState(actor, state, source);
+        ReapplyState(actor, state, forceRedraw, source);
     }
 
-    public void ReapplyState(Actor actor, ActorState state, StateSource source)
+    public void ReapplyState(Actor actor, ActorState state, bool forceRedraw, StateSource source)
     {
         var data = Applier.ApplyAll(state,
-            !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
+            forceRedraw || !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
         StateChanged.Invoke(StateChanged.Type.Reapply, source, state, data, null);
     }
 

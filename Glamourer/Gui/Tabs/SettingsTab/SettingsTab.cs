@@ -7,8 +7,6 @@ using Glamourer.Designs;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.PalettePlus;
-using Glamourer.Services;
-using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -19,24 +17,21 @@ namespace Glamourer.Gui.Tabs.SettingsTab;
 public class SettingsTab(
     Configuration config,
     DesignFileSystemSelector selector,
-    CodeService codeService,
     ContextMenuService contextMenuService,
     UiBuilder uiBuilder,
     GlamourerChangelog changelog,
-    FunModule funModule,
     IKeyState keys,
     DesignColorUi designColorUi,
     PaletteImport paletteImport,
     PalettePlusChecker paletteChecker,
-    CollectionOverrideDrawer overrides)
+    CollectionOverrideDrawer overrides,
+    CodeDrawer codeDrawer)
     : ITab
 {
     private readonly VirtualKey[] _validKeys = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
 
     public ReadOnlySpan<byte> Label
         => "Settings"u8;
-
-    private string _currentCode = string.Empty;
 
     public void DrawContent()
     {
@@ -57,7 +52,7 @@ public class SettingsTab(
             DrawInterfaceSettings();
             DrawColorSettings();
             overrides.Draw();
-            DrawCodes();
+            codeDrawer.Draw();
         }
 
         MainWindow.DrawSupportButtons(changelog.Changelog);
@@ -161,6 +156,7 @@ public class SettingsTab(
 
         Checkbox("Smaller Equip Display", "Use single-line display without icons and small dye buttons instead of double-line display.",
             config.SmallEquip,            v => config.SmallEquip = v);
+        DrawHeightUnitSettings();
         Checkbox("Show Application Checkboxes",
             "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules.",
             !config.HideApplyCheckmarks, v => config.HideApplyCheckmarks = !v);
@@ -168,6 +164,7 @@ public class SettingsTab(
                 "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
                 config.DeleteDesignModifier, v => config.DeleteDesignModifier = v))
             config.Save();
+        DrawRenameSettings();
         Checkbox("Auto-Open Design Folders",
             "Have design folders open or closed as their default state after launching.", config.OpenFoldersByDefault,
             v => config.OpenFoldersByDefault = v);
@@ -295,69 +292,6 @@ public class SettingsTab(
         ImGui.NewLine();
     }
 
-    private void DrawCodes()
-    {
-        const string tooltip =
-            "Cheat Codes are not actually for cheating in the game, but for 'cheating' in Glamourer. They allow for some fun easter-egg modes that usually manipulate the appearance of all players you see (including yourself) in some way.\n\n"
-          + "Cheat Codes are generally pop culture references, but it is unlikely you will be able to guess any of them based on nothing. Some codes have been published on the discord server, but other than that, we are still undecided on how and when to publish them or add any new ones. Maybe some will be hidden in the change logs or on the help pages. Or maybe I will just add hints in this section later on.\n\n"
-          + "In any case, you are not losing out on anything important if you never look at this section and there is no real reason to go on a treasure hunt for them. It is mostly something I added because it was fun for me.";
-
-        var show = ImGui.CollapsingHeader("Cheat Codes");
-        if (ImGui.IsItemHovered())
-        {
-            ImGui.SetNextWindowSize(new Vector2(400, 0));
-            using var tt = ImRaii.Tooltip();
-            ImGuiUtil.TextWrapped(tooltip);
-        }
-
-        if (!show)
-            return;
-
-        using (var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale, _currentCode.Length > 0))
-        {
-            var       color = codeService.CheckCode(_currentCode) != null ? ColorId.ActorAvailable : ColorId.ActorUnavailable;
-            using var c     = ImRaii.PushColor(ImGuiCol.Border, color.Value(), _currentCode.Length > 0);
-            if (ImGui.InputTextWithHint("##Code", "Enter Cheat Code...", ref _currentCode, 512, ImGuiInputTextFlags.EnterReturnsTrue))
-                if (codeService.AddCode(_currentCode))
-                    _currentCode = string.Empty;
-        }
-
-        ImGui.SameLine();
-        ImGuiComponents.HelpMarker(tooltip);
-
-        DrawCodeHints();
-
-        if (config.Codes.Count <= 0)
-            return;
-
-        for (var i = 0; i < config.Codes.Count; ++i)
-        {
-            var (code, state) = config.Codes[i];
-            var action = codeService.CheckCode(code);
-            if (action == null)
-                continue;
-
-            if (ImGui.Checkbox(code, ref state))
-            {
-                action(state);
-                codeService.SaveState();
-            }
-        }
-
-        if (ImGui.Button("Who am I?!?"))
-            funModule.WhoAmI();
-
-        ImGui.SameLine();
-
-        if (ImGui.Button("Who is that!?!"))
-            funModule.WhoIsThat();
-    }
-
-    private void DrawCodeHints()
-    {
-        // TODO
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private void Checkbox(string label, string tooltip, bool current, Action<bool> setter)
     {
@@ -411,4 +345,68 @@ public class SettingsTab(
 
         ImGuiUtil.LabeledHelpMarker("Sort Mode", "Choose the sort mode for the mod selector in the designs tab.");
     }
+
+    private void DrawRenameSettings()
+    {
+        ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
+        using (var combo = ImRaii.Combo("##renameSettings", config.ShowRename.GetData().Name))
+        {
+            if (combo)
+                foreach (var value in Enum.GetValues<RenameField>())
+                {
+                    var (name, desc) = value.GetData();
+                    if (ImGui.Selectable(name, config.ShowRename == value))
+                    {
+                        config.ShowRename = value;
+                        selector.SetRenameSearchPath(value);
+                        config.Save();
+                    }
+
+                    ImGuiUtil.HoverTooltip(desc);
+                }
+        }
+
+        ImGui.SameLine();
+        const string tt =
+            "Select which of the two renaming input fields are visible when opening the right-click context menu of a design in the design selector.";
+        ImGuiComponents.HelpMarker(tt);
+        ImGui.SameLine();
+        ImGui.TextUnformatted("Rename Fields in Design Context Menu");
+        ImGuiUtil.HoverTooltip(tt);
+    }
+
+    private void DrawHeightUnitSettings()
+    {
+        ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
+        using (var combo = ImRaii.Combo("##heightUnit", HeightDisplayTypeName(config.HeightDisplayType)))
+        {
+            if (combo)
+                foreach (var type in Enum.GetValues<HeightDisplayType>())
+                {
+                    if (ImGui.Selectable(HeightDisplayTypeName(type), type == config.HeightDisplayType) && type != config.HeightDisplayType)
+                    {
+                        config.HeightDisplayType = type;
+                        config.Save();
+                    }
+                }
+        }
+
+        ImGui.SameLine();
+        const string tt = "Select how to display the height of characters in real-world units, if at all.";
+        ImGuiComponents.HelpMarker(tt);
+        ImGui.SameLine();
+        ImGui.TextUnformatted("Character Height Display Type");
+        ImGuiUtil.HoverTooltip(tt);
+    }
+
+    private string HeightDisplayTypeName(HeightDisplayType type)
+        => type switch
+        {
+            HeightDisplayType.None       => "Do Not Display",
+            HeightDisplayType.Centimetre => "Centimetres (000.0 cm)",
+            HeightDisplayType.Metre      => "Metres (0.00 m)",
+            HeightDisplayType.Wrong      => "Inches (00.0 in)",
+            HeightDisplayType.WrongFoot  => "Feet (0'00'')",
+            _                            => string.Empty,
+        };
 }
