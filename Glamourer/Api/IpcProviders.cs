@@ -43,6 +43,7 @@ public sealed class IpcProviders : IDisposable, IApiService
             IpcSubscribers.RevertToAutomation.Provider(pi, api.State),
             IpcSubscribers.RevertToAutomationName.Provider(pi, api.State),
             IpcSubscribers.StateChanged.Provider(pi, api.State),
+            IpcSubscribers.StateChangedWithType.Provider(pi, api.State),
             IpcSubscribers.GPoseChanged.Provider(pi, api.State),
         ];
         _initializedProvider.Invoke();
