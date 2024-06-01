@@ -167,7 +167,7 @@ public class ActorPanel
             DrawHumanPanel();
         else
             DrawMonsterPanel();
-        _advancedDyes.Draw(_actor, _state);
+        _advancedDyes.Draw(_data.Objects.Last(), _state);
     }
 
     private void DrawHumanPanel()
