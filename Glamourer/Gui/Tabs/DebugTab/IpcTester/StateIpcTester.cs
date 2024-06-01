@@ -30,7 +30,7 @@ public class StateIpcTester : IUiService, IDisposable
     private string         _base64State = string.Empty;
     private string?        _getStateString;
 
-    public readonly EventSubscriber<nint> StateChanged;
+    public readonly EventSubscriber<nint, StateChangeType> StateChanged;
     private         nint                  _lastStateChangeActor;
     private         ByteString            _lastStateChangeName = ByteString.Empty;
     private         DateTime              _lastStateChangeTime;
@@ -44,7 +44,7 @@ public class StateIpcTester : IUiService, IDisposable
     public StateIpcTester(DalamudPluginInterface pluginInterface)
     {
         _pluginInterface = pluginInterface;
-        StateChanged     = Api.IpcSubscribers.StateChanged.Subscriber(_pluginInterface, OnStateChanged);
+        StateChanged     = Api.IpcSubscribers.StateChangedWithType.Subscriber(_pluginInterface, OnStateChanged);
         GPoseChanged     = Api.IpcSubscribers.GPoseChanged.Subscriber(_pluginInterface, OnGPoseChange);
         StateChanged.Disable();
         GPoseChanged.Disable();
@@ -195,7 +195,7 @@ public class StateIpcTester : IUiService, IDisposable
         ImGui.TextUnformatted($"at {_lastStateChangeTime.ToLocalTime().TimeOfDay}");
     }
 
-    private void OnStateChanged(nint actor)
+    private void OnStateChanged(nint actor, StateChangeType _)
     {
         _lastStateChangeActor = actor;
         _lastStateChangeTime  = DateTime.UtcNow;

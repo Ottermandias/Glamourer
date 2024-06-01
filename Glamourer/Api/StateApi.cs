@@ -247,8 +247,9 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
-    public event Action<IntPtr>? StateChanged;
-    public event Action<bool>?   GPoseChanged;
+    public event Action<nint>?                    StateChanged;
+    public event Action<IntPtr, StateChangeType>? StateChangedWithType;
+    public event Action<bool>?                    GPoseChanged;
 
     private void ApplyDesign(ActorState state, DesignBase design, uint key, ApplyFlag flags)
     {
@@ -329,12 +330,14 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     private void OnGPoseChange(bool gPose)
         => GPoseChanged?.Invoke(gPose);
 
-    private void OnStateChange(StateChanged.Type _1, StateSource _2, ActorState _3, ActorData actors, object? _5)
+    private void OnStateChange(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, object? _5)
     {
-        if (StateChanged == null)
-            return;
+        if (StateChanged != null)
+            foreach (var actor in actors.Objects)
+                StateChanged.Invoke(actor.Address);
 
-        foreach (var actor in actors.Objects)
-            StateChanged.Invoke(actor.Address);
+        if (StateChangedWithType != null)
+            foreach (var actor in actors.Objects)
+                StateChangedWithType.Invoke(actor.Address, type);
     }
 }

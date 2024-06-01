@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
@@ -257,7 +258,7 @@ public sealed class StateManager(
 
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChanged.Type.Reset, source, state, actors, null);
+        StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
     }
 
     public void ResetAdvancedState(ActorState state, StateSource source, uint key = 0)
@@ -282,7 +283,7 @@ public sealed class StateManager(
 
         Glamourer.Log.Verbose(
             $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChanged.Type.Reset, source, state, actors, null);
+        StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
     }
 
     public void ResetCustomize(ActorState state, StateSource source, uint key = 0)
@@ -414,7 +415,7 @@ public sealed class StateManager(
     {
         var data = Applier.ApplyAll(state,
             forceRedraw || !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
-        StateChanged.Invoke(StateChanged.Type.Reapply, source, state, data, null);
+        StateChanged.Invoke(StateChangeType.Reapply, source, state, data, null);
     }
 
     public void DeleteState(ActorIdentifier identifier)

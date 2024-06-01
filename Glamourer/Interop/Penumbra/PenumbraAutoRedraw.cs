@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Glamourer.Api.Enums;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
@@ -43,9 +44,9 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
     private readonly ConcurrentSet<ActorState>                  _skips   = [];
     private          DateTime                                   _frame;
 
-    private void OnStateChange(StateChanged.Type type, StateSource source, ActorState state, ActorData _1, object? _2)
+    private void OnStateChange(StateChangeType type, StateSource source, ActorState state, ActorData _1, object? _2)
     {
-        if (type is StateChanged.Type.Design && source.IsIpc())
+        if (type is StateChangeType.Design && source.IsIpc())
             _skips.TryAdd(state);
     }
 
