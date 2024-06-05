@@ -10,8 +10,9 @@ public enum StateSource : byte
     IpcFixed,
     IpcManual,
 
-    // Only used for CustomizeParameters.
+    // Only used for CustomizeParameters and advanced dyes.
     Pending,
+    IpcPending,
 }
 
 public static class StateSourceExtensions
@@ -19,9 +20,10 @@ public static class StateSourceExtensions
     public static StateSource Base(this StateSource source)
         => source switch
         {
-            StateSource.Manual or StateSource.IpcManual or StateSource.Pending => StateSource.Manual,
-            StateSource.Fixed or StateSource.IpcFixed                          => StateSource.Fixed,
-            _                                                                  => StateSource.Game,
+            StateSource.Manual or StateSource.Pending       => StateSource.Manual,
+            StateSource.IpcManual or StateSource.IpcPending => StateSource.Manual,
+            StateSource.Fixed or StateSource.IpcFixed       => StateSource.Fixed,
+            _                                               => StateSource.Game,
         };
 
     public static bool IsGame(this StateSource source)
@@ -34,7 +36,12 @@ public static class StateSourceExtensions
         => source.Base() is StateSource.Fixed;
 
     public static StateSource SetPending(this StateSource source)
-        => source is StateSource.Manual ? StateSource.Pending : source;
+        => source switch
+        {
+            StateSource.Manual    => StateSource.Pending,
+            StateSource.IpcManual => StateSource.IpcPending,
+            _                     => source,
+        };
 
     public static bool RequiresChange(this StateSource source)
         => source switch
@@ -46,7 +53,7 @@ public static class StateSourceExtensions
         };
 
     public static bool IsIpc(this StateSource source)
-        => source is StateSource.IpcManual or StateSource.IpcFixed;
+        => source is StateSource.IpcManual or StateSource.IpcFixed or StateSource.IpcPending;
 }
 
 public unsafe struct StateSources
@@ -97,6 +104,7 @@ public unsafe struct StateSources
                 case (byte)StateSource.Manual | ((byte)StateSource.Fixed << 4):
                 case (byte)StateSource.IpcFixed | ((byte)StateSource.Fixed << 4):
                 case (byte)StateSource.Pending | ((byte)StateSource.Fixed << 4):
+                case (byte)StateSource.IpcPending | ((byte)StateSource.Fixed << 4):
                 case (byte)StateSource.IpcManual | ((byte)StateSource.Fixed << 4):
                     _data[i] = (byte)((value & 0x0F) | ((byte)StateSource.Manual << 4));
                     break;
@@ -104,6 +112,7 @@ public unsafe struct StateSources
                 case ((byte)StateSource.Manual << 4) | (byte)StateSource.Fixed:
                 case ((byte)StateSource.IpcFixed << 4) | (byte)StateSource.Fixed:
                 case ((byte)StateSource.Pending << 4) | (byte)StateSource.Fixed:
+                case ((byte)StateSource.IpcPending << 4) | (byte)StateSource.Fixed:
                 case ((byte)StateSource.IpcManual << 4) | (byte)StateSource.Fixed:
                     _data[i] = (byte)((value & 0xF0) | (byte)StateSource.Manual);
                     break;

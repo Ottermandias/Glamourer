@@ -96,6 +96,11 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
                         state.Materials.UpdateValue(idx, new MaterialValueState(newGame, materialValue.Model, drawData, StateSource.Manual),
                             out _);
                         break;
+                    case StateSource.IpcPending:
+                        materialValue.Model.Apply(ref row);
+                        state.Materials.UpdateValue(idx, new MaterialValueState(newGame, materialValue.Model, drawData, StateSource.IpcManual),
+                            out _);
+                        break;
                     case StateSource.IpcManual:
                     case StateSource.Manual:
                         deleteList.Add(idx);

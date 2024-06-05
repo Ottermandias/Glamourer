@@ -800,6 +800,12 @@ public class StateListener : IDisposable
                     if (_config.UseAdvancedParameters)
                         model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;
+                case StateSource.IpcPending:
+                    state.BaseData.Parameters.Set(flag, newValue);
+                    state.Sources[flag] = StateSource.IpcManual;
+                    if (_config.UseAdvancedParameters)
+                        model.ApplySingleParameterData(flag, state.ModelData.Parameters);
+                    break;
             }
         }
     }
