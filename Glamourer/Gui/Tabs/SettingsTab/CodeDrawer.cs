@@ -86,7 +86,7 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
 
             if (ImUtf8.IconButton(FontAwesomeIcon.Trash,
                     $"Delete this cheat code.{(canDelete ? string.Empty : $"\nHold {config.DeleteDesignModifier} while clicking to delete.")}",
-                    !canDelete))
+                    disabled: !canDelete))
             {
                 action!(false);
                 config.Codes.RemoveAt(i--);
