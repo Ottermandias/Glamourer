@@ -39,8 +39,8 @@ public class ActorPanel
     private readonly DictModelChara           _modelChara;
     private readonly CustomizeParameterDrawer _parameterDrawer;
     private readonly AdvancedDyePopup         _advancedDyes;
-    private readonly HeaderDrawer.Button[]   _leftButtons;
-    private readonly HeaderDrawer.Button[]   _rightButtons;
+    private readonly HeaderDrawer.Button[]    _leftButtons;
+    private readonly HeaderDrawer.Button[]    _rightButtons;
 
     public ActorPanel(ActorSelector selector,
         StateManager stateManager,
@@ -167,7 +167,8 @@ public class ActorPanel
             DrawHumanPanel();
         else
             DrawMonsterPanel();
-        _advancedDyes.Draw(_data.Objects.Last(), _state);
+        if (_data.Objects.Count > 0)
+            _advancedDyes.Draw(_data.Objects.Last(), _state);
     }
 
     private void DrawHumanPanel()
