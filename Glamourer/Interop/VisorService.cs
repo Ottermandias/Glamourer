@@ -9,17 +9,24 @@ namespace Glamourer.Interop;
 
 public class VisorService : IDisposable
 {
-    public readonly VisorStateChanged Event;
+    private readonly PenumbraReloaded     _penumbra;
+    private readonly IGameInteropProvider _interop;
+    public readonly  VisorStateChanged    Event;
 
-    public unsafe VisorService(VisorStateChanged visorStateChanged, IGameInteropProvider interop)
+    public VisorService(VisorStateChanged visorStateChanged, IGameInteropProvider interop, PenumbraReloaded penumbra)
     {
+        _interop        = interop;
+        _penumbra       = penumbra;
         Event           = visorStateChanged;
-        _setupVisorHook = interop.HookFromAddress<UpdateVisorDelegateInternal>((nint)Human.MemberFunctionPointers.SetupVisor, SetupVisorDetour);
-        _setupVisorHook.Enable();
+        _setupVisorHook = Create();
+        _penumbra.Subscribe(Restore, PenumbraReloaded.Priority.VisorService);
     }
 
     public void Dispose()
-        => _setupVisorHook.Dispose();
+    {
+        _setupVisorHook.Dispose();
+        _penumbra.Unsubscribe(Restore);
+    }
 
     /// <summary> Obtain the current state of the Visor for the given draw object (true: toggled). </summary>
     public static unsafe bool GetVisorState(Model characterBase)
@@ -45,7 +52,7 @@ public class VisorService : IDisposable
 
     private delegate void UpdateVisorDelegateInternal(nint humanPtr, ushort modelId, byte on);
 
-    private readonly Hook<UpdateVisorDelegateInternal> _setupVisorHook;
+    private Hook<UpdateVisorDelegateInternal> _setupVisorHook;
 
     private void SetupVisorDetour(nint human, ushort modelId, byte value)
     {
@@ -71,5 +78,18 @@ public class VisorService : IDisposable
     {
         human.AsCharacterBase->VisorToggled = on;
         _setupVisorHook.Original(human.Address, modelId, on ? (byte)1 : (byte)0);
+    }
+
+    private unsafe Hook<UpdateVisorDelegateInternal> Create()
+    {
+        var hook = _interop.HookFromAddress<UpdateVisorDelegateInternal>((nint)Human.MemberFunctionPointers.SetupVisor, SetupVisorDetour);
+        hook.Enable();
+        return hook;
+    }
+
+    private void Restore()
+    {
+        _setupVisorHook.Dispose();
+        _setupVisorHook = Create();
     }
 }

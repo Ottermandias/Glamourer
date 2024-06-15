@@ -578,6 +578,8 @@ public class StateListener : IDisposable
         // We do not need to handle fixed designs,
         // since a fixed design would already have established state-tracking.
         var actor = _penumbra.GameObjectFromDrawObject(model);
+        if (!actor.IsCharacter)
+            return;
 
         // Only actually change anything if the actor state changed,
         // when equipping headgear the method is called with the current draw object state,
