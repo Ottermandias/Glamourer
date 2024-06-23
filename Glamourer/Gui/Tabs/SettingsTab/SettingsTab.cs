@@ -10,6 +10,7 @@ using Glamourer.Interop.PalettePlus;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using OtterGui.Text;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
@@ -25,7 +26,8 @@ public class SettingsTab(
     PaletteImport paletteImport,
     PalettePlusChecker paletteChecker,
     CollectionOverrideDrawer overrides,
-    CodeDrawer codeDrawer)
+    CodeDrawer codeDrawer,
+    Glamourer glamourer)
     : ITab
 {
     private readonly VirtualKey[] _validKeys = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
@@ -45,8 +47,9 @@ public class SettingsTab(
         ImGui.NewLine();
         ImGui.NewLine();
         ImGui.NewLine();
+        ImGui.NewLine();
 
-        using (var child2 = ImRaii.Child("SettingsChild"))
+        using (ImRaii.Child("SettingsChild"))
         {
             DrawBehaviorSettings();
             DrawInterfaceSettings();
@@ -55,7 +58,7 @@ public class SettingsTab(
             codeDrawer.Draw();
         }
 
-        MainWindow.DrawSupportButtons(changelog.Changelog);
+        MainWindow.DrawSupportButtons(glamourer, changelog.Changelog);
     }
 
     private void DrawBehaviorSettings()

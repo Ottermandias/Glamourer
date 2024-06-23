@@ -50,6 +50,9 @@ public class CodeService
 
     private CodeFlag _enabled;
 
+    public CodeFlag AllEnabled
+        => _enabled;
+
     public bool Enabled(CodeFlag flag)
         => _enabled.HasFlag(flag);
 

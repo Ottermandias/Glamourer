@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -13,6 +14,7 @@ using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Interop.Penumbra;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Custom;
 using OtterGui.Raii;
 using OtterGui.Services;
@@ -131,7 +133,12 @@ public class MainWindow : Window, IDisposable
             if (_penumbra.CurrentMajor == 0)
                 DrawProblemWindow(
                     "Could not attach to Penumbra. Please make sure Penumbra is installed and running.\n\nPenumbra is required for Glamourer to work properly.");
-            else if (_penumbra is { CurrentMajor: PenumbraService.RequiredPenumbraBreakingVersion, CurrentMinor: >= PenumbraService.RequiredPenumbraFeatureVersion })
+            else if (_penumbra is
+                     {
+
+                         CurrentMajor: PenumbraService.RequiredPenumbraBreakingVersion,
+                         CurrentMinor: >= PenumbraService.RequiredPenumbraFeatureVersion,
+                     })
                 DrawProblemWindow(
                     $"You are currently not attached to Penumbra, seemingly by manually detaching from it.\n\nPenumbra's last API Version was {_penumbra.CurrentMajor}.{_penumbra.CurrentMinor}.\n\nPenumbra is required for Glamourer to work properly.");
             else
@@ -184,20 +191,40 @@ public class MainWindow : Window, IDisposable
         return TabType.None;
     }
 
+    /// <summary> The longest support button text. </summary>
+    public static ReadOnlySpan<byte> SupportInfoButtonText
+        => "Copy Support Info to Clipboard"u8;
+
     /// <summary> Draw the support button group on the right-hand side of the window. </summary>
-    public static void DrawSupportButtons(Changelog changelog)
+    public static void DrawSupportButtons(Glamourer glamourer, Changelog changelog)
     {
-        var width = ImGui.CalcTextSize("Join Discord for Support").X + ImGui.GetStyle().FramePadding.X * 2;
+        var width = ImUtf8.CalcTextSize(SupportInfoButtonText).X + ImGui.GetStyle().FramePadding.X * 2;
         var xPos  = ImGui.GetWindowWidth() - width;
         ImGui.SetCursorPos(new Vector2(xPos, 0));
         CustomGui.DrawDiscordButton(Glamourer.Messager, width);
 
         ImGui.SetCursorPos(new Vector2(xPos, ImGui.GetFrameHeightWithSpacing()));
-        CustomGui.DrawGuideButton(Glamourer.Messager, width);
+        DrawSupportButton(glamourer); 
 
         ImGui.SetCursorPos(new Vector2(xPos, 2 * ImGui.GetFrameHeightWithSpacing()));
+        CustomGui.DrawGuideButton(Glamourer.Messager, width);
+
+        ImGui.SetCursorPos(new Vector2(xPos, 3 * ImGui.GetFrameHeightWithSpacing()));
         if (ImGui.Button("Show Changelogs", new Vector2(width, 0)))
             changelog.ForceOpen = true;
+    }
+
+    /// <summary>
+    /// Draw a button that copies the support info to clipboards.
+    /// </summary>
+    private static void DrawSupportButton(Glamourer glamourer)
+    {
+        if (!ImUtf8.Button(SupportInfoButtonText))
+            return;
+
+        var text = glamourer.GatherSupportInformation();
+        ImGui.SetClipboardText(text);
+        Glamourer.Messager.NotificationMessage("Copied Support Info to Clipboard.", NotificationType.Success, false);
     }
 
     private void OnTabSelected(TabType type, Design? _)

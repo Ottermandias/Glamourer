@@ -200,7 +200,7 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
 
     public const int Size = ParamDecalColor + 1;
 
-    public IEnumerable<StateIndex> All
+    public static IEnumerable<StateIndex> All
         => Enumerable.Range(0, Size - 1).Select(i => new StateIndex(i));
 
     public bool GetApply(DesignBase data)
