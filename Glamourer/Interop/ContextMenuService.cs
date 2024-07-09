@@ -47,7 +47,7 @@ public class ContextMenuService : IDisposable
         };
     }
 
-    private unsafe void OnMenuOpened(MenuOpenedArgs args)
+    private unsafe void OnMenuOpened(IMenuOpenedArgs args)
     {
         if (args.MenuType is ContextMenuType.Inventory)
         {
@@ -96,7 +96,7 @@ public class ContextMenuService : IDisposable
     public void Dispose()
         => Disable();
 
-    private void OnClick(MenuItemClickedArgs _)
+    private void OnClick(IMenuItemClickedArgs _)
     {
         var (id, playerData) = _objects.PlayerData;
         if (!playerData.Valid)

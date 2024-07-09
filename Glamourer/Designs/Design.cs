@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Automation;
 using Glamourer.Designs.Links;
 using Glamourer.Interop.Material;

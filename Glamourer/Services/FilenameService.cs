@@ -19,7 +19,7 @@ public class FilenameService
     public readonly string NpcAppearanceFile;
     public readonly string CollectionOverrideFile;
 
-    public FilenameService(DalamudPluginInterface pi)
+    public FilenameService(IDalamudPluginInterface pi)
     {
         ConfigDirectory        = pi.ConfigDirectory.FullName;
         ConfigFile             = pi.ConfigFile.FullName;

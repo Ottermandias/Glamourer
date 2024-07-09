@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;

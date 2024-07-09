@@ -14,7 +14,7 @@ public unsafe class ScalingService : IDisposable
     {
         interop.InitializeFromAttributes(this);
         _setupMountHook =
-            interop.HookFromAddress<SetupMount>((nint)Character.MountContainer.MemberFunctionPointers.SetupMount, SetupMountDetour);
+            interop.HookFromAddress<SetupMount>(MountContainer.MemberFunctionPointers.SetupMount, SetupMountDetour);
         _setupOrnamentHook = interop.HookFromAddress<SetupOrnament>((nint)Ornament.MemberFunctionPointers.SetupOrnament, SetupOrnamentDetour);
         _calculateHeightHook =
             interop.HookFromAddress<CalculateHeight>((nint)Character.MemberFunctionPointers.CalculateHeight, CalculateHeightDetour);
@@ -33,7 +33,7 @@ public unsafe class ScalingService : IDisposable
         _calculateHeightHook.Dispose();
     }
 
-    private delegate void  SetupMount(Character.MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4);
+    private delegate void  SetupMount(MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4);
     private delegate void  SetupOrnament(Ornament* ornament, uint* unk1, float* unk2);
     private delegate void  PlaceMinion(Companion* character);
     private delegate float CalculateHeight(Character* character);
@@ -48,7 +48,7 @@ public unsafe class ScalingService : IDisposable
     [Signature("48 89 5C 24 ?? 55 57 41 57 48 8D 6C 24", DetourName = nameof(PlaceMinionDetour))]
     private readonly Hook<PlaceMinion> _placeMinionHook = null!;
 
-    private void SetupMountDetour(Character.MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4)
+    private void SetupMountDetour(MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4)
     {
         var (race, clan, gender) = GetScaleRelevantCustomize(&container->OwnerObject->Character);
         SetScaleCustomize(&container->OwnerObject->Character, container->OwnerObject->Character.GameObject.DrawObject);

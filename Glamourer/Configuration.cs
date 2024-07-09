@@ -1,6 +1,6 @@
 ﻿using Dalamud.Configuration;
 using Dalamud.Game.ClientState.Keys;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Gui.Tabs.DesignTab;

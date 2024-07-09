@@ -11,7 +11,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
-public class ItemsIpcTester(DalamudPluginInterface pluginInterface) : IUiService
+public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiService
 {
     private int            _gameObjectIndex;
     private string         _gameObjectName = string.Empty;

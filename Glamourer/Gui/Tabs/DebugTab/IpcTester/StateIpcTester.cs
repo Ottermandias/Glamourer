@@ -18,7 +18,7 @@ namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
 public class StateIpcTester : IUiService, IDisposable
 {
-    private readonly DalamudPluginInterface _pluginInterface;
+    private readonly IDalamudPluginInterface _pluginInterface;
 
     private int            _gameObjectIndex;
     private string         _gameObjectName = string.Empty;
@@ -41,7 +41,7 @@ public class StateIpcTester : IUiService, IDisposable
 
     private int _numUnlocked;
 
-    public StateIpcTester(DalamudPluginInterface pluginInterface)
+    public StateIpcTester(IDalamudPluginInterface pluginInterface)
     {
         _pluginInterface = pluginInterface;
         StateChanged     = Api.IpcSubscribers.StateChangedWithType.Subscriber(_pluginInterface, OnStateChanged);

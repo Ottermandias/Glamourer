@@ -1,5 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Events;

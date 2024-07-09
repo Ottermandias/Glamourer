@@ -33,7 +33,7 @@ namespace Glamourer.Services;
 
 public static class StaticServiceManager
 {
-    public static ServiceManager CreateProvider(DalamudPluginInterface pi, Logger log, Glamourer glamourer)
+    public static ServiceManager CreateProvider(IDalamudPluginInterface pi, Logger log, Glamourer glamourer)
     {
         EventWrapperBase.ChangeLogger(log);
         var services = new ServiceManager(log)

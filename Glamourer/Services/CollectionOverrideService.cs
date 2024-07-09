@@ -1,4 +1,4 @@
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Interop.Penumbra;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

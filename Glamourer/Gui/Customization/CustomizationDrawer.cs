@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.Internal;
+using Dalamud.Interface.Textures;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Glamourer.GameData;
@@ -13,7 +14,7 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Gui.Customization;
 
 public partial class CustomizationDrawer(
-    DalamudPluginInterface pi,
+    IDalamudPluginInterface pi,
     CustomizeService _service,
     CodeService _codes,
     Configuration _config,
@@ -22,7 +23,7 @@ public partial class CustomizationDrawer(
     : IDisposable
 {
     private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
-    private readonly IDalamudTextureWrap? _legacyTattoo = GetLegacyTattooIcon(pi);
+    private readonly ISharedImmediateTexture? _legacyTattoo = GetLegacyTattooIcon(pi);
 
     private Exception? _terminate;
 
@@ -190,7 +191,7 @@ public partial class CustomizationDrawer(
         _raceSelectorWidth     = _inputIntSize + _comboSelectorSize - _framedIconSize.X;
     }
 
-    private static IDalamudTextureWrap? GetLegacyTattooIcon(DalamudPluginInterface pi)
+    private static ISharedImmediateTexture? GetLegacyTattooIcon(IDalamudPluginInterface pi)
     {
         using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("Glamourer.LegacyTattoo.raw");
         if (resource == null)

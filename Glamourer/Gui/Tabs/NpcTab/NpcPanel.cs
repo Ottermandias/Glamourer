@@ -1,5 +1,5 @@
 ﻿using Dalamud.Interface;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;
 using Glamourer.Gui.Customization;

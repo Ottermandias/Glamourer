@@ -1,5 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Services;
@@ -198,7 +198,7 @@ public unsafe class FunModule : IDisposable
 
     private static bool ValidFunTarget(Actor actor)
         => actor.IsCharacter
-         && actor.AsObject->ObjectKind is (byte)ObjectKind.Player
+         && actor.AsObject->ObjectKind is (FFXIVClientStructs.FFXIV.Client.Game.Object.ObjectKind)(byte)ObjectKind.Player
          && !actor.IsTransformed
          && actor.AsCharacter->CharacterData.ModelCharaId == 0;
 

@@ -10,7 +10,7 @@ using OtterGui.Services;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
-public class DesignIpcTester(DalamudPluginInterface pluginInterface) : IUiService
+public class DesignIpcTester(IDalamudPluginInterface pluginInterface) : IUiService
 {
     private Dictionary<Guid, string> _designs = [];
     private int                      _gameObjectIndex;

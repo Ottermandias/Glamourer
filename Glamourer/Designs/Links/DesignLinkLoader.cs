@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Services;
@@ -16,12 +16,12 @@ public sealed class DesignLinkLoader(DesignStorage designStorage, MessageService
 
     protected override void HandleChildNotFound(Design parent, LinkData data)
     {
-        Messager.AddMessage(new Notification(
+        Messager.AddMessage(new OtterGui.Classes.Notification(
             $"Could not find the design {data.Identity}. If this design was deleted, please re-save {parent.Identifier}.",
             NotificationType.Warning));
     }
 
     protected override void HandleChildNotSet(Design parent, Design child, string error)
-        => Messager.AddMessage(new Notification($"Could not link {child.Identifier} to {parent.Identifier}: {error}",
+        => Messager.AddMessage(new OtterGui.Classes.Notification($"Could not link {child.Identifier} to {parent.Identifier}: {error}",
             NotificationType.Warning));
 }

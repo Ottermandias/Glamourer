@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Designs;
@@ -64,7 +64,7 @@ public class MainWindow : Window, IDisposable
 
     public TabType SelectTab;
 
-    public MainWindow(DalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
+    public MainWindow(IDalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
         DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, MessagesTab messages, DesignQuickBar quickBar,
         NpcTab npcs, MainWindowPosition position, PenumbraService penumbra)
         : base("GlamourerMainWindow")

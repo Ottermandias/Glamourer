@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.Internal;
+using Dalamud.Interface.Textures;
 using Dalamud.Plugin.Services;
 using OtterGui.Classes;
 using OtterGui.Services;
@@ -32,7 +33,7 @@ public class CustomizeManager : IAsyncDataContainer
     }
 
     /// <summary> Get specific icons. </summary>
-    public IDalamudTextureWrap GetIcon(uint id)
+    public ISharedImmediateTexture GetIcon(uint id)
         => _icons.LoadIcon(id)!;
 
     /// <summary> Iterate over all supported genders and clans. </summary>
