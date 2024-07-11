@@ -2,6 +2,8 @@ using Dalamud.Plugin;
 using Glamourer.Api.Api;
 using Glamourer.Api.Helpers;
 using OtterGui.Services;
+using System.Reflection.Emit;
+using Glamourer.Api.Enums;
 
 namespace Glamourer.Api;
 
@@ -12,7 +14,7 @@ public sealed class IpcProviders : IDisposable, IApiService
     private readonly EventProvider _disposedProvider;
     private readonly EventProvider _initializedProvider;
 
-    public IpcProviders(DalamudPluginInterface pi, IGlamourerApi api)
+    public IpcProviders(IDalamudPluginInterface pi, IGlamourerApi api)
     {
         _disposedProvider    = IpcSubscribers.Disposed.Provider(pi);
         _initializedProvider = IpcSubscribers.Initialized.Provider(pi);
@@ -28,6 +30,11 @@ public sealed class IpcProviders : IDisposable, IApiService
 
             IpcSubscribers.SetItem.Provider(pi, api.Items),
             IpcSubscribers.SetItemName.Provider(pi, api.Items),
+            // backward compatibility
+            new FuncProvider<int, byte, ulong, byte, uint, ulong, int>(pi, IpcSubscribers.Legacy.SetItemV2.Label,
+                (a, b, c, d, e, f) => (int)api.Items.SetItem(a, (ApiEquipSlot)b, c, [d], e, (ApplyFlag)f)),
+            new FuncProvider<string, byte, ulong, byte, uint, ulong, int>(pi, IpcSubscribers.Legacy.SetItemName.Label,
+                (a, b, c, d, e, f) => (int)api.Items.SetItemName(a, (ApiEquipSlot)b, c, [d], e, (ApplyFlag)f)),
 
             IpcSubscribers.GetState.Provider(pi, api.State),
             IpcSubscribers.GetStateName.Provider(pi, api.State),

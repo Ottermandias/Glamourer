@@ -11,9 +11,9 @@ namespace Glamourer.Api;
 
 public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager stateManager) : IGlamourerApiItems, IApiService
 {
-    public GlamourerApiEc SetItem(int objectIndex, ApiEquipSlot slot, ulong itemId, byte stain, uint key, ApplyFlag flags)
+    public GlamourerApiEc SetItem(int objectIndex, ApiEquipSlot slot, ulong itemId, IReadOnlyList<byte> stains, uint key, ApplyFlag flags)
     {
-        var args = ApiHelpers.Args("Index", objectIndex, "Slot", slot, "ID", itemId, "Stain", stain, "Key", key, "Flags", flags);
+        var args = ApiHelpers.Args("Index", objectIndex, "Slot", slot, "ID", itemId, "Stains", stains, "Key", key, "Flags", flags);
         if (!ResolveItem(slot, itemId, out var item))
             return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
 
@@ -27,14 +27,14 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
             return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
 
         var settings = new ApplySettings(Source: flags.HasFlag(ApplyFlag.Once) ? StateSource.IpcManual : StateSource.IpcFixed, Key: key);
-        stateManager.ChangeEquip(state, (EquipSlot)slot, item, stain, settings);
+        stateManager.ChangeEquip(state, (EquipSlot)slot, item, new StainIds(stains), settings);
         ApiHelpers.Lock(state, key, flags);
         return GlamourerApiEc.Success;
     }
 
-    public GlamourerApiEc SetItemName(string playerName, ApiEquipSlot slot, ulong itemId, byte stain, uint key, ApplyFlag flags)
+    public GlamourerApiEc SetItemName(string playerName, ApiEquipSlot slot, ulong itemId, IReadOnlyList<byte> stains, uint key, ApplyFlag flags)
     {
-        var args = ApiHelpers.Args("Name", playerName, "Slot", slot, "ID", itemId, "Stain", stain, "Key", key, "Flags", flags);
+        var args = ApiHelpers.Args("Name", playerName, "Slot", slot, "ID", itemId, "Stains", stains, "Key", key, "Flags", flags);
         if (!ResolveItem(slot, itemId, out var item))
             return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
 
@@ -53,7 +53,7 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
                 continue;
 
             anyUnlocked = true;
-            stateManager.ChangeEquip(state, (EquipSlot)slot, item, stain, settings);
+            stateManager.ChangeEquip(state, (EquipSlot)slot, item, new StainIds(stains), settings);
             ApiHelpers.Lock(state, key, flags);
         }
 
