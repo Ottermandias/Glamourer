@@ -8,8 +8,10 @@ using Glamourer.Services;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
+using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
@@ -51,7 +53,7 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
         using (ImRaii.Group())
         {
             ImGuiUtil.CopyOnClickSelectable($"0x{(ulong)manager:X}");
-            ImGui.TextUnformatted(manager == null ? "-" : manager->GlamourPlatesSpan.Length.ToString());
+            ImGui.TextUnformatted(manager == null ? "-" : manager->GlamourPlates.Length.ToString());
             ImGui.TextUnformatted(manager == null ? "-" : manager->GlamourPlatesRequested.ToString());
             ImGui.SameLine();
             if (ImGui.SmallButton("Request Update"))
@@ -67,13 +69,13 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
         var (identifier, data) = _objects.PlayerData;
         var enabled = data.Valid && _state.GetOrCreate(identifier, data.Objects[0], out state);
 
-        for (var i = 0; i < manager->GlamourPlatesSpan.Length; ++i)
+        for (var i = 0; i < manager->GlamourPlates.Length; ++i)
         {
             using var tree = ImRaii.TreeNode($"Plate #{i + 1:D2}");
             if (!tree)
                 continue;
 
-            ref var plate = ref manager->GlamourPlatesSpan[i];
+            ref var plate = ref manager->GlamourPlates[i];
             if (ImGuiUtil.DrawDisabledButton("Apply to Player", Vector2.Zero, string.Empty, !enabled))
             {
                 var design = CreateDesign(plate);
@@ -90,12 +92,12 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
             using (ImRaii.Group())
             {
                 foreach (var (_, index) in EquipSlotExtensions.FullSlots.WithIndex())
-                    ImGui.TextUnformatted($"{plate.ItemIds[index]:D6}, {plate.StainIds[index]:D3}");
+                    ImGui.TextUnformatted($"{plate.ItemIds[index]:D6}, {StainIds.FromGlamourPlate(plate, index)}");
             }
         }
     }
 
-    [Signature("E8 ?? ?? ?? ?? 32 C0 48 8B 5C 24 ?? 48 8B 6C 24 ?? 48 83 C4 ?? 5F")]
+    [Signature(Sigs.RequestGlamourPlates)]
     private readonly delegate* unmanaged<MirageManager*, void> _requestUpdate = null!;
 
     public void RequestGlamour()
@@ -126,7 +128,7 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
                 continue;
 
             design.GetDesignDataRef().SetItem(slot, item);
-            design.GetDesignDataRef().SetStain(slot, plate.StainIds[index]);
+            design.GetDesignDataRef().SetStain(slot, StainIds.FromGlamourPlate(plate, index));
             design.ApplyEquip |= slot.ToBothFlags();
         }
 

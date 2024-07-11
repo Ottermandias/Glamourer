@@ -1,5 +1,4 @@
-﻿using Glamourer.Interop.Structs;
-using Penumbra.GameData.Structs;
+﻿using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
 
@@ -21,8 +20,8 @@ internal class FunEquipSet
     {
         public Group(ushort headS, byte headV, ushort bodyS, byte bodyV, ushort handsS, byte handsV, ushort legsS, byte legsV, ushort feetS,
             byte feetV, StainId[]? stains = null)
-            : this(new CharacterArmor(headS, headV, 0), new CharacterArmor(bodyS, bodyV, 0), new CharacterArmor(handsS, handsV, 0),
-                new CharacterArmor(legsS,    legsV, 0), new CharacterArmor(feetS, feetV, 0), stains)
+            : this(new CharacterArmor(headS, headV, StainIds.None), new CharacterArmor(bodyS, bodyV, StainIds.None), new CharacterArmor(handsS, handsV, StainIds.None),
+                new CharacterArmor(legsS,    legsV, StainIds.None), new CharacterArmor(feetS, feetV, StainIds.None), stains)
         { }
 
         public static Group FullSetWithoutHat(ushort modelSet, byte variant, StainId[]? stains = null)

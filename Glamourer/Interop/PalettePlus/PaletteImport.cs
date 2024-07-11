@@ -6,7 +6,7 @@ using OtterGui.Services;
 
 namespace Glamourer.Interop.PalettePlus;
 
-public class PaletteImport(DalamudPluginInterface pluginInterface, DesignManager designManager, DesignFileSystem designFileSystem) : IService
+public class PaletteImport(IDalamudPluginInterface pluginInterface, DesignManager designManager, DesignFileSystem designFileSystem) : IService
 {
     private string ConfigFile
         => Path.Combine(Path.GetDirectoryName(pluginInterface.GetPluginConfigDirectory())!, "PalettePlus.json");

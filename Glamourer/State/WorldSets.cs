@@ -22,7 +22,7 @@ public class WorldSets
         [(Gender.Male,   Race.AuRa)]     = FunEquipSet.Group.FullSetWithoutHat(0257, 2),
         [(Gender.Female, Race.AuRa)]     = FunEquipSet.Group.FullSetWithoutHat(0258, 2),
         [(Gender.Male,   Race.Hrothgar)] = FunEquipSet.Group.FullSetWithoutHat(0597, 1),
-        [(Gender.Female, Race.Hrothgar)] = FunEquipSet.Group.FullSetWithoutHat(0000, 0), // TODO Hrothgar Female
+        [(Gender.Female, Race.Hrothgar)] = FunEquipSet.Group.FullSetWithoutHat(0829, 1),
         [(Gender.Male,   Race.Viera)]    = FunEquipSet.Group.FullSetWithoutHat(0744, 1),
         [(Gender.Female, Race.Viera)]    = FunEquipSet.Group.FullSetWithoutHat(0581, 1),
     };

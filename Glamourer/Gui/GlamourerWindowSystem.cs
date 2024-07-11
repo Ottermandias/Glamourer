@@ -7,11 +7,11 @@ namespace Glamourer.Gui;
 public class GlamourerWindowSystem : IDisposable
 {
     private readonly WindowSystem               _windowSystem = new("Glamourer");
-    private readonly UiBuilder                  _uiBuilder;
+    private readonly IUiBuilder                 _uiBuilder;
     private readonly MainWindow                 _ui;
     private readonly PenumbraChangedItemTooltip _penumbraTooltip;
 
-    public GlamourerWindowSystem(UiBuilder uiBuilder, MainWindow ui, GenericPopupWindow popups, PenumbraChangedItemTooltip penumbraTooltip,
+    public GlamourerWindowSystem(IUiBuilder uiBuilder, MainWindow ui, GenericPopupWindow popups, PenumbraChangedItemTooltip penumbraTooltip,
         Configuration config, UnlocksTab unlocksTab, GlamourerChangelog changelog, DesignQuickBar quick)
     {
         _uiBuilder       = uiBuilder;

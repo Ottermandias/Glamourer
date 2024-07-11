@@ -1,5 +1,5 @@
 using Dalamud.Interface;
-using Dalamud.Interface.Internal;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
@@ -7,7 +7,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Services;
 
-public sealed class TextureService(UiBuilder uiBuilder, IDataManager dataManager, ITextureProvider textureProvider)
+public sealed class TextureService(IUiBuilder uiBuilder, IDataManager dataManager, ITextureProvider textureProvider)
     : TextureCache(dataManager, textureProvider), IDisposable
 {
     private readonly IDalamudTextureWrap?[] _slotIcons = CreateSlotIcons(uiBuilder);
@@ -32,7 +32,7 @@ public sealed class TextureService(UiBuilder uiBuilder, IDataManager dataManager
         }
     }
 
-    private static IDalamudTextureWrap?[] CreateSlotIcons(UiBuilder uiBuilder)
+    private static IDalamudTextureWrap?[] CreateSlotIcons(IUiBuilder uiBuilder)
     {
         var ret = new IDalamudTextureWrap?[12];
 

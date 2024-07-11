@@ -20,7 +20,7 @@ public class ContextMenuService : IDisposable
     private readonly ObjectManager _objects;
     private readonly IGameGui      _gameGui;
     private          EquipItem     _lastItem;
-    private          StainId       _lastStain;
+    private readonly StainId[]     _lastStains = new StainId[StainId.NumStains];
 
     private readonly MenuItem _inventoryItem;
 
@@ -47,14 +47,15 @@ public class ContextMenuService : IDisposable
         };
     }
 
-    private unsafe void OnMenuOpened(MenuOpenedArgs args)
+    private unsafe void OnMenuOpened(IMenuOpenedArgs args)
     {
         if (args.MenuType is ContextMenuType.Inventory)
         {
             var arg = (MenuTargetInventory)args.Target;
             if (arg.TargetItem.HasValue && HandleItem(arg.TargetItem.Value.ItemId))
             {
-                _lastStain = arg.TargetItem.Value.Stain;
+                for (var i = 0; i < arg.TargetItem.Value.Stains.Length; ++i)
+                    _lastStains[i] = (StainId)arg.TargetItem.Value.Stains[i];
                 args.AddMenuItem(_inventoryItem);
             }
         }
@@ -77,7 +78,8 @@ public class ContextMenuService : IDisposable
 
                     if (HandleItem(*(ItemId*)(agent + ChatLogContextItemId)))
                     {
-                        _lastStain = 0;
+                        for (var i = 0; i < _lastStains.Length; ++i)
+                            _lastStains[i] = 0;
                         args.AddMenuItem(_inventoryItem);
                     }
 
@@ -96,7 +98,7 @@ public class ContextMenuService : IDisposable
     public void Dispose()
         => Disable();
 
-    private void OnClick(MenuItemClickedArgs _)
+    private void OnClick(IMenuItemClickedArgs _)
     {
         var (id, playerData) = _objects.PlayerData;
         if (!playerData.Valid)
@@ -106,15 +108,15 @@ public class ContextMenuService : IDisposable
             return;
 
         var slot = _lastItem.Type.ToSlot();
-        _state.ChangeEquip(state, slot, _lastItem, _lastStain, ApplySettings.Manual);
+        _state.ChangeEquip(state, slot, _lastItem, _lastStains[0], ApplySettings.Manual);
         if (!_lastItem.Type.ValidOffhand().IsOffhandType())
             return;
 
         if (_lastItem.PrimaryId.Id is > 1600 and < 1651
          && _items.ItemData.TryGetValue(_lastItem.ItemId, EquipSlot.Hands, out var gauntlets))
-            _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, _lastStain, ApplySettings.Manual);
+            _state.ChangeEquip(state, EquipSlot.Hands, gauntlets, _lastStains[0], ApplySettings.Manual);
         if (_items.ItemData.TryGetValue(_lastItem.ItemId, EquipSlot.OffHand, out var offhand))
-            _state.ChangeEquip(state, EquipSlot.OffHand, offhand, _lastStain, ApplySettings.Manual);
+            _state.ChangeEquip(state, EquipSlot.OffHand, offhand, _lastStains[0], ApplySettings.Manual);
     }
 
     private bool HandleItem(ItemId id)

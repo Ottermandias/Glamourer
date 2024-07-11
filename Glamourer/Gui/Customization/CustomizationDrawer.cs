@@ -1,4 +1,6 @@
 ﻿using Dalamud.Interface.Internal;
+using Dalamud.Interface.Textures;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Glamourer.GameData;
@@ -6,6 +8,7 @@ using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Classes;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -13,16 +16,15 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Gui.Customization;
 
 public partial class CustomizationDrawer(
-    DalamudPluginInterface pi,
+    TextureCache textureCache,
     CustomizeService _service,
     CodeService _codes,
     Configuration _config,
     FavoriteManager _favorites,
     HeightService _heightService)
-    : IDisposable
 {
-    private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
-    private readonly IDalamudTextureWrap? _legacyTattoo = GetLegacyTattooIcon(pi);
+    private readonly Vector4                  _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
+    private readonly ISharedImmediateTexture? _legacyTattoo = GetLegacyTattooIcon(textureCache);
 
     private Exception? _terminate;
 
@@ -46,9 +48,6 @@ public partial class CustomizationDrawer(
     private float         _comboSelectorSize;
     private float         _raceSelectorWidth;
     private bool          _withApply;
-
-    public void Dispose()
-        => _legacyTattoo?.Dispose();
 
     public bool Draw(CustomizeArray current, bool locked, bool lockedRedraw)
     {
@@ -190,16 +189,6 @@ public partial class CustomizationDrawer(
         _raceSelectorWidth     = _inputIntSize + _comboSelectorSize - _framedIconSize.X;
     }
 
-    private static IDalamudTextureWrap? GetLegacyTattooIcon(DalamudPluginInterface pi)
-    {
-        using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("Glamourer.LegacyTattoo.raw");
-        if (resource == null)
-            return null;
-
-        var rawImage = new byte[resource.Length];
-        var length   = resource.Read(rawImage, 0, (int)resource.Length);
-        return length == resource.Length
-            ? pi.UiBuilder.LoadImageRaw(rawImage, 192, 192, 4)
-            : null;
-    }
+    private static ISharedImmediateTexture? GetLegacyTattooIcon(TextureCache icons)
+        => icons.TextureProvider.GetFromManifestResource(Assembly.GetExecutingAssembly(), "Glamourer.LegacyTattoo.raw");
 }

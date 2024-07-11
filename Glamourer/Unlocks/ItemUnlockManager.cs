@@ -144,8 +144,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
             if (newGlamourState != _lastGlamourState)
             {
                 _lastGlamourState = newGlamourState;
-                // TODO: Make independent from hardcoded value
-                var span = new ReadOnlySpan<uint>(mirageManager->PrismBoxItemIds, 800);
+                var span = mirageManager->PrismBoxItemIds;
                 foreach (var item in span)
                     changes |= AddItem(item, time);
             }
@@ -154,10 +153,9 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
             if (newPlateState != _lastPlateState)
             {
                 _lastPlateState = newPlateState;
-                foreach (var plate in mirageManager->GlamourPlatesSpan)
+                foreach (var plate in mirageManager->GlamourPlates)
                 {
-                    // TODO: Make independent from hardcoded value
-                    var span = new ReadOnlySpan<uint>(plate.ItemIds, 12);
+                    var span = plate.ItemIds;
                     foreach (var item in span)
                         changes |= AddItem(item, time);
                 }
@@ -176,8 +174,8 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
                 var item = container->GetInventorySlot(_currentInventoryIndex++);
                 if (item != null)
                 {
-                    changes |= AddItem(item->ItemID,    time);
-                    changes |= AddItem(item->GlamourID, time);
+                    changes |= AddItem(item->ItemId,    time);
+                    changes |= AddItem(item->GlamourId, time);
                 }
             }
             else

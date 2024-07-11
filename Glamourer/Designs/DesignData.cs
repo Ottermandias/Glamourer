@@ -9,6 +9,8 @@ namespace Glamourer.Designs;
 
 public unsafe struct DesignData
 {
+    public const int EquipmentByteSize = 10 * CharacterArmor.Size;
+
     private       string                 _nameHead     = string.Empty;
     private       string                 _nameBody     = string.Empty;
     private       string                 _nameHands    = string.Empty;
@@ -21,15 +23,14 @@ public unsafe struct DesignData
     private       string                 _nameLFinger  = string.Empty;
     private       string                 _nameMainhand = string.Empty;
     private       string                 _nameOffhand  = string.Empty;
+    private       string                 _nameFaceWear = string.Empty;
     private fixed uint                   _itemIds[12];
-    private fixed ushort                 _iconIds[12];
-    private fixed byte                   _equipmentBytes[48];
+    private fixed uint                   _iconIds[12];
+    private fixed byte                   _equipmentBytes[EquipmentByteSize + 16];
     public        CustomizeParameterData Parameters;
     public        CustomizeArray         Customize = CustomizeArray.Default;
     public        uint                   ModelId;
     public        CrestFlag              CrestVisibility;
-    private       SecondaryId            _secondaryMainhand;
-    private       SecondaryId            _secondaryOffhand;
     private       FullEquipType          _typeMainhand;
     private       FullEquipType          _typeOffhand;
     private       byte                   _states;
@@ -50,12 +51,19 @@ public unsafe struct DesignData
          || name.IsContained(_nameRFinger)
          || name.IsContained(_nameLFinger)
          || name.IsContained(_nameMainhand)
-         || name.IsContained(_nameOffhand);
+         || name.IsContained(_nameOffhand)
+         || name.IsContained(_nameFaceWear);
 
-    public readonly StainId Stain(EquipSlot slot)
+    public readonly StainIds Stain(EquipSlot slot)
     {
         var index = slot.ToIndex();
-        return index > 11 ? (StainId)0 : _equipmentBytes[4 * index + 3];
+        return index switch
+        {
+            < 10 => new StainIds(_equipmentBytes[CharacterArmor.Size * index + 3], _equipmentBytes[CharacterArmor.Size * index + 4]),
+            10   => new StainIds(_equipmentBytes[EquipmentByteSize + 6],           _equipmentBytes[EquipmentByteSize + 7]),
+            11   => new StainIds(_equipmentBytes[EquipmentByteSize + 14],          _equipmentBytes[EquipmentByteSize + 15]),
+            _    => StainIds.None,
+        };
     }
 
     public readonly bool Crest(CrestFlag slot)
@@ -69,24 +77,29 @@ public unsafe struct DesignData
         => _typeOffhand;
 
     public readonly EquipItem Item(EquipSlot slot)
-        => slot.ToIndex() switch
+    {
+        fixed (byte* ptr = _equipmentBytes)
         {
+            return slot.ToIndex() switch
+            {
             // @formatter:off
-            0  => EquipItem.FromIds((ItemId)_itemIds[ 0], (IconId)_iconIds[ 0], (PrimaryId)(_equipmentBytes[ 0] | (_equipmentBytes[ 1] << 8)), (SecondaryId)0,     (Variant)_equipmentBytes[ 2], FullEquipType.Head,   name: _nameHead    ),
-            1  => EquipItem.FromIds((ItemId)_itemIds[ 1], (IconId)_iconIds[ 1], (PrimaryId)(_equipmentBytes[ 4] | (_equipmentBytes[ 5] << 8)), (SecondaryId)0,     (Variant)_equipmentBytes[ 6], FullEquipType.Body,   name: _nameBody    ),
-            2  => EquipItem.FromIds((ItemId)_itemIds[ 2], (IconId)_iconIds[ 2], (PrimaryId)(_equipmentBytes[ 8] | (_equipmentBytes[ 9] << 8)), (SecondaryId)0,     (Variant)_equipmentBytes[10], FullEquipType.Hands,  name: _nameHands   ),
-            3  => EquipItem.FromIds((ItemId)_itemIds[ 3], (IconId)_iconIds[ 3], (PrimaryId)(_equipmentBytes[12] | (_equipmentBytes[13] << 8)), (SecondaryId)0,     (Variant)_equipmentBytes[14], FullEquipType.Legs,   name: _nameLegs    ),
-            4  => EquipItem.FromIds((ItemId)_itemIds[ 4], (IconId)_iconIds[ 4], (PrimaryId)(_equipmentBytes[16] | (_equipmentBytes[17] << 8)), (SecondaryId)0,     (Variant)_equipmentBytes[18], FullEquipType.Feet,   name: _nameFeet    ),
-            5  => EquipItem.FromIds((ItemId)_itemIds[ 5], (IconId)_iconIds[ 5], (PrimaryId)(_equipmentBytes[20] | (_equipmentBytes[21] << 8)), (SecondaryId)0,     (Variant)_equipmentBytes[22], FullEquipType.Ears,   name: _nameEars    ),
-            6  => EquipItem.FromIds((ItemId)_itemIds[ 6], (IconId)_iconIds[ 6], (PrimaryId)(_equipmentBytes[24] | (_equipmentBytes[25] << 8)), (SecondaryId)0,     (Variant)_equipmentBytes[26], FullEquipType.Neck,   name: _nameNeck    ),
-            7  => EquipItem.FromIds((ItemId)_itemIds[ 7], (IconId)_iconIds[ 7], (PrimaryId)(_equipmentBytes[28] | (_equipmentBytes[29] << 8)), (SecondaryId)0,     (Variant)_equipmentBytes[30], FullEquipType.Wrists, name: _nameWrists  ),
-            8  => EquipItem.FromIds((ItemId)_itemIds[ 8], (IconId)_iconIds[ 8], (PrimaryId)(_equipmentBytes[32] | (_equipmentBytes[33] << 8)), (SecondaryId)0,     (Variant)_equipmentBytes[34], FullEquipType.Finger, name: _nameRFinger ),
-            9  => EquipItem.FromIds((ItemId)_itemIds[ 9], (IconId)_iconIds[ 9], (PrimaryId)(_equipmentBytes[36] | (_equipmentBytes[37] << 8)), (SecondaryId)0,     (Variant)_equipmentBytes[38], FullEquipType.Finger, name: _nameLFinger ),
-            10 => EquipItem.FromIds((ItemId)_itemIds[10], (IconId)_iconIds[10], (PrimaryId)(_equipmentBytes[40] | (_equipmentBytes[41] << 8)), _secondaryMainhand, (Variant)_equipmentBytes[42], _typeMainhand,        name: _nameMainhand),
-            11 => EquipItem.FromIds((ItemId)_itemIds[11], (IconId)_iconIds[11], (PrimaryId)(_equipmentBytes[44] | (_equipmentBytes[45] << 8)), _secondaryOffhand,  (Variant)_equipmentBytes[46], _typeOffhand,         name: _nameOffhand ),
+            0  => EquipItem.FromIds(_itemIds[ 0], _iconIds[ 0], ((CharacterArmor*)ptr)[0].Set, 0, ((CharacterArmor*)ptr)[0].Variant, FullEquipType.Head,   name: _nameHead    ),
+            1  => EquipItem.FromIds(_itemIds[ 1], _iconIds[ 1], ((CharacterArmor*)ptr)[1].Set, 0, ((CharacterArmor*)ptr)[1].Variant, FullEquipType.Body,   name: _nameBody    ),
+            2  => EquipItem.FromIds(_itemIds[ 2], _iconIds[ 2], ((CharacterArmor*)ptr)[2].Set, 0, ((CharacterArmor*)ptr)[2].Variant, FullEquipType.Hands,  name: _nameHands   ),
+            3  => EquipItem.FromIds(_itemIds[ 3], _iconIds[ 3], ((CharacterArmor*)ptr)[3].Set, 0, ((CharacterArmor*)ptr)[3].Variant, FullEquipType.Legs,   name: _nameLegs    ),
+            4  => EquipItem.FromIds(_itemIds[ 4], _iconIds[ 4], ((CharacterArmor*)ptr)[4].Set, 0, ((CharacterArmor*)ptr)[4].Variant, FullEquipType.Feet,   name: _nameFeet    ),
+            5  => EquipItem.FromIds(_itemIds[ 5], _iconIds[ 5], ((CharacterArmor*)ptr)[5].Set, 0, ((CharacterArmor*)ptr)[5].Variant, FullEquipType.Ears,   name: _nameEars    ),
+            6  => EquipItem.FromIds(_itemIds[ 6], _iconIds[ 6], ((CharacterArmor*)ptr)[6].Set, 0, ((CharacterArmor*)ptr)[6].Variant, FullEquipType.Neck,   name: _nameNeck    ),
+            7  => EquipItem.FromIds(_itemIds[ 7], _iconIds[ 7], ((CharacterArmor*)ptr)[7].Set, 0, ((CharacterArmor*)ptr)[7].Variant, FullEquipType.Wrists, name: _nameWrists  ),
+            8  => EquipItem.FromIds(_itemIds[ 8], _iconIds[ 8], ((CharacterArmor*)ptr)[8].Set, 0, ((CharacterArmor*)ptr)[8].Variant, FullEquipType.Finger, name: _nameRFinger ),
+            9  => EquipItem.FromIds(_itemIds[ 9], _iconIds[ 9], ((CharacterArmor*)ptr)[9].Set, 0, ((CharacterArmor*)ptr)[9].Variant, FullEquipType.Finger, name: _nameLFinger ),
+            10 => EquipItem.FromIds(_itemIds[10], _iconIds[10], *(PrimaryId*)(ptr + EquipmentByteSize + 0), *(SecondaryId*)(ptr + EquipmentByteSize + 2), *(Variant*)(ptr + EquipmentByteSize + 4), _typeMainhand, name: _nameMainhand),
+            11 => EquipItem.FromIds(_itemIds[11], _iconIds[11], *(PrimaryId*)(ptr + EquipmentByteSize + 4), *(SecondaryId*)(ptr + EquipmentByteSize + 2),  *(Variant*)(ptr + EquipmentByteSize + 4), _typeOffhand,  name: _nameOffhand ),
             _  => new EquipItem(),
-            // @formatter:on
-        };
+                // @formatter:on
+            };
+        }
+    }
 
     public readonly CharacterArmor Armor(EquipSlot slot)
     {
@@ -113,8 +126,8 @@ public unsafe struct DesignData
     {
         fixed (byte* ptr = _equipmentBytes)
         {
-            var armorPtr = (CharacterArmor*)ptr;
-            return slot is EquipSlot.MainHand ? armorPtr[10].ToWeapon(_secondaryMainhand) : armorPtr[11].ToWeapon(_secondaryOffhand);
+            var weaponPtr = (CharacterWeapon*)(ptr + EquipmentByteSize);
+            return weaponPtr[slot is EquipSlot.MainHand ? 0 : 1];
         }
     }
 
@@ -124,11 +137,11 @@ public unsafe struct DesignData
         if (index > 11)
             return false;
 
-        _itemIds[index]                = item.ItemId.Id;
-        _iconIds[index]                = item.IconId.Id;
-        _equipmentBytes[4 * index + 0] = (byte)item.PrimaryId.Id;
-        _equipmentBytes[4 * index + 1] = (byte)(item.PrimaryId.Id >> 8);
-        _equipmentBytes[4 * index + 2] = item.Variant.Id;
+        _itemIds[index]                                  = item.ItemId.Id;
+        _iconIds[index]                                  = item.IconId.Id;
+        _equipmentBytes[CharacterArmor.Size * index + 0] = (byte)item.PrimaryId.Id;
+        _equipmentBytes[CharacterArmor.Size * index + 1] = (byte)(item.PrimaryId.Id >> 8);
+        _equipmentBytes[CharacterArmor.Size * index + 2] = item.Variant.Id;
         switch (index)
         {
             // @formatter:off
@@ -144,36 +157,40 @@ public unsafe struct DesignData
             case 9:  _nameLFinger  = item.Name; return true;
             // @formatter:on
             case 10:
-                _nameMainhand      = item.Name;
-                _secondaryMainhand = item.SecondaryId;
-                _typeMainhand      = item.Type;
+                _nameMainhand                          = item.Name;
+                _equipmentBytes[EquipmentByteSize + 2] = (byte)item.SecondaryId.Id;
+                _equipmentBytes[EquipmentByteSize + 3] = (byte)(item.SecondaryId.Id >> 8);
+                _typeMainhand                          = item.Type;
                 return true;
             case 11:
-                _nameOffhand      = item.Name;
-                _secondaryOffhand = item.SecondaryId;
-                _typeOffhand      = item.Type;
+                _nameOffhand                           = item.Name;
+                _equipmentBytes[EquipmentByteSize + 2] = (byte)item.SecondaryId.Id;
+                _equipmentBytes[EquipmentByteSize + 3] = (byte)(item.SecondaryId.Id >> 8);
+                _typeOffhand                           = item.Type;
                 return true;
         }
 
         return true;
     }
 
-    public bool SetStain(EquipSlot slot, StainId stain)
+    public bool SetStain(EquipSlot slot, StainIds stains)
         => slot.ToIndex() switch
         {
-            0  => SetIfDifferent(ref _equipmentBytes[3],  stain.Id),
-            1  => SetIfDifferent(ref _equipmentBytes[7],  stain.Id),
-            2  => SetIfDifferent(ref _equipmentBytes[11], stain.Id),
-            3  => SetIfDifferent(ref _equipmentBytes[15], stain.Id),
-            4  => SetIfDifferent(ref _equipmentBytes[19], stain.Id),
-            5  => SetIfDifferent(ref _equipmentBytes[23], stain.Id),
-            6  => SetIfDifferent(ref _equipmentBytes[27], stain.Id),
-            7  => SetIfDifferent(ref _equipmentBytes[31], stain.Id),
-            8  => SetIfDifferent(ref _equipmentBytes[35], stain.Id),
-            9  => SetIfDifferent(ref _equipmentBytes[39], stain.Id),
-            10 => SetIfDifferent(ref _equipmentBytes[43], stain.Id),
-            11 => SetIfDifferent(ref _equipmentBytes[47], stain.Id),
-            _  => false,
+            // @formatter:off
+             0 => SetIfDifferent(ref _equipmentBytes[0 * CharacterArmor.Size + 3], stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[0 * CharacterArmor.Size + 4],  stains.Stain2.Id),
+             1 => SetIfDifferent(ref _equipmentBytes[1 * CharacterArmor.Size + 3], stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[1 * CharacterArmor.Size + 4],  stains.Stain2.Id),
+             2 => SetIfDifferent(ref _equipmentBytes[2 * CharacterArmor.Size + 3], stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[2 * CharacterArmor.Size + 4],  stains.Stain2.Id),
+             3 => SetIfDifferent(ref _equipmentBytes[3 * CharacterArmor.Size + 3], stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[3 * CharacterArmor.Size + 4],  stains.Stain2.Id),
+             4 => SetIfDifferent(ref _equipmentBytes[4 * CharacterArmor.Size + 3], stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[4 * CharacterArmor.Size + 4],  stains.Stain2.Id),
+             5 => SetIfDifferent(ref _equipmentBytes[5 * CharacterArmor.Size + 3], stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[5 * CharacterArmor.Size + 4],  stains.Stain2.Id),
+             6 => SetIfDifferent(ref _equipmentBytes[6 * CharacterArmor.Size + 3], stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[6 * CharacterArmor.Size + 4],  stains.Stain2.Id),
+             7 => SetIfDifferent(ref _equipmentBytes[7 * CharacterArmor.Size + 3], stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[7 * CharacterArmor.Size + 4],  stains.Stain2.Id),
+             8 => SetIfDifferent(ref _equipmentBytes[8 * CharacterArmor.Size + 3], stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[8 * CharacterArmor.Size + 4],  stains.Stain2.Id),
+             9 => SetIfDifferent(ref _equipmentBytes[9 * CharacterArmor.Size + 3], stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[9 * CharacterArmor.Size + 4],  stains.Stain2.Id),
+            10 => SetIfDifferent(ref _equipmentBytes[EquipmentByteSize + 6],      stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[EquipmentByteSize + 7],        stains.Stain2.Id),
+            11 => SetIfDifferent(ref _equipmentBytes[EquipmentByteSize + 14],     stains.Stain1.Id) || SetIfDifferent(ref _equipmentBytes[EquipmentByteSize + 15],       stains.Stain2.Id),
+            _ => false,
+            // @formatter:on
         };
 
     public bool SetCrest(CrestFlag slot, bool visible)
@@ -260,15 +277,15 @@ public unsafe struct DesignData
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             SetItem(slot, ItemManager.NothingItem(slot));
-            SetStain(slot, 0);
+            SetStain(slot, StainIds.None);
             SetCrest(slot.ToCrestFlag(), false);
         }
 
         SetItem(EquipSlot.MainHand, items.DefaultSword);
-        SetStain(EquipSlot.MainHand, 0);
+        SetStain(EquipSlot.MainHand, StainIds.None);
         SetCrest(CrestFlag.MainHand, false);
         SetItem(EquipSlot.OffHand, ItemManager.NothingItem(FullEquipType.Shield));
-        SetStain(EquipSlot.OffHand, 0);
+        SetStain(EquipSlot.OffHand, StainIds.None);
         SetCrest(CrestFlag.OffHand, false);
     }
 
@@ -291,21 +308,22 @@ public unsafe struct DesignData
             MemoryUtility.MemSet(ptr, 0, 10 * 4);
         }
 
-        fixed (ushort* ptr = _iconIds)
+        fixed (uint* ptr = _iconIds)
         {
             MemoryUtility.MemSet(ptr, 0, 10 * 2);
         }
 
-        _nameHead    = string.Empty;
-        _nameBody    = string.Empty;
-        _nameHands   = string.Empty;
-        _nameLegs    = string.Empty;
-        _nameFeet    = string.Empty;
-        _nameEars    = string.Empty;
-        _nameNeck    = string.Empty;
-        _nameWrists  = string.Empty;
-        _nameRFinger = string.Empty;
-        _nameLFinger = string.Empty;
+        _nameHead     = string.Empty;
+        _nameBody     = string.Empty;
+        _nameHands    = string.Empty;
+        _nameLegs     = string.Empty;
+        _nameFeet     = string.Empty;
+        _nameEars     = string.Empty;
+        _nameNeck     = string.Empty;
+        _nameWrists   = string.Empty;
+        _nameRFinger  = string.Empty;
+        _nameLFinger  = string.Empty;
+        _nameFaceWear = string.Empty;
         return true;
     }
 
@@ -322,7 +340,7 @@ public unsafe struct DesignData
 
     public readonly byte[] GetEquipmentBytes()
     {
-        var ret = new byte[40];
+        var ret = new byte[80];
         fixed (byte* retPtr = ret, inPtr = _equipmentBytes)
         {
             MemoryUtility.MemCpyUnchecked(retPtr, inPtr, ret.Length);
@@ -343,8 +361,8 @@ public unsafe struct DesignData
     {
         fixed (byte* dataPtr = _equipmentBytes)
         {
-            var data = new Span<byte>(dataPtr, 40);
-            return Convert.TryFromBase64String(base64, data, out var written) && written == 40;
+            var data = new Span<byte>(dataPtr, 80);
+            return Convert.TryFromBase64String(base64, data, out var written) && written == 80;
         }
     }
 

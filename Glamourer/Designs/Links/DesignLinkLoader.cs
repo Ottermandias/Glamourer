@@ -1,7 +1,8 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Services;
+using Notification = OtterGui.Classes.Notification;
 
 namespace Glamourer.Designs.Links;
 

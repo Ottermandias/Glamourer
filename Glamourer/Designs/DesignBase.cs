@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
@@ -257,10 +257,10 @@ public class DesignBase
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
                 var item      = _designData.Item(slot);
-                var stain     = _designData.Stain(slot);
+                var stains    = _designData.Stain(slot);
                 var crestSlot = slot.ToCrestFlag();
                 var crest     = _designData.Crest(crestSlot);
-                ret[slot.ToString()] = Serialize(item.Id, stain, crest, DoApplyEquip(slot), DoApplyStain(slot), DoApplyCrest(crestSlot));
+                ret[slot.ToString()] = Serialize(item.Id, stains, crest, DoApplyEquip(slot), DoApplyStain(slot), DoApplyCrest(crestSlot));
             }
 
             ret["Hat"]    = new QuadBool(_designData.IsHatVisible(),    DoApplyMeta(MetaIndex.HatState)).ToJObject("Show", "Apply");
@@ -274,16 +274,15 @@ public class DesignBase
 
         return ret;
 
-        static JObject Serialize(CustomItemId id, StainId stain, bool crest, bool apply, bool applyStain, bool applyCrest)
-            => new()
+        static JObject Serialize(CustomItemId id, StainIds stains, bool crest, bool apply, bool applyStain, bool applyCrest)
+            => stains.AddToObject(new JObject
             {
                 ["ItemId"]     = id.Id,
-                ["Stain"]      = stain.Id,
                 ["Crest"]      = crest,
                 ["Apply"]      = apply,
                 ["ApplyStain"] = applyStain,
                 ["ApplyCrest"] = applyCrest,
-            };
+            });
     }
 
     protected JObject SerializeCustomize()
@@ -522,7 +521,7 @@ public class DesignBase
             return;
         }
 
-        static (CustomItemId, StainId, bool, bool, bool, bool) ParseItem(EquipSlot slot, JToken? item)
+        static (CustomItemId, StainIds, bool, bool, bool, bool) ParseItem(EquipSlot slot, JToken? item)
         {
             var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot).Id;
             var stain      = (StainId)(item?["Stain"]?.ToObject<byte>() ?? 0);

@@ -130,22 +130,22 @@ public class StateApplier(
     /// Change the stain of a single piece of armor or weapon.
     /// If the offhand is empty, the stain will be fixed to 0 to prevent crashes.
     /// </summary>
-    public void ChangeStain(ActorData data, EquipSlot slot, StainId stain)
+    public void ChangeStain(ActorData data, EquipSlot slot, StainIds stains)
     {
         var idx = slot.ToIndex();
         switch (idx)
         {
             case < 10:
                 foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-                    _updateSlot.UpdateStain(actor.Model, slot, stain);
+                    _updateSlot.UpdateStain(actor.Model, slot, stains);
                 break;
             case 10:
                 foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-                    _weapon.LoadStain(actor, EquipSlot.MainHand, stain);
+                    _weapon.LoadStain(actor, EquipSlot.MainHand, stains);
                 break;
             case 11:
                 foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-                    _weapon.LoadStain(actor, EquipSlot.OffHand, stain);
+                    _weapon.LoadStain(actor, EquipSlot.OffHand, stains);
                 break;
         }
     }
@@ -162,12 +162,12 @@ public class StateApplier(
 
 
     /// <summary> Apply a weapon to the appropriate slot. </summary>
-    public void ChangeWeapon(ActorData data, EquipSlot slot, EquipItem item, StainId stain)
+    public void ChangeWeapon(ActorData data, EquipSlot slot, EquipItem item, StainIds stains)
     {
         if (slot is EquipSlot.MainHand)
-            ChangeMainhand(data, item, stain);
+            ChangeMainhand(data, item, stains);
         else
-            ChangeOffhand(data, item, stain);
+            ChangeOffhand(data, item, stains);
     }
 
     /// <inheritdoc cref="ChangeWeapon(ActorData,EquipSlot,EquipItem,StainId)"/>
@@ -186,19 +186,19 @@ public class StateApplier(
     /// <summary>
     /// Apply a weapon to the mainhand. If the weapon type has no associated offhand type, apply both.
     /// </summary>
-    public void ChangeMainhand(ActorData data, EquipItem weapon, StainId stain)
+    public void ChangeMainhand(ActorData data, EquipItem weapon, StainIds stains)
     {
         var slot = weapon.Type.ValidOffhand() == FullEquipType.Unknown ? EquipSlot.BothHand : EquipSlot.MainHand;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-            _weapon.LoadWeapon(actor, slot, weapon.Weapon().With(stain));
+            _weapon.LoadWeapon(actor, slot, weapon.Weapon().With(stains));
     }
 
     /// <summary> Apply a weapon to the offhand. </summary>
-    public void ChangeOffhand(ActorData data, EquipItem weapon, StainId stain)
+    public void ChangeOffhand(ActorData data, EquipItem weapon, StainIds stains)
     {
-        stain = weapon.PrimaryId.Id == 0 ? 0 : stain;
+        stains = weapon.PrimaryId.Id == 0 ? StainIds.None : stains;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-            _weapon.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stain));
+            _weapon.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stains));
     }
 
     /// <summary> Change a meta state. </summary>
@@ -209,7 +209,7 @@ public class StateApplier(
             case MetaIndex.Wetness:
             {
                 foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-                    actor.AsCharacter->IsGPoseWet = value;
+                    actor.IsGPoseWet = value;
                 return;
             }
             case MetaIndex.HatState:

@@ -13,7 +13,7 @@ public unsafe struct NpcData
     public CustomizeArray Customize;
 
     /// <summary> The equipment appearance of the NPC, 10 * CharacterArmor. </summary>
-    private fixed byte _equip[40];
+    private fixed byte _equip[CharacterArmor.Size * 10];
 
     /// <summary> The mainhand weapon appearance of the NPC. </summary>
     public CharacterWeapon Mainhand;
@@ -54,36 +54,35 @@ public unsafe struct NpcData
         {
             sb.Append(span[i].Set.Id.ToString("D4"))
                 .Append('-')
-                .Append(span[i].Variant.Id.ToString("D3"))
-                .Append('-')
-                .Append(span[i].Stain.Id.ToString("D3"))
-                .Append(",  ");
+                .Append(span[i].Variant.Id.ToString("D3"));
+            foreach (var stain in span[i].Stains)
+                sb.Append('-').Append(stain.Id.ToString("D3"));
         }
 
         sb.Append(Mainhand.Skeleton.Id.ToString("D4"))
             .Append('-')
             .Append(Mainhand.Weapon.Id.ToString("D4"))
             .Append('-')
-            .Append(Mainhand.Variant.Id.ToString("D3"))
-            .Append('-')
-            .Append(Mainhand.Stain.Id.ToString("D4"))
-            .Append(",  ")
+            .Append(Mainhand.Variant.Id.ToString("D3"));
+        foreach (var stain in Mainhand.Stains)
+            sb.Append('-').Append(stain.Id.ToString("D3"));
+        sb.Append(",  ")
             .Append(Offhand.Skeleton.Id.ToString("D4"))
             .Append('-')
             .Append(Offhand.Weapon.Id.ToString("D4"))
             .Append('-')
-            .Append(Offhand.Variant.Id.ToString("D3"))
-            .Append('-')
-            .Append(Offhand.Stain.Id.ToString("D3"));
+            .Append(Offhand.Variant.Id.ToString("D3"));
+        foreach (var stain in Mainhand.Stains)
+            sb.Append('-').Append(stain.Id.ToString("D3"));
         return sb.ToString();
     }
 
     /// <summary> Set an equipment piece to a given value. </summary>
-    internal void Set(int idx, uint value)
+    internal void Set(int idx, ulong value)
     {
         fixed (byte* ptr = _equip)
         {
-            ((uint*)ptr)[idx] = value;
+            ((ulong*)ptr)[idx] = value;
         }
     }
 

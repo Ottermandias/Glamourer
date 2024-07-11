@@ -2,6 +2,7 @@ using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using OtterGui.Services;
+using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -9,7 +10,7 @@ namespace Glamourer.Services;
 
 public unsafe class HeightService : IService
 {
-    [Signature("E8 ?? ?? ?? FF 48 8B 0D ?? ?? ?? ?? 0F 28 F0")]
+    [Signature(Sigs.CalculateHeight)]
     private readonly delegate* unmanaged[Stdcall]<CharacterUtility*, byte, byte, byte, byte, float> _calculateHeight = null!;
 
     public HeightService(IGameInteropProvider interop)

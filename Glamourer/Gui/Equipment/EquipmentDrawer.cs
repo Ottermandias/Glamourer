@@ -8,6 +8,7 @@ using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using OtterGui.Text;
 using OtterGui.Widgets;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -236,14 +237,18 @@ public class EquipmentDrawer
     /// <summary> Draw an input for stain that can set arbitrary values instead of choosing valid stains. </summary>
     private static void DrawStainArtisan(EquipDrawData data)
     {
-        int stainId = data.CurrentStain.Id;
-        ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
-        if (!ImGui.InputInt("##stain", ref stainId, 0, 0))
-            return;
+        foreach (var (stain, index) in data.CurrentStains.WithIndex())
+        {
+            using var id      = ImUtf8.PushId(index);
+            int       stainId = stain.Id;
+            ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
+            if (!ImGui.InputInt("##stain", ref stainId, 0, 0))
+                return;
 
-        var newStainId = (StainId)Math.Clamp(stainId, 0, byte.MaxValue);
-        if (newStainId != data.CurrentStain.Id)
-            data.SetStain(newStainId);
+            var newStainId = (StainId)Math.Clamp(stainId, 0, byte.MaxValue);
+            if (newStainId != stain.Id)
+                data.SetStains(data.CurrentStains.With(index, newStainId));
+        }
     }
 
     /// <summary> Draw an input for armor that can set arbitrary values instead of choosing items. </summary>
@@ -441,19 +446,27 @@ public class EquipmentDrawer
 
     private void DrawStain(in EquipDrawData data, bool small)
     {
-        var       found    = _stainData.TryGetValue(data.CurrentStain, out var stain);
         using var disabled = ImRaii.Disabled(data.Locked);
-        var change = small
-            ? _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss)
-            : _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss, _comboLength);
-        if (change)
-            if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
-                data.SetStain(stain.RowIndex);
-            else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
-                data.SetStain(Stain.None.RowIndex);
+        var       width    = (_comboLength - ImUtf8.ItemInnerSpacing.X * (data.CurrentStains.Count - 1)) / data.CurrentStains.Count;
+        foreach (var (stainId, index) in data.CurrentStains.WithIndex())
+        {
+            using var id    = ImUtf8.PushId(index);
+            var       found = _stainData.TryGetValue(stainId, out var stain);
+            var change = small
+                ? _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss)
+                : _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss, width);
+            if (index < data.CurrentStains.Count - 1)
+                ImUtf8.SameLineInner();
 
-        if (ResetOrClear(data.Locked, false, data.AllowRevert, true, data.CurrentStain, data.GameStain, Stain.None.RowIndex, out var newStain))
-            data.SetStain(newStain);
+            if (change)
+                if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
+                    data.SetStains(data.CurrentStains.With(index, stain.RowIndex));
+                else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
+                    data.SetStains(data.CurrentStains.With(index, Stain.None.RowIndex));
+            if (ResetOrClear(data.Locked, false, data.AllowRevert, true, stainId, data.GameStains[index], Stain.None.RowIndex,
+                    out var newStain))
+                data.SetStains(data.CurrentStains.With(index, newStain));
+        }
     }
 
     private void DrawItem(in EquipDrawData data, out string label, bool small, bool clear, bool open)

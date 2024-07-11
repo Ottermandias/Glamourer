@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using OtterGui.Classes;

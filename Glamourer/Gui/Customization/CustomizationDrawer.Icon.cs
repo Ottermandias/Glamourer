@@ -29,10 +29,11 @@ public partial class CustomizationDrawer
             npc     = true;
         }
 
-        var icon = _service.Manager.GetIcon(custom!.Value.IconId);
+        var icon    = _service.Manager.GetIcon(custom!.Value.IconId);
+        var hasIcon = icon.TryGetWrap(out var wrap, out _);
         using (_ = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw))
         {
-            if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
+            if (ImGui.ImageButton(wrap?.ImGuiHandle ?? icon.GetWrapOrEmpty().ImGuiHandle, _iconSize))
             {
                 ImGui.OpenPopup(IconSelectorPopup);
             }
@@ -43,7 +44,8 @@ public partial class CustomizationDrawer
             }
         }
 
-        ImGuiUtil.HoverIconTooltip(icon, _iconSize);
+        if (hasIcon)
+            ImGuiUtil.HoverIconTooltip(wrap!, _iconSize);
 
         ImGui.SameLine();
         using (_ = ImRaii.Group())
@@ -83,8 +85,9 @@ public partial class CustomizationDrawer
                 using var frameColor = current == i
                     ? ImRaii.PushColor(ImGuiCol.Button, Colors.SelectedRed)
                     : ImRaii.PushColor(ImGuiCol.Button, ColorId.FavoriteStarOn.Value(), isFavorite);
+                var hasIcon = icon.TryGetWrap(out var wrap, out var _);
 
-                if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize))
+                if (ImGui.ImageButton(wrap?.ImGuiHandle ?? icon.GetWrapOrEmpty().ImGuiHandle, _iconSize))
                 {
                     UpdateValue(custom.Value);
                     ImGui.CloseCurrentPopup();
@@ -96,8 +99,9 @@ public partial class CustomizationDrawer
                     else
                         _favorites.TryAdd(_set.Gender, _set.Clan, _currentIndex, custom.Value);
 
-                ImGuiUtil.HoverIconTooltip(icon, _iconSize,
-                    FavoriteManager.TypeAllowed(_currentIndex) ? "Right-Click to toggle favorite." : string.Empty);
+                if (hasIcon)
+                    ImGuiUtil.HoverIconTooltip(wrap!, _iconSize,
+                        FavoriteManager.TypeAllowed(_currentIndex) ? "Right-Click to toggle favorite." : string.Empty);
 
                 var text      = custom.Value.ToString();
                 var textWidth = ImGui.CalcTextSize(text).X;
@@ -199,14 +203,17 @@ public partial class CustomizationDrawer
             var icon = featureIdx == CustomizeIndex.LegacyTattoo
                 ? _legacyTattoo ?? _service.Manager.GetIcon(feature.IconId)
                 : _service.Manager.GetIcon(feature.IconId);
-            if (ImGui.ImageButton(icon.ImGuiHandle, _iconSize, Vector2.Zero, Vector2.One, (int)ImGui.GetStyle().FramePadding.X,
+            var hasIcon = icon.TryGetWrap(out var wrap, out _);
+            if (ImGui.ImageButton(wrap?.ImGuiHandle ?? icon.GetWrapOrEmpty().ImGuiHandle, _iconSize, Vector2.Zero, Vector2.One,
+                    (int)ImGui.GetStyle().FramePadding.X,
                     Vector4.Zero, enabled ? Vector4.One : _redTint))
             {
                 _customize.Set(featureIdx, enabled ? CustomizeValue.Zero : CustomizeValue.Max);
                 Changed |= _currentFlag;
             }
 
-            ImGuiUtil.HoverIconTooltip(icon, _iconSize);
+            if (hasIcon)
+                ImGuiUtil.HoverIconTooltip(wrap!, _iconSize);
             if (idx % 4 != 3)
                 ImGui.SameLine();
         }

@@ -61,7 +61,7 @@ public sealed class CmaFile
                 var armor = ((CharacterArmor*)ptr)[idx];
                 var item  = items.Identify(slot, armor.Set, armor.Variant);
                 data.SetItem(slot, item);
-                data.SetStain(slot, armor.Stain);
+                data.SetStain(slot, armor.Stains);
             }
 
             data.Customize.Read(ptr);
@@ -74,7 +74,7 @@ public sealed class CmaFile
         if (mainhand == null)
         {
             data.SetItem(EquipSlot.MainHand, items.DefaultSword);
-            data.SetStain(EquipSlot.MainHand, 0);
+            data.SetStain(EquipSlot.MainHand, StainIds.None);
             return;
         }
 
@@ -85,7 +85,7 @@ public sealed class CmaFile
         var item    = items.Identify(EquipSlot.MainHand, set, type, variant);
 
         data.SetItem(EquipSlot.MainHand, item.Valid ? item : items.DefaultSword);
-        data.SetStain(EquipSlot.MainHand, stain);
+        data.SetStain(EquipSlot.MainHand, new StainIds(stain));
     }
 
     private static void ParseOffHand(ItemManager items, JObject jObj, ref DesignData data)
@@ -95,7 +95,7 @@ public sealed class CmaFile
         if (offhand == null)
         {
             data.SetItem(EquipSlot.MainHand, defaultOffhand);
-            data.SetStain(EquipSlot.MainHand, defaultOffhand.PrimaryId.Id == 0 ? 0 : data.Stain(EquipSlot.MainHand));
+            data.SetStain(EquipSlot.MainHand, defaultOffhand.PrimaryId.Id == 0 ? StainIds.None : data.Stain(EquipSlot.MainHand));
             return;
         }
 
@@ -106,6 +106,6 @@ public sealed class CmaFile
         var item    = items.Identify(EquipSlot.OffHand, set, type, variant, data.MainhandType);
 
         data.SetItem(EquipSlot.OffHand, item.Valid ? item : defaultOffhand);
-        data.SetStain(EquipSlot.OffHand, defaultOffhand.PrimaryId.Id == 0 ? 0 : (StainId)stain);
+        data.SetStain(EquipSlot.OffHand, defaultOffhand.PrimaryId.Id == 0 ? StainIds.None : new StainIds(stain));
     }
 }

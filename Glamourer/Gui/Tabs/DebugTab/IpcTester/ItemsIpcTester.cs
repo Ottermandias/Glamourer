@@ -11,7 +11,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
-public class ItemsIpcTester(DalamudPluginInterface pluginInterface) : IUiService
+public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiService
 {
     private int            _gameObjectIndex;
     private string         _gameObjectName = string.Empty;
@@ -40,12 +40,12 @@ public class ItemsIpcTester(DalamudPluginInterface pluginInterface) : IUiService
 
         IpcTesterHelpers.DrawIntro(SetItem.Label);
         if (ImGui.Button("Set##Idx"))
-            _lastError = new SetItem(pluginInterface).Invoke(_gameObjectIndex, (ApiEquipSlot)_slot, _customItemId.Id, _stainId.Id, _key,
+            _lastError = new SetItem(pluginInterface).Invoke(_gameObjectIndex, (ApiEquipSlot)_slot, _customItemId.Id, [_stainId.Id], _key,
                 _flags);
 
         IpcTesterHelpers.DrawIntro(SetItemName.Label);
         if (ImGui.Button("Set##Name"))
-            _lastError = new SetItemName(pluginInterface).Invoke(_gameObjectName, (ApiEquipSlot)_slot, _customItemId.Id, _stainId.Id, _key,
+            _lastError = new SetItemName(pluginInterface).Invoke(_gameObjectName, (ApiEquipSlot)_slot, _customItemId.Id, [_stainId.Id], _key,
                 _flags);
     }
 

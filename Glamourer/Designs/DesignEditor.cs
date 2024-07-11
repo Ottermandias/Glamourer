@@ -3,7 +3,6 @@ using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
-using Glamourer.State;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -167,29 +166,29 @@ public class DesignEditor(
     }
 
     /// <inheritdoc/>
-    public void ChangeStain(object data, EquipSlot slot, StainId stain, ApplySettings _ = default)
+    public void ChangeStains(object data, EquipSlot slot, StainIds stains, ApplySettings _ = default)
     {
         var design = (Design)data;
-        if (Items.ValidateStain(stain, out var _, false).Length > 0)
+        if (Items.ValidateStain(stains, out var _, false).Length > 0)
             return;
 
         var oldStain = design.DesignData.Stain(slot);
-        if (!design.GetDesignDataRef().SetStain(slot, stain))
+        if (!design.GetDesignDataRef().SetStain(slot, stains))
             return;
 
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Set stain of {slot} equipment piece to {stain.Id}.");
-        DesignChanged.Invoke(DesignChanged.Type.Stain, design, (oldStain, stain, slot));
+        Glamourer.Log.Debug($"Set stain of {slot} equipment piece to {stains}.");
+        DesignChanged.Invoke(DesignChanged.Type.Stain, design, (oldStain, stains, slot));
     }
 
     /// <inheritdoc/>
-    public void ChangeEquip(object data, EquipSlot slot, EquipItem? item, StainId? stain, ApplySettings _ = default)
+    public void ChangeEquip(object data, EquipSlot slot, EquipItem? item, StainIds? stains, ApplySettings _ = default)
     {
         if (item.HasValue)
             ChangeItem(data, slot, item.Value, _);
-        if (stain.HasValue)
-            ChangeStain(data, slot, stain.Value, _);
+        if (stains.HasValue)
+            ChangeStains(data, slot, stains.Value, _);
     }
 
     /// <inheritdoc/>

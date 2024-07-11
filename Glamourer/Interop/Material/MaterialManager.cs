@@ -169,13 +169,13 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         if (!actor.AsObject->IsCharacter())
             return false;
 
-        if (actor.AsCharacter->DrawData.WeaponDataSpan[0].DrawObject == characterBase)
+        if (actor.AsCharacter->DrawData.WeaponData[0].DrawObject == characterBase)
         {
             type = MaterialValueIndex.DrawObjectType.Mainhand;
             return true;
         }
 
-        if (actor.AsCharacter->DrawData.WeaponDataSpan[1].DrawObject == characterBase)
+        if (actor.AsCharacter->DrawData.WeaponData[1].DrawObject == characterBase)
         {
             type = MaterialValueIndex.DrawObjectType.Offhand;
             return true;
@@ -199,10 +199,11 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     /// </summary>
     private static CharacterWeapon GetTempSlot(Weapon* weapon)
     {
+        // TODO: Fix offset
         var changedData = *(void**)((byte*)weapon + 0x918);
         if (changedData == null)
-            return new CharacterWeapon(weapon->ModelSetId, weapon->SecondaryId, (Variant)weapon->Variant, (StainId)weapon->ModelUnknown);
+            return new CharacterWeapon(weapon->ModelSetId, weapon->SecondaryId, (Variant)weapon->Variant, StainIds.FromWeapon(*weapon));
 
-        return new CharacterWeapon(weapon->ModelSetId, *(SecondaryId*)changedData, ((Variant*)changedData)[2], ((StainId*)changedData)[3]);
+        return new CharacterWeapon(weapon->ModelSetId, *(SecondaryId*)changedData, ((Variant*)changedData)[2], new StainIds(((StainId*)changedData)[3], ((StainId*)changedData)[4]));
     }
 }

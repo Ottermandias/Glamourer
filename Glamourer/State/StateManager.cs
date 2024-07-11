@@ -117,7 +117,7 @@ public sealed class StateManager(
         if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
         {
             ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(CustomizeArray*)&actor.AsCharacter->DrawData.CustomizeData,
-                (nint)(&actor.AsCharacter->DrawData.Head));
+                (nint)Unsafe.AsPointer(ref actor.AsCharacter->DrawData.EquipmentModelIds[0]));
             return ret;
         }
 
@@ -141,7 +141,7 @@ public sealed class StateManager(
             var head     = ret.IsHatVisible() || ignoreHatState ? model.GetArmor(EquipSlot.Head) : actor.GetArmor(EquipSlot.Head);
             var headItem = Items.Identify(EquipSlot.Head, head.Set, head.Variant);
             ret.SetItem(EquipSlot.Head, headItem);
-            ret.SetStain(EquipSlot.Head, head.Stain);
+            ret.SetStain(EquipSlot.Head, head.Stains);
 
             // The other slots can be used from the draw object.
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Skip(1))
@@ -149,7 +149,7 @@ public sealed class StateManager(
                 var armor = model.GetArmor(slot);
                 var item  = Items.Identify(slot, armor.Set, armor.Variant);
                 ret.SetItem(slot, item);
-                ret.SetStain(slot, armor.Stain);
+                ret.SetStain(slot, armor.Stains);
             }
 
             // Weapons use the draw objects of the weapons, but require the game object either way.
@@ -171,7 +171,7 @@ public sealed class StateManager(
                 var armor = actor.GetArmor(slot);
                 var item  = Items.Identify(slot, armor.Set, armor.Variant);
                 ret.SetItem(slot, item);
-                ret.SetStain(slot, armor.Stain);
+                ret.SetStain(slot, armor.Stains);
             }
 
             main = actor.GetMainhand();
@@ -187,13 +187,13 @@ public sealed class StateManager(
         var mainItem = Items.Identify(EquipSlot.MainHand, main.Skeleton, main.Weapon, main.Variant);
         var offItem  = Items.Identify(EquipSlot.OffHand,  off.Skeleton,  off.Weapon,  off.Variant, mainItem.Type);
         ret.SetItem(EquipSlot.MainHand, mainItem);
-        ret.SetStain(EquipSlot.MainHand, main.Stain);
+        ret.SetStain(EquipSlot.MainHand, main.Stains);
         ret.SetItem(EquipSlot.OffHand, offItem);
-        ret.SetStain(EquipSlot.OffHand, off.Stain);
+        ret.SetStain(EquipSlot.OffHand, off.Stains);
 
         // Wetness can technically only be set in GPose or via external tools.
         // It is only available in the game object.
-        ret.SetIsWet(actor.AsCharacter->IsGPoseWet);
+        ret.SetIsWet(actor.IsGPoseWet);
 
         // Weapon visibility could technically be inferred from the weapon draw objects, 
         // but since we use hat visibility from the game object we can also use weapon visibility from it.
@@ -214,7 +214,7 @@ public sealed class StateManager(
         offhand.Variant  = mainhand.Variant;
         offhand.Weapon   = mainhand.Weapon;
         ret.SetItem(EquipSlot.Hands, gauntlets);
-        ret.SetStain(EquipSlot.Hands, mainhand.Stain);
+        ret.SetStain(EquipSlot.Hands, mainhand.Stains);
     }
 
     /// <summary> Turn an actor human. </summary>
@@ -414,7 +414,9 @@ public sealed class StateManager(
     public void ReapplyState(Actor actor, ActorState state, bool forceRedraw, StateSource source)
     {
         var data = Applier.ApplyAll(state,
-            forceRedraw || !actor.Model.IsHuman || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
+            forceRedraw
+         || !actor.Model.IsHuman
+         || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
         StateChanged.Invoke(StateChangeType.Reapply, source, state, data, null);
     }
 

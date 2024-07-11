@@ -8,7 +8,7 @@ namespace Glamourer.Services;
 
 public class DalamudServices
 {
-    public static void AddServices(ServiceManager services, DalamudPluginInterface pi)
+    public static void AddServices(ServiceManager services, IDalamudPluginInterface pi)
     {
         services.AddExistingService(pi);
         services.AddExistingService(pi.UiBuilder);

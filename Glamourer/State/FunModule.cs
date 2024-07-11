@@ -1,5 +1,5 @@
-﻿using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Services;
@@ -106,7 +106,7 @@ public unsafe class FunModule : IDisposable
          && actor.OnlineStatus is OnlineStatus.PvEMentor or OnlineStatus.PvPMentor or OnlineStatus.TradeMentor
          && slot.IsEquipment())
         {
-            armor = new CharacterArmor(6117, 1, 0);
+            armor = new CharacterArmor(6117, 1, StainIds.None);
             return;
         }
 
@@ -171,7 +171,7 @@ public unsafe class FunModule : IDisposable
                 break;
             case CodeService.CodeFlag.Dolphins:
                 SetDolphin(EquipSlot.Body, ref armor[1]);
-                SetDolphin(EquipSlot.Head, ref armor[0]); 
+                SetDolphin(EquipSlot.Head, ref armor[0]);
                 break;
             case CodeService.CodeFlag.World when actor.Index != 0:
                 _worldSets.Apply(actor, _rng, armor);
@@ -198,7 +198,7 @@ public unsafe class FunModule : IDisposable
 
     private static bool ValidFunTarget(Actor actor)
         => actor.IsCharacter
-         && actor.AsObject->ObjectKind is (byte)ObjectKind.Player
+         && actor.AsObject->ObjectKind is ObjectKind.Pc
          && !actor.IsTransformed
          && actor.AsCharacter->CharacterData.ModelCharaId == 0;
 
@@ -208,7 +208,7 @@ public unsafe class FunModule : IDisposable
     private void SetRandomDye(ref CharacterArmor armor)
     {
         var stainIdx = _rng.Next(0, _stains.Length - 1);
-        armor.Stain = _stains[stainIdx];
+        armor.Stains = _stains[stainIdx];
     }
 
     private void SetRandomItem(EquipSlot slot, ref CharacterArmor armor)
@@ -235,17 +235,17 @@ public unsafe class FunModule : IDisposable
     private static IReadOnlyList<CharacterArmor> DolphinBodies
         =>
         [
-            new CharacterArmor(6089, 1, 4), // Toad
-            new CharacterArmor(6089, 1, 4), // Toad
-            new CharacterArmor(6089, 1, 4), // Toad
-            new CharacterArmor(6023, 1, 4), // Swine
-            new CharacterArmor(6023, 1, 4), // Swine
-            new CharacterArmor(6023, 1, 4), // Swine
-            new CharacterArmor(6133, 1, 4), // Gaja
-            new CharacterArmor(6182, 1, 3), // Imp
-            new CharacterArmor(6182, 1, 3), // Imp
-            new CharacterArmor(6182, 1, 4), // Imp
-            new CharacterArmor(6182, 1, 4), // Imp
+            new CharacterArmor(6089, 1, new StainIds(4)), // Toad
+            new CharacterArmor(6089, 1, new StainIds(4)), // Toad
+            new CharacterArmor(6089, 1, new StainIds(4)), // Toad
+            new CharacterArmor(6023, 1, new StainIds(4)), // Swine
+            new CharacterArmor(6023, 1, new StainIds(4)), // Swine
+            new CharacterArmor(6023, 1, new StainIds(4)), // Swine
+            new CharacterArmor(6133, 1, new StainIds(4)), // Gaja
+            new CharacterArmor(6182, 1, new StainIds(3)), // Imp
+            new CharacterArmor(6182, 1, new StainIds(3)), // Imp
+            new CharacterArmor(6182, 1, new StainIds(4)), // Imp
+            new CharacterArmor(6182, 1, new StainIds(4)), // Imp
         ];
 
     private void SetDolphin(EquipSlot slot, ref CharacterArmor armor)
@@ -253,7 +253,7 @@ public unsafe class FunModule : IDisposable
         armor = slot switch
         {
             EquipSlot.Body => DolphinBodies[_rng.Next(0, DolphinBodies.Count - 1)],
-            EquipSlot.Head => new CharacterArmor(5040, 1, 0),
+            EquipSlot.Head => new CharacterArmor(5040, 1, StainIds.None),
             _              => armor,
         };
     }
@@ -270,7 +270,7 @@ public unsafe class FunModule : IDisposable
 
     private static void SetCrown(Span<CharacterArmor> armor)
     {
-        var clown = new CharacterArmor(6117, 1, 0);
+        var clown = new CharacterArmor(6117, 1, StainIds.None);
         armor[0] = clown;
         armor[1] = clown;
         armor[2] = clown;
@@ -285,15 +285,12 @@ public unsafe class FunModule : IDisposable
             return;
 
         var targetClan = (SubRace)((int)race * 2 - (int)customize.Clan % 2);
-        // TODO Female Hrothgar
-        if (race is Race.Hrothgar && customize.Gender is Gender.Female)
-            targetClan = targetClan is SubRace.Lost ? SubRace.Seawolf : SubRace.Hellsguard;
         _customizations.ChangeClan(ref customize, targetClan);
     }
 
     private void SetGender(ref CustomizeArray customize)
     {
-        if (!_codes.Enabled(CodeService.CodeFlag.SixtyThree) || customize.Race is Race.Hrothgar) // TODO Female Hrothgar
+        if (!_codes.Enabled(CodeService.CodeFlag.SixtyThree))
             return;
 
         _customizations.ChangeGender(ref customize, customize.Gender is Gender.Male ? Gender.Female : Gender.Male);

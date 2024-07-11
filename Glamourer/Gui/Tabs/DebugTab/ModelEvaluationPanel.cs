@@ -5,6 +5,8 @@ using Glamourer.Interop.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using OtterGui.Text;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
 using Penumbra.GameData.Interop;
@@ -18,7 +20,8 @@ public unsafe class ModelEvaluationPanel(
     VisorService _visorService,
     UpdateSlotService _updateSlotService,
     ChangeCustomizeService _changeCustomizeService,
-    CrestService _crestService) : IGameDataDrawer
+    CrestService _crestService,
+    DictGlasses _glasses) : IGameDataDrawer
 {
     public string Label
         => "Model Evaluation";
@@ -177,7 +180,7 @@ public unsafe class ModelEvaluationPanel(
     {
         using var id = ImRaii.PushId("Wetness");
         ImGuiUtil.DrawTableColumn("Wetness");
-        ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.AsCharacter->IsGPoseWet ? "GPose" : "None" : "No Character");
+        ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.IsGPoseWet ? "GPose" : "None" : "No Character");
         var modelString = model.IsCharacterBase
             ? $"{model.AsCharacterBase->SwimmingWetness:F4} Swimming\n"
           + $"{model.AsCharacterBase->WeatherWetness:F4} Weather\n"
@@ -190,13 +193,13 @@ public unsafe class ModelEvaluationPanel(
             return;
 
         if (ImGui.SmallButton("GPose On"))
-            actor.AsCharacter->IsGPoseWet = true;
+            actor.IsGPoseWet = true;
         ImGui.SameLine();
         if (ImGui.SmallButton("GPose Off"))
-            actor.AsCharacter->IsGPoseWet = false;
+            actor.IsGPoseWet = false;
         ImGui.SameLine();
         if (ImGui.SmallButton("GPose Toggle"))
-            actor.AsCharacter->IsGPoseWet = !actor.AsCharacter->IsGPoseWet;
+            actor.IsGPoseWet = !actor.IsGPoseWet;
     }
 
     private void DrawEquip(Actor actor, Model model)
@@ -214,13 +217,38 @@ public unsafe class ModelEvaluationPanel(
 
             if (ImGui.SmallButton("Change Piece"))
                 _updateSlotService.UpdateArmor(model, slot,
-                    new CharacterArmor((PrimaryId)(slot == EquipSlot.Hands ? 6064 : slot == EquipSlot.Head ? 6072 : 1), 1, 0));
+                    new CharacterArmor((PrimaryId)(slot == EquipSlot.Hands ? 6064 : slot == EquipSlot.Head ? 6072 : 1), 1, StainIds.None));
             ImGui.SameLine();
             if (ImGui.SmallButton("Change Stain"))
-                _updateSlotService.UpdateStain(model, slot, 5);
+                _updateSlotService.UpdateStain(model, slot, new StainIds(5, 7));
             ImGui.SameLine();
             if (ImGui.SmallButton("Reset"))
                 _updateSlotService.UpdateSlot(model, slot, actor.GetArmor(slot));
+        }
+
+        using (ImRaii.PushId((int)EquipSlot.FaceWear))
+        {
+            ImGuiUtil.DrawTableColumn(EquipSlot.FaceWear.ToName());
+            if (!actor.IsCharacter)
+            {
+                ImGuiUtil.DrawTableColumn("No Character");
+            }
+            else
+            {
+                var glassesId = actor.AsCharacter->DrawData.GlassesIds[(int)EquipSlot.FaceWear.ToBonusIndex()];
+                if (_glasses.TryGetValue(glassesId, out var glasses))
+                    ImGuiUtil.DrawTableColumn($"{glasses.Id.Id},{glasses.Variant.Id} ({glassesId})");
+                else
+                    ImGuiUtil.DrawTableColumn($"{glassesId}");
+            }
+
+            ImGuiUtil.DrawTableColumn(model.IsHuman ? model.GetArmor(EquipSlot.FaceWear).ToString() : "No Human");
+            ImGui.TableNextColumn();
+            if (ImUtf8.SmallButton("Change Piece"u8))
+            {
+                var data = model.GetArmor(EquipSlot.FaceWear);
+                _updateSlotService.UpdateSlot(model, EquipSlot.FaceWear, data with { Variant = (Variant)((data.Variant.Id + 1) % 12) });
+            }
         }
     }
 

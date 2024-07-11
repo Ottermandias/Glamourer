@@ -10,7 +10,6 @@ using Glamourer.Interop.PalettePlus;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
-using OtterGui.Text;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
@@ -19,7 +18,7 @@ public class SettingsTab(
     Configuration config,
     DesignFileSystemSelector selector,
     ContextMenuService contextMenuService,
-    UiBuilder uiBuilder,
+    IUiBuilder uiBuilder,
     GlamourerChangelog changelog,
     IKeyState keys,
     DesignColorUi designColorUi,

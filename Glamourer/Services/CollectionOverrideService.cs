@@ -1,13 +1,13 @@
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Interop.Penumbra;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
-using OtterGui.Classes;
 using OtterGui.Filesystem;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
+using Notification = OtterGui.Classes.Notification;
 
 namespace Glamourer.Services;
 

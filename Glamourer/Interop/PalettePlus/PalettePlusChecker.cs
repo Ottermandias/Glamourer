@@ -1,7 +1,7 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
-using OtterGui.Classes;
 using OtterGui.Services;
+using Notification = OtterGui.Classes.Notification;
 
 namespace Glamourer.Interop.PalettePlus;
 
@@ -9,9 +9,9 @@ public sealed class PalettePlusChecker : IRequiredService, IDisposable
 {
     private readonly Timer _paletteTimer;
     private readonly Configuration _config;
-    private readonly DalamudPluginInterface _pluginInterface;
+    private readonly IDalamudPluginInterface _pluginInterface;
 
-    public PalettePlusChecker(Configuration config, DalamudPluginInterface pluginInterface)
+    public PalettePlusChecker(Configuration config, IDalamudPluginInterface pluginInterface)
     {
         _config = config;
         _pluginInterface = pluginInterface;

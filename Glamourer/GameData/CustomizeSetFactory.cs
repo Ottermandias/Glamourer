@@ -1,4 +1,5 @@
 ﻿using Dalamud;
+using Dalamud.Game;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Lumina.Excel;
@@ -13,11 +14,11 @@ namespace Glamourer.GameData;
 internal class CustomizeSetFactory(
     IDataManager _gameData,
     IPluginLog _log,
-    IconStorage _icons,
+    TextureCache _icons,
     NpcCustomizeSet _npcCustomizeSet,
     ColorParameters _colors)
 {
-    public CustomizeSetFactory(IDataManager gameData, IPluginLog log, IconStorage icons, NpcCustomizeSet npcCustomizeSet)
+    public CustomizeSetFactory(IDataManager gameData, IPluginLog log, TextureCache icons, NpcCustomizeSet npcCustomizeSet)
         : this(gameData, log, icons, npcCustomizeSet, new ColorParameters(gameData, log))
     { }
 
@@ -87,7 +88,8 @@ internal class CustomizeSetFactory(
 
         var npcCustomizations = new HashSet<(CustomizeIndex, CustomizeValue)>();
         _npcCustomizeSet.Awaiter.Wait();
-        foreach (var customize in _npcCustomizeSet.Select(s => s.Customize).Where(c => c.Clan == race && c.Gender == gender && c.BodyType.Value == 1))
+        foreach (var customize in _npcCustomizeSet.Select(s => s.Customize)
+                     .Where(c => c.Clan == race && c.Gender == gender && c.BodyType.Value == 1))
         {
             foreach (var customizeIndex in customizeIndices)
             {
@@ -346,10 +348,6 @@ internal class CustomizeSetFactory(
     /// <summary> Set the availability of options according to actual availability. </summary>
     private static void SetAvailability(CustomizeSet set, CharaMakeParams row)
     {
-        // TODO: Hrothgar female
-        if (set is { Race: Race.Hrothgar, Gender: Gender.Female })
-            return;
-
         Set(true,                                            CustomizeIndex.Height);
         Set(set.Faces.Count > 0,                             CustomizeIndex.Face);
         Set(true,                                            CustomizeIndex.Hairstyle);

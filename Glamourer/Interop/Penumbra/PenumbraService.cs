@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
 using Glamourer.Events;
 using OtterGui.Classes;
@@ -36,7 +36,7 @@ public unsafe class PenumbraService : IDisposable
     public const int RequiredPenumbraBreakingVersion = 5;
     public const int RequiredPenumbraFeatureVersion  = 0;
 
-    private readonly DalamudPluginInterface                                _pluginInterface;
+    private readonly IDalamudPluginInterface                                _pluginInterface;
     private readonly EventSubscriber<ChangedItemType, uint>                _tooltipSubscriber;
     private readonly EventSubscriber<MouseButton, ChangedItemType, uint>   _clickSubscriber;
     private readonly EventSubscriber<nint, Guid, nint, nint, nint>         _creatingCharacterBase;
@@ -68,7 +68,7 @@ public unsafe class PenumbraService : IDisposable
     public int      CurrentMinor { get; private set; }
     public DateTime AttachTime   { get; private set; }
 
-    public PenumbraService(DalamudPluginInterface pi, PenumbraReloaded penumbraReloaded)
+    public PenumbraService(IDalamudPluginInterface pi, PenumbraReloaded penumbraReloaded)
     {
         _pluginInterface       = pi;
         _penumbraReloaded      = penumbraReloaded;

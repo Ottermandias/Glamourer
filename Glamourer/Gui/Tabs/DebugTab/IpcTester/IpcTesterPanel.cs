@@ -7,7 +7,7 @@ using Penumbra.GameData.Gui.Debug;
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
 public class IpcTesterPanel(
-    DalamudPluginInterface pluginInterface,
+    IDalamudPluginInterface pluginInterface,
     DesignIpcTester designs,
     ItemsIpcTester items,
     StateIpcTester state,

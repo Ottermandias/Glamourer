@@ -23,8 +23,8 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
     public readonly void SetItem(EquipItem item)
         => _editor.ChangeItem(_object, Slot, item, ApplySettings.Manual);
 
-    public readonly void SetStain(StainId stain)
-        => _editor.ChangeStain(_object, Slot, stain, ApplySettings.Manual);
+    public readonly void SetStains(StainIds stains)
+        => _editor.ChangeStains(_object, Slot, stains, ApplySettings.Manual);
 
     public readonly void SetApplyItem(bool value)
     {
@@ -40,10 +40,10 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
         manager.ChangeApplyStain(design, Slot, value);
     }
 
-    public EquipItem CurrentItem  = designData.Item(slot);
-    public StainId   CurrentStain = designData.Stain(slot);
-    public EquipItem GameItem     = default;
-    public StainId   GameStain    = default;
+    public EquipItem CurrentItem   = designData.Item(slot);
+    public StainIds  CurrentStains = designData.Stain(slot);
+    public EquipItem GameItem      = default;
+    public StainIds  GameStains    = default;
     public bool      CurrentApply;
     public bool      CurrentApplyStain;
 
@@ -69,7 +69,7 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
             Locked             = state.IsLocked,
             DisplayApplication = false,
             GameItem           = state.BaseData.Item(slot),
-            GameStain          = state.BaseData.Stain(slot),
+            GameStains         = state.BaseData.Stain(slot),
             AllowRevert        = true,
         };
 }

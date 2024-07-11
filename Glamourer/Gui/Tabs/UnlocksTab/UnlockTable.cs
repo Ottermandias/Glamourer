@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Glamourer.Events;
 using Glamourer.Interop;
@@ -249,7 +250,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             => 70 * ImGuiHelpers.GlobalScale;
 
         public override int ToValue(EquipItem item)
-            => (int) item.Id.Id;
+            => (int)item.Id.Id;
 
         public ItemIdColumn()
             : base(ComparisonMethod.Equal)
@@ -378,13 +379,68 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         }
     }
 
-    private sealed class DyableColumn : YesNoColumn<EquipItem>
-    {
-        public DyableColumn()
-            => Tooltip = "Whether the item is dyable.";
 
-        protected override bool GetValue(EquipItem item)
-            => item.Flags.HasFlag(ItemFlags.IsDyable);
+    private sealed class DyableColumn : ColumnFlags<DyableColumn.Dyable, EquipItem>
+    {
+        [Flags]
+        public enum Dyable : byte
+        {
+            No  = 1,
+            Yes = 2,
+            Two = 4,
+        }
+
+        private Dyable _filterValue;
+
+        public DyableColumn()
+        {
+            AllFlags     =  Dyable.No | Dyable.Yes | Dyable.Two;
+            Flags        &= ~ImGuiTableColumnFlags.NoResize;
+            _filterValue =  AllFlags;
+        }
+
+        public override Dyable FilterValue
+            => _filterValue;
+
+        protected override void SetValue(Dyable value, bool enable)
+            => _filterValue = enable ? _filterValue | value : _filterValue & ~value;
+
+        public override float Width
+            => ImGui.GetFrameHeight() * 2;
+
+        public override bool FilterFunc(EquipItem item)
+            => GetValue(item) switch
+            {
+                0                   => _filterValue.HasFlag(Dyable.No),
+                ItemFlags.IsDyable2 => _filterValue.HasFlag(Dyable.Yes),
+                ItemFlags.IsDyable1 => _filterValue.HasFlag(Dyable.Yes),
+                _                   => _filterValue.HasFlag(Dyable.Two),
+            };
+
+        public override int Compare(EquipItem lhs, EquipItem rhs)
+            => GetValue(lhs).CompareTo(GetValue(rhs));
+
+        public override void DrawColumn(EquipItem item, int idx)
+        {
+            using (ImRaii.PushFont(UiBuilder.IconFont))
+            {
+                ImGuiUtil.Center(Icon(item));
+            }
+
+            ImGuiUtil.HoverTooltip("Whether the item is dyable, and how many slots it has.");
+        }
+
+        private static string Icon(EquipItem item)
+            => GetValue(item) switch
+            {
+                0                   => FontAwesomeIcon.Times.ToIconString(),
+                ItemFlags.IsDyable2 => FontAwesomeIcon.Check.ToIconString(),
+                ItemFlags.IsDyable1 => FontAwesomeIcon.Check.ToIconString(),
+                _                   => FontAwesomeIcon.DiceTwo.ToIconString(),
+            };
+
+        private static ItemFlags GetValue(EquipItem item)
+            => item.Flags & (ItemFlags.IsDyable1 | ItemFlags.IsDyable2);
     }
 
     private sealed class TradableColumn : YesNoColumn<EquipItem>

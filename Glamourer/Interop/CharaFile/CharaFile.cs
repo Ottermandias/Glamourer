@@ -60,7 +60,7 @@ public sealed class CharaFile
             return;
 
         data.SetItem(slot, item);
-        data.SetStain(slot, dye);
+        data.SetStain(slot, new StainIds(dye));
         flags |= slot.ToFlag();
         flags |= slot.ToStainFlag();
     }
@@ -79,7 +79,7 @@ public sealed class CharaFile
             return;
 
         data.SetItem(slot, item);
-        data.SetStain(slot, dye);
+        data.SetStain(slot, new StainIds(dye));
         flags |= slot.ToFlag();
         flags |= slot.ToStainFlag();
     }

@@ -1,5 +1,4 @@
 ﻿using Glamourer.Services;
-using Glamourer.State;
 using OtterGui;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -117,7 +116,7 @@ public class DesignBase64Migration
                 }
 
                 data.SetItem(slot, item);
-                data.SetStain(slot, mdl.Stain);
+                data.SetStain(slot, mdl.Stains);
             }
 
             var main = cur[0].Skeleton.Id == 0
@@ -130,7 +129,7 @@ public class DesignBase64Migration
             }
 
             data.SetItem(EquipSlot.MainHand, main);
-            data.SetStain(EquipSlot.MainHand, cur[0].Stain);
+            data.SetStain(EquipSlot.MainHand, cur[0].Stains);
 
             EquipItem off;
             // Fist weapon hack
@@ -141,7 +140,7 @@ public class DesignBase64Migration
                 if (gauntlet.Valid)
                 {
                     data.SetItem(EquipSlot.Hands, gauntlet);
-                    data.SetStain(EquipSlot.Hands, cur[0].Stain);
+                    data.SetStain(EquipSlot.Hands, cur[0].Stains);
                 }
             }
             else
@@ -158,7 +157,7 @@ public class DesignBase64Migration
             }
 
             data.SetItem(EquipSlot.OffHand, off);
-            data.SetStain(EquipSlot.OffHand, cur[1].Stain);
+            data.SetStain(EquipSlot.OffHand, cur[1].Stains);
             return data;
         }
     }

@@ -1,6 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.ImGuiFileDialog;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Glamourer.Automation;
 using Glamourer.Designs;
@@ -106,7 +106,7 @@ public class DesignPanel
             var data = EquipDrawData.FromDesign(_manager, _selector.Selected!, slot);
             _equipmentDrawer.DrawEquip(data);
             if (usedAllStain)
-                _manager.ChangeStain(_selector.Selected, slot, newAllStain);
+                _manager.ChangeStains(_selector.Selected, slot, newAllStain);
         }
 
         var mainhand = EquipDrawData.FromDesign(_manager, _selector.Selected!, EquipSlot.MainHand);
@@ -453,7 +453,7 @@ public class DesignPanel
     }
 
     private static unsafe string GetUserPath()
-        => Framework.Instance()->UserPath;
+        => Framework.Instance()->UserPathString;
 
 
     private sealed class LockButton(DesignPanel panel) : Button

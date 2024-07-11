@@ -34,14 +34,13 @@ public partial class CustomizationDrawer
 
     private void DrawGenderSelector()
     {
-        using (var disabled = ImRaii.Disabled(_locked || _lockedRedraw))
+        using (ImRaii.Disabled(_locked || _lockedRedraw))
         {
             var icon = _customize.Gender switch
             {
-                Gender.Male when _customize.Race is Race.Hrothgar => FontAwesomeIcon.MarsDouble,
-                Gender.Male                                       => FontAwesomeIcon.Mars,
-                Gender.Female                                     => FontAwesomeIcon.Venus,
-                _                                                 => FontAwesomeIcon.Question,
+                Gender.Male   => FontAwesomeIcon.Mars,
+                Gender.Female => FontAwesomeIcon.Venus,
+                _             => FontAwesomeIcon.Question,
             };
 
             if (ImGuiUtil.DrawDisabledButton(icon.ToIconString(), _framedIconSize, string.Empty,
@@ -56,7 +55,7 @@ public partial class CustomizationDrawer
 
     private void DrawRaceCombo()
     {
-        using (var disabled = ImRaii.Disabled(_locked || _lockedRedraw))
+        using (ImRaii.Disabled(_locked || _lockedRedraw))
         {
             ImGui.SetNextItemWidth(_raceSelectorWidth);
             using (var combo = ImRaii.Combo("##subRaceCombo", _service.ClanName(_customize.Clan, _customize.Gender)))

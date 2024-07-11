@@ -116,20 +116,20 @@ public class UnlockOverview
 
             var unlocked = _customizeUnlocks.IsUnlocked(customize, out var time);
             var icon     = _customizations.Manager.GetIcon(customize.IconId);
-
-            ImGui.Image(icon.ImGuiHandle, iconSize, Vector2.Zero, Vector2.One,
+            var hasIcon  = icon.TryGetWrap(out var wrap, out _);
+            ImGui.Image(wrap?.ImGuiHandle ?? icon.GetWrapOrEmpty().ImGuiHandle, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || _codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
 
             if (_favorites.Contains(_selected3, _selected2, customize.Index, customize.Value))
                 ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
                     12 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 6 * ImGuiHelpers.GlobalScale);
 
-            if (ImGui.IsItemHovered())
+            if (hasIcon && ImGui.IsItemHovered())
             {
                 using var tt   = ImRaii.Tooltip();
-                var       size = new Vector2(icon.Width, icon.Height);
+                var       size = new Vector2(wrap!.Width, wrap.Height);
                 if (size.X >= iconSize.X && size.Y >= iconSize.Y)
-                    ImGui.Image(icon.ImGuiHandle, size);
+                    ImGui.Image(wrap.ImGuiHandle, size);
                 ImGui.TextUnformatted(unlockData.Name);
                 ImGui.TextUnformatted($"{customize.Index.ToDefaultName()} {customize.Value.Value}");
                 ImGui.TextUnformatted(unlocked ? $"Unlocked on {time:g}" : "Not unlocked.");
@@ -191,7 +191,8 @@ public class UnlockOverview
 
             var (icon, size) = (iconHandle.ImGuiHandle, new Vector2(iconHandle.Width, iconHandle.Height));
 
-            ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One, unlocked || _codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
+            ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One,
+                unlocked || _codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (_favorites.Contains(item))
                 ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
                     2 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * ImGuiHelpers.GlobalScale);
@@ -233,8 +234,8 @@ public class UnlockOverview
                         ImGui.TextUnformatted($"For all {_jobs.AllJobGroups[item.JobRestrictions.Id].Name} of at least Level {item.Level}");
                 }
 
-                if (item.Flags.HasFlag(ItemFlags.IsDyable))
-                    ImGui.TextUnformatted("Dyable");
+                if (item.Flags.HasFlag(ItemFlags.IsDyable1))
+                    ImGui.TextUnformatted(item.Flags.HasFlag(ItemFlags.IsDyable2) ? "Dyable (2 Slots)" : "Dyable");
                 if (item.Flags.HasFlag(ItemFlags.IsTradable))
                     ImGui.TextUnformatted("Tradable");
                 if (item.Flags.HasFlag(ItemFlags.IsCrestWorthy))

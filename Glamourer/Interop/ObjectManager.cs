@@ -14,7 +14,7 @@ public class ObjectManager(
     IFramework framework,
     IClientState clientState,
     IObjectTable objects,
-    DalamudPluginInterface pi,
+    IDalamudPluginInterface pi,
     Logger log,
     ActorManager actors,
     ITargetManager targets)

@@ -161,13 +161,6 @@ public sealed class CustomizeService(
             return $"The gender {gender.ToName()} is unknown, reset to {Gender.Male.ToName()}.";
         }
 
-        // TODO: Female Hrothgar
-        if (gender is Gender.Female && race is Race.Hrothgar)
-        {
-            actualGender = Gender.Male;
-            return $"{Race.Hrothgar.ToName()} do not currently support {Gender.Female.ToName()} characters, reset to {Gender.Male.ToName()}.";
-        }
-
         actualGender = gender;
         return string.Empty;
     }
@@ -225,13 +218,6 @@ public sealed class CustomizeService(
         customize.Race = newRace;
         customize.Clan = newClan;
 
-        // TODO Female Hrothgar
-        if (newRace == Race.Hrothgar)
-        {
-            customize.Gender =  Gender.Male;
-            flags            |= CustomizeFlag.Gender;
-        }
-
         var set = Manager.GetSet(customize.Clan, customize.Gender);
         return FixValues(set, ref customize) | flags;
     }
@@ -240,10 +226,6 @@ public sealed class CustomizeService(
     public CustomizeFlag ChangeGender(ref CustomizeArray customize, Gender newGender)
     {
         if (customize.Gender == newGender)
-            return 0;
-
-        // TODO Female Hrothgar
-        if (customize.Race is Race.Hrothgar)
             return 0;
 
         if (ValidateGender(customize.Race, newGender, out newGender).Length > 0)

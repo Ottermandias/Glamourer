@@ -18,32 +18,43 @@ public unsafe class UpdateSlotService : IDisposable
         SlotUpdatingEvent = slotUpdating;
         interop.InitializeFromAttributes(this);
         _flagSlotForUpdateHook.Enable();
+        _flagBonusSlotForUpdateHook.Enable();
     }
 
     public void Dispose()
-        => _flagSlotForUpdateHook.Dispose();
+    {
+        _flagSlotForUpdateHook.Dispose();
+        _flagBonusSlotForUpdateHook.Dispose();
+    }
 
     public void UpdateSlot(Model drawObject, EquipSlot slot, CharacterArmor data)
     {
         if (!drawObject.IsCharacterBase)
             return;
 
-        FlagSlotForUpdateInterop(drawObject, slot, data);
+        var bonusSlot = slot.ToBonusIndex();
+        if (bonusSlot == uint.MaxValue)
+            FlagSlotForUpdateInterop(drawObject, slot, data);
+        else
+            _flagBonusSlotForUpdateHook.Original(drawObject.Address, bonusSlot, &data);
     }
 
-    public void UpdateArmor(Model drawObject, EquipSlot slot, CharacterArmor armor, StainId stain)
-        => UpdateSlot(drawObject, slot, armor.With(stain));
+    public void UpdateArmor(Model drawObject, EquipSlot slot, CharacterArmor armor, StainIds stains)
+        => UpdateSlot(drawObject, slot, armor.With(stains));
 
     public void UpdateArmor(Model drawObject, EquipSlot slot, CharacterArmor armor)
-        => UpdateArmor(drawObject, slot, armor, drawObject.GetArmor(slot).Stain);
+        => UpdateArmor(drawObject, slot, armor, drawObject.GetArmor(slot).Stains);
 
-    public void UpdateStain(Model drawObject, EquipSlot slot, StainId stain)
-        => UpdateArmor(drawObject, slot, drawObject.GetArmor(slot), stain);
+    public void UpdateStain(Model drawObject, EquipSlot slot, StainIds stains)
+        => UpdateArmor(drawObject, slot, drawObject.GetArmor(slot), stains);
 
     private delegate ulong FlagSlotForUpdateDelegateIntern(nint drawObject, uint slot, CharacterArmor* data);
 
     [Signature(Sigs.FlagSlotForUpdate, DetourName = nameof(FlagSlotForUpdateDetour))]
     private readonly Hook<FlagSlotForUpdateDelegateIntern> _flagSlotForUpdateHook = null!;
+
+    [Signature(Sigs.FlagBonusSlotForUpdate, DetourName = nameof(FlagBonusSlotForUpdateDetour))]
+    private readonly Hook<FlagSlotForUpdateDelegateIntern> _flagBonusSlotForUpdateHook = null!;
 
     private ulong FlagSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
     {
@@ -52,6 +63,15 @@ public unsafe class UpdateSlotService : IDisposable
         SlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
         Glamourer.Log.Excessive($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
         return returnValue == ulong.MaxValue ? _flagSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
+    }
+
+    private ulong FlagBonusSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
+    {
+        var slot        = slotIdx.ToBonusSlot();
+        var returnValue = ulong.MaxValue;
+        SlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
+        Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
+        return returnValue == ulong.MaxValue ? _flagBonusSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
     }
 
     private ulong FlagSlotForUpdateInterop(Model drawObject, EquipSlot slot, CharacterArmor armor)

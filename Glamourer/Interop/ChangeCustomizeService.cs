@@ -17,7 +17,7 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
 {
     private readonly PenumbraReloaded                                        _penumbraReloaded;
     private readonly IGameInteropProvider                                    _interop;
-    private readonly delegate* unmanaged[Stdcall]<Human*, byte*, bool, bool> _original;
+    private readonly delegate* unmanaged<Human*, byte*, bool, bool> _original;
     private readonly Post                                                    _postEvent = new();
     
 

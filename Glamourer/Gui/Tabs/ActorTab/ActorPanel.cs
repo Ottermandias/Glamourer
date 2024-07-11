@@ -1,6 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Automation;
@@ -208,7 +208,7 @@ public class ActorPanel
             var data = EquipDrawData.FromState(_stateManager, _state!, slot);
             _equipmentDrawer.DrawEquip(data);
             if (usedAllStain)
-                _stateManager.ChangeStain(_state, slot, newAllStain, ApplySettings.Manual);
+                _stateManager.ChangeStains(_state, slot, newAllStain, ApplySettings.Manual);
         }
 
         var mainhand = EquipDrawData.FromState(_stateManager, _state, EquipSlot.MainHand);

@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Internal;
+﻿using Dalamud.Interface.Textures;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
 using OtterGui.Classes;
 using OtterGui.Services;
@@ -32,8 +33,8 @@ public class CustomizeManager : IAsyncDataContainer
     }
 
     /// <summary> Get specific icons. </summary>
-    public IDalamudTextureWrap GetIcon(uint id)
-        => _icons.LoadIcon(id)!;
+    public ISharedImmediateTexture GetIcon(uint id)
+        => _icons.TextureProvider.GetFromGameIcon(id);
 
     /// <summary> Iterate over all supported genders and clans. </summary>
     public static IEnumerable<(SubRace Clan, Gender Gender)> AllSets()
@@ -47,8 +48,8 @@ public class CustomizeManager : IAsyncDataContainer
 
     public CustomizeManager(ITextureProvider textures, IDataManager gameData, IPluginLog log, NpcCustomizeSet npcCustomizeSet)
     {
-        _icons = new IconStorage(textures, gameData);
-        var stopwatch   = new Stopwatch();
+        _icons = new TextureCache(gameData, textures);
+        var stopwatch = new Stopwatch();
         var tmpTask = Task.Run(() =>
         {
             stopwatch.Start();
@@ -72,7 +73,7 @@ public class CustomizeManager : IAsyncDataContainer
     public bool Finished
         => Awaiter.IsCompletedSuccessfully;
 
-    private readonly        IconStorage    _icons;
+    private readonly        TextureCache   _icons;
     private static readonly int            ListSize           = Clans.Count * Genders.Count;
     private readonly        CustomizeSet[] _customizationSets = new CustomizeSet[ListSize];
 

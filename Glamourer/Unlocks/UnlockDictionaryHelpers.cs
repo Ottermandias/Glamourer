@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Internal.Notifications;
+﻿using Dalamud.Interface.ImGuiNotification;
 using OtterGui.Classes;
 
 namespace Glamourer.Unlocks;

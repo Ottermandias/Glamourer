@@ -227,7 +227,7 @@ public class StateListener : IDisposable
         (_, armor) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
     }
 
-    private void OnMovedEquipment((EquipSlot, uint, StainId)[] items)
+    private void OnMovedEquipment((EquipSlot, uint, StainIds)[] items)
     {
         _objects.Update();
         var (identifier, objects) = _objects.PlayerData;
@@ -250,14 +250,14 @@ public class StateListener : IDisposable
              && current.Weapon == changed.Weapon
              && !state.Sources[slot, false].IsFixed();
 
-            var stainChanged = current.Stain == changed.Stain && !state.Sources[slot, true].IsFixed();
+            var stainChanged = current.Stains == changed.Stains && !state.Sources[slot, true].IsFixed();
 
             switch ((itemChanged, stainChanged))
             {
                 case (true, true):
-                    _manager.ChangeEquip(state, slot, currentItem, current.Stain, ApplySettings.Game);
+                    _manager.ChangeEquip(state, slot, currentItem, current.Stains, ApplySettings.Game);
                     if (slot is EquipSlot.MainHand or EquipSlot.OffHand)
-                        _applier.ChangeWeapon(objects, slot, currentItem, current.Stain);
+                        _applier.ChangeWeapon(objects, slot, currentItem, current.Stains);
                     else
                         _applier.ChangeArmor(objects, slot, current.ToArmor(), !state.Sources[slot, false].IsFixed(),
                             state.ModelData.IsHatVisible());
@@ -265,14 +265,14 @@ public class StateListener : IDisposable
                 case (true, false):
                     _manager.ChangeItem(state, slot, currentItem, ApplySettings.Game);
                     if (slot is EquipSlot.MainHand or EquipSlot.OffHand)
-                        _applier.ChangeWeapon(objects, slot, currentItem, model.Stain);
+                        _applier.ChangeWeapon(objects, slot, currentItem, model.Stains);
                     else
-                        _applier.ChangeArmor(objects, slot, current.ToArmor(model.Stain), !state.Sources[slot, false].IsFixed(),
+                        _applier.ChangeArmor(objects, slot, current.ToArmor(model.Stains), !state.Sources[slot, false].IsFixed(),
                             state.ModelData.IsHatVisible());
                     break;
                 case (false, true):
-                    _manager.ChangeStain(state, slot, current.Stain, ApplySettings.Game);
-                    _applier.ChangeStain(objects, slot, current.Stain);
+                    _manager.ChangeStains(state, slot, current.Stains, ApplySettings.Game);
+                    _applier.ChangeStain(objects, slot, current.Stains);
                     break;
             }
         }
@@ -308,7 +308,7 @@ public class StateListener : IDisposable
                     apply = true;
 
                 if (!state.Sources[slot, true].IsFixed())
-                    _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), ApplySettings.Game);
+                    _manager.ChangeStains(state, slot, state.BaseData.Stain(slot), ApplySettings.Game);
                 else
                     apply = true;
                 break;
@@ -332,7 +332,7 @@ public class StateListener : IDisposable
             else
             {
                 if (weapon.Skeleton.Id != 0)
-                    weapon = weapon.With(newWeapon.Stain);
+                    weapon = weapon.With(newWeapon.Stains);
                 // Force unlock if necessary.
                 _manager.ChangeItem(state, slot, state.BaseData.Item(slot), ApplySettings.Game with { Key = state.Combination });
             }
@@ -341,7 +341,7 @@ public class StateListener : IDisposable
         // Fist Weapon Offhand hack.
         if (slot is EquipSlot.MainHand && weapon.Skeleton.Id is > 1600 and < 1651)
             _lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Skeleton.Id + 50), weapon.Weapon, weapon.Variant,
-                weapon.Stain);
+                weapon.Stains);
 
         _funModule.ApplyFunToWeapon(actor, ref weapon, slot);
     }
@@ -365,7 +365,7 @@ public class StateListener : IDisposable
                 {
                     var item = _items.Identify(slot, actorArmor.Set, actorArmor.Variant);
                     state.BaseData.SetItem(EquipSlot.Head, item);
-                    state.BaseData.SetStain(EquipSlot.Head, actorArmor.Stain);
+                    state.BaseData.SetStain(EquipSlot.Head, actorArmor.Stains);
                     return UpdateState.Change;
                 }
 
@@ -378,9 +378,9 @@ public class StateListener : IDisposable
 
         var baseData = state.BaseData.Armor(slot);
         var change   = UpdateState.NoChange;
-        if (baseData.Stain != armor.Stain)
+        if (baseData.Stains != armor.Stains)
         {
-            state.BaseData.SetStain(slot, armor.Stain);
+            state.BaseData.SetStain(slot, armor.Stains);
             change = UpdateState.Change;
         }
 
@@ -418,7 +418,7 @@ public class StateListener : IDisposable
                     apply = true;
 
                 if (!state.Sources[slot, true].IsFixed())
-                    _manager.ChangeStain(state, slot, state.BaseData.Stain(slot), ApplySettings.Game);
+                    _manager.ChangeStains(state, slot, state.BaseData.Stain(slot), ApplySettings.Game);
                 else
                     apply = true;
 
@@ -503,9 +503,9 @@ public class StateListener : IDisposable
         if (slot is EquipSlot.OffHand && weapon.Value == 0 && actor.GetMainhand().Skeleton.Id is > 1600 and < 1651)
             return UpdateState.NoChange;
 
-        if (baseData.Stain != weapon.Stain)
+        if (baseData.Stains != weapon.Stains)
         {
-            state.BaseData.SetStain(slot, weapon.Stain);
+            state.BaseData.SetStain(slot, weapon.Stains);
             change = UpdateState.Change;
         }
 

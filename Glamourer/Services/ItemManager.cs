@@ -195,16 +195,16 @@ public class ItemManager
     /// The returned stain id is either the input or 0.
     /// The return value is an empty string if there was no problem and a warning otherwise.
     /// </summary>
-    public string ValidateStain(StainId stain, out StainId ret, bool allowUnknown)
+    public string ValidateStain(StainIds stains, out StainIds ret, bool allowUnknown)
     {
-        if (allowUnknown || IsStainValid(stain))
+        if (allowUnknown || stains.All(IsStainValid))
         {
-            ret = stain;
+            ret = stains;
             return string.Empty;
         }
 
-        ret = 0;
-        return $"The Stain {stain} does not exist, reset to unstained.";
+        ret = StainIds.None;
+        return $"The Stain {stains} does not exist, reset to unstained.";
     }
 
     /// <summary> Returns whether an offhand is valid given the required offhand type. </summary>

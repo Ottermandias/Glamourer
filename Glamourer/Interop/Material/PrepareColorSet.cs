@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using OtterGui.Classes;
 using OtterGui.Services;
+using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Interop;
@@ -22,7 +23,7 @@ public sealed unsafe class PrepareColorSet
 
     public PrepareColorSet(HookManager hooks)
         : base("Prepare Color Set ")
-        => _task = hooks.CreateHook<Delegate>(Name, "40 55 56 41 56 48 83 EC ?? 80 BA", Detour, true);
+        => _task = hooks.CreateHook<Delegate>(Name, Sigs.PrepareColorSet, Detour, true);
 
     private readonly Task<Hook<Delegate>> _task;
 
@@ -54,7 +55,7 @@ public sealed unsafe class PrepareColorSet
         return _task.Result.Original(characterBase, material, stainId);
     }
 
-    public static bool TryGetColorTable(CharacterBase* characterBase, MaterialResourceHandle* material, StainId stainId,
+    public static bool TryGetColorTable(CharacterBase* characterBase, MaterialResourceHandle* material, StainIds stainIds,
         out LegacyColorTable table)
     {
         if (material->ColorTable == null)
@@ -64,8 +65,9 @@ public sealed unsafe class PrepareColorSet
         }
 
         var newTable = *(LegacyColorTable*)material->ColorTable;
-        if (stainId.Id != 0)
-            characterBase->ReadStainingTemplate(material, stainId.Id, (Half*)(&newTable));
+        // TODO
+        //if (stainIds.Stain1.Id != 0 || stainIds.Stain2.Id != 0)
+        //    characterBase->ReadStainingTemplate(material, stainId.Id, (Half*)(&newTable));
         table = newTable;
         return true;
     }
@@ -84,21 +86,21 @@ public sealed unsafe class PrepareColorSet
             return false;
         }
 
-        return TryGetColorTable(model.AsCharacterBase, handle, GetStain(), out table);
+        return TryGetColorTable(model.AsCharacterBase, handle, GetStains(), out table);
 
-        StainId GetStain()
+        StainIds GetStains()
         {
             switch (index.DrawObject)
             {
                 case MaterialValueIndex.DrawObjectType.Human:
-                    return index.SlotIndex < 10 ? actor.Model.GetArmor(((uint)index.SlotIndex).ToEquipSlot()).Stain : 0;
+                    return index.SlotIndex < 10 ? actor.Model.GetArmor(((uint)index.SlotIndex).ToEquipSlot()).Stains : StainIds.None;
                 case MaterialValueIndex.DrawObjectType.Mainhand:
-                    var mainhand = (Model)actor.AsCharacter->DrawData.WeaponDataSpan[1].DrawObject;
-                    return mainhand.IsWeapon ? (StainId)mainhand.AsWeapon->ModelUnknown : 0;
+                    var mainhand = (Model)actor.AsCharacter->DrawData.WeaponData[1].DrawObject;
+                    return mainhand.IsWeapon ? StainIds.FromWeapon(*mainhand.AsWeapon) : StainIds.None;
                 case MaterialValueIndex.DrawObjectType.Offhand:
-                    var offhand = (Model)actor.AsCharacter->DrawData.WeaponDataSpan[1].DrawObject;
-                    return offhand.IsWeapon ? (StainId)offhand.AsWeapon->ModelUnknown : 0;
-                default: return 0;
+                    var offhand = (Model)actor.AsCharacter->DrawData.WeaponData[1].DrawObject;
+                    return offhand.IsWeapon ? StainIds.FromWeapon(*offhand.AsWeapon) : StainIds.None;
+                default: return StainIds.None;
             }
         }
     }

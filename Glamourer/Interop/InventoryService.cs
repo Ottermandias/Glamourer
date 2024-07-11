@@ -12,9 +12,9 @@ namespace Glamourer.Interop;
 
 public sealed unsafe class InventoryService : IDisposable, IRequiredService
 {
-    private readonly MovedEquipment                   _movedItemsEvent;
-    private readonly EquippedGearset                  _gearsetEvent;
-    private readonly List<(EquipSlot, uint, StainId)> _itemList = new(12);
+    private readonly MovedEquipment                    _movedItemsEvent;
+    private readonly EquippedGearset                   _gearsetEvent;
+    private readonly List<(EquipSlot, uint, StainIds)> _itemList = new(12);
 
     public InventoryService(MovedEquipment movedItemsEvent, IGameInteropProvider interop, EquippedGearset gearsetEvent)
     {
@@ -60,56 +60,56 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
 
             if (glamourPlateId != 0)
             {
-                void Add(EquipSlot slot, uint glamourId, StainId glamourStain, ref RaptureGearsetModule.GearsetItem item)
+                void Add(EquipSlot slot, uint glamourId, StainIds glamourStain, ref RaptureGearsetModule.GearsetItem item)
                 {
-                    if (item.ItemID == 0)
-                        _itemList.Add((slot, 0, 0));
+                    if (item.ItemId == 0)
+                        _itemList.Add((slot, 0, StainIds.None));
                     else if (glamourId != 0)
                         _itemList.Add((slot, glamourId, glamourStain));
                     else if (item.GlamourId != 0)
-                        _itemList.Add((slot, item.GlamourId, item.Stain));
+                        _itemList.Add((slot, item.GlamourId, StainIds.FromGearsetItem(item)));
                     else
-                        _itemList.Add((slot, FixId(item.ItemID), item.Stain));
+                        _itemList.Add((slot, FixId(item.ItemId), StainIds.FromGearsetItem(item)));
                 }
 
-                var plate = MirageManager.Instance()->GlamourPlatesSpan[glamourPlateId - 1];
-                Add(EquipSlot.MainHand, plate.ItemIds[0],  plate.StainIds[0],  ref entry->ItemsSpan[0]);
-                Add(EquipSlot.OffHand,  plate.ItemIds[1],  plate.StainIds[1],  ref entry->ItemsSpan[1]);
-                Add(EquipSlot.Head,     plate.ItemIds[2],  plate.StainIds[2],  ref entry->ItemsSpan[2]);
-                Add(EquipSlot.Body,     plate.ItemIds[3],  plate.StainIds[3],  ref entry->ItemsSpan[3]);
-                Add(EquipSlot.Hands,    plate.ItemIds[4],  plate.StainIds[4],  ref entry->ItemsSpan[5]);
-                Add(EquipSlot.Legs,     plate.ItemIds[5],  plate.StainIds[5],  ref entry->ItemsSpan[6]);
-                Add(EquipSlot.Feet,     plate.ItemIds[6],  plate.StainIds[6],  ref entry->ItemsSpan[7]);
-                Add(EquipSlot.Ears,     plate.ItemIds[7],  plate.StainIds[7],  ref entry->ItemsSpan[8]);
-                Add(EquipSlot.Neck,     plate.ItemIds[8],  plate.StainIds[8],  ref entry->ItemsSpan[9]);
-                Add(EquipSlot.Wrists,   plate.ItemIds[9],  plate.StainIds[9],  ref entry->ItemsSpan[10]);
-                Add(EquipSlot.RFinger,  plate.ItemIds[10], plate.StainIds[10], ref entry->ItemsSpan[11]);
-                Add(EquipSlot.LFinger,  plate.ItemIds[11], plate.StainIds[11], ref entry->ItemsSpan[12]);
+                var plate = MirageManager.Instance()->GlamourPlates[glamourPlateId - 1];
+                Add(EquipSlot.MainHand, plate.ItemIds[0],  StainIds.FromGlamourPlate(plate, 0),  ref entry->Items[0]);
+                Add(EquipSlot.OffHand,  plate.ItemIds[1],  StainIds.FromGlamourPlate(plate, 1),  ref entry->Items[1]);
+                Add(EquipSlot.Head,     plate.ItemIds[2],  StainIds.FromGlamourPlate(plate, 2),  ref entry->Items[2]);
+                Add(EquipSlot.Body,     plate.ItemIds[3],  StainIds.FromGlamourPlate(plate, 3),  ref entry->Items[3]);
+                Add(EquipSlot.Hands,    plate.ItemIds[4],  StainIds.FromGlamourPlate(plate, 4),  ref entry->Items[5]);
+                Add(EquipSlot.Legs,     plate.ItemIds[5],  StainIds.FromGlamourPlate(plate, 5),  ref entry->Items[6]);
+                Add(EquipSlot.Feet,     plate.ItemIds[6],  StainIds.FromGlamourPlate(plate, 6),  ref entry->Items[7]);
+                Add(EquipSlot.Ears,     plate.ItemIds[7],  StainIds.FromGlamourPlate(plate, 7),  ref entry->Items[8]);
+                Add(EquipSlot.Neck,     plate.ItemIds[8],  StainIds.FromGlamourPlate(plate, 8),  ref entry->Items[9]);
+                Add(EquipSlot.Wrists,   plate.ItemIds[9],  StainIds.FromGlamourPlate(plate, 9),  ref entry->Items[10]);
+                Add(EquipSlot.RFinger,  plate.ItemIds[10], StainIds.FromGlamourPlate(plate, 10), ref entry->Items[11]);
+                Add(EquipSlot.LFinger,  plate.ItemIds[11], StainIds.FromGlamourPlate(plate, 11), ref entry->Items[12]);
             }
             else
             {
                 void Add(EquipSlot slot, ref RaptureGearsetModule.GearsetItem item)
                 {
-                    if (item.ItemID == 0)
-                        _itemList.Add((slot, 0, 0));
+                    if (item.ItemId == 0)
+                        _itemList.Add((slot, 0, StainIds.None));
                     else if (item.GlamourId != 0)
-                        _itemList.Add((slot, item.GlamourId, item.Stain));
+                        _itemList.Add((slot, item.GlamourId, StainIds.FromGearsetItem(item)));
                     else
-                        _itemList.Add((slot, FixId(item.ItemID), item.Stain));
+                        _itemList.Add((slot, FixId(item.ItemId), StainIds.FromGearsetItem(item)));
                 }
 
-                Add(EquipSlot.MainHand, ref entry->ItemsSpan[0]);
-                Add(EquipSlot.OffHand,  ref entry->ItemsSpan[1]);
-                Add(EquipSlot.Head,     ref entry->ItemsSpan[2]);
-                Add(EquipSlot.Body,     ref entry->ItemsSpan[3]);
-                Add(EquipSlot.Hands,    ref entry->ItemsSpan[5]);
-                Add(EquipSlot.Legs,     ref entry->ItemsSpan[6]);
-                Add(EquipSlot.Feet,     ref entry->ItemsSpan[7]);
-                Add(EquipSlot.Ears,     ref entry->ItemsSpan[8]);
-                Add(EquipSlot.Neck,     ref entry->ItemsSpan[9]);
-                Add(EquipSlot.Wrists,   ref entry->ItemsSpan[10]);
-                Add(EquipSlot.RFinger,  ref entry->ItemsSpan[11]);
-                Add(EquipSlot.LFinger,  ref entry->ItemsSpan[12]);
+                Add(EquipSlot.MainHand, ref entry->Items[0]);
+                Add(EquipSlot.OffHand,  ref entry->Items[1]);
+                Add(EquipSlot.Head,     ref entry->Items[2]);
+                Add(EquipSlot.Body,     ref entry->Items[3]);
+                Add(EquipSlot.Hands,    ref entry->Items[5]);
+                Add(EquipSlot.Legs,     ref entry->Items[6]);
+                Add(EquipSlot.Feet,     ref entry->Items[7]);
+                Add(EquipSlot.Ears,     ref entry->Items[8]);
+                Add(EquipSlot.Neck,     ref entry->Items[9]);
+                Add(EquipSlot.Wrists,   ref entry->Items[10]);
+                Add(EquipSlot.RFinger,  ref entry->Items[11]);
+                Add(EquipSlot.LFinger,  ref entry->Items[12]);
             }
 
             _movedItemsEvent.Invoke(_itemList.ToArray());
@@ -155,7 +155,7 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
         return ret;
     }
 
-    private static bool InvokeSource(InventoryType sourceContainer, uint sourceSlot, out (EquipSlot, uint, StainId) tuple)
+    private static bool InvokeSource(InventoryType sourceContainer, uint sourceSlot, out (EquipSlot, uint, StainIds) tuple)
     {
         tuple = default;
         if (sourceContainer is not InventoryType.EquippedItems)
@@ -165,12 +165,12 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
         if (slot is EquipSlot.Unknown)
             return false;
 
-        tuple = (slot, 0u, 0);
+        tuple = (slot, 0u, StainIds.None);
         return true;
     }
 
     private static bool InvokeTarget(InventoryManager* manager, InventoryType targetContainer, uint targetSlot,
-        out (EquipSlot, uint, StainId) tuple)
+        out (EquipSlot, uint, StainIds) tuple)
     {
         tuple = default;
         if (targetContainer is not InventoryType.EquippedItems)
@@ -189,7 +189,7 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
         if (item == null)
             return false;
 
-        tuple = (slot, item->GlamourID != 0 ? item->GlamourID : item->ItemID, item->Stain);
+        tuple = (slot, item->GlamourId != 0 ? item->GlamourId : item->ItemId, new StainIds(item->Stains));
         return true;
     }
 

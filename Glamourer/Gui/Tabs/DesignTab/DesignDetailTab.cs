@@ -1,5 +1,5 @@
 ﻿using Dalamud.Interface;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Services;
 using ImGuiNET;

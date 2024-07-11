@@ -1,4 +1,4 @@
-﻿using Dalamud;
+﻿using Dalamud.Game;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
@@ -8,6 +8,7 @@ using Glamourer.GameData;
 using Glamourer.Events;
 using Glamourer.Services;
 using Lumina.Excel.GeneratedSheets;
+using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Unlocks;
@@ -127,8 +128,8 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     }
 
     private delegate void SetUnlockLinkValueDelegate(nint uiState, uint data, byte value);
-
-    [Signature("48 83 EC ?? 8B C2 44 8B D2", DetourName = nameof(SetUnlockLinkValueDetour))]
+    
+    [Signature(Sigs.SetUnlockLinkValue, DetourName = nameof(SetUnlockLinkValueDetour))]
     private readonly Hook<SetUnlockLinkValueDelegate> _setUnlockLinkValueHook = null!;
 
     private void SetUnlockLinkValueDetour(nint uiState, uint data, byte value)

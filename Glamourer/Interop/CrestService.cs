@@ -4,6 +4,7 @@ using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using OtterGui.Classes;
+using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 
@@ -30,9 +31,9 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
     {
         interop.InitializeFromAttributes(this);
         _humanSetFreeCompanyCrestVisibleOnSlot =
-            interop.HookFromAddress<SetCrestDelegateIntern>(_humanVTable[96], HumanSetFreeCompanyCrestVisibleOnSlotDetour);
+            interop.HookFromAddress<SetCrestDelegateIntern>(_humanVTable[109], HumanSetFreeCompanyCrestVisibleOnSlotDetour);
         _weaponSetFreeCompanyCrestVisibleOnSlot =
-            interop.HookFromAddress<SetCrestDelegateIntern>(_weaponVTable[96], WeaponSetFreeCompanyCrestVisibleOnSlotDetour);
+            interop.HookFromAddress<SetCrestDelegateIntern>(_weaponVTable[109], WeaponSetFreeCompanyCrestVisibleOnSlotDetour);
         _humanSetFreeCompanyCrestVisibleOnSlot.Enable();
         _weaponSetFreeCompanyCrestVisibleOnSlot.Enable();
         _crestChangeHook.Enable();
@@ -63,7 +64,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
 
     private delegate void CrestChangeDelegate(Character* character, byte crestFlags);
 
-    [Signature("E8 ?? ?? ?? ?? 48 8B 55 ?? 49 8B CE E8", DetourName = nameof(CrestChangeDetour))]
+    [Signature(Sigs.CrestChange, DetourName = nameof(CrestChangeDetour))]
     private readonly Hook<CrestChangeDelegate> _crestChangeHook = null!;
 
     private void CrestChangeDetour(Character* character, byte crestFlags)
@@ -96,8 +97,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
                 if (!model.IsHuman)
                     return false;
 
-                var getter = (delegate* unmanaged<Human*, byte, byte>)((nint*)model.AsCharacterBase->VTable)[95];
-                return getter(model.AsHuman, index) != 0;
+                return model.AsHuman->IsFreeCompanyCrestVisibleOnSlot(index) != 0;
             }
             case CrestType.Offhand:
             {
@@ -105,8 +105,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
                 if (!model.IsWeapon)
                     return false;
 
-                var getter = (delegate* unmanaged<Weapon*, byte, byte>)((nint*)model.AsCharacterBase->VTable)[95];
-                return getter(model.AsWeapon, index) != 0;
+                return model.AsWeapon->IsFreeCompanyCrestVisibleOnSlot(index) != 0;
             }
         }
 
@@ -117,10 +116,10 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
 
     private delegate void SetCrestDelegateIntern(DrawObject* drawObject, byte slot, byte visible);
 
-    [Signature(global::Penumbra.GameData.Sigs.HumanVTable, ScanType = ScanType.StaticAddress)]
+    [Signature(Sigs.HumanVTable, ScanType = ScanType.StaticAddress)]
     private readonly nint* _humanVTable = null!;
 
-    [Signature(global::Penumbra.GameData.Sigs.WeaponVTable, ScanType = ScanType.StaticAddress)]
+    [Signature(Sigs.WeaponVTable, ScanType = ScanType.StaticAddress)]
     private readonly nint* _weaponVTable = null!;
 
     private readonly Hook<SetCrestDelegateIntern> _humanSetFreeCompanyCrestVisibleOnSlot;

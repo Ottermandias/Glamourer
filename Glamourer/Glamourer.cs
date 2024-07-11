@@ -28,7 +28,7 @@ public class Glamourer : IDalamudPlugin
 
     private readonly ServiceManager _services;
 
-    public Glamourer(DalamudPluginInterface pluginInterface)
+    public Glamourer(IDalamudPluginInterface pluginInterface)
     {
         try
         {
@@ -128,7 +128,7 @@ public class Glamourer : IDalamudPlugin
         [
             "Penumbra", "MareSynchronos", "CustomizePlus", "SimpleHeels", "VfxEditor", "heliosphere-plugin", "Ktisis", "Brio", "DynamicBridge",
         ];
-        var plugins = _services.GetService<DalamudPluginInterface>().InstalledPlugins
+        var plugins = _services.GetService<IDalamudPluginInterface>().InstalledPlugins
             .GroupBy(p => p.InternalName)
             .ToDictionary(g => g.Key, g =>
             {
