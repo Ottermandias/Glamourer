@@ -14,11 +14,11 @@ namespace Glamourer.GameData;
 internal class CustomizeSetFactory(
     IDataManager _gameData,
     IPluginLog _log,
-    IconStorage _icons,
+    TextureCache _icons,
     NpcCustomizeSet _npcCustomizeSet,
     ColorParameters _colors)
 {
-    public CustomizeSetFactory(IDataManager gameData, IPluginLog log, IconStorage icons, NpcCustomizeSet npcCustomizeSet)
+    public CustomizeSetFactory(IDataManager gameData, IPluginLog log, TextureCache icons, NpcCustomizeSet npcCustomizeSet)
         : this(gameData, log, icons, npcCustomizeSet, new ColorParameters(gameData, log))
     { }
 

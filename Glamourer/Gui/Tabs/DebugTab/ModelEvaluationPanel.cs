@@ -177,7 +177,8 @@ public unsafe class ModelEvaluationPanel(
     {
         using var id = ImRaii.PushId("Wetness");
         ImGuiUtil.DrawTableColumn("Wetness");
-        ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.AsCharacter->IsGPoseWet ? "GPose" : "None" : "No Character");
+        // ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.AsCharacter->IsGPoseWet ? "GPose" : "None" : "No Character");
+        ImGuiUtil.DrawTableColumn(actor.IsCharacter ? "None" : "No Character"); // Until IsGPoseWet is implemented in Penumbra.GameData
         var modelString = model.IsCharacterBase
             ? $"{model.AsCharacterBase->SwimmingWetness:F4} Swimming\n"
           + $"{model.AsCharacterBase->WeatherWetness:F4} Weather\n"
@@ -190,13 +191,19 @@ public unsafe class ModelEvaluationPanel(
             return;
 
         if (ImGui.SmallButton("GPose On"))
-            actor.AsCharacter->IsGPoseWet = true;
+        {
+            // actor.AsCharacter->IsGPoseWet = true;
+        }
         ImGui.SameLine();
         if (ImGui.SmallButton("GPose Off"))
-            actor.AsCharacter->IsGPoseWet = false;
+        {
+            // actor.AsCharacter->IsGPoseWet = false;
+        }
         ImGui.SameLine();
         if (ImGui.SmallButton("GPose Toggle"))
-            actor.AsCharacter->IsGPoseWet = !actor.AsCharacter->IsGPoseWet;
+        {
+            // actor.AsCharacter->IsGPoseWet = !actor.AsCharacter->IsGPoseWet;
+        }
     }
 
     private void DrawEquip(Actor actor, Model model)
@@ -214,10 +221,10 @@ public unsafe class ModelEvaluationPanel(
 
             if (ImGui.SmallButton("Change Piece"))
                 _updateSlotService.UpdateArmor(model, slot,
-                    new CharacterArmor((PrimaryId)(slot == EquipSlot.Hands ? 6064 : slot == EquipSlot.Head ? 6072 : 1), 1, 0));
+                    new CharacterArmor((PrimaryId)(slot == EquipSlot.Hands ? 6064 : slot == EquipSlot.Head ? 6072 : 1), 1, new()));
             ImGui.SameLine();
             if (ImGui.SmallButton("Change Stain"))
-                _updateSlotService.UpdateStain(model, slot, 5);
+                _updateSlotService.UpdateStain(model, slot, StainIds.None);
             ImGui.SameLine();
             if (ImGui.SmallButton("Reset"))
                 _updateSlotService.UpdateSlot(model, slot, actor.GetArmor(slot));

@@ -54,7 +54,7 @@ public sealed unsafe class PrepareColorSet
         return _task.Result.Original(characterBase, material, stainId);
     }
 
-    public static bool TryGetColorTable(CharacterBase* characterBase, MaterialResourceHandle* material, StainId stainId,
+    public static bool TryGetColorTable(CharacterBase* characterBase, MaterialResourceHandle* material, StainIds stainIds,
         out LegacyColorTable table)
     {
         if (material->ColorTable == null)
@@ -64,8 +64,8 @@ public sealed unsafe class PrepareColorSet
         }
 
         var newTable = *(LegacyColorTable*)material->ColorTable;
-        if (stainId.Id != 0)
-            characterBase->ReadStainingTemplate(material, stainId.Id, (Half*)(&newTable));
+        if (stainIds != StainIds.None)
+            characterBase->ReadStainingTemplate(material, stainIds, (Half*)(&newTable));
         table = newTable;
         return true;
     }
@@ -84,21 +84,21 @@ public sealed unsafe class PrepareColorSet
             return false;
         }
 
-        return TryGetColorTable(model.AsCharacterBase, handle, GetStain(), out table);
+        return TryGetColorTable(model.AsCharacterBase, handle, GetStains(), out table);
 
-        StainId GetStain()
+        StainIds GetStains()
         {
             switch (index.DrawObject)
             {
                 case MaterialValueIndex.DrawObjectType.Human:
-                    return index.SlotIndex < 10 ? actor.Model.GetArmor(((uint)index.SlotIndex).ToEquipSlot()).Stain : 0;
+                    return index.SlotIndex < 10 ? actor.Model.GetArmor(((uint)index.SlotIndex).ToEquipSlot()).Stains : new();
                 case MaterialValueIndex.DrawObjectType.Mainhand:
                     var mainhand = (Model)actor.AsCharacter->DrawData.WeaponDataSpan[1].DrawObject;
-                    return mainhand.IsWeapon ? (StainId)mainhand.AsWeapon->ModelUnknown : 0;
+                    return mainhand.IsWeapon ? (StainId)mainhand.AsWeapon->ModelUnknown : new();
                 case MaterialValueIndex.DrawObjectType.Offhand:
                     var offhand = (Model)actor.AsCharacter->DrawData.WeaponDataSpan[1].DrawObject;
-                    return offhand.IsWeapon ? (StainId)offhand.AsWeapon->ModelUnknown : 0;
-                default: return 0;
+                    return offhand.IsWeapon ? (StainId)offhand.AsWeapon->ModelUnknown : new();
+                default: return new();
             }
         }
     }

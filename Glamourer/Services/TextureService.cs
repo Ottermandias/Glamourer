@@ -12,7 +12,7 @@ namespace Glamourer.Services;
 public sealed class TextureService(UiBuilder uiBuilder, IDataManager dataManager, ITextureProvider textureProvider)
     : TextureCache(dataManager, textureProvider), IDisposable
 {
-    private readonly ISharedImmediateTexture?[] _slotIcons = CreateSlotIcons(uiBuilder);
+    private readonly IDalamudTextureWrap?[] _slotIcons = CreateSlotIcons(uiBuilder);
 
     public (nint, Vector2, bool) GetIcon(EquipItem item, EquipSlot slot)
     {
@@ -34,9 +34,9 @@ public sealed class TextureService(UiBuilder uiBuilder, IDataManager dataManager
         }
     }
 
-    private static ISharedImmediateTexture?[] CreateSlotIcons(UiBuilder uiBuilder)
+    private static IDalamudTextureWrap?[] CreateSlotIcons(UiBuilder uiBuilder)
     {
-        var ret = new ISharedImmediateTexture?[12];
+        var ret = new IDalamudTextureWrap?[12];
 
         using var uldWrapper = uiBuilder.LoadUld("ui/uld/ArmouryBoard.uld");
 
@@ -65,7 +65,7 @@ public sealed class TextureService(UiBuilder uiBuilder, IDataManager dataManager
         {
             try
             {
-                ret[slot.ToIndex()] = (ISharedImmediateTexture?)uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", index)!;
+                ret[slot.ToIndex()] = uldWrapper.LoadTexturePart("ui/uld/ArmouryBoard_hr1.tex", index)!;
             }
             catch (Exception ex)
             {

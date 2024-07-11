@@ -194,7 +194,7 @@ public class DesignConverter(
                 item = ItemManager.NothingItem(slot);
             }
 
-            yield return (slot, item, armor.Stain);
+            yield return (slot, item, armor.Stains.Stain1); // To change
         }
 
         var mh = _items.Identify(EquipSlot.MainHand, mainhand.Skeleton, mainhand.Weapon, mainhand.Variant);
@@ -204,7 +204,7 @@ public class DesignConverter(
             mh = _items.DefaultSword;
         }
 
-        yield return (EquipSlot.MainHand, mh, mainhand.Stain);
+        yield return (EquipSlot.MainHand, mh, mainhand.Stains.Stain1); // To change
 
         var oh = _items.Identify(EquipSlot.OffHand, offhand.Skeleton, offhand.Weapon, offhand.Variant, mh.Type);
         if (!skipWarnings && !oh.Valid)
@@ -215,7 +215,7 @@ public class DesignConverter(
                 oh = ItemManager.NothingItem(FullEquipType.Shield);
         }
 
-        yield return (EquipSlot.OffHand, oh, offhand.Stain);
+        yield return (EquipSlot.OffHand, oh, offhand.Stains.Stain1); // To change
     }
 
     private static void ComputeMaterials(DesignMaterialManager manager, in StateMaterialManager materials,

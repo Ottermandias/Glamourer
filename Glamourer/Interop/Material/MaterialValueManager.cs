@@ -203,7 +203,7 @@ public struct MaterialValueState(
         => DrawData.Skeleton == rhsData.Skeleton
          && DrawData.Weapon == rhsData.Weapon
          && DrawData.Variant == rhsData.Variant
-         && DrawData.Stain == rhsData.Stain
+         && DrawData.Stains == rhsData.Stains
          && Game.NearEqual(rhsRow);
 
     public readonly MaterialValueDesign Convert()

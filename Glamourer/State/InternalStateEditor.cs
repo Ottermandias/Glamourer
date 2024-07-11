@@ -184,13 +184,13 @@ public class InternalStateEditor(
     }
 
     /// <summary> Change only the stain of an equipment piece. </summary>
-    public bool ChangeStain(ActorState state, EquipSlot slot, StainId stain, StateSource source, out StainId oldStain, uint key = 0)
+    public bool ChangeStain(ActorState state, EquipSlot slot, StainIds stains, StateSource source, out StainId oldStain, uint key = 0)
     {
         oldStain = state.ModelData.Stain(slot);
         if (!state.CanUnlock(key))
             return false;
 
-        state.ModelData.SetStain(slot, stain);
+        state.ModelData.SetStain(slot, stains);
         state.Sources[slot, true] = source;
         return true;
     }

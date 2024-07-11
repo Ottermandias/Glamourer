@@ -106,7 +106,7 @@ public unsafe class FunModule : IDisposable
          && actor.OnlineStatus is OnlineStatus.PvEMentor or OnlineStatus.PvPMentor or OnlineStatus.TradeMentor
          && slot.IsEquipment())
         {
-            armor = new CharacterArmor(6117, 1, 0);
+            armor = new CharacterArmor(6117, 1, new());
             return;
         }
 
@@ -207,8 +207,10 @@ public unsafe class FunModule : IDisposable
 
     private void SetRandomDye(ref CharacterArmor armor)
     {
-        var stainIdx = _rng.Next(0, _stains.Length - 1);
-        armor.Stain = _stains[stainIdx];
+        var stainIdx1 = _rng.Next(0, _stains.Length - 1);
+        var stainIdx2 = _rng.Next(0, _stains.Length - 1);
+
+        armor.Stains = new(_stains[stainIdx1], _stains[stainIdx2]);
     }
 
     private void SetRandomItem(EquipSlot slot, ref CharacterArmor armor)
@@ -235,17 +237,17 @@ public unsafe class FunModule : IDisposable
     private static IReadOnlyList<CharacterArmor> DolphinBodies
         =>
         [
-            new CharacterArmor(6089, 1, 4), // Toad
-            new CharacterArmor(6089, 1, 4), // Toad
-            new CharacterArmor(6089, 1, 4), // Toad
-            new CharacterArmor(6023, 1, 4), // Swine
-            new CharacterArmor(6023, 1, 4), // Swine
-            new CharacterArmor(6023, 1, 4), // Swine
-            new CharacterArmor(6133, 1, 4), // Gaja
-            new CharacterArmor(6182, 1, 3), // Imp
-            new CharacterArmor(6182, 1, 3), // Imp
-            new CharacterArmor(6182, 1, 4), // Imp
-            new CharacterArmor(6182, 1, 4), // Imp
+            new CharacterArmor(6089, 1, new(4, 4)), // Toad
+            new CharacterArmor(6089, 1, new(4, 4)), // Toad
+            new CharacterArmor(6089, 1, new(4, 4)), // Toad
+            new CharacterArmor(6023, 1, new(4, 4)), // Swine
+            new CharacterArmor(6023, 1, new(4, 4)), // Swine
+            new CharacterArmor(6023, 1, new(4, 4)), // Swine
+            new CharacterArmor(6133, 1, new(4, 4)), // Gaja
+            new CharacterArmor(6182, 1, new(3, 3)), // Imp
+            new CharacterArmor(6182, 1, new(3, 3)), // Imp
+            new CharacterArmor(6182, 1, new(4, 4)), // Imp
+            new CharacterArmor(6182, 1, new(4, 4)), // Imp
         ];
 
     private void SetDolphin(EquipSlot slot, ref CharacterArmor armor)
@@ -253,7 +255,7 @@ public unsafe class FunModule : IDisposable
         armor = slot switch
         {
             EquipSlot.Body => DolphinBodies[_rng.Next(0, DolphinBodies.Count - 1)],
-            EquipSlot.Head => new CharacterArmor(5040, 1, 0),
+            EquipSlot.Head => new CharacterArmor(5040, 1, new(0, 0)),
             _              => armor,
         };
     }
@@ -270,7 +272,7 @@ public unsafe class FunModule : IDisposable
 
     private static void SetCrown(Span<CharacterArmor> armor)
     {
-        var clown = new CharacterArmor(6117, 1, 0);
+        var clown = new CharacterArmor(6117, 1, new());
         armor[0] = clown;
         armor[1] = clown;
         armor[2] = clown;

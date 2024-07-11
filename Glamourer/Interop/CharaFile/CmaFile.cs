@@ -3,6 +3,7 @@ using Glamourer.Services;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using System.Diagnostics.Tracing;
 
 namespace Glamourer.Interop.CharaFile;
 
@@ -61,7 +62,7 @@ public sealed class CmaFile
                 var armor = ((CharacterArmor*)ptr)[idx];
                 var item  = items.Identify(slot, armor.Set, armor.Variant);
                 data.SetItem(slot, item);
-                data.SetStain(slot, armor.Stain);
+                data.SetStain(slot, armor.Stains);
             }
 
             data.Customize.Read(ptr);
@@ -74,18 +75,18 @@ public sealed class CmaFile
         if (mainhand == null)
         {
             data.SetItem(EquipSlot.MainHand, items.DefaultSword);
-            data.SetStain(EquipSlot.MainHand, 0);
+            data.SetStain(EquipSlot.MainHand, StainIds.None);
             return;
         }
 
         var set     = mainhand["Item1"]?.ToObject<ushort>() ?? items.DefaultSword.PrimaryId;
         var type    = mainhand["Item2"]?.ToObject<ushort>() ?? items.DefaultSword.SecondaryId;
         var variant = mainhand["Item3"]?.ToObject<byte>() ?? items.DefaultSword.Variant;
-        var stain   = mainhand["Item4"]?.ToObject<byte>() ?? 0;
+        var stains  = mainhand["Item4"]?.ToObject<StainIds>() ?? StainIds.None;
         var item    = items.Identify(EquipSlot.MainHand, set, type, variant);
 
         data.SetItem(EquipSlot.MainHand, item.Valid ? item : items.DefaultSword);
-        data.SetStain(EquipSlot.MainHand, stain);
+        data.SetStain(EquipSlot.MainHand, stains);
     }
 
     private static void ParseOffHand(ItemManager items, JObject jObj, ref DesignData data)

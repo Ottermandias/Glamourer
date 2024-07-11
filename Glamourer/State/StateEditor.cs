@@ -90,21 +90,21 @@ public class StateEditor(
     }
 
     /// <inheritdoc/>
-    public void ChangeEquip(object data, EquipSlot slot, EquipItem? item, StainId? stain, ApplySettings settings)
+    public void ChangeEquip(object data, EquipSlot slot, EquipItem? item, StainIds? stains, ApplySettings settings)
     {
-        switch (item.HasValue, stain.HasValue)
+        switch (item.HasValue, stains.HasValue)
         {
             case (false, false): return;
             case (true, false):
                 ChangeItem(data, slot, item!.Value, settings);
                 return;
             case (false, true):
-                ChangeStain(data, slot, stain!.Value, settings);
+                ChangeStain(data, slot, stains!.Value, settings);
                 return;
         }
 
         var state = (ActorState)data;
-        if (!Editor.ChangeEquip(state, slot, item ?? state.ModelData.Item(slot), stain ?? state.ModelData.Stain(slot), settings.Source,
+        if (!Editor.ChangeEquip(state, slot, item ?? state.ModelData.Item(slot), stains ?? state.ModelData.Stain(slot), settings.Source,
                 out var old, out var oldStain, settings.Key))
             return;
 
@@ -115,25 +115,25 @@ public class StateEditor(
                 item!.Value.Type != (slot is EquipSlot.MainHand ? state.BaseData.MainhandType : state.BaseData.OffhandType));
 
         if (slot is EquipSlot.MainHand)
-            ApplyMainhandPeriphery(state, item, stain, settings);
+            ApplyMainhandPeriphery(state, item, stains, settings);
 
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item!.Value.Name} ({item.Value.ItemId}) and its stain from {oldStain.Id} to {stain!.Value.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(type,                    settings.Source, state, actors, (old, item!.Value, slot));
-        StateChanged.Invoke(StateChangeType.Stain, settings.Source, state, actors, (oldStain, stain!.Value, slot));
+        StateChanged.Invoke(StateChangeType.Stain, settings.Source, state, actors, (oldStain, stains!.Value, slot));
     }
 
     /// <inheritdoc/>
-    public void ChangeStain(object data, EquipSlot slot, StainId stain, ApplySettings settings)
+    public void ChangeStain(object data, EquipSlot slot, StainIds stains, ApplySettings settings)
     {
         var state = (ActorState)data;
-        if (!Editor.ChangeStain(state, slot, stain, settings.Source, out var old, settings.Key))
+        if (!Editor.ChangeStain(state, slot, stains, settings.Source, out var old, settings.Key))
             return;
 
         var actors = Applier.ChangeStain(state, slot, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old.Id} to {stain.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Stain, settings.Source, state, actors, (old, stain, slot));
+            $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old.Id} to {stains.ToString()}. [Affecting {actors.ToLazyString("nothing")}.]");
+        StateChanged.Invoke(StateChangeType.Stain, settings.Source, state, actors, (old, stains, slot));
     }
 
     /// <inheritdoc/>
@@ -392,19 +392,24 @@ public class StateEditor(
 
 
     /// <summary> Apply offhand item and potentially gauntlets if configured. </summary>
-    private void ApplyMainhandPeriphery(ActorState state, EquipItem? newMainhand, StainId? newStain, ApplySettings settings)
+    private void ApplyMainhandPeriphery(ActorState state, EquipItem? newMainhand, StainIds? newStains, ApplySettings settings)
     {
         if (!Config.ChangeEntireItem || !settings.Source.IsManual())
             return;
 
         var mh      = newMainhand ?? state.ModelData.Item(EquipSlot.MainHand);
         var offhand = newMainhand != null ? Items.GetDefaultOffhand(mh) : state.ModelData.Item(EquipSlot.OffHand);
-        var stain   = newStain ?? state.ModelData.Stain(EquipSlot.MainHand);
+        var stains   = newStains ?? state.ModelData.Stain(EquipSlot.MainHand);
         if (offhand.Valid)
-            ChangeEquip(state, EquipSlot.OffHand, offhand, stain, settings);
+            ChangeEquip(state, EquipSlot.OffHand, offhand, stains, settings);
 
         if (mh is { Type: FullEquipType.Fists } && Items.ItemData.Tertiary.TryGetValue(mh.ItemId, out var gauntlets))
             ChangeEquip(state, EquipSlot.Hands, newMainhand != null ? gauntlets : state.ModelData.Item(EquipSlot.Hands),
-                stain,         settings);
+                stains,         settings);
+    }
+
+    public void ChangeEquip(object data, EquipSlot slot, EquipItem? item, StainId? stain, ApplySettings settings = default)
+    {
+        throw new NotImplementedException();
     }
 }

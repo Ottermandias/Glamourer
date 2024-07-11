@@ -125,7 +125,7 @@ public unsafe struct DesignData
             return false;
 
         _itemIds[index]                = item.ItemId.Id;
-        _iconIds[index]                = item.IconId.Id;
+        _iconIds[index]                = (ushort)item.IconId.Id;
         _equipmentBytes[4 * index + 0] = (byte)item.PrimaryId.Id;
         _equipmentBytes[4 * index + 1] = (byte)(item.PrimaryId.Id >> 8);
         _equipmentBytes[4 * index + 2] = item.Variant.Id;
@@ -158,21 +158,21 @@ public unsafe struct DesignData
         return true;
     }
 
-    public bool SetStain(EquipSlot slot, StainId stain)
+    public bool SetStain(EquipSlot slot, StainIds stains)
         => slot.ToIndex() switch
         {
-            0  => SetIfDifferent(ref _equipmentBytes[3],  stain.Id),
-            1  => SetIfDifferent(ref _equipmentBytes[7],  stain.Id),
-            2  => SetIfDifferent(ref _equipmentBytes[11], stain.Id),
-            3  => SetIfDifferent(ref _equipmentBytes[15], stain.Id),
-            4  => SetIfDifferent(ref _equipmentBytes[19], stain.Id),
-            5  => SetIfDifferent(ref _equipmentBytes[23], stain.Id),
-            6  => SetIfDifferent(ref _equipmentBytes[27], stain.Id),
-            7  => SetIfDifferent(ref _equipmentBytes[31], stain.Id),
-            8  => SetIfDifferent(ref _equipmentBytes[35], stain.Id),
-            9  => SetIfDifferent(ref _equipmentBytes[39], stain.Id),
-            10 => SetIfDifferent(ref _equipmentBytes[43], stain.Id),
-            11 => SetIfDifferent(ref _equipmentBytes[47], stain.Id),
+            0  => SetIfDifferent(ref _equipmentBytes[3],  stains),
+            1  => SetIfDifferent(ref _equipmentBytes[7],  stains),
+            2  => SetIfDifferent(ref _equipmentBytes[11], stains),
+            3  => SetIfDifferent(ref _equipmentBytes[15], stains),
+            4  => SetIfDifferent(ref _equipmentBytes[19], stains),
+            5  => SetIfDifferent(ref _equipmentBytes[23], stains),
+            6  => SetIfDifferent(ref _equipmentBytes[27], stains),
+            7  => SetIfDifferent(ref _equipmentBytes[31], stains),
+            8  => SetIfDifferent(ref _equipmentBytes[35], stains),
+            9  => SetIfDifferent(ref _equipmentBytes[39], stains),
+            10 => SetIfDifferent(ref _equipmentBytes[43], stains),
+            11 => SetIfDifferent(ref _equipmentBytes[47], stains),
             _  => false,
         };
 
@@ -260,15 +260,15 @@ public unsafe struct DesignData
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             SetItem(slot, ItemManager.NothingItem(slot));
-            SetStain(slot, 0);
+            SetStain(slot, StainIds.None);
             SetCrest(slot.ToCrestFlag(), false);
         }
 
         SetItem(EquipSlot.MainHand, items.DefaultSword);
-        SetStain(EquipSlot.MainHand, 0);
+        SetStain(EquipSlot.MainHand, StainIds.None);
         SetCrest(CrestFlag.MainHand, false);
         SetItem(EquipSlot.OffHand, ItemManager.NothingItem(FullEquipType.Shield));
-        SetStain(EquipSlot.OffHand, 0);
+        SetStain(EquipSlot.OffHand, StainIds.None);
         SetCrest(CrestFlag.OffHand, false);
     }
 
