@@ -227,14 +227,14 @@ public class StateListener : IDisposable
         (_, armor) = _items.RestrictedGear.ResolveRestricted(armor, slot, customize.Race, customize.Gender);
     }
 
-    private void OnMovedEquipment((EquipSlot, uint, StainId)[] items)
+    private void OnMovedEquipment((EquipSlot, uint, StainIds)[] items)
     {
         _objects.Update();
         var (identifier, objects) = _objects.PlayerData;
         if (!identifier.IsValid || !_manager.TryGetValue(identifier, out var state))
             return;
 
-        foreach (var (slot, item, stain) in items)
+        foreach (var (slot, item, stains) in items)
         {
             var currentItem = state.BaseData.Item(slot);
             var model = slot is EquipSlot.MainHand or EquipSlot.OffHand
@@ -244,7 +244,7 @@ public class StateListener : IDisposable
             if (model.Value == current.Value || !_items.ItemData.TryGetValue(item, EquipSlot.MainHand, out var changedItem))
                 continue;
 
-            var changed = changedItem.Weapon(stain);
+            var changed = changedItem.Weapon(stains);
             var itemChanged = current.Skeleton == changed.Skeleton
              && current.Variant == changed.Variant
              && current.Weapon == changed.Weapon

@@ -11,7 +11,7 @@ namespace Glamourer.Events;
 /// </list>
 /// </summary>
 public sealed class MovedEquipment() 
-    : EventWrapper<(EquipSlot, uint, StainId)[], MovedEquipment.Priority>(nameof(MovedEquipment))
+    : EventWrapper<(EquipSlot, uint, StainIds)[], MovedEquipment.Priority>(nameof(MovedEquipment))
 {
     public enum Priority
     {

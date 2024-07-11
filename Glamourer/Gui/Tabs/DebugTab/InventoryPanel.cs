@@ -43,8 +43,8 @@ public unsafe class InventoryPanel : IGameDataDrawer
             }
             else
             {
-                ImGuiUtil.DrawTableColumn(item->ItemID.ToString());
-                ImGuiUtil.DrawTableColumn(item->GlamourID.ToString());
+                ImGuiUtil.DrawTableColumn(item->ItemId.ToString());
+                ImGuiUtil.DrawTableColumn(item->GlamourId.ToString());
                 ImGui.TableNextColumn();
                 ImGuiUtil.CopyOnClickSelectable($"0x{(ulong)item:X}");
             }

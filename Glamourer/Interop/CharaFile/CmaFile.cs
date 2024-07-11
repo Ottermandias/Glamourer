@@ -96,7 +96,7 @@ public sealed class CmaFile
         if (offhand == null)
         {
             data.SetItem(EquipSlot.MainHand, defaultOffhand);
-            data.SetStain(EquipSlot.MainHand, defaultOffhand.PrimaryId.Id == 0 ? 0 : data.Stain(EquipSlot.MainHand));
+            data.SetStain(EquipSlot.MainHand, defaultOffhand.PrimaryId.Id == 0 ? StainIds.None : data.Stain(EquipSlot.MainHand));
             return;
         }
 

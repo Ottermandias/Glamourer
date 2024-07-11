@@ -174,7 +174,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         IDataManager gameData)
     {
         var ret   = new Dictionary<CustomizeData, (uint Data, string Name)>();
-        var sheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English)!;
+        var sheet = gameData.GetExcelSheet<CharaMakeCustomize>(Dalamud.Game.ClientLanguage.English)!;
         foreach (var (clan, gender) in CustomizeManager.AllSets())
         {
             var list = customizations.Manager.GetSet(clan, gender);

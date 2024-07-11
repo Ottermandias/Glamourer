@@ -164,7 +164,7 @@ public sealed class CollectionOverrideService : IService, ISavable
                             var collection = _penumbra.CollectionByIdentifier(collectionIdentifier);
                             if (collection == null)
                             {
-                                Glamourer.Messager.AddMessage(new Notification(
+                                Glamourer.Messager.AddMessage(new OtterGui.Classes.Notification(
                                     $"The overridden collection for identifier {identifier.Incognito(null)} with name {collectionIdentifier} could not be found by Penumbra for migration.",
                                     NotificationType.Warning));
                                 continue;

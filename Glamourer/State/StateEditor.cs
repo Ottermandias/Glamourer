@@ -118,7 +118,7 @@ public class StateEditor(
             ApplyMainhandPeriphery(state, item, stains, settings);
 
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item!.Value.Name} ({item.Value.ItemId}) and its stain from {oldStain.Id} to {stain!.Value.Id}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item!.Value.Name} ({item.Value.ItemId}) and its stains from {oldStain[0]},{oldStain[1]} to {stains!.Value[0]}, {stains!.Value[1]}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(type,                    settings.Source, state, actors, (old, item!.Value, slot));
         StateChanged.Invoke(StateChangeType.Stain, settings.Source, state, actors, (oldStain, stains!.Value, slot));
     }
@@ -132,7 +132,7 @@ public class StateEditor(
 
         var actors = Applier.ChangeStain(state, slot, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
-            $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old.Id} to {stains.ToString()}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old[0]},{old[1]} to {stains.ToString()}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Stain, settings.Source, state, actors, (old, stains, slot));
     }
 

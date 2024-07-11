@@ -87,8 +87,8 @@ public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectM
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
                 PrintRow(slot.ToName(), ItemString(state.BaseData, slot), ItemString(state.ModelData, slot), state.Sources[slot, false]);
-                ImGuiUtil.DrawTableColumn(state.BaseData.Stain(slot).Id.ToString());
-                ImGuiUtil.DrawTableColumn(state.ModelData.Stain(slot).Id.ToString());
+                ImGuiUtil.DrawTableColumn($"{state.BaseData.Stain(slot)[0]}, {state.BaseData.Stain(slot)[1]}");
+                ImGuiUtil.DrawTableColumn($"{state.ModelData.Stain(slot)[0]}, {state.ModelData.Stain(slot)[1]}");
                 ImGuiUtil.DrawTableColumn(state.Sources[slot, true].ToString());
             }
 

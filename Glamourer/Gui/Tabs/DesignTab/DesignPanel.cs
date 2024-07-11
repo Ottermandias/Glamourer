@@ -453,7 +453,7 @@ public class DesignPanel
     }
 
     private static unsafe string GetUserPath()
-        => Framework.Instance()->UserPath;
+        => Framework.Instance()->UserPathString;
 
 
     private sealed class LockButton(DesignPanel panel) : Button

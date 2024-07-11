@@ -233,7 +233,7 @@ public class UnlockOverview
                         ImGui.TextUnformatted($"For all {_jobs.AllJobGroups[item.JobRestrictions.Id].Name} of at least Level {item.Level}");
                 }
 
-                if (item.Flags.HasFlag(ItemFlags.IsDyable))
+                if (item.Flags.HasFlag(ItemFlags.IsDyable1))
                     ImGui.TextUnformatted("Dyable");
                 if (item.Flags.HasFlag(ItemFlags.IsTradable))
                     ImGui.TextUnformatted("Tradable");

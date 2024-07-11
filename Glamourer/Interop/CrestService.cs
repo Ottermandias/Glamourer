@@ -96,7 +96,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
                 if (!model.IsHuman)
                     return false;
 
-                var getter = (delegate* unmanaged<Human*, byte, byte>)((nint*)model.AsCharacterBase->VTable)[95];
+                var getter = (delegate* unmanaged<Human*, byte, byte>)((nint*)model.AsCharacterBase->VirtualTable)[95];
                 return getter(model.AsHuman, index) != 0;
             }
             case CrestType.Offhand:
@@ -105,7 +105,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
                 if (!model.IsWeapon)
                     return false;
 
-                var getter = (delegate* unmanaged<Weapon*, byte, byte>)((nint*)model.AsCharacterBase->VTable)[95];
+                var getter = (delegate* unmanaged<Weapon*, byte, byte>)((nint*)model.AsCharacterBase->VirtualTable)[95];
                 return getter(model.AsWeapon, index) != 0;
             }
         }

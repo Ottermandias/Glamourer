@@ -152,11 +152,11 @@ public class InternalStateEditor(
     }
 
     /// <summary> Change a single piece of equipment including stain. </summary>
-    public bool ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainId stain, StateSource source, out EquipItem oldItem,
-        out StainId oldStain, uint key = 0)
+    public bool ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainIds stains, StateSource source, out EquipItem oldItem,
+        out StainIds oldStains, uint key = 0)
     {
         oldItem  = state.ModelData.Item(slot);
-        oldStain = state.ModelData.Stain(slot);
+        oldStains = state.ModelData.Stain(slot);
         if (!state.CanUnlock(key))
             return false;
 
@@ -168,7 +168,7 @@ public class InternalStateEditor(
                 return false;
 
             var old  = oldItem;
-            var oldS = oldStain;
+            var oldS = oldStains;
             gPose.AddActionOnLeave(() =>
             {
                 if (old.Type == state.BaseData.Item(slot).Type)
@@ -177,16 +177,16 @@ public class InternalStateEditor(
         }
 
         state.ModelData.SetItem(slot, item);
-        state.ModelData.SetStain(slot, stain);
+        state.ModelData.SetStain(slot, stains);
         state.Sources[slot, false] = source;
         state.Sources[slot, true]  = source;
         return true;
     }
 
     /// <summary> Change only the stain of an equipment piece. </summary>
-    public bool ChangeStain(ActorState state, EquipSlot slot, StainIds stains, StateSource source, out StainId oldStain, uint key = 0)
+    public bool ChangeStain(ActorState state, EquipSlot slot, StainIds stains, StateSource source, out StainIds oldStains, uint key = 0)
     {
-        oldStain = state.ModelData.Stain(slot);
+        oldStains = state.ModelData.Stain(slot);
         if (!state.CanUnlock(key))
             return false;
 

@@ -52,10 +52,10 @@ public unsafe struct DesignData
          || name.IsContained(_nameMainhand)
          || name.IsContained(_nameOffhand);
 
-    public readonly StainId Stain(EquipSlot slot)
+    public readonly StainIds Stain(EquipSlot slot)
     {
         var index = slot.ToIndex();
-        return index > 11 ? (StainId)0 : _equipmentBytes[4 * index + 3];
+        return index > 11 ? StainIds.None : new(_equipmentBytes[4 * index + 3], _equipmentBytes[4 * index + 3]);
     }
 
     public readonly bool Crest(CrestFlag slot)

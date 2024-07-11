@@ -23,8 +23,8 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
     public readonly void SetItem(EquipItem item)
         => _editor.ChangeItem(_object, Slot, item, ApplySettings.Manual);
 
-    public readonly void SetStain(StainId stain)
-        => _editor.ChangeStain(_object, Slot, stain, ApplySettings.Manual);
+    public readonly void SetStain(StainIds stains)
+        => _editor.ChangeStain(_object, Slot, stains, ApplySettings.Manual);
 
     public readonly void SetApplyItem(bool value)
     {
@@ -41,9 +41,9 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
     }
 
     public EquipItem CurrentItem  = designData.Item(slot);
-    public StainId   CurrentStain = designData.Stain(slot);
+    public StainIds  CurrentStain = designData.Stain(slot);
     public EquipItem GameItem     = default;
-    public StainId   GameStain    = default;
+    public StainIds  GameStain    = default;
     public bool      CurrentApply;
     public bool      CurrentApplyStain;
 

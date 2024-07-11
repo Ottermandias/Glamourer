@@ -65,11 +65,11 @@ public interface IDesignEditor
         => ChangeEquip(data, slot, item, null, settings);
 
     /// <summary> Change the stain for any equipment piece. </summary>
-    public void ChangeStain(object data, EquipSlot slot, StainId stain, ApplySettings settings = default)
-        => ChangeEquip(data, slot, null, stain, settings);
+    public void ChangeStain(object data, EquipSlot slot, StainIds stains, ApplySettings settings = default)
+        => ChangeEquip(data, slot, null, stains, settings);
 
     /// <summary> Change an equipment piece and its stain at the same time. </summary>
-    public void ChangeEquip(object data, EquipSlot slot, EquipItem? item, StainId? stain, ApplySettings settings = default);
+    public void ChangeEquip(object data, EquipSlot slot, EquipItem? item, StainIds? stains, ApplySettings settings = default);
 
     /// <summary> Change the crest visibility for any equipment piece. </summary>
     public void ChangeCrest(object data, CrestFlag slot, bool crest, ApplySettings settings = default);

@@ -257,10 +257,10 @@ public class DesignBase
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
                 var item      = _designData.Item(slot);
-                var stain     = _designData.Stain(slot);
+                var stains     = _designData.Stain(slot);
                 var crestSlot = slot.ToCrestFlag();
                 var crest     = _designData.Crest(crestSlot);
-                ret[slot.ToString()] = Serialize(item.Id, stain, crest, DoApplyEquip(slot), DoApplyStain(slot), DoApplyCrest(crestSlot));
+                ret[slot.ToString()] = Serialize(item.Id, stains, crest, DoApplyEquip(slot), DoApplyStain(slot), DoApplyCrest(crestSlot));
             }
 
             ret["Hat"]    = new QuadBool(_designData.IsHatVisible(),    DoApplyMeta(MetaIndex.HatState)).ToJObject("Show", "Apply");
@@ -274,11 +274,11 @@ public class DesignBase
 
         return ret;
 
-        static JObject Serialize(CustomItemId id, StainId stain, bool crest, bool apply, bool applyStain, bool applyCrest)
+        static JObject Serialize(CustomItemId id, StainIds stains, bool crest, bool apply, bool applyStain, bool applyCrest)
             => new()
             {
                 ["ItemId"]     = id.Id,
-                ["Stain"]      = stain.Id,
+                ["Stain"]      = stains.ToString(),
                 ["Crest"]      = crest,
                 ["Apply"]      = apply,
                 ["ApplyStain"] = applyStain,
@@ -522,15 +522,15 @@ public class DesignBase
             return;
         }
 
-        static (CustomItemId, StainId, bool, bool, bool, bool) ParseItem(EquipSlot slot, JToken? item)
+        static (CustomItemId, StainIds, bool, bool, bool, bool) ParseItem(EquipSlot slot, JToken? item)
         {
             var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot).Id;
-            var stain      = (StainId)(item?["Stain"]?.ToObject<byte>() ?? 0);
+            var stains     = (item?["Stain"]?.ToObject<StainIds>() ?? StainIds.None);
             var crest      = item?["Crest"]?.ToObject<bool>() ?? false;
             var apply      = item?["Apply"]?.ToObject<bool>() ?? false;
             var applyStain = item?["ApplyStain"]?.ToObject<bool>() ?? false;
             var applyCrest = item?["ApplyCrest"]?.ToObject<bool>() ?? false;
-            return (id, stain, crest, apply, applyStain, applyCrest);
+            return (id, stains, crest, apply, applyStain, applyCrest);
         }
 
         void PrintWarning(string msg)
@@ -541,13 +541,13 @@ public class DesignBase
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var (id, stain, crest, apply, applyStain, applyCrest) = ParseItem(slot, equip[slot.ToString()]);
+            var (id, stains, crest, apply, applyStain, applyCrest) = ParseItem(slot, equip[slot.ToString()]);
 
             PrintWarning(items.ValidateItem(slot, id, out var item, allowUnknown));
-            PrintWarning(items.ValidateStain(stain, out stain, allowUnknown));
+            PrintWarning(items.ValidateStain(stains, out stains, allowUnknown));
             var crestSlot = slot.ToCrestFlag();
             design._designData.SetItem(slot, item);
-            design._designData.SetStain(slot, stain);
+            design._designData.SetStain(slot, stains);
             design._designData.SetCrest(crestSlot, crest);
             design.SetApplyEquip(slot, apply);
             design.SetApplyStain(slot, applyStain);
