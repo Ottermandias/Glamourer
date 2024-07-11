@@ -91,14 +91,14 @@ public sealed unsafe class PrepareColorSet
             switch (index.DrawObject)
             {
                 case MaterialValueIndex.DrawObjectType.Human:
-                    return index.SlotIndex < 10 ? actor.Model.GetArmor(((uint)index.SlotIndex).ToEquipSlot()).Stains : new();
+                    return index.SlotIndex < 10 ? actor.Model.GetArmor(((uint)index.SlotIndex).ToEquipSlot()).Stains : StainIds.None;
                 case MaterialValueIndex.DrawObjectType.Mainhand:
                     var mainhand = (Model)actor.AsCharacter->DrawData.WeaponDataSpan[1].DrawObject;
-                    return mainhand.IsWeapon ? (StainId)mainhand.AsWeapon->ModelUnknown : new();
+                    return mainhand.IsWeapon ? (StainId)mainhand.AsWeapon->ModelUnknown : StainIds.None;
                 case MaterialValueIndex.DrawObjectType.Offhand:
                     var offhand = (Model)actor.AsCharacter->DrawData.WeaponDataSpan[1].DrawObject;
-                    return offhand.IsWeapon ? (StainId)offhand.AsWeapon->ModelUnknown : new();
-                default: return new();
+                    return offhand.IsWeapon ? (StainId)offhand.AsWeapon->ModelUnknown : StainIds.None;
+                default: return StainIds.None;
             }
         }
     }

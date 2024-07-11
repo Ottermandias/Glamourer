@@ -48,7 +48,7 @@ public unsafe class MetaService : IDisposable
         if (!actor.IsCharacter)
             return;
 
-        actor.AsCharacter->DrawData.SetVisor(value);
+        actor.AsCharacter->DrawData.SetVisor(value); // Unsure
 
         // The function seems to not do anything if the head is 0, but also breaks for carbuncles turned human, sometimes?
         /* var old = actor.AsCharacter->DrawData.Head.Id;

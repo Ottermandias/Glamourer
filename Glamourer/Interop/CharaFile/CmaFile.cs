@@ -82,7 +82,7 @@ public sealed class CmaFile
         var set     = mainhand["Item1"]?.ToObject<ushort>() ?? items.DefaultSword.PrimaryId;
         var type    = mainhand["Item2"]?.ToObject<ushort>() ?? items.DefaultSword.SecondaryId;
         var variant = mainhand["Item3"]?.ToObject<byte>() ?? items.DefaultSword.Variant;
-        var stains  = mainhand["Item4"]?.ToObject<StainIds>() ?? StainIds.None;
+        var stains  = mainhand["Item4"]?.ToObject<StainIds>() ?? StainIds.None; // Unsure
         var item    = items.Identify(EquipSlot.MainHand, set, type, variant);
 
         data.SetItem(EquipSlot.MainHand, item.Valid ? item : items.DefaultSword);

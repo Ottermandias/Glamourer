@@ -197,7 +197,7 @@ public class ItemManager
     /// </summary>
     public string ValidateStain(StainIds stains, out StainIds ret, bool allowUnknown)
     {
-        if (allowUnknown || IsStainValid(stains[0]) && IsStainValid(stains[1]))
+        if (allowUnknown || IsStainValid(stains[0]) && IsStainValid(stains[1])) // Unsure
         {
             ret = stains;
             return string.Empty;

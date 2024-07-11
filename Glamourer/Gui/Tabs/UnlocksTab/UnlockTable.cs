@@ -384,7 +384,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             => Tooltip = "Whether the item is dyable.";
 
         protected override bool GetValue(EquipItem item)
-            => item.Flags.HasFlag(ItemFlags.IsDyable1);
+            => item.Flags.HasFlag(ItemFlags.IsDyable1); // Unsure
     }
 
     private sealed class TradableColumn : YesNoColumn<EquipItem>

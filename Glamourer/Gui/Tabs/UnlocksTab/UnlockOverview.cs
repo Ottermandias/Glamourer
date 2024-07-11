@@ -234,7 +234,9 @@ public class UnlockOverview
                 }
 
                 if (item.Flags.HasFlag(ItemFlags.IsDyable1))
-                    ImGui.TextUnformatted("Dyable");
+                    ImGui.TextUnformatted("Dyable1");
+                if (item.Flags.HasFlag(ItemFlags.IsDyable2))
+                    ImGui.TextUnformatted("Dyable2");
                 if (item.Flags.HasFlag(ItemFlags.IsTradable))
                     ImGui.TextUnformatted("Tradable");
                 if (item.Flags.HasFlag(ItemFlags.IsCrestWorthy))

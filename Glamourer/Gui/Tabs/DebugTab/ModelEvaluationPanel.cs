@@ -221,7 +221,7 @@ public unsafe class ModelEvaluationPanel(
 
             if (ImGui.SmallButton("Change Piece"))
                 _updateSlotService.UpdateArmor(model, slot,
-                    new CharacterArmor((PrimaryId)(slot == EquipSlot.Hands ? 6064 : slot == EquipSlot.Head ? 6072 : 1), 1, new()));
+                    new CharacterArmor((PrimaryId)(slot == EquipSlot.Hands ? 6064 : slot == EquipSlot.Head ? 6072 : 1), 1, StainIds.None));
             ImGui.SameLine();
             if (ImGui.SmallButton("Change Stain"))
                 _updateSlotService.UpdateStain(model, slot, StainIds.None);

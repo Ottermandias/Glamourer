@@ -176,7 +176,7 @@ public class DesignConverter(
         return System.Convert.ToBase64String(compressed);
     }
 
-    public IEnumerable<(EquipSlot Slot, EquipItem Item, StainId Stain)> FromDrawData(IReadOnlyList<CharacterArmor> armors,
+    public IEnumerable<(EquipSlot Slot, EquipItem Item, StainIds Stains)> FromDrawData(IReadOnlyList<CharacterArmor> armors,
         CharacterWeapon mainhand, CharacterWeapon offhand, bool skipWarnings)
     {
         if (armors.Count != 10)
@@ -194,7 +194,7 @@ public class DesignConverter(
                 item = ItemManager.NothingItem(slot);
             }
 
-            yield return (slot, item, armor.Stains.Stain1); // To change
+            yield return (slot, item, armor.Stains);
         }
 
         var mh = _items.Identify(EquipSlot.MainHand, mainhand.Skeleton, mainhand.Weapon, mainhand.Variant);
@@ -204,7 +204,7 @@ public class DesignConverter(
             mh = _items.DefaultSword;
         }
 
-        yield return (EquipSlot.MainHand, mh, mainhand.Stains.Stain1); // To change
+        yield return (EquipSlot.MainHand, mh, mainhand.Stains);
 
         var oh = _items.Identify(EquipSlot.OffHand, offhand.Skeleton, offhand.Weapon, offhand.Variant, mh.Type);
         if (!skipWarnings && !oh.Valid)
@@ -215,7 +215,7 @@ public class DesignConverter(
                 oh = ItemManager.NothingItem(FullEquipType.Shield);
         }
 
-        yield return (EquipSlot.OffHand, oh, offhand.Stains.Stain1); // To change
+        yield return (EquipSlot.OffHand, oh, offhand.Stains);
     }
 
     private static void ComputeMaterials(DesignMaterialManager manager, in StateMaterialManager materials,

@@ -278,7 +278,7 @@ public class DesignBase
             => new()
             {
                 ["ItemId"]     = id.Id,
-                ["Stain"]      = stains.ToString(),
+                ["Stain"]      = stains.ToString(), // Maybe change the "Stain" into "Stains" ?
                 ["Crest"]      = crest,
                 ["Apply"]      = apply,
                 ["ApplyStain"] = applyStain,
@@ -525,7 +525,7 @@ public class DesignBase
         static (CustomItemId, StainIds, bool, bool, bool, bool) ParseItem(EquipSlot slot, JToken? item)
         {
             var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot).Id;
-            var stains     = (item?["Stain"]?.ToObject<StainIds>() ?? StainIds.None);
+            var stains     = (item?["Stain"]?.ToObject<StainIds>() ?? StainIds.None); // Unsure
             var crest      = item?["Crest"]?.ToObject<bool>() ?? false;
             var apply      = item?["Apply"]?.ToObject<bool>() ?? false;
             var applyStain = item?["ApplyStain"]?.ToObject<bool>() ?? false;

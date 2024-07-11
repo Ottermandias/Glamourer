@@ -36,7 +36,7 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
         _penumbraReloaded    = penumbraReloaded;
         _interop             = interop;
         _changeCustomizeHook = Create();
-        _original            = (delegate* unmanaged[Stdcall]<Human*, byte*, bool, bool>)Human.MemberFunctionPointers.UpdateDrawData;
+        _original            = (delegate* unmanaged[Stdcall]<Human*, byte*, bool, bool>)Human.MemberFunctionPointers.UpdateDrawData; // Unsure
         interop.InitializeFromAttributes(this);
         _penumbraReloaded.Subscribe(Restore, PenumbraReloaded.Priority.ChangeCustomizeService);
     }

@@ -21,8 +21,8 @@ internal class FunEquipSet
     {
         public Group(ushort headS, byte headV, ushort bodyS, byte bodyV, ushort handsS, byte handsV, ushort legsS, byte legsV, ushort feetS,
             byte feetV, StainId[]? stains = null)
-            : this(new CharacterArmor(headS, headV, new()), new CharacterArmor(bodyS, bodyV, new()), new CharacterArmor(handsS, handsV, new()),
-                new CharacterArmor(legsS,    legsV, new()), new CharacterArmor(feetS, feetV, new()), stains)
+            : this(new CharacterArmor(headS, headV, StainIds.None), new CharacterArmor(bodyS, bodyV, StainIds.None), new CharacterArmor(handsS, handsV, StainIds.None),
+                new CharacterArmor(legsS,    legsV, StainIds.None), new CharacterArmor(feetS, feetV, StainIds.None), stains)
         { }
 
         public static Group FullSetWithoutHat(ushort modelSet, byte variant, StainId[]? stains = null)

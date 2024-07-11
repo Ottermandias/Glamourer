@@ -56,7 +56,7 @@ public unsafe struct NpcData
                 .Append('-')
                 .Append(span[i].Variant.Id.ToString("D3"))
                 .Append('-')
-                .Append(span[i].Stains.ToString())
+                .Append(span[i].Stains.ToString()) // Unsure
                 .Append(",  ");
         }
 
@@ -66,7 +66,7 @@ public unsafe struct NpcData
             .Append('-')
             .Append(Mainhand.Variant.Id.ToString("D3"))
             .Append('-')
-            .Append(Mainhand.Stains.ToString())
+            .Append(Mainhand.Stains.ToString()) // Unsure
             .Append(",  ")
             .Append(Offhand.Skeleton.Id.ToString("D4"))
             .Append('-')
@@ -74,7 +74,7 @@ public unsafe struct NpcData
             .Append('-')
             .Append(Offhand.Variant.Id.ToString("D3"))
             .Append('-')
-            .Append(Offhand.Stains.ToString());
+            .Append(Offhand.Stains.ToString()); // Unsure
         return sb.ToString();
     }
 

@@ -106,7 +106,7 @@ public unsafe class FunModule : IDisposable
          && actor.OnlineStatus is OnlineStatus.PvEMentor or OnlineStatus.PvPMentor or OnlineStatus.TradeMentor
          && slot.IsEquipment())
         {
-            armor = new CharacterArmor(6117, 1, new());
+            armor = new CharacterArmor(6117, 1, StainIds.None);
             return;
         }
 
@@ -237,6 +237,7 @@ public unsafe class FunModule : IDisposable
     private static IReadOnlyList<CharacterArmor> DolphinBodies
         =>
         [
+            // Unsure about those
             new CharacterArmor(6089, 1, new(4, 4)), // Toad
             new CharacterArmor(6089, 1, new(4, 4)), // Toad
             new CharacterArmor(6089, 1, new(4, 4)), // Toad
@@ -255,7 +256,7 @@ public unsafe class FunModule : IDisposable
         armor = slot switch
         {
             EquipSlot.Body => DolphinBodies[_rng.Next(0, DolphinBodies.Count - 1)],
-            EquipSlot.Head => new CharacterArmor(5040, 1, new(0, 0)),
+            EquipSlot.Head => new CharacterArmor(5040, 1, StainIds.None),
             _              => armor,
         };
     }
@@ -272,7 +273,7 @@ public unsafe class FunModule : IDisposable
 
     private static void SetCrown(Span<CharacterArmor> armor)
     {
-        var clown = new CharacterArmor(6117, 1, new());
+        var clown = new CharacterArmor(6117, 1, StainIds.None);
         armor[0] = clown;
         armor[1] = clown;
         armor[2] = clown;

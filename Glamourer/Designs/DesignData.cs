@@ -161,6 +161,8 @@ public unsafe struct DesignData
     public bool SetStain(EquipSlot slot, StainIds stains)
         => slot.ToIndex() switch
         {
+            // Those need to be changed
+
             0  => SetIfDifferent(ref _equipmentBytes[3],  stains),
             1  => SetIfDifferent(ref _equipmentBytes[7],  stains),
             2  => SetIfDifferent(ref _equipmentBytes[11], stains),
