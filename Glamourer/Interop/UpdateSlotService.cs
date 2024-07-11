@@ -3,6 +3,7 @@ using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using Glamourer.Events;
 using Penumbra.GameData;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
@@ -11,11 +12,16 @@ namespace Glamourer.Interop;
 
 public unsafe class UpdateSlotService : IDisposable
 {
-    public readonly SlotUpdating SlotUpdatingEvent;
+    public readonly  EquipSlotUpdating EquipSlotUpdatingEvent;
+    public readonly  BonusSlotUpdating BonusSlotUpdatingEvent;
+    private readonly DictGlasses       _glasses;
 
-    public UpdateSlotService(SlotUpdating slotUpdating, IGameInteropProvider interop)
+    public UpdateSlotService(EquipSlotUpdating equipSlotUpdating, BonusSlotUpdating bonusSlotUpdating, IGameInteropProvider interop,
+        DictGlasses glasses)
     {
-        SlotUpdatingEvent = slotUpdating;
+        EquipSlotUpdatingEvent = equipSlotUpdating;
+        BonusSlotUpdatingEvent = bonusSlotUpdating;
+        _glasses               = glasses;
         interop.InitializeFromAttributes(this);
         _flagSlotForUpdateHook.Enable();
         _flagBonusSlotForUpdateHook.Enable();
@@ -27,20 +33,37 @@ public unsafe class UpdateSlotService : IDisposable
         _flagBonusSlotForUpdateHook.Dispose();
     }
 
-    public void UpdateSlot(Model drawObject, EquipSlot slot, CharacterArmor data)
+    public void UpdateEquipSlot(Model drawObject, EquipSlot slot, CharacterArmor data)
     {
         if (!drawObject.IsCharacterBase)
             return;
 
-        var bonusSlot = slot.ToBonusIndex();
-        if (bonusSlot == uint.MaxValue)
-            FlagSlotForUpdateInterop(drawObject, slot, data);
-        else
-            _flagBonusSlotForUpdateHook.Original(drawObject.Address, bonusSlot, &data);
+        FlagSlotForUpdateInterop(drawObject, slot, data);
+    }
+
+    public void UpdateBonusSlot(Model drawObject, BonusEquipFlag slot, CharacterArmor data)
+    {
+        if (!drawObject.IsCharacterBase)
+            return;
+
+        var index = slot.ToIndex();
+        if (index == uint.MaxValue)
+            return;
+
+        _flagBonusSlotForUpdateHook.Original(drawObject.Address, index, &data);
+    }
+
+    public void UpdateGlasses(Model drawObject, GlassesId id)
+    {
+        if (!_glasses.TryGetValue(id, out var glasses))
+            return;
+
+        var armor = new CharacterArmor(glasses.Id, glasses.Variant, StainIds.None);
+        _flagBonusSlotForUpdateHook.Original(drawObject.Address, BonusEquipFlag.Glasses.ToIndex(), &armor);
     }
 
     public void UpdateArmor(Model drawObject, EquipSlot slot, CharacterArmor armor, StainIds stains)
-        => UpdateSlot(drawObject, slot, armor.With(stains));
+        => UpdateEquipSlot(drawObject, slot, armor.With(stains));
 
     public void UpdateArmor(Model drawObject, EquipSlot slot, CharacterArmor armor)
         => UpdateArmor(drawObject, slot, armor, drawObject.GetArmor(slot).Stains);
@@ -60,7 +83,7 @@ public unsafe class UpdateSlotService : IDisposable
     {
         var slot        = slotIdx.ToEquipSlot();
         var returnValue = ulong.MaxValue;
-        SlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
+        EquipSlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
         Glamourer.Log.Excessive($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
         return returnValue == ulong.MaxValue ? _flagSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
     }
@@ -69,7 +92,7 @@ public unsafe class UpdateSlotService : IDisposable
     {
         var slot        = slotIdx.ToBonusSlot();
         var returnValue = ulong.MaxValue;
-        SlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
+        BonusSlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
         Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
         return returnValue == ulong.MaxValue ? _flagBonusSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
     }

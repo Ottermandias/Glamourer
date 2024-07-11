@@ -105,11 +105,11 @@ public class StateApplier(
             {
                 var customize = mdl.GetCustomize();
                 var (_, resolvedItem) = _items.ResolveRestrictedGear(armor, slot, customize.Race, customize.Gender);
-                _updateSlot.UpdateSlot(actor.Model, slot, resolvedItem);
+                _updateSlot.UpdateEquipSlot(actor.Model, slot, resolvedItem);
             }
             else
             {
-                _updateSlot.UpdateSlot(actor.Model, slot, armor);
+                _updateSlot.UpdateEquipSlot(actor.Model, slot, armor);
             }
         }
     }

@@ -32,7 +32,7 @@ public class StateListener : IDisposable
     private readonly ItemManager               _items;
     private readonly CustomizeService          _customizations;
     private readonly PenumbraService           _penumbra;
-    private readonly SlotUpdating              _slotUpdating;
+    private readonly EquipSlotUpdating              _equipSlotUpdating;
     private readonly WeaponLoading             _weaponLoading;
     private readonly HeadGearVisibilityChanged _headGearVisibility;
     private readonly VisorStateChanged         _visorState;
@@ -52,7 +52,7 @@ public class StateListener : IDisposable
     private CharacterWeapon _lastFistOffhand = CharacterWeapon.Empty;
 
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorManager actors, Configuration config,
-        SlotUpdating slotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
+        EquipSlotUpdating equipSlotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState, WeaponVisibilityChanged weaponVisibility,
         HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier, FunModule funModule, HumanModelList humans,
         StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects, GPoseService gPose,
         ChangeCustomizeService changeCustomizeService, CustomizeService customizations, ICondition condition, CrestService crestService)
@@ -62,7 +62,7 @@ public class StateListener : IDisposable
         _penumbra               = penumbra;
         _actors                 = actors;
         _config                 = config;
-        _slotUpdating           = slotUpdating;
+        _equipSlotUpdating           = equipSlotUpdating;
         _weaponLoading          = weaponLoading;
         _visorState             = visorState;
         _weaponVisibility       = weaponVisibility;
@@ -202,7 +202,7 @@ public class StateListener : IDisposable
     /// A draw model loads a new equipment piece.
     /// Update base data, apply or update model data, and protect against restricted gear.
     /// </summary>
-    private void OnSlotUpdating(Model model, EquipSlot slot, ref CharacterArmor armor, ref ulong returnValue)
+    private void OnEquipSlotUpdating(Model model, EquipSlot slot, ref CharacterArmor armor, ref ulong returnValue)
     {
         var actor = _penumbra.GameObjectFromDrawObject(model);
         if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
@@ -699,7 +699,7 @@ public class StateListener : IDisposable
     {
         _penumbra.CreatingCharacterBase += OnCreatingCharacterBase;
         _penumbra.CreatedCharacterBase  += OnCreatedCharacterBase;
-        _slotUpdating.Subscribe(OnSlotUpdating, SlotUpdating.Priority.StateListener);
+        _equipSlotUpdating.Subscribe(OnEquipSlotUpdating, EquipSlotUpdating.Priority.StateListener);
         _movedEquipment.Subscribe(OnMovedEquipment, MovedEquipment.Priority.StateListener);
         _weaponLoading.Subscribe(OnWeaponLoading, WeaponLoading.Priority.StateListener);
         _visorState.Subscribe(OnVisorChange, VisorStateChanged.Priority.StateListener);
@@ -715,7 +715,7 @@ public class StateListener : IDisposable
     {
         _penumbra.CreatingCharacterBase -= OnCreatingCharacterBase;
         _penumbra.CreatedCharacterBase  -= OnCreatedCharacterBase;
-        _slotUpdating.Unsubscribe(OnSlotUpdating);
+        _equipSlotUpdating.Unsubscribe(OnEquipSlotUpdating);
         _movedEquipment.Unsubscribe(OnMovedEquipment);
         _weaponLoading.Unsubscribe(OnWeaponLoading);
         _visorState.Unsubscribe(OnVisorChange);

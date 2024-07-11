@@ -90,7 +90,7 @@ public unsafe class ModelEvaluationPanel(
             : "No CharacterBase");
     }
 
-    private void DrawParameters(Actor actor, Model model)
+    private static void DrawParameters(Actor actor, Model model)
     {
         if (!model.IsHuman)
             return;
@@ -140,13 +140,13 @@ public unsafe class ModelEvaluationPanel(
             return;
 
         if (ImGui.SmallButton("Hide"))
-            _updateSlotService.UpdateSlot(model, EquipSlot.Head, CharacterArmor.Empty);
+            _updateSlotService.UpdateEquipSlot(model, EquipSlot.Head, CharacterArmor.Empty);
         ImGui.SameLine();
         if (ImGui.SmallButton("Show"))
-            _updateSlotService.UpdateSlot(model, EquipSlot.Head, actor.GetArmor(EquipSlot.Head));
+            _updateSlotService.UpdateEquipSlot(model, EquipSlot.Head, actor.GetArmor(EquipSlot.Head));
         ImGui.SameLine();
         if (ImGui.SmallButton("Toggle"))
-            _updateSlotService.UpdateSlot(model, EquipSlot.Head,
+            _updateSlotService.UpdateEquipSlot(model, EquipSlot.Head,
                 model.AsHuman->Head.Value == 0 ? actor.GetArmor(EquipSlot.Head) : CharacterArmor.Empty);
     }
 
@@ -223,31 +223,32 @@ public unsafe class ModelEvaluationPanel(
                 _updateSlotService.UpdateStain(model, slot, new StainIds(5, 7));
             ImGui.SameLine();
             if (ImGui.SmallButton("Reset"))
-                _updateSlotService.UpdateSlot(model, slot, actor.GetArmor(slot));
+                _updateSlotService.UpdateEquipSlot(model, slot, actor.GetArmor(slot));
         }
 
-        using (ImRaii.PushId((int)EquipSlot.FaceWear))
+        foreach (var slot in BonusSlotExtensions.AllFlags)
         {
-            ImGuiUtil.DrawTableColumn(EquipSlot.FaceWear.ToName());
+            using var id2 = ImRaii.PushId((int)slot.ToModelIndex());
+            ImGuiUtil.DrawTableColumn(slot.ToName());
             if (!actor.IsCharacter)
             {
                 ImGuiUtil.DrawTableColumn("No Character");
             }
             else
             {
-                var glassesId = actor.AsCharacter->DrawData.GlassesIds[(int)EquipSlot.FaceWear.ToBonusIndex()];
+                var glassesId = actor.GetBonusSlot(slot);
                 if (_glasses.TryGetValue(glassesId, out var glasses))
                     ImGuiUtil.DrawTableColumn($"{glasses.Id.Id},{glasses.Variant.Id} ({glassesId})");
                 else
                     ImGuiUtil.DrawTableColumn($"{glassesId}");
             }
 
-            ImGuiUtil.DrawTableColumn(model.IsHuman ? model.GetArmor(EquipSlot.FaceWear).ToString() : "No Human");
+            ImGuiUtil.DrawTableColumn(model.IsHuman ? model.GetBonus(slot).ToString() : "No Human");
             ImGui.TableNextColumn();
             if (ImUtf8.SmallButton("Change Piece"u8))
             {
-                var data = model.GetArmor(EquipSlot.FaceWear);
-                _updateSlotService.UpdateSlot(model, EquipSlot.FaceWear, data with { Variant = (Variant)((data.Variant.Id + 1) % 12) });
+                var data = model.GetBonus(slot);
+                _updateSlotService.UpdateBonusSlot(model, slot, data with { Variant = (Variant)((data.Variant.Id + 1) % 12) });
             }
         }
     }

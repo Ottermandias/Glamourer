@@ -70,7 +70,7 @@ public static class StaticServiceManager
 
     private static ServiceManager AddEvents(this ServiceManager services)
         => services.AddSingleton<VisorStateChanged>()
-            .AddSingleton<SlotUpdating>()
+            .AddSingleton<EquipSlotUpdating>()
             .AddSingleton<DesignChanged>()
             .AddSingleton<AutomationChanged>()
             .AddSingleton<StateChanged>()
