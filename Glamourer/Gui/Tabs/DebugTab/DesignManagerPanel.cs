@@ -25,7 +25,7 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
                 continue;
 
             DrawDesign(design, _designFileSystem);
-            var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.ApplyEquip, design.ApplyCustomizeRaw, design.ApplyMeta,
+            var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.Application.Equip, design.Application.Customize, design.Application.Meta,
                 design.WriteProtected());
             using var font = ImRaii.PushFont(UiBuilder.MonoFont);
             ImGuiUtil.TextWrapped(base64);

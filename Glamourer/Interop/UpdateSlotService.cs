@@ -14,14 +14,14 @@ public unsafe class UpdateSlotService : IDisposable
 {
     public readonly  EquipSlotUpdating EquipSlotUpdatingEvent;
     public readonly  BonusSlotUpdating BonusSlotUpdatingEvent;
-    private readonly DictGlasses       _glasses;
+    private readonly DictBonusItems       _bonusItems;
 
     public UpdateSlotService(EquipSlotUpdating equipSlotUpdating, BonusSlotUpdating bonusSlotUpdating, IGameInteropProvider interop,
-        DictGlasses glasses)
+        DictBonusItems bonusItems)
     {
         EquipSlotUpdatingEvent = equipSlotUpdating;
         BonusSlotUpdatingEvent = bonusSlotUpdating;
-        _glasses               = glasses;
+        _bonusItems               = bonusItems;
         interop.InitializeFromAttributes(this);
         _flagSlotForUpdateHook.Enable();
         _flagBonusSlotForUpdateHook.Enable();
@@ -41,7 +41,7 @@ public unsafe class UpdateSlotService : IDisposable
         FlagSlotForUpdateInterop(drawObject, slot, data);
     }
 
-    public void UpdateBonusSlot(Model drawObject, BonusEquipFlag slot, CharacterArmor data)
+    public void UpdateBonusSlot(Model drawObject, BonusItemFlag slot, CharacterArmor data)
     {
         if (!drawObject.IsCharacterBase)
             return;
@@ -53,13 +53,13 @@ public unsafe class UpdateSlotService : IDisposable
         _flagBonusSlotForUpdateHook.Original(drawObject.Address, index, &data);
     }
 
-    public void UpdateGlasses(Model drawObject, GlassesId id)
+    public void UpdateGlasses(Model drawObject, BonusItemId id)
     {
-        if (!_glasses.TryGetValue(id, out var glasses))
+        if (!_bonusItems.TryGetValue(id, out var glasses))
             return;
 
-        var armor = new CharacterArmor(glasses.Id, glasses.Variant, StainIds.None);
-        _flagBonusSlotForUpdateHook.Original(drawObject.Address, BonusEquipFlag.Glasses.ToIndex(), &armor);
+        var armor = new CharacterArmor(glasses.ModelId, glasses.Variant, StainIds.None);
+        _flagBonusSlotForUpdateHook.Original(drawObject.Address, BonusItemFlag.Glasses.ToIndex(), &armor);
     }
 
     public void UpdateArmor(Model drawObject, EquipSlot slot, CharacterArmor armor, StainIds stains)

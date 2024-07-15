@@ -215,6 +215,12 @@ public class ActorPanel
         var offhand  = EquipDrawData.FromState(_stateManager, _state, EquipSlot.OffHand);
         _equipmentDrawer.DrawWeapons(mainhand, offhand, GameMain.IsInGPose());
 
+        foreach (var slot in BonusExtensions.AllFlags)
+        {
+            var data = BonusDrawData.FromState(_stateManager, _state!, slot);
+            _equipmentDrawer.DrawBonusItem(data);
+        }
+
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
         DrawEquipmentMetaToggles();
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));

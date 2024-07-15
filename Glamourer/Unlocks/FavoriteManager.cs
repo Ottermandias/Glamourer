@@ -25,6 +25,7 @@ public class FavoriteManager : ISavable
     private readonly HashSet<ItemId>            _favorites          = [];
     private readonly HashSet<StainId>           _favoriteColors     = [];
     private readonly HashSet<FavoriteHairStyle> _favoriteHairStyles = [];
+    private readonly HashSet<BonusItemId>       _favoriteBonusItems = [];
 
     public FavoriteManager(SaveService saveService)
     {
@@ -62,6 +63,7 @@ public class FavoriteManager : ISavable
                         _favorites.UnionWith(load!.FavoriteItems.Select(i => (ItemId)i));
                         _favoriteColors.UnionWith(load!.FavoriteColors.Select(i => (StainId)i));
                         _favoriteHairStyles.UnionWith(load!.FavoriteHairStyles.Select(t => new FavoriteHairStyle(t)));
+                        _favoriteBonusItems.UnionWith(load!.FavoriteBonusItems.Select(b => new BonusItemId(b)));
                         break;
 
                     default: throw new Exception($"Unknown Version {load?.Version ?? 0}");
@@ -109,6 +111,11 @@ public class FavoriteManager : ISavable
         foreach (var hairStyle in _favoriteHairStyles)
             j.WriteValue(hairStyle.ToValue());
         j.WriteEndArray();
+        j.WriteStartArray();
+        j.WritePropertyName(nameof(LoadIntermediary.FavoriteBonusItems));
+        foreach (var item in _favoriteBonusItems)
+            j.WriteValue(item.Id);
+        j.WriteEndArray();
         j.WriteEndObject();
     }
 
@@ -124,12 +131,18 @@ public class FavoriteManager : ISavable
         return true;
     }
 
-    public bool TryAdd(Stain stain)
-        => TryAdd(stain.RowIndex);
-
     public bool TryAdd(StainId stain)
     {
         if (stain.Id == 0 || !_favoriteColors.Add(stain))
+            return false;
+
+        Save();
+        return true;
+    }
+
+    public bool TryAdd(BonusItem bonusItem)
+    {
+        if (bonusItem.Id == 0 || !_favoriteBonusItems.Add(bonusItem.Id))
             return false;
 
         Save();
@@ -157,12 +170,18 @@ public class FavoriteManager : ISavable
         return true;
     }
 
-    public bool Remove(Stain stain)
-        => Remove(stain.RowIndex);
-
     public bool Remove(StainId stain)
     {
         if (!_favoriteColors.Remove(stain))
+            return false;
+
+        Save();
+        return true;
+    }
+
+    public bool Remove(BonusItem bonusItem)
+    {
+        if (!_favoriteBonusItems.Remove(bonusItem.Id))
             return false;
 
         Save();
@@ -181,23 +200,21 @@ public class FavoriteManager : ISavable
     public bool Contains(EquipItem item)
         => _favorites.Contains(item.ItemId);
 
-    public bool Contains(Stain stain)
-        => _favoriteColors.Contains(stain.RowIndex);
-
-    public bool Contains(ItemId item)
-        => _favorites.Contains(item);
-
     public bool Contains(StainId stain)
         => _favoriteColors.Contains(stain);
+
+    public bool Contains(BonusItem bonusItem)
+        => _favoriteBonusItems.Contains(bonusItem.Id);
 
     public bool Contains(Gender gender, SubRace race, CustomizeIndex type, CustomizeValue value)
         => _favoriteHairStyles.Contains(new FavoriteHairStyle(gender, race, type, value));
 
     private class LoadIntermediary
     {
-        public int    Version            = CurrentVersion;
-        public uint[] FavoriteItems      = [];
-        public byte[] FavoriteColors     = [];
-        public uint[] FavoriteHairStyles = [];
+        public int      Version            = CurrentVersion;
+        public uint[]   FavoriteItems      = [];
+        public byte[]   FavoriteColors     = [];
+        public uint[]   FavoriteHairStyles = [];
+        public ushort[] FavoriteBonusItems = [];
     }
 }

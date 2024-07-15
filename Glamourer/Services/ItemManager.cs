@@ -20,12 +20,13 @@ public class ItemManager
     public readonly ExcelSheet<Lumina.Excel.GeneratedSheets.Item> ItemSheet;
     public readonly DictStain                                     Stains;
     public readonly ItemData                                      ItemData;
+    public readonly DictBonusItems                                DictBonusItems;
     public readonly RestrictedGear                                RestrictedGear;
 
     public readonly EquipItem DefaultSword;
 
     public ItemManager(Configuration config, IDataManager gameData, ObjectIdentification objectIdentification,
-        ItemData itemData, DictStain stains, RestrictedGear restrictedGear)
+        ItemData itemData, DictStain stains, RestrictedGear restrictedGear, DictBonusItems dictBonusItems)
     {
         _config              = config;
         ItemSheet            = gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;
@@ -33,6 +34,7 @@ public class ItemManager
         ItemData             = itemData;
         Stains               = stains;
         RestrictedGear       = restrictedGear;
+        DictBonusItems       = dictBonusItems;
         DefaultSword         = EquipItem.FromMainhand(ItemSheet.GetRow(1601)!); // Weathered Shortsword
     }
 
@@ -124,6 +126,22 @@ public class ItemManager
         }
     }
 
+    public BonusItem Identify(BonusItemFlag slot, PrimaryId id, Variant variant)
+    {
+        var index = slot.ToIndex();
+        if (index == uint.MaxValue)
+            return new BonusItem($"Invalid ({id.Id}-{variant})", 0, 0, id, variant, slot);
+
+        if (id.Id == 0)
+            return BonusItem.Empty(slot);
+
+        return ObjectIdentification.Identify(id, variant, slot)
+            .FirstOrDefault(new BonusItem($"Invalid ({id.Id}-{variant})", 0, 0, id, variant, slot));
+    }
+
+    public BonusItem Resolve(BonusItemFlag slot, BonusItemId id)
+        => IsBonusItemValid(slot, id, out var item) ? item : new BonusItem($"Invalid ({id.Id})", 0, id, 0, 0, slot);
+
     /// <summary> Return the default offhand for a given mainhand, that is for both handed weapons, return the correct offhand part, and for everything else Nothing. </summary>
     public EquipItem GetDefaultOffhand(EquipItem mainhand)
     {
@@ -160,6 +178,18 @@ public class ItemManager
         item = Resolve(slot, itemId);
         return item.Valid;
     }
+
+    /// <summary> Returns whether a bonus item id represents a valid item for a slot and gives the item. </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public bool IsBonusItemValid(BonusItemFlag slot, BonusItemId itemId, out BonusItem item)
+    {
+        if (itemId.Id != 0)
+            return DictBonusItems.TryGetValue(itemId, out item) && slot == item.Slot;
+
+        item = BonusItem.Empty(slot);
+        return true;
+    }
+
 
     /// <summary>
     /// Check whether an item id resolves to an existing item of the correct slot (which should not be weapons.)

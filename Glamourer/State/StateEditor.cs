@@ -89,6 +89,18 @@ public class StateEditor(
         StateChanged.Invoke(type, settings.Source, state, actors, (old, item, slot));
     }
 
+    public void ChangeBonusItem(object data, BonusItemFlag slot, BonusItem item, ApplySettings settings = default)
+    {
+        var state = (ActorState)data;
+        if (!Editor.ChangeBonusItem(state, slot, item, settings.Source, out var old, settings.Key))
+            return;
+
+        var actors = Applier.ChangeBonusItem(state, slot, settings.Source.RequiresChange());
+        Glamourer.Log.Verbose(
+            $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}). [Affecting {actors.ToLazyString("nothing")}.]");
+        StateChanged.Invoke(StateChangeType.BonusItem, settings.Source, state, actors, (old, item, slot));
+    }
+
     /// <inheritdoc/>
     public void ChangeEquip(object data, EquipSlot slot, EquipItem? item, StainIds? stains, ApplySettings settings)
     {
@@ -226,7 +238,7 @@ public class StateEditor(
                         out _, settings.Key);
             }
 
-            var customizeFlags = mergedDesign.Design.ApplyCustomizeRaw;
+            var customizeFlags = mergedDesign.Design.Application.Customize;
             if (mergedDesign.Design.DoApplyCustomize(CustomizeIndex.Clan))
                 customizeFlags |= CustomizeFlag.Race;
 
@@ -245,7 +257,7 @@ public class StateEditor(
                     state.Sources[parameter] = StateSource.Game;
             }
 
-            foreach (var parameter in mergedDesign.Design.ApplyParameters.Iterate())
+            foreach (var parameter in mergedDesign.Design.Application.Parameters.Iterate())
             {
                 if (settings.RespectManual && state.Sources[parameter].IsManual())
                     continue;
@@ -271,6 +283,13 @@ public class StateEditor(
                     if (!settings.RespectManual || !state.Sources[slot, true].IsManual())
                         Editor.ChangeStains(state, slot, mergedDesign.Design.DesignData.Stain(slot),
                             Source(slot.ToState(true)), out _, settings.Key);
+            }
+
+            foreach (var slot in BonusExtensions.AllFlags)
+            {
+                if (mergedDesign.Design.DoApplyBonusItem(slot))
+                    if (!settings.RespectManual || !state.Sources[slot].IsManual())
+                        Editor.ChangeBonusItem(state, slot, mergedDesign.Design.DesignData.BonusItem(slot), Source(slot), out _, settings.Key);
             }
 
             foreach (var weaponSlot in EquipSlotExtensions.WeaponSlots)

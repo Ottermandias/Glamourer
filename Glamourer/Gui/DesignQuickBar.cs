@@ -179,8 +179,7 @@ public sealed class DesignQuickBar : Window, IDisposable
             return;
         }
 
-        var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
-        using var _ = design!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
+        using var _ = design!.TemporarilyRestrictApplication(ApplicationCollection.FromKeys());
         _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks);
     }
 

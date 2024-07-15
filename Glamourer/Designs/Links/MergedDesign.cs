@@ -64,12 +64,8 @@ public sealed class MergedDesign
 {
     public MergedDesign(DesignManager designManager)
     {
-        Design                 = designManager.CreateTemporary();
-        Design.ApplyEquip      = 0;
-        Design.ApplyCustomize  = 0;
-        Design.ApplyCrest      = 0;
-        Design.ApplyParameters = 0;
-        Design.ApplyMeta       = 0;
+        Design             = designManager.CreateTemporary();
+        Design.Application = ApplicationCollection.None;
     }
 
     public MergedDesign(DesignBase design)

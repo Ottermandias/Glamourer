@@ -165,6 +165,11 @@ public class DesignEditor(
         }
     }
 
+    public void ChangeBonusItem(object data, BonusItemFlag slot, BonusItem item, ApplySettings settings = default)
+    {
+        
+    }
+
     /// <inheritdoc/>
     public void ChangeStains(object data, EquipSlot slot, StainIds stains, ApplySettings _ = default)
     {

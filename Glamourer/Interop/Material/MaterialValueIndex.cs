@@ -42,6 +42,12 @@ public readonly record struct MaterialValueIndex(
         return Invalid;
     }
 
+    public static MaterialValueIndex FromSlot(BonusItemFlag slot)
+    {
+        var idx = slot.ToIndex();
+        return idx > 2 ? Invalid : new MaterialValueIndex(DrawObjectType.Human, (byte)(idx + 16), 0, 0);
+    }
+
     public EquipSlot ToEquipSlot()
         => DrawObject switch
         {

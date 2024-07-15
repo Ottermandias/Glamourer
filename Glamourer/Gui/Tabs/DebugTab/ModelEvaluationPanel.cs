@@ -21,7 +21,7 @@ public unsafe class ModelEvaluationPanel(
     UpdateSlotService _updateSlotService,
     ChangeCustomizeService _changeCustomizeService,
     CrestService _crestService,
-    DictGlasses _glasses) : IGameDataDrawer
+    DictBonusItems bonusItems) : IGameDataDrawer
 {
     public string Label
         => "Model Evaluation";
@@ -57,6 +57,16 @@ public unsafe class ModelEvaluationPanel(
                 ImGui.TextUnformatted($"Transformation Id: {actor.AsCharacter->CharacterData.TransformationId}");
             if (actor.AsCharacter->CharacterData.ModelCharaId_2 != -1)
                 ImGui.TextUnformatted($"ModelChara2 {actor.AsCharacter->CharacterData.ModelCharaId_2}");
+
+            ImGuiUtil.DrawTableColumn("Character Mode");
+            ImGuiUtil.DrawTableColumn($"{actor.AsCharacter->Mode}");
+            ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
+
+            ImGuiUtil.DrawTableColumn("Animation");
+            ImGuiUtil.DrawTableColumn($"{((ushort*)&actor.AsCharacter->Timeline)[0x78]}");
+            ImGui.TableNextColumn();
+            ImGui.TableNextColumn();
         }
 
         ImGuiUtil.DrawTableColumn("Mainhand");
@@ -226,7 +236,7 @@ public unsafe class ModelEvaluationPanel(
                 _updateSlotService.UpdateEquipSlot(model, slot, actor.GetArmor(slot));
         }
 
-        foreach (var slot in BonusSlotExtensions.AllFlags)
+        foreach (var slot in BonusExtensions.AllFlags)
         {
             using var id2 = ImRaii.PushId((int)slot.ToModelIndex());
             ImGuiUtil.DrawTableColumn(slot.ToName());
@@ -236,9 +246,9 @@ public unsafe class ModelEvaluationPanel(
             }
             else
             {
-                var glassesId = actor.GetBonusSlot(slot);
-                if (_glasses.TryGetValue(glassesId, out var glasses))
-                    ImGuiUtil.DrawTableColumn($"{glasses.Id.Id},{glasses.Variant.Id} ({glassesId})");
+                var glassesId = actor.GetBonusItem(slot);
+                if (bonusItems.TryGetValue(glassesId, out var glasses))
+                    ImGuiUtil.DrawTableColumn($"{glasses.ModelId.Id},{glasses.Variant.Id} ({glassesId})");
                 else
                     ImGuiUtil.DrawTableColumn($"{glassesId}");
             }

@@ -37,17 +37,13 @@ public class PaletteImport(IDalamudPluginInterface pluginInterface, DesignManage
             }
 
             var design = designManager.CreateEmpty(fullPath, true);
-            design.ApplyCustomize = 0;
-            design.ApplyEquip     = 0;
-            design.ApplyCrest     = 0;
-            designManager.ChangeApplyMeta(design, MetaIndex.VisorState, false);
-            designManager.ChangeApplyMeta(design, MetaIndex.HatState, false);
-            designManager.ChangeApplyMeta(design, MetaIndex.WeaponState, false);
+            design.Application = ApplicationCollection.None;
             foreach (var flag in flags.Iterate())
             {
                 designManager.ChangeApplyParameter(design, flag, true);
                 designManager.ChangeCustomizeParameter(design, flag, palette[flag]);
             }
+
             Glamourer.Log.Information($"Added design for palette {name} at {fullPath}.");
         }
     }

@@ -5,16 +5,9 @@ using Penumbra.GameData.Enums;
 
 namespace Glamourer.Designs;
 
-public readonly struct ApplicationRules(
-    EquipFlag equip,
-    CustomizeFlag customize,
-    CrestFlag crest,
-    CustomizeParameterFlag parameters,
-    MetaFlag meta,
-    bool materials)
+public readonly struct ApplicationRules(ApplicationCollection application, bool materials)
 {
-    public static readonly ApplicationRules All = new(EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant,
-        CrestExtensions.AllRelevant, CustomizeParameterExtensions.All, MetaExtensions.All, true);
+    public static readonly ApplicationRules All = new(ApplicationCollection.All, true);
 
     public static ApplicationRules FromModifiers(ActorState state)
         => FromModifiers(state, ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift);
@@ -23,54 +16,43 @@ public readonly struct ApplicationRules(
         => NpcFromModifiers(ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift);
 
     public static ApplicationRules AllButParameters(ActorState state)
-        => new(All.Equip, All.Customize, All.Crest, ComputeParameters(state.ModelData, state.BaseData, All.Parameters), All.Meta, true);
+        => new(ApplicationCollection.All with { Parameters = ComputeParameters(state.ModelData, state.BaseData, All.Parameters) }, true);
 
     public static ApplicationRules AllWithConfig(Configuration config)
-        => new(All.Equip, All.Customize, All.Crest, config.UseAdvancedParameters ? All.Parameters : 0, All.Meta, config.UseAdvancedDyes);
+        => new(ApplicationCollection.All with { Parameters = config.UseAdvancedParameters ? All.Parameters : 0 }, config.UseAdvancedDyes);
 
     public static ApplicationRules NpcFromModifiers(bool ctrl, bool shift)
-        => new(ctrl || !shift ? EquipFlagExtensions.All : 0,
-            !ctrl || shift ? CustomizeFlagExtensions.AllRelevant : 0,
-            0,
-            0,
-            ctrl || !shift ? MetaFlag.VisorState : 0, false);
+    {
+        var equip     = ctrl || !shift ? EquipFlagExtensions.All : 0;
+        var customize = !ctrl || shift ? CustomizeFlagExtensions.AllRelevant : 0;
+        var visor     = equip != 0 ? MetaFlag.VisorState : 0;
+        return new ApplicationRules(new ApplicationCollection(equip, 0, customize, 0, 0, visor), false);
+    }
 
     public static ApplicationRules FromModifiers(ActorState state, bool ctrl, bool shift)
     {
         var equip      = ctrl || !shift ? EquipFlagExtensions.All : 0;
         var customize  = !ctrl || shift ? CustomizeFlagExtensions.AllRelevant : 0;
+        var bonus      = equip == 0 ? 0 : BonusExtensions.All;
         var crest      = equip == 0 ? 0 : CrestExtensions.AllRelevant;
         var parameters = customize == 0 ? 0 : CustomizeParameterExtensions.All;
         var meta       = state.ModelData.IsWet() ? MetaFlag.Wetness : 0;
         if (equip != 0)
             meta |= MetaFlag.HatState | MetaFlag.WeaponState | MetaFlag.VisorState;
 
-        return new ApplicationRules(equip, customize, crest, ComputeParameters(state.ModelData, state.BaseData, parameters), meta, equip != 0);
+        var collection = new ApplicationCollection(equip, bonus, customize, crest,
+            ComputeParameters(state.ModelData, state.BaseData, parameters), meta);
+        return new ApplicationRules(collection, equip != 0);
     }
 
     public void Apply(DesignBase design)
-    {
-        design.ApplyEquip      = Equip;
-        design.ApplyCustomize  = Customize;
-        design.ApplyCrest      = Crest;
-        design.ApplyParameters = Parameters;
-        design.ApplyMeta       = Meta;
-    }
+        => design.Application = application;
 
     public EquipFlag Equip
-        => equip & EquipFlagExtensions.All;
-
-    public CustomizeFlag Customize
-        => customize & CustomizeFlagExtensions.AllRelevant;
-
-    public CrestFlag Crest
-        => crest & CrestExtensions.AllRelevant;
+        => application.Equip & EquipFlagExtensions.All;
 
     public CustomizeParameterFlag Parameters
-        => parameters & CustomizeParameterExtensions.All;
-
-    public MetaFlag Meta
-        => meta & MetaExtensions.All;
+        => application.Parameters & CustomizeParameterExtensions.All;
 
     public bool Materials
         => materials;

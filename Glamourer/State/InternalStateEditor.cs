@@ -151,6 +151,18 @@ public class InternalStateEditor(
         return true;
     }
 
+    /// <summary> Change a single bonus item. </summary>
+    public bool ChangeBonusItem(ActorState state, BonusItemFlag slot, BonusItem item, StateSource source, out BonusItem oldItem, uint key = 0)
+    {
+        oldItem = state.ModelData.BonusItem(slot);
+        if (!state.CanUnlock(key))
+            return false;
+
+        state.ModelData.SetBonusItem(slot, item);
+        state.Sources[slot] = source;
+        return true;
+    }
+
     /// <summary> Change a single piece of equipment including stain. </summary>
     public bool ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainIds stains, StateSource source, out EquipItem oldItem,
         out StainIds oldStains, uint key = 0)

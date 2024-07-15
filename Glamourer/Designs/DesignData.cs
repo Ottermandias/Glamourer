@@ -9,24 +9,31 @@ namespace Glamourer.Designs;
 
 public unsafe struct DesignData
 {
-    public const int EquipmentByteSize = 10 * CharacterArmor.Size;
+    public const int NumEquipment      = 10;
+    public const int EquipmentByteSize = NumEquipment * CharacterArmor.Size;
+    public const int NumBonusItems     = 1;
+    public const int NumWeapons        = 2;
 
-    private       string                 _nameHead     = string.Empty;
-    private       string                 _nameBody     = string.Empty;
-    private       string                 _nameHands    = string.Empty;
-    private       string                 _nameLegs     = string.Empty;
-    private       string                 _nameFeet     = string.Empty;
-    private       string                 _nameEars     = string.Empty;
-    private       string                 _nameNeck     = string.Empty;
-    private       string                 _nameWrists   = string.Empty;
-    private       string                 _nameRFinger  = string.Empty;
-    private       string                 _nameLFinger  = string.Empty;
-    private       string                 _nameMainhand = string.Empty;
-    private       string                 _nameOffhand  = string.Empty;
-    private       string                 _nameFaceWear = string.Empty;
-    private fixed uint                   _itemIds[12];
-    private fixed uint                   _iconIds[12];
-    private fixed byte                   _equipmentBytes[EquipmentByteSize + 16];
+    private string _nameHead     = string.Empty;
+    private string _nameBody     = string.Empty;
+    private string _nameHands    = string.Empty;
+    private string _nameLegs     = string.Empty;
+    private string _nameFeet     = string.Empty;
+    private string _nameEars     = string.Empty;
+    private string _nameNeck     = string.Empty;
+    private string _nameWrists   = string.Empty;
+    private string _nameRFinger  = string.Empty;
+    private string _nameLFinger  = string.Empty;
+    private string _nameMainhand = string.Empty;
+    private string _nameOffhand  = string.Empty;
+    private string _nameGlasses  = string.Empty;
+
+    private fixed uint                   _itemIds[NumEquipment + NumWeapons];
+    private fixed uint                   _iconIds[NumEquipment + NumWeapons + NumBonusItems];
+    private fixed byte                   _equipmentBytes[EquipmentByteSize + NumWeapons * CharacterWeapon.Size];
+    private fixed ushort                 _bonusIds[NumBonusItems];
+    private fixed ushort                 _bonusModelIds[NumBonusItems];
+    private fixed byte                   _bonusVariants[NumBonusItems];
     public        CustomizeParameterData Parameters;
     public        CustomizeArray         Customize = CustomizeArray.Default;
     public        uint                   ModelId;
@@ -52,7 +59,7 @@ public unsafe struct DesignData
          || name.IsContained(_nameLFinger)
          || name.IsContained(_nameMainhand)
          || name.IsContained(_nameOffhand)
-         || name.IsContained(_nameFaceWear);
+         || name.IsContained(_nameGlasses);
 
     public readonly StainIds Stain(EquipSlot slot)
     {
@@ -101,6 +108,15 @@ public unsafe struct DesignData
         }
     }
 
+    public readonly BonusItem BonusItem(BonusItemFlag slot)
+        => slot switch
+        {
+            // @formatter:off
+            BonusItemFlag.Glasses => new BonusItem(_nameGlasses, _iconIds[12], _bonusIds[0], _bonusModelIds[0], _bonusVariants[0], BonusItemFlag.Glasses),
+            _ => Penumbra.GameData.Structs.BonusItem.Empty(slot),
+            // @formatter:on
+        };
+
     public readonly CharacterArmor Armor(EquipSlot slot)
     {
         fixed (byte* ptr = _equipmentBytes)
@@ -134,7 +150,7 @@ public unsafe struct DesignData
     public bool SetItem(EquipSlot slot, EquipItem item)
     {
         var index = slot.ToIndex();
-        if (index > 11)
+        if (index > NumEquipment + NumWeapons)
             return false;
 
         _itemIds[index]                                  = item.ItemId.Id;
@@ -171,6 +187,25 @@ public unsafe struct DesignData
         }
 
         return true;
+    }
+
+    public bool SetBonusItem(BonusItemFlag slot, BonusItem item)
+    {
+        var index = slot.ToIndex();
+        if (index > NumBonusItems)
+            return false;
+
+        _iconIds[NumEquipment + NumWeapons + index] = item.Icon.Id;
+        _bonusIds[index]                            = item.Id.Id;
+        _bonusModelIds[index]                       = item.ModelId.Id;
+        _bonusVariants[index]                       = item.Variant.Id;
+        switch (index)
+        {
+            case 0:
+                _nameGlasses = item.Name;
+                return true;
+            default: return false;
+        }
     }
 
     public bool SetStain(EquipSlot slot, StainIds stains)
@@ -313,17 +348,17 @@ public unsafe struct DesignData
             MemoryUtility.MemSet(ptr, 0, 10 * 2);
         }
 
-        _nameHead     = string.Empty;
-        _nameBody     = string.Empty;
-        _nameHands    = string.Empty;
-        _nameLegs     = string.Empty;
-        _nameFeet     = string.Empty;
-        _nameEars     = string.Empty;
-        _nameNeck     = string.Empty;
-        _nameWrists   = string.Empty;
-        _nameRFinger  = string.Empty;
-        _nameLFinger  = string.Empty;
-        _nameFaceWear = string.Empty;
+        _nameHead    = string.Empty;
+        _nameBody    = string.Empty;
+        _nameHands   = string.Empty;
+        _nameLegs    = string.Empty;
+        _nameFeet    = string.Empty;
+        _nameEars    = string.Empty;
+        _nameNeck    = string.Empty;
+        _nameWrists  = string.Empty;
+        _nameRFinger = string.Empty;
+        _nameLFinger = string.Empty;
+        _nameGlasses = string.Empty;
         return true;
     }
 

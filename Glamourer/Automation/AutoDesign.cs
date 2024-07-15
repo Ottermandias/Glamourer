@@ -61,6 +61,6 @@ public class AutoDesign
         return ret;
     }
 
-    public (EquipFlag Equip, CustomizeFlag Customize, CrestFlag Crest, CustomizeParameterFlag Parameters, MetaFlag Meta) ApplyWhat()
+    public ApplicationCollection ApplyWhat()
         => Type.ApplyWhat(Design);
 }

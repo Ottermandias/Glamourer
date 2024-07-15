@@ -1,6 +1,5 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
@@ -98,15 +97,6 @@ public static class UiHelpers
         return (currentValue != newValue, currentApply != newApply);
     }
 
-    public static (EquipFlag, CustomizeFlag, CrestFlag, CustomizeParameterFlag) ConvertKeysToFlags()
-        => (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift) switch
-        {
-            (false, false) => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All, CustomizeParameterExtensions.All),
-            (true, true)   => (EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, CrestExtensions.All, CustomizeParameterExtensions.All),
-            (true, false)  => (EquipFlagExtensions.All, (CustomizeFlag)0, CrestExtensions.All, 0),
-            (false, true)  => ((EquipFlag)0, CustomizeFlagExtensions.AllRelevant, 0, CustomizeParameterExtensions.All),
-        };
-
     public static (bool, bool) ConvertKeysToBool()
         => (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift) switch
         {
@@ -126,16 +116,36 @@ public static class UiHelpers
         using var c = ImRaii.PushColor(ImGuiCol.Text,
             hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
         ImGui.TextUnformatted(FontAwesomeIcon.Star.ToIconString());
-        if (ImGui.IsItemClicked())
-        {
-            if (favorite)
-                favorites.Remove(item);
-            else
-                favorites.TryAdd(item);
-            return true;
-        }
+        if (!ImGui.IsItemClicked())
+            return false;
 
-        return false;
+        if (favorite)
+            favorites.Remove(item);
+        else
+            favorites.TryAdd(item);
+        return true;
+
+    }
+
+    public static bool DrawFavoriteStar(FavoriteManager favorites, BonusItem item)
+    {
+        var favorite = favorites.Contains(item);
+        var hovering = ImGui.IsMouseHoveringRect(ImGui.GetCursorScreenPos(),
+            ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetTextLineHeight()));
+
+        using var font = ImRaii.PushFont(UiBuilder.IconFont);
+        using var c = ImRaii.PushColor(ImGuiCol.Text,
+            hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
+        ImGui.TextUnformatted(FontAwesomeIcon.Star.ToIconString());
+        if (!ImGui.IsItemClicked())
+            return false;
+
+        if (favorite)
+            favorites.Remove(item);
+        else
+            favorites.TryAdd(item);
+        return true;
+
     }
 
     public static bool DrawFavoriteStar(FavoriteManager favorites, StainId stain)
@@ -149,15 +159,14 @@ public static class UiHelpers
             hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(FontAwesomeIcon.Star.ToIconString());
-        if (ImGui.IsItemClicked())
-        {
-            if (favorite)
-                favorites.Remove(stain);
-            else
-                favorites.TryAdd(stain);
-            return true;
-        }
+        if (!ImGui.IsItemClicked())
+            return false;
 
-        return false;
+        if (favorite)
+            favorites.Remove(stain);
+        else
+            favorites.TryAdd(stain);
+        return true;
+
     }
 }

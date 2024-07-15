@@ -112,11 +112,7 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
     public DesignBase CreateDesign(in MirageManager.GlamourPlate plate)
     {
         var design = _design.CreateTemporary();
-        design.ApplyCustomize  = 0;
-        design.ApplyCrest      = 0;
-        design.ApplyMeta       = 0;
-        design.ApplyParameters = 0;
-        design.ApplyEquip      = 0;
+        design.Application = ApplicationCollection.None;
         foreach (var (slot, index) in EquipSlotExtensions.FullSlots.WithIndex())
         {
             var itemId = plate.ItemIds[index];
@@ -129,7 +125,7 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
 
             design.GetDesignDataRef().SetItem(slot, item);
             design.GetDesignDataRef().SetStain(slot, StainIds.FromGlamourPlate(plate, index));
-            design.ApplyEquip |= slot.ToBothFlags();
+            design.Application.Equip |= slot.ToBothFlags();
         }
 
         return design;

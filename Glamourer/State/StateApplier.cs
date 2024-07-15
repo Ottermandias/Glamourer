@@ -125,6 +125,33 @@ public class StateApplier(
         return data;
     }
 
+    public void ChangeBonusItem(ActorData data, BonusItemFlag slot, PrimaryId id, Variant variant)
+    {
+        var item = new CharacterArmor(id, variant, StainIds.None);
+        foreach (var actor in data.Objects.Where(a => a.IsCharacter))
+        {
+            var mdl = actor.Model;
+            if (!mdl.IsHuman)
+                continue;
+
+            _updateSlot.UpdateBonusSlot(actor.Model, slot, item);
+        }
+    }
+
+    /// <inheritdoc cref="ChangeBonusItem(ActorData,BonusItemFlag,PrimaryId,Variant)"/>
+    public ActorData ChangeBonusItem(ActorState state, BonusItemFlag slot, bool apply)
+    {
+        // If the source is not IPC we do not want to apply restrictions.
+        var data = GetData(state);
+        if (apply)
+        {
+            var item = state.ModelData.BonusItem(slot);
+            ChangeBonusItem(data, slot, item.ModelId, item.Variant);
+        }
+
+        return data;
+    }
+
 
     /// <summary>
     /// Change the stain of a single piece of armor or weapon.

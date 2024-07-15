@@ -277,13 +277,13 @@ public class SetPanel(
         var size = new Vector2(ImGui.GetFrameHeight());
         size.X += ImGuiHelpers.GlobalScale;
 
-        var (equipFlags, customizeFlags, _, _, _) = design.ApplyWhat();
+        var collection = design.ApplyWhat();
         var sb         = new StringBuilder();
         var designData = design.Design.GetDesignData(default);
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
         {
             var flag = slot.ToFlag();
-            if (!equipFlags.HasFlag(flag))
+            if (!collection.Equip.HasFlag(flag))
                 continue;
 
             var item = designData.Item(slot);
@@ -308,7 +308,7 @@ public class SetPanel(
         foreach (var type in CustomizationExtensions.All)
         {
             var flag = type.ToFlag();
-            if (!customizeFlags.HasFlag(flag))
+            if (!collection.Customize.HasFlag(flag))
                 continue;
 
             if (flag.RequiresRedraw())

@@ -160,6 +160,13 @@ public sealed class StateManager(
 
             foreach (var slot in CrestExtensions.AllRelevantSet)
                 ret.SetCrest(slot, CrestService.GetModelCrest(actor, slot));
+
+            foreach (var slot in BonusExtensions.AllFlags)
+            {
+                var data = model.GetBonus(slot);
+                var item = Items.Identify(slot, data.Set, data.Variant);
+                ret.SetBonusItem(slot, item);
+            }
         }
         else
         {
@@ -181,6 +188,13 @@ public sealed class StateManager(
 
             foreach (var slot in CrestExtensions.AllRelevantSet)
                 ret.SetCrest(slot, actor.GetCrest(slot));
+
+            foreach (var slot in BonusExtensions.AllFlags)
+            {
+                var id   = actor.GetBonusItem(slot);
+                var item = Items.Resolve(slot, id);
+                ret.SetBonusItem(slot, item);
+            }
         }
 
         // Set the weapons regardless of source.
@@ -240,6 +254,9 @@ public sealed class StateManager(
             state.Sources[slot, true]  = StateSource.Game;
             state.Sources[slot, false] = StateSource.Game;
         }
+
+        foreach (var slot in BonusExtensions.AllFlags)
+            state.Sources[slot] = StateSource.Game;
 
         foreach (var type in Enum.GetValues<MetaIndex>())
             state.Sources[type] = StateSource.Game;
@@ -328,6 +345,12 @@ public sealed class StateManager(
                     state.ModelData.IsHatVisible());
             }
 
+            foreach (var slot in BonusExtensions.AllFlags)
+            {
+                var item = state.ModelData.BonusItem(slot);
+                Applier.ChangeBonusItem(actors, slot, item.ModelId, item.Variant);
+            }
+
             var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
             Applier.ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
             var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? actors.OnlyGPose() : actors;
@@ -361,6 +384,15 @@ public sealed class StateManager(
             {
                 state.Sources[slot, false] = StateSource.Game;
                 state.ModelData.SetItem(slot, state.BaseData.Item(slot));
+            }
+        }
+
+        foreach (var slot in BonusExtensions.AllFlags)
+        {
+            if (state.Sources[slot] is StateSource.Fixed)
+            {
+                state.Sources[slot] = StateSource.Game;
+                state.ModelData.SetBonusItem(slot, state.BaseData.BonusItem(slot));
             }
         }
 

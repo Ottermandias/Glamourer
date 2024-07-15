@@ -24,6 +24,7 @@ public class EquipmentDrawer
     private readonly GlamourerColorCombo                    _stainCombo;
     private readonly DictStain                              _stainData;
     private readonly ItemCombo[]                            _itemCombo;
+    private readonly BonusItemCombo[]                       _bonusItemCombo;
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
     private readonly CodeService                            _codes;
     private readonly TextureService                         _textures;
@@ -37,16 +38,17 @@ public class EquipmentDrawer
     public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, CodeService codes, TextureService textures,
         Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes)
     {
-        _items        = items;
-        _codes        = codes;
-        _textures     = textures;
-        _config       = config;
-        _gPose        = gPose;
-        _advancedDyes = advancedDyes;
-        _stainData    = items.Stains;
-        _stainCombo   = new GlamourerColorCombo(DefaultWidth - 20, _stainData, favorites);
-        _itemCombo    = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log, favorites)).ToArray();
-        _weaponCombo  = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
+        _items          = items;
+        _codes          = codes;
+        _textures       = textures;
+        _config         = config;
+        _gPose          = gPose;
+        _advancedDyes   = advancedDyes;
+        _stainData      = items.Stains;
+        _stainCombo     = new GlamourerColorCombo(DefaultWidth - 20, _stainData, favorites);
+        _itemCombo      = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log, favorites)).ToArray();
+        _bonusItemCombo = BonusExtensions.AllFlags.Select(f => new BonusItemCombo(gameData, items, f, Glamourer.Log, favorites)).ToArray();
+        _weaponCombo    = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
         foreach (var type in Enum.GetValues<FullEquipType>())
         {
             if (type.ToSlot() is EquipSlot.MainHand)
@@ -98,6 +100,21 @@ public class EquipmentDrawer
             DrawEquipArtisan(equipDrawData);
         else
             DrawEquipNormal(equipDrawData);
+    }
+
+    public void DrawBonusItem(BonusDrawData bonusDrawData)
+    {
+        if (_config.HideApplyCheckmarks)
+            bonusDrawData.DisplayApplication = false;
+
+        using var id      = ImRaii.PushId(100 + (int)bonusDrawData.Slot);
+        var       spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
+        using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
+
+        if (_config.SmallEquip)
+            DrawBonusItemSmall(bonusDrawData);
+        else
+            DrawBonusItemNormal(bonusDrawData);
     }
 
     public void DrawWeapons(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
@@ -302,6 +319,25 @@ public class EquipmentDrawer
         ImGui.TextUnformatted(label);
     }
 
+    private void DrawBonusItemSmall(in BonusDrawData bonusDrawData)
+    {
+        ImGui.Dummy(new Vector2(StainId.NumStains * ImUtf8.FrameHeight + (StainId.NumStains - 1) * ImUtf8.ItemSpacing.X, ImUtf8.FrameHeight));
+        ImGui.SameLine();
+        DrawBonusItem(bonusDrawData, out var label, true, false, false);
+        if (bonusDrawData.DisplayApplication)
+        {
+            ImGui.SameLine();
+            DrawApply(bonusDrawData);
+        }
+        else if (bonusDrawData.IsState)
+        {
+            _advancedDyes.DrawButton(bonusDrawData.Slot);
+        }
+
+        ImGui.SameLine();
+        ImGui.TextUnformatted(label);
+    }
+
     private void DrawWeaponsSmall(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
     {
         DrawStain(mainhand, true);
@@ -380,6 +416,27 @@ public class EquipmentDrawer
             ImGui.SameLine();
             ImGui.TextUnformatted("(Restricted)");
         }
+    }
+
+    private void DrawBonusItemNormal(in BonusDrawData bonusDrawData)
+    {
+        ImGui.Dummy(_iconSize with { Y = ImUtf8.FrameHeight });
+        var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
+        var left  = ImGui.IsItemClicked(ImGuiMouseButton.Left);
+        ImGui.SameLine();
+        DrawBonusItem(bonusDrawData, out var label, false, right, left);
+        if (bonusDrawData.DisplayApplication)
+        {
+            ImGui.SameLine();
+            DrawApply(bonusDrawData);
+        }
+        else if (bonusDrawData.IsState)
+        {
+            _advancedDyes.DrawButton(bonusDrawData.Slot);
+        }
+
+        ImGui.SameLine();
+        ImGui.TextUnformatted(label);
     }
 
     private void DrawWeaponsNormal(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
@@ -491,6 +548,25 @@ public class EquipmentDrawer
             data.SetItem(item);
     }
 
+    private void DrawBonusItem(in BonusDrawData data, out string label, bool small, bool clear, bool open)
+    {
+        var combo = _bonusItemCombo[data.Slot.ToIndex()];
+        label = combo.Label;
+        if (!data.Locked && open)
+            UiHelpers.OpenCombo($"##{combo.Label}");
+
+        using var disabled = ImRaii.Disabled(data.Locked);
+        var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.Id, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
+            _requiredComboWidth);
+        if (change)
+            data.SetItem(combo.CurrentSelection);
+        else if (combo.CustomVariant.Id > 0)
+            data.SetItem(_items.Identify(data.Slot, combo.CustomSetId, combo.CustomVariant));
+
+        if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, BonusItem.Empty(data.Slot), out var item))
+            data.SetItem(item);
+    }
+
     private static bool ResetOrClear<T>(bool locked, bool clicked, bool allowRevert, bool allowClear,
         in T currentItem, in T revertItem, in T clearItem, out T? item) where T : IEquatable<T>
     {
@@ -586,6 +662,13 @@ public class EquipmentDrawer
     private static void DrawApply(in EquipDrawData data)
     {
         if (UiHelpers.DrawCheckbox($"##apply{data.Slot}", "Apply this item when applying the Design.", data.CurrentApply, out var enabled,
+                data.Locked))
+            data.SetApplyItem(enabled);
+    }
+
+    private static void DrawApply(in BonusDrawData data)
+    {
+        if (UiHelpers.DrawCheckbox($"##apply{data.Slot}", "Apply this bonus item when applying the Design.", data.CurrentApply, out var enabled,
                 data.Locked))
             data.SetApplyItem(enabled);
     }

@@ -72,16 +72,11 @@ public class DesignConverter(
                 ? Design.LoadDesign(_customize, _items, _linkLoader, jObject)
                 : DesignBase.LoadDesignBase(_customize, _items, jObject);
 
-            ret.SetApplyMeta(MetaIndex.Wetness, customize);
             if (!customize)
-                ret.ApplyCustomize = 0;
+                ret.Application.RemoveCustomize();
 
             if (!equip)
-            {
-                ret.ApplyEquip =  0;
-                ret.ApplyCrest =  0;
-                ret.ApplyMeta  &= ~(MetaFlag.HatState | MetaFlag.WeaponState | MetaFlag.VisorState);
-            }
+                ret.Application.RemoveEquip();
 
             return ret;
         }
@@ -155,16 +150,11 @@ public class DesignConverter(
             return null;
         }
 
-        ret.SetApplyMeta(MetaIndex.Wetness, customize);
         if (!customize)
-            ret.ApplyCustomize = 0;
+            ret.Application.RemoveCustomize();
 
         if (!equip)
-        {
-            ret.ApplyEquip =  0;
-            ret.ApplyCrest =  0;
-            ret.ApplyMeta  &= ~(MetaFlag.HatState | MetaFlag.WeaponState | MetaFlag.VisorState);
-        }
+            ret.Application.RemoveEquip();
 
         return ret;
     }

@@ -112,6 +112,13 @@ public class DesignPanel
         var mainhand = EquipDrawData.FromDesign(_manager, _selector.Selected!, EquipSlot.MainHand);
         var offhand  = EquipDrawData.FromDesign(_manager, _selector.Selected!, EquipSlot.OffHand);
         _equipmentDrawer.DrawWeapons(mainhand, offhand, true);
+
+        foreach (var slot in BonusExtensions.AllFlags)
+        {
+            var data = BonusDrawData.FromDesign(_manager, _selector.Selected!, slot);
+            _equipmentDrawer.DrawBonusItem(data);
+        }
+
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
         DrawEquipmentMetaToggles();
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
@@ -149,7 +156,7 @@ public class DesignPanel
         if (!h)
             return;
 
-        if (_customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.ApplyCustomizeRaw,
+        if (_customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.Application.Customize,
                 _selector.Selected!.WriteProtected(), false))
             foreach (var idx in Enum.GetValues<CustomizeIndex>())
             {
@@ -224,7 +231,7 @@ public class DesignPanel
     private void DrawCrestApplication()
     {
         using var id        = ImRaii.PushId("Crests");
-        var       flags     = (uint)_selector.Selected!.ApplyCrest;
+        var       flags     = (uint)_selector.Selected!.Application.Crest;
         var       bigChange = ImGui.CheckboxFlags("Apply All Crests", ref flags, (uint)CrestExtensions.AllRelevant);
         foreach (var flag in CrestExtensions.AllRelevantSet)
         {
@@ -255,7 +262,7 @@ public class DesignPanel
         {
             void ApplyEquip(string label, EquipFlag allFlags, bool stain, IEnumerable<EquipSlot> slots)
             {
-                var       flags     = (uint)(allFlags & _selector.Selected!.ApplyEquip);
+                var       flags     = (uint)(allFlags & _selector.Selected!.Application.Equip);
                 using var id        = ImRaii.PushId(label);
                 var       bigChange = ImGui.CheckboxFlags($"Apply All {label}", ref flags, (uint)allFlags);
                 if (stain)
@@ -302,7 +309,7 @@ public class DesignPanel
     {
         using var  id        = ImRaii.PushId("Meta");
         const uint all       = (uint)MetaExtensions.All;
-        var        flags     = (uint)_selector.Selected!.ApplyMeta;
+        var        flags     = (uint)_selector.Selected!.Application.Meta;
         var        bigChange = ImGui.CheckboxFlags("Apply All Meta Changes", ref flags, all);
 
         var labels = new[]
@@ -324,7 +331,7 @@ public class DesignPanel
     private void DrawParameterApplication()
     {
         using var id        = ImRaii.PushId("Parameter");
-        var       flags     = (uint)_selector.Selected!.ApplyParameters;
+        var       flags     = (uint)_selector.Selected!.Application.Parameters;
         var       bigChange = ImGui.CheckboxFlags("Apply All Customize Parameters", ref flags, (uint)CustomizeParameterExtensions.All);
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
         {
@@ -408,8 +415,7 @@ public class DesignPanel
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
-            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
+            using var _ = _selector.Selected!.TemporarilyRestrictApplication(ApplicationCollection.FromKeys());
             _state.ApplyDesign(state, _selector.Selected!, ApplySettings.ManualWithLinks);
         }
     }
@@ -427,8 +433,7 @@ public class DesignPanel
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var (applyGear, applyCustomize, applyCrest, applyParameters) = UiHelpers.ConvertKeysToFlags();
-            using var _ = _selector.Selected!.TemporarilyRestrictApplication(applyGear, applyCustomize, applyCrest, applyParameters);
+            using var _ = _selector.Selected!.TemporarilyRestrictApplication(ApplicationCollection.FromKeys());
             _state.ApplyDesign(state, _selector.Selected!, ApplySettings.ManualWithLinks);
         }
     }

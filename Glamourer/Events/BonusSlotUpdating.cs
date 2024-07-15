@@ -15,7 +15,7 @@ namespace Glamourer.Events;
 /// </list>
 /// </summary>
 public sealed class BonusSlotUpdating()
-    : EventWrapperRef34<Model, BonusEquipFlag, CharacterArmor, ulong, BonusSlotUpdating.Priority>(nameof(BonusSlotUpdating))
+    : EventWrapperRef34<Model, BonusItemFlag, CharacterArmor, ulong, BonusSlotUpdating.Priority>(nameof(BonusSlotUpdating))
 {
     public enum Priority
     {

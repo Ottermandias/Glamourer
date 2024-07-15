@@ -89,6 +89,9 @@ public sealed class DesignChanged()
         /// <summary> An existing design changed whether a specific equipment piece is applied. Data is the slot of the equipment [EquipSlot]. </summary>
         ApplyEquip,
 
+        /// <summary> An existing design changed whether a specific bonus item is applied. Data is the slot of the item [BonusItemFlag]. </summary>
+        ApplyBonus,
+
         /// <summary> An existing design changed whether a specific stain is applied. Data is the slot of the equipment [EquipSlot]. </summary>
         ApplyStain,
 

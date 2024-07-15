@@ -42,14 +42,15 @@ public class DesignMerger(
             if (!data.IsHuman)
                 continue;
 
-            var (equipFlags, customizeFlags, crestFlags, parameterFlags, applyMeta) = type.ApplyWhat(design);
-            ReduceMeta(data, applyMeta, ret, source);
-            ReduceCustomize(data, customizeFlags, ref fixFlags, ret, source, respectOwnership, startBodyType);
-            ReduceEquip(data, equipFlags, ret, source, respectOwnership);
-            ReduceMainhands(data, jobs, equipFlags, ret, source, respectOwnership);
-            ReduceOffhands(data, jobs, equipFlags, ret, source, respectOwnership);
-            ReduceCrests(data, crestFlags, ret, source);
-            ReduceParameters(data, parameterFlags, ret, source);
+            var collection = type.ApplyWhat(design);
+            ReduceMeta(data, collection.Meta, ret, source);
+            ReduceCustomize(data, collection.Customize, ref fixFlags, ret, source, respectOwnership, startBodyType);
+            ReduceEquip(data, collection.Equip, ret, source, respectOwnership);
+            ReduceBonusItems(data, collection.BonusItem, ret, source, respectOwnership);
+            ReduceMainhands(data, jobs, collection.Equip, ret, source, respectOwnership);
+            ReduceOffhands(data, jobs, collection.Equip, ret, source, respectOwnership);
+            ReduceCrests(data, collection.Crest, ret, source);
+            ReduceParameters(data, collection.Parameters, ret, source);
             ReduceMods(design as Design, ret, modAssociations);
             if (type.HasFlag(ApplicationType.GearCustomization))
                 ReduceMaterials(design, ret);
@@ -83,7 +84,7 @@ public class DesignMerger(
 
     private static void ReduceMeta(in DesignData design, MetaFlag applyMeta, MergedDesign ret, StateSource source)
     {
-        applyMeta &= ~ret.Design.ApplyMeta;
+        applyMeta &= ~ret.Design.Application.Meta;
         if (applyMeta == 0)
             return;
 
@@ -100,7 +101,7 @@ public class DesignMerger(
 
     private static void ReduceCrests(in DesignData design, CrestFlag crestFlags, MergedDesign ret, StateSource source)
     {
-        crestFlags &= ~ret.Design.ApplyCrest;
+        crestFlags &= ~ret.Design.Application.Crest;
         if (crestFlags == 0)
             return;
 
@@ -118,7 +119,7 @@ public class DesignMerger(
     private static void ReduceParameters(in DesignData design, CustomizeParameterFlag parameterFlags, MergedDesign ret,
         StateSource source)
     {
-        parameterFlags &= ~ret.Design.ApplyParameters;
+        parameterFlags &= ~ret.Design.Application.Parameters;
         if (parameterFlags == 0)
             return;
 
@@ -136,7 +137,7 @@ public class DesignMerger(
     private void ReduceEquip(in DesignData design, EquipFlag equipFlags, MergedDesign ret, StateSource source,
         bool respectOwnership)
     {
-        equipFlags &= ~ret.Design.ApplyEquip;
+        equipFlags &= ~ret.Design.Application.Equip;
         if (equipFlags == 0)
             return;
 
@@ -171,6 +172,22 @@ public class DesignMerger(
                 ret.Design.SetApplyStain(slot, true);
                 ret.Sources[slot, true] = source;
             }
+        }
+    }
+
+    private void ReduceBonusItems(in DesignData design, BonusItemFlag bonusItems, MergedDesign ret, StateSource source, bool respectOwnership)
+    {
+        bonusItems &= ~ret.Design.Application.BonusItem;
+        if (bonusItems == 0)
+            return;
+
+        foreach (var slot in BonusExtensions.AllFlags.Where(b => bonusItems.HasFlag(b)))
+        {
+            var item = design.BonusItem(slot);
+            if (!respectOwnership || true) // TODO: maybe check unlocks
+                ret.Design.GetDesignDataRef().SetBonusItem(slot, item);
+            ret.Design.SetApplyBonusItem(slot, true);
+            ret.Sources[slot] = source;
         }
     }
 

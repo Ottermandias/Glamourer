@@ -38,6 +38,13 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
             _                       => Invalid,
         };
 
+    public static implicit operator StateIndex(BonusItemFlag flag)
+        => flag switch
+        {
+            BonusItemFlag.Glasses => new StateIndex(BonusItemGlasses),
+            _                     => Invalid,
+        };
+
     public static implicit operator StateIndex(CustomizeIndex index)
         => index switch
         {
@@ -198,22 +205,12 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
     public const int ParamFacePaintUvOffset     = ParamFacePaintUvMultiplier + 1;
     public const int ParamDecalColor            = ParamFacePaintUvOffset + 1;
 
-    public const int Size = ParamDecalColor + 1;
+    public const int BonusItemGlasses = ParamDecalColor + 1;
+
+    public const int Size = BonusItemGlasses + 1;
 
     public static IEnumerable<StateIndex> All
         => Enumerable.Range(0, Size - 1).Select(i => new StateIndex(i));
-
-    public bool GetApply(DesignBase data)
-        => GetFlag() switch
-        {
-            EquipFlag e              => data.ApplyEquip.HasFlag(e),
-            CustomizeFlag c          => data.ApplyCustomize.HasFlag(c),
-            MetaFlag m               => data.ApplyMeta.HasFlag(m),
-            CrestFlag c              => data.ApplyCrest.HasFlag(c),
-            CustomizeParameterFlag c => data.ApplyParameters.HasFlag(c),
-            bool v                   => v,
-            _                        => false,
-        };
 
     public string ToName()
         => GetFlag() switch
@@ -223,6 +220,7 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
             MetaFlag m               => m.ToIndex().ToName(),
             CrestFlag c              => c.ToLabel(),
             CustomizeParameterFlag c => c.ToName(),
+            BonusItemFlag b          => b.ToName(),
             bool v                   => "Model ID",
             _                        => "Unknown",
         };
@@ -317,6 +315,8 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
             ParamFacePaintUvOffset     => CustomizeParameterFlag.FacePaintUvOffset,
             ParamDecalColor            => CustomizeParameterFlag.DecalColor,
 
+            BonusItemGlasses => BonusItemFlag.Glasses,
+
             _ => -1,
         };
 
@@ -410,6 +410,8 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
             ParamFacePaintUvMultiplier => data.Parameters[CustomizeParameterFlag.FacePaintUvMultiplier],
             ParamFacePaintUvOffset     => data.Parameters[CustomizeParameterFlag.FacePaintUvOffset],
             ParamDecalColor            => data.Parameters[CustomizeParameterFlag.DecalColor],
+
+            BonusItemGlasses => data.BonusItem(BonusItemFlag.Glasses),
 
             _ => null,
         };

@@ -35,7 +35,8 @@ public class ApiHelpers(ObjectManager objects, StateManager stateManager, ActorM
             state = null;
             return GlamourerApiEc.ActorNotFound;
         }
-        stateManager.TryGetValue(identifier, out  state);
+
+        stateManager.TryGetValue(identifier, out state);
         return GlamourerApiEc.Success;
     }
 
@@ -54,12 +55,10 @@ public class ApiHelpers(ObjectManager objects, StateManager stateManager, ActorM
     internal static DesignBase.FlagRestrictionResetter Restrict(DesignBase design, ApplyFlag flags)
         => (flags & (ApplyFlag.Equipment | ApplyFlag.Customization)) switch
         {
-            ApplyFlag.Equipment => design.TemporarilyRestrictApplication(EquipFlagExtensions.All, 0, CrestExtensions.All, 0),
-            ApplyFlag.Customization => design.TemporarilyRestrictApplication(0, CustomizeFlagExtensions.All, 0,
-                CustomizeParameterExtensions.All),
-            ApplyFlag.Equipment | ApplyFlag.Customization => design.TemporarilyRestrictApplication(EquipFlagExtensions.All,
-                CustomizeFlagExtensions.All, CrestExtensions.All, CustomizeParameterExtensions.All),
-            _ => design.TemporarilyRestrictApplication(0, 0, 0, 0),
+            ApplyFlag.Equipment => design.TemporarilyRestrictApplication(ApplicationCollection.Equipment),
+            ApplyFlag.Customization => design.TemporarilyRestrictApplication(ApplicationCollection.Customizations),
+            ApplyFlag.Equipment | ApplyFlag.Customization => design.TemporarilyRestrictApplication(ApplicationCollection.All),
+            _ => design.TemporarilyRestrictApplication(ApplicationCollection.None),
         };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

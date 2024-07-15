@@ -46,6 +46,9 @@ public sealed unsafe class AdvancedDyePopup(
     public void DrawButton(EquipSlot slot)
         => DrawButton(MaterialValueIndex.FromSlot(slot));
 
+    public void DrawButton(BonusItemFlag slot)
+        => DrawButton(MaterialValueIndex.FromSlot(slot));
+
     private void DrawButton(MaterialValueIndex index)
     {
         if (!config.UseAdvancedDyes)

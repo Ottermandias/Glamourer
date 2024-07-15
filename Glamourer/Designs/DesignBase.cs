@@ -42,23 +42,19 @@ public class DesignBase
     /// <summary> Used when importing .cma or .chara files. </summary>
     internal DesignBase(CustomizeService customize, in DesignData designData, EquipFlag equipFlags, CustomizeFlag customizeFlags)
     {
-        _designData    = designData;
-        ApplyCustomize = customizeFlags & CustomizeFlagExtensions.AllRelevant;
-        ApplyEquip     = equipFlags & EquipFlagExtensions.All;
-        ApplyMeta      = 0;
-        CustomizeSet   = SetCustomizationSet(customize);
+        _designData       = designData;
+        ApplyCustomize    = customizeFlags & CustomizeFlagExtensions.AllRelevant;
+        Application.Equip = equipFlags & EquipFlagExtensions.All;
+        Application.Meta  = 0;
+        CustomizeSet      = SetCustomizationSet(customize);
     }
 
     internal DesignBase(DesignBase clone)
     {
-        _designData     = clone._designData;
-        _materials      = clone._materials.Clone();
-        CustomizeSet    = clone.CustomizeSet;
-        ApplyCustomize  = clone.ApplyCustomizeRaw;
-        ApplyEquip      = clone.ApplyEquip & EquipFlagExtensions.All;
-        ApplyParameters = clone.ApplyParameters & CustomizeParameterExtensions.All;
-        ApplyCrest      = clone.ApplyCrest & CrestExtensions.All;
-        ApplyMeta       = clone.ApplyMeta & MetaExtensions.All;
+        _designData  = clone._designData;
+        _materials   = clone._materials.Clone();
+        CustomizeSet = clone.CustomizeSet;
+        Application  = clone.Application.CloneSecure();
     }
 
     /// <summary> Ensure that the customization set is updated when the design data changes. </summary>
@@ -70,27 +66,20 @@ public class DesignBase
 
     #region Application Data
 
-    private CustomizeFlag _applyCustomize = CustomizeFlagExtensions.AllRelevant;
-    public  CustomizeSet  CustomizeSet { get; private set; }
+    public CustomizeSet CustomizeSet { get; private set; }
 
-    public CustomizeParameterFlag ApplyParameters { get; internal set; }
+    public ApplicationCollection Application = ApplicationCollection.Default;
 
     internal CustomizeFlag ApplyCustomize
     {
-        get => _applyCustomize.FixApplication(CustomizeSet);
-        set => _applyCustomize = (value & CustomizeFlagExtensions.AllRelevant) | CustomizeFlag.BodyType;
+        get => Application.Customize.FixApplication(CustomizeSet);
+        set => Application.Customize = (value & CustomizeFlagExtensions.AllRelevant) | CustomizeFlag.BodyType;
     }
 
     internal CustomizeFlag ApplyCustomizeExcludingBodyType
-        => _applyCustomize.FixApplication(CustomizeSet) & ~CustomizeFlag.BodyType;
+        => Application.Customize.FixApplication(CustomizeSet) & ~CustomizeFlag.BodyType;
 
-    internal CustomizeFlag ApplyCustomizeRaw
-        => _applyCustomize;
-
-    internal EquipFlag ApplyEquip = EquipFlagExtensions.All;
-    internal CrestFlag ApplyCrest = CrestExtensions.AllRelevant;
-    internal MetaFlag  ApplyMeta  = MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.WeaponState;
-    private  bool      _writeProtected;
+    private bool _writeProtected;
 
     public bool SetCustomize(CustomizeService customizeService, CustomizeArray customize)
     {
@@ -103,18 +92,18 @@ public class DesignBase
     }
 
     public bool DoApplyMeta(MetaIndex index)
-        => ApplyMeta.HasFlag(index.ToFlag());
+        => Application.Meta.HasFlag(index.ToFlag());
 
     public bool WriteProtected()
         => _writeProtected;
 
     public bool SetApplyMeta(MetaIndex index, bool value)
     {
-        var newFlag = value ? ApplyMeta | index.ToFlag() : ApplyMeta & ~index.ToFlag();
-        if (newFlag == ApplyMeta)
+        var newFlag = value ? Application.Meta | index.ToFlag() : Application.Meta & ~index.ToFlag();
+        if (newFlag == Application.Meta)
             return false;
 
-        ApplyMeta = newFlag;
+        Application.Meta = newFlag;
         return true;
     }
 
@@ -128,103 +117,100 @@ public class DesignBase
     }
 
     public bool DoApplyEquip(EquipSlot slot)
-        => ApplyEquip.HasFlag(slot.ToFlag());
+        => Application.Equip.HasFlag(slot.ToFlag());
 
     public bool DoApplyStain(EquipSlot slot)
-        => ApplyEquip.HasFlag(slot.ToStainFlag());
+        => Application.Equip.HasFlag(slot.ToStainFlag());
 
     public bool DoApplyCustomize(CustomizeIndex idx)
-        => ApplyCustomize.HasFlag(idx.ToFlag());
+        => Application.Customize.HasFlag(idx.ToFlag());
 
     public bool DoApplyCrest(CrestFlag slot)
-        => ApplyCrest.HasFlag(slot);
+        => Application.Crest.HasFlag(slot);
 
     public bool DoApplyParameter(CustomizeParameterFlag flag)
-        => ApplyParameters.HasFlag(flag);
+        => Application.Parameters.HasFlag(flag);
+
+    public bool DoApplyBonusItem(BonusItemFlag slot)
+        => Application.BonusItem.HasFlag(slot);
 
     internal bool SetApplyEquip(EquipSlot slot, bool value)
     {
-        var newValue = value ? ApplyEquip | slot.ToFlag() : ApplyEquip & ~slot.ToFlag();
-        if (newValue == ApplyEquip)
+        var newValue = value ? Application.Equip | slot.ToFlag() : Application.Equip & ~slot.ToFlag();
+        if (newValue == Application.Equip)
             return false;
 
-        ApplyEquip = newValue;
+        Application.Equip = newValue;
+        return true;
+    }
+
+    internal bool SetApplyBonusItem(BonusItemFlag slot, bool value)
+    {
+        var newValue = value ? Application.BonusItem | slot : Application.BonusItem & ~slot;
+        if (newValue == Application.BonusItem)
+            return false;
+
+        Application.BonusItem = newValue;
         return true;
     }
 
     internal bool SetApplyStain(EquipSlot slot, bool value)
     {
-        var newValue = value ? ApplyEquip | slot.ToStainFlag() : ApplyEquip & ~slot.ToStainFlag();
-        if (newValue == ApplyEquip)
+        var newValue = value ? Application.Equip | slot.ToStainFlag() : Application.Equip & ~slot.ToStainFlag();
+        if (newValue == Application.Equip)
             return false;
 
-        ApplyEquip = newValue;
+        Application.Equip = newValue;
         return true;
     }
 
     internal bool SetApplyCustomize(CustomizeIndex idx, bool value)
     {
-        var newValue = value ? _applyCustomize | idx.ToFlag() : _applyCustomize & ~idx.ToFlag();
-        if (newValue == _applyCustomize)
+        var newValue = value ? Application.Customize | idx.ToFlag() : Application.Customize & ~idx.ToFlag();
+        if (newValue == Application.Customize)
             return false;
 
-        _applyCustomize = newValue;
+        Application.Customize = newValue;
         return true;
     }
 
     internal bool SetApplyCrest(CrestFlag slot, bool value)
     {
-        var newValue = value ? ApplyCrest | slot : ApplyCrest & ~slot;
-        if (newValue == ApplyCrest)
+        var newValue = value ? Application.Crest | slot : Application.Crest & ~slot;
+        if (newValue == Application.Crest)
             return false;
 
-        ApplyCrest = newValue;
+        Application.Crest = newValue;
         return true;
     }
 
     internal bool SetApplyParameter(CustomizeParameterFlag flag, bool value)
     {
-        var newValue = value ? ApplyParameters | flag : ApplyParameters & ~flag;
-        if (newValue == ApplyParameters)
+        var newValue = value ? Application.Parameters | flag : Application.Parameters & ~flag;
+        if (newValue == Application.Parameters)
             return false;
 
-        ApplyParameters = newValue;
+        Application.Parameters = newValue;
         return true;
     }
 
-    internal FlagRestrictionResetter TemporarilyRestrictApplication(EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags,
-        CustomizeParameterFlag parameterFlags)
-        => new(this, equipFlags, customizeFlags, crestFlags, parameterFlags);
+    internal FlagRestrictionResetter TemporarilyRestrictApplication(ApplicationCollection restrictions)
+        => new(this, restrictions);
 
     internal readonly struct FlagRestrictionResetter : IDisposable
     {
-        private readonly DesignBase             _design;
-        private readonly EquipFlag              _oldEquipFlags;
-        private readonly CustomizeFlag          _oldCustomizeFlags;
-        private readonly CrestFlag              _oldCrestFlags;
-        private readonly CustomizeParameterFlag _oldParameterFlags;
+        private readonly DesignBase            _design;
+        private readonly ApplicationCollection _oldFlags;
 
-        public FlagRestrictionResetter(DesignBase d, EquipFlag equipFlags, CustomizeFlag customizeFlags, CrestFlag crestFlags,
-            CustomizeParameterFlag parameterFlags)
+        public FlagRestrictionResetter(DesignBase d, ApplicationCollection restrictions)
         {
-            _design            =  d;
-            _oldEquipFlags     =  d.ApplyEquip;
-            _oldCustomizeFlags =  d.ApplyCustomizeRaw;
-            _oldCrestFlags     =  d.ApplyCrest;
-            _oldParameterFlags =  d.ApplyParameters;
-            d.ApplyEquip       &= equipFlags;
-            d.ApplyCustomize   &= customizeFlags;
-            d.ApplyCrest       &= crestFlags;
-            d.ApplyParameters  &= parameterFlags;
+            _design             = d;
+            _oldFlags           = d.Application;
+            _design.Application = restrictions.Restrict(_oldFlags);
         }
 
         public void Dispose()
-        {
-            _design.ApplyEquip      = _oldEquipFlags;
-            _design.ApplyCustomize  = _oldCustomizeFlags;
-            _design.ApplyCrest      = _oldCrestFlags;
-            _design.ApplyParameters = _oldParameterFlags;
-        }
+            => _design.Application = _oldFlags;
     }
 
     private CustomizeSet SetCustomizationSet(CustomizeService customize)
@@ -285,6 +271,22 @@ public class DesignBase
             });
     }
 
+    protected JObject SerializeBonusItems()
+    {
+        var ret = new JObject();
+        foreach (var slot in BonusExtensions.AllFlags)
+        {
+            var item = _designData.BonusItem(slot);
+            ret[slot.ToString()] = new JObject()
+            {
+                ["BonusId"] = item.ModelId.Id,
+                ["Apply"]   = DoApplyBonusItem(slot),
+            };
+        }
+
+        return ret;
+    }
+
     protected JObject SerializeCustomize()
     {
         var ret = new JObject()
@@ -299,7 +301,7 @@ public class DesignBase
                 ret[idx.ToString()] = new JObject()
                 {
                     ["Value"] = customize[idx].Value,
-                    ["Apply"] = ApplyCustomizeRaw.HasFlag(idx.ToFlag()),
+                    ["Apply"] = Application.Customize.HasFlag(idx.ToFlag()),
                 };
             }
         else
@@ -382,7 +384,7 @@ public class DesignBase
             {
                 var k = uint.Parse(key.Name, NumberStyles.HexNumber);
                 var v = value.ToObject<MaterialValueDesign>();
-                if (!MaterialValueIndex.FromKey(k, out var idx))
+                if (!MaterialValueIndex.FromKey(k, out _))
                 {
                     Glamourer.Messager.NotificationMessage($"Invalid material value key {k} for design {name}, skipped.",
                         NotificationType.Warning);
@@ -429,7 +431,7 @@ public class DesignBase
     {
         if (parameters == null)
         {
-            design.ApplyParameters               = 0;
+            design.Application.Parameters         = 0;
             design.GetDesignDataRef().Parameters = default;
             return;
         }
@@ -490,7 +492,7 @@ public class DesignBase
                 return true;
             }
 
-            design.ApplyParameters                     &= ~flag;
+            design.Application.Parameters               &= ~flag;
             design.GetDesignDataRef().Parameters[flag] =  CustomizeParameterValue.Zero;
             return false;
         }
@@ -669,11 +671,12 @@ public class DesignBase
         {
             _designData = DesignBase64Migration.MigrateBase64(items, humans, base64, out var equipFlags, out var customizeFlags,
                 out var writeProtected, out var applyMeta);
-            ApplyEquip      = equipFlags;
-            ApplyCustomize  = customizeFlags;
-            ApplyParameters = 0;
-            ApplyCrest      = 0;
-            ApplyMeta       = applyMeta;
+            Application.Equip     = equipFlags;
+            ApplyCustomize        = customizeFlags;
+            Application.Parameters = 0;
+            Application.Crest     = 0;
+            Application.Meta      = applyMeta;
+            Application.BonusItem = 0;
             SetWriteProtected(writeProtected);
             CustomizeSet = SetCustomizationSet(customize);
         }
