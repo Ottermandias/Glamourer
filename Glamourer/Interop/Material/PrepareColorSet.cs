@@ -21,9 +21,10 @@ public sealed unsafe class PrepareColorSet
         MaterialManager = 0,
     }
 
+    // TODO enable when working
     public PrepareColorSet(HookManager hooks)
         : base("Prepare Color Set ")
-        => _task = hooks.CreateHook<Delegate>(Name, Sigs.PrepareColorSet, Detour, true);
+        => _task = hooks.CreateHook<Delegate>(Name, Sigs.PrepareColorSet, Detour, false);
 
     private readonly Task<Hook<Delegate>> _task;
 
