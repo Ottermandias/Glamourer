@@ -35,11 +35,10 @@ public sealed class CustomizeService(
         }
 
         if (applyWhich.HasFlag(CustomizeFlag.Gender))
-            if (ret.Race is not Race.Hrothgar || newValues.Gender is not Gender.Female)
-            {
-                changed |= ChangeGender(ref ret, newValues.Gender);
-                applied |= CustomizeFlag.Gender;
-            }
+        {
+            changed |= ChangeGender(ref ret, newValues.Gender);
+            applied |= CustomizeFlag.Gender;
+        }
 
         if (applyWhich.HasFlag(CustomizeFlag.BodyType))
         {
@@ -91,7 +90,7 @@ public sealed class CustomizeService(
     /// <summary> Returns whether a gender is valid for the given race. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public bool IsGenderValid(Race race, Gender gender)
-        => race is Race.Hrothgar ? gender == Gender.Male : CustomizeManager.Genders.Contains(gender);
+        => CustomizeManager.Genders.Contains(gender);
 
     /// <inheritdoc cref="IsCustomizationValid(CustomizeSet,CustomizeValue,CustomizeIndex,CustomizeValue, out CustomizeData?)"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
