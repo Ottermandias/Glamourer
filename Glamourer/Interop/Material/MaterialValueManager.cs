@@ -21,7 +21,7 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     public float   SpecularStrength = specularStrength;
     public float   GlossStrength    = glossStrength;
 
-    public ColorRow(in LegacyColorTable.Row row)
+    public ColorRow(in ColorTable.Row row)
         : this(Root(row.Diffuse), Root(row.Specular), Root(row.Emissive), row.SpecularStrength, row.GlossStrength)
     { }
 
@@ -44,7 +44,7 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     private static float Root(float value)
         => value < 0 ? MathF.Sqrt(-value) : MathF.Sqrt(value);
 
-    public readonly bool Apply(ref LegacyColorTable.Row row)
+    public readonly bool Apply(ref ColorTable.Row row)
     {
         var ret = false;
         var d   = Square(Diffuse);

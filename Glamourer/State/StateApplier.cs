@@ -306,6 +306,8 @@ public class StateApplier(
 
     public unsafe void ChangeMaterialValue(ActorData data, MaterialValueIndex index, ColorRow? value, bool force)
     {
+        // TODO fix when working
+        return;
         if (!force && !_config.UseAdvancedDyes)
             return;
 
@@ -338,6 +340,8 @@ public class StateApplier(
 
     public unsafe void ChangeMaterialValues(ActorData data, in StateMaterialManager materials, bool force)
     {
+        // TODO: fix when working
+        return;
         if (!force && !_config.UseAdvancedDyes)
             return;
 
@@ -383,6 +387,11 @@ public class StateApplier(
             ChangeCustomize(actors, state.ModelData.Customize);
             foreach (var slot in EquipSlotExtensions.EqdpSlots)
                 ChangeArmor(actors, slot, state.ModelData.Armor(slot), !state.Sources[slot, false].IsIpc(), state.ModelData.IsHatVisible());
+            foreach (var slot in BonusExtensions.AllFlags)
+            {
+                var item = state.ModelData.BonusItem(slot);
+                ChangeBonusItem(actors, slot, item.ModelId, item.Variant);
+            }
 
             var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
             ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));

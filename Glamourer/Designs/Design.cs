@@ -106,6 +106,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
             ["Tags"]           = JArray.FromObject(Tags),
             ["WriteProtected"] = WriteProtected(),
             ["Equipment"]      = SerializeEquipment(),
+            ["Bonus"]          = SerializeBonusItems(),
             ["Customize"]      = SerializeCustomize(),
             ["Parameters"]     = SerializeParameters(),
             ["Materials"]      = SerializeMaterials(),
@@ -171,6 +172,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
         design.SetWriteProtected(json["WriteProtected"]?.ToObject<bool>() ?? false);
         LoadCustomize(customizations, json["Customize"], design, design.Name, true, false);
         LoadEquip(items, json["Equipment"], design, design.Name, true);
+        LoadBonus(items, design, json["Bonus"]);
         LoadMods(json["Mods"], design);
         LoadParameters(json["Parameters"], design, design.Name);
         LoadMaterials(json["Materials"], design, design.Name);

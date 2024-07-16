@@ -158,22 +158,22 @@ public class EquipmentDrawer
         }
     }
 
-    public bool DrawAllStain(out StainId ret, bool locked)
+    public bool DrawAllStain(out StainIds ret, bool locked)
     {
         using var disabled = ImRaii.Disabled(locked);
         var       change   = _stainCombo.Draw("Dye All Slots", Stain.None.RgbaColor, string.Empty, false, false, MouseWheelType.None);
-        ret = Stain.None.RowIndex;
+        ret = StainIds.None;
         if (change)
             if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out var stain))
-                ret = stain.RowIndex;
+                ret = StainIds.All(stain.RowIndex);
             else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
-                ret = Stain.None.RowIndex;
+                ret = StainIds.None;
 
         if (!locked)
         {
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && _config.DeleteDesignModifier.IsActive())
             {
-                ret    = Stain.None.RowIndex;
+                ret    = StainIds.None;
                 change = true;
             }
 
@@ -420,7 +420,7 @@ public class EquipmentDrawer
 
     private void DrawBonusItemNormal(in BonusDrawData bonusDrawData)
     {
-        ImGui.Dummy(_iconSize with { Y = ImUtf8.FrameHeight });
+        bonusDrawData.CurrentItem.DrawIcon(_textures, _iconSize, bonusDrawData.Slot);
         var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
         var left  = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();

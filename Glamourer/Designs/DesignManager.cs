@@ -356,7 +356,7 @@ public sealed class DesignManager : DesignEditor
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of {slot} bonus item to {value}.");
-        DesignChanged.Invoke(DesignChanged.Type.ApplyBonus, design, slot);
+        DesignChanged.Invoke(DesignChanged.Type.ApplyBonusItem, design, slot);
     }
 
     /// <summary> Change whether to apply a specific stain. </summary>

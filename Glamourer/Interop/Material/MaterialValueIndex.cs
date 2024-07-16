@@ -149,7 +149,7 @@ public readonly record struct MaterialValueIndex(
         => materialIndex < MaterialService.MaterialsPerModel;
 
     public static bool ValidateRow(byte rowIndex)
-        => rowIndex < LegacyColorTable.NumUsedRows;
+        => rowIndex < ColorTable.NumUsedRows;
 
     private static uint ToKey(DrawObjectType type, byte slotIndex, byte materialIndex, byte rowIndex)
     {

@@ -29,8 +29,30 @@ public static class UiHelpers
         if (empty)
         {
             var (bgColor, tint) = isEmpty
-                ? (ImGui.GetColorU32(ImGuiCol.FrameBg), new Vector4(0.1f,       0.1f, 0.1f, 0.5f))
-                : (ImGui.GetColorU32(ImGuiCol.FrameBgActive), new Vector4(0.3f, 0.3f, 0.3f, 0.8f));
+                ? (ImGui.GetColorU32(ImGuiCol.FrameBg), Vector4.One)
+                : (ImGui.GetColorU32(ImGuiCol.FrameBgActive), new Vector4(0.3f, 0.3f, 0.3f, 1f));
+            var pos = ImGui.GetCursorScreenPos();
+            ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * ImGuiHelpers.GlobalScale);
+            if (ptr != nint.Zero)
+                ImGui.Image(ptr, size, Vector2.Zero, Vector2.One, tint);
+            else
+                ImGui.Dummy(size);
+        }
+        else
+        {
+            ImGuiUtil.HoverIcon(ptr, textureSize, size);
+        }
+    }
+
+    public static void DrawIcon(this BonusItem item, TextureService textures, Vector2 size, BonusItemFlag slot)
+    {
+        var isEmpty = item.ModelId.Id == 0;
+        var (ptr, textureSize, empty) = textures.GetIcon(item, slot);
+        if (empty)
+        {
+            var (bgColor, tint) = isEmpty
+                ? (ImGui.GetColorU32(ImGuiCol.FrameBg), Vector4.One)
+                : (ImGui.GetColorU32(ImGuiCol.FrameBgActive), new Vector4(0.3f, 0.3f, 0.3f, 1f));
             var pos = ImGui.GetCursorScreenPos();
             ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * ImGuiHelpers.GlobalScale);
             if (ptr != nint.Zero)

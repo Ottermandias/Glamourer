@@ -51,6 +51,8 @@ public sealed unsafe class AdvancedDyePopup(
 
     private void DrawButton(MaterialValueIndex index)
     {
+        // TODO fix when working
+        return;
         if (!config.UseAdvancedDyes)
             return;
 
@@ -193,11 +195,11 @@ public sealed unsafe class AdvancedDyePopup(
             DrawWindow(textures);
     }
 
-    private void DrawTable(MaterialValueIndex materialIndex, in LegacyColorTable table)
+    private void DrawTable(MaterialValueIndex materialIndex, in ColorTable table)
     {
         using var disabled = ImRaii.Disabled(_state.IsLocked);
         _anyChanged = false;
-        for (byte i = 0; i < LegacyColorTable.NumUsedRows; ++i)
+        for (byte i = 0; i < ColorTable.NumUsedRows; ++i)
         {
             var     index = materialIndex with { RowIndex = i };
             ref var row   = ref table[i];
@@ -208,7 +210,7 @@ public sealed unsafe class AdvancedDyePopup(
         DrawAllRow(materialIndex, table);
     }
 
-    private void DrawAllRow(MaterialValueIndex materialIndex, in LegacyColorTable table)
+    private void DrawAllRow(MaterialValueIndex materialIndex, in ColorTable table)
     {
         using var id         = ImRaii.PushId(100);
         var       buttonSize = new Vector2(ImGui.GetFrameHeight());
@@ -245,11 +247,11 @@ public sealed unsafe class AdvancedDyePopup(
         ImGui.SameLine(0, spacing);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UndoAlt.ToIconString(), buttonSize, "Reset this table to game state.", !_anyChanged,
                 true))
-            for (byte i = 0; i < LegacyColorTable.NumUsedRows; ++i)
+            for (byte i = 0; i < ColorTable.NumUsedRows; ++i)
                 stateManager.ResetMaterialValue(_state, materialIndex with { RowIndex = i }, ApplySettings.Game);
     }
 
-    private void DrawRow(ref LegacyColorTable.Row row, MaterialValueIndex index, in LegacyColorTable table)
+    private void DrawRow(ref ColorTable.Row row, MaterialValueIndex index, in ColorTable table)
     {
         using var id      = ImRaii.PushId(index.RowIndex);
         var       changed = _state.Materials.TryGetValue(index, out var value);

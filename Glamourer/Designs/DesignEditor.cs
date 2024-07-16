@@ -165,9 +165,21 @@ public class DesignEditor(
         }
     }
 
+    /// <inheritdoc/>
     public void ChangeBonusItem(object data, BonusItemFlag slot, BonusItem item, ApplySettings settings = default)
     {
-        
+        var design = (Design)data;
+        if (!Items.IsBonusItemValid(slot, item.Id, out item))
+            return;
+
+        var oldItem = design.DesignData.BonusItem(slot);
+        if (!design.GetDesignDataRef().SetBonusItem(slot, item))
+            return;
+
+        design.LastEdit = DateTimeOffset.UtcNow;
+        SaveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set {slot} bonus item to {item}.");
+        DesignChanged.Invoke(DesignChanged.Type.BonusItem, design, (oldItem, item, slot));
     }
 
     /// <inheritdoc/>

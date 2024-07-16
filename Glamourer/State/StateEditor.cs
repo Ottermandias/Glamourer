@@ -175,7 +175,7 @@ public class StateEditor(
         var @new   = state.ModelData.Parameters[flag];
         var actors = Applier.ChangeParameters(state, flag, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
-            $"Set {flag} crest in state {state.Identifier.Incognito(null)} from {old} to {@new}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set {flag} in state {state.Identifier.Incognito(null)} from {old} to {@new}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Parameter, settings.Source, state, actors, (old, @new, flag));
     }
 

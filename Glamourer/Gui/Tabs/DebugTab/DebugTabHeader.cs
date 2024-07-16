@@ -38,7 +38,8 @@ public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
             provider.GetRequiredService<PenumbraPanel>(),
             provider.GetRequiredService<IpcTesterPanel>(),
             provider.GetRequiredService<DatFilePanel>(),
-            provider.GetRequiredService<GlamourPlatePanel>()
+            provider.GetRequiredService<GlamourPlatePanel>(),
+            provider.GetRequiredService<AdvancedCustomizationDrawer>()
         );
 
     public static DebugTabHeader CreateGameData(IServiceProvider provider)

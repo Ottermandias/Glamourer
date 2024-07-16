@@ -40,6 +40,8 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
 
     private void OnPrepareColorSet(CharacterBase* characterBase, MaterialResourceHandle* material, ref StainId stain, ref nint ret)
     {
+        // TODO fix when working
+        return;
         if (!_config.UseAdvancedDyes)
             return;
 
@@ -76,7 +78,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
 
     /// <summary> Update and apply the glamourer state of an actor according to the application sources when updated by the game. </summary>
     private void UpdateMaterialValues(ActorState state, ReadOnlySpan<(uint Key, MaterialValueState Value)> values, CharacterWeapon drawData,
-        ref LegacyColorTable colorTable)
+        ref ColorTable colorTable)
     {
         var deleteList = _deleteList.Value!;
         deleteList.Clear();

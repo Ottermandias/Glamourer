@@ -12,7 +12,9 @@ public struct CustomizeParameterData
     public Vector3 HairSpecular;
     public Vector3 HairHighlight;
     public Vector3 LeftEye;
+    public float   LeftScleraIntensity;
     public Vector3 RightEye;
+    public float   RightScleraIntensity;
     public Vector3 FeatureColor;
     public float   FacePaintUvMultiplier;
     public float   FacePaintUvOffset;
@@ -33,7 +35,9 @@ public struct CustomizeParameterData
                 CustomizeParameterFlag.HairSpecular          => new CustomizeParameterValue(HairSpecular),
                 CustomizeParameterFlag.HairHighlight         => new CustomizeParameterValue(HairHighlight),
                 CustomizeParameterFlag.LeftEye               => new CustomizeParameterValue(LeftEye),
+                CustomizeParameterFlag.LeftScleraIntensity   => new CustomizeParameterValue(LeftScleraIntensity),
                 CustomizeParameterFlag.RightEye              => new CustomizeParameterValue(RightEye),
+                CustomizeParameterFlag.RightScleraIntensity  => new CustomizeParameterValue(RightScleraIntensity),
                 CustomizeParameterFlag.FeatureColor          => new CustomizeParameterValue(FeatureColor),
                 CustomizeParameterFlag.DecalColor            => new CustomizeParameterValue(DecalColor),
                 CustomizeParameterFlag.FacePaintUvMultiplier => new CustomizeParameterValue(FacePaintUvMultiplier),
@@ -57,7 +61,9 @@ public struct CustomizeParameterData
             CustomizeParameterFlag.HairSpecular          => SetIfDifferent(ref HairSpecular,          value.InternalTriple),
             CustomizeParameterFlag.HairHighlight         => SetIfDifferent(ref HairHighlight,         value.InternalTriple),
             CustomizeParameterFlag.LeftEye               => SetIfDifferent(ref LeftEye,               value.InternalTriple),
+            CustomizeParameterFlag.LeftScleraIntensity   => SetIfDifferent(ref LeftScleraIntensity,   value.Single),
             CustomizeParameterFlag.RightEye              => SetIfDifferent(ref RightEye,              value.InternalTriple),
+            CustomizeParameterFlag.RightScleraIntensity  => SetIfDifferent(ref RightScleraIntensity,  value.Single),
             CustomizeParameterFlag.FeatureColor          => SetIfDifferent(ref FeatureColor,          value.InternalTriple),
             CustomizeParameterFlag.DecalColor            => SetIfDifferent(ref DecalColor,            value.InternalQuadruple),
             CustomizeParameterFlag.FacePaintUvMultiplier => SetIfDifferent(ref FacePaintUvMultiplier, value.Single),
@@ -67,7 +73,7 @@ public struct CustomizeParameterData
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public readonly void Apply(ref CustomizeParameter parameters, CustomizeParameterFlag flags = CustomizeParameterExtensions.All)
+    public readonly unsafe void Apply(ref CustomizeParameter parameters, CustomizeParameterFlag flags = CustomizeParameterExtensions.All)
     {
         parameters.SkinColor = (flags & (CustomizeParameterFlag.SkinDiffuse | CustomizeParameterFlag.MuscleTone)) switch
         {
@@ -77,20 +83,20 @@ public struct CustomizeParameterData
             _                                  => new CustomizeParameterValue(SkinDiffuse, MuscleTone).XivQuadruple,
         };
 
-        parameters.LeftColor = (flags & (CustomizeParameterFlag.LeftEye | CustomizeParameterFlag.FacePaintUvMultiplier)) switch
+        parameters.LeftColor = (flags & (CustomizeParameterFlag.LeftEye | CustomizeParameterFlag.LeftScleraIntensity)) switch
         {
-            0                                            => parameters.LeftColor,
-            CustomizeParameterFlag.LeftEye               => new CustomizeParameterValue(LeftEye, parameters.LeftColor.W).XivQuadruple,
-            CustomizeParameterFlag.FacePaintUvMultiplier => parameters.LeftColor with { W = FacePaintUvMultiplier },
-            _                                            => new CustomizeParameterValue(LeftEye, FacePaintUvMultiplier).XivQuadruple,
+            0                                          => parameters.LeftColor,
+            CustomizeParameterFlag.LeftEye             => new CustomizeParameterValue(LeftEye, parameters.LeftColor.W).XivQuadruple,
+            CustomizeParameterFlag.LeftScleraIntensity => parameters.LeftColor with { W = LeftScleraIntensity },
+            _                                          => new CustomizeParameterValue(LeftEye, LeftScleraIntensity).XivQuadruple,
         };
 
-        parameters.RightColor = (flags & (CustomizeParameterFlag.RightEye | CustomizeParameterFlag.FacePaintUvOffset)) switch
+        parameters.RightColor = (flags & (CustomizeParameterFlag.RightEye | CustomizeParameterFlag.RightScleraIntensity)) switch
         {
-            0                                        => parameters.RightColor,
-            CustomizeParameterFlag.RightEye          => new CustomizeParameterValue(RightEye, parameters.RightColor.W).XivQuadruple,
-            CustomizeParameterFlag.FacePaintUvOffset => parameters.RightColor with { W = FacePaintUvOffset },
-            _                                        => new CustomizeParameterValue(RightEye, FacePaintUvOffset).XivQuadruple,
+            0                                           => parameters.RightColor,
+            CustomizeParameterFlag.RightEye             => new CustomizeParameterValue(RightEye, parameters.RightColor.W).XivQuadruple,
+            CustomizeParameterFlag.RightScleraIntensity => parameters.RightColor with { W = RightScleraIntensity },
+            _                                           => new CustomizeParameterValue(RightEye, RightScleraIntensity).XivQuadruple,
         };
 
         if (flags.HasFlag(CustomizeParameterFlag.SkinSpecular))
@@ -101,6 +107,10 @@ public struct CustomizeParameterData
             parameters.HairFresnelValue0 = new CustomizeParameterValue(HairSpecular).XivTriple;
         if (flags.HasFlag(CustomizeParameterFlag.HairHighlight))
             parameters.MeshColor = new CustomizeParameterValue(HairHighlight).XivTriple;
+        if (flags.HasFlag(CustomizeParameterFlag.FacePaintUvMultiplier))
+            GetUvMultiplierWrite(ref parameters) = FacePaintUvMultiplier;
+        if (flags.HasFlag(CustomizeParameterFlag.FacePaintUvOffset))
+            GetUvOffsetWrite(ref parameters) = FacePaintUvOffset;
         if (flags.HasFlag(CustomizeParameterFlag.LipDiffuse))
             parameters.LipColor = new CustomizeParameterValue(LipDiffuse).XivQuadruple;
         if (flags.HasFlag(CustomizeParameterFlag.FeatureColor))
@@ -115,7 +125,7 @@ public struct CustomizeParameterData
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public readonly void ApplySingle(ref CustomizeParameter parameters, CustomizeParameterFlag flag)
+    public readonly unsafe void ApplySingle(ref CustomizeParameter parameters, CustomizeParameterFlag flag)
     {
         switch (flag)
         {
@@ -150,19 +160,25 @@ public struct CustomizeParameterData
                 parameters.OptionColor = new CustomizeParameterValue(FeatureColor).XivTriple;
                 break;
             case CustomizeParameterFlag.FacePaintUvMultiplier:
-                parameters.LeftColor.W = FacePaintUvMultiplier;
+                GetUvMultiplierWrite(ref parameters) = FacePaintUvMultiplier;
                 break;
             case CustomizeParameterFlag.FacePaintUvOffset:
-                parameters.RightColor.W = FacePaintUvOffset;
+                GetUvOffsetWrite(ref parameters) = FacePaintUvOffset;
+                break;
+            case CustomizeParameterFlag.LeftScleraIntensity:
+                parameters.LeftColor.W = LeftScleraIntensity;
+                break;
+            case CustomizeParameterFlag.RightScleraIntensity:
+                parameters.RightColor.W = RightScleraIntensity;
                 break;
         }
     }
 
-    public static CustomizeParameterData FromParameters(in CustomizeParameter parameter, in DecalParameters decal)
+    public static unsafe CustomizeParameterData FromParameters(in CustomizeParameter parameter, in DecalParameters decal)
         => new()
         {
-            FacePaintUvOffset     = parameter.RightColor.W,
-            FacePaintUvMultiplier = parameter.LeftColor.W,
+            FacePaintUvOffset     = GetUvOffset(parameter),
+            FacePaintUvMultiplier = GetUvMultiplier(parameter),
             MuscleTone            = parameter.SkinColor.W,
             SkinDiffuse           = new CustomizeParameterValue(parameter.SkinColor).InternalTriple,
             SkinSpecular          = new CustomizeParameterValue(parameter.SkinFresnelValue0).InternalTriple,
@@ -171,12 +187,14 @@ public struct CustomizeParameterData
             HairSpecular          = new CustomizeParameterValue(parameter.HairFresnelValue0).InternalTriple,
             HairHighlight         = new CustomizeParameterValue(parameter.MeshColor).InternalTriple,
             LeftEye               = new CustomizeParameterValue(parameter.LeftColor).InternalTriple,
+            LeftScleraIntensity   = new CustomizeParameterValue(parameter.LeftColor.W).Single,
             RightEye              = new CustomizeParameterValue(parameter.RightColor).InternalTriple,
+            RightScleraIntensity  = new CustomizeParameterValue(parameter.RightColor.W).Single,
             FeatureColor          = new CustomizeParameterValue(parameter.OptionColor).InternalTriple,
             DecalColor            = FromParameter(decal),
         };
 
-    public static CustomizeParameterValue FromParameter(in CustomizeParameter parameter, CustomizeParameterFlag flag)
+    public static unsafe CustomizeParameterValue FromParameter(in CustomizeParameter parameter, CustomizeParameterFlag flag)
         => flag switch
         {
             CustomizeParameterFlag.SkinDiffuse           => new CustomizeParameterValue(parameter.SkinColor),
@@ -189,8 +207,8 @@ public struct CustomizeParameterData
             CustomizeParameterFlag.LeftEye               => new CustomizeParameterValue(parameter.LeftColor),
             CustomizeParameterFlag.RightEye              => new CustomizeParameterValue(parameter.RightColor),
             CustomizeParameterFlag.FeatureColor          => new CustomizeParameterValue(parameter.OptionColor),
-            CustomizeParameterFlag.FacePaintUvMultiplier => new CustomizeParameterValue(parameter.LeftColor.W),
-            CustomizeParameterFlag.FacePaintUvOffset     => new CustomizeParameterValue(parameter.RightColor.W),
+            CustomizeParameterFlag.FacePaintUvMultiplier => new CustomizeParameterValue(GetUvMultiplier(parameter)),
+            CustomizeParameterFlag.FacePaintUvOffset     => new CustomizeParameterValue(GetUvOffset(parameter)),
             _                                            => CustomizeParameterValue.Zero,
         };
 
@@ -222,5 +240,42 @@ public struct CustomizeParameterData
 
         val = @new;
         return true;
+    }
+
+
+    private static unsafe float GetUvOffset(in CustomizeParameter parameter)
+    {
+        // TODO CS Update
+        fixed (CustomizeParameter* ptr = &parameter)
+        {
+            return ((float*)ptr)[23];
+        }
+    }
+
+    private static unsafe ref float GetUvOffsetWrite(ref CustomizeParameter parameter)
+    {
+        // TODO CS Update
+        fixed (CustomizeParameter* ptr = &parameter)
+        {
+            return ref ((float*)ptr)[23];
+        }
+    }
+
+    private static unsafe float GetUvMultiplier(in CustomizeParameter parameter)
+    {
+        // TODO CS Update
+        fixed (CustomizeParameter* ptr = &parameter)
+        {
+            return ((float*)ptr)[15];
+        }
+    }
+
+    private static unsafe ref float GetUvMultiplierWrite(ref CustomizeParameter parameter)
+    {
+        // TODO CS Update
+        fixed (CustomizeParameter* ptr = &parameter)
+        {
+            return ref ((float*)ptr)[15];
+        }
     }
 }

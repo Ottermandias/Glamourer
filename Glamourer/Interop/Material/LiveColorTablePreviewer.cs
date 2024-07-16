@@ -13,11 +13,11 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
     private readonly DirectXService                                  _directXService;
 
     public  MaterialValueIndex LastValueIndex         { get; private set; } = MaterialValueIndex.Invalid;
-    public  LegacyColorTable   LastOriginalColorTable { get; private set; }
+    public  ColorTable         LastOriginalColorTable { get; private set; }
     private MaterialValueIndex _valueIndex      = MaterialValueIndex.Invalid;
     private ObjectIndex        _lastObjectIndex = ObjectIndex.AnyIndex;
     private ObjectIndex        _objectIndex     = ObjectIndex.AnyIndex;
-    private LegacyColorTable   _originalColorTable;
+    private ColorTable         _originalColorTable;
 
     public LiveColorTablePreviewer(global::Penumbra.GameData.Interop.ObjectManager objects, IFramework framework, DirectXService directXService)
     {
@@ -78,7 +78,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
             }
             else
             {
-                for (var i = 0; i < LegacyColorTable.NumUsedRows; ++i)
+                for (var i = 0; i < ColorTable.NumUsedRows; ++i)
                 {
                     table[i].Diffuse  = diffuse;
                     table[i].Emissive = emissive;
@@ -92,7 +92,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
         _objectIndex = ObjectIndex.AnyIndex;
     }
 
-    public void OnHover(MaterialValueIndex index, ObjectIndex objectIndex, LegacyColorTable table)
+    public void OnHover(MaterialValueIndex index, ObjectIndex objectIndex, ColorTable table)
     {
         if (_valueIndex.DrawObject is not MaterialValueIndex.DrawObjectType.Invalid)
             return;

@@ -62,6 +62,9 @@ public sealed class DesignChanged()
         /// <summary> An existing design had an equipment piece changed. Data is the old value, the new value and the slot [(EquipItem, EquipItem, EquipSlot)]. </summary>
         Equip,
 
+        /// <summary> An existing design had a bonus item changed. Data is the old value, the new value and the slot [(BonusItem, BonusItem, BonusItemFlag)]. </summary>
+        BonusItem,
+
         /// <summary> An existing design had its weapons changed. Data is the old mainhand, the old offhand, the new mainhand, the new offhand (if any) and the new gauntlets (if any). [(EquipItem, EquipItem, EquipItem, EquipItem?, EquipItem?)]. </summary>
         Weapon,
 
@@ -90,7 +93,7 @@ public sealed class DesignChanged()
         ApplyEquip,
 
         /// <summary> An existing design changed whether a specific bonus item is applied. Data is the slot of the item [BonusItemFlag]. </summary>
-        ApplyBonus,
+        ApplyBonusItem,
 
         /// <summary> An existing design changed whether a specific stain is applied. Data is the slot of the equipment [EquipSlot]. </summary>
         ApplyStain,

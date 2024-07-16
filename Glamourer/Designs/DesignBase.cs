@@ -228,6 +228,7 @@ public class DesignBase
         {
             ["FileVersion"] = FileVersion,
             ["Equipment"]   = SerializeEquipment(),
+            ["Bonus"]       = SerializeBonusItems(),
             ["Customize"]   = SerializeCustomize(),
             ["Parameters"]  = SerializeParameters(),
             ["Materials"]   = SerializeMaterials(),
@@ -279,7 +280,7 @@ public class DesignBase
             var item = _designData.BonusItem(slot);
             ret[slot.ToString()] = new JObject()
             {
-                ["BonusId"] = item.ModelId.Id,
+                ["BonusId"] = item.Id.Id,
                 ["Apply"]   = DoApplyBonusItem(slot),
             };
         }
@@ -424,18 +425,43 @@ public class DesignBase
         LoadEquip(items, json["Equipment"], ret, "Temporary Design", true);
         LoadParameters(json["Parameters"], ret, "Temporary Design");
         LoadMaterials(json["Materials"], ret, "Temporary Design");
+        LoadBonus(items, ret, json["Bonus"]);
         return ret;
+    }
+
+    protected static void LoadBonus(ItemManager items, DesignBase design, JToken? json)
+    {
+        if (json is not JObject obj)
+        {
+            design.Application.BonusItem = 0;
+            return;
+        }
+
+        foreach (var slot in BonusExtensions.AllFlags)
+        {
+            var itemJson = json[slot.ToString()] as JObject;
+            if (itemJson == null)
+            {
+                design.Application.BonusItem &= ~slot;
+                design.GetDesignDataRef().SetBonusItem(slot, BonusItem.Empty(slot));
+                continue;
+            }
+
+            design.SetApplyBonusItem(slot, itemJson["Apply"]?.ToObject<bool>() ?? false);
+            var id   = itemJson["BonusId"]?.ToObject<ushort>() ?? 0;
+            var item = items.Resolve(slot, id);
+            design.GetDesignDataRef().SetBonusItem(slot, item);
+        }
     }
 
     protected static void LoadParameters(JToken? parameters, DesignBase design, string name)
     {
         if (parameters == null)
         {
-            design.Application.Parameters         = 0;
+            design.Application.Parameters        = 0;
             design.GetDesignDataRef().Parameters = default;
             return;
         }
-
 
         foreach (var flag in CustomizeParameterExtensions.ValueFlags)
         {
@@ -492,7 +518,7 @@ public class DesignBase
                 return true;
             }
 
-            design.Application.Parameters               &= ~flag;
+            design.Application.Parameters              &= ~flag;
             design.GetDesignDataRef().Parameters[flag] =  CustomizeParameterValue.Zero;
             return false;
         }
@@ -523,32 +549,15 @@ public class DesignBase
             return;
         }
 
-        static (CustomItemId, StainIds, bool, bool, bool, bool) ParseItem(EquipSlot slot, JToken? item)
-        {
-            var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot).Id;
-            var stain      = (StainId)(item?["Stain"]?.ToObject<byte>() ?? 0);
-            var crest      = item?["Crest"]?.ToObject<bool>() ?? false;
-            var apply      = item?["Apply"]?.ToObject<bool>() ?? false;
-            var applyStain = item?["ApplyStain"]?.ToObject<bool>() ?? false;
-            var applyCrest = item?["ApplyCrest"]?.ToObject<bool>() ?? false;
-            return (id, stain, crest, apply, applyStain, applyCrest);
-        }
-
-        void PrintWarning(string msg)
-        {
-            if (msg.Length > 0 && name != "Temporary Design")
-                Glamourer.Messager.NotificationMessage($"{msg} ({name})", NotificationType.Warning);
-        }
-
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var (id, stain, crest, apply, applyStain, applyCrest) = ParseItem(slot, equip[slot.ToString()]);
+            var (id, stains, crest, apply, applyStain, applyCrest) = ParseItem(slot, equip[slot.ToString()]);
 
             PrintWarning(items.ValidateItem(slot, id, out var item, allowUnknown));
-            PrintWarning(items.ValidateStain(stain, out stain, allowUnknown));
+            PrintWarning(items.ValidateStain(stains, out stains, allowUnknown));
             var crestSlot = slot.ToCrestFlag();
             design._designData.SetItem(slot, item);
-            design._designData.SetStain(slot, stain);
+            design._designData.SetStain(slot, stains);
             design._designData.SetCrest(crestSlot, crest);
             design.SetApplyEquip(slot, apply);
             design.SetApplyStain(slot, applyStain);
@@ -556,21 +565,21 @@ public class DesignBase
         }
 
         {
-            var (id, stain, crest, apply, applyStain, applyCrest) = ParseItem(EquipSlot.MainHand, equip[EquipSlot.MainHand.ToString()]);
+            var (id, stains, crest, apply, applyStain, applyCrest) = ParseItem(EquipSlot.MainHand, equip[EquipSlot.MainHand.ToString()]);
             if (id == ItemManager.NothingId(EquipSlot.MainHand))
                 id = items.DefaultSword.ItemId;
-            var (idOff, stainOff, crestOff, applyOff, applyStainOff, applyCrestOff) =
+            var (idOff, stainsOff, crestOff, applyOff, applyStainOff, applyCrestOff) =
                 ParseItem(EquipSlot.OffHand, equip[EquipSlot.OffHand.ToString()]);
             if (id == ItemManager.NothingId(EquipSlot.OffHand))
                 id = ItemManager.NothingId(FullEquipType.Shield);
 
             PrintWarning(items.ValidateWeapons(id, idOff, out var main, out var off, allowUnknown));
-            PrintWarning(items.ValidateStain(stain,    out stain,    allowUnknown));
-            PrintWarning(items.ValidateStain(stainOff, out stainOff, allowUnknown));
+            PrintWarning(items.ValidateStain(stains,    out stains,    allowUnknown));
+            PrintWarning(items.ValidateStain(stainsOff, out stainsOff, allowUnknown));
             design._designData.SetItem(EquipSlot.MainHand, main);
             design._designData.SetItem(EquipSlot.OffHand,  off);
-            design._designData.SetStain(EquipSlot.MainHand, stain);
-            design._designData.SetStain(EquipSlot.OffHand,  stainOff);
+            design._designData.SetStain(EquipSlot.MainHand, stains);
+            design._designData.SetStain(EquipSlot.OffHand,  stainsOff);
             design._designData.SetCrest(CrestFlag.MainHand, crest);
             design._designData.SetCrest(CrestFlag.OffHand,  crestOff);
             design.SetApplyEquip(EquipSlot.MainHand, apply);
@@ -591,6 +600,24 @@ public class DesignBase
         metaValue = QuadBool.FromJObject(equip["Visor"], "IsToggled", "Apply", QuadBool.NullFalse);
         design.SetApplyMeta(MetaIndex.VisorState, metaValue.Enabled);
         design._designData.SetVisor(metaValue.ForcedValue);
+        return;
+
+        void PrintWarning(string msg)
+        {
+            if (msg.Length > 0 && name != "Temporary Design")
+                Glamourer.Messager.NotificationMessage($"{msg} ({name})", NotificationType.Warning);
+        }
+
+        static (CustomItemId, StainIds, bool, bool, bool, bool) ParseItem(EquipSlot slot, JToken? item)
+        {
+            var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot).Id;
+            var stains     = StainIds.ParseFromObject(item as JObject);
+            var crest      = item?["Crest"]?.ToObject<bool>() ?? false;
+            var apply      = item?["Apply"]?.ToObject<bool>() ?? false;
+            var applyStain = item?["ApplyStain"]?.ToObject<bool>() ?? false;
+            var applyCrest = item?["ApplyCrest"]?.ToObject<bool>() ?? false;
+            return (id, stains, crest, apply, applyStain, applyCrest);
+        }
     }
 
     protected static void LoadCustomize(CustomizeService customizations, JToken? json, DesignBase design, string name, bool forbidNonHuman,
@@ -671,12 +698,12 @@ public class DesignBase
         {
             _designData = DesignBase64Migration.MigrateBase64(items, humans, base64, out var equipFlags, out var customizeFlags,
                 out var writeProtected, out var applyMeta);
-            Application.Equip     = equipFlags;
-            ApplyCustomize        = customizeFlags;
+            Application.Equip      = equipFlags;
+            ApplyCustomize         = customizeFlags;
             Application.Parameters = 0;
-            Application.Crest     = 0;
-            Application.Meta      = applyMeta;
-            Application.BonusItem = 0;
+            Application.Crest      = 0;
+            Application.Meta       = applyMeta;
+            Application.BonusItem  = 0;
             SetWriteProtected(writeProtected);
             CustomizeSet = SetCustomizationSet(customize);
         }

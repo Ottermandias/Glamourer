@@ -9,6 +9,7 @@ using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
+using FFXIVClientStructs.FFXIV.Shader;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
@@ -94,7 +95,8 @@ public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectM
 
             foreach (var type in Enum.GetValues<CustomizeIndex>())
             {
-                PrintRow(type.ToDefaultName(), state.BaseData.Customize[type].Value, state.ModelData.Customize[type].Value, state.Sources[type]);
+                PrintRow(type.ToDefaultName(), state.BaseData.Customize[type].Value, state.ModelData.Customize[type].Value,
+                    state.Sources[type]);
                 ImGui.TableNextRow();
             }
 

@@ -13,7 +13,6 @@ public unsafe class WeaponService : IDisposable
     private readonly WeaponLoading     _event;
     private readonly ThreadLocal<bool> _inUpdate = new(() => false);
 
-
     private readonly delegate* unmanaged[Stdcall]<DrawDataContainer*, uint, ulong, byte, byte, byte, byte, void>
         _original;
 

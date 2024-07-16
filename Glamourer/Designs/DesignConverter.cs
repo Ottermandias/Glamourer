@@ -214,7 +214,7 @@ public class DesignConverter(
         foreach (var (key, value) in materials.Values)
         {
             var idx = MaterialValueIndex.FromKey(key);
-            if (idx.RowIndex >= LegacyColorTable.NumUsedRows)
+            if (idx.RowIndex >= ColorTable.NumUsedRows)
                 continue;
             if (idx.MaterialIndex >= MaterialService.MaterialsPerModel)
                 continue;
