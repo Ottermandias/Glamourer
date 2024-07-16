@@ -1,4 +1,5 @@
-﻿using Glamourer.GameData;
+﻿using Dalamud.Interface.Textures.TextureWraps;
+using Glamourer.GameData;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
@@ -197,16 +198,24 @@ public partial class CustomizationDrawer
         var face = _set.DataByValue(CustomizeIndex.Face, _customize.Face, out _, _customize.Face) < 0 ? _set.Faces[0].Value : _customize.Face;
         foreach (var (featureIdx, idx) in options.WithIndex())
         {
-            using var id      = SetId(featureIdx);
-            var       enabled = _customize.Get(featureIdx) != CustomizeValue.Zero;
-            var       feature = _set.Data(featureIdx, 0, face);
-            var icon = featureIdx == CustomizeIndex.LegacyTattoo
-                ? _legacyTattoo ?? _service.Manager.GetIcon(feature.IconId)
-                : _service.Manager.GetIcon(feature.IconId);
-            var hasIcon = icon.TryGetWrap(out var wrap, out _);
+            using var            id      = SetId(featureIdx);
+            var                  enabled = _customize.Get(featureIdx) != CustomizeValue.Zero;
+            var                  feature = _set.Data(featureIdx, 0, face);
+            bool                 hasIcon;
+            IDalamudTextureWrap? wrap;
+            var                  icon = _service.Manager.GetIcon(feature.IconId);
+            if (featureIdx is CustomizeIndex.LegacyTattoo)
+            {
+                wrap    = _legacyTattoo;
+                hasIcon = wrap != null;
+            }
+            else
+            {
+                hasIcon = icon.TryGetWrap(out wrap, out _);
+            }
+
             if (ImGui.ImageButton(wrap?.ImGuiHandle ?? icon.GetWrapOrEmpty().ImGuiHandle, _iconSize, Vector2.Zero, Vector2.One,
-                    (int)ImGui.GetStyle().FramePadding.X,
-                    Vector4.Zero, enabled ? Vector4.One : _redTint))
+                    (int)ImGui.GetStyle().FramePadding.X, Vector4.Zero, enabled ? Vector4.One : _redTint))
             {
                 _customize.Set(featureIdx, enabled ? CustomizeValue.Zero : CustomizeValue.Max);
                 Changed |= _currentFlag;
