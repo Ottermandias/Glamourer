@@ -12,9 +12,9 @@ public struct CustomizeParameterData
     public Vector3 HairSpecular;
     public Vector3 HairHighlight;
     public Vector3 LeftEye;
-    public float   LeftScleraIntensity;
+    public float   LeftLimbalIntensity;
     public Vector3 RightEye;
-    public float   RightScleraIntensity;
+    public float   RightLimbalIntensity;
     public Vector3 FeatureColor;
     public float   FacePaintUvMultiplier;
     public float   FacePaintUvOffset;
@@ -35,9 +35,9 @@ public struct CustomizeParameterData
                 CustomizeParameterFlag.HairSpecular          => new CustomizeParameterValue(HairSpecular),
                 CustomizeParameterFlag.HairHighlight         => new CustomizeParameterValue(HairHighlight),
                 CustomizeParameterFlag.LeftEye               => new CustomizeParameterValue(LeftEye),
-                CustomizeParameterFlag.LeftScleraIntensity   => new CustomizeParameterValue(LeftScleraIntensity),
+                CustomizeParameterFlag.LeftLimbalIntensity   => new CustomizeParameterValue(LeftLimbalIntensity),
                 CustomizeParameterFlag.RightEye              => new CustomizeParameterValue(RightEye),
-                CustomizeParameterFlag.RightScleraIntensity  => new CustomizeParameterValue(RightScleraIntensity),
+                CustomizeParameterFlag.RightLimbalIntensity  => new CustomizeParameterValue(RightLimbalIntensity),
                 CustomizeParameterFlag.FeatureColor          => new CustomizeParameterValue(FeatureColor),
                 CustomizeParameterFlag.DecalColor            => new CustomizeParameterValue(DecalColor),
                 CustomizeParameterFlag.FacePaintUvMultiplier => new CustomizeParameterValue(FacePaintUvMultiplier),
@@ -61,9 +61,9 @@ public struct CustomizeParameterData
             CustomizeParameterFlag.HairSpecular          => SetIfDifferent(ref HairSpecular,          value.InternalTriple),
             CustomizeParameterFlag.HairHighlight         => SetIfDifferent(ref HairHighlight,         value.InternalTriple),
             CustomizeParameterFlag.LeftEye               => SetIfDifferent(ref LeftEye,               value.InternalTriple),
-            CustomizeParameterFlag.LeftScleraIntensity   => SetIfDifferent(ref LeftScleraIntensity,   value.Single),
+            CustomizeParameterFlag.LeftLimbalIntensity   => SetIfDifferent(ref LeftLimbalIntensity,   value.Single),
             CustomizeParameterFlag.RightEye              => SetIfDifferent(ref RightEye,              value.InternalTriple),
-            CustomizeParameterFlag.RightScleraIntensity  => SetIfDifferent(ref RightScleraIntensity,  value.Single),
+            CustomizeParameterFlag.RightLimbalIntensity  => SetIfDifferent(ref RightLimbalIntensity,  value.Single),
             CustomizeParameterFlag.FeatureColor          => SetIfDifferent(ref FeatureColor,          value.InternalTriple),
             CustomizeParameterFlag.DecalColor            => SetIfDifferent(ref DecalColor,            value.InternalQuadruple),
             CustomizeParameterFlag.FacePaintUvMultiplier => SetIfDifferent(ref FacePaintUvMultiplier, value.Single),
@@ -83,20 +83,20 @@ public struct CustomizeParameterData
             _                                  => new CustomizeParameterValue(SkinDiffuse, MuscleTone).XivQuadruple,
         };
 
-        parameters.LeftColor = (flags & (CustomizeParameterFlag.LeftEye | CustomizeParameterFlag.LeftScleraIntensity)) switch
+        parameters.LeftColor = (flags & (CustomizeParameterFlag.LeftEye | CustomizeParameterFlag.LeftLimbalIntensity)) switch
         {
             0                                          => parameters.LeftColor,
             CustomizeParameterFlag.LeftEye             => new CustomizeParameterValue(LeftEye, parameters.LeftColor.W).XivQuadruple,
-            CustomizeParameterFlag.LeftScleraIntensity => parameters.LeftColor with { W = LeftScleraIntensity },
-            _                                          => new CustomizeParameterValue(LeftEye, LeftScleraIntensity).XivQuadruple,
+            CustomizeParameterFlag.LeftLimbalIntensity => parameters.LeftColor with { W = LeftLimbalIntensity },
+            _                                          => new CustomizeParameterValue(LeftEye, LeftLimbalIntensity).XivQuadruple,
         };
 
-        parameters.RightColor = (flags & (CustomizeParameterFlag.RightEye | CustomizeParameterFlag.RightScleraIntensity)) switch
+        parameters.RightColor = (flags & (CustomizeParameterFlag.RightEye | CustomizeParameterFlag.RightLimbalIntensity)) switch
         {
             0                                           => parameters.RightColor,
             CustomizeParameterFlag.RightEye             => new CustomizeParameterValue(RightEye, parameters.RightColor.W).XivQuadruple,
-            CustomizeParameterFlag.RightScleraIntensity => parameters.RightColor with { W = RightScleraIntensity },
-            _                                           => new CustomizeParameterValue(RightEye, RightScleraIntensity).XivQuadruple,
+            CustomizeParameterFlag.RightLimbalIntensity => parameters.RightColor with { W = RightLimbalIntensity },
+            _                                           => new CustomizeParameterValue(RightEye, RightLimbalIntensity).XivQuadruple,
         };
 
         if (flags.HasFlag(CustomizeParameterFlag.SkinSpecular))
@@ -165,11 +165,11 @@ public struct CustomizeParameterData
             case CustomizeParameterFlag.FacePaintUvOffset:
                 GetUvOffsetWrite(ref parameters) = FacePaintUvOffset;
                 break;
-            case CustomizeParameterFlag.LeftScleraIntensity:
-                parameters.LeftColor.W = LeftScleraIntensity;
+            case CustomizeParameterFlag.LeftLimbalIntensity:
+                parameters.LeftColor.W = LeftLimbalIntensity;
                 break;
-            case CustomizeParameterFlag.RightScleraIntensity:
-                parameters.RightColor.W = RightScleraIntensity;
+            case CustomizeParameterFlag.RightLimbalIntensity:
+                parameters.RightColor.W = RightLimbalIntensity;
                 break;
         }
     }
@@ -187,9 +187,9 @@ public struct CustomizeParameterData
             HairSpecular          = new CustomizeParameterValue(parameter.HairFresnelValue0).InternalTriple,
             HairHighlight         = new CustomizeParameterValue(parameter.MeshColor).InternalTriple,
             LeftEye               = new CustomizeParameterValue(parameter.LeftColor).InternalTriple,
-            LeftScleraIntensity   = new CustomizeParameterValue(parameter.LeftColor.W).Single,
+            LeftLimbalIntensity   = new CustomizeParameterValue(parameter.LeftColor.W).Single,
             RightEye              = new CustomizeParameterValue(parameter.RightColor).InternalTriple,
-            RightScleraIntensity  = new CustomizeParameterValue(parameter.RightColor.W).Single,
+            RightLimbalIntensity  = new CustomizeParameterValue(parameter.RightColor.W).Single,
             FeatureColor          = new CustomizeParameterValue(parameter.OptionColor).InternalTriple,
             DecalColor            = FromParameter(decal),
         };

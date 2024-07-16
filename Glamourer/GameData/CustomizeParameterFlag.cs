@@ -16,8 +16,8 @@ public enum CustomizeParameterFlag : ushort
     FacePaintUvMultiplier = 0x0400,
     FacePaintUvOffset     = 0x0800,
     DecalColor            = 0x1000,
-    LeftScleraIntensity   = 0x2000,
-    RightScleraIntensity  = 0x4000,
+    LeftLimbalIntensity   = 0x2000,
+    RightLimbalIntensity  = 0x4000,
 }
 
 public static class CustomizeParameterExtensions
@@ -31,8 +31,8 @@ public static class CustomizeParameterExtensions
     public const CustomizeParameterFlag RgbaQuadruples = CustomizeParameterFlag.DecalColor | CustomizeParameterFlag.LipDiffuse;
 
     public const CustomizeParameterFlag Percentages = CustomizeParameterFlag.MuscleTone
-      | CustomizeParameterFlag.LeftScleraIntensity
-      | CustomizeParameterFlag.RightScleraIntensity;
+      | CustomizeParameterFlag.LeftLimbalIntensity
+      | CustomizeParameterFlag.RightLimbalIntensity;
 
     public const CustomizeParameterFlag Values = CustomizeParameterFlag.FacePaintUvOffset | CustomizeParameterFlag.FacePaintUvMultiplier;
 
@@ -67,8 +67,8 @@ public static class CustomizeParameterExtensions
             CustomizeParameterFlag.FacePaintUvMultiplier => "Multiplier for Face Paint",
             CustomizeParameterFlag.FacePaintUvOffset     => "Offset of Face Paint",
             CustomizeParameterFlag.DecalColor            => "Face Paint Color",
-            CustomizeParameterFlag.LeftScleraIntensity   => "Left Sclera Intensity",
-            CustomizeParameterFlag.RightScleraIntensity  => "Right Sclera Intensity",
+            CustomizeParameterFlag.LeftLimbalIntensity   => "Left Limbal Ring Intensity",
+            CustomizeParameterFlag.RightLimbalIntensity  => "Right Limbal Ring Intensity",
             _                                            => string.Empty,
         };
 }
