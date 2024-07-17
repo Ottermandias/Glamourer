@@ -58,10 +58,10 @@ public sealed class CmaFile
                 if (idx * 4 + 3 >= byteData.Length)
                     continue;
 
-                var armor = ((CharacterArmor*)ptr)[idx];
+                var armor = ((LegacyCharacterArmor*)ptr)[idx];
                 var item  = items.Identify(slot, armor.Set, armor.Variant);
                 data.SetItem(slot, item);
-                data.SetStain(slot, armor.Stains);
+                data.SetStain(slot, armor.Stain);
             }
 
             data.Customize.Read(ptr);

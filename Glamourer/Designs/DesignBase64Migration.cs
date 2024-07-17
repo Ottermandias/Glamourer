@@ -95,8 +95,8 @@ public class DesignBase64Migration
 
         fixed (byte* ptr = bytes)
         {
-            var cur = (CharacterWeapon*)(ptr + 30);
-            var eq  = (CharacterArmor*)(cur + 2);
+            var cur = (LegacyCharacterWeapon*)(ptr + 30);
+            var eq  = (LegacyCharacterArmor*)(cur + 2);
 
             if (!humans.IsHuman(data.ModelId))
             {
@@ -116,7 +116,7 @@ public class DesignBase64Migration
                 }
 
                 data.SetItem(slot, item);
-                data.SetStain(slot, mdl.Stains);
+                data.SetStain(slot, mdl.Stain);
             }
 
             var main = cur[0].Skeleton.Id == 0
@@ -129,7 +129,7 @@ public class DesignBase64Migration
             }
 
             data.SetItem(EquipSlot.MainHand, main);
-            data.SetStain(EquipSlot.MainHand, cur[0].Stains);
+            data.SetStain(EquipSlot.MainHand, cur[0].Stain);
 
             EquipItem off;
             // Fist weapon hack
@@ -140,7 +140,7 @@ public class DesignBase64Migration
                 if (gauntlet.Valid)
                 {
                     data.SetItem(EquipSlot.Hands, gauntlet);
-                    data.SetStain(EquipSlot.Hands, cur[0].Stains);
+                    data.SetStain(EquipSlot.Hands, cur[0].Stain);
                 }
             }
             else
@@ -157,12 +157,13 @@ public class DesignBase64Migration
             }
 
             data.SetItem(EquipSlot.OffHand, off);
-            data.SetStain(EquipSlot.OffHand, cur[1].Stains);
+            data.SetStain(EquipSlot.OffHand, cur[1].Stain);
             return data;
         }
     }
 
-    public static unsafe string CreateOldBase64(in DesignData save, EquipFlag equipFlags, CustomizeFlag customizeFlags, MetaFlag meta, bool writeProtected, float alpha = 1.0f)
+    public static unsafe string CreateOldBase64(in DesignData save, EquipFlag equipFlags, CustomizeFlag customizeFlags, MetaFlag meta,
+        bool writeProtected, float alpha = 1.0f)
     {
         var data = stackalloc byte[Base64SizeV4];
         data[0] = 5;
@@ -185,10 +186,12 @@ public class DesignBase64Migration
           | (equipFlags.HasFlag(EquipFlag.RFinger) ? 0x04 : 0)
           | (equipFlags.HasFlag(EquipFlag.LFinger) ? 0x08 : 0));
         save.Customize.Write(data + 4);
-        ((CharacterWeapon*)(data + 30))[0] = save.Item(EquipSlot.MainHand).Weapon(save.Stain(EquipSlot.MainHand));
-        ((CharacterWeapon*)(data + 30))[1] = save.Item(EquipSlot.OffHand).Weapon(save.Stain(EquipSlot.OffHand));
+        ((LegacyCharacterWeapon*)(data + 30))[0] =
+            new LegacyCharacterWeapon(save.Item(EquipSlot.MainHand).Weapon(save.Stain(EquipSlot.MainHand)));
+        ((LegacyCharacterWeapon*)(data + 30))[1] =
+            new LegacyCharacterWeapon(save.Item(EquipSlot.OffHand).Weapon(save.Stain(EquipSlot.OffHand)));
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
-            ((CharacterArmor*)(data + 44))[slot.ToIndex()] = save.Item(slot).Armor(save.Stain(slot));
+            ((LegacyCharacterArmor*)(data + 44))[slot.ToIndex()] = new LegacyCharacterArmor(save.Item(slot).Armor(save.Stain(slot)));
         *(ushort*)(data + 84) = 1; // IsSet.
         *(float*)(data + 86)  = 1f;
         data[90] = (byte)((save.IsHatVisible() ? 0x00 : 0x01)
