@@ -63,7 +63,7 @@ public static class CustomizeParameterExtensions
             CustomizeParameterFlag.HairHighlight         => "Hair Highlights",
             CustomizeParameterFlag.LeftEye               => "Left Eye Color",
             CustomizeParameterFlag.RightEye              => "Right Eye Color",
-            CustomizeParameterFlag.FeatureColor          => "Tattoo Color",
+            CustomizeParameterFlag.FeatureColor          => "Feature Color",
             CustomizeParameterFlag.FacePaintUvMultiplier => "Multiplier for Face Paint",
             CustomizeParameterFlag.FacePaintUvOffset     => "Offset of Face Paint",
             CustomizeParameterFlag.DecalColor            => "Face Paint Color",

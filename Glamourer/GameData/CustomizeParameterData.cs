@@ -156,13 +156,21 @@ public struct CustomizeParameterData
                 parameters.LipColor = new CustomizeParameterValue(LipDiffuse).XivQuadruple;
                 break;
             case CustomizeParameterFlag.HairDiffuse:
-                parameters.MainColor = new CustomizeParameterValue(HairDiffuse).XivTriple;
+                // Vector3 is 0x10 byte for some reason.
+                var triple1 = new CustomizeParameterValue(HairDiffuse).XivTriple;
+                parameters.MainColor.X = triple1.X;
+                parameters.MainColor.Y = triple1.Y;
+                parameters.MainColor.Z = triple1.Z;
                 break;
             case CustomizeParameterFlag.HairSpecular:
                 parameters.HairFresnelValue0 = new CustomizeParameterValue(HairSpecular).XivTriple;
                 break;
             case CustomizeParameterFlag.HairHighlight:
-                parameters.MeshColor = new CustomizeParameterValue(HairHighlight).XivTriple;
+                // Vector3 is 0x10 byte for some reason.
+                var triple2 = new CustomizeParameterValue(HairHighlight).XivTriple;
+                parameters.MeshColor.X = triple2.X;
+                parameters.MeshColor.Y = triple2.Y;
+                parameters.MeshColor.Z = triple2.Z;
                 break;
             case CustomizeParameterFlag.LeftEye:
                 parameters.LeftColor = new CustomizeParameterValue(LeftEye, parameters.LeftColor.W).XivQuadruple;
