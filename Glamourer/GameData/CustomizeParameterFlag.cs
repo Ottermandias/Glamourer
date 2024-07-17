@@ -23,7 +23,7 @@ public enum CustomizeParameterFlag : ushort
 public static class CustomizeParameterExtensions
 {
     // Speculars are not available anymore.
-    public const CustomizeParameterFlag All = (CustomizeParameterFlag)0x1FDB;
+    public const CustomizeParameterFlag All = (CustomizeParameterFlag)0x7FDB;
 
     public const CustomizeParameterFlag RgbTriples = All
       & ~(RgbaQuadruples | Percentages | Values);

@@ -73,7 +73,7 @@ public struct CustomizeParameterData
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public readonly unsafe void Apply(ref CustomizeParameter parameters, CustomizeParameterFlag flags = CustomizeParameterExtensions.All)
+    public readonly void Apply(ref CustomizeParameter parameters, CustomizeParameterFlag flags = CustomizeParameterExtensions.All)
     {
         parameters.SkinColor = (flags & (CustomizeParameterFlag.SkinDiffuse | CustomizeParameterFlag.MuscleTone)) switch
         {
@@ -102,11 +102,25 @@ public struct CustomizeParameterData
         if (flags.HasFlag(CustomizeParameterFlag.SkinSpecular))
             parameters.SkinFresnelValue0 = new CustomizeParameterValue(SkinSpecular).XivQuadruple;
         if (flags.HasFlag(CustomizeParameterFlag.HairDiffuse))
-            parameters.MainColor = new CustomizeParameterValue(HairDiffuse).XivTriple;
+        {
+            // Vector3 is 0x10 byte for some reason.
+            var triple = new CustomizeParameterValue(HairDiffuse).XivTriple;
+            parameters.MainColor.X = triple.X;
+            parameters.MainColor.Y = triple.Y;
+            parameters.MainColor.Z = triple.Z;
+        }
+
         if (flags.HasFlag(CustomizeParameterFlag.HairSpecular))
             parameters.HairFresnelValue0 = new CustomizeParameterValue(HairSpecular).XivTriple;
         if (flags.HasFlag(CustomizeParameterFlag.HairHighlight))
-            parameters.MeshColor = new CustomizeParameterValue(HairHighlight).XivTriple;
+        {
+            // Vector3 is 0x10 byte for some reason.
+            var triple = new CustomizeParameterValue(HairHighlight).XivTriple;
+            parameters.MeshColor.X = triple.X;
+            parameters.MeshColor.Y = triple.Y;
+            parameters.MeshColor.Z = triple.Z;
+        }
+
         if (flags.HasFlag(CustomizeParameterFlag.FacePaintUvMultiplier))
             GetUvMultiplierWrite(ref parameters) = FacePaintUvMultiplier;
         if (flags.HasFlag(CustomizeParameterFlag.FacePaintUvOffset))
@@ -125,7 +139,7 @@ public struct CustomizeParameterData
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public readonly unsafe void ApplySingle(ref CustomizeParameter parameters, CustomizeParameterFlag flag)
+    public readonly void ApplySingle(ref CustomizeParameter parameters, CustomizeParameterFlag flag)
     {
         switch (flag)
         {
@@ -174,7 +188,7 @@ public struct CustomizeParameterData
         }
     }
 
-    public static unsafe CustomizeParameterData FromParameters(in CustomizeParameter parameter, in DecalParameters decal)
+    public static CustomizeParameterData FromParameters(in CustomizeParameter parameter, in DecalParameters decal)
         => new()
         {
             FacePaintUvOffset     = GetUvOffset(parameter),
@@ -194,7 +208,7 @@ public struct CustomizeParameterData
             DecalColor            = FromParameter(decal),
         };
 
-    public static unsafe CustomizeParameterValue FromParameter(in CustomizeParameter parameter, CustomizeParameterFlag flag)
+    public static CustomizeParameterValue FromParameter(in CustomizeParameter parameter, CustomizeParameterFlag flag)
         => flag switch
         {
             CustomizeParameterFlag.SkinDiffuse           => new CustomizeParameterValue(parameter.SkinColor),
