@@ -10,7 +10,7 @@ namespace Glamourer.Interop.Material;
 public static unsafe class MaterialService
 {
     public const int TextureWidth      = 8;
-    public const int TextureHeight     = ColorTable.NumUsedRows;
+    public const int TextureHeight     = ColorTable.NumRows;
     public const int MaterialsPerModel = 10;
 
     public static bool GenerateNewColorTable(in ColorTable colorTable, out Texture* texture)
@@ -41,10 +41,10 @@ public static unsafe class MaterialService
             return null;
 
         var index = modelSlot * MaterialsPerModel + materialSlot;
-        if (index < 0 || index >= model.AsCharacterBase->ColorTableTexturesSpan.Length)
+        if (index < 0 || index >= model.AsCharacterBase->ColorTableTextures().Length)
             return null;
 
-        var texture = (Texture**)Unsafe.AsPointer(ref model.AsCharacterBase->ColorTableTexturesSpan[index]);
+        var texture = (Texture**)Unsafe.AsPointer(ref model.AsCharacterBase->ColorTableTextures()[index]);
         return texture;
     }
 
@@ -59,10 +59,10 @@ public static unsafe class MaterialService
             return null;
 
         var index = modelSlot * MaterialsPerModel + materialSlot;
-        if (index < 0 || index >= model.AsCharacterBase->MaterialsSpan.Length)
+        if (index < 0 || index >= model.AsCharacterBase->Materials().Length)
             return null;
 
-        var material = (MaterialResourceHandle*)model.AsCharacterBase->MaterialsSpan[index].Value;
+        var material = model.AsCharacterBase->Materials()[index].Value;
         if (material == null || material->ColorTable == null)
             return null;
 

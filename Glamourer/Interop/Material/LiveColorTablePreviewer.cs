@@ -78,7 +78,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
             }
             else
             {
-                for (var i = 0; i < ColorTable.NumUsedRows; ++i)
+                for (var i = 0; i < ColorTable.NumRows; ++i)
                 {
                     table[i].Diffuse  = diffuse;
                     table[i].Emissive = emissive;

@@ -1,4 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using FFXIVClientStructs.Interop;
 using Newtonsoft.Json;
 using Penumbra.GameData.Enums;
@@ -79,13 +81,13 @@ public readonly record struct MaterialValueIndex(
     {
         if (!TryGetModel(actor, out var model)
          || SlotIndex >= model.AsCharacterBase->SlotCount
-         || model.AsCharacterBase->ColorTableTexturesSpan.Length < (SlotIndex + 1) * MaterialService.MaterialsPerModel)
+         || model.AsCharacterBase->ColorTableTextures().Length < (SlotIndex + 1) * MaterialService.MaterialsPerModel)
         {
             textures = [];
             return false;
         }
 
-        textures = model.AsCharacterBase->ColorTableTexturesSpan.Slice(SlotIndex * MaterialService.MaterialsPerModel,
+        textures = model.AsCharacterBase->ColorTableTextures().Slice(SlotIndex * MaterialService.MaterialsPerModel,
             MaterialService.MaterialsPerModel);
         return true;
     }
@@ -139,7 +141,7 @@ public readonly record struct MaterialValueIndex(
     public static bool ValidateSlot(DrawObjectType type, byte slotIndex)
         => type switch
         {
-            DrawObjectType.Human    => slotIndex < 14,
+            DrawObjectType.Human    => slotIndex < 18,
             DrawObjectType.Mainhand => slotIndex == 0,
             DrawObjectType.Offhand  => slotIndex == 0,
             _                       => false,
@@ -149,7 +151,7 @@ public readonly record struct MaterialValueIndex(
         => materialIndex < MaterialService.MaterialsPerModel;
 
     public static bool ValidateRow(byte rowIndex)
-        => rowIndex < ColorTable.NumUsedRows;
+        => rowIndex < ColorTable.NumRows;
 
     private static uint ToKey(DrawObjectType type, byte slotIndex, byte materialIndex, byte rowIndex)
     {
@@ -174,6 +176,8 @@ public readonly record struct MaterialValueIndex(
             DrawObjectType.Human when SlotIndex == 11 => $"BodySlot.Face.ToString() Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
             DrawObjectType.Human when SlotIndex == 12 => $"{BodySlot.Tail} / {BodySlot.Ear} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
             DrawObjectType.Human when SlotIndex == 13 => $"Connectors Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Human when SlotIndex == 16 => $"{BonusItemFlag.Glasses.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Human when SlotIndex == 17 => $"{BonusItemFlag.UnkSlot.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
             DrawObjectType.Mainhand when SlotIndex == 0 => $"{EquipSlot.MainHand.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
             DrawObjectType.Offhand when SlotIndex == 0 => $"{EquipSlot.OffHand.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
             _ => $"{DrawObject} Slot {SlotIndex} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
@@ -188,4 +192,14 @@ public readonly record struct MaterialValueIndex(
             JsonSerializer serializer)
             => FromKey(serializer.Deserialize<uint>(reader), out var value) ? value : throw new Exception($"Invalid material key {value.Key}.");
     }
+}
+
+// TODO Remove when fixed in CS.
+public static class ColorTableExtension
+{
+    public static unsafe Span<Pointer<MaterialResourceHandle>> Materials(this ref CharacterBase character)
+        => new(character.Materials, character.SlotCount * MaterialService.MaterialsPerModel);
+
+    public static unsafe Span<Pointer<Texture>> ColorTableTextures(this ref CharacterBase character)
+        => new(character.ColorTableTextures, character.SlotCount * MaterialService.MaterialsPerModel);
 }

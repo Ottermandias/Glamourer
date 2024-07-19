@@ -175,9 +175,9 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
     {
         _newRowIdx += 1;
         ImGui.SetNextItemWidth(ImGui.CalcTextSize("Row #0000").X);
-        if (ImGui.DragInt("##Row", ref _newRowIdx, 0.01f, 1, ColorTable.NumUsedRows, "Row #%i"))
+        if (ImGui.DragInt("##Row", ref _newRowIdx, 0.01f, 1, ColorTable.NumRows, "Row #%i"))
         {
-            _newRowIdx = Math.Clamp(_newRowIdx, 1, ColorTable.NumUsedRows);
+            _newRowIdx = Math.Clamp(_newRowIdx, 1, ColorTable.NumRows);
             _newKey    = _newKey with { RowIndex = (byte)(_newRowIdx - 1) };
         }
 

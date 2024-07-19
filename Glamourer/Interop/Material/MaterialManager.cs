@@ -38,10 +38,8 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     public void Dispose()
         => _event.Unsubscribe(OnPrepareColorSet);
 
-    private void OnPrepareColorSet(CharacterBase* characterBase, MaterialResourceHandle* material, ref StainId stain, ref nint ret)
+    private void OnPrepareColorSet(CharacterBase* characterBase, MaterialResourceHandle* material, ref StainIds stain, ref nint ret)
     {
-        // TODO fix when working
-        return;
         if (!_config.UseAdvancedDyes)
             return;
 
@@ -50,7 +48,6 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         var (slotId, materialId) = FindMaterial(characterBase, material);
 
         if (!validType
-         || slotId > 9
          || type is not MaterialValueIndex.DrawObjectType.Human && slotId > 0
          || !actor.Identifier(_actors, out var identifier)
          || !_stateManager.TryGetValue(identifier, out var state))
@@ -62,7 +59,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         if (values.Length == 0)
             return;
 
-        if (!PrepareColorSet.TryGetColorTable(characterBase, material, stain, out var baseColorSet))
+        if (!PrepareColorSet.TryGetColorTable(material, stain, out var baseColorSet))
             return;
 
         var drawData = type switch

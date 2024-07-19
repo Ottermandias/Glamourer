@@ -1,7 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using FFXIVClientStructs.Interop;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
@@ -10,6 +9,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;
+using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Interop;
@@ -28,6 +28,9 @@ public sealed unsafe class AdvancedDyePopup(
     private Actor               _actor;
     private byte                _selectedMaterial = byte.MaxValue;
     private bool                _anyChanged;
+
+    private const int RowsPerPage = 16;
+    private       int _rowOffset;
 
     private bool ShouldBeDrawn()
     {
@@ -51,8 +54,6 @@ public sealed unsafe class AdvancedDyePopup(
 
     private void DrawButton(MaterialValueIndex index)
     {
-        // TODO fix when working
-        return;
         if (!config.UseAdvancedDyes)
             return;
 
@@ -78,8 +79,8 @@ public sealed unsafe class AdvancedDyePopup(
 
     private (string Path, string GamePath) ResourceName(MaterialValueIndex index)
     {
-        var materialHandle = (MaterialResourceHandle*)_actor.Model.AsCharacterBase->MaterialsSpan[
-            index.MaterialIndex + index.SlotIndex * MaterialService.MaterialsPerModel].Value;
+        var materialHandle =
+            _actor.Model.AsCharacterBase->Materials()[index.MaterialIndex + index.SlotIndex * MaterialService.MaterialsPerModel].Value;
         var model       = _actor.Model.AsCharacterBase->ModelsSpan[index.SlotIndex].Value;
         var modelHandle = model == null ? null : model->ModelResourceHandle;
         var path = materialHandle == null
@@ -129,17 +130,30 @@ public sealed unsafe class AdvancedDyePopup(
             if ((tab.Success || select is ImGuiTabItemFlags.SetSelected) && available)
             {
                 _selectedMaterial = i;
+                DrawToggle();
                 DrawTable(index, table);
             }
         }
+    }
 
-        using (ImRaii.PushFont(UiBuilder.IconFont))
+    private void DrawToggle()
+    {
+        var       buttonWidth = new Vector2(ImGui.GetContentRegionAvail().X / 2, 0);
+        using var font        = ImRaii.PushFont(UiBuilder.MonoFont);
+        using (ImRaii.Disabled(_rowOffset == 0))
         {
-            if (ImGui.TabItemButton($"{FontAwesomeIcon.Times.ToIconString()} ", ImGuiTabItemFlags.NoTooltip))
-                _drawIndex = null;
+            if (ToggleButton.ButtonEx("Row 1-16 ", buttonWidth, ImGuiButtonFlags.MouseButtonLeft, ImDrawFlags.RoundCornersLeft))
+                _rowOffset = 0;
         }
 
-        ImGuiUtil.HoverTooltip("Close the advanced dye window.");
+        ImGui.SameLine(0, 0);
+
+
+        using (ImRaii.Disabled(_rowOffset == RowsPerPage))
+        {
+            if (ToggleButton.ButtonEx("Row 17-32", buttonWidth, ImGuiButtonFlags.MouseButtonLeft, ImDrawFlags.RoundCornersRight))
+                _rowOffset = RowsPerPage;
+        }
     }
 
     private void DrawContent(ReadOnlySpan<Pointer<Texture>> textures)
@@ -169,7 +183,7 @@ public sealed unsafe class AdvancedDyePopup(
         }
 
         var size = new Vector2(7 * ImGui.GetFrameHeight() + 3 * ImGui.GetStyle().ItemInnerSpacing.X + 300 * ImGuiHelpers.GlobalScale,
-            18 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + 2 * ImGui.GetStyle().ItemSpacing.Y);
+            19 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + 3 * ImGui.GetStyle().ItemSpacing.Y);
         ImGui.SetNextWindowSize(size);
 
         var window = ImGui.Begin("###Glamourer Advanced Dyes", flags);
@@ -197,12 +211,16 @@ public sealed unsafe class AdvancedDyePopup(
 
     private void DrawTable(MaterialValueIndex materialIndex, in ColorTable table)
     {
+        if (!materialIndex.Valid)
+            return;
+
         using var disabled = ImRaii.Disabled(_state.IsLocked);
         _anyChanged = false;
-        for (byte i = 0; i < ColorTable.NumUsedRows; ++i)
+        for (byte i = 0; i < RowsPerPage; ++i)
         {
-            var     index = materialIndex with { RowIndex = i };
-            ref var row   = ref table[i];
+            var     actualI = (byte)(i + _rowOffset);
+            var     index   = materialIndex with { RowIndex = actualI };
+            ref var row     = ref table[actualI];
             DrawRow(ref row, index, table);
         }
 
@@ -222,7 +240,7 @@ public sealed unsafe class AdvancedDyePopup(
         ImGui.AlignTextToFramePadding();
         using (ImRaii.PushFont(UiBuilder.MonoFont))
         {
-            ImGui.TextUnformatted("All Color Rows");
+            ImGui.TextUnformatted("All Color Rows (1-32)");
         }
 
         var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
@@ -247,7 +265,7 @@ public sealed unsafe class AdvancedDyePopup(
         ImGui.SameLine(0, spacing);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UndoAlt.ToIconString(), buttonSize, "Reset this table to game state.", !_anyChanged,
                 true))
-            for (byte i = 0; i < ColorTable.NumUsedRows; ++i)
+            for (byte i = 0; i < ColorTable.NumRows; ++i)
                 stateManager.ResetMaterialValue(_state, materialIndex with { RowIndex = i }, ApplySettings.Game);
     }
 
@@ -259,9 +277,13 @@ public sealed unsafe class AdvancedDyePopup(
         {
             var internalRow = new ColorRow(row);
             var slot        = index.ToEquipSlot();
-            var weapon = slot is EquipSlot.MainHand or EquipSlot.OffHand
-                ? _state.ModelData.Weapon(slot)
-                : _state.ModelData.Armor(slot).ToWeapon(0);
+            var weapon = slot switch
+            {
+                EquipSlot.MainHand => _state.ModelData.Weapon(EquipSlot.MainHand),
+                EquipSlot.OffHand  => _state.ModelData.Weapon(EquipSlot.OffHand),
+                EquipSlot.Unknown  => _state.ModelData.BonusItem((index.SlotIndex - 16u).ToBonusSlot()).ToArmor().ToWeapon(0),
+                _                  => _state.ModelData.Armor(slot).ToWeapon(0),
+            };
             value = new MaterialValueState(internalRow, internalRow, weapon, StateSource.Manual);
         }
         else
@@ -327,11 +349,11 @@ public sealed unsafe class AdvancedDyePopup(
 
     private struct LabelStruct
     {
-        private fixed byte _label[12];
+        private fixed byte _label[5];
 
         public ImRaii.IEndObject TabItem(byte materialIndex, ImGuiTabItemFlags flags)
         {
-            _label[10] = (byte)('1' + materialIndex);
+            _label[4] = (byte)('A' + materialIndex);
             fixed (byte* ptr = _label)
             {
                 return ImRaii.TabItem(ptr, flags | ImGuiTabItemFlags.NoTooltip);
@@ -340,17 +362,11 @@ public sealed unsafe class AdvancedDyePopup(
 
         public LabelStruct()
         {
-            _label[0]  = (byte)'M';
-            _label[1]  = (byte)'a';
-            _label[2]  = (byte)'t';
-            _label[3]  = (byte)'e';
-            _label[4]  = (byte)'r';
-            _label[5]  = (byte)'i';
-            _label[6]  = (byte)'a';
-            _label[7]  = (byte)'l';
-            _label[8]  = (byte)' ';
-            _label[9]  = (byte)'#';
-            _label[11] = 0;
+            _label[0] = (byte)'M';
+            _label[1] = (byte)'a';
+            _label[2] = (byte)'t';
+            _label[3] = (byte)' ';
+            _label[5] = 0;
         }
     }
 }

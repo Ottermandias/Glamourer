@@ -306,8 +306,6 @@ public class StateApplier(
 
     public unsafe void ChangeMaterialValue(ActorData data, MaterialValueIndex index, ColorRow? value, bool force)
     {
-        // TODO fix when working
-        return;
         if (!force && !_config.UseAdvancedDyes)
             return;
 
@@ -340,8 +338,6 @@ public class StateApplier(
 
     public unsafe void ChangeMaterialValues(ActorData data, in StateMaterialManager materials, bool force)
     {
-        // TODO: fix when working
-        return;
         if (!force && !_config.UseAdvancedDyes)
             return;
 

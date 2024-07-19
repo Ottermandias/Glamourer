@@ -209,25 +209,43 @@ public class DesignConverter(
     }
 
     private static void ComputeMaterials(DesignMaterialManager manager, in StateMaterialManager materials,
-        EquipFlag equipFlags = EquipFlagExtensions.All)
+        EquipFlag equipFlags = EquipFlagExtensions.All, BonusItemFlag bonusFlags = BonusExtensions.All)
     {
         foreach (var (key, value) in materials.Values)
         {
             var idx = MaterialValueIndex.FromKey(key);
-            if (idx.RowIndex >= ColorTable.NumUsedRows)
+            if (idx.RowIndex >= ColorTable.NumRows)
                 continue;
             if (idx.MaterialIndex >= MaterialService.MaterialsPerModel)
                 continue;
 
-            var slot = idx.DrawObject switch
+            switch (idx.DrawObject)
             {
-                MaterialValueIndex.DrawObjectType.Human => idx.SlotIndex < 10 ? ((uint)idx.SlotIndex).ToEquipSlot() : EquipSlot.Unknown,
-                MaterialValueIndex.DrawObjectType.Mainhand when idx.SlotIndex == 0 => EquipSlot.MainHand,
-                MaterialValueIndex.DrawObjectType.Offhand when idx.SlotIndex == 0 => EquipSlot.OffHand,
-                _ => EquipSlot.Unknown,
-            };
-            if (slot is EquipSlot.Unknown || (slot.ToBothFlags() & equipFlags) == 0)
-                continue;
+                case MaterialValueIndex.DrawObjectType.Mainhand when idx.SlotIndex == 0:
+                    if ((equipFlags & (EquipFlag.Mainhand | EquipFlag.MainhandStain)) == 0)
+                        continue;
+
+                    break;
+                case MaterialValueIndex.DrawObjectType.Offhand when idx.SlotIndex == 0:
+                    if ((equipFlags & (EquipFlag.Offhand | EquipFlag.OffhandStain)) == 0)
+                        continue;
+
+                    break;
+                case MaterialValueIndex.DrawObjectType.Human:
+                    if (idx.SlotIndex < 10)
+                    {
+                        if ((((uint)idx.SlotIndex).ToEquipSlot().ToBothFlags() & equipFlags) == 0)
+                            continue;
+                    }
+                    else if (idx.SlotIndex >= 16)
+                    {
+                        if (((idx.SlotIndex - 16u).ToBonusSlot() & bonusFlags) == 0)
+                            continue;
+                    }
+
+                    break;
+                default: continue;
+            }
 
             manager.AddOrUpdateValue(idx, value.Convert());
         }
