@@ -94,28 +94,34 @@ public class FavoriteManager : ISavable
         using var j = new JsonTextWriter(writer);
         j.Formatting = Formatting.Indented;
         j.WriteStartObject();
+
         j.WritePropertyName(nameof(LoadIntermediary.Version));
         j.WriteValue(CurrentVersion);
+
         j.WritePropertyName(nameof(LoadIntermediary.FavoriteItems));
         j.WriteStartArray();
         foreach (var item in _favorites)
             j.WriteValue(item.Id);
         j.WriteEndArray();
+
         j.WritePropertyName(nameof(LoadIntermediary.FavoriteColors));
         j.WriteStartArray();
         foreach (var stain in _favoriteColors)
             j.WriteValue(stain.Id);
         j.WriteEndArray();
+
         j.WritePropertyName(nameof(LoadIntermediary.FavoriteHairStyles));
         j.WriteStartArray();
         foreach (var hairStyle in _favoriteHairStyles)
             j.WriteValue(hairStyle.ToValue());
         j.WriteEndArray();
-        j.WriteStartArray();
+
         j.WritePropertyName(nameof(LoadIntermediary.FavoriteBonusItems));
+        j.WriteStartArray();
         foreach (var item in _favoriteBonusItems)
             j.WriteValue(item.Id);
         j.WriteEndArray();
+
         j.WriteEndObject();
     }
 
