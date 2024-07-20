@@ -176,7 +176,6 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert)
     }
 }
 
-[StructLayout(LayoutKind.Explicit)]
 public struct MaterialValueState(
     in ColorRow game,
     in ColorRow model,
@@ -187,17 +186,10 @@ public struct MaterialValueState(
         : this(gameRow, modelRow, armor.ToWeapon(0), source)
     { }
 
-    [FieldOffset(0)]
-    public ColorRow Game = game;
-
-    [FieldOffset(44)]
-    public ColorRow Model = model;
-
-    [FieldOffset(88)]
+    public          ColorRow        Game     = game;
+    public          ColorRow        Model    = model;
     public readonly CharacterWeapon DrawData = drawData;
-
-    [FieldOffset(95)]
-    public readonly StateSource Source = source;
+    public readonly StateSource     Source   = source;
 
     public readonly bool EqualGame(in ColorRow rhsRow, CharacterWeapon rhsData)
         => DrawData.Skeleton == rhsData.Skeleton
