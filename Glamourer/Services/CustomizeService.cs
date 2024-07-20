@@ -238,7 +238,29 @@ public sealed class CustomizeService(
     private static CustomizeFlag FixValues(CustomizeSet set, ref CustomizeArray customize)
     {
         CustomizeFlag flags = 0;
-        foreach (var idx in CustomizationExtensions.AllBasic)
+
+        // Hrothgar face hack.
+        if (customize.Race is Race.Hrothgar)
+        {
+            if (customize.Face.Value is < 5)
+            {
+                customize.Face += 4;
+                flags          |= CustomizeFlag.Face;
+            }
+        }
+        else if (customize.Face.Value is > 4 and < 9)
+        {
+            customize.Face -= 4;
+            flags          |= CustomizeFlag.Face;
+        }
+
+        if (ValidateCustomizeValue(set, customize.Face, CustomizeIndex.Face, customize.Face, out var fixedFace, false).Length > 0)
+        {
+            customize.Face =  fixedFace;
+            flags          |= CustomizeFlag.Face;
+        }
+
+        foreach (var idx in CustomizationExtensions.AllBasicWithoutFace)
         {
             if (set.IsAvailable(idx))
             {
