@@ -322,7 +322,11 @@ public class StateListener : IDisposable
 
         // Fist weapon gauntlet hack.
         if (slot is EquipSlot.OffHand && weapon.Variant == 0 && weapon.Weapon.Id != 0 && _lastFistOffhand.Weapon.Id != 0)
-            weapon = _lastFistOffhand;
+        {
+            Glamourer.Log.Excessive($"Applying stored fist weapon offhand {_lastFistOffhand}.");
+            weapon           = _lastFistOffhand;
+            _lastFistOffhand = CharacterWeapon.Empty;
+        }
 
         if (!actor.Identifier(_actors, out var identifier)
          || !_manager.TryGetValue(identifier, out var state))
@@ -372,8 +376,11 @@ public class StateListener : IDisposable
 
         // Fist Weapon Offhand hack.
         if (slot is EquipSlot.MainHand && weapon.Skeleton.Id is > 1600 and < 1651)
+        {
             _lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Skeleton.Id + 50), weapon.Weapon, weapon.Variant,
                 weapon.Stains);
+            Glamourer.Log.Excessive($"Storing fist weapon offhand {_lastFistOffhand}.");
+        }
 
         _funModule.ApplyFunToWeapon(actor, ref weapon, slot);
     }
