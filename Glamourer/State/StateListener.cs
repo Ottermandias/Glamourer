@@ -47,10 +47,11 @@ public class StateListener : IDisposable
     private readonly CrestService              _crestService;
     private readonly ICondition                _condition;
 
+    private readonly Dictionary<Actor, CharacterWeapon> _fistOffhands = [];
+
     private ActorIdentifier _creatingIdentifier = ActorIdentifier.Invalid;
     private ActorState?     _creatingState;
     private ActorState?     _customizeState;
-    private CharacterWeapon _lastFistOffhand = CharacterWeapon.Empty;
 
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorManager actors, Configuration config,
         EquipSlotUpdating equipSlotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState,
@@ -321,11 +322,13 @@ public class StateListener : IDisposable
             return;
 
         // Fist weapon gauntlet hack.
-        if (slot is EquipSlot.OffHand && weapon.Variant == 0 && weapon.Weapon.Id != 0 && _lastFistOffhand.Weapon.Id != 0)
+        if (slot is EquipSlot.OffHand
+         && weapon.Variant == 0
+         && weapon.Weapon.Id != 0
+         && _fistOffhands.TryGetValue(actor, out var lastFistOffhand))
         {
-            Glamourer.Log.Excessive($"Applying stored fist weapon offhand {_lastFistOffhand}.");
-            weapon           = _lastFistOffhand;
-            _lastFistOffhand = CharacterWeapon.Empty;
+            Glamourer.Log.Information($"Applying stored fist weapon offhand {lastFistOffhand} for 0x{actor.Address:X}.");
+            weapon = lastFistOffhand;
         }
 
         if (!actor.Identifier(_actors, out var identifier)
@@ -377,9 +380,10 @@ public class StateListener : IDisposable
         // Fist Weapon Offhand hack.
         if (slot is EquipSlot.MainHand && weapon.Skeleton.Id is > 1600 and < 1651)
         {
-            _lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Skeleton.Id + 50), weapon.Weapon, weapon.Variant,
+            lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Skeleton.Id + 50), weapon.Weapon, weapon.Variant,
                 weapon.Stains);
-            Glamourer.Log.Excessive($"Storing fist weapon offhand {_lastFistOffhand}.");
+            _fistOffhands[actor] = lastFistOffhand;
+            Glamourer.Log.Excessive($"Storing fist weapon offhand {lastFistOffhand} for 0x{actor.Address:X}.");
         }
 
         _funModule.ApplyFunToWeapon(actor, ref weapon, slot);
