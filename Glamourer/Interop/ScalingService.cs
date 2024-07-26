@@ -74,7 +74,8 @@ public unsafe class ScalingService : IDisposable
 
     private void PlaceMinionDetour(Companion* companion)
     {
-        var owner = (Actor)((nint*)companion)[0x386];
+        // TODO Update CS
+        var owner = (Actor)((nint*)companion)[0x45C];
         if (!owner.IsCharacter)
         {
             _placeMinionHook.Original(companion);
