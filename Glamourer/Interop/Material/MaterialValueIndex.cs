@@ -1,6 +1,4 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using FFXIVClientStructs.Interop;
 using Newtonsoft.Json;
 using Penumbra.GameData.Enums;
@@ -81,13 +79,13 @@ public readonly record struct MaterialValueIndex(
     {
         if (!TryGetModel(actor, out var model)
          || SlotIndex >= model.AsCharacterBase->SlotCount
-         || model.AsCharacterBase->ColorTableTextures().Length < (SlotIndex + 1) * MaterialService.MaterialsPerModel)
+         || model.AsCharacterBase->ColorTableTexturesSpan.Length < (SlotIndex + 1) * MaterialService.MaterialsPerModel)
         {
             textures = [];
             return false;
         }
 
-        textures = model.AsCharacterBase->ColorTableTextures().Slice(SlotIndex * MaterialService.MaterialsPerModel,
+        textures = model.AsCharacterBase->ColorTableTexturesSpan.Slice(SlotIndex * MaterialService.MaterialsPerModel,
             MaterialService.MaterialsPerModel);
         return true;
     }
@@ -192,14 +190,4 @@ public readonly record struct MaterialValueIndex(
             JsonSerializer serializer)
             => FromKey(serializer.Deserialize<uint>(reader), out var value) ? value : throw new Exception($"Invalid material key {value.Key}.");
     }
-}
-
-// TODO Remove when fixed in CS.
-public static class ColorTableExtension
-{
-    public static unsafe Span<Pointer<MaterialResourceHandle>> Materials(this ref CharacterBase character)
-        => new(character.Materials, character.SlotCount * MaterialService.MaterialsPerModel);
-
-    public static unsafe Span<Pointer<Texture>> ColorTableTextures(this ref CharacterBase character)
-        => new(character.ColorTableTextures, character.SlotCount * MaterialService.MaterialsPerModel);
 }

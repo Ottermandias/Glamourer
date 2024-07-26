@@ -41,10 +41,10 @@ public static unsafe class MaterialService
             return null;
 
         var index = modelSlot * MaterialsPerModel + materialSlot;
-        if (index < 0 || index >= model.AsCharacterBase->ColorTableTextures().Length)
+        if (index < 0 || index >= model.AsCharacterBase->ColorTableTexturesSpan.Length)
             return null;
 
-        var texture = (Texture**)Unsafe.AsPointer(ref model.AsCharacterBase->ColorTableTextures()[index]);
+        var texture = (Texture**)Unsafe.AsPointer(ref model.AsCharacterBase->ColorTableTexturesSpan[index]);
         return texture;
     }
 
@@ -59,10 +59,10 @@ public static unsafe class MaterialService
             return null;
 
         var index = modelSlot * MaterialsPerModel + materialSlot;
-        if (index < 0 || index >= model.AsCharacterBase->Materials().Length)
+        if (index < 0 || index >= model.AsCharacterBase->MaterialsSpan.Length)
             return null;
 
-        var material = model.AsCharacterBase->Materials()[index].Value;
+        var material = (MaterialResourceHandle*) model.AsCharacterBase->MaterialsSpan[index].Value;
         if (material == null || material->ColorTable == null)
             return null;
 

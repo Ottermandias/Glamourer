@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using FFXIVClientStructs.Interop;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
@@ -79,8 +80,7 @@ public sealed unsafe class AdvancedDyePopup(
 
     private (string Path, string GamePath) ResourceName(MaterialValueIndex index)
     {
-        var materialHandle =
-            _actor.Model.AsCharacterBase->Materials()[index.MaterialIndex + index.SlotIndex * MaterialService.MaterialsPerModel].Value;
+        var materialHandle = (MaterialResourceHandle*)_actor.Model.AsCharacterBase->MaterialsSpan[index.MaterialIndex + index.SlotIndex * MaterialService.MaterialsPerModel].Value;
         var model       = _actor.Model.AsCharacterBase->ModelsSpan[index.SlotIndex].Value;
         var modelHandle = model == null ? null : model->ModelResourceHandle;
         var path = materialHandle == null
