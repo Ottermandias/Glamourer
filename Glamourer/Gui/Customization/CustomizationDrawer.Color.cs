@@ -22,8 +22,10 @@ public partial class CustomizationDrawer
         using (_ = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * ImGuiHelpers.GlobalScale, current < 0))
         {
             if (ImGui.ColorButton($"{_customize[index].Value}##color", color, ImGuiColorEditFlags.None, _framedIconSize))
+            {
                 ImGui.OpenPopup(ColorPickerPopupName);
-            else if (current >= 0 && CaptureMouseWheel(ref current, 0, _currentCount))
+            }
+            else if (current >= 0 && !_locked && CaptureMouseWheel(ref current, 0, _currentCount))
             {
                 var data = _set.Data(_currentIndex, current, _customize.Face);
                 UpdateValue(data.Value);
@@ -70,7 +72,7 @@ public partial class CustomizationDrawer
         for (var i = 0; i < _currentCount; ++i)
         {
             var custom = _set.Data(_currentIndex, i, _customize[CustomizeIndex.Face]);
-            if (ImGui.ColorButton(custom.Value.ToString(), ImGui.ColorConvertU32ToFloat4(custom.Color)))
+            if (ImGui.ColorButton(custom.Value.ToString(), ImGui.ColorConvertU32ToFloat4(custom.Color)) && !_locked)
             {
                 UpdateValue(custom.Value);
                 ImGui.CloseCurrentPopup();

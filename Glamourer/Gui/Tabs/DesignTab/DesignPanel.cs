@@ -248,6 +248,8 @@ public class DesignPanel
         if (!h)
             return;
 
+        using var disabled = ImRaii.Disabled(_selector.Selected!.WriteProtected());
+
         using (var _ = ImRaii.Group())
         {
             DrawCustomizeApplication();
@@ -548,7 +550,7 @@ public class DesignPanel
             => panel._selector.Selected != null;
 
         protected override bool Disabled
-            => !panel._manager.CanUndo(panel._selector.Selected);
+            => !panel._manager.CanUndo(panel._selector.Selected) || (panel._selector.Selected?.WriteProtected() ?? true);
 
         protected override string Description
             => "Undo the last change if you accidentally overwrote your design with a different one.";
@@ -604,6 +606,9 @@ public class DesignPanel
 
         protected override string Description
             => "Overwrite this design with your character's current state.";
+        
+        protected override bool Disabled
+            => panel._selector.Selected?.WriteProtected() ?? true;
 
         protected override FontAwesomeIcon Icon
             => FontAwesomeIcon.UserEdit;

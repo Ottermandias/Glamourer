@@ -27,7 +27,7 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
 
     public void Draw(Design design)
     {
-        var available = ImGui.GetContentRegionAvail().X;
+        var       available = ImGui.GetContentRegionAvail().X;
         _spacing    = ImGui.GetStyle().ItemInnerSpacing.X;
         _buttonSize = new Vector2(ImGui.GetFrameHeight());
         var colorWidth = 4 * _buttonSize.X
@@ -64,6 +64,7 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
             ImGui.SameLine(0, _spacing);
             PasteButton(design, key);
             ImGui.SameLine(0, _spacing);
+            using var disabled = ImRaii.Disabled(design.WriteProtected());
             EnabledToggle(design, key, value.Enabled);
             ImGui.SameLine(0, _spacing);
             DrawRow(design, key, value.Value, value.Revert);
@@ -103,7 +104,7 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
         var deleteEnabled = _config.DeleteDesignModifier.IsActive();
         if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), _buttonSize,
                 $"Delete this color row.{(deleteEnabled ? string.Empty : $"\nHold {_config.DeleteDesignModifier} to delete.")}",
-                !deleteEnabled, true))
+                !deleteEnabled || design.WriteProtected(), true))
             return;
 
         _designManager.ChangeMaterialValue(design, index, null);
@@ -121,7 +122,7 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
     private void PasteButton(Design design, MaterialValueIndex index)
     {
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), _buttonSize,
-                "Import an exported row from your clipboard onto this row.", !ColorRowClipboard.IsSet, true))
+                "Import an exported row from your clipboard onto this row.", !ColorRowClipboard.IsSet || design.WriteProtected(), true))
             _designManager.ChangeMaterialValue(design, index, ColorRowClipboard.Row);
     }
 
@@ -154,7 +155,7 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
         ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
         var exists = design.GetMaterialDataRef().TryGetValue(_newKey, out _);
         if (ImGuiUtil.DrawDisabledButton("Add New Row", Vector2.Zero, 
-                exists ? "The selected advanced dye row already exists." : "Add the selected advanced dye row.", exists, false))
+                exists ? "The selected advanced dye row already exists." : "Add the selected advanced dye row.", exists || design.WriteProtected()))
             _designManager.ChangeMaterialValue(design, _newKey, ColorRow.Empty);
     }
 
