@@ -14,6 +14,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
+using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using static Glamourer.Gui.Tabs.HeaderDrawer;
 
@@ -250,11 +251,15 @@ public class DesignPanel
         using (var _ = ImRaii.Group())
         {
             DrawCustomizeApplication();
-            ImGui.NewLine();
+            ImUtf8.IconDummy();
             DrawCrestApplication();
-            ImGui.NewLine();
+            ImUtf8.IconDummy();
             if (_config.UseAdvancedParameters)
+            {
                 DrawMetaApplication();
+                ImUtf8.IconDummy();
+                DrawBonusSlotApplication();
+            }
         }
 
         ImGui.SameLine(ImGui.GetContentRegionAvail().X / 2);
@@ -287,23 +292,37 @@ public class DesignPanel
                 EquipSlot.OffHand,
             });
 
-            ImGui.NewLine();
+            ImUtf8.IconDummy();
             ApplyEquip("Armor", ApplicationTypeExtensions.ArmorFlags, false, EquipSlotExtensions.EquipmentSlots);
 
-            ImGui.NewLine();
+            ImUtf8.IconDummy();
             ApplyEquip("Accessories", ApplicationTypeExtensions.AccessoryFlags, false, EquipSlotExtensions.AccessorySlots);
 
-            ImGui.NewLine();
+            ImUtf8.IconDummy();
             ApplyEquip("Dyes", ApplicationTypeExtensions.StainFlags, true,
                 EquipSlotExtensions.FullSlots);
 
-            ImGui.NewLine();
+            ImUtf8.IconDummy();
             if (_config.UseAdvancedParameters)
+            {
                 DrawParameterApplication();
+            }
             else
+            {
                 DrawMetaApplication();
+                ImUtf8.IconDummy();
+                DrawBonusSlotApplication();
+            }
         }
     }
+
+    private static readonly IReadOnlyList<string> MetaLabels =
+    [
+        "Apply Wetness",
+        "Apply Hat Visibility",
+        "Apply Visor State",
+        "Apply Weapon Visibility",
+    ];
 
     private void DrawMetaApplication()
     {
@@ -312,21 +331,32 @@ public class DesignPanel
         var        flags     = (uint)_selector.Selected!.Application.Meta;
         var        bigChange = ImGui.CheckboxFlags("Apply All Meta Changes", ref flags, all);
 
-        var labels = new[]
-        {
-            "Apply Wetness",
-            "Apply Hat Visibility",
-            "Apply Visor State",
-            "Apply Weapon Visibility",
-        };
-
-        foreach (var (index, label) in MetaExtensions.AllRelevant.Zip(labels))
+        foreach (var (index, label) in MetaExtensions.AllRelevant.Zip(MetaLabels))
         {
             var apply = bigChange ? ((MetaFlag)flags).HasFlag(index.ToFlag()) : _selector.Selected!.DoApplyMeta(index);
             if (ImGui.Checkbox(label, ref apply) || bigChange)
                 _manager.ChangeApplyMeta(_selector.Selected!, index, apply);
         }
     }
+
+    private static readonly IReadOnlyList<string> BonusSlotLabels =
+    [
+        "Apply Facewear",
+    ];
+
+    private void DrawBonusSlotApplication()
+    {
+        using var id        = ImUtf8.PushId("Bonus"u8);
+        var       flags     = _selector.Selected!.Application.BonusItem;
+        var       bigChange = BonusExtensions.AllFlags.Count > 1 && ImUtf8.Checkbox("Apply All Bonus Slots"u8, ref flags, BonusExtensions.All);
+        foreach (var (index, label) in BonusExtensions.AllFlags.Zip(BonusSlotLabels))
+        {
+            var apply = bigChange ? flags.HasFlag(index) : _selector.Selected!.DoApplyBonusItem(index);
+            if (ImUtf8.Checkbox(label, ref apply) || bigChange)
+                _manager.ChangeApplyBonusItem(_selector.Selected!, index, apply);
+        }
+    }
+
 
     private void DrawParameterApplication()
     {
