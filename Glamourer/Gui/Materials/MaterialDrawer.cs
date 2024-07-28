@@ -200,7 +200,7 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
         ImGuiUtil.HoverTooltip("Change the gloss strength for this row.");
         ImGui.SameLine(0, _spacing);
         ImGui.SetNextItemWidth(SpecularStrengthWidth * ImGuiHelpers.GlobalScale);
-        applied |= ImGui.DragFloat("##Specular Strength", ref tmp.SpecularStrength, 0.01f, float.MinValue, float.MaxValue, "%.3f SS");
+        applied |= ImGui.DragFloat("##Specular Strength", ref tmp.SpecularStrength, 0.01f, float.MinValue, float.MaxValue, "%.3f%% SS");
         ImGuiUtil.HoverTooltip("Change the specular strength for this row.");
         if (applied)
             _designManager.ChangeMaterialValue(design, index, tmp);

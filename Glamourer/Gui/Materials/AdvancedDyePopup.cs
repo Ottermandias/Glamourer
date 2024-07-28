@@ -80,7 +80,9 @@ public sealed unsafe class AdvancedDyePopup(
 
     private (string Path, string GamePath) ResourceName(MaterialValueIndex index)
     {
-        var materialHandle = (MaterialResourceHandle*)_actor.Model.AsCharacterBase->MaterialsSpan[index.MaterialIndex + index.SlotIndex * MaterialService.MaterialsPerModel].Value;
+        var materialHandle =
+            (MaterialResourceHandle*)_actor.Model.AsCharacterBase->MaterialsSpan[
+                index.MaterialIndex + index.SlotIndex * MaterialService.MaterialsPerModel].Value;
         var model       = _actor.Model.AsCharacterBase->ModelsSpan[index.SlotIndex].Value;
         var modelHandle = model == null ? null : model->ModelResourceHandle;
         var path = materialHandle == null
@@ -140,18 +142,19 @@ public sealed unsafe class AdvancedDyePopup(
     {
         var       buttonWidth = new Vector2(ImGui.GetContentRegionAvail().X / 2, 0);
         using var font        = ImRaii.PushFont(UiBuilder.MonoFont);
-        using (ImRaii.Disabled(_rowOffset == 0))
+        using var hoverColor  = ImRaii.PushColor(ImGuiCol.ButtonHovered, ImGui.GetColorU32(ImGuiCol.TabHovered));
+
+        using (ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(_rowOffset == 0 ? ImGuiCol.TabActive : ImGuiCol.Tab)))
         {
-            if (ToggleButton.ButtonEx("Row 1-16 ", buttonWidth, ImGuiButtonFlags.MouseButtonLeft, ImDrawFlags.RoundCornersLeft))
+            if (ToggleButton.ButtonEx("Row Pairs 1-8 ", buttonWidth, ImGuiButtonFlags.MouseButtonLeft, ImDrawFlags.RoundCornersLeft))
                 _rowOffset = 0;
         }
 
         ImGui.SameLine(0, 0);
 
-
-        using (ImRaii.Disabled(_rowOffset == RowsPerPage))
+        using (ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(_rowOffset == RowsPerPage ? ImGuiCol.TabActive : ImGuiCol.Tab)))
         {
-            if (ToggleButton.ButtonEx("Row 17-32", buttonWidth, ImGuiButtonFlags.MouseButtonLeft, ImDrawFlags.RoundCornersRight))
+            if (ToggleButton.ButtonEx("Row Pairs 9-16", buttonWidth, ImGuiButtonFlags.MouseButtonLeft, ImDrawFlags.RoundCornersRight))
                 _rowOffset = RowsPerPage;
         }
     }
@@ -182,9 +185,14 @@ public sealed unsafe class AdvancedDyePopup(
             flags |= ImGuiWindowFlags.NoMove;
         }
 
-        var size = new Vector2(7 * ImGui.GetFrameHeight() + 3 * ImGui.GetStyle().ItemInnerSpacing.X + 300 * ImGuiHelpers.GlobalScale,
-            19 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + 3 * ImGui.GetStyle().ItemSpacing.Y);
-        ImGui.SetNextWindowSize(size);
+        var width = 7 * ImGui.GetFrameHeight() // Buttons
+          + 3 * ImGui.GetStyle().ItemSpacing.X // around text
+          + 7 * ImGui.GetStyle().ItemInnerSpacing.X
+          + 200 * ImGuiHelpers.GlobalScale             // Drags
+          + 7 * UiBuilder.MonoFont.GetCharAdvance(' ') // Row
+          + 2 * ImGui.GetStyle().WindowPadding.X;
+        var height = 19 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + 3 * ImGui.GetStyle().ItemSpacing.Y;
+        ImGui.SetNextWindowSize(new Vector2(width, height));
 
         var window = ImGui.Begin("###Glamourer Advanced Dyes", flags);
         try
@@ -240,11 +248,11 @@ public sealed unsafe class AdvancedDyePopup(
         ImGui.AlignTextToFramePadding();
         using (ImRaii.PushFont(UiBuilder.MonoFont))
         {
-            ImGui.TextUnformatted("All Color Rows (1-32)");
+            ImGui.TextUnformatted("All Color Row Pairs (1-16)");
         }
 
         var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
-        ImGui.SameLine(ImGui.GetWindowSize().X - 3 * buttonSize.X - 3 * spacing);
+        ImGui.SameLine(ImGui.GetWindowSize().X - 3 * buttonSize.X - 2 * spacing - ImGui.GetStyle().WindowPadding.X);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), buttonSize, "Export this table to your clipboard.", false,
                 true))
             ColorRowClipboard.Table = table;
@@ -302,7 +310,9 @@ public sealed unsafe class AdvancedDyePopup(
         ImGui.AlignTextToFramePadding();
         using (ImRaii.PushFont(UiBuilder.MonoFont))
         {
-            ImGui.TextUnformatted($"Row {index.RowIndex + 1:D2}");
+            var rowIndex  = index.RowIndex / 2 + 1;
+            var rowSuffix = (index.RowIndex & 1) == 0 ? 'A' : 'B';
+            ImGui.TextUnformatted($"Row {rowIndex,2}{rowSuffix}");
         }
 
         ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 2);
@@ -313,18 +323,22 @@ public sealed unsafe class AdvancedDyePopup(
         ImGui.SameLine(0, spacing.X);
         applied |= ImGuiUtil.ColorPicker("##specular", "Change the specular value for this row.", value.Model.Specular,
             v => value.Model.Specular = v, "S");
+
         ImGui.SameLine(0, spacing.X);
         applied |= ImGuiUtil.ColorPicker("##emissive", "Change the emissive value for this row.", value.Model.Emissive,
             v => value.Model.Emissive = v, "E");
+
         ImGui.SameLine(0, spacing.X);
         ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
         applied |= ImGui.DragFloat("##Gloss", ref value.Model.GlossStrength, 0.01f, 0.001f, float.MaxValue, "%.3f G")
          && value.Model.GlossStrength > 0;
         ImGuiUtil.HoverTooltip("Change the gloss strength for this row.");
+
         ImGui.SameLine(0, spacing.X);
         ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        applied |= ImGui.DragFloat("##Specular Strength", ref value.Model.SpecularStrength, 0.01f, float.MinValue, float.MaxValue, "%.3f SS");
+        applied |= ImGui.DragFloat("##Specular Strength", ref value.Model.SpecularStrength, 0.01f, float.MinValue, float.MaxValue, "%.3f%% SS");
         ImGuiUtil.HoverTooltip("Change the specular strength for this row.");
+
         ImGui.SameLine(0, spacing.X);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), buttonSize, "Export this row to your clipboard.", false,
                 true))
