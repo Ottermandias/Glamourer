@@ -9,6 +9,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
+using OtterGui.Text.EndObjects;
 using OtterGui.Widgets;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -34,6 +35,8 @@ public class EquipmentDrawer
 
     private float _requiredComboWidthUnscaled;
     private float _requiredComboWidth;
+
+    private Stain? _draggedStain;
 
     public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, CodeService codes, TextureService textures,
         Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes)
@@ -512,6 +515,10 @@ public class EquipmentDrawer
             var change = small
                 ? _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss)
                 : _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss, width);
+
+            if (!change)
+                DrawStainDragDrop(data, index, stain, found);
+
             if (index < data.CurrentStains.Count - 1)
                 ImUtf8.SameLineInner();
 
@@ -523,6 +530,27 @@ public class EquipmentDrawer
             if (ResetOrClear(data.Locked, false, data.AllowRevert, true, stainId, data.GameStains[index], Stain.None.RowIndex,
                     out var newStain))
                 data.SetStains(data.CurrentStains.With(index, newStain));
+        }
+    }
+
+    private void DrawStainDragDrop(in EquipDrawData data, int index, Stain stain, bool found)
+    {
+        if (found)
+        {
+            using var dragSource = ImUtf8.DragDropSource();
+            if (dragSource.Success)
+            {
+                if (DragDropSource.SetPayload("stainDragDrop"u8))
+                    _draggedStain = stain;
+                ImUtf8.Text($"Dragging {stain.Name}...");
+            }
+        }
+
+        using var dragTarget = ImUtf8.DragDropTarget();
+        if (dragTarget.IsDropping("stainDragDrop"u8) && _draggedStain.HasValue)
+        {
+            data.SetStains(data.CurrentStains.With(index, _draggedStain.Value.RowIndex));
+            _draggedStain = null;
         }
     }
 

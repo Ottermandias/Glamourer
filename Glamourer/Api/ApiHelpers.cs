@@ -1,6 +1,5 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Designs;
-using Glamourer.GameData;
 using Glamourer.State;
 using OtterGui;
 using OtterGui.Log;
