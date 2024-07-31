@@ -4,10 +4,12 @@ using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Glamourer.Automation;
 using Glamourer.Designs;
+using Glamourer.Designs.History;
 using Glamourer.GameData;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Materials;
+using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
@@ -38,6 +40,7 @@ public class DesignPanel
     private readonly CustomizeParameterDrawer _parameterDrawer;
     private readonly DesignLinkDrawer         _designLinkDrawer;
     private readonly MaterialDrawer           _materials;
+    private readonly EditorHistory            _history;
     private readonly Button[]                 _leftButtons;
     private readonly Button[]                 _rightButtons;
 
@@ -56,7 +59,8 @@ public class DesignPanel
         MultiDesignPanel multiDesignPanel,
         CustomizeParameterDrawer parameterDrawer,
         DesignLinkDrawer designLinkDrawer,
-        MaterialDrawer materials)
+        MaterialDrawer materials,
+        EditorHistory history)
     {
         _selector            = selector;
         _customizationDrawer = customizationDrawer;
@@ -73,12 +77,14 @@ public class DesignPanel
         _parameterDrawer     = parameterDrawer;
         _designLinkDrawer    = designLinkDrawer;
         _materials           = materials;
+        _history             = history;
         _leftButtons =
         [
             new SetFromClipboardButton(this),
-            new UndoButton(this),
+            new DesignUndoButton(this),
             new ExportToClipboardButton(this),
             new ApplyCharacterButton(this),
+            new UndoButton(this),
         ];
         _rightButtons =
         [
@@ -544,7 +550,7 @@ public class DesignPanel
         }
     }
 
-    private sealed class UndoButton(DesignPanel panel) : Button
+    private sealed class DesignUndoButton(DesignPanel panel) : Button
     {
         public override bool Visible
             => panel._selector.Selected != null;
@@ -553,10 +559,10 @@ public class DesignPanel
             => !panel._manager.CanUndo(panel._selector.Selected) || (panel._selector.Selected?.WriteProtected() ?? true);
 
         protected override string Description
-            => "Undo the last change if you accidentally overwrote your design with a different one.";
+            => "Undo the last time you applied an entire design onto this design, if you accidentally overwrote your design with a different one.";
 
         protected override FontAwesomeIcon Icon
-            => FontAwesomeIcon.Undo;
+            => FontAwesomeIcon.SyncAlt;
 
         protected override void OnClick()
         {
@@ -606,7 +612,7 @@ public class DesignPanel
 
         protected override string Description
             => "Overwrite this design with your character's current state.";
-        
+
         protected override bool Disabled
             => panel._selector.Selected?.WriteProtected() ?? true;
 
@@ -631,5 +637,23 @@ public class DesignPanel
                     $"Could not apply player state to design {panel._selector.Selected!.Identifier}", NotificationType.Error, false);
             }
         }
+    }
+
+    private sealed class UndoButton(DesignPanel panel) : Button
+    {
+        protected override string Description
+            => "Undo the last change.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Undo;
+
+        public override bool Visible
+            => panel._selector.Selected != null;
+
+        protected override bool Disabled
+            => (panel._selector.Selected?.WriteProtected() ?? true) || !panel._history.CanUndo(panel._selector.Selected);
+
+        protected override void OnClick()
+            => panel._history.Undo(panel._selector.Selected!);
     }
 }
