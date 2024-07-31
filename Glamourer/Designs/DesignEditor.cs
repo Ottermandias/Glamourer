@@ -196,7 +196,7 @@ public class DesignEditor(
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set stain of {slot} equipment piece to {stains}.");
-        DesignChanged.Invoke(DesignChanged.Type.Stain, design, (oldStain, stains, slot));
+        DesignChanged.Invoke(DesignChanged.Type.Stains, design, (oldStain, stains, slot));
     }
 
     /// <inheritdoc/>

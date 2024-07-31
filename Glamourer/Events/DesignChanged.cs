@@ -68,8 +68,8 @@ public sealed class DesignChanged()
         /// <summary> An existing design had its weapons changed. Data is the old mainhand, the old offhand, the new mainhand, the new offhand (if any) and the new gauntlets (if any). [(EquipItem, EquipItem, EquipItem, EquipItem?, EquipItem?)]. </summary>
         Weapon,
 
-        /// <summary> An existing design had a stain changed. Data is the old stain id, the new stain id and the slot [(StainId, StainId, EquipSlot)]. </summary>
-        Stain,
+        /// <summary> An existing design had a stain changed. Data is the old stain id, the new stain id and the slot [(StainIds, StainIds, EquipSlot)]. </summary>
+        Stains,
 
         /// <summary> An existing design had a crest visibility changed. Data is the old crest visibility, the new crest visibility and the slot [(bool, bool, EquipSlot)]. </summary>
         Crest,
