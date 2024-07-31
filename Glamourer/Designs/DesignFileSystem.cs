@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
+using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Services;
 using Newtonsoft.Json;
@@ -92,13 +93,13 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
             _saveService.QueueSave(this);
     }
 
-    private void OnDesignChange(DesignChanged.Type type, Design design, object? data)
+    private void OnDesignChange(DesignChanged.Type type, Design design, ITransaction? data)
     {
         switch (type)
         {
             case DesignChanged.Type.Created:
                 var parent = Root;
-                if (data is string path)
+                if ((data as CreationTransaction?)?.Path is { } path)
                     try
                     {
                         parent = FindOrCreateAllFolders(path);
@@ -119,7 +120,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
             case DesignChanged.Type.ReloadedAll:
                 Reload();
                 return;
-            case DesignChanged.Type.Renamed when data is string oldName:
+            case DesignChanged.Type.Renamed when (data as RenameTransaction?)?.Old is { } oldName:
                 if (!FindLeaf(design, out var leaf2))
                     return;
 

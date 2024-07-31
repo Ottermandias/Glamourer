@@ -1,5 +1,6 @@
 using Glamourer.Api.Enums;
 using Glamourer.Designs;
+using Glamourer.Designs.History;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
@@ -39,7 +40,7 @@ public class StateEditor(
         var actors = Applier.ForceRedraw(state, source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set model id in state {state.Identifier.Incognito(null)} from {old} to {modelId}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Model, source, state, actors, (old, modelId));
+        StateChanged.Invoke(StateChangeType.Model, source, state, actors, null);
     }
 
     /// <inheritdoc/>
@@ -52,7 +53,7 @@ public class StateEditor(
         var actors = Applier.ChangeCustomize(state, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {idx.ToDefaultName()} customizations in state {state.Identifier.Incognito(null)} from {old.Value} to {value.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Customize, settings.Source, state, actors, (old, value, idx));
+        StateChanged.Invoke(StateChangeType.Customize, settings.Source, state, actors, new CustomizeTransaction(idx, old, value));
     }
 
     /// <inheritdoc/>
@@ -65,7 +66,8 @@ public class StateEditor(
         var actors = Applier.ChangeCustomize(state, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {applied} customizations in state {state.Identifier.Incognito(null)} from {old} to {customizeInput}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.EntireCustomize, settings.Source, state, actors, (old, applied));
+        StateChanged.Invoke(StateChangeType.EntireCustomize, settings.Source, state, actors,
+            new EntireCustomizeTransaction(applied, old, customizeInput));
     }
 
     /// <inheritdoc/>
@@ -86,7 +88,25 @@ public class StateEditor(
 
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}). [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(type, settings.Source, state, actors, (old, item, slot));
+
+        if (type is StateChangeType.Equip)
+        {
+            StateChanged.Invoke(type, settings.Source, state, actors, new EquipTransaction(slot, old, item));
+        }
+        else if (slot is EquipSlot.MainHand)
+        {
+            var oldOff       = state.ModelData.Item(EquipSlot.OffHand);
+            var oldGauntlets = state.ModelData.Item(EquipSlot.Hands);
+            StateChanged.Invoke(type, settings.Source, state, actors,
+                new WeaponTransaction(old, oldOff, oldGauntlets, item, oldOff, oldGauntlets));
+        }
+        else
+        {
+            var oldMain      = state.ModelData.Item(EquipSlot.MainHand);
+            var oldGauntlets = state.ModelData.Item(EquipSlot.Hands);
+            StateChanged.Invoke(type, settings.Source, state, actors,
+                new WeaponTransaction(oldMain, old, oldGauntlets, oldMain, item, oldGauntlets));
+        }
     }
 
     public void ChangeBonusItem(object data, BonusItemFlag slot, BonusItem item, ApplySettings settings = default)
@@ -98,7 +118,7 @@ public class StateEditor(
         var actors = Applier.ChangeBonusItem(state, slot, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.Id}) to {item.Name} ({item.Id}). [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.BonusItem, settings.Source, state, actors, (old, item, slot));
+        StateChanged.Invoke(StateChangeType.BonusItem, settings.Source, state, actors, new BonusItemTransaction(slot, old, item));
     }
 
     /// <inheritdoc/>
@@ -131,8 +151,26 @@ public class StateEditor(
 
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} in state {state.Identifier.Incognito(null)} from {old.Name} ({old.ItemId}) to {item!.Value.Name} ({item.Value.ItemId}) and its stain from {oldStains} to {stains!.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(type,                   settings.Source, state, actors, (old, item!.Value, slot));
-        StateChanged.Invoke(StateChangeType.Stains, settings.Source, state, actors, (oldStains, stains!.Value, slot));
+        if (type is StateChangeType.Equip)
+        {
+            StateChanged.Invoke(type, settings.Source, state, actors, new EquipTransaction(slot, old, item!.Value));
+        }
+        else if (slot is EquipSlot.MainHand)
+        {
+            var oldOff       = state.ModelData.Item(EquipSlot.OffHand);
+            var oldGauntlets = state.ModelData.Item(EquipSlot.Hands);
+            StateChanged.Invoke(type, settings.Source, state, actors,
+                new WeaponTransaction(old, oldOff, oldGauntlets, item!.Value, oldOff, oldGauntlets));
+        }
+        else
+        {
+            var oldMain      = state.ModelData.Item(EquipSlot.MainHand);
+            var oldGauntlets = state.ModelData.Item(EquipSlot.Hands);
+            StateChanged.Invoke(type, settings.Source, state, actors,
+                new WeaponTransaction(oldMain, old, oldGauntlets, oldMain, item!.Value, oldGauntlets));
+        }
+
+        StateChanged.Invoke(StateChangeType.Stains, settings.Source, state, actors, new StainTransaction(slot, oldStains, stains!.Value));
     }
 
     /// <inheritdoc/>
@@ -145,7 +183,7 @@ public class StateEditor(
         var actors = Applier.ChangeStain(state, slot, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {slot.ToName()} stain in state {state.Identifier.Incognito(null)} from {old} to {stains}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Stains, settings.Source, state, actors, (old, stains, slot));
+        StateChanged.Invoke(StateChangeType.Stains, settings.Source, state, actors, new StainTransaction(slot, old, stains));
     }
 
     /// <inheritdoc/>
@@ -158,7 +196,7 @@ public class StateEditor(
         var actors = Applier.ChangeCrests(state, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {slot.ToLabel()} crest in state {state.Identifier.Incognito(null)} from {old} to {crest}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Crest, settings.Source, state, actors, (old, crest, slot));
+        StateChanged.Invoke(StateChangeType.Crest, settings.Source, state, actors, new CrestTransaction(slot, old, crest));
     }
 
     /// <inheritdoc/>
@@ -176,7 +214,7 @@ public class StateEditor(
         var actors = Applier.ChangeParameters(state, flag, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set {flag} in state {state.Identifier.Incognito(null)} from {old} to {@new}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Parameter, settings.Source, state, actors, (old, @new, flag));
+        StateChanged.Invoke(StateChangeType.Parameter, settings.Source, state, actors, new ParameterTransaction(flag, old, @new));
     }
 
     public void ChangeMaterialValue(object data, MaterialValueIndex index, in MaterialValueState newValue, ApplySettings settings)
@@ -188,7 +226,8 @@ public class StateEditor(
         var actors = Applier.ChangeMaterialValue(state, index, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set material value in state {state.Identifier.Incognito(null)} from {oldValue} to {newValue.Game}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.MaterialValue, settings.Source, state, actors, (oldValue, newValue.Game, index));
+        StateChanged.Invoke(StateChangeType.MaterialValue, settings.Source, state, actors,
+            new MaterialTransaction(index, oldValue, newValue.Game));
     }
 
     public void ResetMaterialValue(object data, MaterialValueIndex index, ApplySettings settings)
@@ -200,7 +239,7 @@ public class StateEditor(
         var actors = Applier.ChangeMaterialValue(state, index, true);
         Glamourer.Log.Verbose(
             $"Reset material value in state {state.Identifier.Incognito(null)} to game value. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.MaterialValue, settings.Source, state, actors, index);
+        StateChanged.Invoke(StateChangeType.MaterialValue, settings.Source, state, actors, new MaterialTransaction(index, null, null));
     }
 
     /// <inheritdoc/>
@@ -213,7 +252,7 @@ public class StateEditor(
         var actors = Applier.ChangeMetaState(state, index, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
             $"Set Head Gear Visibility in state {state.Identifier.Incognito(null)} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Other, settings.Source, state, actors, (old, value, MetaIndex.HatState));
+        StateChanged.Invoke(StateChangeType.Other, settings.Source, state, actors, new MetaTransaction(index, old, value));
     }
 
     /// <inheritdoc/>
@@ -377,7 +416,7 @@ public class StateEditor(
 
         Glamourer.Log.Verbose(
             $"Applied design to {state.Identifier.Incognito(null)}. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Design, state.Sources[MetaIndex.Wetness], state, actors, mergedDesign.Design);
+        StateChanged.Invoke(StateChangeType.Design, state.Sources[MetaIndex.Wetness], state, actors, null); // FIXME: maybe later
 
         return;
 

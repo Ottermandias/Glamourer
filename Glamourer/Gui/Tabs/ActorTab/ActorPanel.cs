@@ -5,6 +5,7 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Automation;
 using Glamourer.Designs;
+using Glamourer.Designs.History;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Materials;
@@ -39,6 +40,7 @@ public class ActorPanel
     private readonly DictModelChara           _modelChara;
     private readonly CustomizeParameterDrawer _parameterDrawer;
     private readonly AdvancedDyePopup         _advancedDyes;
+    private readonly EditorHistory            _editorHistory;
     private readonly HeaderDrawer.Button[]    _leftButtons;
     private readonly HeaderDrawer.Button[]    _rightButtons;
 
@@ -55,7 +57,8 @@ public class ActorPanel
         ICondition conditions,
         DictModelChara modelChara,
         CustomizeParameterDrawer parameterDrawer,
-        AdvancedDyePopup advancedDyes)
+        AdvancedDyePopup advancedDyes, 
+        EditorHistory editorHistory)
     {
         _selector            = selector;
         _stateManager        = stateManager;
@@ -71,11 +74,13 @@ public class ActorPanel
         _modelChara          = modelChara;
         _parameterDrawer     = parameterDrawer;
         _advancedDyes        = advancedDyes;
+        _editorHistory       = editorHistory;
         _leftButtons =
         [
             new SetFromClipboardButton(this),
             new ExportToClipboardButton(this),
             new SaveAsDesignButton(this),
+            new UndoButton(this),
         ];
         _rightButtons =
         [
@@ -475,6 +480,24 @@ public class ActorPanel
             panel._newName   = panel._state!.Identifier.ToName();
             panel._newDesign = panel._converter.Convert(panel._state, ApplicationRules.FromModifiers(panel._state));
         }
+    }
+
+    private sealed class UndoButton(ActorPanel panel) : HeaderDrawer.Button
+    {
+        protected override string Description
+            => "Undo the last change.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Undo;
+
+        public override bool Visible
+            => panel._state != null;
+
+        protected override bool Disabled
+            => (panel._state?.IsLocked ?? true) || !panel._editorHistory.CanUndo(panel._state);
+
+        protected override void OnClick()
+            => panel._editorHistory.Undo(panel._state!);
     }
 
     private sealed class LockedButton(ActorPanel panel) : HeaderDrawer.Button

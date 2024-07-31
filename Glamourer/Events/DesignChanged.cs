@@ -1,4 +1,5 @@
 using Glamourer.Designs;
+using Glamourer.Designs.History;
 using Glamourer.Gui;
 using OtterGui.Classes;
 
@@ -13,113 +14,116 @@ namespace Glamourer.Events;
 /// </list>
 /// </summary>
 public sealed class DesignChanged()
-    : EventWrapper<DesignChanged.Type, Design, object?, DesignChanged.Priority>(nameof(DesignChanged))
+    : EventWrapper<DesignChanged.Type, Design, ITransaction?, DesignChanged.Priority>(nameof(DesignChanged))
 {
     public enum Type
     {
-        /// <summary> A new design was created. Data is a potential path to move it to [string?]. </summary>
+        /// <summary> A new design was created. </summary>
         Created,
 
-        /// <summary> An existing design was deleted. Data is null. </summary>
+        /// <summary> An existing design was deleted. </summary>
         Deleted,
 
-        /// <summary> Invoked on full reload. Design and Data are null. </summary>
+        /// <summary> Invoked on full reload. </summary>
         ReloadedAll,
 
-        /// <summary> An existing design was renamed. Data is the prior name [string]. </summary>
+        /// <summary> An existing design was renamed. </summary>
         Renamed,
 
-        /// <summary> An existing design had its description changed. Data is the prior description [string]. </summary>
+        /// <summary> An existing design had its description changed. </summary>
         ChangedDescription,
 
-        /// <summary> An existing design had its associated color changed. Data is the prior color [string]. </summary>
+        /// <summary> An existing design had its associated color changed. </summary>
         ChangedColor,
 
-        /// <summary> An existing design had a new tag added. Data is the new tag and the index it was added at [(string, int)]. </summary>
+        /// <summary> An existing design had a new tag added. </summary>
         AddedTag,
 
-        /// <summary> An existing design had an existing tag removed. Data is the removed tag and the index it had before removal [(string, int)]. </summary>
+        /// <summary> An existing design had an existing tag removed. </summary>
         RemovedTag,
 
-        /// <summary> An existing design had an existing tag renamed. Data is the old name of the tag, the new name of the tag, and the index it had before being resorted [(string, string, int)]. </summary>
+        /// <summary> An existing design had an existing tag renamed. </summary>
         ChangedTag,
 
-        /// <summary> An existing design had a new associated mod added. Data is the Mod and its Settings [(Mod, ModSettings)]. </summary>
+        /// <summary> An existing design had a new associated mod added. </summary>
         AddedMod,
 
-        /// <summary> An existing design had an existing associated mod removed. Data is the Mod and its Settings [(Mod, ModSettings)]. </summary>
+        /// <summary> An existing design had an existing associated mod removed. </summary>
         RemovedMod,
 
-        /// <summary> An existing design had a link to a different design added, removed or moved. Data is null. </summary>
+        /// <summary> An existing design had an existing associated mod updated. </summary>
+        UpdatedMod,
+
+        /// <summary> An existing design had a link to a different design added, removed or moved. </summary>
         ChangedLink,
 
-        /// <summary> An existing design had a customization changed. Data is the old value, the new value and the type [(CustomizeValue, CustomizeValue, CustomizeIndex)]. </summary>
+        /// <summary> An existing design had a customization changed. </summary>
         Customize,
 
-        /// <summary> An existing design had its entire customize array changed. Data is the old array, the applied flags and the changed flags. [(CustomizeArray, CustomizeFlag, CustomizeFlag)]. </summary>
+        /// <summary> An existing design had its entire customize array changed. </summary>
         EntireCustomize,
 
-        /// <summary> An existing design had an equipment piece changed. Data is the old value, the new value and the slot [(EquipItem, EquipItem, EquipSlot)]. </summary>
+        /// <summary> An existing design had an equipment piece changed. </summary>
         Equip,
 
-        /// <summary> An existing design had a bonus item changed. Data is the old value, the new value and the slot [(BonusItem, BonusItem, BonusItemFlag)]. </summary>
+        /// <summary> An existing design had a bonus item changed. </summary>
         BonusItem,
 
-        /// <summary> An existing design had its weapons changed. Data is the old mainhand, the old offhand, the new mainhand, the new offhand (if any) and the new gauntlets (if any). [(EquipItem, EquipItem, EquipItem, EquipItem?, EquipItem?)]. </summary>
+        /// <summary> An existing design had its weapons changed. </summary>
         Weapon,
 
-        /// <summary> An existing design had a stain changed. Data is the old stain id, the new stain id and the slot [(StainIds, StainIds, EquipSlot)]. </summary>
+        /// <summary> An existing design had a stain changed. </summary>
         Stains,
 
-        /// <summary> An existing design had a crest visibility changed. Data is the old crest visibility, the new crest visibility and the slot [(bool, bool, EquipSlot)]. </summary>
+        /// <summary> An existing design had a crest visibility changed. </summary>
         Crest,
 
-        /// <summary> An existing design had a customize parameter changed. Data is the old value, the new value and the flag [(CustomizeParameterValue, CustomizeParameterValue, CustomizeParameterFlag)]. </summary>
+        /// <summary> An existing design had a customize parameter changed. </summary>
         Parameter,
 
-        /// <summary> An existing design had an advanced dye row added, changed, or deleted. Data is the old value, the new value and the index [(ColorRow?, ColorRow?, MaterialValueIndex)]. </summary>
+        /// <summary> An existing design had an advanced dye row added, changed, or deleted. </summary>
         Material,
 
-        /// <summary> An existing design had an advanced dye rows Revert state changed. Data is the index [MaterialValueIndex]. </summary>
+        /// <summary> An existing design had an advanced dye rows Revert state changed. </summary>
         MaterialRevert,
 
         /// <summary> An existing design had changed whether it always forces a redraw or not. </summary>
         ForceRedraw,
 
-        /// <summary> An existing design changed whether a specific customization is applied. Data is the type of customization [CustomizeIndex]. </summary>
+        /// <summary> An existing design changed whether a specific customization is applied. </summary>
         ApplyCustomize,
 
-        /// <summary> An existing design changed whether a specific equipment piece is applied. Data is the slot of the equipment [EquipSlot]. </summary>
+        /// <summary> An existing design changed whether a specific equipment piece is applied. </summary>
         ApplyEquip,
 
-        /// <summary> An existing design changed whether a specific bonus item is applied. Data is the slot of the item [BonusItemFlag]. </summary>
+        /// <summary> An existing design changed whether a specific bonus item is applied. </summary>
         ApplyBonusItem,
 
-        /// <summary> An existing design changed whether a specific stain is applied. Data is the slot of the equipment [EquipSlot]. </summary>
+        /// <summary> An existing design changed whether a specific stain is applied. </summary>
         ApplyStain,
 
-        /// <summary> An existing design changed whether a specific crest visibility is applied. Data is the slot of the equipment [EquipSlot]. </summary>
+        /// <summary> An existing design changed whether a specific crest visibility is applied. </summary>
         ApplyCrest,
 
-        /// <summary> An existing design changed whether a specific customize parameter is applied. Data is the flag for the parameter [CustomizeParameterFlag]. </summary>
+        /// <summary> An existing design changed whether a specific customize parameter is applied. </summary>
         ApplyParameter,
 
-        /// <summary> An existing design changed whether an advanced dye row is applied. Data is the index [MaterialValueIndex]. </summary>
+        /// <summary> An existing design changed whether an advanced dye row is applied. </summary>
         ApplyMaterial,
 
-        /// <summary> An existing design changed its write protection status. Data is the new value [bool]. </summary>
+        /// <summary> An existing design changed its write protection status. </summary>
         WriteProtection,
 
-        /// <summary> An existing design changed its display status for the quick design bar. Data is the new value [bool]. </summary>
+        /// <summary> An existing design changed its display status for the quick design bar. </summary>
         QuickDesignBar,
 
-        /// <summary> An existing design changed one of the meta flags. Data is the flag, whether it was about their applying and the new value [(MetaFlag, bool, bool)]. </summary>
+        /// <summary> An existing design changed one of the meta flags. </summary>
         Other,
     }
 
     public enum Priority
     {
-        /// <seealso cref="Designs.Links.DesignLinkManager.OnDesignChange"/>
+        /// <seealso cref="Designs.Links.DesignLinkManager.OnDesignChanged"/>
         DesignLinkManager = 1,
 
         /// <seealso cref="Automation.AutoDesignManager.OnDesignChange"/>
@@ -131,7 +135,10 @@ public sealed class DesignChanged()
         /// <seealso cref="Gui.Tabs.DesignTab.DesignFileSystemSelector.OnDesignChange"/>
         DesignFileSystemSelector = -1,
 
-        /// <seealso cref="SpecialDesignCombo.OnDesignChange"/>
+        /// <seealso cref="DesignComboBase.OnDesignChanged"/>
         DesignCombo = -2,
+
+        /// <seealso cref="EditorHistory.OnDesignChanged" />
+        EditorHistory = -1000,
     }
 }

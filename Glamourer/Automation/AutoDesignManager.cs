@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
+using Glamourer.Designs.History;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
 using Glamourer.Interop;
@@ -620,7 +621,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         }
     }
 
-    private void OnDesignChange(DesignChanged.Type type, Design design, object? data)
+    private void OnDesignChange(DesignChanged.Type type, Design design, ITransaction? _)
     {
         if (type is not DesignChanged.Type.Deleted)
             return;

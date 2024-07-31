@@ -2,6 +2,7 @@
 using Glamourer.Api.Enums;
 using Glamourer.Automation;
 using Glamourer.Designs;
+using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
@@ -41,13 +42,13 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         _objects      = objects;
         _stateChanged = stateChanged;
         _gPose        = gPose;
-        _stateChanged.Subscribe(OnStateChange, Events.StateChanged.Priority.GlamourerIpc);
+        _stateChanged.Subscribe(OnStateChanged, Events.StateChanged.Priority.GlamourerIpc);
         _gPose.Subscribe(OnGPoseChange, GPoseService.Priority.GlamourerIpc);
     }
 
     public void Dispose()
     {
-        _stateChanged.Unsubscribe(OnStateChange);
+        _stateChanged.Unsubscribe(OnStateChanged);
         _gPose.Unsubscribe(OnGPoseChange);
     }
 
@@ -330,7 +331,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     private void OnGPoseChange(bool gPose)
         => GPoseChanged?.Invoke(gPose);
 
-    private void OnStateChange(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, object? _5)
+    private void OnStateChanged(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, ITransaction? _5)
     {
         if (StateChanged != null)
             foreach (var actor in actors.Objects)

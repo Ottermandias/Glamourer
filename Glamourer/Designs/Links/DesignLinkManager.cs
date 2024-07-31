@@ -1,4 +1,5 @@
 ﻿using Glamourer.Automation;
+using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Services;
 using OtterGui.Services;
@@ -67,7 +68,7 @@ public sealed class DesignLinkManager : IService, IDisposable
         _event.Invoke(DesignChanged.Type.ChangedLink, parent, null);
     }
 
-    private void OnDesignChanged(DesignChanged.Type type, Design deletedDesign, object? _)
+    private void OnDesignChanged(DesignChanged.Type type, Design deletedDesign, ITransaction? _)
     {
         if (type is not DesignChanged.Type.Deleted)
             return;

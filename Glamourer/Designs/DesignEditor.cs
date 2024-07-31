@@ -1,3 +1,4 @@
+using Glamourer.Designs.History;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
@@ -72,7 +73,7 @@ public class DesignEditor(
         design.LastEdit = DateTimeOffset.UtcNow;
         Glamourer.Log.Debug($"Changed customize {idx.ToDefaultName()} in design {design.Identifier} from {oldValue.Value} to {value.Value}.");
         SaveService.QueueSave(design);
-        DesignChanged.Invoke(DesignChanged.Type.Customize, design, (oldValue, value, idx));
+        DesignChanged.Invoke(DesignChanged.Type.Customize, design, new CustomizeTransaction(idx, oldValue, value));
     }
 
     /// <inheritdoc/>
@@ -88,7 +89,7 @@ public class DesignEditor(
         design.LastEdit = DateTimeOffset.UtcNow;
         Glamourer.Log.Debug($"Changed entire customize with resulting flags {applied} and {changed}.");
         SaveService.QueueSave(design);
-        DesignChanged.Invoke(DesignChanged.Type.EntireCustomize, design, (oldCustomize, applied, changed));
+        DesignChanged.Invoke(DesignChanged.Type.EntireCustomize, design, new EntireCustomizeTransaction(changed, oldCustomize, newCustomize));
     }
 
     /// <inheritdoc/>
@@ -103,7 +104,7 @@ public class DesignEditor(
         design.LastEdit = DateTimeOffset.UtcNow;
         Glamourer.Log.Debug($"Set customize parameter {flag} in design {design.Identifier} from {old} to {@new}.");
         SaveService.QueueSave(design);
-        DesignChanged.Invoke(DesignChanged.Type.Parameter, design, (old, @new, flag));
+        DesignChanged.Invoke(DesignChanged.Type.Parameter, design, new ParameterTransaction(flag, old, @new));
     }
 
     /// <inheritdoc/>
@@ -122,11 +123,14 @@ public class DesignEditor(
                 if (!ChangeMainhandPeriphery(design, currentMain, currentOff, item, out var newOff, out var newGauntlets))
                     return;
 
+                var currentGauntlets = design.DesignData.Item(EquipSlot.Hands);
                 design.LastEdit = DateTimeOffset.UtcNow;
                 SaveService.QueueSave(design);
                 Glamourer.Log.Debug(
                     $"Set {EquipSlot.MainHand.ToName()} weapon in design {design.Identifier} from {currentMain.Name} ({currentMain.ItemId}) to {item.Name} ({item.ItemId}).");
-                DesignChanged.Invoke(DesignChanged.Type.Weapon, design, (currentMain, currentOff, item, newOff, newGauntlets));
+                DesignChanged.Invoke(DesignChanged.Type.Weapon, design,
+                    new WeaponTransaction(currentMain, currentOff, currentGauntlets, item, newOff ?? currentOff,
+                        newGauntlets ?? currentGauntlets));
                 return;
             }
             case EquipSlot.OffHand:
@@ -139,11 +143,13 @@ public class DesignEditor(
                 if (!design.GetDesignDataRef().SetItem(EquipSlot.OffHand, item))
                     return;
 
+                var currentGauntlets = design.DesignData.Item(EquipSlot.Hands);
                 design.LastEdit = DateTimeOffset.UtcNow;
                 SaveService.QueueSave(design);
                 Glamourer.Log.Debug(
                     $"Set {EquipSlot.OffHand.ToName()} weapon in design {design.Identifier} from {currentOff.Name} ({currentOff.ItemId}) to {item.Name} ({item.ItemId}).");
-                DesignChanged.Invoke(DesignChanged.Type.Weapon, design, (currentMain, currentOff, currentMain, item));
+                DesignChanged.Invoke(DesignChanged.Type.Weapon, design,
+                    new WeaponTransaction(currentMain, currentOff, currentGauntlets, currentMain, item, currentGauntlets));
                 return;
             }
             default:
@@ -159,7 +165,7 @@ public class DesignEditor(
                 Glamourer.Log.Debug(
                     $"Set {slot.ToName()} equipment piece in design {design.Identifier} from {old.Name} ({old.ItemId}) to {item.Name} ({item.ItemId}).");
                 SaveService.QueueSave(design);
-                DesignChanged.Invoke(DesignChanged.Type.Equip, design, (old, item, slot));
+                DesignChanged.Invoke(DesignChanged.Type.Equip, design, new EquipTransaction(slot, old, item));
                 return;
             }
         }
@@ -179,7 +185,7 @@ public class DesignEditor(
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set {slot} bonus item to {item}.");
-        DesignChanged.Invoke(DesignChanged.Type.BonusItem, design, (oldItem, item, slot));
+        DesignChanged.Invoke(DesignChanged.Type.BonusItem, design, new BonusItemTransaction(slot, oldItem, item));
     }
 
     /// <inheritdoc/>
@@ -196,7 +202,7 @@ public class DesignEditor(
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set stain of {slot} equipment piece to {stains}.");
-        DesignChanged.Invoke(DesignChanged.Type.Stains, design, (oldStain, stains, slot));
+        DesignChanged.Invoke(DesignChanged.Type.Stains, design, new StainTransaction(slot, oldStain, stains));
     }
 
     /// <inheritdoc/>
@@ -219,7 +225,7 @@ public class DesignEditor(
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set crest visibility of {slot} equipment piece to {crest}.");
-        DesignChanged.Invoke(DesignChanged.Type.Crest, design, (oldCrest, crest, slot));
+        DesignChanged.Invoke(DesignChanged.Type.Crest, design, new CrestTransaction(slot, oldCrest, crest));
     }
 
     /// <inheritdoc/>
@@ -232,7 +238,7 @@ public class DesignEditor(
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set value of {metaIndex} to {value}.");
-        DesignChanged.Invoke(DesignChanged.Type.Other, design, (metaIndex, false, value));
+        DesignChanged.Invoke(DesignChanged.Type.Other, design, new MetaTransaction(metaIndex, !value, value));
     }
 
     public void ChangeMaterialRevert(Design design, MaterialValueIndex index, bool revert)
@@ -245,7 +251,7 @@ public class DesignEditor(
         Glamourer.Log.Debug($"Changed advanced dye value for {index} to {(revert ? "Revert." : "no longer Revert.")}");
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        DesignChanged.Invoke(DesignChanged.Type.MaterialRevert, design, index);
+        DesignChanged.Invoke(DesignChanged.Type.MaterialRevert, design, new MaterialRevertTransaction(index, !revert, revert));
     }
 
     public void ChangeMaterialValue(Design design, MaterialValueIndex index, ColorRow? row)
@@ -280,7 +286,7 @@ public class DesignEditor(
 
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.DelaySave(design);
-        DesignChanged.Invoke(DesignChanged.Type.Material, design, (oldValue, row, index));
+        DesignChanged.Invoke(DesignChanged.Type.Material, design, new MaterialTransaction(index, oldValue.Value, row));
     }
 
     public void ChangeApplyMaterialValue(Design design, MaterialValueIndex index, bool value)
@@ -293,7 +299,7 @@ public class DesignEditor(
         Glamourer.Log.Debug($"Changed application of advanced dye for {index} to {value}.");
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        DesignChanged.Invoke(DesignChanged.Type.ApplyMaterial, design, index);
+        DesignChanged.Invoke(DesignChanged.Type.ApplyMaterial, design, new ApplicationTransaction(index, !value, value));
     }
 
 

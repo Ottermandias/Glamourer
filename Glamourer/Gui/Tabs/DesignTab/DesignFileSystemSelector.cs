@@ -2,6 +2,7 @@
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
 using Glamourer.Designs;
+using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Services;
 using ImGuiNET;
@@ -178,7 +179,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     protected override bool FoldersDefaultOpen
         => _config.OpenFoldersByDefault;
 
-    private void OnDesignChange(DesignChanged.Type type, Design design, object? oldData)
+    private void OnDesignChange(DesignChanged.Type type, Design design, ITransaction? _)
     {
         switch (type)
         {

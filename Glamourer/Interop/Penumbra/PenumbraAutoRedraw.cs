@@ -1,5 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Glamourer.Api.Enums;
+using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
@@ -30,21 +31,21 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
         _stateChanged               =  stateChanged;
         _penumbra.ModSettingChanged += OnModSettingChange;
         _framework.Update           += OnFramework;
-        _stateChanged.Subscribe(OnStateChange, StateChanged.Priority.PenumbraAutoRedraw);
+        _stateChanged.Subscribe(OnStateChanged, StateChanged.Priority.PenumbraAutoRedraw);
     }
 
     public void Dispose()
     {
         _penumbra.ModSettingChanged -= OnModSettingChange;
         _framework.Update           -= OnFramework;
-        _stateChanged.Unsubscribe(OnStateChange);
+        _stateChanged.Unsubscribe(OnStateChanged);
     }
 
     private readonly ConcurrentQueue<(ActorState, Action, int)> _actions = [];
     private readonly ConcurrentSet<ActorState>                  _skips   = [];
     private          DateTime                                   _frame;
 
-    private void OnStateChange(StateChangeType type, StateSource source, ActorState state, ActorData _1, object? _2)
+    private void OnStateChanged(StateChangeType type, StateSource source, ActorState state, ActorData _1, ITransaction? _2)
     {
         if (type is StateChangeType.Design && source.IsIpc())
             _skips.TryAdd(state);

@@ -277,7 +277,7 @@ public class DesignPanel
                     {
                         var apply = bigChange ? ((EquipFlag)flags).HasFlag(slot.ToStainFlag()) : _selector.Selected!.DoApplyStain(slot);
                         if (ImGui.Checkbox($"Apply {slot.ToName()} Dye", ref apply) || bigChange)
-                            _manager.ChangeApplyStain(_selector.Selected!, slot, apply);
+                            _manager.ChangeApplyStains(_selector.Selected!, slot, apply);
                     }
                 else
                     foreach (var slot in slots)

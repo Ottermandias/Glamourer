@@ -1,4 +1,5 @@
 using Glamourer.Api.Enums;
+using Glamourer.Designs.History;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using OtterGui.Classes;
@@ -15,11 +16,17 @@ namespace Glamourer.Events;
 /// </list>
 /// </summary>
 public sealed class StateChanged()
-    : EventWrapper<StateChangeType, StateSource, ActorState, ActorData, object?, StateChanged.Priority>(nameof(StateChanged))
+    : EventWrapper<StateChangeType, StateSource, ActorState, ActorData, ITransaction?, StateChanged.Priority>(nameof(StateChanged))
 {
     public enum Priority
     {
-        GlamourerIpc       = int.MinValue,
+        /// <seealso cref="Api.StateApi.OnStateChanged" />
+        GlamourerIpc = int.MinValue,
+
+        /// <seealso cref="Interop.Penumbra.PenumbraAutoRedraw.OnStateChanged" />
         PenumbraAutoRedraw = 0,
+
+        /// <seealso cref="EditorHistory.OnStateChanged" />
+        EditorHistory = -1000,
     }
 }

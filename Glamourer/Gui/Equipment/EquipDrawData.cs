@@ -37,7 +37,7 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
     {
         var manager = (DesignManager)_editor;
         var design  = (Design)_object;
-        manager.ChangeApplyStain(design, Slot, value);
+        manager.ChangeApplyStains(design, Slot, value);
     }
 
     public EquipItem CurrentItem   = designData.Item(slot);

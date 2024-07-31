@@ -2,6 +2,7 @@
 using Dalamud.Interface.Utility.Raii;
 using Glamourer.Automation;
 using Glamourer.Designs;
+using Glamourer.Designs.History;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
 using ImGuiNET;
@@ -29,7 +30,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         TabSelected   = tabSelected;
         Config        = config;
         DesignColors  = designColors;
-        DesignChanged.Subscribe(OnDesignChange, DesignChanged.Priority.DesignCombo);
+        DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
     }
 
     public bool Incognito
@@ -37,7 +38,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
 
     void IDisposable.Dispose()
     {
-        DesignChanged.Unsubscribe(OnDesignChange);
+        DesignChanged.Unsubscribe(OnDesignChanged);
         GC.SuppressFinalize(this);
     }
 
@@ -126,7 +127,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         return filter.IsContained(path) || filter.IsContained(design.ResolveName(false));
     }
 
-    private void OnDesignChange(DesignChanged.Type type, Design design, object? data = null)
+    private void OnDesignChanged(DesignChanged.Type type, Design design, ITransaction? _ = null)
     {
         switch (type)
         {
