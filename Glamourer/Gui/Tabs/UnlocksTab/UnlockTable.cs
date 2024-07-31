@@ -9,6 +9,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Table;
+using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -23,16 +24,16 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         : base("ItemUnlockTable", new ItemList(items),
             new FavoriteColumn(favorites, @event) { Label = "F" },
             new NameColumn(textures, tooltip) { Label     = "Item Name..." },
-            new SlotColumn() { Label                      = "Equip Slot" },
-            new TypeColumn() { Label                      = "Item Type..." },
+            new SlotColumn { Label                        = "Equip Slot" },
+            new TypeColumn { Label                        = "Item Type..." },
             new UnlockDateColumn(itemUnlocks) { Label     = "Unlocked" },
-            new ItemIdColumn() { Label                    = "Item Id..." },
+            new ItemIdColumn { Label                      = "Item Id..." },
             new ModelDataColumn(items) { Label            = "Model Data..." },
             new JobColumn(jobs) { Label                   = "Jobs" },
-            new RequiredLevelColumn() { Label             = "Level..." },
-            new DyableColumn() { Label                    = "Dye" },
-            new CrestColumn() { Label                     = "Crest" },
-            new TradableColumn() { Label                  = "Trade" }
+            new RequiredLevelColumn { Label               = "Level..." },
+            new DyableColumn { Label                      = "Dye" },
+            new CrestColumn { Label                       = "Crest" },
+            new TradableColumn { Label                    = "Trade" }
         )
     {
         _event   =  @event;
@@ -334,11 +335,42 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         public JobColumn(JobService jobs)
         {
             _jobs        =  jobs;
-            _values      =  _jobs.Jobs.Values.Skip(1).Select(j => j.Flag).ToArray();
-            _names       =  _jobs.Jobs.Values.Skip(1).Select(j => j.Abbreviation).ToArray();
+            _values      =  _jobs.Jobs.Ordered.Select(j => j.Flag).ToArray();
+            _names       =  _jobs.Jobs.Ordered.Select(j => j.Abbreviation).ToArray();
             AllFlags     =  _values.Aggregate((l, r) => l | r);
             _filterValue =  AllFlags;
             Flags        &= ~ImGuiTableColumnFlags.NoResize;
+            ComboFlags   |= ImGuiComboFlags.HeightLargest;
+        }
+
+        protected override bool DrawCheckbox(int idx, out bool ret)
+        {
+            var job = _jobs.Jobs.Ordered[idx];
+            var color = job.Role switch
+            {
+                Job.JobRole.Tank           => 0xFFFFD0D0,
+                Job.JobRole.Melee          => 0xFFD0D0FF,
+                Job.JobRole.RangedPhysical => 0xFFD0FFFF,
+                Job.JobRole.RangedMagical  => 0xFFFFD0FF,
+                Job.JobRole.Healer         => 0xFFD0FFD0,
+                Job.JobRole.Crafter        => 0xFF808080,
+                Job.JobRole.Gatherer       => 0xFFD0D0D0,
+                _                          => ImGui.GetColorU32(ImGuiCol.Text),
+            };
+            using var c = ImRaii.PushColor(ImGuiCol.Text, color);
+            var       r = base.DrawCheckbox(idx, out ret);
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            {
+                _filterValue = job.Flag & _filterValue;
+                ret          = true;
+                r            = true;
+            }
+
+            ImUtf8.HoverTooltip("Right-Click to disable all other jobs."u8);
+
+            if (idx < _names.Length - 1 && idx % 2 == 0)
+                ImGui.SameLine(ImGui.GetFrameHeight() * 4);
+            return r;
         }
 
         protected override void SetValue(JobFlag value, bool enable)
