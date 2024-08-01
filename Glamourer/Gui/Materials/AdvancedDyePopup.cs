@@ -29,6 +29,7 @@ public sealed unsafe class AdvancedDyePopup(
     private Actor               _actor;
     private byte                _selectedMaterial = byte.MaxValue;
     private bool                _anyChanged;
+    private bool                _forceFocus;
 
     private const int RowsPerPage = 16;
     private       int _rowOffset;
@@ -70,6 +71,7 @@ public sealed unsafe class AdvancedDyePopup(
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Palette.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
                     string.Empty, false, true))
             {
+                _forceFocus       = true;
                 _selectedMaterial = byte.MaxValue;
                 _drawIndex        = isOpen ? null : index;
             }
@@ -195,6 +197,12 @@ public sealed unsafe class AdvancedDyePopup(
         ImGui.SetNextWindowSize(new Vector2(width, height));
 
         var window = ImGui.Begin("###Glamourer Advanced Dyes", flags);
+        if (ImGui.IsWindowAppearing() || _forceFocus)
+        {
+            ImGui.SetWindowFocus();
+            _forceFocus = false;
+        }
+
         try
         {
             if (window)
