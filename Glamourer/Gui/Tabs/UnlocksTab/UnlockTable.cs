@@ -357,8 +357,12 @@ public class UnlockTable : Table<EquipItem>, IDisposable
                 Job.JobRole.Gatherer       => 0xFFD0D0D0,
                 _                          => ImGui.GetColorU32(ImGuiCol.Text),
             };
-            using var c = ImRaii.PushColor(ImGuiCol.Text, color);
-            var       r = base.DrawCheckbox(idx, out ret);
+            bool r;
+            using (ImRaii.PushColor(ImGuiCol.Text, color))
+            {
+                r = base.DrawCheckbox(idx, out ret);
+            }
+
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             {
                 _filterValue = job.Flag & _filterValue;

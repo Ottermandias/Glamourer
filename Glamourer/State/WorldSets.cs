@@ -70,6 +70,8 @@ public class WorldSets
         (CharacterWeapon.Int(2601, 13, 01), CharacterWeapon.Int(2651, 13, 1)), // DNC, High Steel Chakrams
         (CharacterWeapon.Int(2802, 13, 01), CharacterWeapon.Empty),            // RPR, Deepgold War Scythe
         (CharacterWeapon.Int(2702, 08, 01), CharacterWeapon.Empty),            // SGE, Stonegold Milpreves
+        (CharacterWeapon.Int(3101, 04, 03), CharacterWeapon.Int(3151, 04, 3)), // VPR, High Durium Twinfangs
+        (CharacterWeapon.Int(2901, 25, 01), CharacterWeapon.Int(2951, 25, 1)), // PCT, Chocobo Brush
     };
 
     private static readonly (FunEquipSet.Group, CharacterWeapon, CharacterWeapon)[] _50Artifact = 
@@ -115,6 +117,8 @@ public class WorldSets
         (FunEquipSet.Group.FullSet(204, 4),                                CharacterWeapon.Int(2601, 13, 1), CharacterWeapon.Int(2651, 13, 1)), // DNC, Softstepper, High Steel Chakrams
         (new FunEquipSet.Group(206, 7, 303, 3, 23, 109, 303, 3, 262, 7),   CharacterWeapon.Int(2802, 13, 1), CharacterWeapon.Empty),            // RPR, Muzhik, Deepgold War Scythe
         (new FunEquipSet.Group(20, 46, 289, 6, 342, 3, 120, 9, 342, 3),    CharacterWeapon.Int(2702, 08, 1), CharacterWeapon.Empty),            // SGE, Bookwyrm, Stonegold Milpreves
+        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 288, 5),    CharacterWeapon.Int(3101, 06, 1), CharacterWeapon.Int(3151, 6, 1)),  // VPR, Snakebite, Twinfangs
+        (new FunEquipSet.Group(595, 3, 372, 3, 290, 6, 315, 3, 290, 6),    CharacterWeapon.Int(2901, 02, 1), CharacterWeapon.Int(2951, 2, 1)),  // PCT, Painter's, Round Brush
     };
 
     private static readonly (FunEquipSet.Group, CharacterWeapon, CharacterWeapon)[] _60Artifact = 
@@ -160,6 +164,8 @@ public class WorldSets
         (FunEquipSet.Group.FullSet(204, 4),                                CharacterWeapon.Int(2601, 13, 1), CharacterWeapon.Int(2651, 13, 01)), // DNC, Softstepper, High Steel Chakrams
         (new FunEquipSet.Group(206, 7, 303, 3, 23, 109, 303, 3, 262, 7),   CharacterWeapon.Int(2802, 13, 1), CharacterWeapon.Empty),             // RPR, Muzhik, Deepgold War Scythe
         (new FunEquipSet.Group(20, 46, 289, 6, 342, 3, 120, 9, 342, 3),    CharacterWeapon.Int(2702, 08, 1), CharacterWeapon.Empty),             // SGE, Bookwyrm, Stonegold Milpreves
+        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 288, 5),    CharacterWeapon.Int(3101, 06, 1), CharacterWeapon.Int(3151, 6, 1)),   // VPR, Snakebite, Twinfangs
+        (new FunEquipSet.Group(595, 3, 372, 3, 290, 6, 315, 3, 290, 6),    CharacterWeapon.Int(2901, 02, 1), CharacterWeapon.Int(2951, 2, 1)),   // PCT, Painter's, Round Brush
     };
 
     private static readonly (FunEquipSet.Group, CharacterWeapon, CharacterWeapon)[] _70Artifact = 
@@ -205,6 +211,8 @@ public class WorldSets
         (FunEquipSet.Group.FullSet(204, 4),                                CharacterWeapon.Int(2601, 13, 1), CharacterWeapon.Int(2651, 13, 01)), // DNC, Softstepper, High Steel Chakrams
         (new FunEquipSet.Group(206, 7, 303, 3, 23, 109, 303, 3, 262, 7),   CharacterWeapon.Int(2802, 13, 1), CharacterWeapon.Empty),             // RPR, Muzhik, Deepgold War Scythe
         (new FunEquipSet.Group(20, 46, 289, 6, 342, 3, 120, 9, 342, 3),    CharacterWeapon.Int(2702, 08, 1), CharacterWeapon.Empty),             // SGE, Bookwyrm, Stonegold Milpreves
+        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 288, 5),    CharacterWeapon.Int(3101, 06, 1), CharacterWeapon.Int(3151, 6, 1)),   // VPR, Snakebite, Twinfangs
+        (new FunEquipSet.Group(595, 3, 372, 3, 290, 6, 315, 3, 290, 6),    CharacterWeapon.Int(2901, 02, 1), CharacterWeapon.Int(2951, 2, 1)),   // PCT, Painter's, Round Brush
     };
 
     private static readonly (FunEquipSet.Group, CharacterWeapon, CharacterWeapon)[] _80Artifact =
@@ -250,6 +258,8 @@ public class WorldSets
         (FunEquipSet.Group.FullSet(543, 1),                                CharacterWeapon.Int(2601, 001, 1), CharacterWeapon.Int(2651, 01, 001)), // DNC, Dancer, Krishna
         (new FunEquipSet.Group(206, 7, 303, 3, 23, 109, 303, 3, 262, 7),   CharacterWeapon.Int(2802, 013, 1), CharacterWeapon.Empty),              // RPR, Harvester's, Demon Slicer
         (new FunEquipSet.Group(20, 46, 289, 6, 342, 3, 120, 9, 342, 3),    CharacterWeapon.Int(2702, 008, 1), CharacterWeapon.Empty),              // SGE, Therapeute's, Horkos
+        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 288, 5),    CharacterWeapon.Int(3101, 6, 1),   CharacterWeapon.Int(3151, 6, 1)),    // VPR, Snakebite, Twinfangs
+        (new FunEquipSet.Group(595, 3, 372, 3, 290, 6, 315, 3, 290, 6),    CharacterWeapon.Int(2901, 2, 1),   CharacterWeapon.Int(2951, 2, 1)),    // PCT, Painter's, Round Brush
     };
 
     private static readonly (FunEquipSet.Group, CharacterWeapon, CharacterWeapon)[] _90Artifact = 
@@ -295,29 +305,80 @@ public class WorldSets
         (FunEquipSet.Group.FullSet(694, 1),                                CharacterWeapon.Int(2607, 001, 1), CharacterWeapon.Int(2657, 001, 001)), // DNC, Etoile, Terpsichore
         (FunEquipSet.Group.FullSet(695, 1),                                CharacterWeapon.Int(2801, 001, 1), CharacterWeapon.Empty),               // RPR, Reaper, Death Sickle
         (FunEquipSet.Group.FullSet(696, 1),                                CharacterWeapon.Int(2701, 006, 1), CharacterWeapon.Empty),               // SGE, Didact, Hagneia
+        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 288, 5),    CharacterWeapon.Int(3101, 006, 1), CharacterWeapon.Int(3151, 006, 001)), // VPR, Snakebite, Twinfangs
+        (new FunEquipSet.Group(595, 3, 372, 3, 290, 6, 315, 3, 290, 6),    CharacterWeapon.Int(2901, 002, 1), CharacterWeapon.Int(2951, 002, 001)), // PCT, Painter's, Round Brush
+    };
+
+    private static readonly (FunEquipSet.Group, CharacterWeapon, CharacterWeapon)[] _100Artifact =
+    {
+        (FunEquipSet.Group.FullSet(000, 0), CharacterWeapon.Empty,              CharacterWeapon.Empty),               // ADV, Nothing
+        (FunEquipSet.Group.FullSet(772, 1), CharacterWeapon.Int(0220, 002, 01), CharacterWeapon.Int(0114, 002, 001)), // GLA, Caballarius, Clarent, Galahad
+        (FunEquipSet.Group.FullSet(773, 1), CharacterWeapon.Int(0338, 001, 01), CharacterWeapon.Int(0388, 001, 001)), // PGL, Hesychast's, Suwaiyas
+        (FunEquipSet.Group.FullSet(774, 1), CharacterWeapon.Int(0417, 001, 01), CharacterWeapon.Empty),               // MRD, Agoge, Ferocity
+        (FunEquipSet.Group.FullSet(775, 1), CharacterWeapon.Int(0528, 001, 01), CharacterWeapon.Empty),               // LNC, Heavensbound, Gae Assail
+        (FunEquipSet.Group.FullSet(776, 1), CharacterWeapon.Int(0635, 001, 01), CharacterWeapon.Int(0698, 130, 001)), // ARC, Bihu, Gastraphetes
+        (FunEquipSet.Group.FullSet(777, 1), CharacterWeapon.Int(0831, 002, 01), CharacterWeapon.Empty),               // CNJ, Theophany, Xoanon
+        (FunEquipSet.Group.FullSet(778, 1), CharacterWeapon.Int(1033, 002, 01), CharacterWeapon.Empty),               // THM, Archmage's, Gridarvor
+        (FunEquipSet.Group.FullSet(791, 1), CharacterWeapon.Int(5004, 001, 16), CharacterWeapon.Int(5041, 001, 016)), // CRP, Millrise
+        (FunEquipSet.Group.FullSet(792, 1), CharacterWeapon.Int(5103, 001, 01), CharacterWeapon.Int(5141, 001, 017)), // BSM, Forgerise
+        (FunEquipSet.Group.FullSet(793, 1), CharacterWeapon.Int(5201, 011, 01), CharacterWeapon.Int(5241, 001, 017)), // ARM, Hammerrise
+        (FunEquipSet.Group.FullSet(794, 1), CharacterWeapon.Int(5301, 011, 01), CharacterWeapon.Int(5341, 001, 001)), // GSM, Gemrise
+        (FunEquipSet.Group.FullSet(795, 1), CharacterWeapon.Int(5405, 001, 01), CharacterWeapon.Int(5441, 001, 016)), // LTW, Hiderise
+        (FunEquipSet.Group.FullSet(796, 1), CharacterWeapon.Int(5503, 001, 01), CharacterWeapon.Int(5571, 001, 001)), // WVR, Boltrise
+        (FunEquipSet.Group.FullSet(797, 1), CharacterWeapon.Int(5603, 008, 01), CharacterWeapon.Int(5641, 001, 017)), // ALC, Cauldronrise
+        (FunEquipSet.Group.FullSet(798, 1), CharacterWeapon.Int(5701, 012, 01), CharacterWeapon.Int(5741, 001, 017)), // CUL, Galleyrise
+        (FunEquipSet.Group.FullSet(799, 1), CharacterWeapon.Int(7004, 001, 01), CharacterWeapon.Int(7051, 001, 017)), // MIN, Minerise
+        (FunEquipSet.Group.FullSet(800, 1), CharacterWeapon.Int(7101, 012, 01), CharacterWeapon.Int(7151, 001, 017)), // BTN, Fieldrise
+        (FunEquipSet.Group.FullSet(801, 1), CharacterWeapon.Int(7202, 001, 01), CharacterWeapon.Int(7255, 001, 001)), // FSH, Tacklerise
+        (FunEquipSet.Group.FullSet(772, 1), CharacterWeapon.Int(0220, 002, 01), CharacterWeapon.Int(0114, 002, 001)), // PLD, Caballarius, Clarent, Galahad
+        (FunEquipSet.Group.FullSet(773, 1), CharacterWeapon.Int(0338, 001, 01), CharacterWeapon.Int(0388, 001, 001)), // MNK, Hesychast's, Suwaiyas
+        (FunEquipSet.Group.FullSet(774, 1), CharacterWeapon.Int(0417, 001, 01), CharacterWeapon.Empty),               // WAR, Agoge, Ferocity
+        (FunEquipSet.Group.FullSet(775, 1), CharacterWeapon.Int(0528, 001, 01), CharacterWeapon.Empty),               // DRG, Heavensbound, Gae Assail
+        (FunEquipSet.Group.FullSet(776, 1), CharacterWeapon.Int(0635, 001, 01), CharacterWeapon.Int(0698, 130, 001)), // BRD, Bihu, Gastraphetes
+        (FunEquipSet.Group.FullSet(777, 1), CharacterWeapon.Int(0831, 002, 01), CharacterWeapon.Empty),               // WHM, Theophany, Xoanon
+        (FunEquipSet.Group.FullSet(778, 1), CharacterWeapon.Int(1033, 002, 01), CharacterWeapon.Empty),               // BLM, Archmage's, Gridarvor
+        (FunEquipSet.Group.FullSet(779, 1), CharacterWeapon.Int(1752, 001, 01), CharacterWeapon.Empty),               // ACN, Glyphic, The Grand Grimoire
+        (FunEquipSet.Group.FullSet(779, 1), CharacterWeapon.Int(1752, 001, 01), CharacterWeapon.Empty),               // SMN, Glyphic, The Grand Grimoire
+        (FunEquipSet.Group.FullSet(780, 1), CharacterWeapon.Int(1753, 001, 01), CharacterWeapon.Empty),               // SCH, Pedagogy, Eclecticism
+        (FunEquipSet.Group.FullSet(781, 1), CharacterWeapon.Int(1801, 128, 01), CharacterWeapon.Int(1851, 128, 001)), // ROG, Momochi, Shiranui
+        (FunEquipSet.Group.FullSet(781, 1), CharacterWeapon.Int(1801, 128, 01), CharacterWeapon.Int(1851, 128, 001)), // NIN, Momochi, Shiranui
+        (FunEquipSet.Group.FullSet(783, 1), CharacterWeapon.Int(2026, 002, 01), CharacterWeapon.Int(2099, 001, 001)), // MCH, Forerider's, Sthalmann Special
+        (FunEquipSet.Group.FullSet(782, 1), CharacterWeapon.Int(1519, 002, 01), CharacterWeapon.Empty),               // DRK, Fallen's, Maleficus
+        (FunEquipSet.Group.FullSet(784, 1), CharacterWeapon.Int(2136, 082, 01), CharacterWeapon.Int(2199, 001, 188)), // AST, Ephemerist's, Metis
+        (FunEquipSet.Group.FullSet(785, 1), CharacterWeapon.Int(2215, 001, 01), CharacterWeapon.Int(2259, 003, 001)), // SAM, Sakonji, Kogarasumaru
+        (FunEquipSet.Group.FullSet(786, 1), CharacterWeapon.Int(2301, 097, 01), CharacterWeapon.Int(2380, 001, 001)), // RDM, Roseblood, Colada
+        (FunEquipSet.Group.FullSet(811, 1), CharacterWeapon.Int(2401, 005, 01), CharacterWeapon.Empty),               // BLU, Phantasmal, Blue-eyes
+        (FunEquipSet.Group.FullSet(787, 1), CharacterWeapon.Int(2501, 064, 01), CharacterWeapon.Empty),               // GNB, Bastion's, Chastiefol
+        (FunEquipSet.Group.FullSet(788, 1), CharacterWeapon.Int(2611, 002, 01), CharacterWeapon.Int(2661, 002, 001)), // DNC, Horos, Soma
+        (FunEquipSet.Group.FullSet(790, 1), CharacterWeapon.Int(2816, 001, 01), CharacterWeapon.Empty),               // RPR, Assassin's, Vendetta
+        (FunEquipSet.Group.FullSet(789, 1), CharacterWeapon.Int(2701, 026, 01), CharacterWeapon.Empty),               // SGE, Metanoia, Asklepian
+        (FunEquipSet.Group.FullSet(840, 1), CharacterWeapon.Int(3101, 001, 01), CharacterWeapon.Int(3151, 001, 001)), // VPR, Viper's, Sargatanas
+        (FunEquipSet.Group.FullSet(841, 1), CharacterWeapon.Int(2901, 001, 01), CharacterWeapon.Int(2951, 001, 001)), // PCT, Pictomancer's, Angel Brush
     };
     // @formatter:on
 
     private (FunEquipSet.Group, CharacterWeapon, CharacterWeapon)? GetGroup(byte level, byte job, Race race, Gender gender, Random rng)
     {
-        const int weight50      = 200;
-        const int weight60      = 500;
-        const int weight70      = 700;
-        const int weight80      = 800;
-        const int weight90      = 900;
-        const int weight100     = 1000;
+        const int weight50  = 200;
+        const int weight60  = 500;
+        const int weight70  = 700;
+        const int weight80  = 800;
+        const int weight90  = 900;
+        const int weight100 = 1000;
+        const int weight110 = 1100;
 
         if (job >= StarterWeapons.Length)
             return null;
 
         var maxWeight = level switch
         {
-            < 50 => weight50,
-            < 60 => weight60,
-            < 70 => weight70,
-            < 80 => weight80,
-            < 90 => weight90,
-            _    => weight100,
+            < 50  => weight50,
+            < 60  => weight60,
+            < 70  => weight70,
+            < 80  => weight80,
+            < 90  => weight90,
+            < 100 => weight100,
+            _     => weight110,
         };
 
         var weight = rng.Next(0, maxWeight + 1);
@@ -332,11 +393,12 @@ public class WorldSets
 
         var list = weight switch
         {
-            < weight60 => _50Artifact,
-            < weight70 => _60Artifact,
-            < weight80 => _70Artifact,
-            < weight90 => _80Artifact,
-            _          => _90Artifact,
+            < weight60  => _50Artifact,
+            < weight70  => _60Artifact,
+            < weight80  => _70Artifact,
+            < weight90  => _80Artifact,
+            < weight100 => _90Artifact,
+            _           => _100Artifact,
         };
 
         Glamourer.Log.Verbose($"Chose weight {weight}/{maxWeight} for World set [Character: {level} {job} {race} {gender}].");
