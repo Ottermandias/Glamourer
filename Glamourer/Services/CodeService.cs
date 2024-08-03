@@ -30,13 +30,19 @@ public class CodeService
         Elephants    = 0x020000,
         Crown        = 0x040000,
         Dolphins     = 0x080000,
+        Face         = 0x100000,
+        Manderville  = 0x200000,
+        Smiles       = 0x400000,
     }
 
     public static readonly CodeFlag AllHintCodes =
         Enum.GetValues<CodeFlag>().Where(f => GetData(f).Display).Aggregate((CodeFlag)0, (f1, f2) => f1 | f2);
 
-    public const CodeFlag DyeCodes  = CodeFlag.Clown | CodeFlag.World | CodeFlag.Elephants | CodeFlag.Dolphins;
-    public const CodeFlag GearCodes = CodeFlag.Emperor | CodeFlag.World | CodeFlag.Elephants | CodeFlag.Dolphins;
+    public const CodeFlag DyeCodes =
+        CodeFlag.Clown | CodeFlag.World | CodeFlag.Elephants | CodeFlag.Dolphins;
+
+    public const CodeFlag GearCodes =
+        CodeFlag.Emperor | CodeFlag.World | CodeFlag.Elephants | CodeFlag.Dolphins;
 
     public const CodeFlag RaceCodes = CodeFlag.OopsHyur
       | CodeFlag.OopsElezen
@@ -45,6 +51,8 @@ public class CodeService
       | CodeFlag.OopsRoegadyn
       | CodeFlag.OopsAuRa
       | CodeFlag.OopsHrothgar;
+
+    public const CodeFlag FullCodes = CodeFlag.Face | CodeFlag.Manderville | CodeFlag.Smiles;
 
     public const CodeFlag SizeCodes = CodeFlag.Dwarf | CodeFlag.Giant;
 
@@ -161,26 +169,29 @@ public class CodeService
     private static CodeFlag GetMutuallyExclusive(CodeFlag flag)
         => flag switch
         {
-            CodeFlag.Clown        => DyeCodes & ~CodeFlag.Clown,
-            CodeFlag.Emperor      => GearCodes & ~CodeFlag.Emperor,
-            CodeFlag.Individual   => 0,
-            CodeFlag.Dwarf        => SizeCodes & ~CodeFlag.Dwarf,
-            CodeFlag.Giant        => SizeCodes & ~CodeFlag.Giant,
-            CodeFlag.OopsHyur     => RaceCodes & ~CodeFlag.OopsHyur,
-            CodeFlag.OopsElezen   => RaceCodes & ~CodeFlag.OopsElezen,
-            CodeFlag.OopsLalafell => RaceCodes & ~CodeFlag.OopsLalafell,
-            CodeFlag.OopsMiqote   => RaceCodes & ~CodeFlag.OopsMiqote,
-            CodeFlag.OopsRoegadyn => RaceCodes & ~CodeFlag.OopsRoegadyn,
-            CodeFlag.OopsAuRa     => RaceCodes & ~CodeFlag.OopsAuRa,
-            CodeFlag.OopsHrothgar => RaceCodes & ~CodeFlag.OopsHrothgar,
-            CodeFlag.OopsViera    => RaceCodes & ~CodeFlag.OopsViera,
+            CodeFlag.Clown        => (FullCodes | DyeCodes) & ~CodeFlag.Clown,
+            CodeFlag.Emperor      => (FullCodes | GearCodes) & ~CodeFlag.Emperor,
+            CodeFlag.Individual   => FullCodes,
+            CodeFlag.Dwarf        => (FullCodes | SizeCodes) & ~CodeFlag.Dwarf,
+            CodeFlag.Giant        => (FullCodes | SizeCodes) & ~CodeFlag.Giant,
+            CodeFlag.OopsHyur     => (FullCodes | RaceCodes) & ~CodeFlag.OopsHyur,
+            CodeFlag.OopsElezen   => (FullCodes | RaceCodes) & ~CodeFlag.OopsElezen,
+            CodeFlag.OopsLalafell => (FullCodes | RaceCodes) & ~CodeFlag.OopsLalafell,
+            CodeFlag.OopsMiqote   => (FullCodes | RaceCodes) & ~CodeFlag.OopsMiqote,
+            CodeFlag.OopsRoegadyn => (FullCodes | RaceCodes) & ~CodeFlag.OopsRoegadyn,
+            CodeFlag.OopsAuRa     => (FullCodes | RaceCodes) & ~CodeFlag.OopsAuRa,
+            CodeFlag.OopsHrothgar => (FullCodes | RaceCodes) & ~CodeFlag.OopsHrothgar,
+            CodeFlag.OopsViera    => (FullCodes | RaceCodes) & ~CodeFlag.OopsViera,
             CodeFlag.Artisan      => 0,
-            CodeFlag.SixtyThree   => 0,
+            CodeFlag.SixtyThree   => FullCodes,
             CodeFlag.Shirts       => 0,
-            CodeFlag.World        => (DyeCodes | GearCodes) & ~CodeFlag.World,
-            CodeFlag.Elephants    => (DyeCodes | GearCodes) & ~CodeFlag.Elephants,
-            CodeFlag.Crown        => 0,
-            CodeFlag.Dolphins     => (DyeCodes | GearCodes) & ~CodeFlag.Dolphins,
+            CodeFlag.World        => (FullCodes | DyeCodes | GearCodes) & ~CodeFlag.World,
+            CodeFlag.Elephants    => (FullCodes | DyeCodes | GearCodes) & ~CodeFlag.Elephants,
+            CodeFlag.Crown        => FullCodes,
+            CodeFlag.Dolphins     => (FullCodes | DyeCodes | GearCodes) & ~CodeFlag.Dolphins,
+            CodeFlag.Face         => (FullCodes | RaceCodes | SizeCodes | GearCodes | DyeCodes | CodeFlag.Crown | CodeFlag.SixtyThree) & ~CodeFlag.Face,
+            CodeFlag.Manderville  => (FullCodes | RaceCodes | SizeCodes | GearCodes | DyeCodes | CodeFlag.Crown | CodeFlag.SixtyThree) & ~CodeFlag.Manderville,
+            CodeFlag.Smiles       => (FullCodes | RaceCodes | SizeCodes | GearCodes | DyeCodes | CodeFlag.Crown | CodeFlag.SixtyThree) & ~CodeFlag.Smiles,
             _                     => 0,
         };
     
@@ -207,6 +218,9 @@ public class CodeService
             CodeFlag.Elephants    => [ 0x9F, 0x4C, 0xCF, 0x6D, 0xC4, 0x01, 0x31, 0x46, 0x02, 0x05, 0x31, 0xED, 0xED, 0xB2, 0x66, 0x29, 0x31, 0x09, 0x1E, 0xE7, 0x47, 0xDE, 0x7B, 0x03, 0xB0, 0x3C, 0x06, 0x76, 0x26, 0x91, 0xDF, 0xB2 ],
             CodeFlag.Crown        => [ 0x43, 0x8E, 0x34, 0x56, 0x24, 0xC9, 0xC6, 0xDE, 0x2A, 0x68, 0x3A, 0x5D, 0xF5, 0x8E, 0xCB, 0xEF, 0x0D, 0x4D, 0x5B, 0xDC, 0x23, 0xF9, 0xF9, 0xBD, 0xD9, 0x60, 0xAD, 0x53, 0xC5, 0xA0, 0x33, 0xC4 ],
             CodeFlag.Dolphins     => [ 0x64, 0xC6, 0x2E, 0x7C, 0x22, 0x3A, 0x42, 0xF5, 0xC3, 0x93, 0x4F, 0x70, 0x1F, 0xFD, 0xFA, 0x3C, 0x98, 0xD2, 0x7C, 0xD8, 0x88, 0xA7, 0x3D, 0x1D, 0x0D, 0xD6, 0x70, 0x15, 0x28, 0x2E, 0x79, 0xE7 ],
+            CodeFlag.Face         => [ 0xCA, 0x97, 0x81, 0x12, 0xCA, 0x1B, 0xBD, 0xCA, 0xFA, 0xC2, 0x31, 0xB3, 0x9A, 0x23, 0xDC, 0x4D, 0xA7, 0x86, 0xEF, 0xF8, 0x14, 0x7C, 0x4E, 0x72, 0xB9, 0x80, 0x77, 0x85, 0xAF, 0xEE, 0x48, 0xBB ],
+            CodeFlag.Manderville  => [ 0x3E, 0x23, 0xE8, 0x16, 0x00, 0x39, 0x59, 0x4A, 0x33, 0x89, 0x4F, 0x65, 0x64, 0xE1, 0xB1, 0x34, 0x8B, 0xBD, 0x7A, 0x00, 0x88, 0xD4, 0x2C, 0x4A, 0xCB, 0x73, 0xEE, 0xAE, 0xD5, 0x9C, 0x00, 0x9D ],
+            CodeFlag.Smiles       => [ 0x2E, 0x7D, 0x2C, 0x03, 0xA9, 0x50, 0x7A, 0xE2, 0x65, 0xEC, 0xF5, 0xB5, 0x35, 0x68, 0x85, 0xA5, 0x33, 0x93, 0xA2, 0x02, 0x9D, 0x24, 0x13, 0x94, 0x99, 0x72, 0x65, 0xA1, 0xA2, 0x5A, 0xEF, 0xC6 ],
             _                     => [],
         };
 
@@ -233,6 +247,9 @@ public class CodeService
         CodeFlag.Crown        => (true,  1, ".",     "A famous Shakespearean line.",                                                                           "Sets every player with a mentor symbol enabled to the clown's hat."),
         CodeFlag.Dolphins     => (true,  5, ",",     "The farewell of the second smartest species on Earth.",                                                  "Sets every player to a Namazu hat with different costume bodies."),
         CodeFlag.Artisan      => (false, 3, ",,!",   string.Empty,                                                                                             "Enable a debugging mode for the UI. Not really useful."),
+        CodeFlag.Face         => (false, 3, ",,!",   string.Empty,                                                                                             "Enable a debugging mode for the UI. Not really useful."),
+        CodeFlag.Manderville  => (false, 3, ",,!",   string.Empty,                                                                                             "Enable a debugging mode for the UI. Not really useful."),
+        CodeFlag.Smiles       => (false, 3, ",,!",   string.Empty,                                                                                             "Enable a debugging mode for the UI. Not really useful."),
         _                     => (false, 0, string.Empty, string.Empty, string.Empty),
     };
 }

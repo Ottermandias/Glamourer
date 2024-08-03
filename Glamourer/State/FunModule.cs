@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;
+using Glamourer.GameData;
 using Glamourer.Gui;
 using Glamourer.Services;
 using ImGuiNET;
@@ -35,6 +36,7 @@ public unsafe class FunModule : IDisposable
     private readonly DesignConverter    _designConverter;
     private readonly DesignManager      _designManager;
     private readonly ObjectManager      _objects;
+    private readonly NpcCustomizeSet    _npcs;
     private readonly StainId[]          _stains;
 
     public  FestivalType CurrentFestival { get; private set; } = FestivalType.None;
@@ -68,7 +70,7 @@ public unsafe class FunModule : IDisposable
 
     public FunModule(CodeService codes, CustomizeService customizations, ItemManager items, Configuration config,
         GenericPopupWindow popupWindow, StateManager stateManager, ObjectManager objects, DesignConverter designConverter,
-        DesignManager designManager)
+        DesignManager designManager, NpcCustomizeSet npcs)
     {
         _codes           = codes;
         _customizations  = customizations;
@@ -79,6 +81,7 @@ public unsafe class FunModule : IDisposable
         _objects         = objects;
         _designConverter = designConverter;
         _designManager   = designManager;
+        _npcs            = npcs;
         _rng             = new Random();
         _stains          = _items.Stains.Keys.Prepend((StainId)0).ToArray();
         ResetFestival();
@@ -100,6 +103,15 @@ public unsafe class FunModule : IDisposable
         {
             KeepOldArmor(actor, slot, ref armor);
             return;
+        }
+
+        switch (_codes.Masked(CodeService.FullCodes))
+        {
+            case CodeService.CodeFlag.Face:
+            case CodeService.CodeFlag.Manderville:
+            case CodeService.CodeFlag.Smiles:
+                KeepOldArmor(actor, slot, ref armor);
+                return;
         }
 
         if (_codes.Enabled(CodeService.CodeFlag.Crown)
@@ -130,9 +142,122 @@ public unsafe class FunModule : IDisposable
         }
     }
 
+    private sealed class PrioritizedList<T> : List<(T Item, int Priority)>
+    {
+        private int _cumulative;
+
+        public PrioritizedList(params (T Item, int Priority)[] list)
+        {
+            if (list.Length == 0)
+                return;
+
+            AddRange(list.Where(p => p.Priority > 0).OrderByDescending(p => p.Priority).Select(p => (p.Item, _cumulative += p.Priority)));
+        }
+
+        public T GetRandom(Random rng)
+        {
+            var val = rng.Next(0, _cumulative);
+            foreach (var (item, priority) in this)
+            {
+                if (val < priority)
+                    return item;
+            }
+
+            // Should never happen.
+            return this[^1].Item1;
+        }
+    }
+
+    private static readonly PrioritizedList<NpcId> MandervilleMale = new
+    (
+        (1008264, 30), // Hildi
+        (1008731, 10), // Hildi, slightly damaged
+        (1011668, 3),  // Zombi
+        (1016617, 5),  // Hildi, heavily damaged
+        (1042518, 1),  // Hildi of Light
+        (1006339, 2),  // Godbert, naked
+        (1008734, 10), // Godbert, shorts
+        (1015921, 5),  // Godbert, ripped
+        (1041606, 5),  // Godbert, only shorts
+        (1041605, 5),  // Godbert, summer
+        (1024501, 30), // Godbert, fully clothed
+        (1045184, 3),  // Godbrand
+        (1044749, 1)   // Brandihild
+    );
+
+    private static readonly PrioritizedList<NpcId> MandervilleFemale = new
+    (
+        (1025669, 5),  // Hildi, Geisha
+        (1025670, 2),  // Hildi, makeup, black
+        (1042477, 2),  // Hildi, makeup, white
+        (1016798, 20), // Julyan, Winter
+        (1011707, 30), // Julyan
+        (1005714, 20), // Nashu
+        (1025668, 5),  // Nashu, Kimono
+        (1025674, 5),  // Nashu, fancy
+        (1042486, 30), // Nashu, inspector
+        (1017263, 3),  // Gigi
+        (1017263, 1)   // Gigi, buff
+    );
+
+    private static readonly PrioritizedList<NpcId> Smile = new
+    (
+        (1046504, 75), // Normal
+        (1046501, 20), // Hat
+        (1050613, 4),  // Armor
+        (1047625, 1)   // Elephant
+    );
+
+    private static readonly PrioritizedList<NpcId> FaceMale = new
+    (
+        (1016136, 35), // Gerolt
+        (1032667, 2),  // Gerolt, Suit
+        (1030519, 35), // Grenoldt
+        (1030519, 20), // Grenoldt, Short
+        (1046262, 2),  // Grenoldt, Suit
+        (1048084, 15)  // Genolt
+    );
+
+    private static readonly PrioritizedList<NpcId> FaceFemale = new
+    (
+        (1013713, 10), // Rowena, Togi
+        (1018496, 30), // Rowena, Poncho
+        (1032668, 2),  // Rowena, Gown
+        (1042857, 10), // Rowena, Hannish
+        (1046255, 10), // Mowen, Miner
+        (1046263, 2),  // Mowen, Gown
+        (1027544, 30), // Mowen, Bustle
+        (1049088, 15)  // Rhodina
+    );
+
+    private bool ApplyFullCode(Actor actor, Span<CharacterArmor> armor, ref CustomizeArray customize)
+    {
+        var id = _codes.Masked(CodeService.FullCodes) switch
+        {
+            CodeService.CodeFlag.Face when customize.Gender is Gender.Female && actor.Index != 0 => FaceFemale.GetRandom(_rng),
+            CodeService.CodeFlag.Face when actor.Index != 0                                        => FaceFemale.GetRandom(_rng),
+            CodeService.CodeFlag.Smiles                                                          => Smile.GetRandom(_rng),
+            CodeService.CodeFlag.Manderville when customize.Gender is Gender.Female              => MandervilleFemale.GetRandom(_rng),
+            CodeService.CodeFlag.Manderville                => MandervilleMale.GetRandom(_rng),
+            _                                                                                    => (NpcId)0,
+        };
+
+        if (id.Id == 0 || !_npcs.FindFirst(n => n.Id == id, out var npc))
+            return false;
+
+        customize = npc.Customize;
+        var idx = 0;
+        foreach (ref var a in armor)
+            a = npc.Equip[idx++];
+        return true;
+    }
+
     public void ApplyFunOnLoad(Actor actor, Span<CharacterArmor> armor, ref CustomizeArray customize)
     {
         if (!ValidFunTarget(actor))
+            return;
+
+        if (ApplyFullCode(actor, armor, ref customize))
             return;
 
         // First set the race, if any.

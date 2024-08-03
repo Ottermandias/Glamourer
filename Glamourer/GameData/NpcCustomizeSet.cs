@@ -78,8 +78,8 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
             };
 
             // Event NPCs have a reference to NpcEquip but also contain the appearance in their own row.
-            // Prefer the NpcEquip reference if it is set, otherwise use the own.
-            if (row.NpcEquip.Row != 0 && row.NpcEquip.Value is { } equip)
+            // Prefer the NpcEquip reference if it is set and the own does not appear to be set, otherwise use the own.
+            if (row.NpcEquip.Row != 0 && row.NpcEquip.Value is { } equip && row is { ModelBody: 0, ModelLegs: 0 })
                 ApplyNpcEquip(ref ret, equip);
             else
                 ApplyNpcEquip(ref ret, row);
