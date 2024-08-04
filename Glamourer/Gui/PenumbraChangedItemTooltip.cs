@@ -1,5 +1,4 @@
-﻿using Dalamud;
-using Glamourer.Designs;
+﻿using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -8,6 +7,7 @@ using Glamourer.State;
 using ImGuiNET;
 using OtterGui.Raii;
 using Penumbra.Api.Enums;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -174,7 +174,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
                 CreateTooltip(item, "[Glamourer] ", false);
                 return;
             case ChangedItemType.Customization:
-                var (race, gender, index, value) = ChangedItemExtensions.Split(id);
+                var (race, gender, index, value) = IdentifiedCustomization.Split(id);
                 if (!_objects.Player.Model.IsHuman)
                     return;
 
@@ -218,7 +218,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
                 ApplyItem(state, item);
                 return;
             case ChangedItemType.Customization:
-                var (race, gender, index, value) = ChangedItemExtensions.Split(id);
+                var (race, gender, index, value) = IdentifiedCustomization.Split(id);
                 var customize = state.ModelData.Customize;
                 if (CheckGenderRace(customize, race, gender) && VerifyValue(customize, index, value))
                     _stateManager.ChangeCustomize(state, index, value, ApplySettings.Manual);
