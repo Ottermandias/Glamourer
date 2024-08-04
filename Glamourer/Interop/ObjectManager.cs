@@ -40,7 +40,7 @@ public class ObjectManager(
             return false;
 
         _identifierUpdate = LastUpdate;
-        World             = (ushort)(this[0].Valid ? this[0].HomeWorld : 0);
+        World             = (ushort)(Player.Valid ? Player.HomeWorld : 0);
         _identifiers.Clear();
         _allWorldIdentifiers.Clear();
         _nonOwnedIdentifiers.Clear();

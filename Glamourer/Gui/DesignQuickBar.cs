@@ -70,6 +70,9 @@ public sealed class DesignQuickBar : Window, IDisposable
         IsOpen = _config.Ephemeral.ShowDesignQuickBar && _config.QdbButtons != 0;
     }
 
+    public override bool DrawConditions()
+        => _objects.Player.Valid;
+
     public override void PreDraw()
     {
         Flags = GetFlags;
@@ -112,7 +115,7 @@ public sealed class DesignQuickBar : Window, IDisposable
             ImGui.SameLine();
             DrawApplyButton(buttonSize);
         }
-        
+
         DrawRevertButton(buttonSize);
         DrawRevertEquipButton(buttonSize);
         DrawRevertCustomizeButton(buttonSize);

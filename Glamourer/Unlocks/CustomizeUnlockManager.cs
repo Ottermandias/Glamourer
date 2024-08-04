@@ -6,6 +6,7 @@ using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Glamourer.GameData;
 using Glamourer.Events;
+using Glamourer.Interop;
 using Glamourer.Services;
 using Lumina.Excel.GeneratedSheets;
 using Penumbra.GameData;
@@ -15,10 +16,10 @@ namespace Glamourer.Unlocks;
 
 public class CustomizeUnlockManager : IDisposable, ISavable
 {
-    private readonly SaveService    _saveService;
-    private readonly IClientState   _clientState;
-    private readonly ObjectUnlocked _event;
-
+    private readonly SaveService            _saveService;
+    private readonly IClientState           _clientState;
+    private readonly ObjectUnlocked         _event;
+    private readonly ObjectManager          _objects;
     private readonly Dictionary<uint, long> _unlocked = new();
 
     public readonly IReadOnlyDictionary<CustomizeData, (uint Data, string Name)> Unlockable;
@@ -27,12 +28,13 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         => _unlocked;
 
     public CustomizeUnlockManager(SaveService saveService, CustomizeService customizations, IDataManager gameData,
-        IClientState clientState, ObjectUnlocked @event, IGameInteropProvider interop)
+        IClientState clientState, ObjectUnlocked @event, IGameInteropProvider interop, ObjectManager objects)
     {
         interop.InitializeFromAttributes(this);
         _saveService = saveService;
         _clientState = clientState;
         _event       = @event;
+        _objects     = objects;
         Unlockable   = CreateUnlockableCustomizations(customizations, gameData);
         Load();
         _setUnlockLinkValueHook.Enable();
@@ -94,7 +96,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     /// <summary> Scan and update all unlockable customizations for their current game state. </summary>
     public unsafe void Scan()
     {
-        if (_clientState.LocalPlayer == null)
+        if (!_objects.Player.Valid)
             return;
 
         Glamourer.Log.Debug("[UnlockManager] Scanning for new unlocked customizations.");
@@ -128,7 +130,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     }
 
     private delegate void SetUnlockLinkValueDelegate(nint uiState, uint data, byte value);
-    
+
     [Signature(Sigs.SetUnlockLinkValue, DetourName = nameof(SetUnlockLinkValueDetour))]
     private readonly Hook<SetUnlockLinkValueDelegate> _setUnlockLinkValueHook = null!;
 
