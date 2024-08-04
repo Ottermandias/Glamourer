@@ -13,7 +13,7 @@ public unsafe class MetaService : IDisposable
     private readonly VisorStateChanged         _visorEvent;
 
     private delegate void HideHatGearDelegate(DrawDataContainer* drawData, uint id, byte value);
-    private delegate void HideWeaponsDelegate(DrawDataContainer* drawData, bool value);
+    private delegate void HideWeaponsDelegate(DrawDataContainer* drawData, byte value);
 
     private readonly Hook<HideHatGearDelegate> _hideHatGearHook;
     private readonly Hook<HideWeaponsDelegate> _hideWeaponsHook;
@@ -61,7 +61,7 @@ public unsafe class MetaService : IDisposable
         if (!actor.IsCharacter)
             return;
 
-        _hideWeaponsHook.Original(&actor.AsCharacter->DrawData, !value);
+        _hideWeaponsHook.Original(&actor.AsCharacter->DrawData, (byte)(value ? 0 : 1));
     }
 
     private void HideHatDetour(DrawDataContainer* drawData, uint id, byte value)
@@ -80,21 +80,21 @@ public unsafe class MetaService : IDisposable
         _hideHatGearHook.Original(drawData, id, value);
     }
 
-    private void HideWeaponsDetour(DrawDataContainer* drawData, bool value)
+    private void HideWeaponsDetour(DrawDataContainer* drawData, byte value)
     {
         Actor actor = drawData->OwnerObject;
-        value = !value;
-        _weaponEvent.Invoke(actor, ref value);
-        value = !value;
+        var   v     = value == 0;
+        _weaponEvent.Invoke(actor, ref v);
         Glamourer.Log.Verbose($"[MetaService] Hide Weapon triggered with 0x{(nint)drawData:X} {value} for {actor.Utf8Name}.");
-        _hideWeaponsHook.Original(drawData, value);
+        _hideWeaponsHook.Original(drawData, (byte)(v ? 0 : 1));
     }
 
-    private void ToggleVisorDetour(DrawDataContainer* drawData, bool value)
+    private void ToggleVisorDetour(DrawDataContainer* drawData, byte value)
     {
         Actor actor = drawData->OwnerObject;
-        _visorEvent.Invoke(actor.Model, true, ref value);
+        var   v     = value != 0;
+        _visorEvent.Invoke(actor.Model, true, ref v);
         Glamourer.Log.Verbose($"[MetaService] Toggle Visor triggered with 0x{(nint)drawData:X} {value} for {actor.Utf8Name}.");
-        _toggleVisorHook.Original(drawData, value);
+        _toggleVisorHook.Original(drawData, (byte)(v ? 1 : 0));
     }
 }
