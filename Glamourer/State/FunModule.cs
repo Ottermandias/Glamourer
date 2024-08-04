@@ -105,14 +105,15 @@ public unsafe class FunModule : IDisposable
             return;
         }
 
-        switch (_codes.Masked(CodeService.FullCodes))
-        {
-            case CodeService.CodeFlag.Face:
-            case CodeService.CodeFlag.Manderville:
-            case CodeService.CodeFlag.Smiles:
-                KeepOldArmor(actor, slot, ref armor);
-                return;
-        }
+        if (actor.Index < ObjectIndex.CutsceneStart)
+            switch (_codes.Masked(CodeService.FullCodes))
+            {
+                case CodeService.CodeFlag.Face when actor.Index != 0:
+                case CodeService.CodeFlag.Smiles:
+                case CodeService.CodeFlag.Manderville:
+                    KeepOldArmor(actor, slot, ref armor);
+                    return;
+            }
 
         if (_codes.Enabled(CodeService.CodeFlag.Crown)
          && actor.OnlineStatus is OnlineStatus.PvEMentor or OnlineStatus.PvPMentor or OnlineStatus.TradeMentor
@@ -170,6 +171,7 @@ public unsafe class FunModule : IDisposable
 
     private static readonly PrioritizedList<NpcId> MandervilleMale = new
     (
+        //(0000000, 400), // Nothing
         (1008264, 30), // Hildi
         (1008731, 10), // Hildi, slightly damaged
         (1011668, 3),  // Zombi
@@ -187,6 +189,7 @@ public unsafe class FunModule : IDisposable
 
     private static readonly PrioritizedList<NpcId> MandervilleFemale = new
     (
+        //(0000000, 400), // Nothing
         (1025669, 5),  // Hildi, Geisha
         (1025670, 2),  // Hildi, makeup, black
         (1042477, 2),  // Hildi, makeup, white
@@ -210,6 +213,7 @@ public unsafe class FunModule : IDisposable
 
     private static readonly PrioritizedList<NpcId> FaceMale = new
     (
+        //(0000000, 700), // Nothing
         (1016136, 35), // Gerolt
         (1032667, 2),  // Gerolt, Suit
         (1030519, 35), // Grenoldt
@@ -220,6 +224,7 @@ public unsafe class FunModule : IDisposable
 
     private static readonly PrioritizedList<NpcId> FaceFemale = new
     (
+        //(0000000, 400), // Nothing
         (1013713, 10), // Rowena, Togi
         (1018496, 30), // Rowena, Poncho
         (1032668, 2),  // Rowena, Gown
@@ -232,13 +237,16 @@ public unsafe class FunModule : IDisposable
 
     private bool ApplyFullCode(Actor actor, Span<CharacterArmor> armor, ref CustomizeArray customize)
     {
+        if (actor.Index >= ObjectIndex.CutsceneStart)
+            return false;
+
         var id = _codes.Masked(CodeService.FullCodes) switch
         {
             CodeService.CodeFlag.Face when customize.Gender is Gender.Female && actor.Index != 0 => FaceFemale.GetRandom(_rng),
-            CodeService.CodeFlag.Face when actor.Index != 0                                        => FaceFemale.GetRandom(_rng),
+            CodeService.CodeFlag.Face when actor.Index != 0                                      => FaceMale.GetRandom(_rng),
             CodeService.CodeFlag.Smiles                                                          => Smile.GetRandom(_rng),
             CodeService.CodeFlag.Manderville when customize.Gender is Gender.Female              => MandervilleFemale.GetRandom(_rng),
-            CodeService.CodeFlag.Manderville                => MandervilleMale.GetRandom(_rng),
+            CodeService.CodeFlag.Manderville                                                     => MandervilleMale.GetRandom(_rng),
             _                                                                                    => (NpcId)0,
         };
 
