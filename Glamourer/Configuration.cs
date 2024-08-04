@@ -21,6 +21,8 @@ public enum HeightDisplayType
     Metre,
     Wrong,
     WrongFoot,
+    Corgi,
+    OlympicPool,
 }
 
 public class Configuration : IPluginConfiguration, ISavable

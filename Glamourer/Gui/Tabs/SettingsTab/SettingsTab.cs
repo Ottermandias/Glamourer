@@ -401,14 +401,16 @@ public class SettingsTab(
         ImGuiUtil.HoverTooltip(tt);
     }
 
-    private string HeightDisplayTypeName(HeightDisplayType type)
+    private static string HeightDisplayTypeName(HeightDisplayType type)
         => type switch
         {
-            HeightDisplayType.None       => "Do Not Display",
-            HeightDisplayType.Centimetre => "Centimetres (000.0 cm)",
-            HeightDisplayType.Metre      => "Metres (0.00 m)",
-            HeightDisplayType.Wrong      => "Inches (00.0 in)",
-            HeightDisplayType.WrongFoot  => "Feet (0'00'')",
-            _                            => string.Empty,
+            HeightDisplayType.None        => "Do Not Display",
+            HeightDisplayType.Centimetre  => "Centimetres (000.0 cm)",
+            HeightDisplayType.Metre       => "Metres (0.00 m)",
+            HeightDisplayType.Wrong       => "Inches (00.0 in)",
+            HeightDisplayType.WrongFoot   => "Feet (0'00'')",
+            HeightDisplayType.Corgi       => "Corgis (0.0 Corgis)",
+            HeightDisplayType.OlympicPool => "Olympic-size swimming Pools (0.000 Pools)",
+            _                             => string.Empty,
         };
 }
