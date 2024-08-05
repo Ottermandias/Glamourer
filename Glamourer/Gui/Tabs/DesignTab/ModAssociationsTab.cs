@@ -8,6 +8,9 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
+using OtterGui.Text;
+using OtterGui.Text.Widget;
+using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
@@ -92,10 +95,10 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
 
         ImGui.TableSetupColumn("##Buttons", ImGuiTableColumnFlags.WidthFixed,
             ImGui.GetFrameHeight() * 3 + ImGui.GetStyle().ItemInnerSpacing.X * 2);
-        ImGui.TableSetupColumn("Mod Name",       ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("State",          ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("State").X);
-        ImGui.TableSetupColumn("Priority",       ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Priority").X);
-        ImGui.TableSetupColumn("##Options",      ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Applym").X);
+        ImGui.TableSetupColumn("Mod Name",  ImGuiTableColumnFlags.WidthStretch);
+        ImGui.TableSetupColumn("State",     ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("State").X);
+        ImGui.TableSetupColumn("Priority",  ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Priority").X);
+        ImGui.TableSetupColumn("##Options", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Applym").X);
         ImGui.TableHeadersRow();
 
         Mod?                             removedMod = null;
@@ -124,20 +127,15 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         removedMod = null;
         updatedMod = null;
         ImGui.TableNextColumn();
-        var buttonSize = new Vector2(ImGui.GetFrameHeight());
-        var spacing    = ImGui.GetStyle().ItemInnerSpacing.X;
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), buttonSize,
-                "Delete this mod from associations.", false, true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Trash, "Delete this mod from associations."u8))
             removedMod = mod;
 
-        ImGui.SameLine(0, spacing);
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), buttonSize,
-                "Copy this mod setting to clipboard.", false, true))
+        ImUtf8.SameLineInner();
+        if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Copy this mod setting to clipboard."u8))
             _copy = [(mod, settings)];
 
-        ImGui.SameLine(0, spacing);
-        ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.RedoAlt.ToIconString(), buttonSize,
-            "Update the settings of this mod association.", false, true);
+        ImUtf8.SameLineInner();
+        ImUtf8.IconButton(FontAwesomeIcon.RedoAlt, "Update the settings of this mod association."u8);
         if (ImGui.IsItemHovered())
         {
             var newSettings = penumbra.GetModSettings(mod);
@@ -145,16 +143,16 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
                 updatedMod = (mod, newSettings);
 
             using var style = ImRaii.PushStyle(ImGuiStyleVar.PopupBorderSize, 2 * ImGuiHelpers.GlobalScale);
-            using var tt    = ImRaii.Tooltip();
+            using var tt    = ImUtf8.Tooltip();
             ImGui.Separator();
             var namesDifferent = mod.Name != mod.DirectoryName;
             ImGui.Dummy(new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
             using (ImRaii.Group())
             {
                 if (namesDifferent)
-                    ImGui.TextUnformatted("Directory Name");
-                ImGui.TextUnformatted("Enabled");
-                ImGui.TextUnformatted("Priority");
+                    ImUtf8.Text("Directory Name"u8);
+                ImUtf8.Text("Enabled"u8);
+                ImUtf8.Text("Priority"u8);
                 ModCombo.DrawSettingsLeft(newSettings);
             }
 
@@ -162,27 +160,30 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
             using (ImRaii.Group())
             {
                 if (namesDifferent)
-                    ImGui.TextUnformatted(mod.DirectoryName);
-                ImGui.TextUnformatted(newSettings.Enabled.ToString());
-                ImGui.TextUnformatted(newSettings.Priority.ToString());
+                    ImUtf8.Text(mod.DirectoryName);
+
+                ImUtf8.Text(newSettings.Enabled.ToString());
+                ImUtf8.Text(newSettings.Priority.ToString());
                 ModCombo.DrawSettingsRight(newSettings);
             }
         }
 
         ImGui.TableNextColumn();
-        
-        if (ImGui.Selectable($"{mod.Name}##name"))
+
+        if (ImUtf8.Selectable($"{mod.Name}##name"))
             penumbra.OpenModPage(mod);
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip($"Mod Directory:    {mod.DirectoryName}\n\nClick to open mod page in Penumbra.");
         ImGui.TableNextColumn();
-        using (var font = ImRaii.PushFont(UiBuilder.IconFont))
-        {
-            ImGuiUtil.Center((settings.Enabled ? FontAwesomeIcon.Check : FontAwesomeIcon.Times).ToIconString());
-        }
+        var enabled = settings.Enabled;
+        if (TwoStateCheckbox.Instance.Draw("##Enabled"u8, ref enabled))
+            updatedMod = (mod, settings with { Enabled = enabled });
 
         ImGui.TableNextColumn();
-        ImGuiUtil.RightAlign(settings.Priority.ToString());
+        var priority = settings.Priority;
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        if (ImUtf8.InputScalarOnDeactivated("##Priority"u8, ref priority))
+            updatedMod = (mod, settings with { Priority = priority });
         ImGui.TableNextColumn();
         if (ImGuiUtil.DrawDisabledButton("Apply", new Vector2(ImGui.GetContentRegionAvail().X, 0), string.Empty,
                 !penumbra.Available))

@@ -54,10 +54,10 @@ public class ApiHelpers(ObjectManager objects, StateManager stateManager, ActorM
     internal static DesignBase.FlagRestrictionResetter Restrict(DesignBase design, ApplyFlag flags)
         => (flags & (ApplyFlag.Equipment | ApplyFlag.Customization)) switch
         {
-            ApplyFlag.Equipment => design.TemporarilyRestrictApplication(ApplicationCollection.Equipment),
-            ApplyFlag.Customization => design.TemporarilyRestrictApplication(ApplicationCollection.Customizations),
+            ApplyFlag.Equipment                           => design.TemporarilyRestrictApplication(ApplicationCollection.Equipment),
+            ApplyFlag.Customization                       => design.TemporarilyRestrictApplication(ApplicationCollection.Customizations),
             ApplyFlag.Equipment | ApplyFlag.Customization => design.TemporarilyRestrictApplication(ApplicationCollection.All),
-            _ => design.TemporarilyRestrictApplication(ApplicationCollection.None),
+            _                                             => design.TemporarilyRestrictApplication(ApplicationCollection.None),
         };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -112,7 +112,10 @@ public class ApiHelpers(ObjectManager objects, StateManager stateManager, ActorM
             {
                 sb.Append(arguments[2 * i]);
                 sb.Append(" = ");
-                sb.Append(arguments[2 * i + 1]);
+                if (arguments[2 * i + 1] is IEnumerable e)
+                    sb.Append($"[{string.Join(',', e)}]");
+                else
+                    sb.Append(arguments[2 * i + 1]);
                 sb.Append(", ");
             }
 
