@@ -248,7 +248,8 @@ public sealed class DesignManager : DesignEditor
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Renamed tag {oldTag} at {tagIdx} to {newTag} in design {design.Identifier} and reordered tags.");
-        DesignChanged.Invoke(DesignChanged.Type.ChangedTag, design, new TagChangedTransaction(oldTag, newTag, tagIdx, design.Tags.IndexOf(newTag)));
+        DesignChanged.Invoke(DesignChanged.Type.ChangedTag, design,
+            new TagChangedTransaction(oldTag, newTag, tagIdx, design.Tags.IndexOf(newTag)));
     }
 
     /// <summary> Add an associated mod to a design. </summary>
@@ -278,12 +279,20 @@ public sealed class DesignManager : DesignEditor
     /// <summary> Add or update an associated mod to a design. </summary>
     public void UpdateMod(Design design, Mod mod, ModSettings settings)
     {
-        var oldSettings = design.AssociatedMods[mod];
+        var hasOldSettings = design.AssociatedMods.TryGetValue(mod, out var oldSettings);
         design.AssociatedMods[mod] = settings;
         design.LastEdit            = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Updated (or added) associated mod {mod.DirectoryName} from design {design.Identifier}.");
-        DesignChanged.Invoke(DesignChanged.Type.UpdatedMod, design, new ModUpdatedTransaction(mod, oldSettings, settings));
+        if (hasOldSettings)
+        {
+            Glamourer.Log.Debug($"Updated associated mod {mod.DirectoryName} from design {design.Identifier}.");
+            DesignChanged.Invoke(DesignChanged.Type.UpdatedMod, design, new ModUpdatedTransaction(mod, oldSettings, settings));
+        }
+        else
+        {
+            Glamourer.Log.Debug($"Added associated mod {mod.DirectoryName} from design {design.Identifier}.");
+            DesignChanged.Invoke(DesignChanged.Type.AddedMod, design, new ModAddedTransaction(mod, settings));
+        }
     }
 
     /// <summary> Set the write protection status of a design. </summary>

@@ -10,11 +10,10 @@ using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Text.Widget;
-using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelector selector, DesignManager manager)
+public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelector selector, DesignManager manager, Configuration config)
 {
     private readonly ModCombo              _modCombo = new(penumbra, Glamourer.Log);
     private          (Mod, ModSettings)[]? _copy;
@@ -127,8 +126,17 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         removedMod = null;
         updatedMod = null;
         ImGui.TableNextColumn();
-        if (ImUtf8.IconButton(FontAwesomeIcon.Trash, "Delete this mod from associations."u8))
-            removedMod = mod;
+        var canDelete = config.DeleteDesignModifier.IsActive();
+        if (canDelete)
+        {
+            if (ImUtf8.IconButton(FontAwesomeIcon.Trash, "Delete this mod from associations."u8))
+                removedMod = mod;
+        }
+        else
+        {
+            ImUtf8.IconButton(FontAwesomeIcon.Trash, $"Delete this mod from associations.\nHold {config.DeleteDesignModifier} to delete.",
+                disabled: true);
+        }
 
         ImUtf8.SameLineInner();
         if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Copy this mod setting to clipboard."u8))
