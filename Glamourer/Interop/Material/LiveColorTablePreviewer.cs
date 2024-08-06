@@ -13,11 +13,11 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
     private readonly DirectXService                                  _directXService;
 
     public  MaterialValueIndex LastValueIndex         { get; private set; } = MaterialValueIndex.Invalid;
-    public  ColorTable         LastOriginalColorTable { get; private set; }
+    public  ColorTable.Table   LastOriginalColorTable { get; private set; }
     private MaterialValueIndex _valueIndex      = MaterialValueIndex.Invalid;
     private ObjectIndex        _lastObjectIndex = ObjectIndex.AnyIndex;
     private ObjectIndex        _objectIndex     = ObjectIndex.AnyIndex;
-    private ColorTable         _originalColorTable;
+    private ColorTable.Table   _originalColorTable;
 
     public LiveColorTablePreviewer(global::Penumbra.GameData.Interop.ObjectManager objects, IFramework framework, DirectXService directXService)
     {
@@ -73,15 +73,15 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
             var table    = LastOriginalColorTable;
             if (_valueIndex.RowIndex != byte.MaxValue)
             {
-                table[_valueIndex.RowIndex].Diffuse  = diffuse;
-                table[_valueIndex.RowIndex].Emissive = emissive;
+                table[_valueIndex.RowIndex].DiffuseColor  = (HalfColor)diffuse;
+                table[_valueIndex.RowIndex].EmissiveColor = (HalfColor)emissive;
             }
             else
             {
                 for (var i = 0; i < ColorTable.NumRows; ++i)
                 {
-                    table[i].Diffuse  = diffuse;
-                    table[i].Emissive = emissive;
+                    table[i].DiffuseColor  = (HalfColor)diffuse;
+                    table[i].EmissiveColor = (HalfColor)emissive;
                 }
             }
 
@@ -92,7 +92,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
         _objectIndex = ObjectIndex.AnyIndex;
     }
 
-    public void OnHover(MaterialValueIndex index, ObjectIndex objectIndex, ColorTable table)
+    public void OnHover(MaterialValueIndex index, ObjectIndex objectIndex, in ColorTable.Table table)
     {
         if (_valueIndex.DrawObject is not MaterialValueIndex.DrawObjectType.Invalid)
             return;

@@ -13,7 +13,7 @@ public static unsafe class MaterialService
     public const int TextureHeight     = ColorTable.NumRows;
     public const int MaterialsPerModel = 10;
 
-    public static bool GenerateNewColorTable(in ColorTable colorTable, out Texture* texture)
+    public static bool GenerateNewColorTable(in ColorTable.Table colorTable, out Texture* texture)
     {
         var textureSize = stackalloc int[2];
         textureSize[0] = TextureWidth;
@@ -24,7 +24,7 @@ public static unsafe class MaterialService
         if (texture == null)
             return false;
 
-        fixed (ColorTable* ptr = &colorTable)
+        fixed (ColorTable.Table* ptr = &colorTable)
         {
             return texture->InitializeContents(ptr);
         }
@@ -53,7 +53,7 @@ public static unsafe class MaterialService
     /// <param name="modelSlot"> The model slot. </param>
     /// <param name="materialSlot"> The material slot in the model. </param>
     /// <returns> A pointer to the color table or null. </returns>
-    public static ColorTable* GetMaterialColorTable(Model model, int modelSlot, byte materialSlot)
+    public static ColorTable.Table* GetMaterialColorTable(Model model, int modelSlot, byte materialSlot)
     {
         if (!model.IsCharacterBase)
             return null;
@@ -66,6 +66,6 @@ public static unsafe class MaterialService
         if (material == null || material->ColorTable == null)
             return null;
 
-        return (ColorTable*)material->ColorTable;
+        return (ColorTable.Table*)material->ColorTable;
     }
 }

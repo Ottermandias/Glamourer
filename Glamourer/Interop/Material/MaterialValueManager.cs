@@ -21,8 +21,9 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     public float   SpecularStrength = specularStrength;
     public float   GlossStrength    = glossStrength;
 
-    public ColorRow(in ColorTable.Row row)
-        : this(Root(row.Diffuse), Root(row.Specular), Root(row.Emissive), row.SpecularStrength, row.GlossStrength)
+    public ColorRow(in ColorTableRow row)
+        : this(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor), (float)row.SheenRate,
+            (float)row.Metalness)
     { }
 
     public readonly bool NearEqual(in ColorRow rhs)
@@ -44,39 +45,39 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     private static float Root(float value)
         => value < 0 ? MathF.Sqrt(-value) : MathF.Sqrt(value);
 
-    public readonly bool Apply(ref ColorTable.Row row)
+    public readonly bool Apply(ref ColorTableRow row)
     {
         var ret = false;
         var d   = Square(Diffuse);
-        if (!row.Diffuse.NearEqual(d))
+        if (!((Vector3)row.DiffuseColor).NearEqual(d))
         {
-            row.Diffuse = d;
-            ret         = true;
+            row.DiffuseColor = (HalfColor)d;
+            ret              = true;
         }
 
         var s = Square(Specular);
-        if (!row.Specular.NearEqual(s))
+        if (!((Vector3)row.SpecularColor).NearEqual(s))
         {
-            row.Specular = s;
-            ret          = true;
+            row.SpecularColor = (HalfColor)s;
+            ret               = true;
         }
 
         var e = Square(Emissive);
-        if (!row.Emissive.NearEqual(e))
+        if (!((Vector3)row.EmissiveColor).NearEqual(e))
         {
-            row.Emissive = e;
-            ret          = true;
+            row.EmissiveColor = (HalfColor)e;
+            ret               = true;
         }
 
-        if (!row.SpecularStrength.NearEqual(SpecularStrength))
+        if (!((float)row.SheenRate).NearEqual(SpecularStrength))
         {
-            row.SpecularStrength = SpecularStrength;
-            ret                  = true;
+            row.SheenRate = (Half)SpecularStrength;
+            ret           = true;
         }
 
-        if (!row.GlossStrength.NearEqual(GlossStrength))
+        if (!((float)row.Metalness).NearEqual(GlossStrength))
         {
-            row.GlossStrength = GlossStrength;
+            row.Metalness = (Half)GlossStrength;
             ret               = true;
         }
 

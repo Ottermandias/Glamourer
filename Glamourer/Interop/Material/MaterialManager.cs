@@ -75,7 +75,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
 
     /// <summary> Update and apply the glamourer state of an actor according to the application sources when updated by the game. </summary>
     private void UpdateMaterialValues(ActorState state, ReadOnlySpan<(uint Key, MaterialValueState Value)> values, CharacterWeapon drawData,
-        ref ColorTable colorTable)
+        ref ColorTable.Table colorTable)
     {
         var deleteList = _deleteList.Value!;
         deleteList.Clear();

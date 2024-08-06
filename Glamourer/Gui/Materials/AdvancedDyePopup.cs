@@ -102,10 +102,12 @@ public sealed unsafe class AdvancedDyePopup(
         if (!bar)
             return;
 
+        var table = new ColorTable.Table();
         for (byte i = 0; i < MaterialService.MaterialsPerModel; ++i)
         {
             var index     = _drawIndex!.Value with { MaterialIndex = i };
-            var available = index.TryGetTexture(textures, out var texture) && directX.TryGetColorTable(*texture, out var table);
+            var available = index.TryGetTexture(textures, out var texture) && directX.TryGetColorTable(*texture, out table);
+
 
             if (index == preview.LastValueIndex with { RowIndex = 0 })
                 table = preview.LastOriginalColorTable;
@@ -225,7 +227,7 @@ public sealed unsafe class AdvancedDyePopup(
             DrawWindow(textures);
     }
 
-    private void DrawTable(MaterialValueIndex materialIndex, in ColorTable table)
+    private void DrawTable(MaterialValueIndex materialIndex, ColorTable.Table table)
     {
         if (!materialIndex.Valid)
             return;
@@ -244,7 +246,7 @@ public sealed unsafe class AdvancedDyePopup(
         DrawAllRow(materialIndex, table);
     }
 
-    private void DrawAllRow(MaterialValueIndex materialIndex, in ColorTable table)
+    private void DrawAllRow(MaterialValueIndex materialIndex, in ColorTable.Table table)
     {
         using var id         = ImRaii.PushId(100);
         var       buttonSize = new Vector2(ImGui.GetFrameHeight());
@@ -267,8 +269,9 @@ public sealed unsafe class AdvancedDyePopup(
         ImGui.SameLine(0, spacing);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), buttonSize,
                 "Import an exported table from your clipboard onto this table.", !ColorRowClipboard.IsTableSet, true))
-            foreach (var (row, idx) in ColorRowClipboard.Table.WithIndex())
+            for (var idx = 0; idx < ColorTable.NumRows; ++idx)
             {
+                var row         = ColorRowClipboard.Table[idx];
                 var internalRow = new ColorRow(row);
                 var slot        = materialIndex.ToEquipSlot();
                 var weapon = slot is EquipSlot.MainHand or EquipSlot.OffHand
@@ -285,7 +288,7 @@ public sealed unsafe class AdvancedDyePopup(
                 stateManager.ResetMaterialValue(_state, materialIndex with { RowIndex = i }, ApplySettings.Game);
     }
 
-    private void DrawRow(ref ColorTable.Row row, MaterialValueIndex index, in ColorTable table)
+    private void DrawRow(ref ColorTableRow row, MaterialValueIndex index, in ColorTable.Table table)
     {
         using var id      = ImRaii.PushId(index.RowIndex);
         var       changed = _state.Materials.TryGetValue(index, out var value);

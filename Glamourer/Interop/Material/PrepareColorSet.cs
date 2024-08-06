@@ -66,7 +66,7 @@ public sealed unsafe class PrepareColorSet
     }
 
     public static bool TryGetColorTable(MaterialResourceHandle* material, StainIds stainIds,
-        out ColorTable table)
+        out ColorTable.Table table)
     {
         if (material->ColorTable == null)
         {
@@ -74,7 +74,7 @@ public sealed unsafe class PrepareColorSet
             return false;
         }
 
-        var newTable = *(ColorTable*)material->ColorTable;
+        var newTable = *(ColorTable.Table*)material->ColorTable;
         if (GetDyeTable(material, out var dyeTable))
         {
             if (stainIds.Stain1.Id != 0)
@@ -91,11 +91,14 @@ public sealed unsafe class PrepareColorSet
     }
 
     /// <summary> Assumes the actor is valid. </summary>
-    public static bool TryGetColorTable(Actor actor, MaterialValueIndex index, out ColorTable table)
+    public static bool TryGetColorTable(Actor actor, MaterialValueIndex index, out ColorTable.Table table)
     {
         var idx = index.SlotIndex * MaterialService.MaterialsPerModel + index.MaterialIndex;
         if (!index.TryGetModel(actor, out var model))
+        {
+            table = default;
             return false;
+        }
 
         var handle = (MaterialResourceHandle*)model.AsCharacterBase->Materials[idx];
         if (handle == null)

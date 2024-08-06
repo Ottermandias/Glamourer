@@ -15,13 +15,13 @@ namespace Glamourer.Interop.Material;
 public unsafe class DirectXService(IFramework framework) : IService
 {
     private readonly object                                                                _lock     = new();
-    private readonly ConcurrentDictionary<nint, (DateTime Update, ColorTable Table)> _textures = [];
+    private readonly ConcurrentDictionary<nint, (DateTime Update, ColorTable.Table Table)> _textures = [];
 
     /// <summary> Generate a color table the way the game does inside the original texture, and release the original. </summary>
     /// <param name="original"> The original texture that will be replaced with a new one. </param>
     /// <param name="colorTable"> The input color table. </param>
     /// <returns> Success or failure. </returns>
-    public bool ReplaceColorTable(Texture** original, in ColorTable colorTable)
+    public bool ReplaceColorTable(Texture** original, in ColorTable.Table colorTable)
     {
         if (original == null)
             return false;
@@ -38,7 +38,7 @@ public unsafe class DirectXService(IFramework framework) : IService
             if (texture.IsInvalid)
                 return false;
 
-            fixed (ColorTable* ptr = &colorTable)
+            fixed (ColorTable.Table* ptr = &colorTable)
             {
                 if (!texture.Texture->InitializeContents(ptr))
                     return false;
@@ -51,7 +51,7 @@ public unsafe class DirectXService(IFramework framework) : IService
         return true;
     }
 
-    public bool TryGetColorTable(Texture* texture, out ColorTable table)
+    public bool TryGetColorTable(Texture* texture, out ColorTable.Table table)
     {
         if (_textures.TryGetValue((nint)texture, out var p) && framework.LastUpdateUTC == p.Update)
         {
@@ -73,7 +73,7 @@ public unsafe class DirectXService(IFramework framework) : IService
     /// <param name="texture"> A pointer to the internal texture struct containing the GPU handle. </param>
     /// <param name="table"> The returned color table. </param>
     /// <returns> Whether the table could be fetched. </returns>
-    private static bool TextureColorTable(Texture* texture, out ColorTable table)
+    private static bool TextureColorTable(Texture* texture, out ColorTable.Table table)
     {
         if (texture == null)
         {
@@ -92,6 +92,7 @@ public unsafe class DirectXService(IFramework framework) : IService
         }
         catch
         {
+            table = default;
             return false;
         }
     }
@@ -114,7 +115,7 @@ public unsafe class DirectXService(IFramework framework) : IService
     }
 
     /// <summary> Turn a mapped texture into a color table. </summary>
-    private static ColorTable GetTextureData(ID3D11Texture2D1 resource, MappedSubresource map)
+    private static ColorTable.Table GetTextureData(ID3D11Texture2D1 resource, MappedSubresource map)
     {
         var desc = resource.Description1;
 
@@ -133,14 +134,14 @@ public unsafe class DirectXService(IFramework framework) : IService
     /// <param name="height"> The height of the texture. (Needs to be 16).</param>
     /// <param name="pitch"> The stride in the texture data. </param>
     /// <returns></returns>
-    private static ColorTable ReadTexture(nint data, int length, int height, int pitch)
+    private static ColorTable.Table ReadTexture(nint data, int length, int height, int pitch)
     {
         // Check that the data has sufficient dimension and size.
         var expectedSize = sizeof(Half) * MaterialService.TextureWidth * height * 4;
-        if (length < expectedSize || sizeof(ColorTable) != expectedSize || height != MaterialService.TextureHeight)
+        if (length < expectedSize || sizeof(ColorTable.Table) != expectedSize || height != MaterialService.TextureHeight)
             return default;
 
-        var ret    = new ColorTable();
+        var ret    = new ColorTable.Table();
         var target = (byte*)&ret;
         // If the stride is the same as in the table, just copy.
         if (pitch == MaterialService.TextureWidth)

@@ -6,13 +6,13 @@ namespace Glamourer.Gui.Materials;
 public static class ColorRowClipboard
 {
     private static ColorRow   _row;
-    private static ColorTable _table;
+    private static ColorTable.Table _table;
 
     public static bool IsSet { get; private set; }
 
     public static bool IsTableSet { get; private set; }
 
-    public static ColorTable Table
+    public static ColorTable.Table Table
     {
         get => _table;
         set
