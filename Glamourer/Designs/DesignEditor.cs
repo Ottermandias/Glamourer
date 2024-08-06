@@ -360,7 +360,7 @@ public class DesignEditor(
 
             newOff = o;
         }
-        else if (!_forceFullItemOff && Config.ChangeEntireItem)
+        else if (!_forceFullItemOff && Config.ChangeEntireItem && newMain.Type is not FullEquipType.Sword) // Skip applying shields.
         {
             var defaultOffhand = Items.GetDefaultOffhand(newMain);
             if (Items.IsOffhandValid(newMain, defaultOffhand.ItemId, out var o))

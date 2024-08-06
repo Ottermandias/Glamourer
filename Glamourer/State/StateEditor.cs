@@ -456,6 +456,10 @@ public class StateEditor(
             return;
 
         var mh      = newMainhand ?? state.ModelData.Item(EquipSlot.MainHand);
+        // Do not change Shields to nothing.
+        if (mh.Type is FullEquipType.Sword)
+            return;
+
         var offhand = newMainhand != null ? Items.GetDefaultOffhand(mh) : state.ModelData.Item(EquipSlot.OffHand);
         var stains  = newStains ?? state.ModelData.Stain(EquipSlot.MainHand);
         if (offhand.Valid)
