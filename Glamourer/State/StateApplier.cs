@@ -75,7 +75,7 @@ public class StateApplier(
         }
     }
 
-    /// <inheritdoc cref="ChangeCustomize(ActorData, in CustomizeArray, ActorState?)"/>
+    /// <inheritdoc cref="ChangeCustomize(ActorData,in CustomizeArray,ActorState?)"/>
     public ActorData ChangeCustomize(ActorState state, bool apply)
     {
         var data = GetData(state);
@@ -177,7 +177,7 @@ public class StateApplier(
         }
     }
 
-    /// <inheritdoc cref="ChangeStain(ActorData,EquipSlot,StainId)"/>
+    /// <inheritdoc cref="ChangeStain(ActorData,EquipSlot,StainIds)"/>
     public ActorData ChangeStain(ActorState state, EquipSlot slot, bool apply)
     {
         var data = GetData(state);
@@ -197,7 +197,7 @@ public class StateApplier(
             ChangeOffhand(data, item, stains);
     }
 
-    /// <inheritdoc cref="ChangeWeapon(ActorData,EquipSlot,EquipItem,StainId)"/>
+    /// <inheritdoc cref="ChangeWeapon(ActorData,EquipSlot,EquipItem,StainIds)"/>
     public ActorData ChangeWeapon(ActorState state, EquipSlot slot, bool apply, bool onlyGPose)
     {
         var data = GetData(state);
@@ -229,7 +229,7 @@ public class StateApplier(
     }
 
     /// <summary> Change a meta state. </summary>
-    public unsafe void ChangeMetaState(ActorData data, MetaIndex index, bool value)
+    public void ChangeMetaState(ActorData data, MetaIndex index, bool value)
     {
         switch (index)
         {
@@ -311,15 +311,15 @@ public class StateApplier(
 
         foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))
         {
-            if (!index.TryGetTexture(actor, out var texture))
+            if (!index.TryGetTexture(actor, out var texture, out var mode))
                 continue;
 
             if (!_directX.TryGetColorTable(*texture, out var table))
                 continue;
 
             if (value.HasValue)
-                value.Value.Apply(ref table[index.RowIndex]);
-            else if (PrepareColorSet.TryGetColorTable(actor, index, out var baseTable))
+                value.Value.Apply(ref table[index.RowIndex], mode);
+            else if (PrepareColorSet.TryGetColorTable(actor, index, out var baseTable, out _))
                 table[index.RowIndex] = baseTable[index.RowIndex];
             else
                 continue;
@@ -353,11 +353,11 @@ public class StateApplier(
                 if (!mainKey.TryGetTexture(actor, out var texture))
                     continue;
 
-                if (!PrepareColorSet.TryGetColorTable(actor, mainKey, out var table))
+                if (!PrepareColorSet.TryGetColorTable(actor, mainKey, out var table, out var mode))
                     continue;
 
                 foreach (var (key, value) in values)
-                    value.Model.Apply(ref table[key.RowIndex]);
+                    value.Model.Apply(ref table[key.RowIndex], mode);
 
                 _directX.ReplaceColorTable(texture, table);
             }

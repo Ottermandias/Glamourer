@@ -13,6 +13,12 @@ namespace Glamourer.Interop.Material;
 /// <summary> Values are not squared. </summary>
 public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, float specularStrength, float glossStrength)
 {
+    public enum Mode
+    {
+        Legacy,
+        Dawntrail,
+    }
+
     public static readonly ColorRow Empty = new(Vector3.Zero, Vector3.Zero, Vector3.Zero, 0, 0);
 
     public Vector3 Diffuse          = diffuse;
@@ -22,8 +28,9 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     public float   GlossStrength    = glossStrength;
 
     public ColorRow(in ColorTableRow row)
-        : this(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor), (float)row.SheenRate,
-            (float)row.Metalness)
+        : this(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
+            (float)row.LegacySpecularStrength(),
+            (float)row.LegacyGloss())
     { }
 
     public readonly bool NearEqual(in ColorRow rhs)
@@ -45,7 +52,7 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     private static float Root(float value)
         => value < 0 ? MathF.Sqrt(-value) : MathF.Sqrt(value);
 
-    public readonly bool Apply(ref ColorTableRow row)
+    public readonly bool Apply(ref ColorTableRow row, Mode mode)
     {
         var ret = false;
         var d   = Square(Diffuse);
@@ -69,20 +76,38 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
             ret               = true;
         }
 
-        if (!((float)row.SheenRate).NearEqual(SpecularStrength))
+        if (mode is Mode.Legacy)
         {
-            row.SheenRate = (Half)SpecularStrength;
-            ret           = true;
-        }
+            if (!((float)row.LegacySpecularStrength()).NearEqual(SpecularStrength))
+            {
+                row.LegacySpecularStrengthWrite() = (Half)SpecularStrength;
+                ret                               = true;
+            }
 
-        if (!((float)row.Metalness).NearEqual(GlossStrength))
-        {
-            row.Metalness = (Half)GlossStrength;
-            ret               = true;
+            if (!((float)row.LegacyGloss()).NearEqual(GlossStrength))
+            {
+                row.LegacyGlossWrite() = (Half)GlossStrength;
+                ret                    = true;
+            }
         }
 
         return ret;
     }
+}
+
+internal static class ColorTableRowExtensions
+{
+    internal static Half LegacySpecularStrength(this in ColorTableRow row)
+        => row[7];
+
+    internal static Half LegacyGloss(this in ColorTableRow row)
+        => row[3];
+
+    internal static ref Half LegacySpecularStrengthWrite(this ref ColorTableRow row)
+        => ref row[7];
+
+    internal static ref Half LegacyGlossWrite(this ref ColorTableRow row)
+        => ref row[3];
 }
 
 [JsonConverter(typeof(Converter))]

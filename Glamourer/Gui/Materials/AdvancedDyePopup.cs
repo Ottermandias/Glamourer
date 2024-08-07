@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using FFXIVClientStructs.Interop;
 using Glamourer.Designs;
@@ -27,6 +28,7 @@ public sealed unsafe class AdvancedDyePopup(
     private MaterialValueIndex? _drawIndex;
     private ActorState          _state = null!;
     private Actor               _actor;
+    private ColorRow.Mode       _mode;
     private byte                _selectedMaterial = byte.MaxValue;
     private bool                _anyChanged;
     private bool                _forceFocus;
@@ -96,7 +98,7 @@ public sealed unsafe class AdvancedDyePopup(
         return (path, gamePath);
     }
 
-    private void DrawTabBar(ReadOnlySpan<Pointer<Texture>> textures, ref bool firstAvailable)
+    private void DrawTabBar(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials, ref bool firstAvailable)
     {
         using var bar = ImRaii.TabBar("tabs");
         if (!bar)
@@ -105,8 +107,9 @@ public sealed unsafe class AdvancedDyePopup(
         var table = new ColorTable.Table();
         for (byte i = 0; i < MaterialService.MaterialsPerModel; ++i)
         {
-            var index     = _drawIndex!.Value with { MaterialIndex = i };
-            var available = index.TryGetTexture(textures, out var texture) && directX.TryGetColorTable(*texture, out table);
+            var index = _drawIndex!.Value with { MaterialIndex = i };
+            var available = index.TryGetTexture(textures, materials, out var texture, out _mode)
+             && directX.TryGetColorTable(*texture, out table);
 
 
             if (index == preview.LastValueIndex with { RowIndex = 0 })
@@ -163,16 +166,16 @@ public sealed unsafe class AdvancedDyePopup(
         }
     }
 
-    private void DrawContent(ReadOnlySpan<Pointer<Texture>> textures)
+    private void DrawContent(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials)
     {
         var firstAvailable = true;
-        DrawTabBar(textures, ref firstAvailable);
+        DrawTabBar(textures, materials, ref firstAvailable);
 
         if (firstAvailable)
             ImGui.TextUnformatted("No Editable Materials available.");
     }
 
-    private void DrawWindow(ReadOnlySpan<Pointer<Texture>> textures)
+    private void DrawWindow(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials)
     {
         var flags = ImGuiWindowFlags.NoFocusOnAppearing
           | ImGuiWindowFlags.NoCollapse
@@ -208,7 +211,7 @@ public sealed unsafe class AdvancedDyePopup(
         try
         {
             if (window)
-                DrawContent(textures);
+                DrawContent(textures, materials);
         }
         finally
         {
@@ -223,8 +226,8 @@ public sealed unsafe class AdvancedDyePopup(
         if (!ShouldBeDrawn())
             return;
 
-        if (_drawIndex!.Value.TryGetTextures(actor, out var textures))
-            DrawWindow(textures);
+        if (_drawIndex!.Value.TryGetTextures(actor, out var textures, out var materials))
+            DrawWindow(textures, materials);
     }
 
     private void DrawTable(MaterialValueIndex materialIndex, ColorTable.Table table)
@@ -340,15 +343,30 @@ public sealed unsafe class AdvancedDyePopup(
             v => value.Model.Emissive = v, "E");
 
         ImGui.SameLine(0, spacing.X);
-        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        applied |= ImGui.DragFloat("##Gloss", ref value.Model.GlossStrength, 0.01f, 0.001f, float.MaxValue, "%.3f G")
-         && value.Model.GlossStrength > 0;
-        ImGuiUtil.HoverTooltip("Change the gloss strength for this row.");
+        if (_mode is not ColorRow.Mode.Dawntrail)
+        {
+            ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
+            applied |= ImGui.DragFloat("##Gloss", ref value.Model.GlossStrength, 0.01f, 0.001f, float.MaxValue, "%.3f G")
+             && value.Model.GlossStrength > 0;
+            ImGuiUtil.HoverTooltip("Change the gloss strength for this row.");
+        }
+        else
+        {
+            ImGui.Dummy(new Vector2(100 * ImGuiHelpers.GlobalScale, 0));
+        }
 
         ImGui.SameLine(0, spacing.X);
-        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        applied |= ImGui.DragFloat("##Specular Strength", ref value.Model.SpecularStrength, 0.01f, float.MinValue, float.MaxValue, "%.3f%% SS");
-        ImGuiUtil.HoverTooltip("Change the specular strength for this row.");
+        if (_mode is not ColorRow.Mode.Dawntrail)
+        {
+            ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
+            applied |= ImGui.DragFloat("##Specular Strength", ref value.Model.SpecularStrength, 0.01f, float.MinValue, float.MaxValue,
+                "%.3f%% SS");
+            ImGuiUtil.HoverTooltip("Change the specular strength for this row.");
+        }
+        else
+        {
+            ImGui.Dummy(new Vector2(100 * ImGuiHelpers.GlobalScale, 0));
+        }
 
         ImGui.SameLine(0, spacing.X);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), buttonSize, "Export this row to your clipboard.", false,

@@ -91,11 +91,12 @@ public sealed unsafe class PrepareColorSet
     }
 
     /// <summary> Assumes the actor is valid. </summary>
-    public static bool TryGetColorTable(Actor actor, MaterialValueIndex index, out ColorTable.Table table)
+    public static bool TryGetColorTable(Actor actor, MaterialValueIndex index, out ColorTable.Table table, out ColorRow.Mode mode)
     {
         var idx = index.SlotIndex * MaterialService.MaterialsPerModel + index.MaterialIndex;
         if (!index.TryGetModel(actor, out var model))
         {
+            mode  = ColorRow.Mode.Dawntrail;
             table = default;
             return false;
         }
@@ -103,10 +104,12 @@ public sealed unsafe class PrepareColorSet
         var handle = (MaterialResourceHandle*)model.AsCharacterBase->Materials[idx];
         if (handle == null)
         {
+            mode  = ColorRow.Mode.Dawntrail;
             table = default;
             return false;
         }
 
+        mode = GetMode(handle);
         return TryGetColorTable(handle, GetStains(), out table);
 
         StainIds GetStains()
@@ -125,6 +128,14 @@ public sealed unsafe class PrepareColorSet
             }
         }
     }
+
+    /// <summary> Get the shader mode of the material. </summary>
+    public static ColorRow.Mode GetMode(MaterialResourceHandle* handle)
+        => handle == null
+            ? ColorRow.Mode.Dawntrail
+            : handle->ShpkNameSpan.SequenceEqual("characterlegacy.shpk"u8)
+                ? ColorRow.Mode.Legacy
+                : ColorRow.Mode.Dawntrail;
 
     /// <summary> Get the correct dye table for a material. </summary>
     private static bool GetDyeTable(MaterialResourceHandle* material, out ushort* ptr)

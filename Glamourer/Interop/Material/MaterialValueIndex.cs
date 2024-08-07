@@ -1,9 +1,11 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using FFXIVClientStructs.Interop;
 using Newtonsoft.Json;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Interop;
+using CsMaterial = FFXIVClientStructs.FFXIV.Client.Graphics.Render.Material;
 
 namespace Glamourer.Interop.Material;
 
@@ -75,20 +77,38 @@ public readonly record struct MaterialValueIndex(
         return model.IsCharacterBase;
     }
 
+    public unsafe bool TryGetTextures(Actor actor, out ReadOnlySpan<Pointer<Texture>> textures, out ReadOnlySpan<Pointer<CsMaterial>> materials)
+    {
+        if (!TryGetModel(actor, out var model)
+         || SlotIndex >= model.AsCharacterBase->SlotCount
+         || model.AsCharacterBase->ColorTableTexturesSpan.Length < (SlotIndex + 1) * MaterialService.MaterialsPerModel)
+        {
+            textures  = [];
+            materials = [];
+            return false;
+        }
+
+        var from = SlotIndex * MaterialService.MaterialsPerModel;
+        textures  = model.AsCharacterBase->ColorTableTexturesSpan.Slice(from, MaterialService.MaterialsPerModel);
+        materials = model.AsCharacterBase->MaterialsSpan.Slice(from, MaterialService.MaterialsPerModel);
+        return true;
+    }
+
     public unsafe bool TryGetTextures(Actor actor, out ReadOnlySpan<Pointer<Texture>> textures)
     {
         if (!TryGetModel(actor, out var model)
          || SlotIndex >= model.AsCharacterBase->SlotCount
          || model.AsCharacterBase->ColorTableTexturesSpan.Length < (SlotIndex + 1) * MaterialService.MaterialsPerModel)
         {
-            textures = [];
+            textures  = [];
             return false;
         }
 
-        textures = model.AsCharacterBase->ColorTableTexturesSpan.Slice(SlotIndex * MaterialService.MaterialsPerModel,
-            MaterialService.MaterialsPerModel);
+        var from = SlotIndex * MaterialService.MaterialsPerModel;
+        textures  = model.AsCharacterBase->ColorTableTexturesSpan.Slice(from, MaterialService.MaterialsPerModel);
         return true;
     }
+
 
     public unsafe bool TryGetTexture(Actor actor, out Texture** texture)
     {
@@ -97,6 +117,38 @@ public readonly record struct MaterialValueIndex(
 
         texture = null;
         return false;
+    }
+
+    public unsafe bool TryGetTexture(Actor actor, out Texture** texture, out ColorRow.Mode mode)
+    {
+        if (TryGetTextures(actor, out var textures, out var materials))
+            return TryGetTexture(textures, materials, out texture, out mode);
+
+        mode    = ColorRow.Mode.Dawntrail;
+        texture = null;
+        return false;
+    }
+
+    public unsafe bool TryGetTexture(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<CsMaterial>> materials,
+        out Texture** texture, out ColorRow.Mode mode)
+    {
+        mode = MaterialIndex >= materials.Length
+            ? ColorRow.Mode.Dawntrail
+            : PrepareColorSet.GetMode((MaterialResourceHandle*)materials[MaterialIndex].Value);
+
+
+        if (MaterialIndex >= textures.Length || textures[MaterialIndex].Value == null)
+        {
+            texture = null;
+            return false;
+        }
+
+        fixed (Pointer<Texture>* ptr = textures)
+        {
+            texture = (Texture**)ptr + MaterialIndex;
+        }
+
+        return true;
     }
 
     public unsafe bool TryGetTexture(ReadOnlySpan<Pointer<Texture>> textures, out Texture** texture)
@@ -114,6 +166,7 @@ public readonly record struct MaterialValueIndex(
 
         return true;
     }
+
 
     public static MaterialValueIndex FromKey(uint key)
         => new(key);

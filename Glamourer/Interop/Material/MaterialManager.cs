@@ -1,5 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
+using FFXIVClientStructs.Havok.Animation.Rig;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
@@ -67,7 +68,8 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             MaterialValueIndex.DrawObjectType.Human => GetTempSlot((Human*)characterBase, slotId),
             _                                       => GetTempSlot((Weapon*)characterBase),
         };
-        UpdateMaterialValues(state, values, drawData, ref baseColorSet);
+        var mode = PrepareColorSet.GetMode(material);
+        UpdateMaterialValues(state, values, drawData, ref baseColorSet, mode);
 
         if (MaterialService.GenerateNewColorTable(baseColorSet, out var texture))
             ret = (nint)texture;
@@ -75,7 +77,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
 
     /// <summary> Update and apply the glamourer state of an actor according to the application sources when updated by the game. </summary>
     private void UpdateMaterialValues(ActorState state, ReadOnlySpan<(uint Key, MaterialValueState Value)> values, CharacterWeapon drawData,
-        ref ColorTable.Table colorTable)
+        ref ColorTable.Table colorTable, ColorRow.Mode mode)
     {
         var deleteList = _deleteList.Value!;
         deleteList.Clear();
@@ -86,17 +88,17 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             ref var row           = ref colorTable[idx.RowIndex];
             var     newGame       = new ColorRow(row);
             if (materialValue.EqualGame(newGame, drawData))
-                materialValue.Model.Apply(ref row);
+                materialValue.Model.Apply(ref row, mode);
             else
                 switch (materialValue.Source)
                 {
                     case StateSource.Pending:
-                        materialValue.Model.Apply(ref row);
+                        materialValue.Model.Apply(ref row, mode);
                         state.Materials.UpdateValue(idx, new MaterialValueState(newGame, materialValue.Model, drawData, StateSource.Manual),
                             out _);
                         break;
                     case StateSource.IpcPending:
-                        materialValue.Model.Apply(ref row);
+                        materialValue.Model.Apply(ref row, mode);
                         state.Materials.UpdateValue(idx, new MaterialValueState(newGame, materialValue.Model, drawData, StateSource.IpcManual),
                             out _);
                         break;
@@ -106,7 +108,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
                         break;
                     case StateSource.Fixed:
                     case StateSource.IpcFixed:
-                        materialValue.Model.Apply(ref row);
+                        materialValue.Model.Apply(ref row, mode);
                         state.Materials.UpdateValue(idx, new MaterialValueState(newGame, materialValue.Model, drawData, materialValue.Source),
                             out _);
                         break;
