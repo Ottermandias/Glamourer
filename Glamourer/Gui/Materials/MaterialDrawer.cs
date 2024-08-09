@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
+using FFXIVClientStructs.FFXIV.Common.Lua;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using ImGuiNET;
@@ -196,11 +197,11 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
         applied |= ImGuiUtil.ColorPicker("##emissive", "Change the emissive value for this row.", row.Emissive, v => tmp.Emissive = v, "E");
         ImGui.SameLine(0, _spacing);
         ImGui.SetNextItemWidth(GlossWidth * ImGuiHelpers.GlobalScale);
-        applied |= ImGui.DragFloat("##Gloss", ref tmp.GlossStrength, 0.01f, 0.001f, float.MaxValue, "%.3f G");
+        applied |= AdvancedDyePopup.DragGloss(ref tmp.GlossStrength);
         ImGuiUtil.HoverTooltip("Change the gloss strength for this row.");
         ImGui.SameLine(0, _spacing);
         ImGui.SetNextItemWidth(SpecularStrengthWidth * ImGuiHelpers.GlobalScale);
-        applied |= ImGui.DragFloat("##Specular Strength", ref tmp.SpecularStrength, 0.01f, float.MinValue, float.MaxValue, "%.3f%% SS");
+        applied |= AdvancedDyePopup.DragSpecularStrength(ref tmp.SpecularStrength);
         ImGuiUtil.HoverTooltip("Change the specular strength for this row.");
         if (applied)
             _designManager.ChangeMaterialValue(design, index, tmp);

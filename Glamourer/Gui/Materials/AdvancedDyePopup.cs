@@ -11,6 +11,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;
+using OtterGui.Text;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
@@ -346,8 +347,7 @@ public sealed unsafe class AdvancedDyePopup(
         if (_mode is not ColorRow.Mode.Dawntrail)
         {
             ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-            applied |= ImGui.DragFloat("##Gloss", ref value.Model.GlossStrength, 0.01f, 0.001f, float.MaxValue, "%.3f G")
-             && value.Model.GlossStrength > 0;
+            applied |= DragGloss(ref value.Model.GlossStrength);
             ImGuiUtil.HoverTooltip("Change the gloss strength for this row.");
         }
         else
@@ -359,8 +359,7 @@ public sealed unsafe class AdvancedDyePopup(
         if (_mode is not ColorRow.Mode.Dawntrail)
         {
             ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-            applied |= ImGui.DragFloat("##Specular Strength", ref value.Model.SpecularStrength, 0.01f, float.MinValue, float.MaxValue,
-                "%.3f%% SS");
+            applied |= DragSpecularStrength(ref value.Model.SpecularStrength);
             ImGuiUtil.HoverTooltip("Change the specular strength for this row.");
         }
         else
@@ -386,6 +385,36 @@ public sealed unsafe class AdvancedDyePopup(
 
         if (applied)
             stateManager.ChangeMaterialValue(_state, index, value, ApplySettings.Manual);
+    }
+
+    public static bool DragGloss(ref float value)
+    {
+        var tmp      = value;
+        var minValue = ImGui.GetIO().KeyCtrl ? 0f : (float)Half.Epsilon;
+        if (!ImUtf8.DragScalar("##Gloss"u8, ref tmp, "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value), ImGuiSliderFlags.AlwaysClamp))
+            return false;
+
+        var tmp2 = Math.Clamp(tmp, minValue, (float)Half.MaxValue);
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragSpecularStrength(ref float value)
+    {
+        var tmp = value * 100f;
+        if (!ImUtf8.DragScalar("##SpecularStrength"u8, ref tmp, "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f, 0.05f,
+                ImGuiSliderFlags.AlwaysClamp))
+            return false;
+
+        var tmp2 = Math.Clamp(tmp, 0f, (float)Half.MaxValue * 100f) / 100f;
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
     }
 
     private LabelStruct _label = new();

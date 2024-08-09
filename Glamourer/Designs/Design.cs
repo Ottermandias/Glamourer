@@ -228,10 +228,10 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
             if (array == null)
                 return;
 
-            foreach (var obj in array.OfType<JObject>())
+            foreach (var jObj in array.OfType<JObject>())
             {
-                var identifier = obj["Design"]?.ToObject<Guid>() ?? throw new ArgumentNullException("Design");
-                var type       = (ApplicationType)(obj["Type"]?.ToObject<uint>() ?? 0);
+                var identifier = jObj["Design"]?.ToObject<Guid>() ?? throw new ArgumentNullException(nameof(design));
+                var type       = (ApplicationType)(jObj["Type"]?.ToObject<uint>() ?? 0);
                 linkLoader.AddObject(design, new LinkData(identifier, type, order));
             }
         }
