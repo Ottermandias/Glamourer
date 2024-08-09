@@ -100,12 +100,12 @@ public readonly record struct MaterialValueIndex(
          || SlotIndex >= model.AsCharacterBase->SlotCount
          || model.AsCharacterBase->ColorTableTexturesSpan.Length < (SlotIndex + 1) * MaterialService.MaterialsPerModel)
         {
-            textures  = [];
+            textures = [];
             return false;
         }
 
         var from = SlotIndex * MaterialService.MaterialsPerModel;
-        textures  = model.AsCharacterBase->ColorTableTexturesSpan.Slice(from, MaterialService.MaterialsPerModel);
+        textures = model.AsCharacterBase->ColorTableTexturesSpan.Slice(from, MaterialService.MaterialsPerModel);
         return true;
     }
 
@@ -220,19 +220,26 @@ public readonly record struct MaterialValueIndex(
     public override string ToString()
         => DrawObject switch
         {
-            DrawObjectType.Invalid => "Invalid",
-            DrawObjectType.Human when SlotIndex < 10 =>
-                $"{((uint)SlotIndex).ToEquipSlot().ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            DrawObjectType.Human when SlotIndex == 10 => $"BodySlot.Hair.ToString() Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            DrawObjectType.Human when SlotIndex == 11 => $"BodySlot.Face.ToString() Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            DrawObjectType.Human when SlotIndex == 12 => $"{BodySlot.Tail} / {BodySlot.Ear} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            DrawObjectType.Human when SlotIndex == 13 => $"Connectors Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            DrawObjectType.Human when SlotIndex == 16 => $"{BonusItemFlag.Glasses.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            DrawObjectType.Human when SlotIndex == 17 => $"{BonusItemFlag.UnkSlot.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            DrawObjectType.Mainhand when SlotIndex == 0 => $"{EquipSlot.MainHand.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            DrawObjectType.Offhand when SlotIndex == 0 => $"{EquipSlot.OffHand.ToName()} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
-            _ => $"{DrawObject} Slot {SlotIndex} Material #{MaterialIndex + 1} Row #{RowIndex + 1}",
+            DrawObjectType.Invalid                      => "Invalid",
+            DrawObjectType.Human when SlotIndex < 10    => $"{((uint)SlotIndex).ToEquipSlot().ToName()} {MaterialString()} {RowString()}",
+            DrawObjectType.Human when SlotIndex == 10   => $"{BodySlot.Hair} {MaterialString()} {RowString()}",
+            DrawObjectType.Human when SlotIndex == 11   => $"{BodySlot.Face} {MaterialString()} {RowString()}",
+            DrawObjectType.Human when SlotIndex == 12   => $"{BodySlot.Tail} / {BodySlot.Ear} {MaterialString()} {RowString()}",
+            DrawObjectType.Human when SlotIndex == 13   => $"Connectors {MaterialString()} {RowString()}",
+            DrawObjectType.Human when SlotIndex == 16   => $"{BonusItemFlag.Glasses.ToName()} {MaterialString()} {RowString()}",
+            DrawObjectType.Human when SlotIndex == 17   => $"{BonusItemFlag.UnkSlot.ToName()} {MaterialString()} {RowString()}",
+            DrawObjectType.Mainhand when SlotIndex == 0 => $"{EquipSlot.MainHand.ToName()} {MaterialString()} {RowString()}",
+            DrawObjectType.Offhand when SlotIndex == 0  => $"{EquipSlot.OffHand.ToName()} {MaterialString()} {RowString()}",
+            _                                           => $"{DrawObject} Slot {SlotIndex} {MaterialString()} {RowString()}",
         };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private string MaterialString()
+        => $"Material {(char)(MaterialIndex + 'A')}";
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private string RowString()
+        => $"Row {RowIndex / 2 + 1}{(char)(RowIndex % 2 + 'A')}";
 
     private class Converter : JsonConverter<MaterialValueIndex>
     {
