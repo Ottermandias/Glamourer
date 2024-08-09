@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
 using Penumbra.GameData.Structs;
+using Notification = OtterGui.Classes.Notification;
 
 namespace Glamourer.Designs;
 
@@ -34,7 +35,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     }
 
     // Metadata
-    public new const int FileVersion = 1;
+    public new const int FileVersion = 2;
 
     public Guid                         Identifier     { get; internal init; }
     public DateTimeOffset               CreationDate   { get; internal init; }
@@ -143,17 +144,81 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
 
     #region Deserialization
 
-    public static Design LoadDesign(CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader, JObject json)
+    public static Design LoadDesign(SaveService saveService, CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader, JObject json)
     {
         var version = json["FileVersion"]?.ToObject<int>() ?? 0;
         return version switch
         {
-            FileVersion => LoadDesignV1(customizations, items, linkLoader, json),
+            1           => LoadDesignV1(saveService, customizations, items, linkLoader, json),
+            FileVersion => LoadDesignV2(customizations, items, linkLoader, json),
             _           => throw new Exception("The design to be loaded has no valid Version."),
         };
     }
 
-    private static Design LoadDesignV1(CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader, JObject json)
+    /// <summary> The values for gloss and specular strength were switched. Swap them for all appropriate designs. </summary>
+    private static Design LoadDesignV1(SaveService saveService, CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader, JObject json)
+    {
+        var design             = LoadDesignV2(customizations, items, linkLoader, json);
+        var materialDesignData = design.GetMaterialDataRef();
+        if (materialDesignData.Values.Count == 0)
+            return design;
+
+        var materialData = materialDesignData.Clone();
+        // Guesstimate whether to migrate material rows:
+        // Update 1.3.0.10 released at that time, so any design last updated before that can be migrated.
+        if (design.LastEdit <= new DateTime(2024, 8, 7, 16, 0, 0, DateTimeKind.Utc))
+        {
+            Migrate("because it was saved the wrong way around before 1.3.0.10, and this design was not changed since that release.");
+        }
+        else
+        {
+            var hasNegativeGloss    = false;
+            var hasNonPositiveGloss = false;
+            var specularLarger      = 0;
+            foreach (var (key, value) in materialData.GetValues(MaterialValueIndex.Min(), MaterialValueIndex.Max()))
+            {
+                hasNegativeGloss    |= value.Value.GlossStrength < 0;
+                hasNonPositiveGloss |= value.Value.GlossStrength <= 0;
+                if (value.Value.SpecularStrength > value.Value.GlossStrength)
+                    ++specularLarger;
+            }
+
+            // If there is any negative gloss, this is wrong and can be migrated.
+            if (hasNegativeGloss)
+                Migrate("because it had a negative Gloss value, which is not supported and thus probably outdated.");
+            // If there is any non-positive Gloss and some specular values that are larger, it is probably wrong and can be migrated.
+            else if (hasNonPositiveGloss && specularLarger > 0)
+                Migrate("because it had a zero Gloss value, and at least one Specular Strength larger than the Gloss, which is unusual.");
+            // If most of the specular strengths are larger, it is probably wrong and can be migrated.
+            else if (specularLarger > materialData.Values.Count / 2)
+                Migrate("because most of its Specular Strength values were larger than the Gloss values, which is unusual.");
+        }
+
+        return design;
+
+        void Migrate(string reason)
+        {
+            materialDesignData.Clear();
+            foreach (var (key, value) in materialData.GetValues(MaterialValueIndex.Min(), MaterialValueIndex.Max()))
+            {
+                var gloss            = Math.Clamp(value.Value.SpecularStrength, 0, (float)Half.MaxValue);
+                var specularStrength = Math.Clamp(value.Value.GlossStrength,    0, (float)Half.MaxValue);
+                var colorRow = value.Value with
+                {
+                    GlossStrength = gloss,
+                    SpecularStrength = specularStrength,
+                };
+                materialDesignData.AddOrUpdateValue(MaterialValueIndex.FromKey(key), value with { Value = colorRow });
+            }
+
+            Glamourer.Messager.AddMessage(new Notification(
+                $"Swapped Gloss and Specular Strength in {materialDesignData.Values.Count} Rows in design {design.Incognito} {reason}",
+                NotificationType.Info));
+            saveService.Save(SaveType.ImmediateSync,design);
+        }
+    }
+
+    private static Design LoadDesignV2(CustomizeService customizations, ItemManager items, DesignLinkLoader linkLoader, JObject json)
     {
         var creationDate = json["CreationDate"]?.ToObject<DateTimeOffset>() ?? throw new ArgumentNullException("CreationDate");
 
@@ -183,7 +248,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
 
         static string[] ParseTags(JObject json)
         {
-            var tags = json["Tags"]?.ToObject<string[]>() ?? Array.Empty<string>();
+            var tags = json["Tags"]?.ToObject<string[]>() ?? [];
             return tags.OrderBy(t => t).Distinct().ToArray();
         }
     }

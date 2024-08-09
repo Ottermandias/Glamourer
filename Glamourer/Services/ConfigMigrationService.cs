@@ -23,7 +23,18 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
         MigrateV2To4();
         MigrateV4To5();
         MigrateV5To6();
+        MigrateV6To7();
         AddColors(config, true);
+    }
+
+    private void MigrateV6To7()
+    {
+        if (_config.Version > 6)
+            return;
+
+        // Do not actually change anything in the config, just create a backup before designs are migrated.
+        backupService.CreateMigrationBackup("pre_gloss_specular_migration");
+        _config.Version = 7;
     }
 
     private void MigrateV5To6()

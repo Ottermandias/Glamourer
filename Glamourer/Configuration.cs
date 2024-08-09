@@ -143,10 +143,10 @@ public class Configuration : IPluginConfiguration, ISavable
 
     public static class Constants
     {
-        public const int CurrentVersion = 6;
+        public const int CurrentVersion = 7;
 
         public static readonly ISortMode<Design>[] ValidSortModes =
-        {
+        [
             ISortMode<Design>.FoldersFirst,
             ISortMode<Design>.Lexicographical,
             new DesignFileSystem.CreationDate(),
@@ -159,7 +159,7 @@ public class Configuration : IPluginConfiguration, ISavable
             ISortMode<Design>.InverseFoldersLast,
             ISortMode<Design>.InternalOrder,
             ISortMode<Design>.InverseInternalOrder,
-        };
+        ];
     }
 
     /// <summary> Convert SortMode Types to their name. </summary>
