@@ -34,6 +34,7 @@ public class GlamourerChangelog
         Add1_2_1_0(Changelog);
         AddDummy(Changelog);
         Add1_2_3_0(Changelog);
+        Add1_3_1_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -53,6 +54,47 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_3_1_0(Changelog log)
+        => log.NextVersion("Version 1.2.3.0")
+            .RegisterHighlight("Glamourer is now released for Dawntrail!")
+            .RegisterEntry("Added support for female Hrothgar.",  1)
+            .RegisterEntry("Added support for the Glasses slot.", 1)
+            .RegisterEntry("Added support for two dye slots.",    1)
+            .RegisterImportant(
+                "There were some issues with Advanced Dyes stored in Designs. When launching this update, Glamourer will try to migrate all your old designs into the new form.")
+            .RegisterEntry("Unfortunately, this is slightly based on guesswork and may cause false-positive migrations.",            1)
+            .RegisterEntry("In general, the values for Gloss and Specular Strength were swapped, so the migration swaps them back.", 1)
+            .RegisterEntry(
+                "In some cases this may not be correct, or the values stored were problematic to begin with and will now cause further issues.",
+                1)
+            .RegisterImportant(
+                "If your designs lose their specular color, you need to verify that the Specular Strength is non-zero (usually in 0-100%).", 1)
+            .RegisterImportant(
+                "If your designs are extremely glossy and reflective, you need to verify that the Gloss value is greater than zero (usually a power of 2 >= 1, it should never be 0).",
+                1)
+            .RegisterEntry(
+                "I am very sorry for the inconvenience but there is no way to salvage this sanely in all cases, especially with user-input values.",
+                1)
+            .RegisterImportant(
+                "Any materials already using Dawntrails shaders will currently not be able to edit the Gloss or Specular Strength Values in Advanced Dyes.")
+            .RegisterImportant(
+                "Skin and Hair Shine from advanced customizations are not supported by the game any longer, so they are not displayed for the moment.")
+            .RegisterHighlight("All eyes now support Limbal rings (which use the Feature Color for their color).")
+            .RegisterHighlight("Dyes can now be dragged and dropped onto other dyes to replicate them.")
+            .RegisterEntry("The job filter in the Unlocks tab has been improved.")
+            .RegisterHighlight(
+                "Editing designs or actors now has a history and you can undo up to 16 of the last changes you made, separately per design or actor.")
+            .RegisterEntry(
+                "Some changes (like when a weapon applies its offhand) may count as multiple and have to be stepped back separately.", 1)
+            .RegisterEntry("You can now change the priority or enabled state of associated mods directly.")
+            .RegisterEntry("Glamourer now has a Support Info button akin to Penumbra's.")
+            .RegisterEntry("Glamourer now respects write protection on designs better.")
+            .RegisterEntry("The advanced dye window popup should now get focused when it is opening even in detached state.")
+            .RegisterHighlight("You can now display your characters height in Corgis or Olympic Swimming Pools.")
+            .RegisterEntry("Fixed some issues with advanced customizations and dyes applied via IPC. (1.2.3.2)")
+            .RegisterEntry(
+                "Glamourer now uses the last matching game object for advanced dyes instead of the first (mainly relevant for GPose). (1.2.3.1)");
 
     private static void Add1_2_3_0(Changelog log)
         => log.NextVersion("Version 1.2.3.0")
