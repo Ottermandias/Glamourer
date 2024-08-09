@@ -19,7 +19,7 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
         Dawntrail,
     }
 
-    public static readonly ColorRow Empty = new(Vector3.Zero, Vector3.Zero, Vector3.Zero, 0, 0);
+    public static readonly ColorRow Empty = new(Vector3.Zero, Vector3.Zero, Vector3.Zero, 1f, 1f);
 
     public Vector3 Diffuse          = diffuse;
     public Vector3 Specular         = specular;

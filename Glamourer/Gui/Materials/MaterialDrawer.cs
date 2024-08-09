@@ -1,12 +1,12 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using FFXIVClientStructs.FFXIV.Common.Lua;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Services;
+using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Gui;
@@ -28,13 +28,13 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
 
     public void Draw(Design design)
     {
-        var       available = ImGui.GetContentRegionAvail().X;
+        var available = ImGui.GetContentRegionAvail().X;
         _spacing    = ImGui.GetStyle().ItemInnerSpacing.X;
         _buttonSize = new Vector2(ImGui.GetFrameHeight());
         var colorWidth = 4 * _buttonSize.X
           + (GlossWidth + SpecularStrengthWidth) * ImGuiHelpers.GlobalScale
           + 6 * _spacing
-          + ImGui.CalcTextSize("Revert").X;
+          + ImUtf8.CalcTextSize("Revert"u8).X;
         if (available > 1.95 * colorWidth)
             DrawSingleRow(design);
         else
@@ -44,9 +44,9 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
 
     private void DrawName(MaterialValueIndex index)
     {
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale).Push(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f));
-        using var color = ImRaii.PushColor(ImGuiCol.Border, ImGui.GetColorU32(ImGuiCol.Text));
-        ImGuiUtil.DrawTextButton(index.ToString(), new Vector2((GlossWidth + SpecularStrengthWidth) * ImGuiHelpers.GlobalScale + _spacing, 0), 0);
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f));
+        ImUtf8.TextFramed(index.ToString(), 0, new Vector2((GlossWidth + SpecularStrengthWidth) * ImGuiHelpers.GlobalScale + _spacing, 0),
+            borderColor: ImGui.GetColorU32(ImGuiCol.Text));
     }
 
     private void DrawSingleRow(Design design)
@@ -55,11 +55,11 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
         {
             using var id = ImRaii.PushId(i);
             var (idx, value) = design.Materials[i];
-            var       key = MaterialValueIndex.FromKey(idx);
+            var key = MaterialValueIndex.FromKey(idx);
 
             DrawName(key);
             ImGui.SameLine(0, _spacing);
-            DeleteButton(design, key, ref i); 
+            DeleteButton(design, key, ref i);
             ImGui.SameLine(0, _spacing);
             CopyButton(value.Value);
             ImGui.SameLine(0, _spacing);
@@ -91,7 +91,7 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
             PasteButton(design, key);
             ImGui.SameLine(0, _spacing);
             EnabledToggle(design, key, value.Enabled);
-            
+
 
             DrawRow(design, key, value.Value, value.Revert);
             ImGui.SameLine(0, _spacing);
@@ -103,9 +103,9 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
     private void DeleteButton(Design design, MaterialValueIndex index, ref int idx)
     {
         var deleteEnabled = _config.DeleteDesignModifier.IsActive();
-        if (!ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), _buttonSize,
-                $"Delete this color row.{(deleteEnabled ? string.Empty : $"\nHold {_config.DeleteDesignModifier} to delete.")}",
-                !deleteEnabled || design.WriteProtected(), true))
+        if (!ImUtf8.IconButton(FontAwesomeIcon.Trash,
+                $"Delete this color row.{(deleteEnabled ? string.Empty : $"\nHold {_config.DeleteDesignModifier} to delete.")}", disabled:
+                !deleteEnabled || design.WriteProtected()))
             return;
 
         _designManager.ChangeMaterialValue(design, index, null);
@@ -114,31 +114,29 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
 
     private void CopyButton(in ColorRow row)
     {
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), _buttonSize, "Export this row to your clipboard.",
-                false,
-                true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Export this row to your clipboard."u8))
             ColorRowClipboard.Row = row;
     }
 
     private void PasteButton(Design design, MaterialValueIndex index)
     {
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), _buttonSize,
-                "Import an exported row from your clipboard onto this row.", !ColorRowClipboard.IsSet || design.WriteProtected(), true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported row from your clipboard onto this row."u8,
+                disabled: !ColorRowClipboard.IsSet || design.WriteProtected()))
             _designManager.ChangeMaterialValue(design, index, ColorRowClipboard.Row);
     }
 
     private void EnabledToggle(Design design, MaterialValueIndex index, bool enabled)
     {
-        if (ImGui.Checkbox("Enabled", ref enabled))
+        if (ImUtf8.Checkbox("Enabled"u8, ref enabled))
             _designManager.ChangeApplyMaterialValue(design, index, enabled);
     }
 
     private void RevertToggle(Design design, MaterialValueIndex index, bool revert)
     {
-        if (ImGui.Checkbox("Revert", ref revert))
+        if (ImUtf8.Checkbox("Revert"u8, ref revert))
             _designManager.ChangeMaterialRevert(design, index, revert);
-        ImGuiUtil.HoverTooltip(
-            "If this is checked, Glamourer will try to revert the advanced dye row to its game state instead of applying a specific row.");
+        ImUtf8.HoverTooltip(
+            "If this is checked, Glamourer will try to revert the advanced dye row to its game state instead of applying a specific row."u8);
     }
 
     public void DrawNew(Design design)
@@ -149,41 +147,38 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
                 MaterialIndex = (byte)_newMaterialIdx,
                 RowIndex = (byte)_newRowIdx,
             };
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        ImUtf8.SameLineInner();
         DrawMaterialIdxDrag();
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        ImUtf8.SameLineInner();
         DrawRowIdxDrag();
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        ImUtf8.SameLineInner();
         var exists = design.GetMaterialDataRef().TryGetValue(_newKey, out _);
-        if (ImGuiUtil.DrawDisabledButton("Add New Row", Vector2.Zero, 
-                exists ? "The selected advanced dye row already exists." : "Add the selected advanced dye row.", exists || design.WriteProtected()))
+        if (ImUtf8.ButtonEx("Add New Row"u8,
+                exists ? "The selected advanced dye row already exists."u8 : "Add the selected advanced dye row."u8, Vector2.Zero,
+                exists || design.WriteProtected()))
             _designManager.ChangeMaterialValue(design, _newKey, ColorRow.Empty);
     }
 
     private void DrawMaterialIdxDrag()
     {
-        _newMaterialIdx += 1;
-        ImGui.SetNextItemWidth(ImGui.CalcTextSize("Material #000").X);
-        if (ImGui.DragInt("##Material", ref _newMaterialIdx, 0.01f, 1, MaterialService.MaterialsPerModel, "Material #%i"))
+        ImGui.SetNextItemWidth(ImUtf8.CalcTextSize("Material AA"u8).X);
+        var format = $"Material {(char)('A' + _newMaterialIdx)}";
+        if (ImUtf8.DragScalar("##Material"u8, ref _newMaterialIdx, format, 0, MaterialService.MaterialsPerModel - 1, 0.01f))
         {
-            _newMaterialIdx = Math.Clamp(_newMaterialIdx, 1, MaterialService.MaterialsPerModel);
-            _newKey         = _newKey with { MaterialIndex = (byte)(_newMaterialIdx - 1) };
+            _newMaterialIdx = Math.Clamp(_newMaterialIdx, 0, MaterialService.MaterialsPerModel - 1);
+            _newKey         = _newKey with { MaterialIndex = (byte)_newMaterialIdx };
         }
-
-        _newMaterialIdx -= 1;
     }
 
     private void DrawRowIdxDrag()
     {
-        _newRowIdx += 1;
-        ImGui.SetNextItemWidth(ImGui.CalcTextSize("Row #0000").X);
-        if (ImGui.DragInt("##Row", ref _newRowIdx, 0.01f, 1, ColorTable.NumRows, "Row #%i"))
+        ImGui.SetNextItemWidth(ImUtf8.CalcTextSize("Row 0000"u8).X);
+        var format = $"Row {_newRowIdx / 2 + 1}{(char)(_newRowIdx % 2 + 'A')}";
+        if (ImUtf8.DragScalar("##Row"u8, ref _newRowIdx, format, 0, ColorTable.NumRows - 1, 0.01f))
         {
-            _newRowIdx = Math.Clamp(_newRowIdx, 1, ColorTable.NumRows);
-            _newKey    = _newKey with { RowIndex = (byte)(_newRowIdx - 1) };
+            _newRowIdx = Math.Clamp(_newRowIdx, 0, ColorTable.NumRows - 1);
+            _newKey    = _newKey with { RowIndex = (byte)_newRowIdx };
         }
-
-        _newRowIdx -= 1;
     }
 
     private void DrawRow(Design design, MaterialValueIndex index, in ColorRow row, bool disabled)
@@ -191,18 +186,18 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
         var tmp = row;
         using var _ = ImRaii.Disabled(disabled);
         var applied = ImGuiUtil.ColorPicker("##diffuse", "Change the diffuse value for this row.", row.Diffuse, v => tmp.Diffuse = v, "D");
-        ImGui.SameLine(0, _spacing);
+        ImUtf8.SameLineInner();
         applied |= ImGuiUtil.ColorPicker("##specular", "Change the specular value for this row.", row.Specular, v => tmp.Specular = v, "S");
-        ImGui.SameLine(0, _spacing);
+        ImUtf8.SameLineInner();
         applied |= ImGuiUtil.ColorPicker("##emissive", "Change the emissive value for this row.", row.Emissive, v => tmp.Emissive = v, "E");
-        ImGui.SameLine(0, _spacing);
+        ImUtf8.SameLineInner();
         ImGui.SetNextItemWidth(GlossWidth * ImGuiHelpers.GlobalScale);
         applied |= AdvancedDyePopup.DragGloss(ref tmp.GlossStrength);
-        ImGuiUtil.HoverTooltip("Change the gloss strength for this row.");
-        ImGui.SameLine(0, _spacing);
+        ImUtf8.HoverTooltip("Change the gloss strength for this row."u8);
+        ImUtf8.SameLineInner();
         ImGui.SetNextItemWidth(SpecularStrengthWidth * ImGuiHelpers.GlobalScale);
         applied |= AdvancedDyePopup.DragSpecularStrength(ref tmp.SpecularStrength);
-        ImGuiUtil.HoverTooltip("Change the specular strength for this row.");
+        ImUtf8.HoverTooltip("Change the specular strength for this row."u8);
         if (applied)
             _designManager.ChangeMaterialValue(design, index, tmp);
     }
