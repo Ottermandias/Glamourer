@@ -35,7 +35,8 @@ public sealed class IpcProviders : IDisposable, IApiService
                 (a, b, c, d, e, f) => (int)api.Items.SetItem(a, (ApiEquipSlot)b, c, [d], e, (ApplyFlag)f)),
             new FuncProvider<string, byte, ulong, byte, uint, ulong, int>(pi, IpcSubscribers.Legacy.SetItemName.Label,
                 (a, b, c, d, e, f) => (int)api.Items.SetItemName(a, (ApiEquipSlot)b, c, [d], e, (ApplyFlag)f)),
-
+            IpcSubscribers.SetBonusItem.Provider(pi, api.Items),
+            IpcSubscribers.SetBonusItemName.Provider(pi, api.Items),
             IpcSubscribers.GetState.Provider(pi, api.State),
             IpcSubscribers.GetStateName.Provider(pi, api.State),
             IpcSubscribers.GetStateBase64.Provider(pi, api.State),

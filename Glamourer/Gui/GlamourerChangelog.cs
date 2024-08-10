@@ -91,6 +91,7 @@ public class GlamourerChangelog
             .RegisterEntry("Glamourer now has a Support Info button akin to Penumbra's.")
             .RegisterEntry("Glamourer now respects write protection on designs better.")
             .RegisterEntry("The advanced dye window popup should now get focused when it is opening even in detached state.")
+            .RegisterEntry("Added API and IPC for bonus items, i.e. the Glasses slot.")
             .RegisterHighlight("You can now display your characters height in Corgis or Olympic Swimming Pools.")
             .RegisterEntry("Fixed some issues with advanced customizations and dyes applied via IPC. (1.2.3.2)")
             .RegisterEntry(

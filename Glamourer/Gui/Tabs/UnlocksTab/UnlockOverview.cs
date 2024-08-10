@@ -7,6 +7,7 @@ using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui.Raii;
+using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using ImGuiClip = OtterGui.ImGuiClip;
@@ -200,11 +201,12 @@ public class UnlockOverview(
                 using var tt = ImRaii.Tooltip();
                 if (size.X >= iconSize.X && size.Y >= iconSize.Y)
                     ImGui.Image(icon, size);
-                ImGui.TextUnformatted(item.Name);
-                ImGui.TextUnformatted($"{item.Slot.ToName()}");
-                ImGui.TextUnformatted($"{item.ModelId.Id}-{item.Variant.Id}");
+                ImUtf8.Text(item.Name);
+                ImUtf8.Text($"{item.Slot.ToName()}");
+                ImUtf8.Text($"{item.Id.Id}");
+                ImUtf8.Text($"{item.ModelId.Id}-{item.Variant.Id}");
                 // TODO
-                ImGui.TextUnformatted("Always Unlocked"); // : $"Unlocked on {time:g}" : "Not Unlocked.");
+                ImUtf8.Text("Always Unlocked"); // : $"Unlocked on {time:g}" : "Not Unlocked.");
                 // TODO
                 //tooltip.CreateTooltip(item, string.Empty, false);
             }

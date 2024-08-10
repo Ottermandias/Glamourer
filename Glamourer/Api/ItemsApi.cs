@@ -69,6 +69,64 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
+    public GlamourerApiEc SetBonusItem(int objectIndex, ApiBonusSlot slot, ulong bonusItemId, uint key, ApplyFlag flags)
+    {
+        var args = ApiHelpers.Args("Index", objectIndex, "Slot", slot, "ID", bonusItemId, "Key", key, "Flags", flags);
+        if (!ResolveBonusItem(slot, bonusItemId, out var item))
+            return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
+
+        if (helpers.FindState(objectIndex) is not { } state)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
+
+        if (!state.ModelData.IsHuman)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotHuman, args);
+
+        if (!state.CanUnlock(key))
+            return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
+
+        var settings = new ApplySettings(Source: flags.HasFlag(ApplyFlag.Once) ? StateSource.IpcManual : StateSource.IpcFixed, Key: key);
+        stateManager.ChangeBonusItem(state, item.Slot, item, settings);
+        ApiHelpers.Lock(state, key, flags);
+        return GlamourerApiEc.Success;
+    }
+
+    public GlamourerApiEc SetBonusItemName(string playerName, ApiBonusSlot slot, ulong bonusItemId, uint key, ApplyFlag flags)
+    {
+        var args = ApiHelpers.Args("Name", playerName, "Slot", slot, "ID", bonusItemId, "Key", key, "Flags", flags);
+        if (!ResolveBonusItem(slot, bonusItemId, out var item))
+            return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
+
+        var settings    = new ApplySettings(Source: flags.HasFlag(ApplyFlag.Once) ? StateSource.IpcManual : StateSource.IpcFixed, Key: key);
+        var anyHuman    = false;
+        var anyFound    = false;
+        var anyUnlocked = false;
+        foreach (var state in helpers.FindStates(playerName))
+        {
+            anyFound = true;
+            if (!state.ModelData.IsHuman)
+                continue;
+
+            anyHuman = true;
+            if (!state.CanUnlock(key))
+                continue;
+
+            anyUnlocked = true;
+            stateManager.ChangeBonusItem(state, item.Slot, item, settings);
+            ApiHelpers.Lock(state, key, flags);
+        }
+
+        if (!anyFound)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
+
+        if (!anyHuman)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotHuman, args);
+
+        if (!anyUnlocked)
+            return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
+
+        return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
     private bool ResolveItem(ApiEquipSlot apiSlot, ulong itemId, out EquipItem item)
     {
         var id   = (CustomItemId)itemId;
@@ -78,5 +136,16 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
 
         item = itemManager.Resolve(slot, id);
         return item.Valid;
+    }
+
+    private bool ResolveBonusItem(ApiBonusSlot apiSlot, ulong itemId, out BonusItem item)
+    {
+        var slot = apiSlot switch
+        {
+            ApiBonusSlot.Glasses => BonusItemFlag.Glasses,
+            _                    => BonusItemFlag.Unknown,
+        };
+
+        return itemManager.IsBonusItemValid(slot, (BonusItemId)itemId, out item);
     }
 }

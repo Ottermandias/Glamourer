@@ -19,7 +19,8 @@ public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiServic
     private ApplyFlag      _flags = ApplyFlagEx.DesignDefault;
     private CustomItemId   _customItemId;
     private StainId        _stainId;
-    private EquipSlot      _slot = EquipSlot.Head;
+    private EquipSlot      _slot      = EquipSlot.Head;
+    private BonusItemFlag  _bonusSlot = BonusItemFlag.Glasses;
     private GlamourerApiEc _lastError;
 
     public void Draw()
@@ -47,6 +48,16 @@ public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiServic
         if (ImGui.Button("Set##Name"))
             _lastError = new SetItemName(pluginInterface).Invoke(_gameObjectName, (ApiEquipSlot)_slot, _customItemId.Id, [_stainId.Id], _key,
                 _flags);
+
+        IpcTesterHelpers.DrawIntro(SetBonusItem.Label);
+        if (ImGui.Button("Set##BonusIdx"))
+            _lastError = new SetBonusItem(pluginInterface).Invoke(_gameObjectIndex, ToApi(_bonusSlot), _customItemId.Id, _key,
+                _flags);
+
+        IpcTesterHelpers.DrawIntro(SetBonusItemName.Label);
+        if (ImGui.Button("Set##BonusName"))
+            _lastError = new SetBonusItemName(pluginInterface).Invoke(_gameObjectName, ToApi(_bonusSlot), _customItemId.Id, _key,
+                _flags);
     }
 
     private void DrawItemInput()
@@ -57,6 +68,7 @@ public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiServic
         if (ImGuiUtil.InputUlong("Custom Item ID", ref tmp))
             _customItemId = tmp;
         EquipSlotCombo.Draw("Equip Slot", string.Empty, ref _slot, width);
+        BonusSlotCombo.Draw("Bonus Slot", string.Empty, ref _bonusSlot, width);
         var value = (int)_stainId.Id;
         ImGui.SetNextItemWidth(width);
         if (ImGui.InputInt("Stain ID", ref value, 1, 3))
@@ -65,4 +77,11 @@ public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiServic
             _stainId = (StainId)value;
         }
     }
+
+    private static ApiBonusSlot ToApi(BonusItemFlag slot)
+        => slot switch
+        {
+            BonusItemFlag.Glasses => ApiBonusSlot.Glasses,
+            _                     => ApiBonusSlot.Unknown,
+        };
 }
