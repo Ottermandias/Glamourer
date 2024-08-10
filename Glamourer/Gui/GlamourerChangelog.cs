@@ -56,7 +56,7 @@ public class GlamourerChangelog
     }
 
     private static void Add1_3_1_0(Changelog log)
-        => log.NextVersion("Version 1.2.3.0")
+        => log.NextVersion("Version 1.3.1.0")
             .RegisterHighlight("Glamourer is now released for Dawntrail!")
             .RegisterEntry("Added support for female Hrothgar.",  1)
             .RegisterEntry("Added support for the Glasses slot.", 1)
