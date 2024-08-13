@@ -59,7 +59,7 @@ public unsafe class ScalingService : IDisposable
 
     private void SetupOrnamentDetour(Ornament* ornament, uint* unk1, float* unk2)
     {
-        var character = ornament->Character.GetParentCharacter();
+        var character = ornament->GetParentCharacter();
         if (character == null)
         {
             _setupOrnamentHook.Original(ornament, unk1, unk2);

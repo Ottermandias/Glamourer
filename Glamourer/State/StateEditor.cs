@@ -251,7 +251,7 @@ public class StateEditor(
 
         var actors = Applier.ChangeMetaState(state, index, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
-            $"Set Head Gear Visibility in state {state.Identifier.Incognito(null)} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set {index.ToName()} in state {state.Identifier.Incognito(null)} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Other, settings.Source, state, actors, new MetaTransaction(index, old, value));
     }
 

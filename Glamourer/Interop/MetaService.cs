@@ -61,7 +61,9 @@ public unsafe class MetaService : IDisposable
         if (!actor.IsCharacter)
             return;
 
+        var old = actor.AsCharacter->DrawData.IsWeaponHidden;
         _hideWeaponsHook.Original(&actor.AsCharacter->DrawData, (byte)(value ? 0 : 1));
+        actor.AsCharacter->DrawData.IsWeaponHidden = old;
     }
 
     private void HideHatDetour(DrawDataContainer* drawData, uint id, byte value)

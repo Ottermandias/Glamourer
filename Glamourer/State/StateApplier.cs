@@ -247,8 +247,13 @@ public class StateApplier(
             }
             case MetaIndex.WeaponState:
             {
-                foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-                    _metaService.SetWeaponState(actor, value);
+                // Only apply to the GPose character because otherwise we get some weird incompatibility when leaving GPose.
+                if (_objects.IsInGPose)
+                    foreach (var actor in data.Objects.Where(a => a.IsGPoseOrCutscene))
+                        _metaService.SetWeaponState(actor, value);
+                else
+                    foreach (var actor in data.Objects.Where(a => a.IsCharacter))
+                        _metaService.SetWeaponState(actor, value);
                 return;
             }
             case MetaIndex.VisorState:
