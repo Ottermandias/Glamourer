@@ -112,7 +112,7 @@ public unsafe struct DesignData
         => slot switch
         {
             // @formatter:off
-            BonusItemFlag.Glasses => new BonusItem(_nameGlasses, _iconIds[12], _bonusIds[0], _bonusModelIds[0], _bonusVariants[0], BonusItemFlag.Glasses),
+            BonusItemFlag.Glasses => Penumbra.GameData.Structs.BonusItem.FromIds(_bonusIds[0], _iconIds[12], _bonusModelIds[0], _bonusVariants[0], BonusItemFlag.Glasses, _nameGlasses),
             _ => Penumbra.GameData.Structs.BonusItem.Empty(slot),
             // @formatter:on
         };

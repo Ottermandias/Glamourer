@@ -280,7 +280,7 @@ public class DesignBase
             var item = _designData.BonusItem(slot);
             ret[slot.ToString()] = new JObject()
             {
-                ["BonusId"] = item.Id.Id,
+                ["BonusId"] = item.CustomId.Id,
                 ["Apply"]   = DoApplyBonusItem(slot),
             };
         }
@@ -431,7 +431,7 @@ public class DesignBase
 
     protected static void LoadBonus(ItemManager items, DesignBase design, JToken? json)
     {
-        if (json is not JObject obj)
+        if (json is not JObject)
         {
             design.Application.BonusItem = 0;
             return;
@@ -439,8 +439,7 @@ public class DesignBase
 
         foreach (var slot in BonusExtensions.AllFlags)
         {
-            var itemJson = json[slot.ToString()] as JObject;
-            if (itemJson == null)
+            if (json[slot.ToString()] is not JObject itemJson)
             {
                 design.Application.BonusItem &= ~slot;
                 design.GetDesignDataRef().SetBonusItem(slot, BonusItem.Empty(slot));
@@ -448,7 +447,7 @@ public class DesignBase
             }
 
             design.SetApplyBonusItem(slot, itemJson["Apply"]?.ToObject<bool>() ?? false);
-            var id   = itemJson["BonusId"]?.ToObject<ushort>() ?? 0;
+            var id   = itemJson["BonusId"]?.ToObject<ulong>() ?? 0;
             var item = items.Resolve(slot, id);
             design.GetDesignDataRef().SetBonusItem(slot, item);
         }

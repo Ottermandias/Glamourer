@@ -139,6 +139,8 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
             "If this is checked, Glamourer will try to revert the advanced dye row to its game state instead of applying a specific row."u8);
     }
 
+    public sealed class MaterialSlotCombo; 
+
     public void DrawNew(Design design)
     {
         if (EquipSlotCombo.Draw("##slot", "Choose a slot for an advanced dye row.", ref _newSlot))

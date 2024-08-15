@@ -132,15 +132,47 @@ public class ItemManager
         if (index == uint.MaxValue)
             return new BonusItem($"Invalid ({id.Id}-{variant})", 0, 0, id, variant, slot);
 
-        if (id.Id == 0)
-            return BonusItem.Empty(slot);
+        var item = ObjectIdentification.Identify(id, variant, slot)
+            .FirstOrDefault(BonusItem.FromIds(BonusItemId.Invalid, 0, id, variant, slot));
+        if (item.Id != BonusItemId.Invalid)
+            return item;
 
-        return ObjectIdentification.Identify(id, variant, slot)
-            .FirstOrDefault(new BonusItem($"Invalid ({id.Id}-{variant})", 0, 0, id, variant, slot));
+        if (slot is BonusItemFlag.Glasses)
+        {
+            var headItem = ObjectIdentification.Identify(id, 0, variant, EquipSlot.Head).FirstOrDefault();
+            if (headItem.Valid)
+                return BonusItem.FromIds(BonusItemId.Invalid, headItem.IconId, id, variant, slot, $"{headItem.Name} ({EquipSlot.Head.ToName()}: {id}-{variant})");
+        }
+
+        return item;
     }
 
     public BonusItem Resolve(BonusItemFlag slot, BonusItemId id)
         => IsBonusItemValid(slot, id, out var item) ? item : new BonusItem($"Invalid ({id.Id})", 0, id, 0, 0, slot);
+
+    public BonusItem Resolve(BonusItemFlag slot, CustomItemId id)
+    {
+        // Only from early designs as migration.
+        if (!id.IsBonusItem)
+        {
+            IsBonusItemValid(slot, (BonusItemId)id.Id, out var item);
+            return item;
+        }
+
+        if (!id.IsCustom)
+        {
+            if (IsBonusItemValid(slot, id.BonusItem, out var item))
+                return item;
+
+            return BonusItem.Empty(slot);
+        }
+
+        var (model, variant, slot2) = id.SplitBonus;
+        if (slot != slot2)
+            return BonusItem.Empty(slot);
+
+        return Identify(slot, model, variant);
+    }
 
     /// <summary> Return the default offhand for a given mainhand, that is for both handed weapons, return the correct offhand part, and for everything else Nothing. </summary>
     public EquipItem GetDefaultOffhand(EquipItem mainhand)

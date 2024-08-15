@@ -175,7 +175,7 @@ public class DesignEditor(
     public void ChangeBonusItem(object data, BonusItemFlag slot, BonusItem item, ApplySettings settings = default)
     {
         var design = (Design)data;
-        if (!Items.IsBonusItemValid(slot, item.Id, out item))
+        if (item.Slot != slot)
             return;
 
         var oldItem = design.DesignData.BonusItem(slot);
