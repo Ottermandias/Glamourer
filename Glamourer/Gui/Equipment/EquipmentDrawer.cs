@@ -27,7 +27,6 @@ public class EquipmentDrawer
     private readonly ItemCombo[]                            _itemCombo;
     private readonly BonusItemCombo[]                       _bonusItemCombo;
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
-    private readonly CodeService                            _codes;
     private readonly TextureService                         _textures;
     private readonly Configuration                          _config;
     private readonly GPoseService                           _gPose;
@@ -38,11 +37,10 @@ public class EquipmentDrawer
 
     private Stain? _draggedStain;
 
-    public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, CodeService codes, TextureService textures,
+    public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, TextureService textures,
         Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes)
     {
         _items          = items;
-        _codes          = codes;
         _textures       = textures;
         _config         = config;
         _gPose          = gPose;
@@ -99,8 +97,6 @@ public class EquipmentDrawer
 
         if (_config.SmallEquip)
             DrawEquipSmall(equipDrawData);
-        else if (!equipDrawData.Locked && _codes.Enabled(CodeService.CodeFlag.Artisan))
-            DrawEquipArtisan(equipDrawData);
         else
             DrawEquipNormal(equipDrawData);
     }
@@ -137,8 +133,6 @@ public class EquipmentDrawer
 
         if (_config.SmallEquip)
             DrawWeaponsSmall(mainhand, offhand, allWeapons);
-        else if (!mainhand.Locked && _codes.Enabled(CodeService.CodeFlag.Artisan))
-            DrawWeaponsArtisan(mainhand, offhand);
         else
             DrawWeaponsNormal(mainhand, offhand, allWeapons);
     }
@@ -185,116 +179,6 @@ public class EquipmentDrawer
 
         return change;
     }
-
-    #region Artisan
-
-    private void DrawEquipArtisan(EquipDrawData data)
-    {
-        DrawStainArtisan(data);
-        ImGui.SameLine();
-        DrawArmorArtisan(data);
-        if (!data.DisplayApplication)
-            return;
-
-        ImGui.SameLine();
-        DrawApply(data);
-        ImGui.SameLine();
-        DrawApplyStain(data);
-    }
-
-    private void DrawWeaponsArtisan(in EquipDrawData mainhand, in EquipDrawData offhand)
-    {
-        using (var _ = ImRaii.PushId(0))
-        {
-            DrawStainArtisan(mainhand);
-            ImGui.SameLine();
-            DrawWeapon(mainhand);
-        }
-
-        using (var _ = ImRaii.PushId(1))
-        {
-            DrawStainArtisan(offhand);
-            ImGui.SameLine();
-            DrawWeapon(offhand);
-        }
-
-        return;
-
-        void DrawWeapon(in EquipDrawData current)
-        {
-            int setId   = current.CurrentItem.PrimaryId.Id;
-            int type    = current.CurrentItem.SecondaryId.Id;
-            int variant = current.CurrentItem.Variant.Id;
-            ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
-            if (ImGui.InputInt("##setId", ref setId, 0, 0))
-            {
-                var newSetId = (PrimaryId)Math.Clamp(setId, 0, ushort.MaxValue);
-                if (newSetId.Id != current.CurrentItem.PrimaryId.Id)
-                    current.SetItem(_items.Identify(current.Slot, newSetId, current.CurrentItem.SecondaryId, current.CurrentItem.Variant));
-            }
-
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
-            if (ImGui.InputInt("##type", ref type, 0, 0))
-            {
-                var newType = (SecondaryId)Math.Clamp(type, 0, ushort.MaxValue);
-                if (newType.Id != current.CurrentItem.SecondaryId.Id)
-                    current.SetItem(_items.Identify(current.Slot, current.CurrentItem.PrimaryId, newType, current.CurrentItem.Variant));
-            }
-
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
-            if (ImGui.InputInt("##variant", ref variant, 0, 0))
-            {
-                var newVariant = (Variant)Math.Clamp(variant, 0, byte.MaxValue);
-                if (newVariant.Id != current.CurrentItem.Variant.Id)
-                    current.SetItem(_items.Identify(current.Slot, current.CurrentItem.PrimaryId, current.CurrentItem.SecondaryId,
-                        newVariant));
-            }
-        }
-    }
-
-    /// <summary> Draw an input for stain that can set arbitrary values instead of choosing valid stains. </summary>
-    private static void DrawStainArtisan(EquipDrawData data)
-    {
-        foreach (var (stain, index) in data.CurrentStains.WithIndex())
-        {
-            using var id      = ImUtf8.PushId(index);
-            int       stainId = stain.Id;
-            ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
-            if (!ImGui.InputInt("##stain", ref stainId, 0, 0))
-                return;
-
-            var newStainId = (StainId)Math.Clamp(stainId, 0, byte.MaxValue);
-            if (newStainId != stain.Id)
-                data.SetStains(data.CurrentStains.With(index, newStainId));
-        }
-    }
-
-    /// <summary> Draw an input for armor that can set arbitrary values instead of choosing items. </summary>
-    private void DrawArmorArtisan(EquipDrawData data)
-    {
-        int setId   = data.CurrentItem.PrimaryId.Id;
-        int variant = data.CurrentItem.Variant.Id;
-        ImGui.SetNextItemWidth(80 * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt("##setId", ref setId, 0, 0))
-        {
-            var newSetId = (PrimaryId)Math.Clamp(setId, 0, ushort.MaxValue);
-            if (newSetId.Id != data.CurrentItem.PrimaryId.Id)
-                data.SetItem(_items.Identify(data.Slot, newSetId, data.CurrentItem.Variant));
-        }
-
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt("##variant", ref variant, 0, 0))
-        {
-            var newVariant = (byte)Math.Clamp(variant, 0, byte.MaxValue);
-            if (newVariant != data.CurrentItem.Variant)
-                data.SetItem(_items.Identify(data.Slot, data.CurrentItem.PrimaryId, newVariant));
-        }
-    }
-
-    #endregion
 
     #region Small
 

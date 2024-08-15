@@ -1,7 +1,5 @@
 ﻿using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
-using Dalamud.Interface.Utility;
-using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Glamourer.GameData;
 using Glamourer.Services;
@@ -17,7 +15,6 @@ namespace Glamourer.Gui.Customization;
 public partial class CustomizationDrawer(
     ITextureProvider textures,
     CustomizeService _service,
-    CodeService _codes,
     Configuration _config,
     FavoriteManager _favorites,
     HeightService _heightService)
@@ -119,9 +116,6 @@ public partial class CustomizationDrawer(
 
         try
         {
-            if (_codes.Enabled(CodeService.CodeFlag.Artisan))
-                return DrawArtisan();
-
             DrawRaceGenderSelector();
             DrawBodyType();
 
@@ -154,31 +148,6 @@ public partial class CustomizationDrawer(
             ImGuiUtil.TextWrapped(_terminate.ToString());
             return false;
         }
-    }
-
-    private unsafe bool DrawArtisan()
-    {
-        for (var i = 0; i < CustomizeArray.Size; ++i)
-        {
-            using var id    = ImRaii.PushId(i);
-            int       value = _customize.Data[i];
-            ImGui.SetNextItemWidth(40 * ImGuiHelpers.GlobalScale);
-            if (ImGui.InputInt(string.Empty, ref value, 0, 0))
-            {
-                var newValue = (byte)Math.Clamp(value, 0, byte.MaxValue);
-                if (newValue != _customize.Data[i])
-                    foreach (var flag in Enum.GetValues<CustomizeIndex>())
-                    {
-                        var (j, _) = flag.ToByteAndMask();
-                        if (j == i)
-                            Changed |= flag.ToFlag();
-                    }
-
-                _customize.Data[i] = newValue;
-            }
-        }
-
-        return Changed != 0;
     }
 
     private void UpdateSizes()
