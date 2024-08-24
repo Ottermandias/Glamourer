@@ -340,14 +340,14 @@ public unsafe class FunModule : IDisposable
 
     private void SetRandomDye(ref CharacterArmor armor)
     {
-        var stainIdx = _rng.Next(0, _stains.Length - 1);
+        var stainIdx = _rng.Next(0, _stains.Length);
         armor.Stains = _stains[stainIdx];
     }
 
     private void SetRandomItem(EquipSlot slot, ref CharacterArmor armor)
     {
         var list = _items.ItemData.ByType[slot.ToEquipType()];
-        var rng  = _rng.Next(0, list.Count - 1);
+        var rng  = _rng.Next(0, list.Count);
         var item = list[rng];
         armor.Set     = item.PrimaryId;
         armor.Variant = item.Variant;
@@ -385,7 +385,7 @@ public unsafe class FunModule : IDisposable
     {
         armor = slot switch
         {
-            EquipSlot.Body => DolphinBodies[_rng.Next(0, DolphinBodies.Count - 1)],
+            EquipSlot.Body => DolphinBodies[_rng.Next(0, DolphinBodies.Count)],
             EquipSlot.Head => new CharacterArmor(5040, 1, StainIds.None),
             _              => armor,
         };
@@ -440,7 +440,7 @@ public unsafe class FunModule : IDisposable
             if (index is CustomizeIndex.Face || !set.IsAvailable(index))
                 continue;
 
-            var valueIdx = _rng.Next(0, set.Count(index) - 1);
+            var valueIdx = _rng.Next(0, set.Count(index));
             customize[index] = set.Data(index, valueIdx).Value;
         }
     }
