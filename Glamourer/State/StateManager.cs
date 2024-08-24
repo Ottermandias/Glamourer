@@ -311,7 +311,8 @@ public sealed class StateManager(
         foreach (var flag in CustomizationExtensions.All)
             state.Sources[flag] = StateSource.Game;
 
-        state.ModelData = state.BaseData;
+        state.ModelData.ModelId   = state.BaseData.ModelId;
+        state.ModelData.Customize = state.BaseData.Customize;
         var actors = ActorData.Invalid;
         if (source is not StateSource.Game)
             actors = Applier.ChangeCustomize(state, true);
@@ -333,6 +334,13 @@ public sealed class StateManager(
                 state.ModelData.SetItem(slot, state.BaseData.Item(slot));
                 state.ModelData.SetStain(slot, state.BaseData.Stain(slot));
             }
+        }
+
+        foreach (var slot in BonusExtensions.AllFlags)
+        {
+            state.Sources[slot] = StateSource.Game;
+            if (source is not StateSource.Game)
+                state.ModelData.SetBonusItem(slot, state.BaseData.BonusItem(slot));
         }
 
         var actors = ActorData.Invalid;
