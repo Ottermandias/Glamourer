@@ -1,4 +1,4 @@
-﻿using Glamourer.Designs;
+using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -168,12 +168,23 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
         {
             case ChangedItemType.ItemOffhand:
             case ChangedItemType.Item:
+            {
                 if (!_items.ItemData.TryGetValue(id, type is ChangedItemType.Item ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
                     return;
 
                 CreateTooltip(item, "[Glamourer] ", false);
                 return;
+            }
+            case ChangedItemType.CustomArmor:
+            {
+                var (model, variant, slot) = IdentifiedItem.Split(id);
+                var item = _items.Identify(slot.ToSlot(), model, variant);
+                if (item.Valid)
+                    CreateTooltip(item, "[Glamourer] ", false);
+                return;
+            }
             case ChangedItemType.Customization:
+            {
                 var (race, gender, index, value) = IdentifiedCustomization.Split(id);
                 if (!_objects.Player.Model.IsHuman)
                     return;
@@ -183,6 +194,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
                     ImGui.TextUnformatted("[Glamourer] Right-Click to apply to current actor.");
 
                 return;
+            }
         }
     }
 
@@ -212,17 +224,29 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
         {
             case ChangedItemType.Item:
             case ChangedItemType.ItemOffhand:
+            {
                 if (!_items.ItemData.TryGetValue(id, type is ChangedItemType.Item ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
                     return;
 
                 ApplyItem(state, item);
                 return;
+            }
+            case ChangedItemType.CustomArmor:
+            {
+                var (model, variant, slot) = IdentifiedItem.Split(id);
+                var item = _items.Identify(slot.ToSlot(), model, variant);
+                if (item.Valid)
+                    ApplyItem(state, item);
+                return;
+            }
             case ChangedItemType.Customization:
+            {
                 var (race, gender, index, value) = IdentifiedCustomization.Split(id);
                 var customize = state.ModelData.Customize;
                 if (CheckGenderRace(customize, race, gender) && VerifyValue(customize, index, value))
                     _stateManager.ChangeCustomize(state, index, value, ApplySettings.Manual);
                 return;
+            }
         }
     }
 
@@ -236,7 +260,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
         else
         {
             var oldItem = state.ModelData.Item(slot);
-            if (oldItem.ItemId != item.ItemId)
+            if (oldItem.Id != item.Id)
                 _lastItems[slot.ToIndex()] = oldItem;
         }
     }
