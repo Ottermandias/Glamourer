@@ -12,7 +12,7 @@ namespace Glamourer.Interop;
 public class ContextMenuService : IDisposable
 {
     public const int ItemSearchContextItemId = 0x1738;
-    public const int ChatLogContextItemId    = 0x948;
+    public const int ChatLogContextItemId    = 0x950;
 
     private readonly ItemManager   _items;
     private readonly IContextMenu  _contextMenu;
