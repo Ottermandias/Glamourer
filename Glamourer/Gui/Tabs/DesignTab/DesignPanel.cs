@@ -9,7 +9,6 @@ using Glamourer.GameData;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Materials;
-using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;

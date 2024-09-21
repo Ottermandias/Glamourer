@@ -330,6 +330,12 @@ public class DesignEditor(
 
         _forceFullItemOff = false;
 
+        foreach (var slot in BonusExtensions.AllFlags)
+        {
+            if (other.DoApplyBonusItem(slot))
+                ChangeBonusItem(design, slot, other.DesignData.BonusItem(slot));
+        }
+
         foreach (var slot in Enum.GetValues<CrestFlag>().Where(other.DoApplyCrest))
             ChangeCrest(design, slot, other.DesignData.Crest(slot));
 

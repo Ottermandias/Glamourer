@@ -40,13 +40,14 @@ public class DesignBase
     }
 
     /// <summary> Used when importing .cma or .chara files. </summary>
-    internal DesignBase(CustomizeService customize, in DesignData designData, EquipFlag equipFlags, CustomizeFlag customizeFlags)
+    internal DesignBase(CustomizeService customize, in DesignData designData, EquipFlag equipFlags, CustomizeFlag customizeFlags, BonusItemFlag bonusFlags)
     {
-        _designData       = designData;
-        ApplyCustomize    = customizeFlags & CustomizeFlagExtensions.AllRelevant;
-        Application.Equip = equipFlags & EquipFlagExtensions.All;
-        Application.Meta  = 0;
-        CustomizeSet      = SetCustomizationSet(customize);
+        _designData           = designData;
+        ApplyCustomize        = customizeFlags & CustomizeFlagExtensions.AllRelevant;
+        Application.Equip     = equipFlags & EquipFlagExtensions.All;
+        Application.BonusItem = bonusFlags & BonusExtensions.All;
+        Application.Meta      = 0;
+        CustomizeSet          = SetCustomizationSet(customize);
     }
 
     internal DesignBase(DesignBase clone)

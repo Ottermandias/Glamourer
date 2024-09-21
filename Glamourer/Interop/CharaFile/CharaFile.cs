@@ -13,6 +13,7 @@ public sealed class CharaFile
     public DesignData    Data = new();
     public CustomizeFlag ApplyCustomize;
     public EquipFlag     ApplyEquip;
+    public BonusItemFlag ApplyBonus;
 
     public static CharaFile ParseData(ItemManager items, string data, string? name = null)
     {
@@ -24,6 +25,7 @@ public sealed class CharaFile
         ret.Name           = jObj["Nickname"]?.ToObject<string>() ?? name ?? "New Design";
         ret.ApplyCustomize = ParseCustomize(jObj, ref ret.Data.Customize);
         ret.ApplyEquip     = ParseEquipment(items, jObj, ref ret.Data);
+        ret.ApplyBonus     = ParseBonusItems(items, jObj, ref ret.Data);
         return ret;
     }
 
@@ -45,6 +47,13 @@ public sealed class CharaFile
         return ret;
     }
 
+    private static BonusItemFlag ParseBonusItems(ItemManager items, JObject jObj, ref DesignData data)
+    {
+        BonusItemFlag ret = 0;
+        ParseBonus(items, jObj, "Glasses", "GlassesId", BonusItemFlag.Glasses, ref data, ref ret);
+        return ret;
+    }
+
     private static void ParseWeapon(ItemManager items, JObject jObj, string property, EquipSlot slot, ref DesignData data, ref EquipFlag flags)
     {
         var jTok = jObj[property];
@@ -61,6 +70,8 @@ public sealed class CharaFile
 
         data.SetItem(slot, item);
         data.SetStain(slot, new StainIds(dye));
+        if (slot is EquipSlot.MainHand)
+            data.SetItem(EquipSlot.OffHand, items.GetDefaultOffhand(item));
         flags |= slot.ToFlag();
         flags |= slot.ToStainFlag();
     }
@@ -82,6 +93,26 @@ public sealed class CharaFile
         data.SetStain(slot, new StainIds(dye));
         flags |= slot.ToFlag();
         flags |= slot.ToStainFlag();
+    }
+
+    private static void ParseBonus(ItemManager items, JObject jObj, string property, string subProperty, BonusItemFlag slot,
+        ref DesignData data, ref BonusItemFlag flags)
+    {
+        var id = jObj[property]?[subProperty]?.ToObject<int>();
+        if (id is null)
+            return;
+
+        if (id is 0)
+        {
+            data.SetBonusItem(slot, BonusItem.Empty(slot));
+            flags |= slot;
+        }
+
+        if (!items.DictBonusItems.TryGetValue((BonusItemId)id.Value, out var item) || item.Slot != slot)
+            return;
+
+        data.SetBonusItem(slot, item);
+        flags |= slot;
     }
 
     private static CustomizeFlag ParseCustomize(JObject jObj, ref CustomizeArray customize)

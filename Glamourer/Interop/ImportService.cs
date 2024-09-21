@@ -65,7 +65,7 @@ public class ImportService(CustomizeService _customizations, IDragDropManager _d
             var file = CharaFile.CharaFile.ParseData(_items, text, Path.GetFileNameWithoutExtension(path));
 
             name   = file.Name;
-            design = new DesignBase(_customizations, file.Data, file.ApplyEquip, file.ApplyCustomize);
+            design = new DesignBase(_customizations, file.Data, file.ApplyEquip, file.ApplyCustomize, file.ApplyBonus);
         }
         catch (Exception ex)
         {
@@ -95,7 +95,7 @@ public class ImportService(CustomizeService _customizations, IDragDropManager _d
                 throw new Exception();
 
             name   = file.Name;
-            design = new DesignBase(_customizations, file.Data, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant);
+            design = new DesignBase(_customizations, file.Data, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, 0);
         }
         catch (Exception ex)
         {
