@@ -3,6 +3,7 @@ using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility;
 using Glamourer.Designs;
+using Glamourer.Designs.Links;
 using Glamourer.Interop.Penumbra;
 using ImGuiNET;
 using OtterGui;
@@ -82,7 +83,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
 
     public void ApplyAll()
     {
-        foreach (var (mod, settings) in selector.Selected!.AssociatedMods)
+        foreach (var (mod, settings) in GetAllAssociatedMods(selector.Selected!))
             penumbra.SetMod(mod, settings);
     }
 
@@ -241,5 +242,27 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         ImGui.TableNextColumn();
         _modCombo.Draw("##new", currentName.IsNullOrEmpty() ? "Select new Mod..." : currentName, string.Empty,
             ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeight());
+    }
+
+    private static Dictionary<Mod, ModSettings> GetAllAssociatedMods(Design design)
+    {
+        var associatedMods = new Dictionary<Mod, ModSettings>();
+        var designLinks = design.Links;
+        
+        foreach (var (mod, settings) in designLinks.Before.SelectMany(GetAllLinkAssociatedMods))
+            associatedMods.TryAdd(mod, settings);
+
+        foreach (var (mod, settings) in design.AssociatedMods)
+            associatedMods.TryAdd(mod, settings);
+
+        foreach (var (mod, settings) in designLinks.After.SelectMany(GetAllLinkAssociatedMods))
+            associatedMods.TryAdd(mod, settings);
+
+        return associatedMods;
+    }
+
+    private static Dictionary<Mod, ModSettings> GetAllLinkAssociatedMods(DesignLink designLink)
+    {
+        return GetAllAssociatedMods(designLink.Link);
     }
 }
