@@ -117,7 +117,7 @@ public class WorldSets
         (FunEquipSet.Group.FullSet(204, 4),                                CharacterWeapon.Int(2601, 13, 1), CharacterWeapon.Int(2651, 13, 1)), // DNC, Softstepper, High Steel Chakrams
         (new FunEquipSet.Group(206, 7, 303, 3, 23, 109, 303, 3, 262, 7),   CharacterWeapon.Int(2802, 13, 1), CharacterWeapon.Empty),            // RPR, Muzhik, Deepgold War Scythe
         (new FunEquipSet.Group(20, 46, 289, 6, 342, 3, 120, 9, 342, 3),    CharacterWeapon.Int(2702, 08, 1), CharacterWeapon.Empty),            // SGE, Bookwyrm, Stonegold Milpreves
-        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 288, 5),    CharacterWeapon.Int(3101, 06, 1), CharacterWeapon.Int(3151, 6, 1)),  // VPR, Snakebite, Twinfangs
+        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 262, 8),    CharacterWeapon.Int(3101, 06, 1), CharacterWeapon.Int(3151, 6, 1)),  // VPR, Snakebite, Twinfangs
         (new FunEquipSet.Group(595, 3, 372, 3, 290, 6, 315, 3, 290, 6),    CharacterWeapon.Int(2901, 02, 1), CharacterWeapon.Int(2951, 2, 1)),  // PCT, Painter's, Round Brush
     };
 
@@ -164,7 +164,7 @@ public class WorldSets
         (FunEquipSet.Group.FullSet(204, 4),                                CharacterWeapon.Int(2601, 13, 1), CharacterWeapon.Int(2651, 13, 01)), // DNC, Softstepper, High Steel Chakrams
         (new FunEquipSet.Group(206, 7, 303, 3, 23, 109, 303, 3, 262, 7),   CharacterWeapon.Int(2802, 13, 1), CharacterWeapon.Empty),             // RPR, Muzhik, Deepgold War Scythe
         (new FunEquipSet.Group(20, 46, 289, 6, 342, 3, 120, 9, 342, 3),    CharacterWeapon.Int(2702, 08, 1), CharacterWeapon.Empty),             // SGE, Bookwyrm, Stonegold Milpreves
-        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 288, 5),    CharacterWeapon.Int(3101, 06, 1), CharacterWeapon.Int(3151, 6, 1)),   // VPR, Snakebite, Twinfangs
+        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 262, 8),    CharacterWeapon.Int(3101, 06, 1), CharacterWeapon.Int(3151, 6, 1)),   // VPR, Snakebite, Twinfangs
         (new FunEquipSet.Group(595, 3, 372, 3, 290, 6, 315, 3, 290, 6),    CharacterWeapon.Int(2901, 02, 1), CharacterWeapon.Int(2951, 2, 1)),   // PCT, Painter's, Round Brush
     };
 
@@ -211,7 +211,7 @@ public class WorldSets
         (FunEquipSet.Group.FullSet(204, 4),                                CharacterWeapon.Int(2601, 13, 1), CharacterWeapon.Int(2651, 13, 01)), // DNC, Softstepper, High Steel Chakrams
         (new FunEquipSet.Group(206, 7, 303, 3, 23, 109, 303, 3, 262, 7),   CharacterWeapon.Int(2802, 13, 1), CharacterWeapon.Empty),             // RPR, Muzhik, Deepgold War Scythe
         (new FunEquipSet.Group(20, 46, 289, 6, 342, 3, 120, 9, 342, 3),    CharacterWeapon.Int(2702, 08, 1), CharacterWeapon.Empty),             // SGE, Bookwyrm, Stonegold Milpreves
-        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 288, 5),    CharacterWeapon.Int(3101, 06, 1), CharacterWeapon.Int(3151, 6, 1)),   // VPR, Snakebite, Twinfangs
+        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 262, 8),    CharacterWeapon.Int(3101, 06, 1), CharacterWeapon.Int(3151, 6, 1)),   // VPR, Snakebite, Twinfangs
         (new FunEquipSet.Group(595, 3, 372, 3, 290, 6, 315, 3, 290, 6),    CharacterWeapon.Int(2901, 02, 1), CharacterWeapon.Int(2951, 2, 1)),   // PCT, Painter's, Round Brush
     };
 
@@ -258,7 +258,7 @@ public class WorldSets
         (FunEquipSet.Group.FullSet(543, 1),                                CharacterWeapon.Int(2601, 001, 1), CharacterWeapon.Int(2651, 01, 001)), // DNC, Dancer, Krishna
         (new FunEquipSet.Group(206, 7, 303, 3, 23, 109, 303, 3, 262, 7),   CharacterWeapon.Int(2802, 013, 1), CharacterWeapon.Empty),              // RPR, Harvester's, Demon Slicer
         (new FunEquipSet.Group(20, 46, 289, 6, 342, 3, 120, 9, 342, 3),    CharacterWeapon.Int(2702, 008, 1), CharacterWeapon.Empty),              // SGE, Therapeute's, Horkos
-        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 288, 5),    CharacterWeapon.Int(3101, 6, 1),   CharacterWeapon.Int(3151, 6, 1)),    // VPR, Snakebite, Twinfangs
+        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 262, 8),    CharacterWeapon.Int(3101, 6, 1),   CharacterWeapon.Int(3151, 6, 1)),    // VPR, Snakebite, Twinfangs
         (new FunEquipSet.Group(595, 3, 372, 3, 290, 6, 315, 3, 290, 6),    CharacterWeapon.Int(2901, 2, 1),   CharacterWeapon.Int(2951, 2, 1)),    // PCT, Painter's, Round Brush
     };
 
@@ -305,7 +305,7 @@ public class WorldSets
         (FunEquipSet.Group.FullSet(694, 1),                                CharacterWeapon.Int(2607, 001, 1), CharacterWeapon.Int(2657, 001, 001)), // DNC, Etoile, Terpsichore
         (FunEquipSet.Group.FullSet(695, 1),                                CharacterWeapon.Int(2801, 001, 1), CharacterWeapon.Empty),               // RPR, Reaper, Death Sickle
         (FunEquipSet.Group.FullSet(696, 1),                                CharacterWeapon.Int(2701, 006, 1), CharacterWeapon.Empty),               // SGE, Didact, Hagneia
-        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 288, 5),    CharacterWeapon.Int(3101, 006, 1), CharacterWeapon.Int(3151, 006, 001)), // VPR, Snakebite, Twinfangs
+        (new FunEquipSet.Group(491, 3, 288, 5, 288, 5, 288, 5, 262, 8),    CharacterWeapon.Int(3101, 006, 1), CharacterWeapon.Int(3151, 006, 001)), // VPR, Snakebite, Twinfangs
         (new FunEquipSet.Group(595, 3, 372, 3, 290, 6, 315, 3, 290, 6),    CharacterWeapon.Int(2901, 002, 1), CharacterWeapon.Int(2951, 002, 001)), // PCT, Painter's, Round Brush
     };
 
