@@ -20,7 +20,8 @@ public class UnlocksTab : Window, ITab
         _overview = overview;
         _table    = table;
 
-        IsOpen = false;
+        Flags  |= ImGuiWindowFlags.NoDocking;
+        IsOpen =  false;
         SizeConstraints = new WindowSizeConstraints()
         {
             MinimumSize = new Vector2(700, 675),
