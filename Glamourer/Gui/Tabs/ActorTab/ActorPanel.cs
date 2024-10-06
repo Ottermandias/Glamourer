@@ -16,6 +16,8 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
+using OtterGui.Text;
+using OtterGui.Text.HelperObjects;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -181,6 +183,7 @@ public class ActorPanel
         DrawCustomizationsHeader();
         DrawEquipmentHeader();
         DrawParameterHeader();
+        DrawDebugData();
     }
 
     private void DrawCustomizationsHeader()
@@ -188,7 +191,7 @@ public class ActorPanel
         var header = _state!.ModelData.ModelId == 0
             ? "Customization"
             : $"Customization (Model Id #{_state.ModelData.ModelId})###Customization";
-        using var h = ImRaii.CollapsingHeader(header);
+        using var h = ImUtf8.CollapsingHeaderId(header);
         if (!h)
             return;
 
@@ -201,7 +204,7 @@ public class ActorPanel
 
     private void DrawEquipmentHeader()
     {
-        using var h = ImRaii.CollapsingHeader("Equipment");
+        using var h = ImUtf8.CollapsingHeaderId("Equipment"u8);
         if (!h)
             return;
 
@@ -236,11 +239,45 @@ public class ActorPanel
         if (!_config.UseAdvancedParameters)
             return;
 
-        using var h = ImRaii.CollapsingHeader("Advanced Customizations");
+        using var h = ImUtf8.CollapsingHeaderId("Advanced Customizations"u8);
         if (!h)
             return;
 
         _parameterDrawer.Draw(_stateManager, _state!);
+    }
+
+    private unsafe void DrawDebugData()
+    {
+        if (!_config.DebugMode)
+            return;
+
+        using var h = ImUtf8.CollapsingHeaderId("Debug Data"u8);
+        if (!h)
+            return;
+
+        using var t = ImUtf8.Table("table"u8, 2, ImGuiTableFlags.SizingFixedFit);
+        if (!t)
+            return;
+
+        ImUtf8.DrawTableColumn("Object Index"u8);
+        DrawCopyColumn($"{string.Join(", ", _data.Objects.Select(d => d.AsObject->ObjectIndex))}");
+        ImUtf8.DrawTableColumn("Name ID"u8);
+        DrawCopyColumn($"{string.Join(", ", _data.Objects.Select(d => d.AsObject->GetNameId()))}");
+        ImUtf8.DrawTableColumn("Base ID"u8);
+        DrawCopyColumn($"{string.Join(", ", _data.Objects.Select(d => d.AsObject->BaseId))}");
+        ImUtf8.DrawTableColumn("Entity ID"u8);
+        DrawCopyColumn($"{string.Join(", ", _data.Objects.Select(d => d.AsObject->EntityId))}");
+        ImUtf8.DrawTableColumn("Owner ID"u8);
+        DrawCopyColumn($"{string.Join(", ", _data.Objects.Select(d => d.AsObject->OwnerId))}");
+        ImUtf8.DrawTableColumn("Game Object ID"u8);
+        DrawCopyColumn($"{string.Join(", ", _data.Objects.Select(d => d.AsObject->GetGameObjectId().ObjectId))}");
+
+        static void DrawCopyColumn(ref Utf8StringHandler<TextStringHandlerBuffer> text)
+        {
+            ImUtf8.DrawTableColumn(ref text);
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                ImUtf8.SetClipboardText(TextStringHandlerBuffer.Span);
+        }
     }
 
     private void DrawEquipmentMetaToggles()
