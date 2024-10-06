@@ -35,6 +35,7 @@ public class GlamourerChangelog
         AddDummy(Changelog);
         Add1_2_3_0(Changelog);
         Add1_3_1_0(Changelog);
+        Add1_3_2_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -54,6 +55,23 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_3_2_0(Changelog log)
+        => log.NextVersion("Version 1.3.2.0")
+            .RegisterEntry("Fixed an issue with weapon hiding when leaving GPose or changing zones.")
+            .RegisterEntry("Added support for unnamed items to be previewed from Penumbra.")
+            .RegisterEntry("Item combos filters now check if the model string starts with the current filter, instead of checking if the primary ID contains the current filter.")
+            .RegisterEntry("Improved the handling of bonus items (glasses) in designs.")
+            .RegisterEntry("Imported .chara files now import bonus items.")
+            .RegisterEntry("Added a Debug Data rider in the Actors tab that is visible if Debug Mode is enabled and (currently) contains some IDs.")
+            .RegisterEntry("Fixed bonus items not reverting correctly in some cases.")
+            .RegisterEntry("Fixed an issue with the RNG in cheat codes and events skipping some possible entries.")
+            .RegisterEntry("Fixed the chat log context menu for glamourer Try-On.")
+            .RegisterEntry("Fixed some issues with cheat code sets.")
+            .RegisterEntry("Made the popped out Advanced Dye Window and Unlocks Window non-docking as that caused issues when docked to the main Glamourer window.")
+            .RegisterEntry("Refreshed NPC name associations.")
+            .RegisterEntry("Removed a now useless cheat code.")
+            .RegisterEntry("Added API for Bonus Items. (1.3.1.1)");
 
     private static void Add1_3_1_0(Changelog log)
         => log.NextVersion("Version 1.3.1.0")
