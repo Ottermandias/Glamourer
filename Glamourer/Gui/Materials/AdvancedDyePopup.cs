@@ -181,7 +181,8 @@ public sealed unsafe class AdvancedDyePopup(
         var flags = ImGuiWindowFlags.NoFocusOnAppearing
           | ImGuiWindowFlags.NoCollapse
           | ImGuiWindowFlags.NoDecoration
-          | ImGuiWindowFlags.NoResize;
+          | ImGuiWindowFlags.NoResize
+          | ImGuiWindowFlags.NoDocking;
 
         // Set position to the right of the main window when attached
         // The downwards offset is implicit through child position.
