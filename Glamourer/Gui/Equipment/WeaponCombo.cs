@@ -5,6 +5,7 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Log;
 using OtterGui.Raii;
+using OtterGui.Text;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -69,12 +70,12 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
         var ret = ImGui.Selectable(name, selected);
         ImGui.SameLine();
         using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
-        ImGuiUtil.RightAlign($"({obj.PrimaryId.Id}-{obj.SecondaryId.Id}-{obj.Variant})");
+        ImUtf8.TextRightAligned($"({obj.PrimaryId.Id}-{obj.SecondaryId.Id}-{obj.Variant.Id})");
         return ret;
     }
 
     protected override bool IsVisible(int globalIndex, LowerString filter)
-        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].PrimaryId.Id.ToString());
+        => base.IsVisible(globalIndex, filter) || Items[globalIndex].ModelString.StartsWith(filter.Lower);
 
     protected override string ToString(EquipItem obj)
         => obj.Name;
