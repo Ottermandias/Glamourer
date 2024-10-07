@@ -1,11 +1,15 @@
-﻿using Dalamud.Interface;
+﻿using System.Security.AccessControl;
+using Dalamud.Interface;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
+using OtterGui.Text;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
@@ -25,6 +29,7 @@ public class ActorSelector(ObjectManager objects, ActorManager actors, Ephemeral
 
     private LowerString _actorFilter = LowerString.Empty;
     private Vector2     _defaultItemSpacing;
+    private WorldId     _world;
     private float       _width;
 
     public (ActorIdentifier Identifier, ActorData Data) Selection
@@ -36,12 +41,43 @@ public class ActorSelector(ObjectManager objects, ActorManager actors, Ephemeral
     public void Draw(float width)
     {
         _width = width;
-        using var group = ImRaii.Group();
+        using var group = ImUtf8.Group();
         _defaultItemSpacing = ImGui.GetStyle().ItemSpacing;
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
         ImGui.SetNextItemWidth(_width);
         LowerString.InputWithHint("##actorFilter", "Filter...", ref _actorFilter, 64);
+        if (ImGui.IsItemHovered())
+        {
+            using var tt = ImUtf8.Tooltip();
+            ImUtf8.Text("Filter for names containing the input."u8);
+            ImGui.Dummy(new Vector2(0, ImGui.GetTextLineHeight() / 2));
+            ImUtf8.Text("Special filters are:"u8);
+            var color = ColorId.HeaderButtons.Value();
+            ImUtf8.Text("<p>"u8, color);
+            ImGui.SameLine(0, 0);
+            ImUtf8.Text(": show only player characters."u8);
+
+            ImUtf8.Text("<o>"u8, color);
+            ImGui.SameLine(0, 0);
+            ImUtf8.Text(": show only owned game objects."u8);
+
+            ImUtf8.Text("<n>"u8, color);
+            ImGui.SameLine(0, 0);
+            ImUtf8.Text(": show only NPCs."u8);
+
+            ImUtf8.Text("<r>"u8, color);
+            ImGui.SameLine(0, 0);
+            ImUtf8.Text(": show only retainers."u8);
+
+            ImUtf8.Text("<s>"u8, color);
+            ImGui.SameLine(0, 0);
+            ImUtf8.Text(": show only special screen characters."u8);
+
+            ImUtf8.Text("<w>"u8, color);
+            ImGui.SameLine(0, 0);
+            ImUtf8.Text(": show only players from your world."u8);
+        }
 
         DrawSelector();
         DrawSelectionButtons();
@@ -49,11 +85,12 @@ public class ActorSelector(ObjectManager objects, ActorManager actors, Ephemeral
 
     private void DrawSelector()
     {
-        using var child = ImRaii.Child("##Selector", new Vector2(_width, -ImGui.GetFrameHeight()), true);
+        using var child = ImUtf8.Child("##Selector"u8, new Vector2(_width, -ImGui.GetFrameHeight()), true);
         if (!child)
             return;
 
         objects.Update();
+        _world = new WorldId(objects.Player.Valid ? objects.Player.HomeWorld : (ushort)0);
         using var style     = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
         var       skips     = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
         var       remainder = ImGuiClip.FilteredClippedDraw(objects.Identifiers, skips, CheckFilter, DrawSelectable);
@@ -61,12 +98,22 @@ public class ActorSelector(ObjectManager objects, ActorManager actors, Ephemeral
     }
 
     private bool CheckFilter(KeyValuePair<ActorIdentifier, ActorData> pair)
-        => _actorFilter.IsEmpty || pair.Value.Label.Contains(_actorFilter.Lower, StringComparison.OrdinalIgnoreCase);
+        => _actorFilter.Lower switch
+        {
+            ""    => true,
+            "<p>" => pair.Key.Type is IdentifierType.Player,
+            "<o>" => pair.Key.Type is IdentifierType.Owned,
+            "<n>" => pair.Key.Type is IdentifierType.Npc,
+            "<r>" => pair.Key.Type is IdentifierType.Retainer,
+            "<s>" => pair.Key.Type is IdentifierType.Special,
+            "<w>" => pair.Key.Type is IdentifierType.Player && pair.Key.HomeWorld == _world,
+            _     => _actorFilter.IsContained(pair.Value.Label),
+        };
 
     private void DrawSelectable(KeyValuePair<ActorIdentifier, ActorData> pair)
     {
         var equals = pair.Key.Equals(_identifier);
-        if (ImGui.Selectable(IncognitoMode ? pair.Key.Incognito(pair.Value.Label) : pair.Value.Label, equals) && !equals)
+        if (ImUtf8.Selectable(IncognitoMode ? pair.Key.Incognito(pair.Value.Label) : pair.Value.Label, equals) && !equals)
             _identifier = pair.Key.CreatePermanent();
     }
 
@@ -76,15 +123,14 @@ public class ActorSelector(ObjectManager objects, ActorManager actors, Ephemeral
             .Push(ImGuiStyleVar.FrameRounding, 0);
         var buttonWidth = new Vector2(_width / 2, 0);
 
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UserCircle.ToIconString(), buttonWidth
-                , "Select the local player character.", !objects.Player, true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.UserCircle, "Select the local player character."u8, buttonWidth, !objects.Player))
             _identifier = objects.Player.GetIdentifier(actors);
 
         ImGui.SameLine();
         var (id, data) = objects.TargetData;
         var tt = data.Valid ? $"Select the current target {id} in the list." :
             id.IsValid      ? $"The target {id} is not in the list." : "No target selected.";
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.HandPointer.ToIconString(), buttonWidth, tt, objects.IsInGPose || !data.Valid, true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.HandPointer, tt, buttonWidth, objects.IsInGPose || !data.Valid))
             _identifier = id;
     }
 }
