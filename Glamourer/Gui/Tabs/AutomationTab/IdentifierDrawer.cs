@@ -20,6 +20,7 @@ public class IdentifierDrawer
     public ActorIdentifier PlayerIdentifier    { get; private set; } = ActorIdentifier.Invalid;
     public ActorIdentifier RetainerIdentifier  { get; private set; } = ActorIdentifier.Invalid;
     public ActorIdentifier MannequinIdentifier { get; private set; } = ActorIdentifier.Invalid;
+    public ActorIdentifier OwnedIdentifier     { get; private set; } = ActorIdentifier.Invalid;
 
     public IdentifierDrawer(ActorManager actors, DictWorld dictWorld, DictModelChara dictModelChara, DictBNpcNames bNpcNames, DictBNpc bNpc,
         HumanModelList humans)
@@ -60,6 +61,9 @@ public class IdentifierDrawer
     public bool CanSetNpc
         => NpcIdentifier.IsValid;
 
+    public bool CanSetOwned
+        => OwnedIdentifier.IsValid;
+
     private void UpdateIdentifiers()
     {
         if (ByteString.FromString(_characterName, out var byteName))
@@ -67,6 +71,11 @@ public class IdentifierDrawer
             PlayerIdentifier    = _actors.CreatePlayer(byteName, _worldCombo.CurrentSelection.Key);
             RetainerIdentifier  = _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Bell);
             MannequinIdentifier = _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Mannequin);
+
+            if (_humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc)
+                OwnedIdentifier = _actors.CreateOwned(byteName, _worldCombo.CurrentSelection.Key, _humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0]);
+            else
+                OwnedIdentifier = ActorIdentifier.Invalid;
         }
 
         NpcIdentifier = _humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc

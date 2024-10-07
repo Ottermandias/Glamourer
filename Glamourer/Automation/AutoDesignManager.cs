@@ -570,12 +570,13 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             IdentifierType.Player   => true,
             IdentifierType.Retainer => true,
             IdentifierType.Npc      => true,
+            IdentifierType.Owned    => true,
             _                       => false,
         };
 
         if (!validType)
         {
-            group = Array.Empty<ActorIdentifier>();
+            group = [];
             return false;
         }
 
@@ -602,6 +603,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
                         : ActorIdentifier.RetainerType.Bell).CreatePermanent(),
             ],
             IdentifierType.Npc => CreateNpcs(_actors, identifier),
+            IdentifierType.Owned => CreateNpcs(_actors, identifier),
             _                  => [],
         };
 
@@ -616,8 +618,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             };
             return table.Where(kvp => kvp.Value == name)
                 .Select(kvp => manager.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, identifier.HomeWorld.Id,
-                    identifier.Kind,
-                    kvp.Key)).ToArray();
+                    identifier.Kind, kvp.Key)).ToArray();
         }
     }
 

@@ -299,12 +299,19 @@ public sealed class AutoDesignApplier : IDisposable
                 if (_manager.EnabledSets.TryGetValue(identifier, out set))
                     return true;
 
-                identifier = _actors.CreatePlayer(identifier.PlayerName, ushort.MaxValue);
+                identifier = _actors.CreatePlayer(identifier.PlayerName, WorldId.AnyWorld);
                 return _manager.EnabledSets.TryGetValue(identifier, out set);
             case IdentifierType.Retainer:
             case IdentifierType.Npc:
                 return _manager.EnabledSets.TryGetValue(identifier, out set);
             case IdentifierType.Owned:
+                if (_manager.EnabledSets.TryGetValue(identifier, out set))
+                    return true;
+
+                identifier = _actors.CreateOwned(identifier.PlayerName, WorldId.AnyWorld, identifier.Kind, identifier.DataId);
+                if (_manager.EnabledSets.TryGetValue(identifier, out set))
+                    return true;
+
                 identifier = _actors.CreateNpc(identifier.Kind, identifier.DataId);
                 return _manager.EnabledSets.TryGetValue(identifier, out set);
             default:
