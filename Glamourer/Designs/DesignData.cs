@@ -108,12 +108,12 @@ public unsafe struct DesignData
         }
     }
 
-    public readonly BonusItem BonusItem(BonusItemFlag slot)
+    public readonly EquipItem BonusItem(BonusItemFlag slot)
         => slot switch
         {
             // @formatter:off
-            BonusItemFlag.Glasses => Penumbra.GameData.Structs.BonusItem.FromIds(_bonusIds[0], _iconIds[12], _bonusModelIds[0], _bonusVariants[0], BonusItemFlag.Glasses, _nameGlasses),
-            _ => Penumbra.GameData.Structs.BonusItem.Empty(slot),
+            BonusItemFlag.Glasses => EquipItem.FromIds(_bonusIds[0], _iconIds[12], _bonusModelIds[0], 0, _bonusVariants[0], FullEquipType.Glasses, 0, _nameGlasses),
+            _                     => EquipItem.BonusItemNothing(slot),
             // @formatter:on
         };
 
@@ -191,15 +191,15 @@ public unsafe struct DesignData
         return true;
     }
 
-    public bool SetBonusItem(BonusItemFlag slot, BonusItem item)
+    public bool SetBonusItem(BonusItemFlag slot, EquipItem item)
     {
         var index = slot.ToIndex();
         if (index > NumBonusItems)
             return false;
 
-        _iconIds[NumEquipment + NumWeapons + index] = item.Icon.Id;
-        _bonusIds[index]                            = item.Id.Id;
-        _bonusModelIds[index]                       = item.ModelId.Id;
+        _iconIds[NumEquipment + NumWeapons + index] = item.IconId.Id;
+        _bonusIds[index]                            = item.Id.BonusItem.Id;
+        _bonusModelIds[index]                       = item.PrimaryId.Id;
         _bonusVariants[index]                       = item.Variant.Id;
         switch (index)
         {
@@ -330,7 +330,7 @@ public unsafe struct DesignData
     public void SetDefaultBonusItems()
     {
         foreach (var slot in BonusExtensions.AllFlags)
-            SetBonusItem(slot, Penumbra.GameData.Structs.BonusItem.Empty(slot));
+            SetBonusItem(slot, EquipItem.BonusItemNothing(slot));
     }
 
 

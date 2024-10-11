@@ -13,11 +13,11 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public sealed class BonusItemCombo : FilterComboCache<BonusItem>
+public sealed class BonusItemCombo : FilterComboCache<EquipItem>
 {
     private readonly FavoriteManager _favorites;
     public readonly  string          Label;
-    private          BonusItemId     _currentItem;
+    private          CustomItemId    _currentItem;
     private          float           _innerWidth;
 
     public PrimaryId CustomSetId   { get; private set; }
@@ -75,14 +75,14 @@ public sealed class BonusItemCombo : FilterComboCache<BonusItem>
         var ret = ImGui.Selectable(name, selected);
         ImGui.SameLine();
         using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
-        ImGuiUtil.RightAlign($"({obj.ModelId.Id}-{obj.Variant.Id})");
+        ImGuiUtil.RightAlign($"({obj.PrimaryId.Id}-{obj.Variant.Id})");
         return ret;
     }
 
     protected override bool IsVisible(int globalIndex, LowerString filter)
-        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].ModelId.Id.ToString());
+        => base.IsVisible(globalIndex, filter) || filter.IsContained(Items[globalIndex].PrimaryId.Id.ToString());
 
-    protected override string ToString(BonusItem obj)
+    protected override string ToString(EquipItem obj)
         => obj.Name;
 
     private static string GetLabel(IDataManager gameData, BonusItemFlag slot)
@@ -98,13 +98,10 @@ public sealed class BonusItemCombo : FilterComboCache<BonusItem>
         };
     }
 
-    private static List<BonusItem> GetItems(FavoriteManager favorites, ItemManager items, BonusItemFlag slot)
+    private static List<EquipItem> GetItems(FavoriteManager favorites, ItemManager items, BonusItemFlag slot)
     {
-        var nothing = BonusItem.Empty(slot);
-        if (slot is not BonusItemFlag.Glasses)
-            return [nothing];
-
-        return items.DictBonusItems.Values.OrderByDescending(favorites.Contains).ThenBy(i => i.Id.Id).Prepend(nothing).ToList();
+        var nothing = EquipItem.BonusItemNothing(slot);
+        return items.ItemData.ByType[slot.ToEquipType()].OrderByDescending(favorites.Contains).ThenBy(i => i.Id.Id).Prepend(nothing).ToList();
     }
 
     protected override void OnClosePopup()

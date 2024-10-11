@@ -40,7 +40,7 @@ public readonly record struct EquipTransaction(EquipSlot Slot, EquipItem Old, Eq
         => editor.ChangeItem(data, Slot, Old, ApplySettings.Manual);
 }
 
-public readonly record struct BonusItemTransaction(BonusItemFlag Slot, BonusItem Old, BonusItem New)
+public readonly record struct BonusItemTransaction(BonusItemFlag Slot, EquipItem Old, EquipItem New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)

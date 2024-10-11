@@ -172,10 +172,10 @@ public class DesignEditor(
     }
 
     /// <inheritdoc/>
-    public void ChangeBonusItem(object data, BonusItemFlag slot, BonusItem item, ApplySettings settings = default)
+    public void ChangeBonusItem(object data, BonusItemFlag slot, EquipItem item, ApplySettings settings = default)
     {
         var design = (Design)data;
-        if (item.Slot != slot)
+        if (item.Type.ToBonus() != slot)
             return;
 
         var oldItem = design.DesignData.BonusItem(slot);

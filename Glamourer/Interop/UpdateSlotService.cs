@@ -58,7 +58,7 @@ public unsafe class UpdateSlotService : IDisposable
         if (!_bonusItems.TryGetValue(id, out var glasses))
             return;
 
-        var armor = new CharacterArmor(glasses.ModelId, glasses.Variant, StainIds.None);
+        var armor = new CharacterArmor(glasses.PrimaryId, glasses.Variant, StainIds.None);
         _flagBonusSlotForUpdateHook.Original(drawObject.Address, BonusItemFlag.Glasses.ToIndex(), &armor);
     }
 

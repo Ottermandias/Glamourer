@@ -44,9 +44,9 @@ public static class UiHelpers
         }
     }
 
-    public static void DrawIcon(this BonusItem item, TextureService textures, Vector2 size, BonusItemFlag slot)
+    public static void DrawIcon(this EquipItem item, TextureService textures, Vector2 size, BonusItemFlag slot)
     {
-        var isEmpty = item.ModelId.Id == 0;
+        var isEmpty = item.PrimaryId.Id == 0;
         var (ptr, textureSize, empty) = textures.GetIcon(item, slot);
         if (empty)
         {
@@ -129,27 +129,6 @@ public static class UiHelpers
         };
 
     public static bool DrawFavoriteStar(FavoriteManager favorites, EquipItem item)
-    {
-        var favorite = favorites.Contains(item);
-        var hovering = ImGui.IsMouseHoveringRect(ImGui.GetCursorScreenPos(),
-            ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetTextLineHeight()));
-
-        using var font = ImRaii.PushFont(UiBuilder.IconFont);
-        using var c = ImRaii.PushColor(ImGuiCol.Text,
-            hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
-        ImGui.TextUnformatted(FontAwesomeIcon.Star.ToIconString());
-        if (!ImGui.IsItemClicked())
-            return false;
-
-        if (favorite)
-            favorites.Remove(item);
-        else
-            favorites.TryAdd(item);
-        return true;
-
-    }
-
-    public static bool DrawFavoriteStar(FavoriteManager favorites, BonusItem item)
     {
         var favorite = favorites.Contains(item);
         var hovering = ImGui.IsMouseHoveringRect(ImGui.GetCursorScreenPos(),

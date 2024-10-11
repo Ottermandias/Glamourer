@@ -10,7 +10,7 @@ namespace Glamourer.Services;
 
 public class ItemManager
 {
-    public const string Nothing              = "Nothing";
+    public const string Nothing              = EquipItem.Nothing;
     public const string SmallClothesNpc      = "Smallclothes (NPC)";
     public const ushort SmallClothesNpcModel = 9903;
 
@@ -126,31 +126,20 @@ public class ItemManager
         }
     }
 
-    public BonusItem Identify(BonusItemFlag slot, PrimaryId id, Variant variant)
+    public EquipItem Identify(BonusItemFlag slot, PrimaryId id, Variant variant)
     {
         var index = slot.ToIndex();
         if (index == uint.MaxValue)
-            return new BonusItem($"Invalid ({id.Id}-{variant})", 0, 0, id, variant, slot);
+            return new EquipItem($"Invalid ({id.Id}-{variant})", 0, 0, id, 0, variant, slot.ToEquipType(), 0, 0, 0);
 
-        var item = ObjectIdentification.Identify(id, variant, slot)
-            .FirstOrDefault(BonusItem.FromIds(BonusItemId.Invalid, 0, id, variant, slot));
-        if (item.Id != BonusItemId.Invalid)
-            return item;
-
-        if (slot is BonusItemFlag.Glasses)
-        {
-            var headItem = ObjectIdentification.Identify(id, 0, variant, EquipSlot.Head).FirstOrDefault();
-            if (headItem.Valid)
-                return BonusItem.FromIds(BonusItemId.Invalid, headItem.IconId, id, variant, slot, $"{headItem.Name} ({EquipSlot.Head.ToName()}: {id}-{variant})");
-        }
-
-        return item;
+        return ObjectIdentification.Identify(id, variant, slot)
+            .FirstOrDefault(new EquipItem($"Invalid ({id.Id}-{variant})", 0, 0, id, 0, variant, slot.ToEquipType(), 0, 0, 0));
     }
 
-    public BonusItem Resolve(BonusItemFlag slot, BonusItemId id)
-        => IsBonusItemValid(slot, id, out var item) ? item : new BonusItem($"Invalid ({id.Id})", 0, id, 0, 0, slot);
+    public EquipItem Resolve(BonusItemFlag slot, BonusItemId id)
+        => IsBonusItemValid(slot, id, out var item) ? item : new EquipItem($"Invalid ({id.Id})", id, 0, 0, 0, 0, slot.ToEquipType(), 0, 0, 0);
 
-    public BonusItem Resolve(BonusItemFlag slot, CustomItemId id)
+    public EquipItem Resolve(BonusItemFlag slot, CustomItemId id)
     {
         // Only from early designs as migration.
         if (!id.IsBonusItem)
@@ -164,12 +153,12 @@ public class ItemManager
             if (IsBonusItemValid(slot, id.BonusItem, out var item))
                 return item;
 
-            return BonusItem.Empty(slot);
+            return EquipItem.BonusItemNothing(slot);
         }
 
         var (model, variant, slot2) = id.SplitBonus;
         if (slot != slot2)
-            return BonusItem.Empty(slot);
+            return EquipItem.BonusItemNothing(slot);
 
         return Identify(slot, model, variant);
     }
@@ -213,12 +202,12 @@ public class ItemManager
 
     /// <summary> Returns whether a bonus item id represents a valid item for a slot and gives the item. </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public bool IsBonusItemValid(BonusItemFlag slot, BonusItemId itemId, out BonusItem item)
+    public bool IsBonusItemValid(BonusItemFlag slot, BonusItemId itemId, out EquipItem item)
     {
         if (itemId.Id != 0)
-            return DictBonusItems.TryGetValue(itemId, out item) && slot == item.Slot;
+            return DictBonusItems.TryGetValue(itemId, out item) && slot == item.Type.ToBonus();
 
-        item = BonusItem.Empty(slot);
+        item = new EquipItem(Nothing, (BonusItemId)0, 0, 0, 0, 0, slot.ToEquipType(), 0, 0, 0);
         return true;
     }
 

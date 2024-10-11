@@ -12,7 +12,7 @@ public class FavoriteManager : ISavable
     private readonly record struct FavoriteHairStyle(Gender Gender, SubRace Race, CustomizeIndex Type, CustomizeValue Id)
     {
         public uint ToValue()
-            => (uint)Id.Value | ((uint)Type << 8) | ((uint)Race << 16) | ((uint)Gender << 24);
+            => Id.Value | ((uint)Type << 8) | ((uint)Race << 16) | ((uint)Gender << 24);
 
         public FavoriteHairStyle(uint value)
             : this((Gender)((value >> 24) & 0xFF), (SubRace)((value >> 16) & 0xFF), (CustomizeIndex)((value >> 8) & 0xFF),
@@ -61,9 +61,9 @@ public class FavoriteManager : ISavable
                 {
                     case 1:
                         _favorites.UnionWith(load!.FavoriteItems.Select(i => (ItemId)i));
-                        _favoriteColors.UnionWith(load!.FavoriteColors.Select(i => (StainId)i));
-                        _favoriteHairStyles.UnionWith(load!.FavoriteHairStyles.Select(t => new FavoriteHairStyle(t)));
-                        _favoriteBonusItems.UnionWith(load!.FavoriteBonusItems.Select(b => new BonusItemId(b)));
+                        _favoriteColors.UnionWith(load.FavoriteColors.Select(i => (StainId)i));
+                        _favoriteHairStyles.UnionWith(load.FavoriteHairStyles.Select(t => new FavoriteHairStyle(t)));
+                        _favoriteBonusItems.UnionWith(load.FavoriteBonusItems.Select(b => new BonusItemId(b)));
                         break;
 
                     default: throw new Exception($"Unknown Version {load?.Version ?? 0}");
@@ -126,7 +126,12 @@ public class FavoriteManager : ISavable
     }
 
     public bool TryAdd(EquipItem item)
-        => TryAdd(item.ItemId);
+    {
+        if (item.Id.IsBonusItem)
+            return TryAdd(item.Id.BonusItem);
+
+        return TryAdd(item.ItemId);
+    }
 
     public bool TryAdd(ItemId item)
     {
@@ -137,18 +142,18 @@ public class FavoriteManager : ISavable
         return true;
     }
 
-    public bool TryAdd(StainId stain)
+    public bool TryAdd(BonusItemId item)
     {
-        if (stain.Id == 0 || !_favoriteColors.Add(stain))
+        if (item.Id == 0 || !_favoriteBonusItems.Add(item))
             return false;
 
         Save();
         return true;
     }
 
-    public bool TryAdd(BonusItem bonusItem)
+    public bool TryAdd(StainId stain)
     {
-        if (bonusItem.Id == 0 || !_favoriteBonusItems.Add(bonusItem.Id))
+        if (stain.Id == 0 || !_favoriteColors.Add(stain))
             return false;
 
         Save();
@@ -165,7 +170,11 @@ public class FavoriteManager : ISavable
     }
 
     public bool Remove(EquipItem item)
-        => Remove(item.ItemId);
+    {
+        if (item.Id.IsBonusItem)
+            Remove(item.Id.BonusItem);
+        return Remove(item.ItemId);
+    }
 
     public bool Remove(ItemId item)
     {
@@ -176,18 +185,18 @@ public class FavoriteManager : ISavable
         return true;
     }
 
-    public bool Remove(StainId stain)
+    public bool Remove(BonusItemId item)
     {
-        if (!_favoriteColors.Remove(stain))
+        if (!_favoriteBonusItems.Remove(item))
             return false;
 
         Save();
         return true;
     }
 
-    public bool Remove(BonusItem bonusItem)
+    public bool Remove(StainId stain)
     {
-        if (!_favoriteBonusItems.Remove(bonusItem.Id))
+        if (!_favoriteColors.Remove(stain))
             return false;
 
         Save();
@@ -204,13 +213,21 @@ public class FavoriteManager : ISavable
     }
 
     public bool Contains(EquipItem item)
-        => _favorites.Contains(item.ItemId);
+    {
+        if (item.Id.IsBonusItem)
+            return _favoriteBonusItems.Contains(item.Id.BonusItem);
+
+        return _favorites.Contains(item.ItemId);
+    }
 
     public bool Contains(StainId stain)
         => _favoriteColors.Contains(stain);
 
-    public bool Contains(BonusItem bonusItem)
-        => _favoriteBonusItems.Contains(bonusItem.Id);
+    public bool Contains(ItemId itemId)
+        => _favorites.Contains(itemId);
+
+    public bool Contains(BonusItemId bonusItemId)
+        => _favoriteBonusItems.Contains(bonusItemId);
 
     public bool Contains(Gender gender, SubRace race, CustomizeIndex type, CustomizeValue value)
         => _favoriteHairStyles.Contains(new FavoriteHairStyle(gender, race, type, value));

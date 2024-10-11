@@ -6,9 +6,12 @@ using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.State;
+using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Log;
 using OtterGui.Services;
+using Penumbra.GameData.Enums;
+using Penumbra.GameData.Files;
 
 namespace Glamourer;
 
@@ -44,6 +47,15 @@ public class Glamourer : IDalamudPlugin
             _services.GetService<CommandService>();        // initialize commands.
             _services.GetService<IpcProviders>();          // initialize IPC.
             Log.Information($"Glamourer v{Version} loaded successfully.");
+
+            //var text      = File.ReadAllBytes(@"C:\FFXIVMods\PBDTest\files\human.pbd");
+            //var pbd       = new PbdFile(text);
+            //var roundtrip = pbd.Write();
+            //File.WriteAllBytes(@"C:\FFXIVMods\PBDTest\files\Vanilla resaved save.pbd", roundtrip);
+            //var deformer = pbd.Deformers.FirstOrDefault(d => d.GenderRace is GenderRace.RoegadynFemale)!.RacialDeformer;
+            //deformer.DeformMatrices["ya_fukubu_phys"] = deformer.DeformMatrices["j_kosi"];
+            //var aleks = pbd.Write();
+            //File.WriteAllBytes(@"C:\FFXIVMods\PBDTest\files\rue.pbd", aleks);
         }
         catch
         {

@@ -65,7 +65,7 @@ public interface IDesignEditor
         => ChangeEquip(data, slot, item, null, settings);
 
     /// <summary> Change a bonus item. </summary>
-    public void ChangeBonusItem(object data, BonusItemFlag slot, BonusItem item, ApplySettings settings = default);
+    public void ChangeBonusItem(object data, BonusItemFlag slot, EquipItem item, ApplySettings settings = default);
 
     /// <summary> Change the stain for any equipment piece. </summary>
     public void ChangeStains(object data, EquipSlot slot, StainIds stains, ApplySettings settings = default)

@@ -468,14 +468,14 @@ public class EquipmentDrawer
             UiHelpers.OpenCombo($"##{combo.Label}");
 
         using var disabled = ImRaii.Disabled(data.Locked);
-        var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.Id, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
+        var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.Id.BonusItem, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
             _requiredComboWidth);
         if (change)
             data.SetItem(combo.CurrentSelection);
         else if (combo.CustomVariant.Id > 0)
             data.SetItem(_items.Identify(data.Slot, combo.CustomSetId, combo.CustomVariant));
 
-        if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, BonusItem.Empty(data.Slot), out var item))
+        if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, EquipItem.BonusItemNothing(data.Slot), out var item))
             data.SetItem(item);
     }
 

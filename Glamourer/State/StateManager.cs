@@ -356,7 +356,7 @@ public sealed class StateManager(
             foreach (var slot in BonusExtensions.AllFlags)
             {
                 var item = state.ModelData.BonusItem(slot);
-                Applier.ChangeBonusItem(actors, slot, item.ModelId, item.Variant);
+                Applier.ChangeBonusItem(actors, slot, item.PrimaryId, item.Variant);
             }
 
             var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;

@@ -281,7 +281,7 @@ public class DesignBase
             var item = _designData.BonusItem(slot);
             ret[slot.ToString()] = new JObject()
             {
-                ["BonusId"] = item.CustomId.Id,
+                ["BonusId"] = item.Id.Id,
                 ["Apply"]   = DoApplyBonusItem(slot),
             };
         }
@@ -443,7 +443,7 @@ public class DesignBase
             if (json[slot.ToString()] is not JObject itemJson)
             {
                 design.Application.BonusItem &= ~slot;
-                design.GetDesignDataRef().SetBonusItem(slot, BonusItem.Empty(slot));
+                design.GetDesignDataRef().SetBonusItem(slot, EquipItem.BonusItemNothing(slot));
                 continue;
             }
 

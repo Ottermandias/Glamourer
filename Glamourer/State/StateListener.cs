@@ -250,11 +250,11 @@ public class StateListener : IDisposable
                     else
                         apply = true;
                     if (apply)
-                        item = state.ModelData.BonusItem(slot).ToArmor();
+                        item = state.ModelData.BonusItem(slot).Armor();
                     break;
                 // Use current model data.
                 case UpdateState.NoChange:
-                    item = state.ModelData.BonusItem(slot).ToArmor();
+                    item = state.ModelData.BonusItem(slot).Armor();
                     break;
                 case UpdateState.Transformed: break;
             }
@@ -453,12 +453,12 @@ public class StateListener : IDisposable
             return UpdateState.NoChange;
 
         // The actor item does not correspond to the model item, thus the actor is transformed.
-        if (actorItem.ModelId != item.Set || actorItem.Variant != item.Variant)
+        if (actorItem.PrimaryId != item.Set || actorItem.Variant != item.Variant)
             return UpdateState.Transformed;
 
         var baseData = state.BaseData.BonusItem(slot);
         var change   = UpdateState.NoChange;
-        if (baseData.Id != actorItem.Id || baseData.ModelId != item.Set || baseData.Variant != item.Variant)
+        if (baseData.Id != actorItem.Id || baseData.PrimaryId != item.Set || baseData.Variant != item.Variant)
         {
             var identified = _items.Identify(slot, item.Set, item.Variant);
             state.BaseData.SetBonusItem(slot, identified);

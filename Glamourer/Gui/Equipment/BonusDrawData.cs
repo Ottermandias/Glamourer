@@ -20,7 +20,7 @@ public struct BonusDrawData(BonusItemFlag slot, in DesignData designData)
     public readonly bool IsState
         => _object is ActorState;
 
-    public readonly void SetItem(BonusItem item)
+    public readonly void SetItem(EquipItem item)
         => _editor.ChangeBonusItem(_object, Slot, item, ApplySettings.Manual);
 
     public readonly void SetApplyItem(bool value)
@@ -30,8 +30,8 @@ public struct BonusDrawData(BonusItemFlag slot, in DesignData designData)
         manager.ChangeApplyBonusItem(design, Slot, value);
     }
 
-    public BonusItem CurrentItem = designData.BonusItem(slot);
-    public BonusItem GameItem    = default;
+    public EquipItem CurrentItem = designData.BonusItem(slot);
+    public EquipItem GameItem    = default;
     public bool      CurrentApply;
 
     public static BonusDrawData FromDesign(DesignManager manager, Design design, BonusItemFlag slot)

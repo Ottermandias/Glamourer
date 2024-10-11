@@ -248,7 +248,7 @@ public unsafe class ModelEvaluationPanel(
             {
                 var glassesId = actor.GetBonusItem(slot);
                 if (bonusItems.TryGetValue(glassesId, out var glasses))
-                    ImGuiUtil.DrawTableColumn($"{glasses.ModelId.Id},{glasses.Variant.Id} ({glassesId})");
+                    ImGuiUtil.DrawTableColumn($"{glasses.PrimaryId.Id},{glasses.Variant.Id} ({glassesId})");
                 else
                     ImGuiUtil.DrawTableColumn($"{glassesId}");
             }

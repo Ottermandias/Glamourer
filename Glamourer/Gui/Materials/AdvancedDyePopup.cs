@@ -305,7 +305,7 @@ public sealed unsafe class AdvancedDyePopup(
             {
                 EquipSlot.MainHand => _state.ModelData.Weapon(EquipSlot.MainHand),
                 EquipSlot.OffHand  => _state.ModelData.Weapon(EquipSlot.OffHand),
-                EquipSlot.Unknown  => _state.ModelData.BonusItem((index.SlotIndex - 16u).ToBonusSlot()).ToArmor().ToWeapon(0),
+                EquipSlot.Unknown  => _state.ModelData.BonusItem((index.SlotIndex - 16u).ToBonusSlot()).Armor().ToWeapon(0), // TODO: Handle better
                 _                  => _state.ModelData.Armor(slot).ToWeapon(0),
             };
             value = new MaterialValueState(internalRow, internalRow, weapon, StateSource.Manual);

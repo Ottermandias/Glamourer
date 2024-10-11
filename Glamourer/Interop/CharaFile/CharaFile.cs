@@ -104,11 +104,11 @@ public sealed class CharaFile
 
         if (id is 0)
         {
-            data.SetBonusItem(slot, BonusItem.Empty(slot));
+            data.SetBonusItem(slot, EquipItem.BonusItemNothing(slot));
             flags |= slot;
         }
 
-        if (!items.DictBonusItems.TryGetValue((BonusItemId)id.Value, out var item) || item.Slot != slot)
+        if (!items.DictBonusItems.TryGetValue((BonusItemId)id.Value, out var item) || item.Type.ToBonus() != slot)
             return;
 
         data.SetBonusItem(slot, item);

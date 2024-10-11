@@ -152,7 +152,7 @@ public class InternalStateEditor(
     }
 
     /// <summary> Change a single bonus item. </summary>
-    public bool ChangeBonusItem(ActorState state, BonusItemFlag slot, BonusItem item, StateSource source, out BonusItem oldItem, uint key = 0)
+    public bool ChangeBonusItem(ActorState state, BonusItemFlag slot, EquipItem item, StateSource source, out EquipItem oldItem, uint key = 0)
     {
         oldItem = state.ModelData.BonusItem(slot);
         if (!state.CanUnlock(key))

@@ -180,11 +180,11 @@ public class UnlockOverview(
         if (remainder > 0)
             ImGuiClip.DrawEndDummy(remainder, iconSize.Y + spacing.Y);
 
-        void DrawItem(BonusItem item)
+        void DrawItem(EquipItem item)
         {
             // TODO check unlocks
             var unlocked = true;
-            if (!textures.TryLoadIcon(item.Icon.Id, out var iconHandle))
+            if (!textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
                 return;
 
             var (icon, size) = (iconHandle.ImGuiHandle, new Vector2(iconHandle.Width, iconHandle.Height));
@@ -202,9 +202,9 @@ public class UnlockOverview(
                 if (size.X >= iconSize.X && size.Y >= iconSize.Y)
                     ImGui.Image(icon, size);
                 ImUtf8.Text(item.Name);
-                ImUtf8.Text($"{item.Slot.ToName()}");
+                ImUtf8.Text($"{item.Type.ToName()}");
                 ImUtf8.Text($"{item.Id.Id}");
-                ImUtf8.Text($"{item.ModelId.Id}-{item.Variant.Id}");
+                ImUtf8.Text($"{item.PrimaryId.Id}-{item.Variant.Id}");
                 // TODO
                 ImUtf8.Text("Always Unlocked"); // : $"Unlocked on {time:g}" : "Not Unlocked.");
                 // TODO

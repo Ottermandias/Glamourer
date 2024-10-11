@@ -85,7 +85,7 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
             return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
 
         var settings = new ApplySettings(Source: flags.HasFlag(ApplyFlag.Once) ? StateSource.IpcManual : StateSource.IpcFixed, Key: key);
-        stateManager.ChangeBonusItem(state, item.Slot, item, settings);
+        stateManager.ChangeBonusItem(state, item.Type.ToBonus(), item, settings);
         ApiHelpers.Lock(state, key, flags);
         return GlamourerApiEc.Success;
     }
@@ -111,7 +111,7 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
                 continue;
 
             anyUnlocked = true;
-            stateManager.ChangeBonusItem(state, item.Slot, item, settings);
+            stateManager.ChangeBonusItem(state, item.Type.ToBonus(), item, settings);
             ApiHelpers.Lock(state, key, flags);
         }
 
@@ -138,7 +138,7 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         return item.Valid;
     }
 
-    private bool ResolveBonusItem(ApiBonusSlot apiSlot, ulong itemId, out BonusItem item)
+    private bool ResolveBonusItem(ApiBonusSlot apiSlot, ulong itemId, out EquipItem item)
     {
         var slot = apiSlot switch
         {

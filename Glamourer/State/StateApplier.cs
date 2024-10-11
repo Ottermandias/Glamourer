@@ -146,7 +146,7 @@ public class StateApplier(
         if (apply)
         {
             var item = state.ModelData.BonusItem(slot);
-            ChangeBonusItem(data, slot, item.ModelId, item.Variant);
+            ChangeBonusItem(data, slot, item.PrimaryId, item.Variant);
         }
 
         return data;
@@ -391,7 +391,7 @@ public class StateApplier(
             foreach (var slot in BonusExtensions.AllFlags)
             {
                 var item = state.ModelData.BonusItem(slot);
-                ChangeBonusItem(actors, slot, item.ModelId, item.Variant);
+                ChangeBonusItem(actors, slot, item.PrimaryId, item.Variant);
             }
 
             var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
