@@ -23,7 +23,7 @@ public readonly record struct ApplySettings(
         RespectManual   = false,
         UseSingleSource = false,
         MergeLinks      = false,
-        ResetMaterials  = false,
+        ResetMaterials  = true,
     };
 
     public static readonly ApplySettings ManualWithLinks = new()
@@ -34,7 +34,7 @@ public readonly record struct ApplySettings(
         RespectManual   = false,
         UseSingleSource = false,
         MergeLinks      = true,
-        ResetMaterials  = false,
+        ResetMaterials  = true,
     };
 
     public static readonly ApplySettings Game = new()
