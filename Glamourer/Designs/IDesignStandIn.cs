@@ -25,4 +25,6 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
     public bool ChangeData(object data);
 
     public bool ForcedRedraw { get; }
+
+    public bool ResetMaterials { get; }
 }

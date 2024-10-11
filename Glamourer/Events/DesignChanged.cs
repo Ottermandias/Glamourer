@@ -90,6 +90,9 @@ public sealed class DesignChanged()
         /// <summary> An existing design had changed whether it always forces a redraw or not. </summary>
         ForceRedraw,
 
+        /// <summary> An existing design had changed whether it always reset materials or not. </summary>
+        ResetMaterials,
+
         /// <summary> An existing design changed whether a specific customization is applied. </summary>
         ApplyCustomize,
 

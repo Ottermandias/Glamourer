@@ -53,4 +53,7 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
 
     public bool ForcedRedraw
         => combo.Design?.ForcedRedraw ?? false;
+
+    public bool ResetMaterials
+        => combo.Design?.ResetMaterials ?? false;
 }

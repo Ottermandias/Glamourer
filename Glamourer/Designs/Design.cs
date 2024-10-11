@@ -45,6 +45,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     public string[]                     Tags           { get; internal set; } = [];
     public int                          Index          { get; internal set; }
     public bool                         ForcedRedraw   { get; internal set; }
+    public bool                         ResetMaterials { get; internal set; }
     public bool                         QuickDesign    { get; internal set; } = true;
     public string                       Color          { get; internal set; } = string.Empty;
     public SortedList<Mod, ModSettings> AssociatedMods { get; private set; }  = [];
@@ -102,6 +103,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
             ["Name"]           = Name.Text,
             ["Description"]    = Description,
             ["ForcedRedraw"]   = ForcedRedraw,
+            ["ResetMaterials"] = ResetMaterials,
             ["Color"]          = Color,
             ["QuickDesign"]    = QuickDesign,
             ["Tags"]           = JArray.FromObject(Tags),
@@ -244,6 +246,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
         LoadLinks(linkLoader, json["Links"], design);
         design.Color        = json["Color"]?.ToObject<string>() ?? string.Empty;
         design.ForcedRedraw = json["ForcedRedraw"]?.ToObject<bool>() ?? false;
+        design.ResetMaterials = json["ResetMaterials"]?.ToObject<bool>() ?? false;
         return design;
 
         static string[] ParseTags(JObject json)
