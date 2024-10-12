@@ -330,7 +330,7 @@ public sealed class DesignManager : DesignEditor
 
         design.ForcedRedraw = forcedRedraw;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Set {design.Identifier} to {(forcedRedraw ? "not" : string.Empty)} force redraws.");
+        Glamourer.Log.Debug($"Set {design.Identifier} to {(forcedRedraw ? string.Empty : "not")} force redraws.");
         DesignChanged.Invoke(DesignChanged.Type.ForceRedraw, design, null);
     }
 
@@ -341,7 +341,7 @@ public sealed class DesignManager : DesignEditor
 
         design.ResetAdvancedDyes = resetAdvancedDyes;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Set {design.Identifier} to {(resetAdvancedDyes ? "not" : string.Empty)} reset advanced dyes.");
+        Glamourer.Log.Debug($"Set {design.Identifier} to {(resetAdvancedDyes ? string.Empty : "not")} reset advanced dyes.");
         DesignChanged.Invoke(DesignChanged.Type.ResetAdvancedDyes, design, null);
     }
 
