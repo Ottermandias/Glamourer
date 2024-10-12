@@ -334,6 +334,17 @@ public sealed class DesignManager : DesignEditor
         DesignChanged.Invoke(DesignChanged.Type.ForceRedraw, design, null);
     }
 
+    public void ChangeResetMaterials(Design design, bool resetMaterials)
+    {
+        if (design.ResetMaterials == resetMaterials)
+            return;
+
+        design.ResetMaterials = resetMaterials;
+        SaveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set {design.Identifier} to {(resetMaterials ? "not" : string.Empty)} reset materials.");
+        DesignChanged.Invoke(DesignChanged.Type.ResetMaterials, design, null);
+    }
+
     /// <summary> Change whether to apply a specific customize value. </summary>
     public void ChangeApplyCustomize(Design design, CustomizeIndex idx, bool value)
     {

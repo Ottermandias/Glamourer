@@ -56,6 +56,8 @@ public class DesignMerger(
                 ReduceMaterials(design, ret);
             if (design.ForcedRedraw)
                 ret.ForcedRedraw = true;
+            if (design.ResetMaterials)
+                ret.ResetMaterials = true;
         }
 
         ApplyFixFlags(ret, fixFlags);

@@ -154,7 +154,7 @@ public sealed class AutoDesignApplier : IDisposable
                     {
                         Reduce(data.Objects[0], state, newSet, _config.RespectManualOnAutomationUpdate, false, out var forcedRedraw);
                         foreach (var actor in data.Objects)
-                            _state.ReapplyState(actor, forcedRedraw,StateSource.Fixed);
+                            _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
                     }
                 }
                 else if (_objects.TryGetValueAllWorld(id, out data) || _objects.TryGetValueNonOwned(id, out data))
@@ -286,7 +286,9 @@ public sealed class AutoDesignApplier : IDisposable
         var mergedDesign = _designMerger.Merge(
             set.Designs.Where(d => d.IsActive(actor)).SelectMany(d => d.Design.AllLinks.Select(l => (l.Design, l.Flags & d.Type, d.Jobs.Flags))),
             state.ModelData.Customize, state.BaseData, true, _config.AlwaysApplyAssociatedMods);
-        _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, false));
+
+        var resetMaterials = mergedDesign.ResetMaterials;
+        _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, resetMaterials));
         forcedRedraw = mergedDesign.ForcedRedraw;
     }
 
