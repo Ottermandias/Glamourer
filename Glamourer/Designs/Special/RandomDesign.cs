@@ -82,6 +82,6 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public bool ForcedRedraw
         => false;
 
-    public bool ResetMaterials
+    public bool ResetAdvancedDyes
         => false;
 }

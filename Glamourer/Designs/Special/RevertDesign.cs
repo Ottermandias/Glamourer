@@ -46,6 +46,6 @@ public class RevertDesign : IDesignStandIn
     public bool ForcedRedraw
         => false;
 
-    public bool ResetMaterials
-        => false;
+    public bool ResetAdvancedDyes
+        => true;
 }

@@ -304,8 +304,8 @@ public class DesignEditor(
 
 
     /// <inheritdoc/>
-    public void ApplyDesign(object data, MergedDesign other, ApplySettings _ = default)
-        => ApplyDesign(data, other.Design);
+    public void ApplyDesign(object data, MergedDesign other, ApplySettings settings = default)
+        => ApplyDesign(data, other.Design, settings);
 
     /// <inheritdoc/>
     public void ApplyDesign(object data, DesignBase other, ApplySettings _ = default)

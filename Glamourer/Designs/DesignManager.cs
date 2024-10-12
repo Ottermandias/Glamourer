@@ -334,15 +334,15 @@ public sealed class DesignManager : DesignEditor
         DesignChanged.Invoke(DesignChanged.Type.ForceRedraw, design, null);
     }
 
-    public void ChangeResetMaterials(Design design, bool resetMaterials)
+    public void ChangeResetAdvancedDyes(Design design, bool resetAdvancedDyes)
     {
-        if (design.ResetMaterials == resetMaterials)
+        if (design.ResetAdvancedDyes == resetAdvancedDyes)
             return;
 
-        design.ResetMaterials = resetMaterials;
+        design.ResetAdvancedDyes = resetAdvancedDyes;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Set {design.Identifier} to {(resetMaterials ? "not" : string.Empty)} reset materials.");
-        DesignChanged.Invoke(DesignChanged.Type.ResetMaterials, design, null);
+        Glamourer.Log.Debug($"Set {design.Identifier} to {(resetAdvancedDyes ? "not" : string.Empty)} reset advanced dyes.");
+        DesignChanged.Invoke(DesignChanged.Type.ResetAdvancedDyes, design, null);
     }
 
     /// <summary> Change whether to apply a specific customize value. </summary>

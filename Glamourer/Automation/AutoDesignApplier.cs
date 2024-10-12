@@ -287,8 +287,7 @@ public sealed class AutoDesignApplier : IDisposable
             set.Designs.Where(d => d.IsActive(actor)).SelectMany(d => d.Design.AllLinks.Select(l => (l.Design, l.Flags & d.Type, d.Jobs.Flags))),
             state.ModelData.Customize, state.BaseData, true, _config.AlwaysApplyAssociatedMods);
 
-        var resetMaterials = mergedDesign.ResetMaterials;
-        _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, resetMaterials));
+        _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, false));
         forcedRedraw = mergedDesign.ForcedRedraw;
     }
 
