@@ -112,7 +112,7 @@ public unsafe struct DesignData
         => slot switch
         {
             // @formatter:off
-            BonusItemFlag.Glasses => EquipItem.FromIds(_bonusIds[0], _iconIds[12], _bonusModelIds[0], 0, _bonusVariants[0], FullEquipType.Glasses, 0, _nameGlasses),
+            BonusItemFlag.Glasses => EquipItem.FromBonusIds(_bonusIds[0], _iconIds[12], _bonusModelIds[0], _bonusVariants[0], BonusItemFlag.Glasses, _nameGlasses),
             _                     => EquipItem.BonusItemNothing(slot),
             // @formatter:on
         };
