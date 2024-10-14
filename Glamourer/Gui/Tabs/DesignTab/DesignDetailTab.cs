@@ -58,7 +58,7 @@ public class DesignDetailTab
         if (!table)
             return;
 
-        ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Last Update Datem").X);
+        ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Reset Advanced Dyes").X);
         ImGui.TableSetupColumn("Data", ImGuiTableColumnFlags.WidthStretch);
 
         ImGuiUtil.DrawFrameColumn("Design Name");
