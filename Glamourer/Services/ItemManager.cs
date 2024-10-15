@@ -142,7 +142,7 @@ public class ItemManager
     public EquipItem Resolve(BonusItemFlag slot, CustomItemId id)
     {
         // Only from early designs as migration.
-        if (!id.IsBonusItem)
+        if (!id.IsBonusItem || id.Id == 0)
         {
             IsBonusItemValid(slot, (BonusItemId)id.Id, out var item);
             return item;
@@ -207,7 +207,7 @@ public class ItemManager
         if (itemId.Id != 0)
             return DictBonusItems.TryGetValue(itemId, out item) && slot == item.Type.ToBonus();
 
-        item = new EquipItem(Nothing, (BonusItemId)0, 0, 0, 0, 0, slot.ToEquipType(), 0, 0, 0);
+        item = EquipItem.BonusItemNothing(slot);
         return true;
     }
 

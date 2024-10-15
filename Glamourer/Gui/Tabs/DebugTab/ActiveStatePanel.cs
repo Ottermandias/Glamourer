@@ -9,7 +9,6 @@ using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
-using FFXIVClientStructs.FFXIV.Shader;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
@@ -67,7 +66,13 @@ public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectM
         static string ItemString(in DesignData data, EquipSlot slot)
         {
             var item = data.Item(slot);
-            return $"{item.Name} ({item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
+            return $"{item.Name} ({item.Id.ToDiscriminatingString()} {item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
+        }
+
+        static string BonusItemString(in DesignData data, BonusItemFlag slot)
+        {
+            var item = data.BonusItem(slot);
+            return $"{item.Name} ({item.Id.ToDiscriminatingString()} {item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
         }
 
         PrintRow("Model ID", state.BaseData.ModelId, state.ModelData.ModelId, state.Sources[MetaIndex.ModelId]);
@@ -91,6 +96,12 @@ public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectM
                 ImGuiUtil.DrawTableColumn(state.BaseData.Stain(slot).ToString());
                 ImGuiUtil.DrawTableColumn(state.ModelData.Stain(slot).ToString());
                 ImGuiUtil.DrawTableColumn(state.Sources[slot, true].ToString());
+            }
+
+            foreach (var slot in BonusExtensions.AllFlags)
+            {
+                PrintRow(slot.ToName(), BonusItemString(state.BaseData, slot), BonusItemString(state.ModelData, slot), state.Sources[slot]);
+                ImGui.TableNextRow();
             }
 
             foreach (var type in Enum.GetValues<CustomizeIndex>())
