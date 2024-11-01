@@ -36,6 +36,7 @@ public class GlamourerChangelog
         Add1_2_3_0(Changelog);
         Add1_3_1_0(Changelog);
         Add1_3_2_0(Changelog);
+        Add1_3_3_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -55,6 +56,14 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_3_3_0(Changelog log)
+        => log.NextVersion("Version 1.3.3.0")
+            .RegisterHighlight("Added the option to create automations for owned human NPCs (like trust avatars).")
+            .RegisterEntry("Added some special filters to the Actors tab selector, hover over it to see the options.")
+            .RegisterEntry("Added an option for designs to always reset all previously applied advanced dyes.")
+            .RegisterEntry("Added some new NPC-only customizations to the valid customizations.")
+            .RegisterEntry("Reworked quite a bit of things around face wear / bonus items. Please let me know if anything broke.");
 
     private static void Add1_3_2_0(Changelog log)
         => log.NextVersion("Version 1.3.2.0")

@@ -84,9 +84,13 @@ internal class CustomizeSetFactory(
             CustomizeIndex.TattooColor,
             CustomizeIndex.EyeColorLeft,
             CustomizeIndex.EyeColorRight,
+            CustomizeIndex.TailShape,
         };
 
-        var npcCustomizations = new HashSet<(CustomizeIndex, CustomizeValue)>();
+        var npcCustomizations = new HashSet<(CustomizeIndex, CustomizeValue)>()
+        {
+            (CustomizeIndex.Height, CustomizeValue.Max),
+        };
         _npcCustomizeSet.Awaiter.Wait();
         foreach (var customize in _npcCustomizeSet.Select(s => s.Customize)
                      .Where(c => c.Clan == race && c.Gender == gender && c.BodyType.Value == 1))
