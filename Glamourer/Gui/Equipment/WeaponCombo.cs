@@ -81,7 +81,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
         => obj.Name;
 
     private static string GetLabel(FullEquipType type)
-        => type is FullEquipType.Unknown ? "Mainhand" : type.ToName();
+        => type.IsUnknown() ? "Mainhand" : type.ToName();
 
     private static IReadOnlyList<EquipItem> GetWeapons(FavoriteManager favorites, ItemManager items, FullEquipType type)
     {

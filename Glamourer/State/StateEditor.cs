@@ -380,7 +380,7 @@ public class StateEditor(
                     Editor.ChangeMetaState(state, meta, mergedDesign.Design.DesignData.GetMeta(meta), Source(meta), out _, settings.Key);
             }
 
-            if (settings.ResetMaterials || mergedDesign.ResetAdvancedDyes)
+            if (settings.ResetMaterials || (!settings.RespectManual && mergedDesign.ResetAdvancedDyes))
                 state.Materials.Clear();
 
             foreach (var (key, value) in mergedDesign.Design.Materials)

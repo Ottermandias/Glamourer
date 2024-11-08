@@ -143,11 +143,11 @@ public class DesignDetailTab
             _manager.ChangeForcedRedraw(_selector.Selected!, forceRedraw);
         ImGuiUtil.HoverTooltip("Set this design to always force a redraw when it is applied through any means.");
 
-        var resetMaterials = _selector.Selected!.ResetAdvancedDyes;
+        var resetAdvancedDyes = _selector.Selected!.ResetAdvancedDyes;
         ImGuiUtil.DrawFrameColumn("Reset Advanced Dyes");
         ImGui.TableNextColumn();
-        if (ImGui.Checkbox("##ResetAdvancedDyes", ref resetMaterials))
-            _manager.ChangeResetAdvancedDyes(_selector.Selected!, resetMaterials);
+        if (ImGui.Checkbox("##ResetAdvancedDyes", ref resetAdvancedDyes))
+            _manager.ChangeResetAdvancedDyes(_selector.Selected!, resetAdvancedDyes);
         ImGuiUtil.HoverTooltip("Set this design to reset any previously applied advanced dyes when it is applied through any means.");
 
         ImGuiUtil.DrawFrameColumn("Color");

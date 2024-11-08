@@ -28,8 +28,10 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
         => EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand).Zip(_lastItems)
             .Select(p => new KeyValuePair<EquipSlot, EquipItem>(p.First, p.Second));
 
-    public DateTime LastTooltip { get; private set; } = DateTime.MinValue;
-    public DateTime LastClick   { get; private set; } = DateTime.MinValue;
+    public ChangedItemType LastType    { get; private set; } = ChangedItemType.None;
+    public uint            LastId      { get; private set; } = 0;
+    public DateTime        LastTooltip { get; private set; } = DateTime.MinValue;
+    public DateTime        LastClick   { get; private set; } = DateTime.MinValue;
 
     public PenumbraChangedItemTooltip(PenumbraService penumbra, StateManager stateManager, ItemManager items, ObjectManager objects,
         CustomizeService customize, GPoseService gpose)
@@ -160,6 +162,8 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
 
     private void OnPenumbraTooltip(ChangedItemType type, uint id)
     {
+        LastType    = type;
+        LastId      = id;
         LastTooltip = DateTime.UtcNow;
         if (!Player())
             return;
@@ -204,7 +208,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
             return true;
 
         var main     = _objects.Player.GetMainhand();
-        var mainItem = _items.Identify(slot, main.Skeleton, main.Weapon, main.Variant);
+        var mainItem = _items.Identify(EquipSlot.MainHand, main.Skeleton, main.Weapon, main.Variant);
         if (slot == EquipSlot.MainHand)
             return item.Type == mainItem.Type;
 

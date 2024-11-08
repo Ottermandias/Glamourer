@@ -558,7 +558,7 @@ public class EquipmentDrawer
 
         label = combo.Label;
         var locked = offhand.Locked
-         || !_gPose.InGPose && (offhand.CurrentItem.Type is FullEquipType.Unknown || mainhand.CurrentItem.Type is FullEquipType.Unknown);
+         || !_gPose.InGPose && (offhand.CurrentItem.Type.IsUnknown() || mainhand.CurrentItem.Type.IsUnknown());
         using var disabled = ImRaii.Disabled(locked);
         if (!locked && open)
             UiHelpers.OpenCombo($"##{combo.Label}");
