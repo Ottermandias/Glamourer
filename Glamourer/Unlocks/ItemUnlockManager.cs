@@ -3,11 +3,11 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Glamourer.Events;
 using Glamourer.Services;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using Cabinet = Lumina.Excel.GeneratedSheets.Cabinet;
+using Cabinet = Lumina.Excel.Sheets.Cabinet;
 
 namespace Glamourer.Unlocks;
 
@@ -192,7 +192,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
     public bool IsUnlocked(CustomItemId itemId, out DateTimeOffset time)
     {
         // Pseudo items are always unlocked.
-        if (itemId.Id >= _items.ItemSheet.RowCount)
+        if (itemId.Id >= (uint) _items.ItemSheet.Count)
         {
             time = DateTimeOffset.MinValue;
             return true;
@@ -273,32 +273,31 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
     private static Dictionary<ItemId, UnlockRequirements> CreateUnlockData(IDataManager gameData, ItemManager items)
     {
         var ret     = new Dictionary<ItemId, UnlockRequirements>();
-        var cabinet = gameData.GetExcelSheet<Cabinet>()!;
+        var cabinet = gameData.GetExcelSheet<Cabinet>();
         foreach (var row in cabinet)
         {
-            if (items.ItemData.TryGetValue(row.Item.Row, EquipSlot.MainHand, out var item))
+            if (items.ItemData.TryGetValue(row.Item.RowId, EquipSlot.MainHand, out var item))
                 ret.TryAdd(item.ItemId, new UnlockRequirements(row.RowId, 0, 0, 0, UnlockType.Cabinet));
         }
 
-        var gilShopItem = gameData.GetExcelSheet<GilShopItem>()!;
-        var gilShop     = gameData.GetExcelSheet<GilShop>()!;
-        foreach (var row in gilShopItem)
+        var gilShopItem = gameData.GetSubrowExcelSheet<GilShopItem>();
+        var gilShop     = gameData.GetExcelSheet<GilShop>();
+        foreach (var row in gilShopItem.SelectMany(g => g))
         {
-            if (!items.ItemData.TryGetValue(row.Item.Row, EquipSlot.MainHand, out var item))
+            if (!items.ItemData.TryGetValue(row.Item.RowId, EquipSlot.MainHand, out var item))
                 continue;
 
-            var quest1      = row.QuestRequired[0].Row;
-            var quest2      = row.QuestRequired[1].Row;
-            var achievement = row.AchievementRequired.Row;
+            var quest1      = row.QuestRequired[0].RowId;
+            var quest2      = row.QuestRequired[1].RowId;
+            var achievement = row.AchievementRequired.RowId;
             var state       = row.StateRequired;
 
-            var shop = gilShop.GetRow(row.RowId);
-            if (shop != null && shop.Quest.Row != 0)
+            if (gilShop.TryGetRow(row.RowId, out var shop) && shop.Quest.RowId != 0)
             {
                 if (quest1 == 0)
-                    quest1 = shop.Quest.Row;
+                    quest1 = shop.Quest.RowId;
                 else if (quest2 == 0)
-                    quest2 = shop.Quest.Row;
+                    quest2 = shop.Quest.RowId;
             }
 
             var type = (quest1 != 0 ? UnlockType.Quest1 : 0)

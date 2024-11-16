@@ -40,7 +40,7 @@ public class UnlockOverview(
 
         foreach (var type in Enum.GetValues<FullEquipType>())
         {
-            if (type.IsOffhandType() || !items.ItemData.ByType.TryGetValue(type, out var value) || value.Count == 0)
+            if (type.IsOffhandType() || type.IsBonus() || !items.ItemData.ByType.TryGetValue(type, out var value) || value.Count == 0)
                 continue;
 
             if (ImGui.Selectable(type.ToName(), _selected1 == type))

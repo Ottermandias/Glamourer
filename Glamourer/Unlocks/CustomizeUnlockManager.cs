@@ -8,7 +8,7 @@ using Glamourer.GameData;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Services;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 
@@ -183,25 +183,25 @@ public class CustomizeUnlockManager : IDisposable, ISavable
             var list = customizations.Manager.GetSet(clan, gender);
             foreach (var hair in list.HairStyles)
             {
-                var x = sheet.FirstOrDefault(f => f.FeatureID == hair.Value.Value);
+                var x = sheet.FirstOrNull(f => f.FeatureID == hair.Value.Value);
                 if (x?.IsPurchasable == true)
                 {
-                    var name = x.FeatureID == 61
+                    var name = x.Value.FeatureID == 61
                         ? "Eternal Bond"
-                        : x.HintItem.Value?.Name.ToDalamudString().ToString().Replace("Modern Aesthetics - ", string.Empty)
+                        : x.Value.HintItem.ValueNullable?.Name.ExtractText().Replace("Modern Aesthetics - ", string.Empty)
                      ?? string.Empty;
-                    ret.TryAdd(hair, (x.Data, name));
+                    ret.TryAdd(hair, (x.Value.Data, name));
                 }
             }
 
             foreach (var paint in list.FacePaints)
             {
-                var x = sheet.FirstOrDefault(f => f.FeatureID == paint.Value.Value);
+                var x = sheet.FirstOrNull(f => f.FeatureID == paint.Value.Value);
                 if (x?.IsPurchasable == true)
                 {
-                    var name = x.HintItem.Value?.Name.ToDalamudString().ToString().Replace("Modern Cosmetics - ", string.Empty)
+                    var name = x.Value.HintItem.ValueNullable?.Name.ExtractText().Replace("Modern Cosmetics - ", string.Empty)
                      ?? string.Empty;
-                    ret.TryAdd(paint, (x.Data, name));
+                    ret.TryAdd(paint, (x.Value.Data, name));
                 }
             }
         }

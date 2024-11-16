@@ -1,5 +1,6 @@
 using Dalamud.Plugin.Services;
 using Lumina.Excel;
+using Lumina.Excel.Sheets;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -16,12 +17,12 @@ public class ItemManager
 
     private readonly Configuration _config;
 
-    public readonly ObjectIdentification                          ObjectIdentification;
-    public readonly ExcelSheet<Lumina.Excel.GeneratedSheets.Item> ItemSheet;
-    public readonly DictStain                                     Stains;
-    public readonly ItemData                                      ItemData;
-    public readonly DictBonusItems                                DictBonusItems;
-    public readonly RestrictedGear                                RestrictedGear;
+    public readonly ObjectIdentification ObjectIdentification;
+    public readonly ExcelSheet<Item>     ItemSheet;
+    public readonly DictStain            Stains;
+    public readonly ItemData             ItemData;
+    public readonly DictBonusItems       DictBonusItems;
+    public readonly RestrictedGear       RestrictedGear;
 
     public readonly EquipItem DefaultSword;
 
@@ -29,13 +30,13 @@ public class ItemManager
         ItemData itemData, DictStain stains, RestrictedGear restrictedGear, DictBonusItems dictBonusItems)
     {
         _config              = config;
-        ItemSheet            = gameData.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()!;
+        ItemSheet            = gameData.GetExcelSheet<Item>();
         ObjectIdentification = objectIdentification;
         ItemData             = itemData;
         Stains               = stains;
         RestrictedGear       = restrictedGear;
         DictBonusItems       = dictBonusItems;
-        DefaultSword         = EquipItem.FromMainhand(ItemSheet.GetRow(1601)!); // Weathered Shortsword
+        DefaultSword         = EquipItem.FromMainhand(ItemSheet.GetRow(1601)); // Weathered Shortsword
     }
 
     public (bool, CharacterArmor) ResolveRestrictedGear(CharacterArmor armor, EquipSlot slot, Race race, Gender gender)

@@ -1,6 +1,7 @@
 ﻿using OtterGui;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Race = Penumbra.GameData.Enums.Race;
 
 namespace Glamourer.GameData;
 
@@ -38,9 +39,9 @@ public class CustomizeSet
     public string Option(CustomizeIndex index)
         => OptionName[(int)index];
 
-    public IReadOnlyList<byte>                                             Voices { get; internal init; } = null!;
-    public IReadOnlyList<CharaMakeParams.MenuType>                         Types  { get; internal set; }  = null!;
-    public IReadOnlyDictionary<CharaMakeParams.MenuType, CustomizeIndex[]> Order  { get; internal set; }  = null!;
+    public IReadOnlyList<byte>                             Voices { get; internal init; } = null!;
+    public IReadOnlyList<MenuType>                         Types  { get; internal set; }  = null!;
+    public IReadOnlyDictionary<MenuType, CustomizeIndex[]> Order  { get; internal set; }  = null!;
 
 
     // Always list selector.
@@ -97,9 +98,9 @@ public class CustomizeSet
 
         return type switch
         {
-            CharaMakeParams.MenuType.ListSelector  => GetInteger0(out custom),
-            CharaMakeParams.MenuType.List1Selector => GetInteger1(out custom),
-            CharaMakeParams.MenuType.IconSelector => index switch
+            MenuType.ListSelector  => GetInteger0(out custom),
+            MenuType.List1Selector => GetInteger1(out custom),
+            MenuType.IconSelector => index switch
             {
                 CustomizeIndex.Face => Get(Faces, HrothgarFaceHack(value), out custom),
                 CustomizeIndex.Hairstyle => Get((face = HrothgarFaceHack(face)).Value < HairByFace.Count ? HairByFace[face.Value] : HairStyles,
@@ -109,7 +110,7 @@ public class CustomizeSet
                 CustomizeIndex.LipColor  => Get(LipColorsDark, value, out custom),
                 _                        => Invalid(out custom),
             },
-            CharaMakeParams.MenuType.ColorPicker => index switch
+            MenuType.ColorPicker => index switch
             {
                 CustomizeIndex.SkinColor       => Get(SkinColors,                                       value, out custom),
                 CustomizeIndex.EyeColorLeft    => Get(EyeColors,                                        value, out custom),
@@ -121,16 +122,16 @@ public class CustomizeSet
                 CustomizeIndex.FacePaintColor  => Get(FacePaintColorsDark.Concat(FacePaintColorsLight), value, out custom),
                 _                              => Invalid(out custom),
             },
-            CharaMakeParams.MenuType.DoubleColorPicker => index switch
+            MenuType.DoubleColorPicker => index switch
             {
                 CustomizeIndex.LipColor       => Get(LipColorsDark.Concat(LipColorsLight),             value, out custom),
                 CustomizeIndex.FacePaintColor => Get(FacePaintColorsDark.Concat(FacePaintColorsLight), value, out custom),
                 _                             => Invalid(out custom),
             },
-            CharaMakeParams.MenuType.IconCheckmark => GetBool(index, value, out custom),
-            CharaMakeParams.MenuType.Percentage    => GetInteger0(out custom),
-            CharaMakeParams.MenuType.Checkmark     => GetBool(index, value, out custom),
-            _                                      => Invalid(out custom),
+            MenuType.IconCheckmark => GetBool(index, value, out custom),
+            MenuType.Percentage    => GetInteger0(out custom),
+            MenuType.Checkmark     => GetBool(index, value, out custom),
+            _                      => Invalid(out custom),
         };
 
         int Get(IEnumerable<CustomizeData> list, CustomizeValue v, out CustomizeData? output)
@@ -208,10 +209,10 @@ public class CustomizeSet
 
         switch (Types[(int)index])
         {
-            case CharaMakeParams.MenuType.Percentage:    return new CustomizeData(index, (CustomizeValue)idx,           0, (ushort)idx);
-            case CharaMakeParams.MenuType.ListSelector:  return new CustomizeData(index, (CustomizeValue)idx,           0, (ushort)idx);
-            case CharaMakeParams.MenuType.List1Selector: return new CustomizeData(index, (CustomizeValue)(idx + 1),     0, (ushort)idx);
-            case CharaMakeParams.MenuType.Checkmark:     return new CustomizeData(index, CustomizeValue.Bool(idx != 0), 0, (ushort)idx);
+            case MenuType.Percentage:    return new CustomizeData(index, (CustomizeValue)idx,           0, (ushort)idx);
+            case MenuType.ListSelector:  return new CustomizeData(index, (CustomizeValue)idx,           0, (ushort)idx);
+            case MenuType.List1Selector: return new CustomizeData(index, (CustomizeValue)(idx + 1),     0, (ushort)idx);
+            case MenuType.Checkmark:     return new CustomizeData(index, CustomizeValue.Bool(idx != 0), 0, (ushort)idx);
         }
 
         return index switch
@@ -241,7 +242,7 @@ public class CustomizeSet
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public CharaMakeParams.MenuType Type(CustomizeIndex index)
+    public MenuType Type(CustomizeIndex index)
         => Types[(int)index];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -256,9 +257,9 @@ public class CustomizeSet
 
         return Type(index) switch
         {
-            CharaMakeParams.MenuType.Percentage    => 101,
-            CharaMakeParams.MenuType.IconCheckmark => 2,
-            CharaMakeParams.MenuType.Checkmark     => 2,
+            MenuType.Percentage    => 101,
+            MenuType.IconCheckmark => 2,
+            MenuType.Checkmark     => 2,
             _ => index switch
             {
                 CustomizeIndex.Face => Faces.Count,

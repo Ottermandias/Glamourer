@@ -193,7 +193,7 @@ public partial class CustomizationDrawer
 
     private void DrawMultiIcons()
     {
-        var options = _set.Order[CharaMakeParams.MenuType.IconCheckmark];
+        var options = _set.Order[MenuType.IconCheckmark];
         using var group = ImRaii.Group();
         var face = _set.DataByValue(CustomizeIndex.Face, _customize.Face, out _, _customize.Face) < 0 ? _set.Faces[0].Value : _customize.Face;
         foreach (var (featureIdx, idx) in options.WithIndex())

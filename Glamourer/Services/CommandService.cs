@@ -548,7 +548,7 @@ public class CommandService : IDisposable, IApiService
             if (baseValue != null)
             {
                 var v = baseValue.Value;
-                if (set.Type(customizeIndex) is CharaMakeParams.MenuType.ListSelector)
+                if (set.Type(customizeIndex) is MenuType.ListSelector)
                     --v;
                 set.DataByValue(customizeIndex, new CustomizeValue(v), out var data, customize.Face);
                 if (data != null)

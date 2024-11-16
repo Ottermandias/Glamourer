@@ -121,22 +121,22 @@ public partial class CustomizationDrawer(
 
             _set = _service.Manager.GetSet(_customize.Clan, _customize.Gender);
 
-            foreach (var id in _set.Order[CharaMakeParams.MenuType.Percentage])
+            foreach (var id in _set.Order[MenuType.Percentage])
                 PercentageSelector(id);
 
-            Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.IconSelector], DrawIconSelector, ImGui.SameLine);
+            Functions.IteratePairwise(_set.Order[MenuType.IconSelector], DrawIconSelector, ImGui.SameLine);
 
             DrawMultiIconSelector();
 
-            foreach (var id in _set.Order[CharaMakeParams.MenuType.ListSelector])
+            foreach (var id in _set.Order[MenuType.ListSelector])
                 DrawListSelector(id, false);
 
-            foreach (var id in _set.Order[CharaMakeParams.MenuType.List1Selector])
+            foreach (var id in _set.Order[MenuType.List1Selector])
                 DrawListSelector(id, true);
 
-            Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.ColorPicker], DrawColorPicker, ImGui.SameLine);
+            Functions.IteratePairwise(_set.Order[MenuType.ColorPicker], DrawColorPicker, ImGui.SameLine);
 
-            Functions.IteratePairwise(_set.Order[CharaMakeParams.MenuType.Checkmark], DrawCheckbox,
+            Functions.IteratePairwise(_set.Order[MenuType.Checkmark], DrawCheckbox,
                 () => ImGui.SameLine(_comboSelectorSize - _framedIconSize.X + ImGui.GetStyle().WindowPadding.X));
             return Changed != 0 || ChangeApply != _initialApply;
         }

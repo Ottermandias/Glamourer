@@ -2,7 +2,7 @@
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Log;
@@ -91,8 +91,8 @@ public sealed class BonusItemCombo : FilterComboCache<EquipItem>
 
         return slot switch
         {
-            BonusItemFlag.Glasses => sheet.GetRow(16050)?.Text.ToString() ?? "Facewear",
-            BonusItemFlag.UnkSlot => sheet.GetRow(16051)?.Text.ToString() ?? "Facewear",
+            BonusItemFlag.Glasses => sheet.TryGetRow(16050, out var text) ? text.Text.ToString() : "Facewear",
+            BonusItemFlag.UnkSlot => sheet.TryGetRow(16051, out var text) ? text.Text.ToString() : "Facewear",
 
             _ => string.Empty,
         };

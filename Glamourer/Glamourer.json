@@ -8,7 +8,7 @@
   "AssemblyVersion": "9.0.0.1",
   "RepoUrl": "https://github.com/Ottermandias/Glamourer",
   "ApplicableVersion": "any",
-  "DalamudApiLevel": 10,
+  "DalamudApiLevel": 11,
   "ImageUrls": null,
   "IconUrl": "https://raw.githubusercontent.com/Ottermandias/Glamourer/master/images/icon.png"
 }

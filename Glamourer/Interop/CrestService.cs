@@ -47,7 +47,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
         flags &= CrestExtensions.AllRelevant;
         var       currentCrests = gameObject.CrestBitfield;
         using var update        = _inUpdate.EnterMethod();
-        _crestChangeHook.Original(gameObject.AsCharacter, (byte) flags);
+        _crestChangeHook.Original(&gameObject.AsCharacter->DrawData, (byte) flags);
         gameObject.CrestBitfield = currentCrests;
     }
 
@@ -62,14 +62,14 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
         _crestChangeHook.Dispose();
     }
 
-    private delegate void CrestChangeDelegate(Character* character, byte crestFlags);
+    private delegate void CrestChangeDelegate(DrawDataContainer* container, byte crestFlags);
 
     [Signature(Sigs.CrestChange, DetourName = nameof(CrestChangeDetour))]
     private readonly Hook<CrestChangeDelegate> _crestChangeHook = null!;
 
-    private void CrestChangeDetour(Character* character, byte crestFlags)
+    private void CrestChangeDetour(DrawDataContainer* container, byte crestFlags)
     {
-        var actor = (Actor)character;
+        var actor = (Actor)container->OwnerObject;
         foreach (var slot in CrestExtensions.AllRelevantSet)
         {
             var newValue = ((CrestFlag)crestFlags).HasFlag(slot);
@@ -78,9 +78,9 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
         }
 
         Glamourer.Log.Verbose(
-            $"Called CrestChange on {(ulong)character:X} with {crestFlags:X} and prior flags {((Actor)character).CrestBitfield}.");
+            $"Called CrestChange on {(ulong)container:X} with {crestFlags:X} and prior flags {actor.CrestBitfield}.");
         using var _ = _inUpdate.EnterMethod();
-        _crestChangeHook.Original(character, crestFlags);
+        _crestChangeHook.Original(container, crestFlags);
     }
 
     public static bool GetModelCrest(Actor gameObject, CrestFlag slot)
