@@ -190,7 +190,7 @@ internal class CustomizeSetFactory(
 
     private CustomizeData[] ExtractValues(CharaMakeType row, CustomizeIndex type)
     {
-        var data = row.CharaMakeStruct.FirstOrNull(m => m.Customize == CustomizeIndex.TailShape.ToByteAndMask().ByteIdx);
+        var data = row.CharaMakeStruct.FirstOrNull(m => m.Customize == type.ToByteAndMask().ByteIdx);
         return data?.SubMenuParam.Take(data.Value.SubMenuNum).Select((v, i) => FromValueAndIndex(type, v, i)).ToArray() ?? [];
     }
 
