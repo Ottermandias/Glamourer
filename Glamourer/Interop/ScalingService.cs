@@ -5,8 +5,7 @@ using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Penumbra.GameData;
 using Penumbra.GameData.Interop;
-using Penumbra.GameData.Structs;
-using System.ComponentModel;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Character = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
 
 namespace Glamourer.Interop;
@@ -70,8 +69,7 @@ public unsafe class ScalingService : IDisposable
 
     private void PlaceMinionDetour(Companion* companion)
     {
-        // TODO Update CS
-        var owner = (Actor)((nint*)companion)[0x45C];
+        var owner = (Actor)(GameObject*)companion->Owner;
         if (!owner.IsCharacter)
         {
             _placeMinionHook.Original(companion);
