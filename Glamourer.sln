@@ -6,7 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{383AEE76-D423-431C-893A-7AB3DEA13630}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		.github\workflows\release.yml = .github\workflows\release.yml
 		repo.json = repo.json
+		.github\workflows\test_release.yml = .github\workflows\test_release.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Glamourer", "Glamourer\Glamourer.csproj", "{01EB903D-871F-4285-A8CF-6486561D5B5B}"
