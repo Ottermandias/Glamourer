@@ -52,11 +52,11 @@ public unsafe class ModelEvaluationPanel(
         ImGui.TableNextColumn();
         if (actor.IsCharacter)
         {
-            ImGui.TextUnformatted(actor.AsCharacter->CharacterData.ModelCharaId.ToString());
+            ImGui.TextUnformatted(actor.AsCharacter->ModelContainer.ModelCharaId.ToString());
             if (actor.AsCharacter->CharacterData.TransformationId != 0)
                 ImGui.TextUnformatted($"Transformation Id: {actor.AsCharacter->CharacterData.TransformationId}");
-            if (actor.AsCharacter->CharacterData.ModelCharaId_2 != -1)
-                ImGui.TextUnformatted($"ModelChara2 {actor.AsCharacter->CharacterData.ModelCharaId_2}");
+            if (actor.AsCharacter->ModelContainer.ModelCharaId_2 != -1)
+                ImGui.TextUnformatted($"ModelChara2 {actor.AsCharacter->ModelContainer.ModelCharaId_2}");
 
             ImGuiUtil.DrawTableColumn("Character Mode");
             ImGuiUtil.DrawTableColumn($"{actor.AsCharacter->Mode}");

@@ -166,7 +166,7 @@ internal class CustomizeSetFactory(
                 continue;
 
             // Hair Row from CustomizeSheet might not be set in case of unlockable hair.
-            if (_customizeSheet.TryGetRow(customizeIdx, out var hairRow))
+            if (!_customizeSheet.TryGetRow(customizeIdx, out var hairRow))
                 hairList.Add(new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)i, customizeIdx));
             else if (_icons.IconExists(hairRow.Icon))
                 hairList.Add(new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)hairRow.FeatureID, hairRow.Icon,

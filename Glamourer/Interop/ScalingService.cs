@@ -19,7 +19,7 @@ public unsafe class ScalingService : IDisposable
         _setupMountHook =
             interop.HookFromAddress<SetupMount>((nint)MountContainer.MemberFunctionPointers.SetupMount, SetupMountDetour);
         _calculateHeightHook =
-            interop.HookFromAddress<CalculateHeight>((nint)HeightContainer.MemberFunctionPointers.CalculateHeight, CalculateHeightDetour);
+            interop.HookFromAddress<CalculateHeight>((nint)Character.MemberFunctionPointers.CalculateHeight, CalculateHeightDetour);
 
         _setupMountHook.Enable();
         _updateOrnamentHook.Enable();

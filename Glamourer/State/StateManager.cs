@@ -114,14 +114,14 @@ public sealed class StateManager(
         // Model ID is only unambiguously contained in the game object.
         // The draw object only has the object type.
         // TODO reverse search model data to get model id from model.
-        if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
+        if (!_humans.IsHuman((uint)actor.AsCharacter->ModelContainer.ModelCharaId))
         {
-            ret.LoadNonHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId, *(CustomizeArray*)&actor.AsCharacter->DrawData.CustomizeData,
+            ret.LoadNonHuman((uint)actor.AsCharacter->ModelContainer.ModelCharaId, *(CustomizeArray*)&actor.AsCharacter->DrawData.CustomizeData,
                 (nint)Unsafe.AsPointer(ref actor.AsCharacter->DrawData.EquipmentModelIds[0]));
             return ret;
         }
 
-        ret.ModelId = (uint)actor.AsCharacter->CharacterData.ModelCharaId;
+        ret.ModelId = (uint)actor.AsCharacter->ModelContainer.ModelCharaId;
         ret.IsHuman = true;
 
         CharacterWeapon main;

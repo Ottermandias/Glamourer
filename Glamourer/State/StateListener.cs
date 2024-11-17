@@ -593,7 +593,7 @@ public class StateListener : IDisposable
     private unsafe UpdateState UpdateBaseData(Actor actor, ActorState state, uint modelId, nint customizeData, nint equipData)
     {
         // Model ID does not agree between game object and new draw object => Transformation.
-        if (modelId != (uint)actor.AsCharacter->CharacterData.ModelCharaId)
+        if (modelId != (uint)actor.AsCharacter->ModelContainer.ModelCharaId)
             return UpdateState.Transformed;
 
         // Model ID did not change to stored state.

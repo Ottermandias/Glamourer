@@ -277,7 +277,7 @@ public sealed class AutoDesignApplier : IDisposable
         }
 
         forcedRedraw = false;
-        if (!_humans.IsHuman((uint)actor.AsCharacter->CharacterData.ModelCharaId))
+        if (!_humans.IsHuman((uint)actor.AsCharacter->ModelContainer.ModelCharaId))
             return;
 
         if (actor.IsTransformed)

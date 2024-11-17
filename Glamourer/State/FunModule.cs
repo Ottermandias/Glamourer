@@ -333,7 +333,7 @@ public unsafe class FunModule : IDisposable
         => actor.IsCharacter
          && actor.AsObject->ObjectKind is ObjectKind.Pc
          && !actor.IsTransformed
-         && actor.AsCharacter->CharacterData.ModelCharaId == 0;
+         && actor.AsCharacter->ModelContainer.ModelCharaId == 0;
 
     private static void KeepOldArmor(Actor actor, EquipSlot slot, ref CharacterArmor armor)
         => armor = actor.Model.Valid ? actor.Model.GetArmor(slot) : armor;
