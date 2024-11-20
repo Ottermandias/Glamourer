@@ -200,7 +200,8 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     /// </summary>
     private static CharacterWeapon GetTempSlot(Weapon* weapon)
     {
-        var changedData = *(void**)((byte*)weapon + 0xA00);
+        // TODO: Use ClientStructs
+        var changedData = *(void**)((byte*)weapon + 0xA40);
         if (changedData == null)
             return new CharacterWeapon(weapon->ModelSetId, weapon->SecondaryId, (Variant)weapon->Variant, StainIds.FromWeapon(*weapon));
 
