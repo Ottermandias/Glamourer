@@ -37,6 +37,7 @@ public class GlamourerChangelog
         Add1_3_1_0(Changelog);
         Add1_3_2_0(Changelog);
         Add1_3_3_0(Changelog);
+        Add1_3_4_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -56,6 +57,12 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_3_4_0(Changelog log)
+        => log.NextVersion("Version 1.3.4.0")
+            .RegisterEntry("Glamourer has been updated for Dalamud API 11 and patch 7.1.")
+            .RegisterEntry("Maybe fixed issues with shared weapon types and reset designs.")
+            .RegisterEntry("Fixed issues with resetting advanced dyes and certain weapon types");
 
     private static void Add1_3_3_0(Changelog log)
         => log.NextVersion("Version 1.3.3.0")
