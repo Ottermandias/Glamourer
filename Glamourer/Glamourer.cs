@@ -139,6 +139,7 @@ public class Glamourer : IDalamudPlugin
         ReadOnlySpan<string> relevantPlugins =
         [
             "Penumbra", "MareSynchronos", "CustomizePlus", "SimpleHeels", "VfxEditor", "heliosphere-plugin", "Ktisis", "Brio", "DynamicBridge",
+            "LoporritSync",
         ];
         var plugins = _services.GetService<IDalamudPluginInterface>().InstalledPlugins
             .GroupBy(p => p.InternalName)

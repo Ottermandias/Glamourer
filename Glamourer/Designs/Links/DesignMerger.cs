@@ -1,4 +1,5 @@
 ﻿using Glamourer.Automation;
+using Glamourer.Designs.Special;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
@@ -23,8 +24,7 @@ public class DesignMerger(
             modAssociations);
 
     public MergedDesign Merge(IEnumerable<(IDesignStandIn, ApplicationType, JobFlag)> designs, in CustomizeArray currentCustomize,
-        in DesignData baseRef,
-        bool respectOwnership, bool modAssociations)
+        in DesignData baseRef, bool respectOwnership, bool modAssociations)
     {
         var ret = new MergedDesign(designManager);
         ret.Design.SetCustomize(_customize, currentCustomize);

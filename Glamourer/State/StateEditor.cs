@@ -359,7 +359,7 @@ public class StateEditor(
                     }
 
                     var currentType = state.BaseData.Item(weaponSlot).Type;
-                    if (mergedDesign.Weapons.TryGet(currentType, state.LastJob, out var weapon))
+                    if (mergedDesign.Weapons.TryGet(currentType, state.LastJob, true, out var weapon))
                     {
                         var source = settings.UseSingleSource ? settings.Source :
                             weapon.Item2 is StateSource.Game  ? StateSource.Game : settings.Source;

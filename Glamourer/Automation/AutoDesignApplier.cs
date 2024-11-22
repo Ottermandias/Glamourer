@@ -77,7 +77,7 @@ public sealed class AutoDesignApplier : IDisposable
             {
                 case EquipSlot.MainHand:
                 {
-                    if (_jobChangeState.TryGetValue(current.Type, actor.Job, out var data))
+                    if (_jobChangeState.TryGetValue(current.Type, actor.Job, false, out var data))
                     {
                         Glamourer.Log.Verbose(
                             $"Changing Mainhand from {state.ModelData.Weapon(EquipSlot.MainHand)} | {state.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{actor.Address:X}.");
@@ -89,7 +89,7 @@ public sealed class AutoDesignApplier : IDisposable
                 }
                 case EquipSlot.OffHand when current.Type == state.BaseData.MainhandType.Offhand():
                 {
-                    if (_jobChangeState.TryGetValue(current.Type, actor.Job, out var data))
+                    if (_jobChangeState.TryGetValue(current.Type, actor.Job, false, out var data))
                     {
                         Glamourer.Log.Verbose(
                             $"Changing Offhand from {state.ModelData.Weapon(EquipSlot.OffHand)} | {state.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{actor.Address:X}.");
