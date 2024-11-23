@@ -18,7 +18,7 @@ public unsafe class ScalingService : IDisposable
         _setupMountHook =
             interop.HookFromAddress<SetupMount>((nint)MountContainer.MemberFunctionPointers.SetupMount, SetupMountDetour);
         _calculateHeightHook =
-            interop.HookFromAddress<CalculateHeight>((nint)Character.MemberFunctionPointers.CalculateHeight, CalculateHeightDetour);
+            interop.HookFromAddress<CalculateHeight>((nint)ModelContainer.MemberFunctionPointers.CalculateHeight, CalculateHeightDetour);
 
         _setupMountHook.Enable();
         _updateOrnamentHook.Enable();
@@ -37,7 +37,7 @@ public unsafe class ScalingService : IDisposable
     private delegate void  SetupMount(MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4);
     private delegate void  UpdateOrnament(OrnamentContainer* ornament);
     private delegate void  PlaceMinion(Companion* character);
-    private delegate float CalculateHeight(Character* character);
+    private delegate float CalculateHeight(ModelContainer* character);
 
     private readonly Hook<SetupMount> _setupMountHook;
 
@@ -85,12 +85,12 @@ public unsafe class ScalingService : IDisposable
         }
     }
 
-    private float CalculateHeightDetour(Character* character)
+    private float CalculateHeightDetour(ModelContainer* container)
     {
-        var (gender, bodyType, clan, height) = GetHeightRelevantCustomize(character);
-        SetHeightCustomize(character, character->GameObject.DrawObject);
-        var ret = _calculateHeightHook.Original(character);
-        SetHeightCustomize(character, gender, bodyType, clan, height);
+        var (gender, bodyType, clan, height) = GetHeightRelevantCustomize(container->OwnerObject);
+        SetHeightCustomize(container->OwnerObject, container->OwnerObject->DrawObject);
+        var ret = _calculateHeightHook.Original(container);
+        SetHeightCustomize(container->OwnerObject, gender, bodyType, clan, height);
         return ret;
     }
 
