@@ -11,27 +11,24 @@ namespace Glamourer.Interop;
 
 public class ContextMenuService : IDisposable
 {
-    public const int ItemSearchContextItemId = 0x1738;
-    public const int ChatLogContextItemId    = 0x950;
+    public const int ChatLogContextItemId = 0x958;
 
     private readonly ItemManager   _items;
     private readonly IContextMenu  _contextMenu;
     private readonly StateManager  _state;
     private readonly ObjectManager _objects;
-    private readonly IGameGui      _gameGui;
     private          EquipItem     _lastItem;
     private readonly StainId[]     _lastStains = new StainId[StainId.NumStains];
 
     private readonly MenuItem _inventoryItem;
 
-    public ContextMenuService(ItemManager items, StateManager state, ObjectManager objects, IGameGui gameGui, Configuration config,
+    public ContextMenuService(ItemManager items, StateManager state, ObjectManager objects, Configuration config,
         IContextMenu context)
     {
         _contextMenu = context;
         _items       = items;
         _state       = state;
         _objects     = objects;
-        _gameGui     = gameGui;
         if (config.EnableGameContextMenu)
             Enable();
 
@@ -55,7 +52,7 @@ public class ContextMenuService : IDisposable
             if (arg.TargetItem.HasValue && HandleItem(arg.TargetItem.Value.ItemId))
             {
                 for (var i = 0; i < arg.TargetItem.Value.Stains.Length; ++i)
-                    _lastStains[i] = (StainId)arg.TargetItem.Value.Stains[i];
+                    _lastStains[i] = arg.TargetItem.Value.Stains[i];
                 args.AddMenuItem(_inventoryItem);
             }
         }
@@ -72,11 +69,41 @@ public class ContextMenuService : IDisposable
                 }
                 case "ChatLog":
                 {
-                    var agent = _gameGui.FindAgentInterface("ChatLog");
-                    if (agent == nint.Zero || !ValidateChatLogContext(agent))
+                    var agent = AgentChatLog.Instance();
+                    if (agent == null || !ValidateChatLogContext(agent))
                         return;
 
                     if (HandleItem(*(ItemId*)(agent + ChatLogContextItemId)))
+                    {
+                        for (var i = 0; i < _lastStains.Length; ++i)
+                            _lastStains[i] = 0;
+                        args.AddMenuItem(_inventoryItem);
+                    }
+
+                    break;
+                }
+                case "RecipeNote":
+                {
+                    var agent = AgentRecipeNote.Instance();
+                    if (agent == null)
+                        return;
+
+                    if (HandleItem(agent->ContextMenuResultItemId))
+                    {
+                        for (var i = 0; i < _lastStains.Length; ++i)
+                            _lastStains[i] = 0;
+                        args.AddMenuItem(_inventoryItem);
+                    }
+
+                    break;
+                }
+                case "InclusionShop":
+                {
+                    var agent = AgentRecipeItemContext.Instance();
+                    if (agent == null)
+                        return;
+
+                    if (HandleItem(agent->ResultItemId))
                     {
                         for (var i = 0; i < _lastStains.Length; ++i)
                             _lastStains[i] = 0;
@@ -125,6 +152,6 @@ public class ContextMenuService : IDisposable
         return _items.ItemData.TryGetValue(itemId, EquipSlot.MainHand, out _lastItem);
     }
 
-    private static unsafe bool ValidateChatLogContext(nint agent)
-        => *(uint*)(agent + ChatLogContextItemId + 8) == 3;
+    private static unsafe bool ValidateChatLogContext(AgentChatLog* agent)
+        => *(&agent->ContextItemId + 8) == 3;
 }
