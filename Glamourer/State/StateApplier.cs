@@ -309,27 +309,31 @@ public class StateApplier(
         return data;
     }
 
-    public unsafe void ChangeMaterialValue(ActorData data, MaterialValueIndex index, ColorRow? value, bool force)
+    public unsafe void ChangeMaterialValue(ActorState state, ActorData data, MaterialValueIndex changedIndex, ColorRow? changedValue,
+        bool force)
     {
         if (!force && !_config.UseAdvancedDyes)
             return;
 
         foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))
         {
-            if (!index.TryGetTexture(actor, out var texture, out var mode))
+            if (!changedIndex.TryGetTexture(actor, out var texture))
                 continue;
 
-            if (!_directX.TryGetColorTable(*texture, out var table))
+            if (!PrepareColorSet.TryGetColorTable(actor, changedIndex, out var baseTable, out var mode))
                 continue;
 
-            if (value.HasValue)
-                value.Value.Apply(ref table[index.RowIndex], mode);
-            else if (PrepareColorSet.TryGetColorTable(actor, index, out var baseTable, out _))
-                table[index.RowIndex] = baseTable[index.RowIndex];
-            else
-                continue;
+            foreach (var (index, value) in state.Materials.GetValues(
+                         MaterialValueIndex.Min(changedIndex.DrawObject, changedIndex.SlotIndex, changedIndex.MaterialIndex),
+                         MaterialValueIndex.Max(changedIndex.DrawObject, changedIndex.SlotIndex, changedIndex.MaterialIndex)))
+            {
+                if (index == changedIndex.Key)
+                    changedValue?.Apply(ref baseTable[changedIndex.RowIndex], mode);
+                else
+                    value.Model.Apply(ref baseTable[MaterialValueIndex.FromKey(index).RowIndex], mode);
+            }
 
-            _directX.ReplaceColorTable(texture, table);
+            _directX.ReplaceColorTable(texture, baseTable);
         }
     }
 
@@ -337,7 +341,8 @@ public class StateApplier(
     {
         var data = GetData(state);
         if (apply)
-            ChangeMaterialValue(data, index, state.Materials.TryGetValue(index, out var v) ? v.Model : null, state.IsLocked);
+            ChangeMaterialValue(state, data, index, state.Materials.TryGetValue(index, out var v) ? v.Model : null, state.IsLocked);
+
         return data;
     }
 

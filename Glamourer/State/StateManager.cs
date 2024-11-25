@@ -293,7 +293,7 @@ public sealed class StateManager(
         {
             actors = Applier.ChangeParameters(state, CustomizeParameterExtensions.All, true);
             foreach (var (idx, mat) in state.Materials.Values)
-                Applier.ChangeMaterialValue(actors, MaterialValueIndex.FromKey(idx), mat.Game, true);
+                Applier.ChangeMaterialValue(state, actors, MaterialValueIndex.FromKey(idx), mat.Game, true);
         }
 
         state.Materials.Clear();
