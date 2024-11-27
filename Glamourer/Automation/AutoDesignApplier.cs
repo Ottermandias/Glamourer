@@ -222,12 +222,11 @@ public sealed class AutoDesignApplier : IDisposable
         if (!_config.EnableAutoDesigns)
             return;
 
-        if (!GetPlayerSet(identifier, out var set))
-            return;
-
         if (reset)
             _state.ResetState(state, StateSource.Game);
-        Reduce(actor, state, set, false, false, out forcedRedraw);
+
+        if (GetPlayerSet(identifier, out var set))
+            Reduce(actor, state, set, false, false, out forcedRedraw);
     }
 
     public bool Reduce(Actor actor, ActorIdentifier identifier, [NotNullWhen(true)] out ActorState? state)
@@ -284,7 +283,8 @@ public sealed class AutoDesignApplier : IDisposable
             return;
 
         var mergedDesign = _designMerger.Merge(
-            set.Designs.Where(d => d.IsActive(actor)).SelectMany(d => d.Design.AllLinks.Select(l => (l.Design, l.Flags & d.Type, d.Jobs.Flags))),
+            set.Designs.Where(d => d.IsActive(actor))
+                .SelectMany(d => d.Design.AllLinks.Select(l => (l.Design, l.Flags & d.Type, d.Jobs.Flags))),
             state.ModelData.Customize, state.BaseData, true, _config.AlwaysApplyAssociatedMods);
 
         _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, false));
