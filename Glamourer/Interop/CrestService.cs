@@ -2,6 +2,7 @@
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using OtterGui.Classes;
 using Penumbra.GameData;
@@ -37,6 +38,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
         _humanSetFreeCompanyCrestVisibleOnSlot.Enable();
         _weaponSetFreeCompanyCrestVisibleOnSlot.Enable();
         _crestChangeHook.Enable();
+        _crestChangeCallerHook.Enable();
     }
 
     public void UpdateCrests(Actor gameObject, CrestFlag flags)
@@ -60,6 +62,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
         _humanSetFreeCompanyCrestVisibleOnSlot.Dispose();
         _weaponSetFreeCompanyCrestVisibleOnSlot.Dispose();
         _crestChangeHook.Dispose();
+        _crestChangeCallerHook.Dispose();
     }
 
     private delegate void CrestChangeDelegate(DrawDataContainer* container, byte crestFlags);
@@ -81,6 +84,28 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
             $"Called CrestChange on {(ulong)container:X} with {crestFlags:X} and prior flags {actor.CrestBitfield}.");
         using var _ = _inUpdate.EnterMethod();
         _crestChangeHook.Original(container, crestFlags);
+    }
+
+    [Signature(Sigs.CrestChangeCaller, DetourName = nameof(CrestChangeCallerDetour))]
+    private readonly Hook<CrestChangeCallerDelegate> _crestChangeCallerHook = null!;
+
+    private delegate void CrestChangeCallerDelegate(DrawDataContainer* container, byte* data);
+
+    private void CrestChangeCallerDetour(DrawDataContainer* container, byte* data)
+    {
+        var     actor = (Actor)container->OwnerObject;
+        ref var flags = ref data[16];
+        foreach (var slot in CrestExtensions.AllRelevantSet)
+        {
+            var newValue = ((CrestFlag)flags).HasFlag(slot);
+            Invoke(actor, slot, ref newValue);
+            flags = (byte)(newValue ? flags | (byte)slot : flags & (byte)~slot);
+        }
+        Glamourer.Log.Verbose(
+            $"Called inlined CrestChange via CrestChangeCaller on {(ulong)container:X} with {(flags & 0x1F):X} and prior flags {actor.CrestBitfield}.");
+
+        using var _ = _inUpdate.EnterMethod();
+        _crestChangeCallerHook.Original(container, data);
     }
 
     public static bool GetModelCrest(Actor gameObject, CrestFlag slot)

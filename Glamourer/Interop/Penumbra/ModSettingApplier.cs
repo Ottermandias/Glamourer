@@ -18,7 +18,7 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
         if (!objects.TryGetValue(state.Identifier, out var data))
         {
             Glamourer.Log.Verbose(
-                $"[Mod Applier] No mod settings applied because no actor for {state.Identifier} could be found to associate collection.");
+                $"[Mod Applier] No mod settings applied because no actor for {state.Identifier.Incognito(null)} could be found to associate collection.");
             return;
         }
 
