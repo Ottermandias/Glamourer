@@ -99,11 +99,14 @@ public sealed class DesignManager : DesignEditor
         var (actualName, path) = ParseName(name, handlePath);
         var design = new Design(Customizations, Items)
         {
-            CreationDate = DateTimeOffset.UtcNow,
-            LastEdit     = DateTimeOffset.UtcNow,
-            Identifier   = CreateNewGuid(),
-            Name         = actualName,
-            Index        = Designs.Count,
+            CreationDate      = DateTimeOffset.UtcNow,
+            LastEdit          = DateTimeOffset.UtcNow,
+            Identifier        = CreateNewGuid(),
+            Name              = actualName,
+            Index             = Designs.Count,
+            ForcedRedraw      = Config.DefaultDesignSettings.AlwaysForceRedrawing,
+            ResetAdvancedDyes = Config.DefaultDesignSettings.ResetAdvancedDyes,
+            QuickDesign       = Config.DefaultDesignSettings.ShowQuickDesignBar,
         };
         Designs.Add(design);
         Glamourer.Log.Debug($"Added new design {design.Identifier}.");
@@ -118,11 +121,14 @@ public sealed class DesignManager : DesignEditor
         var (actualName, path) = ParseName(name, handlePath);
         var design = new Design(clone)
         {
-            CreationDate = DateTimeOffset.UtcNow,
-            LastEdit     = DateTimeOffset.UtcNow,
-            Identifier   = CreateNewGuid(),
-            Name         = actualName,
-            Index        = Designs.Count,
+            CreationDate      = DateTimeOffset.UtcNow,
+            LastEdit          = DateTimeOffset.UtcNow,
+            Identifier        = CreateNewGuid(),
+            Name              = actualName,
+            Index             = Designs.Count,
+            ForcedRedraw      = Config.DefaultDesignSettings.AlwaysForceRedrawing,
+            ResetAdvancedDyes = Config.DefaultDesignSettings.ResetAdvancedDyes,
+            QuickDesign       = Config.DefaultDesignSettings.ShowQuickDesignBar,
         };
 
         Designs.Add(design);
@@ -138,11 +144,11 @@ public sealed class DesignManager : DesignEditor
         var (actualName, path) = ParseName(name, handlePath);
         var design = new Design(clone)
         {
-            CreationDate = DateTimeOffset.UtcNow,
-            LastEdit     = DateTimeOffset.UtcNow,
-            Identifier   = CreateNewGuid(),
-            Name         = actualName,
-            Index        = Designs.Count,
+            CreationDate      = DateTimeOffset.UtcNow,
+            LastEdit          = DateTimeOffset.UtcNow,
+            Identifier        = CreateNewGuid(),
+            Name              = actualName,
+            Index             = Designs.Count,
         };
         Designs.Add(design);
         Glamourer.Log.Debug(

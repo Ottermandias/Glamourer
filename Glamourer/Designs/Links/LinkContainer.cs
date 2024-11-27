@@ -14,6 +14,16 @@ public sealed class LinkContainer : List<DesignLink>
     public new int Count
         => base.Count + After.Count;
 
+    public LinkContainer Clone()
+    {
+        var ret = new LinkContainer();
+        ret.EnsureCapacity(base.Count);
+        ret.After.EnsureCapacity(After.Count);
+        ret.AddRange(this);
+        ret.After.AddRange(After);
+        return ret;
+    }
+
     public bool Reorder(int fromIndex, LinkOrder fromOrder, int toIndex, LinkOrder toOrder)
     {
         var fromList = fromOrder switch
@@ -89,13 +99,15 @@ public sealed class LinkContainer : List<DesignLink>
 
         if (GetAllLinks(parent).Any(l => l.Link.Link == child && l.Order != order))
         {
-            error = $"Adding {child.Incognito} to {parent.Incognito}s links would create a circle, the parent already links to the child in the opposite direction.";
+            error =
+                $"Adding {child.Incognito} to {parent.Incognito}s links would create a circle, the parent already links to the child in the opposite direction.";
             return false;
         }
 
         if (GetAllLinks(child).Any(l => l.Link.Link == parent && l.Order == order))
         {
-            error = $"Adding {child.Incognito} to {parent.Incognito}s links would create a circle, the child already links to the parent in the opposite direction.";
+            error =
+                $"Adding {child.Incognito} to {parent.Incognito}s links would create a circle, the child already links to the parent in the opposite direction.";
             return false;
         }
 

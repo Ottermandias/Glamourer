@@ -10,6 +10,7 @@ using Glamourer.Interop.PalettePlus;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using OtterGui.Text;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
@@ -51,6 +52,7 @@ public class SettingsTab(
         using (ImRaii.Child("SettingsChild"))
         {
             DrawBehaviorSettings();
+            DrawDesignDefaultSettings();
             DrawInterfaceSettings();
             DrawColorSettings();
             overrides.Draw();
@@ -99,6 +101,19 @@ public class SettingsTab(
           + "If you enable this setting, you are aware that any resulting misconfiguration is your own fault.",
             config.AlwaysApplyAssociatedMods, v => config.AlwaysApplyAssociatedMods = v);
         ImGui.NewLine();
+    }
+
+    private void DrawDesignDefaultSettings()
+    {
+        if (!ImUtf8.CollapsingHeader("Design Defaults"))
+            return;
+
+        Checkbox("Show in Quick Design Bar", "Newly created designs will be shown in the quick design bar by default.",
+            config.DefaultDesignSettings.ShowQuickDesignBar, v => config.DefaultDesignSettings.ShowQuickDesignBar = v);
+        Checkbox("Reset Advanced Dyes", "Newly created designs will be configured to reset advanced dyes on application by default.",
+            config.DefaultDesignSettings.ResetAdvancedDyes, v => config.DefaultDesignSettings.ResetAdvancedDyes = v);
+        Checkbox("Always Force Redraw", "Newly created designs will be configured to force character redraws on application by default.",
+            config.DefaultDesignSettings.AlwaysForceRedrawing, v => config.DefaultDesignSettings.AlwaysForceRedrawing = v);
     }
 
     private void DrawInterfaceSettings()

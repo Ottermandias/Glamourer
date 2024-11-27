@@ -25,6 +25,13 @@ public enum HeightDisplayType
     OlympicPool,
 }
 
+public class DefaultDesignSettings
+{
+    public bool AlwaysForceRedrawing = false;
+    public bool ResetAdvancedDyes    = false;
+    public bool ShowQuickDesignBar   = true;
+}
+
 public class Configuration : IPluginConfiguration, ISavable
 {
     [JsonIgnore]
@@ -58,6 +65,8 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool AlwaysApplyAssociatedMods        { get; set; } = false;
     public bool AllowDoubleClickToApply          { get; set; } = false;
     public bool RespectManualOnAutomationUpdate  { get; set; } = false;
+
+    public DefaultDesignSettings DefaultDesignSettings { get; set; } = new();
 
     public HeightDisplayType    HeightDisplayType    { get; set; } = HeightDisplayType.Centimetre;
     public RenameField          ShowRename           { get; set; } = RenameField.BothDataPrio;
