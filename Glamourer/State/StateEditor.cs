@@ -437,7 +437,7 @@ public class StateEditor(
         if (!settings.MergeLinks || design is not Design d)
             merged = new MergedDesign(design);
         else
-            merged = merger.Merge(d.AllLinks, state.ModelData.IsHuman ? state.ModelData.Customize : CustomizeArray.Default, state.BaseData,
+            merged = merger.Merge(d.AllLinks(true), state.ModelData.IsHuman ? state.ModelData.Customize : CustomizeArray.Default, state.BaseData,
                 false, Config.AlwaysApplyAssociatedMods);
 
         ApplyDesign(data, merged, settings with

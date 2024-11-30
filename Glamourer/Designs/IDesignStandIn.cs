@@ -16,7 +16,7 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
     public string      SerializeName();
     public StateSource AssociatedSource();
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks { get; }
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication);
 
     public void AddData(JObject jObj);
 

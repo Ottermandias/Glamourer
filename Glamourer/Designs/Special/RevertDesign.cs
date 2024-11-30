@@ -29,9 +29,9 @@ public class RevertDesign : IDesignStandIn
     public StateSource AssociatedSource()
         => StateSource.Game;
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool _)
     {
-        get { yield return (this, ApplicationType.All, JobFlag.All); }
+        yield return (this, ApplicationType.All, JobFlag.All);
     }
 
     public void AddData(JObject jObj)

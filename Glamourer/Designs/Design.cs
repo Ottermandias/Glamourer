@@ -58,7 +58,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     public string Incognito
         => Identifier.ToString()[..8];
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication)
         => LinkContainer.GetAllLinks(this).Select(t => ((IDesignStandIn)t.Link.Link, t.Link.Type, JobFlag.All));
 
     #endregion

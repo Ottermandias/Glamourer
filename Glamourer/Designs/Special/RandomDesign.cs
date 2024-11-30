@@ -46,17 +46,17 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public StateSource AssociatedSource()
         => StateSource.Manual;
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication)
     {
-        get
-        {
+        if (newApplication)
             _currentDesign = rng.Design(Predicates);
-            if (_currentDesign == null)
-                yield break;
+        else
+            _currentDesign ??= rng.Design(Predicates);
+        if (_currentDesign == null)
+            yield break;
 
-            foreach (var (link, type, jobs) in _currentDesign.AllLinks)
-                yield return (link, type, jobs);
-        }
+        foreach (var (link, type, jobs) in _currentDesign.AllLinks(newApplication))
+            yield return (link, type, jobs);
     }
 
     public void AddData(JObject jObj)

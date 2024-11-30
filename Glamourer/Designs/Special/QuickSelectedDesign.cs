@@ -39,8 +39,8 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
     public StateSource AssociatedSource()
         => StateSource.Manual;
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks
-        => combo.Design?.AllLinks ?? [];
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication)
+        => combo.Design?.AllLinks(newApplication) ?? [];
 
     public void AddData(JObject jObj)
     { }

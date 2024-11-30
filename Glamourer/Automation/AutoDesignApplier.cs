@@ -152,7 +152,7 @@ public sealed class AutoDesignApplier : IDisposable
                 {
                     if (_state.GetOrCreate(id, data.Objects[0], out var state))
                     {
-                        Reduce(data.Objects[0], state, newSet, _config.RespectManualOnAutomationUpdate, false, out var forcedRedraw);
+                        Reduce(data.Objects[0], state, newSet, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
                         foreach (var actor in data.Objects)
                             _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
                     }
@@ -164,7 +164,7 @@ public sealed class AutoDesignApplier : IDisposable
                         var specificId = actor.GetIdentifier(_actors);
                         if (_state.GetOrCreate(specificId, actor, out var state))
                         {
-                            Reduce(actor, state, newSet, _config.RespectManualOnAutomationUpdate, false, out var forcedRedraw);
+                            Reduce(actor, state, newSet, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
                             _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
                         }
                     }
@@ -212,7 +212,7 @@ public sealed class AutoDesignApplier : IDisposable
 
         var respectManual = state.LastJob == newJob.Id;
         state.LastJob = actor.Job;
-        Reduce(actor, state, set, respectManual, true, out var forcedRedraw);
+        Reduce(actor, state, set, respectManual, true, true, out var forcedRedraw);
         _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
     }
 
@@ -226,7 +226,7 @@ public sealed class AutoDesignApplier : IDisposable
             _state.ResetState(state, StateSource.Game);
 
         if (GetPlayerSet(identifier, out var set))
-            Reduce(actor, state, set, false, false, out forcedRedraw);
+            Reduce(actor, state, set, false, false, false, out forcedRedraw);
     }
 
     public bool Reduce(Actor actor, ActorIdentifier identifier, [NotNullWhen(true)] out ActorState? state)
@@ -253,11 +253,11 @@ public sealed class AutoDesignApplier : IDisposable
         var respectManual = !state.UpdateTerritory(_clientState.TerritoryType) || !_config.RevertManualChangesOnZoneChange;
         if (!respectManual)
             _state.ResetState(state, StateSource.Game);
-        Reduce(actor, state, set, respectManual, false, out _);
+        Reduce(actor, state, set, respectManual, false, false, out _);
         return true;
     }
 
-    private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual, bool fromJobChange, out bool forcedRedraw)
+    private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual, bool fromJobChange, bool newApplication, out bool forcedRedraw)
     {
         if (set.BaseState is AutoDesignSet.Base.Game)
         {
@@ -284,7 +284,7 @@ public sealed class AutoDesignApplier : IDisposable
 
         var mergedDesign = _designMerger.Merge(
             set.Designs.Where(d => d.IsActive(actor))
-                .SelectMany(d => d.Design.AllLinks.Select(l => (l.Design, l.Flags & d.Type, d.Jobs.Flags))),
+                .SelectMany(d => d.Design.AllLinks(newApplication).Select(l => (l.Design, l.Flags & d.Type, d.Jobs.Flags))),
             state.ModelData.Customize, state.BaseData, true, _config.AlwaysApplyAssociatedMods);
 
         _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, false));
@@ -337,7 +337,7 @@ public sealed class AutoDesignApplier : IDisposable
 
         var respectManual = prior == id;
         NewGearsetId = id;
-        Reduce(data.Objects[0], state, set, respectManual, job != state.LastJob, out var forcedRedraw);
+        Reduce(data.Objects[0], state, set, respectManual, job != state.LastJob, prior == id, out var forcedRedraw);
         NewGearsetId = -1;
         foreach (var actor in data.Objects)
             _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
