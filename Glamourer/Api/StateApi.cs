@@ -322,8 +322,8 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         version = DesignConverter.Version;
         return state switch
         {
-            string s  => _converter.FromBase64(s, (flags & ApplyFlag.Equipment) != 0, (flags & ApplyFlag.Customization) != 0, out version),
-            JObject j => _converter.FromJObject(j, (flags & ApplyFlag.Equipment) != 0, (flags & ApplyFlag.Customization) != 0),
+            string s  => _converter.FromBase64(s, (flags & ApplyFlag.Customization) != 0, (flags & ApplyFlag.Equipment) != 0, out version),
+            JObject j => _converter.FromJObject(j, (flags & ApplyFlag.Customization) != 0, (flags & ApplyFlag.Equipment) != 0),
             _         => null,
         };
     }
