@@ -12,7 +12,8 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public const string  ResolvedName   = "Random";
     private      Design? _currentDesign;
 
-    public IReadOnlyList<IDesignPredicate> Predicates { get; private set; } = [];
+    public IReadOnlyList<IDesignPredicate> Predicates    { get; private set; } = [];
+    public bool                            ResetOnRedraw { get; set; }         = false;
 
     public string ResolveName(bool _)
         => ResolvedName;
@@ -40,6 +41,7 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
 
     public bool Equals(IDesignStandIn? other)
         => other is RandomDesign r
+         && r.ResetOnRedraw == ResetOnRedraw
          && string.Equals(RandomPredicate.GeneratePredicateString(r.Predicates), RandomPredicate.GeneratePredicateString(Predicates),
                 StringComparison.OrdinalIgnoreCase);
 
@@ -48,7 +50,7 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
 
     public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication)
     {
-        if (newApplication)
+        if (newApplication || ResetOnRedraw)
             _currentDesign = rng.Design(Predicates);
         else
             _currentDesign ??= rng.Design(Predicates);
@@ -61,22 +63,32 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
 
     public void AddData(JObject jObj)
     {
-        jObj["Restrictions"] = RandomPredicate.GeneratePredicateString(Predicates);
+        jObj["Restrictions"]  = RandomPredicate.GeneratePredicateString(Predicates);
+        jObj["ResetOnRedraw"] = ResetOnRedraw;
     }
 
     public void ParseData(JObject jObj)
     {
         var restrictions = jObj["Restrictions"]?.ToObject<string>() ?? string.Empty;
-        Predicates = RandomPredicate.GeneratePredicates(restrictions);
+        Predicates    = RandomPredicate.GeneratePredicates(restrictions);
+        ResetOnRedraw = jObj["ResetOnRedraw"]?.ToObject<bool>() ?? false;
     }
 
     public bool ChangeData(object data)
     {
-        if (data is not List<IDesignPredicate> predicates)
-            return false;
+        if (data is List<IDesignPredicate> predicates)
+        {
+            Predicates = predicates;
+            return true;
+        }
 
-        Predicates = predicates;
-        return true;
+        if (data is bool resetOnRedraw)
+        {
+            ResetOnRedraw = resetOnRedraw;
+            return true;
+        }
+
+        return false;
     }
 
     public bool ForcedRedraw

@@ -8,6 +8,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;
+using OtterGui.Text;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
@@ -383,6 +384,11 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     private void DrawContent(RandomDesign random)
     {
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetStyle().WindowPadding.Y + ImGuiHelpers.GlobalScale);
+        ImGui.Separator();
+        ImGui.Dummy(Vector2.Zero);
+        var reset = random.ResetOnRedraw;
+        if (ImUtf8.Checkbox("Reset Chosen Design On Every Redraw"u8, ref reset))
+            _autoDesignManager.ChangeData(_set!, _designIndex, reset);
         ImGui.Separator();
         ImGui.Dummy(Vector2.Zero);
 
