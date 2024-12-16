@@ -3,6 +3,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
+using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
@@ -27,7 +28,8 @@ public class SettingsTab(
     PalettePlusChecker paletteChecker,
     CollectionOverrideDrawer overrides,
     CodeDrawer codeDrawer,
-    Glamourer glamourer)
+    Glamourer glamourer,
+    AutoDesignApplier autoDesignApplier)
     : ITab
 {
     private readonly VirtualKey[] _validKeys = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
@@ -43,7 +45,11 @@ public class SettingsTab(
 
         Checkbox("Enable Auto Designs",
             "Enable the application of designs associated to characters in the Automation tab to be applied automatically.",
-            config.EnableAutoDesigns, v => config.EnableAutoDesigns = v);
+            config.EnableAutoDesigns, v =>
+            {
+                config.EnableAutoDesigns = v;
+                autoDesignApplier.OnEnableAutoDesignsChanged(v);
+            });
         ImGui.NewLine();
         ImGui.NewLine();
         ImGui.NewLine();

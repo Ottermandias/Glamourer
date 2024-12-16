@@ -55,6 +55,15 @@ public sealed class AutoDesignApplier : IDisposable
         _equippedGearset.Subscribe(OnEquippedGearset, EquippedGearset.Priority.AutoDesignApplier);
     }
 
+    public void OnEnableAutoDesignsChanged(bool value)
+    {
+        if (value)
+            return;
+
+        foreach (var state in _state.Values)
+            state.Sources.RemoveFixedDesignSources();
+    }
+
     public void Dispose()
     {
         _weapons.Unsubscribe(OnWeaponLoading);
@@ -234,9 +243,6 @@ public sealed class AutoDesignApplier : IDisposable
         AutoDesignSet set;
         if (!_state.TryGetValue(identifier, out state))
         {
-            if (!_config.EnableAutoDesigns)
-                return false;
-
             if (!GetPlayerSet(identifier, out set!))
                 return false;
 
@@ -257,7 +263,8 @@ public sealed class AutoDesignApplier : IDisposable
         return true;
     }
 
-    private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual, bool fromJobChange, bool newApplication, out bool forcedRedraw)
+    private unsafe void Reduce(Actor actor, ActorState state, AutoDesignSet set, bool respectManual, bool fromJobChange, bool newApplication,
+        out bool forcedRedraw)
     {
         if (set.BaseState is AutoDesignSet.Base.Game)
         {
@@ -294,6 +301,12 @@ public sealed class AutoDesignApplier : IDisposable
     /// <summary> Get world-specific first and all-world afterward. </summary>
     private bool GetPlayerSet(ActorIdentifier identifier, [NotNullWhen(true)] out AutoDesignSet? set)
     {
+        if (!_config.EnableAutoDesigns)
+        {
+            set = null;
+            return false;
+        }
+
         switch (identifier.Type)
         {
             case IdentifierType.Player:
