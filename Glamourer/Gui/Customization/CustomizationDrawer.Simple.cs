@@ -295,7 +295,7 @@ public partial class CustomizationDrawer
 
     private void ApplyCheckbox(CustomizeIndex index)
     {
-        SetId(index);
+        using var id = SetId(index);
         if (UiHelpers.DrawCheckbox("##apply", $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
             ToggleApply();
     }
