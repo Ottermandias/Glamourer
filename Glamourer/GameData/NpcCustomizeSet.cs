@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Excel.Sheets;
 using OtterGui.Services;
 using Penumbra.GameData.DataContainers;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.GameData;
@@ -34,6 +35,23 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
 
     /// <summary> The list of data. </summary>
     private readonly List<NpcData> _data = [];
+
+    private readonly BitArray _hairColors      = new(256);
+    private readonly BitArray _eyeColors       = new(256);
+    private readonly BitArray _facepaintColors = new(256);
+    private readonly BitArray _tattooColors    = new(256);
+
+    public bool CheckColor(CustomizeIndex type, CustomizeValue value)
+        => type switch
+        {
+            CustomizeIndex.HairColor       => _hairColors[value.Value],
+            CustomizeIndex.HighlightsColor => _hairColors[value.Value],
+            CustomizeIndex.EyeColorLeft    => _eyeColors[value.Value],
+            CustomizeIndex.EyeColorRight   => _eyeColors[value.Value],
+            CustomizeIndex.FacePaintColor  => _facepaintColors[value.Value],
+            CustomizeIndex.TattooColor     => _tattooColors[value.Value],
+            _                              => false,
+        };
 
     /// <summary> Create the data when ready. </summary>
     public NpcCustomizeSet(IDataManager data, DictENpc eNpcs, DictBNpc bNpcs, DictBNpcNames bNpcNames)
@@ -147,6 +165,12 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
             for (var i = 0; i < duplicates.Count; ++i)
             {
                 var current = duplicates[i];
+                _hairColors[current.Customize[CustomizeIndex.HairColor].Value]           = true;
+                _hairColors[current.Customize[CustomizeIndex.HighlightsColor].Value]     = true;
+                _eyeColors[current.Customize[CustomizeIndex.EyeColorLeft].Value]         = true;
+                _eyeColors[current.Customize[CustomizeIndex.EyeColorRight].Value]        = true;
+                _facepaintColors[current.Customize[CustomizeIndex.FacePaintColor].Value] = true;
+                _tattooColors[current.Customize[CustomizeIndex.TattooColor].Value]       = true;
                 for (var j = 0; j < i; ++j)
                 {
                     if (current.DataEquals(duplicates[j]))
@@ -195,8 +219,8 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
         data.Set(7, row.ModelWrists | (row.DyeWrists.RowId << 24) | ((ulong)row.Dye2Wrists.RowId << 32));
         data.Set(8, row.ModelRightRing | (row.DyeRightRing.RowId << 24) | ((ulong)row.Dye2RightRing.RowId << 32));
         data.Set(9, row.ModelLeftRing | (row.DyeLeftRing.RowId << 24) | ((ulong)row.Dye2LeftRing.RowId << 32));
-        data.Mainhand     = new CharacterWeapon(row.ModelMainHand | ((ulong)row.DyeMainHand.RowId << 48) | ((ulong)row.Dye2MainHand.RowId << 56));
-        data.Offhand      = new CharacterWeapon(row.ModelOffHand | ((ulong)row.DyeOffHand.RowId << 48) | ((ulong)row.Dye2OffHand.RowId << 56));
+        data.Mainhand = new CharacterWeapon(row.ModelMainHand | ((ulong)row.DyeMainHand.RowId << 48) | ((ulong)row.Dye2MainHand.RowId << 56));
+        data.Offhand = new CharacterWeapon(row.ModelOffHand | ((ulong)row.DyeOffHand.RowId << 48) | ((ulong)row.Dye2OffHand.RowId << 56));
         data.VisorToggled = row.Visor;
     }
 
@@ -213,8 +237,8 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
         data.Set(7, row.ModelWrists | (row.DyeWrists.RowId << 24) | ((ulong)row.Dye2Wrists.RowId << 32));
         data.Set(8, row.ModelRightRing | (row.DyeRightRing.RowId << 24) | ((ulong)row.Dye2RightRing.RowId << 32));
         data.Set(9, row.ModelLeftRing | (row.DyeLeftRing.RowId << 24) | ((ulong)row.Dye2LeftRing.RowId << 32));
-        data.Mainhand     = new CharacterWeapon(row.ModelMainHand | ((ulong)row.DyeMainHand.RowId << 48) | ((ulong)row.Dye2MainHand.RowId << 56));
-        data.Offhand      = new CharacterWeapon(row.ModelOffHand | ((ulong)row.DyeOffHand.RowId << 48) | ((ulong)row.Dye2OffHand.RowId << 56));
+        data.Mainhand = new CharacterWeapon(row.ModelMainHand | ((ulong)row.DyeMainHand.RowId << 48) | ((ulong)row.Dye2MainHand.RowId << 56));
+        data.Offhand = new CharacterWeapon(row.ModelOffHand | ((ulong)row.DyeOffHand.RowId << 48) | ((ulong)row.Dye2OffHand.RowId << 56));
         data.VisorToggled = row.Visor;
     }
 

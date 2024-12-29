@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game;
 using Dalamud.Plugin.Services;
-using Dalamud.Utility;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using OtterGui.Classes;
@@ -29,7 +28,7 @@ internal class CustomizeSetFactory(
         var row      = _charaMakeSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
         var hrothgar = race.ToRace() == Race.Hrothgar;
         // Create the initial set with all the easily accessible parameters available for anyone.
-        var set = new CustomizeSet(race, gender)
+        var set = new CustomizeSet(_npcCustomizeSet, race, gender)
         {
             Name                 = GetName(race, gender),
             Voices               = row.VoiceStruct,
@@ -77,13 +76,7 @@ internal class CustomizeSetFactory(
             CustomizeIndex.Hairstyle,
             CustomizeIndex.LipColor,
             CustomizeIndex.SkinColor,
-            CustomizeIndex.FacePaintColor,
-            CustomizeIndex.HighlightsColor,
-            CustomizeIndex.HairColor,
             CustomizeIndex.FacePaint,
-            CustomizeIndex.TattooColor,
-            CustomizeIndex.EyeColorLeft,
-            CustomizeIndex.EyeColorRight,
             CustomizeIndex.TailShape,
         };
 
