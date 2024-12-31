@@ -16,6 +16,7 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Text;
+using OtterGuiInternal.Structs;
 using Penumbra.GameData.Enums;
 using static Glamourer.Gui.Tabs.HeaderDrawer;
 
@@ -415,11 +416,16 @@ public class DesignPanel
 
     private void DrawPanel()
     {
-        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
-        if (!child || _selector.Selected == null)
+        using var table = ImUtf8.Table("##Panel", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY, ImGui.GetContentRegionAvail());
+        if (!table || _selector.Selected == null)
             return;
-
+        ImGui.TableSetupScrollFreeze(0, 1);
+        ImGui.TableNextColumn();
+        if (_selector.Selected == null)
+            return;
         DrawButtonRow();
+        ImGui.TableNextColumn();
+
         DrawCustomize();
         DrawEquipment();
         DrawCustomizeParameters();
@@ -432,6 +438,7 @@ public class DesignPanel
 
     private void DrawButtonRow()
     {
+        ImGui.Dummy(Vector2.Zero);
         DrawApplyToSelf();
         ImGui.SameLine();
         DrawApplyToTarget();

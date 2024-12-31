@@ -154,10 +154,11 @@ public class ActorPanel
 
     private unsafe void DrawPanel()
     {
-        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
-        if (!child || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
+        using var table = ImUtf8.Table("##Panel", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY, ImGui.GetContentRegionAvail());
+        if (!table || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
             return;
-
+        ImGui.TableSetupScrollFreeze(0, 1);
+        ImGui.TableNextColumn();
         var transformationId = _actor.IsCharacter ? _actor.AsCharacter->CharacterData.TransformationId : 0;
         if (transformationId != 0)
             ImGuiUtil.DrawTextButton($"Currently transformed to Transformation {transformationId}.",
@@ -168,6 +169,7 @@ public class ActorPanel
         DrawApplyToTarget();
 
         RevertButtons();
+        ImGui.TableNextColumn();
 
         using var disabled = ImRaii.Disabled(transformationId != 0);
         if (_state.ModelData.IsHuman)

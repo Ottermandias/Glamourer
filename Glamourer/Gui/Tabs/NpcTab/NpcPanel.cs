@@ -11,6 +11,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
+using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using static Glamourer.Gui.Tabs.HeaderDrawer;
 
@@ -30,8 +31,8 @@ public class NpcPanel
     private readonly StateManager           _state;
     private readonly ObjectManager          _objects;
     private readonly DesignColors           _colors;
-    private readonly Button[]              _leftButtons;
-    private readonly Button[]              _rightButtons;
+    private readonly Button[]               _leftButtons;
+    private readonly Button[]               _rightButtons;
 
     public NpcPanel(NpcSelector selector,
         LocalNpcAppearanceData favorites,
@@ -114,11 +115,16 @@ public class NpcPanel
 
     private void DrawPanel()
     {
-        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
-        if (!child || !_selector.HasSelection)
+        using var table = ImUtf8.Table("##Panel", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY, ImGui.GetContentRegionAvail());
+        if (!table || !_selector.HasSelection)
             return;
 
+        ImGui.TableSetupScrollFreeze(0, 1);
+        ImGui.TableNextColumn();
+        ImGui.Dummy(Vector2.Zero);
         DrawButtonRow();
+
+        ImGui.TableNextColumn();
         DrawCustomization();
         DrawEquipment();
         DrawAppearanceInfo();
@@ -133,10 +139,9 @@ public class NpcPanel
 
     private void DrawCustomization()
     {
-        var header = _selector.Selection.ModelId == 0
-            ? "Customization"
-            : $"Customization (Model Id #{_selector.Selection.ModelId})###Customization";
-        using var h = ImRaii.CollapsingHeader(header);
+        using var h = _selector.Selection.ModelId == 0
+            ? ImUtf8.CollapsingHeaderId("Customization"u8)
+            : ImUtf8.CollapsingHeaderId($"Customization (Model Id #{_selector.Selection.ModelId})###Customization");
         if (!h)
             return;
 
@@ -146,7 +151,7 @@ public class NpcPanel
 
     private void DrawEquipment()
     {
-        using var h = ImRaii.CollapsingHeader("Equipment");
+        using var h = ImUtf8.CollapsingHeaderId("Equipment"u8);
         if (!h)
             return;
 
@@ -185,9 +190,7 @@ public class NpcPanel
     private void DrawApplyToSelf()
     {
         var (id, data) = _objects.PlayerData;
-        if (!ImGuiUtil.DrawDisabledButton("Apply to Yourself", Vector2.Zero,
-                "Apply the current NPC appearance to your character.\nHold Control to only apply gear.\nHold Shift to only apply customizations.",
-                !data.Valid))
+        if (!ImUtf8.ButtonEx("Apply to Yourself"u8, "Apply the current NPC appearance to your character.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8, Vector2.Zero, !data.Valid))
             return;
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
@@ -202,10 +205,10 @@ public class NpcPanel
         var (id, data) = _objects.TargetData;
         var tt = id.IsValid
             ? data.Valid
-                ? "Apply the current NPC appearance to your current target.\nHold Control to only apply gear.\nHold Shift to only apply customizations."
-                : "The current target can not be manipulated."
-            : "No valid target selected.";
-        if (!ImGuiUtil.DrawDisabledButton("Apply to Target", Vector2.Zero, tt, !data.Valid))
+                ? "Apply the current NPC appearance to your current target.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8
+                : "The current target can not be manipulated."u8
+            : "No valid target selected."u8;
+        if (!ImUtf8.ButtonEx("Apply to Target"u8, tt, Vector2.Zero, !data.Valid))
             return;
 
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
@@ -218,28 +221,28 @@ public class NpcPanel
 
     private void DrawAppearanceInfo()
     {
-        using var h = ImRaii.CollapsingHeader("Appearance Details");
+        using var h = ImUtf8.CollapsingHeaderId("Appearance Details"u8);
         if (!h)
             return;
 
-        using var table = ImRaii.Table("Details", 2);
+        using var table = ImUtf8.Table("Details"u8, 2);
         if (!table)
             return;
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f));
-        ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Last Update Datem").X);
-        ImGui.TableSetupColumn("Data", ImGuiTableColumnFlags.WidthStretch);
+        ImUtf8.TableSetupColumn("Type"u8, ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Last Update Datem").X);
+        ImUtf8.TableSetupColumn("Data"u8, ImGuiTableColumnFlags.WidthStretch);
 
         var selection = _selector.Selection;
-        CopyButton("NPC Name", selection.Name);
-        CopyButton("NPC ID",   selection.Id.Id.ToString());
+        CopyButton("NPC Name"u8, selection.Name);
+        CopyButton("NPC ID"u8,   selection.Id.Id.ToString());
         ImGuiUtil.DrawFrameColumn("NPC Type");
         ImGui.TableNextColumn();
         var width = ImGui.GetContentRegionAvail().X;
         ImGuiUtil.DrawTextButton(selection.Kind is ObjectKind.BattleNpc ? "Battle NPC" : "Event NPC", new Vector2(width, 0),
             ImGui.GetColorU32(ImGuiCol.FrameBg));
 
-        ImGuiUtil.DrawFrameColumn("Color");
+        ImUtf8.DrawFrameColumn("Color"u8);
         var color     = _favorites.GetColor(selection);
         var colorName = color.Length == 0 ? DesignColors.AutomaticName : color;
         ImGui.TableNextColumn();
@@ -272,18 +275,18 @@ public class NpcPanel
             var       size = new Vector2(ImGui.GetFrameHeight());
             using var font = ImRaii.PushFont(UiBuilder.IconFont);
             ImGuiUtil.DrawTextButton(FontAwesomeIcon.ExclamationCircle.ToIconString(), size, 0, _colors.MissingColor);
-            ImGuiUtil.HoverTooltip("The color associated with this design does not exist.");
+            ImUtf8.HoverTooltip("The color associated with this design does not exist."u8);
         }
 
         return;
 
-        static void CopyButton(string label, string text)
+        static void CopyButton(ReadOnlySpan<byte> label, string text)
         {
-            ImGuiUtil.DrawFrameColumn(label);
+            ImUtf8.DrawFrameColumn(label);
             ImGui.TableNextColumn();
-            if (ImGui.Button(text, new Vector2(ImGui.GetContentRegionAvail().X, 0)))
-                ImGui.SetClipboardText(text);
-            ImGuiUtil.HoverTooltip("Click to copy to clipboard.");
+            if (ImUtf8.Button(text, new Vector2(ImGui.GetContentRegionAvail().X, 0)))
+                ImUtf8.SetClipboardText(text);
+            ImUtf8.HoverTooltip("Click to copy to clipboard."u8);
         }
     }
 
