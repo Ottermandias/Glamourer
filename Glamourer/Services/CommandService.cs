@@ -6,6 +6,7 @@ using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.GameData;
 using Glamourer.Gui;
+using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using ImGuiNET;
@@ -22,31 +23,30 @@ namespace Glamourer.Services;
 
 public class CommandService : IDisposable, IApiService
 {
-    private const string RandomString       = "random";
     private const string MainCommandString  = "/glamourer";
     private const string ApplyCommandString = "/glamour";
 
-    private readonly ICommandManager       _commands;
-    private readonly MainWindow            _mainWindow;
-    private readonly IChatGui              _chat;
-    private readonly ActorManager          _actors;
-    private readonly ObjectManager         _objects;
-    private readonly StateManager          _stateManager;
-    private readonly AutoDesignApplier     _autoDesignApplier;
-    private readonly AutoDesignManager     _autoDesignManager;
-    private readonly DesignManager         _designManager;
-    private readonly DesignConverter       _converter;
-    private readonly DesignFileSystem      _designFileSystem;
-    private readonly Configuration         _config;
-    private readonly ModSettingApplier     _modApplier;
-    private readonly ItemManager           _items;
-    private readonly RandomDesignGenerator _randomDesign;
-    private readonly CustomizeService      _customizeService;
+    private readonly ICommandManager   _commands;
+    private readonly MainWindow        _mainWindow;
+    private readonly IChatGui          _chat;
+    private readonly ActorManager      _actors;
+    private readonly ObjectManager     _objects;
+    private readonly StateManager      _stateManager;
+    private readonly AutoDesignApplier _autoDesignApplier;
+    private readonly AutoDesignManager _autoDesignManager;
+    private readonly Configuration     _config;
+    private readonly ModSettingApplier _modApplier;
+    private readonly ItemManager       _items;
+    private readonly CustomizeService  _customizeService;
+    private readonly DesignManager     _designManager;
+    private readonly DesignConverter   _converter;
+    private readonly DesignResolver    _resolver;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier,
-        ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService)
+        ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService, DesignFileSystemSelector designSelector,
+        QuickDesignCombo quickDesignCombo, DesignResolver resolver)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -57,13 +57,12 @@ public class CommandService : IDisposable, IApiService
         _stateManager      = stateManager;
         _designManager     = designManager;
         _converter         = converter;
-        _designFileSystem  = designFileSystem;
         _autoDesignManager = autoDesignManager;
         _config            = config;
         _modApplier        = modApplier;
         _items             = items;
-        _randomDesign      = randomDesign;
         _customizeService  = customizeService;
+        _resolver          = resolver;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -611,7 +610,7 @@ public class CommandService : IDisposable, IApiService
         if (split.Length is not 2)
         {
             _chat.Print(new SeStringBuilder().AddText("Use with /glamour apply ")
-                .AddYellow("[Design Name, Path or Identifier, Random, or Clipboard]")
+                .AddYellow("[Design Name, Path or Identifier, Quick, Selection, Random, or Clipboard]")
                 .AddText(" | ")
                 .AddGreen("[Character Identifier]")
                 .AddText("; ")
@@ -628,6 +627,10 @@ public class CommandService : IDisposable, IApiService
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 The design path is the folder path in the selector, with '/' as separators. It is also case-insensitive.")
                 .BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》 Quick will use the design currently selected in the Quick Design Bar, if any.").BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》 Selection will use the design currently selected in the main interfaces Designs tab, if any.").BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 Clipboard as a single word will try to apply a design string currently in your clipboard.").BuiltString);
             _chat.Print(new SeStringBuilder()
@@ -656,7 +659,7 @@ public class CommandService : IDisposable, IApiService
                 "y"    => true,
                 _      => false,
             };
-        if (!GetDesign(split[0], out var design, true) || !IdentifierHandling(split2[0], out var identifiers, false, true))
+        if (!_resolver.GetDesign(split[0], out var design, true) || !IdentifierHandling(split2[0], out var identifiers, false, true))
             return false;
 
         _objects.Update();
@@ -688,7 +691,7 @@ public class CommandService : IDisposable, IApiService
         if (!applyMods || design is not Design d)
             return;
 
-        var (messages, appliedMods, collection, name, overridden) = _modApplier.ApplyModSettings(d.AssociatedMods, actor);
+        var (messages, appliedMods, _, name, overridden) = _modApplier.ApplyModSettings(d.AssociatedMods, actor);
 
         foreach (var message in messages)
             Glamourer.Messager.Chat.Print($"Error applying mod settings: {message}");
@@ -717,7 +720,7 @@ public class CommandService : IDisposable, IApiService
             return false;
         }
 
-        if (!GetDesign(argument, out var designBase, false) || designBase is not Design d)
+        if (!_resolver.GetDesign(argument, out var designBase, false) || designBase is not Design d)
             return false;
 
         _designManager.Delete(d);
@@ -796,81 +799,6 @@ public class CommandService : IDisposable, IApiService
         return false;
     }
 
-    private bool GetDesign(string argument, [NotNullWhen(true)] out DesignBase? design, bool allowSpecial)
-    {
-        design = null;
-        if (argument.Length == 0)
-            return false;
-
-        if (allowSpecial)
-        {
-            if (string.Equals("clipboard", argument, StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    var clipboardText = ImGui.GetClipboardText();
-                    if (clipboardText.Length > 0)
-                        design = _converter.FromBase64(clipboardText, true, true, out _);
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                if (design != null)
-                    return true;
-
-                _chat.Print(new SeStringBuilder().AddText("Your current clipboard did not contain a valid design string.").BuiltString);
-                return false;
-            }
-
-            if (argument.StartsWith(RandomString, StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    if (argument.Length == RandomString.Length)
-                        design = _randomDesign.Design();
-                    else if (argument[RandomString.Length] == ':')
-                        design = _randomDesign.Design(argument[(RandomString.Length + 1)..]);
-                    if (design == null)
-                    {
-                        _chat.Print(new SeStringBuilder().AddText("No design matched your restrictions.").BuiltString);
-                        return false;
-                    }
-
-                    _chat.Print($"Chose random design {((Design)design).Name}.");
-                }
-                catch (Exception ex)
-                {
-                    _chat.Print(new SeStringBuilder().AddText($"Error in the restriction string: {ex.Message}").BuiltString);
-                    return false;
-                }
-
-                return true;
-            }
-        }
-
-        if (Guid.TryParse(argument, out var guid))
-        {
-            design = _designManager.Designs.ByIdentifier(guid);
-        }
-        else
-        {
-            var lower = argument.ToLowerInvariant();
-            design = _designManager.Designs.FirstOrDefault(d
-                => d.Name.Lower == lower || lower.Length > 3 && d.Identifier.ToString().StartsWith(lower));
-            if (design == null && _designFileSystem.Find(lower, out var child) && child is DesignFileSystem.Leaf leaf)
-                design = leaf.Value;
-        }
-
-        if (design != null)
-            return true;
-
-        _chat.Print(new SeStringBuilder().AddText("The token ").AddYellow(argument, true).AddText(" did not resolve to an existing design.")
-            .BuiltString);
-        return false;
-    }
-
     private unsafe bool IdentifierHandling(string argument, out ActorIdentifier[] identifiers, bool allowAnyWorld, bool allowIndex)
     {
         try
@@ -882,7 +810,7 @@ public class CommandService : IDisposable, IApiService
                 {
                     _chat.Print(new SeStringBuilder().AddText("The placeholder ").AddGreen(argument)
                         .AddText(" did not resolve to a game object with a valid identifier.").BuiltString);
-                    identifiers = Array.Empty<ActorIdentifier>();
+                    identifiers = [];
                     return false;
                 }
 
@@ -913,7 +841,7 @@ public class CommandService : IDisposable, IApiService
             _chat.Print(new SeStringBuilder().AddText("The argument ").AddRed(argument, true)
                 .AddText($" could not be converted to an identifier. {e.Message}")
                 .BuiltString);
-            identifiers = Array.Empty<ActorIdentifier>();
+            identifiers = [];
             return false;
         }
     }
