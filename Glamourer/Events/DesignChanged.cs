@@ -93,6 +93,9 @@ public sealed class DesignChanged()
         /// <summary> An existing design had changed whether it always resets advanced dyes or not. </summary>
         ResetAdvancedDyes,
 
+        /// <summary> An existing design had changed whether it always resets all prior temporary settings or not. </summary>
+        ResetTemporarySettings,
+
         /// <summary> An existing design changed whether a specific customization is applied. </summary>
         ApplyCustomize,
 

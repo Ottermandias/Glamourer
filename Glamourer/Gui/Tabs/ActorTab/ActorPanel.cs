@@ -159,6 +159,7 @@ public class ActorPanel
             return;
         ImGui.TableSetupScrollFreeze(0, 1);
         ImGui.TableNextColumn();
+        ImGui.Dummy(Vector2.Zero);
         var transformationId = _actor.IsCharacter ? _actor.AsCharacter->CharacterData.TransformationId : 0;
         if (transformationId != 0)
             ImGuiUtil.DrawTextButton($"Currently transformed to Transformation {transformationId}.",

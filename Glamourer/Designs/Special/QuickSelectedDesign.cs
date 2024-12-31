@@ -56,4 +56,7 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
 
     public bool ResetAdvancedDyes
         => combo.Design?.ResetAdvancedDyes ?? false;
+
+    public bool ResetTemporarySettings
+        => combo.Design?.ResetTemporarySettings ?? false;
 }

@@ -106,6 +106,9 @@ public class SettingsTab(
           + "Glamourer will NOT revert these applied settings automatically. This may mess up your collection and configuration.\n\n"
           + "If you enable this setting, you are aware that any resulting misconfiguration is your own fault.",
             config.AlwaysApplyAssociatedMods, v => config.AlwaysApplyAssociatedMods = v);
+        Checkbox("Use Temporary Mod Settings",
+            "Apply all settings as temporary settings so they will be reset when Glamourer or the game shut down.", config.UseTemporarySettings,
+            v => config.UseTemporarySettings = v);
         ImGui.NewLine();
     }
 
@@ -120,6 +123,8 @@ public class SettingsTab(
             config.DefaultDesignSettings.ResetAdvancedDyes, v => config.DefaultDesignSettings.ResetAdvancedDyes = v);
         Checkbox("Always Force Redraw", "Newly created designs will be configured to force character redraws on application by default.",
             config.DefaultDesignSettings.AlwaysForceRedrawing, v => config.DefaultDesignSettings.AlwaysForceRedrawing = v);
+        Checkbox("Reset Temporary Settings", "Newly created designs will be configured to clear all advanced settings applied by Glamourer to the collection by default.",
+            config.DefaultDesignSettings.ResetTemporarySettings, v => config.DefaultDesignSettings.ResetTemporarySettings = v);
     }
 
     private void DrawInterfaceSettings()

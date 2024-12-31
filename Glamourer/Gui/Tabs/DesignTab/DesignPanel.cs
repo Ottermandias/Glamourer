@@ -423,6 +423,7 @@ public class DesignPanel
         ImGui.TableNextColumn();
         if (_selector.Selected == null)
             return;
+        ImGui.Dummy(Vector2.Zero);
         DrawButtonRow();
         ImGui.TableNextColumn();
 
@@ -438,7 +439,6 @@ public class DesignPanel
 
     private void DrawButtonRow()
     {
-        ImGui.Dummy(Vector2.Zero);
         DrawApplyToSelf();
         ImGui.SameLine();
         DrawApplyToTarget();

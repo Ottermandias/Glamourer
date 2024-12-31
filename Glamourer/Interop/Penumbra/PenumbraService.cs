@@ -21,10 +21,10 @@ public readonly record struct Mod(string Name, string DirectoryName) : IComparab
     }
 }
 
-public readonly record struct ModSettings(Dictionary<string, List<string>> Settings, int Priority, bool Enabled)
+public readonly record struct ModSettings(Dictionary<string, List<string>> Settings, int Priority, bool Enabled, bool ForceInherit, bool Remove)
 {
     public ModSettings()
-        : this(new Dictionary<string, List<string>>(), 0, false)
+        : this(new Dictionary<string, List<string>>(), 0, false, false, false)
     { }
 
     public static ModSettings Empty
@@ -33,30 +33,41 @@ public readonly record struct ModSettings(Dictionary<string, List<string>> Setti
 
 public class PenumbraService : IDisposable
 {
-    public const int RequiredPenumbraBreakingVersion = 5;
-    public const int RequiredPenumbraFeatureVersion  = 0;
+    public const int RequiredPenumbraBreakingVersion    = 5;
+    public const int RequiredPenumbraFeatureVersion     = 3;
+    public const int RequiredPenumbraFeatureVersionTemp = 4;
 
-    private readonly IDalamudPluginInterface                                _pluginInterface;
+    private const int Key = -1610;
+
+    private readonly IDalamudPluginInterface                               _pluginInterface;
+    private readonly Configuration                                         _config;
     private readonly EventSubscriber<ChangedItemType, uint>                _tooltipSubscriber;
     private readonly EventSubscriber<MouseButton, ChangedItemType, uint>   _clickSubscriber;
     private readonly EventSubscriber<nint, Guid, nint, nint, nint>         _creatingCharacterBase;
     private readonly EventSubscriber<nint, Guid, nint>                     _createdCharacterBase;
     private readonly EventSubscriber<ModSettingChange, Guid, string, bool> _modSettingChanged;
 
-    private global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier? _collectionByIdentifier;
-    private global::Penumbra.Api.IpcSubscribers.GetCollections?             _collections;
-    private global::Penumbra.Api.IpcSubscribers.RedrawObject?               _redraw;
-    private global::Penumbra.Api.IpcSubscribers.GetDrawObjectInfo?          _drawObjectInfo;
-    private global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndex?     _cutsceneParent;
-    private global::Penumbra.Api.IpcSubscribers.GetCollectionForObject?     _objectCollection;
-    private global::Penumbra.Api.IpcSubscribers.GetModList?                 _getMods;
-    private global::Penumbra.Api.IpcSubscribers.GetCollection?              _currentCollection;
-    private global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings?      _getCurrentSettings;
-    private global::Penumbra.Api.IpcSubscribers.TrySetMod?                  _setMod;
-    private global::Penumbra.Api.IpcSubscribers.TrySetModPriority?          _setModPriority;
-    private global::Penumbra.Api.IpcSubscribers.TrySetModSetting?           _setModSetting;
-    private global::Penumbra.Api.IpcSubscribers.TrySetModSettings?          _setModSettings;
-    private global::Penumbra.Api.IpcSubscribers.OpenMainWindow?             _openModPage;
+    private global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier?          _collectionByIdentifier;
+    private global::Penumbra.Api.IpcSubscribers.GetCollections?                      _collections;
+    private global::Penumbra.Api.IpcSubscribers.RedrawObject?                        _redraw;
+    private global::Penumbra.Api.IpcSubscribers.GetDrawObjectInfo?                   _drawObjectInfo;
+    private global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndex?              _cutsceneParent;
+    private global::Penumbra.Api.IpcSubscribers.GetCollectionForObject?              _objectCollection;
+    private global::Penumbra.Api.IpcSubscribers.GetModList?                          _getMods;
+    private global::Penumbra.Api.IpcSubscribers.GetCollection?                       _currentCollection;
+    private global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings?               _getCurrentSettings;
+    private global::Penumbra.Api.IpcSubscribers.TryInheritMod?                       _inheritMod;
+    private global::Penumbra.Api.IpcSubscribers.TrySetMod?                           _setMod;
+    private global::Penumbra.Api.IpcSubscribers.TrySetModPriority?                   _setModPriority;
+    private global::Penumbra.Api.IpcSubscribers.TrySetModSetting?                    _setModSetting;
+    private global::Penumbra.Api.IpcSubscribers.TrySetModSettings?                   _setModSettings;
+    private global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettings?             _setTemporaryModSettings;
+    private global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettingsPlayer?       _setTemporaryModSettingsPlayer;
+    private global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettings?          _removeTemporaryModSettings;
+    private global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettingsPlayer?    _removeTemporaryModSettingsPlayer;
+    private global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings?       _removeAllTemporaryModSettings;
+    private global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer? _removeAllTemporaryModSettingsPlayer;
+    private global::Penumbra.Api.IpcSubscribers.OpenMainWindow?                      _openModPage;
 
     private readonly IDisposable _initializedEvent;
     private readonly IDisposable _disposedEvent;
@@ -68,10 +79,11 @@ public class PenumbraService : IDisposable
     public int      CurrentMinor { get; private set; }
     public DateTime AttachTime   { get; private set; }
 
-    public PenumbraService(IDalamudPluginInterface pi, PenumbraReloaded penumbraReloaded)
+    public PenumbraService(IDalamudPluginInterface pi, PenumbraReloaded penumbraReloaded, Configuration config)
     {
         _pluginInterface       = pi;
         _penumbraReloaded      = penumbraReloaded;
+        _config                = config;
         _initializedEvent      = global::Penumbra.Api.IpcSubscribers.Initialized.Subscriber(pi, Reattach);
         _disposedEvent         = global::Penumbra.Api.IpcSubscribers.Disposed.Subscriber(pi, Unattach);
         _tooltipSubscriber     = global::Penumbra.Api.IpcSubscribers.ChangedItemTooltip.Subscriber(pi);
@@ -128,7 +140,7 @@ public class PenumbraService : IDisposable
             if (ec is not PenumbraApiEc.Success)
                 return ModSettings.Empty;
 
-            return tuple.HasValue ? new ModSettings(tuple.Value.Item3, tuple.Value.Item2, tuple.Value.Item1) : ModSettings.Empty;
+            return tuple.HasValue ? new ModSettings(tuple.Value.Item3, tuple.Value.Item2, tuple.Value.Item1, false, false) : ModSettings.Empty;
         }
         catch (Exception ex)
         {
@@ -164,7 +176,7 @@ public class PenumbraService : IDisposable
                 .Select(t => (new Mod(t.Item2, t.Item1),
                     !t.Item3.Item2.HasValue
                         ? ModSettings.Empty
-                        : new ModSettings(t.Item3.Item2!.Value.Item3, t.Item3.Item2!.Value.Item2, t.Item3.Item2!.Value.Item1)))
+                        : new ModSettings(t.Item3.Item2!.Value.Item3, t.Item3.Item2!.Value.Item2, t.Item3.Item2!.Value.Item1, false, false)))
                 .OrderByDescending(p => p.Item2.Enabled)
                 .ThenBy(p => p.Item1.Name)
                 .ThenBy(p => p.Item1.DirectoryName)
@@ -195,7 +207,7 @@ public class PenumbraService : IDisposable
     /// Try to set all mod settings as desired. Only sets when the mod should be enabled.
     /// If it is disabled, ignore all other settings.
     /// </summary>
-    public string SetMod(Mod mod, ModSettings settings, Guid? collectionInput = null)
+    public string SetMod(Mod mod, ModSettings settings, Guid? collectionInput = null, ObjectIndex? index = null)
     {
         if (!Available)
             return "Penumbra is not available.";
@@ -204,40 +216,10 @@ public class PenumbraService : IDisposable
         try
         {
             var collection = collectionInput ?? _currentCollection!.Invoke(ApiCollectionType.Current)!.Value.Id;
-            var ec         = _setMod!.Invoke(collection, mod.DirectoryName, settings.Enabled);
-            switch (ec)
-            {
-                case PenumbraApiEc.ModMissing:        return $"The mod {mod.Name} [{mod.DirectoryName}] could not be found.";
-                case PenumbraApiEc.CollectionMissing: return $"The collection {collection} could not be found.";
-            }
-
-            if (!settings.Enabled)
-                return string.Empty;
-
-            ec = _setModPriority!.Invoke(collection, mod.DirectoryName, settings.Priority);
-            Debug.Assert(ec is PenumbraApiEc.Success or PenumbraApiEc.NothingChanged, "Setting Priority should not be able to fail.");
-
-            foreach (var (setting, list) in settings.Settings)
-            {
-                ec = list.Count == 1
-                    ? _setModSetting!.Invoke(collection, mod.DirectoryName, setting, list[0])
-                    : _setModSettings!.Invoke(collection, mod.DirectoryName, setting, list);
-                switch (ec)
-                {
-                    case PenumbraApiEc.OptionGroupMissing:
-                        sb.AppendLine($"Could not find the option group {setting} in mod {mod.Name}.");
-                        break;
-                    case PenumbraApiEc.OptionMissing:
-                        sb.AppendLine($"Could not find all desired options in the option group {setting} in mod {mod.Name}.");
-                        break;
-                    case PenumbraApiEc.Success:
-                    case PenumbraApiEc.NothingChanged:
-                        break;
-                    default:
-                        sb.AppendLine($"Could not apply options in the option group {setting} in mod {mod.Name} for unknown reason {ec}.");
-                        break;
-                }
-            }
+            if (_config.UseTemporarySettings && _setTemporaryModSettings != null)
+                SetModTemporary(sb, mod, settings, collection, index);
+            else
+                SetModPermanent(sb, mod, settings, collection);
 
             return sb.ToString();
         }
@@ -246,6 +228,103 @@ public class PenumbraService : IDisposable
             return sb.AppendLine(ex.Message).ToString();
         }
     }
+
+    public void RemoveAllTemporarySettings(Guid collection)
+        => _removeAllTemporaryModSettings?.Invoke(collection, Key);
+
+    public void RemoveAllTemporarySettings(ObjectIndex index)
+        => _removeAllTemporaryModSettingsPlayer?.Invoke(index.Index, Key);
+
+    public void ClearAllTemporarySettings()
+    {
+        if (!Available || _removeAllTemporaryModSettings == null)
+            return;
+
+        var collections = _collections!.Invoke();
+        foreach (var collection in collections)
+            RemoveAllTemporarySettings(collection.Key);
+    }
+
+    private void SetModTemporary(StringBuilder sb, Mod mod, ModSettings settings, Guid collection, ObjectIndex? index)
+    {
+        var ex = settings.Remove
+            ? index.HasValue
+                ? _removeTemporaryModSettingsPlayer!.Invoke(index.Value.Index, mod.DirectoryName, Key)
+                : _removeTemporaryModSettings!.Invoke(collection, mod.DirectoryName, Key)
+            : index.HasValue
+                ? _setTemporaryModSettingsPlayer!.Invoke(index.Value.Index, mod.DirectoryName, settings.ForceInherit, settings.Enabled,
+                    settings.Priority,
+                    settings.Settings.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value), "Glamourer", Key)
+                : _setTemporaryModSettings!.Invoke(collection, mod.DirectoryName, settings.ForceInherit, settings.Enabled, settings.Priority,
+                    settings.Settings.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value), "Glamourer", Key);
+        switch (ex)
+        {
+            case PenumbraApiEc.InvalidArgument:
+                sb.Append($"No actor with index {index!.Value.Index} could be identified.");
+                return;
+            case PenumbraApiEc.ModMissing:
+                sb.Append($"The mod {mod.Name} [{mod.DirectoryName}] could not be found.");
+                return;
+            case PenumbraApiEc.CollectionMissing:
+                sb.Append($"The collection {collection} could not be found.");
+                return;
+            case PenumbraApiEc.TemporarySettingImpossible:
+                sb.Append($"The collection {collection} can not have settings.");
+                return;
+            case PenumbraApiEc.TemporarySettingDisallowed:
+                sb.Append($"The mod {mod.Name} [{mod.DirectoryName}] already has temporary settings with a different key in {collection}.");
+                return;
+            case PenumbraApiEc.OptionGroupMissing:
+            case PenumbraApiEc.OptionMissing:
+                sb.Append($"The provided settings for {mod.Name} [{mod.DirectoryName}] did not correspond to its actual options.");
+                return;
+        }
+    }
+
+    private void SetModPermanent(StringBuilder sb, Mod mod, ModSettings settings, Guid collection)
+    {
+        var ec = settings.ForceInherit
+            ? _inheritMod!.Invoke(collection, mod.DirectoryName, true)
+            : _setMod!.Invoke(collection, mod.DirectoryName, settings.Enabled);
+        switch (ec)
+        {
+            case PenumbraApiEc.ModMissing:
+                sb.Append($"The mod {mod.Name} [{mod.DirectoryName}] could not be found.");
+                return;
+            case PenumbraApiEc.CollectionMissing:
+                sb.Append($"The collection {collection} could not be found.");
+                return;
+        }
+
+        if (settings.ForceInherit || !settings.Enabled)
+            return;
+
+        ec = _setModPriority!.Invoke(collection, mod.DirectoryName, settings.Priority);
+        Debug.Assert(ec is PenumbraApiEc.Success or PenumbraApiEc.NothingChanged, "Setting Priority should not be able to fail.");
+
+        foreach (var (setting, list) in settings.Settings)
+        {
+            ec = list.Count == 1
+                ? _setModSetting!.Invoke(collection, mod.DirectoryName, setting, list[0])
+                : _setModSettings!.Invoke(collection, mod.DirectoryName, setting, list);
+            switch (ec)
+            {
+                case PenumbraApiEc.OptionGroupMissing:
+                    sb.AppendLine($"Could not find the option group {setting} in mod {mod.Name}.");
+                    break;
+                case PenumbraApiEc.OptionMissing:
+                    sb.AppendLine($"Could not find all desired options in the option group {setting} in mod {mod.Name}.");
+                    break;
+                case PenumbraApiEc.Success:
+                case PenumbraApiEc.NothingChanged:
+                    break;
+                default:
+                    sb.AppendLine($"Could not apply options in the option group {setting} in mod {mod.Name} for unknown reason {ec}.");
+                    break;
+            }
+        }
+    }
+
 
     /// <summary> Obtain the name of the collection currently assigned to the player. </summary>
     public Guid GetCurrentPlayerCollection()
@@ -347,12 +426,24 @@ public class PenumbraService : IDisposable
             _getMods                = new global::Penumbra.Api.IpcSubscribers.GetModList(_pluginInterface);
             _currentCollection      = new global::Penumbra.Api.IpcSubscribers.GetCollection(_pluginInterface);
             _getCurrentSettings     = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings(_pluginInterface);
+            _inheritMod             = new global::Penumbra.Api.IpcSubscribers.TryInheritMod(_pluginInterface);
             _setMod                 = new global::Penumbra.Api.IpcSubscribers.TrySetMod(_pluginInterface);
             _setModPriority         = new global::Penumbra.Api.IpcSubscribers.TrySetModPriority(_pluginInterface);
             _setModSetting          = new global::Penumbra.Api.IpcSubscribers.TrySetModSetting(_pluginInterface);
             _setModSettings         = new global::Penumbra.Api.IpcSubscribers.TrySetModSettings(_pluginInterface);
             _openModPage            = new global::Penumbra.Api.IpcSubscribers.OpenMainWindow(_pluginInterface);
-            Available               = true;
+            if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp)
+            {
+                _setTemporaryModSettings          = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettings(_pluginInterface);
+                _setTemporaryModSettingsPlayer    = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettingsPlayer(_pluginInterface);
+                _removeTemporaryModSettings       = new global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettings(_pluginInterface);
+                _removeTemporaryModSettingsPlayer = new global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettingsPlayer(_pluginInterface);
+                _removeAllTemporaryModSettings    = new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings(_pluginInterface);
+                _removeAllTemporaryModSettingsPlayer =
+                    new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer(_pluginInterface);
+            }
+
+            Available = true;
             _penumbraReloaded.Invoke();
             Glamourer.Log.Debug("Glamourer attached to Penumbra.");
         }
@@ -373,27 +464,35 @@ public class PenumbraService : IDisposable
         _modSettingChanged.Disable();
         if (Available)
         {
-            _collectionByIdentifier = null;
-            _collections            = null;
-            _redraw                 = null;
-            _drawObjectInfo         = null;
-            _cutsceneParent         = null;
-            _objectCollection       = null;
-            _getMods                = null;
-            _currentCollection      = null;
-            _getCurrentSettings     = null;
-            _setMod                 = null;
-            _setModPriority         = null;
-            _setModSetting          = null;
-            _setModSettings         = null;
-            _openModPage            = null;
-            Available               = false;
+            _collectionByIdentifier              = null;
+            _collections                         = null;
+            _redraw                              = null;
+            _drawObjectInfo                      = null;
+            _cutsceneParent                      = null;
+            _objectCollection                    = null;
+            _getMods                             = null;
+            _currentCollection                   = null;
+            _getCurrentSettings                  = null;
+            _inheritMod                          = null;
+            _setMod                              = null;
+            _setModPriority                      = null;
+            _setModSetting                       = null;
+            _setModSettings                      = null;
+            _openModPage                         = null;
+            _setTemporaryModSettings             = null;
+            _setTemporaryModSettingsPlayer       = null;
+            _removeTemporaryModSettings          = null;
+            _removeTemporaryModSettingsPlayer    = null;
+            _removeAllTemporaryModSettings       = null;
+            _removeAllTemporaryModSettingsPlayer = null;
+            Available                            = false;
             Glamourer.Log.Debug("Glamourer detached from Penumbra.");
         }
     }
 
     public void Dispose()
     {
+        ClearAllTemporarySettings();
         Unattach();
         _tooltipSubscriber.Dispose();
         _clickSubscriber.Dispose();

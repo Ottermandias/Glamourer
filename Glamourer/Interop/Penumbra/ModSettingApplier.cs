@@ -3,12 +3,15 @@ using Glamourer.Services;
 using Glamourer.State;
 using OtterGui.Services;
 using Penumbra.GameData.Interop;
+using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop.Penumbra;
 
 public class ModSettingApplier(PenumbraService penumbra, Configuration config, ObjectManager objects, CollectionOverrideService overrides)
     : IService
 {
+    private readonly HashSet<Guid> _collectionTracker = [];
+
     public void HandleStateApplication(ActorState state, MergedDesign design)
     {
         if (!config.AlwaysApplyAssociatedMods || design.AssociatedMods.Count == 0)
@@ -22,20 +25,20 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
             return;
         }
 
-        var collections = new HashSet<Guid>();
-
+        _collectionTracker.Clear();
         foreach (var actor in data.Objects)
         {
             var (collection, _, overridden) = overrides.GetCollection(actor, state.Identifier);
             if (collection == Guid.Empty)
                 continue;
 
-            if (!collections.Add(collection))
+            if (!_collectionTracker.Add(collection))
                 continue;
 
+            var index = ResetOldSettings(collection, actor, design.ResetTemporarySettings);
             foreach (var (mod, setting) in design.AssociatedMods)
             {
-                var message = penumbra.SetMod(mod, setting, collection);
+                var message = penumbra.SetMod(mod, setting, collection, index);
                 if (message.Length > 0)
                     Glamourer.Log.Verbose($"[Mod Applier] Error applying mod settings: {message}");
                 else
@@ -45,7 +48,8 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
         }
     }
 
-    public (List<string> Messages, int Applied, Guid Collection, string Name, bool Overridden) ApplyModSettings(IReadOnlyDictionary<Mod, ModSettings> settings, Actor actor)
+    public (List<string> Messages, int Applied, Guid Collection, string Name, bool Overridden) ApplyModSettings(
+        IReadOnlyDictionary<Mod, ModSettings> settings, Actor actor, bool resetOther)
     {
         var (collection, name, overridden) = overrides.GetCollection(actor);
         if (collection == Guid.Empty)
@@ -53,9 +57,11 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
 
         var messages    = new List<string>();
         var appliedMods = 0;
+
+        var index = ResetOldSettings(collection, actor, resetOther);
         foreach (var (mod, setting) in settings)
         {
-            var message = penumbra.SetMod(mod, setting, collection);
+            var message = penumbra.SetMod(mod, setting, collection, index);
             if (message.Length > 0)
                 messages.Add($"Error applying mod settings: {message}");
             else
@@ -63,5 +69,19 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
         }
 
         return (messages, appliedMods, collection, name, overridden);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private ObjectIndex? ResetOldSettings(Guid collection, Actor actor, bool resetOther)
+    {
+        ObjectIndex? index = actor.Valid ? actor.Index : null;
+        if (!resetOther)
+            return index;
+
+        if (index == null)
+            penumbra.RemoveAllTemporarySettings(collection);
+        else
+            penumbra.RemoveAllTemporarySettings(index.Value);
+        return index;
     }
 }

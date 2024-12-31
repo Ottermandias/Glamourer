@@ -58,6 +58,8 @@ public class DesignMerger(
                 ret.ForcedRedraw = true;
             if (design.ResetAdvancedDyes)
                 ret.ResetAdvancedDyes = true;
+            if (design.ResetTemporarySettings)
+                ret.ResetTemporarySettings = true;
         }
 
         ApplyFixFlags(ret, fixFlags);

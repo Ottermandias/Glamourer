@@ -99,14 +99,15 @@ public sealed class DesignManager : DesignEditor
         var (actualName, path) = ParseName(name, handlePath);
         var design = new Design(Customizations, Items)
         {
-            CreationDate      = DateTimeOffset.UtcNow,
-            LastEdit          = DateTimeOffset.UtcNow,
-            Identifier        = CreateNewGuid(),
-            Name              = actualName,
-            Index             = Designs.Count,
-            ForcedRedraw      = Config.DefaultDesignSettings.AlwaysForceRedrawing,
-            ResetAdvancedDyes = Config.DefaultDesignSettings.ResetAdvancedDyes,
-            QuickDesign       = Config.DefaultDesignSettings.ShowQuickDesignBar,
+            CreationDate           = DateTimeOffset.UtcNow,
+            LastEdit               = DateTimeOffset.UtcNow,
+            Identifier             = CreateNewGuid(),
+            Name                   = actualName,
+            Index                  = Designs.Count,
+            ForcedRedraw           = Config.DefaultDesignSettings.AlwaysForceRedrawing,
+            ResetAdvancedDyes      = Config.DefaultDesignSettings.ResetAdvancedDyes,
+            QuickDesign            = Config.DefaultDesignSettings.ShowQuickDesignBar,
+            ResetTemporarySettings = Config.DefaultDesignSettings.ResetTemporarySettings,
         };
         Designs.Add(design);
         Glamourer.Log.Debug($"Added new design {design.Identifier}.");
@@ -121,14 +122,15 @@ public sealed class DesignManager : DesignEditor
         var (actualName, path) = ParseName(name, handlePath);
         var design = new Design(clone)
         {
-            CreationDate      = DateTimeOffset.UtcNow,
-            LastEdit          = DateTimeOffset.UtcNow,
-            Identifier        = CreateNewGuid(),
-            Name              = actualName,
-            Index             = Designs.Count,
-            ForcedRedraw      = Config.DefaultDesignSettings.AlwaysForceRedrawing,
-            ResetAdvancedDyes = Config.DefaultDesignSettings.ResetAdvancedDyes,
-            QuickDesign       = Config.DefaultDesignSettings.ShowQuickDesignBar,
+            CreationDate           = DateTimeOffset.UtcNow,
+            LastEdit               = DateTimeOffset.UtcNow,
+            Identifier             = CreateNewGuid(),
+            Name                   = actualName,
+            Index                  = Designs.Count,
+            ForcedRedraw           = Config.DefaultDesignSettings.AlwaysForceRedrawing,
+            ResetAdvancedDyes      = Config.DefaultDesignSettings.ResetAdvancedDyes,
+            QuickDesign            = Config.DefaultDesignSettings.ShowQuickDesignBar,
+            ResetTemporarySettings = Config.DefaultDesignSettings.ResetTemporarySettings,
         };
 
         Designs.Add(design);
@@ -144,11 +146,11 @@ public sealed class DesignManager : DesignEditor
         var (actualName, path) = ParseName(name, handlePath);
         var design = new Design(clone)
         {
-            CreationDate      = DateTimeOffset.UtcNow,
-            LastEdit          = DateTimeOffset.UtcNow,
-            Identifier        = CreateNewGuid(),
-            Name              = actualName,
-            Index             = Designs.Count,
+            CreationDate = DateTimeOffset.UtcNow,
+            LastEdit     = DateTimeOffset.UtcNow,
+            Identifier   = CreateNewGuid(),
+            Name         = actualName,
+            Index        = Designs.Count,
         };
         Designs.Add(design);
         Glamourer.Log.Debug(
@@ -349,6 +351,17 @@ public sealed class DesignManager : DesignEditor
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set {design.Identifier} to {(resetAdvancedDyes ? string.Empty : "not")} reset advanced dyes.");
         DesignChanged.Invoke(DesignChanged.Type.ResetAdvancedDyes, design, null);
+    }
+
+    public void ChangeResetTemporarySettings(Design design, bool resetTemporarySettings)
+    {
+        if (design.ResetTemporarySettings == resetTemporarySettings)
+            return;
+
+        design.ResetTemporarySettings = resetTemporarySettings;
+        SaveService.QueueSave(design);
+        Glamourer.Log.Debug($"Set {design.Identifier} to {(resetTemporarySettings ? string.Empty : "not")} reset temporary settings.");
+        DesignChanged.Invoke(DesignChanged.Type.ResetTemporarySettings, design, null);
     }
 
     /// <summary> Change whether to apply a specific customize value. </summary>

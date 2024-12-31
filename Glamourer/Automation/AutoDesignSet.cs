@@ -10,7 +10,8 @@ public class AutoDesignSet(string name, ActorIdentifier[] identifiers, List<Auto
     public string            Name        = name;
     public ActorIdentifier[] Identifiers = identifiers;
     public bool              Enabled;
-    public Base              BaseState = Base.Current;
+    public Base              BaseState              = Base.Current;
+    public bool              ResetTemporarySettings = false;
 
     public JObject Serialize()
     {
@@ -20,11 +21,12 @@ public class AutoDesignSet(string name, ActorIdentifier[] identifiers, List<Auto
 
         return new JObject()
         {
-            ["Name"]       = Name,
-            ["Identifier"] = Identifiers[0].ToJson(),
-            ["Enabled"]    = Enabled,
-            ["BaseState"]  = BaseState.ToString(),
-            ["Designs"]    = list,
+            ["Name"]                   = Name,
+            ["Identifier"]             = Identifiers[0].ToJson(),
+            ["Enabled"]                = Enabled,
+            ["BaseState"]              = BaseState.ToString(),
+            ["ResetTemporarySettings"] = ResetTemporarySettings.ToString(),
+            ["Designs"]                = list,
         };
     }
 

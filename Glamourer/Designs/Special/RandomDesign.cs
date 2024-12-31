@@ -92,8 +92,11 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     }
 
     public bool ForcedRedraw
-        => false;
+        => _currentDesign?.ForcedRedraw ?? false;
 
     public bool ResetAdvancedDyes
-        => false;
+        => _currentDesign?.ResetAdvancedDyes ?? false;
+
+    public bool ResetTemporarySettings
+        => _currentDesign?.ResetTemporarySettings ?? false;
 }

@@ -48,4 +48,7 @@ public class RevertDesign : IDesignStandIn
 
     public bool ResetAdvancedDyes
         => true;
+
+    public bool ResetTemporarySettings
+        => true;
 }

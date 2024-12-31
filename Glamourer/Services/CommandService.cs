@@ -691,7 +691,7 @@ public class CommandService : IDisposable, IApiService
         if (!applyMods || design is not Design d)
             return;
 
-        var (messages, appliedMods, _, name, overridden) = _modApplier.ApplyModSettings(d.AssociatedMods, actor);
+        var (messages, appliedMods, _, name, overridden) = _modApplier.ApplyModSettings(d.AssociatedMods, actor, d.ResetTemporarySettings);
 
         foreach (var message in messages)
             Glamourer.Messager.Chat.Print($"Error applying mod settings: {message}");

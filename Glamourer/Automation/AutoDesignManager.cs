@@ -444,8 +444,9 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
             var set = new AutoDesignSet(name, group)
             {
-                Enabled   = obj["Enabled"]?.ToObject<bool>() ?? false,
-                BaseState = obj["BaseState"]?.ToObject<AutoDesignSet.Base>() ?? AutoDesignSet.Base.Current,
+                Enabled                = obj["Enabled"]?.ToObject<bool>() ?? false,
+                ResetTemporarySettings = obj["ResetTemporarySettings"]?.ToObject<bool>() ?? false,
+                BaseState              = obj["BaseState"]?.ToObject<AutoDesignSet.Base>() ?? AutoDesignSet.Base.Current,
             };
 
             if (set.Enabled)
@@ -602,9 +603,9 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
                         ? ActorIdentifier.RetainerType.Mannequin
                         : ActorIdentifier.RetainerType.Bell).CreatePermanent(),
             ],
-            IdentifierType.Npc => CreateNpcs(_actors, identifier),
+            IdentifierType.Npc   => CreateNpcs(_actors, identifier),
             IdentifierType.Owned => CreateNpcs(_actors, identifier),
-            _                  => [],
+            _                    => [],
         };
 
         static ActorIdentifier[] CreateNpcs(ActorManager manager, ActorIdentifier identifier)

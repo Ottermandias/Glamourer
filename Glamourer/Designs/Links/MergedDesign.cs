@@ -101,4 +101,5 @@ public sealed class MergedDesign
     public          StateSources                 Sources        = new();
     public          bool                         ForcedRedraw;
     public          bool                         ResetAdvancedDyes;
+    public          bool                         ResetTemporarySettings;
 }

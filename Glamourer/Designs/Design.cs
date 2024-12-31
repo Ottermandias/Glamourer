@@ -28,32 +28,34 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     internal Design(Design other)
         : base(other)
     {
-        Tags              = [.. other.Tags];
-        Description       = other.Description;
-        QuickDesign       = other.QuickDesign;
-        ForcedRedraw      = other.ForcedRedraw;
-        ResetAdvancedDyes = other.ResetAdvancedDyes;
-        Color             = other.Color;
-        AssociatedMods    = new SortedList<Mod, ModSettings>(other.AssociatedMods);
-        Links             = Links.Clone();
+        Tags                   = [.. other.Tags];
+        Description            = other.Description;
+        QuickDesign            = other.QuickDesign;
+        ForcedRedraw           = other.ForcedRedraw;
+        ResetAdvancedDyes      = other.ResetAdvancedDyes;
+        ResetTemporarySettings = other.ResetTemporarySettings;
+        Color                  = other.Color;
+        AssociatedMods         = new SortedList<Mod, ModSettings>(other.AssociatedMods);
+        Links                  = Links.Clone();
     }
 
     // Metadata
     public new const int FileVersion = 2;
 
-    public Guid                         Identifier        { get; internal init; }
-    public DateTimeOffset               CreationDate      { get; internal init; }
-    public DateTimeOffset               LastEdit          { get; internal set; }
-    public LowerString                  Name              { get; internal set; } = LowerString.Empty;
-    public string                       Description       { get; internal set; } = string.Empty;
-    public string[]                     Tags              { get; internal set; } = [];
-    public int                          Index             { get; internal set; }
-    public bool                         ForcedRedraw      { get; internal set; }
-    public bool                         ResetAdvancedDyes { get; internal set; }
-    public bool                         QuickDesign       { get; internal set; } = true;
-    public string                       Color             { get; internal set; } = string.Empty;
-    public SortedList<Mod, ModSettings> AssociatedMods    { get; private set; }  = [];
-    public LinkContainer                Links             { get; private set; }  = [];
+    public Guid                         Identifier             { get; internal init; }
+    public DateTimeOffset               CreationDate           { get; internal init; }
+    public DateTimeOffset               LastEdit               { get; internal set; }
+    public LowerString                  Name                   { get; internal set; } = LowerString.Empty;
+    public string                       Description            { get; internal set; } = string.Empty;
+    public string[]                     Tags                   { get; internal set; } = [];
+    public int                          Index                  { get; internal set; }
+    public bool                         ForcedRedraw           { get; internal set; }
+    public bool                         ResetAdvancedDyes      { get; internal set; }
+    public bool                         ResetTemporarySettings { get; internal set; }
+    public bool                         QuickDesign            { get; internal set; } = true;
+    public string                       Color                  { get; internal set; } = string.Empty;
+    public SortedList<Mod, ModSettings> AssociatedMods         { get; private set; }  = [];
+    public LinkContainer                Links                  { get; private set; }  = [];
 
     public string Incognito
         => Identifier.ToString()[..8];
@@ -100,25 +102,26 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     {
         var ret = new JObject()
         {
-            ["FileVersion"]       = FileVersion,
-            ["Identifier"]        = Identifier,
-            ["CreationDate"]      = CreationDate,
-            ["LastEdit"]          = LastEdit,
-            ["Name"]              = Name.Text,
-            ["Description"]       = Description,
-            ["ForcedRedraw"]      = ForcedRedraw,
-            ["ResetAdvancedDyes"] = ResetAdvancedDyes,
-            ["Color"]             = Color,
-            ["QuickDesign"]       = QuickDesign,
-            ["Tags"]              = JArray.FromObject(Tags),
-            ["WriteProtected"]    = WriteProtected(),
-            ["Equipment"]         = SerializeEquipment(),
-            ["Bonus"]             = SerializeBonusItems(),
-            ["Customize"]         = SerializeCustomize(),
-            ["Parameters"]        = SerializeParameters(),
-            ["Materials"]         = SerializeMaterials(),
-            ["Mods"]              = SerializeMods(),
-            ["Links"]             = Links.Serialize(),
+            ["FileVersion"]            = FileVersion,
+            ["Identifier"]             = Identifier,
+            ["CreationDate"]           = CreationDate,
+            ["LastEdit"]               = LastEdit,
+            ["Name"]                   = Name.Text,
+            ["Description"]            = Description,
+            ["ForcedRedraw"]           = ForcedRedraw,
+            ["ResetAdvancedDyes"]      = ResetAdvancedDyes,
+            ["ResetTemporarySettings"] = ResetTemporarySettings,
+            ["Color"]                  = Color,
+            ["QuickDesign"]            = QuickDesign,
+            ["Tags"]                   = JArray.FromObject(Tags),
+            ["WriteProtected"]         = WriteProtected(),
+            ["Equipment"]              = SerializeEquipment(),
+            ["Bonus"]                  = SerializeBonusItems(),
+            ["Customize"]              = SerializeCustomize(),
+            ["Parameters"]             = SerializeParameters(),
+            ["Materials"]              = SerializeMaterials(),
+            ["Mods"]                   = SerializeMods(),
+            ["Links"]                  = Links.Serialize(),
         };
         return ret;
     }
@@ -250,9 +253,10 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
         LoadParameters(json["Parameters"], design, design.Name);
         LoadMaterials(json["Materials"], design, design.Name);
         LoadLinks(linkLoader, json["Links"], design);
-        design.Color             = json["Color"]?.ToObject<string>() ?? string.Empty;
-        design.ForcedRedraw      = json["ForcedRedraw"]?.ToObject<bool>() ?? false;
-        design.ResetAdvancedDyes = json["ResetAdvancedDyes"]?.ToObject<bool>() ?? false;
+        design.Color                  = json["Color"]?.ToObject<string>() ?? string.Empty;
+        design.ForcedRedraw           = json["ForcedRedraw"]?.ToObject<bool>() ?? false;
+        design.ResetAdvancedDyes      = json["ResetAdvancedDyes"]?.ToObject<bool>() ?? false;
+        design.ResetTemporarySettings = json["ResetTemporarySettings"]?.ToObject<bool>() ?? false;
         return design;
 
         static string[] ParseTags(JObject json)
@@ -278,12 +282,15 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
                 continue;
             }
 
-            var settingsDict = tok["Settings"]?.ToObject<Dictionary<string, List<string>>>() ?? [];
-            var settings     = new Dictionary<string, List<string>>(settingsDict.Count);
+            var forceInherit  = tok["Inherit"]?.ToObject<bool>() ?? false;
+            var removeSetting = tok["Remove"]?.ToObject<bool>() ?? false;
+            var settingsDict  = tok["Settings"]?.ToObject<Dictionary<string, List<string>>>() ?? [];
+            var settings      = new Dictionary<string, List<string>>(settingsDict.Count);
             foreach (var (key, value) in settingsDict)
                 settings.Add(key, value);
             var priority = tok["Priority"]?.ToObject<int>() ?? 0;
-            if (!design.AssociatedMods.TryAdd(new Mod(name, directory), new ModSettings(settings, priority, enabled.Value)))
+            if (!design.AssociatedMods.TryAdd(new Mod(name, directory),
+                    new ModSettings(settings, priority, enabled.Value, forceInherit, removeSetting)))
                 Glamourer.Messager.NotificationMessage("The loaded design contains a mod more than once, skipped.", NotificationType.Warning);
         }
     }

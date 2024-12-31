@@ -88,16 +88,18 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
 
     private void DrawTable()
     {
-        using var table = ImRaii.Table("Mods", 5, ImGuiTableFlags.RowBg);
+        using var table = ImUtf8.Table("Mods"u8, 7, ImGuiTableFlags.RowBg);
         if (!table)
             return;
 
-        ImGui.TableSetupColumn("##Buttons", ImGuiTableColumnFlags.WidthFixed,
+        ImUtf8.TableSetupColumn("##Buttons"u8, ImGuiTableColumnFlags.WidthFixed,
             ImGui.GetFrameHeight() * 3 + ImGui.GetStyle().ItemInnerSpacing.X * 2);
-        ImGui.TableSetupColumn("Mod Name",  ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("State",     ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("State").X);
-        ImGui.TableSetupColumn("Priority",  ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Priority").X);
-        ImGui.TableSetupColumn("##Options", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Applym").X);
+        ImUtf8.TableSetupColumn("Mod Name"u8,  ImGuiTableColumnFlags.WidthStretch);
+        ImUtf8.TableSetupColumn("Remove"u8,    ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Remove"u8).X);
+        ImUtf8.TableSetupColumn("Inherit"u8,   ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Inherit"u8).X);
+        ImUtf8.TableSetupColumn("State"u8,     ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("State"u8).X);
+        ImUtf8.TableSetupColumn("Priority"u8,  ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Priority"u8).X);
+        ImUtf8.TableSetupColumn("##Options"u8, ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Applym"u8).X);
         ImGui.TableHeadersRow();
 
         Mod?                             removedMod = null;
@@ -182,6 +184,17 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
             penumbra.OpenModPage(mod);
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip($"Mod Directory:    {mod.DirectoryName}\n\nClick to open mod page in Penumbra.");
+        ImGui.TableNextColumn();
+        var remove = settings.Remove;
+        if (TwoStateCheckbox.Instance.Draw("##Remove"u8, ref remove))
+            updatedMod = (mod, settings with { Remove = remove });
+        ImUtf8.HoverTooltip(
+            "Remove any temporary settings applied by Glamourer instead of applying the configured settings. Only works when using temporary settings, ignored otherwise."u8);
+        ImGui.TableNextColumn();
+        var inherit = settings.ForceInherit;
+        if (TwoStateCheckbox.Instance.Draw("##Enabled"u8, ref inherit))
+            updatedMod = (mod, settings with { ForceInherit = inherit });
+        ImUtf8.HoverTooltip("Force the mod to inherit its settings from inherited collections."u8);
         ImGui.TableNextColumn();
         var enabled = settings.Enabled;
         if (TwoStateCheckbox.Instance.Draw("##Enabled"u8, ref enabled))

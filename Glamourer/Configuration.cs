@@ -27,9 +27,10 @@ public enum HeightDisplayType
 
 public class DefaultDesignSettings
 {
-    public bool AlwaysForceRedrawing = false;
-    public bool ResetAdvancedDyes    = false;
-    public bool ShowQuickDesignBar   = true;
+    public bool AlwaysForceRedrawing   = false;
+    public bool ResetAdvancedDyes      = false;
+    public bool ShowQuickDesignBar     = true;
+    public bool ResetTemporarySettings = false;
 }
 
 public class Configuration : IPluginConfiguration, ISavable
@@ -63,6 +64,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool ShowColorConfig                  { get; set; } = true;
     public bool ChangeEntireItem                 { get; set; } = false;
     public bool AlwaysApplyAssociatedMods        { get; set; } = false;
+    public bool UseTemporarySettings             { get; set; } = true;
     public bool AllowDoubleClickToApply          { get; set; } = false;
     public bool RespectManualOnAutomationUpdate  { get; set; } = false;
 

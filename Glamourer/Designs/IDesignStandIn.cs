@@ -26,5 +26,6 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
 
     public bool ForcedRedraw { get; }
 
-    public bool ResetAdvancedDyes { get; }
+    public bool ResetAdvancedDyes      { get; }
+    public bool ResetTemporarySettings { get; }
 }
