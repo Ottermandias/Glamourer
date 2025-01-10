@@ -38,6 +38,7 @@ public class GlamourerChangelog
         Add1_3_2_0(Changelog);
         Add1_3_3_0(Changelog);
         Add1_3_4_0(Changelog);
+        Add1_3_5_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -58,11 +59,27 @@ public class GlamourerChangelog
         }
     }
 
+    private static void Add1_3_5_0(Changelog log)
+        => log.NextVersion("Version 1.3.5.0")
+            .RegisterHighlight("Added the usage of the new Temporary Mod Setting functionality from Penumbra to apply mod associations. This is on by default but can be turned back to permanent changes in the settings.")
+            .RegisterEntry("Designs now have a setting to always reset all prior temporary settings made by Glamourer on application.", 1)
+            .RegisterEntry("Automation Sets also have a setting to do this, independently of the designs contained in them.", 1)
+            .RegisterHighlight("More NPC customization options should now be accepted as valid for designs, regardless of clan/gender.")
+            .RegisterHighlight("The 'Apply' chat command had the currently selected design and the current quick bar design added as choices.")
+            .RegisterEntry("The application buttons for designs, NPCs or actors should now stick at the top of their respective panels even when scrolling down.")
+            .RegisterHighlight("Randomly chosen designs should now stay across loading screens or redrawing. (1.3.4.3)")
+            .RegisterEntry("In automation, Random designs now have an option to always choose another design, including during loading screens or redrawing.", 1)
+            .RegisterEntry("Fixed an issue where disabling auto designs did not work as expected.")
+            .RegisterEntry("Fixed the inversion of application flags in IPC calls.")
+            .RegisterEntry("Fixed an issue with the scaling of the Advanced Dye popup with increased font sizes.")
+            .RegisterEntry("Fixed a bug when editing gear set conditions in the automation tab.")
+            .RegisterEntry("Fixed some ImGui issues.");
+
     private static void Add1_3_4_0(Changelog log)
         => log.NextVersion("Version 1.3.4.0")
             .RegisterEntry("Glamourer has been updated for Dalamud API 11 and patch 7.1.")
             .RegisterEntry("Maybe fixed issues with shared weapon types and reset designs.")
-            .RegisterEntry("Fixed issues with resetting advanced dyes and certain weapon types");
+            .RegisterEntry("Fixed issues with resetting advanced dyes and certain weapon types.");
 
     private static void Add1_3_3_0(Changelog log)
         => log.NextVersion("Version 1.3.3.0")
