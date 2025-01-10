@@ -198,7 +198,7 @@ public sealed unsafe class AdvancedDyePopup(
           + 3 * ImGui.GetStyle().ItemSpacing.X // around text
           + 7 * ImGui.GetStyle().ItemInnerSpacing.X
           + 200 * ImGuiHelpers.GlobalScale             // Drags
-          + 7 * UiBuilder.MonoFont.GetCharAdvance(' ') // Row
+          + 7 * UiBuilder.MonoFont.GetCharAdvance(' ') * ImGuiHelpers.GlobalScale // Row
           + 2 * ImGui.GetStyle().WindowPadding.X;
         var height = 19 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + 3 * ImGui.GetStyle().ItemSpacing.Y;
         ImGui.SetNextWindowSize(new Vector2(width, height));
