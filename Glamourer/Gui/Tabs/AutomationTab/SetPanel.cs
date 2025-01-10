@@ -230,6 +230,7 @@ public class SetPanel(
     }
 
     private int _tmpGearset = int.MaxValue;
+    private int _whichIndex = -1;
 
     private void DrawConditions(AutoDesign design, int idx)
     {
@@ -245,14 +246,19 @@ public class SetPanel(
         ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
         if (usingGearset)
         {
-            var set = 1 + (_tmpGearset == int.MaxValue ? design.GearsetIndex : _tmpGearset);
+            var set = 1 + (_tmpGearset == int.MaxValue || _whichIndex != idx ? design.GearsetIndex : _tmpGearset);
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
             if (ImGui.InputInt("##whichGearset", ref set, 0, 0))
+            {
+                _whichIndex = idx;
                 _tmpGearset = Math.Clamp(set, 1, 100);
+            }
+
             if (ImGui.IsItemDeactivatedAfterEdit())
             {
                 _manager.ChangeGearsetCondition(Selection, idx, (short)(_tmpGearset - 1));
                 _tmpGearset = int.MaxValue;
+                _whichIndex = -1;
             }
         }
         else
