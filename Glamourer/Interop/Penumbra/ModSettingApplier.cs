@@ -14,7 +14,7 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
 
     public void HandleStateApplication(ActorState state, MergedDesign design)
     {
-        if (!config.AlwaysApplyAssociatedMods || design.AssociatedMods.Count == 0)
+        if (!config.AlwaysApplyAssociatedMods || (design.AssociatedMods.Count == 0 && !design.ResetTemporarySettings))
             return;
 
         objects.Update();
