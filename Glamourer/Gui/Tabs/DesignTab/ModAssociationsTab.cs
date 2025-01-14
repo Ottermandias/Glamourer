@@ -149,12 +149,14 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         ImUtf8.IconButton(FontAwesomeIcon.RedoAlt, "Update the settings of this mod association."u8);
         if (ImGui.IsItemHovered())
         {
-            var newSettings = penumbra.GetModSettings(mod);
+            var newSettings = penumbra.GetModSettings(mod, out var source);
             if (ImGui.IsItemClicked())
                 updatedMod = (mod, newSettings);
 
             using var style = ImRaii.PushStyle(ImGuiStyleVar.PopupBorderSize, 2 * ImGuiHelpers.GlobalScale);
             using var tt    = ImUtf8.Tooltip();
+            if (source.Length > 0)
+                ImUtf8.Text($"Using temporary settings made by {source}.");
             ImGui.Separator();
             var namesDifferent = mod.Name != mod.DirectoryName;
             ImGui.Dummy(new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
@@ -162,6 +164,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
             {
                 if (namesDifferent)
                     ImUtf8.Text("Directory Name"u8);
+                ImUtf8.Text("Force Inherit"u8);
                 ImUtf8.Text("Enabled"u8);
                 ImUtf8.Text("Priority"u8);
                 ModCombo.DrawSettingsLeft(newSettings);
@@ -173,6 +176,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
                 if (namesDifferent)
                     ImUtf8.Text(mod.DirectoryName);
 
+                ImUtf8.Text(newSettings.ForceInherit.ToString());
                 ImUtf8.Text(newSettings.Enabled.ToString());
                 ImUtf8.Text(newSettings.Priority.ToString());
                 ModCombo.DrawSettingsRight(newSettings);

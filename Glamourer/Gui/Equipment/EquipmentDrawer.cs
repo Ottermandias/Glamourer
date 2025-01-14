@@ -118,7 +118,7 @@ public class EquipmentDrawer
 
     public void DrawWeapons(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
     {
-        if (mainhand.CurrentItem.PrimaryId.Id == 0)
+        if (mainhand.CurrentItem.PrimaryId.Id == 0 && !allWeapons)
             return;
 
         if (_config.HideApplyCheckmarks)

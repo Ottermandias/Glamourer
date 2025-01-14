@@ -33,9 +33,10 @@ public readonly record struct ModSettings(Dictionary<string, List<string>> Setti
 
 public class PenumbraService : IDisposable
 {
-    public const int RequiredPenumbraBreakingVersion    = 5;
-    public const int RequiredPenumbraFeatureVersion     = 3;
-    public const int RequiredPenumbraFeatureVersionTemp = 4;
+    public const int RequiredPenumbraBreakingVersion     = 5;
+    public const int RequiredPenumbraFeatureVersion      = 3;
+    public const int RequiredPenumbraFeatureVersionTemp  = 4;
+    public const int RequiredPenumbraFeatureVersionTemp2 = 5;
 
     private const int Key = -1610;
 
@@ -67,6 +68,7 @@ public class PenumbraService : IDisposable
     private global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettingsPlayer?    _removeTemporaryModSettingsPlayer;
     private global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings?       _removeAllTemporaryModSettings;
     private global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer? _removeAllTemporaryModSettingsPlayer;
+    private global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings?           _queryTemporaryModSettings;
     private global::Penumbra.Api.IpcSubscribers.OpenMainWindow?                      _openModPage;
 
     private readonly IDisposable _initializedEvent;
@@ -128,19 +130,30 @@ public class PenumbraService : IDisposable
     public Dictionary<Guid, string> GetCollections()
         => Available ? _collections!.Invoke() : [];
 
-    public ModSettings GetModSettings(in Mod mod)
+    public ModSettings GetModSettings(in Mod mod, out string source)
     {
+        source = string.Empty; 
         if (!Available)
             return ModSettings.Empty;
 
         try
         {
             var collection = _currentCollection!.Invoke(ApiCollectionType.Current);
+            if (_queryTemporaryModSettings != null)
+            {
+                var tempEc = _queryTemporaryModSettings.Invoke(collection!.Value.Id, mod.DirectoryName, out var tempTuple, out source);
+                if (tempEc is PenumbraApiEc.Success && tempTuple != null)
+                    return new ModSettings(tempTuple.Value.Settings, tempTuple.Value.Priority, tempTuple.Value.Enabled,
+                        tempTuple.Value.ForceInherit, false);
+            }
+
             var (ec, tuple) = _getCurrentSettings!.Invoke(collection!.Value.Id, mod.DirectoryName);
             if (ec is not PenumbraApiEc.Success)
                 return ModSettings.Empty;
 
-            return tuple.HasValue ? new ModSettings(tuple.Value.Item3, tuple.Value.Item2, tuple.Value.Item1, false, false) : ModSettings.Empty;
+            return tuple.HasValue
+                ? new ModSettings(tuple.Value.Item3, tuple.Value.Item2, tuple.Value.Item1, false, false)
+                : ModSettings.Empty;
         }
         catch (Exception ex)
         {
@@ -441,6 +454,8 @@ public class PenumbraService : IDisposable
                 _removeAllTemporaryModSettings    = new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings(_pluginInterface);
                 _removeAllTemporaryModSettingsPlayer =
                     new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer(_pluginInterface);
+                if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp2)
+                    _queryTemporaryModSettings = new global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings(_pluginInterface);
             }
 
             Available = true;
@@ -485,6 +500,7 @@ public class PenumbraService : IDisposable
             _removeTemporaryModSettingsPlayer    = null;
             _removeAllTemporaryModSettings       = null;
             _removeAllTemporaryModSettingsPlayer = null;
+            _queryTemporaryModSettings           = null;
             Available                            = false;
             Glamourer.Log.Debug("Glamourer detached from Penumbra.");
         }
