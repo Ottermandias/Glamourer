@@ -216,8 +216,7 @@ public class StateListener : IDisposable
         // then we do not want to use our restricted gear protection
         // since we assume the player has that gear modded to availability.
         var locked = false;
-        if (actor.Identifier(_actors, out var identifier)
-         && _manager.TryGetValue(identifier, out var state))
+        if (actor.Identifier(_actors, out var identifier) && _manager.TryGetValue(identifier, out var state))
         {
             HandleEquipSlot(actor, state, slot, ref armor);
             locked = state.Sources[slot, false] is StateSource.IpcFixed;
@@ -383,7 +382,7 @@ public class StateListener : IDisposable
             lastFistOffhand = new CharacterWeapon((PrimaryId)(weapon.Skeleton.Id + 50), weapon.Weapon, weapon.Variant,
                 weapon.Stains);
             _fistOffhands[actor] = lastFistOffhand;
-            Glamourer.Log.Excessive($"Storing fist weapon offhand {lastFistOffhand} for 0x{actor.Address:X}.");
+            Glamourer.Log.Verbose($"Storing fist weapon offhand {lastFistOffhand} for 0x{actor.Address:X}.");
         }
 
         _funModule.ApplyFunToWeapon(actor, ref weapon, slot);

@@ -64,12 +64,13 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
 
     private Hook<ChangeCustomizeDelegate> _changeCustomizeHook;
 
+    // manual invoke by calling the detours _original call to `execute to` instead of `listen to`.
     public bool UpdateCustomize(Model model, CustomizeArray customize)
     {
         if (!model.IsHuman)
             return false;
 
-        Glamourer.Log.Verbose($"[ChangeCustomize] Invoked on 0x{model.Address:X} with {customize}.");
+        Glamourer.Log.Information($"[ChangeCustomize] Glamour-Invoked on 0x{model.Address:X} with {customize}.");
         using var _   = InUpdate.EnterMethod();
         var       ret = _original(model.AsHuman, customize.Data, true);
         return ret;
@@ -78,15 +79,19 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
     public bool UpdateCustomize(Actor actor, CustomizeArray customize)
         => UpdateCustomize(actor.Model, customize);
 
+    // detoured method.
     private bool ChangeCustomizeDetour(Human* human, byte* data, byte skipEquipment)
     {
         if (!InUpdate.InMethod)
             Invoke(human, ref *(CustomizeArray*)data);
 
         var ret = _changeCustomizeHook.Original(human, data, skipEquipment);
+
+        Glamourer.Log.Information($"[ChangeCustomize] Called on with {*(CustomizeArray*)data} ({ret}).");
         _postEvent.Invoke(human);
         return ret;
     }
+
 
     public void Subscribe(Action<Model> action, Post.Priority priority)
         => _postEvent.Subscribe(action, priority);

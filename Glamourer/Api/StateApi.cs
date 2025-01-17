@@ -333,6 +333,8 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     private void OnStateChanged(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, ITransaction? _5)
     {
+        Glamourer.Log.Error($"[OnStateChanged API CALL] Sending out OnStateChanged with type {type}.");
+
         if (StateChanged != null)
             foreach (var actor in actors.Objects)
                 StateChanged.Invoke(actor.Address);

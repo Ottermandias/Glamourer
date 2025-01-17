@@ -273,7 +273,7 @@ public sealed class StateManager(
         if (source is not StateSource.Game)
             actors = Applier.ApplyAll(state, redraw, true);
 
-        Glamourer.Log.Verbose(
+        Glamourer.Log.Debug(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
     }
@@ -298,7 +298,7 @@ public sealed class StateManager(
 
         state.Materials.Clear();
 
-        Glamourer.Log.Verbose(
+        Glamourer.Log.Debug(
             $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
     }
