@@ -64,7 +64,6 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
 
     private Hook<ChangeCustomizeDelegate> _changeCustomizeHook;
 
-    // manual invoke by calling the detours _original call to `execute to` instead of `listen to`.
     public bool UpdateCustomize(Model model, CustomizeArray customize)
     {
         if (!model.IsHuman)
@@ -79,7 +78,6 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
     public bool UpdateCustomize(Actor actor, CustomizeArray customize)
         => UpdateCustomize(actor.Model, customize);
 
-    // detoured method.
     private bool ChangeCustomizeDetour(Human* human, byte* data, byte skipEquipment)
     {
         if (!InUpdate.InMethod)
@@ -89,7 +87,6 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
         _postEvent.Invoke(human);
         return ret;
     }
-
 
     public void Subscribe(Action<Model> action, Post.Priority priority)
         => _postEvent.Subscribe(action, priority);

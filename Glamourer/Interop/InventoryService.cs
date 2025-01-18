@@ -5,7 +5,6 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Glamourer.Events;
 using OtterGui.Services;
-using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.String;
@@ -14,10 +13,6 @@ namespace Glamourer.Interop;
 
 public sealed unsafe class InventoryService : IDisposable, IRequiredService
 {
-    private readonly MovedEquipment                    _movedItemsEvent;
-    private readonly EquippedGearset                   _gearsetEvent;
-    private readonly List<(EquipSlot, uint, StainIds)> _itemList = new(12);
-
     // Called by EquipGearset, but returns a pointer instead of an int.
     // This is the internal function processed by all sources of Equipping a gearset,
     // such as hotbar gearset application and command gearset application
@@ -27,10 +22,16 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
     [Signature(EquipGearsetInternal, DetourName = nameof(EquipGearSetInternalDetour))]
     private readonly Hook<ChangeGearsetInternalDelegate> _equipGearsetInternalHook = null!;
 
+    // The following above is currently pending for an accepted PR in FFXIVCLientStructs.
+    // Once accepted, remove everything above this comment and replace EquipGearset with EquipGearsetInternal.
+
+    private readonly MovedEquipment _movedItemsEvent;
+    private readonly EquippedGearset _gearsetEvent;
+    private readonly List<(EquipSlot, uint, StainIds)> _itemList = new(12);
     public InventoryService(MovedEquipment movedItemsEvent, IGameInteropProvider interop, EquippedGearset gearsetEvent)
     {
         _movedItemsEvent = movedItemsEvent;
-        _gearsetEvent    = gearsetEvent;
+        _gearsetEvent = gearsetEvent;
 
         _moveItemHook = interop.HookFromAddress<MoveItemDelegate>((nint)InventoryManager.MemberFunctionPointers.MoveItemSlot, MoveItemDetour);
         _equipGearsetHook = interop.HookFromAddress<EquipGearsetDelegate>((nint)RaptureGearsetModule.MemberFunctionPointers.EquipGearset, EquipGearSetDetour);
@@ -58,7 +59,7 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
         var ret = _equipGearsetInternalHook.Original(module, gearsetId, glamourPlateId);
         var set = module->GetGearset((int)gearsetId);
         _gearsetEvent.Invoke(new ByteString(set->Name).ToString(), (int)gearsetId, prior, glamourPlateId, set->ClassJob);
-        Glamourer.Log.Verbose($"[InventoryService] [EquipInternal] Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
+        Glamourer.Log.Verbose($"[InventoryService] Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
         if (ret == 0)
         {
             var entry = module->GetGearset((int)gearsetId);
@@ -131,9 +132,10 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
         return ret;
     }
 
+    // Remove once internal is added. This no longer serves any purpose.
     private int EquipGearSetDetour(RaptureGearsetModule* module, int gearsetId, byte glamourPlateId)
     {
-        var ret   = _equipGearsetHook.Original(module, gearsetId, glamourPlateId);
+        var ret = _equipGearsetHook.Original(module, gearsetId, glamourPlateId);
         Glamourer.Log.Excessive($"[InventoryService] (old) Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
         return ret;
     }
@@ -216,18 +218,18 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
     private static EquipSlot GetSlot(uint slot)
         => slot switch
         {
-            0  => EquipSlot.MainHand,
-            1  => EquipSlot.OffHand,
-            2  => EquipSlot.Head,
-            3  => EquipSlot.Body,
-            4  => EquipSlot.Hands,
-            6  => EquipSlot.Legs,
-            7  => EquipSlot.Feet,
-            8  => EquipSlot.Ears,
-            9  => EquipSlot.Neck,
+            0 => EquipSlot.MainHand,
+            1 => EquipSlot.OffHand,
+            2 => EquipSlot.Head,
+            3 => EquipSlot.Body,
+            4 => EquipSlot.Hands,
+            6 => EquipSlot.Legs,
+            7 => EquipSlot.Feet,
+            8 => EquipSlot.Ears,
+            9 => EquipSlot.Neck,
             10 => EquipSlot.Wrists,
             11 => EquipSlot.RFinger,
             12 => EquipSlot.LFinger,
-            _  => EquipSlot.Unknown,
+            _ => EquipSlot.Unknown,
         };
 }

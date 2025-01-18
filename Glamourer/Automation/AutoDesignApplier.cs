@@ -202,17 +202,8 @@ public sealed class AutoDesignApplier : IDisposable
         }
     }
 
-    /// <summary>
-    /// JOB CHANGE IS CALLED UPON HERE.
-    /// </summary>
     private void OnJobChange(Actor actor, Job oldJob, Job newJob)
     {
-        unsafe
-        {
-            var drawObject = actor.AsCharacter->DrawObject;
-            Glamourer.Log.Information($"[AutoDesignApplier][OnJobChange] 0x{(nint)drawObject:X} changed job from {oldJob} ({oldJob.Id}) to {newJob} ({newJob.Id}).");
-        }
-
         if (!_config.EnableAutoDesigns || !actor.Identifier(_actors, out var id))
             return;
 

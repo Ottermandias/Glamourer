@@ -8,12 +8,11 @@ using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
+
 namespace Glamourer.Interop;
 
-/// <summary>
-/// This struct is the struct that loadallequipment passes in as its gearsetData container.
-/// </summary>
-[StructLayout(LayoutKind.Explicit)] // Size of 70 bytes maybe?
+// This struct is implemented into a PR for FFXIVClientStructs. Once merged, remove this struct and reference the data in ClientStructs instead.
+[StructLayout(LayoutKind.Explicit)]
 public readonly struct GearsetItemDataStruct
 {
     // Stores the weapon data. Includes both dyes in the data. </summary>
@@ -54,30 +53,15 @@ public readonly struct GearsetItemDataStruct
 
 public unsafe class UpdateSlotService : IDisposable
 {
+    // This function is what calls the weapon/equipment/crest loads, which call FlagSlotForUpdate if different. (MetaData not included)
+    public const string LoadGearsetDataSig = "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 44 0F B6 B9";
+    private delegate Int64 LoadGearsetDataDelegate(DrawDataContainer* drawDataContainer, GearsetItemDataStruct* gearsetData);
+    // The above can be removed after the FFXIVClientStruct Merge is made!
+
     public readonly EquipSlotUpdating EquipSlotUpdatingEvent;
     public readonly BonusSlotUpdating BonusSlotUpdatingEvent;
     public readonly GearsetDataLoaded GearsetDataLoadedEvent;
     private readonly DictBonusItems _bonusItems;
-
-    // This function is what calls the weapon/equipment/crest loads, which call FlagSlotForUpdate if different. (MetaData not included)
-    public const string LoadGearsetDataSig = "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 44 0F B6 B9";
-    private delegate Int64 LoadGearsetDataDelegate(DrawDataContainer* drawDataContainer, GearsetItemDataStruct* gearsetData);
-    private Int64 LoadGearsetDataDetour(DrawDataContainer* drawDataContainer, GearsetItemDataStruct* gearsetData)
-    {
-        // Let the gearset data process all of its loads and slot flag update calls first.
-        var ret = _loadGearsetDataHook.Original(drawDataContainer, gearsetData);
-        // Ensure that the owner of the drawdata container is a character base.
-        Model ownerDrawObject = drawDataContainer->OwnerObject->DrawObject;
-        if (!ownerDrawObject.IsCharacterBase)
-            return ret;
-
-        // invoke the changed event for the state listener and return.
-        Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] Owner: 0x{ownerDrawObject.Address:X} Finished Applying its GameState!");
-        // Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
-        GearsetDataLoadedEvent.Invoke(drawDataContainer->OwnerObject->DrawObject);
-        return ret;
-    }
-
     public UpdateSlotService(EquipSlotUpdating equipSlotUpdating, BonusSlotUpdating bonusSlotUpdating, GearsetDataLoaded gearsetDataLoaded,
         IGameInteropProvider interop, DictBonusItems bonusItems)
     {
@@ -150,7 +134,7 @@ public unsafe class UpdateSlotService : IDisposable
 
     private ulong FlagSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
     {
-        var slot = slotIdx.ToEquipSlot();
+        var slot        = slotIdx.ToEquipSlot();
         var returnValue = ulong.MaxValue;
         EquipSlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
         Glamourer.Log.Excessive($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
@@ -160,7 +144,7 @@ public unsafe class UpdateSlotService : IDisposable
 
     private ulong FlagBonusSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
     {
-        var slot = slotIdx.ToBonusSlot();
+        var slot        = slotIdx.ToBonusSlot();
         var returnValue = ulong.MaxValue;
         BonusSlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
         Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
@@ -173,6 +157,20 @@ public unsafe class UpdateSlotService : IDisposable
         Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Invoked by Glamourer on 0x{drawObject.Address:X} on {slot} with itemdata {armor}.");
         return _flagSlotForUpdateHook.Original(drawObject.Address, slot.ToIndex(), &armor);
     }
+    private Int64 LoadGearsetDataDetour(DrawDataContainer* drawDataContainer, GearsetItemDataStruct* gearsetData)
+    {
+        // Let the gearset data process all of its loads and slot flag update calls first.
+        var ret = _loadGearsetDataHook.Original(drawDataContainer, gearsetData);
+        Model ownerDrawObject = drawDataContainer->OwnerObject->DrawObject;
+        if (!ownerDrawObject.IsCharacterBase)
+            return ret;
+
+        // invoke the changed event for the state listener and return.
+        Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] Owner: 0x{ownerDrawObject.Address:X} Finished Applying its GameState!");
+        // Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
+        GearsetDataLoadedEvent.Invoke(drawDataContainer->OwnerObject->DrawObject);
+        return ret;
+    }
 
     // If you ever care to debug this, here is a formatted string output of this new gearsetDataPacket struct.
     private string FormatGearsetItemDataStruct(GearsetItemDataStruct gearsetData)
@@ -183,7 +181,6 @@ public unsafe class UpdateSlotService : IDisposable
             $"\nOffhandWeaponData: Id: {gearsetData.OffhandWeaponData.Id}, Type: {gearsetData.OffhandWeaponData.Type}, " +
             $"Variant: {gearsetData.OffhandWeaponData.Variant}, Stain0: {gearsetData.OffhandWeaponData.Stain0}, Stain1: {gearsetData.OffhandWeaponData.Stain1}" +
             $"\nCrestBitField: {gearsetData.CrestBitField} | JobId: {gearsetData.JobId} | UNK_18: {gearsetData.UNK_18} | UNK_19: {gearsetData.UNK_19}";
-        // Iterate through offsets from 20 to 60 and format the CharacterArmor data
         for (int offset = 20; offset <= 56; offset += sizeof(LegacyCharacterArmor))
         {
             LegacyCharacterArmor* equipSlotPtr = (LegacyCharacterArmor*)((byte*)&gearsetData + offset);

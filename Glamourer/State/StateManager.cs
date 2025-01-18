@@ -274,7 +274,7 @@ public sealed class StateManager(
         if (source is not StateSource.Game)
             actors = Applier.ApplyAll(state, redraw, true);
 
-        Glamourer.Log.Debug(
+        Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
         // only invoke if we define this reset call as the final call in our state update.
@@ -302,7 +302,7 @@ public sealed class StateManager(
 
         state.Materials.Clear();
 
-        Glamourer.Log.Debug(
+        Glamourer.Log.Verbose(
             $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
         // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
@@ -453,22 +453,22 @@ public sealed class StateManager(
         }
     }
 
-    public void ReapplyState(Actor actor, bool forceRedraw, StateSource source, bool isUpdate = false)
+    public void ReapplyState(Actor actor, bool forceRedraw, StateSource source, bool stateUpdate = false)
     {
         if (!GetOrCreate(actor, out var state))
             return;
 
-        ReapplyState(actor, state, forceRedraw, source, isUpdate);
+        ReapplyState(actor, state, forceRedraw, source, stateUpdate);
     }
 
-    public void ReapplyState(Actor actor, ActorState state, bool forceRedraw, StateSource source, bool isUpdate)
+    public void ReapplyState(Actor actor, ActorState state, bool forceRedraw, StateSource source, bool stateUpdate)
     {
         var data = Applier.ApplyAll(state,
             forceRedraw
          || !actor.Model.IsHuman
          || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
         StateChanged.Invoke(StateChangeType.Reapply, source, state, data, null);
-        if(isUpdate)
+        if(stateUpdate)
             StateUpdated.Invoke(StateUpdateType.Reapply, data);
     }
 

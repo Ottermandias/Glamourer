@@ -13,8 +13,8 @@ using Glamourer.GameData;
 using Penumbra.GameData.DataContainers;
 using Glamourer.Designs;
 using Penumbra.GameData.Interop;
-using ObjectManager = Glamourer.Interop.ObjectManager;
 using Glamourer.Api.Enums;
+using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.State;
 

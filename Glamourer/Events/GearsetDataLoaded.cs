@@ -1,7 +1,5 @@
 using OtterGui.Classes;
-using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
-using Penumbra.GameData.Structs;
 
 namespace Glamourer.Events;
 
@@ -9,7 +7,7 @@ namespace Glamourer.Events;
 /// Triggers when the equipped gearset finished running all of its LoadEquipment, LoadWeapon, and crest calls.
 /// This defines a universal endpoint of base game state application to monitor.
 /// <list type="number">
-///     <item>The model drawobject associated with the finished load (should always be ClientPlayer) </item>
+///     <item>The model drawobject associated with the finished load (Also fired by other players on render) </item>
 /// </list>
 /// </summary>
 public sealed class GearsetDataLoaded()
