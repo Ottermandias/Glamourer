@@ -1,5 +1,4 @@
 ﻿using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Glamourer.Designs;
 using Glamourer.Designs.Links;

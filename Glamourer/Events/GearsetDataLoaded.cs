@@ -15,7 +15,7 @@ public sealed class GearsetDataLoaded()
 {
     public enum Priority
     {
-        /// <seealso cref="State.StateListener.OnEquippedGearsetLoaded"/>
+        /// <seealso cref="State.StateListener.OnGearsetDataLoaded"/>
         StateListener = 0,
     }
 }
