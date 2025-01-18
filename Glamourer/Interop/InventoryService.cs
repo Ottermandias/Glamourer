@@ -18,7 +18,9 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
     private readonly EquippedGearset                   _gearsetEvent;
     private readonly List<(EquipSlot, uint, StainIds)> _itemList = new(12);
 
-    // This can be moved into client structs or penumbra.gamedata when needed.
+    // Called by EquipGearset, but returns a pointer instead of an int.
+    // This is the internal function processed by all sources of Equipping a gearset,
+    // such as hotbar gearset application and command gearset application
     public const string EquipGearsetInternal = "40 55 53 56 57 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 4C 63 FA";
     private delegate nint ChangeGearsetInternalDelegate(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId);
 
@@ -56,7 +58,7 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
         var ret = _equipGearsetInternalHook.Original(module, gearsetId, glamourPlateId);
         var set = module->GetGearset((int)gearsetId);
         _gearsetEvent.Invoke(new ByteString(set->Name).ToString(), (int)gearsetId, prior, glamourPlateId, set->ClassJob);
-        Glamourer.Log.Warning($"[InventoryService] [EquipInternal] Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
+        Glamourer.Log.Verbose($"[InventoryService] [EquipInternal] Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
         if (ret == 0)
         {
             var entry = module->GetGearset((int)gearsetId);
@@ -132,7 +134,7 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
     private int EquipGearSetDetour(RaptureGearsetModule* module, int gearsetId, byte glamourPlateId)
     {
         var ret   = _equipGearsetHook.Original(module, gearsetId, glamourPlateId);
-        Glamourer.Log.Verbose($"[InventoryService] Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
+        Glamourer.Log.Excessive($"[InventoryService] (old) Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
         return ret;
     }
 
@@ -148,7 +150,7 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
         InventoryType targetContainer, ushort targetSlot, byte unk)
     {
         var ret = _moveItemHook.Original(manager, sourceContainer, sourceSlot, targetContainer, targetSlot, unk);
-        Glamourer.Log.Verbose($"[InventoryService] Moved {sourceContainer} {sourceSlot} {targetContainer} {targetSlot} (Returned {ret})");
+        Glamourer.Log.Excessive($"[InventoryService] Moved {sourceContainer} {sourceSlot} {targetContainer} {targetSlot} (Returned {ret})");
         if (ret == 0)
         {
             if (InvokeSource(sourceContainer, sourceSlot, out var source))

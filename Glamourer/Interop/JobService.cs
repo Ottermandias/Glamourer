@@ -50,7 +50,7 @@ public class JobService : IDisposable
         var newJob = Jobs.TryGetValue(newJobIndex, out var j) ? j : Jobs[0];
         var oldJob = Jobs.TryGetValue(oldJobIndex, out var o) ? o : Jobs[0];
 
-        Glamourer.Log.Error($"{actor} changed job from {oldJob} to {newJob}.");
+        Glamourer.Log.Excessive($"{actor} changed job from {oldJob} to {newJob}.");
         JobChanged?.Invoke(actor, oldJob, newJob);
     }
 }

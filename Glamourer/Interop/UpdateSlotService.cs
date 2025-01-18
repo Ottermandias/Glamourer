@@ -23,7 +23,7 @@ public readonly struct GearsetItemDataStruct
     [FieldOffset(16)] public readonly byte CrestBitField; // A Bitfield:: ShieldCrest == 1, HeadCrest == 2, Chest Crest == 4
     [FieldOffset(17)] public readonly byte JobId; // Job ID associated with the gearset change.
 
-    // Flicks from 0 to 128 (anywhere inbetween), have yet to associate what it is linked to. Remains the same when flicking between gearsets of the same job.
+    // Flicks from 0 to 127 (anywhere inbetween), have yet to associate what it is linked to. Remains the same when flicking between gearsets of the same job.
     [FieldOffset(18)] public readonly byte UNK_18;
     [FieldOffset(19)] public readonly byte UNK_19; // I have never seen this be anything other than 0.
 
@@ -56,69 +56,47 @@ public unsafe class UpdateSlotService : IDisposable
 {
     public readonly EquipSlotUpdating EquipSlotUpdatingEvent;
     public readonly BonusSlotUpdating BonusSlotUpdatingEvent;
+    public readonly GearsetDataLoaded GearsetDataLoadedEvent;
     private readonly DictBonusItems _bonusItems;
 
-    #region LoadAllEquipData
-    ///////////////////////////////////////////////////
-    // This is a currently undocumented signature that loads all equipment after changing a gearset.
-    // :: Signature Maintainers Note:
-    // To obtain this signature, get the stacktrace from FlagSlotForUpdate for human, and find func `sub_140842F50`.
-    // This function is what calls the weapon/equipment/crest loads, which call FlagSlotForUpdate if different.
-    //
-    // By detouring this function, and executing the original, then logic after, we have a consistant point in time where we know all
-    // slots have been flagged, meaning a consistant point in time that glamourer has processed all of its updates.
-    public const string LoadAllEquipmentSig = "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 44 0F B6 B9";
-    private delegate Int64 LoadAllEquipmentDelegate(DrawDataContainer* drawDataContainer, GearsetItemDataStruct* gearsetData);
-    private Int64 LoadAllEquipmentDetour(DrawDataContainer* drawDataContainer, GearsetItemDataStruct* gearsetData)
+    // This function is what calls the weapon/equipment/crest loads, which call FlagSlotForUpdate if different. (MetaData not included)
+    public const string LoadGearsetDataSig = "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 44 0F B6 B9";
+    private delegate Int64 LoadGearsetDataDelegate(DrawDataContainer* drawDataContainer, GearsetItemDataStruct* gearsetData);
+    private Int64 LoadGearsetDataDetour(DrawDataContainer* drawDataContainer, GearsetItemDataStruct* gearsetData)
     {
-        // return original first so we can log the changes after
-        var ret = _loadAllEquipmentHook.Original(drawDataContainer, gearsetData);
+        // Let the gearset data process all of its loads and slot flag update calls first.
+        var ret = _loadGearsetDataHook.Original(drawDataContainer, gearsetData);
+        // Ensure that the owner of the drawdata container is a character base.
+        Model ownerDrawObject = drawDataContainer->OwnerObject->DrawObject;
+        if (!ownerDrawObject.IsCharacterBase)
+            return ret;
 
-        // perform logic stuff.
-        var owner = drawDataContainer->OwnerObject;
-        Glamourer.Log.Warning($"[LoadAllEquipmentDetour] Owner: 0x{(nint)owner->DrawObject:X} Finished Applying its GameState!");
-        Glamourer.Log.Warning($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
-
-        // return original.
+        // invoke the changed event for the state listener and return.
+        Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] Owner: 0x{ownerDrawObject.Address:X} Finished Applying its GameState!");
+        // Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
+        GearsetDataLoadedEvent.Invoke(drawDataContainer->OwnerObject->DrawObject);
         return ret;
     }
 
-    private string FormatWeaponModelId(WeaponModelId weaponModelId) => $"Id: {weaponModelId.Id}, Type: {weaponModelId.Type}, Variant: {weaponModelId.Variant}, Stain0: {weaponModelId.Stain0}, Stain1: {weaponModelId.Stain1}";
-
-    private string FormatGearsetItemDataStruct(GearsetItemDataStruct gearsetItemData)
-    {
-        string ret = $"\nMainhandWeaponData: {FormatWeaponModelId(gearsetItemData.MainhandWeaponData)}," +
-               $"\nOffhandWeaponData: {FormatWeaponModelId(gearsetItemData.OffhandWeaponData)}," +
-               $"\nCrestBitField: {gearsetItemData.CrestBitField} | JobId: {gearsetItemData.JobId} | UNK_18: {gearsetItemData.UNK_18} | UNK_19: {gearsetItemData.UNK_19}";
-        // Iterate through offsets from 20 to 60 and format the CharacterArmor data
-        for (int offset = 20; offset <= 56; offset += sizeof(LegacyCharacterArmor))
-        {
-            LegacyCharacterArmor* equipSlotPtr = (LegacyCharacterArmor*)((byte*)&gearsetItemData + offset);
-            int dyeOffset = (offset - 20) / sizeof(LegacyCharacterArmor) + 60; // Calculate the corresponding dye offset
-            byte* dyePtr = (byte*)&gearsetItemData + dyeOffset;
-            ret += $"\nEquipSlot {((EquipSlot)(dyeOffset-60)).ToString()}:: Id: {(*equipSlotPtr).Set}, Variant: {(*equipSlotPtr).Variant}, Stain0: {(*equipSlotPtr).Stain.Id}, Stain1: {*dyePtr}";
-        }
-        return ret;
-    }
-#endregion LoadAllEquipData
-
-    public UpdateSlotService(EquipSlotUpdating equipSlotUpdating, BonusSlotUpdating bonusSlotUpdating, IGameInteropProvider interop,
-        DictBonusItems bonusItems)
+    public UpdateSlotService(EquipSlotUpdating equipSlotUpdating, BonusSlotUpdating bonusSlotUpdating, GearsetDataLoaded gearsetDataLoaded,
+        IGameInteropProvider interop, DictBonusItems bonusItems)
     {
         EquipSlotUpdatingEvent = equipSlotUpdating;
         BonusSlotUpdatingEvent = bonusSlotUpdating;
+        GearsetDataLoadedEvent = gearsetDataLoaded;
+
         _bonusItems = bonusItems;
         interop.InitializeFromAttributes(this);
         _flagSlotForUpdateHook.Enable();
         _flagBonusSlotForUpdateHook.Enable();
-        _loadAllEquipmentHook.Enable();
+        _loadGearsetDataHook.Enable();
     }
 
     public void Dispose()
     {
         _flagSlotForUpdateHook.Dispose();
         _flagBonusSlotForUpdateHook.Dispose();
-        _loadAllEquipmentHook.Dispose();
+        _loadGearsetDataHook.Dispose();
     }
 
     public void UpdateEquipSlot(Model drawObject, EquipSlot slot, CharacterArmor data)
@@ -167,18 +145,16 @@ public unsafe class UpdateSlotService : IDisposable
     [Signature(Sigs.FlagBonusSlotForUpdate, DetourName = nameof(FlagBonusSlotForUpdateDetour))]
     private readonly Hook<FlagSlotForUpdateDelegateIntern> _flagBonusSlotForUpdateHook = null!;
 
-    [Signature(LoadAllEquipmentSig, DetourName = nameof(LoadAllEquipmentDetour))]
-    private readonly Hook<LoadAllEquipmentDelegate> _loadAllEquipmentHook = null!;
+    [Signature(LoadGearsetDataSig, DetourName = nameof(LoadGearsetDataDetour))]
+    private readonly Hook<LoadGearsetDataDelegate> _loadGearsetDataHook = null!;
 
     private ulong FlagSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
     {
         var slot = slotIdx.ToEquipSlot();
         var returnValue = ulong.MaxValue;
-
         EquipSlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
-        Glamourer.Log.Information($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
+        Glamourer.Log.Excessive($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
         returnValue = returnValue == ulong.MaxValue ? _flagSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
-
         return returnValue;
     }
 
@@ -186,17 +162,35 @@ public unsafe class UpdateSlotService : IDisposable
     {
         var slot = slotIdx.ToBonusSlot();
         var returnValue = ulong.MaxValue;
-
         BonusSlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
-        Glamourer.Log.Information($"[FlagBonusSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
+        Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
         returnValue = returnValue == ulong.MaxValue ? _flagBonusSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
-
         return returnValue;
     }
 
     private ulong FlagSlotForUpdateInterop(Model drawObject, EquipSlot slot, CharacterArmor armor)
     {
-        Glamourer.Log.Warning($"Glamour-Invoked Equip Slot update for 0x{drawObject.Address:X} with {slot} and {armor}.");
+        Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Invoked by Glamourer on 0x{drawObject.Address:X} on {slot} with itemdata {armor}.");
         return _flagSlotForUpdateHook.Original(drawObject.Address, slot.ToIndex(), &armor);
+    }
+
+    // If you ever care to debug this, here is a formatted string output of this new gearsetDataPacket struct.
+    private string FormatGearsetItemDataStruct(GearsetItemDataStruct gearsetData)
+    {
+        string ret =
+            $"\nMainhandWeaponData: Id: {gearsetData.MainhandWeaponData.Id}, Type: {gearsetData.MainhandWeaponData.Type}, " +
+            $"Variant: {gearsetData.MainhandWeaponData.Variant}, Stain0: {gearsetData.MainhandWeaponData.Stain0}, Stain1: {gearsetData.MainhandWeaponData.Stain1}" +
+            $"\nOffhandWeaponData: Id: {gearsetData.OffhandWeaponData.Id}, Type: {gearsetData.OffhandWeaponData.Type}, " +
+            $"Variant: {gearsetData.OffhandWeaponData.Variant}, Stain0: {gearsetData.OffhandWeaponData.Stain0}, Stain1: {gearsetData.OffhandWeaponData.Stain1}" +
+            $"\nCrestBitField: {gearsetData.CrestBitField} | JobId: {gearsetData.JobId} | UNK_18: {gearsetData.UNK_18} | UNK_19: {gearsetData.UNK_19}";
+        // Iterate through offsets from 20 to 60 and format the CharacterArmor data
+        for (int offset = 20; offset <= 56; offset += sizeof(LegacyCharacterArmor))
+        {
+            LegacyCharacterArmor* equipSlotPtr = (LegacyCharacterArmor*)((byte*)&gearsetData + offset);
+            int dyeOffset = (offset - 20) / sizeof(LegacyCharacterArmor) + 60; // Calculate the corresponding dye offset
+            byte* dyePtr = (byte*)&gearsetData + dyeOffset;
+            ret += $"\nEquipSlot {((EquipSlot)(dyeOffset - 60)).ToString()}:: Id: {(*equipSlotPtr).Set}, Variant: {(*equipSlotPtr).Variant}, Stain0: {(*equipSlotPtr).Stain.Id}, Stain1: {*dyePtr}";
+        }
+        return ret;
     }
 }

@@ -17,6 +17,7 @@ public class StateEditor(
     InternalStateEditor editor,
     StateApplier applier,
     StateChanged stateChanged,
+    StateUpdated stateUpdated,
     JobChangeState jobChange,
     Configuration config,
     ItemManager items,
@@ -27,6 +28,7 @@ public class StateEditor(
     protected readonly InternalStateEditor Editor       = editor;
     protected readonly StateApplier        Applier      = applier;
     protected readonly StateChanged        StateChanged = stateChanged;
+    protected readonly StateUpdated        StateUpdated = stateUpdated;
     protected readonly Configuration       Config       = config;
     protected readonly ItemManager         Items        = items;
 
@@ -41,6 +43,7 @@ public class StateEditor(
         Glamourer.Log.Verbose(
             $"Set model id in state {state.Identifier.Incognito(null)} from {old} to {modelId}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Model, source, state, actors, null);
+        StateUpdated.Invoke(StateUpdateType.ModelChange, actors);
     }
 
     /// <inheritdoc/>
@@ -419,6 +422,8 @@ public class StateEditor(
 
         Glamourer.Log.Debug($"Applied design to {state.Identifier.Incognito(null)}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Design, state.Sources[MetaIndex.Wetness], state, actors, null); // FIXME: maybe later
+        if(settings.SendStateUpdate)
+            StateUpdated.Invoke(StateUpdateType.DesignApplied, actors);
 
         return;
 

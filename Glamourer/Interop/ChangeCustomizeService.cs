@@ -70,7 +70,7 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
         if (!model.IsHuman)
             return false;
 
-        Glamourer.Log.Information($"[ChangeCustomize] Glamour-Invoked on 0x{model.Address:X} with {customize}.");
+        Glamourer.Log.Verbose($"[ChangeCustomize] Invoked on 0x{model.Address:X} with {customize}.");
         using var _   = InUpdate.EnterMethod();
         var       ret = _original(model.AsHuman, customize.Data, true);
         return ret;
@@ -86,8 +86,6 @@ public unsafe class ChangeCustomizeService : EventWrapperRef2<Model, CustomizeAr
             Invoke(human, ref *(CustomizeArray*)data);
 
         var ret = _changeCustomizeHook.Original(human, data, skipEquipment);
-
-        Glamourer.Log.Information($"[ChangeCustomize] Called on with {*(CustomizeArray*)data} ({ret}).");
         _postEvent.Invoke(human);
         return ret;
     }

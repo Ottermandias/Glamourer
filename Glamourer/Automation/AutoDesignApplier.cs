@@ -216,8 +216,6 @@ public sealed class AutoDesignApplier : IDisposable
         if (!_config.EnableAutoDesigns || !actor.Identifier(_actors, out var id))
             return;
 
-        Glamourer.Log.Information($"[AutoDesignApplier][OnJobChange] We had EnableAutoDesigns active, and are a valid actor!");
-
         if (!GetPlayerSet(id, out var set))
         {
             if (_state.TryGetValue(id, out var s))

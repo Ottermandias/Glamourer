@@ -11,9 +11,10 @@ using OtterGui.Services;
 using Penumbra.GameData.Interop;
 using ObjectManager = Glamourer.Interop.ObjectManager;
 using StateChanged = Glamourer.Events.StateChanged;
+using StateUpdated = Glamourer.Events.StateUpdated;
 
 namespace Glamourer.Api;
-
+ 
 public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 {
     private readonly ApiHelpers        _helpers;
@@ -23,6 +24,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     private readonly AutoDesignApplier _autoDesigns;
     private readonly ObjectManager     _objects;
     private readonly StateChanged      _stateChanged;
+    private readonly StateUpdated      _stateUpdated;
     private readonly GPoseService      _gPose;
 
     public StateApi(ApiHelpers helpers,
@@ -32,6 +34,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         AutoDesignApplier autoDesigns,
         ObjectManager objects,
         StateChanged stateChanged,
+        StateUpdated stateUpdated,
         GPoseService gPose)
     {
         _helpers      = helpers;
@@ -41,8 +44,10 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         _autoDesigns  = autoDesigns;
         _objects      = objects;
         _stateChanged = stateChanged;
+        _stateUpdated = stateUpdated;
         _gPose        = gPose;
         _stateChanged.Subscribe(OnStateChanged, Events.StateChanged.Priority.GlamourerIpc);
+        _stateUpdated.Subscribe(OnStateUpdated, Events.StateUpdated.Priority.GlamourerIpc);
         _gPose.Subscribe(OnGPoseChange, GPoseService.Priority.GlamourerIpc);
     }
 
@@ -250,13 +255,14 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     public event Action<nint>?                    StateChanged;
     public event Action<IntPtr, StateChangeType>? StateChangedWithType;
+    public event Action<IntPtr, StateUpdateType>? StateUpdated;
     public event Action<bool>?                    GPoseChanged;
 
     private void ApplyDesign(ActorState state, DesignBase design, uint key, ApplyFlag flags)
     {
         var once = (flags & ApplyFlag.Once) != 0;
         var settings = new ApplySettings(Source: once ? StateSource.IpcManual : StateSource.IpcFixed, Key: key, MergeLinks: true,
-            ResetMaterials: !once && key != 0);
+            ResetMaterials: !once && key != 0, SendStateUpdate: true);
         _stateManager.ApplyDesign(state, design, settings);
         ApiHelpers.Lock(state, key, flags);
     }
@@ -296,7 +302,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     {
         var source = (flags & ApplyFlag.Once) != 0 ? StateSource.IpcManual : StateSource.IpcFixed;
         _autoDesigns.ReapplyAutomation(actor, state.Identifier, state, true, out var forcedRedraw);
-        _stateManager.ReapplyState(actor, state, forcedRedraw, source);
+        _stateManager.ReapplyAutomationState(actor, state, forcedRedraw, true, source);
         ApiHelpers.Lock(state, key, flags);
     }
 
@@ -333,7 +339,8 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     private void OnStateChanged(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, ITransaction? _5)
     {
-        Glamourer.Log.Error($"[OnStateChanged API CALL] Sending out OnStateChanged with type {type}.");
+        // Remove this comment before creating PR.
+        Glamourer.Log.Verbose($"[OnStateChanged] Sending out OnStateChanged with type {type}.");
 
         if (StateChanged != null)
             foreach (var actor in actors.Objects)
@@ -342,5 +349,17 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         if (StateChangedWithType != null)
             foreach (var actor in actors.Objects)
                 StateChangedWithType.Invoke(actor.Address, type);
+    }
+
+    private void OnStateUpdated(StateUpdateType type, ActorData actors)
+    {
+        if (StateUpdated != null)
+            foreach (var actor in actors.Objects)
+            {
+                // Remove these before creating PR
+                Glamourer.Log.Information($"[ENDPOINT DEBUGGING] 0x{actor.Address:X} had update of type {type}.");
+                Glamourer.Log.Information("--------------------------------------------------------------");
+                StateUpdated.Invoke(actor.Address, type);
+            }
     }
 }
