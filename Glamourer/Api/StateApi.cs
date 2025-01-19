@@ -340,9 +340,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     private void OnStateChanged(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, ITransaction? _5)
     {
-        // Remove this comment before creating PR.
-        Glamourer.Log.Verbose($"[OnStateChanged] Sending out OnStateChanged with type {type}.");
-
+        // Glamourer.Log.Verbose($"[OnStateChanged] Sending out OnStateChanged with type {type}.");
         if (StateChanged != null)
             foreach (var actor in actors.Objects)
                 StateChanged.Invoke(actor.Address);
@@ -354,13 +352,9 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     private void OnStateUpdated(StateUpdateType type, ActorData actors)
     {
+        // Glamourer.Log.Verbose($"[OnStateUpdated] Sending out OnStateUpdated with type {type}.");
         if (StateUpdated != null)
             foreach (var actor in actors.Objects)
-            {
-                // Remove these before creating PR
-                Glamourer.Log.Information($"[ENDPOINT DEBUGGING] 0x{actor.Address:X} had update of type {type}.");
-                Glamourer.Log.Information("--------------------------------------------------------------");
                 StateUpdated.Invoke(actor.Address, type);
-            }
     }
 }
