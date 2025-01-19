@@ -54,6 +54,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     public void Dispose()
     {
         _stateChanged.Unsubscribe(OnStateChanged);
+        _stateUpdated.Unsubscribe(OnStateUpdated);
         _gPose.Unsubscribe(OnGPoseChange);
     }
 

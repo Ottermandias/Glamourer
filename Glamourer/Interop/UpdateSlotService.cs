@@ -11,9 +11,9 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
-// This struct is implemented into a PR for FFXIVClientStructs. Once merged, remove this struct and reference the data in ClientStructs instead.
+// Can be removed once merged with client structs and referenced directly. See: https://github.com/aers/FFXIVClientStructs/pull/1277/files
 [StructLayout(LayoutKind.Explicit)]
-public readonly struct GearsetItemDataStruct
+public readonly struct GearsetDataStruct
 {
     // Stores the weapon data. Includes both dyes in the data. </summary>
     [FieldOffset(0)] public readonly WeaponModelId MainhandWeaponData;
@@ -53,11 +53,6 @@ public readonly struct GearsetItemDataStruct
 
 public unsafe class UpdateSlotService : IDisposable
 {
-    // This function is what calls the weapon/equipment/crest loads, which call FlagSlotForUpdate if different. (MetaData not included)
-    public const string LoadGearsetDataSig = "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 44 0F B6 B9";
-    private delegate Int64 LoadGearsetDataDelegate(DrawDataContainer* drawDataContainer, GearsetItemDataStruct* gearsetData);
-    // The above can be removed after the FFXIVClientStruct Merge is made!
-
     public readonly EquipSlotUpdating EquipSlotUpdatingEvent;
     public readonly BonusSlotUpdating BonusSlotUpdatingEvent;
     public readonly GearsetDataLoaded GearsetDataLoadedEvent;
@@ -68,9 +63,12 @@ public unsafe class UpdateSlotService : IDisposable
         EquipSlotUpdatingEvent = equipSlotUpdating;
         BonusSlotUpdatingEvent = bonusSlotUpdating;
         GearsetDataLoadedEvent = gearsetDataLoaded;
-
         _bonusItems = bonusItems;
+
+        // Usable after the merge with client structs.
+        //_loadGearsetDataHook = interop.HookFromAddress<LoadGearsetDataDelegate>((nint)DrawDataContainer.MemberFunctionPointers.LoadGearsetData, LoadGearsetDataDetour);
         interop.InitializeFromAttributes(this);
+
         _flagSlotForUpdateHook.Enable();
         _flagBonusSlotForUpdateHook.Enable();
         _loadGearsetDataHook.Enable();
@@ -129,6 +127,19 @@ public unsafe class UpdateSlotService : IDisposable
     [Signature(Sigs.FlagBonusSlotForUpdate, DetourName = nameof(FlagBonusSlotForUpdateDetour))]
     private readonly Hook<FlagSlotForUpdateDelegateIntern> _flagBonusSlotForUpdateHook = null!;
 
+    // This signature is what calls the weapon/equipment/crest load functions in the drawData container inherited from a human/characterBase.
+    //
+    // Contrary to assumption, this is not frequently fired when any slot changes, and is instead only called when another player
+    // initially loads, or when the client player changes gearsets. (Does not fire when another player or self is redrawn)
+    //
+    // This functions purpose is to iterate all Equipment/Weapon/Crest data on gearset change / initial player load, and determine which slots need to fire FlagSlotForUpdate.
+    //
+    // Because Glamourer processes GameState changes by detouring this method, this means by returning original after detour, any logic performed after will occur
+    // AFTER Glamourer finishes applying all changes to the game State, providing a gearset endpoint. (MetaData not included)
+    // Currently pending a merge to clientStructs, after which it can be removed, along with the explicit struct. See: https://github.com/aers/FFXIVClientStructs/pull/1277/files
+    public const string LoadGearsetDataSig = "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 44 0F B6 B9";
+    private delegate Int64 LoadGearsetDataDelegate(DrawDataContainer* drawDataContainer, GearsetDataStruct* gearsetData);
+
     [Signature(LoadGearsetDataSig, DetourName = nameof(LoadGearsetDataDetour))]
     private readonly Hook<LoadGearsetDataDelegate> _loadGearsetDataHook = null!;
 
@@ -157,23 +168,20 @@ public unsafe class UpdateSlotService : IDisposable
         Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Invoked by Glamourer on 0x{drawObject.Address:X} on {slot} with itemdata {armor}.");
         return _flagSlotForUpdateHook.Original(drawObject.Address, slot.ToIndex(), &armor);
     }
-    private Int64 LoadGearsetDataDetour(DrawDataContainer* drawDataContainer, GearsetItemDataStruct* gearsetData)
+    private Int64 LoadGearsetDataDetour(DrawDataContainer* drawDataContainer, GearsetDataStruct* gearsetData)
     {
         // Let the gearset data process all of its loads and slot flag update calls first.
         var ret = _loadGearsetDataHook.Original(drawDataContainer, gearsetData);
-        Model ownerDrawObject = drawDataContainer->OwnerObject->DrawObject;
-        if (!ownerDrawObject.IsCharacterBase)
-            return ret;
-
-        // invoke the changed event for the state listener and return.
-        Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] Owner: 0x{ownerDrawObject.Address:X} Finished Applying its GameState!");
+        Model drawObject = drawDataContainer->OwnerObject->DrawObject;
+        Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] Owner: 0x{drawObject.Address:X} Finished Applying its GameState!");
+        GearsetDataLoadedEvent.Invoke(drawObject);
+        // Can use for debugging, if desired.
         // Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
-        GearsetDataLoadedEvent.Invoke(drawDataContainer->OwnerObject->DrawObject);
         return ret;
     }
 
-    // If you ever care to debug this, here is a formatted string output of this new gearsetDataPacket struct.
-    private string FormatGearsetItemDataStruct(GearsetItemDataStruct gearsetData)
+    // If you ever care to debug this, here is a formatted string output of this new gearsetData struct.
+    private string FormatGearsetItemDataStruct(GearsetDataStruct gearsetData)
     {
         string ret =
             $"\nMainhandWeaponData: Id: {gearsetData.MainhandWeaponData.Id}, Type: {gearsetData.MainhandWeaponData.Type}, " +

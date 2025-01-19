@@ -13,18 +13,6 @@ namespace Glamourer.Interop;
 
 public sealed unsafe class InventoryService : IDisposable, IRequiredService
 {
-    // Called by EquipGearset, but returns a pointer instead of an int.
-    // This is the internal function processed by all sources of Equipping a gearset,
-    // such as hotbar gearset application and command gearset application
-    public const string EquipGearsetInternal = "40 55 53 56 57 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 4C 63 FA";
-    private delegate nint ChangeGearsetInternalDelegate(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId);
-
-    [Signature(EquipGearsetInternal, DetourName = nameof(EquipGearSetInternalDetour))]
-    private readonly Hook<ChangeGearsetInternalDelegate> _equipGearsetInternalHook = null!;
-
-    // The following above is currently pending for an accepted PR in FFXIVCLientStructs.
-    // Once accepted, remove everything above this comment and replace EquipGearset with EquipGearsetInternal.
-
     private readonly MovedEquipment _movedItemsEvent;
     private readonly EquippedGearset _gearsetEvent;
     private readonly List<(EquipSlot, uint, StainIds)> _itemList = new(12);
@@ -34,24 +22,29 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
         _gearsetEvent = gearsetEvent;
 
         _moveItemHook = interop.HookFromAddress<MoveItemDelegate>((nint)InventoryManager.MemberFunctionPointers.MoveItemSlot, MoveItemDetour);
-        _equipGearsetHook = interop.HookFromAddress<EquipGearsetDelegate>((nint)RaptureGearsetModule.MemberFunctionPointers.EquipGearset, EquipGearSetDetour);
+        // This can be uncommented after ClientStructs Updates with EquipGearsetInternal after merged PR. (See comment below)
+        //_equipGearsetInternalHook = interop.HookFromAddress<EquipGearsetDelegate>((nint)RaptureGearsetModule.MemberFunctionPointers.EquipGearsetInternal, EquipGearSetInternalDetour);
+
+        // Can be removed after ClientStructs Update since this is only needed for current EquipGearsetInternal [Signature]
         interop.InitializeFromAttributes(this);
 
         _moveItemHook.Enable();
-        _equipGearsetHook.Enable();
         _equipGearsetInternalHook.Enable();
     }
 
     public void Dispose()
     {
         _moveItemHook.Dispose();
-        _equipGearsetHook.Dispose();
         _equipGearsetInternalHook.Dispose();
     }
 
-    private delegate int EquipGearsetDelegate(RaptureGearsetModule* module, int gearsetId, byte glamourPlateId);
+    // This is the internal function processed by all sources of Equipping a gearset, such as hotbar gearset application and command gearset application.
+    // Currently is pending to ClientStructs for integration. See: https://github.com/aers/FFXIVClientStructs/pull/1277
+    public const string EquipGearsetInternal = "40 55 53 56 57 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 4C 63 FA";
+    private delegate nint EquipGearsetInternalDelegate(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId);
 
-    private readonly Hook<EquipGearsetDelegate> _equipGearsetHook;
+    [Signature(EquipGearsetInternal, DetourName = nameof(EquipGearSetInternalDetour))]
+    private readonly Hook<EquipGearsetInternalDelegate> _equipGearsetInternalHook = null!;
 
     private nint EquipGearSetInternalDetour(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId)
     {
@@ -129,14 +122,6 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
             _movedItemsEvent.Invoke(_itemList.ToArray());
         }
 
-        return ret;
-    }
-
-    // Remove once internal is added. This no longer serves any purpose.
-    private int EquipGearSetDetour(RaptureGearsetModule* module, int gearsetId, byte glamourPlateId)
-    {
-        var ret = _equipGearsetHook.Original(module, gearsetId, glamourPlateId);
-        Glamourer.Log.Excessive($"[InventoryService] (old) Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
         return ret;
     }
 

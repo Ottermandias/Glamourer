@@ -163,7 +163,7 @@ public sealed class AutoDesignApplier : IDisposable
                     {
                         Reduce(data.Objects[0], state, newSet, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
                         foreach (var actor in data.Objects)
-                            _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
+                            _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
                     }
                 }
                 else if (_objects.TryGetValueAllWorld(id, out data) || _objects.TryGetValueNonOwned(id, out data))
@@ -174,7 +174,7 @@ public sealed class AutoDesignApplier : IDisposable
                         if (_state.GetOrCreate(specificId, actor, out var state))
                         {
                             Reduce(actor, state, newSet, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
-                            _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
+                            _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
                         }
                     }
                 }
