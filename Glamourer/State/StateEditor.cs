@@ -253,7 +253,7 @@ public class StateEditor(
             return;
 
         var actors = Applier.ChangeMetaState(state, index, settings.Source.RequiresChange());
-        Glamourer.Log.Debug(
+        Glamourer.Log.Verbose(
             $"Set {index.ToName()} in state {state.Identifier.Incognito(null)} from {old} to {value}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Other, settings.Source, state, actors, new MetaTransaction(index, old, value));
     }
@@ -417,7 +417,8 @@ public class StateEditor(
             ? Applier.ApplyAll(state, requiresRedraw, false)
             : ActorData.Invalid;
         
-        Glamourer.Log.Verbose($"Applied design to {state.Identifier.Incognito(null)}. [Affecting {actors.ToLazyString("nothing")}.]");
+        Glamourer.Log.Verbose(
+            $"Applied design to {state.Identifier.Incognito(null)}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Design, state.Sources[MetaIndex.Wetness], state, actors, null); // FIXME: maybe later
         if(settings.SendStateUpdate)
             StateUpdated.Invoke(StateUpdateType.DesignApplied, actors);

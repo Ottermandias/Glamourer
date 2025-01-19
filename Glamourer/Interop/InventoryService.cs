@@ -13,9 +13,10 @@ namespace Glamourer.Interop;
 
 public sealed unsafe class InventoryService : IDisposable, IRequiredService
 {
-    private readonly MovedEquipment _movedItemsEvent;
-    private readonly EquippedGearset _gearsetEvent;
+    private readonly MovedEquipment                    _movedItemsEvent;
+    private readonly EquippedGearset                   _gearsetEvent;
     private readonly List<(EquipSlot, uint, StainIds)> _itemList = new(12);
+
     public InventoryService(MovedEquipment movedItemsEvent, IGameInteropProvider interop, EquippedGearset gearsetEvent)
     {
         _movedItemsEvent = movedItemsEvent;
@@ -80,18 +81,18 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
                 }
 
                 var plate = MirageManager.Instance()->GlamourPlates[glamourPlateId - 1];
-                Add(EquipSlot.MainHand, plate.ItemIds[0], StainIds.FromGlamourPlate(plate, 0), ref entry->Items[0]);
-                Add(EquipSlot.OffHand, plate.ItemIds[1], StainIds.FromGlamourPlate(plate, 1), ref entry->Items[1]);
-                Add(EquipSlot.Head, plate.ItemIds[2], StainIds.FromGlamourPlate(plate, 2), ref entry->Items[2]);
-                Add(EquipSlot.Body, plate.ItemIds[3], StainIds.FromGlamourPlate(plate, 3), ref entry->Items[3]);
-                Add(EquipSlot.Hands, plate.ItemIds[4], StainIds.FromGlamourPlate(plate, 4), ref entry->Items[5]);
-                Add(EquipSlot.Legs, plate.ItemIds[5], StainIds.FromGlamourPlate(plate, 5), ref entry->Items[6]);
-                Add(EquipSlot.Feet, plate.ItemIds[6], StainIds.FromGlamourPlate(plate, 6), ref entry->Items[7]);
-                Add(EquipSlot.Ears, plate.ItemIds[7], StainIds.FromGlamourPlate(plate, 7), ref entry->Items[8]);
-                Add(EquipSlot.Neck, plate.ItemIds[8], StainIds.FromGlamourPlate(plate, 8), ref entry->Items[9]);
-                Add(EquipSlot.Wrists, plate.ItemIds[9], StainIds.FromGlamourPlate(plate, 9), ref entry->Items[10]);
-                Add(EquipSlot.RFinger, plate.ItemIds[10], StainIds.FromGlamourPlate(plate, 10), ref entry->Items[11]);
-                Add(EquipSlot.LFinger, plate.ItemIds[11], StainIds.FromGlamourPlate(plate, 11), ref entry->Items[12]);
+                Add(EquipSlot.MainHand, plate.ItemIds[0],  StainIds.FromGlamourPlate(plate, 0),  ref entry->Items[0]);
+                Add(EquipSlot.OffHand,  plate.ItemIds[1],  StainIds.FromGlamourPlate(plate, 1),  ref entry->Items[1]);
+                Add(EquipSlot.Head,     plate.ItemIds[2],  StainIds.FromGlamourPlate(plate, 2),  ref entry->Items[2]);
+                Add(EquipSlot.Body,     plate.ItemIds[3],  StainIds.FromGlamourPlate(plate, 3),  ref entry->Items[3]);
+                Add(EquipSlot.Hands,    plate.ItemIds[4],  StainIds.FromGlamourPlate(plate, 4),  ref entry->Items[5]);
+                Add(EquipSlot.Legs,     plate.ItemIds[5],  StainIds.FromGlamourPlate(plate, 5),  ref entry->Items[6]);
+                Add(EquipSlot.Feet,     plate.ItemIds[6],  StainIds.FromGlamourPlate(plate, 6),  ref entry->Items[7]);
+                Add(EquipSlot.Ears,     plate.ItemIds[7],  StainIds.FromGlamourPlate(plate, 7),  ref entry->Items[8]);
+                Add(EquipSlot.Neck,     plate.ItemIds[8],  StainIds.FromGlamourPlate(plate, 8),  ref entry->Items[9]);
+                Add(EquipSlot.Wrists,   plate.ItemIds[9],  StainIds.FromGlamourPlate(plate, 9),  ref entry->Items[10]);
+                Add(EquipSlot.RFinger,  plate.ItemIds[10], StainIds.FromGlamourPlate(plate, 10), ref entry->Items[11]);
+                Add(EquipSlot.LFinger,  plate.ItemIds[11], StainIds.FromGlamourPlate(plate, 11), ref entry->Items[12]);
             }
             else
             {
@@ -106,17 +107,17 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
                 }
 
                 Add(EquipSlot.MainHand, ref entry->Items[0]);
-                Add(EquipSlot.OffHand, ref entry->Items[1]);
-                Add(EquipSlot.Head, ref entry->Items[2]);
-                Add(EquipSlot.Body, ref entry->Items[3]);
-                Add(EquipSlot.Hands, ref entry->Items[5]);
-                Add(EquipSlot.Legs, ref entry->Items[6]);
-                Add(EquipSlot.Feet, ref entry->Items[7]);
-                Add(EquipSlot.Ears, ref entry->Items[8]);
-                Add(EquipSlot.Neck, ref entry->Items[9]);
-                Add(EquipSlot.Wrists, ref entry->Items[10]);
-                Add(EquipSlot.RFinger, ref entry->Items[11]);
-                Add(EquipSlot.LFinger, ref entry->Items[12]);
+                Add(EquipSlot.OffHand,  ref entry->Items[1]);
+                Add(EquipSlot.Head,     ref entry->Items[2]);
+                Add(EquipSlot.Body,     ref entry->Items[3]);
+                Add(EquipSlot.Hands,    ref entry->Items[5]);
+                Add(EquipSlot.Legs,     ref entry->Items[6]);
+                Add(EquipSlot.Feet,     ref entry->Items[7]);
+                Add(EquipSlot.Ears,     ref entry->Items[8]);
+                Add(EquipSlot.Neck,     ref entry->Items[9]);
+                Add(EquipSlot.Wrists,   ref entry->Items[10]);
+                Add(EquipSlot.RFinger,  ref entry->Items[11]);
+                Add(EquipSlot.LFinger,  ref entry->Items[12]);
             }
 
             _movedItemsEvent.Invoke(_itemList.ToArray());
@@ -203,18 +204,18 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
     private static EquipSlot GetSlot(uint slot)
         => slot switch
         {
-            0 => EquipSlot.MainHand,
-            1 => EquipSlot.OffHand,
-            2 => EquipSlot.Head,
-            3 => EquipSlot.Body,
-            4 => EquipSlot.Hands,
-            6 => EquipSlot.Legs,
-            7 => EquipSlot.Feet,
-            8 => EquipSlot.Ears,
-            9 => EquipSlot.Neck,
+            0  => EquipSlot.MainHand,
+            1  => EquipSlot.OffHand,
+            2  => EquipSlot.Head,
+            3  => EquipSlot.Body,
+            4  => EquipSlot.Hands,
+            6  => EquipSlot.Legs,
+            7  => EquipSlot.Feet,
+            8  => EquipSlot.Ears,
+            9  => EquipSlot.Neck,
             10 => EquipSlot.Wrists,
             11 => EquipSlot.RFinger,
             12 => EquipSlot.LFinger,
-            _ => EquipSlot.Unknown,
+            _  => EquipSlot.Unknown,
         };
 }

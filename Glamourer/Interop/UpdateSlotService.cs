@@ -11,46 +11,6 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
-// Can be removed once merged with client structs and referenced directly. See: https://github.com/aers/FFXIVClientStructs/pull/1277/files
-[StructLayout(LayoutKind.Explicit)]
-public readonly struct GearsetDataStruct
-{
-    // Stores the weapon data. Includes both dyes in the data. </summary>
-    [FieldOffset(0)] public readonly WeaponModelId MainhandWeaponData;
-    [FieldOffset(8)] public readonly WeaponModelId OffhandWeaponData;
-
-    [FieldOffset(16)] public readonly byte CrestBitField; // A Bitfield:: ShieldCrest == 1, HeadCrest == 2, Chest Crest == 4
-    [FieldOffset(17)] public readonly byte JobId; // Job ID associated with the gearset change.
-
-    // Flicks from 0 to 127 (anywhere inbetween), have yet to associate what it is linked to. Remains the same when flicking between gearsets of the same job.
-    [FieldOffset(18)] public readonly byte UNK_18;
-    [FieldOffset(19)] public readonly byte UNK_19; // I have never seen this be anything other than 0.
-
-    // Legacy helmet equip slot armor for a character.
-    [FieldOffset(20)] public readonly LegacyCharacterArmor HeadSlotArmor;
-    [FieldOffset(24)] public readonly LegacyCharacterArmor TopSlotArmor;
-    [FieldOffset(28)] public readonly LegacyCharacterArmor ArmsSlotArmor;
-    [FieldOffset(32)] public readonly LegacyCharacterArmor LegsSlotArmor;
-    [FieldOffset(26)] public readonly LegacyCharacterArmor FeetSlotArmor;
-    [FieldOffset(40)] public readonly LegacyCharacterArmor EarSlotArmor;
-    [FieldOffset(44)] public readonly LegacyCharacterArmor NeckSlotArmor;
-    [FieldOffset(48)] public readonly LegacyCharacterArmor WristSlotArmor;
-    [FieldOffset(52)] public readonly LegacyCharacterArmor RFingerSlotArmor;
-    [FieldOffset(56)] public readonly LegacyCharacterArmor LFingerSlotArmor;
-
-    // Byte array of all slot's secondary dyes.
-    [FieldOffset(60)] public readonly byte HeadSlotSecondaryDye;
-    [FieldOffset(61)] public readonly byte TopSlotSecondaryDye;
-    [FieldOffset(62)] public readonly byte ArmsSlotSecondaryDye;
-    [FieldOffset(63)] public readonly byte LegsSlotSecondaryDye;
-    [FieldOffset(64)] public readonly byte FeetSlotSecondaryDye;
-    [FieldOffset(65)] public readonly byte EarSlotSecondaryDye;
-    [FieldOffset(66)] public readonly byte NeckSlotSecondaryDye;
-    [FieldOffset(67)] public readonly byte WristSlotSecondaryDye;
-    [FieldOffset(68)] public readonly byte RFingerSlotSecondaryDye;
-    [FieldOffset(69)] public readonly byte LFingerSlotSecondaryDye;
-}
-
 public unsafe class UpdateSlotService : IDisposable
 {
     public readonly EquipSlotUpdating EquipSlotUpdatingEvent;
@@ -145,22 +105,20 @@ public unsafe class UpdateSlotService : IDisposable
 
     private ulong FlagSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
     {
-        var slot        = slotIdx.ToEquipSlot();
+        var slot = slotIdx.ToEquipSlot();
         var returnValue = ulong.MaxValue;
         EquipSlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
         Glamourer.Log.Excessive($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
-        returnValue = returnValue == ulong.MaxValue ? _flagSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
-        return returnValue;
+        return returnValue == ulong.MaxValue ? _flagSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
     }
 
     private ulong FlagBonusSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
     {
-        var slot        = slotIdx.ToBonusSlot();
+        var slot = slotIdx.ToBonusSlot();
         var returnValue = ulong.MaxValue;
         BonusSlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
         Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
-        returnValue = returnValue == ulong.MaxValue ? _flagBonusSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
-        return returnValue;
+        return returnValue == ulong.MaxValue ? _flagBonusSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
     }
 
     private ulong FlagSlotForUpdateInterop(Model drawObject, EquipSlot slot, CharacterArmor armor)
@@ -175,7 +133,6 @@ public unsafe class UpdateSlotService : IDisposable
         Model drawObject = drawDataContainer->OwnerObject->DrawObject;
         Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] Owner: 0x{drawObject.Address:X} Finished Applying its GameState!");
         GearsetDataLoadedEvent.Invoke(drawObject);
-        // Can use for debugging, if desired.
         // Glamourer.Log.Verbose($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
         return ret;
     }
@@ -198,4 +155,44 @@ public unsafe class UpdateSlotService : IDisposable
         }
         return ret;
     }
+}
+
+// Can be removed once merged with client structs and referenced directly. See: https://github.com/aers/FFXIVClientStructs/pull/1277/files
+[StructLayout(LayoutKind.Explicit)]
+public readonly struct GearsetDataStruct
+{
+    // Stores the weapon data. Includes both dyes in the data. </summary>
+    [FieldOffset(0)] public readonly WeaponModelId MainhandWeaponData;
+    [FieldOffset(8)] public readonly WeaponModelId OffhandWeaponData;
+
+    [FieldOffset(16)] public readonly byte CrestBitField; // A Bitfield:: ShieldCrest == 1, HeadCrest == 2, Chest Crest == 4
+    [FieldOffset(17)] public readonly byte JobId; // Job ID associated with the gearset change.
+
+    // Flicks from 0 to 127 (anywhere inbetween), have yet to associate what it is linked to. Remains the same when flicking between gearsets of the same job.
+    [FieldOffset(18)] public readonly byte UNK_18;
+    [FieldOffset(19)] public readonly byte UNK_19; // I have never seen this be anything other than 0.
+
+    // Legacy helmet equip slot armor for a character.
+    [FieldOffset(20)] public readonly LegacyCharacterArmor HeadSlotArmor;
+    [FieldOffset(24)] public readonly LegacyCharacterArmor TopSlotArmor;
+    [FieldOffset(28)] public readonly LegacyCharacterArmor ArmsSlotArmor;
+    [FieldOffset(32)] public readonly LegacyCharacterArmor LegsSlotArmor;
+    [FieldOffset(26)] public readonly LegacyCharacterArmor FeetSlotArmor;
+    [FieldOffset(40)] public readonly LegacyCharacterArmor EarSlotArmor;
+    [FieldOffset(44)] public readonly LegacyCharacterArmor NeckSlotArmor;
+    [FieldOffset(48)] public readonly LegacyCharacterArmor WristSlotArmor;
+    [FieldOffset(52)] public readonly LegacyCharacterArmor RFingerSlotArmor;
+    [FieldOffset(56)] public readonly LegacyCharacterArmor LFingerSlotArmor;
+
+    // Byte array of all slot's secondary dyes.
+    [FieldOffset(60)] public readonly byte HeadSlotSecondaryDye;
+    [FieldOffset(61)] public readonly byte TopSlotSecondaryDye;
+    [FieldOffset(62)] public readonly byte ArmsSlotSecondaryDye;
+    [FieldOffset(63)] public readonly byte LegsSlotSecondaryDye;
+    [FieldOffset(64)] public readonly byte FeetSlotSecondaryDye;
+    [FieldOffset(65)] public readonly byte EarSlotSecondaryDye;
+    [FieldOffset(66)] public readonly byte NeckSlotSecondaryDye;
+    [FieldOffset(67)] public readonly byte WristSlotSecondaryDye;
+    [FieldOffset(68)] public readonly byte RFingerSlotSecondaryDye;
+    [FieldOffset(69)] public readonly byte LFingerSlotSecondaryDye;
 }
