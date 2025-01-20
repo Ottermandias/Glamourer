@@ -7,8 +7,8 @@ namespace Glamourer.Gui.Equipment;
 
 public struct EquipDrawData(EquipSlot slot, in DesignData designData)
 {
-    private         IDesignEditor _editor;
-    private         object        _object;
+    private         IDesignEditor _editor = null!;
+    private         object        _object = null!;
     public readonly EquipSlot     Slot = slot;
     public          bool          Locked;
     public          bool          DisplayApplication;
