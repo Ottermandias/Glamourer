@@ -9,6 +9,7 @@ using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.GameData;
 using Penumbra.GameData.DataContainers;
 using Glamourer.Designs;
@@ -53,6 +54,7 @@ public class StateListener : IDisposable
     private readonly Dictionary<Actor, CharacterWeapon> _fistOffhands = [];
 
     private ActorIdentifier _creatingIdentifier = ActorIdentifier.Invalid;
+    private bool            _isPlayerNpc;
     private ActorState?     _creatingState;
     private ActorState?     _customizeState;
 
@@ -122,11 +124,13 @@ public class StateListener : IDisposable
             return;
 
         _creatingIdentifier = actor.GetIdentifier(_actors);
-
         ref var modelId   = ref *(uint*)modelPtr;
         ref var customize = ref *(CustomizeArray*)customizePtr;
         if (_autoDesignApplier.Reduce(actor, _creatingIdentifier, out _creatingState))
         {
+            _isPlayerNpc = _creatingIdentifier.Type is IdentifierType.Player
+             && actor.IsCharacter
+             && actor.AsCharacter->GetObjectKind() is ObjectKind.EventNpc;
             switch (UpdateBaseData(actor, _creatingState, modelId, customizePtr, equipDataPtr))
             {
                 // TODO handle right
@@ -347,7 +351,7 @@ public class StateListener : IDisposable
          && weapon.Weapon.Id != 0
          && _fistOffhands.TryGetValue(actor, out var lastFistOffhand))
         {
-            Glamourer.Log.Information($"Applying stored fist weapon offhand {lastFistOffhand} for 0x{actor.Address:X}.");
+            Glamourer.Log.Verbose($"Applying stored fist weapon offhand {lastFistOffhand} for 0x{actor.Address:X}.");
             weapon = lastFistOffhand;
         }
 
@@ -440,15 +444,22 @@ public class StateListener : IDisposable
         }
 
         var baseData = state.BaseData.Armor(slot);
-        var change   = UpdateState.NoChange;
+
+        var change = UpdateState.NoChange;
         if (baseData.Stains != armor.Stains)
         {
+            if (_isPlayerNpc)
+                return UpdateState.Transformed;
+
             state.BaseData.SetStain(slot, armor.Stains);
             change = UpdateState.Change;
         }
 
         if (baseData.Set.Id != armor.Set.Id || baseData.Variant != armor.Variant && !fistWeapon)
         {
+            if (_isPlayerNpc)
+                return UpdateState.Transformed;
+
             var item = _items.Identify(slot, armor.Set, armor.Variant);
             state.BaseData.SetItem(slot, item);
             change = UpdateState.Change;
@@ -480,6 +491,9 @@ public class StateListener : IDisposable
         var change   = UpdateState.NoChange;
         if (baseData.Id != actorItem.Id || baseData.PrimaryId != item.Set || baseData.Variant != item.Variant)
         {
+            if (_isPlayerNpc)
+                return UpdateState.Transformed;
+
             var identified = _items.Identify(slot, item.Set, item.Variant);
             state.BaseData.SetBonusItem(slot, identified);
             change = UpdateState.Change;
@@ -596,6 +610,9 @@ public class StateListener : IDisposable
 
         if (baseData.Skeleton.Id != weapon.Skeleton.Id || baseData.Weapon.Id != weapon.Weapon.Id || baseData.Variant != weapon.Variant)
         {
+            if (_isPlayerNpc)
+                return UpdateState.Transformed;
+
             var item = _items.Identify(slot, weapon.Skeleton, weapon.Weapon, weapon.Variant,
                 slot is EquipSlot.OffHand ? state.BaseData.MainhandType : FullEquipType.Unknown);
             state.BaseData.SetItem(slot, item);
@@ -641,6 +658,10 @@ public class StateListener : IDisposable
     {
         // Customize array does not agree between game object and draw object => transformation.
         if (checkTransform && !actor.Customize->Equals(customize))
+            return UpdateState.Transformed;
+
+        // Check for player NPCs with a different game state.
+        if (_isPlayerNpc && !actor.Customize->Equals(state.BaseData.Customize))
             return UpdateState.Transformed;
 
         // Customize array did not change to stored state.

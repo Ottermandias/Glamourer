@@ -6,8 +6,8 @@ namespace Glamourer.Gui.Customization;
 
 public struct CustomizeParameterDrawData(CustomizeParameterFlag flag, in DesignData data)
 {
-    private         IDesignEditor          _editor;
-    private         object                 _object;
+    private         IDesignEditor          _editor = null!;
+    private         object                 _object = null!;
     public readonly CustomizeParameterFlag Flag = flag;
     public          bool                   Locked;
     public          bool                   DisplayApplication;
