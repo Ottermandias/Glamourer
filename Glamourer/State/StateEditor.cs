@@ -416,7 +416,7 @@ public class StateEditor(
         var actors = settings.Source.RequiresChange()
             ? Applier.ApplyAll(state, requiresRedraw, false)
             : ActorData.Invalid;
-        
+
         Glamourer.Log.Verbose(
             $"Applied design to {state.Identifier.Incognito(null)}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Design, state.Sources[MetaIndex.Wetness], state, actors, null); // FIXME: maybe later

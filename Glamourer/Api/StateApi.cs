@@ -14,7 +14,6 @@ using StateChanged = Glamourer.Events.StateChanged;
 using StateUpdated = Glamourer.Events.StateUpdated;
 
 namespace Glamourer.Api;
- 
 public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 {
     private readonly ApiHelpers        _helpers;
@@ -340,7 +339,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     private void OnStateChanged(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, ITransaction? _5)
     {
-        // Glamourer.Log.Verbose($"[OnStateChanged] Sending out OnStateChanged with type {type}.");
+        Glamourer.Log.Excessive($"[OnStateChanged] State Changed with Type {type} [Affecting {actors.ToLazyString("nothing")}.]");
         if (StateChanged != null)
             foreach (var actor in actors.Objects)
                 StateChanged.Invoke(actor.Address);
@@ -352,7 +351,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     private void OnStateUpdated(StateUpdateType type, ActorData actors)
     {
-        // Glamourer.Log.Verbose($"[OnStateUpdated] Sending out OnStateUpdated with type {type}.");
+        Glamourer.Log.Verbose($"[OnStateUpdated] State Updated with Type {type}. [Affecting {actors.ToLazyString("nothing")}.]");
         if (StateUpdated != null)
             foreach (var actor in actors.Objects)
                 StateUpdated.Invoke(actor.Address, type);

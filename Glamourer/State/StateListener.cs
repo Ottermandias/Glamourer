@@ -225,7 +225,8 @@ public class StateListener : IDisposable
         // then we do not want to use our restricted gear protection
         // since we assume the player has that gear modded to availability.
         var locked = false;
-        if (actor.Identifier(_actors, out var identifier) && _manager.TryGetValue(identifier, out var state))
+        if (actor.Identifier(_actors, out var identifier) 
+         && _manager.TryGetValue(identifier, out var state))
         {
             HandleEquipSlot(actor, state, slot, ref armor);
             locked = state.Sources[slot, false] is StateSource.IpcFixed;

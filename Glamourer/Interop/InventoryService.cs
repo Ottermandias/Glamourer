@@ -23,34 +23,26 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
         _gearsetEvent = gearsetEvent;
 
         _moveItemHook = interop.HookFromAddress<MoveItemDelegate>((nint)InventoryManager.MemberFunctionPointers.MoveItemSlot, MoveItemDetour);
-        // This can be uncommented after ClientStructs Updates with EquipGearsetInternal after merged PR. (See comment below)
-        //_equipGearsetInternalHook = interop.HookFromAddress<EquipGearsetDelegate>((nint)RaptureGearsetModule.MemberFunctionPointers.EquipGearsetInternal, EquipGearSetInternalDetour);
-
-        // Can be removed after ClientStructs Update since this is only needed for current EquipGearsetInternal [Signature]
-        interop.InitializeFromAttributes(this);
+        _equipGearsetHook = interop.HookFromAddress<EquipGearsetInternalDelegate>((nint)RaptureGearsetModule.MemberFunctionPointers.EquipGearsetInternal, EquipGearSetDetour);
 
         _moveItemHook.Enable();
-        _equipGearsetInternalHook.Enable();
+        _equipGearsetHook.Enable();
     }
 
     public void Dispose()
     {
         _moveItemHook.Dispose();
-        _equipGearsetInternalHook.Dispose();
+        _equipGearsetHook.Dispose();
     }
 
-    // This is the internal function processed by all sources of Equipping a gearset, such as hotbar gearset application and command gearset application.
-    // Currently is pending to ClientStructs for integration. See: https://github.com/aers/FFXIVClientStructs/pull/1277
-    public const string EquipGearsetInternal = "40 55 53 56 57 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 4C 63 FA";
     private delegate nint EquipGearsetInternalDelegate(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId);
 
-    [Signature(EquipGearsetInternal, DetourName = nameof(EquipGearSetInternalDetour))]
-    private readonly Hook<EquipGearsetInternalDelegate> _equipGearsetInternalHook = null!;
+    private readonly Hook<EquipGearsetInternalDelegate> _equipGearsetHook = null!;
 
-    private nint EquipGearSetInternalDetour(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId)
+    private nint EquipGearSetDetour(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId)
     {
         var prior = module->CurrentGearsetIndex;
-        var ret = _equipGearsetInternalHook.Original(module, gearsetId, glamourPlateId);
+        var ret = _equipGearsetHook.Original(module, gearsetId, glamourPlateId);
         var set = module->GetGearset((int)gearsetId);
         _gearsetEvent.Invoke(new ByteString(set->Name).ToString(), (int)gearsetId, prior, glamourPlateId, set->ClassJob);
         Glamourer.Log.Verbose($"[InventoryService] Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
