@@ -2,7 +2,6 @@ using Dalamud.Plugin;
 using Glamourer.Api.Api;
 using Glamourer.Api.Helpers;
 using OtterGui.Services;
-using System.Reflection.Emit;
 using Glamourer.Api.Enums;
 
 namespace Glamourer.Api;

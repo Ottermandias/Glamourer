@@ -41,7 +41,7 @@ public class StateListener : IDisposable
     private readonly HeadGearVisibilityChanged _headGearVisibility;
     private readonly VisorStateChanged         _visorState;
     private readonly WeaponVisibilityChanged   _weaponVisibility;
-    private readonly StateUpdated              _stateUpdated;
+    private readonly StateFinalized              _stateFinalized;
     private readonly AutoDesignApplier         _autoDesignApplier;
     private readonly FunModule                 _funModule;
     private readonly HumanModelList            _humans;
@@ -63,7 +63,7 @@ public class StateListener : IDisposable
         WeaponVisibilityChanged weaponVisibility, HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier,
         FunModule funModule, HumanModelList humans, StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects,
         GPoseService gPose, ChangeCustomizeService changeCustomizeService, CustomizeService customizations, ICondition condition,
-        CrestService crestService, BonusSlotUpdating bonusSlotUpdating, StateUpdated stateUpdated)
+        CrestService crestService, BonusSlotUpdating bonusSlotUpdating, StateFinalized stateFinalized)
     {
         _manager                = manager;
         _items                  = items;
@@ -88,7 +88,7 @@ public class StateListener : IDisposable
         _condition              = condition;
         _crestService           = crestService;
         _bonusSlotUpdating      = bonusSlotUpdating;
-        _stateUpdated           = stateUpdated;
+        _stateFinalized           = stateFinalized;
         Subscribe();
     }
 
@@ -281,7 +281,7 @@ public class StateListener : IDisposable
 
         _objects.Update();
         if (_objects.TryGetValue(identifier, out var actors) && actors.Valid)
-            _stateUpdated.Invoke(StateFinalizationType.Gearset, actors);
+            _stateFinalized.Invoke(StateFinalizationType.Gearset, actors);
     }
 
 

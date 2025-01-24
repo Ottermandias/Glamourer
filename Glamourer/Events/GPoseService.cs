@@ -13,8 +13,8 @@ public sealed class GPoseService : EventWrapper<bool, GPoseService.Priority>
 
     public enum Priority
     {
-        /// <seealso cref="Api.GlamourerIpc.OnGPoseChanged"/>
-        GlamourerIpc = int.MinValue,
+        /// <seealso cref="Api.StateApi.OnGPoseChange"/>
+        StateApi = int.MinValue,
     }
 
     public bool InGPose { get; private set; }

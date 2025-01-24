@@ -11,9 +11,9 @@ using OtterGui.Services;
 using Penumbra.GameData.Interop;
 using ObjectManager = Glamourer.Interop.ObjectManager;
 using StateChanged = Glamourer.Events.StateChanged;
-using StateUpdated = Glamourer.Events.StateUpdated;
 
 namespace Glamourer.Api;
+
 public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 {
     private readonly ApiHelpers        _helpers;
@@ -23,7 +23,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     private readonly AutoDesignApplier _autoDesigns;
     private readonly ObjectManager     _objects;
     private readonly StateChanged      _stateChanged;
-    private readonly StateUpdated      _stateUpdated;
+    private readonly StateFinalized    _stateFinalized;
     private readonly GPoseService      _gPose;
 
     public StateApi(ApiHelpers helpers,
@@ -33,27 +33,27 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         AutoDesignApplier autoDesigns,
         ObjectManager objects,
         StateChanged stateChanged,
-        StateUpdated stateUpdated,
+        StateFinalized stateFinalized,
         GPoseService gPose)
     {
-        _helpers      = helpers;
-        _stateManager = stateManager;
-        _converter    = converter;
-        _config       = config;
-        _autoDesigns  = autoDesigns;
-        _objects      = objects;
-        _stateChanged = stateChanged;
-        _stateUpdated = stateUpdated;
-        _gPose        = gPose;
+        _helpers        = helpers;
+        _stateManager   = stateManager;
+        _converter      = converter;
+        _config         = config;
+        _autoDesigns    = autoDesigns;
+        _objects        = objects;
+        _stateChanged   = stateChanged;
+        _stateFinalized = stateFinalized;
+        _gPose          = gPose;
         _stateChanged.Subscribe(OnStateChanged, Events.StateChanged.Priority.GlamourerIpc);
-        _stateUpdated.Subscribe(OnStateUpdated, Events.StateUpdated.Priority.GlamourerIpc);
-        _gPose.Subscribe(OnGPoseChange, GPoseService.Priority.GlamourerIpc);
+        _stateFinalized.Subscribe(OnStateFinalized, Events.StateFinalized.Priority.StateApi);
+        _gPose.Subscribe(OnGPoseChange, GPoseService.Priority.StateApi);
     }
 
     public void Dispose()
     {
         _stateChanged.Unsubscribe(OnStateChanged);
-        _stateUpdated.Unsubscribe(OnStateUpdated);
+        _stateFinalized.Unsubscribe(OnStateFinalized);
         _gPose.Unsubscribe(OnGPoseChange);
     }
 
@@ -253,16 +253,16 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
-    public event Action<nint>?                    StateChanged;
-    public event Action<IntPtr, StateChangeType>? StateChangedWithType;
+    public event Action<nint>?                          StateChanged;
+    public event Action<IntPtr, StateChangeType>?       StateChangedWithType;
     public event Action<IntPtr, StateFinalizationType>? StateFinalized;
-    public event Action<bool>?                    GPoseChanged;
+    public event Action<bool>?                          GPoseChanged;
 
     private void ApplyDesign(ActorState state, DesignBase design, uint key, ApplyFlag flags)
     {
         var once = (flags & ApplyFlag.Once) != 0;
         var settings = new ApplySettings(Source: once ? StateSource.IpcManual : StateSource.IpcFixed, Key: key, MergeLinks: true,
-            ResetMaterials: !once && key != 0, SendStateUpdate: true);
+            ResetMaterials: !once && key != 0, IsFinal: true);
         _stateManager.ApplyDesign(state, design, settings);
         ApiHelpers.Lock(state, key, flags);
     }
@@ -349,7 +349,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
                 StateChangedWithType.Invoke(actor.Address, type);
     }
 
-    private void OnStateUpdated(StateFinalizationType type, ActorData actors)
+    private void OnStateFinalized(StateFinalizationType type, ActorData actors)
     {
         Glamourer.Log.Verbose($"[OnStateUpdated] State Updated with Type {type}. [Affecting {actors.ToLazyString("nothing")}.]");
         if (StateFinalized != null)

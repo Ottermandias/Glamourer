@@ -183,7 +183,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         }
 
         using var _ = design!.TemporarilyRestrictApplication(ApplicationCollection.FromKeys());
-        _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with { SendStateUpdate = true });
+        _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with { IsFinal = true });
     }
 
     private void DrawRevertButton(Vector2 buttonSize)
@@ -213,7 +213,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, tooltip, available);
         ImGui.SameLine();
         if (clicked)
-            _stateManager.ResetState(state!, StateSource.Manual, stateUpdate: true);
+            _stateManager.ResetState(state!, StateSource.Manual, isFinal: true);
     }
 
     private void DrawRevertAutomationButton(Vector2 buttonSize)

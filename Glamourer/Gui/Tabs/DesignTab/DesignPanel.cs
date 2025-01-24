@@ -460,7 +460,7 @@ public class DesignPanel
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
             using var _ = _selector.Selected!.TemporarilyRestrictApplication(ApplicationCollection.FromKeys());
-            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.ManualWithLinks with { SendStateUpdate = true });
+            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.ManualWithLinks with { IsFinal = true });
         }
     }
 
@@ -478,7 +478,7 @@ public class DesignPanel
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
             using var _ = _selector.Selected!.TemporarilyRestrictApplication(ApplicationCollection.FromKeys());
-            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.ManualWithLinks with { SendStateUpdate = true });
+            _state.ApplyDesign(state, _selector.Selected!, ApplySettings.ManualWithLinks with { IsFinal = true });
         }
     }
 

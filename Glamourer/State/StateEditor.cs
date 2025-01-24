@@ -17,7 +17,7 @@ public class StateEditor(
     InternalStateEditor editor,
     StateApplier applier,
     StateChanged stateChanged,
-    StateUpdated stateUpdated,
+    StateFinalized stateFinalized,
     JobChangeState jobChange,
     Configuration config,
     ItemManager items,
@@ -25,12 +25,12 @@ public class StateEditor(
     ModSettingApplier modApplier,
     GPoseService gPose) : IDesignEditor
 {
-    protected readonly InternalStateEditor Editor       = editor;
-    protected readonly StateApplier        Applier      = applier;
-    protected readonly StateChanged        StateChanged = stateChanged;
-    protected readonly StateUpdated        StateUpdated = stateUpdated;
-    protected readonly Configuration       Config       = config;
-    protected readonly ItemManager         Items        = items;
+    protected readonly InternalStateEditor Editor         = editor;
+    protected readonly StateApplier        Applier        = applier;
+    protected readonly StateChanged        StateChanged   = stateChanged;
+    protected readonly StateFinalized      StateFinalized = stateFinalized;
+    protected readonly Configuration       Config         = config;
+    protected readonly ItemManager         Items          = items;
 
     /// <summary> Turn an actor to. </summary>
     public void ChangeModelId(ActorState state, uint modelId, CustomizeArray customize, nint equipData, StateSource source,
@@ -43,7 +43,7 @@ public class StateEditor(
         Glamourer.Log.Verbose(
             $"Set model id in state {state.Identifier.Incognito(null)} from {old} to {modelId}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Model, source, state, actors, null);
-        StateUpdated.Invoke(StateFinalizationType.ModelChange, actors);
+        StateFinalized.Invoke(StateFinalizationType.ModelChange, actors);
     }
 
     /// <inheritdoc/>
@@ -383,7 +383,7 @@ public class StateEditor(
                     Editor.ChangeMetaState(state, meta, mergedDesign.Design.DesignData.GetMeta(meta), Source(meta), out _, settings.Key);
             }
 
-            if (settings.ResetMaterials || (!settings.RespectManual && mergedDesign.ResetAdvancedDyes))
+            if (settings.ResetMaterials || !settings.RespectManual && mergedDesign.ResetAdvancedDyes)
                 state.Materials.Clear();
 
             foreach (var (key, value) in mergedDesign.Design.Materials)
@@ -420,8 +420,8 @@ public class StateEditor(
         Glamourer.Log.Verbose(
             $"Applied design to {state.Identifier.Incognito(null)}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Design, state.Sources[MetaIndex.Wetness], state, actors, null); // FIXME: maybe later
-        if(settings.SendStateUpdate)
-            StateUpdated.Invoke(StateFinalizationType.DesignApplied, actors);
+        if (settings.IsFinal)
+            StateFinalized.Invoke(StateFinalizationType.DesignApplied, actors);
 
         return;
 
@@ -442,7 +442,8 @@ public class StateEditor(
         if (!settings.MergeLinks || design is not Design d)
             merged = new MergedDesign(design);
         else
-            merged = merger.Merge(d.AllLinks(true), state.ModelData.IsHuman ? state.ModelData.Customize : CustomizeArray.Default, state.BaseData,
+            merged = merger.Merge(d.AllLinks(true), state.ModelData.IsHuman ? state.ModelData.Customize : CustomizeArray.Default,
+                state.BaseData,
                 false, Config.AlwaysApplyAssociatedMods);
 
         ApplyDesign(data, merged, settings with
@@ -460,7 +461,7 @@ public class StateEditor(
         if (!Config.ChangeEntireItem || !settings.Source.IsManual())
             return;
 
-        var mh      = newMainhand ?? state.ModelData.Item(EquipSlot.MainHand);
+        var mh = newMainhand ?? state.ModelData.Item(EquipSlot.MainHand);
         // Do not change Shields to nothing.
         if (mh.Type is FullEquipType.Sword)
             return;

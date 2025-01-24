@@ -18,6 +18,7 @@ public unsafe class UpdateSlotService : IDisposable
     public readonly  BonusSlotUpdating BonusSlotUpdatingEvent;
     public readonly  GearsetDataLoaded GearsetDataLoadedEvent;
     private readonly DictBonusItems    _bonusItems;
+
     public UpdateSlotService(EquipSlotUpdating equipSlotUpdating, BonusSlotUpdating bonusSlotUpdating, GearsetDataLoaded gearsetDataLoaded,
         IGameInteropProvider interop, DictBonusItems bonusItems)
     {
@@ -26,8 +27,8 @@ public unsafe class UpdateSlotService : IDisposable
         GearsetDataLoadedEvent = gearsetDataLoaded;
         _bonusItems            = bonusItems;
 
-        _loadGearsetDataHook = interop.HookFromAddress<LoadGearsetDataDelegate>((nint)DrawDataContainer.MemberFunctionPointers.LoadGearsetData, LoadGearsetDataDetour);
         interop.InitializeFromAttributes(this);
+        _loadGearsetDataHook = interop.HookFromAddress<LoadGearsetDataDelegate>((nint)DrawDataContainer.MemberFunctionPointers.LoadGearsetData, LoadGearsetDataDetour);
         _flagSlotForUpdateHook.Enable();
         _flagBonusSlotForUpdateHook.Enable();
         _loadGearsetDataHook.Enable();
@@ -89,8 +90,8 @@ public unsafe class UpdateSlotService : IDisposable
     /// <summary> Detours the func that makes all FlagSlotForUpdate calls on a gearset change or initial render of a given actor (Only Cases this is Called).
     /// <para> Logic done after returning the original hook executes <b>After</b> all equipment/weapon/crest data is loaded into the Actors BaseData. </para>
     /// </summary>
-    private delegate Int64 LoadGearsetDataDelegate(DrawDataContainer* drawDataContainer, PacketPlayerGearsetData* gearsetData);
-    private readonly Hook<LoadGearsetDataDelegate> _loadGearsetDataHook = null!;
+    private delegate ulong LoadGearsetDataDelegate(DrawDataContainer* drawDataContainer, PacketPlayerGearsetData* gearsetData);
+    private readonly Hook<LoadGearsetDataDelegate> _loadGearsetDataHook;
 
     private ulong FlagSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
     {
@@ -115,30 +116,30 @@ public unsafe class UpdateSlotService : IDisposable
         Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Glamourer-Invoked on 0x{drawObject.Address:X} on {slot} with item data {armor}.");
         return _flagSlotForUpdateHook.Original(drawObject.Address, slot.ToIndex(), &armor);
     }
-    private Int64 LoadGearsetDataDetour(DrawDataContainer* drawDataContainer, PacketPlayerGearsetData* gearsetData)
+    private ulong LoadGearsetDataDetour(DrawDataContainer* drawDataContainer, PacketPlayerGearsetData* gearsetData)
     {
         var ret = _loadGearsetDataHook.Original(drawDataContainer, gearsetData);
-        Model drawObject = drawDataContainer->OwnerObject->DrawObject;
+        var drawObject = drawDataContainer->OwnerObject->DrawObject;
         GearsetDataLoadedEvent.Invoke(drawObject);
-        // Glamourer.Log.Excessive($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
+        Glamourer.Log.Excessive($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
         return ret;
     }
 
-    // If you ever care to debug this, here is a formatted string output of this new gearsetData struct.
-    private string FormatGearsetItemDataStruct(PacketPlayerGearsetData gearsetData)
+
+    private static string FormatGearsetItemDataStruct(PacketPlayerGearsetData gearsetData)
     {
-        string ret =
+        var ret =
             $"\nMainhandWeaponData: Id: {gearsetData.MainhandWeaponData.Id}, Type: {gearsetData.MainhandWeaponData.Type}, " +
             $"Variant: {gearsetData.MainhandWeaponData.Variant}, Stain0: {gearsetData.MainhandWeaponData.Stain0}, Stain1: {gearsetData.MainhandWeaponData.Stain1}" +
             $"\nOffhandWeaponData: Id: {gearsetData.OffhandWeaponData.Id}, Type: {gearsetData.OffhandWeaponData.Type}, " +
             $"Variant: {gearsetData.OffhandWeaponData.Variant}, Stain0: {gearsetData.OffhandWeaponData.Stain0}, Stain1: {gearsetData.OffhandWeaponData.Stain1}" +
             $"\nCrestBitField: {gearsetData.CrestBitField} | JobId: {gearsetData.JobId}";
-        for (int offset = 20; offset <= 56; offset += sizeof(LegacyCharacterArmor))
+        for (var offset = 20; offset <= 56; offset += sizeof(LegacyCharacterArmor))
         {
-            LegacyCharacterArmor* equipSlotPtr = (LegacyCharacterArmor*)((byte*)&gearsetData + offset);
-            int dyeOffset = (offset - 20) / sizeof(LegacyCharacterArmor) + 60; // Calculate the corresponding dye offset
-            byte* dyePtr = (byte*)&gearsetData + dyeOffset;
-            ret += $"\nEquipSlot {((EquipSlot)(dyeOffset - 60)).ToString()}:: Id: {(*equipSlotPtr).Set}, Variant: {(*equipSlotPtr).Variant}, Stain0: {(*equipSlotPtr).Stain.Id}, Stain1: {*dyePtr}";
+            var equipSlotPtr = (LegacyCharacterArmor*)((byte*)&gearsetData + offset);
+            var dyeOffset = (offset - 20) / sizeof(LegacyCharacterArmor) + 60; // Calculate the corresponding dye offset
+            var dyePtr = (byte*)&gearsetData + dyeOffset;
+            ret += $"\nEquipSlot {(EquipSlot)(dyeOffset - 60)}:: Id: {(*equipSlotPtr).Set}, Variant: {(*equipSlotPtr).Variant}, Stain0: {(*equipSlotPtr).Stain.Id}, Stain1: {*dyePtr}";
         }
         return ret;
     }

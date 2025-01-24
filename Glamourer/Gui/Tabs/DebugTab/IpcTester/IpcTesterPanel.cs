@@ -51,6 +51,7 @@ public class IpcTesterPanel(
         Glamourer.Log.Debug("[IPCTester] Subscribed to IPC events for IPC tester.");
         state.GPoseChanged.Enable();
         state.StateChanged.Enable();
+        state.StateFinalized.Enable();
         framework.Update += CheckUnsubscribe;
         _subscribed      =  true;
     }
@@ -73,5 +74,6 @@ public class IpcTesterPanel(
         _subscribed = false;
         state.GPoseChanged.Disable();
         state.StateChanged.Disable();
+        state.StateFinalized.Disable();
     }
 }

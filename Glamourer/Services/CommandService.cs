@@ -668,7 +668,7 @@ public class CommandService : IDisposable, IApiService
             if (!_objects.TryGetValue(identifier, out var actors))
             {
                 if (_stateManager.TryGetValue(identifier, out var state))
-                    _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with { SendStateUpdate = true });
+                    _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with { IsFinal = true });
             }
             else
             {
@@ -677,7 +677,7 @@ public class CommandService : IDisposable, IApiService
                     if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
                     {
                         ApplyModSettings(design, actor, applyMods);
-                        _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with { SendStateUpdate = true });
+                        _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with { IsFinal = true });
                     }
                 }
             }

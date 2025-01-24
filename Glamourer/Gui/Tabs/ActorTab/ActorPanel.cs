@@ -385,7 +385,7 @@ public class ActorPanel
     {
         if (ImGuiUtil.DrawDisabledButton("Revert to Game", Vector2.Zero, "Revert the character to its actual state in the game.",
                 _state!.IsLocked))
-            _stateManager.ResetState(_state!, StateSource.Manual, stateUpdate: true);
+            _stateManager.ResetState(_state!, StateSource.Manual, isFinal: true);
 
         ImGui.SameLine();
 
@@ -423,7 +423,7 @@ public class ActorPanel
 
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
             _stateManager.ApplyDesign(state, _converter.Convert(_state!, ApplicationRules.FromModifiers(_state!)),
-                ApplySettings.Manual with { SendStateUpdate = true });
+                ApplySettings.Manual with { IsFinal = true });
     }
 
     private void DrawApplyToTarget()
@@ -440,7 +440,7 @@ public class ActorPanel
 
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
             _stateManager.ApplyDesign(state, _converter.Convert(_state!, ApplicationRules.FromModifiers(_state!)),
-                ApplySettings.Manual with { SendStateUpdate = true });
+                ApplySettings.Manual with { IsFinal = true });
     }
 
 
@@ -467,7 +467,7 @@ public class ActorPanel
                 var text = ImGui.GetClipboardText();
                 var design = panel._converter.FromBase64(text, applyCustomize, applyGear, out _)
                  ?? throw new Exception("The clipboard did not contain valid data.");
-                panel._stateManager.ApplyDesign(panel._state!, design, ApplySettings.ManualWithLinks with { SendStateUpdate = true });
+                panel._stateManager.ApplyDesign(panel._state!, design, ApplySettings.ManualWithLinks with { IsFinal = true });
             }
             catch (Exception ex)
             {
