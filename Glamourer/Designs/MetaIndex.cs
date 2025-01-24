@@ -1,4 +1,5 @@
-﻿using Glamourer.State;
+﻿using Glamourer.Api.Enums;
+using Glamourer.State;
 
 namespace Glamourer.Designs;
 
@@ -35,6 +36,16 @@ public static class MetaExtensions
             MetaIndex.VisorState  => MetaFlag.VisorState,
             MetaIndex.WeaponState => MetaFlag.WeaponState,
             _                     => (MetaFlag)byte.MaxValue,
+        };
+
+    public static MetaIndex ToIndex(this SetMetaFlag index)
+        => index switch
+        {
+            SetMetaFlag.Wetness     => MetaIndex.Wetness,
+            SetMetaFlag.HatState    => MetaIndex.HatState,
+            SetMetaFlag.VisorState  => MetaIndex.VisorState,
+            SetMetaFlag.WeaponState => MetaIndex.WeaponState,
+            _                       => (MetaIndex)byte.MaxValue,
         };
 
     public static MetaIndex ToIndex(this MetaFlag index)
