@@ -6,6 +6,7 @@ using Glamourer.State;
 using OtterGui.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using static OtterGui.ItemSelector<T>;
 
 namespace Glamourer.Api;
 
@@ -96,9 +97,9 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         if (!ResolveBonusItem(slot, bonusItemId, out var item))
             return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
 
-        var settings    = new ApplySettings(Source: flags.HasFlag(ApplyFlag.Once) ? StateSource.IpcManual : StateSource.IpcFixed, Key: key);
-        var anyHuman    = false;
-        var anyFound    = false;
+        var settings = new ApplySettings(Source: flags.HasFlag(ApplyFlag.Once) ? StateSource.IpcManual : StateSource.IpcFixed, Key: key);
+        var anyHuman = false;
+        var anyFound = false;
         var anyUnlocked = false;
         foreach (var state in helpers.FindStates(playerName))
         {
@@ -125,6 +126,29 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
             return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
 
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
+    public GlamourerApiEc SetMetaState(int objectIndex, bool newValue, uint key, SetMetaFlag metaFlags)
+    {
+        var args = ApiHelpers.Args("Index", objectIndex, "Value", newValue, "Key", key, "Flags", metaFlags);
+        if (metaFlags == 0)
+            return ApiHelpers.Return(GlamourerApiEc.InvalidState, args);
+
+        if (helpers.FindState(objectIndex) is not { } state)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
+
+        if (!state.ModelData.IsHuman)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotHuman, args);
+
+        if (!state.CanUnlock(key))
+            return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
+
+        // Grab MetaIndices from attached flags, and update the states.
+        var indices = metaFlags.ToIndices();
+        foreach (var index in indices)
+            stateManager.ChangeMetaState(state, index, newValue, ApplySettings.Manual);
+
+        return GlamourerApiEc.Success;
     }
 
     private bool ResolveItem(ApiEquipSlot apiSlot, ulong itemId, out EquipItem item)
