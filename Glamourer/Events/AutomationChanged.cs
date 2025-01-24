@@ -37,6 +37,9 @@ public sealed class AutomationChanged()
         /// <summary> Change the used base state of a given set. Additional data is prior and new base. [(AutoDesignSet.Base, AutoDesignSet.Base)]. </summary>
         ChangedBase,
 
+        /// <summary> Change the resetting of temporary settings for a given set. Additional data is the new value.  </summary>
+        ChangedTemporarySettingsReset,
+
         /// <summary> Add a new associated design to a given set. Additional data is the index it got added at [int]. </summary>
         AddedDesign,
 

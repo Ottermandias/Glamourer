@@ -58,38 +58,53 @@ public class SetPanel(
 
         var spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
 
-        using (_ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
+        using (ImUtf8.Group())
         {
-            var enabled = Selection.Enabled;
-            if (ImGui.Checkbox("##Enabled", ref enabled))
-                _manager.SetState(_selector.SelectionIndex, enabled);
-            ImGuiUtil.LabeledHelpMarker("Enabled",
-                "Whether the designs in this set should be applied at all. Only one set can be enabled for a character at the same time.");
-        }
-
-        ImGui.SameLine();
-        using (_ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
-        {
-            var useGame = _selector.Selection!.BaseState is AutoDesignSet.Base.Game;
-            if (ImGui.Checkbox("##gameState", ref useGame))
-                _manager.ChangeBaseState(_selector.SelectionIndex, useGame ? AutoDesignSet.Base.Game : AutoDesignSet.Base.Current);
-            ImGuiUtil.LabeledHelpMarker("Use Game State as Base",
-                "When this is enabled, the designs matching conditions will be applied successively on top of what your character is supposed to look like for the game. "
-              + "Otherwise, they will be applied on top of the characters actual current look using Glamourer.");
-        }
-
-        ImGui.SameLine();
-        using (_ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
-        {
-            var editing = _config.ShowAutomationSetEditing;
-            if (ImGui.Checkbox("##Show Editing", ref editing))
+            using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
             {
-                _config.ShowAutomationSetEditing = editing;
-                _config.Save();
+                var enabled = Selection.Enabled;
+                if (ImGui.Checkbox("##Enabled", ref enabled))
+                    _manager.SetState(_selector.SelectionIndex, enabled);
+                ImGuiUtil.LabeledHelpMarker("Enabled",
+                    "Whether the designs in this set should be applied at all. Only one set can be enabled for a character at the same time.");
             }
 
-            ImGuiUtil.LabeledHelpMarker("Show Editing",
-                "Show options to change the name or the associated character or NPC of this design set.");
+            using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
+            {
+                var useGame = _selector.Selection!.BaseState is AutoDesignSet.Base.Game;
+                if (ImGui.Checkbox("##gameState", ref useGame))
+                    _manager.ChangeBaseState(_selector.SelectionIndex, useGame ? AutoDesignSet.Base.Game : AutoDesignSet.Base.Current);
+                ImGuiUtil.LabeledHelpMarker("Use Game State as Base",
+                    "When this is enabled, the designs matching conditions will be applied successively on top of what your character is supposed to look like for the game. "
+                  + "Otherwise, they will be applied on top of the characters actual current look using Glamourer.");
+            }
+        }
+
+        ImGui.SameLine();
+        using (ImUtf8.Group())
+        {
+            using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
+            {
+                var editing = _config.ShowAutomationSetEditing;
+                if (ImGui.Checkbox("##Show Editing", ref editing))
+                {
+                    _config.ShowAutomationSetEditing = editing;
+                    _config.Save();
+                }
+
+                ImGuiUtil.LabeledHelpMarker("Show Editing",
+                    "Show options to change the name or the associated character or NPC of this design set.");
+            }
+
+            using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
+            {
+                var resetSettings = _selector.Selection!.ResetTemporarySettings;
+                if (ImGui.Checkbox("##resetSettings", ref resetSettings))
+                    _manager.ChangeResetSettings(_selector.SelectionIndex, resetSettings);
+
+                ImGuiUtil.LabeledHelpMarker("Reset Temporary Settings",
+                    "Always reset all temporary settings applied by Glamourer when this automation set is applied, regardless of active designs.");
+            }
         }
 
         if (_config.ShowAutomationSetEditing)
