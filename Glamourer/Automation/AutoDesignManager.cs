@@ -234,6 +234,22 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         _event.Invoke(AutomationChanged.Type.ChangedBase, set, (old, newBase));
     }
 
+    public void ChangeResetSettings(int whichSet, bool newValue)
+    {
+        if (whichSet >= _data.Count || whichSet < 0)
+            return;
+
+        var set = _data[whichSet];
+        if (newValue == set.ResetTemporarySettings)
+            return;
+
+        var old = set.ResetTemporarySettings;
+        set.ResetTemporarySettings = newValue;
+        Save();
+        Glamourer.Log.Debug($"Changed resetting of temporary settings of set {whichSet + 1} from {old} to {newValue}.");
+        _event.Invoke(AutomationChanged.Type.ChangedTemporarySettingsReset, set, newValue);
+    }
+
     public void AddDesign(AutoDesignSet set, IDesignStandIn design)
     {
         var newDesign = new AutoDesign()
