@@ -6,7 +6,6 @@ using Glamourer.State;
 using OtterGui.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using static OtterGui.ItemSelector<T>;
 
 namespace Glamourer.Api;
 
@@ -128,10 +127,10 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
-    public GlamourerApiEc SetMetaState(int objectIndex, bool newValue, uint key, SetMetaFlag metaFlags)
+    public GlamourerApiEc SetMetaState(int objectIndex, SetMetaFlag metaStates, bool newValue, uint key, ApplyFlag flags)
     {
-        var args = ApiHelpers.Args("Index", objectIndex, "Value", newValue, "Key", key, "Flags", metaFlags);
-        if (metaFlags == 0)
+        var args = ApiHelpers.Args("Index", objectIndex, "MetaStates", metaStates, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
+        if (metaStates == 0)
             return ApiHelpers.Return(GlamourerApiEc.InvalidState, args);
 
         if (helpers.FindState(objectIndex) is not { } state)
@@ -144,7 +143,7 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
             return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
 
         // Grab MetaIndices from attached flags, and update the states.
-        var indices = metaFlags.ToIndices();
+        var indices = metaStates.ToIndices();
         foreach (var index in indices)
             stateManager.ChangeMetaState(state, index, newValue, ApplySettings.Manual);
 
