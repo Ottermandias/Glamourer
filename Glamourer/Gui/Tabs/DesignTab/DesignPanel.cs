@@ -2,6 +2,7 @@
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using Glamourer.Api.Enums;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Designs.History;

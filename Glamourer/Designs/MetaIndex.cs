@@ -12,15 +12,6 @@ public enum MetaIndex
     ModelId     = StateIndex.MetaModelId,
 }
 
-[Flags]
-public enum MetaFlag : byte
-{
-    Wetness     = 0x01,
-    HatState    = 0x02,
-    VisorState  = 0x04,
-    WeaponState = 0x08,
-}
-
 public static class MetaExtensions
 {
     public static readonly IReadOnlyList<MetaIndex> AllRelevant =
@@ -38,29 +29,6 @@ public static class MetaExtensions
             _                     => (MetaFlag)byte.MaxValue,
         };
 
-    public static MetaIndex ToIndex(this SetMetaFlag index)
-        => index switch
-        {
-            SetMetaFlag.Wetness     => MetaIndex.Wetness,
-            SetMetaFlag.HatState    => MetaIndex.HatState,
-            SetMetaFlag.VisorState  => MetaIndex.VisorState,
-            SetMetaFlag.WeaponState => MetaIndex.WeaponState,
-            _                       => (MetaIndex)byte.MaxValue,
-        };
-
-    public static IEnumerable<MetaIndex> ToIndices(this SetMetaFlag index)
-    {
-        if (index.HasFlag(SetMetaFlag.Wetness))
-            yield return MetaIndex.Wetness;
-        if (index.HasFlag(SetMetaFlag.HatState))
-            yield return MetaIndex.HatState;
-        if (index.HasFlag(SetMetaFlag.VisorState))
-            yield return MetaIndex.VisorState;
-        if (index.HasFlag(SetMetaFlag.WeaponState))
-            yield return MetaIndex.WeaponState;
-    }
-
-
     public static MetaIndex ToIndex(this MetaFlag index)
         => index switch
         {
@@ -68,8 +36,20 @@ public static class MetaExtensions
             MetaFlag.HatState    => MetaIndex.HatState,
             MetaFlag.VisorState  => MetaIndex.VisorState,
             MetaFlag.WeaponState => MetaIndex.WeaponState,
-            _                    => (MetaIndex)byte.MaxValue,
+            _                       => (MetaIndex)byte.MaxValue,
         };
+
+    public static IEnumerable<MetaIndex> ToIndices(this MetaFlag index)
+    {
+        if (index.HasFlag(MetaFlag.Wetness))
+            yield return MetaIndex.Wetness;
+        if (index.HasFlag(MetaFlag.HatState))
+            yield return MetaIndex.HatState;
+        if (index.HasFlag(MetaFlag.VisorState))
+            yield return MetaIndex.VisorState;
+        if (index.HasFlag(MetaFlag.WeaponState))
+            yield return MetaIndex.WeaponState;
+    }
 
     public static string ToName(this MetaIndex index)
         => index switch

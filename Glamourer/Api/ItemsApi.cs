@@ -127,9 +127,9 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
-    public GlamourerApiEc SetMeta(int objectIndex, SetMetaFlag types, bool newValue, uint key, ApplyFlag flags)
+    public GlamourerApiEc SetMetaState(int objectIndex, MetaFlag types, bool newValue, uint key, ApplyFlag flags)
     {
-        var args = ApiHelpers.Args("Index", objectIndex, "Meta Types", types, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
+        var args = ApiHelpers.Args("Index", objectIndex, "MetaTypes", types, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
         if (types == 0)
             return ApiHelpers.Return(GlamourerApiEc.InvalidState, args);
 
@@ -153,13 +153,12 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         return GlamourerApiEc.Success;
     }
 
-    public GlamourerApiEc SetMetaState(string playerName, SetMetaFlag types, bool newValue, uint key, ApplyFlag flags)
+    public GlamourerApiEc SetMetaStateName(string playerName, MetaFlag types, bool newValue, uint key, ApplyFlag flags)
     {
-        var args = ApiHelpers.Args("Name", playerName, "Meta Types", types, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
+        var args = ApiHelpers.Args("Name", playerName, "MetaTypes", types, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
         if (types == 0)
             return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
 
-        var indices = types.ToIndices();
         var anyHuman = false;
         var anyFound = false;
         var anyUnlocked = false;
@@ -175,7 +174,7 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
 
             anyUnlocked = true;
             // update all MetaStates for this ActorState
-            foreach (var index in indices)
+            foreach (var index in types.ToIndices())
             {
                 stateManager.ChangeMetaState(state, index, newValue, ApplySettings.Manual);
                 ApiHelpers.Lock(state, key, flags);
