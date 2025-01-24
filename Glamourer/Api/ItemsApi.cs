@@ -150,6 +150,44 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         return GlamourerApiEc.Success;
     }
 
+    public GlamourerApiEc SetMetaStateName(string playerName, SetMetaFlag metaStates, bool newValue, uint key, ApplyFlag flags)
+    {
+        var args = ApiHelpers.Args("Name", playerName, "MetaStates", metaStates, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
+        if (metaStates == 0)
+            return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
+
+        var indices = metaStates.ToIndices();
+        var anyHuman = false;
+        var anyFound = false;
+        var anyUnlocked = false;
+        foreach (var state in helpers.FindStates(playerName))
+        {
+            anyFound = true;
+            if (!state.ModelData.IsHuman)
+                continue;
+
+            anyHuman = true;
+            if (!state.CanUnlock(key))
+                continue;
+
+            anyUnlocked = true;
+            // update all MetaStates for this ActorState
+            foreach (var index in indices)
+                stateManager.ChangeMetaState(state, index, newValue, ApplySettings.Manual);
+        }
+
+        if (!anyFound)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
+
+        if (!anyHuman)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotHuman, args);
+
+        if (!anyUnlocked)
+            return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
+
+        return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
     private bool ResolveItem(ApiEquipSlot apiSlot, ulong itemId, out EquipItem item)
     {
         var id   = (CustomItemId)itemId;
