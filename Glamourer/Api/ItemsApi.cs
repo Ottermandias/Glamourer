@@ -145,7 +145,10 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         // Grab MetaIndices from attached flags, and update the states.
         var indices = metaStates.ToIndices();
         foreach (var index in indices)
+        {
             stateManager.ChangeMetaState(state, index, newValue, ApplySettings.Manual);
+            ApiHelpers.Lock(state, key, flags);
+        }
 
         return GlamourerApiEc.Success;
     }
@@ -173,7 +176,10 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
             anyUnlocked = true;
             // update all MetaStates for this ActorState
             foreach (var index in indices)
+            {
                 stateManager.ChangeMetaState(state, index, newValue, ApplySettings.Manual);
+                ApiHelpers.Lock(state, key, flags);
+            }
         }
 
         if (!anyFound)
