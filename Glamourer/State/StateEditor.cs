@@ -43,7 +43,7 @@ public class StateEditor(
         Glamourer.Log.Verbose(
             $"Set model id in state {state.Identifier.Incognito(null)} from {old} to {modelId}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Model, source, state, actors, null);
-        StateUpdated.Invoke(StateUpdateType.ModelChange, actors);
+        StateUpdated.Invoke(StateFinalizationType.ModelChange, actors);
     }
 
     /// <inheritdoc/>
@@ -421,7 +421,7 @@ public class StateEditor(
             $"Applied design to {state.Identifier.Incognito(null)}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Design, state.Sources[MetaIndex.Wetness], state, actors, null); // FIXME: maybe later
         if(settings.SendStateUpdate)
-            StateUpdated.Invoke(StateUpdateType.DesignApplied, actors);
+            StateUpdated.Invoke(StateFinalizationType.DesignApplied, actors);
 
         return;
 

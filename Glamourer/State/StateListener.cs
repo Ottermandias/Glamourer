@@ -281,7 +281,7 @@ public class StateListener : IDisposable
 
         _objects.Update();
         if (_objects.TryGetValue(identifier, out var actors) && actors.Valid)
-            _stateUpdated.Invoke(StateUpdateType.Gearset, actors);
+            _stateUpdated.Invoke(StateFinalizationType.Gearset, actors);
     }
 
 

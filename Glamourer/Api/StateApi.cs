@@ -255,7 +255,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     public event Action<nint>?                    StateChanged;
     public event Action<IntPtr, StateChangeType>? StateChangedWithType;
-    public event Action<IntPtr, StateUpdateType>? StateUpdated;
+    public event Action<IntPtr, StateFinalizationType>? StateFinalized;
     public event Action<bool>?                    GPoseChanged;
 
     private void ApplyDesign(ActorState state, DesignBase design, uint key, ApplyFlag flags)
@@ -349,11 +349,11 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
                 StateChangedWithType.Invoke(actor.Address, type);
     }
 
-    private void OnStateUpdated(StateUpdateType type, ActorData actors)
+    private void OnStateUpdated(StateFinalizationType type, ActorData actors)
     {
         Glamourer.Log.Verbose($"[OnStateUpdated] State Updated with Type {type}. [Affecting {actors.ToLazyString("nothing")}.]");
-        if (StateUpdated != null)
+        if (StateFinalized != null)
             foreach (var actor in actors.Objects)
-                StateUpdated.Invoke(actor.Address, type);
+                StateFinalized.Invoke(actor.Address, type);
     }
 }

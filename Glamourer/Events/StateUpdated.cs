@@ -14,7 +14,7 @@ namespace Glamourer.Events;
 /// </list>
 /// </summary>
 public sealed class StateUpdated()
-    : EventWrapper<StateUpdateType, ActorData, StateUpdated.Priority>(nameof(StateUpdated))
+    : EventWrapper<StateFinalizationType, ActorData, StateUpdated.Priority>(nameof(StateUpdated))
 {
     public enum Priority
     {

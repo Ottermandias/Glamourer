@@ -279,7 +279,7 @@ public sealed class StateManager(
         StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
         // only invoke if we define this reset call as the final call in our state update.
         if(stateUpdate)
-            StateUpdated.Invoke(StateUpdateType.Revert, actors);
+            StateUpdated.Invoke(StateFinalizationType.Revert, actors);
     }
 
     public void ResetAdvancedState(ActorState state, StateSource source, uint key = 0)
@@ -306,7 +306,7 @@ public sealed class StateManager(
             $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
         // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
-        StateUpdated.Invoke(StateUpdateType.RevertAdvanced, actors);
+        StateUpdated.Invoke(StateFinalizationType.RevertAdvanced, actors);
     }
 
     public void ResetCustomize(ActorState state, StateSource source, uint key = 0)
@@ -325,7 +325,7 @@ public sealed class StateManager(
         Glamourer.Log.Verbose(
             $"Reset customization state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
-        StateUpdated.Invoke(StateUpdateType.RevertCustomize, actors);
+        StateUpdated.Invoke(StateFinalizationType.RevertCustomize, actors);
     }
 
     public void ResetEquip(ActorState state, StateSource source, uint key = 0)
@@ -376,7 +376,7 @@ public sealed class StateManager(
         Glamourer.Log.Verbose(
             $"Reset equipment state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
-        StateUpdated.Invoke(StateUpdateType.RevertEquipment, actors);
+        StateUpdated.Invoke(StateFinalizationType.RevertEquipment, actors);
     }
 
     public void ResetStateFixed(ActorState state, bool respectManualPalettes, uint key = 0)
@@ -469,7 +469,7 @@ public sealed class StateManager(
          || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
         StateChanged.Invoke(StateChangeType.Reapply, source, state, data, null);
         if(stateUpdate)
-            StateUpdated.Invoke(StateUpdateType.Reapply, data);
+            StateUpdated.Invoke(StateFinalizationType.Reapply, data);
     }
 
     /// <summary> Automation variant for reapply, to fire the correct StateUpdateType once reapplied. </summary>
@@ -490,7 +490,7 @@ public sealed class StateManager(
          || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
         StateChanged.Invoke(StateChangeType.Reapply, source, state, data, null);
         // invoke the automation update based on what reset is.
-        StateUpdated.Invoke(wasReset ? StateUpdateType.RevertAutomation : StateUpdateType.ReapplyAutomation, data);
+        StateUpdated.Invoke(wasReset ? StateFinalizationType.RevertAutomation : StateFinalizationType.ReapplyAutomation, data);
     }
 
     public void DeleteState(ActorIdentifier identifier)
