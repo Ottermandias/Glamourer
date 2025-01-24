@@ -48,6 +48,19 @@ public static class MetaExtensions
             _                       => (MetaIndex)byte.MaxValue,
         };
 
+    public static IEnumerable<MetaIndex> ToIndices(this SetMetaFlag index)
+    {
+        if (index.HasFlag(SetMetaFlag.Wetness))
+            yield return MetaIndex.Wetness;
+        if (index.HasFlag(SetMetaFlag.HatState))
+            yield return MetaIndex.HatState;
+        if (index.HasFlag(SetMetaFlag.VisorState))
+            yield return MetaIndex.VisorState;
+        if (index.HasFlag(SetMetaFlag.WeaponState))
+            yield return MetaIndex.WeaponState;
+    }
+
+
     public static MetaIndex ToIndex(this MetaFlag index)
         => index switch
         {
