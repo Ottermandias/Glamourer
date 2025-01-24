@@ -2,7 +2,6 @@ using Dalamud.Plugin;
 using Glamourer.Api.Api;
 using Glamourer.Api.Helpers;
 using OtterGui.Services;
-using System.Reflection.Emit;
 using Glamourer.Api.Enums;
 
 namespace Glamourer.Api;
@@ -52,6 +51,7 @@ public sealed class IpcProviders : IDisposable, IApiService
             IpcSubscribers.RevertToAutomationName.Provider(pi, api.State),
             IpcSubscribers.StateChanged.Provider(pi, api.State),
             IpcSubscribers.StateChangedWithType.Provider(pi, api.State),
+            IpcSubscribers.StateFinalized.Provider(pi, api.State),
             IpcSubscribers.GPoseChanged.Provider(pi, api.State),
         ];
         _initializedProvider.Invoke();

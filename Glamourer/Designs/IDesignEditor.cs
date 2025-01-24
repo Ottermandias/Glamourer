@@ -13,7 +13,8 @@ public readonly record struct ApplySettings(
     bool FromJobChange = false,
     bool UseSingleSource = false,
     bool MergeLinks = false,
-    bool ResetMaterials = false)
+    bool ResetMaterials = false,
+    bool IsFinal = false)
 {
     public static readonly ApplySettings Manual = new()
     {
@@ -24,6 +25,7 @@ public readonly record struct ApplySettings(
         UseSingleSource = false,
         MergeLinks      = false,
         ResetMaterials  = false,
+        IsFinal         = false,
     };
 
     public static readonly ApplySettings ManualWithLinks = new()
@@ -35,6 +37,7 @@ public readonly record struct ApplySettings(
         UseSingleSource = false,
         MergeLinks      = true,
         ResetMaterials  = false,
+        IsFinal         = false,
     };
 
     public static readonly ApplySettings Game = new()
@@ -46,6 +49,7 @@ public readonly record struct ApplySettings(
         UseSingleSource = false,
         MergeLinks      = false,
         ResetMaterials  = true,
+        IsFinal         = false,
     };
 }
 

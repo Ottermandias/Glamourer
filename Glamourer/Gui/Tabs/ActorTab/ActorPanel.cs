@@ -385,7 +385,7 @@ public class ActorPanel
     {
         if (ImGuiUtil.DrawDisabledButton("Revert to Game", Vector2.Zero, "Revert the character to its actual state in the game.",
                 _state!.IsLocked))
-            _stateManager.ResetState(_state!, StateSource.Manual);
+            _stateManager.ResetState(_state!, StateSource.Manual, isFinal: true);
 
         ImGui.SameLine();
 
@@ -394,7 +394,7 @@ public class ActorPanel
                 !_config.EnableAutoDesigns || _state!.IsLocked))
         {
             _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!, false, out var forcedRedraw);
-            _stateManager.ReapplyState(_actor, forcedRedraw, StateSource.Manual);
+            _stateManager.ReapplyAutomationState(_actor, forcedRedraw, false, StateSource.Manual);
         }
 
         ImGui.SameLine();
@@ -403,14 +403,14 @@ public class ActorPanel
                 !_config.EnableAutoDesigns || _state!.IsLocked))
         {
             _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!, true, out var forcedRedraw);
-            _stateManager.ReapplyState(_actor, forcedRedraw, StateSource.Manual);
+            _stateManager.ReapplyAutomationState(_actor, forcedRedraw, true, StateSource.Manual);
         }
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton("Reapply", Vector2.Zero,
                 "Try to reapply the configured state if something went wrong. Should generally not be necessary.",
                 _state!.IsLocked))
-            _stateManager.ReapplyState(_actor, false, StateSource.Manual);
+            _stateManager.ReapplyState(_actor, false, StateSource.Manual, true);
     }
 
     private void DrawApplyToSelf()
@@ -423,7 +423,7 @@ public class ActorPanel
 
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
             _stateManager.ApplyDesign(state, _converter.Convert(_state!, ApplicationRules.FromModifiers(_state!)),
-                ApplySettings.Manual);
+                ApplySettings.Manual with { IsFinal = true });
     }
 
     private void DrawApplyToTarget()
@@ -440,7 +440,7 @@ public class ActorPanel
 
         if (_stateManager.GetOrCreate(id, data.Objects[0], out var state))
             _stateManager.ApplyDesign(state, _converter.Convert(_state!, ApplicationRules.FromModifiers(_state!)),
-                ApplySettings.Manual);
+                ApplySettings.Manual with { IsFinal = true });
     }
 
 
@@ -467,7 +467,7 @@ public class ActorPanel
                 var text = ImGui.GetClipboardText();
                 var design = panel._converter.FromBase64(text, applyCustomize, applyGear, out _)
                  ?? throw new Exception("The clipboard did not contain valid data.");
-                panel._stateManager.ApplyDesign(panel._state!, design, ApplySettings.ManualWithLinks);
+                panel._stateManager.ApplyDesign(panel._state!, design, ApplySettings.ManualWithLinks with { IsFinal = true });
             }
             catch (Exception ex)
             {

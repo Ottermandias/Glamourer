@@ -196,7 +196,7 @@ public class NpcPanel
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
             var design = _converter.Convert(ToDesignData(), new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
-            _state.ApplyDesign(state, design, ApplySettings.Manual);
+            _state.ApplyDesign(state, design, ApplySettings.Manual with { IsFinal = true });
         }
     }
 
@@ -214,7 +214,7 @@ public class NpcPanel
         if (_state.GetOrCreate(id, data.Objects[0], out var state))
         {
             var design = _converter.Convert(ToDesignData(), new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
-            _state.ApplyDesign(state, design, ApplySettings.Manual);
+            _state.ApplyDesign(state, design, ApplySettings.Manual with { IsFinal = true });
         }
     }
 

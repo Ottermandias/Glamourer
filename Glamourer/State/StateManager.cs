@@ -18,19 +18,20 @@ using Penumbra.GameData.Interop;
 namespace Glamourer.State;
 
 public sealed class StateManager(
-    ActorManager _actors,
+    ActorManager actors,
     ItemManager items,
-    StateChanged @event,
+    StateChanged changeEvent,
+    StateFinalized finalizeEvent,
     StateApplier applier,
     InternalStateEditor editor,
-    HumanModelList _humans,
-    IClientState _clientState,
+    HumanModelList humans,
+    IClientState clientState,
     Configuration config,
     JobChangeState jobChange,
     DesignMerger merger,
     ModSettingApplier modApplier,
     GPoseService gPose)
-    : StateEditor(editor, applier, @event, jobChange, config, items, merger, modApplier, gPose),
+    : StateEditor(editor, applier, changeEvent, finalizeEvent, jobChange, config, items, merger, modApplier, gPose),
         IReadOnlyDictionary<ActorIdentifier, ActorState>
 {
     private readonly Dictionary<ActorIdentifier, ActorState> _states = [];
@@ -61,7 +62,7 @@ public sealed class StateManager(
 
     /// <inheritdoc cref="GetOrCreate(ActorIdentifier, Actor, out ActorState?)"/>
     public bool GetOrCreate(Actor actor, [NotNullWhen(true)] out ActorState? state)
-        => GetOrCreate(actor.GetIdentifier(_actors), actor, out state);
+        => GetOrCreate(actor.GetIdentifier(actors), actor, out state);
 
     /// <summary> Try to obtain or create a new state for an existing actor. Returns false if no state could be created. </summary>
     public unsafe bool GetOrCreate(ActorIdentifier identifier, Actor actor, [NotNullWhen(true)] out ActorState? state)
@@ -81,7 +82,7 @@ public sealed class StateManager(
                 ModelData     = FromActor(actor, true,  false),
                 BaseData      = FromActor(actor, false, false),
                 LastJob       = (byte)(actor.IsCharacter ? actor.AsCharacter->CharacterData.ClassJob : 0),
-                LastTerritory = _clientState.TerritoryType,
+                LastTerritory = clientState.TerritoryType,
             };
             // state.Identifier is owned.
             _states.Add(state.Identifier, state);
@@ -114,7 +115,7 @@ public sealed class StateManager(
         // Model ID is only unambiguously contained in the game object.
         // The draw object only has the object type.
         // TODO reverse search model data to get model id from model.
-        if (!_humans.IsHuman((uint)actor.AsCharacter->ModelContainer.ModelCharaId))
+        if (!humans.IsHuman((uint)actor.AsCharacter->ModelContainer.ModelCharaId))
         {
             ret.LoadNonHuman((uint)actor.AsCharacter->ModelContainer.ModelCharaId, *(CustomizeArray*)&actor.AsCharacter->DrawData.CustomizeData,
                 (nint)Unsafe.AsPointer(ref actor.AsCharacter->DrawData.EquipmentModelIds[0]));
@@ -235,7 +236,7 @@ public sealed class StateManager(
     public void TurnHuman(ActorState state, StateSource source, uint key = 0)
         => ChangeModelId(state, 0, CustomizeArray.Default, nint.Zero, source, key);
 
-    public void ResetState(ActorState state, StateSource source, uint key = 0)
+    public void ResetState(ActorState state, StateSource source, uint key = 0, bool isFinal = false)
     {
         if (!state.Unlock(key))
             return;
@@ -276,6 +277,9 @@ public sealed class StateManager(
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
+        // only invoke if we define this reset call as the final call in our state update.
+        if(isFinal)
+            StateFinalized.Invoke(StateFinalizationType.Revert, actors);
     }
 
     public void ResetAdvancedState(ActorState state, StateSource source, uint key = 0)
@@ -301,6 +305,8 @@ public sealed class StateManager(
         Glamourer.Log.Verbose(
             $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
+        // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
+        StateFinalized.Invoke(StateFinalizationType.RevertAdvanced, actors);
     }
 
     public void ResetCustomize(ActorState state, StateSource source, uint key = 0)
@@ -318,6 +324,8 @@ public sealed class StateManager(
             actors = Applier.ChangeCustomize(state, true);
         Glamourer.Log.Verbose(
             $"Reset customization state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
+        // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
+        StateFinalized.Invoke(StateFinalizationType.RevertCustomize, actors);
     }
 
     public void ResetEquip(ActorState state, StateSource source, uint key = 0)
@@ -367,6 +375,8 @@ public sealed class StateManager(
 
         Glamourer.Log.Verbose(
             $"Reset equipment state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
+        // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
+        StateFinalized.Invoke(StateFinalizationType.RevertEquipment, actors);
     }
 
     public void ResetStateFixed(ActorState state, bool respectManualPalettes, uint key = 0)
@@ -443,21 +453,44 @@ public sealed class StateManager(
         }
     }
 
-    public void ReapplyState(Actor actor, bool forceRedraw, StateSource source)
+    public void ReapplyState(Actor actor, bool forceRedraw, StateSource source, bool isFinal = false)
     {
         if (!GetOrCreate(actor, out var state))
             return;
 
-        ReapplyState(actor, state, forceRedraw, source);
+        ReapplyState(actor, state, forceRedraw, source, isFinal);
     }
 
-    public void ReapplyState(Actor actor, ActorState state, bool forceRedraw, StateSource source)
+    public void ReapplyState(Actor actor, ActorState state, bool forceRedraw, StateSource source, bool isFinal)
     {
         var data = Applier.ApplyAll(state,
             forceRedraw
          || !actor.Model.IsHuman
          || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
         StateChanged.Invoke(StateChangeType.Reapply, source, state, data, null);
+        if(isFinal)
+            StateFinalized.Invoke(StateFinalizationType.Reapply, data);
+    }
+
+    /// <summary> Automation variant for reapply, to fire the correct StateUpdateType once reapplied. </summary>
+    public void ReapplyAutomationState(Actor actor, bool forceRedraw, bool wasReset, StateSource source)
+    {
+        if (!GetOrCreate(actor, out var state))
+            return;
+
+        ReapplyAutomationState(actor, state, forceRedraw, wasReset, source);
+    }
+
+    /// <summary> Automation variant for reapply, to fire the correct StateUpdateType once reapplied. </summary>
+    public void ReapplyAutomationState(Actor actor, ActorState state, bool forceRedraw, bool wasReset, StateSource source)
+    {
+        var data = Applier.ApplyAll(state,
+            forceRedraw
+         || !actor.Model.IsHuman
+         || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
+        StateChanged.Invoke(StateChangeType.Reapply, source, state, data, null);
+        // invoke the automation update based on what reset is.
+        StateFinalized.Invoke(wasReset ? StateFinalizationType.RevertAutomation : StateFinalizationType.ReapplyAutomation, data);
     }
 
     public void DeleteState(ActorIdentifier identifier)

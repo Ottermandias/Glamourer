@@ -88,7 +88,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
                     _actions.Enqueue((state, () =>
                     {
                         foreach (var actor in actors.Objects)
-                            _state.ReapplyState(actor, state, false, StateSource.IpcManual);
+                            _state.ReapplyState(actor, state, false, StateSource.IpcManual, true);
                         Glamourer.Log.Debug($"Automatically applied mod settings of type {type} to {id.Incognito(null)}.");
                     }, WaitFrames));
                 }
@@ -108,7 +108,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
             _frame = currentFrame;
             _framework.RunOnFrameworkThread(() =>
             {
-                _state.ReapplyState(_objects.Player, false, StateSource.IpcManual);
+                _state.ReapplyState(_objects.Player, false, StateSource.IpcManual, true);
                 Glamourer.Log.Debug(
                     $"Automatically applied mod settings of type {type} to {_objects.PlayerData.Identifier.Incognito(null)} (Local Player).");
             });

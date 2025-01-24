@@ -79,7 +79,7 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
             if (ImGuiUtil.DrawDisabledButton("Apply to Player", Vector2.Zero, string.Empty, !enabled))
             {
                 var design = CreateDesign(plate);
-                _state.ApplyDesign(state!, design, ApplySettings.Manual);
+                _state.ApplyDesign(state!, design, ApplySettings.Manual with { IsFinal = true });
             }
 
             using (ImRaii.Group())

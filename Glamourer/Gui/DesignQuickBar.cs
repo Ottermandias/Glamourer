@@ -183,7 +183,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         }
 
         using var _ = design!.TemporarilyRestrictApplication(ApplicationCollection.FromKeys());
-        _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks);
+        _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with { IsFinal = true });
     }
 
     private void DrawRevertButton(Vector2 buttonSize)
@@ -213,7 +213,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, tooltip, available);
         ImGui.SameLine();
         if (clicked)
-            _stateManager.ResetState(state!, StateSource.Manual);
+            _stateManager.ResetState(state!, StateSource.Manual, isFinal: true);
     }
 
     private void DrawRevertAutomationButton(Vector2 buttonSize)
@@ -252,7 +252,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         foreach (var actor in data.Objects)
         {
             _autoDesignApplier.ReapplyAutomation(actor, id, state!, true, out var forcedRedraw);
-            _stateManager.ReapplyState(actor, forcedRedraw, StateSource.Manual);
+            _stateManager.ReapplyAutomationState(actor, forcedRedraw, true, StateSource.Manual);
         }
     }
 
@@ -292,7 +292,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         foreach (var actor in data.Objects)
         {
             _autoDesignApplier.ReapplyAutomation(actor, id, state!, false, out var forcedRedraw);
-            _stateManager.ReapplyState(actor, forcedRedraw, StateSource.Manual);
+            _stateManager.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Manual);
         }
     }
 

@@ -329,7 +329,7 @@ public class CommandService : IDisposable, IApiService
                 if (_stateManager.GetOrCreate(identifier, actor, out var state))
                 {
                     _autoDesignApplier.ReapplyAutomation(actor, identifier, state, revert, out var forcedRedraw);
-                    _stateManager.ReapplyState(actor, forcedRedraw, StateSource.Manual);
+                    _stateManager.ReapplyAutomationState(actor, forcedRedraw, revert, StateSource.Manual);
                 }
             }
         }
@@ -378,7 +378,7 @@ public class CommandService : IDisposable, IApiService
                 return true;
 
             foreach (var actor in data.Objects)
-                _stateManager.ReapplyState(actor, false, StateSource.Manual);
+                _stateManager.ReapplyState(actor, false, StateSource.Manual, true);
         }
 
 
@@ -668,7 +668,7 @@ public class CommandService : IDisposable, IApiService
             if (!_objects.TryGetValue(identifier, out var actors))
             {
                 if (_stateManager.TryGetValue(identifier, out var state))
-                    _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks);
+                    _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with { IsFinal = true });
             }
             else
             {
@@ -677,7 +677,7 @@ public class CommandService : IDisposable, IApiService
                     if (_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
                     {
                         ApplyModSettings(design, actor, applyMods);
-                        _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks);
+                        _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with { IsFinal = true });
                     }
                 }
             }

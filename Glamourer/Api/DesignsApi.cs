@@ -33,7 +33,7 @@ public class DesignsApi(ApiHelpers helpers, DesignManager designs, StateManager 
     {
         var once = (flags & ApplyFlag.Once) != 0;
         var settings = new ApplySettings(Source: once ? StateSource.IpcManual : StateSource.IpcFixed, Key: key, MergeLinks: true,
-            ResetMaterials: !once && key != 0);
+            ResetMaterials: !once && key != 0, IsFinal: true);
 
         using var restrict = ApiHelpers.Restrict(design, flags);
         stateManager.ApplyDesign(state, design, settings);

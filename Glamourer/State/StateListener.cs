@@ -14,6 +14,7 @@ using Glamourer.GameData;
 using Penumbra.GameData.DataContainers;
 using Glamourer.Designs;
 using Penumbra.GameData.Interop;
+using Glamourer.Api.Enums;
 using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.State;
@@ -35,10 +36,12 @@ public class StateListener : IDisposable
     private readonly PenumbraService           _penumbra;
     private readonly EquipSlotUpdating         _equipSlotUpdating;
     private readonly BonusSlotUpdating         _bonusSlotUpdating;
+    private readonly GearsetDataLoaded         _gearsetDataLoaded;
     private readonly WeaponLoading             _weaponLoading;
     private readonly HeadGearVisibilityChanged _headGearVisibility;
     private readonly VisorStateChanged         _visorState;
     private readonly WeaponVisibilityChanged   _weaponVisibility;
+    private readonly StateFinalized              _stateFinalized;
     private readonly AutoDesignApplier         _autoDesignApplier;
     private readonly FunModule                 _funModule;
     private readonly HumanModelList            _humans;
@@ -56,11 +59,11 @@ public class StateListener : IDisposable
     private ActorState?     _customizeState;
 
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorManager actors, Configuration config,
-        EquipSlotUpdating equipSlotUpdating, WeaponLoading weaponLoading, VisorStateChanged visorState,
+        EquipSlotUpdating equipSlotUpdating, GearsetDataLoaded gearsetDataLoaded, WeaponLoading weaponLoading, VisorStateChanged visorState,
         WeaponVisibilityChanged weaponVisibility, HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier,
         FunModule funModule, HumanModelList humans, StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects,
         GPoseService gPose, ChangeCustomizeService changeCustomizeService, CustomizeService customizations, ICondition condition,
-        CrestService crestService, BonusSlotUpdating bonusSlotUpdating)
+        CrestService crestService, BonusSlotUpdating bonusSlotUpdating, StateFinalized stateFinalized)
     {
         _manager                = manager;
         _items                  = items;
@@ -68,6 +71,7 @@ public class StateListener : IDisposable
         _actors                 = actors;
         _config                 = config;
         _equipSlotUpdating      = equipSlotUpdating;
+        _gearsetDataLoaded      = gearsetDataLoaded;
         _weaponLoading          = weaponLoading;
         _visorState             = visorState;
         _weaponVisibility       = weaponVisibility;
@@ -84,6 +88,7 @@ public class StateListener : IDisposable
         _condition              = condition;
         _crestService           = crestService;
         _bonusSlotUpdating      = bonusSlotUpdating;
+        _stateFinalized           = stateFinalized;
         Subscribe();
     }
 
@@ -220,7 +225,7 @@ public class StateListener : IDisposable
         // then we do not want to use our restricted gear protection
         // since we assume the player has that gear modded to availability.
         var locked = false;
-        if (actor.Identifier(_actors, out var identifier)
+        if (actor.Identifier(_actors, out var identifier) 
          && _manager.TryGetValue(identifier, out var state))
         {
             HandleEquipSlot(actor, state, slot, ref armor);
@@ -263,6 +268,22 @@ public class StateListener : IDisposable
                 case UpdateState.Transformed: break;
             }
     }
+
+    private void OnGearsetDataLoaded(Model model)
+    {
+        var actor = _penumbra.GameObjectFromDrawObject(model);
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
+            return;
+
+        // ensure actor and state are valid.
+        if (!actor.Identifier(_actors, out var identifier))
+            return;
+
+        _objects.Update();
+        if (_objects.TryGetValue(identifier, out var actors) && actors.Valid)
+            _stateFinalized.Invoke(StateFinalizationType.Gearset, actors);
+    }
+
 
     private void OnMovedEquipment((EquipSlot, uint, StainIds)[] items)
     {
@@ -787,6 +808,7 @@ public class StateListener : IDisposable
         _penumbra.CreatedCharacterBase  += OnCreatedCharacterBase;
         _equipSlotUpdating.Subscribe(OnEquipSlotUpdating, EquipSlotUpdating.Priority.StateListener);
         _bonusSlotUpdating.Subscribe(OnBonusSlotUpdating, BonusSlotUpdating.Priority.StateListener);
+        _gearsetDataLoaded.Subscribe(OnGearsetDataLoaded, GearsetDataLoaded.Priority.StateListener);
         _movedEquipment.Subscribe(OnMovedEquipment, MovedEquipment.Priority.StateListener);
         _weaponLoading.Subscribe(OnWeaponLoading, WeaponLoading.Priority.StateListener);
         _visorState.Subscribe(OnVisorChange, VisorStateChanged.Priority.StateListener);
@@ -804,6 +826,7 @@ public class StateListener : IDisposable
         _penumbra.CreatedCharacterBase  -= OnCreatedCharacterBase;
         _equipSlotUpdating.Unsubscribe(OnEquipSlotUpdating);
         _bonusSlotUpdating.Unsubscribe(OnBonusSlotUpdating);
+        _gearsetDataLoaded.Unsubscribe(OnGearsetDataLoaded);
         _movedEquipment.Unsubscribe(OnMovedEquipment);
         _weaponLoading.Unsubscribe(OnWeaponLoading);
         _visorState.Unsubscribe(OnVisorChange);

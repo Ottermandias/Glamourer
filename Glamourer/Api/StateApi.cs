@@ -23,6 +23,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     private readonly AutoDesignApplier _autoDesigns;
     private readonly ObjectManager     _objects;
     private readonly StateChanged      _stateChanged;
+    private readonly StateFinalized    _stateFinalized;
     private readonly GPoseService      _gPose;
 
     public StateApi(ApiHelpers helpers,
@@ -32,23 +33,27 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         AutoDesignApplier autoDesigns,
         ObjectManager objects,
         StateChanged stateChanged,
+        StateFinalized stateFinalized,
         GPoseService gPose)
     {
-        _helpers      = helpers;
-        _stateManager = stateManager;
-        _converter    = converter;
-        _config       = config;
-        _autoDesigns  = autoDesigns;
-        _objects      = objects;
-        _stateChanged = stateChanged;
-        _gPose        = gPose;
+        _helpers        = helpers;
+        _stateManager   = stateManager;
+        _converter      = converter;
+        _config         = config;
+        _autoDesigns    = autoDesigns;
+        _objects        = objects;
+        _stateChanged   = stateChanged;
+        _stateFinalized = stateFinalized;
+        _gPose          = gPose;
         _stateChanged.Subscribe(OnStateChanged, Events.StateChanged.Priority.GlamourerIpc);
-        _gPose.Subscribe(OnGPoseChange, GPoseService.Priority.GlamourerIpc);
+        _stateFinalized.Subscribe(OnStateFinalized, Events.StateFinalized.Priority.StateApi);
+        _gPose.Subscribe(OnGPoseChange, GPoseService.Priority.StateApi);
     }
 
     public void Dispose()
     {
         _stateChanged.Unsubscribe(OnStateChanged);
+        _stateFinalized.Unsubscribe(OnStateFinalized);
         _gPose.Unsubscribe(OnGPoseChange);
     }
 
@@ -248,15 +253,16 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
-    public event Action<nint>?                    StateChanged;
-    public event Action<IntPtr, StateChangeType>? StateChangedWithType;
-    public event Action<bool>?                    GPoseChanged;
+    public event Action<nint>?                          StateChanged;
+    public event Action<IntPtr, StateChangeType>?       StateChangedWithType;
+    public event Action<IntPtr, StateFinalizationType>? StateFinalized;
+    public event Action<bool>?                          GPoseChanged;
 
     private void ApplyDesign(ActorState state, DesignBase design, uint key, ApplyFlag flags)
     {
         var once = (flags & ApplyFlag.Once) != 0;
         var settings = new ApplySettings(Source: once ? StateSource.IpcManual : StateSource.IpcFixed, Key: key, MergeLinks: true,
-            ResetMaterials: !once && key != 0);
+            ResetMaterials: !once && key != 0, IsFinal: true);
         _stateManager.ApplyDesign(state, design, settings);
         ApiHelpers.Lock(state, key, flags);
     }
@@ -296,7 +302,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     {
         var source = (flags & ApplyFlag.Once) != 0 ? StateSource.IpcManual : StateSource.IpcFixed;
         _autoDesigns.ReapplyAutomation(actor, state.Identifier, state, true, out var forcedRedraw);
-        _stateManager.ReapplyState(actor, state, forcedRedraw, source);
+        _stateManager.ReapplyAutomationState(actor, state, forcedRedraw, true, source);
         ApiHelpers.Lock(state, key, flags);
     }
 
@@ -333,6 +339,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     private void OnStateChanged(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, ITransaction? _5)
     {
+        Glamourer.Log.Excessive($"[OnStateChanged] State Changed with Type {type} [Affecting {actors.ToLazyString("nothing")}.]");
         if (StateChanged != null)
             foreach (var actor in actors.Objects)
                 StateChanged.Invoke(actor.Address);
@@ -340,5 +347,13 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         if (StateChangedWithType != null)
             foreach (var actor in actors.Objects)
                 StateChangedWithType.Invoke(actor.Address, type);
+    }
+
+    private void OnStateFinalized(StateFinalizationType type, ActorData actors)
+    {
+        Glamourer.Log.Verbose($"[OnStateUpdated] State Updated with Type {type}. [Affecting {actors.ToLazyString("nothing")}.]");
+        if (StateFinalized != null)
+            foreach (var actor in actors.Objects)
+                StateFinalized.Invoke(actor.Address, type);
     }
 }
