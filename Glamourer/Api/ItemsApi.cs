@@ -127,10 +127,10 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
-    public GlamourerApiEc SetMetaState(int objectIndex, SetMetaFlag metaStates, bool newValue, uint key, ApplyFlag flags)
+    public GlamourerApiEc SetMeta(int objectIndex, SetMetaFlag types, bool newValue, uint key, ApplyFlag flags)
     {
-        var args = ApiHelpers.Args("Index", objectIndex, "MetaStates", metaStates, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
-        if (metaStates == 0)
+        var args = ApiHelpers.Args("Index", objectIndex, "Meta Types", types, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
+        if (types == 0)
             return ApiHelpers.Return(GlamourerApiEc.InvalidState, args);
 
         if (helpers.FindState(objectIndex) is not { } state)
@@ -143,7 +143,7 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
             return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
 
         // Grab MetaIndices from attached flags, and update the states.
-        var indices = metaStates.ToIndices();
+        var indices = types.ToIndices();
         foreach (var index in indices)
         {
             stateManager.ChangeMetaState(state, index, newValue, ApplySettings.Manual);
@@ -153,13 +153,13 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         return GlamourerApiEc.Success;
     }
 
-    public GlamourerApiEc SetMetaStateName(string playerName, SetMetaFlag metaStates, bool newValue, uint key, ApplyFlag flags)
+    public GlamourerApiEc SetMetaState(string playerName, SetMetaFlag types, bool newValue, uint key, ApplyFlag flags)
     {
-        var args = ApiHelpers.Args("Name", playerName, "MetaStates", metaStates, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
-        if (metaStates == 0)
+        var args = ApiHelpers.Args("Name", playerName, "Meta Types", types, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
+        if (types == 0)
             return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
 
-        var indices = metaStates.ToIndices();
+        var indices = types.ToIndices();
         var anyHuman = false;
         var anyFound = false;
         var anyUnlocked = false;
