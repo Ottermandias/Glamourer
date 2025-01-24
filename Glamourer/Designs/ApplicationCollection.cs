@@ -1,3 +1,4 @@
+using Glamourer.Api.Enums;
 using Glamourer.GameData;
 using ImGuiNET;
 using Penumbra.GameData.Enums;

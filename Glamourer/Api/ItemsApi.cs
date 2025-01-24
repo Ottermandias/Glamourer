@@ -96,9 +96,9 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
         if (!ResolveBonusItem(slot, bonusItemId, out var item))
             return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
 
-        var settings    = new ApplySettings(Source: flags.HasFlag(ApplyFlag.Once) ? StateSource.IpcManual : StateSource.IpcFixed, Key: key);
-        var anyHuman    = false;
-        var anyFound    = false;
+        var settings = new ApplySettings(Source: flags.HasFlag(ApplyFlag.Once) ? StateSource.IpcManual : StateSource.IpcFixed, Key: key);
+        var anyHuman = false;
+        var anyFound = false;
         var anyUnlocked = false;
         foreach (var state in helpers.FindStates(playerName))
         {
@@ -113,6 +113,72 @@ public class ItemsApi(ApiHelpers helpers, ItemManager itemManager, StateManager 
             anyUnlocked = true;
             stateManager.ChangeBonusItem(state, item.Type.ToBonus(), item, settings);
             ApiHelpers.Lock(state, key, flags);
+        }
+
+        if (!anyFound)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
+
+        if (!anyHuman)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotHuman, args);
+
+        if (!anyUnlocked)
+            return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
+
+        return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
+    public GlamourerApiEc SetMetaState(int objectIndex, MetaFlag types, bool newValue, uint key, ApplyFlag flags)
+    {
+        var args = ApiHelpers.Args("Index", objectIndex, "MetaTypes", types, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
+        if (types == 0)
+            return ApiHelpers.Return(GlamourerApiEc.InvalidState, args);
+
+        if (helpers.FindState(objectIndex) is not { } state)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
+
+        if (!state.ModelData.IsHuman)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotHuman, args);
+
+        if (!state.CanUnlock(key))
+            return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
+
+        // Grab MetaIndices from attached flags, and update the states.
+        var indices = types.ToIndices();
+        foreach (var index in indices)
+        {
+            stateManager.ChangeMetaState(state, index, newValue, ApplySettings.Manual);
+            ApiHelpers.Lock(state, key, flags);
+        }
+
+        return GlamourerApiEc.Success;
+    }
+
+    public GlamourerApiEc SetMetaStateName(string playerName, MetaFlag types, bool newValue, uint key, ApplyFlag flags)
+    {
+        var args = ApiHelpers.Args("Name", playerName, "MetaTypes", types, "NewValue", newValue, "Key", key, "ApplyFlags", flags);
+        if (types == 0)
+            return ApiHelpers.Return(GlamourerApiEc.ItemInvalid, args);
+
+        var anyHuman = false;
+        var anyFound = false;
+        var anyUnlocked = false;
+        foreach (var state in helpers.FindStates(playerName))
+        {
+            anyFound = true;
+            if (!state.ModelData.IsHuman)
+                continue;
+
+            anyHuman = true;
+            if (!state.CanUnlock(key))
+                continue;
+
+            anyUnlocked = true;
+            // update all MetaStates for this ActorState
+            foreach (var index in types.ToIndices())
+            {
+                stateManager.ChangeMetaState(state, index, newValue, ApplySettings.Manual);
+                ApiHelpers.Lock(state, key, flags);
+            }
         }
 
         if (!anyFound)

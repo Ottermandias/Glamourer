@@ -1,4 +1,5 @@
-﻿using Glamourer.State;
+﻿using Glamourer.Api.Enums;
+using Glamourer.State;
 
 namespace Glamourer.Designs;
 
@@ -9,15 +10,6 @@ public enum MetaIndex
     VisorState  = StateIndex.MetaVisorState,
     WeaponState = StateIndex.MetaWeaponState,
     ModelId     = StateIndex.MetaModelId,
-}
-
-[Flags]
-public enum MetaFlag : byte
-{
-    Wetness     = 0x01,
-    HatState    = 0x02,
-    VisorState  = 0x04,
-    WeaponState = 0x08,
 }
 
 public static class MetaExtensions
@@ -44,8 +36,20 @@ public static class MetaExtensions
             MetaFlag.HatState    => MetaIndex.HatState,
             MetaFlag.VisorState  => MetaIndex.VisorState,
             MetaFlag.WeaponState => MetaIndex.WeaponState,
-            _                    => (MetaIndex)byte.MaxValue,
+            _                       => (MetaIndex)byte.MaxValue,
         };
+
+    public static IEnumerable<MetaIndex> ToIndices(this MetaFlag index)
+    {
+        if (index.HasFlag(MetaFlag.Wetness))
+            yield return MetaIndex.Wetness;
+        if (index.HasFlag(MetaFlag.HatState))
+            yield return MetaIndex.HatState;
+        if (index.HasFlag(MetaFlag.VisorState))
+            yield return MetaIndex.VisorState;
+        if (index.HasFlag(MetaFlag.WeaponState))
+            yield return MetaIndex.WeaponState;
+    }
 
     public static string ToName(this MetaIndex index)
         => index switch

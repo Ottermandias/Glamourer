@@ -1,4 +1,5 @@
-﻿using Glamourer.Designs;
+﻿using Glamourer.Api.Enums;
+using Glamourer.Designs;
 using Glamourer.State;
 using Penumbra.GameData.Enums;
 
