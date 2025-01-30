@@ -224,7 +224,7 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs already reset temporary settings."
             : $"Make all {_numDesigns} selected designs reset temporary settings. Changes {diff} designs.";
-        if (ImUtf8.ButtonEx("Set Reset Settings"u8, tt, buttonWidth, diff == 0))
+        if (ImUtf8.ButtonEx("Set Reset Temp. Settings"u8, tt, buttonWidth, diff == 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeResetTemporarySettings(design.Value, true);
 
@@ -232,7 +232,7 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
         tt = _numDesignsResetSettings == 0
             ? $"None of the {_numDesigns} selected designs reset temporary settings."
             : $"Stop all {_numDesigns} selected designs from resetting temporary settings. Changes {_numDesignsResetSettings} designs.";
-        if (ImUtf8.ButtonEx("Remove Reset Settings"u8, tt, buttonWidth, _numDesignsResetSettings == 0))
+        if (ImUtf8.ButtonEx("Remove Reset Temp. Settings"u8, tt, buttonWidth, _numDesignsResetSettings == 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeResetTemporarySettings(design.Value, false);
         ImGui.Separator();
