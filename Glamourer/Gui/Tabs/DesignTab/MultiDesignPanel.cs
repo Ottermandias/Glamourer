@@ -25,6 +25,10 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
         var offset = DrawMultiTagger(width);
         DrawMultiColor(width, offset);
         DrawMultiQuickDesignBar(offset);
+        DrawMultiLock(offset);
+        DrawMultiResetSettings(offset);
+        DrawMultiResetDyes(offset);
+        DrawMultiForceRedraw(offset);
     }
 
     private void DrawCounts(Vector2 treeNodePos)
@@ -43,19 +47,46 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
         ImGui.SetCursorPos(startPos);
     }
 
+    private void ResetCounts()
+    {
+        _numQuickDesignEnabled   = 0;
+        _numDesignsLocked        = 0;
+        _numDesignsForcedRedraw  = 0;
+        _numDesignsResetSettings = 0;
+        _numDesignsResetDyes     = 0;
+    }
+
+    private bool CountLeaves(DesignFileSystem.IPath path)
+    {
+        if (path is not DesignFileSystem.Leaf l)
+            return false;
+
+        if (l.Value.QuickDesign)
+            ++_numQuickDesignEnabled;
+        if (l.Value.WriteProtected())
+            ++_numDesignsLocked;
+        if (l.Value.ResetTemporarySettings)
+            ++_numDesignsResetSettings;
+        if (l.Value.ForcedRedraw)
+            ++_numDesignsForcedRedraw;
+        if (l.Value.ResetAdvancedDyes)
+            ++_numDesignsResetDyes;
+        return true;
+    }
+
     private int DrawDesignList()
     {
+        ResetCounts();
         using var tree = ImUtf8.TreeNode("Currently Selected Objects"u8, ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.NoTreePushOnOpen);
         ImGui.Separator();
         if (!tree)
-            return selector.SelectedPaths.Count(l => l is DesignFileSystem.Leaf);
+            return selector.SelectedPaths.Count(CountLeaves);
 
         var sizeType             = new Vector2(ImGui.GetFrameHeight());
         var availableSizePercent = (ImGui.GetContentRegionAvail().X - sizeType.X - 4 * ImGui.GetStyle().CellPadding.X) / 100;
         var sizeMods             = availableSizePercent * 35;
         var sizeFolders          = availableSizePercent * 65;
 
-        _numQuickDesignEnabled = 0;
         var numDesigns = 0;
         using (var table = ImUtf8.Table("mods"u8, 3, ImGuiTableFlags.RowBg))
         {
@@ -81,12 +112,8 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
                 ImUtf8.DrawFrameColumn(text);
                 ImUtf8.DrawFrameColumn(fullName);
 
-                if (path is not DesignFileSystem.Leaf l2)
-                    continue;
-
-                ++numDesigns;
-                if (l2.Value.QuickDesign)
-                    ++_numQuickDesignEnabled;
+                if (CountLeaves(path))
+                    ++numDesigns;
             }
         }
 
@@ -96,6 +123,10 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
 
     private          string              _tag = string.Empty;
     private          int                 _numQuickDesignEnabled;
+    private          int                 _numDesignsLocked;
+    private          int                 _numDesignsForcedRedraw;
+    private          int                 _numDesignsResetSettings;
+    private          int                 _numDesignsResetDyes;
     private          int                 _numDesigns;
     private readonly List<Design>        _addDesigns    = [];
     private readonly List<(Design, int)> _removeDesigns = [];
@@ -158,6 +189,98 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
         if (ImUtf8.ButtonEx("Hide Selected Designs in QDB"u8, tt, buttonWidth, _numQuickDesignEnabled == 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetQuickDesign(design.Value, false);
+        ImGui.Separator();
+    }
+
+    private void DrawMultiLock(float offset)
+    {
+        ImUtf8.TextFrameAligned("Multi Lock:"u8);
+        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
+        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        var diff        = _numDesigns - _numDesignsLocked;
+        var tt = diff == 0
+            ? $"All {_numDesigns} selected designs are already write protected."
+            : $"Write-protect all {_numDesigns} designs. Changes {diff} designs.";
+        if (ImUtf8.ButtonEx("Turn Write-Protected"u8, tt, buttonWidth, diff == 0))
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+                editor.SetWriteProtection(design.Value, true);
+
+        ImGui.SameLine();
+        tt = _numDesignsLocked == 0
+            ? $"None of the {_numDesigns} selected designs are write-protected."
+            : $"Remove the write protection of the {_numDesigns} selected designs. Changes {_numDesignsLocked} designs.";
+        if (ImUtf8.ButtonEx("Remove Write-Protection"u8, tt, buttonWidth, _numDesignsLocked == 0))
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+                editor.SetWriteProtection(design.Value, false);
+        ImGui.Separator();
+    }
+
+    private void DrawMultiResetSettings(float offset)
+    {
+        ImUtf8.TextFrameAligned("Settings:"u8);
+        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
+        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        var diff        = _numDesigns - _numDesignsResetSettings;
+        var tt = diff == 0
+            ? $"All {_numDesigns} selected designs already reset temporary settings."
+            : $"Make all {_numDesigns} selected designs reset temporary settings. Changes {diff} designs.";
+        if (ImUtf8.ButtonEx("Set Reset Settings"u8, tt, buttonWidth, diff == 0))
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+                editor.ChangeResetTemporarySettings(design.Value, true);
+
+        ImGui.SameLine();
+        tt = _numDesignsResetSettings == 0
+            ? $"None of the {_numDesigns} selected designs reset temporary settings."
+            : $"Stop all {_numDesigns} selected designs from resetting temporary settings. Changes {_numDesignsResetSettings} designs.";
+        if (ImUtf8.ButtonEx("Remove Reset Settings"u8, tt, buttonWidth, _numDesignsResetSettings == 0))
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+                editor.ChangeResetTemporarySettings(design.Value, false);
+        ImGui.Separator();
+    }
+
+    private void DrawMultiResetDyes(float offset)
+    {
+        ImUtf8.TextFrameAligned("Adv. Dyes:"u8);
+        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
+        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        var diff        = _numDesigns - _numDesignsResetDyes;
+        var tt = diff == 0
+            ? $"All {_numDesigns} selected designs already reset advanced dyes."
+            : $"Make all {_numDesigns} selected designs reset advanced dyes. Changes {diff} designs.";
+        if (ImUtf8.ButtonEx("Set Reset Dyes"u8, tt, buttonWidth, diff == 0))
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+                editor.ChangeResetAdvancedDyes(design.Value, true);
+
+        ImGui.SameLine();
+        tt = _numDesignsLocked == 0
+            ? $"None of the {_numDesigns} selected designs reset advanced dyes."
+            : $"Stop all {_numDesigns} selected designs from resetting advanced dyes. Changes {_numDesignsResetDyes} designs.";
+        if (ImUtf8.ButtonEx("Remove Reset Dyes"u8, tt, buttonWidth, _numDesignsResetDyes == 0))
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+                editor.ChangeResetAdvancedDyes(design.Value, false);
+        ImGui.Separator();
+    }
+
+    private void DrawMultiForceRedraw(float offset)
+    {
+        ImUtf8.TextFrameAligned("Redrawing:"u8);
+        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
+        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        var diff        = _numDesigns - _numDesignsForcedRedraw;
+        var tt = diff == 0
+            ? $"All {_numDesigns} selected designs already force redraws."
+            : $"Make all {_numDesigns} designs force redraws. Changes {diff} designs.";
+        if (ImUtf8.ButtonEx("Force Redraws"u8, tt, buttonWidth, diff == 0))
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+                editor.ChangeForcedRedraw(design.Value, true);
+
+        ImGui.SameLine();
+        tt = _numDesignsLocked == 0
+            ? $"None of the {_numDesigns} selected designs force redraws."
+            : $"Stop all {_numDesigns} selected designs from forcing redraws. Changes {_numDesignsForcedRedraw} designs.";
+        if (ImUtf8.ButtonEx("Remove Forced Redraws"u8, tt, buttonWidth, _numDesignsForcedRedraw == 0))
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+                editor.ChangeForcedRedraw(design.Value, false);
         ImGui.Separator();
     }
 
