@@ -11,7 +11,7 @@ namespace Glamourer.GameData;
 /// </summary>
 public class CustomizeSet
 {
-    private NpcCustomizeSet _npcCustomizations;
+    private readonly NpcCustomizeSet _npcCustomizations;
 
     internal CustomizeSet(NpcCustomizeSet npcCustomizations, SubRace clan, Gender gender)
     {
@@ -88,7 +88,7 @@ public class CustomizeSet
     {
         if (IsAvailable(index))
             return DataByValue(index, value, out custom, face) >= 0
-             || _npcCustomizations.CheckColor(index, value)
+             || _npcCustomizations.CheckValue(index, value)
              || NpcOptions.Any(t => t.Type == index && t.Value == value);
 
         custom = null;

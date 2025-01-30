@@ -3,6 +3,7 @@ using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Excel.Sheets;
 using OtterGui.Services;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -40,17 +41,19 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
     private readonly BitArray _eyeColors       = new(256);
     private readonly BitArray _facepaintColors = new(256);
     private readonly BitArray _tattooColors    = new(256);
+    private readonly BitArray _facepaints      = new(128);
 
-    public bool CheckColor(CustomizeIndex type, CustomizeValue value)
+    public bool CheckValue(CustomizeIndex type, CustomizeValue value)
         => type switch
         {
-            CustomizeIndex.HairColor       => _hairColors[value.Value],
-            CustomizeIndex.HighlightsColor => _hairColors[value.Value],
-            CustomizeIndex.EyeColorLeft    => _eyeColors[value.Value],
-            CustomizeIndex.EyeColorRight   => _eyeColors[value.Value],
-            CustomizeIndex.FacePaintColor  => _facepaintColors[value.Value],
-            CustomizeIndex.TattooColor     => _tattooColors[value.Value],
-            _                              => false,
+            CustomizeIndex.HairColor                        => _hairColors[value.Value],
+            CustomizeIndex.HighlightsColor                  => _hairColors[value.Value],
+            CustomizeIndex.EyeColorLeft                     => _eyeColors[value.Value],
+            CustomizeIndex.EyeColorRight                    => _eyeColors[value.Value],
+            CustomizeIndex.FacePaintColor                   => _facepaintColors[value.Value],
+            CustomizeIndex.TattooColor                      => _tattooColors[value.Value],
+            CustomizeIndex.FacePaint when value.Value < 128 => _facepaints[value.Value],
+            _                                               => false,
         };
 
     /// <summary> Create the data when ready. </summary>
@@ -58,13 +61,14 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
     {
         var waitTask = Task.WhenAll(eNpcs.Awaiter, bNpcs.Awaiter, bNpcNames.Awaiter);
         Awaiter = waitTask.ContinueWith(_ =>
-        {
-            var watch    = Stopwatch.StartNew();
-            var eNpcTask = Task.Run(() => CreateEnpcData(data, eNpcs));
-            var bNpcTask = Task.Run(() => CreateBnpcData(data, bNpcs, bNpcNames));
-            FilterAndOrderNpcData(eNpcTask.Result, bNpcTask.Result);
-            Time = watch.ElapsedMilliseconds;
-        });
+            {
+                var watch    = Stopwatch.StartNew();
+                var eNpcTask = Task.Run(() => CreateEnpcData(data, eNpcs));
+                var bNpcTask = Task.Run(() => CreateBnpcData(data, bNpcs, bNpcNames));
+                FilterAndOrderNpcData(eNpcTask.Result, bNpcTask.Result);
+                Time = watch.ElapsedMilliseconds;
+            })
+            .ContinueWith(_ => CheckFacepaintFiles(data, _facepaints));
     }
 
     /// <summary> Create data from event NPCs. </summary>
@@ -321,6 +325,17 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
             return (false, CustomizeArray.Default);
 
         return (true, customize);
+    }
+
+    /// <summary> Check decal files for existence. </summary>
+    private static void CheckFacepaintFiles(IDataManager data, BitArray facepaints)
+    {
+        for (var i = 0; i < 128; ++i)
+        {
+            var path = GamePaths.Character.Tex.DecalPath("face", (PrimaryId)i);
+            if (data.FileExists(path))
+                facepaints[i] = true;
+        }
     }
 
     /// <inheritdoc/>

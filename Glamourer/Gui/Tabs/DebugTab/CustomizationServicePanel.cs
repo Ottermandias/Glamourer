@@ -28,9 +28,35 @@ public class CustomizationServicePanel(CustomizeService customize) : IGameDataDr
             DrawNpcCustomizationInfo(set);
         }
 
+        DrawFacepaintInfo();
         DrawColorInfo();
     }
 
+    private void DrawFacepaintInfo()
+    {
+        using var tree = ImUtf8.TreeNode("NPC Facepaints"u8);
+        if (!tree)
+            return;
+
+        using var table = ImUtf8.Table("data"u8, 2, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        if (!table)
+            return;
+
+        ImGui.TableNextColumn();
+        ImUtf8.TableHeader("Id"u8);
+        ImGui.TableNextColumn();
+        ImUtf8.TableHeader("Facepaint"u8);
+
+        for (var i = 0; i < 128; ++i)
+        {
+            var index = new CustomizeValue((byte)i);
+            ImUtf8.DrawTableColumn($"{i:D3}");
+            using var font = ImRaii.PushFont(UiBuilder.IconFont);
+            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.FacePaint, index)
+                ? FontAwesomeIcon.Check.ToIconString()
+                : FontAwesomeIcon.Times.ToIconString());
+        }
+    }
     private void DrawColorInfo()
     {
         using var tree = ImUtf8.TreeNode("NPC Colors"u8);
@@ -57,16 +83,16 @@ public class CustomizationServicePanel(CustomizeService customize) : IGameDataDr
             var index = new CustomizeValue((byte)i);
             ImUtf8.DrawTableColumn($"{i:D3}");
             using var font = ImRaii.PushFont(UiBuilder.IconFont);
-            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckColor(CustomizeIndex.HairColor, index)
+            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.HairColor, index)
                 ? FontAwesomeIcon.Check.ToIconString()
                 : FontAwesomeIcon.Times.ToIconString());
-            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckColor(CustomizeIndex.EyeColorLeft, index)
+            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.EyeColorLeft, index)
                 ? FontAwesomeIcon.Check.ToIconString()
                 : FontAwesomeIcon.Times.ToIconString());
-            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckColor(CustomizeIndex.FacePaintColor, index)
+            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.FacePaintColor, index)
                 ? FontAwesomeIcon.Check.ToIconString()
                 : FontAwesomeIcon.Times.ToIconString());
-            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckColor(CustomizeIndex.TattooColor, index)
+            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.TattooColor, index)
                 ? FontAwesomeIcon.Check.ToIconString()
                 : FontAwesomeIcon.Times.ToIconString());
         }

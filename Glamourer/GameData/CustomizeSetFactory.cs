@@ -76,7 +76,6 @@ internal class CustomizeSetFactory(
             CustomizeIndex.Hairstyle,
             CustomizeIndex.LipColor,
             CustomizeIndex.SkinColor,
-            CustomizeIndex.FacePaint,
             CustomizeIndex.TailShape,
         };
 
