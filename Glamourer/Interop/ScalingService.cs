@@ -1,19 +1,27 @@
-﻿using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Hooking;
+﻿using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Penumbra.GameData;
 using Penumbra.GameData.Interop;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using Glamourer.State;
+using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
 using Character = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
+using CustomizeIndex = Dalamud.Game.ClientState.Objects.Enums.CustomizeIndex;
 
 namespace Glamourer.Interop;
 
 public unsafe class ScalingService : IDisposable
 {
-    public ScalingService(IGameInteropProvider interop)
+    private readonly ActorManager _actors;
+    private readonly StateManager _state;
+
+    public ScalingService(IGameInteropProvider interop, StateManager state, ActorManager actors)
     {
+        _state  = state;
+        _actors = actors;
         interop.InitializeFromAttributes(this);
         _setupMountHook =
             interop.HookFromAddress<SetupMount>((nint)MountContainer.MemberFunctionPointers.SetupMount, SetupMountDetour);
@@ -79,7 +87,16 @@ public unsafe class ScalingService : IDisposable
             var mdl     = owner.Model;
             var oldRace = owner.AsCharacter->DrawData.CustomizeData.Race;
             if (mdl.IsHuman)
+            {
                 owner.AsCharacter->DrawData.CustomizeData.Race = mdl.AsHuman->Customize.Race;
+            }
+            else
+            {
+                var actor = _actors.FromObject(owner, out _, true, false, true);
+                if (_state.TryGetValue(actor, out var state))
+                    owner.AsCharacter->DrawData.CustomizeData.Race = (byte)state.ModelData.Customize.Race;
+            }
+
             _placeMinionHook.Original(companion);
             owner.AsCharacter->DrawData.CustomizeData.Race = oldRace;
         }
@@ -103,12 +120,20 @@ public unsafe class ScalingService : IDisposable
             character->DrawData.CustomizeData.Tribe, character->DrawData.CustomizeData[(int)CustomizeIndex.Height]);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void SetScaleCustomize(Character* character, Model model)
+    private void SetScaleCustomize(Character* character, Model model)
     {
-        if (!model.IsHuman)
+        if (model.IsHuman)
+        {
+            SetScaleCustomize(character, model.AsHuman->Customize.Race, model.AsHuman->Customize.Tribe, model.AsHuman->Customize.Sex);
+            return;
+        }
+
+        var actor = _actors.FromObject(character, out _, true, false, true);
+        if (!_state.TryGetValue(actor, out var state))
             return;
 
-        SetScaleCustomize(character, model.AsHuman->Customize.Race, model.AsHuman->Customize.Tribe, model.AsHuman->Customize.Sex);
+        ref var customize = ref state.ModelData.Customize;
+        SetScaleCustomize(character, (byte)customize.Race, (byte)customize.Clan, customize.Gender.ToGameByte());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -120,13 +145,22 @@ public unsafe class ScalingService : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void SetHeightCustomize(Character* character, Model model)
+    private void SetHeightCustomize(Character* character, Model model)
     {
-        if (!model.IsHuman)
+        if (model.IsHuman)
+        {
+            SetHeightCustomize(character, model.AsHuman->Customize.Sex, model.AsHuman->Customize.BodyType, model.AsHuman->Customize.Tribe,
+                model.AsHuman->Customize[(int)CustomizeIndex.Height]);
+            return;
+        }
+
+        var actor = _actors.FromObject(character, out _, true, false, true);
+        if (!_state.TryGetValue(actor, out var state))
             return;
 
-        SetHeightCustomize(character, model.AsHuman->Customize.Sex, model.AsHuman->Customize.BodyType, model.AsHuman->Customize.Tribe,
-            model.AsHuman->Customize[(int)CustomizeIndex.Height]);
+        ref var customize = ref state.ModelData.Customize;
+        SetHeightCustomize(character, customize.Gender.ToGameByte(), customize.BodyType.Value, (byte)customize.Clan,
+            customize[global::Penumbra.GameData.Enums.CustomizeIndex.Height].Value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
