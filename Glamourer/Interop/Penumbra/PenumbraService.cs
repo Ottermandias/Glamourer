@@ -37,6 +37,7 @@ public class PenumbraService : IDisposable
     public const int RequiredPenumbraFeatureVersion      = 3;
     public const int RequiredPenumbraFeatureVersionTemp  = 4;
     public const int RequiredPenumbraFeatureVersionTemp2 = 5;
+    public const int RequiredPenumbraFeatureVersionTemp3 = 6;
 
     private const int Key = -1610;
 
@@ -56,7 +57,9 @@ public class PenumbraService : IDisposable
     private global::Penumbra.Api.IpcSubscribers.GetCollectionForObject?              _objectCollection;
     private global::Penumbra.Api.IpcSubscribers.GetModList?                          _getMods;
     private global::Penumbra.Api.IpcSubscribers.GetCollection?                       _currentCollection;
+    private global::Penumbra.Api.IpcSubscribers.GetCurrentModSettingsWithTemp?       _getCurrentSettingsWithTemp;
     private global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings?               _getCurrentSettings;
+    private global::Penumbra.Api.IpcSubscribers.GetAllModSettings?                   _getAllSettings;
     private global::Penumbra.Api.IpcSubscribers.TryInheritMod?                       _inheritMod;
     private global::Penumbra.Api.IpcSubscribers.TrySetMod?                           _setMod;
     private global::Penumbra.Api.IpcSubscribers.TrySetModPriority?                   _setModPriority;
@@ -132,22 +135,28 @@ public class PenumbraService : IDisposable
 
     public ModSettings GetModSettings(in Mod mod, out string source)
     {
-        source = string.Empty; 
+        source = string.Empty;
         if (!Available)
             return ModSettings.Empty;
 
         try
         {
             var collection = _currentCollection!.Invoke(ApiCollectionType.Current);
-            if (_queryTemporaryModSettings != null)
-            {
-                var tempEc = _queryTemporaryModSettings.Invoke(collection!.Value.Id, mod.DirectoryName, out var tempTuple, out source);
-                if (tempEc is PenumbraApiEc.Success && tempTuple != null)
-                    return new ModSettings(tempTuple.Value.Settings, tempTuple.Value.Priority, tempTuple.Value.Enabled,
-                        tempTuple.Value.ForceInherit, false);
-            }
+            return GetSettings(collection!.Value.Id, mod.DirectoryName, mod.Name, out source);
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Log.Error($"Error fetching mod settings for {mod.DirectoryName} from Penumbra:\n{ex}");
+            return ModSettings.Empty;
+        }
+    }
 
-            var (ec, tuple) = _getCurrentSettings!.Invoke(collection!.Value.Id, mod.DirectoryName);
+    private ModSettings GetSettings(Guid collection, string modDirectory, string modName, out string source)
+    {
+        if (_getCurrentSettingsWithTemp != null)
+        {
+            source          = string.Empty;
+            var (ec, tuple) = _getCurrentSettingsWithTemp!.Invoke(collection, modDirectory, modName, false, false, Key);
             if (ec is not PenumbraApiEc.Success)
                 return ModSettings.Empty;
 
@@ -155,11 +164,23 @@ public class PenumbraService : IDisposable
                 ? new ModSettings(tuple.Value.Item3, tuple.Value.Item2, tuple.Value.Item1, false, false)
                 : ModSettings.Empty;
         }
-        catch (Exception ex)
+
+        if (_queryTemporaryModSettings != null)
         {
-            Glamourer.Log.Error($"Error fetching mod settings for {mod.DirectoryName} from Penumbra:\n{ex}");
-            return ModSettings.Empty;
+            var tempEc = _queryTemporaryModSettings.Invoke(collection, modDirectory, out var tempTuple, out source);
+            if (tempEc is PenumbraApiEc.Success && tempTuple != null)
+                return new ModSettings(tempTuple.Value.Settings, tempTuple.Value.Priority, tempTuple.Value.Enabled,
+                    tempTuple.Value.ForceInherit, false);
         }
+
+        source            = string.Empty;
+        var (ec2, tuple2) = _getCurrentSettings!.Invoke(collection, modDirectory);
+        if (ec2 is not PenumbraApiEc.Success)
+            return ModSettings.Empty;
+
+        return tuple2.HasValue
+            ? new ModSettings(tuple2.Value.Item3, tuple2.Value.Item2, tuple2.Value.Item1, false, false)
+            : ModSettings.Empty;
     }
 
     public (Guid Id, string Name)? CollectionByIdentifier(string identifier)
@@ -183,13 +204,23 @@ public class PenumbraService : IDisposable
         {
             var allMods    = _getMods!.Invoke();
             var collection = _currentCollection!.Invoke(ApiCollectionType.Current);
+            if (_getAllSettings != null)
+            {
+                var allSettings = _getAllSettings.Invoke(collection!.Value.Id, false, false, Key);
+                if (allSettings.Item1 is PenumbraApiEc.Success)
+                    return allMods.Select(m => (new Mod(m.Value, m.Key),
+                            allSettings.Item2!.TryGetValue(m.Key, out var s)
+                                ? new ModSettings(s.Item3, s.Item2, s.Item1, s.Item4 && s.Item5, false)
+                                : ModSettings.Empty))
+                        .OrderByDescending(p => p.Item2.Enabled)
+                        .ThenBy(p => p.Item1.Name)
+                        .ThenBy(p => p.Item1.DirectoryName)
+                        .ThenByDescending(p => p.Item2.Priority)
+                        .ToList();
+            }
+
             return allMods
-                .Select(m => (m.Key, m.Value, _getCurrentSettings!.Invoke(collection!.Value.Id, m.Key)))
-                .Where(t => t.Item3.Item1 is PenumbraApiEc.Success)
-                .Select(t => (new Mod(t.Item2, t.Item1),
-                    !t.Item3.Item2.HasValue
-                        ? ModSettings.Empty
-                        : new ModSettings(t.Item3.Item2!.Value.Item3, t.Item3.Item2!.Value.Item2, t.Item3.Item2!.Value.Item1, false, false)))
+                .Select(m => (new Mod(m.Value, m.Key), GetSettings(collection!.Value.Id, m.Key, m.Value, out _)))
                 .OrderByDescending(p => p.Item2.Enabled)
                 .ThenBy(p => p.Item1.Name)
                 .ThenBy(p => p.Item1.DirectoryName)
@@ -455,7 +486,14 @@ public class PenumbraService : IDisposable
                 _removeAllTemporaryModSettingsPlayer =
                     new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer(_pluginInterface);
                 if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp2)
+                {
                     _queryTemporaryModSettings = new global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings(_pluginInterface);
+                    if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp2)
+                    {
+                        _getCurrentSettingsWithTemp = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettingsWithTemp(_pluginInterface);
+                        _getAllSettings             = new global::Penumbra.Api.IpcSubscribers.GetAllModSettings(_pluginInterface);
+                    }
+                }
             }
 
             Available = true;
@@ -488,6 +526,8 @@ public class PenumbraService : IDisposable
             _getMods                             = null;
             _currentCollection                   = null;
             _getCurrentSettings                  = null;
+            _getCurrentSettingsWithTemp          = null;
+            _getAllSettings                      = null;
             _inheritMod                          = null;
             _setMod                              = null;
             _setModPriority                      = null;
