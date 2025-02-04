@@ -121,8 +121,9 @@ public class CommandService : IDisposable, IApiService
             "apply"              => Apply(argument),
             "reapply"            => ReapplyState(argument),
             "revert"             => Revert(argument),
-            "reapplyautomation"  => ReapplyAutomation(argument, "reapplyautomation",  false),
-            "reverttoautomation" => ReapplyAutomation(argument, "reverttoautomation", true),
+            "reapplyautomation"  => ReapplyAutomation(argument, "reapplyautomation",  false, false),
+            "reverttoautomation" => ReapplyAutomation(argument, "reverttoautomation", true, false),
+            "resetdesign"        => ReapplyAutomation(argument, "resetdesign", false, true),
             "automation"         => SetAutomation(argument),
             "copy"               => CopyState(argument),
             "save"               => SaveState(argument),
@@ -151,6 +152,8 @@ public class CommandService : IDisposable, IApiService
             "Reapplies the current automation state on top of the characters current state.. Use without arguments for help.").BuiltString);
         _chat.Print(new SeStringBuilder().AddCommand("reverttoautomation",
             "Reverts a given character to its supposed state using automated designs. Use without arguments for help.").BuiltString);
+        _chat.Print(new SeStringBuilder().AddCommand("resetdesign",
+            "Reapplies the current automation and resets the random design. Use without arguments for help.").BuiltString);
         _chat.Print(new SeStringBuilder()
             .AddCommand("copy", "Copy the current state of a character to clipboard. Use without arguments for help.").BuiltString);
         _chat.Print(new SeStringBuilder()
@@ -306,7 +309,7 @@ public class CommandService : IDisposable, IApiService
         return true;
     }
 
-    private bool ReapplyAutomation(string argument, string command, bool revert)
+    private bool ReapplyAutomation(string argument, string command, bool revert, bool forcedNew)
     {
         if (argument.Length == 0)
         {
@@ -328,7 +331,7 @@ public class CommandService : IDisposable, IApiService
             {
                 if (_stateManager.GetOrCreate(identifier, actor, out var state))
                 {
-                    _autoDesignApplier.ReapplyAutomation(actor, identifier, state, revert, out var forcedRedraw);
+                    _autoDesignApplier.ReapplyAutomation(actor, identifier, state, revert, forcedNew, out var forcedRedraw);
                     _stateManager.ReapplyAutomationState(actor, forcedRedraw, revert, StateSource.Manual);
                 }
             }
