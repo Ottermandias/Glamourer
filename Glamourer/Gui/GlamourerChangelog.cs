@@ -39,6 +39,7 @@ public class GlamourerChangelog
         Add1_3_3_0(Changelog);
         Add1_3_4_0(Changelog);
         Add1_3_5_0(Changelog);
+        Add1_3_6_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -58,6 +59,22 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_3_6_0(Changelog log)
+        => log.NextVersion("Version 1.3.6.0")
+            .RegisterHighlight("Added some new multi design selection functionality to change design settings of many designs at once.")
+            .RegisterEntry("Also added the number of selected designs and folders to the multi design selection display.", 1)
+            .RegisterEntry("Glamourer will now use temporary settings when saving mod associations, if they exist in Penumbra.")
+            .RegisterEntry("Actually added the checkbox to reset all temporary settings to Automation Sets (functionality was there, just not exposed to the UI...).")
+            .RegisterEntry("Adapted the behavior for identified copies of characters that have a different state than the character itself to deal with the associated Penumbra changes.")
+            .RegisterEntry("Added '/glamour resetdesign' as a command, that re-applies automation but resets randomly chosen designs (Thanks Diorik).")
+            .RegisterEntry("All existing facepaints should now be accepted in designs, including NPC facepaints.")
+            .RegisterEntry("Overwriting a design with your characters current state will now discard any prior advanced dyes and only add those from the current state.")
+            .RegisterEntry("Fixed an issue with racial mount and accessory scaling when changing zones on a changed race.")
+            .RegisterEntry("Fixed issues with the detection of gear set changes in certain circumstances (Thanks Cordelia).")
+            .RegisterEntry("Fixed an issue with the Force to Inherit checkbox in mod associations.")
+            .RegisterEntry("Added a new IPC event that fires only when Glamourer finalizes its current changes to a character (for/from Cordelia).")
+            .RegisterEntry("Added new IPC to set a meta flag on actors. (for/from Cordelia).");
 
     private static void Add1_3_5_0(Changelog log)
         => log.NextVersion("Version 1.3.5.0")
