@@ -251,7 +251,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         foreach (var actor in data.Objects)
         {
-            _autoDesignApplier.ReapplyAutomation(actor, id, state!, true, out var forcedRedraw);
+            _autoDesignApplier.ReapplyAutomation(actor, id, state!, true, false, out var forcedRedraw);
             _stateManager.ReapplyAutomationState(actor, forcedRedraw, true, StateSource.Manual);
         }
     }
@@ -291,7 +291,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         foreach (var actor in data.Objects)
         {
-            _autoDesignApplier.ReapplyAutomation(actor, id, state!, false, out var forcedRedraw);
+            _autoDesignApplier.ReapplyAutomation(actor, id, state!, false, false, out var forcedRedraw);
             _stateManager.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Manual);
         }
     }
