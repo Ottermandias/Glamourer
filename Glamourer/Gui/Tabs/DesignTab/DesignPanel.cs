@@ -636,6 +636,7 @@ public class DesignPanel
 
                 var design = panel._converter.Convert(state, ApplicationRules.FromModifiers(state))
                  ?? throw new Exception("The clipboard did not contain valid data.");
+                panel._selector.Selected!.GetMaterialDataRef().Clear();
                 panel._manager.ApplyDesign(panel._selector.Selected!, design);
             }
             catch (Exception ex)
