@@ -301,7 +301,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     private void RevertToAutomation(Actor actor, ActorState state, uint key, ApplyFlag flags)
     {
         var source = (flags & ApplyFlag.Once) != 0 ? StateSource.IpcManual : StateSource.IpcFixed;
-        _autoDesigns.ReapplyAutomation(actor, state.Identifier, state, true, out var forcedRedraw);
+        _autoDesigns.ReapplyAutomation(actor, state.Identifier, state, true, false, out var forcedRedraw);
         _stateManager.ReapplyAutomationState(actor, state, forcedRedraw, true, source);
         ApiHelpers.Lock(state, key, flags);
     }

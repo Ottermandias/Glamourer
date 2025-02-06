@@ -225,7 +225,7 @@ public sealed class AutoDesignApplier : IDisposable
         _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
     }
 
-    public void ReapplyAutomation(Actor actor, ActorIdentifier identifier, ActorState state, bool reset, out bool forcedRedraw)
+    public void ReapplyAutomation(Actor actor, ActorIdentifier identifier, ActorState state, bool reset, bool forcedNew, out bool forcedRedraw)
     {
         forcedRedraw = false;
         if (!_config.EnableAutoDesigns)
@@ -235,7 +235,7 @@ public sealed class AutoDesignApplier : IDisposable
             _state.ResetState(state, StateSource.Game);
 
         if (GetPlayerSet(identifier, out var set))
-            Reduce(actor, state, set, false, false, false, out forcedRedraw);
+            Reduce(actor, state, set, false, false, forcedNew, out forcedRedraw);
     }
 
     public bool Reduce(Actor actor, ActorIdentifier identifier, [NotNullWhen(true)] out ActorState? state)

@@ -393,7 +393,7 @@ public class ActorPanel
                 "Reapply the current automation state for the character on top of its current state..",
                 !_config.EnableAutoDesigns || _state!.IsLocked))
         {
-            _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!, false, out var forcedRedraw);
+            _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!, false, false, out var forcedRedraw);
             _stateManager.ReapplyAutomationState(_actor, forcedRedraw, false, StateSource.Manual);
         }
 
@@ -402,7 +402,7 @@ public class ActorPanel
                 "Try to revert the character to the state it would have using automated designs.",
                 !_config.EnableAutoDesigns || _state!.IsLocked))
         {
-            _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!, true, out var forcedRedraw);
+            _autoDesignApplier.ReapplyAutomation(_actor, _identifier, _state!, true, false, out var forcedRedraw);
             _stateManager.ReapplyAutomationState(_actor, forcedRedraw, true, StateSource.Manual);
         }
 
