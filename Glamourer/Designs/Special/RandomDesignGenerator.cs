@@ -6,19 +6,20 @@ namespace Glamourer.Designs.Special;
 public class RandomDesignGenerator(DesignStorage designs, DesignFileSystem fileSystem, Configuration config) : IService
 {
     private readonly Random _rng = new();
-    private Guid? _lastDesignID = null;
+    private WeakReference<Design?> _lastDesign = new(null, false);
 
-    public Design? Design(IList<Design> localDesigns)
+    public Design? Design(IReadOnlyList<Design> localDesigns)
     {
         if (localDesigns.Count == 0)
             return null;
 
-        if (config.PreventRandomRepeats && _lastDesignID != null && localDesigns.Count > 1 && localDesigns.FindFirst(d => d.Identifier == _lastDesignID, out var found))
-            localDesigns.Remove(found);
-            
-        var idx = _rng.Next(0, localDesigns.Count);
+        int idx;
+        do
+            idx = _rng.Next(0, localDesigns.Count);
+        while (config.PreventRandomRepeats && localDesigns.Count > 1 && _lastDesign.TryGetTarget(out var lastDesign) && lastDesign == localDesigns[idx]);
+        
         Glamourer.Log.Verbose($"[Random Design] Chose design {idx + 1} out of {localDesigns.Count}: {localDesigns[idx].Incognito}.");
-        _lastDesignID = localDesigns[idx].Identifier;
+        _lastDesign.SetTarget(localDesigns[idx]);
         return localDesigns[idx];
     }
 
