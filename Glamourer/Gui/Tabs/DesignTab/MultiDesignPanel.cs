@@ -5,11 +5,15 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
+using static Glamourer.Gui.Tabs.HeaderDrawer;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager editor, DesignColors colors)
+public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager editor, DesignColors colors, Configuration config)
 {
+    private readonly Button[] _leftButtons  = [];
+    private readonly Button[] _rightButtons = [new IncognitoButton(config.Ephemeral)];
+
     private readonly DesignColorCombo _colorCombo = new(colors, true);
 
     public void Draw()
@@ -17,8 +21,12 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
         if (selector.SelectedPaths.Count == 0)
             return;
 
-        var width = ImGuiHelpers.ScaledVector2(145, 0);
-        ImGui.NewLine();
+        HeaderDrawer.Draw(string.Empty, 0, ImGui.GetColorU32(ImGuiCol.FrameBg), _leftButtons, _rightButtons);
+        using var child = ImUtf8.Child("##MultiPanel"u8, default, true);
+        if (!child)
+            return;
+
+        var width       = ImGuiHelpers.ScaledVector2(145, 0);
         var treeNodePos = ImGui.GetCursorPos();
         _numDesigns = DrawDesignList();
         DrawCounts(treeNodePos);
@@ -135,7 +143,7 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
     {
         ImUtf8.TextFrameAligned("Multi Tagger:"u8);
         ImGui.SameLine();
-        var offset = ImGui.GetItemRectSize().X;
+        var offset = ImGui.GetItemRectSize().X + ImGui.GetStyle().WindowPadding.X;
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 2 * (width.X + ImGui.GetStyle().ItemSpacing.X));
         ImUtf8.InputText("##tag"u8, ref _tag, "Tag Name..."u8);
 

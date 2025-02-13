@@ -1,8 +1,8 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Utility;
-using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Interop;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
@@ -23,7 +23,8 @@ public class UnlockOverview(
     TextureService textures,
     CodeService codes,
     JobService jobs,
-    FavoriteManager favorites)
+    FavoriteManager favorites,
+    PenumbraService penumbra)
 {
     private static readonly Vector4 UnavailableTint = new(0.3f, 0.3f, 0.3f, 1.0f);
 
@@ -31,6 +32,9 @@ public class UnlockOverview(
     private SubRace       _selected2 = SubRace.Unknown;
     private Gender        _selected3 = Gender.Unknown;
     private BonusItemFlag _selected4 = BonusItemFlag.Unknown;
+
+    private uint _favoriteColor;
+    private uint _moddedColor;
 
     private void DrawSelector()
     {
@@ -90,6 +94,9 @@ public class UnlockOverview(
         if (!child)
             return;
 
+        _moddedColor   = ColorId.ModdedItemMarker.Value();
+        _favoriteColor = ColorId.FavoriteStarOn.Value();
+
         if (_selected1 is not FullEquipType.Unknown)
             DrawItems();
         else if (_selected2 is not SubRace.Unknown && _selected3 is not Gender.Unknown)
@@ -120,7 +127,7 @@ public class UnlockOverview(
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
 
             if (favorites.Contains(_selected3, _selected2, customize.Index, customize.Value))
-                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
+                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), _favoriteColor,
                     12 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 6 * ImGuiHelpers.GlobalScale);
 
             if (hasIcon && ImGui.IsItemHovered())
@@ -192,8 +199,10 @@ public class UnlockOverview(
             ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (favorites.Contains(item))
-                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
+                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), _favoriteColor,
                     2 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * ImGuiHelpers.GlobalScale);
+
+            var mods = DrawModdedMarker(item, iconSize);
 
             // TODO handle clicking
             if (ImGui.IsItemHovered())
@@ -206,9 +215,10 @@ public class UnlockOverview(
                 ImUtf8.Text($"{item.Id.Id}");
                 ImUtf8.Text($"{item.PrimaryId.Id}-{item.Variant.Id}");
                 // TODO
-                ImUtf8.Text("Always Unlocked"); // : $"Unlocked on {time:g}" : "Not Unlocked.");
+                ImUtf8.Text("Always Unlocked"u8); // : $"Unlocked on {time:g}" : "Not Unlocked.");
                 // TODO
                 //tooltip.CreateTooltip(item, string.Empty, false);
+                DrawModTooltip(mods);
             }
         }
     }
@@ -263,6 +273,8 @@ public class UnlockOverview(
                 ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
                     2 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * ImGuiHelpers.GlobalScale);
 
+            var mods = DrawModdedMarker(item, iconSize);
+
             if (ImGui.IsItemClicked())
                 Glamourer.Messager.Chat.Print(new SeStringBuilder().AddItemLink(item.ItemId.Id, false).BuiltString);
 
@@ -306,6 +318,7 @@ public class UnlockOverview(
                     ImGui.TextUnformatted("Tradable");
                 if (item.Flags.HasFlag(ItemFlags.IsCrestWorthy))
                     ImGui.TextUnformatted("Can apply Crest");
+                DrawModTooltip(mods);
                 tooltip.CreateTooltip(item, string.Empty, false);
             }
         }
@@ -316,4 +329,36 @@ public class UnlockOverview(
 
     private static int IconsPerRow(float iconWidth, float iconSpacing)
         => (int)(ImGui.GetContentRegionAvail().X / (iconWidth + iconSpacing));
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    private (string ModDirectory, string ModName)[] DrawModdedMarker(in EquipItem item, Vector2 iconSize)
+    {
+        var mods = penumbra.CheckCurrentChangedItem(item.Name);
+        if (mods.Length == 0)
+            return mods;
+
+        var center = ImGui.GetItemRectMin() + new Vector2(iconSize.X * 0.85f, iconSize.Y * 0.15f);
+        ImGui.GetWindowDrawList().AddCircleFilled(center, iconSize.X * 0.1f, _moddedColor);
+        ImGui.GetWindowDrawList().AddCircle(center, iconSize.X * 0.1f, 0xFF000000);
+        return mods;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    private void DrawModTooltip((string ModDirectory, string ModName)[] mods)
+    {
+        switch (mods.Length)
+        {
+            case 0: return;
+            case 1:
+                ImUtf8.Text("Modded by: "u8, _moddedColor);
+                ImGui.SameLine(0, 0);
+                ImUtf8.Text(mods[0].ModName);
+                return;
+            default:
+                ImUtf8.Text("Modded by:"u8, _moddedColor);
+                foreach (var (_, mod) in mods)
+                    ImUtf8.BulletText(mod);
+                return;
+        }
+    }
 }

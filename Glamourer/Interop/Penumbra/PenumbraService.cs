@@ -38,6 +38,7 @@ public class PenumbraService : IDisposable
     public const int RequiredPenumbraFeatureVersionTemp  = 4;
     public const int RequiredPenumbraFeatureVersionTemp2 = 5;
     public const int RequiredPenumbraFeatureVersionTemp3 = 6;
+    public const int RequiredPenumbraFeatureVersionTemp4 = 7;
 
     private const int Key = -1610;
 
@@ -49,30 +50,33 @@ public class PenumbraService : IDisposable
     private readonly EventSubscriber<nint, Guid, nint>                     _createdCharacterBase;
     private readonly EventSubscriber<ModSettingChange, Guid, string, bool> _modSettingChanged;
 
-    private global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier?          _collectionByIdentifier;
-    private global::Penumbra.Api.IpcSubscribers.GetCollections?                      _collections;
-    private global::Penumbra.Api.IpcSubscribers.RedrawObject?                        _redraw;
-    private global::Penumbra.Api.IpcSubscribers.GetDrawObjectInfo?                   _drawObjectInfo;
-    private global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndex?              _cutsceneParent;
-    private global::Penumbra.Api.IpcSubscribers.GetCollectionForObject?              _objectCollection;
-    private global::Penumbra.Api.IpcSubscribers.GetModList?                          _getMods;
-    private global::Penumbra.Api.IpcSubscribers.GetCollection?                       _currentCollection;
-    private global::Penumbra.Api.IpcSubscribers.GetCurrentModSettingsWithTemp?       _getCurrentSettingsWithTemp;
-    private global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings?               _getCurrentSettings;
-    private global::Penumbra.Api.IpcSubscribers.GetAllModSettings?                   _getAllSettings;
-    private global::Penumbra.Api.IpcSubscribers.TryInheritMod?                       _inheritMod;
-    private global::Penumbra.Api.IpcSubscribers.TrySetMod?                           _setMod;
-    private global::Penumbra.Api.IpcSubscribers.TrySetModPriority?                   _setModPriority;
-    private global::Penumbra.Api.IpcSubscribers.TrySetModSetting?                    _setModSetting;
-    private global::Penumbra.Api.IpcSubscribers.TrySetModSettings?                   _setModSettings;
-    private global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettings?             _setTemporaryModSettings;
-    private global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettingsPlayer?       _setTemporaryModSettingsPlayer;
-    private global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettings?          _removeTemporaryModSettings;
-    private global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettingsPlayer?    _removeTemporaryModSettingsPlayer;
-    private global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings?       _removeAllTemporaryModSettings;
-    private global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer? _removeAllTemporaryModSettingsPlayer;
-    private global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings?           _queryTemporaryModSettings;
-    private global::Penumbra.Api.IpcSubscribers.OpenMainWindow?                      _openModPage;
+    private global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier?                          _collectionByIdentifier;
+    private global::Penumbra.Api.IpcSubscribers.GetCollections?                                      _collections;
+    private global::Penumbra.Api.IpcSubscribers.RedrawObject?                                        _redraw;
+    private global::Penumbra.Api.IpcSubscribers.GetDrawObjectInfo?                                   _drawObjectInfo;
+    private global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndex?                              _cutsceneParent;
+    private global::Penumbra.Api.IpcSubscribers.GetCollectionForObject?                              _objectCollection;
+    private global::Penumbra.Api.IpcSubscribers.GetModList?                                          _getMods;
+    private global::Penumbra.Api.IpcSubscribers.GetCollection?                                       _currentCollection;
+    private global::Penumbra.Api.IpcSubscribers.GetCurrentModSettingsWithTemp?                       _getCurrentSettingsWithTemp;
+    private global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings?                               _getCurrentSettings;
+    private global::Penumbra.Api.IpcSubscribers.GetAllModSettings?                                   _getAllSettings;
+    private global::Penumbra.Api.IpcSubscribers.TryInheritMod?                                       _inheritMod;
+    private global::Penumbra.Api.IpcSubscribers.TrySetMod?                                           _setMod;
+    private global::Penumbra.Api.IpcSubscribers.TrySetModPriority?                                   _setModPriority;
+    private global::Penumbra.Api.IpcSubscribers.TrySetModSetting?                                    _setModSetting;
+    private global::Penumbra.Api.IpcSubscribers.TrySetModSettings?                                   _setModSettings;
+    private global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettings?                             _setTemporaryModSettings;
+    private global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettingsPlayer?                       _setTemporaryModSettingsPlayer;
+    private global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettings?                          _removeTemporaryModSettings;
+    private global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettingsPlayer?                    _removeTemporaryModSettingsPlayer;
+    private global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings?                       _removeAllTemporaryModSettings;
+    private global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer?                 _removeAllTemporaryModSettingsPlayer;
+    private global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings?                           _queryTemporaryModSettings;
+    private global::Penumbra.Api.IpcSubscribers.OpenMainWindow?                                      _openModPage;
+    private global::Penumbra.Api.IpcSubscribers.GetChangedItems?                                     _getChangedItems;
+    private IReadOnlyList<(string ModDirectory, IReadOnlyDictionary<string, object?> ChangedItems)>? _changedItems;
+    private Func<string, (string ModDirectory, string ModName)[]>?                                   _checkCurrentChangedItems;
 
     private readonly IDisposable _initializedEvent;
     private readonly IDisposable _disposedEvent;
@@ -195,37 +199,58 @@ public class PenumbraService : IDisposable
         return ret[0];
     }
 
-    public IReadOnlyList<(Mod Mod, ModSettings Settings)> GetMods()
+    public IReadOnlyList<(Mod Mod, ModSettings Settings, int Count)> GetMods(IReadOnlyList<string> data)
     {
         if (!Available)
             return [];
 
         try
         {
-            var allMods    = _getMods!.Invoke();
-            var collection = _currentCollection!.Invoke(ApiCollectionType.Current);
-            if (_getAllSettings != null)
+            var allMods           = _getMods!.Invoke();
+            var currentCollection = _currentCollection!.Invoke(ApiCollectionType.Current);
+            var withSettings      = WithSettings(allMods, currentCollection!.Value.Id);
+            var withCounts        = WithCounts(withSettings, allMods.Count);
+            return OrderList(withCounts, allMods.Count);
+
+            IEnumerable<(Mod Mod, ModSettings Settings)> WithSettings(Dictionary<string, string> mods, Guid collection)
             {
-                var allSettings = _getAllSettings.Invoke(collection!.Value.Id, false, false, Key);
-                if (allSettings.Item1 is PenumbraApiEc.Success)
-                    return allMods.Select(m => (new Mod(m.Value, m.Key),
+                if (_getAllSettings != null)
+                {
+                    var allSettings = _getAllSettings.Invoke(collection, false, false, Key);
+                    if (allSettings.Item1 is PenumbraApiEc.Success)
+                        return mods.Select(m => (new Mod(m.Value, m.Key),
                             allSettings.Item2!.TryGetValue(m.Key, out var s)
-                                ? new ModSettings(s.Item3, s.Item2, s.Item1, s.Item4 && s.Item5, false)
-                                : ModSettings.Empty))
-                        .OrderByDescending(p => p.Item2.Enabled)
-                        .ThenBy(p => p.Item1.Name)
-                        .ThenBy(p => p.Item1.DirectoryName)
-                        .ThenByDescending(p => p.Item2.Priority)
-                        .ToList();
+                                ? new ModSettings(s.Item3, s.Item2, s.Item1, s is { Item4: true, Item5: true }, false)
+                                : ModSettings.Empty));
+                }
+
+                return mods.Select(m => (new Mod(m.Value, m.Key), GetSettings(collection, m.Key, m.Value, out _)));
             }
 
-            return allMods
-                .Select(m => (new Mod(m.Value, m.Key), GetSettings(collection!.Value.Id, m.Key, m.Value, out _)))
-                .OrderByDescending(p => p.Item2.Enabled)
-                .ThenBy(p => p.Item1.Name)
-                .ThenBy(p => p.Item1.DirectoryName)
-                .ThenByDescending(p => p.Item2.Priority)
-                .ToList();
+            IEnumerable<(Mod Mod, ModSettings Settings, int Count)> WithCounts(IEnumerable<(Mod Mod, ModSettings Settings)> mods, int count)
+            {
+                if (_changedItems != null && _changedItems.Count == count)
+                    return mods.Select((m, idx) => (m.Mod, m.Settings, CountItems(_changedItems[idx].ChangedItems, data)));
+
+                return mods.Select(p => (p.Item1, p.Item2, CountItems(_getChangedItems!.Invoke(p.Item1.DirectoryName, p.Item1.Name), data)));
+
+                static int CountItems(IReadOnlyDictionary<string, object?> dict, IReadOnlyList<string> data)
+                    => data.Count(dict.ContainsKey);
+            }
+
+            static IReadOnlyList<(Mod Mod, ModSettings Settings, int Count)> OrderList(
+                IEnumerable<(Mod Mod, ModSettings Settings, int Count)> enumerable, int count)
+            {
+                var array = new (Mod Mod, ModSettings Settings, int Count)[count];
+                var i     = 0;
+                foreach (var t in enumerable.OrderByDescending(p => p.Item2.Enabled)
+                             .ThenByDescending(p => p.Item3)
+                             .ThenBy(p => p.Item1.Name)
+                             .ThenBy(p => p.Item1.DirectoryName)
+                             .ThenByDescending(p => p.Item2.Priority))
+                    array[i++] = t;
+                return array;
+            }
         }
         catch (Exception ex)
         {
@@ -288,6 +313,9 @@ public class PenumbraService : IDisposable
         foreach (var collection in collections)
             RemoveAllTemporarySettings(collection.Key);
     }
+
+    public (string ModDirectory, string ModName)[] CheckCurrentChangedItem(string changedItem)
+        => _checkCurrentChangedItems?.Invoke(changedItem) ?? [];
 
     private void SetModTemporary(StringBuilder sb, Mod mod, ModSettings settings, Guid collection, ObjectIndex? index)
     {
@@ -476,6 +504,7 @@ public class PenumbraService : IDisposable
             _setModSetting          = new global::Penumbra.Api.IpcSubscribers.TrySetModSetting(_pluginInterface);
             _setModSettings         = new global::Penumbra.Api.IpcSubscribers.TrySetModSettings(_pluginInterface);
             _openModPage            = new global::Penumbra.Api.IpcSubscribers.OpenMainWindow(_pluginInterface);
+            _getChangedItems        = new global::Penumbra.Api.IpcSubscribers.GetChangedItems(_pluginInterface);
             if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp)
             {
                 _setTemporaryModSettings          = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettings(_pluginInterface);
@@ -488,10 +517,16 @@ public class PenumbraService : IDisposable
                 if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp2)
                 {
                     _queryTemporaryModSettings = new global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings(_pluginInterface);
-                    if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp2)
+                    if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp3)
                     {
                         _getCurrentSettingsWithTemp = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettingsWithTemp(_pluginInterface);
                         _getAllSettings             = new global::Penumbra.Api.IpcSubscribers.GetAllModSettings(_pluginInterface);
+                        if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp4)
+                        {
+                            _changedItems = new global::Penumbra.Api.IpcSubscribers.GetChangedItemAdapterList(_pluginInterface).Invoke();
+                            _checkCurrentChangedItems =
+                                new global::Penumbra.Api.IpcSubscribers.CheckCurrentChangedItemFunc(_pluginInterface).Invoke();
+                        }
                     }
                 }
             }
@@ -541,6 +576,9 @@ public class PenumbraService : IDisposable
             _removeAllTemporaryModSettings       = null;
             _removeAllTemporaryModSettingsPlayer = null;
             _queryTemporaryModSettings           = null;
+            _getChangedItems                     = null;
+            _changedItems                        = null;
+            _checkCurrentChangedItems            = null;
             Available                            = false;
             Glamourer.Log.Debug("Glamourer detached from Penumbra.");
         }

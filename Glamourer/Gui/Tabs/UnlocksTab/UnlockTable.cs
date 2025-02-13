@@ -3,6 +3,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Glamourer.Events;
 using Glamourer.Interop;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
@@ -17,12 +18,16 @@ namespace Glamourer.Gui.Tabs.UnlocksTab;
 
 public class UnlockTable : Table<EquipItem>, IDisposable
 {
-    private readonly ObjectUnlocked _event;
+    private readonly ObjectUnlocked  _event;
+    private readonly PenumbraService _penumbra;
+
+    private Guid _lastCurrentCollection = Guid.Empty;
 
     public UnlockTable(ItemManager items, TextureService textures, ItemUnlockManager itemUnlocks,
-        PenumbraChangedItemTooltip tooltip, ObjectUnlocked @event, JobService jobs, FavoriteManager favorites)
+        PenumbraChangedItemTooltip tooltip, ObjectUnlocked @event, JobService jobs, FavoriteManager favorites, PenumbraService penumbra)
         : base("ItemUnlockTable", new ItemList(items),
             new FavoriteColumn(favorites, @event) { Label = "F" },
+            new ModdedColumn(penumbra) { Label            = "M" },
             new NameColumn(textures, tooltip) { Label     = "Item Name..." },
             new SlotColumn { Label                        = "Equip Slot" },
             new TypeColumn { Label                        = "Item Type..." },
@@ -36,14 +41,40 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             new TradableColumn { Label                    = "Trade" }
         )
     {
-        _event   =  @event;
-        Sortable =  true;
-        Flags    |= ImGuiTableFlags.Hideable | ImGuiTableFlags.Reorderable | ImGuiTableFlags.Resizable;
+        _event    =  @event;
+        _penumbra =  penumbra;
+        Sortable  =  true;
+        Flags     |= ImGuiTableFlags.Hideable | ImGuiTableFlags.Reorderable | ImGuiTableFlags.Resizable;
         _event.Subscribe(OnObjectUnlock, ObjectUnlocked.Priority.UnlockTable);
+        _penumbra.ModSettingChanged += OnModSettingsChanged;
+        
+    }
+
+    private void OnModSettingsChanged(Penumbra.Api.Enums.ModSettingChange type, Guid collection, string mod, bool inherited)
+    {
+        if (collection != _lastCurrentCollection)
+            return;
+
+        FilterDirty = true;
+        SortDirty   = true;
+    }
+
+    protected override void PreDraw()
+    {
+        var lastCurrentCollection = _penumbra.CurrentCollection.Id;
+        if (_lastCurrentCollection != lastCurrentCollection)
+        {
+            _lastCurrentCollection = lastCurrentCollection;
+            FilterDirty            = true;
+            SortDirty              = true;
+        }
     }
 
     public void Dispose()
-        => _event.Unsubscribe(OnObjectUnlock);
+    {
+        _event.Unsubscribe(OnObjectUnlock);
+        _penumbra.ModSettingChanged -= OnModSettingsChanged;
+    }
 
     private sealed class FavoriteColumn : YesNoColumn<EquipItem>
     {
@@ -75,6 +106,66 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
         public override int Compare(EquipItem lhs, EquipItem rhs)
             => _favorites.Contains(rhs).CompareTo(_favorites.Contains(lhs));
+    }
+
+    private sealed class ModdedColumn : YesNoColumn<EquipItem>
+    {
+        public override float Width
+            => ImGui.GetFrameHeightWithSpacing();
+
+        private readonly PenumbraService               _penumbra;
+        private readonly Dictionary<CustomItemId, int> _compareCache = [];
+
+        public ModdedColumn(PenumbraService penumbra)
+        {
+            _penumbra =  penumbra;
+            Flags     |= ImGuiTableColumnFlags.NoResize;
+        }
+
+        public override void PostSort()
+        {
+            _compareCache.Clear();
+        }
+
+        public override void DrawColumn(EquipItem item, int idx)
+        {
+            var value = _penumbra.CheckCurrentChangedItem(item.Name);
+            if (value.Length == 0)
+                return;
+
+            using (ImRaii.PushFont(UiBuilder.IconFont))
+            {
+                using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.ModdedItemMarker.Value());
+                ImGuiUtil.Center(FontAwesomeIcon.Circle.ToIconString());
+            }
+
+            if (ImGui.IsItemHovered())
+            {
+                using var tt = ImUtf8.Tooltip();
+                foreach (var (_, mod) in value)
+                    ImUtf8.BulletText(mod);
+            }
+        }
+
+        public override bool FilterFunc(EquipItem item)
+            => FilterValue.HasFlag(_penumbra.CheckCurrentChangedItem(item.Name).Length > 0 ? YesNoFlag.Yes : YesNoFlag.No);
+
+        public override int Compare(EquipItem lhs, EquipItem rhs)
+        {
+            if (!_compareCache.TryGetValue(lhs.Id, out var lhsCount))
+            {
+                lhsCount              = _penumbra.CheckCurrentChangedItem(lhs.Name).Length;
+                _compareCache[lhs.Id] = lhsCount;
+            }
+
+            if (!_compareCache.TryGetValue(rhs.Id, out var rhsCount))
+            {
+                rhsCount              = _penumbra.CheckCurrentChangedItem(rhs.Name).Length;
+                _compareCache[rhs.Id] = rhsCount;
+            }
+
+            return lhsCount.CompareTo(rhsCount);
+        }
     }
 
     private sealed class NameColumn : ColumnString<EquipItem>
@@ -317,7 +408,6 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         { }
     }
 
-
     private sealed class JobColumn : ColumnFlags<JobFlag, EquipItem>
     {
         public override float Width
@@ -414,7 +504,6 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             ImGui.TextUnformatted(text);
         }
     }
-
 
     private sealed class DyableColumn : ColumnFlags<DyableColumn.Dyable, EquipItem>
     {

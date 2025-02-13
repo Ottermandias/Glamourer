@@ -15,7 +15,7 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelector selector, DesignManager manager, Configuration config)
 {
-    private readonly ModCombo              _modCombo = new(penumbra, Glamourer.Log);
+    private readonly ModCombo              _modCombo = new(penumbra, Glamourer.Log, selector);
     private          (Mod, ModSettings)[]? _copy;
 
     public void Draw()

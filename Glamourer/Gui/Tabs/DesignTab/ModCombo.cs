@@ -4,19 +4,18 @@ using ImGuiNET;
 using OtterGui.Classes;
 using OtterGui.Log;
 using OtterGui.Raii;
+using OtterGui.Text;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings)>
+public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings, int Count)>
 {
-    public ModCombo(PenumbraService penumbra, Logger log)
-        : base(penumbra.GetMods, MouseWheelType.None, log)
-    {
-        SearchByParts = false;
-    }
+    public ModCombo(PenumbraService penumbra, Logger log, DesignFileSystemSelector selector)
+        : base(() => penumbra.GetMods(selector.Selected?.FilteredItemNames.ToArray() ?? []), MouseWheelType.None, log)
+        => SearchByParts = false;
 
-    protected override string ToString((Mod Mod, ModSettings Settings) obj)
+    protected override string ToString((Mod Mod, ModSettings Settings, int Count) obj)
         => obj.Mod.Name;
 
     protected override bool IsVisible(int globalIndex, LowerString filter)
@@ -24,36 +23,45 @@ public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings)>
 
     protected override bool DrawSelectable(int globalIdx, bool selected)
     {
-        using var id = ImRaii.PushId(globalIdx);
-        var (mod, settings) = Items[globalIdx];
+        using var id = ImUtf8.PushId(globalIdx);
+        var (mod, settings, count) = Items[globalIdx];
         bool ret;
-        using (var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled), !settings.Enabled))
+        var color = settings.Enabled
+            ? count > 0
+                ? ColorId.ContainsItemsEnabled.Value()
+                : ImGui.GetColorU32(ImGuiCol.Text)
+            : count > 0
+                ? ColorId.ContainsItemsDisabled.Value()
+                : ImGui.GetColorU32(ImGuiCol.TextDisabled);
+        using (ImRaii.PushColor(ImGuiCol.Text, color))
         {
-            ret = ImGui.Selectable(mod.Name, selected);
+            ret = ImUtf8.Selectable(mod.Name, selected);
         }
 
         if (ImGui.IsItemHovered())
         {
             using var style          = ImRaii.PushStyle(ImGuiStyleVar.PopupBorderSize, 2 * ImGuiHelpers.GlobalScale);
-            using var tt             = ImRaii.Tooltip();
+            using var tt             = ImUtf8.Tooltip();
             var       namesDifferent = mod.Name != mod.DirectoryName;
             ImGui.Dummy(new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
-            using (var group = ImRaii.Group())
+            using (ImUtf8.Group())
             {
                 if (namesDifferent)
-                    ImGui.TextUnformatted("Directory Name");
-                ImGui.TextUnformatted("Enabled");
-                ImGui.TextUnformatted("Priority");
+                    ImUtf8.Text("Directory Name"u8);
+                ImUtf8.Text("Enabled"u8);
+                ImUtf8.Text("Priority"u8);
+                ImUtf8.Text("Affected Design Items"u8);
                 DrawSettingsLeft(settings);
             }
 
             ImGui.SameLine(Math.Max(ImGui.GetItemRectSize().X + 3 * ImGui.GetStyle().ItemSpacing.X, 150 * ImGuiHelpers.GlobalScale));
-            using (var group = ImRaii.Group())
+            using (ImUtf8.Group())
             {
                 if (namesDifferent)
-                    ImGui.TextUnformatted(mod.DirectoryName);
-                ImGui.TextUnformatted(settings.Enabled.ToString());
-                ImGui.TextUnformatted(settings.Priority.ToString());
+                    ImUtf8.Text(mod.DirectoryName);
+                ImUtf8.Text($"{settings.Enabled}");
+                ImUtf8.Text($"{settings.Priority}");
+                ImUtf8.Text($"{count}");
                 DrawSettingsRight(settings);
             }
         }
@@ -65,7 +73,7 @@ public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings)>
     {
         foreach (var setting in settings.Settings)
         {
-            ImGui.TextUnformatted(setting.Key);
+            ImUtf8.Text(setting.Key);
             for (var i = 1; i < setting.Value.Count; ++i)
                 ImGui.NewLine();
         }
@@ -76,10 +84,10 @@ public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings)>
         foreach (var setting in settings.Settings)
         {
             if (setting.Value.Count == 0)
-                ImGui.TextUnformatted("<None Enabled>");
+                ImUtf8.Text("<None Enabled>"u8);
             else
                 foreach (var option in setting.Value)
-                    ImGui.TextUnformatted(option);
+                    ImUtf8.Text(option);
         }
     }
 }

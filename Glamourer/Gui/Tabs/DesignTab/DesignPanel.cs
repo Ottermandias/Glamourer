@@ -17,7 +17,6 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Text;
-using OtterGuiInternal.Structs;
 using Penumbra.GameData.Enums;
 using static Glamourer.Gui.Tabs.HeaderDrawer;
 
