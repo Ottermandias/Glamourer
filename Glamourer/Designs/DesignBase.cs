@@ -195,6 +195,9 @@ public class DesignBase
         return true;
     }
 
+    public IEnumerable<string> FilteredItemNames
+        => _designData.FilteredItemNames(Application.Equip, Application.BonusItem);
+
     internal FlagRestrictionResetter TemporarilyRestrictApplication(ApplicationCollection restrictions)
         => new(this, restrictions);
 

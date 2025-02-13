@@ -46,20 +46,9 @@ public unsafe struct DesignData
     public DesignData()
     { }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     public readonly bool ContainsName(LowerString name)
-        => name.IsContained(_nameHead)
-         || name.IsContained(_nameBody)
-         || name.IsContained(_nameHands)
-         || name.IsContained(_nameLegs)
-         || name.IsContained(_nameFeet)
-         || name.IsContained(_nameEars)
-         || name.IsContained(_nameNeck)
-         || name.IsContained(_nameWrists)
-         || name.IsContained(_nameRFinger)
-         || name.IsContained(_nameLFinger)
-         || name.IsContained(_nameMainhand)
-         || name.IsContained(_nameOffhand)
-         || name.IsContained(_nameGlasses);
+        => ItemNames.Any(name.IsContained);
 
     public readonly StainIds Stain(EquipSlot slot)
     {
@@ -76,6 +65,57 @@ public unsafe struct DesignData
     public readonly bool Crest(CrestFlag slot)
         => CrestVisibility.HasFlag(slot);
 
+    public readonly IEnumerable<string> ItemNames
+    {
+        [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            yield return _nameHead;
+            yield return _nameBody;
+            yield return _nameHands;
+            yield return _nameLegs;
+            yield return _nameFeet;
+            yield return _nameEars;
+            yield return _nameNeck;
+            yield return _nameWrists;
+            yield return _nameRFinger;
+            yield return _nameLFinger;
+            yield return _nameMainhand;
+            yield return _nameOffhand;
+            yield return _nameGlasses;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    public readonly IEnumerable<string> FilteredItemNames(EquipFlag item, BonusItemFlag bonusItem)
+    {
+        if (item.HasFlag(EquipFlag.Head))
+            yield return _nameHead;
+        if (item.HasFlag(EquipFlag.Body))
+            yield return _nameBody;
+        if (item.HasFlag(EquipFlag.Hands))
+            yield return _nameHands;
+        if (item.HasFlag(EquipFlag.Legs))
+            yield return _nameLegs;
+        if (item.HasFlag(EquipFlag.Feet))
+            yield return _nameFeet;
+        if (item.HasFlag(EquipFlag.Ears))
+            yield return _nameEars;
+        if (item.HasFlag(EquipFlag.Neck))
+            yield return _nameNeck;
+        if (item.HasFlag(EquipFlag.Wrist))
+            yield return _nameWrists;
+        if (item.HasFlag(EquipFlag.RFinger))
+            yield return _nameRFinger;
+        if (item.HasFlag(EquipFlag.LFinger))
+            yield return _nameLFinger;
+        if (item.HasFlag(EquipFlag.Mainhand))
+            yield return _nameMainhand;
+        if (item.HasFlag(EquipFlag.Offhand))
+            yield return _nameOffhand;
+        if (bonusItem.HasFlag(BonusItemFlag.Glasses))
+            yield return _nameGlasses;
+    }
 
     public readonly FullEquipType MainhandType
         => _typeMainhand;
