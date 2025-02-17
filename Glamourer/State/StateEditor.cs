@@ -407,7 +407,8 @@ public class StateEditor(
                 }
                 else if (!value.Revert)
                 {
-                    Editor.ChangeMaterialValue(state, idx, new MaterialValueState(ColorRow.Empty, value.Value, CharacterWeapon.Empty, source),
+                    Editor.ChangeMaterialValue(state, idx,
+                        new MaterialValueState(ColorRow.Empty, value.Value, CharacterWeapon.Empty, source),
                         settings.Source, out _, settings.Key);
                 }
             }

@@ -9,7 +9,6 @@ using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.PalettePlus;
 using ImGuiNET;
-using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Widgets;
@@ -39,12 +38,12 @@ public class SettingsTab(
 
     public void DrawContent()
     {
-        using var child = ImRaii.Child("MainWindowChild");
+        using var child = ImUtf8.Child("MainWindowChild"u8, default);
         if (!child)
             return;
 
-        Checkbox("Enable Auto Designs",
-            "Enable the application of designs associated to characters in the Automation tab to be applied automatically.",
+        Checkbox("Enable Auto Designs"u8,
+            "Enable the application of designs associated to characters in the Automation tab to be applied automatically."u8,
             config.EnableAutoDesigns, v =>
             {
                 config.EnableAutoDesigns = v;
@@ -55,7 +54,7 @@ public class SettingsTab(
         ImGui.NewLine();
         ImGui.NewLine();
 
-        using (ImRaii.Child("SettingsChild"))
+        using (ImUtf8.Child("SettingsChild"u8, default))
         {
             DrawBehaviorSettings();
             DrawDesignDefaultSettings();
@@ -70,44 +69,44 @@ public class SettingsTab(
 
     private void DrawBehaviorSettings()
     {
-        if (!ImGui.CollapsingHeader("Glamourer Behavior"))
+        if (!ImUtf8.CollapsingHeader("Glamourer Behavior"u8))
             return;
 
-        Checkbox("Always Apply Entire Weapon for Mainhand",
-            "When manually applying a mainhand item, will also apply a corresponding offhand and potentially gauntlets for certain fist weapons.",
+        Checkbox("Always Apply Entire Weapon for Mainhand"u8,
+            "When manually applying a mainhand item, will also apply a corresponding offhand and potentially gauntlets for certain fist weapons."u8,
             config.ChangeEntireItem, v => config.ChangeEntireItem = v);
-        Checkbox("Use Replacement Gear for Gear Unavailable to Your Race or Gender",
-            "Use different gender- and race-appropriate models as a substitute when detecting certain items not available for a characters current gender and race.",
+        Checkbox("Use Replacement Gear for Gear Unavailable to Your Race or Gender"u8,
+            "Use different gender- and race-appropriate models as a substitute when detecting certain items not available for a characters current gender and race."u8,
             config.UseRestrictedGearProtection, v => config.UseRestrictedGearProtection = v);
-        Checkbox("Do Not Apply Unobtained Items in Automation",
-            "Enable this if you want automatically applied designs to only consider items and customizations you have actually unlocked once, and skip those you have not.",
+        Checkbox("Do Not Apply Unobtained Items in Automation"u8,
+            "Enable this if you want automatically applied designs to only consider items and customizations you have actually unlocked once, and skip those you have not."u8,
             config.UnlockedItemMode, v => config.UnlockedItemMode = v);
-        Checkbox("Respect Manual Changes When Editing Automation",
-            "Whether changing any currently active automation group will respect manual changes to the character before re-applying the changed automation or not.",
+        Checkbox("Respect Manual Changes When Editing Automation"u8,
+            "Whether changing any currently active automation group will respect manual changes to the character before re-applying the changed automation or not."u8,
             config.RespectManualOnAutomationUpdate, v => config.RespectManualOnAutomationUpdate = v);
-        Checkbox("Enable Festival Easter-Eggs",
-            "Glamourer may do some fun things on specific dates. Disable this if you do not want your experience disrupted by this.",
+        Checkbox("Enable Festival Easter-Eggs"u8,
+            "Glamourer may do some fun things on specific dates. Disable this if you do not want your experience disrupted by this."u8,
             config.DisableFestivals == 0, v => config.DisableFestivals = v ? (byte)0 : (byte)2);
-        Checkbox("Auto-Reload Gear",
-            "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection.",
+        Checkbox("Auto-Reload Gear"u8,
+            "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection."u8,
             config.AutoRedrawEquipOnChanges, v => config.AutoRedrawEquipOnChanges = v);
-        Checkbox("Revert Manual Changes on Zone Change",
-            "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone.",
+        Checkbox("Revert Manual Changes on Zone Change"u8,
+            "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone."u8,
             config.RevertManualChangesOnZoneChange, v => config.RevertManualChangesOnZoneChange = v);
-        Checkbox("Enable Advanced Customization Options",
-            "Enable the display and editing of advanced customization options like arbitrary colors.",
+        Checkbox("Enable Advanced Customization Options"u8,
+            "Enable the display and editing of advanced customization options like arbitrary colors."u8,
             config.UseAdvancedParameters, paletteChecker.SetAdvancedParameters);
         PaletteImportButton();
-        Checkbox("Enable Advanced Dye Options",
-            "Enable the display and editing of advanced dyes (color sets) for all equipment",
+        Checkbox("Enable Advanced Dye Options"u8,
+            "Enable the display and editing of advanced dyes (color sets) for all equipment"u8,
             config.UseAdvancedDyes, v => config.UseAdvancedDyes = v);
-        Checkbox("Always Apply Associated Mods",
-            "Whenever a design is applied to a character (including via automation), Glamourer will try to apply its associated mod settings to the collection currently associated with that character, if it is available.\n\n"
-          + "Glamourer will NOT revert these applied settings automatically. This may mess up your collection and configuration.\n\n"
-          + "If you enable this setting, you are aware that any resulting misconfiguration is your own fault.",
+        Checkbox("Always Apply Associated Mods"u8,
+            "Whenever a design is applied to a character (including via automation), Glamourer will try to apply its associated mod settings to the collection currently associated with that character, if it is available.\n\n"u8
+          + "Glamourer will NOT revert these applied settings automatically. This may mess up your collection and configuration.\n\n"u8
+          + "If you enable this setting, you are aware that any resulting misconfiguration is your own fault."u8,
             config.AlwaysApplyAssociatedMods, v => config.AlwaysApplyAssociatedMods = v);
-        Checkbox("Use Temporary Mod Settings",
-            "Apply all settings as temporary settings so they will be reset when Glamourer or the game shut down.", config.UseTemporarySettings,
+        Checkbox("Use Temporary Mod Settings"u8,
+            "Apply all settings as temporary settings so they will be reset when Glamourer or the game shut down."u8, config.UseTemporarySettings,
             v => config.UseTemporarySettings = v);
         ImGui.NewLine();
     }
@@ -117,33 +116,34 @@ public class SettingsTab(
         if (!ImUtf8.CollapsingHeader("Design Defaults"))
             return;
 
-        Checkbox("Show in Quick Design Bar", "Newly created designs will be shown in the quick design bar by default.",
+        Checkbox("Show in Quick Design Bar"u8, "Newly created designs will be shown in the quick design bar by default."u8,
             config.DefaultDesignSettings.ShowQuickDesignBar, v => config.DefaultDesignSettings.ShowQuickDesignBar = v);
-        Checkbox("Reset Advanced Dyes", "Newly created designs will be configured to reset advanced dyes on application by default.",
+        Checkbox("Reset Advanced Dyes"u8, "Newly created designs will be configured to reset advanced dyes on application by default."u8,
             config.DefaultDesignSettings.ResetAdvancedDyes, v => config.DefaultDesignSettings.ResetAdvancedDyes = v);
-        Checkbox("Always Force Redraw", "Newly created designs will be configured to force character redraws on application by default.",
+        Checkbox("Always Force Redraw"u8, "Newly created designs will be configured to force character redraws on application by default."u8,
             config.DefaultDesignSettings.AlwaysForceRedrawing, v => config.DefaultDesignSettings.AlwaysForceRedrawing = v);
-        Checkbox("Reset Temporary Settings", "Newly created designs will be configured to clear all advanced settings applied by Glamourer to the collection by default.",
+        Checkbox("Reset Temporary Settings"u8,
+            "Newly created designs will be configured to clear all advanced settings applied by Glamourer to the collection by default."u8,
             config.DefaultDesignSettings.ResetTemporarySettings, v => config.DefaultDesignSettings.ResetTemporarySettings = v);
     }
 
     private void DrawInterfaceSettings()
     {
-        if (!ImGui.CollapsingHeader("Interface"))
+        if (!ImUtf8.CollapsingHeader("Interface"u8))
             return;
 
-        EphemeralCheckbox("Show Quick Design Bar",
-            "Show a bar separate from the main window that allows you to quickly apply designs or revert your character and target.",
+        EphemeralCheckbox("Show Quick Design Bar"u8,
+            "Show a bar separate from the main window that allows you to quickly apply designs or revert your character and target."u8,
             config.Ephemeral.ShowDesignQuickBar, v => config.Ephemeral.ShowDesignQuickBar = v);
-        EphemeralCheckbox("Lock Quick Design Bar", "Prevent the quick design bar from being moved and lock it in place.",
+        EphemeralCheckbox("Lock Quick Design Bar"u8, "Prevent the quick design bar from being moved and lock it in place."u8,
             config.Ephemeral.LockDesignQuickBar,
             v => config.Ephemeral.LockDesignQuickBar = v);
         if (Widget.ModifiableKeySelector("Hotkey to Toggle Quick Design Bar", "Set a hotkey that opens or closes the quick design bar.",
                 100 * ImGuiHelpers.GlobalScale,
                 config.ToggleQuickDesignBar, v => config.ToggleQuickDesignBar = v, _validKeys))
             config.Save();
-        Checkbox("Show Quick Design Bar in Main Window",
-            "Show the quick design bar in the tab selection part of the main window, too.",
+        Checkbox("Show Quick Design Bar in Main Window"u8,
+            "Show the quick design bar in the tab selection part of the main window, too."u8,
             config.ShowQuickBarInTabs, v => config.ShowQuickBarInTabs = v);
         DrawQuickDesignBoxes();
 
@@ -151,7 +151,7 @@ public class SettingsTab(
         ImGui.Separator();
         ImGui.Dummy(Vector2.Zero);
 
-        Checkbox("Enable Game Context Menus", "Whether to show a Try On via Glamourer button on context menus for equippable items.",
+        Checkbox("Enable Game Context Menus"u8, "Whether to show a Try On via Glamourer button on context menus for equippable items."u8,
             config.EnableGameContextMenu,     v =>
             {
                 config.EnableGameContextMenu = v;
@@ -160,41 +160,41 @@ public class SettingsTab(
                 else
                     contextMenuService.Disable();
             });
-        Checkbox("Show Window when UI is Hidden", "Whether to show Glamourer windows even when the games UI is hidden.",
+        Checkbox("Show Window when UI is Hidden"u8, "Whether to show Glamourer windows even when the games UI is hidden."u8,
             config.ShowWindowWhenUiHidden,        v =>
             {
                 config.ShowWindowWhenUiHidden = v;
                 uiBuilder.DisableUserUiHide   = v;
             });
-        Checkbox("Hide Window in Cutscenes", "Whether the main Glamourer window should automatically be hidden when entering cutscenes or not.",
+        Checkbox("Hide Window in Cutscenes"u8, "Whether the main Glamourer window should automatically be hidden when entering cutscenes or not."u8,
             config.HideWindowInCutscene,
             v =>
             {
                 config.HideWindowInCutscene     = v;
                 uiBuilder.DisableCutsceneUiHide = !v;
             });
-        EphemeralCheckbox("Lock Main Window", "Prevent the main window from being moved and lock it in place.",
+        EphemeralCheckbox("Lock Main Window"u8, "Prevent the main window from being moved and lock it in place."u8,
             config.Ephemeral.LockMainWindow,
             v => config.Ephemeral.LockMainWindow = v);
-        Checkbox("Open Main Window at Game Start", "Whether the main Glamourer window should be open or closed after launching the game.",
+        Checkbox("Open Main Window at Game Start"u8, "Whether the main Glamourer window should be open or closed after launching the game."u8,
             config.OpenWindowAtStart,              v => config.OpenWindowAtStart = v);
         ImGui.Dummy(Vector2.Zero);
         ImGui.Separator();
         ImGui.Dummy(Vector2.Zero);
 
-        Checkbox("Smaller Equip Display", "Use single-line display without icons and small dye buttons instead of double-line display.",
+        Checkbox("Smaller Equip Display"u8, "Use single-line display without icons and small dye buttons instead of double-line display."u8,
             config.SmallEquip,            v => config.SmallEquip = v);
         DrawHeightUnitSettings();
-        Checkbox("Show Application Checkboxes",
-            "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules.",
+        Checkbox("Show Application Checkboxes"u8,
+            "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules."u8,
             !config.HideApplyCheckmarks, v => config.HideApplyCheckmarks = !v);
         if (Widget.DoubleModifierSelector("Design Deletion Modifier",
                 "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
                 config.DeleteDesignModifier, v => config.DeleteDesignModifier = v))
             config.Save();
         DrawRenameSettings();
-        Checkbox("Auto-Open Design Folders",
-            "Have design folders open or closed as their default state after launching.", config.OpenFoldersByDefault,
+        Checkbox("Auto-Open Design Folders"u8,
+            "Have design folders open or closed as their default state after launching."u8, config.OpenFoldersByDefault,
             v => config.OpenFoldersByDefault = v);
         DrawFolderSortType();
 
@@ -202,32 +202,32 @@ public class SettingsTab(
         ImGui.Separator();
         ImGui.Dummy(Vector2.Zero);
 
-        Checkbox("Allow Double-Clicking Designs to Apply",
-            "Tries to apply a design to the current player character When double-clicking it in the design selector.",
+        Checkbox("Allow Double-Clicking Designs to Apply"u8,
+            "Tries to apply a design to the current player character When double-clicking it in the design selector."u8,
             config.AllowDoubleClickToApply, v => config.AllowDoubleClickToApply = v);
-        Checkbox("Show all Application Rule Checkboxes for Automation",
-            "Show multiple separate application rule checkboxes for automated designs, instead of a single box for enabling or disabling.",
+        Checkbox("Show all Application Rule Checkboxes for Automation"u8,
+            "Show multiple separate application rule checkboxes for automated designs, instead of a single box for enabling or disabling."u8,
             config.ShowAllAutomatedApplicationRules, v => config.ShowAllAutomatedApplicationRules = v);
-        Checkbox("Show Unobtained Item Warnings",
-            "Show information whether you have unlocked all items and customizations in your automated design or not.",
+        Checkbox("Show Unobtained Item Warnings"u8,
+            "Show information whether you have unlocked all items and customizations in your automated design or not."u8,
             config.ShowUnlockedItemWarnings, v => config.ShowUnlockedItemWarnings = v);
         if (config.UseAdvancedParameters)
         {
-            Checkbox("Show Color Display Config", "Show the Color Display configuration options in the Advanced Customization panels.",
+            Checkbox("Show Color Display Config"u8, "Show the Color Display configuration options in the Advanced Customization panels."u8,
                 config.ShowColorConfig,           v => config.ShowColorConfig = v);
-            Checkbox("Show Palette+ Import Button",
-                "Show the import button that allows you to import Palette+ palettes onto a design in the Advanced Customization options section for designs.",
+            Checkbox("Show Palette+ Import Button"u8,
+                "Show the import button that allows you to import Palette+ palettes onto a design in the Advanced Customization options section for designs."u8,
                 config.ShowPalettePlusImport, v => config.ShowPalettePlusImport = v);
             using var id = ImRaii.PushId(1);
             PaletteImportButton();
         }
 
         if (config.UseAdvancedDyes)
-            Checkbox("Keep Advanced Dye Window Attached",
-                "Keeps the advanced dye window expansion attached to the main window, or makes it freely movable.",
+            Checkbox("Keep Advanced Dye Window Attached"u8,
+                "Keeps the advanced dye window expansion attached to the main window, or makes it freely movable."u8,
                 config.KeepAdvancedDyesAttached, v => config.KeepAdvancedDyesAttached = v);
 
-        Checkbox("Debug Mode", "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general.", config.DebugMode,
+        Checkbox("Debug Mode"u8, "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general."u8, config.DebugMode,
             v => config.DebugMode = v);
         ImGui.NewLine();
     }
@@ -236,40 +236,48 @@ public class SettingsTab(
     {
         var showAuto     = config.EnableAutoDesigns;
         var showAdvanced = config.UseAdvancedParameters || config.UseAdvancedDyes;
-        var numColumns   = 7 - (showAuto ? 0 : 2) - (showAdvanced ? 0 : 1);
+        var numColumns   = 8 - (showAuto ? 0 : 2) - (showAdvanced ? 0 : 1) - (config.UseTemporarySettings ? 0 : 1);
         ImGui.NewLine();
-        ImGui.TextUnformatted("Show the Following Buttons in the Quick Design Bar:");
+        ImUtf8.Text("Show the Following Buttons in the Quick Design Bar:"u8);
         ImGui.Dummy(Vector2.Zero);
-        using var table = ImRaii.Table("##tableQdb", numColumns,
+        using var table = ImUtf8.Table("##tableQdb"u8, numColumns,
             ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.Borders | ImGuiTableFlags.NoHostExtendX);
         if (!table)
             return;
 
-        var columns = new[]
-        {
-            (" Apply Design ", true, QdbButtons.ApplyDesign),
-            (" Revert All ", true, QdbButtons.RevertAll),
-            (" Revert to Auto ", showAuto, QdbButtons.RevertAutomation),
-            (" Reapply Auto ", showAuto, QdbButtons.ReapplyAutomation),
-            (" Revert Equip ", true, QdbButtons.RevertEquip),
-            (" Revert Customize ", true, QdbButtons.RevertCustomize),
-            (" Revert Advanced ", showAdvanced, QdbButtons.RevertAdvanced),
-        };
+        ReadOnlySpan<(string, bool, QdbButtons)> columns =
+        [
+            ("Apply Design", true, QdbButtons.ApplyDesign),
+            ("Revert All", true, QdbButtons.RevertAll),
+            ("Revert to Auto", showAuto, QdbButtons.RevertAutomation),
+            ("Reapply Auto", showAuto, QdbButtons.ReapplyAutomation),
+            ("Revert Equip", true, QdbButtons.RevertEquip),
+            ("Revert Customize", true, QdbButtons.RevertCustomize),
+            ("Revert Advanced", showAdvanced, QdbButtons.RevertAdvanced),
+            ("Reset Settings", config.UseTemporarySettings, QdbButtons.ResetSettings),
+        ];
 
-        foreach (var (label, _, _) in columns.Where(t => t.Item2))
+        for(var i = 0; i < columns.Length; ++i)
         {
+            if (!columns[i].Item2)
+                continue;
+
             ImGui.TableNextColumn();
-            ImGui.TableHeader(label);
+            ImUtf8.TableHeader(columns[i].Item1);
         }
 
-        foreach (var (_, _, flag) in columns.Where(t => t.Item2))
+        for (var i = 0; i < columns.Length; ++i)
         {
-            using var id = ImRaii.PushId((int)flag);
+            if (!columns[i].Item2)
+                continue;
+
+            var       flag = columns[i].Item3;
+            using var id   = ImUtf8.PushId((int)flag);
             ImGui.TableNextColumn();
             var offset = (ImGui.GetContentRegionAvail().X - ImGui.GetFrameHeight()) / 2;
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + offset);
             var value = config.QdbButtons.HasFlag(flag);
-            if (!ImGui.Checkbox(string.Empty, ref value))
+            if (!ImUtf8.Checkbox(""u8, ref value))
                 continue;
 
             var buttons = value ? config.QdbButtons | flag : config.QdbButtons & ~flag;
@@ -287,31 +295,31 @@ public class SettingsTab(
             return;
 
         ImGui.SameLine();
-        if (ImGui.Button("Import Palette+ to Designs"))
+        if (ImUtf8.Button("Import Palette+ to Designs"u8))
             paletteImport.ImportDesigns();
-        ImGuiUtil.HoverTooltip(
+        ImUtf8.HoverTooltip(
             $"Import all existing Palettes from your Palette+ Config into Designs at PalettePlus/[Name] if these do not exist. Existing Palettes are:\n\n\t - {string.Join("\n\t - ", paletteImport.Data.Keys)}");
     }
 
     /// <summary> Draw the entire Color subsection. </summary>
     private void DrawColorSettings()
     {
-        if (!ImGui.CollapsingHeader("Colors"))
+        if (!ImUtf8.CollapsingHeader("Colors"u8))
             return;
 
-        using (var tree = ImRaii.TreeNode("Custom Design Colors"))
+        using (var tree = ImUtf8.TreeNode("Custom Design Colors"u8))
         {
             if (tree)
                 designColorUi.Draw();
         }
 
-        using (var tree = ImRaii.TreeNode("Color Settings"))
+        using (var tree = ImUtf8.TreeNode("Color Settings"u8))
         {
             if (tree)
                 foreach (var color in Enum.GetValues<ColorId>())
                 {
                     var (defaultColor, name, description) = color.Data();
-                    var currentColor = config.Colors.TryGetValue(color, out var current) ? current : defaultColor;
+                    var currentColor = config.Colors.GetValueOrDefault(color, defaultColor);
                     if (Widget.ColorPicker(name, description, currentColor, c => config.Colors[color] = c, defaultColor))
                         config.Save();
                 }
@@ -321,33 +329,33 @@ public class SettingsTab(
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private void Checkbox(string label, string tooltip, bool current, Action<bool> setter)
+    private void Checkbox(ReadOnlySpan<byte> label, ReadOnlySpan<byte> tooltip, bool current, Action<bool> setter)
     {
-        using var id  = ImRaii.PushId(label);
+        using var id  = ImUtf8.PushId(label);
         var       tmp = current;
-        if (ImGui.Checkbox(string.Empty, ref tmp) && tmp != current)
+        if (ImUtf8.Checkbox(""u8, ref tmp) && tmp != current)
         {
             setter(tmp);
             config.Save();
         }
 
         ImGui.SameLine();
-        ImGuiUtil.LabeledHelpMarker(label, tooltip);
+        ImUtf8.LabeledHelpMarker(label, tooltip);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private void EphemeralCheckbox(string label, string tooltip, bool current, Action<bool> setter)
+    private void EphemeralCheckbox(ReadOnlySpan<byte> label, ReadOnlySpan<byte> tooltip, bool current, Action<bool> setter)
     {
-        using var id  = ImRaii.PushId(label);
+        using var id  = ImUtf8.PushId(label);
         var       tmp = current;
-        if (ImGui.Checkbox(string.Empty, ref tmp) && tmp != current)
+        if (ImUtf8.Checkbox(""u8, ref tmp) && tmp != current)
         {
             setter(tmp);
             config.Ephemeral.Save();
         }
 
         ImGui.SameLine();
-        ImGuiUtil.LabeledHelpMarker(label, tooltip);
+        ImUtf8.LabeledHelpMarker(label, tooltip);
     }
 
     /// <summary> Different supported sort modes as a combo. </summary>
@@ -355,29 +363,29 @@ public class SettingsTab(
     {
         var sortMode = config.SortMode;
         ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
-        using (var combo = ImRaii.Combo("##sortMode", sortMode.Name))
+        using (var combo = ImUtf8.Combo("##sortMode"u8, sortMode.Name))
         {
             if (combo)
                 foreach (var val in Configuration.Constants.ValidSortModes)
                 {
-                    if (ImGui.Selectable(val.Name, val.GetType() == sortMode.GetType()) && val.GetType() != sortMode.GetType())
+                    if (ImUtf8.Selectable(val.Name, val.GetType() == sortMode.GetType()) && val.GetType() != sortMode.GetType())
                     {
                         config.SortMode = val;
                         selector.SetFilterDirty();
                         config.Save();
                     }
 
-                    ImGuiUtil.HoverTooltip(val.Description);
+                    ImUtf8.HoverTooltip(val.Description);
                 }
         }
 
-        ImGuiUtil.LabeledHelpMarker("Sort Mode", "Choose the sort mode for the mod selector in the designs tab.");
+        ImUtf8.LabeledHelpMarker("Sort Mode"u8, "Choose the sort mode for the mod selector in the designs tab."u8);
     }
 
     private void DrawRenameSettings()
     {
         ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
-        using (var combo = ImRaii.Combo("##renameSettings", config.ShowRename.GetData().Name))
+        using (var combo = ImUtf8.Combo("##renameSettings"u8, config.ShowRename.GetData().Name))
         {
             if (combo)
                 foreach (var value in Enum.GetValues<RenameField>())
@@ -390,7 +398,7 @@ public class SettingsTab(
                         config.Save();
                     }
 
-                    ImGuiUtil.HoverTooltip(desc);
+                    ImUtf8.HoverTooltip(desc);
                 }
         }
 
@@ -399,19 +407,19 @@ public class SettingsTab(
             "Select which of the two renaming input fields are visible when opening the right-click context menu of a design in the design selector.";
         ImGuiComponents.HelpMarker(tt);
         ImGui.SameLine();
-        ImGui.TextUnformatted("Rename Fields in Design Context Menu");
-        ImGuiUtil.HoverTooltip(tt);
+        ImUtf8.Text("Rename Fields in Design Context Menu"u8);
+        ImUtf8.HoverTooltip(tt);
     }
 
     private void DrawHeightUnitSettings()
     {
         ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
-        using (var combo = ImRaii.Combo("##heightUnit", HeightDisplayTypeName(config.HeightDisplayType)))
+        using (var combo = ImUtf8.Combo("##heightUnit"u8, HeightDisplayTypeName(config.HeightDisplayType)))
         {
             if (combo)
                 foreach (var type in Enum.GetValues<HeightDisplayType>())
                 {
-                    if (ImGui.Selectable(HeightDisplayTypeName(type), type == config.HeightDisplayType) && type != config.HeightDisplayType)
+                    if (ImUtf8.Selectable(HeightDisplayTypeName(type), type == config.HeightDisplayType) && type != config.HeightDisplayType)
                     {
                         config.HeightDisplayType = type;
                         config.Save();
@@ -423,20 +431,20 @@ public class SettingsTab(
         const string tt = "Select how to display the height of characters in real-world units, if at all.";
         ImGuiComponents.HelpMarker(tt);
         ImGui.SameLine();
-        ImGui.TextUnformatted("Character Height Display Type");
-        ImGuiUtil.HoverTooltip(tt);
+        ImUtf8.Text("Character Height Display Type"u8);
+        ImUtf8.HoverTooltip(tt);
     }
 
-    private static string HeightDisplayTypeName(HeightDisplayType type)
+    private static ReadOnlySpan<byte> HeightDisplayTypeName(HeightDisplayType type)
         => type switch
         {
-            HeightDisplayType.None        => "Do Not Display",
-            HeightDisplayType.Centimetre  => "Centimetres (000.0 cm)",
-            HeightDisplayType.Metre       => "Metres (0.00 m)",
-            HeightDisplayType.Wrong       => "Inches (00.0 in)",
-            HeightDisplayType.WrongFoot   => "Feet (0'00'')",
-            HeightDisplayType.Corgi       => "Corgis (0.0 Corgis)",
-            HeightDisplayType.OlympicPool => "Olympic-size swimming Pools (0.000 Pools)",
-            _                             => string.Empty,
+            HeightDisplayType.None        => "Do Not Display"u8,
+            HeightDisplayType.Centimetre  => "Centimetres (000.0 cm)"u8,
+            HeightDisplayType.Metre       => "Metres (0.00 m)"u8,
+            HeightDisplayType.Wrong       => "Inches (00.0 in)"u8,
+            HeightDisplayType.WrongFoot   => "Feet (0'00'')"u8,
+            HeightDisplayType.Corgi       => "Corgis (0.0 Corgis)"u8,
+            HeightDisplayType.OlympicPool => "Olympic-size swimming Pools (0.000 Pools)"u8,
+            _                             => ""u8,
         };
 }

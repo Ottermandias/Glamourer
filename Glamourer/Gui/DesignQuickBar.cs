@@ -7,11 +7,13 @@ using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Interop;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Text;
 using Penumbra.GameData.Actors;
 
 namespace Glamourer.Gui;
@@ -26,6 +28,7 @@ public enum QdbButtons
     RevertEquip       = 0x10,
     RevertCustomize   = 0x20,
     ReapplyAutomation = 0x40,
+    ResetSettings     = 0x80,
 }
 
 public sealed class DesignQuickBar : Window, IDisposable
@@ -40,6 +43,7 @@ public sealed class DesignQuickBar : Window, IDisposable
     private readonly StateManager      _stateManager;
     private readonly AutoDesignApplier _autoDesignApplier;
     private readonly ObjectManager     _objects;
+    private readonly PenumbraService   _penumbra;
     private readonly IKeyState         _keyState;
     private readonly ImRaii.Style      _windowPadding  = new();
     private readonly ImRaii.Color      _windowColor    = new();
@@ -47,7 +51,7 @@ public sealed class DesignQuickBar : Window, IDisposable
     private          int               _numButtons;
 
     public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
-        ObjectManager objects, AutoDesignApplier autoDesignApplier)
+        ObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra)
         : base("Glamourer Quick Bar", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking)
     {
         _config             = config;
@@ -56,6 +60,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         _keyState           = keyState;
         _objects            = objects;
         _autoDesignApplier  = autoDesignApplier;
+        _penumbra           = penumbra;
         IsOpen              = _config.Ephemeral.ShowDesignQuickBar;
         DisableWindowSounds = true;
         Size                = Vector2.Zero;
@@ -122,6 +127,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         DrawRevertAdvancedCustomization(buttonSize);
         DrawRevertAutomationButton(buttonSize);
         DrawReapplyAutomationButton(buttonSize);
+        DrawResetSettingsButton(buttonSize);
     }
 
     private ActorIdentifier _playerIdentifier;
@@ -392,10 +398,41 @@ public sealed class DesignQuickBar : Window, IDisposable
             _stateManager.ResetEquip(state!, StateSource.Manual);
     }
 
+    private void DrawResetSettingsButton(Vector2 buttonSize)
+    {
+        if (!_config.QdbButtons.HasFlag(QdbButtons.ResetSettings))
+            return;
+
+        var available = 0;
+        var tooltip   = string.Empty;
+
+        if (_playerIdentifier.IsValid && _playerData.Valid)
+        {
+            available |= 1;
+            tooltip   =  $"Left-Click: Reset all temporary settings applied by Glamourer to the collection affecting {_playerIdentifier}.";
+        }
+
+        if (_targetIdentifier.IsValid && _targetData.Valid)
+        {
+            if (available != 0)
+                tooltip += '\n';
+            available |= 2;
+            tooltip   += $"Right-Click: Reset all temporary settings applied by Glamourer to the collection affecting {_targetIdentifier}.";
+        }
+
+        if (available == 0)
+            tooltip = "Neither player character nor target are available to identify their collections.";
+
+        var (clicked, _, data, _) = ResolveTarget(FontAwesomeIcon.Cog, buttonSize, tooltip, available);
+        ImGui.SameLine();
+        if (clicked)
+            _penumbra.RemoveAllTemporarySettings(data.Objects[0].Index);
+    }
+
     private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(FontAwesomeIcon icon, Vector2 buttonSize, string tooltip,
         int available)
     {
-        ImGuiUtil.DrawDisabledButton(icon.ToIconString(), buttonSize, tooltip, available == 0, true);
+        ImUtf8.IconButton(icon, tooltip, buttonSize, available == 0);
         if ((available & 1) == 1 && ImGui.IsItemClicked(ImGuiMouseButton.Left))
             return (true, _playerIdentifier, _playerData, _playerState);
         if ((available & 2) == 2 && ImGui.IsItemClicked(ImGuiMouseButton.Right))
@@ -440,6 +477,8 @@ public sealed class DesignQuickBar : Window, IDisposable
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertCustomize))
             ++_numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertEquip))
+            ++_numButtons;
+        if (_config.UseTemporarySettings && _config.QdbButtons.HasFlag(QdbButtons.ResetSettings))
             ++_numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.ApplyDesign))
         {
