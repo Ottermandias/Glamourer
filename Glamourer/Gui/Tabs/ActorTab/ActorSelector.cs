@@ -91,9 +91,10 @@ public class ActorSelector(ObjectManager objects, ActorManager actors, Ephemeral
 
         objects.Update();
         _world = new WorldId(objects.Player.Valid ? objects.Player.HomeWorld : (ushort)0);
-        using var style     = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
-        var       skips     = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
-        var       remainder = ImGuiClip.FilteredClippedDraw(objects.Identifiers, skips, CheckFilter, DrawSelectable);
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
+        var       skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
+        var remainder = ImGuiClip.FilteredClippedDraw(objects.Identifiers.Where(p => p.Value.Objects.Any(a => a.Model)), skips, CheckFilter,
+            DrawSelectable);
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
     }
 

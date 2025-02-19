@@ -83,7 +83,7 @@ public class ObjectManager(
 
     private void HandleIdentifier(ActorIdentifier identifier, Actor character)
     {
-        if (!character.Model || !identifier.IsValid)
+        if (!identifier.IsValid)
             return;
 
         if (!_identifiers.TryGetValue(identifier, out var data))
