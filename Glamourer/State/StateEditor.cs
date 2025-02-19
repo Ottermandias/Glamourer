@@ -262,7 +262,7 @@ public class StateEditor(
     public void ApplyDesign(object data, MergedDesign mergedDesign, ApplySettings settings)
     {
         var state = (ActorState)data;
-        modApplier.HandleStateApplication(state, mergedDesign);
+        modApplier.HandleStateApplication(state, mergedDesign, true);
         if (!Editor.ChangeModelId(state, mergedDesign.Design.DesignData.ModelId, mergedDesign.Design.DesignData.Customize,
                 mergedDesign.Design.GetDesignDataRef().GetEquipmentPtr(), settings.Source, out var oldModelId, settings.Key))
             return;

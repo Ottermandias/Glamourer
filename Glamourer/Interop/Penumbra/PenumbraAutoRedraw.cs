@@ -12,16 +12,18 @@ namespace Glamourer.Interop.Penumbra;
 
 public class PenumbraAutoRedraw : IDisposable, IRequiredService
 {
-    private const    int             WaitFrames = 5;
-    private readonly Configuration   _config;
-    private readonly PenumbraService _penumbra;
-    private readonly StateManager    _state;
-    private readonly ObjectManager   _objects;
-    private readonly IFramework      _framework;
-    private readonly StateChanged    _stateChanged;
+    private const    int                    WaitFrames = 5;
+    private readonly Configuration          _config;
+    private readonly PenumbraService        _penumbra;
+    private readonly StateManager           _state;
+    private readonly ObjectManager          _objects;
+    private readonly IFramework             _framework;
+    private readonly StateChanged           _stateChanged;
+    private readonly PenumbraAutoRedrawSkip _skip;
+
 
     public PenumbraAutoRedraw(PenumbraService penumbra, Configuration config, StateManager state, ObjectManager objects, IFramework framework,
-        StateChanged stateChanged)
+        StateChanged stateChanged, PenumbraAutoRedrawSkip skip)
     {
         _penumbra                   =  penumbra;
         _config                     =  config;
@@ -29,6 +31,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
         _objects                    =  objects;
         _framework                  =  framework;
         _stateChanged               =  stateChanged;
+        _skip                       =  skip;
         _penumbra.ModSettingChanged += OnModSettingChange;
         _framework.Update           += OnFramework;
         _stateChanged.Subscribe(OnStateChanged, StateChanged.Priority.PenumbraAutoRedraw);
@@ -94,7 +97,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
                 }
             });
         }
-        else if (_config.AutoRedrawEquipOnChanges)
+        else if (_config.AutoRedrawEquipOnChanges && !_skip.Skip)
         {
             // Only update once per frame.
             var playerName = _penumbra.GetCurrentPlayerCollection();

@@ -7,12 +7,12 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop.Penumbra;
 
-public class ModSettingApplier(PenumbraService penumbra, Configuration config, ObjectManager objects, CollectionOverrideService overrides)
+public class ModSettingApplier(PenumbraService penumbra, PenumbraAutoRedrawSkip autoRedrawSkip, Configuration config, ObjectManager objects, CollectionOverrideService overrides)
     : IService
 {
     private readonly HashSet<Guid> _collectionTracker = [];
 
-    public void HandleStateApplication(ActorState state, MergedDesign design)
+    public void HandleStateApplication(ActorState state, MergedDesign design, bool skipAutoRedraw)
     {
         if (!config.AlwaysApplyAssociatedMods || (design.AssociatedMods.Count == 0 && !design.ResetTemporarySettings))
             return;
@@ -26,6 +26,7 @@ public class ModSettingApplier(PenumbraService penumbra, Configuration config, O
         }
 
         _collectionTracker.Clear();
+        using var skip = autoRedrawSkip.SkipAutoUpdates(skipAutoRedraw);
         foreach (var actor in data.Objects)
         {
             var (collection, _, overridden) = overrides.GetCollection(actor, state.Identifier);
