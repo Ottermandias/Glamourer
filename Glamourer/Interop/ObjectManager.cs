@@ -2,6 +2,7 @@
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using Glamourer.Events;
 using Glamourer.Interop.Structs;
 using OtterGui.Log;
 using Penumbra.GameData.Actors;
@@ -24,8 +25,11 @@ public class ObjectManager(
         => LastFrame;
 
     private DateTime _identifierUpdate;
-    public  bool     IsInGPose { get; private set; }
-    public  ushort   World     { get; private set; }
+
+    public bool IsInGPose
+        => clientState.IsGPosing;
+
+    public ushort World { get; private set; }
 
     private readonly Dictionary<ActorIdentifier, ActorData> _identifiers         = new(200);
     private readonly Dictionary<ActorIdentifier, ActorData> _allWorldIdentifiers = new(200);
@@ -76,8 +80,6 @@ public class ObjectManager(
                 HandleIdentifier(identifier, actor);
         }
 
-        var gPose = GPosePlayer;
-        IsInGPose = gPose.Utf8Name.Length > 0;
         return true;
     }
 

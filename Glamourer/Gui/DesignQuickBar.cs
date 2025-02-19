@@ -409,7 +409,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         if (_playerIdentifier.IsValid && _playerData.Valid)
         {
             available |= 1;
-            tooltip   =  $"Left-Click: Reset all temporary settings applied by Glamourer to the collection affecting {_playerIdentifier}.";
+            tooltip   =  $"Left-Click: Reset all temporary settings applied by Glamourer (manually or through automation) to the collection affecting {_playerIdentifier}.";
         }
 
         if (_targetIdentifier.IsValid && _targetData.Valid)
@@ -417,7 +417,7 @@ public sealed class DesignQuickBar : Window, IDisposable
             if (available != 0)
                 tooltip += '\n';
             available |= 2;
-            tooltip   += $"Right-Click: Reset all temporary settings applied by Glamourer to the collection affecting {_targetIdentifier}.";
+            tooltip   += $"Right-Click: Reset all temporary settings applied by Glamourer (manually or through automation) to the collection affecting {_targetIdentifier}.";
         }
 
         if (available == 0)
@@ -426,7 +426,10 @@ public sealed class DesignQuickBar : Window, IDisposable
         var (clicked, _, data, _) = ResolveTarget(FontAwesomeIcon.Cog, buttonSize, tooltip, available);
         ImGui.SameLine();
         if (clicked)
-            _penumbra.RemoveAllTemporarySettings(data.Objects[0].Index);
+        {
+            _penumbra.RemoveAllTemporarySettings(data.Objects[0].Index, StateSource.Manual);
+            _penumbra.RemoveAllTemporarySettings(data.Objects[0].Index, StateSource.Fixed);
+        }
     }
 
     private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(FontAwesomeIcon icon, Vector2 buttonSize, string tooltip,

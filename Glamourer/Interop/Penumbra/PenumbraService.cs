@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
 using Glamourer.Events;
+using Glamourer.State;
 using OtterGui.Classes;
 using Penumbra.Api.Enums;
 using Penumbra.Api.Helpers;
@@ -40,7 +41,10 @@ public class PenumbraService : IDisposable
     public const int RequiredPenumbraFeatureVersionTemp3 = 6;
     public const int RequiredPenumbraFeatureVersionTemp4 = 7;
 
-    private const int Key = -1610;
+    private const int    KeyFixed  = -1610;
+    private const string NameFixed = "Glamourer (Automation)";
+    private const int    KeyManual = -6160;
+    private const string NameManual = "Glamourer (Manually)";
 
     private readonly IDalamudPluginInterface                               _pluginInterface;
     private readonly Configuration                                         _config;
@@ -160,7 +164,7 @@ public class PenumbraService : IDisposable
         if (_getCurrentSettingsWithTemp != null)
         {
             source          = string.Empty;
-            var (ec, tuple) = _getCurrentSettingsWithTemp!.Invoke(collection, modDirectory, modName, false, false, Key);
+            var (ec, tuple) = _getCurrentSettingsWithTemp!.Invoke(collection, modDirectory, modName, false, false, KeyFixed);
             if (ec is not PenumbraApiEc.Success)
                 return ModSettings.Empty;
 
@@ -216,7 +220,7 @@ public class PenumbraService : IDisposable
             {
                 if (_getAllSettings != null)
                 {
-                    var allSettings = _getAllSettings.Invoke(collection, false, false, Key);
+                    var allSettings = _getAllSettings.Invoke(collection, false, false, KeyFixed);
                     if (allSettings.Item1 is PenumbraApiEc.Success)
                         return mods.Select(m => (new Mod(m.Value, m.Key),
                             allSettings.Item2!.TryGetValue(m.Key, out var s)
@@ -276,7 +280,7 @@ public class PenumbraService : IDisposable
     /// Try to set all mod settings as desired. Only sets when the mod should be enabled.
     /// If it is disabled, ignore all other settings.
     /// </summary>
-    public string SetMod(Mod mod, ModSettings settings, Guid? collectionInput = null, ObjectIndex? index = null)
+    public string SetMod(Mod mod, ModSettings settings, StateSource source, Guid? collectionInput = null, ObjectIndex? index = null)
     {
         if (!Available)
             return "Penumbra is not available.";
@@ -286,7 +290,7 @@ public class PenumbraService : IDisposable
         {
             var collection = collectionInput ?? _currentCollection!.Invoke(ApiCollectionType.Current)!.Value.Id;
             if (_config.UseTemporarySettings && _setTemporaryModSettings != null)
-                SetModTemporary(sb, mod, settings, collection, index);
+                SetModTemporary(sb, mod, settings, collection, index, source);
             else
                 SetModPermanent(sb, mod, settings, collection);
 
@@ -298,37 +302,43 @@ public class PenumbraService : IDisposable
         }
     }
 
-    public void RemoveAllTemporarySettings(Guid collection)
-        => _removeAllTemporaryModSettings?.Invoke(collection, Key);
+    public void RemoveAllTemporarySettings(Guid collection, StateSource source)
+        => _removeAllTemporaryModSettings?.Invoke(collection, source.IsFixed() ? KeyFixed : KeyManual);
 
-    public void RemoveAllTemporarySettings(ObjectIndex index)
-        => _removeAllTemporaryModSettingsPlayer?.Invoke(index.Index, Key);
+    public void RemoveAllTemporarySettings(ObjectIndex index, StateSource source)
+        => _removeAllTemporaryModSettingsPlayer?.Invoke(index.Index, source.IsFixed() ? KeyFixed : KeyManual);
 
-    public void ClearAllTemporarySettings()
+    public void ClearAllTemporarySettings(bool fix, bool manual)
     {
         if (!Available || _removeAllTemporaryModSettings == null)
             return;
 
         var collections = _collections!.Invoke();
         foreach (var collection in collections)
-            RemoveAllTemporarySettings(collection.Key);
+        {
+            if (fix)
+                RemoveAllTemporarySettings(collection.Key, StateSource.Fixed);
+            if (manual)
+                RemoveAllTemporarySettings(collection.Key, StateSource.Manual);
+        }
     }
 
     public (string ModDirectory, string ModName)[] CheckCurrentChangedItem(string changedItem)
         => _checkCurrentChangedItems?.Invoke(changedItem) ?? [];
 
-    private void SetModTemporary(StringBuilder sb, Mod mod, ModSettings settings, Guid collection, ObjectIndex? index)
+    private void SetModTemporary(StringBuilder sb, Mod mod, ModSettings settings, Guid collection, ObjectIndex? index, StateSource source)
     {
+        var (key, name) = source.IsFixed() ? (KeyFixed, NameFixed) : (KeyManual, NameManual);
         var ex = settings.Remove
             ? index.HasValue
-                ? _removeTemporaryModSettingsPlayer!.Invoke(index.Value.Index, mod.DirectoryName, Key)
-                : _removeTemporaryModSettings!.Invoke(collection, mod.DirectoryName, Key)
+                ? _removeTemporaryModSettingsPlayer!.Invoke(index.Value.Index, mod.DirectoryName, key)
+                : _removeTemporaryModSettings!.Invoke(collection, mod.DirectoryName, key)
             : index.HasValue
                 ? _setTemporaryModSettingsPlayer!.Invoke(index.Value.Index, mod.DirectoryName, settings.ForceInherit, settings.Enabled,
                     settings.Priority,
-                    settings.Settings.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value), "Glamourer", Key)
+                    settings.Settings.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value), name, key)
                 : _setTemporaryModSettings!.Invoke(collection, mod.DirectoryName, settings.ForceInherit, settings.Enabled, settings.Priority,
-                    settings.Settings.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value), "Glamourer", Key);
+                    settings.Settings.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value), name, key);
         switch (ex)
         {
             case PenumbraApiEc.InvalidArgument:
@@ -586,7 +596,7 @@ public class PenumbraService : IDisposable
 
     public void Dispose()
     {
-        ClearAllTemporarySettings();
+        ClearAllTemporarySettings(true, true);
         Unattach();
         _tooltipSubscriber.Dispose();
         _clickSubscriber.Dispose();

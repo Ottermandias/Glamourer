@@ -12,7 +12,7 @@ public class ModSettingApplier(PenumbraService penumbra, PenumbraAutoRedrawSkip 
 {
     private readonly HashSet<Guid> _collectionTracker = [];
 
-    public void HandleStateApplication(ActorState state, MergedDesign design, bool skipAutoRedraw)
+    public void HandleStateApplication(ActorState state, MergedDesign design, StateSource source, bool skipAutoRedraw, bool respectManual)
     {
         if (!config.AlwaysApplyAssociatedMods || (design.AssociatedMods.Count == 0 && !design.ResetTemporarySettings))
             return;
@@ -36,10 +36,10 @@ public class ModSettingApplier(PenumbraService penumbra, PenumbraAutoRedrawSkip 
             if (!_collectionTracker.Add(collection))
                 continue;
 
-            var index = ResetOldSettings(collection, actor, design.ResetTemporarySettings);
+            var index = ResetOldSettings(collection, actor, source, design.ResetTemporarySettings, respectManual);
             foreach (var (mod, setting) in design.AssociatedMods)
             {
-                var message = penumbra.SetMod(mod, setting, collection, index);
+                var message = penumbra.SetMod(mod, setting, source, collection, index);
                 if (message.Length > 0)
                     Glamourer.Log.Verbose($"[Mod Applier] Error applying mod settings: {message}");
                 else
@@ -50,7 +50,7 @@ public class ModSettingApplier(PenumbraService penumbra, PenumbraAutoRedrawSkip 
     }
 
     public (List<string> Messages, int Applied, Guid Collection, string Name, bool Overridden) ApplyModSettings(
-        IReadOnlyDictionary<Mod, ModSettings> settings, Actor actor, bool resetOther)
+        IReadOnlyDictionary<Mod, ModSettings> settings, Actor actor, StateSource source, bool resetOther)
     {
         var (collection, name, overridden) = overrides.GetCollection(actor);
         if (collection == Guid.Empty)
@@ -59,10 +59,10 @@ public class ModSettingApplier(PenumbraService penumbra, PenumbraAutoRedrawSkip 
         var messages    = new List<string>();
         var appliedMods = 0;
 
-        var index = ResetOldSettings(collection, actor, resetOther);
+        var index = ResetOldSettings(collection, actor, source, resetOther, true);
         foreach (var (mod, setting) in settings)
         {
-            var message = penumbra.SetMod(mod, setting, collection, index);
+            var message = penumbra.SetMod(mod, setting, source, collection, index);
             if (message.Length > 0)
                 messages.Add($"Error applying mod settings: {message}");
             else
@@ -73,16 +73,24 @@ public class ModSettingApplier(PenumbraService penumbra, PenumbraAutoRedrawSkip 
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ObjectIndex? ResetOldSettings(Guid collection, Actor actor, bool resetOther)
+    private ObjectIndex? ResetOldSettings(Guid collection, Actor actor, StateSource source, bool resetOther, bool respectManual)
     {
         ObjectIndex? index = actor.Valid ? actor.Index : null;
         if (!resetOther)
             return index;
 
         if (index == null)
-            penumbra.RemoveAllTemporarySettings(collection);
+        {
+            penumbra.RemoveAllTemporarySettings(collection, source);
+            if (!respectManual && source.IsFixed())
+                penumbra.RemoveAllTemporarySettings(collection, StateSource.Manual);
+        }
         else
-            penumbra.RemoveAllTemporarySettings(index.Value);
+        {
+            penumbra.RemoveAllTemporarySettings(index.Value, source);
+            if (!respectManual && source.IsFixed())
+                penumbra.RemoveAllTemporarySettings(index.Value, StateSource.Manual);
+        }
         return index;
     }
 }

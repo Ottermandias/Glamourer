@@ -52,7 +52,7 @@ public class SetPanel(
 
     private void DrawPanel()
     {
-        using var child = ImRaii.Child("##Panel", -Vector2.One, true);
+        using var child = ImUtf8.Child("##Panel"u8, -Vector2.One, true);
         if (!child || !_selector.HasSelection)
             return;
 
@@ -63,20 +63,20 @@ public class SetPanel(
             using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
             {
                 var enabled = Selection.Enabled;
-                if (ImGui.Checkbox("##Enabled", ref enabled))
+                if (ImUtf8.Checkbox("##Enabled"u8, ref enabled))
                     _manager.SetState(_selector.SelectionIndex, enabled);
-                ImGuiUtil.LabeledHelpMarker("Enabled",
-                    "Whether the designs in this set should be applied at all. Only one set can be enabled for a character at the same time.");
+                ImUtf8.LabeledHelpMarker("Enabled"u8,
+                    "Whether the designs in this set should be applied at all. Only one set can be enabled for a character at the same time."u8);
             }
 
             using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
             {
                 var useGame = _selector.Selection!.BaseState is AutoDesignSet.Base.Game;
-                if (ImGui.Checkbox("##gameState", ref useGame))
+                if (ImUtf8.Checkbox("##gameState"u8, ref useGame))
                     _manager.ChangeBaseState(_selector.SelectionIndex, useGame ? AutoDesignSet.Base.Game : AutoDesignSet.Base.Current);
-                ImGuiUtil.LabeledHelpMarker("Use Game State as Base",
-                    "When this is enabled, the designs matching conditions will be applied successively on top of what your character is supposed to look like for the game. "
-                  + "Otherwise, they will be applied on top of the characters actual current look using Glamourer.");
+                ImUtf8.LabeledHelpMarker("Use Game State as Base"u8,
+                    "When this is enabled, the designs matching conditions will be applied successively on top of what your character is supposed to look like for the game. "u8
+                  + "Otherwise, they will be applied on top of the characters actual current look using Glamourer."u8);
             }
         }
 
@@ -86,14 +86,14 @@ public class SetPanel(
             using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
             {
                 var editing = _config.ShowAutomationSetEditing;
-                if (ImGui.Checkbox("##Show Editing", ref editing))
+                if (ImUtf8.Checkbox("##Show Editing"u8, ref editing))
                 {
                     _config.ShowAutomationSetEditing = editing;
                     _config.Save();
                 }
 
-                ImGuiUtil.LabeledHelpMarker("Show Editing",
-                    "Show options to change the name or the associated character or NPC of this design set.");
+                ImUtf8.LabeledHelpMarker("Show Editing"u8,
+                    "Show options to change the name or the associated character or NPC of this design set."u8);
             }
 
             using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
@@ -102,8 +102,8 @@ public class SetPanel(
                 if (ImGui.Checkbox("##resetSettings", ref resetSettings))
                     _manager.ChangeResetSettings(_selector.SelectionIndex, resetSettings);
 
-                ImGuiUtil.LabeledHelpMarker("Reset Temporary Settings",
-                    "Always reset all temporary settings applied by Glamourer when this automation set is applied, regardless of active designs.");
+                ImUtf8.LabeledHelpMarker("Reset Temporary Settings"u8,
+                    "Always reset all temporary settings applied by Glamourer when this automation set is applied, regardless of active designs."u8);
             }
         }
 
@@ -160,42 +160,42 @@ public class SetPanel(
             (false, false) => 4,
         };
 
-        using var table = ImRaii.Table("SetTable", numRows, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY);
+        using var table = ImUtf8.Table("SetTable"u8, numRows, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY);
         if (!table)
             return;
 
-        ImGui.TableSetupColumn("##del",   ImGuiTableColumnFlags.WidthFixed, ImGui.GetFrameHeight());
-        ImGui.TableSetupColumn("##Index", ImGuiTableColumnFlags.WidthFixed, 30 * ImGuiHelpers.GlobalScale);
+        ImUtf8.TableSetupColumn("##del"u8,   ImGuiTableColumnFlags.WidthFixed, ImGui.GetFrameHeight());
+        ImUtf8.TableSetupColumn("##Index"u8, ImGuiTableColumnFlags.WidthFixed, 30 * ImGuiHelpers.GlobalScale);
 
         if (singleRow)
         {
-            ImGui.TableSetupColumn("Design", ImGuiTableColumnFlags.WidthFixed, 220 * ImGuiHelpers.GlobalScale);
+            ImUtf8.TableSetupColumn("Design"u8, ImGuiTableColumnFlags.WidthFixed, 220 * ImGuiHelpers.GlobalScale);
             if (_config.ShowAllAutomatedApplicationRules)
-                ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed,
+                ImUtf8.TableSetupColumn("Application"u8, ImGuiTableColumnFlags.WidthFixed,
                     6 * ImGui.GetFrameHeight() + 10 * ImGuiHelpers.GlobalScale);
             else
-                ImGui.TableSetupColumn("Use", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
+                ImUtf8.TableSetupColumn("Use"u8, ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
         }
         else
         {
-            ImGui.TableSetupColumn("Design / Job Restrictions", ImGuiTableColumnFlags.WidthFixed, 250 * ImGuiHelpers.GlobalScale);
+            ImUtf8.TableSetupColumn("Design / Job Restrictions"u8, ImGuiTableColumnFlags.WidthFixed, 250 * ImGuiHelpers.GlobalScale);
             if (_config.ShowAllAutomatedApplicationRules)
-                ImGui.TableSetupColumn("Application", ImGuiTableColumnFlags.WidthFixed,
+                ImUtf8.TableSetupColumn("Application"u8, ImGuiTableColumnFlags.WidthFixed,
                     3 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
             else
-                ImGui.TableSetupColumn("Use", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
+                ImUtf8.TableSetupColumn("Use"u8, ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
         }
 
         if (singleRow)
-            ImGui.TableSetupColumn("Job Restrictions", ImGuiTableColumnFlags.WidthStretch);
+            ImUtf8.TableSetupColumn("Job Restrictions"u8, ImGuiTableColumnFlags.WidthStretch);
 
         if (_config.ShowUnlockedItemWarnings)
-            ImGui.TableSetupColumn(string.Empty, ImGuiTableColumnFlags.WidthFixed, 2 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
+            ImUtf8.TableSetupColumn(""u8, ImGuiTableColumnFlags.WidthFixed, 2 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
 
         ImGui.TableHeadersRow();
         foreach (var (design, idx) in Selection.Designs.WithIndex())
         {
-            using var id = ImRaii.PushId(idx);
+            using var id = ImUtf8.PushId(idx);
             ImGui.TableNextColumn();
             var keyValid = _config.DeleteDesignModifier.IsActive();
             var tt = keyValid
@@ -205,7 +205,7 @@ public class SetPanel(
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), new Vector2(ImGui.GetFrameHeight()), tt, !keyValid, true))
                 _endAction = () => _manager.DeleteDesign(Selection, idx);
             ImGui.TableNextColumn();
-            ImGui.Selectable($"#{idx + 1:D2}");
+            ImUtf8.Selectable($"#{idx + 1:D2}");
             DrawDragDrop(Selection, idx);
             ImGui.TableNextColumn();
             DrawRandomEditing(Selection, design, idx);
@@ -234,8 +234,7 @@ public class SetPanel(
 
         ImGui.TableNextColumn();
         ImGui.TableNextColumn();
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("New");
+        ImUtf8.TextFrameAligned("New"u8);
         ImGui.TableNextColumn();
         _designCombo.Draw(Selection, null, -1);
         ImGui.TableNextRow();
@@ -250,20 +249,20 @@ public class SetPanel(
     private void DrawConditions(AutoDesign design, int idx)
     {
         var usingGearset = design.GearsetIndex >= 0;
-        if (ImGui.Button($"{(usingGearset ? "Gearset:" : "Jobs:")}##usingGearset"))
+        if (ImUtf8.Button($"{(usingGearset ? "Gearset:" : "Jobs:")}##usingGearset"))
         {
             usingGearset = !usingGearset;
             _manager.ChangeGearsetCondition(Selection, idx, (short)(usingGearset ? 0 : -1));
         }
 
-        ImGuiUtil.HoverTooltip("Click to switch between Job and Gearset restrictions.");
+        ImUtf8.HoverTooltip("Click to switch between Job and Gearset restrictions."u8);
 
         ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
         if (usingGearset)
         {
             var set = 1 + (_tmpGearset == int.MaxValue || _whichIndex != idx ? design.GearsetIndex : _tmpGearset);
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            if (ImGui.InputInt("##whichGearset", ref set, 0, 0))
+            if (ImUtf8.InputScalar("##whichGearset"u8, ref set))
             {
                 _whichIndex = idx;
                 _tmpGearset = Math.Clamp(set, 1, 100);
@@ -361,12 +360,12 @@ public class SetPanel(
                     ImGuiUtil.DrawTextButton(FontAwesomeIcon.ExclamationCircle.ToIconString(), size, color);
                 }
 
-                ImGuiUtil.HoverTooltip(sb.ToString());
+                ImUtf8.HoverTooltip($"{sb}");
             }
             else
             {
                 ImGuiUtil.DrawTextButton(string.Empty, size, 0);
-                ImGuiUtil.HoverTooltip(good);
+                ImUtf8.HoverTooltip(good);
             }
         }
     }
@@ -374,7 +373,7 @@ public class SetPanel(
     private void DrawDragDrop(AutoDesignSet set, int index)
     {
         const string dragDropLabel = "DesignDragDrop";
-        using (var target = ImRaii.DragDropTarget())
+        using (var target = ImUtf8.DragDropTarget())
         {
             if (target.Success && ImGuiUtil.IsDropping(dragDropLabel))
             {
@@ -388,11 +387,11 @@ public class SetPanel(
             }
         }
 
-        using (var source = ImRaii.DragDropSource())
+        using (var source = ImUtf8.DragDropSource())
         {
             if (source)
             {
-                ImGui.TextUnformatted($"Moving design #{index + 1:D2}...");
+                ImUtf8.Text($"Moving design #{index + 1:D2}...");
                 if (ImGui.SetDragDropPayload(dragDropLabel, nint.Zero, 0))
                 {
                     _dragIndex                 = index;
@@ -415,16 +414,16 @@ public class SetPanel(
         }
 
         style.Pop();
-        ImGuiUtil.HoverTooltip("Toggle all application modes at once.");
+        ImUtf8.HoverTooltip("Toggle all application modes at once."u8);
         if (_config.ShowAllAutomatedApplicationRules)
         {
             void Box(int idx)
             {
                 var (type, description) = ApplicationTypeExtensions.Types[idx];
                 var value = design.Type.HasFlag(type);
-                if (ImGui.Checkbox($"##{(byte)type}", ref value))
+                if (ImUtf8.Checkbox($"##{(byte)type}", ref value))
                     newType = value ? newType | type : newType & ~type;
-                ImGuiUtil.HoverTooltip(description);
+                ImUtf8.HoverTooltip(description);
             }
 
             ImGui.SameLine();
