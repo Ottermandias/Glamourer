@@ -1,4 +1,5 @@
 ﻿using Glamourer.Designs;
+using Glamourer.Interop.Material;
 using Glamourer.State;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -9,10 +10,11 @@ public struct BonusDrawData(BonusItemFlag slot, in DesignData designData)
 {
     private         IDesignEditor _editor = null!;
     private         object        _object = null!;
-    public readonly BonusItemFlag Slot = slot;
+    public readonly BonusItemFlag Slot    = slot;
     public          bool          Locked;
     public          bool          DisplayApplication;
     public          bool          AllowRevert;
+    public          bool          HasAdvancedDyes;
 
     public readonly bool IsDesign
         => _object is Design;
@@ -42,6 +44,7 @@ public struct BonusDrawData(BonusItemFlag slot, in DesignData designData)
             CurrentApply       = design.DoApplyBonusItem(slot),
             Locked             = design.WriteProtected(),
             DisplayApplication = true,
+            HasAdvancedDyes    = design.GetMaterialDataRef().CheckExistence(MaterialValueIndex.FromSlot(slot)),
         };
 
     public static BonusDrawData FromState(StateManager manager, ActorState state, BonusItemFlag slot)
@@ -53,5 +56,6 @@ public struct BonusDrawData(BonusItemFlag slot, in DesignData designData)
             DisplayApplication = false,
             GameItem           = state.BaseData.BonusItem(slot),
             AllowRevert        = true,
+            HasAdvancedDyes    = state.Materials.CheckExistence(MaterialValueIndex.FromSlot(slot)),
         };
 }

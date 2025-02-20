@@ -51,28 +51,29 @@ public sealed unsafe class AdvancedDyePopup(
         return true;
     }
 
-    public void DrawButton(EquipSlot slot)
-        => DrawButton(MaterialValueIndex.FromSlot(slot));
+    public void DrawButton(EquipSlot slot, uint color)
+        => DrawButton(MaterialValueIndex.FromSlot(slot), color);
 
-    public void DrawButton(BonusItemFlag slot)
-        => DrawButton(MaterialValueIndex.FromSlot(slot));
+    public void DrawButton(BonusItemFlag slot, uint color)
+        => DrawButton(MaterialValueIndex.FromSlot(slot), color);
 
-    private void DrawButton(MaterialValueIndex index)
+    private void DrawButton(MaterialValueIndex index, uint color)
     {
         if (!config.UseAdvancedDyes)
             return;
 
         ImGui.SameLine();
-        using var id     = ImRaii.PushId(index.SlotIndex | ((int)index.DrawObject << 8));
+        using var id     = ImUtf8.PushId(index.SlotIndex | ((int)index.DrawObject << 8));
         var       isOpen = index == _drawIndex;
 
-        using (ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ButtonActive), isOpen)
-                   .Push(ImGuiCol.Text,   ColorId.HeaderButtons.Value(), isOpen)
-                   .Push(ImGuiCol.Border, ColorId.HeaderButtons.Value(), isOpen))
+        var (textColor, buttonColor) = isOpen
+            ? (ColorId.HeaderButtons.Value(), ImGui.GetColorU32(ImGuiCol.ButtonActive))
+            : (color, 0u);
+
+        using (ImRaii.PushColor(ImGuiCol.Border, textColor, isOpen))
         {
             using var frame = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * ImGuiHelpers.GlobalScale, isOpen);
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Palette.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                    string.Empty, false, true))
+            if (ImUtf8.IconButton(FontAwesomeIcon.Palette, ""u8, default, false, textColor, buttonColor))
             {
                 _forceFocus       = true;
                 _selectedMaterial = byte.MaxValue;
@@ -80,7 +81,7 @@ public sealed unsafe class AdvancedDyePopup(
             }
         }
 
-        ImGuiUtil.HoverTooltip("Open advanced dyes for this slot.");
+        ImUtf8.HoverTooltip("Open advanced dyes for this slot."u8);
     }
 
     private (string Path, string GamePath) ResourceName(MaterialValueIndex index)
@@ -197,7 +198,7 @@ public sealed unsafe class AdvancedDyePopup(
         var width = 7 * ImGui.GetFrameHeight() // Buttons
           + 3 * ImGui.GetStyle().ItemSpacing.X // around text
           + 7 * ImGui.GetStyle().ItemInnerSpacing.X
-          + 200 * ImGuiHelpers.GlobalScale             // Drags
+          + 200 * ImGuiHelpers.GlobalScale                                        // Drags
           + 7 * UiBuilder.MonoFont.GetCharAdvance(' ') * ImGuiHelpers.GlobalScale // Row
           + 2 * ImGui.GetStyle().WindowPadding.X;
         var height = 19 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + 3 * ImGui.GetStyle().ItemSpacing.Y;
@@ -305,8 +306,9 @@ public sealed unsafe class AdvancedDyePopup(
             {
                 EquipSlot.MainHand => _state.ModelData.Weapon(EquipSlot.MainHand),
                 EquipSlot.OffHand  => _state.ModelData.Weapon(EquipSlot.OffHand),
-                EquipSlot.Unknown  => _state.ModelData.BonusItem((index.SlotIndex - 16u).ToBonusSlot()).Armor().ToWeapon(0), // TODO: Handle better
-                _                  => _state.ModelData.Armor(slot).ToWeapon(0),
+                EquipSlot.Unknown =>
+                    _state.ModelData.BonusItem((index.SlotIndex - 16u).ToBonusSlot()).Armor().ToWeapon(0), // TODO: Handle better
+                _ => _state.ModelData.Armor(slot).ToWeapon(0),
             };
             value = new MaterialValueState(internalRow, internalRow, weapon, StateSource.Manual);
         }
@@ -392,7 +394,8 @@ public sealed unsafe class AdvancedDyePopup(
     {
         var tmp      = value;
         var minValue = ImGui.GetIO().KeyCtrl ? 0f : (float)Half.Epsilon;
-        if (!ImUtf8.DragScalar("##Gloss"u8, ref tmp, "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value), ImGuiSliderFlags.AlwaysClamp))
+        if (!ImUtf8.DragScalar("##Gloss"u8, ref tmp, "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value),
+                ImGuiSliderFlags.AlwaysClamp))
             return false;
 
         var tmp2 = Math.Clamp(tmp, minValue, (float)Half.MaxValue);

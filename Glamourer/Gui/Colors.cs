@@ -32,6 +32,7 @@ public enum ColorId
     ModdedItemMarker,
     ContainsItemsEnabled,
     ContainsItemsDisabled,
+    AdvancedDyeActive,
 }
 
 public static class Colors
@@ -70,6 +71,7 @@ public static class Colors
             ColorId.ModdedItemMarker           => (0xFFFF20FF, "Modded Item Marker",                 "The color of dot in the unlocks overview tab signaling that the item is modded in the currently selected Penumbra collection."      ),
             ColorId.ContainsItemsEnabled       => (0xFFA0F0A0, "Enabled Mod Contains Design Items",  "The color of enabled mods in the associated mod dropdown menu when they contain items used in this design."                         ),
             ColorId.ContainsItemsDisabled      => (0x80A0F0A0, "Disabled Mod Contains Design Items", "The color of disabled mods in the associated mod dropdown menu when they contain items used in this design."                        ),
+            ColorId.AdvancedDyeActive          => (0xFF58DDFF, "Advanced Dyes Active",               "The highlight color for the advanced dye button and marker if any advanced dyes are active for this slot."                          ),
             _                                  => (0x00000000, string.Empty,                         string.Empty                                                                                                                         ),
             // @formatter:on
         };

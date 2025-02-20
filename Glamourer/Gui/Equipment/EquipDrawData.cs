@@ -1,4 +1,5 @@
 ﻿using Glamourer.Designs;
+using Glamourer.Interop.Material;
 using Glamourer.State;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -9,7 +10,7 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
 {
     private         IDesignEditor _editor = null!;
     private         object        _object = null!;
-    public readonly EquipSlot     Slot = slot;
+    public readonly EquipSlot     Slot    = slot;
     public          bool          Locked;
     public          bool          DisplayApplication;
     public          bool          AllowRevert;
@@ -29,15 +30,13 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
     public readonly void SetApplyItem(bool value)
     {
         var manager = (DesignManager)_editor;
-        var design  = (Design)_object;
-        manager.ChangeApplyItem(design, Slot, value);
+        manager.ChangeApplyItem((Design)_object, Slot, value);
     }
 
     public readonly void SetApplyStain(bool value)
     {
         var manager = (DesignManager)_editor;
-        var design  = (Design)_object;
-        manager.ChangeApplyStains(design, Slot, value);
+        manager.ChangeApplyStains((Design)_object, Slot, value);
     }
 
     public EquipItem CurrentItem   = designData.Item(slot);
@@ -46,6 +45,7 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
     public StainIds  GameStains    = default;
     public bool      CurrentApply;
     public bool      CurrentApplyStain;
+    public bool      HasAdvancedDyes;
 
     public readonly Gender CurrentGender = designData.Customize.Gender;
     public readonly Race   CurrentRace   = designData.Customize.Race;
@@ -58,6 +58,7 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
             CurrentApply       = design.DoApplyEquip(slot),
             CurrentApplyStain  = design.DoApplyStain(slot),
             Locked             = design.WriteProtected(),
+            HasAdvancedDyes    = design.GetMaterialDataRef().CheckExistence(MaterialValueIndex.FromSlot(slot)),
             DisplayApplication = true,
         };
 
@@ -70,6 +71,7 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
             DisplayApplication = false,
             GameItem           = state.BaseData.Item(slot),
             GameStains         = state.BaseData.Stain(slot),
+            HasAdvancedDyes    = state.Materials.CheckExistence(MaterialValueIndex.FromSlot(slot)),
             AllowRevert        = true,
         };
 }

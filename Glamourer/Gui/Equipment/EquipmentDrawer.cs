@@ -3,6 +3,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using Glamourer.Events;
 using Glamourer.Gui.Materials;
+using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
@@ -63,6 +64,7 @@ public class EquipmentDrawer
 
     private Vector2 _iconSize;
     private float   _comboLength;
+    private uint    _advancedMaterialColor;
 
     public void Prepare()
     {
@@ -74,7 +76,8 @@ public class EquipmentDrawer
                     .Max(i => ImGui.CalcTextSize($"{i.Item2.Name} ({i.Item2.ModelString})").X)
               / ImGuiHelpers.GlobalScale;
 
-        _requiredComboWidth = _requiredComboWidthUnscaled * ImGuiHelpers.GlobalScale;
+        _requiredComboWidth    = _requiredComboWidthUnscaled * ImGuiHelpers.GlobalScale;
+        _advancedMaterialColor = ColorId.AdvancedDyeActive.Value();
     }
 
     private bool VerifyRestrictedGear(EquipDrawData data)
@@ -91,7 +94,7 @@ public class EquipmentDrawer
         if (_config.HideApplyCheckmarks)
             equipDrawData.DisplayApplication = false;
 
-        using var id      = ImRaii.PushId((int)equipDrawData.Slot);
+        using var id      = ImUtf8.PushId((int)equipDrawData.Slot);
         var       spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
         using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
 
@@ -106,7 +109,7 @@ public class EquipmentDrawer
         if (_config.HideApplyCheckmarks)
             bonusDrawData.DisplayApplication = false;
 
-        using var id      = ImRaii.PushId(100 + (int)bonusDrawData.Slot);
+        using var id      = ImUtf8.PushId(100 + (int)bonusDrawData.Slot);
         var       spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
         using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
 
@@ -127,7 +130,7 @@ public class EquipmentDrawer
             offhand.DisplayApplication  = false;
         }
 
-        using var id      = ImRaii.PushId("Weapons");
+        using var id      = ImUtf8.PushId("Weapons"u8);
         var       spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
         using var style   = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
 
@@ -174,7 +177,7 @@ public class EquipmentDrawer
                 change = true;
             }
 
-            ImGuiUtil.HoverTooltip($"{_config.DeleteDesignModifier.ToString()} and Right-click to clear.");
+            ImUtf8.HoverTooltip($"{_config.DeleteDesignModifier.ToString()} and Right-click to clear.");
         }
 
         return change;
@@ -196,14 +199,13 @@ public class EquipmentDrawer
         }
         else if (equipDrawData.IsState)
         {
-            _advancedDyes.DrawButton(equipDrawData.Slot);
+            _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : 0u);
         }
 
         if (VerifyRestrictedGear(equipDrawData))
             label += " (Restricted)";
 
-        ImGui.SameLine();
-        ImGui.TextUnformatted(label);
+        DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
     }
 
     private void DrawBonusItemSmall(in BonusDrawData bonusDrawData)
@@ -218,11 +220,10 @@ public class EquipmentDrawer
         }
         else if (bonusDrawData.IsState)
         {
-            _advancedDyes.DrawButton(bonusDrawData.Slot);
+            _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : 0u);
         }
 
-        ImGui.SameLine();
-        ImGui.TextUnformatted(label);
+        DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
     }
 
     private void DrawWeaponsSmall(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
@@ -239,12 +240,12 @@ public class EquipmentDrawer
         }
         else if (mainhand.IsState)
         {
-            _advancedDyes.DrawButton(EquipSlot.MainHand);
+            _advancedDyes.DrawButton(EquipSlot.MainHand, mainhand.HasAdvancedDyes ? _advancedMaterialColor : 0u);
         }
 
         if (allWeapons)
             mainhandLabel += $" ({mainhand.CurrentItem.Type.ToName()})";
-        WeaponHelpMarker(mainhandLabel);
+        WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel);
 
         if (offhand.CurrentItem.Type is FullEquipType.Unknown)
             return;
@@ -261,10 +262,10 @@ public class EquipmentDrawer
         }
         else if (offhand.IsState)
         {
-            _advancedDyes.DrawButton(EquipSlot.OffHand);
+            _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : 0u);
         }
 
-        WeaponHelpMarker(offhandLabel);
+        WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel);
     }
 
     #endregion
@@ -285,8 +286,8 @@ public class EquipmentDrawer
             DrawApply(equipDrawData);
         }
 
-        ImGui.SameLine();
-        ImGui.TextUnformatted(label);
+        DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
+
         DrawStain(equipDrawData, false);
         if (equipDrawData.DisplayApplication)
         {
@@ -295,13 +296,13 @@ public class EquipmentDrawer
         }
         else if (equipDrawData.IsState)
         {
-            _advancedDyes.DrawButton(equipDrawData.Slot);
+            _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : 0u);
         }
 
         if (VerifyRestrictedGear(equipDrawData))
         {
             ImGui.SameLine();
-            ImGui.TextUnformatted("(Restricted)");
+            ImUtf8.Text("(Restricted)"u8);
         }
     }
 
@@ -319,11 +320,10 @@ public class EquipmentDrawer
         }
         else if (bonusDrawData.IsState)
         {
-            _advancedDyes.DrawButton(bonusDrawData.Slot);
+            _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : 0u);
         }
 
-        ImGui.SameLine();
-        ImGui.TextUnformatted(label);
+        DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
     }
 
     private void DrawWeaponsNormal(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
@@ -334,7 +334,7 @@ public class EquipmentDrawer
         mainhand.CurrentItem.DrawIcon(_textures, _iconSize, EquipSlot.MainHand);
         var left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();
-        using (ImRaii.Group())
+        using (ImUtf8.Group())
         {
             DrawMainhand(ref mainhand, ref offhand, out var mainhandLabel, allWeapons, false, left);
             if (mainhand.DisplayApplication)
@@ -343,7 +343,8 @@ public class EquipmentDrawer
                 DrawApply(mainhand);
             }
 
-            WeaponHelpMarker(mainhandLabel, allWeapons ? mainhand.CurrentItem.Type.ToName() : null);
+            WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel,
+                allWeapons ? mainhand.CurrentItem.Type.ToName() : null);
 
             DrawStain(mainhand, false);
             if (mainhand.DisplayApplication)
@@ -353,7 +354,7 @@ public class EquipmentDrawer
             }
             else if (mainhand.IsState)
             {
-                _advancedDyes.DrawButton(EquipSlot.MainHand);
+                _advancedDyes.DrawButton(EquipSlot.MainHand, mainhand.HasAdvancedDyes ? _advancedMaterialColor : 0u);
             }
         }
 
@@ -364,7 +365,7 @@ public class EquipmentDrawer
         var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
         left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
         ImGui.SameLine();
-        using (ImRaii.Group())
+        using (ImUtf8.Group())
         {
             DrawOffhand(mainhand, offhand, out var offhandLabel, false, right, left);
             if (offhand.DisplayApplication)
@@ -373,7 +374,7 @@ public class EquipmentDrawer
                 DrawApply(offhand);
             }
 
-            WeaponHelpMarker(offhandLabel);
+            WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel);
 
             DrawStain(offhand, false);
             if (offhand.DisplayApplication)
@@ -381,9 +382,9 @@ public class EquipmentDrawer
                 ImGui.SameLine();
                 DrawApplyStain(offhand);
             }
-            else if (mainhand.IsState)
+            else if (offhand.IsState)
             {
-                _advancedDyes.DrawButton(EquipSlot.OffHand);
+                _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : 0u);
             }
         }
     }
@@ -468,14 +469,16 @@ public class EquipmentDrawer
             UiHelpers.OpenCombo($"##{combo.Label}");
 
         using var disabled = ImRaii.Disabled(data.Locked);
-        var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.Id.BonusItem, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
+        var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.Id.BonusItem,
+            small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
             _requiredComboWidth);
         if (change)
             data.SetItem(combo.CurrentSelection);
         else if (combo.CustomVariant.Id > 0)
             data.SetItem(_items.Identify(data.Slot, combo.CustomSetId, combo.CustomVariant));
 
-        if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, EquipItem.BonusItemNothing(data.Slot), out var item))
+        if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, EquipItem.BonusItemNothing(data.Slot),
+                out var item))
             data.SetItem(item);
     }
 
@@ -502,7 +505,7 @@ public class EquipmentDrawer
                 (false, true, _)     => ("Right-click to clear.\nControl and mouse wheel to scroll.", clearItem, true),
                 (false, false, _)    => ("Control and mouse wheel to scroll.", default, false),
             };
-        ImGuiUtil.HoverTooltip(tt);
+        ImUtf8.HoverTooltip(tt);
 
         return clicked && valid;
     }
@@ -544,8 +547,8 @@ public class EquipmentDrawer
             }
         }
 
-        if (unknown && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("The weapon type could not be identified, thus changing it to other weapons of that type is not possible.");
+        if (unknown)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "The weapon type could not be identified, thus changing it to other weapons of that type is not possible."u8);
     }
 
     private void DrawOffhand(in EquipDrawData mainhand, in EquipDrawData offhand, out string label, bool small, bool clear, bool open)
@@ -595,19 +598,31 @@ public class EquipmentDrawer
 
     #endregion
 
-    private static void WeaponHelpMarker(string label, string? type = null)
+    private void WeaponHelpMarker(bool hasAdvancedDyes, string label, string? type = null)
     {
         ImGui.SameLine();
         ImGuiComponents.HelpMarker(
             "Changing weapons to weapons of different types can cause crashes, freezes, soft- and hard locks and cheating, "
           + "thus it is only allowed to change weapons to other weapons of the same type.");
-        ImGui.SameLine();
-        ImGui.TextUnformatted(label);
+        DrawEquipLabel(hasAdvancedDyes, label);
+
         if (type == null)
             return;
 
         var pos = ImGui.GetItemRectMin();
         pos.Y += ImGui.GetFrameHeightWithSpacing();
         ImGui.GetWindowDrawList().AddText(pos, ImGui.GetColorU32(ImGuiCol.Text), $"({type})");
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    private void DrawEquipLabel(bool hasAdvancedDyes, string label)
+    {
+        ImGui.SameLine();
+        using (ImRaii.PushColor(ImGuiCol.Text, _advancedMaterialColor, hasAdvancedDyes))
+        {
+            ImUtf8.Text(label);
+        }
+        if (hasAdvancedDyes)
+            ImUtf8.HoverTooltip("This design has advanced dyes setup for this slot."u8);
     }
 }

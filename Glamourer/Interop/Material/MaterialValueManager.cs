@@ -6,6 +6,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using static Penumbra.GameData.Files.ShpkFile;
 
 
 namespace Glamourer.Interop.Material;
@@ -278,6 +280,24 @@ public readonly struct MaterialValueManager<T>
 
         _values.Insert(~idx, (key, value));
         return true;
+    }
+
+    public bool CheckExistence(MaterialValueIndex index)
+    {
+        if (_values.Count == 0)
+            return false;
+
+        var key = index.Key;
+        var idx = Search(key);
+        if (idx >= 0)
+            return true;
+
+        idx = ~idx;
+        if (idx >= _values.Count)
+            return false;
+
+        var nextItem = MaterialValueIndex.FromKey(_values[idx].Key);
+        return nextItem.DrawObject == index.DrawObject && nextItem.SlotIndex == index.SlotIndex;
     }
 
     public bool RemoveValue(MaterialValueIndex index)
