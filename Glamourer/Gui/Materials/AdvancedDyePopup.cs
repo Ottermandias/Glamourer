@@ -8,7 +8,6 @@ using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using ImGuiNET;
-using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;
 using OtterGui.Text;
@@ -102,11 +101,12 @@ public sealed unsafe class AdvancedDyePopup(
 
     private void DrawTabBar(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials, ref bool firstAvailable)
     {
-        using var bar = ImRaii.TabBar("tabs");
+        using var bar = ImUtf8.TabBar("tabs"u8);
         if (!bar)
             return;
 
-        var table = new ColorTable.Table();
+        var table          = new ColorTable.Table();
+        var highLightColor = ColorId.AdvancedDyeActive.Value();
         for (byte i = 0; i < MaterialService.MaterialsPerModel; ++i)
         {
             var index = _drawIndex!.Value with { MaterialIndex = i };
@@ -125,17 +125,30 @@ public sealed unsafe class AdvancedDyePopup(
             if (available)
                 firstAvailable = false;
 
-            using var tab = _label.TabItem(i, select);
+            var       hasAdvancedDyes = _state.Materials.CheckExistenceMaterial(index);
+            using var c               = ImRaii.PushColor(ImGuiCol.Text, highLightColor, hasAdvancedDyes);
+            using var tab             = _label.TabItem(i, select);
+            c.Pop();
             if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             {
                 using var enabled = ImRaii.Enabled();
                 var (path, gamePath) = ResourceName(index);
+                using var tt = ImUtf8.Tooltip();
+
                 if (gamePath.Length == 0 || path.Length == 0)
-                    ImGui.SetTooltip("This material does not exist.");
+                    ImUtf8.Text("This material does not exist."u8);
                 else if (!available)
-                    ImGui.SetTooltip($"This material does not have an associated color set.\n\n{gamePath}\n{path}");
+                    ImUtf8.Text($"This material does not have an associated color set.\n\n{gamePath}\n{path}");
                 else
-                    ImGui.SetTooltip($"{gamePath}\n{path}");
+                    ImUtf8.Text($"{gamePath}\n{path}");
+
+                if (hasAdvancedDyes && !available)
+                {
+                    ImUtf8.Text("\nRight-Click to remove ineffective advanced dyes."u8);
+                    if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                        for (byte row = 0; row < ColorTable.NumRows; ++row)
+                            stateManager.ResetMaterialValue(_state, index with { RowIndex = row }, ApplySettings.Game);
+                }
             }
 
             if ((tab.Success || select is ImGuiTabItemFlags.SetSelected) && available)
@@ -174,7 +187,7 @@ public sealed unsafe class AdvancedDyePopup(
         DrawTabBar(textures, materials, ref firstAvailable);
 
         if (firstAvailable)
-            ImGui.TextUnformatted("No Editable Materials available.");
+            ImUtf8.Text("No Editable Materials available."u8);
     }
 
     private void DrawWindow(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials)
@@ -256,25 +269,23 @@ public sealed unsafe class AdvancedDyePopup(
     {
         using var id         = ImRaii.PushId(100);
         var       buttonSize = new Vector2(ImGui.GetFrameHeight());
-        ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Crosshairs.ToIconString(), buttonSize, "Highlight all affected colors on the character.",
-            false, true);
+        ImUtf8.IconButton(FontAwesomeIcon.Crosshairs, "Highlight all affected colors on the character."u8, buttonSize);
         if (ImGui.IsItemHovered())
             preview.OnHover(materialIndex with { RowIndex = byte.MaxValue }, _actor.Index, table);
         ImGui.SameLine();
         ImGui.AlignTextToFramePadding();
         using (ImRaii.PushFont(UiBuilder.MonoFont))
         {
-            ImGui.TextUnformatted("All Color Row Pairs (1-16)");
+            ImUtf8.Text("All Color Row Pairs (1-16)"u8);
         }
 
         var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
         ImGui.SameLine(ImGui.GetWindowSize().X - 3 * buttonSize.X - 2 * spacing - ImGui.GetStyle().WindowPadding.X);
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), buttonSize, "Export this table to your clipboard.", false,
-                true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Export this table to your clipboard."u8, buttonSize))
             ColorRowClipboard.Table = table;
         ImGui.SameLine(0, spacing);
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), buttonSize,
-                "Import an exported table from your clipboard onto this table.", !ColorRowClipboard.IsTableSet, true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported table from your clipboard onto this table."u8, buttonSize,
+                !ColorRowClipboard.IsTableSet))
             for (var idx = 0; idx < ColorTable.NumRows; ++idx)
             {
                 var row         = ColorRowClipboard.Table[idx];
@@ -288,15 +299,14 @@ public sealed unsafe class AdvancedDyePopup(
             }
 
         ImGui.SameLine(0, spacing);
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UndoAlt.ToIconString(), buttonSize, "Reset this table to game state.", !_anyChanged,
-                true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.UndoAlt, "Reset this table to game state."u8, buttonSize, !_anyChanged))
             for (byte i = 0; i < ColorTable.NumRows; ++i)
                 stateManager.ResetMaterialValue(_state, materialIndex with { RowIndex = i }, ApplySettings.Game);
     }
 
     private void DrawRow(ref ColorTableRow row, MaterialValueIndex index, in ColorTable.Table table)
     {
-        using var id      = ImRaii.PushId(index.RowIndex);
+        using var id      = ImUtf8.PushId(index.RowIndex);
         var       changed = _state.Materials.TryGetValue(index, out var value);
         if (!changed)
         {
@@ -319,8 +329,7 @@ public sealed unsafe class AdvancedDyePopup(
         }
 
         var buttonSize = new Vector2(ImGui.GetFrameHeight());
-        ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Crosshairs.ToIconString(), buttonSize, "Highlight the affected colors on the character.",
-            false, true);
+        ImUtf8.IconButton(FontAwesomeIcon.Crosshairs, "Highlight the affected colors on the character."u8, buttonSize);
         if (ImGui.IsItemHovered())
             preview.OnHover(index, _actor.Index, table);
 
@@ -330,28 +339,28 @@ public sealed unsafe class AdvancedDyePopup(
         {
             var rowIndex  = index.RowIndex / 2 + 1;
             var rowSuffix = (index.RowIndex & 1) == 0 ? 'A' : 'B';
-            ImGui.TextUnformatted($"Row {rowIndex,2}{rowSuffix}");
+           ImUtf8.Text($"Row {rowIndex,2}{rowSuffix}");
         }
 
         ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 2);
-        var applied = ImGuiUtil.ColorPicker("##diffuse", "Change the diffuse value for this row.", value.Model.Diffuse,
-            v => value.Model.Diffuse = v, "D");
+        var applied = ImUtf8.ColorPicker("##diffuse"u8, "Change the diffuse value for this row."u8, value.Model.Diffuse,
+            v => value.Model.Diffuse = v, "D"u8);
 
         var spacing = ImGui.GetStyle().ItemInnerSpacing;
         ImGui.SameLine(0, spacing.X);
-        applied |= ImGuiUtil.ColorPicker("##specular", "Change the specular value for this row.", value.Model.Specular,
-            v => value.Model.Specular = v, "S");
+        applied |= ImUtf8.ColorPicker("##specular"u8, "Change the specular value for this row."u8, value.Model.Specular,
+            v => value.Model.Specular = v, "S"u8);
 
         ImGui.SameLine(0, spacing.X);
-        applied |= ImGuiUtil.ColorPicker("##emissive", "Change the emissive value for this row.", value.Model.Emissive,
-            v => value.Model.Emissive = v, "E");
+        applied |= ImUtf8.ColorPicker("##emissive"u8, "Change the emissive value for this row."u8, value.Model.Emissive,
+            v => value.Model.Emissive = v, "E"u8);
 
         ImGui.SameLine(0, spacing.X);
         if (_mode is not ColorRow.Mode.Dawntrail)
         {
             ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
             applied |= DragGloss(ref value.Model.GlossStrength);
-            ImGuiUtil.HoverTooltip("Change the gloss strength for this row.");
+            ImUtf8.HoverTooltip("Change the gloss strength for this row."u8);
         }
         else
         {
@@ -363,7 +372,7 @@ public sealed unsafe class AdvancedDyePopup(
         {
             ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
             applied |= DragSpecularStrength(ref value.Model.SpecularStrength);
-            ImGuiUtil.HoverTooltip("Change the specular strength for this row.");
+            ImUtf8.HoverTooltip("Change the specular strength for this row."u8);
         }
         else
         {
@@ -371,19 +380,17 @@ public sealed unsafe class AdvancedDyePopup(
         }
 
         ImGui.SameLine(0, spacing.X);
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Clipboard.ToIconString(), buttonSize, "Export this row to your clipboard.", false,
-                true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Export this row to your clipboard."u8, buttonSize))
             ColorRowClipboard.Row = value.Model;
         ImGui.SameLine(0, spacing.X);
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), buttonSize,
-                "Import an exported row from your clipboard onto this row.", !ColorRowClipboard.IsSet, true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported row from your clipboard onto this row."u8, buttonSize, !ColorRowClipboard.IsSet))
         {
             value.Model = ColorRowClipboard.Row;
             applied     = true;
         }
 
         ImGui.SameLine(0, spacing.X);
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.UndoAlt.ToIconString(), buttonSize, "Reset this row to game state.", !changed, true))
+        if (ImUtf8.IconButton(FontAwesomeIcon.UndoAlt, "Reset this row to game state."u8, buttonSize, !changed))
             stateManager.ResetMaterialValue(_state, index, ApplySettings.Game);
 
         if (applied)

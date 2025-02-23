@@ -58,7 +58,7 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
             CurrentApply       = design.DoApplyEquip(slot),
             CurrentApplyStain  = design.DoApplyStain(slot),
             Locked             = design.WriteProtected(),
-            HasAdvancedDyes    = design.GetMaterialDataRef().CheckExistence(MaterialValueIndex.FromSlot(slot)),
+            HasAdvancedDyes    = design.GetMaterialDataRef().CheckExistenceSlot(MaterialValueIndex.FromSlot(slot)),
             DisplayApplication = true,
         };
 
@@ -71,7 +71,7 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
             DisplayApplication = false,
             GameItem           = state.BaseData.Item(slot),
             GameStains         = state.BaseData.Stain(slot),
-            HasAdvancedDyes    = state.Materials.CheckExistence(MaterialValueIndex.FromSlot(slot)),
+            HasAdvancedDyes    = state.Materials.CheckExistenceSlot(MaterialValueIndex.FromSlot(slot)),
             AllowRevert        = true,
         };
 }

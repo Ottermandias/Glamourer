@@ -44,7 +44,7 @@ public struct BonusDrawData(BonusItemFlag slot, in DesignData designData)
             CurrentApply       = design.DoApplyBonusItem(slot),
             Locked             = design.WriteProtected(),
             DisplayApplication = true,
-            HasAdvancedDyes    = design.GetMaterialDataRef().CheckExistence(MaterialValueIndex.FromSlot(slot)),
+            HasAdvancedDyes    = design.GetMaterialDataRef().CheckExistenceSlot(MaterialValueIndex.FromSlot(slot)),
         };
 
     public static BonusDrawData FromState(StateManager manager, ActorState state, BonusItemFlag slot)
@@ -56,6 +56,6 @@ public struct BonusDrawData(BonusItemFlag slot, in DesignData designData)
             DisplayApplication = false,
             GameItem           = state.BaseData.BonusItem(slot),
             AllowRevert        = true,
-            HasAdvancedDyes    = state.Materials.CheckExistence(MaterialValueIndex.FromSlot(slot)),
+            HasAdvancedDyes    = state.Materials.CheckExistenceSlot(MaterialValueIndex.FromSlot(slot)),
         };
 }

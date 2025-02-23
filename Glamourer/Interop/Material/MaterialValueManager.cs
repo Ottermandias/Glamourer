@@ -282,22 +282,34 @@ public readonly struct MaterialValueManager<T>
         return true;
     }
 
-    public bool CheckExistence(MaterialValueIndex index)
+    public bool CheckExistenceSlot(MaterialValueIndex index)
+    {
+        var key = CheckExistence(index);
+        return key.Valid && key.DrawObject == index.DrawObject && key.SlotIndex == index.SlotIndex;
+    }
+
+    public bool CheckExistenceMaterial(MaterialValueIndex index)
+    {
+        var key = CheckExistence(index);
+        return key.Valid && key.DrawObject == index.DrawObject && key.SlotIndex == index.SlotIndex && key.MaterialIndex == index.MaterialIndex;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private MaterialValueIndex CheckExistence(MaterialValueIndex index)
     {
         if (_values.Count == 0)
-            return false;
+            return MaterialValueIndex.Invalid;
 
         var key = index.Key;
         var idx = Search(key);
         if (idx >= 0)
-            return true;
+            return index;
 
         idx = ~idx;
         if (idx >= _values.Count)
-            return false;
+            return MaterialValueIndex.Invalid;
 
-        var nextItem = MaterialValueIndex.FromKey(_values[idx].Key);
-        return nextItem.DrawObject == index.DrawObject && nextItem.SlotIndex == index.SlotIndex;
+        return MaterialValueIndex.FromKey(_values[idx].Key);
     }
 
     public bool RemoveValue(MaterialValueIndex index)
