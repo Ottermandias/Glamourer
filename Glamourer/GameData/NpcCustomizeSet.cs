@@ -330,9 +330,9 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
     /// <summary> Check decal files for existence. </summary>
     private static void CheckFacepaintFiles(IDataManager data, BitArray facepaints)
     {
-        for (var i = 0; i < 128; ++i)
+        for (byte i = 0; i < 128; ++i)
         {
-            var path = GamePaths.Character.Tex.DecalPath("face", (PrimaryId)i);
+            var path = GamePaths.Tex.FaceDecal(i);
             if (data.FileExists(path))
                 facepaints[i] = true;
         }
