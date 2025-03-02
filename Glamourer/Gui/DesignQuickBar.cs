@@ -48,6 +48,7 @@ public sealed class DesignQuickBar : Window, IDisposable
     private readonly ImRaii.Color      _windowColor    = new();
     private          DateTime          _keyboardToggle = DateTime.UnixEpoch;
     private          int               _numButtons;
+    private readonly StringBuilder     _tooltipBuilder = new(512);
 
     public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
         ObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra)
@@ -107,7 +108,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     private void Draw(float width)
     {
-        using var group      = ImRaii.Group();
+        using var group      = ImUtf8.Group();
         var       spacing    = ImGui.GetStyle().ItemInnerSpacing;
         using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
         var       buttonSize = new Vector2(ImGui.GetFrameHeight());
@@ -149,33 +150,38 @@ public sealed class DesignQuickBar : Window, IDisposable
     {
         var design    = _designCombo.Design as Design;
         var available = 0;
-        var tooltip   = string.Empty;
+        _tooltipBuilder.Clear();
+
         if (design == null)
         {
-            tooltip = "No design selected.";
+            _tooltipBuilder.Append("No design selected.");
         }
         else
         {
             if (_playerIdentifier.IsValid && _playerData.Valid)
             {
                 available |= 1;
-                tooltip   =  $"Left-Click: Apply {design.ResolveName(_config.Ephemeral.IncognitoMode)} to yourself.";
+                _tooltipBuilder.Append("Left-Click: Apply ")
+                    .Append(design.ResolveName(_config.Ephemeral.IncognitoMode))
+                    .Append(" to yourself.");
             }
 
             if (_targetIdentifier.IsValid && _targetData.Valid)
             {
                 if (available != 0)
-                    tooltip += '\n';
+                    _tooltipBuilder.Append('\n');
                 available |= 2;
-                tooltip   += $"Right-Click: Apply {design.ResolveName(_config.Ephemeral.IncognitoMode)} to {_targetIdentifier}.";
+                _tooltipBuilder.Append("Right-Click: Apply ")
+                    .Append(design.ResolveName(_config.Ephemeral.IncognitoMode))
+                    .Append(" to {_targetIdentifier}.");
             }
 
             if (available == 0)
-                tooltip = "Neither player character nor target available.";
+                _tooltipBuilder.Append("Neither player character nor target available.");
         }
 
 
-        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.PlayCircle, size, tooltip, available);
+        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.PlayCircle, size, available);
         ImGui.SameLine();
         if (!clicked)
             return;
@@ -197,25 +203,28 @@ public sealed class DesignQuickBar : Window, IDisposable
             return;
 
         var available = 0;
-        var tooltip   = string.Empty;
+        _tooltipBuilder.Clear();
+
         if (_playerIdentifier.IsValid && _playerState is { IsLocked: false })
         {
             available |= 1;
-            tooltip   =  "Left-Click: Revert the player character to their game state.";
+            _tooltipBuilder.Append("Left-Click: Revert the player character to their game state.");
         }
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false })
         {
             if (available != 0)
-                tooltip += '\n';
+                _tooltipBuilder.Append('\n');
             available |= 2;
-            tooltip   += $"Right-Click: Revert {_targetIdentifier} to their game state.";
+            _tooltipBuilder.Append("Right-Click: Revert ")
+                .Append(_targetIdentifier)
+                .Append(" to their game state.");
         }
 
         if (available == 0)
-            tooltip = "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.";
+            _tooltipBuilder.Append("Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
-        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, tooltip, available);
+        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, available);
         ImGui.SameLine();
         if (clicked)
             _stateManager.ResetState(state!, StateSource.Manual, isFinal: true);
@@ -230,26 +239,28 @@ public sealed class DesignQuickBar : Window, IDisposable
             return;
 
         var available = 0;
-        var tooltip   = string.Empty;
+        _tooltipBuilder.Clear();
 
         if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
         {
             available |= 1;
-            tooltip   =  "Left-Click: Revert the player character to their automation state.";
+            _tooltipBuilder.Append("Left-Click: Revert the player character to their automation state.");
         }
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
             if (available != 0)
-                tooltip += '\n';
+                _tooltipBuilder.Append('\n');
             available |= 2;
-            tooltip   += $"Right-Click: Revert {_targetIdentifier} to their automation state.";
+            _tooltipBuilder.Append("Right-Click: Revert ")
+                .Append(_targetIdentifier)
+                .Append(" to their automation state.");
         }
 
         if (available == 0)
-            tooltip = "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.";
+            _tooltipBuilder.Append("Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
-        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.SyncAlt, buttonSize, tooltip, available);
+        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.SyncAlt, buttonSize,  available);
         ImGui.SameLine();
         if (!clicked)
             return;
@@ -270,26 +281,28 @@ public sealed class DesignQuickBar : Window, IDisposable
             return;
 
         var available = 0;
-        var tooltip   = string.Empty;
+        _tooltipBuilder.Clear();
 
         if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
         {
             available |= 1;
-            tooltip   =  "Left-Click: Reapply the player character's current automation on top of their current state.";
+            _tooltipBuilder.Append("Left-Click: Reapply the player character's current automation on top of their current state.");
         }
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
             if (available != 0)
-                tooltip += '\n';
+                _tooltipBuilder.Append('\n');
             available |= 2;
-            tooltip   += $"Right-Click: Reapply {_targetIdentifier}'s current automation on top of their current state.";
+            _tooltipBuilder.Append("Right-Click: Reapply ")
+                .Append(_targetIdentifier)
+                .Append("'s current automation on top of their current state.");
         }
 
         if (available == 0)
-            tooltip = "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.";
+            _tooltipBuilder.Append("Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
-        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.Repeat, buttonSize, tooltip, available);
+        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.Repeat, buttonSize, available);
         ImGui.SameLine();
         if (!clicked)
             return;
@@ -307,26 +320,28 @@ public sealed class DesignQuickBar : Window, IDisposable
             return;
 
         var available = 0;
-        var tooltip   = string.Empty;
+        _tooltipBuilder.Clear();
 
         if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
         {
             available |= 1;
-            tooltip   =  "Left-Click: Revert the advanced customizations and dyes of the player character to their game state.";
+            _tooltipBuilder.Append("Left-Click: Revert the advanced customizations and dyes of the player character to their game state.");
         }
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
             if (available != 0)
-                tooltip += '\n';
+                _tooltipBuilder.Append('\n');
             available |= 2;
-            tooltip   += $"Right-Click: Revert the advanced customizations and dyes of {_targetIdentifier} to their game state.";
+            _tooltipBuilder.Append("Right-Click: Revert the advanced customizations and dyes of ")
+                .Append(_targetIdentifier)
+                .Append(" to their game state.");
         }
 
         if (available == 0)
-            tooltip = "Neither player character nor target are available or their state is locked.";
+            _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
-        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Palette, buttonSize, tooltip, available);
+        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Palette, buttonSize, available);
         ImGui.SameLine();
         if (clicked)
             _stateManager.ResetAdvancedState(state!, StateSource.Manual);
@@ -338,26 +353,28 @@ public sealed class DesignQuickBar : Window, IDisposable
             return;
 
         var available = 0;
-        var tooltip   = string.Empty;
+        _tooltipBuilder.Clear();
 
         if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
         {
             available |= 1;
-            tooltip   =  "Left-Click: Revert the customizations of the player character to their game state.";
+            _tooltipBuilder.Append("Left-Click: Revert the customizations of the player character to their game state.");
         }
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
             if (available != 0)
-                tooltip += '\n';
+                _tooltipBuilder.Append('\n');
             available |= 2;
-            tooltip   += $"Right-Click: Revert the customizations of {_targetIdentifier} to their game state.";
+            _tooltipBuilder.Append("Right-Click: Revert the customizations of ")
+                .Append(_targetIdentifier)
+                .Append(" to their game state.");
         }
 
         if (available == 0)
-            tooltip = "Neither player character nor target are available or their state is locked.";
+            _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
-        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.User, buttonSize, tooltip, available);
+        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.User, buttonSize, available);
         ImGui.SameLine();
         if (clicked)
             _stateManager.ResetCustomize(state!, StateSource.Manual);
@@ -369,26 +386,28 @@ public sealed class DesignQuickBar : Window, IDisposable
             return;
 
         var available = 0;
-        var tooltip   = string.Empty;
+        _tooltipBuilder.Clear();
 
         if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
         {
             available |= 1;
-            tooltip   =  "Left-Click: Revert the equipment of the player character to its game state.";
+            _tooltipBuilder.Append("Left-Click: Revert the equipment of the player character to its game state.");
         }
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
             if (available != 0)
-                tooltip += '\n';
+                _tooltipBuilder.Append('\n');
             available |= 2;
-            tooltip   += $"Right-Click: Revert the equipment of {_targetIdentifier} to its game state.";
+            _tooltipBuilder.Append("Right-Click: Revert the equipment of ")
+                .Append(_targetIdentifier)
+                .Append(" to its game state.");
         }
 
         if (available == 0)
-            tooltip = "Neither player character nor target are available or their state is locked.";
+            _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
-        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Vest, buttonSize, tooltip, available);
+        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Vest, buttonSize, available);
         ImGui.SameLine();
         if (clicked)
             _stateManager.ResetEquip(state!, StateSource.Manual);
@@ -400,26 +419,30 @@ public sealed class DesignQuickBar : Window, IDisposable
             return;
 
         var available = 0;
-        var tooltip   = string.Empty;
+        _tooltipBuilder.Clear();
 
         if (_playerIdentifier.IsValid && _playerData.Valid)
         {
             available |= 1;
-            tooltip   =  $"Left-Click: Reset all temporary settings applied by Glamourer (manually or through automation) to the collection affecting {_playerIdentifier}.";
+            _tooltipBuilder.Append("Left-Click: Reset all temporary settings applied by Glamourer (manually or through automation) to the collection affecting ")
+                .Append(_playerIdentifier)
+                .Append('.');
         }
 
         if (_targetIdentifier.IsValid && _targetData.Valid)
         {
             if (available != 0)
-                tooltip += '\n';
+                _tooltipBuilder.Append('\n');
             available |= 2;
-            tooltip   += $"Right-Click: Reset all temporary settings applied by Glamourer (manually or through automation) to the collection affecting {_targetIdentifier}.";
+            _tooltipBuilder.Append("Right-Click: Reset all temporary settings applied by Glamourer (manually or through automation) to the collection affecting ")
+                .Append(_targetIdentifier)
+                .Append('.');
         }
 
         if (available == 0)
-            tooltip = "Neither player character nor target are available to identify their collections.";
+            _tooltipBuilder.Append("Neither player character nor target are available to identify their collections.");
 
-        var (clicked, _, data, _) = ResolveTarget(FontAwesomeIcon.Cog, buttonSize, tooltip, available);
+        var (clicked, _, data, _) = ResolveTarget(FontAwesomeIcon.Cog, buttonSize, available);
         ImGui.SameLine();
         if (clicked)
         {
@@ -428,10 +451,11 @@ public sealed class DesignQuickBar : Window, IDisposable
         }
     }
 
-    private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(FontAwesomeIcon icon, Vector2 buttonSize, string tooltip,
-        int available)
+    private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(FontAwesomeIcon icon, Vector2 buttonSize, int available)
     {
-        ImUtf8.IconButton(icon, tooltip, buttonSize, available == 0);
+        var enumerator = _tooltipBuilder.GetChunks();
+        var span       = enumerator.MoveNext() ? enumerator.Current.Span : [];
+        ImUtf8.IconButton(icon, span, buttonSize, available == 0);
         if ((available & 1) == 1 && ImGui.IsItemClicked(ImGuiMouseButton.Left))
             return (true, _playerIdentifier, _playerData, _playerState);
         if ((available & 2) == 2 && ImGui.IsItemClicked(ImGuiMouseButton.Right))
