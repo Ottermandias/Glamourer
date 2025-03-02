@@ -19,9 +19,6 @@ public readonly struct ApplicationRules(ApplicationCollection application, bool 
     public static ApplicationRules AllButParameters(ActorState state)
         => new(ApplicationCollection.All with { Parameters = ComputeParameters(state.ModelData, state.BaseData, All.Parameters) }, true);
 
-    public static ApplicationRules AllWithConfig(Configuration config)
-        => new(ApplicationCollection.All with { Parameters = config.UseAdvancedParameters ? All.Parameters : 0 }, config.UseAdvancedDyes);
-
     public static ApplicationRules NpcFromModifiers(bool ctrl, bool shift)
     {
         var equip     = ctrl || !shift ? EquipFlagExtensions.All : 0;

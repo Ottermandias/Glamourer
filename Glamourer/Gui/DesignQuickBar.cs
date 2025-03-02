@@ -11,7 +11,6 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
-using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Text;
 using Penumbra.GameData.Actors;
@@ -304,9 +303,6 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     private void DrawRevertAdvancedCustomization(Vector2 buttonSize)
     {
-        if (!_config.UseAdvancedParameters)
-            return;
-
         if (!_config.QdbButtons.HasFlag(QdbButtons.RevertAdvanced))
             return;
 
@@ -475,7 +471,7 @@ public sealed class DesignQuickBar : Window, IDisposable
                 ++_numButtons;
         }
 
-        if ((_config.UseAdvancedParameters || _config.UseAdvancedDyes) && _config.QdbButtons.HasFlag(QdbButtons.RevertAdvanced))
+        if (_config.QdbButtons.HasFlag(QdbButtons.RevertAdvanced))
             ++_numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertCustomize))
             ++_numButtons;

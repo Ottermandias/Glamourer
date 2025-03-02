@@ -24,7 +24,6 @@ public class SettingsTab(
     IKeyState keys,
     DesignColorUi designColorUi,
     PaletteImport paletteImport,
-    PalettePlusChecker paletteChecker,
     CollectionOverrideDrawer overrides,
     CodeDrawer codeDrawer,
     Glamourer glamourer,
@@ -93,20 +92,15 @@ public class SettingsTab(
         Checkbox("Revert Manual Changes on Zone Change"u8,
             "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone."u8,
             config.RevertManualChangesOnZoneChange, v => config.RevertManualChangesOnZoneChange = v);
-        Checkbox("Enable Advanced Customization Options"u8,
-            "Enable the display and editing of advanced customization options like arbitrary colors."u8,
-            config.UseAdvancedParameters, paletteChecker.SetAdvancedParameters);
         PaletteImportButton();
-        Checkbox("Enable Advanced Dye Options"u8,
-            "Enable the display and editing of advanced dyes (color sets) for all equipment"u8,
-            config.UseAdvancedDyes, v => config.UseAdvancedDyes = v);
         Checkbox("Always Apply Associated Mods"u8,
             "Whenever a design is applied to a character (including via automation), Glamourer will try to apply its associated mod settings to the collection currently associated with that character, if it is available.\n\n"u8
           + "Glamourer will NOT revert these applied settings automatically. This may mess up your collection and configuration.\n\n"u8
           + "If you enable this setting, you are aware that any resulting misconfiguration is your own fault."u8,
             config.AlwaysApplyAssociatedMods, v => config.AlwaysApplyAssociatedMods = v);
         Checkbox("Use Temporary Mod Settings"u8,
-            "Apply all settings as temporary settings so they will be reset when Glamourer or the game shut down."u8, config.UseTemporarySettings,
+            "Apply all settings as temporary settings so they will be reset when Glamourer or the game shut down."u8,
+            config.UseTemporarySettings,
             v => config.UseTemporarySettings = v);
         ImGui.NewLine();
     }
@@ -152,7 +146,7 @@ public class SettingsTab(
         ImGui.Dummy(Vector2.Zero);
 
         Checkbox("Enable Game Context Menus"u8, "Whether to show a Try On via Glamourer button on context menus for equippable items."u8,
-            config.EnableGameContextMenu,     v =>
+            config.EnableGameContextMenu,       v =>
             {
                 config.EnableGameContextMenu = v;
                 if (v)
@@ -161,12 +155,13 @@ public class SettingsTab(
                     contextMenuService.Disable();
             });
         Checkbox("Show Window when UI is Hidden"u8, "Whether to show Glamourer windows even when the games UI is hidden."u8,
-            config.ShowWindowWhenUiHidden,        v =>
+            config.ShowWindowWhenUiHidden,          v =>
             {
                 config.ShowWindowWhenUiHidden = v;
                 uiBuilder.DisableUserUiHide   = v;
             });
-        Checkbox("Hide Window in Cutscenes"u8, "Whether the main Glamourer window should automatically be hidden when entering cutscenes or not."u8,
+        Checkbox("Hide Window in Cutscenes"u8,
+            "Whether the main Glamourer window should automatically be hidden when entering cutscenes or not."u8,
             config.HideWindowInCutscene,
             v =>
             {
@@ -177,13 +172,13 @@ public class SettingsTab(
             config.Ephemeral.LockMainWindow,
             v => config.Ephemeral.LockMainWindow = v);
         Checkbox("Open Main Window at Game Start"u8, "Whether the main Glamourer window should be open or closed after launching the game."u8,
-            config.OpenWindowAtStart,              v => config.OpenWindowAtStart = v);
+            config.OpenWindowAtStart,                v => config.OpenWindowAtStart = v);
         ImGui.Dummy(Vector2.Zero);
         ImGui.Separator();
         ImGui.Dummy(Vector2.Zero);
 
         Checkbox("Smaller Equip Display"u8, "Use single-line display without icons and small dye buttons instead of double-line display."u8,
-            config.SmallEquip,            v => config.SmallEquip = v);
+            config.SmallEquip,              v => config.SmallEquip = v);
         DrawHeightUnitSettings();
         Checkbox("Show Application Checkboxes"u8,
             "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules."u8,
@@ -211,23 +206,22 @@ public class SettingsTab(
         Checkbox("Show Unobtained Item Warnings"u8,
             "Show information whether you have unlocked all items and customizations in your automated design or not."u8,
             config.ShowUnlockedItemWarnings, v => config.ShowUnlockedItemWarnings = v);
-        if (config.UseAdvancedParameters)
+        Checkbox("Show Color Display Config"u8, "Show the Color Display configuration options in the Advanced Customization panels."u8,
+            config.ShowColorConfig,             v => config.ShowColorConfig = v);
+        Checkbox("Show Palette+ Import Button"u8,
+            "Show the import button that allows you to import Palette+ palettes onto a design in the Advanced Customization options section for designs."u8,
+            config.ShowPalettePlusImport, v => config.ShowPalettePlusImport = v);
+        using (ImRaii.PushId(1))
         {
-            Checkbox("Show Color Display Config"u8, "Show the Color Display configuration options in the Advanced Customization panels."u8,
-                config.ShowColorConfig,           v => config.ShowColorConfig = v);
-            Checkbox("Show Palette+ Import Button"u8,
-                "Show the import button that allows you to import Palette+ palettes onto a design in the Advanced Customization options section for designs."u8,
-                config.ShowPalettePlusImport, v => config.ShowPalettePlusImport = v);
-            using var id = ImRaii.PushId(1);
             PaletteImportButton();
         }
 
-        if (config.UseAdvancedDyes)
-            Checkbox("Keep Advanced Dye Window Attached"u8,
-                "Keeps the advanced dye window expansion attached to the main window, or makes it freely movable."u8,
-                config.KeepAdvancedDyesAttached, v => config.KeepAdvancedDyesAttached = v);
+        Checkbox("Keep Advanced Dye Window Attached"u8,
+            "Keeps the advanced dye window expansion attached to the main window, or makes it freely movable."u8,
+            config.KeepAdvancedDyesAttached, v => config.KeepAdvancedDyesAttached = v);
 
-        Checkbox("Debug Mode"u8, "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general."u8, config.DebugMode,
+        Checkbox("Debug Mode"u8, "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general."u8,
+            config.DebugMode,
             v => config.DebugMode = v);
         ImGui.NewLine();
     }
@@ -235,8 +229,7 @@ public class SettingsTab(
     private void DrawQuickDesignBoxes()
     {
         var showAuto     = config.EnableAutoDesigns;
-        var showAdvanced = config.UseAdvancedParameters || config.UseAdvancedDyes;
-        var numColumns   = 8 - (showAuto ? 0 : 2) - (showAdvanced ? 0 : 1) - (config.UseTemporarySettings ? 0 : 1);
+        var numColumns   = 8 - (showAuto ? 0 : 2) - (config.UseTemporarySettings ? 0 : 1);
         ImGui.NewLine();
         ImUtf8.Text("Show the Following Buttons in the Quick Design Bar:"u8);
         ImGui.Dummy(Vector2.Zero);
@@ -253,11 +246,11 @@ public class SettingsTab(
             ("Reapply Auto", showAuto, QdbButtons.ReapplyAutomation),
             ("Revert Equip", true, QdbButtons.RevertEquip),
             ("Revert Customize", true, QdbButtons.RevertCustomize),
-            ("Revert Advanced", showAdvanced, QdbButtons.RevertAdvanced),
+            ("Revert Advanced", true, QdbButtons.RevertAdvanced),
             ("Reset Settings", config.UseTemporarySettings, QdbButtons.ResetSettings),
         ];
 
-        for(var i = 0; i < columns.Length; ++i)
+        for (var i = 0; i < columns.Length; ++i)
         {
             if (!columns[i].Item2)
                 continue;
@@ -291,7 +284,7 @@ public class SettingsTab(
 
     private void PaletteImportButton()
     {
-        if (!config.UseAdvancedParameters || !config.ShowPalettePlusImport)
+        if (!config.ShowPalettePlusImport)
             return;
 
         ImGui.SameLine();

@@ -180,10 +180,7 @@ public class DesignPanel
 
     private void DrawCustomizeParameters()
     {
-        if (!_config.UseAdvancedParameters)
-            return;
-
-        using var h = ImRaii.CollapsingHeader("Advanced Customizations");
+        using var h = ImUtf8.CollapsingHeaderId("Advanced Customizations"u8);
         if (!h)
             return;
 
@@ -192,10 +189,7 @@ public class DesignPanel
 
     private void DrawMaterialValues()
     {
-        if (!_config.UseAdvancedDyes)
-            return;
-
-        using var h = ImRaii.CollapsingHeader("Advanced Dyes");
+        using var h = ImUtf8.CollapsingHeaderId("Advanced Dyes"u8);
         if (!h)
             return;
 
@@ -204,7 +198,7 @@ public class DesignPanel
 
     private void DrawCustomizeApplication()
     {
-        using var id        = ImRaii.PushId("Customizations");
+        using var id        = ImUtf8.PushId("Customizations"u8);
         var       set       = _selector.Selected!.CustomizeSet;
         var       available = set.SettingAvailable | CustomizeFlag.Clan | CustomizeFlag.Gender | CustomizeFlag.BodyType;
         var flags = _selector.Selected!.ApplyCustomizeExcludingBodyType == 0 ? 0 :
@@ -219,55 +213,52 @@ public class DesignPanel
         }
 
         var applyClan = _selector.Selected!.DoApplyCustomize(CustomizeIndex.Clan);
-        if (ImGui.Checkbox($"Apply {CustomizeIndex.Clan.ToDefaultName()}", ref applyClan))
+        if (ImUtf8.Checkbox($"Apply {CustomizeIndex.Clan.ToDefaultName()}", ref applyClan))
             _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Clan, applyClan);
 
         var applyGender = _selector.Selected!.DoApplyCustomize(CustomizeIndex.Gender);
-        if (ImGui.Checkbox($"Apply {CustomizeIndex.Gender.ToDefaultName()}", ref applyGender))
+        if (ImUtf8.Checkbox($"Apply {CustomizeIndex.Gender.ToDefaultName()}", ref applyGender))
             _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Gender, applyGender);
 
 
         foreach (var index in CustomizationExtensions.All.Where(set.IsAvailable))
         {
             var apply = _selector.Selected!.DoApplyCustomize(index);
-            if (ImGui.Checkbox($"Apply {set.Option(index)}", ref apply))
+            if (ImUtf8.Checkbox($"Apply {set.Option(index)}", ref apply))
                 _manager.ChangeApplyCustomize(_selector.Selected!, index, apply);
         }
     }
 
     private void DrawCrestApplication()
     {
-        using var id        = ImRaii.PushId("Crests");
+        using var id        = ImUtf8.PushId("Crests"u8);
         var       flags     = (uint)_selector.Selected!.Application.Crest;
         var       bigChange = ImGui.CheckboxFlags("Apply All Crests", ref flags, (uint)CrestExtensions.AllRelevant);
         foreach (var flag in CrestExtensions.AllRelevantSet)
         {
             var apply = bigChange ? ((CrestFlag)flags & flag) == flag : _selector.Selected!.DoApplyCrest(flag);
-            if (ImGui.Checkbox($"Apply {flag.ToLabel()} Crest", ref apply) || bigChange)
+            if (ImUtf8.Checkbox($"Apply {flag.ToLabel()} Crest", ref apply) || bigChange)
                 _manager.ChangeApplyCrest(_selector.Selected!, flag, apply);
         }
     }
 
     private void DrawApplicationRules()
     {
-        using var h = ImRaii.CollapsingHeader("Application Rules");
+        using var h = ImUtf8.CollapsingHeaderId("Application Rules"u8);
         if (!h)
             return;
 
         using var disabled = ImRaii.Disabled(_selector.Selected!.WriteProtected());
 
-        using (var _ = ImRaii.Group())
+        using (var _ = ImUtf8.Group())
         {
             DrawCustomizeApplication();
             ImUtf8.IconDummy();
             DrawCrestApplication();
             ImUtf8.IconDummy();
-            if (_config.UseAdvancedParameters)
-            {
-                DrawMetaApplication();
-                ImUtf8.IconDummy();
-                DrawBonusSlotApplication();
-            }
+            DrawMetaApplication();
+            ImUtf8.IconDummy();
+            DrawBonusSlotApplication();
         }
 
         ImGui.SameLine(ImGui.GetContentRegionAvail().X / 2);
@@ -276,20 +267,20 @@ public class DesignPanel
             void ApplyEquip(string label, EquipFlag allFlags, bool stain, IEnumerable<EquipSlot> slots)
             {
                 var       flags     = (uint)(allFlags & _selector.Selected!.Application.Equip);
-                using var id        = ImRaii.PushId(label);
+                using var id        = ImUtf8.PushId(label);
                 var       bigChange = ImGui.CheckboxFlags($"Apply All {label}", ref flags, (uint)allFlags);
                 if (stain)
                     foreach (var slot in slots)
                     {
                         var apply = bigChange ? ((EquipFlag)flags).HasFlag(slot.ToStainFlag()) : _selector.Selected!.DoApplyStain(slot);
-                        if (ImGui.Checkbox($"Apply {slot.ToName()} Dye", ref apply) || bigChange)
+                        if (ImUtf8.Checkbox($"Apply {slot.ToName()} Dye", ref apply) || bigChange)
                             _manager.ChangeApplyStains(_selector.Selected!, slot, apply);
                     }
                 else
                     foreach (var slot in slots)
                     {
                         var apply = bigChange ? ((EquipFlag)flags).HasFlag(slot.ToFlag()) : _selector.Selected!.DoApplyEquip(slot);
-                        if (ImGui.Checkbox($"Apply {slot.ToName()}", ref apply) || bigChange)
+                        if (ImUtf8.Checkbox($"Apply {slot.ToName()}", ref apply) || bigChange)
                             _manager.ChangeApplyItem(_selector.Selected!, slot, apply);
                     }
             }
@@ -311,16 +302,7 @@ public class DesignPanel
                 EquipSlotExtensions.FullSlots);
 
             ImUtf8.IconDummy();
-            if (_config.UseAdvancedParameters)
-            {
-                DrawParameterApplication();
-            }
-            else
-            {
-                DrawMetaApplication();
-                ImUtf8.IconDummy();
-                DrawBonusSlotApplication();
-            }
+            DrawParameterApplication();
         }
     }
 
@@ -334,7 +316,7 @@ public class DesignPanel
 
     private void DrawMetaApplication()
     {
-        using var  id        = ImRaii.PushId("Meta");
+        using var  id        = ImUtf8.PushId("Meta");
         const uint all       = (uint)MetaExtensions.All;
         var        flags     = (uint)_selector.Selected!.Application.Meta;
         var        bigChange = ImGui.CheckboxFlags("Apply All Meta Changes", ref flags, all);
@@ -342,7 +324,7 @@ public class DesignPanel
         foreach (var (index, label) in MetaExtensions.AllRelevant.Zip(MetaLabels))
         {
             var apply = bigChange ? ((MetaFlag)flags).HasFlag(index.ToFlag()) : _selector.Selected!.DoApplyMeta(index);
-            if (ImGui.Checkbox(label, ref apply) || bigChange)
+            if (ImUtf8.Checkbox(label, ref apply) || bigChange)
                 _manager.ChangeApplyMeta(_selector.Selected!, index, apply);
         }
     }
@@ -368,20 +350,20 @@ public class DesignPanel
 
     private void DrawParameterApplication()
     {
-        using var id        = ImRaii.PushId("Parameter");
+        using var id        = ImUtf8.PushId("Parameter");
         var       flags     = (uint)_selector.Selected!.Application.Parameters;
         var       bigChange = ImGui.CheckboxFlags("Apply All Customize Parameters", ref flags, (uint)CustomizeParameterExtensions.All);
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
         {
             var apply = bigChange ? ((CustomizeParameterFlag)flags).HasFlag(flag) : _selector.Selected!.DoApplyParameter(flag);
-            if (ImGui.Checkbox($"Apply {flag.ToName()}", ref apply) || bigChange)
+            if (ImUtf8.Checkbox($"Apply {flag.ToName()}", ref apply) || bigChange)
                 _manager.ChangeApplyParameter(_selector.Selected!, flag, apply);
         }
     }
 
     public void Draw()
     {
-        using var group = ImRaii.Group();
+        using var group = ImUtf8.Group();
         if (_selector.SelectedPaths.Count > 1)
         {
             _multiDesignPanel.Draw();
@@ -419,10 +401,12 @@ public class DesignPanel
         using var table = ImUtf8.Table("##Panel", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY, ImGui.GetContentRegionAvail());
         if (!table || _selector.Selected == null)
             return;
+
         ImGui.TableSetupScrollFreeze(0, 1);
         ImGui.TableNextColumn();
         if (_selector.Selected == null)
             return;
+
         ImGui.Dummy(Vector2.Zero);
         DrawButtonRow();
         ImGui.TableNextColumn();

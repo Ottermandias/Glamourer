@@ -41,9 +41,6 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
 
     private void OnPrepareColorSet(CharacterBase* characterBase, MaterialResourceHandle* material, ref StainIds stain, ref nint ret)
     {
-        if (!_config.UseAdvancedDyes)
-            return;
-
         var actor     = _penumbra.GameObjectFromDrawObject(characterBase);
         var validType = FindType(characterBase, actor, out var type);
         var (slotId, materialId) = FindMaterial(characterBase, material);

@@ -41,7 +41,7 @@ public class StateListener : IDisposable
     private readonly HeadGearVisibilityChanged _headGearVisibility;
     private readonly VisorStateChanged         _visorState;
     private readonly WeaponVisibilityChanged   _weaponVisibility;
-    private readonly StateFinalized              _stateFinalized;
+    private readonly StateFinalized            _stateFinalized;
     private readonly AutoDesignApplier         _autoDesignApplier;
     private readonly FunModule                 _funModule;
     private readonly HumanModelList            _humans;
@@ -88,7 +88,7 @@ public class StateListener : IDisposable
         _condition              = condition;
         _crestService           = crestService;
         _bonusSlotUpdating      = bonusSlotUpdating;
-        _stateFinalized           = stateFinalized;
+        _stateFinalized         = stateFinalized;
         Subscribe();
     }
 
@@ -225,7 +225,7 @@ public class StateListener : IDisposable
         // then we do not want to use our restricted gear protection
         // since we assume the player has that gear modded to availability.
         var locked = false;
-        if (actor.Identifier(_actors, out var identifier) 
+        if (actor.Identifier(_actors, out var identifier)
          && _manager.TryGetValue(identifier, out var state))
         {
             HandleEquipSlot(actor, state, slot, ref armor);
@@ -889,7 +889,7 @@ public class StateListener : IDisposable
                 case StateSource.Manual:
                     if (state.BaseData.Parameters.Set(flag, newValue))
                         _manager.ChangeCustomizeParameter(state, flag, newValue, ApplySettings.Game);
-                    else if (_config.UseAdvancedParameters)
+                    else
                         model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;
                 case StateSource.IpcManual:
@@ -900,8 +900,7 @@ public class StateListener : IDisposable
                     break;
                 case StateSource.Fixed:
                     state.BaseData.Parameters.Set(flag, newValue);
-                    if (_config.UseAdvancedParameters)
-                        model.ApplySingleParameterData(flag, state.ModelData.Parameters);
+                    model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;
                 case StateSource.IpcFixed:
                     state.BaseData.Parameters.Set(flag, newValue);
@@ -910,14 +909,12 @@ public class StateListener : IDisposable
                 case StateSource.Pending:
                     state.BaseData.Parameters.Set(flag, newValue);
                     state.Sources[flag] = StateSource.Manual;
-                    if (_config.UseAdvancedParameters)
-                        model.ApplySingleParameterData(flag, state.ModelData.Parameters);
+                    model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;
                 case StateSource.IpcPending:
                     state.BaseData.Parameters.Set(flag, newValue);
                     state.Sources[flag] = StateSource.IpcManual;
-                    if (_config.UseAdvancedParameters)
-                        model.ApplySingleParameterData(flag, state.ModelData.Parameters);
+                    model.ApplySingleParameterData(flag, state.ModelData.Parameters);
                     break;
             }
         }

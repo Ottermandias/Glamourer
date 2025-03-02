@@ -239,9 +239,6 @@ public class ActorPanel
 
     private void DrawParameterHeader()
     {
-        if (!_config.UseAdvancedParameters)
-            return;
-
         using var h = ImUtf8.CollapsingHeaderId("Advanced Customizations"u8);
         if (!h)
             return;

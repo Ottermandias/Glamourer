@@ -25,7 +25,6 @@ public class StateApplier(
     MetaService _metaService,
     ObjectManager _objects,
     CrestService _crests,
-    Configuration _config,
     DirectXService _directX)
 {
     /// <summary> Simply force a redraw regardless of conditions. </summary>
@@ -291,30 +290,26 @@ public class StateApplier(
     }
 
     /// <summary> Change the customize parameters on models. Can change multiple at once. </summary>
-    public void ChangeParameters(ActorData data, CustomizeParameterFlag flags, in CustomizeParameterData values, bool force)
+    public void ChangeParameters(ActorData data, CustomizeParameterFlag flags, in CustomizeParameterData values)
     {
-        if (!force && !_config.UseAdvancedParameters || flags == 0)
+        if (flags == 0)
             return;
 
         foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))
             actor.Model.ApplyParameterData(flags, values);
     }
 
-    /// <inheritdoc cref="ChangeParameters(ActorData,CustomizeParameterFlag,in CustomizeParameterData,bool)"/>
+    /// <inheritdoc cref="ChangeParameters(ActorData,CustomizeParameterFlag,in CustomizeParameterData)"/>
     public ActorData ChangeParameters(ActorState state, CustomizeParameterFlag flags, bool apply)
     {
         var data = GetData(state);
         if (apply)
-            ChangeParameters(data, flags, state.ModelData.Parameters, state.IsLocked);
+            ChangeParameters(data, flags, state.ModelData.Parameters);
         return data;
     }
 
-    public unsafe void ChangeMaterialValue(ActorState state, ActorData data, MaterialValueIndex changedIndex, ColorRow? changedValue,
-        bool force)
+    public unsafe void ChangeMaterialValue(ActorState state, ActorData data, MaterialValueIndex changedIndex, ColorRow? changedValue)
     {
-        if (!force && !_config.UseAdvancedDyes)
-            return;
-
         foreach (var actor in data.Objects.Where(a => a is { IsCharacter: true, Model.IsHuman: true }))
         {
             if (!changedIndex.TryGetTexture(actor, out var texture))
@@ -341,16 +336,13 @@ public class StateApplier(
     {
         var data = GetData(state);
         if (apply)
-            ChangeMaterialValue(state, data, index, state.Materials.TryGetValue(index, out var v) ? v.Model : null, state.IsLocked);
+            ChangeMaterialValue(state, data, index, state.Materials.TryGetValue(index, out var v) ? v.Model : null);
 
         return data;
     }
 
-    public unsafe void ChangeMaterialValues(ActorData data, in StateMaterialManager materials, bool force)
+    public unsafe void ChangeMaterialValues(ActorData data, in StateMaterialManager materials)
     {
-        if (!force && !_config.UseAdvancedDyes)
-            return;
-
         var groupedMaterialValues = materials.Values.Select(p => (MaterialValueIndex.FromKey(p.Key), p.Value))
             .GroupBy(p => (p.Item1.DrawObject, p.Item1.SlotIndex, p.Item1.MaterialIndex));
 
@@ -410,8 +402,8 @@ public class StateApplier(
                 ChangeMetaState(actors, MetaIndex.WeaponState, state.ModelData.IsWeaponVisible());
                 ChangeMetaState(actors, MetaIndex.VisorState,  state.ModelData.IsVisorToggled());
                 ChangeCrests(actors, state.ModelData.CrestVisibility);
-                ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters, state.IsLocked);
-                ChangeMaterialValues(actors, state.Materials, state.IsLocked);
+                ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters);
+                ChangeMaterialValues(actors, state.Materials);
             }
         }
 

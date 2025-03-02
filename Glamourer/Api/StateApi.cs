@@ -314,7 +314,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         if (!state.CanUnlock(key))
             return (GlamourerApiEc.InvalidKey, null);
 
-        return (GlamourerApiEc.Success, _converter.ShareJObject(state, ApplicationRules.AllWithConfig(_config)));
+        return (GlamourerApiEc.Success, _converter.ShareJObject(state, ApplicationRules.All));
     }
 
     private (GlamourerApiEc, string?) ConvertBase64(ActorState? state, uint key)

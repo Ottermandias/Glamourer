@@ -38,9 +38,6 @@ public sealed unsafe class AdvancedDyePopup(
 
     private bool ShouldBeDrawn()
     {
-        if (!config.UseAdvancedDyes)
-            return false;
-
         if (_drawIndex is not { Valid: true })
             return false;
 
@@ -58,9 +55,6 @@ public sealed unsafe class AdvancedDyePopup(
 
     private void DrawButton(MaterialValueIndex index, uint color)
     {
-        if (!config.UseAdvancedDyes)
-            return;
-
         ImGui.SameLine();
         using var id     = ImUtf8.PushId(index.SlotIndex | ((int)index.DrawObject << 8));
         var       isOpen = index == _drawIndex;
