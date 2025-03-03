@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Glamourer.Designs;
+using Glamourer.Interop.Material;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
@@ -37,6 +38,7 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
         DrawMultiResetSettings(offset);
         DrawMultiResetDyes(offset);
         DrawMultiForceRedraw(offset);
+        DrawAdvancedButtons(offset);
     }
 
     private void DrawCounts(Vector2 treeNodePos)
@@ -57,11 +59,13 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
 
     private void ResetCounts()
     {
-        _numQuickDesignEnabled   = 0;
-        _numDesignsLocked        = 0;
-        _numDesignsForcedRedraw  = 0;
-        _numDesignsResetSettings = 0;
-        _numDesignsResetDyes     = 0;
+        _numQuickDesignEnabled      = 0;
+        _numDesignsLocked           = 0;
+        _numDesignsForcedRedraw     = 0;
+        _numDesignsResetSettings    = 0;
+        _numDesignsResetDyes        = 0;
+        _numDesignsWithAdvancedDyes = 0;
+        _numAdvancedDyes            = 0;
     }
 
     private bool CountLeaves(DesignFileSystem.IPath path)
@@ -79,6 +83,12 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
             ++_numDesignsForcedRedraw;
         if (l.Value.ResetAdvancedDyes)
             ++_numDesignsResetDyes;
+        if (l.Value.Materials.Count > 0)
+        {
+            ++_numDesignsWithAdvancedDyes;
+            _numAdvancedDyes += l.Value.Materials.Count;
+        }
+
         return true;
     }
 
@@ -135,6 +145,8 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
     private          int                 _numDesignsForcedRedraw;
     private          int                 _numDesignsResetSettings;
     private          int                 _numDesignsResetDyes;
+    private          int                 _numAdvancedDyes;
+    private          int                 _numDesignsWithAdvancedDyes;
     private          int                 _numDesigns;
     private readonly List<Design>        _addDesigns    = [];
     private readonly List<(Design, int)> _removeDesigns = [];
@@ -294,7 +306,7 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
 
     private void DrawMultiColor(Vector2 width, float offset)
     {
-        ImUtf8.TextFrameAligned("Multi Colors:");
+        ImUtf8.TextFrameAligned("Multi Colors:"u8);
         ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
         _colorCombo.Draw("##color", _colorCombo.CurrentSelection ?? string.Empty, "Select a design color.",
             ImGui.GetContentRegionAvail().X - 2 * (width.X + ImGui.GetStyle().ItemSpacing.X), ImGui.GetTextLineHeight());
@@ -329,6 +341,31 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
 
         ImGui.Separator();
     }
+
+    private void DrawAdvancedButtons(float offset)
+    {
+        ImUtf8.TextFrameAligned("Delete Adv."u8);
+        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
+        var enabled = config.DeleteDesignModifier.IsActive();
+        var tt = _numDesignsWithAdvancedDyes is 0
+            ? "No selected designs contain any advanced dyes."
+            : $"Delete {_numAdvancedDyes} advanced dyes from {_numDesignsWithAdvancedDyes} of the selected designs.";
+        if (ImUtf8.ButtonEx("Delete All Advanced Dyes"u8, tt, new Vector2(ImGui.GetContentRegionAvail().X, 0),
+                !enabled || _numDesignsWithAdvancedDyes is 0))
+
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
+            {
+                while (design.Value.Materials.Count > 0)
+                    editor.ChangeMaterialValue(design.Value, MaterialValueIndex.FromKey(design.Value.Materials[0].Item1), null);
+            }
+
+        if (!enabled && _numDesignsWithAdvancedDyes is not 0)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking to delete.");
+        ImGui.Separator();
+    }
+
+    private void DrawApplicationButtons(Vector2 width, float offset)
+    { }
 
     private void UpdateTagCache()
     {
