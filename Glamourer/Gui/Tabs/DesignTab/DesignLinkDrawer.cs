@@ -10,7 +10,12 @@ using OtterGui.Services;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSelector _selector, LinkDesignCombo _combo, DesignColors _colorManager) : IUiService
+public class DesignLinkDrawer(
+    DesignLinkManager _linkManager,
+    DesignFileSystemSelector _selector,
+    LinkDesignCombo _combo,
+    DesignColors _colorManager,
+    Configuration config) : IUiService
 {
     private int       _dragDropIndex       = -1;
     private LinkOrder _dragDropOrder       = LinkOrder.None;
@@ -19,12 +24,15 @@ public class DesignLinkDrawer(DesignLinkManager _linkManager, DesignFileSystemSe
 
     public void Draw()
     {
-        using var header = ImRaii.CollapsingHeader("Design Links");
+        using var h = DesignPanelFlag.DesignLinks.Header(config);
+        if (h.Disposed)
+            return;
+
         ImGuiUtil.HoverTooltip(
             "Design links are links to other designs that will be applied to characters or during automation according to the rules set.\n"
           + "They apply from top to bottom just like automated design sets, so anything set by an earlier design will not not be set again by later designs, and order is important.\n"
           + "If a linked design links to other designs, they will also be applied, so circular links are prohibited. ");
-        if (!header)
+        if (!h)
             return;
 
         DrawList();

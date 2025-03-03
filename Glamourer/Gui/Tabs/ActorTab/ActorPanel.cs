@@ -59,7 +59,7 @@ public class ActorPanel
         ICondition conditions,
         DictModelChara modelChara,
         CustomizeParameterDrawer parameterDrawer,
-        AdvancedDyePopup advancedDyes, 
+        AdvancedDyePopup advancedDyes,
         EditorHistory editorHistory)
     {
         _selector            = selector;
@@ -157,6 +157,7 @@ public class ActorPanel
         using var table = ImUtf8.Table("##Panel", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY, ImGui.GetContentRegionAvail());
         if (!table || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
             return;
+
         ImGui.TableSetupScrollFreeze(0, 1);
         ImGui.TableNextColumn();
         ImGui.Dummy(Vector2.Zero);
@@ -191,10 +192,14 @@ public class ActorPanel
 
     private void DrawCustomizationsHeader()
     {
+        if (_config.HideDesignPanel.HasFlag(DesignPanelFlag.Customization))
+            return;
+
         var header = _state!.ModelData.ModelId == 0
             ? "Customization"
             : $"Customization (Model Id #{_state.ModelData.ModelId})###Customization";
-        using var h = ImUtf8.CollapsingHeaderId(header);
+        var       expand = _config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
+        using var h      = ImUtf8.CollapsingHeaderId(header, expand ? ImGuiTreeNodeFlags.DefaultOpen : ImGuiTreeNodeFlags.None);
         if (!h)
             return;
 
@@ -207,7 +212,7 @@ public class ActorPanel
 
     private void DrawEquipmentHeader()
     {
-        using var h = ImUtf8.CollapsingHeaderId("Equipment"u8);
+        using var h = DesignPanelFlag.Equipment.Header(_config);
         if (!h)
             return;
 
@@ -239,7 +244,7 @@ public class ActorPanel
 
     private void DrawParameterHeader()
     {
-        using var h = ImUtf8.CollapsingHeaderId("Advanced Customizations"u8);
+        using var h = DesignPanelFlag.AdvancedCustomizations.Header(_config);
         if (!h)
             return;
 
@@ -251,7 +256,7 @@ public class ActorPanel
         if (!_config.DebugMode)
             return;
 
-        using var h = ImUtf8.CollapsingHeaderId("Debug Data"u8);
+        using var h = DesignPanelFlag.DebugData.Header(_config);
         if (!h)
             return;
 

@@ -21,7 +21,10 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
 
     public void Draw()
     {
-        using var h = ImRaii.CollapsingHeader("Mod Associations");
+        using var h = DesignPanelFlag.ModAssociations.Header(config);
+        if (h.Disposed)
+            return;
+
         ImGuiUtil.HoverTooltip(
             "This tab can store information about specific mods associated with this design.\n\n"
           + "It does NOT change any mod settings automatically, though there is functionality to apply desired mod settings manually.\n"
@@ -98,7 +101,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         ImUtf8.TableSetupColumn("Mod Name"u8, ImGuiTableColumnFlags.WidthStretch);
         if (config.UseTemporarySettings)
             ImUtf8.TableSetupColumn("Remove"u8, ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Remove"u8).X);
-        ImUtf8.TableSetupColumn("Inherit"u8, ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Inherit"u8).X);
+        ImUtf8.TableSetupColumn("Inherit"u8,   ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Inherit"u8).X);
         ImUtf8.TableSetupColumn("State"u8,     ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("State"u8).X);
         ImUtf8.TableSetupColumn("Priority"u8,  ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Priority"u8).X);
         ImUtf8.TableSetupColumn("##Options"u8, ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Applym"u8).X);

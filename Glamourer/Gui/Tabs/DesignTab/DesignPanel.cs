@@ -101,7 +101,7 @@ public class DesignPanel
 
     private void DrawEquipment()
     {
-        using var h = ImRaii.CollapsingHeader("Equipment");
+        using var h = DesignPanelFlag.Equipment.Header(_config);
         if (!h)
             return;
 
@@ -156,10 +156,14 @@ public class DesignPanel
 
     private void DrawCustomize()
     {
+        if (_config.HideDesignPanel.HasFlag(DesignPanelFlag.Customization))
+            return;
+
         var header = _selector.Selected!.DesignData.ModelId == 0
             ? "Customization"
             : $"Customization (Model Id #{_selector.Selected!.DesignData.ModelId})###Customization";
-        using var h = ImRaii.CollapsingHeader(header);
+        var       expand = _config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
+        using var h      = ImUtf8.CollapsingHeaderId(header, expand ? ImGuiTreeNodeFlags.DefaultOpen : ImGuiTreeNodeFlags.None);
         if (!h)
             return;
 
@@ -180,7 +184,7 @@ public class DesignPanel
 
     private void DrawCustomizeParameters()
     {
-        using var h = ImUtf8.CollapsingHeaderId("Advanced Customizations"u8);
+        using var h = DesignPanelFlag.AdvancedCustomizations.Header(_config);
         if (!h)
             return;
 
@@ -189,7 +193,7 @@ public class DesignPanel
 
     private void DrawMaterialValues()
     {
-        using var h = ImUtf8.CollapsingHeaderId("Advanced Dyes"u8);
+        using var h = DesignPanelFlag.AdvancedDyes.Header(_config);
         if (!h)
             return;
 
@@ -244,7 +248,7 @@ public class DesignPanel
 
     private void DrawApplicationRules()
     {
-        using var h = ImUtf8.CollapsingHeaderId("Application Rules"u8);
+        using var h = DesignPanelFlag.ApplicationRules.Header(_config);
         if (!h)
             return;
 

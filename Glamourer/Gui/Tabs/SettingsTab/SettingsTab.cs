@@ -136,6 +136,7 @@ public class SettingsTab(
                 100 * ImGuiHelpers.GlobalScale,
                 config.ToggleQuickDesignBar, v => config.ToggleQuickDesignBar = v, _validKeys))
             config.Save();
+
         Checkbox("Show Quick Design Bar in Main Window"u8,
             "Show the quick design bar in the tab selection part of the main window, too."u8,
             config.ShowQuickBarInTabs, v => config.ShowQuickBarInTabs = v);
@@ -192,6 +193,20 @@ public class SettingsTab(
             "Have design folders open or closed as their default state after launching."u8, config.OpenFoldersByDefault,
             v => config.OpenFoldersByDefault = v);
         DrawFolderSortType();
+
+        ImGui.NewLine();
+        ImUtf8.Text("Show the following panels in their respective tabs:"u8);
+        ImGui.Dummy(Vector2.Zero);
+        DesignPanelFlagExtensions.DrawTable("##panelTable"u8, config.HideDesignPanel, config.AutoExpandDesignPanel, v =>
+        {
+            config.HideDesignPanel = v;
+            config.Save();
+        }, v =>
+        {
+            config.AutoExpandDesignPanel = v;
+            config.Save();
+        });
+
 
         ImGui.Dummy(Vector2.Zero);
         ImGui.Separator();

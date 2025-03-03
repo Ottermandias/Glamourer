@@ -55,6 +55,9 @@ public sealed unsafe class AdvancedDyePopup(
 
     private void DrawButton(MaterialValueIndex index, uint color)
     {
+        if (config.HideDesignPanel.HasFlag(DesignPanelFlag.AdvancedDyes))
+            return;
+
         ImGui.SameLine();
         using var id     = ImUtf8.PushId(index.SlotIndex | ((int)index.DrawObject << 8));
         var       isOpen = index == _drawIndex;
