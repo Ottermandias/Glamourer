@@ -360,6 +360,8 @@ public class DesignPanel
             equip     = false;
             customize = true;
         }
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
 
         if (ImUtf8.ButtonEx("Default Application"u8,
                 "Set the application rules to the default values as if the design was newly created, without any advanced features or wetness."u8,
@@ -369,6 +371,8 @@ public class DesignPanel
             _manager.ChangeApplyMulti(_selector.Selected!, true, true, true, false, true, true, false, true);
             _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.Wetness, false);
         }
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
 
         ImGui.SameLine();
         if (ImUtf8.ButtonEx("Disable Advanced"u8, "Disable all advanced dyes and customizations but keep everything else as is."u8,

@@ -39,6 +39,7 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
         DrawMultiResetDyes(offset);
         DrawMultiForceRedraw(offset);
         DrawAdvancedButtons(offset);
+        DrawApplicationButtons(offset);
     }
 
     private void DrawCounts(Vector2 treeNodePos)
@@ -364,8 +365,107 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
         ImGui.Separator();
     }
 
-    private void DrawApplicationButtons(Vector2 width, float offset)
-    { }
+    private void DrawApplicationButtons(float offset)
+    {
+        ImUtf8.TextFrameAligned("Application"u8);
+        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
+        var   width     = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        var   enabled   = config.DeleteDesignModifier.IsActive();
+        bool? equip     = null;
+        bool? customize = null;
+        var   group     = ImUtf8.Group();
+        if (ImUtf8.ButtonEx("Disable Everything"u8,
+                _numDesigns > 0
+                    ? $"Disable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness for all {_numDesigns} designs."
+                    : "No designs selected.", width, !enabled))
+        {
+            equip     = false;
+            customize = false;
+        }
+
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+
+        ImGui.SameLine();
+        if (ImUtf8.ButtonEx("Enable Everything"u8,
+                _numDesigns > 0
+                    ? $"Enable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness for all {_numDesigns} designs."
+                    : "No designs selected.", width, !enabled))
+        {
+            equip     = true;
+            customize = true;
+        }
+
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+
+        if (ImUtf8.ButtonEx("Equipment Only"u8,
+                _numDesigns > 0
+                    ? $"Enable application of anything related to gear, disable anything that is not related to gear for all {_numDesigns} designs."
+                    : "No designs selected.", width, !enabled))
+        {
+            equip     = true;
+            customize = false;
+        }
+
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+
+        ImGui.SameLine();
+        if (ImUtf8.ButtonEx("Customization Only"u8,
+                _numDesigns > 0
+                    ? $"Enable application of anything related to customization, disable anything that is not related to customization for all {_numDesigns} designs."
+                    : "No designs selected.", width, !enabled))
+        {
+            equip     = false;
+            customize = true;
+        }
+
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+
+        if (ImUtf8.ButtonEx("Default Application"u8,
+                _numDesigns > 0
+                    ? $"Set the application rules to the default values as if the {_numDesigns} were newly created,without any advanced features or wetness."
+                    : "No designs selected.", width, !enabled))
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>().Select(l => l.Value))
+            {
+                editor.ChangeApplyMulti(design, true, true, true, false, true, true, false, true);
+                editor.ChangeApplyMeta(design, MetaIndex.Wetness, false);
+            }
+
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+
+        ImGui.SameLine();
+        if (ImUtf8.ButtonEx("Disable Advanced"u8, _numDesigns > 0
+                ? $"Disable all advanced dyes and customizations but keep everything else as is for all {_numDesigns} designs."
+                : "No designs selected.", width, !enabled))
+            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>().Select(l => l.Value))
+                editor.ChangeApplyMulti(design, null, null, null, false, null, null, false, null);
+
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+
+        group.Dispose();
+        ImGui.Separator();
+        if (equip is null && customize is null)
+            return;
+
+        foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>().Select(l => l.Value))
+        {
+            editor.ChangeApplyMulti(design, equip, customize, equip, customize, null, equip, equip, equip);
+            if (equip.HasValue)
+            {
+                editor.ChangeApplyMeta(design, MetaIndex.HatState,    equip.Value);
+                editor.ChangeApplyMeta(design, MetaIndex.VisorState,  equip.Value);
+                editor.ChangeApplyMeta(design, MetaIndex.WeaponState, equip.Value);
+            }
+
+            if (customize.HasValue)
+                editor.ChangeApplyMeta(design, MetaIndex.Wetness, customize.Value);
+        }
+    }
 
     private void UpdateTagCache()
     {
