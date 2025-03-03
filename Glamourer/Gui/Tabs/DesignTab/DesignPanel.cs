@@ -254,6 +254,8 @@ public class DesignPanel
 
         using var disabled = ImRaii.Disabled(_selector.Selected!.WriteProtected());
 
+        DrawAllButtons();
+
         using (var _ = ImUtf8.Group())
         {
             DrawCustomizeApplication();
@@ -308,6 +310,88 @@ public class DesignPanel
             ImUtf8.IconDummy();
             DrawParameterApplication();
         }
+    }
+
+    private void DrawAllButtons()
+    {
+        var   enabled   = _config.DeleteDesignModifier.IsActive();
+        bool? equip     = null;
+        bool? customize = null;
+        var   size      = new Vector2(200 * ImUtf8.GlobalScale, 0);
+        if (ImUtf8.ButtonEx("Disable Everything"u8,
+                "Disable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness."u8, size,
+                !enabled))
+        {
+            equip     = false;
+            customize = false;
+        }
+
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
+
+        ImGui.SameLine();
+        if (ImUtf8.ButtonEx("Enable Everything"u8,
+                "Enable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness."u8, size,
+                !enabled))
+        {
+            equip     = true;
+            customize = true;
+        }
+
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
+
+        if (ImUtf8.ButtonEx("Equipment Only"u8,
+                "Enable application of anything related to gear, disable anything that is not related to gear."u8, size,
+                !enabled))
+        {
+            equip     = true;
+            customize = false;
+        }
+
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
+
+        ImGui.SameLine();
+        if (ImUtf8.ButtonEx("Customization Only"u8,
+                "Enable application of anything related to customization, disable anything that is not related to customization."u8, size,
+                !enabled))
+        {
+            equip     = false;
+            customize = true;
+        }
+
+        if (ImUtf8.ButtonEx("Default Application"u8,
+                "Set the application rules to the default values as if the design was newly created, without any advanced features or wetness."u8,
+                size,
+                !enabled))
+        {
+            _manager.ChangeApplyMulti(_selector.Selected!, true, true, true, false, true, true, false, true);
+            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.Wetness, false);
+        }
+
+        ImGui.SameLine();
+        if (ImUtf8.ButtonEx("Disable Advanced"u8, "Disable all advanced dyes and customizations but keep everything else as is."u8,
+                size,
+                !enabled))
+            _manager.ChangeApplyMulti(_selector.Selected!, null, null, null, false, null, null, false, null);
+
+        if (!enabled)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
+
+        if (equip is null && customize is null)
+            return;
+
+        _manager.ChangeApplyMulti(_selector.Selected!, equip, customize, equip, customize, null, equip, equip, equip);
+        if (equip.HasValue)
+        {
+            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.HatState,    equip.Value);
+            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.VisorState,  equip.Value);
+            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.WeaponState, equip.Value);
+        }
+
+        if (customize.HasValue)
+            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.Wetness, customize.Value);
     }
 
     private static readonly IReadOnlyList<string> MetaLabels =

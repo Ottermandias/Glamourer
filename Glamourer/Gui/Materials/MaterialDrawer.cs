@@ -44,7 +44,7 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
 
     private void DrawName(MaterialValueIndex index)
     {
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f));
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.05f, 0.5f));
         ImUtf8.TextFramed(index.ToString(), 0, new Vector2((GlossWidth + SpecularStrengthWidth) * ImGuiHelpers.GlobalScale + _spacing, 0),
             borderColor: ImGui.GetColorU32(ImGuiCol.Text));
     }

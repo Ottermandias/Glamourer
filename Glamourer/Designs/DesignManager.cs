@@ -3,6 +3,7 @@ using Glamourer.Designs.History;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
+using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Newtonsoft.Json;
@@ -446,6 +447,39 @@ public sealed class DesignManager : DesignEditor
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Set applying of parameter {flag} to {value}.");
         DesignChanged.Invoke(DesignChanged.Type.ApplyParameter, design, new ApplicationTransaction(flag, !value, value));
+    }
+
+    /// <summary> Change multiple application values at once. </summary>
+    public void ChangeApplyMulti(Design design, bool? equipment, bool? customization, bool? bonus, bool? parameters, bool? meta, bool? stains,
+        bool? materials, bool? crest)
+    {
+        if (equipment is { } e)
+            foreach (var f in EquipSlotExtensions.FullSlots)
+                ChangeApplyItem(design, f, e);
+        if (stains is { } s)
+            foreach (var f in EquipSlotExtensions.FullSlots)
+                ChangeApplyStains(design, f, s);
+        if (customization is { } c)
+            foreach (var f in CustomizationExtensions.All.Where(design.CustomizeSet.IsAvailable).Prepend(CustomizeIndex.Clan)
+                         .Prepend(CustomizeIndex.Gender))
+                ChangeApplyCustomize(design, f, c);
+        if (bonus is { } b)
+            foreach (var f in BonusExtensions.AllFlags)
+                ChangeApplyBonusItem(design, f, b);
+        if (meta is { } m)
+            foreach (var f in MetaExtensions.AllRelevant)
+                ChangeApplyMeta(design, f, m);
+        if (crest is { } cr)
+            foreach (var f in CrestExtensions.AllRelevantSet)
+                ChangeApplyCrest(design, f, cr);
+
+        if (parameters is { } p)
+            foreach (var f in CustomizeParameterExtensions.AllFlags)
+                ChangeApplyParameter(design, f, p);
+
+        if (materials is { } ma)
+            foreach (var (key, _) in design.GetMaterialData())
+                ChangeApplyMaterialValue(design, MaterialValueIndex.FromKey(key), ma);
     }
 
     #endregion
