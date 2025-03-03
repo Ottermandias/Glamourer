@@ -478,7 +478,7 @@ public sealed class DesignManager : DesignEditor
                 ChangeApplyParameter(design, f, p);
 
         if (materials is { } ma)
-            foreach (var (key, _) in design.GetMaterialData())
+            foreach (var (key, _) in design.GetMaterialData().ToArray())
                 ChangeApplyMaterialValue(design, MaterialValueIndex.FromKey(key), ma);
     }
 
