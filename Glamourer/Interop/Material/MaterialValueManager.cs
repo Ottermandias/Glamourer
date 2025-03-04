@@ -6,8 +6,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using static Penumbra.GameData.Files.ShpkFile;
 
 
 namespace Glamourer.Interop.Material;

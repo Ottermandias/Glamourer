@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
@@ -16,6 +17,7 @@ using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Interop;
 using Penumbra.String;
+using Notification = OtterGui.Classes.Notification;
 
 namespace Glamourer.Gui.Materials;
 
@@ -262,6 +264,61 @@ public sealed unsafe class AdvancedDyePopup(
         DrawAllRow(materialIndex, table);
     }
 
+    private static void CopyToClipboard(in ColorTable.Table table)
+    {
+        try
+        {
+            fixed (ColorTable.Table* ptr = &table)
+            {
+                var data   = new ReadOnlySpan<byte>(ptr, sizeof(ColorTable.Table));
+                var base64 = Convert.ToBase64String(data);
+                ImGui.SetClipboardText(base64);
+            }
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Log.Error($"Could not copy color table to clipboard:\n{ex}");
+        }
+    }
+
+    private static bool ImportFromClipboard(out ColorTable.Table table)
+    {
+        try
+        {
+            var base64 = ImGui.GetClipboardText();
+            if (base64.Length > 0)
+            {
+                var data = Convert.FromBase64String(base64);
+                if (sizeof(ColorTable.Table) <= data.Length)
+                {
+                    table = new ColorTable.Table();
+                    fixed (ColorTable.Table* tPtr = &table)
+                    {
+                        fixed (byte* ptr = data)
+                        {
+                            new ReadOnlySpan<byte>(ptr, sizeof(ColorTable.Table)).CopyTo(new Span<byte>(tPtr, sizeof(ColorTable.Table)));
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            if (ColorRowClipboard.IsTableSet)
+            {
+                table = ColorRowClipboard.Table;
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Messager.AddMessage(new Notification(ex, "Could not paste color table from clipboard.",
+                "Could not paste color table from clipboard.", NotificationType.Error));
+        }
+
+        table = default;
+        return false;
+    }
+
     private void DrawAllRow(MaterialValueIndex materialIndex, in ColorTable.Table table)
     {
         using var id         = ImRaii.PushId(100);
@@ -279,13 +336,17 @@ public sealed unsafe class AdvancedDyePopup(
         var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
         ImGui.SameLine(ImGui.GetWindowSize().X - 3 * buttonSize.X - 2 * spacing - ImGui.GetStyle().WindowPadding.X);
         if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Export this table to your clipboard."u8, buttonSize))
+        {
             ColorRowClipboard.Table = table;
+            CopyToClipboard(table);
+        }
+
         ImGui.SameLine(0, spacing);
-        if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported table from your clipboard onto this table."u8, buttonSize,
-                !ColorRowClipboard.IsTableSet))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported table from your clipboard onto this table."u8, buttonSize)
+         && ImportFromClipboard(out var newTable))
             for (var idx = 0; idx < ColorTable.NumRows; ++idx)
             {
-                var row         = ColorRowClipboard.Table[idx];
+                var row         = newTable[idx];
                 var internalRow = new ColorRow(row);
                 var slot        = materialIndex.ToEquipSlot();
                 var weapon = slot is EquipSlot.MainHand or EquipSlot.OffHand
@@ -336,7 +397,7 @@ public sealed unsafe class AdvancedDyePopup(
         {
             var rowIndex  = index.RowIndex / 2 + 1;
             var rowSuffix = (index.RowIndex & 1) == 0 ? 'A' : 'B';
-           ImUtf8.Text($"Row {rowIndex,2}{rowSuffix}");
+            ImUtf8.Text($"Row {rowIndex,2}{rowSuffix}");
         }
 
         ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 2);
@@ -380,7 +441,8 @@ public sealed unsafe class AdvancedDyePopup(
         if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Export this row to your clipboard."u8, buttonSize))
             ColorRowClipboard.Row = value.Model;
         ImGui.SameLine(0, spacing.X);
-        if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported row from your clipboard onto this row."u8, buttonSize, !ColorRowClipboard.IsSet))
+        if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported row from your clipboard onto this row."u8, buttonSize,
+                !ColorRowClipboard.IsSet))
         {
             value.Model = ColorRowClipboard.Row;
             applied     = true;
