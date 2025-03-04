@@ -30,10 +30,10 @@ public class SetPanel(
     Configuration _config,
     RandomRestrictionDrawer _randomDrawer)
 {
-    private readonly JobGroupCombo          _jobGroupCombo = new(_manager, _jobs, Glamourer.Log);
+    private readonly JobGroupCombo         _jobGroupCombo = new(_manager, _jobs, Glamourer.Log);
     private readonly HeaderDrawer.Button[] _rightButtons  = [new HeaderDrawer.IncognitoButton(_config.Ephemeral)];
-    private          string?                _tempName;
-    private          int                    _dragIndex = -1;
+    private          string?               _tempName;
+    private          int                   _dragIndex = -1;
 
     private Action? _endAction;
 
@@ -178,7 +178,8 @@ public class SetPanel(
         }
         else
         {
-            ImUtf8.TableSetupColumn("Design / Job Restrictions"u8, ImGuiTableColumnFlags.WidthFixed, 250 * ImGuiHelpers.GlobalScale);
+            ImUtf8.TableSetupColumn("Design / Job Restrictions"u8, ImGuiTableColumnFlags.WidthFixed,
+                250 * ImGuiHelpers.GlobalScale - (ImGui.GetScrollMaxY() > 0 ? ImGui.GetStyle().ScrollbarSize : 0));
             if (_config.ShowAllAutomatedApplicationRules)
                 ImUtf8.TableSetupColumn("Application"u8, ImGuiTableColumnFlags.WidthFixed,
                     3 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
@@ -205,8 +206,8 @@ public class SetPanel(
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), new Vector2(ImGui.GetFrameHeight()), tt, !keyValid, true))
                 _endAction = () => _manager.DeleteDesign(Selection, idx);
             ImGui.TableNextColumn();
-            ImUtf8.Selectable($"#{idx + 1:D2}");
-            DrawDragDrop(Selection, idx);
+            DrawSelectable(idx, design.Design);
+
             ImGui.TableNextColumn();
             DrawRandomEditing(Selection, design, idx);
             _designCombo.Draw(Selection, design, idx);
@@ -241,6 +242,44 @@ public class SetPanel(
 
         _endAction?.Invoke();
         _endAction = null;
+    }
+
+    private void DrawSelectable(int idx, IDesignStandIn design)
+    {
+        var highlight = 0u;
+        var sb        = new StringBuilder();
+        if (design is Design d)
+        {
+            var count = design.AllLinks(true).Count();
+            if (count > 1)
+            {
+                sb.AppendLine($"This design contains {count - 1} links to other designs.");
+                highlight = ColorId.HeaderButtons.Value();
+            }
+
+            count = d.AssociatedMods.Count;
+            if (count > 0)
+            {
+                sb.AppendLine($"This design contains {count} mod associations.");
+                highlight = ColorId.ModdedItemMarker.Value();
+            }
+
+            count = design.GetMaterialData().Count(p => p.Item2.Enabled);
+            if (count > 0)
+            {
+                sb.AppendLine($"This design contains {count} enabled advanced dyes.");
+                highlight = ColorId.AdvancedDyeActive.Value();
+            }
+        }
+
+        using (ImRaii.PushColor(ImGuiCol.Text, highlight, highlight != 0))
+        {
+            ImUtf8.Selectable($"#{idx + 1:D2}");
+        }
+
+        ImUtf8.HoverTooltip($"{sb}");
+
+        DrawDragDrop(Selection, idx);
     }
 
     private int _tmpGearset = int.MaxValue;
