@@ -1,18 +1,25 @@
-﻿using OtterGui.Services;
+﻿using OtterGui;
+using OtterGui.Services;
 
 namespace Glamourer.Designs.Special;
 
-public class RandomDesignGenerator(DesignStorage designs, DesignFileSystem fileSystem) : IService
+public class RandomDesignGenerator(DesignStorage designs, DesignFileSystem fileSystem, Configuration config) : IService
 {
     private readonly Random _rng = new();
+    private WeakReference<Design?> _lastDesign = new(null, false);
 
     public Design? Design(IReadOnlyList<Design> localDesigns)
     {
         if (localDesigns.Count == 0)
             return null;
 
-        var idx = _rng.Next(0, localDesigns.Count);
+        int idx;
+        do
+            idx = _rng.Next(0, localDesigns.Count);
+        while (config.PreventRandomRepeats && localDesigns.Count > 1 && _lastDesign.TryGetTarget(out var lastDesign) && lastDesign == localDesigns[idx]);
+        
         Glamourer.Log.Verbose($"[Random Design] Chose design {idx + 1} out of {localDesigns.Count}: {localDesigns[idx].Incognito}.");
+        _lastDesign.SetTarget(localDesigns[idx]);
         return localDesigns[idx];
     }
 
