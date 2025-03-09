@@ -386,7 +386,7 @@ public class DesignPanel
         if (equip is null && customize is null)
             return;
 
-        _manager.ChangeApplyMulti(_selector.Selected!, equip, customize, equip, customize, null, equip, equip, equip);
+        _manager.ChangeApplyMulti(_selector.Selected!, equip, customize, equip, customize.HasValue && !customize.Value ? false : null, null, equip, equip, equip);
         if (equip.HasValue)
         {
             _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.HatState,    equip.Value);

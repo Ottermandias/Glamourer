@@ -454,7 +454,7 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
 
         foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>().Select(l => l.Value))
         {
-            editor.ChangeApplyMulti(design, equip, customize, equip, customize, null, equip, equip, equip);
+            editor.ChangeApplyMulti(design, equip, customize, equip, customize.HasValue && !customize.Value ? false : null, null, equip, equip, equip);
             if (equip.HasValue)
             {
                 editor.ChangeApplyMeta(design, MetaIndex.HatState,    equip.Value);
