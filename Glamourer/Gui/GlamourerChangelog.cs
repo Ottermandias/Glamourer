@@ -40,6 +40,7 @@ public class GlamourerChangelog
         Add1_3_4_0(Changelog);
         Add1_3_5_0(Changelog);
         Add1_3_6_0(Changelog);
+        Add1_3_7_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -60,32 +61,67 @@ public class GlamourerChangelog
         }
     }
 
+    private static void Add1_3_7_0(Changelog log)
+        => log.NextVersion("Version 1.3.7.0")
+            .RegisterImportant(
+                "The option to disable advanced customizations or advanced dyes has been removed. The functionality can no longer be disabled entirely, you can just decide not to use it, and to hide it.")
+            .RegisterHighlight(
+                "You can now configure which panels (like Customization, Equipment, Advanced Customization etc.) are displayed at all, and which are expanded by default. This does not disable any functionality.")
+            .RegisterHighlight(
+                "The Unlocks tab now shows whether items are modded in the currently selected collection in Penumbra in Overview mode and shows and can filter and sort for it in Detailed mode.")
+            .RegisterEntry("Added an optional button to the Quick Design Bar to reset all temporary settings applied by Glamourer.")
+            .RegisterHighlight(
+                "Any existing advanced dyes will now be highlighted on the corresponding Advanced Dye buttons in the actors panel and on the corresponding equip slot name in the design panel.")
+            .RegisterEntry("This also affects currently inactive advanced dyes, which can now be manually removed on the inactive materials.",
+                1)
+            .RegisterHighlight(
+                "In the design list of an automation set, the design indices are now highlighted if a design contains advanced dyes, mod associations, or links to other designs.")
+            .RegisterHighlight("Some quality of life improvements:")
+            .RegisterEntry("Added some buttons for some application rule presets to the Application Rules panel.",                         1)
+            .RegisterEntry("Added some buttons to enable, disable or delete all advanced dyes in a design.",                               1)
+            .RegisterEntry("Some of those buttons are also available in multi-design selection to apply to all selected designs at once.", 1)
+            .RegisterEntry(
+                "A copied material color set from Penumbra should now be able to be imported into a advanced dye color set, as well as the other way around.")
+            .RegisterEntry(
+                "Automatically applied character updates when applying a design with mod associations and temporary settings are now skipped to prevent some issues with GPose. This should not affect anything else.")
+            .RegisterEntry("Glamourer now differentiates between temporary settings applied through manual or automatic application.");
+
+
     private static void Add1_3_6_0(Changelog log)
         => log.NextVersion("Version 1.3.6.0")
             .RegisterHighlight("Added some new multi design selection functionality to change design settings of many designs at once.")
             .RegisterEntry("Also added the number of selected designs and folders to the multi design selection display.", 1)
             .RegisterEntry("Glamourer will now use temporary settings when saving mod associations, if they exist in Penumbra.")
-            .RegisterEntry("Actually added the checkbox to reset all temporary settings to Automation Sets (functionality was there, just not exposed to the UI...).")
-            .RegisterEntry("Adapted the behavior for identified copies of characters that have a different state than the character itself to deal with the associated Penumbra changes.")
-            .RegisterEntry("Added '/glamour resetdesign' as a command, that re-applies automation but resets randomly chosen designs (Thanks Diorik).")
+            .RegisterEntry(
+                "Actually added the checkbox to reset all temporary settings to Automation Sets (functionality was there, just not exposed to the UI...).")
+            .RegisterEntry(
+                "Adapted the behavior for identified copies of characters that have a different state than the character itself to deal with the associated Penumbra changes.")
+            .RegisterEntry(
+                "Added '/glamour resetdesign' as a command, that re-applies automation but resets randomly chosen designs (Thanks Diorik).")
             .RegisterEntry("All existing facepaints should now be accepted in designs, including NPC facepaints.")
-            .RegisterEntry("Overwriting a design with your characters current state will now discard any prior advanced dyes and only add those from the current state.")
+            .RegisterEntry(
+                "Overwriting a design with your characters current state will now discard any prior advanced dyes and only add those from the current state.")
             .RegisterEntry("Fixed an issue with racial mount and accessory scaling when changing zones on a changed race.")
             .RegisterEntry("Fixed issues with the detection of gear set changes in certain circumstances (Thanks Cordelia).")
             .RegisterEntry("Fixed an issue with the Force to Inherit checkbox in mod associations.")
-            .RegisterEntry("Added a new IPC event that fires only when Glamourer finalizes its current changes to a character (for/from Cordelia).")
+            .RegisterEntry(
+                "Added a new IPC event that fires only when Glamourer finalizes its current changes to a character (for/from Cordelia).")
             .RegisterEntry("Added new IPC to set a meta flag on actors. (for/from Cordelia).");
 
     private static void Add1_3_5_0(Changelog log)
         => log.NextVersion("Version 1.3.5.0")
-            .RegisterHighlight("Added the usage of the new Temporary Mod Setting functionality from Penumbra to apply mod associations. This is on by default but can be turned back to permanent changes in the settings.")
+            .RegisterHighlight(
+                "Added the usage of the new Temporary Mod Setting functionality from Penumbra to apply mod associations. This is on by default but can be turned back to permanent changes in the settings.")
             .RegisterEntry("Designs now have a setting to always reset all prior temporary settings made by Glamourer on application.", 1)
-            .RegisterEntry("Automation Sets also have a setting to do this, independently of the designs contained in them.", 1)
+            .RegisterEntry("Automation Sets also have a setting to do this, independently of the designs contained in them.",           1)
             .RegisterHighlight("More NPC customization options should now be accepted as valid for designs, regardless of clan/gender.")
             .RegisterHighlight("The 'Apply' chat command had the currently selected design and the current quick bar design added as choices.")
-            .RegisterEntry("The application buttons for designs, NPCs or actors should now stick at the top of their respective panels even when scrolling down.")
+            .RegisterEntry(
+                "The application buttons for designs, NPCs or actors should now stick at the top of their respective panels even when scrolling down.")
             .RegisterHighlight("Randomly chosen designs should now stay across loading screens or redrawing. (1.3.4.3)")
-            .RegisterEntry("In automation, Random designs now have an option to always choose another design, including during loading screens or redrawing.", 1)
+            .RegisterEntry(
+                "In automation, Random designs now have an option to always choose another design, including during loading screens or redrawing.",
+                1)
             .RegisterEntry("Fixed an issue where disabling auto designs did not work as expected.")
             .RegisterEntry("Fixed the inversion of application flags in IPC calls.")
             .RegisterEntry("Fixed an issue with the scaling of the Advanced Dye popup with increased font sizes.")
@@ -110,15 +146,18 @@ public class GlamourerChangelog
         => log.NextVersion("Version 1.3.2.0")
             .RegisterEntry("Fixed an issue with weapon hiding when leaving GPose or changing zones.")
             .RegisterEntry("Added support for unnamed items to be previewed from Penumbra.")
-            .RegisterEntry("Item combos filters now check if the model string starts with the current filter, instead of checking if the primary ID contains the current filter.")
+            .RegisterEntry(
+                "Item combos filters now check if the model string starts with the current filter, instead of checking if the primary ID contains the current filter.")
             .RegisterEntry("Improved the handling of bonus items (glasses) in designs.")
             .RegisterEntry("Imported .chara files now import bonus items.")
-            .RegisterEntry("Added a Debug Data rider in the Actors tab that is visible if Debug Mode is enabled and (currently) contains some IDs.")
+            .RegisterEntry(
+                "Added a Debug Data rider in the Actors tab that is visible if Debug Mode is enabled and (currently) contains some IDs.")
             .RegisterEntry("Fixed bonus items not reverting correctly in some cases.")
             .RegisterEntry("Fixed an issue with the RNG in cheat codes and events skipping some possible entries.")
             .RegisterEntry("Fixed the chat log context menu for glamourer Try-On.")
             .RegisterEntry("Fixed some issues with cheat code sets.")
-            .RegisterEntry("Made the popped out Advanced Dye Window and Unlocks Window non-docking as that caused issues when docked to the main Glamourer window.")
+            .RegisterEntry(
+                "Made the popped out Advanced Dye Window and Unlocks Window non-docking as that caused issues when docked to the main Glamourer window.")
             .RegisterEntry("Refreshed NPC name associations.")
             .RegisterEntry("Removed a now useless cheat code.")
             .RegisterEntry("Added API for Bonus Items. (1.3.1.1)");
