@@ -168,7 +168,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
         {
             var type      = ScannableInventories[_currentInventory];
             var container = inventoryManager->GetInventoryContainer(type);
-            if (container != null && container->Loaded != 0 && _currentInventoryIndex < container->Size)
+            if (container != null && container->IsLoaded && _currentInventoryIndex < container->Size)
             {
                 Glamourer.Log.Excessive($"[UnlockScanner] Scanning {_currentInventory} {type} {_currentInventoryIndex}/{container->Size}.");
                 var item = container->GetInventorySlot(_currentInventoryIndex++);

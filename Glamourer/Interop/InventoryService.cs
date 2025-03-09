@@ -182,7 +182,7 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
 
         // Invoked after calling Original, so the item is already moved.
         var inventory = manager->GetInventoryContainer(targetContainer);
-        if (inventory == null || inventory->Loaded == 0 || inventory->Size <= targetSlot)
+        if (inventory == null || inventory->IsLoaded || inventory->Size <= targetSlot)
             return false;
 
         var item = inventory->GetInventorySlot((int)targetSlot);
