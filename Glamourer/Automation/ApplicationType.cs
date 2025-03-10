@@ -47,7 +47,13 @@ public static class ApplicationTypeExtensions
     }
 
     public static ApplicationCollection ApplyWhat(this ApplicationType type, IDesignStandIn designStandIn)
-        => designStandIn is not DesignBase design ? type.Collection() : type.Collection().Restrict(design.Application);
+    {
+        if(designStandIn is not DesignBase design)
+            return type.Collection();
+        var ret = type.Collection().Restrict(design.Application); 
+        ret.CustomizeRaw = ret.CustomizeRaw.FixApplication(design.CustomizeSet);
+        return ret;
+    }
 
     public const EquipFlag WeaponFlags    = EquipFlag.Mainhand | EquipFlag.Offhand;
     public const EquipFlag ArmorFlags     = EquipFlag.Head | EquipFlag.Body | EquipFlag.Hands | EquipFlag.Legs | EquipFlag.Feet;
