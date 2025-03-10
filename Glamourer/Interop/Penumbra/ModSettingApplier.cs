@@ -39,7 +39,7 @@ public class ModSettingApplier(PenumbraService penumbra, PenumbraAutoRedrawSkip 
             var index = ResetOldSettings(collection, actor, source, design.ResetTemporarySettings, respectManual);
             foreach (var (mod, setting) in design.AssociatedMods)
             {
-                var message = penumbra.SetMod(mod, setting, source, collection, index);
+                var message = penumbra.SetMod(mod, setting, source, respectManual, collection, index);
                 if (message.Length > 0)
                     Glamourer.Log.Verbose($"[Mod Applier] Error applying mod settings: {message}");
                 else
@@ -62,7 +62,7 @@ public class ModSettingApplier(PenumbraService penumbra, PenumbraAutoRedrawSkip 
         var index = ResetOldSettings(collection, actor, source, resetOther, true);
         foreach (var (mod, setting) in settings)
         {
-            var message = penumbra.SetMod(mod, setting, source, collection, index);
+            var message = penumbra.SetMod(mod, setting, source, false, collection, index);
             if (message.Length > 0)
                 messages.Add($"Error applying mod settings: {message}");
             else

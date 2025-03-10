@@ -41,9 +41,9 @@ public class PenumbraService : IDisposable
     public const int RequiredPenumbraFeatureVersionTemp3 = 6;
     public const int RequiredPenumbraFeatureVersionTemp4 = 7;
 
-    private const int    KeyFixed  = -1610;
-    private const string NameFixed = "Glamourer (Automation)";
-    private const int    KeyManual = -6160;
+    private const int    KeyFixed   = -1610;
+    private const string NameFixed  = "Glamourer (Automation)";
+    private const int    KeyManual  = -6160;
     private const string NameManual = "Glamourer (Manually)";
 
     private readonly IDalamudPluginInterface                               _pluginInterface;
@@ -77,6 +77,7 @@ public class PenumbraService : IDisposable
     private global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings?                       _removeAllTemporaryModSettings;
     private global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer?                 _removeAllTemporaryModSettingsPlayer;
     private global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings?                           _queryTemporaryModSettings;
+    private global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettingsPlayer?                     _queryTemporaryModSettingsPlayer;
     private global::Penumbra.Api.IpcSubscribers.OpenMainWindow?                                      _openModPage;
     private global::Penumbra.Api.IpcSubscribers.GetChangedItems?                                     _getChangedItems;
     private IReadOnlyList<(string ModDirectory, IReadOnlyDictionary<string, object?> ChangedItems)>? _changedItems;
@@ -280,7 +281,8 @@ public class PenumbraService : IDisposable
     /// Try to set all mod settings as desired. Only sets when the mod should be enabled.
     /// If it is disabled, ignore all other settings.
     /// </summary>
-    public string SetMod(Mod mod, ModSettings settings, StateSource source, Guid? collectionInput = null, ObjectIndex? index = null)
+    public string SetMod(Mod mod, ModSettings settings, StateSource source, bool respectManual, Guid? collectionInput = null,
+        ObjectIndex? index = null)
     {
         if (!Available)
             return "Penumbra is not available.";
@@ -290,7 +292,7 @@ public class PenumbraService : IDisposable
         {
             var collection = collectionInput ?? _currentCollection!.Invoke(ApiCollectionType.Current)!.Value.Id;
             if (_config.UseTemporarySettings && _setTemporaryModSettings != null)
-                SetModTemporary(sb, mod, settings, collection, index, source);
+                SetModTemporary(sb, mod, settings, collection, respectManual, index, source);
             else
                 SetModPermanent(sb, mod, settings, collection);
 
@@ -326,9 +328,29 @@ public class PenumbraService : IDisposable
     public (string ModDirectory, string ModName)[] CheckCurrentChangedItem(string changedItem)
         => _checkCurrentChangedItems?.Invoke(changedItem) ?? [];
 
-    private void SetModTemporary(StringBuilder sb, Mod mod, ModSettings settings, Guid collection, ObjectIndex? index, StateSource source)
+    private void SetModTemporary(StringBuilder sb, Mod mod, ModSettings settings, Guid collection, bool respectManual, ObjectIndex? index,
+        StateSource source)
     {
         var (key, name) = source.IsFixed() ? (KeyFixed, NameFixed) : (KeyManual, NameManual);
+        // Check for existing manual settings and do not apply fixed on top of them if respecting manual changes.
+        if (key is KeyFixed && respectManual)
+        {
+            var existingSource = string.Empty;
+            var ec = index.HasValue
+                ? _queryTemporaryModSettingsPlayer?.Invoke(index.Value.Index, mod.DirectoryName, out _,
+                    out existingSource, key, mod.Name)
+             ?? PenumbraApiEc.InvalidArgument
+                : _queryTemporaryModSettings?.Invoke(collection, mod.DirectoryName, out _,
+                    out existingSource, key, mod.Name)
+             ?? PenumbraApiEc.InvalidArgument;
+            if (ec is PenumbraApiEc.Success && existingSource is NameManual)
+            {
+                Glamourer.Log.Debug(
+                    $"Skipped applying mod settings for [{mod.Name}] through automation because manual settings from Glamourer existed.");
+                return;
+            }
+        }
+
         var ex = settings.Remove
             ? index.HasValue
                 ? _removeTemporaryModSettingsPlayer!.Invoke(index.Value.Index, mod.DirectoryName, key)
@@ -391,9 +413,7 @@ public class PenumbraService : IDisposable
                 : _setModSettings!.Invoke(collection, mod.DirectoryName, setting, list);
             switch (ec)
             {
-                case PenumbraApiEc.OptionGroupMissing:
-                    sb.AppendLine($"Could not find the option group {setting} in mod {mod.Name}.");
-                    break;
+                case PenumbraApiEc.OptionGroupMissing: sb.AppendLine($"Could not find the option group {setting} in mod {mod.Name}."); break;
                 case PenumbraApiEc.OptionMissing:
                     sb.AppendLine($"Could not find all desired options in the option group {setting} in mod {mod.Name}.");
                     break;
@@ -527,6 +547,8 @@ public class PenumbraService : IDisposable
                 if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp2)
                 {
                     _queryTemporaryModSettings = new global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings(_pluginInterface);
+                    _queryTemporaryModSettingsPlayer =
+                        new global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettingsPlayer(_pluginInterface);
                     if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp3)
                     {
                         _getCurrentSettingsWithTemp = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettingsWithTemp(_pluginInterface);
@@ -586,6 +608,7 @@ public class PenumbraService : IDisposable
             _removeAllTemporaryModSettings       = null;
             _removeAllTemporaryModSettingsPlayer = null;
             _queryTemporaryModSettings           = null;
+            _queryTemporaryModSettingsPlayer     = null;
             _getChangedItems                     = null;
             _changedItems                        = null;
             _checkCurrentChangedItems            = null;

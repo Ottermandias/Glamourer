@@ -87,7 +87,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
     public void ApplyAll()
     {
         foreach (var (mod, settings) in selector.Selected!.AssociatedMods)
-            penumbra.SetMod(mod, settings, StateSource.Manual);
+            penumbra.SetMod(mod, settings, StateSource.Manual, false);
     }
 
     private void DrawTable()
@@ -222,7 +222,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         if (ImGuiUtil.DrawDisabledButton("Apply", new Vector2(ImGui.GetContentRegionAvail().X, 0), string.Empty,
                 !penumbra.Available))
         {
-            var text = penumbra.SetMod(mod, settings, StateSource.Manual);
+            var text = penumbra.SetMod(mod, settings, StateSource.Manual, false);
             if (text.Length > 0)
                 Glamourer.Messager.NotificationMessage(text, NotificationType.Warning, false);
         }
