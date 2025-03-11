@@ -41,12 +41,13 @@ public class CommandService : IDisposable, IApiService
     private readonly DesignManager     _designManager;
     private readonly DesignConverter   _converter;
     private readonly DesignResolver    _resolver;
+    private readonly PenumbraService   _penumbra;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier,
         ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService, DesignFileSystemSelector designSelector,
-        QuickDesignCombo quickDesignCombo, DesignResolver resolver)
+        QuickDesignCombo quickDesignCombo, DesignResolver resolver, PenumbraService penumbra)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -63,6 +64,7 @@ public class CommandService : IDisposable, IApiService
         _items             = items;
         _customizeService  = customizeService;
         _resolver          = resolver;
+        _penumbra          = penumbra;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -122,8 +124,9 @@ public class CommandService : IDisposable, IApiService
             "reapply"            => ReapplyState(argument),
             "revert"             => Revert(argument),
             "reapplyautomation"  => ReapplyAutomation(argument, "reapplyautomation",  false, false),
-            "reverttoautomation" => ReapplyAutomation(argument, "reverttoautomation", true, false),
-            "resetdesign"        => ReapplyAutomation(argument, "resetdesign", false, true),
+            "reverttoautomation" => ReapplyAutomation(argument, "reverttoautomation", true,  false),
+            "resetdesign"        => ReapplyAutomation(argument, "resetdesign",        false, true),
+            "clearsettings"      => ClearSettings(argument),
             "automation"         => SetAutomation(argument),
             "copy"               => CopyState(argument),
             "save"               => SaveState(argument),
@@ -155,6 +158,8 @@ public class CommandService : IDisposable, IApiService
         _chat.Print(new SeStringBuilder().AddCommand("resetdesign",
             "Reapplies the current automation and resets the random design. Use without arguments for help.").BuiltString);
         _chat.Print(new SeStringBuilder()
+            .AddCommand("clearsettings", "Clears all temporary settings applied by Glamourer. Use without arguments for help.").BuiltString);
+        _chat.Print(new SeStringBuilder()
             .AddCommand("copy", "Copy the current state of a character to clipboard. Use without arguments for help.").BuiltString);
         _chat.Print(new SeStringBuilder()
             .AddCommand("save", "Save the current state of a character to a named design. Use without arguments for help.").BuiltString);
@@ -165,6 +170,62 @@ public class CommandService : IDisposable, IApiService
         _chat.Print(new SeStringBuilder()
             .AddCommand("applycustomization", "Apply a specific customization value to a character. Use without arguments for help.")
             .BuiltString);
+        return true;
+    }
+
+    private bool ClearSettings(string argument)
+    {
+        var argumentList = argument.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (argumentList.Length < 1)
+        {
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour clearsettings ").AddGreen("[Character Identifier]").AddText(" | ")
+                .AddPurple("<true or false>").AddText(" | ").AddBlue("<true or false>").BuiltString);
+            PlayerIdentifierHelp(false, true);
+            _chat.Print(new SeStringBuilder().AddText("    》 The character identifier specifies the collection to clear settings from. It also accepts '").AddGreen("all").AddText("' to clear all collections.").BuiltString);
+            _chat.Print(new SeStringBuilder().AddText("    》 The booleans are optional and default to 'true', the ").AddPurple("first")
+                .AddText(" determines whether ").AddPurple("manually").AddText(" applied settings are cleared, the ").AddBlue("second")
+                .AddText(" determines whether ").AddBlue("automatically").AddText(" applied settings are cleared.").BuiltString);
+            return false;
+        }
+
+        var clearManual    = true;
+        var clearAutomatic = true;
+        if (argumentList.Length > 1 && bool.TryParse(argumentList[1], out var m))
+            clearManual = m;
+        if (argumentList.Length > 2 && bool.TryParse(argumentList[2], out var a))
+            clearAutomatic = a;
+
+        if (!clearManual && !clearAutomatic)
+            return true;
+
+        if (argumentList[0].ToLowerInvariant() is "all")
+        {
+            _penumbra.ClearAllTemporarySettings(clearAutomatic, clearManual);
+            return true;
+        }
+
+        if (!IdentifierHandling(argumentList[0], out var identifiers, false, true))
+            return false;
+
+        var set = new HashSet<Guid>();
+        foreach (var id in identifiers)
+        {
+            if (!_objects.TryGetValue(id, out var data) || !data.Valid)
+                continue;
+
+            foreach (var obj in data.Objects)
+            {
+                var guid = _penumbra.GetActorCollection(obj, out _);
+                if (!set.Add(guid))
+                    continue;
+
+                if (clearManual)
+                    _penumbra.RemoveAllTemporarySettings(guid, StateSource.Manual);
+                if (clearAutomatic)
+                    _penumbra.RemoveAllTemporarySettings(guid, StateSource.Fixed);
+            }
+        }
+
         return true;
     }
 
@@ -283,21 +344,11 @@ public class CommandService : IDisposable, IApiService
             {
                 switch (char.ToLowerInvariant(character))
                 {
-                    case 'c':
-                        applicationFlags |= ApplicationType.Customizations;
-                        break;
-                    case 'e':
-                        applicationFlags |= ApplicationType.Armor;
-                        break;
-                    case 'a':
-                        applicationFlags |= ApplicationType.Accessories;
-                        break;
-                    case 'd':
-                        applicationFlags |= ApplicationType.GearCustomization;
-                        break;
-                    case 'w':
-                        applicationFlags |= ApplicationType.Weapons;
-                        break;
+                    case 'c': applicationFlags |= ApplicationType.Customizations; break;
+                    case 'e': applicationFlags |= ApplicationType.Armor; break;
+                    case 'a': applicationFlags |= ApplicationType.Accessories; break;
+                    case 'd': applicationFlags |= ApplicationType.GearCustomization; break;
+                    case 'w': applicationFlags |= ApplicationType.Weapons; break;
                     default:
                         _chat.Print(new SeStringBuilder().AddText("The value ").AddPurple(split2[1], true)
                             .AddText(" is not a valid set of application flags.").BuiltString);
@@ -694,7 +745,8 @@ public class CommandService : IDisposable, IApiService
         if (!applyMods || design is not Design d)
             return;
 
-        var (messages, appliedMods, _, name, overridden) = _modApplier.ApplyModSettings(d.AssociatedMods, actor, StateSource.Manual, d.ResetTemporarySettings);
+        var (messages, appliedMods, _, name, overridden) =
+            _modApplier.ApplyModSettings(d.AssociatedMods, actor, StateSource.Manual, d.ResetTemporarySettings);
 
         foreach (var message in messages)
             Glamourer.Messager.Chat.Print($"Error applying mod settings: {message}");
