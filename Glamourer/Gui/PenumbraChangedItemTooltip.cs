@@ -29,7 +29,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
             .Select(p => new KeyValuePair<EquipSlot, EquipItem>(p.First, p.Second));
 
     public ChangedItemType LastType    { get; private set; } = ChangedItemType.None;
-    public uint            LastId      { get; private set; } = 0;
+    public uint            LastId      { get; private set; }
     public DateTime        LastTooltip { get; private set; } = DateTime.MinValue;
     public DateTime        LastClick   { get; private set; } = DateTime.MinValue;
 

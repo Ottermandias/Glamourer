@@ -94,7 +94,7 @@ public sealed unsafe class AdvancedDyePopup(
             : ByteString.FromSpanUnsafe(materialHandle->ResourceHandle.FileName.AsSpan(), true).ToString();
         var gamePath = modelHandle == null
             ? string.Empty
-            : modelHandle->GetMaterialFileNameBySlotAsString(index.MaterialIndex);
+            : modelHandle->GetMaterialFileNameBySlot(index.MaterialIndex).ToString();
         return (path, gamePath);
     }
 

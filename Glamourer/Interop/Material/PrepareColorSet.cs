@@ -133,7 +133,7 @@ public sealed unsafe class PrepareColorSet
     public static ColorRow.Mode GetMode(MaterialResourceHandle* handle)
         => handle == null
             ? ColorRow.Mode.Dawntrail
-            : handle->ShpkNameSpan.SequenceEqual("characterlegacy.shpk"u8)
+            : handle->ShpkName.AsSpan().SequenceEqual("characterlegacy.shpk"u8)
                 ? ColorRow.Mode.Legacy
                 : ColorRow.Mode.Dawntrail;
 

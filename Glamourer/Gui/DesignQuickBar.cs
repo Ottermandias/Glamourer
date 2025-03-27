@@ -173,7 +173,7 @@ public sealed class DesignQuickBar : Window, IDisposable
                 available |= 2;
                 _tooltipBuilder.Append("Right-Click: Apply ")
                     .Append(design.ResolveName(_config.Ephemeral.IncognitoMode))
-                    .Append(" to {_targetIdentifier}.");
+                    .Append(" to ").Append(_config.Ephemeral.IncognitoMode ? _targetIdentifier.Incognito(null) : _targetIdentifier.ToName());
             }
 
             if (available == 0)

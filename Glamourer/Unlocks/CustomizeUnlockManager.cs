@@ -190,7 +190,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
                         ? "Eternal Bond"
                         : x.Value.HintItem.ValueNullable?.Name.ExtractText().Replace("Modern Aesthetics - ", string.Empty)
                      ?? string.Empty;
-                    ret.TryAdd(hair, (x.Value.Data, name));
+                    ret.TryAdd(hair, (x.Value.UnlockLink, name));
                 }
             }
 
@@ -201,7 +201,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
                 {
                     var name = x.Value.HintItem.ValueNullable?.Name.ExtractText().Replace("Modern Cosmetics - ", string.Empty)
                      ?? string.Empty;
-                    ret.TryAdd(paint, (x.Value.Data, name));
+                    ret.TryAdd(paint, (x.Value.UnlockLink, name));
                 }
             }
         }

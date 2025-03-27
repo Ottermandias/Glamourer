@@ -9,18 +9,24 @@ namespace Glamourer.Interop.Material;
 
 public static unsafe class MaterialService
 {
+    private const TextureFormat Format = TextureFormat.R16G16B16A16_FLOAT;
+    private const TextureFlags  Flags  = TextureFlags.TextureType2D | TextureFlags.Managed | TextureFlags.Immutable;
+
     public const int TextureWidth      = 8;
     public const int TextureHeight     = ColorTable.NumRows;
     public const int MaterialsPerModel = 10;
 
-    public static bool GenerateNewColorTable(in ColorTable.Table colorTable, out Texture* texture)
+    public static Texture* CreateColorTableTexture()
     {
         var textureSize = stackalloc int[2];
         textureSize[0] = TextureWidth;
         textureSize[1] = TextureHeight;
+        return Device.Instance()->CreateTexture2D(textureSize, 1, Format, Flags, 7);
+    }
 
-        texture = Device.Instance()->CreateTexture2D(textureSize, 1, (uint)TexFile.TextureFormat.R16G16B16A16F,
-            (uint)(TexFile.Attribute.TextureType2D | TexFile.Attribute.Managed | TexFile.Attribute.Immutable), 7);
+    public static bool GenerateNewColorTable(in ColorTable.Table colorTable, out Texture* texture)
+    {
+        texture = CreateColorTableTexture();
         if (texture == null)
             return false;
 

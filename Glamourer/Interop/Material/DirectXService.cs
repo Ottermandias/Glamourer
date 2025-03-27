@@ -1,12 +1,9 @@
 ﻿using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using Lumina.Data.Files;
 using OtterGui.Services;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.String.Functions;
 using SharpGen.Runtime;
 using Vortice.Direct3D11;
-using Vortice.DXGI;
 using MapFlags = Vortice.Direct3D11.MapFlags;
 using Texture = FFXIVClientStructs.FFXIV.Client.Graphics.Kernel.Texture;
 
@@ -14,7 +11,7 @@ namespace Glamourer.Interop.Material;
 
 public unsafe class DirectXService(IFramework framework) : IService
 {
-    private readonly object                                                                _lock     = new();
+    private readonly object _lock = new();
     private readonly ConcurrentDictionary<nint, (DateTime Update, ColorTable.Table Table)> _textures = [];
 
     /// <summary> Generate a color table the way the game does inside the original texture, and release the original. </summary>
@@ -32,9 +29,7 @@ public unsafe class DirectXService(IFramework framework) : IService
 
         lock (_lock)
         {
-            using var texture = new SafeTextureHandle(Device.Instance()->CreateTexture2D(textureSize, 1,
-                (uint)TexFile.TextureFormat.R16G16B16A16F,
-                (uint)(TexFile.Attribute.TextureType2D | TexFile.Attribute.Managed | TexFile.Attribute.Immutable), 7), false);
+            using var texture = new SafeTextureHandle(MaterialService.CreateColorTableTexture(), false);
             if (texture.IsInvalid)
                 return false;
 
@@ -119,7 +114,7 @@ public unsafe class DirectXService(IFramework framework) : IService
     {
         var desc = resource.Description1;
 
-        if (desc.Format is not Format.R16G16B16A16_Float
+        if (desc.Format is not Vortice.DXGI.Format.R16G16B16A16_Float
          || desc.Width != MaterialService.TextureWidth
          || desc.Height != MaterialService.TextureHeight
          || map.DepthPitch != map.RowPitch * desc.Height)
