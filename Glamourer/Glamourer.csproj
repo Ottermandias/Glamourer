@@ -10,10 +10,6 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
-  </PropertyGroup>
-
   <ItemGroup>
     <None Remove="LegacyTattoo.raw" />
   </ItemGroup>
@@ -62,8 +58,4 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="if $(Configuration) == Release powershell Copy-Item -Force $(TargetDir)$(SolutionName).json -Destination $(SolutionDir)" />
-  </Target>
 </Project>
