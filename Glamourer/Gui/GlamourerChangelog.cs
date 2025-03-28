@@ -41,6 +41,7 @@ public class GlamourerChangelog
         Add1_3_5_0(Changelog);
         Add1_3_6_0(Changelog);
         Add1_3_7_0(Changelog);
+        Add1_3_8_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -60,6 +61,18 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_3_8_0(Changelog log)
+        => log.NextVersion("Version 1.3.8.0")
+            .RegisterImportant("Updated Glamourer for update 7.20 and Dalamud API 12.")
+            .RegisterEntry(
+                "This is not thoroughly tested, but I decided to push to stable instead of testing because otherwise a lot of people would just go to testing just for early access again despite having no business doing so.",
+                1)
+            .RegisterEntry(
+                "I also do not use most of the functionality of Glamourer myself, so I am unable to even encounter most issues myself.", 1)
+            .RegisterEntry("If you encounter any issues, please report them quickly on the discord.",                                    1)
+            .RegisterEntry("Added a chat command to clear temporary settings applied by Glamourer to Penumbra.")
+            .RegisterEntry("Fixed small issues with customizations not applicable to your race still applying.");
 
     private static void Add1_3_7_0(Changelog log)
         => log.NextVersion("Version 1.3.7.0")
