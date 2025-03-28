@@ -12,6 +12,10 @@
 
   <ItemGroup>
     <None Remove="LegacyTattoo.raw" />
+
+    <None Include="Glamourer.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -52,10 +56,4 @@
       <InformationalVersion>$(GitCommitHash)</InformationalVersion>
     </PropertyGroup>
   </Target>
-
-  <ItemGroup>
-    <None Update="Glamourer.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
 </Project>
