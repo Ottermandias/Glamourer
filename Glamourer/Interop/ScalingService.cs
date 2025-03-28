@@ -27,6 +27,9 @@ public unsafe class ScalingService : IDisposable
             interop.HookFromAddress<SetupMount>((nint)MountContainer.MemberFunctionPointers.SetupMount, SetupMountDetour);
         _calculateHeightHook =
             interop.HookFromAddress<CalculateHeight>((nint)ModelContainer.MemberFunctionPointers.CalculateHeight, CalculateHeightDetour);
+        _placeMinionHook = interop.HookFromAddress<PlaceMinion>((nint)Companion.MemberFunctionPointers.PlaceCompanion, PlaceMinionDetour);
+        //_updateOrnamentHook =
+        //    interop.HookFromAddress<UpdateOrnament>((nint)Ornament.MemberFunctionPointers.UpdateOrnament, UpdateOrnamentDetour);
 
         _setupMountHook.Enable();
         _updateOrnamentHook.Enable();
@@ -55,8 +58,6 @@ public unsafe class ScalingService : IDisposable
 
     private readonly Hook<CalculateHeight> _calculateHeightHook;
 
-    // TODO: Use client structs sig.
-    [Signature(Sigs.PlaceMinion, DetourName = nameof(PlaceMinionDetour))]
     private readonly Hook<PlaceMinion> _placeMinionHook = null!;
 
     private void SetupMountDetour(MountContainer* container, short mountId, uint unk1, uint unk2, uint unk3, byte unk4)
