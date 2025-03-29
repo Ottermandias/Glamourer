@@ -197,12 +197,11 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     /// </summary>
     private static CharacterWeapon GetTempSlot(Weapon* weapon)
     {
-        // TODO: Use ClientStructs
-        var changedData = *(void**)((byte*)weapon + 0xA40);
+        var changedData = weapon->ChangedData;
         if (changedData == null)
             return new CharacterWeapon(weapon->ModelSetId, weapon->SecondaryId, (Variant)weapon->Variant, StainIds.FromWeapon(*weapon));
 
-        return new CharacterWeapon(weapon->ModelSetId, *(SecondaryId*)changedData, ((Variant*)changedData)[2],
-            new StainIds(((StainId*)changedData)[3], ((StainId*)changedData)[4]));
+        return new CharacterWeapon(weapon->ModelSetId, changedData->SecondaryId, changedData->Variant,
+            new StainIds(changedData->Stain0, changedData->Stain1));
     }
 }
