@@ -157,7 +157,11 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     /// <summary> Find the type of the given draw object by checking the actors pointers. </summary>
     private static bool FindType(CharacterBase* characterBase, Actor actor, out MaterialValueIndex.DrawObjectType type)
     {
-        type = MaterialValueIndex.DrawObjectType.Human;
+        type = MaterialValueIndex.DrawObjectType.Invalid;
+        if (!((Model)characterBase).IsHuman)
+            return false;
+
+        type = type = MaterialValueIndex.DrawObjectType.Human;
         if (!actor.Valid)
             return false;
 
