@@ -157,19 +157,23 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     /// <summary> Find the type of the given draw object by checking the actors pointers. </summary>
     private static bool FindType(CharacterBase* characterBase, Actor actor, out MaterialValueIndex.DrawObjectType type)
     {
-        type = MaterialValueIndex.DrawObjectType.Invalid;
-        if (!((Model)characterBase).IsHuman)
-            return false;
-
-        type = type = MaterialValueIndex.DrawObjectType.Human;
         if (!actor.Valid)
+        {
+            type = MaterialValueIndex.DrawObjectType.Invalid;
             return false;
+        }
 
-        if (actor.Model.AsCharacterBase == characterBase)
+        if (actor.Model.AsCharacterBase == characterBase && ((Model)characterBase).IsHuman)
+        {
+            type = MaterialValueIndex.DrawObjectType.Human;
             return true;
+        }
 
         if (!actor.AsObject->IsCharacter())
+        {
+            type = MaterialValueIndex.DrawObjectType.Invalid;
             return false;
+        }
 
         if (actor.AsCharacter->DrawData.WeaponData[0].DrawObject == characterBase)
         {
@@ -183,6 +187,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             return true;
         }
 
+        type = MaterialValueIndex.DrawObjectType.Invalid;
         return false;
     }
 
