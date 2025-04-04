@@ -75,6 +75,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public RenameField          ShowRename           { get; set; } = RenameField.BothDataPrio;
     public ModifiableHotkey     ToggleQuickDesignBar { get; set; } = new(VirtualKey.NO_KEY);
     public DoubleModifier       DeleteDesignModifier { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
+    public DoubleModifier       IncognitoModifier    { get; set; } = new(ModifierHotkey.Control);
     public ChangeLogDisplayType ChangeLogDisplayType { get; set; } = ChangeLogDisplayType.New;
 
     public QdbButtons QdbButtons { get; set; } =

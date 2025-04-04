@@ -188,6 +188,10 @@ public class SettingsTab(
                 "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
                 config.DeleteDesignModifier, v => config.DeleteDesignModifier = v))
             config.Save();
+        if (Widget.DoubleModifierSelector("Incognito Modifier",
+                "A modifier you need to hold while clicking the Incognito button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
+                config.IncognitoModifier, v => config.IncognitoModifier = v))
+            config.Save();
         DrawRenameSettings();
         Checkbox("Auto-Open Design Folders"u8,
             "Have design folders open or closed as their default state after launching."u8, config.OpenFoldersByDefault,

@@ -87,7 +87,7 @@ public class ActorPanel
         _rightButtons =
         [
             new LockedButton(this),
-            new HeaderDrawer.IncognitoButton(_config.Ephemeral),
+            new HeaderDrawer.IncognitoButton(_config),
         ];
     }
 

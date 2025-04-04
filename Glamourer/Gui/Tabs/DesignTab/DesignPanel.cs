@@ -89,7 +89,7 @@ public class DesignPanel
         _rightButtons =
         [
             new LockButton(this),
-            new IncognitoButton(_config.Ephemeral),
+            new IncognitoButton(_config),
         ];
     }
 

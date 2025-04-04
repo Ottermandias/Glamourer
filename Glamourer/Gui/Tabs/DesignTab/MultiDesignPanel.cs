@@ -13,7 +13,7 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager editor, DesignColors colors, Configuration config)
 {
     private readonly Button[] _leftButtons  = [];
-    private readonly Button[] _rightButtons = [new IncognitoButton(config.Ephemeral)];
+    private readonly Button[] _rightButtons = [new IncognitoButton(config)];
 
     private readonly DesignColorCombo _colorCombo = new(colors, true);
 

@@ -44,22 +44,36 @@ public static class HeaderDrawer
         }
     }
 
-    public sealed class IncognitoButton(EphemeralConfig config) : Button
+    public sealed class IncognitoButton(Configuration config) : Button
     {
         protected override string Description
-            => config.IncognitoMode
-                ? "Toggle incognito mode off."
-                : "Toggle incognito mode on.";
+        {
+            get
+            {
+                var hold = config.IncognitoModifier.IsActive();
+                return (config.Ephemeral.IncognitoMode, hold)
+                    switch
+                    {
+                        (true, true)   => "Toggle incognito mode off.",
+                        (false, true)  => "Toggle incognito mode on.",
+                        (true, false)  => $"Toggle incognito mode off.\n\nHold {config.IncognitoModifier} while clicking to toggle.",
+                        (false, false) => $"Toggle incognito mode on.\n\nHold {config.IncognitoModifier} while clicking to toggle.",
+                    };
+            }
+        }
 
         protected override FontAwesomeIcon Icon
-            => config.IncognitoMode
+            => config.Ephemeral.IncognitoMode
                 ? FontAwesomeIcon.EyeSlash
                 : FontAwesomeIcon.Eye;
 
         protected override void OnClick()
         {
-            config.IncognitoMode = !config.IncognitoMode;
-            config.Save();
+            if (!config.IncognitoModifier.IsActive())
+                return;
+
+            config.Ephemeral.IncognitoMode = !config.Ephemeral.IncognitoMode;
+            config.Ephemeral.Save();
         }
     }
 
