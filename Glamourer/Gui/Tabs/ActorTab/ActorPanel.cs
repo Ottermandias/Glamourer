@@ -10,7 +10,6 @@ using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Materials;
 using Glamourer.Interop;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
@@ -22,7 +21,6 @@ using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
-using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
@@ -35,7 +33,7 @@ public class ActorPanel
     private readonly AutoDesignApplier        _autoDesignApplier;
     private readonly Configuration            _config;
     private readonly DesignConverter          _converter;
-    private readonly ObjectManager            _objects;
+    private readonly ActorObjectManager       _objects;
     private readonly DesignManager            _designManager;
     private readonly ImportService            _importService;
     private readonly ICondition               _conditions;
@@ -53,7 +51,7 @@ public class ActorPanel
         AutoDesignApplier autoDesignApplier,
         Configuration config,
         DesignConverter converter,
-        ObjectManager objects,
+        ActorObjectManager objects,
         DesignManager designManager,
         ImportService importService,
         ICondition conditions,
@@ -106,7 +104,7 @@ public class ActorPanel
     {
         using var group = ImRaii.Group();
         (_identifier, _data) = _selector.Selection;
-        _lockedRedraw = _identifier.Type is IdentifierType.Special
+        _lockedRedraw = _identifier.Type is IdentifierType.Special || _objects.IsInLobby
          || _conditions[ConditionFlag.OccupiedInCutSceneEvent];
         (_actorName, _actor) = GetHeaderName();
         DrawHeader();

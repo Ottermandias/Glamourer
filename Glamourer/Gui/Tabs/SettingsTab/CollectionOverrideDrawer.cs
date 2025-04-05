@@ -6,14 +6,14 @@ using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
-using ObjectManager = Glamourer.Interop.ObjectManager;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
 public class CollectionOverrideDrawer(
     CollectionOverrideService collectionOverrides,
     Configuration config,
-    ObjectManager objects,
+    ActorObjectManager objects,
     ActorManager actors,
     PenumbraService penumbra,
     CollectionCombo combo) : IService
@@ -61,7 +61,8 @@ public class CollectionOverrideDrawer(
         DrawActorIdentifier(idx, actor);
 
         ImGui.TableNextColumn();
-        if (combo.Draw("##collection", name, $"Select the overriding collection. Current GUID:", ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeight()))
+        if (combo.Draw("##collection", name, $"Select the overriding collection. Current GUID:", ImGui.GetContentRegionAvail().X,
+                ImGui.GetTextLineHeight()))
         {
             var (guid, _, newName) = combo.CurrentSelection;
             collectionOverrides.ChangeOverride(idx, guid, newName);
@@ -69,7 +70,7 @@ public class CollectionOverrideDrawer(
 
         if (ImGui.IsItemHovered())
         {
-            using var tt = ImRaii.Tooltip();
+            using var tt   = ImRaii.Tooltip();
             using var font = ImRaii.PushFont(UiBuilder.MonoFont);
             ImGui.TextUnformatted($"    {collection}");
         }
@@ -102,7 +103,7 @@ public class CollectionOverrideDrawer(
             return;
 
         using var tt2 = ImRaii.Tooltip();
-        using var f = ImRaii.PushFont(UiBuilder.MonoFont);
+        using var f   = ImRaii.PushFont(UiBuilder.MonoFont);
         ImGui.TextUnformatted(collection.ToString());
     }
 
@@ -146,7 +147,7 @@ public class CollectionOverrideDrawer(
             }
             catch (ActorIdentifierFactory.IdentifierParseError e)
             {
-                _exception = e;
+                _exception   = e;
                 _identifiers = [];
             }
 

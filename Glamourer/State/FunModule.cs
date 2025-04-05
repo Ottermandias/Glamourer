@@ -11,7 +11,6 @@ using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 using CustomizeIndex = Penumbra.GameData.Enums.CustomizeIndex;
-using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.State;
 
@@ -35,7 +34,7 @@ public unsafe class FunModule : IDisposable
     private readonly StateManager       _stateManager;
     private readonly DesignConverter    _designConverter;
     private readonly DesignManager      _designManager;
-    private readonly ObjectManager      _objects;
+    private readonly ActorObjectManager _objects;
     private readonly NpcCustomizeSet    _npcs;
     private readonly StainId[]          _stains;
 
@@ -69,7 +68,7 @@ public unsafe class FunModule : IDisposable
         => OnDayChange(DateTime.Now.Day, DateTime.Now.Month, DateTime.Now.Year);
 
     public FunModule(CodeService codes, CustomizeService customizations, ItemManager items, Configuration config,
-        GenericPopupWindow popupWindow, StateManager stateManager, ObjectManager objects, DesignConverter designConverter,
+        GenericPopupWindow popupWindow, StateManager stateManager, ActorObjectManager objects, DesignConverter designConverter,
         DesignManager designManager, NpcCustomizeSet npcs)
     {
         _codes           = codes;
@@ -125,9 +124,7 @@ public unsafe class FunModule : IDisposable
 
         switch (_codes.Masked(CodeService.GearCodes))
         {
-            case CodeService.CodeFlag.Emperor:
-                SetRandomItem(slot, ref armor);
-                break;
+            case CodeService.CodeFlag.Emperor: SetRandomItem(slot, ref armor); break;
             case CodeService.CodeFlag.Elephants:
             case CodeService.CodeFlag.Dolphins:
             case CodeService.CodeFlag.World when actor.Index != 0:
@@ -137,9 +134,7 @@ public unsafe class FunModule : IDisposable
 
         switch (_codes.Masked(CodeService.DyeCodes))
         {
-            case CodeService.CodeFlag.Clown:
-                SetRandomDye(ref armor);
-                break;
+            case CodeService.CodeFlag.Clown: SetRandomDye(ref armor); break;
         }
     }
 
@@ -306,9 +301,7 @@ public unsafe class FunModule : IDisposable
                 SetDolphin(EquipSlot.Body, ref armor[1]);
                 SetDolphin(EquipSlot.Head, ref armor[0]);
                 break;
-            case CodeService.CodeFlag.World when actor.Index != 0:
-                _worldSets.Apply(actor, _rng, armor);
-                break;
+            case CodeService.CodeFlag.World when actor.Index != 0: _worldSets.Apply(actor, _rng, armor); break;
         }
 
         switch (_codes.Masked(CodeService.DyeCodes))
@@ -368,17 +361,17 @@ public unsafe class FunModule : IDisposable
     private static IReadOnlyList<CharacterArmor> DolphinBodies
         =>
         [
-            new CharacterArmor(6089, 1, new StainIds(4)), // Toad
-            new CharacterArmor(6089, 1, new StainIds(4)), // Toad
-            new CharacterArmor(6089, 1, new StainIds(4)), // Toad
-            new CharacterArmor(6023, 1, new StainIds(4)), // Swine
-            new CharacterArmor(6023, 1, new StainIds(4)), // Swine
-            new CharacterArmor(6023, 1, new StainIds(4)), // Swine
-            new CharacterArmor(6133, 1, new StainIds(4)), // Gaja
-            new CharacterArmor(6182, 1, new StainIds(3)), // Imp
-            new CharacterArmor(6182, 1, new StainIds(3)), // Imp
-            new CharacterArmor(6182, 1, new StainIds(4)), // Imp
-            new CharacterArmor(6182, 1, new StainIds(4)), // Imp
+            new(6089, 1, new StainIds(4)), // Toad
+            new(6089, 1, new StainIds(4)), // Toad
+            new(6089, 1, new StainIds(4)), // Toad
+            new(6023, 1, new StainIds(4)), // Swine
+            new(6023, 1, new StainIds(4)), // Swine
+            new(6023, 1, new StainIds(4)), // Swine
+            new(6133, 1, new StainIds(4)), // Gaja
+            new(6182, 1, new StainIds(3)), // Imp
+            new(6182, 1, new StainIds(3)), // Imp
+            new(6182, 1, new StainIds(4)), // Imp
+            new(6182, 1, new StainIds(4)), // Imp
         ];
 
     private void SetDolphin(EquipSlot slot, ref CharacterArmor armor)

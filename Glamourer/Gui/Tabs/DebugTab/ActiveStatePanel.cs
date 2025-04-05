@@ -1,18 +1,17 @@
 ﻿using Dalamud.Interface;
 using Glamourer.GameData;
 using Glamourer.Designs;
-using Glamourer.Interop;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectManager) : IGameDataDrawer
+public class ActiveStatePanel(StateManager _stateManager, ActorObjectManager _objectManager) : IGameDataDrawer
 {
     public string Label
         => $"Active Actors ({_stateManager.Count})###Active Actors";
@@ -22,8 +21,7 @@ public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectM
 
     public void Draw()
     {
-        _objectManager.Update();
-        foreach (var (identifier, actors) in _objectManager.Identifiers)
+        foreach (var (identifier, actors) in _objectManager)
         {
             if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Trash.ToIconString()}##{actors.Label}", new Vector2(ImGui.GetFrameHeight()),
                     string.Empty, !_stateManager.ContainsKey(identifier), true))
@@ -66,13 +64,15 @@ public class ActiveStatePanel(StateManager _stateManager, ObjectManager _objectM
         static string ItemString(in DesignData data, EquipSlot slot)
         {
             var item = data.Item(slot);
-            return $"{item.Name} ({item.Id.ToDiscriminatingString()} {item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
+            return
+                $"{item.Name} ({item.Id.ToDiscriminatingString()} {item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
         }
 
         static string BonusItemString(in DesignData data, BonusItemFlag slot)
         {
             var item = data.BonusItem(slot);
-            return $"{item.Name} ({item.Id.ToDiscriminatingString()} {item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
+            return
+                $"{item.Name} ({item.Id.ToDiscriminatingString()} {item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
         }
 
         PrintRow("Model ID", state.BaseData.ModelId, state.ModelData.ModelId, state.Sources[MetaIndex.ModelId]);

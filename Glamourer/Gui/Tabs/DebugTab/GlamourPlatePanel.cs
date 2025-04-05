@@ -3,24 +3,25 @@ using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Designs;
-using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Text;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
 public unsafe class GlamourPlatePanel : IGameDataDrawer
 {
-    private readonly DesignManager _design;
-    private readonly ItemManager   _items;
-    private readonly StateManager  _state;
-    private readonly ObjectManager _objects;
+    private readonly DesignManager      _design;
+    private readonly ItemManager        _items;
+    private readonly StateManager       _state;
+    private readonly ActorObjectManager _objects;
 
     public string Label
         => "Glamour Plates";
@@ -28,7 +29,8 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
     public bool Disabled
         => false;
 
-    public GlamourPlatePanel(IGameInteropProvider interop, ItemManager items, DesignManager design, StateManager state, ObjectManager objects)
+    public GlamourPlatePanel(IGameInteropProvider interop, ItemManager items, DesignManager design, StateManager state,
+        ActorObjectManager objects)
     {
         _items   = items;
         _design  = design;
@@ -42,24 +44,24 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
         var manager = MirageManager.Instance();
         using (ImRaii.Group())
         {
-            ImGui.TextUnformatted("Address:");
-            ImGui.TextUnformatted("Number of Glamour Plates:");
-            ImGui.TextUnformatted("Glamour Plates Requested:");
-            ImGui.TextUnformatted("Glamour Plates Loaded:");
-            ImGui.TextUnformatted("Is Applying Glamour Plates:");
+            ImUtf8.Text("Address:"u8);
+            ImUtf8.Text("Number of Glamour Plates:"u8);
+            ImUtf8.Text("Glamour Plates Requested:"u8);
+            ImUtf8.Text("Glamour Plates Loaded:"u8);
+            ImUtf8.Text("Is Applying Glamour Plates:"u8);
         }
 
         ImGui.SameLine();
         using (ImRaii.Group())
         {
-            ImGuiUtil.CopyOnClickSelectable($"0x{(ulong)manager:X}");
-            ImGui.TextUnformatted(manager == null ? "-" : manager->GlamourPlates.Length.ToString());
-            ImGui.TextUnformatted(manager == null ? "-" : manager->GlamourPlatesRequested.ToString());
+            ImUtf8.CopyOnClickSelectable($"0x{(ulong)manager:X}");
+            ImUtf8.Text(manager == null ? "-" : manager->GlamourPlates.Length.ToString());
+            ImUtf8.Text(manager == null ? "-" : manager->GlamourPlatesRequested.ToString());
             ImGui.SameLine();
-            if (ImGui.SmallButton("Request Update"))
+            if (ImUtf8.SmallButton("Request Update"u8))
                 RequestGlamour();
-            ImGui.TextUnformatted(manager == null ? "-" : manager->GlamourPlatesLoaded.ToString());
-            ImGui.TextUnformatted(manager == null ? "-" : manager->IsApplyingGlamourPlate.ToString());
+            ImUtf8.Text(manager == null ? "-" : manager->GlamourPlatesLoaded.ToString());
+            ImUtf8.Text(manager == null ? "-" : manager->IsApplyingGlamourPlate.ToString());
         }
 
         if (manager == null)
@@ -71,12 +73,12 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
 
         for (var i = 0; i < manager->GlamourPlates.Length; ++i)
         {
-            using var tree = ImRaii.TreeNode($"Plate #{i + 1:D2}");
+            using var tree = ImUtf8.TreeNode($"Plate #{i + 1:D2}");
             if (!tree)
                 continue;
 
             ref var plate = ref manager->GlamourPlates[i];
-            if (ImGuiUtil.DrawDisabledButton("Apply to Player", Vector2.Zero, string.Empty, !enabled))
+            if (ImUtf8.ButtonEx("Apply to Player"u8, ""u8, Vector2.Zero, !enabled))
             {
                 var design = CreateDesign(plate);
                 _state.ApplyDesign(state!, design, ApplySettings.Manual with { IsFinal = true });
@@ -85,14 +87,14 @@ public unsafe class GlamourPlatePanel : IGameDataDrawer
             using (ImRaii.Group())
             {
                 foreach (var slot in EquipSlotExtensions.FullSlots)
-                    ImGui.TextUnformatted(slot.ToName());
+                    ImUtf8.Text(slot.ToName());
             }
 
             ImGui.SameLine();
             using (ImRaii.Group())
             {
                 foreach (var (_, index) in EquipSlotExtensions.FullSlots.WithIndex())
-                    ImGui.TextUnformatted($"{plate.ItemIds[index]:D6}, {StainIds.FromGlamourPlate(plate, index)}");
+                    ImUtf8.Text($"{plate.ItemIds[index]:D6}, {StainIds.FromGlamourPlate(plate, index)}");
             }
         }
     }

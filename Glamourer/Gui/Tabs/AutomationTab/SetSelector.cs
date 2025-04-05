@@ -2,12 +2,11 @@
 using Dalamud.Interface.Utility;
 using Glamourer.Automation;
 using Glamourer.Events;
-using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
-using Penumbra.GameData.Actors;
+using Penumbra.GameData.Interop;
 using Penumbra.String;
 using ImGuiClip = OtterGui.ImGuiClip;
 
@@ -18,8 +17,7 @@ public class SetSelector : IDisposable
     private readonly Configuration              _config;
     private readonly AutoDesignManager          _manager;
     private readonly AutomationChanged          _event;
-    private readonly ActorManager               _actors;
-    private readonly ObjectManager              _objects;
+    private readonly ActorObjectManager         _objects;
     private readonly List<(AutoDesignSet, int)> _list = [];
 
     public AutoDesignSet? Selection      { get; private set; }
@@ -38,14 +36,13 @@ public class SetSelector : IDisposable
     private int     _dragIndex = -1;
     private Action? _endAction;
 
-    internal int _dragDesignIndex = -1;
+    internal int DragDesignIndex = -1;
 
-    public SetSelector(AutoDesignManager manager, AutomationChanged @event, Configuration config, ActorManager actors, ObjectManager objects)
+    public SetSelector(AutoDesignManager manager, AutomationChanged @event, Configuration config, ActorObjectManager objects)
     {
         _manager = manager;
         _event   = @event;
         _config  = config;
-        _actors  = actors;
         _objects = objects;
         _event.Subscribe(OnAutomationChange, AutomationChanged.Priority.SetSelector);
     }
@@ -94,7 +91,7 @@ public class SetSelector : IDisposable
     }
 
     private LowerString _filter        = LowerString.Empty;
-    private uint        _enabledFilter = 0;
+    private uint        _enabledFilter;
     private float       _width;
     private Vector2     _defaultItemSpacing;
     private Vector2     _selectableSize;
@@ -177,7 +174,6 @@ public class SetSelector : IDisposable
         UpdateList();
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
         _selectableSize = new Vector2(0, 2 * ImGui.GetTextLineHeight() + ImGui.GetStyle().ItemSpacing.Y);
-        _objects.Update();
         ImGuiClip.ClippedDraw(_list, DrawSetSelectable, _selectableSize.Y + 2 * ImGui.GetStyle().ItemSpacing.Y);
         _endAction?.Invoke();
         _endAction = null;
@@ -186,7 +182,7 @@ public class SetSelector : IDisposable
     private void DrawSetSelectable((AutoDesignSet Set, int Index) pair)
     {
         using var id = ImRaii.PushId(pair.Index);
-        using (var color = ImRaii.PushColor(ImGuiCol.Text, pair.Set.Enabled ? ColorId.EnabledAutoSet.Value() : ColorId.DisabledAutoSet.Value()))
+        using (ImRaii.PushColor(ImGuiCol.Text, pair.Set.Enabled ? ColorId.EnabledAutoSet.Value() : ColorId.DisabledAutoSet.Value()))
         {
             if (ImGui.Selectable(GetSetName(pair.Set, pair.Index), pair.Set == Selection, ImGuiSelectableFlags.None, _selectableSize))
             {
@@ -285,9 +281,9 @@ public class SetSelector : IDisposable
 
     private void NewSetButton(Vector2 size)
     {
-        var id = _actors.GetCurrentPlayer();
+        var id = _objects.Actors.GetCurrentPlayer();
         if (!id.IsValid)
-            id = _actors.CreatePlayer(ByteString.FromSpanUnsafe("New Design"u8, true, false, true), ushort.MaxValue);
+            id = _objects.Actors.CreatePlayer(ByteString.FromSpanUnsafe("New Design"u8, true, false, true), ushort.MaxValue);
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), size,
                 $"Create a new Automatic Design Set for {id}. The associated player can be changed later.", !id.IsValid, true))
             _manager.AddDesignSet("New Automation Set", id);
@@ -332,15 +328,15 @@ public class SetSelector : IDisposable
                 }
                 else if (ImGuiUtil.IsDropping("DesignDragDrop"))
                 {
-                    if (_dragDesignIndex >= 0)
+                    if (DragDesignIndex >= 0)
                     {
-                        var idx     = _dragDesignIndex;
+                        var idx     = DragDesignIndex;
                         var setTo   = set;
                         var setFrom = Selection!;
                         _endAction = () => _manager.MoveDesignToSet(setFrom, idx, setTo);
                     }
 
-                    _dragDesignIndex = -1;
+                    DragDesignIndex = -1;
                 }
             }
         }

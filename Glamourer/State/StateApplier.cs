@@ -7,6 +7,7 @@ using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.State;
@@ -23,7 +24,7 @@ public class StateApplier(
     ItemManager _items,
     PenumbraService _penumbra,
     MetaService _metaService,
-    ObjectManager _objects,
+    ActorObjectManager _objects,
     CrestService _crests,
     DirectXService _directX)
 {
@@ -411,8 +412,5 @@ public class StateApplier(
     }
 
     private ActorData GetData(ActorState state)
-    {
-        _objects.Update();
-        return _objects.TryGetValue(state.Identifier, out var data) ? data : ActorData.Invalid;
-    }
+        => _objects.TryGetValue(state.Identifier, out var data) ? data : ActorData.Invalid;
 }

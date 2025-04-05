@@ -6,12 +6,10 @@ using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.State;
-using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Log;
 using OtterGui.Services;
-using Penumbra.GameData.Enums;
-using Penumbra.GameData.Files;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer;
 
@@ -82,7 +80,7 @@ public class Glamourer : IDalamudPlugin
         var designManager = _services.GetService<DesignManager>();
         var autoManager   = _services.GetService<AutoDesignManager>();
         var stateManager  = _services.GetService<StateManager>();
-        var objectManager = _services.GetService<ObjectManager>();
+        var objectManager = _services.GetService<ActorObjectManager>();
         var currentPlayer = objectManager.PlayerData.Identifier;
         var states        = stateManager.Where(kvp => objectManager.ContainsKey(kvp.Key)).ToList();
 

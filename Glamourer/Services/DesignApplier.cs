@@ -1,13 +1,12 @@
 ﻿using Glamourer.Designs;
-using Glamourer.Interop;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Services;
 
-public sealed class DesignApplier(StateManager stateManager, ObjectManager objects) : IService
+public sealed class DesignApplier(StateManager stateManager, ActorObjectManager objects) : IService
 {
     public void ApplyToPlayer(DesignBase design)
     {
@@ -34,16 +33,10 @@ public sealed class DesignApplier(StateManager stateManager, ObjectManager objec
     }
 
     public void Apply(ActorIdentifier actor, DesignBase design)
-    {
-        objects.Update();
-        Apply(actor, objects.TryGetValue(actor, out var d) ? d : ActorData.Invalid, design, ApplySettings.ManualWithLinks);
-    }
+        => Apply(actor, objects.TryGetValue(actor, out var d) ? d : ActorData.Invalid, design, ApplySettings.ManualWithLinks);
 
     public void Apply(ActorIdentifier actor, DesignBase design, ApplySettings settings)
-    {
-        objects.Update();
-        Apply(actor, objects.TryGetValue(actor, out var d) ? d : ActorData.Invalid, design, settings);
-    }
+        => Apply(actor, objects.TryGetValue(actor, out var d) ? d : ActorData.Invalid, design, settings);
 
     public void Apply(ActorIdentifier actor, ActorData data, DesignBase design)
         => Apply(actor, data, design, ApplySettings.ManualWithLinks);

@@ -27,6 +27,7 @@ using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Services;
@@ -102,6 +103,7 @@ public static class StaticServiceManager
             .AddSingleton<PenumbraService>()
             .AddSingleton(p => new CutsceneResolver(p.GetRequiredService<PenumbraService>().CutsceneParent))
             .AddSingleton<ObjectManager>()
+            .AddSingleton<ActorObjectManager>()
             .AddSingleton<PenumbraAutoRedraw>()
             .AddSingleton<JobService>()
             .AddSingleton<CustomizeUnlockManager>()

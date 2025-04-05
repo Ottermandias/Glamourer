@@ -1,13 +1,13 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using Glamourer.Interop;
 using ImGuiNET;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Gui.Debug;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class AdvancedCustomizationDrawer(ObjectManager objects) : IGameDataDrawer
+public unsafe class AdvancedCustomizationDrawer(ActorObjectManager objects) : IGameDataDrawer
 {
     public string Label
         => "Advanced Customizations";
@@ -31,8 +31,8 @@ public unsafe class AdvancedCustomizationDrawer(ObjectManager objects) : IGameDa
             return;
         }
 
-        DrawCBuffer("Customize"u8, model.AsHuman->CustomizeParameterCBuffer,        0);
-        DrawCBuffer("Decal"u8,     model.AsHuman->DecalColorCBuffer,                1);
+        DrawCBuffer("Customize"u8, model.AsHuman->CustomizeParameterCBuffer,          0);
+        DrawCBuffer("Decal"u8,     model.AsHuman->DecalColorCBuffer,                  1);
         DrawCBuffer("Unk1"u8,      *(ConstantBuffer**)((byte*)model.AsHuman + 0xBA0), 2);
         DrawCBuffer("Unk2"u8,      *(ConstantBuffer**)((byte*)model.AsHuman + 0xBA8), 3);
     }

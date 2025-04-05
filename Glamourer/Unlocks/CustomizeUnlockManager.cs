@@ -1,16 +1,15 @@
 ﻿using Dalamud.Game;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
-using Dalamud.Utility;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Glamourer.GameData;
 using Glamourer.Events;
-using Glamourer.Interop;
 using Glamourer.Services;
 using Lumina.Excel.Sheets;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Unlocks;
 
@@ -19,7 +18,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     private readonly SaveService            _saveService;
     private readonly IClientState           _clientState;
     private readonly ObjectUnlocked         _event;
-    private readonly ObjectManager          _objects;
+    private readonly ActorObjectManager     _objects;
     private readonly Dictionary<uint, long> _unlocked = new();
 
     public readonly IReadOnlyDictionary<CustomizeData, (uint Data, string Name)> Unlockable;
@@ -28,7 +27,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         => _unlocked;
 
     public CustomizeUnlockManager(SaveService saveService, CustomizeService customizations, IDataManager gameData,
-        IClientState clientState, ObjectUnlocked @event, IGameInteropProvider interop, ObjectManager objects)
+        IClientState clientState, ObjectUnlocked @event, IGameInteropProvider interop, ActorObjectManager objects)
     {
         interop.InitializeFromAttributes(this);
         _saveService = saveService;
@@ -177,7 +176,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         IDataManager gameData)
     {
         var ret   = new Dictionary<CustomizeData, (uint Data, string Name)>();
-        var sheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English)!;
+        var sheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English);
         foreach (var (clan, gender) in CustomizeManager.AllSets())
         {
             var list = customizations.Manager.GetSet(clan, gender);

@@ -5,7 +5,6 @@ using Glamourer.Designs;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs.DesignTab;
-using Glamourer.Interop;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
@@ -13,6 +12,7 @@ using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using static Glamourer.Gui.Tabs.HeaderDrawer;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
@@ -30,7 +30,7 @@ public class NpcPanel
     private readonly DesignConverter        _converter;
     private readonly DesignManager          _designManager;
     private readonly StateManager           _state;
-    private readonly ObjectManager          _objects;
+    private readonly ActorObjectManager     _objects;
     private readonly DesignColors           _colors;
     private readonly Button[]               _leftButtons;
     private readonly Button[]               _rightButtons;
@@ -42,7 +42,7 @@ public class NpcPanel
         DesignConverter converter,
         DesignManager designManager,
         StateManager state,
-        ObjectManager objects,
+        ActorObjectManager objects,
         DesignColors colors,
         Configuration config)
     {

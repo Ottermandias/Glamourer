@@ -6,14 +6,13 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Designs;
-using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui.Classes;
 using OtterGui.Text;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Gui;
 
@@ -37,21 +36,21 @@ public sealed class DesignQuickBar : Window, IDisposable
             ? ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoMove
             : ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing;
 
-    private readonly Configuration     _config;
-    private readonly QuickDesignCombo  _designCombo;
-    private readonly StateManager      _stateManager;
-    private readonly AutoDesignApplier _autoDesignApplier;
-    private readonly ObjectManager     _objects;
-    private readonly PenumbraService   _penumbra;
-    private readonly IKeyState         _keyState;
-    private readonly ImRaii.Style      _windowPadding  = new();
-    private readonly ImRaii.Color      _windowColor    = new();
-    private          DateTime          _keyboardToggle = DateTime.UnixEpoch;
-    private          int               _numButtons;
-    private readonly StringBuilder     _tooltipBuilder = new(512);
+    private readonly Configuration      _config;
+    private readonly QuickDesignCombo   _designCombo;
+    private readonly StateManager       _stateManager;
+    private readonly AutoDesignApplier  _autoDesignApplier;
+    private readonly ActorObjectManager _objects;
+    private readonly PenumbraService    _penumbra;
+    private readonly IKeyState          _keyState;
+    private readonly ImRaii.Style       _windowPadding  = new();
+    private readonly ImRaii.Color       _windowColor    = new();
+    private          DateTime           _keyboardToggle = DateTime.UnixEpoch;
+    private          int                _numButtons;
+    private readonly StringBuilder      _tooltipBuilder = new(512);
 
     public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
-        ObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra)
+        ActorObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra)
         : base("Glamourer Quick Bar", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking)
     {
         _config             = config;
@@ -222,7 +221,8 @@ public sealed class DesignQuickBar : Window, IDisposable
         }
 
         if (available == 0)
-            _tooltipBuilder.Append("Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
+            _tooltipBuilder.Append(
+                "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, available);
         ImGui.SameLine();
@@ -258,9 +258,10 @@ public sealed class DesignQuickBar : Window, IDisposable
         }
 
         if (available == 0)
-            _tooltipBuilder.Append("Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
+            _tooltipBuilder.Append(
+                "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
-        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.SyncAlt, buttonSize,  available);
+        var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.SyncAlt, buttonSize, available);
         ImGui.SameLine();
         if (!clicked)
             return;
@@ -300,7 +301,8 @@ public sealed class DesignQuickBar : Window, IDisposable
         }
 
         if (available == 0)
-            _tooltipBuilder.Append("Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
+            _tooltipBuilder.Append(
+                "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
         var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.Repeat, buttonSize, available);
         ImGui.SameLine();
@@ -424,7 +426,9 @@ public sealed class DesignQuickBar : Window, IDisposable
         if (_playerIdentifier.IsValid && _playerData.Valid)
         {
             available |= 1;
-            _tooltipBuilder.Append("Left-Click: Reset all temporary settings applied by Glamourer (manually or through automation) to the collection affecting ")
+            _tooltipBuilder
+                .Append(
+                    "Left-Click: Reset all temporary settings applied by Glamourer (manually or through automation) to the collection affecting ")
                 .Append(_playerIdentifier)
                 .Append('.');
         }
@@ -434,7 +438,9 @@ public sealed class DesignQuickBar : Window, IDisposable
             if (available != 0)
                 _tooltipBuilder.Append('\n');
             available |= 2;
-            _tooltipBuilder.Append("Right-Click: Reset all temporary settings applied by Glamourer (manually or through automation) to the collection affecting ")
+            _tooltipBuilder
+                .Append(
+                    "Right-Click: Reset all temporary settings applied by Glamourer (manually or through automation) to the collection affecting ")
                 .Append(_targetIdentifier)
                 .Append('.');
         }

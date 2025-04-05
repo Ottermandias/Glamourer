@@ -15,7 +15,6 @@ using Penumbra.GameData.DataContainers;
 using Glamourer.Designs;
 using Penumbra.GameData.Interop;
 using Glamourer.Api.Enums;
-using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.State;
 
@@ -28,7 +27,7 @@ public class StateListener : IDisposable
 {
     private readonly Configuration             _config;
     private readonly ActorManager              _actors;
-    private readonly ObjectManager             _objects;
+    private readonly ActorObjectManager        _objects;
     private readonly StateManager              _manager;
     private readonly StateApplier              _applier;
     private readonly ItemManager               _items;
@@ -61,7 +60,7 @@ public class StateListener : IDisposable
     public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorManager actors, Configuration config,
         EquipSlotUpdating equipSlotUpdating, GearsetDataLoaded gearsetDataLoaded, WeaponLoading weaponLoading, VisorStateChanged visorState,
         WeaponVisibilityChanged weaponVisibility, HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier,
-        FunModule funModule, HumanModelList humans, StateApplier applier, MovedEquipment movedEquipment, ObjectManager objects,
+        FunModule funModule, HumanModelList humans, StateApplier applier, MovedEquipment movedEquipment, ActorObjectManager objects,
         GPoseService gPose, ChangeCustomizeService changeCustomizeService, CustomizeService customizations, ICondition condition,
         CrestService crestService, BonusSlotUpdating bonusSlotUpdating, StateFinalized stateFinalized)
     {
@@ -205,9 +204,7 @@ public class StateListener : IDisposable
                 }
 
                 break;
-            case UpdateState.NoChange:
-                customize = state.ModelData.Customize;
-                break;
+            case UpdateState.NoChange: customize = state.ModelData.Customize; break;
         }
     }
 
@@ -262,9 +259,7 @@ public class StateListener : IDisposable
                         item = state.ModelData.BonusItem(slot).Armor();
                     break;
                 // Use current model data.
-                case UpdateState.NoChange:
-                    item = state.ModelData.BonusItem(slot).Armor();
-                    break;
+                case UpdateState.NoChange:    item = state.ModelData.BonusItem(slot).Armor(); break;
                 case UpdateState.Transformed: break;
             }
     }
@@ -279,7 +274,6 @@ public class StateListener : IDisposable
         if (!actor.Identifier(_actors, out var identifier))
             return;
 
-        _objects.Update();
         if (_objects.TryGetValue(identifier, out var actors) && actors.Valid)
             _stateFinalized.Invoke(StateFinalizationType.Gearset, actors);
     }
@@ -287,7 +281,6 @@ public class StateListener : IDisposable
 
     private void OnMovedEquipment((EquipSlot, uint, StainIds)[] items)
     {
-        _objects.Update();
         var (identifier, objects) = _objects.PlayerData;
         if (!identifier.IsValid || !_manager.TryGetValue(identifier, out var state))
             return;
@@ -310,7 +303,7 @@ public class StateListener : IDisposable
 
             var stainChanged = current.Stains == changed.Stains && !state.Sources[slot, true].IsFixed();
 
-            switch ((itemChanged, stainChanged))
+            switch (itemChanged, stainChanged)
             {
                 case (true, true):
                     _manager.ChangeEquip(state, slot, currentItem, current.Stains, ApplySettings.Game);
@@ -376,9 +369,7 @@ public class StateListener : IDisposable
                 else
                     apply = true;
                 break;
-            case UpdateState.NoChange:
-                apply = true;
-                break;
+            case UpdateState.NoChange: apply = true; break;
         }
 
         var baseType  = slot is EquipSlot.OffHand ? state.BaseData.MainhandType.Offhand() : state.BaseData.MainhandType;

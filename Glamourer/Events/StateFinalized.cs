@@ -2,6 +2,7 @@ using Glamourer.Api;
 using Glamourer.Api.Enums;
 using Glamourer.Interop.Structs;
 using OtterGui.Classes;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Events;
 

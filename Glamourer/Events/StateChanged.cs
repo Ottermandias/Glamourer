@@ -3,6 +3,7 @@ using Glamourer.Designs.History;
 using Glamourer.Interop.Structs;
 using Glamourer.State;
 using OtterGui.Classes;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Events;
 

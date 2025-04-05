@@ -11,12 +11,11 @@ using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
-using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
 public unsafe class ModelEvaluationPanel(
-    ObjectManager _objectManager,
+    ActorObjectManager _objectManager,
     VisorService _visorService,
     UpdateSlotService _updateSlotService,
     ChangeCustomizeService _changeCustomizeService,
@@ -34,7 +33,7 @@ public unsafe class ModelEvaluationPanel(
     public void Draw()
     {
         ImGui.InputInt("Game Object Index", ref _gameObjectIndex, 0, 0);
-        var       actor = _objectManager[_gameObjectIndex];
+        var       actor = _objectManager.Objects[_gameObjectIndex];
         var       model = actor.Model;
         using var table = ImRaii.Table("##evaluationTable", 4, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         ImGui.TableNextColumn();

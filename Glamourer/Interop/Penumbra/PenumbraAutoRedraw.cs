@@ -2,11 +2,11 @@
 using Glamourer.Api.Enums;
 using Glamourer.Designs.History;
 using Glamourer.Events;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using OtterGui.Classes;
 using OtterGui.Services;
 using Penumbra.Api.Enums;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop.Penumbra;
 
@@ -16,13 +16,14 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
     private readonly Configuration          _config;
     private readonly PenumbraService        _penumbra;
     private readonly StateManager           _state;
-    private readonly ObjectManager          _objects;
+    private readonly ActorObjectManager     _objects;
     private readonly IFramework             _framework;
     private readonly StateChanged           _stateChanged;
     private readonly PenumbraAutoRedrawSkip _skip;
 
 
-    public PenumbraAutoRedraw(PenumbraService penumbra, Configuration config, StateManager state, ObjectManager objects, IFramework framework,
+    public PenumbraAutoRedraw(PenumbraService penumbra, Configuration config, StateManager state, ActorObjectManager objects,
+        IFramework framework,
         StateChanged stateChanged, PenumbraAutoRedrawSkip skip)
     {
         _penumbra                   =  penumbra;
@@ -78,7 +79,6 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
         {
             _framework.RunOnFrameworkThread(() =>
             {
-                _objects.Update();
                 foreach (var (id, state) in _state)
                 {
                     if (!_objects.TryGetValue(id, out var actors) || !actors.Valid)

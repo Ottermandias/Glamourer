@@ -1,8 +1,8 @@
 using Glamourer.Api.Enums;
 using Glamourer.Events;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using OtterGui.Services;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Designs.History;
 

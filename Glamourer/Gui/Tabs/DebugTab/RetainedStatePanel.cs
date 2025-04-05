@@ -3,10 +3,11 @@ using Glamourer.Interop.Structs;
 using Glamourer.State;
 using OtterGui.Raii;
 using Penumbra.GameData.Gui.Debug;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class RetainedStatePanel(StateManager _stateManager, ObjectManager _objectManager) : IGameDataDrawer
+public class RetainedStatePanel(StateManager _stateManager, ActorObjectManager _objectManager) : IGameDataDrawer
 {
     public string Label
         => "Retained States (Inactive Actors)";

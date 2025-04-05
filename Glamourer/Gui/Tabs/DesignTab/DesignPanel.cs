@@ -18,6 +18,7 @@ using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using static Glamourer.Gui.Tabs.HeaderDrawer;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
@@ -28,7 +29,7 @@ public class DesignPanel
     private readonly DesignFileSystemSelector _selector;
     private readonly CustomizationDrawer      _customizationDrawer;
     private readonly DesignManager            _manager;
-    private readonly ObjectManager            _objects;
+    private readonly ActorObjectManager       _objects;
     private readonly StateManager             _state;
     private readonly EquipmentDrawer          _equipmentDrawer;
     private readonly ModAssociationsTab       _modAssociations;
@@ -48,7 +49,7 @@ public class DesignPanel
     public DesignPanel(DesignFileSystemSelector selector,
         CustomizationDrawer customizationDrawer,
         DesignManager manager,
-        ObjectManager objects,
+        ActorObjectManager objects,
         StateManager state,
         EquipmentDrawer equipmentDrawer,
         ModAssociationsTab modAssociations,
@@ -360,6 +361,7 @@ public class DesignPanel
             equip     = false;
             customize = true;
         }
+
         if (!enabled)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
 
@@ -371,6 +373,7 @@ public class DesignPanel
             _manager.ChangeApplyMulti(_selector.Selected!, true, true, true, false, true, true, false, true);
             _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.Wetness, false);
         }
+
         if (!enabled)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
 
@@ -386,7 +389,8 @@ public class DesignPanel
         if (equip is null && customize is null)
             return;
 
-        _manager.ChangeApplyMulti(_selector.Selected!, equip, customize, equip, customize.HasValue && !customize.Value ? false : null, null, equip, equip, equip);
+        _manager.ChangeApplyMulti(_selector.Selected!, equip, customize, equip, customize.HasValue && !customize.Value ? false : null, null,
+            equip, equip, equip);
         if (equip.HasValue)
         {
             _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.HatState,    equip.Value);

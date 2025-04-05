@@ -5,6 +5,7 @@ using Glamourer.Designs;
 using Glamourer.Services;
 using Glamourer.State;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
@@ -13,16 +14,16 @@ public class ContextMenuService : IDisposable
 {
     public const int ChatLogContextItemId = 0x958;
 
-    private readonly ItemManager   _items;
-    private readonly IContextMenu  _contextMenu;
-    private readonly StateManager  _state;
-    private readonly ObjectManager _objects;
-    private          EquipItem     _lastItem;
-    private readonly StainId[]     _lastStains = new StainId[StainId.NumStains];
+    private readonly ItemManager        _items;
+    private readonly IContextMenu       _contextMenu;
+    private readonly StateManager       _state;
+    private readonly ActorObjectManager _objects;
+    private          EquipItem          _lastItem;
+    private readonly StainId[]          _lastStains = new StainId[StainId.NumStains];
 
     private readonly MenuItem _inventoryItem;
 
-    public ContextMenuService(ItemManager items, StateManager state, ObjectManager objects, Configuration config,
+    public ContextMenuService(ItemManager items, StateManager state, ActorObjectManager objects, Configuration config,
         IContextMenu context)
     {
         _contextMenu = context;

@@ -4,34 +4,32 @@ using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Designs.History;
 using Glamourer.Events;
-using Glamourer.Interop.Structs;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
 using OtterGui.Services;
 using Penumbra.GameData.Interop;
-using ObjectManager = Glamourer.Interop.ObjectManager;
 using StateChanged = Glamourer.Events.StateChanged;
 
 namespace Glamourer.Api;
 
 public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 {
-    private readonly ApiHelpers        _helpers;
-    private readonly StateManager      _stateManager;
-    private readonly DesignConverter   _converter;
-    private readonly Configuration     _config;
-    private readonly AutoDesignApplier _autoDesigns;
-    private readonly ObjectManager     _objects;
-    private readonly StateChanged      _stateChanged;
-    private readonly StateFinalized    _stateFinalized;
-    private readonly GPoseService      _gPose;
+    private readonly ApiHelpers         _helpers;
+    private readonly StateManager       _stateManager;
+    private readonly DesignConverter    _converter;
+    private readonly Configuration      _config;
+    private readonly AutoDesignApplier  _autoDesigns;
+    private readonly ActorObjectManager _objects;
+    private readonly StateChanged       _stateChanged;
+    private readonly StateFinalized     _stateFinalized;
+    private readonly GPoseService       _gPose;
 
     public StateApi(ApiHelpers helpers,
         StateManager stateManager,
         DesignConverter converter,
         Configuration config,
         AutoDesignApplier autoDesigns,
-        ObjectManager objects,
+        ActorObjectManager objects,
         StateChanged stateChanged,
         StateFinalized stateFinalized,
         GPoseService gPose)
@@ -219,7 +217,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         if (!state.CanUnlock(key))
             return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
 
-        RevertToAutomation(_objects[objectIndex], state, key, flags);
+        RevertToAutomation(_objects.Objects[objectIndex], state, key, flags);
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
@@ -272,15 +270,9 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         var source = (flags & ApplyFlag.Once) != 0 ? StateSource.IpcManual : StateSource.IpcFixed;
         switch (flags & (ApplyFlag.Equipment | ApplyFlag.Customization))
         {
-            case ApplyFlag.Equipment:
-                _stateManager.ResetEquip(state, source, key);
-                break;
-            case ApplyFlag.Customization:
-                _stateManager.ResetCustomize(state, source, key);
-                break;
-            case ApplyFlag.Equipment | ApplyFlag.Customization:
-                _stateManager.ResetState(state, source, key);
-                break;
+            case ApplyFlag.Equipment:                           _stateManager.ResetEquip(state, source, key); break;
+            case ApplyFlag.Customization:                       _stateManager.ResetCustomize(state, source, key); break;
+            case ApplyFlag.Equipment | ApplyFlag.Customization: _stateManager.ResetState(state, source, key); break;
         }
 
         ApiHelpers.Lock(state, key, flags);
@@ -288,7 +280,6 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     private GlamourerApiEc RevertToAutomation(ActorState state, uint key, ApplyFlag flags)
     {
-        _objects.Update();
         if (!_objects.TryGetValue(state.Identifier, out var actors) || !actors.Valid)
             return GlamourerApiEc.ActorNotFound;
 

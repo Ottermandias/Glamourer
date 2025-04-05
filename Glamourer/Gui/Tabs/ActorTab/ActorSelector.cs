@@ -1,7 +1,4 @@
-﻿using System.Security.AccessControl;
-using Dalamud.Interface;
-using Glamourer.Interop;
-using Glamourer.Interop.Structs;
+﻿using Dalamud.Interface;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
@@ -9,11 +6,12 @@ using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
-public class ActorSelector(ObjectManager objects, ActorManager actors, EphemeralConfig config)
+public class ActorSelector(ActorObjectManager objects, ActorManager actors, EphemeralConfig config)
 {
     private ActorIdentifier _identifier = ActorIdentifier.Invalid;
 
@@ -89,11 +87,10 @@ public class ActorSelector(ObjectManager objects, ActorManager actors, Ephemeral
         if (!child)
             return;
 
-        objects.Update();
         _world = new WorldId(objects.Player.Valid ? objects.Player.HomeWorld : (ushort)0);
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
         var       skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
-        var remainder = ImGuiClip.FilteredClippedDraw(objects.Identifiers.Where(p => p.Value.Objects.Any(a => a.Model)), skips, CheckFilter,
+        var remainder = ImGuiClip.FilteredClippedDraw(objects.Where(p => p.Value.Objects.Any(a => a.Model)), skips, CheckFilter,
             DrawSelectable);
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
     }

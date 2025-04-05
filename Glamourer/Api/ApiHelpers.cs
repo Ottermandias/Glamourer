@@ -6,12 +6,12 @@ using OtterGui.Log;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.String;
-using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.Api;
 
-public class ApiHelpers(ObjectManager objects, StateManager stateManager, ActorManager actors) : IApiService
+public class ApiHelpers(ActorObjectManager objects, StateManager stateManager, ActorManager actors) : IApiService
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     internal IEnumerable<ActorState> FindExistingStates(string actorName)
@@ -27,7 +27,7 @@ public class ApiHelpers(ObjectManager objects, StateManager stateManager, ActorM
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     internal GlamourerApiEc FindExistingState(int objectIndex, out ActorState? state)
     {
-        var actor      = objects[objectIndex];
+        var actor      = objects.Objects[objectIndex];
         var identifier = actor.GetIdentifier(actors);
         if (!identifier.IsValid)
         {
@@ -42,7 +42,7 @@ public class ApiHelpers(ObjectManager objects, StateManager stateManager, ActorM
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     internal ActorState? FindState(int objectIndex)
     {
-        var actor      = objects[objectIndex];
+        var actor      = objects.Objects[objectIndex];
         var identifier = actor.GetIdentifier(actors);
         if (identifier.IsValid && stateManager.GetOrCreate(identifier, actor, out var state))
             return state;
@@ -73,10 +73,8 @@ public class ApiHelpers(ObjectManager objects, StateManager stateManager, ActorM
         if (objectName.Length == 0 || !ByteString.FromString(objectName, out var byteString))
             return [];
 
-        objects.Update();
-
         return stateManager.Values.Where(state => state.Identifier.Type is IdentifierType.Player && state.Identifier.PlayerName == byteString)
-            .Concat(objects.Identifiers
+            .Concat(objects
                 .Where(kvp => kvp.Key is { IsValid: true, Type: IdentifierType.Player } && kvp.Key.PlayerName == byteString)
                 .SelectWhere(kvp =>
                 {

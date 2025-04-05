@@ -17,7 +17,6 @@ using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
-using ObjectManager = Glamourer.Interop.ObjectManager;
 
 namespace Glamourer.Services;
 
@@ -26,24 +25,24 @@ public class CommandService : IDisposable, IApiService
     private const string MainCommandString  = "/glamourer";
     private const string ApplyCommandString = "/glamour";
 
-    private readonly ICommandManager   _commands;
-    private readonly MainWindow        _mainWindow;
-    private readonly IChatGui          _chat;
-    private readonly ActorManager      _actors;
-    private readonly ObjectManager     _objects;
-    private readonly StateManager      _stateManager;
-    private readonly AutoDesignApplier _autoDesignApplier;
-    private readonly AutoDesignManager _autoDesignManager;
-    private readonly Configuration     _config;
-    private readonly ModSettingApplier _modApplier;
-    private readonly ItemManager       _items;
-    private readonly CustomizeService  _customizeService;
-    private readonly DesignManager     _designManager;
-    private readonly DesignConverter   _converter;
-    private readonly DesignResolver    _resolver;
-    private readonly PenumbraService   _penumbra;
+    private readonly ICommandManager    _commands;
+    private readonly MainWindow         _mainWindow;
+    private readonly IChatGui           _chat;
+    private readonly ActorManager       _actors;
+    private readonly ActorObjectManager _objects;
+    private readonly StateManager       _stateManager;
+    private readonly AutoDesignApplier  _autoDesignApplier;
+    private readonly AutoDesignManager  _autoDesignManager;
+    private readonly Configuration      _config;
+    private readonly ModSettingApplier  _modApplier;
+    private readonly ItemManager        _items;
+    private readonly CustomizeService   _customizeService;
+    private readonly DesignManager      _designManager;
+    private readonly DesignConverter    _converter;
+    private readonly DesignResolver     _resolver;
+    private readonly PenumbraService    _penumbra;
 
-    public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ObjectManager objects,
+    public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ActorObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier,
         ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService, DesignFileSystemSelector designSelector,
@@ -181,7 +180,9 @@ public class CommandService : IDisposable, IApiService
             _chat.Print(new SeStringBuilder().AddText("Use with /glamour clearsettings ").AddGreen("[Character Identifier]").AddText(" | ")
                 .AddPurple("<true or false>").AddText(" | ").AddBlue("<true or false>").BuiltString);
             PlayerIdentifierHelp(false, true);
-            _chat.Print(new SeStringBuilder().AddText("    》 The character identifier specifies the collection to clear settings from. It also accepts '").AddGreen("all").AddText("' to clear all collections.").BuiltString);
+            _chat.Print(new SeStringBuilder()
+                .AddText("    》 The character identifier specifies the collection to clear settings from. It also accepts '").AddGreen("all")
+                .AddText("' to clear all collections.").BuiltString);
             _chat.Print(new SeStringBuilder().AddText("    》 The booleans are optional and default to 'true', the ").AddPurple("first")
                 .AddText(" determines whether ").AddPurple("manually").AddText(" applied settings are cleared, the ").AddBlue("second")
                 .AddText(" determines whether ").AddBlue("automatically").AddText(" applied settings are cleared.").BuiltString);
@@ -372,7 +373,6 @@ public class CommandService : IDisposable, IApiService
         if (!IdentifierHandling(argument, out var identifiers, false, true))
             return false;
 
-        _objects.Update();
         foreach (var identifier in identifiers)
         {
             if (!_objects.TryGetValue(identifier, out var data))
@@ -425,7 +425,6 @@ public class CommandService : IDisposable, IApiService
         if (!IdentifierHandling(argument, out var identifiers, false, true))
             return false;
 
-        _objects.Update();
         foreach (var identifier in identifiers)
         {
             if (!_objects.TryGetValue(identifier, out var data))
@@ -485,7 +484,6 @@ public class CommandService : IDisposable, IApiService
         if (!IdentifierHandling(split[1], out var identifiers, false, true))
             return false;
 
-        _objects.Update();
         foreach (var identifier in identifiers)
         {
             if (!_objects.TryGetValue(identifier, out var actors))
@@ -568,7 +566,6 @@ public class CommandService : IDisposable, IApiService
         if (!IdentifierHandling(split[1], out var identifiers, false, true))
             return false;
 
-        _objects.Update();
         foreach (var identifier in identifiers)
         {
             if (!_objects.TryGetValue(identifier, out var actors))
@@ -716,7 +713,6 @@ public class CommandService : IDisposable, IApiService
         if (!_resolver.GetDesign(split[0], out var design, true) || !IdentifierHandling(split2[0], out var identifiers, false, true))
             return false;
 
-        _objects.Update();
         foreach (var identifier in identifiers)
         {
             if (!_objects.TryGetValue(identifier, out var actors))
@@ -794,7 +790,6 @@ public class CommandService : IDisposable, IApiService
         if (!IdentifierHandling(argument, out var identifiers, false, true))
             return false;
 
-        _objects.Update();
         foreach (var identifier in identifiers)
         {
             if (!_stateManager.TryGetValue(identifier, out var state)
@@ -835,7 +830,6 @@ public class CommandService : IDisposable, IApiService
         if (!IdentifierHandling(split[1], out var identifiers, false, true))
             return false;
 
-        _objects.Update();
         foreach (var identifier in identifiers)
         {
             if (!_stateManager.TryGetValue(identifier, out var state)

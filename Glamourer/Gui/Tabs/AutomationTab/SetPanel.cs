@@ -434,7 +434,7 @@ public class SetPanel(
                 if (ImGui.SetDragDropPayload(dragDropLabel, nint.Zero, 0))
                 {
                     _dragIndex                 = index;
-                    _selector._dragDesignIndex = index;
+                    _selector.DragDesignIndex = index;
                 }
             }
         }

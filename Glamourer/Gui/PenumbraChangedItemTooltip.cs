@@ -1,6 +1,5 @@
 using Glamourer.Designs;
 using Glamourer.Events;
-using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
@@ -9,18 +8,19 @@ using OtterGui.Raii;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui;
 
 public sealed class PenumbraChangedItemTooltip : IDisposable
 {
-    private readonly PenumbraService  _penumbra;
-    private readonly StateManager     _stateManager;
-    private readonly ItemManager      _items;
-    private readonly ObjectManager    _objects;
-    private readonly CustomizeService _customize;
-    private readonly GPoseService     _gpose;
+    private readonly PenumbraService    _penumbra;
+    private readonly StateManager       _stateManager;
+    private readonly ItemManager        _items;
+    private readonly ActorObjectManager _objects;
+    private readonly CustomizeService   _customize;
+    private readonly GPoseService       _gpose;
 
     private readonly EquipItem[] _lastItems = new EquipItem[EquipFlagExtensions.NumEquipFlags / 2];
 
@@ -33,7 +33,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
     public DateTime        LastTooltip { get; private set; } = DateTime.MinValue;
     public DateTime        LastClick   { get; private set; } = DateTime.MinValue;
 
-    public PenumbraChangedItemTooltip(PenumbraService penumbra, StateManager stateManager, ItemManager items, ObjectManager objects,
+    public PenumbraChangedItemTooltip(PenumbraService penumbra, StateManager stateManager, ItemManager items, ActorObjectManager objects,
         CustomizeService customize, GPoseService gpose)
     {
         _penumbra         =  penumbra;
