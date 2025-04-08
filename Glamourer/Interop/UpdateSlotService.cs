@@ -120,7 +120,7 @@ public unsafe class UpdateSlotService : IDisposable
     {
         var ret = _loadGearsetDataHook.Original(drawDataContainer, gearsetData);
         var drawObject = drawDataContainer->OwnerObject->DrawObject;
-        GearsetDataLoadedEvent.Invoke(drawObject);
+        GearsetDataLoadedEvent.Invoke(drawDataContainer->OwnerObject, drawObject);
         Glamourer.Log.Excessive($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
         return ret;
     }

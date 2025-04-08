@@ -11,7 +11,7 @@ namespace Glamourer.Events;
 /// </list>
 /// </summary>
 public sealed class GearsetDataLoaded()
-    : EventWrapper<Model, GearsetDataLoaded.Priority>(nameof(GearsetDataLoaded))
+    : EventWrapper<Actor, Model, GearsetDataLoaded.Priority>(nameof(GearsetDataLoaded))
 {
     public enum Priority
     {

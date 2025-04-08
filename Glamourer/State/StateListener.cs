@@ -264,10 +264,9 @@ public class StateListener : IDisposable
             }
     }
 
-    private void OnGearsetDataLoaded(Model model)
+    private void OnGearsetDataLoaded(Actor actor, Model model)
     {
-        var actor = _penumbra.GameObjectFromDrawObject(model);
-        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
+        if (!actor.Valid || (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart))
             return;
 
         // ensure actor and state are valid.
