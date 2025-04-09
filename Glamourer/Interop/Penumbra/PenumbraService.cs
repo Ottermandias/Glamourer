@@ -34,12 +34,8 @@ public readonly record struct ModSettings(Dictionary<string, List<string>> Setti
 
 public class PenumbraService : IDisposable
 {
-    public const int RequiredPenumbraBreakingVersion     = 5;
-    public const int RequiredPenumbraFeatureVersion      = 3;
-    public const int RequiredPenumbraFeatureVersionTemp  = 4;
-    public const int RequiredPenumbraFeatureVersionTemp2 = 5;
-    public const int RequiredPenumbraFeatureVersionTemp3 = 6;
-    public const int RequiredPenumbraFeatureVersionTemp4 = 7;
+    public const int RequiredPenumbraBreakingVersion = 5;
+    public const int RequiredPenumbraFeatureVersion  = 8;
 
     private const int    KeyFixed   = -1610;
     private const string NameFixed  = "Glamourer (Automation)";
@@ -57,8 +53,6 @@ public class PenumbraService : IDisposable
     private global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier?                          _collectionByIdentifier;
     private global::Penumbra.Api.IpcSubscribers.GetCollections?                                      _collections;
     private global::Penumbra.Api.IpcSubscribers.RedrawObject?                                        _redraw;
-    private global::Penumbra.Api.IpcSubscribers.GetDrawObjectInfo?                                   _drawObjectInfo;
-    private global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndex?                              _cutsceneParent;
     private global::Penumbra.Api.IpcSubscribers.GetCollectionForObject?                              _objectCollection;
     private global::Penumbra.Api.IpcSubscribers.GetModList?                                          _getMods;
     private global::Penumbra.Api.IpcSubscribers.GetCollection?                                       _currentCollection;
@@ -82,6 +76,8 @@ public class PenumbraService : IDisposable
     private global::Penumbra.Api.IpcSubscribers.GetChangedItems?                                     _getChangedItems;
     private IReadOnlyList<(string ModDirectory, IReadOnlyDictionary<string, object?> ChangedItems)>? _changedItems;
     private Func<string, (string ModDirectory, string ModName)[]>?                                   _checkCurrentChangedItems;
+    private Func<int, int>?                                                                          _checkCutsceneParent;
+    private Func<nint, nint>?                                                                        _getGameObject;
 
     private readonly IDisposable _initializedEvent;
     private readonly IDisposable _disposedEvent;
@@ -453,11 +449,11 @@ public class PenumbraService : IDisposable
 
     /// <summary> Obtain the game object corresponding to a draw object. </summary>
     public Actor GameObjectFromDrawObject(Model drawObject)
-        => Available ? _drawObjectInfo!.Invoke(drawObject.Address).Item1 : Actor.Null;
+        => _getGameObject?.Invoke(drawObject.Address) ?? Actor.Null;
 
     /// <summary> Obtain the parent of a cutscene actor if it is known. </summary>
     public short CutsceneParent(ushort idx)
-        => (short)(Available ? _cutsceneParent!.Invoke(idx) : -1);
+        => (short)(_checkCutsceneParent?.Invoke(idx) ?? -1);
 
     /// <summary> Try to redraw the given actor. </summary>
     public void RedrawObject(Actor actor, RedrawType settings)
@@ -519,49 +515,37 @@ public class PenumbraService : IDisposable
             _creatingCharacterBase.Enable();
             _createdCharacterBase.Enable();
             _modSettingChanged.Enable();
-            _collectionByIdentifier = new global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier(_pluginInterface);
-            _collections            = new global::Penumbra.Api.IpcSubscribers.GetCollections(_pluginInterface);
-            _redraw                 = new global::Penumbra.Api.IpcSubscribers.RedrawObject(_pluginInterface);
-            _drawObjectInfo         = new global::Penumbra.Api.IpcSubscribers.GetDrawObjectInfo(_pluginInterface);
-            _cutsceneParent         = new global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndex(_pluginInterface);
-            _objectCollection       = new global::Penumbra.Api.IpcSubscribers.GetCollectionForObject(_pluginInterface);
-            _getMods                = new global::Penumbra.Api.IpcSubscribers.GetModList(_pluginInterface);
-            _currentCollection      = new global::Penumbra.Api.IpcSubscribers.GetCollection(_pluginInterface);
-            _getCurrentSettings     = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings(_pluginInterface);
-            _inheritMod             = new global::Penumbra.Api.IpcSubscribers.TryInheritMod(_pluginInterface);
-            _setMod                 = new global::Penumbra.Api.IpcSubscribers.TrySetMod(_pluginInterface);
-            _setModPriority         = new global::Penumbra.Api.IpcSubscribers.TrySetModPriority(_pluginInterface);
-            _setModSetting          = new global::Penumbra.Api.IpcSubscribers.TrySetModSetting(_pluginInterface);
-            _setModSettings         = new global::Penumbra.Api.IpcSubscribers.TrySetModSettings(_pluginInterface);
-            _openModPage            = new global::Penumbra.Api.IpcSubscribers.OpenMainWindow(_pluginInterface);
-            _getChangedItems        = new global::Penumbra.Api.IpcSubscribers.GetChangedItems(_pluginInterface);
-            if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp)
-            {
-                _setTemporaryModSettings          = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettings(_pluginInterface);
-                _setTemporaryModSettingsPlayer    = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettingsPlayer(_pluginInterface);
-                _removeTemporaryModSettings       = new global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettings(_pluginInterface);
-                _removeTemporaryModSettingsPlayer = new global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettingsPlayer(_pluginInterface);
-                _removeAllTemporaryModSettings    = new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings(_pluginInterface);
-                _removeAllTemporaryModSettingsPlayer =
-                    new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer(_pluginInterface);
-                if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp2)
-                {
-                    _queryTemporaryModSettings = new global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings(_pluginInterface);
-                    _queryTemporaryModSettingsPlayer =
-                        new global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettingsPlayer(_pluginInterface);
-                    if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp3)
-                    {
-                        _getCurrentSettingsWithTemp = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettingsWithTemp(_pluginInterface);
-                        _getAllSettings             = new global::Penumbra.Api.IpcSubscribers.GetAllModSettings(_pluginInterface);
-                        if (CurrentMinor >= RequiredPenumbraFeatureVersionTemp4)
-                        {
-                            _changedItems = new global::Penumbra.Api.IpcSubscribers.GetChangedItemAdapterList(_pluginInterface).Invoke();
-                            _checkCurrentChangedItems =
-                                new global::Penumbra.Api.IpcSubscribers.CheckCurrentChangedItemFunc(_pluginInterface).Invoke();
-                        }
-                    }
-                }
-            }
+            _collectionByIdentifier           = new global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier(_pluginInterface);
+            _collections                      = new global::Penumbra.Api.IpcSubscribers.GetCollections(_pluginInterface);
+            _redraw                           = new global::Penumbra.Api.IpcSubscribers.RedrawObject(_pluginInterface);
+            _checkCutsceneParent              = new global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndexFunc(_pluginInterface).Invoke();
+            _getGameObject                    = new global::Penumbra.Api.IpcSubscribers.GetGameObjectFromDrawObjectFunc(_pluginInterface).Invoke();
+            _objectCollection                 = new global::Penumbra.Api.IpcSubscribers.GetCollectionForObject(_pluginInterface);
+            _getMods                          = new global::Penumbra.Api.IpcSubscribers.GetModList(_pluginInterface);
+            _currentCollection                = new global::Penumbra.Api.IpcSubscribers.GetCollection(_pluginInterface);
+            _getCurrentSettings               = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings(_pluginInterface);
+            _inheritMod                       = new global::Penumbra.Api.IpcSubscribers.TryInheritMod(_pluginInterface);
+            _setMod                           = new global::Penumbra.Api.IpcSubscribers.TrySetMod(_pluginInterface);
+            _setModPriority                   = new global::Penumbra.Api.IpcSubscribers.TrySetModPriority(_pluginInterface);
+            _setModSetting                    = new global::Penumbra.Api.IpcSubscribers.TrySetModSetting(_pluginInterface);
+            _setModSettings                   = new global::Penumbra.Api.IpcSubscribers.TrySetModSettings(_pluginInterface);
+            _openModPage                      = new global::Penumbra.Api.IpcSubscribers.OpenMainWindow(_pluginInterface);
+            _getChangedItems                  = new global::Penumbra.Api.IpcSubscribers.GetChangedItems(_pluginInterface);
+            _setTemporaryModSettings          = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettings(_pluginInterface);
+            _setTemporaryModSettingsPlayer    = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettingsPlayer(_pluginInterface);
+            _removeTemporaryModSettings       = new global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettings(_pluginInterface);
+            _removeTemporaryModSettingsPlayer = new global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettingsPlayer(_pluginInterface);
+            _removeAllTemporaryModSettings    = new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings(_pluginInterface);
+            _removeAllTemporaryModSettingsPlayer =
+                new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer(_pluginInterface);
+            _queryTemporaryModSettings = new global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings(_pluginInterface);
+            _queryTemporaryModSettingsPlayer =
+                new global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettingsPlayer(_pluginInterface);
+            _getCurrentSettingsWithTemp = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettingsWithTemp(_pluginInterface);
+            _getAllSettings             = new global::Penumbra.Api.IpcSubscribers.GetAllModSettings(_pluginInterface);
+            _changedItems               = new global::Penumbra.Api.IpcSubscribers.GetChangedItemAdapterList(_pluginInterface).Invoke();
+            _checkCurrentChangedItems =
+                new global::Penumbra.Api.IpcSubscribers.CheckCurrentChangedItemFunc(_pluginInterface).Invoke();
 
             Available = true;
             _penumbraReloaded.Invoke();
@@ -587,8 +571,8 @@ public class PenumbraService : IDisposable
             _collectionByIdentifier              = null;
             _collections                         = null;
             _redraw                              = null;
-            _drawObjectInfo                      = null;
-            _cutsceneParent                      = null;
+            _getGameObject                       = null;
+            _checkCutsceneParent                 = null;
             _objectCollection                    = null;
             _getMods                             = null;
             _currentCollection                   = null;
