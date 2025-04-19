@@ -1,4 +1,5 @@
 ﻿using OtterGui;
+using OtterGui.Extensions;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Race = Penumbra.GameData.Enums.Race;

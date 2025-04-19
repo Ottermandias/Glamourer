@@ -8,7 +8,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OtterGui;
+using OtterGui.Extensions;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 

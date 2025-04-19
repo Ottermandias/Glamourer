@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Extensions;
 using OtterGui.Filesystem;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;

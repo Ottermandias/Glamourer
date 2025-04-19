@@ -5,6 +5,7 @@ using Glamourer.Events;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Extensions;
 using OtterGui.Raii;
 using Penumbra.GameData.Interop;
 using Penumbra.String;

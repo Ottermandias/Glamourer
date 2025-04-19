@@ -8,6 +8,7 @@ using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Text.EndObjects;

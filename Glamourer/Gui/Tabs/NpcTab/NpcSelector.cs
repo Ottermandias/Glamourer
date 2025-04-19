@@ -1,6 +1,7 @@
 ﻿using Glamourer.GameData;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Raii;
 using ImGuiClip = OtterGui.ImGuiClip;
 

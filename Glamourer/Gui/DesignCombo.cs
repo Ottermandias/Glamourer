@@ -8,6 +8,7 @@ using Glamourer.Events;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Extensions;
 using OtterGui.Log;
 using OtterGui.Widgets;
 

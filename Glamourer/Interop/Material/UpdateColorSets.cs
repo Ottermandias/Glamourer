@@ -8,7 +8,7 @@ public sealed class UpdateColorSets : FastHook<UpdateColorSets.Delegate>
 {
     public delegate void Delegate(Model model, uint unk);
 
-    private readonly ThreadLocal<Model> _updatingModel = new();
+    private readonly ThreadLocal<Model> _updatingModel = new(() => Model.Null);
 
     public UpdateColorSets(HookManager hooks)
         => Task = hooks.CreateHook<Delegate>("Update Color Sets", Sigs.UpdateColorSets, Detour, true);
@@ -17,7 +17,7 @@ public sealed class UpdateColorSets : FastHook<UpdateColorSets.Delegate>
     {
         _updatingModel.Value = model;
         Task.Result.Original(model, unk);
-        _updatingModel.Value = nint.Zero;
+        _updatingModel.Value = Model.Null;
     }
 
     public Model Get()

@@ -1,6 +1,7 @@
 ﻿using Glamourer.Automation;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Raii;
 using Penumbra.GameData.Gui.Debug;
 

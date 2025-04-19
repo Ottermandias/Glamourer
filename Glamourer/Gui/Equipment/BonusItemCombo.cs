@@ -5,6 +5,7 @@ using ImGuiNET;
 using Lumina.Excel.Sheets;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Extensions;
 using OtterGui.Log;
 using OtterGui.Raii;
 using OtterGui.Widgets;

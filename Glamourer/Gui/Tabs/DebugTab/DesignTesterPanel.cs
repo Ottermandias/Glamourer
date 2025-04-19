@@ -3,6 +3,7 @@ using Glamourer.Designs;
 using Glamourer.Services;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Raii;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;

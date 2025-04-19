@@ -8,6 +8,7 @@ using Glamourer.Services;
 using Newtonsoft.Json;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Extensions;
 using OtterGui.Filesystem;
 using OtterGui.Widgets;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;

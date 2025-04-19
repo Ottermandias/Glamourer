@@ -3,6 +3,7 @@ using Glamourer.Interop.Penumbra;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Filesystem;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;

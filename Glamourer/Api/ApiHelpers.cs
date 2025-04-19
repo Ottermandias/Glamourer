@@ -2,6 +2,7 @@
 using Glamourer.Designs;
 using Glamourer.State;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Log;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;

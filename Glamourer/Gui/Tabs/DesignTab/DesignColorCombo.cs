@@ -1,6 +1,7 @@
 ﻿using Glamourer.Designs;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 

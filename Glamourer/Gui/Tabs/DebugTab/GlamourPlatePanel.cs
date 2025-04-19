@@ -7,6 +7,7 @@ using Glamourer.Services;
 using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Text;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;

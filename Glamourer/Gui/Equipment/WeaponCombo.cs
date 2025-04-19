@@ -3,6 +3,7 @@ using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Extensions;
 using OtterGui.Log;
 using OtterGui.Raii;
 using OtterGui.Text;

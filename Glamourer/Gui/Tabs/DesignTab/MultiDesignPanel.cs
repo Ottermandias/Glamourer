@@ -4,6 +4,7 @@ using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Text;
 using static Glamourer.Gui.Tabs.HeaderDrawer;

@@ -12,6 +12,7 @@ using Glamourer.State;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Extensions;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;

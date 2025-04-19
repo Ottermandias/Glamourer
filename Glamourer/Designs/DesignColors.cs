@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
 using OtterGui.Classes;
+using OtterGui.Extensions;
 
 namespace Glamourer.Designs;
 

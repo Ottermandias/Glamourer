@@ -3,6 +3,7 @@ using Glamourer.GameData;
 using Glamourer.Unlocks;
 using ImGuiNET;
 using OtterGui;
+using OtterGui.Extensions;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
