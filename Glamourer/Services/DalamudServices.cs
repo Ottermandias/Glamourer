@@ -6,6 +6,8 @@ using OtterGui.Services;
 
 namespace Glamourer.Services;
 
+#pragma warning disable SeStringEvaluator
+
 public class DalamudServices
 {
     public static void AddServices(ServiceManager services, IDalamudPluginInterface pi)
@@ -28,5 +30,6 @@ public class DalamudServices
         services.AddDalamudService<IGameInteropProvider>(pi);
         services.AddDalamudService<INotificationManager>(pi);
         services.AddDalamudService<IContextMenu>(pi);
+        services.AddDalamudService<ISeStringEvaluator>(pi);
     }
 }
