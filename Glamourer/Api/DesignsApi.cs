@@ -6,10 +6,15 @@ using OtterGui.Services;
 
 namespace Glamourer.Api;
 
-public class DesignsApi(ApiHelpers helpers, DesignManager designs, StateManager stateManager) : IGlamourerApiDesigns, IApiService
+public class DesignsApi(ApiHelpers helpers, DesignManager designs, StateManager stateManager, DesignFileSystem fileSystem, DesignColors color)
+    : IGlamourerApiDesigns, IApiService
 {
     public Dictionary<Guid, string> GetDesignList()
         => designs.Designs.ToDictionary(d => d.Identifier, d => d.Name.Text);
+
+    public Dictionary<Guid, (string DisplayName, string FullPath, uint DisplayColor, bool ShownInQdb)> GetDesignListExtended()
+        => designs.Designs.ToDictionary(d => d.Identifier,
+            d => (d.Name.Text, fileSystem.FindLeaf(d, out var leaf) ? leaf.FullName() : d.Name.Text, color.GetColor(d), d.QuickDesign));
 
     public GlamourerApiEc ApplyDesign(Guid designId, int objectIndex, uint key, ApplyFlag flags)
     {
