@@ -2,11 +2,12 @@
 using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.State;
+using Newtonsoft.Json.Linq;
 using OtterGui.Services;
 
 namespace Glamourer.Api;
 
-public class DesignsApi(ApiHelpers helpers, DesignManager designs, StateManager stateManager, DesignFileSystem fileSystem, DesignColors color)
+public class DesignsApi(ApiHelpers helpers, DesignManager designs, StateManager stateManager, DesignFileSystem fileSystem, DesignColors color, DesignConverter converter)
     : IGlamourerApiDesigns, IApiService
 {
     public Dictionary<Guid, string> GetDesignList()
@@ -70,5 +71,31 @@ public class DesignsApi(ApiHelpers helpers, DesignManager designs, StateManager 
             return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
 
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
+    public (GlamourerApiEc, Guid?) AddDesign(string designInput, string name)
+    {
+        var args = ApiHelpers.Args("Design Input", designInput);
+
+        DesignBase? designBase = converter.FromBase64(designInput, true, true, out _);
+        if (designBase == null)
+        {
+            try
+            {
+                var jObj = JObject.Parse(designInput);
+                designBase = converter.FromJObject(jObj, true, true);
+            }
+            catch
+            {
+                return (ApiHelpers.Return(GlamourerApiEc.CouldNotParse, args), null);
+            }
+        }
+
+        if (designBase == null)
+            return (ApiHelpers.Return(GlamourerApiEc.CouldNotParse, args), null);
+
+        Design design = designs.CreateClone(designBase, name, true);
+
+        return (ApiHelpers.Return(GlamourerApiEc.Success, args), design.Identifier);
     }
 }
