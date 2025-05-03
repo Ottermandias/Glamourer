@@ -102,8 +102,8 @@ public class SettingsTab(
             "Apply all settings as temporary settings so they will be reset when Glamourer or the game shut down."u8,
             config.UseTemporarySettings,
             v => config.UseTemporarySettings = v);
-        Checkbox("Prevent Random Design Repeats", 
-            "When using random designs, prevent the same design from being chosen twice in a row.",
+        Checkbox("Prevent Random Design Repeats"u8,
+            "When using random designs, prevent the same design from being chosen twice in a row."u8,
             config.PreventRandomRepeats, v => config.PreventRandomRepeats = v);
         ImGui.NewLine();
     }
@@ -250,8 +250,8 @@ public class SettingsTab(
 
     private void DrawQuickDesignBoxes()
     {
-        var showAuto     = config.EnableAutoDesigns;
-        var numColumns   = 8 - (showAuto ? 0 : 2) - (config.UseTemporarySettings ? 0 : 1);
+        var showAuto   = config.EnableAutoDesigns;
+        var numColumns = 8 - (showAuto ? 0 : 2) - (config.UseTemporarySettings ? 0 : 1);
         ImGui.NewLine();
         ImUtf8.Text("Show the Following Buttons in the Quick Design Bar:"u8);
         ImGui.Dummy(Vector2.Zero);
