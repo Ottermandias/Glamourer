@@ -66,6 +66,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool UseTemporarySettings             { get; set; } = true;
     public bool AllowDoubleClickToApply          { get; set; } = false;
     public bool RespectManualOnAutomationUpdate  { get; set; } = false;
+    public bool PreventRandomRepeats             { get; set; } = false;
 
     public DesignPanelFlag HideDesignPanel       { get; set; } = 0;
     public DesignPanelFlag AutoExpandDesignPanel { get; set; } = 0;

@@ -102,6 +102,9 @@ public class SettingsTab(
             "Apply all settings as temporary settings so they will be reset when Glamourer or the game shut down."u8,
             config.UseTemporarySettings,
             v => config.UseTemporarySettings = v);
+        Checkbox("Prevent Random Design Repeats", 
+            "When using random designs, prevent the same design from being chosen twice in a row.",
+            config.PreventRandomRepeats, v => config.PreventRandomRepeats = v);
         ImGui.NewLine();
     }
 
