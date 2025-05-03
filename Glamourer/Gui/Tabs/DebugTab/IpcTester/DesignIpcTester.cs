@@ -7,6 +7,7 @@ using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;
+using OtterGui.Text;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
@@ -15,6 +16,7 @@ public class DesignIpcTester(IDalamudPluginInterface pluginInterface) : IUiServi
     private Dictionary<Guid, string> _designs = [];
     private int                      _gameObjectIndex;
     private string                   _gameObjectName = string.Empty;
+    private string                   _designName     = string.Empty;
     private uint                     _key;
     private ApplyFlag                _flags = ApplyFlagEx.DesignDefault;
     private Guid?                    _design;
@@ -30,6 +32,7 @@ public class DesignIpcTester(IDalamudPluginInterface pluginInterface) : IUiServi
         IpcTesterHelpers.IndexInput(ref _gameObjectIndex);
         IpcTesterHelpers.KeyInput(ref _key);
         IpcTesterHelpers.NameInput(ref _gameObjectName);
+        ImUtf8.InputText("##designName"u8, ref _designName, "Design Name..."u8);
         ImGuiUtil.GuidInput("##identifier", "Design Identifier...", string.Empty, ref _design, ref _designText,
             ImGui.GetContentRegionAvail().X);
         IpcTesterHelpers.DrawFlagInput(ref _flags);
@@ -54,6 +57,48 @@ public class DesignIpcTester(IDalamudPluginInterface pluginInterface) : IUiServi
         IpcTesterHelpers.DrawIntro(ApplyDesignName.Label);
         if (ImGuiUtil.DrawDisabledButton("Apply##Name", Vector2.Zero, string.Empty, !_design.HasValue))
             _lastError = new ApplyDesignName(pluginInterface).Invoke(_design!.Value, _gameObjectName, _key, _flags);
+
+        IpcTesterHelpers.DrawIntro(GetExtendedDesignData.Label);
+        if (_design.HasValue)
+        {
+            var (display, path, color, draw) = new GetExtendedDesignData(pluginInterface).Invoke(_design.Value);
+            if (path.Length > 0)
+                ImUtf8.Text($"{display} ({path}){(draw ? " in QDB"u8 : ""u8)}", color);
+            else
+                ImUtf8.Text("No Data"u8);
+        }
+        else
+        {
+            ImUtf8.Text("No Data"u8);
+        }
+
+        IpcTesterHelpers.DrawIntro(GetDesignBase64.Label);
+        if (ImUtf8.Button("To Clipboard##Base64"u8) && _design.HasValue)
+        {
+            var data = new GetDesignBase64(pluginInterface).Invoke(_design.Value);
+            ImUtf8.SetClipboardText(data);
+        }
+
+        IpcTesterHelpers.DrawIntro(AddDesign.Label);
+        if (ImUtf8.Button("Add from Clipboard"u8))
+            try
+            {
+                var data = ImUtf8.GetClipboardText();
+                _lastError = new AddDesign(pluginInterface).Invoke(data, _designName, out var newDesign);
+                if (_lastError is GlamourerApiEc.Success)
+                {
+                    _design     = newDesign;
+                    _designText = newDesign.ToString();
+                }
+            }
+            catch
+            {
+                _lastError = GlamourerApiEc.UnknownError;
+            }
+
+        IpcTesterHelpers.DrawIntro(DeleteDesign.Label);
+        if (ImUtf8.Button("Delete##Design"u8) && _design.HasValue)
+            _lastError = new DeleteDesign(pluginInterface).Invoke(_design.Value);
     }
 
     private void DrawDesignsPopup()
