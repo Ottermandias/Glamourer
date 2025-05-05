@@ -1,7 +1,6 @@
 ﻿using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
-using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Extensions;
 using OtterGui.Log;
@@ -19,6 +18,10 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
     public readonly  string          Label;
     private          ItemId          _currentItem;
     private          float           _innerWidth;
+
+    public PrimaryId   CustomSetId    { get; private set; }
+    public SecondaryId CustomWeaponId { get; private set; }
+    public Variant     CustomVariant  { get; private set; }
 
     public WeaponCombo(ItemManager items, FullEquipType type, Logger log, FavoriteManager favorites)
         : base(() => GetWeapons(favorites, items, type), MouseWheelType.Control, log)
@@ -47,8 +50,9 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
 
     public bool Draw(string previewName, ItemId previewIdx, float width, float innerWidth)
     {
-        _innerWidth  = innerWidth;
-        _currentItem = previewIdx;
+        _innerWidth   = innerWidth;
+        _currentItem  = previewIdx;
+        CustomVariant = 0;
         return Draw($"##{Label}", previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
     }
 
@@ -73,6 +77,24 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
         using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
         ImUtf8.TextRightAligned($"({obj.PrimaryId.Id}-{obj.SecondaryId.Id}-{obj.Variant.Id})");
         return ret;
+    }
+
+    protected override void OnClosePopup()
+    {
+        // If holding control while the popup closes, try to parse the input as a full tuple of set id, weapon id and variant, and set a custom item for that.
+        if (!ImGui.GetIO().KeyCtrl)
+            return;
+
+        var split = Filter.Text.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (split.Length != 3
+         || !ushort.TryParse(split[0], out var setId)
+         || !ushort.TryParse(split[1], out var weaponId)
+         || !byte.TryParse(split[2], out var variant))
+            return;
+
+        CustomSetId    = setId;
+        CustomWeaponId = weaponId;
+        CustomVariant  = variant;
     }
 
     protected override bool IsVisible(int globalIndex, LowerString filter)

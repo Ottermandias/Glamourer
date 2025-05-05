@@ -27,6 +27,9 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
     public readonly void SetStains(StainIds stains)
         => _editor.ChangeStains(_object, Slot, stains, ApplySettings.Manual);
 
+    public readonly void SetStain(int which, StainId stain)
+        => _editor.ChangeStains(_object, Slot, CurrentStains.With(which, stain), ApplySettings.Manual);
+
     public readonly void SetApplyItem(bool value)
     {
         var manager = (DesignManager)_editor;

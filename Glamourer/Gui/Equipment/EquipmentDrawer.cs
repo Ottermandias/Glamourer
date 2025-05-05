@@ -3,16 +3,15 @@ using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using Glamourer.Events;
 using Glamourer.Gui.Materials;
-using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImGuiNET;
-using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Text.EndObjects;
 using OtterGui.Widgets;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -33,6 +32,7 @@ public class EquipmentDrawer
     private readonly Configuration                          _config;
     private readonly GPoseService                           _gPose;
     private readonly AdvancedDyePopup                       _advancedDyes;
+    private readonly ItemCopyService                        _itemCopy;
 
     private float _requiredComboWidthUnscaled;
     private float _requiredComboWidth;
@@ -40,13 +40,14 @@ public class EquipmentDrawer
     private Stain? _draggedStain;
 
     public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, TextureService textures,
-        Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes)
+        Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes, ItemCopyService itemCopy)
     {
         _items          = items;
         _textures       = textures;
         _config         = config;
         _gPose          = gPose;
         _advancedDyes   = advancedDyes;
+        _itemCopy       = itemCopy;
         _stainData      = items.Stains;
         _stainCombo     = new GlamourerColorCombo(DefaultWidth - 20, _stainData, favorites);
         _itemCombo      = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log, favorites)).ToArray();
@@ -183,6 +184,7 @@ public class EquipmentDrawer
 
         return change;
     }
+
 
     #region Small
 
@@ -402,6 +404,7 @@ public class EquipmentDrawer
                 ? _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss)
                 : _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss, width);
 
+            _itemCopy.HandleCopyPaste(data, index);
             if (!change)
                 DrawStainDragDrop(data, index, stain, found);
 
@@ -456,6 +459,7 @@ public class EquipmentDrawer
             data.SetItem(combo.CurrentSelection);
         else if (combo.CustomVariant.Id > 0)
             data.SetItem(_items.Identify(data.Slot, combo.CustomSetId, combo.CustomVariant));
+        _itemCopy.HandleCopyPaste(data);
 
         if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, ItemManager.NothingItem(data.Slot),
                 out var item))
@@ -473,6 +477,14 @@ public class EquipmentDrawer
         var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.Id.BonusItem,
             small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
             _requiredComboWidth);
+        if (ImGui.IsItemHovered() && ImGui.GetIO().KeyCtrl)
+        {
+            if (ImGui.IsKeyPressed(ImGuiKey.C))
+                _itemCopy.Copy(combo.CurrentSelection);
+            else if (ImGui.IsKeyPressed(ImGuiKey.V))
+                _itemCopy.Paste(data.Slot.ToEquipType(), data.SetItem);
+        }
+
         if (change)
             data.SetItem(combo.CurrentSelection);
         else if (combo.CustomVariant.Id > 0)
@@ -531,8 +543,12 @@ public class EquipmentDrawer
             if (combo.Draw(mainhand.CurrentItem.Name, mainhand.CurrentItem.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
                     _requiredComboWidth))
                 changedItem = combo.CurrentSelection;
-            else if (ResetOrClear(mainhand.Locked || unknown, open, mainhand.AllowRevert, false, mainhand.CurrentItem, mainhand.GameItem,
-                         default,                             out var c))
+            else if (combo.CustomVariant.Id > 0 && (drawAll || ItemData.ConvertWeaponId(combo.CustomSetId) == mainhand.CurrentItem.Type))
+                changedItem = _items.Identify(mainhand.Slot, combo.CustomSetId, combo.CustomWeaponId, combo.CustomVariant);
+            _itemCopy.HandleCopyPaste(mainhand);
+
+            if (ResetOrClear(mainhand.Locked || unknown, open, mainhand.AllowRevert, false, mainhand.CurrentItem, mainhand.GameItem,
+                    default,                             out var c))
                 changedItem = c;
 
             if (changedItem != null)
@@ -549,7 +565,8 @@ public class EquipmentDrawer
         }
 
         if (unknown)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, "The weapon type could not be identified, thus changing it to other weapons of that type is not possible."u8);
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled,
+                "The weapon type could not be identified, thus changing it to other weapons of that type is not possible."u8);
     }
 
     private void DrawOffhand(in EquipDrawData mainhand, in EquipDrawData offhand, out string label, bool small, bool clear, bool open)
@@ -569,6 +586,9 @@ public class EquipmentDrawer
         if (combo.Draw(offhand.CurrentItem.Name, offhand.CurrentItem.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
                 _requiredComboWidth))
             offhand.SetItem(combo.CurrentSelection);
+        else if (combo.CustomVariant.Id > 0 && ItemData.ConvertWeaponId(combo.CustomSetId) == offhand.CurrentItem.Type)
+            offhand.SetItem(_items.Identify(mainhand.Slot, combo.CustomSetId, combo.CustomWeaponId, combo.CustomVariant));
+        _itemCopy.HandleCopyPaste(offhand);
 
         var defaultOffhand = _items.GetDefaultOffhand(mainhand.CurrentItem);
         if (ResetOrClear(locked, clear, offhand.AllowRevert, true, offhand.CurrentItem, offhand.GameItem, defaultOffhand, out var item))
@@ -623,6 +643,7 @@ public class EquipmentDrawer
         {
             ImUtf8.Text(label);
         }
+
         if (hasAdvancedDyes)
             ImUtf8.HoverTooltip("This design has advanced dyes setup for this slot."u8);
     }
