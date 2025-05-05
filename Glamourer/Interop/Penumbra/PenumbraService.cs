@@ -172,14 +172,14 @@ public class PenumbraService : IDisposable
 
         if (_queryTemporaryModSettings != null)
         {
-            var tempEc = _queryTemporaryModSettings.Invoke(collection, modDirectory, out var tempTuple, out source);
+            var tempEc = _queryTemporaryModSettings.Invoke(collection, modDirectory, out var tempTuple, out source, 0, modName);
             if (tempEc is PenumbraApiEc.Success && tempTuple != null)
                 return new ModSettings(tempTuple.Value.Settings, tempTuple.Value.Priority, tempTuple.Value.Enabled,
                     tempTuple.Value.ForceInherit, false);
         }
 
         source            = string.Empty;
-        var (ec2, tuple2) = _getCurrentSettings!.Invoke(collection, modDirectory);
+        var (ec2, tuple2) = _getCurrentSettings!.Invoke(collection, modDirectory, modName);
         if (ec2 is not PenumbraApiEc.Success)
             return ModSettings.Empty;
 
@@ -265,7 +265,7 @@ public class PenumbraService : IDisposable
         if (!Available)
             return;
 
-        if (_openModPage!.Invoke(TabType.Mods, mod.DirectoryName) == PenumbraApiEc.ModMissing)
+        if (_openModPage!.Invoke(TabType.Mods, mod.DirectoryName, mod.Name) == PenumbraApiEc.ModMissing)
             Glamourer.Messager.NotificationMessage($"Could not open the mod {mod.Name}, no fitting mod was found in your Penumbra install.",
                 NotificationType.Info, false);
     }
@@ -349,14 +349,14 @@ public class PenumbraService : IDisposable
 
         var ex = settings.Remove
             ? index.HasValue
-                ? _removeTemporaryModSettingsPlayer!.Invoke(index.Value.Index, mod.DirectoryName, key)
-                : _removeTemporaryModSettings!.Invoke(collection, mod.DirectoryName, key)
+                ? _removeTemporaryModSettingsPlayer!.Invoke(index.Value.Index, mod.DirectoryName, key, mod.Name)
+                : _removeTemporaryModSettings!.Invoke(collection, mod.DirectoryName, key, mod.Name)
             : index.HasValue
                 ? _setTemporaryModSettingsPlayer!.Invoke(index.Value.Index, mod.DirectoryName, settings.ForceInherit, settings.Enabled,
                     settings.Priority,
-                    settings.Settings.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value), name, key)
+                    settings.Settings.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value), name, key, mod.Name)
                 : _setTemporaryModSettings!.Invoke(collection, mod.DirectoryName, settings.ForceInherit, settings.Enabled, settings.Priority,
-                    settings.Settings.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value), name, key);
+                    settings.Settings.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<string>)kvp.Value), name, key, mod.Name);
         switch (ex)
         {
             case PenumbraApiEc.InvalidArgument:
@@ -384,8 +384,8 @@ public class PenumbraService : IDisposable
     private void SetModPermanent(StringBuilder sb, Mod mod, ModSettings settings, Guid collection)
     {
         var ec = settings.ForceInherit
-            ? _inheritMod!.Invoke(collection, mod.DirectoryName, true)
-            : _setMod!.Invoke(collection, mod.DirectoryName, settings.Enabled);
+            ? _inheritMod!.Invoke(collection, mod.DirectoryName, true, mod.Name)
+            : _setMod!.Invoke(collection, mod.DirectoryName, settings.Enabled, mod.Name);
         switch (ec)
         {
             case PenumbraApiEc.ModMissing:
@@ -399,14 +399,14 @@ public class PenumbraService : IDisposable
         if (settings.ForceInherit || !settings.Enabled)
             return;
 
-        ec = _setModPriority!.Invoke(collection, mod.DirectoryName, settings.Priority);
+        ec = _setModPriority!.Invoke(collection, mod.DirectoryName, settings.Priority, mod.Name);
         Debug.Assert(ec is PenumbraApiEc.Success or PenumbraApiEc.NothingChanged, "Setting Priority should not be able to fail.");
 
         foreach (var (setting, list) in settings.Settings)
         {
             ec = list.Count == 1
-                ? _setModSetting!.Invoke(collection, mod.DirectoryName, setting, list[0])
-                : _setModSettings!.Invoke(collection, mod.DirectoryName, setting, list);
+                ? _setModSetting!.Invoke(collection, mod.DirectoryName, setting, list[0], mod.Name)
+                : _setModSettings!.Invoke(collection, mod.DirectoryName, setting, list, mod.Name);
             switch (ec)
             {
                 case PenumbraApiEc.OptionGroupMissing: sb.AppendLine($"Could not find the option group {setting} in mod {mod.Name}."); break;
