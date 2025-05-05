@@ -26,6 +26,7 @@ public class Glamourer : IDalamudPlugin
 
     public static readonly Logger         Log = new();
     public static          MessageService Messager { get; private set; } = null!;
+    public static          DynamisIpc     Dynamis  { get; private set; } = null!;
 
     private readonly ServiceManager _services;
 
@@ -35,6 +36,7 @@ public class Glamourer : IDalamudPlugin
         {
             _services = StaticServiceManager.CreateProvider(pluginInterface, Log, this);
             Messager  = _services.GetService<MessageService>();
+            Dynamis   = _services.GetService<DynamisIpc>();
             _services.EnsureRequiredServices();
 
             _services.GetService<VisorService>();

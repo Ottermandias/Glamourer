@@ -112,7 +112,8 @@ public static class StaticServiceManager
             .AddSingleton<CrestService>()
             .AddSingleton<InventoryService>()
             .AddSingleton<ContextMenuService>()
-            .AddSingleton<ScalingService>();
+            .AddSingleton<ScalingService>()
+            .AddSingleton<DynamisIpc>();
 
     private static ServiceManager AddDesigns(this ServiceManager services)
         => services.AddSingleton<DesignManager>()

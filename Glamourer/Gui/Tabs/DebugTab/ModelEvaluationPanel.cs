@@ -45,9 +45,10 @@ public unsafe class ModelEvaluationPanel(
 
         ImGuiUtil.DrawTableColumn("Address");
         ImGui.TableNextColumn();
-        ImGuiUtil.CopyOnClickSelectable(actor.ToString());
+
+        Glamourer.Dynamis.DrawPointer(actor);
         ImGui.TableNextColumn();
-        ImGuiUtil.CopyOnClickSelectable(model.ToString());
+        Glamourer.Dynamis.DrawPointer(model);
         ImGui.TableNextColumn();
         if (actor.IsCharacter)
         {
