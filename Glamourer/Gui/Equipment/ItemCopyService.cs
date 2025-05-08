@@ -1,18 +1,13 @@
-﻿using Dalamud.Game.ClientState.Keys;
-using Dalamud.Plugin.Services;
-using Glamourer.Services;
+﻿using Glamourer.Services;
 using ImGuiNET;
-using OtterGui.OtterGuiInternal.Enums;
 using OtterGui.Services;
-using OtterGuiInternal;
-using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public class ItemCopyService(ItemManager items, IKeyState keyState, DictStain stainData) : IUiService
+public class ItemCopyService(ItemManager items, DictStain stainData) : IUiService
 {
     public EquipItem? Item  { get; private set; }
     public Stain?     Stain { get; private set; }

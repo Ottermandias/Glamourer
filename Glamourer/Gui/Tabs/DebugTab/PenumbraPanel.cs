@@ -61,7 +61,7 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
         ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
         ImGui.InputInt("##CutsceneIndex", ref _gameObjectIndex, 0, 0);
         ImGuiUtil.DrawTableColumn(_penumbra.Available
-            ? _penumbra.CutsceneParent((ushort) _gameObjectIndex).ToString()
+            ? _penumbra.CutsceneParent((ushort)_gameObjectIndex).ToString()
             : "Penumbra Unavailable");
 
         ImGuiUtil.DrawTableColumn("Redraw Object");
@@ -76,7 +76,9 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
         }
 
         ImGuiUtil.DrawTableColumn("Last Tooltip Date");
-        ImGuiUtil.DrawTableColumn(_penumbraTooltip.LastTooltip > DateTime.MinValue ? $"{_penumbraTooltip.LastTooltip.ToLongTimeString()} ({_penumbraTooltip.LastType} {_penumbraTooltip.LastId})" : "Never");
+        ImGuiUtil.DrawTableColumn(_penumbraTooltip.LastTooltip > DateTime.MinValue
+            ? $"{_penumbraTooltip.LastTooltip.ToLongTimeString()} ({_penumbraTooltip.LastType} {_penumbraTooltip.LastId})"
+            : "Never");
         ImGui.TableNextColumn();
 
         ImGuiUtil.DrawTableColumn("Last Click Date");

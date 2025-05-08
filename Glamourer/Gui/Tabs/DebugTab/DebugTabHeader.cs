@@ -1,5 +1,4 @@
 ﻿using Glamourer.Gui.Tabs.DebugTab.IpcTester;
-using ImGuiNET;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Raii;
 using Penumbra.GameData.Gui.Debug;
@@ -36,6 +35,7 @@ public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
             provider.GetRequiredService<ModelEvaluationPanel>(),
             provider.GetRequiredService<ObjectManagerPanel>(),
             provider.GetRequiredService<PenumbraPanel>(),
+            provider.GetRequiredService<DynamisPanel>(),
             provider.GetRequiredService<IpcTesterPanel>(),
             provider.GetRequiredService<DatFilePanel>(),
             provider.GetRequiredService<GlamourPlatePanel>(),
