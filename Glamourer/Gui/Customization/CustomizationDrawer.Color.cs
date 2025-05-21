@@ -4,13 +4,80 @@ using Glamourer.GameData;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Raii;
+using OtterGui.Text;
+using OtterGui.Text.EndObjects;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Structs;
+using System;
 
 namespace Glamourer.Gui.Customization;
 
 public partial class CustomizationDrawer
 {
-    private const string ColorPickerPopupName = "ColorPicker";
+    private const string         ColorPickerPopupName = "ColorPicker";
+    private       CustomizeValue _draggedColorValue;
+    private       CustomizeIndex _draggedColorType;
+
+
+    private void DrawDragDropSource(CustomizeIndex index, CustomizeData custom)
+    {
+        using var dragDropSource = ImUtf8.DragDropSource();
+        if (!dragDropSource)
+            return;
+
+        if (!DragDropSource.SetPayload("##colorDragDrop"u8))
+            _draggedColorValue = _customize[index];
+        ImUtf8.Text(
+            $"Dragging {(custom.Color == 0 ? $"{_currentOption} (NPC)" : _currentOption)} #{_draggedColorValue.Value}...");
+        _draggedColorType = index;
+    }
+
+    private void DrawDragDropTarget(CustomizeIndex index)
+    {
+        using var dragDropTarget = ImUtf8.DragDropTarget();
+        if (!dragDropTarget.Success || !dragDropTarget.IsDropping("##colorDragDrop"u8))
+            return;
+
+        var idx       = _set.DataByValue(_draggedColorType, _draggedColorValue, out var draggedData, _customize.Face);
+        var bestMatch = _draggedColorValue;
+        if (draggedData.HasValue)
+        {
+            var draggedColor = draggedData.Value.Color;
+            var targetData   = _set.Data(index, idx);
+            if (targetData.Color != draggedColor)
+            {
+                var bestDiff = Diff(targetData.Color, draggedColor);
+                var count    = _set.Count(index);
+                for (var i = 0; i < count; ++i)
+                {
+                    targetData = _set.Data(index, i);
+                    if (targetData.Color == draggedColor)
+                    {
+                        UpdateValue(_draggedColorValue);
+                        return;
+                    }
+
+                    var diff = Diff(targetData.Color, draggedColor);
+                    if (diff >= bestDiff)
+                        continue;
+
+                    bestDiff  = diff;
+                    bestMatch = (CustomizeValue)i;
+                }
+            }
+        }
+
+        UpdateValue(bestMatch);
+        return;
+
+        static uint Diff(uint color1, uint color2)
+        {
+            var r = (color1 & 0xFF) - (color2 & 0xFF);
+            var g = ((color1 >> 8) & 0xFF) - ((color2 >> 8) & 0xFF);
+            var b = ((color1 >> 16) & 0xFF) - ((color2 >> 16) & 0xFF);
+            return 30 * r * r + 59 * g * g + 11 * b * b;
+        }
+    }
 
     private void DrawColorPicker(CustomizeIndex index)
     {
@@ -21,7 +88,7 @@ public partial class CustomizationDrawer
 
         using (_ = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * ImGuiHelpers.GlobalScale, current < 0))
         {
-            if (ImGui.ColorButton($"{_customize[index].Value}##color", color, ImGuiColorEditFlags.None, _framedIconSize))
+            if (ImGui.ColorButton($"{_customize[index].Value}##color", color, ImGuiColorEditFlags.NoDragDrop, _framedIconSize))
             {
                 ImGui.OpenPopup(ColorPickerPopupName);
             }
@@ -30,6 +97,9 @@ public partial class CustomizationDrawer
                 var data = _set.Data(_currentIndex, current, _customize.Face);
                 UpdateValue(data.Value);
             }
+
+            DrawDragDropSource(index, custom);
+            DrawDragDropTarget(index);
         }
 
         var npc = false;
