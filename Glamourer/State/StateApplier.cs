@@ -411,6 +411,6 @@ public class StateApplier(
         return actors;
     }
 
-    private ActorData GetData(ActorState state)
+    public ActorData GetData(ActorState state)
         => _objects.TryGetValue(state.Identifier, out var data) ? data : ActorData.Invalid;
 }

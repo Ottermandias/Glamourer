@@ -24,7 +24,18 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
         MigrateV4To5();
         MigrateV5To6();
         MigrateV6To7();
+        MigrateV7To8();
         AddColors(config, true);
+    }
+
+    private void MigrateV7To8()
+    {
+        if (_config.Version > 7)
+            return;
+
+        if (_config.QdbButtons.HasFlag(QdbButtons.RevertAdvancedDyes))
+            _config.QdbButtons |= QdbButtons.RevertAdvancedCustomization;
+        _config.Version = 8;
     }
 
     private void MigrateV6To7()
@@ -43,7 +54,7 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
             return;
 
         if (_data["ShowRevertAdvancedParametersButton"]?.ToObject<bool>() ?? true)
-            _config.QdbButtons |= QdbButtons.RevertAdvanced;
+            _config.QdbButtons |= QdbButtons.RevertAdvancedCustomization;
         _config.Version = 6;
     }
 

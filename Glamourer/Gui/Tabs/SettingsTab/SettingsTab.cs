@@ -251,7 +251,7 @@ public class SettingsTab(
     private void DrawQuickDesignBoxes()
     {
         var showAuto   = config.EnableAutoDesigns;
-        var numColumns = 8 - (showAuto ? 0 : 2) - (config.UseTemporarySettings ? 0 : 1);
+        var numColumns = 9 - (showAuto ? 0 : 2) - (config.UseTemporarySettings ? 0 : 1);
         ImGui.NewLine();
         ImUtf8.Text("Show the Following Buttons in the Quick Design Bar:"u8);
         ImGui.Dummy(Vector2.Zero);
@@ -268,7 +268,8 @@ public class SettingsTab(
             ("Reapply Auto", showAuto, QdbButtons.ReapplyAutomation),
             ("Revert Equip", true, QdbButtons.RevertEquip),
             ("Revert Customize", true, QdbButtons.RevertCustomize),
-            ("Revert Advanced", true, QdbButtons.RevertAdvanced),
+            ("Revert Advanced Customization", true, QdbButtons.RevertAdvancedCustomization),
+            ("Revert Advanced Dyes", true, QdbButtons.RevertAdvancedDyes),
             ("Reset Settings", config.UseTemporarySettings, QdbButtons.ResetSettings),
         ];
 

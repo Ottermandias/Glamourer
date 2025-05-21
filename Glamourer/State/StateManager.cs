@@ -270,16 +270,63 @@ public sealed class StateManager(
 
         state.Materials.Clear();
 
-        var actors = ActorData.Invalid;
+        var objects = ActorData.Invalid;
         if (source is not StateSource.Game)
-            actors = Applier.ApplyAll(state, redraw, true);
+            objects = Applier.ApplyAll(state, redraw, true);
 
         Glamourer.Log.Verbose(
-            $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
+            $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {objects.ToLazyString("nothing")}.]");
+        StateChanged.Invoke(StateChangeType.Reset, source, state, objects, null);
         // only invoke if we define this reset call as the final call in our state update.
-        if(isFinal)
-            StateFinalized.Invoke(StateFinalizationType.Revert, actors);
+        if (isFinal)
+            StateFinalized.Invoke(StateFinalizationType.Revert, objects);
+    }
+
+    public void ResetAdvancedDyes(ActorState state, StateSource source, uint key = 0)
+    {
+        if (!state.Unlock(key) || !state.ModelData.IsHuman)
+            return;
+
+        state.ModelData.Parameters = state.BaseData.Parameters;
+
+        foreach (var flag in CustomizeParameterExtensions.AllFlags)
+            state.Sources[flag] = StateSource.Game;
+
+        var objects = Applier.GetData(state);
+        if (source is not StateSource.Game)
+            foreach (var (idx, mat) in state.Materials.Values)
+                Applier.ChangeMaterialValue(state, objects, MaterialValueIndex.FromKey(idx), mat.Game);
+
+        state.Materials.Clear();
+
+        Glamourer.Log.Verbose(
+            $"Reset advanced dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {objects.ToLazyString("nothing")}.]");
+        StateChanged.Invoke(StateChangeType.Reset, source, state, objects, null);
+        // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
+        StateFinalized.Invoke(StateFinalizationType.RevertAdvanced, objects);
+    }
+
+    public void ResetAdvancedCustomizations(ActorState state, StateSource source, uint key = 0)
+    {
+        if (!state.Unlock(key) || !state.ModelData.IsHuman)
+            return;
+
+        state.ModelData.Parameters = state.BaseData.Parameters;
+
+        foreach (var flag in CustomizeParameterExtensions.AllFlags)
+            state.Sources[flag] = StateSource.Game;
+
+        var objects = ActorData.Invalid;
+        if (source is not StateSource.Game)
+            objects = Applier.ChangeParameters(state, CustomizeParameterExtensions.All, true);
+
+        state.Materials.Clear();
+
+        Glamourer.Log.Verbose(
+            $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {objects.ToLazyString("nothing")}.]");
+        StateChanged.Invoke(StateChangeType.Reset, source, state, objects, null);
+        // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
+        StateFinalized.Invoke(StateFinalizationType.RevertAdvanced, objects);
     }
 
     public void ResetAdvancedState(ActorState state, StateSource source, uint key = 0)
@@ -468,7 +515,7 @@ public sealed class StateManager(
          || !actor.Model.IsHuman
          || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
         StateChanged.Invoke(StateChangeType.Reapply, source, state, data, null);
-        if(isFinal)
+        if (isFinal)
             StateFinalized.Invoke(StateFinalizationType.Reapply, data);
     }
 

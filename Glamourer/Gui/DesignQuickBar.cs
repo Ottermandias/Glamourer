@@ -19,14 +19,15 @@ namespace Glamourer.Gui;
 [Flags]
 public enum QdbButtons
 {
-    ApplyDesign       = 0x01,
-    RevertAll         = 0x02,
-    RevertAutomation  = 0x04,
-    RevertAdvanced    = 0x08,
-    RevertEquip       = 0x10,
-    RevertCustomize   = 0x20,
-    ReapplyAutomation = 0x40,
-    ResetSettings     = 0x80,
+    ApplyDesign                 = 0x01,
+    RevertAll                   = 0x02,
+    RevertAutomation            = 0x04,
+    RevertAdvancedDyes          = 0x08,
+    RevertEquip                 = 0x10,
+    RevertCustomize             = 0x20,
+    ReapplyAutomation           = 0x40,
+    ResetSettings               = 0x80,
+    RevertAdvancedCustomization = 0x100,
 }
 
 public sealed class DesignQuickBar : Window, IDisposable
@@ -124,6 +125,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         DrawRevertEquipButton(buttonSize);
         DrawRevertCustomizeButton(buttonSize);
         DrawRevertAdvancedCustomization(buttonSize);
+        DrawRevertAdvancedDyes(buttonSize);
         DrawRevertAutomationButton(buttonSize);
         DrawReapplyAutomationButton(buttonSize);
         DrawResetSettingsButton(buttonSize);
@@ -318,7 +320,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     private void DrawRevertAdvancedCustomization(Vector2 buttonSize)
     {
-        if (!_config.QdbButtons.HasFlag(QdbButtons.RevertAdvanced))
+        if (!_config.QdbButtons.HasFlag(QdbButtons.RevertAdvancedCustomization))
             return;
 
         var available = 0;
@@ -327,7 +329,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
         {
             available |= 1;
-            _tooltipBuilder.Append("Left-Click: Revert the advanced customizations and dyes of the player character to their game state.");
+            _tooltipBuilder.Append("Left-Click: Revert the advanced customizations of the player character to their game state.");
         }
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
@@ -335,7 +337,40 @@ public sealed class DesignQuickBar : Window, IDisposable
             if (available != 0)
                 _tooltipBuilder.Append('\n');
             available |= 2;
-            _tooltipBuilder.Append("Right-Click: Revert the advanced customizations and dyes of ")
+            _tooltipBuilder.Append("Right-Click: Revert the advanced customizations of ")
+                .Append(_targetIdentifier)
+                .Append(" to their game state.");
+        }
+
+        if (available == 0)
+            _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
+
+        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.PaintBrush, buttonSize, available);
+        ImGui.SameLine();
+        if (clicked)
+            _stateManager.ResetAdvancedCustomizations(state!, StateSource.Manual);
+    }
+
+    private void DrawRevertAdvancedDyes(Vector2 buttonSize)
+    {
+        if (!_config.QdbButtons.HasFlag(QdbButtons.RevertAdvancedDyes))
+            return;
+
+        var available = 0;
+        _tooltipBuilder.Clear();
+
+        if (_playerIdentifier.IsValid && _playerState is { IsLocked: false } && _playerData.Valid)
+        {
+            available |= 1;
+            _tooltipBuilder.Append("Left-Click: Revert the advanced dyes of the player character to their game state.");
+        }
+
+        if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
+        {
+            if (available != 0)
+                _tooltipBuilder.Append('\n');
+            available |= 2;
+            _tooltipBuilder.Append("Right-Click: Revert the advanced dyes of ")
                 .Append(_targetIdentifier)
                 .Append(" to their game state.");
         }
@@ -346,7 +381,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Palette, buttonSize, available);
         ImGui.SameLine();
         if (clicked)
-            _stateManager.ResetAdvancedState(state!, StateSource.Manual);
+            _stateManager.ResetAdvancedDyes(state!, StateSource.Manual);
     }
 
     private void DrawRevertCustomizeButton(Vector2 buttonSize)
@@ -501,7 +536,7 @@ public sealed class DesignQuickBar : Window, IDisposable
                 ++_numButtons;
         }
 
-        if (_config.QdbButtons.HasFlag(QdbButtons.RevertAdvanced))
+        if (_config.QdbButtons.HasFlag(QdbButtons.RevertAdvancedCustomization))
             ++_numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertCustomize))
             ++_numButtons;
