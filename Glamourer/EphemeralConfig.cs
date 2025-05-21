@@ -20,6 +20,10 @@ public class EphemeralConfig : ISavable
     public Guid               SelectedQuickDesign { get; set; } = Guid.Empty;
     public int                LastSeenVersion     { get; set; } = GlamourerChangelog.LastChangelogVersion;
 
+    public float CurrentDesignSelectorWidth { get; set; } = 200f;
+    public float DesignSelectorMinimumScale { get; set; } = 0.1f;
+    public float DesignSelectorMaximumScale { get; set; } = 0.5f;
+
 
     [JsonIgnore]
     private readonly SaveService _saveService;

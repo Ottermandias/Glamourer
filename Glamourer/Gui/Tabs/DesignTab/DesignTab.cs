@@ -16,7 +16,7 @@ public class DesignTab(DesignFileSystemSelector _selector, DesignPanel _panel, I
 
     public void DrawContent()
     {
-        _selector.Draw(GetDesignSelectorSize());
+        _selector.Draw();
         if (_importService.CreateCharaTarget(out var designBase, out var name))
         {
             var newDesign = _manager.CreateClone(designBase, name, true);
@@ -27,7 +27,4 @@ public class DesignTab(DesignFileSystemSelector _selector, DesignPanel _panel, I
         _panel.Draw();
         _importService.CreateCharaSource();
     }
-
-    public float GetDesignSelectorSize()
-        => 200f * ImGuiHelpers.GlobalScale;
 }

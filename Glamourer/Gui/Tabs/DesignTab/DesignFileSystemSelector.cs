@@ -12,6 +12,7 @@ using OtterGui.Filesystem;
 using OtterGui.FileSystem.Selector;
 using OtterGui.Log;
 using OtterGui.Raii;
+using OtterGui.Text;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
@@ -44,6 +45,29 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
 
     public record struct DesignState(uint Color)
     { }
+
+    protected override float CurrentWidth
+        => _config.Ephemeral.CurrentDesignSelectorWidth * ImUtf8.GlobalScale;
+
+    protected override float MinimumAbsoluteRemainder
+        => 470 * ImUtf8.GlobalScale;
+
+    protected override float MinimumScaling
+        => _config.Ephemeral.DesignSelectorMinimumScale;
+
+    protected override float MaximumScaling
+        => _config.Ephemeral.DesignSelectorMaximumScale;
+
+    protected override void SetSize(Vector2 size)
+    {
+        base.SetSize(size);
+        var adaptedSize = MathF.Round(size.X / ImUtf8.GlobalScale);
+        if (adaptedSize == _config.Ephemeral.CurrentDesignSelectorWidth)
+            return;
+
+        _config.Ephemeral.CurrentDesignSelectorWidth = adaptedSize;
+        _config.Ephemeral.Save();
+    }
 
     public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, IKeyState keyState, DesignChanged @event,
         Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log, DesignColors designColors,
