@@ -37,7 +37,7 @@ public partial class CustomizationDrawer
         using var dragDropTarget = ImUtf8.DragDropTarget();
         if (!dragDropTarget.Success || !dragDropTarget.IsDropping("##colorDragDrop"u8))
             return;
-
+        
         var idx       = _set.DataByValue(_draggedColorType, _draggedColorValue, out var draggedData, _customize.Face);
         var bestMatch = _draggedColorValue;
         if (draggedData.HasValue)

@@ -1,7 +1,6 @@
 ﻿using Glamourer.Designs;
 using ImGuiNET;
 using OtterGui;
-using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 
@@ -13,13 +12,6 @@ public sealed class DesignColorCombo(DesignColors _designColors, bool _skipAutom
             : _designColors.Keys.OrderBy(k => k).Prepend(DesignColors.AutomaticName),
         MouseWheelType.Control, Glamourer.Log)
 {
-    protected override void OnMouseWheel(string preview, ref int current, int steps)
-    {
-        if (CurrentSelectionIdx < 0)
-            CurrentSelectionIdx = Items.IndexOf(preview);
-        base.OnMouseWheel(preview, ref current, steps);
-    }
-
     protected override bool DrawSelectable(int globalIdx, bool selected)
     {
         var       isAutomatic = !_skipAutomatic && globalIdx == 0;
