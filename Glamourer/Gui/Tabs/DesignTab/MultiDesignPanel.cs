@@ -3,7 +3,6 @@ using Dalamud.Interface.Utility;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using ImGuiNET;
-using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Text;
@@ -11,7 +10,12 @@ using static Glamourer.Gui.Tabs.HeaderDrawer;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager editor, DesignColors colors, Configuration config)
+public class MultiDesignPanel(
+    DesignFileSystemSelector selector,
+    DesignManager editor,
+    DesignColors colors,
+    Configuration config,
+    DesignComboWrapper combos)
 {
     private readonly Button[] _leftButtons  = [];
     private readonly Button[] _rightButtons = [new IncognitoButton(config)];
@@ -201,16 +205,23 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
             ? $"All {_numDesigns} selected designs are already displayed in the quick design bar."
             : $"Display all {_numDesigns} selected designs in the quick design bar. Changes {diff} designs.";
         if (ImUtf8.ButtonEx("Display Selected Designs in QDB"u8, tt, buttonWidth, diff == 0))
+        {
+            using var disableListener = combos.StopListening();
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetQuickDesign(design.Value, true);
+        }
 
         ImGui.SameLine();
         tt = _numQuickDesignEnabled == 0
             ? $"All {_numDesigns} selected designs are already hidden in the quick design bar."
             : $"Hide all {_numDesigns} selected designs in the quick design bar. Changes {_numQuickDesignEnabled} designs.";
         if (ImUtf8.ButtonEx("Hide Selected Designs in QDB"u8, tt, buttonWidth, _numQuickDesignEnabled == 0))
+        {
+            using var disableListener = combos.StopListening();
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetQuickDesign(design.Value, false);
+        }
+
         ImGui.Separator();
     }
 
@@ -327,8 +338,11 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
             : $"Set the color of {_addDesigns.Count} designs to \"{_colorCombo.CurrentSelection}\"\n\n\t{string.Join("\n\t", _addDesigns.Select(m => m.Name.Text))}";
         ImGui.SameLine();
         if (ImUtf8.ButtonEx(label, tooltip, width, _addDesigns.Count == 0))
+        {
+            using var disableListener = combos.StopListening();
             foreach (var design in _addDesigns)
                 editor.ChangeColor(design, _colorCombo.CurrentSelection!);
+        }
 
         label = _removeDesigns.Count > 0
             ? $"Unset {_removeDesigns.Count} Designs"
@@ -338,8 +352,11 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
             : $"Set {_removeDesigns.Count} designs to use automatic color again:\n\n\t{string.Join("\n\t", _removeDesigns.Select(m => m.Item1.Name.Text))}";
         ImGui.SameLine();
         if (ImUtf8.ButtonEx(label, tooltip, width, _removeDesigns.Count == 0))
+        {
+            using var disableListener = combos.StopListening();
             foreach (var (design, _) in _removeDesigns)
                 editor.ChangeColor(design, string.Empty);
+        }
 
         ImGui.Separator();
     }
@@ -455,7 +472,8 @@ public class MultiDesignPanel(DesignFileSystemSelector selector, DesignManager e
 
         foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>().Select(l => l.Value))
         {
-            editor.ChangeApplyMulti(design, equip, customize, equip, customize.HasValue && !customize.Value ? false : null, null, equip, equip, equip);
+            editor.ChangeApplyMulti(design, equip, customize, equip, customize.HasValue && !customize.Value ? false : null, null, equip, equip,
+                equip);
             if (equip.HasValue)
             {
                 editor.ChangeApplyMeta(design, MetaIndex.HatState,    equip.Value);

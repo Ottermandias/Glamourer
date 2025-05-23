@@ -152,7 +152,7 @@ public class EditorHistory : IDisposable, IService
     {
         if (!_stateEntries.TryGetValue(state, out var list))
         {
-            list = new Queue();
+            list = [];
             _stateEntries.Add(state, list);
         }
 
@@ -163,7 +163,7 @@ public class EditorHistory : IDisposable, IService
     {
         if (!_designEntries.TryGetValue(design, out var list))
         {
-            list = new Queue();
+            list = [];
             _designEntries.Add(design, list);
         }
 

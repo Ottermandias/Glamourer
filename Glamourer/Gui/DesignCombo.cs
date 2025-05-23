@@ -10,6 +10,7 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Extensions;
 using OtterGui.Log;
+using OtterGui.Services;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui;
@@ -21,6 +22,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
     protected readonly DesignColors    DesignColors;
     protected readonly TabSelected     TabSelected;
     protected          float           InnerWidth;
+    public             bool            IsListening { get; protected set; }
     private            IDesignStandIn? _currentDesign;
 
     protected DesignComboBase(Func<IReadOnlyList<Tuple<IDesignStandIn, string>>> generator, Logger log, DesignChanged designChanged,
@@ -32,6 +34,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         Config        = config;
         DesignColors  = designColors;
         DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
+        IsListening = true;
     }
 
     public bool Incognito
@@ -41,6 +44,25 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
     {
         DesignChanged.Unsubscribe(OnDesignChanged);
         GC.SuppressFinalize(this);
+    }
+
+    public void StopListening()
+    {
+        if (!IsListening)
+            return;
+
+        DesignChanged.Unsubscribe(OnDesignChanged);
+        IsListening = false;
+    }
+
+    public void StartListening()
+    {
+        if (IsListening)
+            return;
+
+        DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
+        OnDesignChanged(DesignChanged.Type.Deleted, null);
+        IsListening = true;
     }
 
     protected override bool DrawSelectable(int globalIdx, bool selected)
@@ -128,7 +150,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         return filter.IsContained(path) || filter.IsContained(design.ResolveName(false));
     }
 
-    private void OnDesignChanged(DesignChanged.Type type, Design design, ITransaction? _ = null)
+    private void OnDesignChanged(DesignChanged.Type type, Design? _1, ITransaction? _2 = null)
     {
         switch (type)
         {
@@ -356,5 +378,31 @@ public sealed class SpecialDesignCombo(
             autoDesignManager.ChangeDesign(set, autoDesignIndex, CurrentSelection!.Item1);
         else
             autoDesignManager.AddDesign(set, CurrentSelection!.Item1);
+    }
+}
+
+public class DesignComboWrapper(ServiceManager services)
+{
+    public readonly IReadOnlyList<DesignComboBase> Combos = services.GetServicesImplementing<DesignComboBase>().ToArray();
+
+    internal DesignComboListener StopListening()
+    {
+        var list = new List<DesignComboBase>(Combos.Count);
+        foreach (var combo in Combos.Where(c => c.IsListening))
+        {
+            combo.StopListening();
+            list.Add(combo);
+        }
+
+        return new DesignComboListener(list);
+    }
+
+    internal readonly struct DesignComboListener(List<DesignComboBase> combos) : IDisposable
+    {
+        public void Dispose()
+        {
+            foreach (var combo in combos)
+                combo.StartListening();
+        }
     }
 }

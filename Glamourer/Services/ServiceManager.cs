@@ -169,5 +169,6 @@ public static class StaticServiceManager
             .AddSingleton<DesignQuickBar>()
             .AddSingleton<DesignColorUi>()
             .AddSingleton<NpcCombo>()
-            .AddSingleton<TextureCache>();
+            .AddSingleton<TextureCache>()
+            .AddSingleton<DesignComboWrapper>();
 }
