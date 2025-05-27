@@ -79,10 +79,10 @@ public sealed unsafe class PrepareColorSet
         if (GetDyeTable(material, out var dyeTable))
         {
             if (stainIds.Stain1.Id != 0)
-                MaterialResourceHandle.MemberFunctionPointers.ReadStainingTemplate(material, dyeTable, stainIds.Stain1.Id, (Half*)&newTable, 0);
+                material->ReadStainingTemplate(dyeTable, stainIds.Stain1.Id, (Half*)&newTable, 0);
 
             if (stainIds.Stain2.Id != 0)
-                MaterialResourceHandle.MemberFunctionPointers.ReadStainingTemplate(material, dyeTable, stainIds.Stain1.Id, (Half*)&newTable, 1);
+                material->ReadStainingTemplate(dyeTable, stainIds.Stain1.Id, (Half*)&newTable, 1);
         }
 
         table = newTable;
