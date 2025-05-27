@@ -1,5 +1,4 @@
 ﻿using Dalamud.Hooking;
-using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
@@ -51,10 +50,6 @@ public sealed unsafe class PrepareColorSet
 
     private delegate Texture* Delegate(MaterialResourceHandle* material, StainId stainId1, StainId stainId2);
 
-    // TODO use CS when stabilized in Dalamud.
-    [Signature("E8 ?? ?? ?? ?? 48 8B FB EB 07")]
-    private static delegate* unmanaged<MaterialResourceHandle*, ushort*, byte, Half*, uint, void> _readStainingTemplate = null;
-
     private Texture* Detour(MaterialResourceHandle* material, StainId stainId1, StainId stainId2)
     {
         Glamourer.Log.Excessive($"[{Name}] Triggered with 0x{(nint)material:X} {stainId1.Id} {stainId2.Id}.");
@@ -84,10 +79,10 @@ public sealed unsafe class PrepareColorSet
         if (GetDyeTable(material, out var dyeTable))
         {
             if (stainIds.Stain1.Id != 0)
-                _readStainingTemplate(material, dyeTable, stainIds.Stain1.Id, (Half*)(&newTable), 0);
+                MaterialResourceHandle.MemberFunctionPointers.ReadStainingTemplate(material, dyeTable, stainIds.Stain1.Id, (Half*)&newTable, 0);
 
             if (stainIds.Stain2.Id != 0)
-                _readStainingTemplate(material, dyeTable, stainIds.Stain2.Id, (Half*)(&newTable), 1);
+                MaterialResourceHandle.MemberFunctionPointers.ReadStainingTemplate(material, dyeTable, stainIds.Stain1.Id, (Half*)&newTable, 1);
         }
 
         table = newTable;
