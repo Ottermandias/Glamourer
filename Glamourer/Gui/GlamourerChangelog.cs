@@ -42,6 +42,7 @@ public class GlamourerChangelog
         Add1_3_6_0(Changelog);
         Add1_3_7_0(Changelog);
         Add1_3_8_0(Changelog);
+        Add1_4_0_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -61,6 +62,31 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_4_0_0(Changelog log)
+        => log.NextVersion("Version 1.4.0.0")
+            .RegisterHighlight("The design selector width is now draggable within certain restrictions that depend on the total window width.")
+            .RegisterEntry("The current behavior may not be final, let me know if you have any comments.", 1)
+            .RegisterEntry("Regular customization colors can now be dragged & dropped onto other customizations.")
+            .RegisterEntry(
+                "If no identical color is available in the target slot, the most similar color available (for certain values of similar) will be chosen instead.",
+                1)
+            .RegisterEntry("Resetting advanced dyes and customizations has been split into two buttons for the quick design bar.")
+            .RegisterEntry("Weapons now also support custom ID input in the combo search box.")
+            .RegisterEntry("Added new IPC methods GetExtendedDesignData, AddDesign, DeleteDesign, GetDesignBase64, GetDesignJObject.")
+            .RegisterEntry("Added the option to prevent immediate repeats for random design selection (Thanks Diorik!).")
+            .RegisterEntry("Optimized some multi-design changes when selecting many designs and changing them at once.")
+            .RegisterEntry("Fixed item combos not starting from the currently selected item when scrolling them via mouse wheel.")
+            .RegisterEntry("Fixed some issue with Glamourer not searching mods by name for mod associations in some cases.")
+            .RegisterEntry("Fixed the IPC methods SetMetaState and SetMetaStateName not working (Thanks Caraxi!).")
+            .RegisterEntry("Added new IPC method GetDesignListExtended. (1.3.8.6)")
+            .RegisterEntry(
+                "Improved the naming of NPCs for identifiers by using Haselnussbombers new naming functionality (Thanks Hasel!). (1.3.8.6)")
+            .RegisterEntry(
+                "Added a modifier key separate from the delete modifier key that is used for less important key-checks, specifically toggling incognito mode. (1.3.8.5)")
+            .RegisterEntry("Used better Penumbra IPC for some things. (1.3.8.5)")
+            .RegisterEntry("Fixed an issue with advanced dyes for weapons. (1.3.8.5)")
+            .RegisterEntry("Fixed an issue with NPC automation due to missing job detection. (1.3.8.1)");
 
     private static void Add1_3_8_0(Changelog log)
         => log.NextVersion("Version 1.3.8.0")
