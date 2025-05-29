@@ -538,6 +538,8 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertAdvancedCustomization))
             ++_numButtons;
+        if (_config.QdbButtons.HasFlag(QdbButtons.RevertAdvancedDyes))
+            ++_numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertCustomize))
             ++_numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertEquip))
