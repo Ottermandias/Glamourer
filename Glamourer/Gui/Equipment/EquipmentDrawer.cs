@@ -37,7 +37,9 @@ public class EquipmentDrawer
     private float _requiredComboWidthUnscaled;
     private float _requiredComboWidth;
 
-    private Stain? _draggedStain;
+    private Stain?             _draggedStain;
+    private EquipItemSlotCache _draggedItem;
+    private EquipSlot          _dragTarget;
 
     public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, TextureService textures,
         Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes, ItemCopyService itemCopy)
@@ -80,6 +82,7 @@ public class EquipmentDrawer
 
         _requiredComboWidth    = _requiredComboWidthUnscaled * ImGuiHelpers.GlobalScale;
         _advancedMaterialColor = ColorId.AdvancedDyeActive.Value();
+        _dragTarget            = EquipSlot.Unknown;
     }
 
     private bool VerifyRestrictedGear(EquipDrawData data)
@@ -429,8 +432,8 @@ public class EquipmentDrawer
             using var dragSource = ImUtf8.DragDropSource();
             if (dragSource.Success)
             {
-                if (DragDropSource.SetPayload("stainDragDrop"u8))
-                    _draggedStain = stain;
+                DragDropSource.SetPayload("stainDragDrop"u8);
+                _draggedStain = stain;
                 ImUtf8.Text($"Dragging {stain.Name}...");
             }
         }
@@ -455,6 +458,7 @@ public class EquipmentDrawer
         using var disabled = ImRaii.Disabled(data.Locked);
         var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.ItemId, small ? _comboLength - ImGui.GetFrameHeight() : _comboLength,
             _requiredComboWidth);
+        DrawGearDragDrop(data);
         if (change)
             data.SetItem(combo.CurrentSelection);
         else if (combo.CustomVariant.Id > 0)
@@ -493,6 +497,50 @@ public class EquipmentDrawer
         if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, EquipItem.BonusItemNothing(data.Slot),
                 out var item))
             data.SetItem(item);
+    }
+
+    private void DrawGearDragDrop(in EquipDrawData data)
+    {
+        if (data.CurrentItem.Valid)
+        {
+            using var dragSource = ImUtf8.DragDropSource();
+            if (dragSource.Success)
+            {
+                DragDropSource.SetPayload("equipDragDrop"u8);
+                _draggedItem.Update(_items, data.CurrentItem, data.Slot);
+            }
+        }
+
+        using var dragTarget = ImUtf8.DragDropTarget();
+        if (!dragTarget)
+            return;
+
+        var item = _draggedItem[data.Slot];
+        if (!item.Valid)
+            return;
+
+        _dragTarget = data.Slot;
+        if (!dragTarget.IsDropping("equipDragDrop"u8))
+            return;
+
+        data.SetItem(item);
+        _draggedItem.Clear();
+    }
+
+    public unsafe void DrawDragDropTooltip()
+    {
+        var payload = ImGui.GetDragDropPayload().NativePtr;
+        if (payload is null)
+            return;
+
+        if (!MemoryMarshal.CreateReadOnlySpanFromNullTerminated(payload->DataType).SequenceEqual("equipDragDrop"u8))
+            return;
+
+        using var tt = ImUtf8.Tooltip();
+        if (_dragTarget is EquipSlot.Unknown)
+            ImUtf8.Text($"Dragging {_draggedItem.Dragged.Name}...");
+        else
+            ImUtf8.Text($"Converting to {_draggedItem[_dragTarget].Name}...");
     }
 
     private static bool ResetOrClear<T>(bool locked, bool clicked, bool allowRevert, bool allowClear,
@@ -546,6 +594,7 @@ public class EquipmentDrawer
             else if (combo.CustomVariant.Id > 0 && (drawAll || ItemData.ConvertWeaponId(combo.CustomSetId) == mainhand.CurrentItem.Type))
                 changedItem = _items.Identify(mainhand.Slot, combo.CustomSetId, combo.CustomWeaponId, combo.CustomVariant);
             _itemCopy.HandleCopyPaste(mainhand);
+            DrawGearDragDrop(mainhand);
 
             if (ResetOrClear(mainhand.Locked || unknown, open, mainhand.AllowRevert, false, mainhand.CurrentItem, mainhand.GameItem,
                     default,                             out var c))
@@ -589,6 +638,7 @@ public class EquipmentDrawer
         else if (combo.CustomVariant.Id > 0 && ItemData.ConvertWeaponId(combo.CustomSetId) == offhand.CurrentItem.Type)
             offhand.SetItem(_items.Identify(mainhand.Slot, combo.CustomSetId, combo.CustomWeaponId, combo.CustomVariant));
         _itemCopy.HandleCopyPaste(offhand);
+        DrawGearDragDrop(offhand);
 
         var defaultOffhand = _items.GetDefaultOffhand(mainhand.CurrentItem);
         if (ResetOrClear(locked, clear, offhand.AllowRevert, true, offhand.CurrentItem, offhand.GameItem, defaultOffhand, out var item))

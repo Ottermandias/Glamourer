@@ -130,6 +130,7 @@ public class DesignPanel
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
         DrawEquipmentMetaToggles();
         ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        _equipmentDrawer.DrawDragDropTooltip();
     }
 
     private void DrawEquipmentMetaToggles()

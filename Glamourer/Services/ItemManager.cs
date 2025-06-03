@@ -174,6 +174,36 @@ public class ItemManager
         return NothingItem(offhandType);
     }
 
+    public bool FindClosestShield(ItemId id, out EquipItem item)
+    {
+        var list = ItemData.ByType[FullEquipType.Shield];
+        try
+        {
+            item = list.Where(i => i.ItemId.Id > id.Id && i.ItemId.Id - id.Id < 50).MinBy(i => i.ItemId.Id);
+            return true;
+        }
+        catch
+        {
+            item = default;
+            return false;
+        }
+    }
+
+    public bool FindClosestSword(ItemId id, out EquipItem item)
+    {
+        var list = ItemData.ByType[FullEquipType.Sword];
+        try
+        {
+            item = list.Where(i => i.ItemId.Id < id.Id && id.Id - i.ItemId.Id < 50).MaxBy(i => i.ItemId.Id);
+            return true;
+        }
+        catch
+        {
+            item = default;
+            return false;
+        }
+    }
+
     public EquipItem Identify(EquipSlot slot, PrimaryId id, SecondaryId type, Variant variant,
         FullEquipType mainhandType = FullEquipType.Unknown)
     {
