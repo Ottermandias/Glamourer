@@ -14,8 +14,7 @@ public class MultiDesignPanel(
     DesignFileSystemSelector selector,
     DesignManager editor,
     DesignColors colors,
-    Configuration config,
-    DesignComboWrapper combos)
+    Configuration config)
 {
     private readonly Button[] _leftButtons  = [];
     private readonly Button[] _rightButtons = [new IncognitoButton(config)];
@@ -206,7 +205,6 @@ public class MultiDesignPanel(
             : $"Display all {_numDesigns} selected designs in the quick design bar. Changes {diff} designs.";
         if (ImUtf8.ButtonEx("Display Selected Designs in QDB"u8, tt, buttonWidth, diff == 0))
         {
-            using var disableListener = combos.StopListening();
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetQuickDesign(design.Value, true);
         }
@@ -217,7 +215,6 @@ public class MultiDesignPanel(
             : $"Hide all {_numDesigns} selected designs in the quick design bar. Changes {_numQuickDesignEnabled} designs.";
         if (ImUtf8.ButtonEx("Hide Selected Designs in QDB"u8, tt, buttonWidth, _numQuickDesignEnabled == 0))
         {
-            using var disableListener = combos.StopListening();
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetQuickDesign(design.Value, false);
         }
@@ -339,7 +336,6 @@ public class MultiDesignPanel(
         ImGui.SameLine();
         if (ImUtf8.ButtonEx(label, tooltip, width, _addDesigns.Count == 0))
         {
-            using var disableListener = combos.StopListening();
             foreach (var design in _addDesigns)
                 editor.ChangeColor(design, _colorCombo.CurrentSelection!);
         }
@@ -353,7 +349,6 @@ public class MultiDesignPanel(
         ImGui.SameLine();
         if (ImUtf8.ButtonEx(label, tooltip, width, _removeDesigns.Count == 0))
         {
-            using var disableListener = combos.StopListening();
             foreach (var (design, _) in _removeDesigns)
                 editor.ChangeColor(design, string.Empty);
         }

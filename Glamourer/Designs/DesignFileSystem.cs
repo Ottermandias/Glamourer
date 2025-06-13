@@ -114,14 +114,14 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
 
                 return;
             case DesignChanged.Type.Deleted:
-                if (FindLeaf(design, out var leaf1))
+                if (TryGetValue(design, out var leaf1))
                     Delete(leaf1);
                 return;
             case DesignChanged.Type.ReloadedAll:
                 Reload();
                 return;
             case DesignChanged.Type.Renamed when (data as RenameTransaction?)?.Old is { } oldName:
-                if (!FindLeaf(design, out var leaf2))
+                if (!TryGetValue(design, out var leaf2))
                     return;
 
                 var old = oldName.FixName();
@@ -149,15 +149,6 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
         => DesignHasDefaultPath(design, fullPath)
             ? (string.Empty, false)
             : (DesignToIdentifier(design), true);
-
-    // Search the entire filesystem for the leaf corresponding to a design.
-    public bool FindLeaf(Design design, [NotNullWhen(true)] out Leaf? leaf)
-    {
-        leaf = Root.GetAllDescendants(ISortMode<Design>.Lexicographical)
-            .OfType<Leaf>()
-            .FirstOrDefault(l => l.Value == design);
-        return leaf != null;
-    }
 
     internal static void MigrateOldPaths(SaveService saveService, Dictionary<string, string> oldPaths)
     {

@@ -10,7 +10,6 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Extensions;
 using OtterGui.Log;
-using OtterGui.Services;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui;
@@ -22,8 +21,8 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
     protected readonly DesignColors    DesignColors;
     protected readonly TabSelected     TabSelected;
     protected          float           InnerWidth;
-    public             bool            IsListening { get; protected set; }
     private            IDesignStandIn? _currentDesign;
+    private            bool            _isCurrentSelectionDirty;
 
     protected DesignComboBase(Func<IReadOnlyList<Tuple<IDesignStandIn, string>>> generator, Logger log, DesignChanged designChanged,
         TabSelected tabSelected, EphemeralConfig config, DesignColors designColors)
@@ -34,7 +33,6 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         Config        = config;
         DesignColors  = designColors;
         DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
-        IsListening = true;
     }
 
     public bool Incognito
@@ -44,25 +42,6 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
     {
         DesignChanged.Unsubscribe(OnDesignChanged);
         GC.SuppressFinalize(this);
-    }
-
-    public void StopListening()
-    {
-        if (!IsListening)
-            return;
-
-        DesignChanged.Unsubscribe(OnDesignChanged);
-        IsListening = false;
-    }
-
-    public void StartListening()
-    {
-        if (IsListening)
-            return;
-
-        DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
-        OnDesignChanged(DesignChanged.Type.Deleted, null);
-        IsListening = true;
     }
 
     protected override bool DrawSelectable(int globalIdx, bool selected)
@@ -106,17 +85,11 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
             DrawRightAligned(quickDesign.ResolveName(false), "[Nothing]", DesignColors.MissingColor);
     }
 
-    protected override int UpdateCurrentSelected(int currentSelected)
-    {
-        CurrentSelectionIdx = Items.IndexOf(p => _currentDesign == p.Item1);
-        UpdateSelection(CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : null);
-        return CurrentSelectionIdx;
-    }
-
     protected bool Draw(IDesignStandIn? currentDesign, string? label, float width)
     {
         _currentDesign = currentDesign;
-        InnerWidth     = 400 * ImGuiHelpers.GlobalScale;
+        UpdateCurrentSelection();
+        InnerWidth = 400 * ImGuiHelpers.GlobalScale;
         var  name = label ?? "Select Design Here...";
         bool ret;
         using (_ = currentDesign != null ? ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(currentDesign as Design)) : null)
@@ -150,37 +123,52 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         return filter.IsContained(path) || filter.IsContained(design.ResolveName(false));
     }
 
+    private void UpdateCurrentSelection()
+    {
+        if (!_isCurrentSelectionDirty)
+            return;
+
+        var priorState = IsInitialized;
+        if (priorState)
+            Cleanup();
+        CurrentSelectionIdx = Items.IndexOf(s => ReferenceEquals(s.Item1, CurrentSelection?.Item1));
+        if (CurrentSelectionIdx >= 0)
+        {
+            UpdateSelection(Items[CurrentSelectionIdx]);
+        }
+        else if (Items.Count > 0)
+        {
+            CurrentSelectionIdx = 0;
+            UpdateSelection(Items[0]);
+        }
+        else
+        {
+            UpdateSelection(null);
+        }
+
+        if (!priorState)
+            Cleanup();
+        _isCurrentSelectionDirty = false;
+    }
+
+    protected override int UpdateCurrentSelected(int currentSelected)
+    {
+        CurrentSelectionIdx = Items.IndexOf(p => _currentDesign == p.Item1);
+        UpdateSelection(CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : null);
+        return CurrentSelectionIdx;
+    }
+
     private void OnDesignChanged(DesignChanged.Type type, Design? _1, ITransaction? _2 = null)
     {
-        switch (type)
+        _isCurrentSelectionDirty = type switch
         {
-            case DesignChanged.Type.Created:
-            case DesignChanged.Type.Renamed:
-            case DesignChanged.Type.ChangedColor:
-            case DesignChanged.Type.Deleted:
-            case DesignChanged.Type.QuickDesignBar:
-                var priorState = IsInitialized;
-                if (priorState)
-                    Cleanup();
-                CurrentSelectionIdx = Items.IndexOf(s => ReferenceEquals(s.Item1, CurrentSelection?.Item1));
-                if (CurrentSelectionIdx >= 0)
-                {
-                    UpdateSelection(Items[CurrentSelectionIdx]);
-                }
-                else if (Items.Count > 0)
-                {
-                    CurrentSelectionIdx = 0;
-                    UpdateSelection(Items[0]);
-                }
-                else
-                {
-                    UpdateSelection(null);
-                }
-
-                if (!priorState)
-                    Cleanup();
-                break;
-        }
+            DesignChanged.Type.Created        => true,
+            DesignChanged.Type.Renamed        => true,
+            DesignChanged.Type.ChangedColor   => true,
+            DesignChanged.Type.Deleted        => true,
+            DesignChanged.Type.QuickDesignBar => true,
+            _                                 => _isCurrentSelectionDirty,
+        };
     }
 
     private void QuickSelectedDesignTooltip(IDesignStandIn? design)
@@ -248,8 +236,7 @@ public abstract class DesignCombo : DesignComboBase
 
 public sealed class QuickDesignCombo : DesignCombo
 {
-    public QuickDesignCombo(DesignManager designs,
-        DesignFileSystem fileSystem,
+    public QuickDesignCombo(DesignFileSystem fileSystem,
         Logger log,
         DesignChanged designChanged,
         TabSelected tabSelected,
@@ -257,9 +244,9 @@ public sealed class QuickDesignCombo : DesignCombo
         DesignColors designColors)
         : base(log, designChanged, tabSelected, config, designColors, () =>
         [
-            .. designs.Designs
-                .Where(d => d.QuickDesign)
-                .Select(d => new Tuple<IDesignStandIn, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
+            .. fileSystem
+                .Where(kvp => kvp.Key.QuickDesign)
+                .Select(kvp => new Tuple<IDesignStandIn, string>(kvp.Key, kvp.Value.FullName()))
                 .OrderBy(d => d.Item2),
         ])
     {
@@ -300,7 +287,6 @@ public sealed class QuickDesignCombo : DesignCombo
 }
 
 public sealed class LinkDesignCombo(
-    DesignManager designs,
     DesignFileSystem fileSystem,
     Logger log,
     DesignChanged designChanged,
@@ -309,8 +295,8 @@ public sealed class LinkDesignCombo(
     DesignColors designColors)
     : DesignCombo(log, designChanged, tabSelected, config, designColors, () =>
     [
-        .. designs.Designs
-            .Select(d => new Tuple<IDesignStandIn, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
+        .. fileSystem
+            .Select(kvp => new Tuple<IDesignStandIn, string>(kvp.Key, kvp.Value.FullName()))
             .OrderBy(d => d.Item2),
     ]);
 
@@ -324,8 +310,8 @@ public sealed class RandomDesignCombo(
     DesignColors designColors)
     : DesignCombo(log, designChanged, tabSelected, config, designColors, () =>
     [
-        .. designs.Designs
-            .Select(d => new Tuple<IDesignStandIn, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
+        .. fileSystem
+            .Select(kvp => new Tuple<IDesignStandIn, string>(kvp.Key, kvp.Value.FullName()))
             .OrderBy(d => d.Item2),
     ])
 {
@@ -351,7 +337,6 @@ public sealed class RandomDesignCombo(
 }
 
 public sealed class SpecialDesignCombo(
-    DesignManager designs,
     DesignFileSystem fileSystem,
     TabSelected tabSelected,
     DesignColors designColors,
@@ -361,8 +346,8 @@ public sealed class SpecialDesignCombo(
     EphemeralConfig config,
     RandomDesignGenerator rng,
     QuickSelectedDesign quickSelectedDesign)
-    : DesignComboBase(() => designs.Designs
-        .Select(d => new Tuple<IDesignStandIn, string>(d, fileSystem.FindLeaf(d, out var l) ? l.FullName() : string.Empty))
+    : DesignComboBase(() => fileSystem
+        .Select(kvp => new Tuple<IDesignStandIn, string>(kvp.Key, kvp.Value.FullName()))
         .OrderBy(d => d.Item2)
         .Prepend(new Tuple<IDesignStandIn, string>(new RandomDesign(rng), string.Empty))
         .Prepend(new Tuple<IDesignStandIn, string>(quickSelectedDesign,   string.Empty))
@@ -378,31 +363,5 @@ public sealed class SpecialDesignCombo(
             autoDesignManager.ChangeDesign(set, autoDesignIndex, CurrentSelection!.Item1);
         else
             autoDesignManager.AddDesign(set, CurrentSelection!.Item1);
-    }
-}
-
-public class DesignComboWrapper(ServiceManager services)
-{
-    public readonly IReadOnlyList<DesignComboBase> Combos = services.GetServicesImplementing<DesignComboBase>().ToArray();
-
-    internal DesignComboListener StopListening()
-    {
-        var list = new List<DesignComboBase>(Combos.Count);
-        foreach (var combo in Combos.Where(c => c.IsListening))
-        {
-            combo.StopListening();
-            list.Add(combo);
-        }
-
-        return new DesignComboListener(list);
-    }
-
-    internal readonly struct DesignComboListener(List<DesignComboBase> combos) : IDisposable
-    {
-        public void Dispose()
-        {
-            foreach (var combo in combos)
-                combo.StartListening();
-        }
     }
 }

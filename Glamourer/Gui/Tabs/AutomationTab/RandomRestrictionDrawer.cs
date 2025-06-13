@@ -278,7 +278,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     private void LookupTooltip(IEnumerable<Design> designs)
     {
         using var _ = ImRaii.Tooltip();
-        var tt = string.Join('\n', designs.Select(d => _designFileSystem.FindLeaf(d, out var l) ? l.FullName() : d.Name.Text).OrderBy(t => t));
+        var tt = string.Join('\n', designs.Select(d => _designFileSystem.TryGetValue(d, out var l) ? l.FullName() : d.Name.Text).OrderBy(t => t));
         ImGui.TextUnformatted(tt.Length == 0
             ? "Matches no currently existing designs."
             : "Matches the following designs:");

@@ -3,7 +3,9 @@ using Glamourer.Designs;
 using ImGuiNET;
 using OtterGui;
 using OtterGui.Extensions;
+using OtterGui.Filesystem;
 using OtterGui.Raii;
+using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
 
@@ -19,6 +21,7 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
 
     public void Draw()
     {
+        DrawButtons();
         foreach (var (design, idx) in _designManager.Designs.WithIndex())
         {
             using var t = ImRaii.TreeNode($"{design.Name}##{idx}");
@@ -26,12 +29,33 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
                 continue;
 
             DrawDesign(design, _designFileSystem);
-            var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.Application.Equip, design.Application.Customize, design.Application.Meta,
+            var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.Application.Equip, design.Application.Customize,
+                design.Application.Meta,
                 design.WriteProtected());
             using var font = ImRaii.PushFont(UiBuilder.MonoFont);
             ImGuiUtil.TextWrapped(base64);
             if (ImGui.IsItemClicked())
                 ImGui.SetClipboardText(base64);
+        }
+    }
+
+    private void DrawButtons()
+    {
+        if (ImUtf8.Button("Generate 500 Test Designs"u8))
+            for (var i = 0; i < 500; ++i)
+            {
+                var design = _designManager.CreateEmpty($"Test Designs/Test Design {i}", true);
+                _designManager.AddTag(design, "_DebugTest");
+            }
+
+        ImUtf8.SameLineInner();
+        if (ImUtf8.Button("Remove All Test Designs"u8))
+        {
+            var designs = _designManager.Designs.Where(d => d.Tags.Contains("_DebugTest")).ToArray();
+            foreach (var design in designs)
+                _designManager.Delete(design);
+            if (_designFileSystem.Find("Test Designs", out var path) && path is DesignFileSystem.Folder { TotalChildren: 0 })
+                _designFileSystem.Delete(path);
         }
     }
 
@@ -53,7 +77,7 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
             ImGui.TableNextRow();
             ImGuiUtil.DrawTableColumn("Design File System Path");
             if (fileSystem != null)
-                ImGuiUtil.DrawTableColumn(fileSystem.FindLeaf(d, out var leaf) ? leaf.FullName() : "No Path Known");
+                ImGuiUtil.DrawTableColumn(fileSystem.TryGetValue(d, out var leaf) ? leaf.FullName() : "No Path Known");
             ImGui.TableNextRow();
 
             ImGuiUtil.DrawTableColumn("Creation");

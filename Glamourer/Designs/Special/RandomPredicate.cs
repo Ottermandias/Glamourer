@@ -22,7 +22,7 @@ public interface IDesignPredicate
             : designs;
 
     private static (Design Design, string LowerName, string Identifier, string LowerPath) Transform(Design d, DesignFileSystem fs)
-        => (d, d.Name.Lower, d.Identifier.ToString(), fs.FindLeaf(d, out var l) ? l.FullName().ToLowerInvariant() : string.Empty);
+        => (d, d.Name.Lower, d.Identifier.ToString(), fs.TryGetValue(d, out var l) ? l.FullName().ToLowerInvariant() : string.Empty);
 }
 
 public static class RandomPredicate
