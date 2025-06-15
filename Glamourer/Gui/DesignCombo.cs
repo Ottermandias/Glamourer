@@ -123,6 +123,14 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         return filter.IsContained(path) || filter.IsContained(design.ResolveName(false));
     }
 
+    protected override void OnMouseWheel(string preview, ref int _2, int steps)
+    {
+        if (!ReferenceEquals(_currentDesign, CurrentSelection?.Item1))
+            CurrentSelectionIdx = -1;
+
+        base.OnMouseWheel(preview, ref _2, steps);
+    }
+
     private void UpdateCurrentSelection()
     {
         if (!_isCurrentSelectionDirty)
