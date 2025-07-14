@@ -145,8 +145,10 @@ public class ItemManager
         // Only from early designs as migration.
         if (!id.IsBonusItem || id.Id == 0)
         {
-            IsBonusItemValid(slot, (BonusItemId)id.Id, out var item);
-            return item;
+            if (IsBonusItemValid(slot, (BonusItemId)id.Id, out var item))
+                return item;
+
+            return EquipItem.BonusItemNothing(slot);
         }
 
         if (!id.IsCustom)
