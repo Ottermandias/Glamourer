@@ -272,7 +272,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         {
             case ApplyFlag.Equipment:                           _stateManager.ResetEquip(state, source, key); break;
             case ApplyFlag.Customization:                       _stateManager.ResetCustomize(state, source, key); break;
-            case ApplyFlag.Equipment | ApplyFlag.Customization: _stateManager.ResetState(state, source, key); break;
+            case ApplyFlag.Equipment | ApplyFlag.Customization: _stateManager.ResetState(state, source, key, true); break;
         }
 
         ApiHelpers.Lock(state, key, flags);
