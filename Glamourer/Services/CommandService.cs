@@ -407,7 +407,7 @@ public class CommandService : IDisposable, IApiService
         foreach (var identifier in identifiers)
         {
             if (_stateManager.TryGetValue(identifier, out var state))
-                _stateManager.ResetState(state, StateSource.Manual);
+                _stateManager.ResetState(state, StateSource.Manual, isFinal: true);
         }
 
 
