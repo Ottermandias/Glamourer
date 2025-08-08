@@ -41,11 +41,11 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
 
     public struct CreationDate : ISortMode<Design>
     {
-        public string Name
-            => "Creation Date (Older First)";
+        public ReadOnlySpan<byte> Name
+            => "Creation Date (Older First)"u8;
 
-        public string Description
-            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their creation date.";
+        public ReadOnlySpan<byte> Description
+            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their creation date."u8;
 
         public IEnumerable<IPath> GetChildren(Folder f)
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderBy(l => l.Value.CreationDate));
@@ -53,11 +53,11 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
 
     public struct UpdateDate : ISortMode<Design>
     {
-        public string Name
-            => "Update Date (Older First)";
+        public ReadOnlySpan<byte> Name
+            => "Update Date (Older First)"u8;
 
-        public string Description
-            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their last update date.";
+        public ReadOnlySpan<byte> Description
+            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their last update date."u8;
 
         public IEnumerable<IPath> GetChildren(Folder f)
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderBy(l => l.Value.LastEdit));
@@ -65,11 +65,11 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
 
     public struct InverseCreationDate : ISortMode<Design>
     {
-        public string Name
-            => "Creation Date (Newer First)";
+        public ReadOnlySpan<byte> Name
+            => "Creation Date (Newer First)"u8;
 
-        public string Description
-            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse creation date.";
+        public ReadOnlySpan<byte> Description
+            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse creation date."u8;
 
         public IEnumerable<IPath> GetChildren(Folder f)
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderByDescending(l => l.Value.CreationDate));
@@ -77,11 +77,11 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
 
     public struct InverseUpdateDate : ISortMode<Design>
     {
-        public string Name
-            => "Update Date (Newer First)";
+        public ReadOnlySpan<byte> Name
+            => "Update Date (Newer First)"u8;
 
-        public string Description
-            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse last update date.";
+        public ReadOnlySpan<byte> Description
+            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse last update date."u8;
 
         public IEnumerable<IPath> GetChildren(Folder f)
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderByDescending(l => l.Value.LastEdit));
