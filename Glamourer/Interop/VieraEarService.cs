@@ -2,6 +2,7 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
+using Penumbra.GameData;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop;
@@ -69,7 +70,7 @@ public unsafe class VieraEarService : IDisposable
 
     private unsafe Hook<UpdateVieraEarDelegateInternal> Create()
     {
-        var hook = _interop.HookFromSignature<UpdateVieraEarDelegateInternal>("E8 ?? ?? ?? ?? 48 8D 8F ?? ?? ?? ?? 4C 8D 4C 24", SetupVieraEarDetour);
+        var hook = _interop.HookFromSignature<UpdateVieraEarDelegateInternal>(Sigs.SetupVieraEars, SetupVieraEarDetour);
         hook.Enable();
         return hook;
     }
