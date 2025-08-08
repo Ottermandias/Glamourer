@@ -43,6 +43,7 @@ public class GlamourerChangelog
         Add1_3_7_0(Changelog);
         Add1_3_8_0(Changelog);
         Add1_4_0_0(Changelog);
+        Add1_5_0_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -62,6 +63,19 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_5_0_0(Changelog log)
+        => log.NextVersion("Version 1.5.0.0")
+            .RegisterImportant("Updated for game version 7.30 and Dalamud API13, which uses a new GUI backend. Some things may not work as expected. Please let me know any issues you encounter.")
+            .RegisterHighlight("Added the new Viera Ears state to designs. Old designs will not apply the state.")
+            .RegisterHighlight("Added the option to make newly created designs write-protected by default to the design defaults.")
+            .RegisterEntry("Fixed issues with reverting state and IPC.")
+            .RegisterEntry("Fixed an issue when using the mousewheel to scroll through designs (1.4.0.3).")
+            .RegisterEntry("Fixed an issue with invalid bonus items (1.4.0.3).")
+            .RegisterHighlight("Added drag & drop of equipment pieces which will try to match the corresponding model IDs in other slots if possible (1.4.0.2).")
+            .RegisterEntry("Heavily optimized some issues when having many designs and creating new ones or updating them (1.4.0.2)")
+            .RegisterEntry("Fixed an issue with staining templates (1.4.0.1).")
+            .RegisterEntry("Fixed an issue with the QDB buttons not counting correctly (1.4.0.1).");
 
     private static void Add1_4_0_0(Changelog log)
         => log.NextVersion("Version 1.4.0.0")
