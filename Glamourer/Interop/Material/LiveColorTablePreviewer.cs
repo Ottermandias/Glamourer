@@ -114,9 +114,9 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
         var        frame       = DateTimeOffset.UtcNow.UtcTicks;
         var        hueByte     = frame % (steps * frameLength) / frameLength;
         var        hue         = (float)hueByte / steps;
-        float        r, g, b     = 0;
-        ImGui.ColorConvertHSVtoRGB(hue, 1, 1, &r, &g, &b);
-        return new Vector3(r, g, b);
+        Vector3    ret;
+        ImGui.ColorConvertHSVtoRGB(hue, 1, 1, &ret.X, &ret.Y, &ret.Z);
+        return ret;
     }
 
     public void Dispose()

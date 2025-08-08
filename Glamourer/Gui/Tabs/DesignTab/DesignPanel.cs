@@ -154,6 +154,11 @@ public class DesignPanel
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.WeaponState, _manager, _selector.Selected!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.OffHand, _manager, _selector.Selected!));
         }
+        ImGui.SameLine();
+        using (var _ = ImRaii.Group())
+        {
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.EarState, _manager, _selector.Selected!));
+        }
     }
 
     private void DrawCustomize()

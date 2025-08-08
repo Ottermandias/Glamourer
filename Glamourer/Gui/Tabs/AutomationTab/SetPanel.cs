@@ -432,7 +432,7 @@ public class SetPanel(
             if (source)
             {
                 ImUtf8.Text($"Moving design #{index + 1:D2}...");
-                if (ImGui.SetDragDropPayload(dragDropLabel, nint.Zero, 0))
+                if (ImGui.SetDragDropPayload(dragDropLabel, null, 0))
                 {
                     _dragIndex                 = index;
                     _selector.DragDesignIndex = index;

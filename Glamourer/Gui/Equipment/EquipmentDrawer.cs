@@ -529,11 +529,11 @@ public class EquipmentDrawer
 
     public unsafe void DrawDragDropTooltip()
     {
-        var payload = ImGui.GetDragDropPayload().NativePtr;
+        var payload = ImGui.GetDragDropPayload().Handle;
         if (payload is null)
             return;
 
-        if (!MemoryMarshal.CreateReadOnlySpanFromNullTerminated(payload->DataType).SequenceEqual("equipDragDrop"u8))
+        if (!MemoryMarshal.CreateReadOnlySpanFromNullTerminated((byte*)Unsafe.AsPointer(ref payload->DataType_0)).SequenceEqual("equipDragDrop"u8))
             return;
 
         using var tt = ImUtf8.Tooltip();

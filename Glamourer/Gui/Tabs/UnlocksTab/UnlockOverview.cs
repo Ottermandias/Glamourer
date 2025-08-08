@@ -123,7 +123,7 @@ public class UnlockOverview(
             var unlocked = customizeUnlocks.IsUnlocked(customize, out var time);
             var icon     = customizations.Manager.GetIcon(customize.IconId);
             var hasIcon  = icon.TryGetWrap(out var wrap, out _);
-            ImGui.Image(wrap?.ImGuiHandle ?? icon.GetWrapOrEmpty().ImGuiHandle, iconSize, Vector2.Zero, Vector2.One,
+            ImGui.Image(wrap?.Handle ?? icon.GetWrapOrEmpty().Handle, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
 
             if (favorites.Contains(_selected3, _selected2, customize.Index, customize.Value))
@@ -135,7 +135,7 @@ public class UnlockOverview(
                 using var tt   = ImRaii.Tooltip();
                 var       size = new Vector2(wrap!.Width, wrap.Height);
                 if (size.X >= iconSize.X && size.Y >= iconSize.Y)
-                    ImGui.Image(wrap.ImGuiHandle, size);
+                    ImGui.Image(wrap.Handle, size);
                 ImGui.TextUnformatted(unlockData.Name);
                 ImGui.TextUnformatted($"{customize.Index.ToDefaultName()} {customize.Value.Value}");
                 ImGui.TextUnformatted(unlocked ? $"Unlocked on {time:g}" : "Not unlocked.");
@@ -194,7 +194,7 @@ public class UnlockOverview(
             if (!textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
                 return;
 
-            var (icon, size) = (iconHandle.ImGuiHandle, new Vector2(iconHandle.Width, iconHandle.Height));
+            var (icon, size) = (iconHandle.Handle, new Vector2(iconHandle.Width, iconHandle.Height));
 
             ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
@@ -265,7 +265,7 @@ public class UnlockOverview(
             if (!textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
                 return;
 
-            var (icon, size) = (iconHandle.ImGuiHandle, new Vector2(iconHandle.Width, iconHandle.Height));
+            var (icon, size) = (iconHandle.Handle, new Vector2(iconHandle.Width, iconHandle.Height));
 
             ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);

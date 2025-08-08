@@ -123,7 +123,7 @@ public class CollectionOverrideDrawer(
         {
             if (source)
             {
-                ImGui.SetDragDropPayload("DraggingOverride", nint.Zero, 0);
+                ImGui.SetDragDropPayload("DraggingOverride", null, 0);
                 ImGui.TextUnformatted($"Reordering Override #{idx + 1}...");
                 _dragDropIndex = idx;
             }

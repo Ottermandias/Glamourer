@@ -144,7 +144,7 @@ public class SetSelector : IDisposable
         ImGui.SameLine();
         var f = _enabledFilter;
 
-        if (ImGui.CheckboxFlags("##enabledFilter", ref f, 3))
+        if (ImGui.CheckboxFlags("##enabledFilter", ref f, 3u))
         {
             _enabledFilter = _enabledFilter switch
             {
@@ -347,7 +347,7 @@ public class SetSelector : IDisposable
             if (source)
             {
                 ImGui.TextUnformatted($"Moving design set {GetSetName(set, index)} from position {index + 1}...");
-                if (ImGui.SetDragDropPayload(dragDropLabel, nint.Zero, 0))
+                if (ImGui.SetDragDropPayload(dragDropLabel, null, 0))
                     _dragIndex = index;
             }
         }

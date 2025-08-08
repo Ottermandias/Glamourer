@@ -67,7 +67,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
 
     private delegate void CrestChangeDelegate(DrawDataContainer* container, byte crestFlags);
 
-    [Signature(Sigs.CrestChange, DetourName = nameof(CrestChangeDetour))]
+    [Signature(Sigs.SetFreeCompanyCrestBitfield, DetourName = nameof(CrestChangeDetour))]
     private readonly Hook<CrestChangeDelegate> _crestChangeHook = null!;
 
     private void CrestChangeDetour(DrawDataContainer* container, byte crestFlags)

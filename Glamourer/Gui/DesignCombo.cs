@@ -194,7 +194,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
             ImGui.TextUnformatted("Currently resolving to ");
             using var color = ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(linkedDesign));
             ImGui.SameLine(0, 0);
-            ImGui.TextUnformatted(linkedDesign.Name);
+            ImGui.TextUnformatted(linkedDesign.Name.Text);
         }
         else
         {

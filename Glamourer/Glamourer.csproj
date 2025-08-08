@@ -29,7 +29,6 @@
     <ProjectReference Include="..\Penumbra.String\Penumbra.String.csproj" />
     <ProjectReference Include="..\Penumbra.GameData\Penumbra.GameData.csproj" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.4.2-beta" />
-    <PackageReference Update="DalamudPackager" Version="13.0.0" />
   </ItemGroup>
 
   <ItemGroup>
