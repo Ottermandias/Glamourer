@@ -113,6 +113,8 @@ public class SettingsTab(
         if (!ImUtf8.CollapsingHeader("Design Defaults"))
             return;
 
+        Checkbox("Locked Designs"u8, "Newly created designs will be locked to prevent unintended changes."u8,
+            config.DefaultDesignSettings.Locked, v => config.DefaultDesignSettings.Locked = v);
         Checkbox("Show in Quick Design Bar"u8, "Newly created designs will be shown in the quick design bar by default."u8,
             config.DefaultDesignSettings.ShowQuickDesignBar, v => config.DefaultDesignSettings.ShowQuickDesignBar = v);
         Checkbox("Reset Advanced Dyes"u8, "Newly created designs will be configured to reset advanced dyes on application by default."u8,

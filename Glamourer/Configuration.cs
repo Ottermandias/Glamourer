@@ -32,6 +32,7 @@ public class DefaultDesignSettings
     public bool ResetAdvancedDyes      = false;
     public bool ShowQuickDesignBar     = true;
     public bool ResetTemporarySettings = false;
+    public bool Locked                 = false;
 }
 
 public class Configuration : IPluginConfiguration, ISavable

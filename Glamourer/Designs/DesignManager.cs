@@ -110,6 +110,7 @@ public sealed class DesignManager : DesignEditor
             QuickDesign            = Config.DefaultDesignSettings.ShowQuickDesignBar,
             ResetTemporarySettings = Config.DefaultDesignSettings.ResetTemporarySettings,
         };
+        design.SetWriteProtected(Config.DefaultDesignSettings.Locked);
         Designs.Add(design);
         Glamourer.Log.Debug($"Added new design {design.Identifier}.");
         SaveService.ImmediateSave(design);
@@ -134,6 +135,7 @@ public sealed class DesignManager : DesignEditor
             ResetTemporarySettings = Config.DefaultDesignSettings.ResetTemporarySettings,
         };
 
+        design.SetWriteProtected(Config.DefaultDesignSettings.Locked);
         Designs.Add(design);
         Glamourer.Log.Debug($"Added new design {design.Identifier} by cloning Temporary Design.");
         SaveService.ImmediateSave(design);
@@ -153,6 +155,7 @@ public sealed class DesignManager : DesignEditor
             Name         = actualName,
             Index        = Designs.Count,
         };
+        design.SetWriteProtected(Config.DefaultDesignSettings.Locked);
         Designs.Add(design);
         Glamourer.Log.Debug(
             $"Added new design {design.Identifier} by cloning {clone.Identifier.ToString()}.");
