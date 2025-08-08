@@ -9,6 +9,7 @@ using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.GameData;
 using Penumbra.GameData.DataContainers;
@@ -39,6 +40,7 @@ public class StateListener : IDisposable
     private readonly WeaponLoading             _weaponLoading;
     private readonly HeadGearVisibilityChanged _headGearVisibility;
     private readonly VisorStateChanged         _visorState;
+    private readonly VieraEarStateChanged      _vieraEarState;
     private readonly WeaponVisibilityChanged   _weaponVisibility;
     private readonly StateFinalized            _stateFinalized;
     private readonly AutoDesignApplier         _autoDesignApplier;
@@ -62,7 +64,7 @@ public class StateListener : IDisposable
         WeaponVisibilityChanged weaponVisibility, HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier,
         FunModule funModule, HumanModelList humans, StateApplier applier, MovedEquipment movedEquipment, ActorObjectManager objects,
         GPoseService gPose, ChangeCustomizeService changeCustomizeService, CustomizeService customizations, ICondition condition,
-        CrestService crestService, BonusSlotUpdating bonusSlotUpdating, StateFinalized stateFinalized)
+        CrestService crestService, BonusSlotUpdating bonusSlotUpdating, StateFinalized stateFinalized, VieraEarStateChanged vieraEarState)
     {
         _manager                = manager;
         _items                  = items;
@@ -88,6 +90,7 @@ public class StateListener : IDisposable
         _crestService           = crestService;
         _bonusSlotUpdating      = bonusSlotUpdating;
         _stateFinalized         = stateFinalized;
+        _vieraEarState          = vieraEarState;
         Subscribe();
     }
 
@@ -266,7 +269,7 @@ public class StateListener : IDisposable
 
     private void OnGearsetDataLoaded(Actor actor, Model model)
     {
-        if (!actor.Valid || (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart))
+        if (!actor.Valid || _condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
             return;
 
         // ensure actor and state are valid.
@@ -710,6 +713,44 @@ public class StateListener : IDisposable
         }
     }
 
+    /// <summary> Handle visor state changes made by the game. </summary>
+    private void OnVieraEarChange(Actor actor, ref bool value)
+    {
+        // Value is inverted compared to our own handling.
+
+        // Skip updates when in customize update.
+        if (ChangeCustomizeService.InUpdate.InMethod)
+            return;
+
+        if (!actor.IsCharacter)
+            return;
+
+        if (_condition[ConditionFlag.CreatingCharacter] && actor.Index >= ObjectIndex.CutsceneStart)
+            return;
+
+        if (!actor.Identifier(_actors, out var identifier))
+            return;
+
+        if (!_manager.TryGetValue(identifier, out var state))
+            return;
+
+        // Update visor base state.
+        if (state.BaseData.SetEarsVisible(!value))
+        {
+            // if base state changed, either overwrite the actual value if we have fixed values,
+            // or overwrite the stored model state with the new one.
+            if (state.Sources[MetaIndex.EarState].IsFixed())
+                value = !state.ModelData.AreEarsVisible();
+            else
+                _manager.ChangeMetaState(state, MetaIndex.EarState, !value, ApplySettings.Game);
+        }
+        else
+        {
+            // if base state did not change, overwrite the value with the model state one.
+            value = !state.ModelData.AreEarsVisible();
+        }
+    }
+
     /// <summary> Handle Hat Visibility changes. These act on the game object. </summary>
     private void OnHeadGearVisibilityChange(Actor actor, ref bool value)
     {
@@ -802,6 +843,7 @@ public class StateListener : IDisposable
         _movedEquipment.Subscribe(OnMovedEquipment, MovedEquipment.Priority.StateListener);
         _weaponLoading.Subscribe(OnWeaponLoading, WeaponLoading.Priority.StateListener);
         _visorState.Subscribe(OnVisorChange, VisorStateChanged.Priority.StateListener);
+        _vieraEarState.Subscribe(OnVieraEarChange, VieraEarStateChanged.Priority.StateListener);
         _headGearVisibility.Subscribe(OnHeadGearVisibilityChange, HeadGearVisibilityChanged.Priority.StateListener);
         _weaponVisibility.Subscribe(OnWeaponVisibilityChange, WeaponVisibilityChanged.Priority.StateListener);
         _changeCustomizeService.Subscribe(OnCustomizeChange, ChangeCustomizeService.Priority.StateListener);
@@ -820,6 +862,7 @@ public class StateListener : IDisposable
         _movedEquipment.Unsubscribe(OnMovedEquipment);
         _weaponLoading.Unsubscribe(OnWeaponLoading);
         _visorState.Unsubscribe(OnVisorChange);
+        _vieraEarState.Unsubscribe(OnVieraEarChange);
         _headGearVisibility.Unsubscribe(OnHeadGearVisibilityChange);
         _weaponVisibility.Unsubscribe(OnWeaponVisibilityChange);
         _changeCustomizeService.Unsubscribe(OnCustomizeChange);

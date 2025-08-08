@@ -9,9 +9,9 @@ namespace Glamourer.Interop;
 
 public class VisorService : IDisposable
 {
-    private readonly PenumbraReloaded     _penumbra;
-    private readonly IGameInteropProvider _interop;
-    public readonly  VisorStateChanged    Event;
+    private readonly PenumbraReloaded      _penumbra;
+    private readonly IGameInteropProvider  _interop;
+    public readonly  VisorStateChanged     Event;
 
     public VisorService(VisorStateChanged visorStateChanged, IGameInteropProvider interop, PenumbraReloaded penumbra)
     {

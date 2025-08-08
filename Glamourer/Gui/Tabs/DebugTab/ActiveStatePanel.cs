@@ -87,6 +87,9 @@ public class ActiveStatePanel(StateManager _stateManager, ActorObjectManager _ob
             PrintRow("Visor Toggled", state.BaseData.IsVisorToggled(), state.ModelData.IsVisorToggled(),
                 state.Sources[MetaIndex.VisorState]);
             ImGui.TableNextRow();
+            PrintRow("Viera Ears Visible", state.BaseData.AreEarsVisible(), state.ModelData.AreEarsVisible(),
+                state.Sources[MetaIndex.EarState]);
+            ImGui.TableNextRow();
             PrintRow("Weapon Visible", state.BaseData.IsWeaponVisible(), state.ModelData.IsWeaponVisible(),
                 state.Sources[MetaIndex.WeaponState]);
             ImGui.TableNextRow();

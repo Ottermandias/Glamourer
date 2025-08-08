@@ -15,5 +15,8 @@ public sealed class PenumbraReloaded()
 
         /// <seealso cref="Interop.VisorService.Restore"/>
         VisorService = 0,
+
+        /// <seealso cref="Interop.VieraEarService.Restore"/>
+        VieraEarService = 0,
     }
 }

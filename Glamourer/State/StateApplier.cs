@@ -262,6 +262,14 @@ public class StateApplier(
                     _visor.SetVisorState(actor.Model, value);
                 return;
             }
+            case MetaIndex.EarState:
+                foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
+                {
+                    var model = actor.Model;
+                    model.VieraEarsVisible = value;
+                }
+
+                return;
         }
     }
 
@@ -402,6 +410,7 @@ public class StateApplier(
                 ChangeMetaState(actors, MetaIndex.HatState,    state.ModelData.IsHatVisible());
                 ChangeMetaState(actors, MetaIndex.WeaponState, state.ModelData.IsWeaponVisible());
                 ChangeMetaState(actors, MetaIndex.VisorState,  state.ModelData.IsVisorToggled());
+                ChangeMetaState(actors, MetaIndex.EarState,    state.ModelData.AreEarsVisible());
                 ChangeCrests(actors, state.ModelData.CrestVisibility);
                 ChangeParameters(actors, state.OnlyChangedParameters(), state.ModelData.Parameters);
                 ChangeMaterialValues(actors, state.Materials);

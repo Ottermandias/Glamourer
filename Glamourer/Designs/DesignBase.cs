@@ -40,7 +40,8 @@ public class DesignBase
     }
 
     /// <summary> Used when importing .cma or .chara files. </summary>
-    internal DesignBase(CustomizeService customize, in DesignData designData, EquipFlag equipFlags, CustomizeFlag customizeFlags, BonusItemFlag bonusFlags)
+    internal DesignBase(CustomizeService customize, in DesignData designData, EquipFlag equipFlags, CustomizeFlag customizeFlags,
+        BonusItemFlag bonusFlags)
     {
         _designData           = designData;
         ApplyCustomize        = customizeFlags & CustomizeFlagExtensions.AllRelevant;
@@ -254,9 +255,10 @@ public class DesignBase
                 ret[slot.ToString()] = Serialize(item.Id, stains, crest, DoApplyEquip(slot), DoApplyStain(slot), DoApplyCrest(crestSlot));
             }
 
-            ret["Hat"]    = new QuadBool(_designData.IsHatVisible(),    DoApplyMeta(MetaIndex.HatState)).ToJObject("Show", "Apply");
-            ret["Visor"]  = new QuadBool(_designData.IsVisorToggled(),  DoApplyMeta(MetaIndex.VisorState)).ToJObject("IsToggled", "Apply");
-            ret["Weapon"] = new QuadBool(_designData.IsWeaponVisible(), DoApplyMeta(MetaIndex.WeaponState)).ToJObject("Show", "Apply");
+            ret["Hat"]       = new QuadBool(_designData.IsHatVisible(),    DoApplyMeta(MetaIndex.HatState)).ToJObject("Show", "Apply");
+            ret["VieraEars"] = new QuadBool(_designData.AreEarsVisible(),  DoApplyMeta(MetaIndex.EarState)).ToJObject("Show", "Apply");
+            ret["Visor"]     = new QuadBool(_designData.IsVisorToggled(),  DoApplyMeta(MetaIndex.VisorState)).ToJObject("IsToggled", "Apply");
+            ret["Weapon"]    = new QuadBool(_designData.IsWeaponVisible(), DoApplyMeta(MetaIndex.WeaponState)).ToJObject("Show", "Apply");
         }
         else
         {
@@ -603,6 +605,10 @@ public class DesignBase
         metaValue = QuadBool.FromJObject(equip["Visor"], "IsToggled", "Apply", QuadBool.NullFalse);
         design.SetApplyMeta(MetaIndex.VisorState, metaValue.Enabled);
         design._designData.SetVisor(metaValue.ForcedValue);
+
+        metaValue = QuadBool.FromJObject(equip["VieraEars"], "Show", "Apply", QuadBool.NullTrue);
+        design.SetApplyMeta(MetaIndex.EarState, metaValue.Enabled);
+        design._designData.SetEarsVisible(metaValue.ForcedValue);
         return;
 
         void PrintWarning(string msg)

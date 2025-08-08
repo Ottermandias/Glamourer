@@ -71,6 +71,7 @@ public static class StaticServiceManager
 
     private static ServiceManager AddEvents(this ServiceManager services)
         => services.AddSingleton<VisorStateChanged>()
+            .AddSingleton<VieraEarStateChanged>()
             .AddSingleton<EquipSlotUpdating>()
             .AddSingleton<DesignChanged>()
             .AddSingleton<AutomationChanged>()
@@ -96,6 +97,7 @@ public static class StaticServiceManager
 
     private static ServiceManager AddInterop(this ServiceManager services)
         => services.AddSingleton<VisorService>()
+            .AddSingleton<VieraEarService>()
             .AddSingleton<ChangeCustomizeService>()
             .AddSingleton<MetaService>()
             .AddSingleton<UpdateSlotService>()

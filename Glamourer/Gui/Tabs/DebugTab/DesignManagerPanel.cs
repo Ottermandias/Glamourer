@@ -114,6 +114,7 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
             ImGuiUtil.DrawTableColumn(index.ToName());
             ImGuiUtil.DrawTableColumn(design.DesignData.GetMeta(index).ToString());
             ImGuiUtil.DrawTableColumn(design.DoApplyMeta(index) ? "Apply" : "Keep");
+            ImGui.TableNextRow();
         }
 
         ImGuiUtil.DrawTableColumn("Model ID");

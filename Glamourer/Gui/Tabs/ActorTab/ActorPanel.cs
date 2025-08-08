@@ -305,6 +305,12 @@ public class ActorPanel
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(MetaIndex.WeaponState, _stateManager, _state!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.OffHand, _stateManager, _state!));
         }
+
+        ImGui.SameLine();
+        using (_ = ImRaii.Group())
+        {
+            EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(MetaIndex.EarState, _stateManager, _state!));
+        }
     }
 
     private void DrawMonsterPanel()

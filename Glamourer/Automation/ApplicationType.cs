@@ -38,7 +38,7 @@ public static class ApplicationTypeExtensions
         var customizeFlags = type.HasFlag(ApplicationType.Customizations) ? CustomizeFlagExtensions.All : 0;
         var parameterFlags = type.HasFlag(ApplicationType.Customizations) ? CustomizeParameterExtensions.All : 0;
         var crestFlags     = type.HasFlag(ApplicationType.GearCustomization) ? CrestExtensions.AllRelevant : 0;
-        var metaFlags = (type.HasFlag(ApplicationType.Armor) ? MetaFlag.HatState | MetaFlag.VisorState : 0)
+        var metaFlags = (type.HasFlag(ApplicationType.Armor) ? MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.EarState : 0)
           | (type.HasFlag(ApplicationType.Weapons) ? MetaFlag.WeaponState : 0)
           | (type.HasFlag(ApplicationType.Customizations) ? MetaFlag.Wetness : 0);
         var bonusFlags = type.HasFlag(ApplicationType.Armor) ? BonusExtensions.All : 0;

@@ -19,13 +19,13 @@ public record struct ApplicationCollection(
     public static readonly ApplicationCollection None = new(0, 0, CustomizeFlag.BodyType, 0, 0, 0);
 
     public static readonly ApplicationCollection Equipment = new(EquipFlagExtensions.All, BonusExtensions.All,
-        CustomizeFlag.BodyType, CrestExtensions.AllRelevant, 0, MetaFlag.HatState | MetaFlag.WeaponState | MetaFlag.VisorState);
+        CustomizeFlag.BodyType, CrestExtensions.AllRelevant, 0, MetaFlag.HatState | MetaFlag.WeaponState | MetaFlag.VisorState | MetaFlag.EarState);
 
     public static readonly ApplicationCollection Customizations = new(0, 0, CustomizeFlagExtensions.AllRelevant, 0,
         CustomizeParameterExtensions.All, MetaFlag.Wetness);
 
     public static readonly ApplicationCollection Default = new(EquipFlagExtensions.All, BonusExtensions.All,
-        CustomizeFlagExtensions.AllRelevant, CrestExtensions.AllRelevant, 0, MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.WeaponState);
+        CustomizeFlagExtensions.AllRelevant, CrestExtensions.AllRelevant, 0, MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.WeaponState | MetaFlag.EarState);
 
     public static ApplicationCollection FromKeys()
         => (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift) switch
@@ -47,7 +47,7 @@ public record struct ApplicationCollection(
         Equip     =  0;
         BonusItem =  0;
         Crest     =  0;
-        Meta      &= ~(MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.WeaponState);
+        Meta      &= ~(MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.WeaponState | MetaFlag.EarState);
     }
 
     public void RemoveCustomize()

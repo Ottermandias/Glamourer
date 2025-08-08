@@ -158,6 +158,7 @@ public sealed class StateManager(
 
             // Visor state is a flag on the game object, but we can see the actual state on the draw object.
             ret.SetVisor(VisorService.GetVisorState(model));
+            ret.SetEarsVisible(model.VieraEarsVisible);
 
             foreach (var slot in CrestExtensions.AllRelevantSet)
                 ret.SetCrest(slot, CrestService.GetModelCrest(actor, slot));
@@ -186,7 +187,7 @@ public sealed class StateManager(
             off  = actor.GetOffhand();
             FistWeaponHack(ref ret, ref main, ref off);
             ret.SetVisor(actor.AsCharacter->DrawData.IsVisorToggled);
-
+            ret.SetEarsVisible(actor.ShowVieraEars);
             foreach (var slot in CrestExtensions.AllRelevantSet)
                 ret.SetCrest(slot, actor.GetCrest(slot));
 

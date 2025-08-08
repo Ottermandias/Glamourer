@@ -189,8 +189,9 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
     public const int MetaVisorState  = MetaHatState + 1;
     public const int MetaWeaponState = MetaVisorState + 1;
     public const int MetaModelId     = MetaWeaponState + 1;
+    public const int MetaEarState    = MetaModelId + 1;
 
-    public const int CrestHead    = MetaModelId + 1;
+    public const int CrestHead    = MetaEarState + 1;
     public const int CrestBody    = CrestHead + 1;
     public const int CrestOffhand = CrestBody + 1;
 
@@ -300,6 +301,7 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
             MetaHatState    => MetaFlag.HatState,
             MetaVisorState  => MetaFlag.VisorState,
             MetaWeaponState => MetaFlag.WeaponState,
+            MetaEarState    => MetaFlag.EarState,
             MetaModelId     => true,
 
             CrestHead    => CrestFlag.Head,

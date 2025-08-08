@@ -287,6 +287,7 @@ public unsafe struct DesignData
             MetaIndex.HatState    => IsHatVisible(),
             MetaIndex.VisorState  => IsVisorToggled(),
             MetaIndex.WeaponState => IsWeaponVisible(),
+            MetaIndex.EarState    => AreEarsVisible(),
             _                     => false,
         };
 
@@ -297,6 +298,7 @@ public unsafe struct DesignData
             MetaIndex.HatState    => SetHatVisible(value),
             MetaIndex.VisorState  => SetVisor(value),
             MetaIndex.WeaponState => SetWeaponVisible(value),
+            MetaIndex.EarState    => SetEarsVisible(value),
             _                     => false,
         };
 
@@ -340,12 +342,24 @@ public unsafe struct DesignData
     public readonly bool IsWeaponVisible()
         => (_states & 0x08) == 0x08;
 
+    public readonly bool AreEarsVisible()
+        => (_states & 0x10) == 0x00;
+
     public bool SetWeaponVisible(bool value)
     {
         if (value == IsWeaponVisible())
             return false;
 
         _states = (byte)(value ? _states | 0x08 : _states & ~0x08);
+        return true;
+    }
+
+    public bool SetEarsVisible(bool value)
+    {
+        if (value == AreEarsVisible())
+            return false;
+
+        _states = (byte)(value ? _states & ~0x10 : _states | 0x10);
         return true;
     }
 
@@ -386,6 +400,7 @@ public unsafe struct DesignData
 
         SetHatVisible(true);
         SetWeaponVisible(true);
+        SetEarsVisible(true);
         SetVisor(false);
         fixed (uint* ptr = _itemIds)
         {

@@ -17,6 +17,7 @@ namespace Glamourer.Gui.Tabs.DebugTab;
 public unsafe class ModelEvaluationPanel(
     ActorObjectManager _objectManager,
     VisorService _visorService,
+    VieraEarService _vieraEarService,
     UpdateSlotService _updateSlotService,
     ChangeCustomizeService _changeCustomizeService,
     CrestService _crestService,
@@ -84,6 +85,7 @@ public unsafe class ModelEvaluationPanel(
         ImGuiUtil.CopyOnClickSelectable(offhand.ToString());
 
         DrawVisor(actor, model);
+        DrawVieraEars(actor, model);
         DrawHatState(actor, model);
         DrawWeaponState(actor, model);
         DrawWetness(actor, model);
@@ -133,6 +135,26 @@ public unsafe class ModelEvaluationPanel(
         ImGui.SameLine();
         if (ImGui.SmallButton("Toggle"))
             _visorService.SetVisorState(model, !VisorService.GetVisorState(model));
+    }
+
+    private void DrawVieraEars(Actor actor, Model model)
+    {
+        using var id = ImRaii.PushId("Viera Ears");
+        ImGuiUtil.DrawTableColumn("Viera Ears");
+        ImGuiUtil.DrawTableColumn(actor.IsCharacter ? actor.ShowVieraEars.ToString() : "No Character");
+        ImGuiUtil.DrawTableColumn(model.IsHuman ? model.VieraEarsVisible.ToString() : "No Human");
+        ImGui.TableNextColumn();
+        if (!model.IsHuman)
+            return;
+
+        if (ImGui.SmallButton("Set True"))
+            _vieraEarService.SetVieraEarState(model, true);
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Set False"))
+            _vieraEarService.SetVieraEarState(model, false);
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Toggle"))
+            _vieraEarService.SetVieraEarState(model, !model.VieraEarsVisible);
     }
 
     private void DrawHatState(Actor actor, Model model)
