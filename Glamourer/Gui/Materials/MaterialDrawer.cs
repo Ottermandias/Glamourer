@@ -3,7 +3,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Services;
 using OtterGui.Text;

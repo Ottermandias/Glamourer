@@ -2,7 +2,7 @@
 using Glamourer.GameData;
 using Glamourer.Designs;
 using Glamourer.State;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;

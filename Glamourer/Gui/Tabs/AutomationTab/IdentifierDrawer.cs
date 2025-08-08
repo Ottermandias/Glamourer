@@ -1,5 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Gui;

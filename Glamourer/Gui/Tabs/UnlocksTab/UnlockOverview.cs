@@ -5,7 +5,7 @@ using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.Unlocks;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;

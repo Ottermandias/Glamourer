@@ -8,7 +8,7 @@ using FFXIVClientStructs.Interop;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Glamourer.State;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Raii;
 using OtterGui.Services;
 using OtterGui.Text;

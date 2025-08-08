@@ -5,7 +5,7 @@ using Glamourer.Designs;
 using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Services;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Filesystem;

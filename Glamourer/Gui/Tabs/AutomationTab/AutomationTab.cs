@@ -1,5 +1,5 @@
 ﻿using Dalamud.Interface.Utility;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;

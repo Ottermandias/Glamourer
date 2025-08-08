@@ -1,5 +1,5 @@
 ﻿using Glamourer.Designs;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Text;
 using OtterGui.Text.EndObjects;
 

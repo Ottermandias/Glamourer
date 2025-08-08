@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Glamourer.Api.IpcSubscribers;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;

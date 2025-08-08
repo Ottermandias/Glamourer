@@ -1,5 +1,5 @@
 ﻿using Glamourer.Automation;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Raii;

@@ -2,7 +2,7 @@
 using Dalamud.Interface.Utility;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Text;

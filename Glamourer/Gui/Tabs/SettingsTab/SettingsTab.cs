@@ -8,7 +8,7 @@ using Glamourer.Designs;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.PalettePlus;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Widgets;

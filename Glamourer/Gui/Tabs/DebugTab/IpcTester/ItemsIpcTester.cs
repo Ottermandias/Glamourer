@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Api.Enums;
 using Glamourer.Api.IpcSubscribers;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;

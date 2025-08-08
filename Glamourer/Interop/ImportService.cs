@@ -3,7 +3,7 @@ using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Interop.CharaFile;
 using Glamourer.Services;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;

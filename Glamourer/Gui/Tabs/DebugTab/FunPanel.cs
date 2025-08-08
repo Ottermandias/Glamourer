@@ -1,5 +1,5 @@
 ﻿using Glamourer.State;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;

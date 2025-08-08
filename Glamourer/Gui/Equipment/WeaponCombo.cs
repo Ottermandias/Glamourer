@@ -1,6 +1,6 @@
 ﻿using Glamourer.Services;
 using Glamourer.Unlocks;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Classes;
 using OtterGui.Extensions;
 using OtterGui.Log;

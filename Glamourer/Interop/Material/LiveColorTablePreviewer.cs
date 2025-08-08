@@ -1,5 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Services;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
@@ -114,7 +114,8 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
         var        frame       = DateTimeOffset.UtcNow.UtcTicks;
         var        hueByte     = frame % (steps * frameLength) / frameLength;
         var        hue         = (float)hueByte / steps;
-        ImGui.ColorConvertHSVtoRGB(hue, 1, 1, out var r, out var g, out var b);
+        float        r, g, b     = 0;
+        ImGui.ColorConvertHSVtoRGB(hue, 1, 1, &r, &g, &b);
         return new Vector3(r, g, b);
     }
 

@@ -1,7 +1,7 @@
 ﻿using Dalamud.Plugin.Services;
 using Glamourer.Services;
 using Glamourer.Unlocks;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 using OtterGui.Classes;
 using OtterGui.Extensions;

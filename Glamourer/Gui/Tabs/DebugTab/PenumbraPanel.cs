@@ -1,6 +1,6 @@
 ﻿using Dalamud.Interface.Utility;
 using Glamourer.Interop.Penumbra;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.Api.Enums;

@@ -6,7 +6,7 @@ using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.State;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;

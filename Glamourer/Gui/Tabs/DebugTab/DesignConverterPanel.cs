@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface;
 using Glamourer.Designs;
 using Glamourer.Utility;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Newtonsoft.Json.Linq;
 using OtterGui;
 using OtterGui.Raii;

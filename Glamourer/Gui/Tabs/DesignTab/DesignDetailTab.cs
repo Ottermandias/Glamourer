@@ -2,7 +2,7 @@
 using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Services;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;

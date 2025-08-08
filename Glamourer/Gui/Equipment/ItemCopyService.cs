@@ -1,5 +1,5 @@
 ﻿using Glamourer.Services;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Services;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;

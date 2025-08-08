@@ -1,6 +1,6 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Designs;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using static Penumbra.GameData.Files.ShpkFile;
 

@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface.Textures.TextureWraps;
 using Glamourer.GameData;
 using Glamourer.Unlocks;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Raii;
@@ -35,7 +35,7 @@ public partial class CustomizationDrawer
         var hasIcon = icon.TryGetWrap(out var wrap, out _);
         using (_ = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw))
         {
-            if (ImGui.ImageButton(wrap?.ImGuiHandle ?? icon.GetWrapOrEmpty().ImGuiHandle, _iconSize))
+            if (ImGui.ImageButton(wrap?.Handle ?? icon.GetWrapOrEmpty().Handle, _iconSize))
             {
                 ImGui.OpenPopup(IconSelectorPopup);
             }
@@ -89,7 +89,7 @@ public partial class CustomizationDrawer
                     : ImRaii.PushColor(ImGuiCol.Button, ColorId.FavoriteStarOn.Value(), isFavorite);
                 var hasIcon = icon.TryGetWrap(out var wrap, out var _);
 
-                if (ImGui.ImageButton(wrap?.ImGuiHandle ?? icon.GetWrapOrEmpty().ImGuiHandle, _iconSize))
+                if (ImGui.ImageButton(wrap?.Handle ?? icon.GetWrapOrEmpty().Handle, _iconSize))
                 {
                     UpdateValue(custom.Value);
                     ImGui.CloseCurrentPopup();
@@ -215,7 +215,7 @@ public partial class CustomizationDrawer
                 hasIcon = icon.TryGetWrap(out wrap, out _);
             }
 
-            if (ImGui.ImageButton(wrap?.ImGuiHandle ?? icon.GetWrapOrEmpty().ImGuiHandle, _iconSize, Vector2.Zero, Vector2.One,
+            if (ImGui.ImageButton(wrap?.Handle ?? icon.GetWrapOrEmpty().Handle, _iconSize, Vector2.Zero, Vector2.One,
                     (int)ImGui.GetStyle().FramePadding.X, Vector4.Zero, enabled ? Vector4.One : _redTint))
             {
                 _customize.Set(featureIdx, enabled ? CustomizeValue.Zero : CustomizeValue.Max);

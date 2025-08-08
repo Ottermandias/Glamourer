@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Designs;
 using Glamourer.Services;
 using Glamourer.State;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Text;

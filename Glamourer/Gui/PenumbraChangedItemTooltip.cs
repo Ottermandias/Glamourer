@@ -3,7 +3,7 @@ using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Raii;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Data;

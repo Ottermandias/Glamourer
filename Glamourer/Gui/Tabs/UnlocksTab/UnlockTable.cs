@@ -6,7 +6,7 @@ using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.Unlocks;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Table;

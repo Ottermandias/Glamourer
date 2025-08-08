@@ -12,7 +12,7 @@ using Glamourer.Gui.Tabs.NpcTab;
 using Glamourer.Gui.Tabs.SettingsTab;
 using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Interop.Penumbra;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Custom;

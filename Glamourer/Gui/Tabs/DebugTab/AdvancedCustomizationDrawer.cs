@@ -1,5 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Gui.Debug;

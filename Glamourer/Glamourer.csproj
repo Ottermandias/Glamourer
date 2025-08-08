@@ -1,4 +1,4 @@
-﻿<Project Sdk="Dalamud.NET.Sdk/12.0.2">
+﻿<Project Sdk="Dalamud.NET.Sdk/13.0.0">
   <PropertyGroup>
     <RootNamespace>Glamourer</RootNamespace>
     <AssemblyName>Glamourer</AssemblyName>
@@ -29,6 +29,7 @@
     <ProjectReference Include="..\Penumbra.String\Penumbra.String.csproj" />
     <ProjectReference Include="..\Penumbra.GameData\Penumbra.GameData.csproj" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.4.2-beta" />
+    <PackageReference Update="DalamudPackager" Version="13.0.0" />
   </ItemGroup>
 
   <ItemGroup>

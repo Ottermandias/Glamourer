@@ -1,6 +1,6 @@
 using Glamourer.Api.Enums;
 using Glamourer.GameData;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Designs;

@@ -2,7 +2,7 @@
 using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Services;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

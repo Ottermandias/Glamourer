@@ -3,7 +3,7 @@ using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility.Raii;
 using Glamourer.Gui;
 using Glamourer.Services;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;

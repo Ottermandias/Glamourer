@@ -9,7 +9,7 @@ using Glamourer.Gui;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Extensions;

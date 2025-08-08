@@ -4,7 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.State;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;

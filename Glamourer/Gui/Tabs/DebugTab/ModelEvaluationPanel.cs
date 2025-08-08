@@ -2,7 +2,7 @@
 using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;

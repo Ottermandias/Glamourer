@@ -4,7 +4,7 @@ using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Services;

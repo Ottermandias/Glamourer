@@ -5,7 +5,7 @@ using Glamourer.Api.Enums;
 using Glamourer.Api.Helpers;
 using Glamourer.Api.IpcSubscribers;
 using Glamourer.Designs;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;

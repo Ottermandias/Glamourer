@@ -8,7 +8,7 @@ using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Classes;
 using OtterGui.Text;
 using Penumbra.GameData.Actors;

@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface;
 using Glamourer.Services;
 using Glamourer.State;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using OtterGui.Filesystem;
 using OtterGui.Raii;
 using OtterGui.Services;

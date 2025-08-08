@@ -122,7 +122,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
                 if (!model.IsHuman)
                     return false;
 
-                return model.AsHuman->IsFreeCompanyCrestVisibleOnSlot(index) != 0;
+                return model.AsHuman->IsFreeCompanyCrestVisibleOnSlot(index);
             }
             case CrestType.Offhand:
             {
@@ -130,7 +130,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
                 if (!model.IsWeapon)
                     return false;
 
-                return model.AsWeapon->IsFreeCompanyCrestVisibleOnSlot(index) != 0;
+                return model.AsWeapon->IsFreeCompanyCrestVisibleOnSlot(index);
             }
         }
 
