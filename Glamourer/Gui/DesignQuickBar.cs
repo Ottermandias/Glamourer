@@ -52,6 +52,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
         ActorObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra)
+        : base("Glamourer Quick Bar", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking)
     {
         _config             = config;
         _designCombo        = designCombo;
