@@ -189,10 +189,7 @@ public class DesignDetailTab
         else if (_selector.Selected!.Color.Length != 0)
         {
             ImGui.SameLine();
-            var       size = new Vector2(ImGui.GetFrameHeight());
-            using var font = ImRaii.PushFont(UiBuilder.IconFont);
-            ImGuiUtil.DrawTextButton(FontAwesomeIcon.ExclamationCircle.ToIconString(), size, 0, _colors.MissingColor);
-            ImUtf8.HoverTooltip("The color associated with this design does not exist."u8);
+            ImUtf8.Icon(FontAwesomeIcon.ExclamationCircle, "The color associated with this design does not exist."u8, _colors.MissingColor);
         }
 
         ImUtf8.DrawFrameColumn("Creation Date"u8);
