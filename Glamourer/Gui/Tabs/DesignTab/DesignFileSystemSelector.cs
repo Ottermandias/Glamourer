@@ -175,7 +175,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         var       flag  = selected ? ImGuiTreeNodeFlags.Selected | LeafFlags : LeafFlags;
         var       name  = IncognitoMode ? leaf.Value.Incognito : leaf.Value.Name.Text;
         using var color = ImRaii.PushColor(ImGuiCol.Text, state.Color);
-        using var _     = ImRaii.TreeNode(name, flag);
+        using var _     = ImUtf8.TreeNode(name, flag);
         if (_config.AllowDoubleClickToApply && ImGui.IsItemHovered() && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
             _designApplier.ApplyToPlayer(leaf.Value);
     }
