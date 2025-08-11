@@ -96,6 +96,12 @@ public class CommandService : IDisposable, IApiService
                     _config.Ephemeral.LockMainWindow = !_config.Ephemeral.LockMainWindow;
                     _config.Ephemeral.Save();
                     return;
+                case "automation":
+                    var newValue = !_config.EnableAutoDesigns;
+                    _config.EnableAutoDesigns = newValue;
+                    _autoDesignApplier.OnEnableAutoDesignsChanged(newValue);
+                    _config.Save();
+                    return;
                 default:
                     _chat.Print("Use without argument to toggle the main window.");
                     _chat.Print(new SeStringBuilder().AddText("Use ").AddPurple("/glamour").AddText(" instead of ").AddRed("/glamourer")
