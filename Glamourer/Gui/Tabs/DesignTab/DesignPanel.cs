@@ -270,11 +270,9 @@ public class DesignPanel
             DrawCrestApplication();
             ImUtf8.IconDummy();
             DrawMetaApplication();
-            ImUtf8.IconDummy();
-            DrawBonusSlotApplication();
         }
 
-        ImGui.SameLine(ImGui.GetContentRegionAvail().X / 2);
+        ImGui.SameLine(210 * ImUtf8.GlobalScale + ImGui.GetStyle().ItemSpacing.X);
         using (var _ = ImRaii.Group())
         {
             void ApplyEquip(string label, EquipFlag allFlags, bool stain, IEnumerable<EquipSlot> slots)
@@ -316,6 +314,9 @@ public class DesignPanel
 
             ImUtf8.IconDummy();
             DrawParameterApplication();
+
+            ImUtf8.IconDummy();
+            DrawBonusSlotApplication();
         }
     }
 
@@ -324,7 +325,7 @@ public class DesignPanel
         var   enabled   = _config.DeleteDesignModifier.IsActive();
         bool? equip     = null;
         bool? customize = null;
-        var   size      = new Vector2(200 * ImUtf8.GlobalScale, 0);
+        var   size      = new Vector2(210 * ImUtf8.GlobalScale, 0);
         if (ImUtf8.ButtonEx("Disable Everything"u8,
                 "Disable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness."u8, size,
                 !enabled))
@@ -414,6 +415,7 @@ public class DesignPanel
         "Apply Hat Visibility",
         "Apply Visor State",
         "Apply Weapon Visibility",
+        "Apply Viera Ear Visibility",
     ];
 
     private void DrawMetaApplication()
