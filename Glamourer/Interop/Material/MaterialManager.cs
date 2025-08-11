@@ -197,7 +197,8 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         if (human->ChangedEquipData == null)
             return ((Model)human).GetArmor(((uint)slotId).ToEquipSlot()).ToWeapon(0);
 
-        return ((CharacterArmor*)human->ChangedEquipData + slotId * 4)->ToWeapon(0);
+        var item = (ChangedEquipData*)human->ChangedEquipData + slotId;
+        return ((CharacterArmor*)item)->ToWeapon(0);
     }
 
     /// <summary>
