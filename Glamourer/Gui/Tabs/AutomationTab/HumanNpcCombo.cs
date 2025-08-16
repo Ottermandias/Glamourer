@@ -2,11 +2,11 @@
 using Dalamud.Utility;
 using Dalamud.Bindings.ImGui;
 using OtterGui;
-using OtterGui.Custom;
 using OtterGui.Extensions;
 using OtterGui.Log;
 using OtterGui.Widgets;
 using Penumbra.GameData.DataContainers;
+using OtterGui.Custom;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 

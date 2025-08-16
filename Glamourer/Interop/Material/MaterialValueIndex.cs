@@ -50,6 +50,18 @@ public readonly record struct MaterialValueIndex(
         return idx > 2 ? Invalid : new MaterialValueIndex(DrawObjectType.Human, (byte)(idx + 16), 0, 0);
     }
 
+    public string SlotName()
+    {
+        var slot = ToEquipSlot();
+        if (slot is not EquipSlot.Unknown)
+            return slot.ToName();
+
+        if (DrawObject is DrawObjectType.Human && SlotIndex is 16)
+            return BonusItemFlag.Glasses.ToString();
+
+        return EquipSlot.Unknown.ToName();
+    }
+
     public EquipSlot ToEquipSlot()
         => DrawObject switch
         {
@@ -57,6 +69,13 @@ public readonly record struct MaterialValueIndex(
             DrawObjectType.Mainhand when SlotIndex == 0 => EquipSlot.MainHand,
             DrawObjectType.Offhand when SlotIndex == 0  => EquipSlot.OffHand,
             _                                           => EquipSlot.Unknown,
+        };
+
+    public BonusItemFlag ToBonusSlot()
+        => DrawObject switch
+        {
+            DrawObjectType.Human when SlotIndex > 15 => ((uint)SlotIndex - 16).ToBonusSlot(),
+            _                                        => BonusItemFlag.Unknown,
         };
 
     public unsafe bool TryGetModel(Actor actor, out Model model)

@@ -18,7 +18,6 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
     public const float GlossWidth            = 100;
     public const float SpecularStrengthWidth = 125;
 
-    private EquipSlot          _newSlot = EquipSlot.Head;
     private int                _newMaterialIdx;
     private int                _newRowIdx;
     private MaterialValueIndex _newKey = MaterialValueIndex.FromSlot(EquipSlot.Head);
@@ -178,14 +177,42 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
 
     public sealed class MaterialSlotCombo;
 
+    private void DrawSlotCombo()
+    {
+        var width = ImUtf8.CalcTextSize(EquipSlot.OffHand.ToName()).X + ImGui.GetFrameHeightWithSpacing();
+        ImGui.SetNextItemWidth(width);
+        using var combo = ImUtf8.Combo("##slot"u8, _newKey.SlotName());
+        if (combo)
+        {
+            var currentSlot = _newKey.ToEquipSlot();
+            foreach (var tmpSlot in EquipSlotExtensions.FullSlots)
+            {
+                if (ImUtf8.Selectable(tmpSlot.ToName(), tmpSlot == currentSlot) && currentSlot != tmpSlot)
+                    _newKey = MaterialValueIndex.FromSlot(tmpSlot) with
+                    {
+                        MaterialIndex = (byte)_newMaterialIdx,
+                        RowIndex = (byte)_newRowIdx,
+                    };
+            }
+
+            var currentBonus = _newKey.ToBonusSlot();
+            foreach (var bonusSlot in BonusExtensions.AllFlags)
+            {
+                if (ImUtf8.Selectable(bonusSlot.ToName(), bonusSlot == currentBonus) && bonusSlot != currentBonus)
+                    _newKey = MaterialValueIndex.FromSlot(bonusSlot) with
+                    {
+                        MaterialIndex = (byte)_newMaterialIdx,
+                        RowIndex = (byte)_newRowIdx,
+                    };
+            }
+        }
+
+        ImUtf8.HoverTooltip("Choose a slot for an advanced dye row."u8);
+    }
+
     public void DrawNew(Design design)
     {
-        if (EquipSlotCombo.Draw("##slot", "Choose a slot for an advanced dye row.", ref _newSlot))
-            _newKey = MaterialValueIndex.FromSlot(_newSlot) with
-            {
-                MaterialIndex = (byte)_newMaterialIdx,
-                RowIndex = (byte)_newRowIdx,
-            };
+        DrawSlotCombo();
         ImUtf8.SameLineInner();
         DrawMaterialIdxDrag();
         ImUtf8.SameLineInner();
