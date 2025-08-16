@@ -154,6 +154,7 @@ public class DesignPanel
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.WeaponState, _manager, _selector.Selected!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.OffHand, _manager, _selector.Selected!));
         }
+
         ImGui.SameLine();
         using (var _ = ImRaii.Group())
         {
@@ -403,6 +404,7 @@ public class DesignPanel
             _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.HatState,    equip.Value);
             _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.VisorState,  equip.Value);
             _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.WeaponState, equip.Value);
+            _manager.ChangeApplyMeta(_selector.Selected!, MetaIndex.EarState,    equip.Value);
         }
 
         if (customize.HasValue)
