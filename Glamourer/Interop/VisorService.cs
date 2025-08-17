@@ -9,9 +9,9 @@ namespace Glamourer.Interop;
 
 public class VisorService : IDisposable
 {
-    private readonly PenumbraReloaded      _penumbra;
-    private readonly IGameInteropProvider  _interop;
-    public readonly  VisorStateChanged     Event;
+    private readonly PenumbraReloaded     _penumbra;
+    private readonly IGameInteropProvider _interop;
+    public readonly  VisorStateChanged    Event;
 
     public VisorService(VisorStateChanged visorStateChanged, IGameInteropProvider interop, PenumbraReloaded penumbra)
     {
@@ -36,7 +36,7 @@ public class VisorService : IDisposable
     /// <param name="human"> The draw object. </param>
     /// <param name="on"> The desired state (true: toggled). </param>
     /// <returns> Whether the state was changed. </returns>
-    public bool SetVisorState(Model human, bool on)
+    public unsafe bool SetVisorState(Model human, bool on)
     {
         if (!human.IsHuman)
             return false;
@@ -46,6 +46,8 @@ public class VisorService : IDisposable
         if (oldState == on)
             return false;
 
+        // No clue what this flag does, but it's necessary for toggling static visors on or off, e.g. Alternate Cap (6229-1).
+        human.AsHuman->StateFlags |= (CharacterBase.StateFlag)0x40000000;
         SetupVisorDetour(human, human.GetArmor(EquipSlot.Head).Set.Id, on);
         return true;
     }
