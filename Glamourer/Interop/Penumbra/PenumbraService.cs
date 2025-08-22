@@ -2,6 +2,7 @@
 using Dalamud.Plugin;
 using Glamourer.Events;
 using Glamourer.State;
+using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
 using Penumbra.Api.Enums;
 using Penumbra.Api.Helpers;
@@ -49,6 +50,8 @@ public class PenumbraService : IDisposable
     private readonly EventSubscriber<nint, Guid, nint, nint, nint>         _creatingCharacterBase;
     private readonly EventSubscriber<nint, Guid, nint>                     _createdCharacterBase;
     private readonly EventSubscriber<ModSettingChange, Guid, string, bool> _modSettingChanged;
+    private readonly EventSubscriber<JObject, string, Guid>                _pcpParsed;
+    private readonly EventSubscriber<JObject, ushort>                      _pcpCreated;
 
     private global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier?                          _collectionByIdentifier;
     private global::Penumbra.Api.IpcSubscribers.GetCollections?                                      _collections;
@@ -101,6 +104,8 @@ public class PenumbraService : IDisposable
         _createdCharacterBase  = global::Penumbra.Api.IpcSubscribers.CreatedCharacterBase.Subscriber(pi);
         _creatingCharacterBase = global::Penumbra.Api.IpcSubscribers.CreatingCharacterBase.Subscriber(pi);
         _modSettingChanged     = global::Penumbra.Api.IpcSubscribers.ModSettingChanged.Subscriber(pi);
+        _pcpCreated            = global::Penumbra.Api.IpcSubscribers.CreatingPcp.Subscriber(pi);
+        _pcpParsed             = global::Penumbra.Api.IpcSubscribers.ParsingPcp.Subscriber(pi);
         Reattach();
     }
 
@@ -133,6 +138,18 @@ public class PenumbraService : IDisposable
     {
         add => _modSettingChanged.Event += value;
         remove => _modSettingChanged.Event -= value;
+    }
+
+    public event Action<JObject, ushort> PcpCreated
+    {
+        add => _pcpCreated.Event += value;
+        remove => _pcpCreated.Event -= value;
+    }
+
+    public event Action<JObject, string, Guid> PcpParsed
+    {
+        add => _pcpParsed.Event += value;
+        remove => _pcpParsed.Event -= value;
     }
 
     public Dictionary<Guid, string> GetCollections()
@@ -514,28 +531,30 @@ public class PenumbraService : IDisposable
             _clickSubscriber.Enable();
             _creatingCharacterBase.Enable();
             _createdCharacterBase.Enable();
+            _pcpCreated.Enable();
+            _pcpParsed.Enable();
             _modSettingChanged.Enable();
-            _collectionByIdentifier           = new global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier(_pluginInterface);
-            _collections                      = new global::Penumbra.Api.IpcSubscribers.GetCollections(_pluginInterface);
-            _redraw                           = new global::Penumbra.Api.IpcSubscribers.RedrawObject(_pluginInterface);
-            _checkCutsceneParent              = new global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndexFunc(_pluginInterface).Invoke();
-            _getGameObject                    = new global::Penumbra.Api.IpcSubscribers.GetGameObjectFromDrawObjectFunc(_pluginInterface).Invoke();
-            _objectCollection                 = new global::Penumbra.Api.IpcSubscribers.GetCollectionForObject(_pluginInterface);
-            _getMods                          = new global::Penumbra.Api.IpcSubscribers.GetModList(_pluginInterface);
-            _currentCollection                = new global::Penumbra.Api.IpcSubscribers.GetCollection(_pluginInterface);
-            _getCurrentSettings               = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings(_pluginInterface);
-            _inheritMod                       = new global::Penumbra.Api.IpcSubscribers.TryInheritMod(_pluginInterface);
-            _setMod                           = new global::Penumbra.Api.IpcSubscribers.TrySetMod(_pluginInterface);
-            _setModPriority                   = new global::Penumbra.Api.IpcSubscribers.TrySetModPriority(_pluginInterface);
-            _setModSetting                    = new global::Penumbra.Api.IpcSubscribers.TrySetModSetting(_pluginInterface);
-            _setModSettings                   = new global::Penumbra.Api.IpcSubscribers.TrySetModSettings(_pluginInterface);
-            _openModPage                      = new global::Penumbra.Api.IpcSubscribers.OpenMainWindow(_pluginInterface);
-            _getChangedItems                  = new global::Penumbra.Api.IpcSubscribers.GetChangedItems(_pluginInterface);
-            _setTemporaryModSettings          = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettings(_pluginInterface);
-            _setTemporaryModSettingsPlayer    = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettingsPlayer(_pluginInterface);
-            _removeTemporaryModSettings       = new global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettings(_pluginInterface);
+            _collectionByIdentifier = new global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier(_pluginInterface);
+            _collections = new global::Penumbra.Api.IpcSubscribers.GetCollections(_pluginInterface);
+            _redraw = new global::Penumbra.Api.IpcSubscribers.RedrawObject(_pluginInterface);
+            _checkCutsceneParent = new global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndexFunc(_pluginInterface).Invoke();
+            _getGameObject = new global::Penumbra.Api.IpcSubscribers.GetGameObjectFromDrawObjectFunc(_pluginInterface).Invoke();
+            _objectCollection = new global::Penumbra.Api.IpcSubscribers.GetCollectionForObject(_pluginInterface);
+            _getMods = new global::Penumbra.Api.IpcSubscribers.GetModList(_pluginInterface);
+            _currentCollection = new global::Penumbra.Api.IpcSubscribers.GetCollection(_pluginInterface);
+            _getCurrentSettings = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings(_pluginInterface);
+            _inheritMod = new global::Penumbra.Api.IpcSubscribers.TryInheritMod(_pluginInterface);
+            _setMod = new global::Penumbra.Api.IpcSubscribers.TrySetMod(_pluginInterface);
+            _setModPriority = new global::Penumbra.Api.IpcSubscribers.TrySetModPriority(_pluginInterface);
+            _setModSetting = new global::Penumbra.Api.IpcSubscribers.TrySetModSetting(_pluginInterface);
+            _setModSettings = new global::Penumbra.Api.IpcSubscribers.TrySetModSettings(_pluginInterface);
+            _openModPage = new global::Penumbra.Api.IpcSubscribers.OpenMainWindow(_pluginInterface);
+            _getChangedItems = new global::Penumbra.Api.IpcSubscribers.GetChangedItems(_pluginInterface);
+            _setTemporaryModSettings = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettings(_pluginInterface);
+            _setTemporaryModSettingsPlayer = new global::Penumbra.Api.IpcSubscribers.SetTemporaryModSettingsPlayer(_pluginInterface);
+            _removeTemporaryModSettings = new global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettings(_pluginInterface);
             _removeTemporaryModSettingsPlayer = new global::Penumbra.Api.IpcSubscribers.RemoveTemporaryModSettingsPlayer(_pluginInterface);
-            _removeAllTemporaryModSettings    = new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings(_pluginInterface);
+            _removeAllTemporaryModSettings = new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettings(_pluginInterface);
             _removeAllTemporaryModSettingsPlayer =
                 new global::Penumbra.Api.IpcSubscribers.RemoveAllTemporaryModSettingsPlayer(_pluginInterface);
             _queryTemporaryModSettings = new global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettings(_pluginInterface);
@@ -566,6 +585,8 @@ public class PenumbraService : IDisposable
         _creatingCharacterBase.Disable();
         _createdCharacterBase.Disable();
         _modSettingChanged.Disable();
+        _pcpCreated.Disable();
+        _pcpParsed.Disable();
         if (Available)
         {
             _collectionByIdentifier              = null;
@@ -612,5 +633,7 @@ public class PenumbraService : IDisposable
         _initializedEvent.Dispose();
         _disposedEvent.Dispose();
         _modSettingChanged.Dispose();
+        _pcpCreated.Dispose();
+        _pcpParsed.Dispose();
     }
 }

@@ -71,6 +71,7 @@ public class Glamourer : IDalamudPlugin
         sb.Append($"> **`Festival Easter-Eggs: `** {config.DisableFestivals}\n");
         sb.Append($"> **`Apply Entire Weapon:  `** {config.ChangeEntireItem}\n");
         sb.Append($"> **`Apply Associated Mods:`** {config.AlwaysApplyAssociatedMods}\n");
+        sb.Append($"> **`Attach to PCP:        `** {config.AttachToPcp}\n");
         sb.Append($"> **`Hidden Panels:        `** {config.HideDesignPanel}\n");
         sb.Append($"> **`Show QDB:             `** {config.Ephemeral.ShowDesignQuickBar}\n");
         sb.Append($"> **`QDB Hotkey:           `** {config.ToggleQuickDesignBar}\n");

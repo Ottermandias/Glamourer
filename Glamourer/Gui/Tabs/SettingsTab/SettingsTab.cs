@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.ClientState.Keys;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
@@ -8,7 +9,8 @@ using Glamourer.Designs;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.PalettePlus;
-using Dalamud.Bindings.ImGui;
+using Glamourer.Services;
+using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Widgets;
@@ -27,7 +29,8 @@ public class SettingsTab(
     CollectionOverrideDrawer overrides,
     CodeDrawer codeDrawer,
     Glamourer glamourer,
-    AutoDesignApplier autoDesignApplier)
+    AutoDesignApplier autoDesignApplier,
+    PcpService pcpService)
     : ITab
 {
     private readonly VirtualKey[] _validKeys = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
@@ -89,6 +92,15 @@ public class SettingsTab(
         Checkbox("Auto-Reload Gear"u8,
             "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection."u8,
             config.AutoRedrawEquipOnChanges, v => config.AutoRedrawEquipOnChanges = v);
+        Checkbox("Attach to PCP-Handling"u8,
+            "Add the actor's glamourer state when a PCP is created by Penumbra, and create a design and apply it if possible when a PCP is installed by Penumbra."u8,
+            config.AttachToPcp, pcpService.Set);
+        var active = config.DeleteDesignModifier.IsActive();
+        ImGui.SameLine();
+        if (ImUtf8.ButtonEx("Delete all PCP Designs"u8, "Deletes all designs tagged with 'PCP' from the design list."u8, disabled: !active))
+            pcpService.CleanPcpDesigns();
+        if (!active)
+            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"\nHold {config.DeleteDesignModifier} while clicking.");
         Checkbox("Revert Manual Changes on Zone Change"u8,
             "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone."u8,
             config.RevertManualChangesOnZoneChange, v => config.RevertManualChangesOnZoneChange = v);
@@ -124,6 +136,28 @@ public class SettingsTab(
         Checkbox("Reset Temporary Settings"u8,
             "Newly created designs will be configured to clear all advanced settings applied by Glamourer to the collection by default."u8,
             config.DefaultDesignSettings.ResetTemporarySettings, v => config.DefaultDesignSettings.ResetTemporarySettings = v);
+
+        var tmp = config.PcpFolder;
+        ImGui.SetNextItemWidth(0.4f * ImGui.GetContentRegionAvail().X);
+        if (ImUtf8.InputText("##pcpFolder"u8, ref tmp))
+            config.PcpFolder = tmp;
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            config.Save();
+
+        ImGuiUtil.LabeledHelpMarker("Default PCP Organizational Folder",
+            "The folder any designs created due to penumbra character packs are moved to on creation.\nLeave blank to import into Root.");
+
+        tmp = config.PcpColor;
+        ImGui.SetNextItemWidth(0.4f * ImGui.GetContentRegionAvail().X);
+        if (ImUtf8.InputText("##pcpColor"u8, ref tmp))
+            config.PcpColor = tmp;
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            config.Save();
+
+        ImGuiUtil.LabeledHelpMarker("Default PCP Design Color",
+            "The name of the color group any designs created due to penumbra character packs are assigned.\nLeave blank for no specific color assignment.");
     }
 
     private void DrawInterfaceSettings()
