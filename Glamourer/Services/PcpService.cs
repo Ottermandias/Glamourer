@@ -96,7 +96,7 @@ public class PcpService : IRequiredService
         }
     }
 
-    private void OnPcpCreation(JObject jObj, ushort index)
+    private void OnPcpCreation(JObject jObj, ushort index, string path)
     {
         Glamourer.Log.Debug("[PCPService] Adding Glamourer data to PCP file.");
         var actorIdentifier = _objects.Actors.FromJson(jObj["Actor"] as JObject);
@@ -110,7 +110,7 @@ public class PcpService : IRequiredService
         }
 
         var design = _designConverter.Convert(state, ApplicationRules.All);
-        jObj["Glamourer"] = new JObject()
+        jObj["Glamourer"] = new JObject
         {
             ["Version"] = 1,
             ["Design"]  = design.JsonSerialize(),

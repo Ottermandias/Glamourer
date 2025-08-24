@@ -51,7 +51,7 @@ public class PenumbraService : IDisposable
     private readonly EventSubscriber<nint, Guid, nint>                     _createdCharacterBase;
     private readonly EventSubscriber<ModSettingChange, Guid, string, bool> _modSettingChanged;
     private readonly EventSubscriber<JObject, string, Guid>                _pcpParsed;
-    private readonly EventSubscriber<JObject, ushort>                      _pcpCreated;
+    private readonly EventSubscriber<JObject, ushort, string>              _pcpCreated;
 
     private global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier?                          _collectionByIdentifier;
     private global::Penumbra.Api.IpcSubscribers.GetCollections?                                      _collections;
@@ -140,7 +140,7 @@ public class PenumbraService : IDisposable
         remove => _modSettingChanged.Event -= value;
     }
 
-    public event Action<JObject, ushort> PcpCreated
+    public event Action<JObject, ushort, string> PcpCreated
     {
         add => _pcpCreated.Event += value;
         remove => _pcpCreated.Event -= value;
