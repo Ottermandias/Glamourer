@@ -44,6 +44,7 @@ public class GlamourerChangelog
         Add1_3_8_0(Changelog);
         Add1_4_0_0(Changelog);
         Add1_5_0_0(Changelog);
+        Add1_5_1_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -63,6 +64,16 @@ public class GlamourerChangelog
             _config.Save();
         }
     }
+
+    private static void Add1_5_1_0(Changelog log)
+        => log.NextVersion("Version 1.5.1.0")
+            .RegisterHighlight("Added support for Penumbras PCP functionality to add the current state of the character as a design.")
+            .RegisterEntry("On import, a design for the PCP is created and, if possible, applied to the character.", 1)
+            .RegisterEntry("No automation is assigned.", 1)
+            .RegisterEntry("Finer control about this can be found in the settings.", 1)
+            .RegisterEntry("Fixed an issue with static visors not toggling through Glamourer (1.5.0.7).")
+            .RegisterEntry("The advanced dye slot combo now contains glasses (1.5.0.7).")
+            .RegisterEntry("Several fixes for patch-related issues (1.5.0.1 - 1.5.0.6");
 
     private static void Add1_5_0_0(Changelog log)
         => log.NextVersion("Version 1.5.0.0")
