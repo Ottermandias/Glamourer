@@ -69,9 +69,9 @@ public static unsafe class MaterialService
             return null;
 
         var material = (MaterialResourceHandle*) model.AsCharacterBase->MaterialsSpan[index].Value;
-        if (material == null || material->ColorTable == null)
+        if (material == null || material->DataSet == null)
             return null;
 
-        return (ColorTable.Table*)material->ColorTable;
+        return (ColorTable.Table*)material->DataSet;
     }
 }
