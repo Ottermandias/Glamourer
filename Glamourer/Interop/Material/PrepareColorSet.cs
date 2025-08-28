@@ -69,7 +69,7 @@ public sealed unsafe class PrepareColorSet
     public static bool TryGetColorTable(MaterialResourceHandle* material, StainIds stainIds,
         out ColorTable.Table table)
     {
-        if (material->DataSet == null)
+        if (material->DataSet == null || material->DataSetSize < sizeof(ColorTable.Table) || !material->HasColorTable)
         {
             table = default;
             return false;

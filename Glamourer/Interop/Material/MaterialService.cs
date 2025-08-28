@@ -1,6 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
-using Lumina.Data.Files;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Interop;
 using Texture = FFXIVClientStructs.FFXIV.Client.Graphics.Kernel.Texture;
@@ -69,7 +68,7 @@ public static unsafe class MaterialService
             return null;
 
         var material = (MaterialResourceHandle*) model.AsCharacterBase->MaterialsSpan[index].Value;
-        if (material == null || material->DataSet == null)
+        if (material == null || material->DataSet == null || material->DataSetSize < sizeof(ColorTable.Table) || !material->HasColorTable)
             return null;
 
         return (ColorTable.Table*)material->DataSet;
