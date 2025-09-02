@@ -53,7 +53,7 @@ public sealed class IpcProviders : IDisposable, IApiService
             IpcSubscribers.RevertState.Provider(pi, api.State),
             IpcSubscribers.RevertStateName.Provider(pi, api.State),
             IpcSubscribers.UnlockState.Provider(pi, api.State),
-            IpcSubscribers.IsUnlocked.Provider(pi, api.State),
+            IpcSubscribers.CanUnlock.Provider(pi, api.State),
             IpcSubscribers.UnlockStateName.Provider(pi, api.State),
             IpcSubscribers.UnlockAll.Provider(pi, api.State),
             IpcSubscribers.RevertToAutomation.Provider(pi, api.State),
@@ -76,4 +76,5 @@ public sealed class IpcProviders : IDisposable, IApiService
         _disposedProvider.Dispose();
     }
 }
+
 
