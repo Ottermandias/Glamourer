@@ -50,7 +50,8 @@ public class CodeService
       | CodeFlag.OopsMiqote
       | CodeFlag.OopsRoegadyn
       | CodeFlag.OopsAuRa
-      | CodeFlag.OopsHrothgar;
+      | CodeFlag.OopsHrothgar
+      | CodeFlag.OopsViera;
 
     public const CodeFlag FullCodes = CodeFlag.Face | CodeFlag.Manderville | CodeFlag.Smiles;
 
@@ -250,3 +251,4 @@ public class CodeService
         _                     => (false, 0, string.Empty, string.Empty, string.Empty),
     };
 }
+
