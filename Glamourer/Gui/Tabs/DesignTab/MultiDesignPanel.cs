@@ -3,7 +3,6 @@ using Dalamud.Interface.Utility;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Dalamud.Bindings.ImGui;
-using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Text;
 using static Glamourer.Gui.Tabs.HeaderDrawer;

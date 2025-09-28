@@ -1,9 +1,10 @@
 using OtterGui.Classes;
 using OtterGui.Log;
+using OtterGui.Services;
 
 namespace Glamourer.Services;
 
-public class BackupService
+public class BackupService : IAsyncService
 {
     private readonly Logger                  _logger;
     private readonly DirectoryInfo           _configDirectory;
@@ -14,7 +15,7 @@ public class BackupService
         _logger          = logger;
         _fileNames       = GlamourerFiles(fileNames);
         _configDirectory = new DirectoryInfo(fileNames.ConfigDirectory);
-        Backup.CreateAutomaticBackup(logger, _configDirectory, _fileNames);
+        Awaiter          = Task.Run(() => Backup.CreateAutomaticBackup(logger, new DirectoryInfo(fileNames.ConfigDirectory), _fileNames));
     }
 
     /// <summary> Create a permanent backup with a given name for migrations. </summary>
@@ -40,4 +41,9 @@ public class BackupService
 
         return list;
     }
+
+    public Task Awaiter { get; }
+
+    public bool Finished
+        => Awaiter.IsCompletedSuccessfully;
 }
