@@ -138,6 +138,14 @@ public class StateIpcTester : IUiService, IDisposable
         if (ImUtf8.Button("Apply Base64##Name"u8))
             _lastError = new ApplyStateName(_pluginInterface).Invoke(_base64State, _gameObjectName, _key, _flags);
 
+        IpcTesterHelpers.DrawIntro(ReapplyState.Label);
+        if (ImUtf8.Button("Reapply##Idx"u8))
+            _lastError = new ReapplyState(_pluginInterface).Invoke(_gameObjectIndex, _key, _flags);
+
+        IpcTesterHelpers.DrawIntro(ReapplyStateName.Label);
+        if (ImUtf8.Button("Reapply##Name"u8))
+            _lastError = new ReapplyStateName(_pluginInterface).Invoke(_gameObjectName, _key, _flags);
+
         IpcTesterHelpers.DrawIntro(RevertState.Label);
         if (ImUtf8.Button("Revert##Idx"u8))
             _lastError = new RevertState(_pluginInterface).Invoke(_gameObjectIndex, _key, _flags);

@@ -123,6 +123,48 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
+    public GlamourerApiEc ReapplyState(int objectIndex, uint key, ApplyFlag flags)
+    {
+        var args = ApiHelpers.Args("Index", objectIndex, "Key", key, "Flags", flags);
+        if (_helpers.FindExistingState(objectIndex, out var state) != GlamourerApiEc.Success)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
+
+        if (state == null)
+            return ApiHelpers.Return(GlamourerApiEc.NothingDone, args);
+
+        if (!state.CanUnlock(key))
+            return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
+
+        Reapply(_objects.Objects[objectIndex], state, key, flags);
+        return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
+    public GlamourerApiEc ReapplyStateName(string playerName, uint key, ApplyFlag flags)
+    {
+        var args = ApiHelpers.Args("Name", playerName, "Key", key, "Flags", flags);
+        var states = _helpers.FindExistingStates(playerName);
+
+        var any = false;
+        var anyReapplied = false;
+        foreach (var state in states)
+        {
+            any = true;
+            if (!state.CanUnlock(key))
+                continue;
+
+            anyReapplied = true;
+            anyReapplied |= Reapply(state, key, flags) is GlamourerApiEc.Success;
+        }
+
+        if (any)
+            ApiHelpers.Return(GlamourerApiEc.NothingDone, args);
+
+        if (!anyReapplied)
+            return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
+
+        return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
     public GlamourerApiEc RevertState(int objectIndex, uint key, ApplyFlag flags)
     {
         var args = ApiHelpers.Args("Index", objectIndex, "Key", key, "Flags", flags);
@@ -262,6 +304,24 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         var settings = new ApplySettings(Source: once ? StateSource.IpcManual : StateSource.IpcFixed, Key: key, MergeLinks: true,
             ResetMaterials: !once && key != 0, IsFinal: true);
         _stateManager.ApplyDesign(state, design, settings);
+        ApiHelpers.Lock(state, key, flags);
+    }
+
+    private GlamourerApiEc Reapply(ActorState state, uint key, ApplyFlag flags)
+    {
+        if (!_objects.TryGetValue(state.Identifier, out var actors) || !actors.Valid)
+            return GlamourerApiEc.ActorNotFound;
+
+        foreach (var actor in actors.Objects)
+            Reapply(actor, state, key, flags);
+
+        return GlamourerApiEc.Success;
+    }
+
+    private void Reapply(Actor actor, ActorState state, uint key, ApplyFlag flags)
+    {
+        var source = (flags & ApplyFlag.Once) != 0 ? StateSource.IpcManual : StateSource.IpcFixed;
+        _stateManager.ReapplyState(actor, state, false, source, true);
         ApiHelpers.Lock(state, key, flags);
     }
 
