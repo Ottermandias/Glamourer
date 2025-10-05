@@ -20,6 +20,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     private readonly Configuration      _config;
     private readonly AutoDesignApplier  _autoDesigns;
     private readonly ActorObjectManager _objects;
+    private readonly AutoRedrawChanged  _autoRedraw;
     private readonly StateChanged       _stateChanged;
     private readonly StateFinalized     _stateFinalized;
     private readonly GPoseService       _gPose;
@@ -30,6 +31,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         Configuration config,
         AutoDesignApplier autoDesigns,
         ActorObjectManager objects,
+        AutoRedrawChanged autoRedraw,
         StateChanged stateChanged,
         StateFinalized stateFinalized,
         GPoseService gPose)
@@ -40,9 +42,11 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         _config         = config;
         _autoDesigns    = autoDesigns;
         _objects        = objects;
+        _autoRedraw     = autoRedraw;
         _stateChanged   = stateChanged;
         _stateFinalized = stateFinalized;
         _gPose          = gPose;
+        _autoRedraw.Subscribe(OnAutoRedrawChange, AutoRedrawChanged.Priority.StateApi);
         _stateChanged.Subscribe(OnStateChanged, Events.StateChanged.Priority.GlamourerIpc);
         _stateFinalized.Subscribe(OnStateFinalized, Events.StateFinalized.Priority.StateApi);
         _gPose.Subscribe(OnGPoseChange, GPoseService.Priority.StateApi);
@@ -50,6 +54,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     public void Dispose()
     {
+        _autoRedraw.Unsubscribe(OnAutoRedrawChange);
         _stateChanged.Unsubscribe(OnStateChanged);
         _stateFinalized.Unsubscribe(OnStateFinalized);
         _gPose.Unsubscribe(OnGPoseChange);
@@ -293,6 +298,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
+    public event Action<bool>?                          AutoReloadGearChanged;
     public event Action<nint>?                          StateChanged;
     public event Action<IntPtr, StateChangeType>?       StateChangedWithType;
     public event Action<IntPtr, StateFinalizationType>? StateFinalized;
@@ -385,8 +391,8 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         };
     }
 
-    private void OnGPoseChange(bool gPose)
-        => GPoseChanged?.Invoke(gPose);
+    private void OnAutoRedrawChange(bool autoReload)
+        => AutoReloadGearChanged?.Invoke(autoReload);
 
     private void OnStateChanged(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, ITransaction? _5)
     {
@@ -407,4 +413,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
             foreach (var actor in actors.Objects)
                 StateFinalized.Invoke(actor.Address, type);
     }
+
+    private void OnGPoseChange(bool gPose)
+        => GPoseChanged?.Invoke(gPose);
 }

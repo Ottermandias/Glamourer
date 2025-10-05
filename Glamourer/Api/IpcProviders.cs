@@ -22,6 +22,7 @@ public sealed class IpcProviders : IDisposable, IApiService
             new FuncProvider<(int Major, int Minor)>(pi, "Glamourer.ApiVersions", () => api.ApiVersion), // backward compatibility
             new FuncProvider<int>(pi, "Glamourer.ApiVersion", () => api.ApiVersion.Major),               // backward compatibility
             IpcSubscribers.ApiVersion.Provider(pi, api),
+            IpcSubscribers.AutoReloadGearEnabled.Provider(pi, api),
 
             IpcSubscribers.GetDesignList.Provider(pi, api.Designs),
             IpcSubscribers.GetDesignListExtended.Provider(pi, api.Designs),
@@ -59,6 +60,7 @@ public sealed class IpcProviders : IDisposable, IApiService
             IpcSubscribers.UnlockAll.Provider(pi, api.State),
             IpcSubscribers.RevertToAutomation.Provider(pi, api.State),
             IpcSubscribers.RevertToAutomationName.Provider(pi, api.State),
+            IpcSubscribers.AutoReloadGearChanged.Provider(pi, api.State),
             IpcSubscribers.StateChanged.Provider(pi, api.State),
             IpcSubscribers.StateChangedWithType.Provider(pi, api.State),
             IpcSubscribers.StateFinalized.Provider(pi, api.State),
