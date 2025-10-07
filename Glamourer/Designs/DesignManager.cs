@@ -6,10 +6,12 @@ using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
+using OtterGui.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
+
 
 namespace Glamourer.Designs;
 
@@ -227,7 +229,7 @@ public sealed class DesignManager : DesignEditor
 
         design.Tags     = design.Tags.Append(tag).OrderBy(t => t).ToArray();
         design.LastEdit = DateTimeOffset.UtcNow;
-        var idx = design.Tags.IndexOf(tag);
+        var idx = design.Tags.AsEnumerable().IndexOf(tag);
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Added tag {tag} at {idx} to design {design.Identifier}.");
         DesignChanged.Invoke(DesignChanged.Type.AddedTag, design, new TagAddedTransaction(tag, idx));
@@ -260,7 +262,7 @@ public sealed class DesignManager : DesignEditor
         SaveService.QueueSave(design);
         Glamourer.Log.Debug($"Renamed tag {oldTag} at {tagIdx} to {newTag} in design {design.Identifier} and reordered tags.");
         DesignChanged.Invoke(DesignChanged.Type.ChangedTag, design,
-            new TagChangedTransaction(oldTag, newTag, tagIdx, design.Tags.IndexOf(newTag)));
+            new TagChangedTransaction(oldTag, newTag, tagIdx, design.Tags.AsEnumerable().IndexOf(newTag)));
     }
 
     /// <summary> Add an associated mod to a design. </summary>
