@@ -1,8 +1,5 @@
 ﻿using Glamourer.Api.Enums;
-using Glamourer.Designs;
 using Dalamud.Bindings.ImGui;
-using OtterGui;
-using static Penumbra.GameData.Files.ShpkFile;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
