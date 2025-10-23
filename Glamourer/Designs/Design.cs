@@ -139,6 +139,8 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
             };
             if (settings.Enabled)
             {
+                obj["Remove"] = settings.Remove;
+                obj["Inherit"] = settings.ForceInherit;
                 obj["Priority"] = settings.Priority;
                 obj["Settings"] = JObject.FromObject(settings.Settings);
             }
