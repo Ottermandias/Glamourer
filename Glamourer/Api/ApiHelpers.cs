@@ -1,13 +1,13 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.State;
-using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Log;
 using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
+using Penumbra.GameData.Structs;
 using Penumbra.String;
 
 namespace Glamourer.Api;
@@ -15,14 +15,23 @@ namespace Glamourer.Api;
 public class ApiHelpers(ActorObjectManager objects, StateManager stateManager, ActorManager actors) : IApiService
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    internal IEnumerable<ActorState> FindExistingStates(string actorName)
+    internal IEnumerable<ActorState> FindExistingStates(string actorName, ushort worldId = ushort.MaxValue)
     {
         if (actorName.Length == 0 || !ByteString.FromString(actorName, out var byteString))
             yield break;
 
-        foreach (var state in stateManager.Values.Where(state
-                     => state.Identifier.Type is IdentifierType.Player && state.Identifier.PlayerName == byteString))
-            yield return state;
+        if (worldId == WorldId.AnyWorld.Id)
+        {
+            foreach (var state in stateManager.Values.Where(state
+                         => state.Identifier.Type is IdentifierType.Player && state.Identifier.PlayerName == byteString))
+                yield return state;
+        }
+        else
+        {
+            var identifier = actors.CreatePlayer(byteString, worldId);
+            if (stateManager.TryGetValue(identifier, out var state))
+                yield return state;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
