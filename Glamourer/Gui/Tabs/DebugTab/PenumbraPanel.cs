@@ -89,7 +89,13 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
         ImGui.Separator();
         foreach (var (slot, item) in _penumbraTooltip.LastItems)
         {
-            ImGuiUtil.DrawTableColumn($"{slot.ToName()} Revert-Item");
+            switch (slot)
+            {
+                case EquipSlot e:     ImGuiUtil.DrawTableColumn($"{e.ToName()} Revert-Item"); break;
+                case BonusItemFlag f: ImGuiUtil.DrawTableColumn($"{f.ToName()} Revert-Item"); break;
+                default:              ImGuiUtil.DrawTableColumn("Unk Revert-Item"); break;
+            }
+
             ImGuiUtil.DrawTableColumn(item.Valid ? item.Name : "None");
             ImGui.TableNextColumn();
         }
