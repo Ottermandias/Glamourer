@@ -557,7 +557,7 @@ public sealed class DesignManager : DesignEditor
         try
         {
             File.Move(SaveService.FileNames.MigrationDesignFile,
-                Path.ChangeExtension(SaveService.FileNames.MigrationDesignFile, ".json.bak"));
+                Path.ChangeExtension(SaveService.FileNames.MigrationDesignFile, ".json.bak"), true);
             Glamourer.Log.Information($"Moved migrated design file {SaveService.FileNames.MigrationDesignFile} to backup file.");
         }
         catch (Exception ex)
