@@ -1,11 +1,11 @@
-﻿using Dalamud.Interface;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Glamourer.Api.Enums;
 using Glamourer.Api.Helpers;
 using Glamourer.Api.IpcSubscribers;
 using Glamourer.Designs;
-using Dalamud.Bindings.ImGui;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui;
@@ -31,6 +31,10 @@ public class StateIpcTester : IUiService, IDisposable
     private string         _base64State = string.Empty;
     private string?        _getStateString;
 
+    public readonly EventSubscriber<bool> AutoRedrawChanged;
+    private         bool                  _lastAutoRedrawChangeValue;
+    private         DateTime              _lastAutoRedrawChangeTime;
+
     public readonly EventSubscriber<nint, StateChangeType> StateChanged;
     private         nint                                   _lastStateChangeActor;
     private         ByteString                             _lastStateChangeName = ByteString.Empty;
@@ -51,10 +55,12 @@ public class StateIpcTester : IUiService, IDisposable
 
     public StateIpcTester(IDalamudPluginInterface pluginInterface)
     {
-        _pluginInterface = pluginInterface;
-        StateChanged     = StateChangedWithType.Subscriber(_pluginInterface, OnStateChanged);
-        StateFinalized   = Api.IpcSubscribers.StateFinalized.Subscriber(_pluginInterface, OnStateFinalized);
-        GPoseChanged     = Api.IpcSubscribers.GPoseChanged.Subscriber(_pluginInterface, OnGPoseChange);
+        _pluginInterface    = pluginInterface;
+        AutoRedrawChanged   = AutoReloadGearChanged.Subscriber(_pluginInterface, OnAutoRedrawChanged);
+        StateChanged        = StateChangedWithType.Subscriber(_pluginInterface, OnStateChanged);
+        StateFinalized      = Api.IpcSubscribers.StateFinalized.Subscriber(_pluginInterface, OnStateFinalized);
+        GPoseChanged        = Api.IpcSubscribers.GPoseChanged.Subscriber(_pluginInterface, OnGPoseChange);
+        AutoRedrawChanged.Disable();
         StateChanged.Disable();
         StateFinalized.Disable();
         GPoseChanged.Disable();
@@ -62,6 +68,7 @@ public class StateIpcTester : IUiService, IDisposable
 
     public void Dispose()
     {
+        AutoRedrawChanged.Dispose();
         StateChanged.Dispose();
         StateFinalized.Dispose();
         GPoseChanged.Dispose();
@@ -83,6 +90,8 @@ public class StateIpcTester : IUiService, IDisposable
 
         IpcTesterHelpers.DrawIntro("Last Error");
         ImGui.TextUnformatted(_lastError.ToString());
+        IpcTesterHelpers.DrawIntro("Last Auto Redraw Change");
+        ImGui.TextUnformatted($"{_lastAutoRedrawChangeValue} at {_lastAutoRedrawChangeTime.ToLocalTime().TimeOfDay}");
         IpcTesterHelpers.DrawIntro("Last State Change");
         PrintChangeName();
         IpcTesterHelpers.DrawIntro("Last State Finalization");
@@ -137,6 +146,14 @@ public class StateIpcTester : IUiService, IDisposable
         ImGui.SameLine();
         if (ImUtf8.Button("Apply Base64##Name"u8))
             _lastError = new ApplyStateName(_pluginInterface).Invoke(_base64State, _gameObjectName, _key, _flags);
+
+        IpcTesterHelpers.DrawIntro(ReapplyState.Label);
+        if (ImUtf8.Button("Reapply##Idx"u8))
+            _lastError = new ReapplyState(_pluginInterface).Invoke(_gameObjectIndex, _key, _flags);
+
+        IpcTesterHelpers.DrawIntro(ReapplyStateName.Label);
+        if (ImUtf8.Button("Reapply##Name"u8))
+            _lastError = new ReapplyStateName(_pluginInterface).Invoke(_gameObjectName, _key, _flags);
 
         IpcTesterHelpers.DrawIntro(RevertState.Label);
         if (ImUtf8.Button("Revert##Idx"u8))
@@ -223,6 +240,12 @@ public class StateIpcTester : IUiService, IDisposable
 
         ImGui.SameLine();
         ImUtf8.Text($"at {_lastStateFinalizeTime.ToLocalTime().TimeOfDay}");
+    }
+
+    private void OnAutoRedrawChanged(bool value)
+    {
+        _lastAutoRedrawChangeValue = value;
+        _lastAutoRedrawChangeTime  = DateTime.UtcNow;
     }
 
     private void OnStateChanged(nint actor, StateChangeType type)
