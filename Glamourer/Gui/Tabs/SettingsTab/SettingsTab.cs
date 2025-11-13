@@ -9,6 +9,7 @@ using Glamourer.Designs;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.PalettePlus;
+using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using OtterGui;
 using OtterGui.Raii;
@@ -69,6 +70,12 @@ public class SettingsTab(
         MainWindow.DrawSupportButtons(glamourer, changelog.Changelog);
     }
 
+    public void DrawPenumbraIntegrationSettings()
+    {
+        DrawPenumbraIntegrationSettings1();
+        DrawPenumbraIntegrationSettings2();
+    }
+
     private void DrawBehaviorSettings()
     {
         if (!ImUtf8.CollapsingHeader("Glamourer Behavior"u8))
@@ -89,6 +96,20 @@ public class SettingsTab(
         Checkbox("Enable Festival Easter-Eggs"u8,
             "Glamourer may do some fun things on specific dates. Disable this if you do not want your experience disrupted by this."u8,
             config.DisableFestivals == 0, v => config.DisableFestivals = v ? (byte)0 : (byte)2);
+        DrawPenumbraIntegrationSettings1();
+        Checkbox("Revert Manual Changes on Zone Change"u8,
+            "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone."u8,
+            config.RevertManualChangesOnZoneChange, v => config.RevertManualChangesOnZoneChange = v);
+        PaletteImportButton();
+        DrawPenumbraIntegrationSettings2();
+        Checkbox("Prevent Random Design Repeats"u8,
+            "When using random designs, prevent the same design from being chosen twice in a row."u8,
+            config.PreventRandomRepeats, v => config.PreventRandomRepeats = v);
+        ImGui.NewLine();
+    }
+
+    private void DrawPenumbraIntegrationSettings1()
+    {
         Checkbox("Auto-Reload Gear"u8,
             "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection."u8,
             config.AutoRedrawEquipOnChanges, v => config.AutoRedrawEquipOnChanges = v);
@@ -101,10 +122,10 @@ public class SettingsTab(
             pcpService.CleanPcpDesigns();
         if (!active)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"\nHold {config.DeleteDesignModifier} while clicking.");
-        Checkbox("Revert Manual Changes on Zone Change"u8,
-            "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone."u8,
-            config.RevertManualChangesOnZoneChange, v => config.RevertManualChangesOnZoneChange = v);
-        PaletteImportButton();
+    }
+
+    private void DrawPenumbraIntegrationSettings2()
+    {
         Checkbox("Always Apply Associated Mods"u8,
             "Whenever a design is applied to a character (including via automation), Glamourer will try to apply its associated mod settings to the collection currently associated with that character, if it is available.\n\n"u8
           + "Glamourer will NOT revert these applied settings automatically. This may mess up your collection and configuration.\n\n"u8
@@ -114,10 +135,6 @@ public class SettingsTab(
             "Apply all settings as temporary settings so they will be reset when Glamourer or the game shut down."u8,
             config.UseTemporarySettings,
             v => config.UseTemporarySettings = v);
-        Checkbox("Prevent Random Design Repeats"u8,
-            "When using random designs, prevent the same design from being chosen twice in a row."u8,
-            config.PreventRandomRepeats, v => config.PreventRandomRepeats = v);
-        ImGui.NewLine();
     }
 
     private void DrawDesignDefaultSettings()
