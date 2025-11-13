@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Ipc.Exceptions;
 using Glamourer.Events;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
@@ -36,7 +37,7 @@ public readonly record struct ModSettings(Dictionary<string, List<string>> Setti
 public class PenumbraService : IDisposable
 {
     public const int RequiredPenumbraBreakingVersion = 5;
-    public const int RequiredPenumbraFeatureVersion  = 8;
+    public const int RequiredPenumbraFeatureVersion  = 13;
 
     private const int    KeyFixed   = -1610;
     private const string NameFixed  = "Glamourer (Automation)";
@@ -77,6 +78,8 @@ public class PenumbraService : IDisposable
     private global::Penumbra.Api.IpcSubscribers.QueryTemporaryModSettingsPlayer?                     _queryTemporaryModSettingsPlayer;
     private global::Penumbra.Api.IpcSubscribers.OpenMainWindow?                                      _openModPage;
     private global::Penumbra.Api.IpcSubscribers.GetChangedItems?                                     _getChangedItems;
+    private global::Penumbra.Api.IpcSubscribers.RegisterSettingsSection?                             _registerSettingsSection;
+    private global::Penumbra.Api.IpcSubscribers.UnregisterSettingsSection?                           _unregisterSettingsSection;
     private IReadOnlyList<(string ModDirectory, IReadOnlyDictionary<string, object?> ChangedItems)>? _changedItems;
     private Func<string, (string ModDirectory, string ModName)[]>?                                   _checkCurrentChangedItems;
     private Func<int, int>?                                                                          _checkCutsceneParent;
@@ -151,6 +154,11 @@ public class PenumbraService : IDisposable
         add => _pcpParsed.Event += value;
         remove => _pcpParsed.Event -= value;
     }
+
+    public event Action? DrawSettingsSection;
+
+    private void InvokeDrawSettingsSection()
+        => DrawSettingsSection?.Invoke();
 
     public Dictionary<Guid, string> GetCollections()
         => Available ? _collections!.Invoke() : [];
@@ -565,6 +573,10 @@ public class PenumbraService : IDisposable
             _changedItems               = new global::Penumbra.Api.IpcSubscribers.GetChangedItemAdapterList(_pluginInterface).Invoke();
             _checkCurrentChangedItems =
                 new global::Penumbra.Api.IpcSubscribers.CheckCurrentChangedItemFunc(_pluginInterface).Invoke();
+            _registerSettingsSection = new global::Penumbra.Api.IpcSubscribers.RegisterSettingsSection(_pluginInterface);
+            _unregisterSettingsSection = new global::Penumbra.Api.IpcSubscribers.UnregisterSettingsSection(_pluginInterface);
+
+            _registerSettingsSection.Invoke(InvokeDrawSettingsSection);
 
             Available = true;
             _penumbraReloaded.Invoke();
@@ -587,6 +599,15 @@ public class PenumbraService : IDisposable
         _modSettingChanged.Disable();
         _pcpCreated.Disable();
         _pcpParsed.Disable();
+        try
+        {
+            _unregisterSettingsSection?.Invoke(InvokeDrawSettingsSection);
+        }
+        catch (IpcNotReadyError)
+        {
+            // Ignore.
+        }
+
         if (Available)
         {
             _collectionByIdentifier              = null;
@@ -617,6 +638,8 @@ public class PenumbraService : IDisposable
             _getChangedItems                     = null;
             _changedItems                        = null;
             _checkCurrentChangedItems            = null;
+            _registerSettingsSection             = null;
+            _unregisterSettingsSection           = null;
             Available                            = false;
             Glamourer.Log.Debug("Glamourer detached from Penumbra.");
         }
