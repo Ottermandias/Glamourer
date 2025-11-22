@@ -167,6 +167,12 @@ public sealed class AutoDesignApplier : IDisposable
                         if (key.Type != id.Type)
                             continue;
 
+                        if (key.Type == IdentifierType.Retainer)
+                        {
+                            if (id.Retainer != ActorIdentifier.RetainerType.Both && key.Retainer != ActorIdentifier.RetainerType.Both && id.Retainer != key.Retainer)
+                                continue;
+                        }
+
                         var worldMatches = key.Type switch
                         {
                             IdentifierType.Player => key.HomeWorld == id.HomeWorld || key.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld || id.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld,

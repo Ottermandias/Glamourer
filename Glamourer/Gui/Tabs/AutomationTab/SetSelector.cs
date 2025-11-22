@@ -7,6 +7,8 @@ using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Extensions;
 using OtterGui.Raii;
+using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.String;
 using ImGuiClip = OtterGui.ImGuiClip;
@@ -225,7 +227,17 @@ public class SetSelector : IDisposable
                 
                 foreach (var (actorId, _) in _objects)
                 {
-                    if (actorId.Type == id.Type && actorId.DataId == id.DataId)
+                    if (actorId.Type != id.Type)
+                        continue;
+
+                    // For retainers, also check the RetainerType to avoid matching Bell retainers with Mannequins
+                    if (actorId.Type == IdentifierType.Retainer)
+                    {
+                        if (id.Retainer != ActorIdentifier.RetainerType.Both && actorId.Retainer != ActorIdentifier.RetainerType.Both && id.Retainer != actorId.Retainer)
+                            continue;
+                    }
+
+                    if (actorId.DataId == id.DataId)
                     {
                         var actorNameStr = actorId.PlayerName.ToString();
                         if (regex.IsMatch(actorNameStr))
