@@ -74,7 +74,7 @@ public class IdentifierDrawer
     private void UpdateIdentifiers()
     {
         var isWildcard = IsWildcardPattern(_characterName);
-        ByteString byteName = default;
+        ByteString byteName = default!;
         
         // For wildcard patterns, use FromStringUnsafe to allow '*' characters
         if (isWildcard)
