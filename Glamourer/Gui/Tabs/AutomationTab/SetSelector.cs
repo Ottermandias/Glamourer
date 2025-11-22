@@ -241,7 +241,30 @@ public class SetSelector : IDisposable
                     {
                         var actorNameStr = actorId.PlayerName.ToString();
                         if (regex.IsMatch(actorNameStr))
+                        {
+                            // Don't show wildcard match as active if the actor already has an exact match automation
+                            var hasExactMatch = false;
+                            foreach (var designSet in _manager)
+                            {
+                                if (!designSet.Enabled)
+                                    continue;
+
+                                foreach (var otherId in designSet.Identifiers)
+                                {
+                                    if (otherId.Equals(actorId))
+                                    {
+                                        hasExactMatch = true;
+                                        break;
+                                    }
+                                }
+                                if (hasExactMatch)
+                                    break;
+                            }
+                            
+                            if (hasExactMatch)
+                                continue;
                             return true;
+                        }
                     }
                 }
             }
