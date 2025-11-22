@@ -15,6 +15,7 @@ using OtterGui.Filesystem;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Penumbra.String;
 
 namespace Glamourer.Automation;
 
@@ -406,6 +407,60 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         };
     }
 
+    /// <summary>
+    /// Try to get an automation set that matches the given identifier, including wildcard patterns.
+    /// First tries exact match, then tries wildcard patterns from enabled sets.
+    /// </summary>
+    public bool TryGetSetWithWildcard(ActorIdentifier identifier, [NotNullWhen(true)] out AutoDesignSet? set)
+    {
+        // First try exact match
+        if (_enabled.TryGetValue(identifier, out set))
+            return true;
+
+        // Then try wildcard matching against all enabled sets
+        foreach (var (_, enabledSet) in _enabled)
+        {
+            foreach (var setId in enabledSet.Identifiers)
+            {
+                // Use wildcard-aware matching when the stored identifier contains a wildcard pattern in the name.
+                if (!setId.PlayerName.IsEmpty && setId.PlayerName.ToString().Contains('*'))
+                {
+                    var sameType = identifier.Type == setId.Type;
+                    if (!sameType)
+                        continue;
+
+                    var worldMatches = identifier.Type switch
+                    {
+                        Penumbra.GameData.Enums.IdentifierType.Player => identifier.HomeWorld == setId.HomeWorld || identifier.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld || setId.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld,
+                        Penumbra.GameData.Enums.IdentifierType.Owned  => identifier.HomeWorld == setId.HomeWorld || identifier.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld || setId.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld,
+                        _ => true,
+                    };
+
+                    if (!worldMatches)
+                        continue;
+
+                    // Inline wildcard matching to avoid cross-namespace ambiguity.
+                    var name = identifier.PlayerName.ToString();
+                    var pattern = setId.PlayerName.ToString();
+                    var regexPattern = System.Text.RegularExpressions.Regex.Escape(pattern).Replace("\\*", ".*");
+                    if (System.Text.RegularExpressions.Regex.IsMatch(name, $"^{regexPattern}$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                    {
+                        set = enabledSet;
+                        return true;
+                    }
+                }
+                else if (identifier.Matches(setId))
+                {
+                    set = enabledSet;
+                    return true;
+                }
+            }
+        }
+
+        set = null;
+        return false;
+    }
+
     private void Load()
     {
         var file = _saveService.FileNames.AutomationFile;
@@ -611,34 +666,45 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         {
             IdentifierType.Player =>
             [
-                identifier.CreatePermanent(),
+                (IsWildcardName(identifier.PlayerName)
+                    ? _actors.CreatePlayerUnchecked(identifier.PlayerName, identifier.HomeWorld).CreatePermanent()
+                    : identifier.CreatePermanent()),
             ],
             IdentifierType.Retainer =>
             [
-                _actors.CreateRetainer(identifier.PlayerName,
-                    identifier.Retainer == ActorIdentifier.RetainerType.Mannequin
-                        ? ActorIdentifier.RetainerType.Mannequin
-                        : ActorIdentifier.RetainerType.Bell).CreatePermanent(),
+                (IsWildcardName(identifier.PlayerName)
+                    ? _actors.CreateRetainerUnchecked(identifier.PlayerName,
+                        identifier.Retainer == ActorIdentifier.RetainerType.Mannequin
+                            ? ActorIdentifier.RetainerType.Mannequin
+                            : ActorIdentifier.RetainerType.Bell)
+                    : _actors.CreateRetainer(identifier.PlayerName,
+                        identifier.Retainer == ActorIdentifier.RetainerType.Mannequin
+                            ? ActorIdentifier.RetainerType.Mannequin
+                            : ActorIdentifier.RetainerType.Bell)).CreatePermanent(),
             ],
             IdentifierType.Npc   => CreateNpcs(_actors, identifier),
             IdentifierType.Owned => CreateNpcs(_actors, identifier),
             _                    => [],
         };
 
-        static ActorIdentifier[] CreateNpcs(ActorManager manager, ActorIdentifier identifier)
-        {
-            var name = manager.Data.ToName(identifier.Kind, identifier.DataId);
-            var table = identifier.Kind switch
-            {
-                ObjectKind.BattleNpc => (IReadOnlyDictionary<NpcId, string>)manager.Data.BNpcs,
-                ObjectKind.EventNpc  => manager.Data.ENpcs,
-                _                    => new Dictionary<NpcId, string>(),
-            };
-            return table.Where(kvp => kvp.Value == name)
-                .Select(kvp => manager.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, identifier.HomeWorld.Id,
-                    identifier.Kind, kvp.Key)).ToArray();
-        }
+        static bool IsWildcardName(ByteString name)
+            => name.ToString().Contains('*');
     }
+
+    static ActorIdentifier[] CreateNpcs(ActorManager manager, ActorIdentifier identifier)
+    {
+        var name = manager.Data.ToName(identifier.Kind, identifier.DataId);
+        var table = identifier.Kind switch
+        {
+            ObjectKind.BattleNpc => (IReadOnlyDictionary<NpcId, string>)manager.Data.BNpcs,
+            ObjectKind.EventNpc  => manager.Data.ENpcs,
+            _                    => new Dictionary<NpcId, string>(),
+        };
+        return table.Where(kvp => kvp.Value == name)
+            .Select(kvp => manager.CreateIndividualUnchecked(identifier.Type, identifier.PlayerName, identifier.HomeWorld.Id,
+                identifier.Kind, kvp.Key)).ToArray();
+    }
+    
 
     private void OnDesignChange(DesignChanged.Type type, Design design, ITransaction? _)
     {

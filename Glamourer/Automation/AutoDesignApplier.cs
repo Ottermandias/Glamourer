@@ -155,6 +155,49 @@ public sealed class AutoDesignApplier : IDisposable
 
             foreach (var id in newSet.Identifiers)
             {
+                // If the stored identifier uses a wildcard in the player name, it will not directly
+                // be present in the ActorObjectManager dictionaries. Scan the live objects and
+                // apply to any matching actors instead.
+                if (!id.PlayerName.IsEmpty && id.PlayerName.ToString().Contains('*'))
+                {
+                    var pattern = id.PlayerName.ToString();
+                    var regexPattern = System.Text.RegularExpressions.Regex.Escape(pattern).Replace("\\*", ".*");
+                    foreach (var (key, data2) in _objects)
+                    {
+                        if (key.Type != id.Type)
+                            continue;
+
+                        var worldMatches = key.Type switch
+                        {
+                            IdentifierType.Player => key.HomeWorld == id.HomeWorld || key.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld || id.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld,
+                            IdentifierType.Owned  => key.HomeWorld == id.HomeWorld || key.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld || id.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld,
+                            _ => true,
+                        };
+
+                        if (!worldMatches)
+                            continue;
+
+                        if (!System.Text.RegularExpressions.Regex.IsMatch(key.PlayerName.ToString(), $"^{regexPattern}$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                            continue;
+
+                        // Skip this actor if there's an exact-match automation set already enabled for it.
+                        if (_manager.EnabledSets.ContainsKey(key))
+                            continue;
+
+                        // Apply to all actors represented by this key.
+                        foreach (var actor in data2.Objects)
+                        {
+                            var specificId = actor.GetIdentifier(_actors);
+                            if (_state.GetOrCreate(specificId, actor, out var state))
+                            {
+                                Reduce(actor, state, newSet, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
+                                _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
+                            }
+                        }
+                    }
+
+                    continue;
+                }
                 if (_objects.TryGetValue(id, out var data))
                 {
                     if (_state.GetOrCreate(id, data.Objects[0], out var state))
@@ -318,28 +361,79 @@ public sealed class AutoDesignApplier : IDisposable
         switch (identifier.Type)
         {
             case IdentifierType.Player:
-                if (_manager.EnabledSets.TryGetValue(identifier, out set))
+                if (TryGettingSetExactOrWildcard(identifier, out set))
                     return true;
 
                 identifier = _actors.CreatePlayer(identifier.PlayerName, WorldId.AnyWorld);
-                return _manager.EnabledSets.TryGetValue(identifier, out set);
+                if (TryGettingSetExactOrWildcard(identifier, out set))
+                    return true;
+
+                set = null;
+                return false;
             case IdentifierType.Retainer:
             case IdentifierType.Npc:
-                return _manager.EnabledSets.TryGetValue(identifier, out set);
+                return TryGettingSetExactOrWildcard(identifier, out set);
             case IdentifierType.Owned:
-                if (_manager.EnabledSets.TryGetValue(identifier, out set))
+                if (TryGettingSetExactOrWildcard(identifier, out set))
                     return true;
 
                 identifier = _actors.CreateOwned(identifier.PlayerName, WorldId.AnyWorld, identifier.Kind, identifier.DataId);
-                if (_manager.EnabledSets.TryGetValue(identifier, out set))
+                if (TryGettingSetExactOrWildcard(identifier, out set))
                     return true;
 
                 identifier = _actors.CreateNpc(identifier.Kind, identifier.DataId);
-                return _manager.EnabledSets.TryGetValue(identifier, out set);
+                return TryGettingSetExactOrWildcard(identifier, out set);
             default:
                 set = null;
                 return false;
         }
+    }
+
+    /// <summary> Try to get a set matching exactly or via wildcard pattern. </summary>
+    private bool TryGettingSetExactOrWildcard(ActorIdentifier identifier, [NotNullWhen(true)] out AutoDesignSet? set)
+    {
+        // First try exact match
+        if (_manager.EnabledSets.TryGetValue(identifier, out set))
+            return true;
+
+        // Then try wildcard matches
+        foreach (var (key, value) in _manager.EnabledSets)
+        {
+            // Use wildcard-aware matching when the stored identifier contains a wildcard pattern in the name.
+            if (!key.PlayerName.IsEmpty && key.PlayerName.ToString().Contains('*'))
+            {
+                var sameType = identifier.Type == key.Type;
+                if (!sameType)
+                    continue;
+
+                var worldMatches = identifier.Type switch
+                {
+                    Penumbra.GameData.Enums.IdentifierType.Player => identifier.HomeWorld == key.HomeWorld || identifier.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld || key.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld,
+                    Penumbra.GameData.Enums.IdentifierType.Owned  => identifier.HomeWorld == key.HomeWorld || identifier.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld || key.HomeWorld == Penumbra.GameData.Structs.WorldId.AnyWorld,
+                    _ => true,
+                };
+
+                if (!worldMatches)
+                    continue;
+
+                var name = identifier.PlayerName.ToString();
+                var pattern = key.PlayerName.ToString();
+                var regexPattern = System.Text.RegularExpressions.Regex.Escape(pattern).Replace("\\*", ".*");
+                if (System.Text.RegularExpressions.Regex.IsMatch(name, $"^{regexPattern}$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                {
+                    set = value;
+                    return true;
+                }
+            }
+            else if (identifier.Matches(key))
+            {
+                set = value;
+                return true;
+            }
+        }
+
+        set = null;
+        return false;
     }
 
     internal static int NewGearsetId = -1;

@@ -5,6 +5,7 @@ using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Gui;
 using Penumbra.GameData.Structs;
 using Penumbra.String;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
@@ -64,19 +65,51 @@ public class IdentifierDrawer
     public bool CanSetOwned
         => OwnedIdentifier.IsValid;
 
+    private static bool IsWildcardPattern(string? name)
+        => !string.IsNullOrEmpty(name) && name.Contains('*');
+
+    private static T Create<T>(bool wildcard, Func<T> uncheckedFactory, Func<T> checkedFactory)
+        => wildcard ? uncheckedFactory() : checkedFactory();
+
     private void UpdateIdentifiers()
     {
-        if (ByteString.FromString(_characterName, out var byteName))
+        var isWildcard = IsWildcardPattern(_characterName);
+        ByteString byteName = default;
+        
+        // For wildcard patterns, use FromStringUnsafe to allow '*' characters
+        if (isWildcard)
+            byteName = ByteString.FromStringUnsafe(_characterName ?? string.Empty, false);
+        else if (!ByteString.FromString(_characterName, out byteName))
         {
-            PlayerIdentifier    = _actors.CreatePlayer(byteName, _worldCombo.CurrentSelection.Key);
-            RetainerIdentifier  = _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Bell);
-            MannequinIdentifier = _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Mannequin);
-
-            if (_humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc)
-                OwnedIdentifier = _actors.CreateOwned(byteName, _worldCombo.CurrentSelection.Key, _humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0]);
-            else
-                OwnedIdentifier = ActorIdentifier.Invalid;
+            PlayerIdentifier    = ActorIdentifier.Invalid;
+            RetainerIdentifier  = ActorIdentifier.Invalid;
+            MannequinIdentifier = ActorIdentifier.Invalid;
+            OwnedIdentifier     = ActorIdentifier.Invalid;
+            NpcIdentifier       = ActorIdentifier.Invalid;
+            return;
         }
+
+        // Create identifiers using a single helper to handle wildcard vs checked creation
+        PlayerIdentifier = Create(isWildcard,
+            () => _actors.CreatePlayerUnchecked(byteName, _worldCombo.CurrentSelection.Key),
+            () => _actors.CreatePlayer(byteName, _worldCombo.CurrentSelection.Key));
+
+        RetainerIdentifier = Create(isWildcard,
+            () => _actors.CreateRetainerUnchecked(byteName, ActorIdentifier.RetainerType.Bell),
+            () => _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Bell));
+
+        MannequinIdentifier = Create(isWildcard,
+            () => _actors.CreateRetainerUnchecked(byteName, ActorIdentifier.RetainerType.Mannequin),
+            () => _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Mannequin));
+
+        if (_humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc)
+            OwnedIdentifier = Create(isWildcard,
+                () => _actors.CreateIndividualUnchecked(IdentifierType.Owned, byteName, _worldCombo.CurrentSelection.Key.Id,
+                    _humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0]),
+                () => _actors.CreateOwned(byteName, _worldCombo.CurrentSelection.Key, _humanNpcCombo.CurrentSelection.Kind,
+                    _humanNpcCombo.CurrentSelection.Ids[0]));
+        else
+            OwnedIdentifier = ActorIdentifier.Invalid;
 
         NpcIdentifier = _humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc
             ? _actors.CreateNpc(_humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0])
