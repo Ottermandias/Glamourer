@@ -54,6 +54,7 @@ public sealed class IpcProviders : IDisposable, IApiService
             IpcSubscribers.RevertStateName.Provider(pi, api.State),
             IpcSubscribers.UnlockState.Provider(pi, api.State),
             IpcSubscribers.UnlockStateName.Provider(pi, api.State),
+            IpcSubscribers.DeletePlayerState.Provider(pi, api.State),
             IpcSubscribers.UnlockAll.Provider(pi, api.State),
             IpcSubscribers.RevertToAutomation.Provider(pi, api.State),
             IpcSubscribers.RevertToAutomationName.Provider(pi, api.State),

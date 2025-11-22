@@ -385,7 +385,7 @@ public class StateApplier(
         var actors = ChangeMetaState(state, MetaIndex.Wetness, true);
         if (redraw)
         {
-            if (withLock)
+            if (withLock && actors.Valid)
                 state.TempLock();
             ForceRedraw(actors);
         }

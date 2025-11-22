@@ -490,7 +490,7 @@ public class MultiDesignPanel(
 
         foreach (var leaf in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
         {
-            var index = leaf.Value.Tags.IndexOf(_tag);
+            var index = leaf.Value.Tags.AsEnumerable().IndexOf(_tag);
             if (index >= 0)
                 _removeDesigns.Add((leaf.Value, index));
             else

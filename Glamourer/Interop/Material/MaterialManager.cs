@@ -62,7 +62,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
 
         var drawData = type switch
         {
-            MaterialValueIndex.DrawObjectType.Human => GetTempSlot((Human*)characterBase, slotId),
+            MaterialValueIndex.DrawObjectType.Human => GetTempSlot((Human*)characterBase, (HumanSlot)slotId),
             _                                       => GetTempSlot((Weapon*)characterBase),
         };
         var mode = PrepareColorSet.GetMode(material);
@@ -192,13 +192,24 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     }
 
     /// <summary> We need to get the temporary set, variant and stain that is currently being set if it is available. </summary>
-    private static CharacterWeapon GetTempSlot(Human* human, byte slotId)
+    private static CharacterWeapon GetTempSlot(Human* human, HumanSlot slotId)
     {
-        if (human->ChangedEquipData == null)
-            return ((Model)human).GetArmor(((uint)slotId).ToEquipSlot()).ToWeapon(0);
+        if (human->ChangedEquipData is null)
+            return slotId.ToSpecificEnum() switch
+            {
+                EquipSlot slot      => ((Model)human).GetArmor(slot).ToWeapon(0),
+                BonusItemFlag bonus => ((Model)human).GetBonus(bonus).ToWeapon(0),
+                _                   => default,
+            };
 
-        var item = (ChangedEquipData*)human->ChangedEquipData + slotId;
-        return ((CharacterArmor*)item)->ToWeapon(0);
+        if (!slotId.ToSlotIndex(out var index))
+            return default;
+
+        var item = (ChangedEquipData*)human->ChangedEquipData + index;
+        if (index < 10)
+            return ((CharacterArmor*)item)->ToWeapon(0);
+
+        return new CharacterWeapon(item->BonusModel, 0, item->BonusVariant, StainIds.None);
     }
 
     /// <summary>
