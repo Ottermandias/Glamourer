@@ -202,10 +202,39 @@ public class SetSelector : IDisposable
         if (IncognitoMode)
             text = pair.Set.Identifiers[0].Incognito(text);
         var textSize  = ImGui.CalcTextSize(text);
-        var textColor = pair.Set.Identifiers.Any(_objects.ContainsKey) ? ColorId.AutomationActorAvailable : ColorId.AutomationActorUnavailable;
+        var textColor = HasMatchingActor(pair.Set) ? ColorId.AutomationActorAvailable : ColorId.AutomationActorUnavailable;
         ImGui.SetCursorPos(new Vector2(ImGui.GetContentRegionAvail().X - textSize.X,
             ImGui.GetCursorPosY() - ImGui.GetTextLineHeightWithSpacing()));
         ImGuiUtil.TextColored(textColor.Value(), text);
+    }
+
+    private bool HasMatchingActor(AutoDesignSet set)
+    {
+        foreach (var id in set.Identifiers)
+        {
+            // Check for exact match
+            if (_objects.ContainsKey(id))
+                return true;
+
+            // Check for wildcard match
+            var nameStr = id.PlayerName.ToString();
+            if (nameStr.Contains('*'))
+            {
+                var pattern = "^" + System.Text.RegularExpressions.Regex.Escape(nameStr).Replace("\\*", ".*") + "$";
+                var regex = new System.Text.RegularExpressions.Regex(pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                
+                foreach (var (actorId, _) in _objects)
+                {
+                    if (actorId.Type == id.Type && actorId.DataId == id.DataId)
+                    {
+                        var actorNameStr = actorId.PlayerName.ToString();
+                        if (regex.IsMatch(actorNameStr))
+                            return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void DrawSelectionButtons()
