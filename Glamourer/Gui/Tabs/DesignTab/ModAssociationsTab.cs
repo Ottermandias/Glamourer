@@ -71,6 +71,8 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
     private void DrawApplyAllButton()
     {
         var (id, name) = penumbra.CurrentCollection;
+        if (config.Ephemeral.IncognitoMode)
+            name = id.ShortGuid();
         if (ImGuiUtil.DrawDisabledButton($"Try Applying All Associated Mods to {name}##applyAll",
                 new Vector2(ImGui.GetContentRegionAvail().X, 0), string.Empty, id == Guid.Empty))
             ApplyAll();

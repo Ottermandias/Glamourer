@@ -22,11 +22,12 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
     private readonly CustomizeService   _customize;
     private readonly GPoseService       _gpose;
 
-    private readonly EquipItem[] _lastItems = new EquipItem[EquipFlagExtensions.NumEquipFlags / 2];
+    private readonly EquipItem[] _lastItems = new EquipItem[EquipFlagExtensions.NumEquipFlags / 2 + BonusExtensions.AllFlags.Count];
 
-    public IEnumerable<KeyValuePair<EquipSlot, EquipItem>> LastItems
-        => EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand).Zip(_lastItems)
-            .Select(p => new KeyValuePair<EquipSlot, EquipItem>(p.First, p.Second));
+    public IEnumerable<KeyValuePair<object, EquipItem>> LastItems
+        => EquipSlotExtensions.EqdpSlots.Cast<object>().Append(EquipSlot.MainHand).Append(EquipSlot.OffHand)
+            .Concat(BonusExtensions.AllFlags.Cast<object>()).Zip(_lastItems)
+            .Select(p => new KeyValuePair<object, EquipItem>(p.First, p.Second));
 
     public ChangedItemType LastType    { get; private set; } = ChangedItemType.None;
     public uint            LastId      { get; private set; }
@@ -72,6 +73,21 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
         if (!Player())
             return;
 
+        var bonusSlot = item.Type.ToBonus();
+        if (bonusSlot is not BonusItemFlag.Unknown)
+        {
+            // + 2 due to weapons.
+            var glasses = _lastItems[bonusSlot.ToSlot() + 2];
+            using (_ = !openTooltip ? null : ImRaii.Tooltip())
+            {
+                ImGui.TextUnformatted($"{prefix}Right-Click to apply to current actor.");
+                if (glasses.Valid)
+                    ImGui.TextUnformatted($"{prefix}Control + Right-Click to re-apply {glasses.Name} to current actor.");
+            }
+
+            return;
+        }
+
         var slot = item.Type.ToSlot();
         var last = _lastItems[slot.ToIndex()];
         switch (slot)
@@ -109,6 +125,27 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
 
     public void ApplyItem(ActorState state, EquipItem item)
     {
+        var bonusSlot = item.Type.ToBonus();
+        if (bonusSlot is not BonusItemFlag.Unknown)
+        {
+            // + 2 due to weapons.
+            var glasses = _lastItems[bonusSlot.ToSlot() + 2];
+            if (ImGui.GetIO().KeyCtrl && glasses.Valid)
+            {
+                Glamourer.Log.Debug($"Re-Applying {glasses.Name} to {bonusSlot.ToName()}.");
+                SetLastItem(bonusSlot, default, state);
+                _stateManager.ChangeBonusItem(state, bonusSlot, glasses, ApplySettings.Manual);
+            }
+            else
+            {
+                Glamourer.Log.Debug($"Applying {item.Name} to {bonusSlot.ToName()}.");
+                SetLastItem(bonusSlot, item, state);
+                _stateManager.ChangeBonusItem(state, bonusSlot, item, ApplySettings.Manual);
+            }
+
+            return;
+        }
+
         var slot = item.Type.ToSlot();
         var last = _lastItems[slot.ToIndex()];
         switch (slot)
@@ -265,7 +302,22 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
         {
             var oldItem = state.ModelData.Item(slot);
             if (oldItem.Id != item.Id)
-                _lastItems[slot.ToIndex()] = oldItem;
+                last = oldItem;
+        }
+    }
+
+    private void SetLastItem(BonusItemFlag slot, EquipItem item, ActorState state)
+    {
+        ref var last = ref _lastItems[slot.ToSlot() + 2];
+        if (!item.Valid)
+        {
+            last = default;
+        }
+        else
+        {
+            var oldItem = state.ModelData.BonusItem(slot);
+            if (oldItem.Id != item.Id)
+                last = oldItem;
         }
     }
 

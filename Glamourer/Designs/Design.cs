@@ -100,7 +100,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
 
     public new JObject JsonSerialize()
     {
-        var ret = new JObject()
+        var ret = new JObject
         {
             ["FileVersion"]            = FileVersion,
             ["Identifier"]             = Identifier,
@@ -131,12 +131,17 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
         var ret = new JArray();
         foreach (var (mod, settings) in AssociatedMods)
         {
-            var obj = new JObject()
+            var obj = new JObject
             {
                 ["Name"]      = mod.Name,
                 ["Directory"] = mod.DirectoryName,
-                ["Enabled"]   = settings.Enabled,
             };
+            if (settings.Remove)
+                obj["Remove"] = true;
+            else if (settings.ForceInherit)
+                obj["Inherit"] = true;
+            else
+                obj["Enabled"] = settings.Enabled;
             if (settings.Enabled)
             {
                 obj["Priority"] = settings.Priority;

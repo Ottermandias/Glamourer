@@ -8,6 +8,7 @@ using Glamourer.State;
 using Newtonsoft.Json.Linq;
 using OtterGui.Services;
 using Penumbra.GameData.Interop;
+using Penumbra.GameData.Structs;
 using StateChanged = Glamourer.Events.StateChanged;
 
 namespace Glamourer.Api;
@@ -17,7 +18,6 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     private readonly ApiHelpers         _helpers;
     private readonly StateManager       _stateManager;
     private readonly DesignConverter    _converter;
-    private readonly Configuration      _config;
     private readonly AutoDesignApplier  _autoDesigns;
     private readonly ActorObjectManager _objects;
     private readonly AutoRedrawChanged  _autoRedraw;
@@ -28,7 +28,6 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     public StateApi(ApiHelpers helpers,
         StateManager stateManager,
         DesignConverter converter,
-        Configuration config,
         AutoDesignApplier autoDesigns,
         ActorObjectManager objects,
         AutoRedrawChanged autoRedraw,
@@ -39,7 +38,6 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         _helpers        = helpers;
         _stateManager   = stateManager;
         _converter      = converter;
-        _config         = config;
         _autoDesigns    = autoDesigns;
         _objects        = objects;
         _autoRedraw     = autoRedraw;
@@ -247,6 +245,27 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
             return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
 
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
+    public GlamourerApiEc DeletePlayerState(string playerName, ushort worldId, uint key)
+    {
+        var args   = ApiHelpers.Args("Name", playerName, "World", worldId, "Key", key);
+        var states = _helpers.FindExistingStates(playerName).ToList();
+        if (states.Count is 0)
+            return ApiHelpers.Return(GlamourerApiEc.NothingDone, args);
+
+        var anyLocked = false;
+        foreach (var state in states)
+        {
+            if (state.CanUnlock(key))
+                _stateManager.DeleteState(state.Identifier);
+            else
+                anyLocked = true;
+        }
+
+        return ApiHelpers.Return(anyLocked
+            ? GlamourerApiEc.InvalidKey
+            : GlamourerApiEc.Success, args);
     }
 
     public int UnlockAll(uint key)
