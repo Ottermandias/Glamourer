@@ -178,6 +178,20 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
+    public GlamourerApiEc CanUnlock(int objectIndex, uint key, out bool isLocked, out bool canUnlock)
+    {
+        var args = ApiHelpers.Args("Index", objectIndex, "Key", key);
+        isLocked = false; // These seem like reasonable defaults.
+        canUnlock = false;
+        if (_helpers.FindExistingState(objectIndex, out var state) != GlamourerApiEc.Success)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
+        if (state == null)
+            return ApiHelpers.Return(GlamourerApiEc.InvalidState, args); // Possibly, the error type could be changed. I just looked at what was available.
+        isLocked = state.IsLocked;
+        canUnlock = state.CanUnlock(key);
+        return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
     public GlamourerApiEc UnlockStateName(string playerName, uint key)
     {
         var args   = ApiHelpers.Args("Name", playerName, "Key", key);
