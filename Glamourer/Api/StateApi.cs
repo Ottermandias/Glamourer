@@ -129,10 +129,10 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     public GlamourerApiEc ReapplyState(int objectIndex, uint key, ApplyFlag flags)
     {
         var args = ApiHelpers.Args("Index", objectIndex, "Key", key, "Flags", flags);
-        if (_helpers.FindExistingState(objectIndex, out var state) != GlamourerApiEc.Success)
+        if (_helpers.FindExistingState(objectIndex, out var state) is not GlamourerApiEc.Success)
             return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
 
-        if (state == null)
+        if (state is null)
             return ApiHelpers.Return(GlamourerApiEc.NothingDone, args);
 
         if (!state.CanUnlock(key))
@@ -359,14 +359,14 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     private void Reapply(Actor actor, ActorState state, uint key, ApplyFlag flags)
     {
-        var source = (flags & ApplyFlag.Once) != 0 ? StateSource.IpcManual : StateSource.IpcFixed;
+        var source = flags.HasFlag(ApplyFlag.Once) ? StateSource.IpcFixed : StateSource.IpcManual;
         _stateManager.ReapplyState(actor, state, false, source, true);
         ApiHelpers.Lock(state, key, flags);
     }
 
     private void Revert(ActorState state, uint key, ApplyFlag flags)
     {
-        var source = (flags & ApplyFlag.Once) != 0 ? StateSource.IpcManual : StateSource.IpcFixed;
+        var source = flags.HasFlag(ApplyFlag.Once) ? StateSource.IpcFixed : StateSource.IpcManual;
         switch (flags & (ApplyFlag.Equipment | ApplyFlag.Customization))
         {
             case ApplyFlag.Equipment:                           _stateManager.ResetEquip(state, source, key); break;
