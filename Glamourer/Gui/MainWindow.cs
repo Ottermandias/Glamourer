@@ -102,6 +102,8 @@ public class MainWindow : Window, IDisposable
         SelectTab = _config.Ephemeral.SelectedTab;
         _event.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
         IsOpen = _config.OpenWindowAtStart;
+
+        _penumbra.DrawSettingsSection += Settings.DrawPenumbraIntegrationSettings;
     }
 
     public void OpenSettings()
@@ -120,7 +122,10 @@ public class MainWindow : Window, IDisposable
     }
 
     public void Dispose()
-        => _event.Unsubscribe(OnTabSelected);
+    {
+        _event.Unsubscribe(OnTabSelected);
+        _penumbra.DrawSettingsSection -= Settings.DrawPenumbraIntegrationSettings;
+    }
 
     public override void Draw()
     {
