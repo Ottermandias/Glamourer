@@ -33,6 +33,11 @@ public class IpcTesterPanel(
             ImGui.SameLine();
             ImGui.TextUnformatted($"({major}.{minor:D4})");
 
+            ImGui.TextUnformatted(AutoReloadGearEnabled.Label);
+            var autoRedraw = new AutoReloadGearEnabled(pluginInterface).Invoke();
+            ImGui.SameLine();
+            ImGui.TextUnformatted(autoRedraw ? "Enabled" : "Disabled");
+
             designs.Draw();
             items.Draw();
             state.Draw();
@@ -49,6 +54,7 @@ public class IpcTesterPanel(
             return;
 
         Glamourer.Log.Debug("[IPCTester] Subscribed to IPC events for IPC tester.");
+        state.AutoRedrawChanged.Enable();
         state.GPoseChanged.Enable();
         state.StateChanged.Enable();
         state.StateFinalized.Enable();
@@ -72,6 +78,7 @@ public class IpcTesterPanel(
 
         Glamourer.Log.Debug("[IPCTester] Unsubscribed from IPC events for IPC tester.");
         _subscribed = false;
+        state.AutoRedrawChanged.Disable();
         state.GPoseChanged.Disable();
         state.StateChanged.Disable();
         state.StateFinalized.Disable();

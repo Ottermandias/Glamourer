@@ -6,6 +6,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Designs;
+using Glamourer.Events;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.PalettePlus;
@@ -30,6 +31,7 @@ public class SettingsTab(
     CodeDrawer codeDrawer,
     Glamourer glamourer,
     AutoDesignApplier autoDesignApplier,
+    AutoRedrawChanged autoRedraw,
     PcpService pcpService)
     : ITab
 {
@@ -91,7 +93,11 @@ public class SettingsTab(
             config.DisableFestivals == 0, v => config.DisableFestivals = v ? (byte)0 : (byte)2);
         Checkbox("Auto-Reload Gear"u8,
             "Automatically reload equipment pieces on your own character when changing any mod options in Penumbra in their associated collection."u8,
-            config.AutoRedrawEquipOnChanges, v => config.AutoRedrawEquipOnChanges = v);
+            config.AutoRedrawEquipOnChanges, v =>
+            {
+                config.AutoRedrawEquipOnChanges = v;
+                autoRedraw.Invoke(v);
+            });
         Checkbox("Attach to PCP-Handling"u8,
             "Add the actor's glamourer state when a PCP is created by Penumbra, and create a design and apply it if possible when a PCP is installed by Penumbra."u8,
             config.AttachToPcp, pcpService.Set);

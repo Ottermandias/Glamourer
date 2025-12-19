@@ -20,6 +20,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     private readonly DesignConverter    _converter;
     private readonly AutoDesignApplier  _autoDesigns;
     private readonly ActorObjectManager _objects;
+    private readonly AutoRedrawChanged  _autoRedraw;
     private readonly StateChanged       _stateChanged;
     private readonly StateFinalized     _stateFinalized;
     private readonly GPoseService       _gPose;
@@ -29,6 +30,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         DesignConverter converter,
         AutoDesignApplier autoDesigns,
         ActorObjectManager objects,
+        AutoRedrawChanged autoRedraw,
         StateChanged stateChanged,
         StateFinalized stateFinalized,
         GPoseService gPose)
@@ -38,9 +40,11 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         _converter      = converter;
         _autoDesigns    = autoDesigns;
         _objects        = objects;
+        _autoRedraw     = autoRedraw;
         _stateChanged   = stateChanged;
         _stateFinalized = stateFinalized;
         _gPose          = gPose;
+        _autoRedraw.Subscribe(OnAutoRedrawChange, AutoRedrawChanged.Priority.StateApi);
         _stateChanged.Subscribe(OnStateChanged, Events.StateChanged.Priority.GlamourerIpc);
         _stateFinalized.Subscribe(OnStateFinalized, Events.StateFinalized.Priority.StateApi);
         _gPose.Subscribe(OnGPoseChange, GPoseService.Priority.StateApi);
@@ -48,6 +52,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     public void Dispose()
     {
+        _autoRedraw.Unsubscribe(OnAutoRedrawChange);
         _stateChanged.Unsubscribe(OnStateChanged);
         _stateFinalized.Unsubscribe(OnStateFinalized);
         _gPose.Unsubscribe(OnGPoseChange);
@@ -117,6 +122,48 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
         if (!anyHuman)
             return ApiHelpers.Return(GlamourerApiEc.ActorNotHuman, args);
+
+        return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
+    public GlamourerApiEc ReapplyState(int objectIndex, uint key, ApplyFlag flags)
+    {
+        var args = ApiHelpers.Args("Index", objectIndex, "Key", key, "Flags", flags);
+        if (_helpers.FindExistingState(objectIndex, out var state) != GlamourerApiEc.Success)
+            return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
+
+        if (state == null)
+            return ApiHelpers.Return(GlamourerApiEc.NothingDone, args);
+
+        if (!state.CanUnlock(key))
+            return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
+
+        Reapply(_objects.Objects[objectIndex], state, key, flags);
+        return ApiHelpers.Return(GlamourerApiEc.Success, args);
+    }
+
+    public GlamourerApiEc ReapplyStateName(string playerName, uint key, ApplyFlag flags)
+    {
+        var args = ApiHelpers.Args("Name", playerName, "Key", key, "Flags", flags);
+        var states = _helpers.FindExistingStates(playerName);
+
+        var any = false;
+        var anyReapplied = false;
+        foreach (var state in states)
+        {
+            any = true;
+            if (!state.CanUnlock(key))
+                continue;
+
+            anyReapplied = true;
+            anyReapplied |= Reapply(state, key, flags) is GlamourerApiEc.Success;
+        }
+
+        if (any)
+            ApiHelpers.Return(GlamourerApiEc.NothingDone, args);
+
+        if (!anyReapplied)
+            return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
 
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
@@ -284,6 +331,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
 
+    public event Action<bool>?                          AutoReloadGearChanged;
     public event Action<nint>?                          StateChanged;
     public event Action<IntPtr, StateChangeType>?       StateChangedWithType;
     public event Action<IntPtr, StateFinalizationType>? StateFinalized;
@@ -295,6 +343,24 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         var settings = new ApplySettings(Source: once ? StateSource.IpcManual : StateSource.IpcFixed, Key: key, MergeLinks: true,
             ResetMaterials: !once && key != 0, IsFinal: true);
         _stateManager.ApplyDesign(state, design, settings);
+        ApiHelpers.Lock(state, key, flags);
+    }
+
+    private GlamourerApiEc Reapply(ActorState state, uint key, ApplyFlag flags)
+    {
+        if (!_objects.TryGetValue(state.Identifier, out var actors) || !actors.Valid)
+            return GlamourerApiEc.ActorNotFound;
+
+        foreach (var actor in actors.Objects)
+            Reapply(actor, state, key, flags);
+
+        return GlamourerApiEc.Success;
+    }
+
+    private void Reapply(Actor actor, ActorState state, uint key, ApplyFlag flags)
+    {
+        var source = (flags & ApplyFlag.Once) != 0 ? StateSource.IpcManual : StateSource.IpcFixed;
+        _stateManager.ReapplyState(actor, state, false, source, true);
         ApiHelpers.Lock(state, key, flags);
     }
 
@@ -358,8 +424,8 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         };
     }
 
-    private void OnGPoseChange(bool gPose)
-        => GPoseChanged?.Invoke(gPose);
+    private void OnAutoRedrawChange(bool autoReload)
+        => AutoReloadGearChanged?.Invoke(autoReload);
 
     private void OnStateChanged(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, ITransaction? _5)
     {
@@ -380,4 +446,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
             foreach (var actor in actors.Objects)
                 StateFinalized.Invoke(actor.Address, type);
     }
+
+    private void OnGPoseChange(bool gPose)
+        => GPoseChanged?.Invoke(gPose);
 }
