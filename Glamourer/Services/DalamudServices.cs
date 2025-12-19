@@ -1,4 +1,3 @@
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface.DragDrop;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -17,6 +16,7 @@ public class DalamudServices
         services.AddDalamudService<ICommandManager>(pi);
         services.AddDalamudService<IDataManager>(pi);
         services.AddDalamudService<IClientState>(pi);
+        services.AddDalamudService<IPlayerState>(pi);
         services.AddDalamudService<ICondition>(pi);
         services.AddDalamudService<IGameGui>(pi);
         services.AddDalamudService<IChatGui>(pi);
