@@ -119,7 +119,7 @@ public class SettingsTab(
                 config.AutoRedrawEquipOnChanges = v;
                 autoRedraw.Invoke(v);
             });
-        Checkbox("Attach to PCP-Handling"u8,
+        Checkbox("Attach to PCP Handling"u8,
             "Add the actor's glamourer state when a PCP is created by Penumbra, and create a design and apply it if possible when a PCP is installed by Penumbra."u8,
             config.AttachToPcp, pcpService.Set);
         var active = config.DeleteDesignModifier.IsActive();
