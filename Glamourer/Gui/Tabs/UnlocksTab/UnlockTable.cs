@@ -194,7 +194,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
                 ImGui.Dummy(new Vector2(ImGui.GetFrameHeight()));
             ImGui.SameLine();
             ImGui.AlignTextToFramePadding();
-            if (ImGui.Selectable(item.Name))
+            if (ImGui.Selectable(item.Name) && !item.Id.IsBonusItem)
                 Glamourer.Messager.Chat.Print(new SeStringBuilder().AddItemLink(item.ItemId.Id, false).BuiltString);
 
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && _tooltip.Player(out var state))
