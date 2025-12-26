@@ -1,6 +1,7 @@
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
+using Glamourer.State;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Designs.History;
@@ -125,7 +126,10 @@ public readonly record struct MaterialTransaction(MaterialValueIndex Index, Colo
         => older is MaterialTransaction other && Index == other.Index ? new MaterialTransaction(Index, other.Old, New) : null;
 
     public void Revert(IDesignEditor editor, object data)
-        => ((DesignManager)editor).ChangeMaterialValue((Design)data, Index, Old);
+    {
+        if (editor is DesignManager e)
+            e.ChangeMaterialValue((Design)data, Index, Old);
+    }
 }
 
 /// <remarks> Only Designs. </remarks>
