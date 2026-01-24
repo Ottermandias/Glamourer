@@ -30,7 +30,7 @@ using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 using FrameworkManager = OtterGui.Classes.FrameworkManager;
 using Logger = OtterGui.Log.Logger;
-using MessageService = OtterGui.Classes.MessageService;
+using MessageService = Luna.MessageService;
 
 namespace Glamourer.Services;
 

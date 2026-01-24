@@ -3,11 +3,13 @@ using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Services;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
+using Luna;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Text;
-using OtterGui.Widgets;
+using TagButtons = OtterGui.Widgets.TagButtons;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
@@ -189,7 +191,8 @@ public class DesignDetailTab
         else if (_selector.Selected!.Color.Length != 0)
         {
             ImGui.SameLine();
-            ImUtf8.Icon(FontAwesomeIcon.ExclamationCircle, "The color associated with this design does not exist."u8, _colors.MissingColor);
+            ImEx.Icon.Draw(LunaStyle.WarningIcon, _colors.MissingColor);
+            Im.Tooltip.OnHover("The color associated with this design does not exist."u8);
         }
 
         ImUtf8.DrawFrameColumn("Creation Date"u8);

@@ -1,7 +1,7 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.GameData;
 using Glamourer.State;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Designs;
@@ -11,10 +11,10 @@ public readonly struct ApplicationRules(ApplicationCollection application, bool 
     public static readonly ApplicationRules All = new(ApplicationCollection.All, true);
 
     public static ApplicationRules FromModifiers(ActorState state)
-        => FromModifiers(state, ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift);
+        => FromModifiers(state, Im.Io.KeyControl, Im.Io.KeyShift);
 
     public static ApplicationRules NpcFromModifiers()
-        => NpcFromModifiers(ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift);
+        => NpcFromModifiers(Im.Io.KeyControl, Im.Io.KeyShift);
 
     public static ApplicationRules AllButParameters(ActorState state)
         => new(ApplicationCollection.All with { Parameters = ComputeParameters(state.ModelData, state.BaseData, All.Parameters) }, true);

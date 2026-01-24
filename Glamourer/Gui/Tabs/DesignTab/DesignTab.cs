@@ -1,30 +1,28 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
-using Dalamud.Interface.Utility;
 using Glamourer.Designs;
 using Glamourer.Interop;
 using Dalamud.Bindings.ImGui;
-using OtterGui.Classes;
-using OtterGui.Widgets;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class DesignTab(DesignFileSystemSelector _selector, DesignPanel _panel, ImportService _importService, DesignManager _manager)
-    : ITab
+public class DesignTab(DesignFileSystemSelector selector, DesignPanel panel, ImportService importService, DesignManager manager)
+    : OtterGui.Widgets.ITab
 {
     public ReadOnlySpan<byte> Label
         => "Designs"u8;
 
     public void DrawContent()
     {
-        _selector.Draw();
-        if (_importService.CreateCharaTarget(out var designBase, out var name))
+        selector.Draw();
+        if (importService.CreateCharaTarget(out var designBase, out var name))
         {
-            var newDesign = _manager.CreateClone(designBase, name, true);
+            var newDesign = manager.CreateClone(designBase, name, true);
             Glamourer.Messager.NotificationMessage($"Imported Anamnesis .chara file {name} as new design {newDesign.Name}", NotificationType.Success, false);
         }
 
         ImGui.SameLine();
-        _panel.Draw();
-        _importService.CreateCharaSource();
+        panel.Draw();
+        importService.CreateCharaSource();
     }
 }

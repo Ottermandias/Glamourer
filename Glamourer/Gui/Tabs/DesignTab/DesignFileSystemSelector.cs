@@ -6,6 +6,7 @@ using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Services;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Filesystem;
@@ -13,6 +14,7 @@ using OtterGui.FileSystem.Selector;
 using OtterGui.Log;
 using OtterGui.Raii;
 using OtterGui.Text;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
@@ -43,7 +45,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     public new DesignFileSystem.Leaf? SelectedLeaf
         => base.SelectedLeaf;
 
-    public record struct DesignState(uint Color)
+    public record struct DesignState(Rgba32 Color)
     { }
 
     protected override float CurrentWidth
@@ -70,7 +72,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     }
 
     public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, IKeyState keyState, DesignChanged @event,
-        Configuration config, DesignConverter converter, TabSelected selectionEvent, Logger log, DesignColors designColors,
+        Configuration config, DesignConverter converter, TabSelected selectionEvent, OtterGui.Log.Logger log, DesignColors designColors,
         DesignApplier designApplier)
         : base(fileSystem, keyState, log, allowMultipleSelection: true)
     {
@@ -174,7 +176,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     {
         var       flag  = selected ? ImGuiTreeNodeFlags.Selected | LeafFlags : LeafFlags;
         var       name  = IncognitoMode ? leaf.Value.Incognito : leaf.Value.Name.Text;
-        using var color = ImRaii.PushColor(ImGuiCol.Text, state.Color);
+        using var color = ImGuiColor.Text.Push(state.Color);
         using var _     = ImUtf8.TreeNode(name, flag);
         if (_config.AllowDoubleClickToApply && ImGui.IsItemHovered() && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
             _designApplier.ApplyToPlayer(leaf.Value);
@@ -271,7 +273,9 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     }
 
     private void DeleteButton(Vector2 size)
-        => DeleteSelectionButton(size, _config.DeleteDesignModifier, "design", "designs", _designManager.Delete);
+        => DeleteSelectionButton(size,
+            new OtterGui.Classes.DoubleModifier(new OtterGui.Classes.ModifierHotkey(_config.DeleteDesignModifier.Modifier1),
+                new OtterGui.Classes.ModifierHotkey(_config.DeleteDesignModifier.Modifier2)), "design", "designs", _designManager.Delete);
 
     private void DrawNewDesignPopup()
     {

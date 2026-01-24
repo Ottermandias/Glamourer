@@ -4,6 +4,7 @@ using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Raii;
@@ -97,13 +98,13 @@ public class DesignLinkDrawer(
         var color = colorManager.GetColor(selector.Selected!);
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {
-            using var c = ImRaii.PushColor(ImGuiCol.Text, color);
+            using var c = ImGuiColor.Text.Push(color);
             ImGui.AlignTextToFramePadding();
             ImGuiUtil.RightAlign(FontAwesomeIcon.ArrowRightLong.ToIconString());
         }
 
         ImGui.TableNextColumn();
-        using (ImRaii.PushColor(ImGuiCol.Text, color))
+        using (ImGuiColor.Text.Push(color))
         {
             ImGui.AlignTextToFramePadding();
             ImGui.Selectable(selector.IncognitoMode ? selector.Selected!.Incognito : selector.Selected!.Name.Text);
@@ -114,7 +115,7 @@ public class DesignLinkDrawer(
         ImGui.TableNextColumn();
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {
-            using var c = ImRaii.PushColor(ImGuiCol.Text, color);
+            using var c = ImGuiColor.Text.Push(color);
             ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted(FontAwesomeIcon.ArrowLeftLong.ToIconString());
         }
@@ -134,7 +135,7 @@ public class DesignLinkDrawer(
             var (design, flags) = list[i];
             ImGui.TableNextColumn();
 
-            using (ImRaii.PushColor(ImGuiCol.Text, colorManager.GetColor(design)))
+            using (ImGuiColor.Text.Push(colorManager.GetColor(design)))
             {
                 ImGui.AlignTextToFramePadding();
                 ImGui.Selectable(selector.IncognitoMode ? design.Incognito : design.Name.Text);

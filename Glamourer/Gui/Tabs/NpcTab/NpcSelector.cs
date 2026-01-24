@@ -1,6 +1,6 @@
 ﻿using Glamourer.GameData;
 using Dalamud.Bindings.ImGui;
-using OtterGui;
+using ImSharp;
 using OtterGui.Extensions;
 using OtterGui.Raii;
 using ImGuiClip = OtterGui.ImGuiClip;
@@ -85,7 +85,7 @@ public class NpcSelector : IDisposable
     private void DrawSelectable(int globalIndex)
     {
         using var id    = ImRaii.PushId(globalIndex);
-        using var color = ImRaii.PushColor(ImGuiCol.Text, _favorites.GetData(_npcs[globalIndex]).Color);
+        using var color = ImGuiColor.Text.Push(_favorites.GetData(_npcs[globalIndex]).Color);
         if (ImGui.Selectable(_npcs[globalIndex].Name, _selectedGlobalIndex == globalIndex, ImGuiSelectableFlags.AllowItemOverlap))
             _selectedGlobalIndex = globalIndex;
     }

@@ -1,8 +1,8 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Gui;
 using Glamourer.Services;
+using Luna;
 using Newtonsoft.Json;
-using OtterGui.Classes;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace Glamourer;

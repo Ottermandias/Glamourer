@@ -14,12 +14,10 @@ using Glamourer.Interop.Penumbra;
 using Dalamud.Bindings.ImGui;
 using Luna;
 using OtterGui;
-using OtterGui.Classes;
-using OtterGui.Custom;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Widgets;
-using Changelog = OtterGui.Widgets.Changelog;
+using Changelog = Luna.Changelog;
 using ITab = OtterGui.Widgets.ITab;
 using Window = Dalamud.Interface.Windowing.Window;
 
@@ -53,7 +51,7 @@ public class MainWindow : Window, IDisposable
     private readonly TabSelected        _event;
     private readonly MainWindowPosition _position;
     private readonly ITab[]             _tabs;
-    private          bool               _ignorePenumbra = false;
+    private          bool               _ignorePenumbra;
 
     public readonly SettingsTab   Settings;
     public readonly ActorTab      Actors;
@@ -208,13 +206,13 @@ public class MainWindow : Window, IDisposable
         var width = ImUtf8.CalcTextSize(SupportInfoButtonText).X + ImGui.GetStyle().FramePadding.X * 2;
         var xPos  = ImGui.GetWindowWidth() - width;
         ImGui.SetCursorPos(new Vector2(xPos, 0));
-        CustomGui.DrawDiscordButton(Glamourer.Messager, width);
+        SupportButton.Discord(Glamourer.Messager, width);
 
         ImGui.SetCursorPos(new Vector2(xPos, ImGui.GetFrameHeightWithSpacing()));
         DrawSupportButton(glamourer); 
 
         ImGui.SetCursorPos(new Vector2(xPos, 2 * ImGui.GetFrameHeightWithSpacing()));
-        CustomGui.DrawGuideButton(Glamourer.Messager, width);
+        SupportButton.ReniGuide(Glamourer.Messager, width);
 
         ImGui.SetCursorPos(new Vector2(xPos, 3 * ImGui.GetFrameHeightWithSpacing()));
         if (ImGui.Button("Show Changelogs", new Vector2(width, 0)))
@@ -270,7 +268,7 @@ public class MainWindow : Window, IDisposable
 
         ImGui.NewLine();
         ImGui.NewLine();
-        CustomGui.DrawDiscordButton(Glamourer.Messager, 0);
+        SupportButton.Discord(Glamourer.Messager, 0);
         ImGui.SameLine();
         ImGui.NewLine();
         ImGui.NewLine();

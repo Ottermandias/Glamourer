@@ -9,7 +9,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtterGui.Classes;
 using Penumbra.GameData.Structs;
-using Notification = OtterGui.Classes.Notification;
+using Luna;
+using Notification = Luna.Notification;
+using SaveType = OtterGui.Classes.SaveType;
 
 namespace Glamourer.Designs;
 

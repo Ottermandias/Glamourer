@@ -7,6 +7,8 @@ using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
+using Luna;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
@@ -279,12 +281,12 @@ public class NpcPanel
             if (DesignColorUi.DrawColorButton($"Color associated with {color}", currentColor, out var newColor))
                 _colors.SetColor(color, newColor);
         }
-        else if (color.Length != 0)
+        else if (color.Length is not 0)
         {
             ImGui.SameLine();
             var       size = new Vector2(ImGui.GetFrameHeight());
             using var font = ImRaii.PushFont(UiBuilder.IconFont);
-            ImGuiUtil.DrawTextButton(FontAwesomeIcon.ExclamationCircle.ToIconString(), size, 0, _colors.MissingColor);
+            ImEx.TextFramed(LunaStyle.WarningIcon.Span, size, _colors.MissingColor);
             ImUtf8.HoverTooltip("The color associated with this design does not exist."u8);
         }
 

@@ -2,14 +2,13 @@
 using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Services;
+using Luna;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OtterGui.Classes;
-using OtterGui.Filesystem;
 
 namespace Glamourer.Designs;
 
-public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
+public sealed class DesignFileSystem : OtterGui.Filesystem.FileSystem<Design>, IDisposable, ISavable
 {
     private readonly DesignChanged _designChanged;
 
@@ -39,7 +38,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
         _designChanged.Unsubscribe(OnDesignChange);
     }
 
-    public struct CreationDate : ISortMode<Design>
+    public struct CreationDate : OtterGui.Filesystem.ISortMode<Design>
     {
         public ReadOnlySpan<byte> Name
             => "Creation Date (Older First)"u8;
@@ -51,7 +50,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderBy(l => l.Value.CreationDate));
     }
 
-    public struct UpdateDate : ISortMode<Design>
+    public struct UpdateDate : OtterGui.Filesystem.ISortMode<Design>
     {
         public ReadOnlySpan<byte> Name
             => "Update Date (Older First)"u8;
@@ -63,7 +62,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderBy(l => l.Value.LastEdit));
     }
 
-    public struct InverseCreationDate : ISortMode<Design>
+    public struct InverseCreationDate : OtterGui.Filesystem.ISortMode<Design>
     {
         public ReadOnlySpan<byte> Name
             => "Creation Date (Newer First)"u8;
@@ -75,7 +74,7 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderByDescending(l => l.Value.CreationDate));
     }
 
-    public struct InverseUpdateDate : ISortMode<Design>
+    public struct InverseUpdateDate : OtterGui.Filesystem.ISortMode<Design>
     {
         public ReadOnlySpan<byte> Name
             => "Update Date (Newer First)"u8;
@@ -87,9 +86,9 @@ public sealed class DesignFileSystem : FileSystem<Design>, IDisposable, ISavable
             => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderByDescending(l => l.Value.LastEdit));
     }
 
-    private void OnChange(FileSystemChangeType type, IPath _1, IPath? _2, IPath? _3)
+    private void OnChange(OtterGui.Filesystem.FileSystemChangeType type, IPath _1, IPath? _2, IPath? _3)
     {
-        if (type != FileSystemChangeType.Reload)
+        if (type != OtterGui.Filesystem.FileSystemChangeType.Reload)
             _saveService.QueueSave(this);
     }
 

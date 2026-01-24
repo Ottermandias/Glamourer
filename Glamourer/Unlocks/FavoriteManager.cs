@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Services;
+using Luna;
 using Newtonsoft.Json;
-using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 

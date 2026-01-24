@@ -2,6 +2,7 @@
 using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.State;
+using ImSharp;
 using Luna;
 using Newtonsoft.Json.Linq;
 
@@ -21,11 +22,11 @@ public class DesignsApi(
 
     public Dictionary<Guid, (string DisplayName, string FullPath, uint DisplayColor, bool ShownInQdb)> GetDesignListExtended()
         => fileSystem.ToDictionary(kvp => kvp.Key.Identifier,
-            kvp => (kvp.Key.Name.Text, kvp.Value.FullName(), color.GetColor(kvp.Key), kvp.Key.QuickDesign));
+            kvp => (kvp.Key.Name.Text, kvp.Value.FullName(), color.GetColor(kvp.Key).Color, kvp.Key.QuickDesign));
 
     public (string DisplayName, string FullPath, uint DisplayColor, bool ShowInQdb) GetExtendedDesignData(Guid designId)
         => designs.Designs.ByIdentifier(designId) is { } d
-            ? (d.Name.Text, fileSystem.TryGetValue(d, out var leaf) ? leaf.FullName() : d.Name.Text, color.GetColor(d), d.QuickDesign)
+            ? (d.Name.Text, fileSystem.TryGetValue(d, out var leaf) ? leaf.FullName() : d.Name.Text, color.GetColor(d).Color, d.QuickDesign)
             : (string.Empty, string.Empty, 0, false);
 
     public GlamourerApiEc ApplyDesign(Guid designId, int objectIndex, uint key, ApplyFlag flags)

@@ -7,7 +7,7 @@ using OtterGui.Extensions;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
 using Extensions = OtterGui.Filesystem.Extensions;
-using Notification = OtterGui.Classes.Notification;
+using Notification = Luna.Notification;
 
 namespace Glamourer.Services;
 
@@ -165,8 +165,7 @@ public sealed class CollectionOverrideService : IService, ISavable
                             if (collection == null)
                             {
                                 Glamourer.Messager.AddMessage(new Notification(
-                                    $"The overridden collection for identifier {identifier.Incognito(null)} with name {collectionIdentifier} could not be found by Penumbra for migration.",
-                                    NotificationType.Warning));
+                                    $"The overridden collection for identifier {identifier.Incognito(null)} with name {collectionIdentifier} could not be found by Penumbra for migration."));
                                 continue;
                             }
 

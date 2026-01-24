@@ -12,10 +12,13 @@ using Glamourer.Interop;
 using Glamourer.Interop.PalettePlus;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
+using ImSharp;
+using Luna;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Widgets;
+using ITab = OtterGui.Widgets.ITab;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
@@ -194,9 +197,8 @@ public class SettingsTab(
         EphemeralCheckbox("Lock Quick Design Bar"u8, "Prevent the quick design bar from being moved and lock it in place."u8,
             config.Ephemeral.LockDesignQuickBar,
             v => config.Ephemeral.LockDesignQuickBar = v);
-        if (Widget.ModifiableKeySelector("Hotkey to Toggle Quick Design Bar", "Set a hotkey that opens or closes the quick design bar.",
-                100 * ImGuiHelpers.GlobalScale,
-                config.ToggleQuickDesignBar, v => config.ToggleQuickDesignBar = v, _validKeys))
+        if (KeySelector.ModifiableKeySelector("Hotkey to Toggle Quick Design Bar"u8, "Set a hotkey that opens or closes the quick design bar."u8,
+                100 * ImGuiHelpers.GlobalScale, config.ToggleQuickDesignBar, v => config.ToggleQuickDesignBar = v, _validKeys))
             config.Save();
 
         Checkbox("Show Quick Design Bar in Main Window"u8,
@@ -246,12 +248,12 @@ public class SettingsTab(
         Checkbox("Show Application Checkboxes"u8,
             "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules."u8,
             !config.HideApplyCheckmarks, v => config.HideApplyCheckmarks = !v);
-        if (Widget.DoubleModifierSelector("Design Deletion Modifier",
-                "A modifier you need to hold while clicking the Delete Design button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
+        if (KeySelector.DoubleModifier("Design Deletion Modifier"u8,
+                "A modifier you need to hold while clicking the Delete Design button for it to take effect."u8, 100 * ImGuiHelpers.GlobalScale,
                 config.DeleteDesignModifier, v => config.DeleteDesignModifier = v))
             config.Save();
-        if (Widget.DoubleModifierSelector("Incognito Modifier",
-                "A modifier you need to hold while clicking the Incognito button for it to take effect.", 100 * ImGuiHelpers.GlobalScale,
+        if (KeySelector.DoubleModifier("Incognito Modifier"u8,
+                "A modifier you need to hold while clicking the Incognito button for it to take effect."u8, 100 * ImGuiHelpers.GlobalScale,
                 config.IncognitoModifier, v => config.IncognitoModifier = v))
             config.Save();
         DrawRenameSettings();

@@ -2,17 +2,16 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
-using OtterGui.Classes;
 using OtterGui.Text;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
+using Luna;
 
 namespace Glamourer.Gui;
 
@@ -30,7 +29,7 @@ public enum QdbButtons
     RevertAdvancedCustomization = 0x100,
 }
 
-public sealed class DesignQuickBar : Window, IDisposable
+public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDisposable
 {
     private ImGuiWindowFlags GetFlags
         => _config.Ephemeral.LockDesignQuickBar
@@ -516,12 +515,12 @@ public sealed class DesignQuickBar : Window, IDisposable
         _config.Ephemeral.Save();
     }
 
-    private bool CheckKeyState(ModifiableHotkey key, bool noKey)
+    private bool CheckKeyState(Luna.ModifiableHotkey key, bool noKey)
     {
         if (key.Hotkey == VirtualKey.NO_KEY)
             return noKey;
 
-        return _keyState[key.Hotkey] && key.Modifier1.IsActive() && key.Modifier2.IsActive();
+        return _keyState[key.Hotkey] && key.Modifiers.IsActive();
     }
 
     private float UpdateWidth()

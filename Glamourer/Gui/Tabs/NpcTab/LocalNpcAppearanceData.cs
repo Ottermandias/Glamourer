@@ -2,7 +2,7 @@
 using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -26,7 +26,7 @@ public class LocalNpcAppearanceData : ISavable
     public bool IsFavorite(in NpcData data)
         => _data.TryGetValue(ToKey(data), out var tuple) && tuple.Favorite;
 
-    public (uint Color, bool Favorite) GetData(in NpcData data)
+    public (Rgba32 Color, bool Favorite) GetData(in NpcData data)
         => _data.TryGetValue(ToKey(data), out var t)
             ? (GetColor(t.Color,      t.Favorite, data.Kind), t.Favorite)
             : (GetColor(string.Empty, false,      data.Kind), false);
@@ -34,7 +34,7 @@ public class LocalNpcAppearanceData : ISavable
     public string GetColor(in NpcData data)
         => _data.TryGetValue(ToKey(data), out var t) ? t.Color : string.Empty;
 
-    private uint GetColor(string color, bool favorite, ObjectKind kind)
+    private Rgba32 GetColor(string color, bool favorite, ObjectKind kind)
     {
         if (color.Length == 0)
         {
@@ -47,7 +47,7 @@ public class LocalNpcAppearanceData : ISavable
         }
 
         if (_colors.TryGetValue(color, out var value))
-            return value == 0 ? ImGui.GetColorU32(ImGuiCol.Text) : value;
+            return value.IsTransparent ? Im.Color.Get(ImGuiColor.Text) : value;
 
         return _colors.MissingColor;
     }

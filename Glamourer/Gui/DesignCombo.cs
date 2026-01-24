@@ -6,11 +6,13 @@ using Glamourer.Designs.History;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Extensions;
 using OtterGui.Log;
 using OtterGui.Widgets;
+using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui;
 
@@ -52,7 +54,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         {
             case Design realDesign:
             {
-                using var color = ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(realDesign));
+                using var color = ImGuiColor.Text.Push(DesignColors.GetColor(realDesign));
                 ret = base.DrawSelectable(globalIdx, selected);
                 DrawPath(path, realDesign);
                 return ret;
@@ -92,10 +94,9 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         InnerWidth = 400 * ImGuiHelpers.GlobalScale;
         var  name = label ?? "Select Design Here...";
         bool ret;
-        using (_ = currentDesign != null ? ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(currentDesign as Design)) : null)
+        using (currentDesign is not null ? ImGuiColor.Text.Push(DesignColors.GetColor(currentDesign as Design)) : null)
         {
-            ret = Draw("##design", name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing())
-             && CurrentSelection != null;
+            ret = Draw("##design", name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing()) && CurrentSelection is not null;
         }
 
         if (currentDesign is Design design)
@@ -192,7 +193,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         if (linkedDesign != null)
         {
             ImGui.TextUnformatted("Currently resolving to ");
-            using var color = ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(linkedDesign));
+            using var color = ImGuiColor.Text.Push(DesignColors.GetColor(linkedDesign));
             ImGui.SameLine(0, 0);
             ImGui.TextUnformatted(linkedDesign.Name.Text);
         }
@@ -202,7 +203,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         }
     }
 
-    private static void DrawRightAligned(string leftText, string text, uint color)
+    private static void DrawRightAligned(string leftText, string text, Rgba32 color)
     {
         var start          = ImGui.GetItemRectMin();
         var pos            = start.X + ImGui.CalcTextSize(leftText).X;
@@ -216,8 +217,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         if (offset < ImGui.GetStyle().ItemSpacing.X)
             ImGuiUtil.HoverTooltip(text);
         else
-            ImGui.GetWindowDrawList().AddText(start with { X = pos + offset },
-                color, text);
+            Im.Window.DrawList.Text(start with { X = pos + offset }, color, text);
     }
 }
 

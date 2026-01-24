@@ -1,5 +1,5 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
-using OtterGui.Classes;
+using Luna;
 
 namespace Glamourer.Unlocks;
 

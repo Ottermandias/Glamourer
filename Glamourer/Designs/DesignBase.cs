@@ -3,10 +3,10 @@ using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Newtonsoft.Json.Linq;
-using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.GameData.DataContainers;
+using Luna;
 
 namespace Glamourer.Designs;
 
@@ -595,19 +595,19 @@ public class DesignBase
             design.SetApplyCrest(CrestFlag.OffHand,  applyCrestOff);
         }
         var metaValue = QuadBool.FromJObject(equip["Hat"], "Show", "Apply", QuadBool.NullFalse);
-        design.SetApplyMeta(MetaIndex.HatState, metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.HatState, metaValue.Set);
         design._designData.SetHatVisible(metaValue.ForcedValue);
 
         metaValue = QuadBool.FromJObject(equip["Weapon"], "Show", "Apply", QuadBool.NullFalse);
-        design.SetApplyMeta(MetaIndex.WeaponState, metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.WeaponState, metaValue.Set);
         design._designData.SetWeaponVisible(metaValue.ForcedValue);
 
         metaValue = QuadBool.FromJObject(equip["Visor"], "IsToggled", "Apply", QuadBool.NullFalse);
-        design.SetApplyMeta(MetaIndex.VisorState, metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.VisorState, metaValue.Set);
         design._designData.SetVisor(metaValue.ForcedValue);
 
         metaValue = QuadBool.FromJObject(equip["VieraEars"], "Show", "Apply", QuadBool.NullTrue);
-        design.SetApplyMeta(MetaIndex.EarState, metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.EarState, metaValue.Set);
         design._designData.SetEarsVisible(metaValue.ForcedValue);
         return;
 
@@ -652,7 +652,7 @@ public class DesignBase
 
         var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);
         design._designData.SetIsWet(wetness.ForcedValue);
-        design.SetApplyMeta(MetaIndex.Wetness, wetness.Enabled);
+        design.SetApplyMeta(MetaIndex.Wetness, wetness.Set);
 
         design._designData.ModelId = json["ModelId"]?.ToObject<uint>() ?? 0;
         PrintWarning(customizations.ValidateModelId(design._designData.ModelId, out design._designData.ModelId,

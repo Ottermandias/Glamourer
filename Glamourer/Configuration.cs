@@ -6,11 +6,8 @@ using Glamourer.Gui;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Services;
 using Newtonsoft.Json;
-using OtterGui;
-using OtterGui.Classes;
-using OtterGui.Extensions;
 using OtterGui.Filesystem;
-using OtterGui.Widgets;
+using Luna;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace Glamourer;
