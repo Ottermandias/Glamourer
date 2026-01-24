@@ -4,9 +4,9 @@ using Dalamud.Plugin;
 using Glamourer.Api.Enums;
 using Glamourer.Api.IpcSubscribers;
 using Dalamud.Bindings.ImGui;
+using Luna;
 using OtterGui;
 using OtterGui.Raii;
-using OtterGui.Services;
 using OtterGui.Text;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;

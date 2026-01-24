@@ -10,10 +10,10 @@ using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class ItemUnlockPanel(ItemUnlockManager _itemUnlocks, ItemManager _items) : IGameDataDrawer
+public sealed class ItemUnlockPanel(ItemUnlockManager itemUnlocks, ItemManager items) : IGameDataDrawer
 {
-    public string Label
-        => "Unlocked Items";
+    public ReadOnlySpan<byte> Label
+        => "Unlocked Items"u8;
 
     public bool Disabled
         => false;
@@ -35,10 +35,10 @@ public class ItemUnlockPanel(ItemUnlockManager _itemUnlocks, ItemManager _items)
         ImGui.TableNextColumn();
         var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
         ImGui.TableNextRow();
-        var remainder = ImGuiClip.ClippedDraw(_itemUnlocks, skips, t =>
+        var remainder = ImGuiClip.ClippedDraw(itemUnlocks, skips, t =>
         {
             ImGuiUtil.DrawTableColumn(t.Key.ToString());
-            if (_items.ItemData.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
+            if (items.ItemData.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
             {
                 ImGuiUtil.DrawTableColumn(equip.Name);
                 ImGuiUtil.DrawTableColumn(equip.Type.ToName());
@@ -51,12 +51,12 @@ public class ItemUnlockPanel(ItemUnlockManager _itemUnlocks, ItemManager _items)
                 ImGui.TableNextColumn();
             }
 
-            ImGuiUtil.DrawTableColumn(_itemUnlocks.IsUnlocked(t.Key, out var time)
+            ImGuiUtil.DrawTableColumn(itemUnlocks.IsUnlocked(t.Key, out var time)
                 ? time == DateTimeOffset.MinValue
                     ? "Always"
                     : time.LocalDateTime.ToString("g")
                 : "Never");
-        }, _itemUnlocks.Count);
+        }, itemUnlocks.Count);
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
     }
 }

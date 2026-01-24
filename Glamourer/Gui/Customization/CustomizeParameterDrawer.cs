@@ -4,9 +4,9 @@ using Glamourer.GameData;
 using Glamourer.Interop.PalettePlus;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using Luna;
 using OtterGui;
 using OtterGui.Raii;
-using OtterGui.Services;
 
 namespace Glamourer.Gui.Customization;
 

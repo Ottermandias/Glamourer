@@ -1,4 +1,5 @@
 ﻿using Glamourer.Gui.Tabs.DebugTab.IpcTester;
+using ImSharp;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Raii;
 using Penumbra.GameData.Gui.Debug;
@@ -18,8 +19,8 @@ public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
 
         foreach (var subTree in SubTrees)
         {
-            using var disabled = ImRaii.Disabled(subTree.Disabled);
-            using var tree     = ImRaii.TreeNode(subTree.Label);
+            var       disabled = Im.Disabled(subTree.Disabled);
+            using var tree     = Im.Tree.Node(subTree.Label);
             if (tree)
             {
                 disabled.Dispose();

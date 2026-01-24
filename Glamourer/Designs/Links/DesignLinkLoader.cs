@@ -1,7 +1,8 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
+using Luna;
 using OtterGui.Classes;
 using OtterGui.Extensions;
-using OtterGui.Services;
+using MessageService = OtterGui.Classes.MessageService;
 using Notification = OtterGui.Classes.Notification;
 
 namespace Glamourer.Designs.Links;
@@ -10,7 +11,7 @@ public sealed class DesignLinkLoader(DesignStorage designStorage, MessageService
     : DelayedReferenceLoader<Design, LinkData>(messager), IService
 {
     protected override bool TryGetObject(LinkData data, [NotNullWhen(true)] out Design? obj)
-        => designStorage.FindFirst(d => d.Identifier == data.Identity, out obj);
+        => ArrayExtensions.FindFirst(designStorage, d => d.Identifier == data.Identity, out obj);
 
     protected override bool SetObject(Design parent, Design child, LinkData data, out string error)
         => LinkContainer.AddLink(parent, child, data.Type, data.Order, out error);

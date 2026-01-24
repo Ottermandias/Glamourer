@@ -5,9 +5,9 @@ using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
 using Dalamud.Bindings.ImGui;
+using Luna;
 using OtterGui;
 using OtterGui.Raii;
-using OtterGui.Services;
 using OtterGui.Text;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;

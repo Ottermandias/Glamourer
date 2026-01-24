@@ -7,10 +7,10 @@ using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class CustomizationUnlockPanel(CustomizeUnlockManager _customizeUnlocks) : IGameDataDrawer
+public sealed class CustomizationUnlockPanel(CustomizeUnlockManager customizeUnlocks) : IGameDataDrawer
 {
-    public string Label
-        => "Customizations";
+    public ReadOnlySpan<byte> Label
+        => "Customizations"u8;
 
     public bool Disabled
         => false;
@@ -26,19 +26,19 @@ public class CustomizationUnlockPanel(CustomizeUnlockManager _customizeUnlocks) 
         ImGui.TableNextColumn();
         var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
         ImGui.TableNextRow();
-        var remainder = ImGuiClip.ClippedDraw(_customizeUnlocks.Unlockable, skips, t =>
+        var remainder = ImGuiClip.ClippedDraw(customizeUnlocks.Unlockable, skips, t =>
         {
             ImGuiUtil.DrawTableColumn(t.Key.Index.ToDefaultName());
             ImGuiUtil.DrawTableColumn(t.Key.CustomizeId.ToString());
             ImGuiUtil.DrawTableColumn(t.Key.Value.Value.ToString());
             ImGuiUtil.DrawTableColumn(t.Value.Data.ToString());
             ImGuiUtil.DrawTableColumn(t.Value.Name);
-            ImGuiUtil.DrawTableColumn(_customizeUnlocks.IsUnlocked(t.Key, out var time)
+            ImGuiUtil.DrawTableColumn(customizeUnlocks.IsUnlocked(t.Key, out var time)
                 ? time == DateTimeOffset.MinValue
                     ? "Always"
                     : time.LocalDateTime.ToString("g")
                 : "Never");
-        }, _customizeUnlocks.Unlockable.Count);
+        }, customizeUnlocks.Unlockable.Count);
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
     }
 }

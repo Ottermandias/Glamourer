@@ -2,7 +2,7 @@
 using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Services;
-using OtterGui.Services;
+using Luna;
 
 namespace Glamourer.Designs.Links;
 

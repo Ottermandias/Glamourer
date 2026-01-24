@@ -7,10 +7,10 @@ using Penumbra.GameData.Interop;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class AdvancedCustomizationDrawer(ActorObjectManager objects) : IGameDataDrawer
+public sealed unsafe class AdvancedCustomizationDrawer(ActorObjectManager objects) : IGameDataDrawer
 {
-    public string Label
-        => "Advanced Customizations";
+    public ReadOnlySpan<byte> Label
+        => "Advanced Customizations"u8;
 
     public bool Disabled
         => false;

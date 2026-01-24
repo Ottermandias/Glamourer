@@ -6,15 +6,15 @@ using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
-public class IpcTesterPanel(
+public sealed class IpcTesterPanel(
     IDalamudPluginInterface pluginInterface,
     DesignIpcTester designs,
     ItemsIpcTester items,
     StateIpcTester state,
     IFramework framework) : IGameDataDrawer
 {
-    public string Label
-        => "IPC Tester";
+    public ReadOnlySpan<byte> Label
+        => "IPC Tester"u8;
 
     public bool Disabled
         => false;

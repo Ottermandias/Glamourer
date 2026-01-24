@@ -1,12 +1,11 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Automation;
-using Glamourer.Designs.Special;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Unlocks;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -14,10 +13,10 @@ namespace Glamourer.Designs.Links;
 
 public class DesignMerger(
     DesignManager designManager,
-    CustomizeService _customize,
-    Configuration _config,
-    ItemUnlockManager _itemUnlocks,
-    CustomizeUnlockManager _customizeUnlocks) : IService
+    CustomizeService customizeService,
+    Configuration config,
+    ItemUnlockManager itemUnlocks,
+    CustomizeUnlockManager customizeUnlocks) : IService
 {
     public MergedDesign Merge(LinkContainer designs, in CustomizeArray currentCustomize, in DesignData baseRef, bool respectOwnership,
         bool modAssociations)
@@ -28,10 +27,10 @@ public class DesignMerger(
         in DesignData baseRef, bool respectOwnership, bool modAssociations)
     {
         var ret = new MergedDesign(designManager);
-        ret.Design.SetCustomize(_customize, currentCustomize);
+        ret.Design.SetCustomize(customizeService, currentCustomize);
         var           startBodyType = currentCustomize.BodyType;
         CustomizeFlag fixFlags      = 0;
-        respectOwnership &= _config.UnlockedItemMode;
+        respectOwnership &= config.UnlockedItemMode;
         foreach (var (design, type, jobs) in designs)
         {
             if (type is 0)
@@ -153,7 +152,7 @@ public class DesignMerger(
             if (equipFlags.HasFlag(flag))
             {
                 var item = design.Item(slot);
-                if (!respectOwnership || _itemUnlocks.IsUnlocked(item.Id, out _))
+                if (!respectOwnership || itemUnlocks.IsUnlocked(item.Id, out _))
                     ret.Design.GetDesignDataRef().SetItem(slot, item);
                 ret.Design.SetApplyEquip(slot, true);
                 ret.Sources[slot, false] = source;
@@ -203,7 +202,7 @@ public class DesignMerger(
             return;
 
         var weapon = design.Item(EquipSlot.MainHand);
-        if (respectOwnership && !_itemUnlocks.IsUnlocked(weapon.Id, out _))
+        if (respectOwnership && !itemUnlocks.IsUnlocked(weapon.Id, out _))
             return;
 
         if (!ret.Design.DoApplyEquip(EquipSlot.MainHand))
@@ -222,7 +221,7 @@ public class DesignMerger(
             return;
 
         var weapon = design.Item(EquipSlot.OffHand);
-        if (respectOwnership && !_itemUnlocks.IsUnlocked(weapon.Id, out _))
+        if (respectOwnership && !itemUnlocks.IsUnlocked(weapon.Id, out _))
             return;
 
         if (!ret.Design.DoApplyEquip(EquipSlot.OffHand))
@@ -252,7 +251,7 @@ public class DesignMerger(
         var customize = ret.Design.DesignData.Customize;
         if (customizeFlags.HasFlag(CustomizeFlag.Clan))
         {
-            fixFlags |= _customize.ChangeClan(ref customize, design.Customize.Clan);
+            fixFlags |= customizeService.ChangeClan(ref customize, design.Customize.Clan);
             ret.Design.SetApplyCustomize(CustomizeIndex.Clan, true);
             ret.Design.SetApplyCustomize(CustomizeIndex.Race, true);
             customizeFlags                   &= ~(CustomizeFlag.Clan | CustomizeFlag.Race);
@@ -262,7 +261,7 @@ public class DesignMerger(
 
         if (customizeFlags.HasFlag(CustomizeFlag.Gender))
         {
-            fixFlags |= _customize.ChangeGender(ref customize, design.Customize.Gender);
+            fixFlags |= customizeService.ChangeGender(ref customize, design.Customize.Gender);
             ret.Design.SetApplyCustomize(CustomizeIndex.Gender, true);
             customizeFlags                     &= ~CustomizeFlag.Gender;
             ret.Sources[CustomizeIndex.Gender] =  source;
@@ -283,7 +282,7 @@ public class DesignMerger(
             ret.Sources[CustomizeIndex.BodyType] =  source;
         }
 
-        var set  = _customize.Manager.GetSet(customize.Clan, customize.Gender);
+        var set  = customizeService.Manager.GetSet(customize.Clan, customize.Gender);
         var face = customize.Face;
         foreach (var index in Enum.GetValues<CustomizeIndex>())
         {
@@ -295,7 +294,7 @@ public class DesignMerger(
             if (!CustomizeService.IsCustomizationValid(set, face, index, value, out var data))
                 continue;
 
-            if (data.HasValue && respectOwnership && !_customizeUnlocks.IsUnlocked(data.Value, out _))
+            if (data.HasValue && respectOwnership && !customizeUnlocks.IsUnlocked(data.Value, out _))
                 continue;
 
             customize[index] = data?.Value ?? value;
@@ -304,7 +303,7 @@ public class DesignMerger(
             fixFlags           &= ~flag;
         }
 
-        ret.Design.SetCustomize(_customize, customize);
+        ret.Design.SetCustomize(customizeService, customize);
     }
 
     private static void ApplyFixFlags(MergedDesign ret, CustomizeFlag fixFlags)

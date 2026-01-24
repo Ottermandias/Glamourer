@@ -14,17 +14,17 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class ModelEvaluationPanel(
-    ActorObjectManager _objectManager,
-    VisorService _visorService,
-    VieraEarService _vieraEarService,
-    UpdateSlotService _updateSlotService,
-    ChangeCustomizeService _changeCustomizeService,
-    CrestService _crestService,
+public sealed unsafe class ModelEvaluationPanel(
+    ActorObjectManager objectManager,
+    VisorService visorService,
+    VieraEarService vieraEarService,
+    UpdateSlotService updateSlotService,
+    ChangeCustomizeService changeCustomizeService,
+    CrestService crestService,
     DictBonusItems bonusItems) : IGameDataDrawer
 {
-    public string Label
-        => "Model Evaluation";
+    public ReadOnlySpan<byte> Label
+        => "Model Evaluation"u8;
 
     public bool Disabled
         => false;
@@ -34,7 +34,7 @@ public unsafe class ModelEvaluationPanel(
     public void Draw()
     {
         ImGui.InputInt("Game Object Index", ref _gameObjectIndex, 0, 0);
-        var       actor = _objectManager.Objects[_gameObjectIndex];
+        var       actor = objectManager.Objects[_gameObjectIndex];
         var       model = actor.Model;
         using var table = ImRaii.Table("##evaluationTable", 4, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
         ImGui.TableNextColumn();
@@ -128,13 +128,13 @@ public unsafe class ModelEvaluationPanel(
             return;
 
         if (ImGui.SmallButton("Set True"))
-            _visorService.SetVisorState(model, true);
+            visorService.SetVisorState(model, true);
         ImGui.SameLine();
         if (ImGui.SmallButton("Set False"))
-            _visorService.SetVisorState(model, false);
+            visorService.SetVisorState(model, false);
         ImGui.SameLine();
         if (ImGui.SmallButton("Toggle"))
-            _visorService.SetVisorState(model, !VisorService.GetVisorState(model));
+            visorService.SetVisorState(model, !VisorService.GetVisorState(model));
     }
 
     private void DrawVieraEars(Actor actor, Model model)
@@ -148,13 +148,13 @@ public unsafe class ModelEvaluationPanel(
             return;
 
         if (ImGui.SmallButton("Set True"))
-            _vieraEarService.SetVieraEarState(model, true);
+            vieraEarService.SetVieraEarState(model, true);
         ImGui.SameLine();
         if (ImGui.SmallButton("Set False"))
-            _vieraEarService.SetVieraEarState(model, false);
+            vieraEarService.SetVieraEarState(model, false);
         ImGui.SameLine();
         if (ImGui.SmallButton("Toggle"))
-            _vieraEarService.SetVieraEarState(model, !model.VieraEarsVisible);
+            vieraEarService.SetVieraEarState(model, !model.VieraEarsVisible);
     }
 
     private void DrawHatState(Actor actor, Model model)
@@ -172,13 +172,13 @@ public unsafe class ModelEvaluationPanel(
             return;
 
         if (ImGui.SmallButton("Hide"))
-            _updateSlotService.UpdateEquipSlot(model, EquipSlot.Head, CharacterArmor.Empty);
+            updateSlotService.UpdateEquipSlot(model, EquipSlot.Head, CharacterArmor.Empty);
         ImGui.SameLine();
         if (ImGui.SmallButton("Show"))
-            _updateSlotService.UpdateEquipSlot(model, EquipSlot.Head, actor.GetArmor(EquipSlot.Head));
+            updateSlotService.UpdateEquipSlot(model, EquipSlot.Head, actor.GetArmor(EquipSlot.Head));
         ImGui.SameLine();
         if (ImGui.SmallButton("Toggle"))
-            _updateSlotService.UpdateEquipSlot(model, EquipSlot.Head,
+            updateSlotService.UpdateEquipSlot(model, EquipSlot.Head,
                 model.AsHuman->Head.Value == 0 ? actor.GetArmor(EquipSlot.Head) : CharacterArmor.Empty);
     }
 
@@ -248,14 +248,14 @@ public unsafe class ModelEvaluationPanel(
                 continue;
 
             if (ImGui.SmallButton("Change Piece"))
-                _updateSlotService.UpdateArmor(model, slot,
+                updateSlotService.UpdateArmor(model, slot,
                     new CharacterArmor((PrimaryId)(slot == EquipSlot.Hands ? 6064 : slot == EquipSlot.Head ? 6072 : 1), 1, StainIds.None));
             ImGui.SameLine();
             if (ImGui.SmallButton("Change Stain"))
-                _updateSlotService.UpdateStain(model, slot, new StainIds(5, 7));
+                updateSlotService.UpdateStain(model, slot, new StainIds(5, 7));
             ImGui.SameLine();
             if (ImGui.SmallButton("Reset"))
-                _updateSlotService.UpdateEquipSlot(model, slot, actor.GetArmor(slot));
+                updateSlotService.UpdateEquipSlot(model, slot, actor.GetArmor(slot));
         }
 
         foreach (var slot in BonusExtensions.AllFlags)
@@ -280,7 +280,7 @@ public unsafe class ModelEvaluationPanel(
             if (ImUtf8.SmallButton("Change Piece"u8))
             {
                 var data = model.GetBonus(slot);
-                _updateSlotService.UpdateBonusSlot(model, slot, data with { Variant = (Variant)((data.Variant.Id + 1) % 12) });
+                updateSlotService.UpdateBonusSlot(model, slot, data with { Variant = (Variant)((data.Variant.Id + 1) % 12) });
             }
         }
     }
@@ -311,7 +311,7 @@ public unsafe class ModelEvaluationPanel(
                 var shift    = BitOperations.TrailingZeroCount(mask);
                 var newValue = value + (1 << shift);
                 modelCustomize.Set(type, (CustomizeValue)newValue);
-                _changeCustomizeService.UpdateCustomize(model, modelCustomize);
+                changeCustomizeService.UpdateCustomize(model, modelCustomize);
             }
 
             ImGui.SameLine();
@@ -322,14 +322,14 @@ public unsafe class ModelEvaluationPanel(
                 var shift    = BitOperations.TrailingZeroCount(mask);
                 var newValue = value - (1 << shift);
                 modelCustomize.Set(type, (CustomizeValue)newValue);
-                _changeCustomizeService.UpdateCustomize(model, modelCustomize);
+                changeCustomizeService.UpdateCustomize(model, modelCustomize);
             }
 
             ImGui.SameLine();
             if (ImGui.SmallButton("Reset"))
             {
                 modelCustomize.Set(type, actorCustomize[type]);
-                _changeCustomizeService.UpdateCustomize(model, modelCustomize);
+                changeCustomizeService.UpdateCustomize(model, modelCustomize);
             }
         }
     }
@@ -357,6 +357,6 @@ public unsafe class ModelEvaluationPanel(
         }
 
         if (whichToggle != 0)
-            _crestService.UpdateCrests(actor, totalModelFlags ^ whichToggle);
+            crestService.UpdateCrests(actor, totalModelFlags ^ whichToggle);
     }
 }

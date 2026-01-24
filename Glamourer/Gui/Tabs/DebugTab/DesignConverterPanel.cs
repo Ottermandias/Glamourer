@@ -9,10 +9,10 @@ using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DesignConverterPanel(DesignConverter _designConverter) : IGameDataDrawer
+public sealed class DesignConverterPanel(DesignConverter designConverter) : IGameDataDrawer
 {
-    public string Label
-        => "Design Converter";
+    public ReadOnlySpan<byte> Label
+        => "Design Converter"u8;
 
     public bool Disabled
         => false;
@@ -48,7 +48,7 @@ public class DesignConverterPanel(DesignConverter _designConverter) : IGameDataD
                 _version          = _clipboardData.Decompress(out _dataUncompressed);
                 _textUncompressed = Encoding.UTF8.GetString(_dataUncompressed);
                 _json             = JObject.Parse(_textUncompressed);
-                _tmpDesign        = _designConverter.FromBase64(_clipboardText, true, true, out _);
+                _tmpDesign        = designConverter.FromBase64(_clipboardText, true, true, out _);
             }
             catch (Exception ex)
             {

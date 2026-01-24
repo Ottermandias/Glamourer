@@ -6,7 +6,6 @@ using Glamourer.Designs;
 using Glamourer.Services;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
-using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Text;
 using Penumbra.GameData;
@@ -17,15 +16,15 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class GlamourPlatePanel : IGameDataDrawer
+public sealed unsafe class GlamourPlatePanel : IGameDataDrawer
 {
     private readonly DesignManager      _design;
     private readonly ItemManager        _items;
     private readonly StateManager       _state;
     private readonly ActorObjectManager _objects;
 
-    public string Label
-        => "Glamour Plates";
+    public ReadOnlySpan<byte> Label
+        => "Glamour Plates"u8;
 
     public bool Disabled
         => false;

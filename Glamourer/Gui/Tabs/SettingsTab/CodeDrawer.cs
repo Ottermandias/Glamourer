@@ -2,9 +2,9 @@
 using Glamourer.Services;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using Luna;
 using OtterGui.Filesystem;
 using OtterGui.Raii;
-using OtterGui.Services;
 using OtterGui.Text;
 using OtterGui.Text.EndObjects;
 
@@ -134,7 +134,7 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
         if (!target.IsDropping(DragDropLabel) || _dragCodeIdx == -1)
             return;
 
-        if (config.Codes.Move(_dragCodeIdx, idx))
+        if (Extensions.Move(config.Codes, _dragCodeIdx, idx))
             codeService.SaveState();
         _dragCodeIdx = -1;
     }

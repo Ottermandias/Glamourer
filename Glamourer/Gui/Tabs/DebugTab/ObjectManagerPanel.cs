@@ -7,10 +7,10 @@ using Penumbra.GameData.Interop;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class ObjectManagerPanel(ActorObjectManager _objectManager, ActorManager _actors) : IGameDataDrawer
+public sealed class ObjectManagerPanel(ActorObjectManager objectManager, ActorManager actors) : IGameDataDrawer
 {
-    public string Label
-        => "Object Manager";
+    public ReadOnlySpan<byte> Label
+        => "Object Manager"u8;
 
     public bool Disabled
         => false;
@@ -19,7 +19,7 @@ public class ObjectManagerPanel(ActorObjectManager _objectManager, ActorManager 
 
     public void Draw()
     {
-        _objectManager.Objects.DrawDebug();
+        objectManager.Objects.DrawDebug();
 
         using (var table = ImUtf8.Table("##data"u8, 3, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit))
         {
@@ -27,32 +27,32 @@ public class ObjectManagerPanel(ActorObjectManager _objectManager, ActorManager 
                 return;
 
             ImUtf8.DrawTableColumn("World"u8);
-            ImUtf8.DrawTableColumn(_actors.Finished ? _actors.Data.ToWorldName(_objectManager.World) : "Service Missing");
-            ImUtf8.DrawTableColumn(_objectManager.World.ToString());
+            ImUtf8.DrawTableColumn(actors.Finished ? actors.Data.ToWorldName(objectManager.World) : "Service Missing");
+            ImUtf8.DrawTableColumn(objectManager.World.ToString());
 
             ImUtf8.DrawTableColumn("Player Character"u8);
-            ImUtf8.DrawTableColumn($"{_objectManager.Player.Utf8Name} ({_objectManager.Player.Index})");
+            ImUtf8.DrawTableColumn($"{objectManager.Player.Utf8Name} ({objectManager.Player.Index})");
             ImGui.TableNextColumn();
-            ImUtf8.CopyOnClickSelectable(_objectManager.Player.ToString());
+            ImUtf8.CopyOnClickSelectable(objectManager.Player.ToString());
 
             ImUtf8.DrawTableColumn("In GPose"u8);
-            ImUtf8.DrawTableColumn(_objectManager.IsInGPose.ToString());
+            ImUtf8.DrawTableColumn(objectManager.IsInGPose.ToString());
             ImGui.TableNextColumn();
 
             ImUtf8.DrawTableColumn("In Lobby"u8);
-            ImUtf8.DrawTableColumn(_objectManager.IsInLobby.ToString());
+            ImUtf8.DrawTableColumn(objectManager.IsInLobby.ToString());
             ImGui.TableNextColumn();
 
-            if (_objectManager.IsInGPose)
+            if (objectManager.IsInGPose)
             {
                 ImUtf8.DrawTableColumn("GPose Player"u8);
-                ImUtf8.DrawTableColumn($"{_objectManager.GPosePlayer.Utf8Name} ({_objectManager.GPosePlayer.Index})");
+                ImUtf8.DrawTableColumn($"{objectManager.GPosePlayer.Utf8Name} ({objectManager.GPosePlayer.Index})");
                 ImGui.TableNextColumn();
-                ImUtf8.CopyOnClickSelectable(_objectManager.GPosePlayer.ToString());
+                ImUtf8.CopyOnClickSelectable(objectManager.GPosePlayer.ToString());
             }
 
             ImUtf8.DrawTableColumn("Number of Players"u8);
-            ImUtf8.DrawTableColumn(_objectManager.Count.ToString());
+            ImUtf8.DrawTableColumn(objectManager.Count.ToString());
             ImGui.TableNextColumn();
         }
 
@@ -70,7 +70,7 @@ public class ObjectManagerPanel(ActorObjectManager _objectManager, ActorManager 
         var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
         ImGui.TableNextRow();
 
-        var remainder = ImGuiClip.FilteredClippedDraw(_objectManager, skips,
+        var remainder = ImGuiClip.FilteredClippedDraw(objectManager, skips,
             p => p.Value.Label.Contains(_objectFilter, StringComparison.OrdinalIgnoreCase), p
                 =>
             {

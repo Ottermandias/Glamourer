@@ -26,7 +26,7 @@ public class IdentifierDrawer
         HumanModelList humans)
     {
         _actors        = actors;
-        _worldCombo    = new WorldCombo(dictWorld, Glamourer.Log);
+        _worldCombo    = new WorldCombo(dictWorld);
         _humanNpcCombo = new HumanNpcCombo("##npcs", dictModelChara, bNpcNames, bNpc, humans, Glamourer.Log);
     }
 
@@ -68,12 +68,12 @@ public class IdentifierDrawer
     {
         if (ByteString.FromString(_characterName, out var byteName))
         {
-            PlayerIdentifier    = _actors.CreatePlayer(byteName, _worldCombo.CurrentSelection.Key);
+            PlayerIdentifier    = _actors.CreatePlayer(byteName, _worldCombo.Selected.Key);
             RetainerIdentifier  = _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Bell);
             MannequinIdentifier = _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Mannequin);
 
             if (_humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc)
-                OwnedIdentifier = _actors.CreateOwned(byteName, _worldCombo.CurrentSelection.Key, _humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0]);
+                OwnedIdentifier = _actors.CreateOwned(byteName, _worldCombo.Selected.Key, _humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0]);
             else
                 OwnedIdentifier = ActorIdentifier.Invalid;
         }

@@ -4,17 +4,17 @@ using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using Dalamud.Bindings.ImGui;
+using Luna;
 using OtterGui;
 using OtterGui.Raii;
-using OtterGui.Services;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
 public class DesignLinkDrawer(
-    DesignLinkManager _linkManager,
-    DesignFileSystemSelector _selector,
-    LinkDesignCombo _combo,
-    DesignColors _colorManager,
+    DesignLinkManager linkManager,
+    DesignFileSystemSelector selector,
+    LinkDesignCombo combo,
+    DesignColors colorManager,
     Configuration config) : IUiService
 {
     private int       _dragDropIndex       = -1;
@@ -47,23 +47,23 @@ public class DesignLinkDrawer(
             switch (_dragDropTargetOrder)
             {
                 case LinkOrder.Before:
-                    for (var i = _selector.Selected!.Links.Before.Count - 1; i >= _dragDropTargetIndex; --i)
-                        _linkManager.MoveDesignLink(_selector.Selected!, i, LinkOrder.Before, 0, LinkOrder.After);
+                    for (var i = selector.Selected!.Links.Before.Count - 1; i >= _dragDropTargetIndex; --i)
+                        linkManager.MoveDesignLink(selector.Selected!, i, LinkOrder.Before, 0, LinkOrder.After);
                     break;
                 case LinkOrder.After:
                     for (var i = 0; i <= _dragDropTargetIndex; ++i)
                     {
-                        _linkManager.MoveDesignLink(_selector.Selected!, 0, LinkOrder.After, _selector.Selected!.Links.Before.Count,
+                        linkManager.MoveDesignLink(selector.Selected!, 0, LinkOrder.After, selector.Selected!.Links.Before.Count,
                             LinkOrder.Before);
                     }
 
                     break;
             }
         else if (_dragDropTargetOrder is LinkOrder.Self)
-            _linkManager.MoveDesignLink(_selector.Selected!, _dragDropIndex, _dragDropOrder, _selector.Selected!.Links.Before.Count,
+            linkManager.MoveDesignLink(selector.Selected!, _dragDropIndex, _dragDropOrder, selector.Selected!.Links.Before.Count,
                 LinkOrder.Before);
         else
-            _linkManager.MoveDesignLink(_selector.Selected!, _dragDropIndex, _dragDropOrder, _dragDropTargetIndex, _dragDropTargetOrder);
+            linkManager.MoveDesignLink(selector.Selected!, _dragDropIndex, _dragDropOrder, _dragDropTargetIndex, _dragDropTargetOrder);
 
         _dragDropIndex       = -1;
         _dragDropTargetIndex = -1;
@@ -83,9 +83,9 @@ public class DesignLinkDrawer(
             6 * ImGui.GetFrameHeight() + 5 * ImGui.GetStyle().ItemInnerSpacing.X);
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
-        DrawSubList(_selector.Selected!.Links.Before, LinkOrder.Before);
+        DrawSubList(selector.Selected!.Links.Before, LinkOrder.Before);
         DrawSelf();
-        DrawSubList(_selector.Selected!.Links.After, LinkOrder.After);
+        DrawSubList(selector.Selected!.Links.After, LinkOrder.After);
         DrawNew();
         MoveLink();
     }
@@ -94,7 +94,7 @@ public class DesignLinkDrawer(
     {
         using var id = ImRaii.PushId((int)LinkOrder.Self);
         ImGui.TableNextColumn();
-        var color = _colorManager.GetColor(_selector.Selected!);
+        var color = colorManager.GetColor(selector.Selected!);
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {
             using var c = ImRaii.PushColor(ImGuiCol.Text, color);
@@ -106,11 +106,11 @@ public class DesignLinkDrawer(
         using (ImRaii.PushColor(ImGuiCol.Text, color))
         {
             ImGui.AlignTextToFramePadding();
-            ImGui.Selectable(_selector.IncognitoMode ? _selector.Selected!.Incognito : _selector.Selected!.Name.Text);
+            ImGui.Selectable(selector.IncognitoMode ? selector.Selected!.Incognito : selector.Selected!.Name.Text);
         }
 
         ImGuiUtil.HoverTooltip("Current Design");
-        DrawDragDrop(_selector.Selected!, LinkOrder.Self, 0);
+        DrawDragDrop(selector.Selected!, LinkOrder.Self, 0);
         ImGui.TableNextColumn();
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {
@@ -134,10 +134,10 @@ public class DesignLinkDrawer(
             var (design, flags) = list[i];
             ImGui.TableNextColumn();
 
-            using (ImRaii.PushColor(ImGuiCol.Text, _colorManager.GetColor(design)))
+            using (ImRaii.PushColor(ImGuiCol.Text, colorManager.GetColor(design)))
             {
                 ImGui.AlignTextToFramePadding();
-                ImGui.Selectable(_selector.IncognitoMode ? design.Incognito : design.Name.Text);
+                ImGui.Selectable(selector.IncognitoMode ? design.Incognito : design.Name.Text);
             }
 
             DrawDragDrop(design, order, i);
@@ -147,7 +147,7 @@ public class DesignLinkDrawer(
             DrawApplicationBoxes(i, order, flags);
 
             if (delete)
-                _linkManager.RemoveDesignLink(_selector.Selected!, i--, order);
+                linkManager.RemoveDesignLink(selector.Selected!, i--, order);
         }
     }
 
@@ -156,11 +156,11 @@ public class DesignLinkDrawer(
         var buttonSize = new Vector2(ImGui.GetFrameHeight());
         ImGui.TableNextColumn();
         ImGui.TableNextColumn();
-        _combo.Draw(ImGui.GetContentRegionAvail().X);
+        combo.Draw(ImGui.GetContentRegionAvail().X);
         ImGui.TableNextColumn();
         string ttBefore,     ttAfter;
         bool   canAddBefore, canAddAfter;
-        var    design = _combo.Design as Design;
+        var    design = combo.Design as Design;
         if (design == null)
         {
             ttAfter      = ttBefore    = "Select a design first.";
@@ -168,11 +168,11 @@ public class DesignLinkDrawer(
         }
         else
         {
-            canAddBefore = LinkContainer.CanAddLink(_selector.Selected!, design, LinkOrder.Before, out var error);
+            canAddBefore = LinkContainer.CanAddLink(selector.Selected!, design, LinkOrder.Before, out var error);
             ttBefore = canAddBefore
                 ? $"Add a link at the top of the list to {design.Name}."
                 : $"Can not add a link to {design.Name}:\n{error}";
-            canAddAfter = LinkContainer.CanAddLink(_selector.Selected!, design, LinkOrder.After, out error);
+            canAddAfter = LinkContainer.CanAddLink(selector.Selected!, design, LinkOrder.After, out error);
             ttAfter = canAddAfter
                 ? $"Add a link at the bottom of the list to {design.Name}."
                 : $"Can not add a link to {design.Name}:\n{error}";
@@ -180,13 +180,13 @@ public class DesignLinkDrawer(
 
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.ArrowCircleUp.ToIconString(), buttonSize, ttBefore, !canAddBefore, true))
         {
-            _linkManager.AddDesignLink(_selector.Selected!, design!, LinkOrder.Before);
-            _linkManager.MoveDesignLink(_selector.Selected!, _selector.Selected!.Links.Before.Count - 1, LinkOrder.Before, 0, LinkOrder.Before);
+            linkManager.AddDesignLink(selector.Selected!, design!, LinkOrder.Before);
+            linkManager.MoveDesignLink(selector.Selected!, selector.Selected!.Links.Before.Count - 1, LinkOrder.Before, 0, LinkOrder.Before);
         }
 
         ImGui.SameLine();
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.ArrowCircleDown.ToIconString(), buttonSize, ttAfter, !canAddAfter, true))
-            _linkManager.AddDesignLink(_selector.Selected!, design!, LinkOrder.After);
+            linkManager.AddDesignLink(selector.Selected!, design!, LinkOrder.After);
     }
 
     private void DrawDragDrop(Design design, LinkOrder order, int index)
@@ -238,7 +238,7 @@ public class DesignLinkDrawer(
         ImGui.SameLine();
         Box(4);
         if (newType != current)
-            _linkManager.ChangeApplicationType(_selector.Selected!, idx, order, newType);
+            linkManager.ChangeApplicationType(selector.Selected!, idx, order, newType);
         return;
 
         void Box(int i)

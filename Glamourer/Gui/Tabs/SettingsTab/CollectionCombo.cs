@@ -1,11 +1,11 @@
 ﻿using Dalamud.Interface;
 using Glamourer.Interop.Penumbra;
 using Dalamud.Bindings.ImGui;
+using Luna;
 using OtterGui;
-using OtterGui.Log;
 using OtterGui.Raii;
-using OtterGui.Services;
 using OtterGui.Widgets;
+using Logger = OtterGui.Log.Logger;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
 

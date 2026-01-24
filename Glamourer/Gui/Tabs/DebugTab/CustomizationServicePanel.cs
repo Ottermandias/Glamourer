@@ -11,10 +11,10 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class CustomizationServicePanel(CustomizeService customize) : IGameDataDrawer
+public sealed class CustomizationServicePanel(CustomizeService customize) : IGameDataDrawer
 {
-    public string Label
-        => "Customization Service";
+    public ReadOnlySpan<byte> Label
+        => "Customization Service"u8;
 
     public bool Disabled
         => !customize.Finished;

@@ -11,10 +11,10 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItemTooltip _penumbraTooltip) : IGameDataDrawer
+public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemTooltip penumbraTooltip) : IGameDataDrawer
 {
-    public string Label
-        => "Penumbra Interop";
+    public ReadOnlySpan<byte> Label
+        => "Penumbra Interop"u8;
 
     public bool Disabled
         => false;
@@ -29,20 +29,20 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
             return;
 
         ImGuiUtil.DrawTableColumn("Available");
-        ImGuiUtil.DrawTableColumn(_penumbra.Available.ToString());
+        ImGuiUtil.DrawTableColumn(penumbra.Available.ToString());
         ImGui.TableNextColumn();
         if (ImGui.SmallButton("Unattach"))
-            _penumbra.Unattach();
+            penumbra.Unattach();
         ImGui.SameLine();
         if (ImGui.SmallButton("Reattach"))
-            _penumbra.Reattach();
+            penumbra.Reattach();
 
         ImGuiUtil.DrawTableColumn("Version");
-        ImGuiUtil.DrawTableColumn($"{_penumbra.CurrentMajor}.{_penumbra.CurrentMinor}");
+        ImGuiUtil.DrawTableColumn($"{penumbra.CurrentMajor}.{penumbra.CurrentMinor}");
         ImGui.TableNextColumn();
 
         ImGuiUtil.DrawTableColumn("Attached When");
-        ImGuiUtil.DrawTableColumn(_penumbra.AttachTime.ToLocalTime().ToLongTimeString());
+        ImGuiUtil.DrawTableColumn(penumbra.AttachTime.ToLocalTime().ToLongTimeString());
         ImGui.TableNextColumn();
 
         ImGuiUtil.DrawTableColumn("Draw Object");
@@ -52,16 +52,16 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
         if (ImGui.InputScalar("##drawObjectPtr", ImGuiDataType.U64, ref address, nint.Zero, nint.Zero, "%llx",
                 ImGuiInputTextFlags.CharsHexadecimal))
             _drawObject = address;
-        ImGuiUtil.DrawTableColumn(_penumbra.Available
-            ? $"0x{_penumbra.GameObjectFromDrawObject(_drawObject).Address:X}"
+        ImGuiUtil.DrawTableColumn(penumbra.Available
+            ? $"0x{penumbra.GameObjectFromDrawObject(_drawObject).Address:X}"
             : "Penumbra Unavailable");
 
         ImGuiUtil.DrawTableColumn("Cutscene Object");
         ImGui.TableNextColumn();
         ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
         ImGui.InputInt("##CutsceneIndex", ref _gameObjectIndex, 0, 0);
-        ImGuiUtil.DrawTableColumn(_penumbra.Available
-            ? _penumbra.CutsceneParent((ushort)_gameObjectIndex).ToString()
+        ImGuiUtil.DrawTableColumn(penumbra.Available
+            ? penumbra.CutsceneParent((ushort)_gameObjectIndex).ToString()
             : "Penumbra Unavailable");
 
         ImGuiUtil.DrawTableColumn("Redraw Object");
@@ -69,25 +69,25 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
         ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
         ImGui.InputInt("##redrawObject", ref _gameObjectIndex, 0, 0);
         ImGui.TableNextColumn();
-        using (_ = ImRaii.Disabled(!_penumbra.Available))
+        using (_ = ImRaii.Disabled(!penumbra.Available))
         {
             if (ImGui.SmallButton("Redraw"))
-                _penumbra.RedrawObject((ObjectIndex)_gameObjectIndex, RedrawType.Redraw);
+                penumbra.RedrawObject((ObjectIndex)_gameObjectIndex, RedrawType.Redraw);
         }
 
         ImGuiUtil.DrawTableColumn("Last Tooltip Date");
-        ImGuiUtil.DrawTableColumn(_penumbraTooltip.LastTooltip > DateTime.MinValue
-            ? $"{_penumbraTooltip.LastTooltip.ToLongTimeString()} ({_penumbraTooltip.LastType} {_penumbraTooltip.LastId})"
+        ImGuiUtil.DrawTableColumn(penumbraTooltip.LastTooltip > DateTime.MinValue
+            ? $"{penumbraTooltip.LastTooltip.ToLongTimeString()} ({penumbraTooltip.LastType} {penumbraTooltip.LastId})"
             : "Never");
         ImGui.TableNextColumn();
 
         ImGuiUtil.DrawTableColumn("Last Click Date");
-        ImGuiUtil.DrawTableColumn(_penumbraTooltip.LastClick > DateTime.MinValue ? _penumbraTooltip.LastClick.ToLongTimeString() : "Never");
+        ImGuiUtil.DrawTableColumn(penumbraTooltip.LastClick > DateTime.MinValue ? penumbraTooltip.LastClick.ToLongTimeString() : "Never");
         ImGui.TableNextColumn();
 
         ImGui.Separator();
         ImGui.Separator();
-        foreach (var (slot, item) in _penumbraTooltip.LastItems)
+        foreach (var (slot, item) in penumbraTooltip.LastItems)
         {
             switch (slot)
             {

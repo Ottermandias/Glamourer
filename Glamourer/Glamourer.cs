@@ -6,10 +6,10 @@ using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.State;
-using OtterGui.Classes;
-using OtterGui.Log;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Interop;
+using Logger = OtterGui.Log.Logger;
+using MessageService = OtterGui.Classes.MessageService;
 
 namespace Glamourer;
 

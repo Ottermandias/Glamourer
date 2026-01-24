@@ -1,9 +1,9 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.State;
+using Luna;
 using OtterGui.Extensions;
 using OtterGui.Log;
-using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
@@ -84,9 +84,8 @@ public class ApiHelpers(ActorObjectManager objects, StateManager stateManager, A
             return [];
 
         return stateManager.Values.Where(state => state.Identifier.Type is IdentifierType.Player && state.Identifier.PlayerName == byteString)
-            .Concat(objects
-                .Where(kvp => kvp.Key is { IsValid: true, Type: IdentifierType.Player } && kvp.Key.PlayerName == byteString)
-                .SelectWhere(kvp =>
+            .Concat(ArrayExtensions.SelectWhere(objects
+   .Where(kvp => kvp.Key is { IsValid: true, Type: IdentifierType.Player } && kvp.Key.PlayerName == byteString), kvp =>
                 {
                     if (stateManager.ContainsKey(kvp.Key))
                         return (false, null);

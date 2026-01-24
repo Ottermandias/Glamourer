@@ -1,6 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Dalamud.Bindings.ImGui;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
 

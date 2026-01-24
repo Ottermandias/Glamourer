@@ -1,7 +1,7 @@
 using Glamourer.Api.Enums;
 using Glamourer.Events;
 using Glamourer.State;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Designs.History;

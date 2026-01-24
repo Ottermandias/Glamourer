@@ -19,16 +19,18 @@ using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using Glamourer.Unlocks;
+using Luna;
 using Microsoft.Extensions.DependencyInjection;
 using OtterGui.Classes;
-using OtterGui.Log;
 using OtterGui.Raii;
-using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
+using FrameworkManager = OtterGui.Classes.FrameworkManager;
+using Logger = OtterGui.Log.Logger;
+using MessageService = OtterGui.Classes.MessageService;
 
 namespace Glamourer.Services;
 
@@ -37,7 +39,7 @@ public static class StaticServiceManager
     public static ServiceManager CreateProvider(IDalamudPluginInterface pi, Logger log, Glamourer glamourer)
     {
         EventWrapperBase.ChangeLogger(log);
-        var services = new ServiceManager(log)
+        var services = new ServiceManager(new Luna.Logger("Glamourer"))
             .AddExistingService(log)
             .AddMeta()
             .AddInterop()
@@ -51,8 +53,15 @@ public static class StaticServiceManager
         services.AddIServices(typeof(EquipItem).Assembly);
         services.AddIServices(typeof(Glamourer).Assembly);
         services.AddIServices(typeof(ImRaii).Assembly);
+        services.AddIServices(typeof(ServiceManager).Assembly);
+        services.AddIServices<OtterGui.Services.IService>(typeof(Glamourer).Assembly);
+
+        services.AddSingleton<DictJob>();
+        services.AddSingleton<DictJobGroup>();
+        services.AddSingleton<NameDicts>();
+        services.AddSingleton<DictWorld>();
         services.AddSingleton<IGlamourerApi>(p => p.GetRequiredService<GlamourerApi>());
-        services.CreateProvider();
+        services.BuildProvider();
         return services;
     }
 

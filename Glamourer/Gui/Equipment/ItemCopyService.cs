@@ -1,13 +1,12 @@
 ﻿using Glamourer.Services;
 using Dalamud.Bindings.ImGui;
-using OtterGui.Services;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public class ItemCopyService(ItemManager items, DictStain stainData) : IUiService
+public class ItemCopyService(ItemManager items, DictStain stainData) : Luna.IUiService
 {
     public EquipItem? Item  { get; private set; }
     public Stain?     Stain { get; private set; }

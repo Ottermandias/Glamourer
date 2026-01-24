@@ -3,8 +3,7 @@ using Glamourer.Api.Enums;
 using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.State;
-using OtterGui.Classes;
-using OtterGui.Services;
+using Luna;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Interop;
 
@@ -46,7 +45,7 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
     }
 
     private readonly ConcurrentQueue<(ActorState, Action, int)> _actions = [];
-    private readonly ConcurrentSet<ActorState>                  _skips   = [];
+    private readonly OtterGui.Classes.ConcurrentSet<ActorState> _skips   = [];
     private          DateTime                                   _frame;
 
     private void OnStateChanged(StateChangeType type, StateSource source, ActorState state, ActorData _1, ITransaction? _2)

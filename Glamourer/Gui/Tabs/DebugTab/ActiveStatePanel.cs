@@ -3,6 +3,7 @@ using Glamourer.GameData;
 using Glamourer.Designs;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
@@ -11,29 +12,29 @@ using Penumbra.GameData.Interop;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class ActiveStatePanel(StateManager _stateManager, ActorObjectManager _objectManager) : IGameDataDrawer
+public sealed class ActiveStatePanel(StateManager stateManager, ActorObjectManager objectManager) : IGameDataDrawer
 {
-    public string Label
-        => $"Active Actors ({_stateManager.Count})###Active Actors";
+    public ReadOnlySpan<byte> Label
+        => new StringU8($"Active Actors ({stateManager.Count})###Active Actors");
 
     public bool Disabled
         => false;
 
     public void Draw()
     {
-        foreach (var (identifier, actors) in _objectManager)
+        foreach (var (identifier, actors) in objectManager)
         {
             if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Trash.ToIconString()}##{actors.Label}", new Vector2(ImGui.GetFrameHeight()),
-                    string.Empty, !_stateManager.ContainsKey(identifier), true))
-                _stateManager.DeleteState(identifier);
+                    string.Empty, !stateManager.ContainsKey(identifier), true))
+                stateManager.DeleteState(identifier);
 
             ImGui.SameLine();
             using var t = ImRaii.TreeNode(actors.Label);
             if (!t)
                 continue;
 
-            if (_stateManager.GetOrCreate(identifier, actors.Objects[0], out var state))
-                DrawState(_stateManager, actors, state);
+            if (stateManager.GetOrCreate(identifier, actors.Objects[0], out var state))
+                DrawState(stateManager, actors, state);
             else
                 ImGui.TextUnformatted("Invalid actor.");
         }

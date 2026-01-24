@@ -5,10 +5,9 @@ using Glamourer.Designs;
 using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.State;
+using Luna;
 using Newtonsoft.Json.Linq;
-using OtterGui.Services;
 using Penumbra.GameData.Interop;
-using Penumbra.GameData.Structs;
 using StateChanged = Glamourer.Events.StateChanged;
 
 namespace Glamourer.Api;

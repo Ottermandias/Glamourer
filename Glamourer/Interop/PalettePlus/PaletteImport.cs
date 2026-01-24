@@ -1,8 +1,8 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Designs;
 using Glamourer.GameData;
+using Luna;
 using Newtonsoft.Json.Linq;
-using OtterGui.Services;
 
 namespace Glamourer.Interop.PalettePlus;
 

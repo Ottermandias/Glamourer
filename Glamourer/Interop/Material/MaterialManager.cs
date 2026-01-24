@@ -1,10 +1,9 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
-using FFXIVClientStructs.Havok.Animation.Rig;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
@@ -19,7 +18,6 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     private readonly StateManager    _stateManager;
     private readonly PenumbraService _penumbra;
     private readonly ActorManager    _actors;
-    private readonly Configuration   _config;
 
     private int _lastSlot;
 
@@ -31,7 +29,6 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         _stateManager = stateManager;
         _actors       = actors;
         _penumbra     = penumbra;
-        _config       = config;
         _event        = prepareColorSet;
         _event.Subscribe(OnPrepareColorSet, PrepareColorSet.Priority.MaterialManager);
     }

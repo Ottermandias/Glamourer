@@ -1,7 +1,7 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Luna;
 using OtterGui.Raii;
-using OtterGui.Services;
-using OtterGui.Widgets;
+using ITab = OtterGui.Widgets.ITab;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
@@ -32,7 +32,7 @@ public unsafe class DebugTab(ServiceManager manager) : ITab
 
         if (ImGui.CollapsingHeader("General"))
         {
-            manager.Timers.Draw("Timers");
+            StartTimeTracker.Draw("Timers"u8);
         }
 
         foreach (var header in _headers)

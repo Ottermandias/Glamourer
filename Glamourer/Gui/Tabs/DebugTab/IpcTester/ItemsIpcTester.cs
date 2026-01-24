@@ -2,9 +2,10 @@
 using Glamourer.Api.Enums;
 using Glamourer.Api.IpcSubscribers;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
+using Luna;
 using OtterGui;
 using OtterGui.Raii;
-using OtterGui.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui;
 using Penumbra.GameData.Structs;
@@ -67,8 +68,8 @@ public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiServic
         ImGui.SetNextItemWidth(width);
         if (ImGuiUtil.InputUlong("Custom Item ID", ref tmp))
             _customItemId = tmp;
-        EquipSlotCombo.Draw("Equip Slot", string.Empty, ref _slot, width);
-        BonusSlotCombo.Draw("Bonus Slot", string.Empty, ref _bonusSlot, width);
+        EquipSlotCombo.Draw("Equip Slot"u8, StringU8.Empty, ref _slot, width);
+        BonusSlotCombo.Draw("Bonus Slot"u8, StringU8.Empty, ref _bonusSlot, width);
         var value = (int)_stainId.Id;
         ImGui.SetNextItemWidth(width);
         if (ImGui.InputInt("Stain ID", ref value, 1, 3))

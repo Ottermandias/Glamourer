@@ -5,8 +5,7 @@ using Glamourer.Designs.Special;
 using Glamourer.Gui;
 using Glamourer.Gui.Tabs.DesignTab;
 using Dalamud.Bindings.ImGui;
-using OtterGui.Services;
-using OtterGui.Classes;
+using Luna;
 
 namespace Glamourer.Services;
 

@@ -10,10 +10,10 @@ using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class UnlockableItemsPanel(ItemUnlockManager _itemUnlocks, ItemManager _items) : IGameDataDrawer
+public sealed class UnlockableItemsPanel(ItemUnlockManager itemUnlocks, ItemManager items) : IGameDataDrawer
 {
-    public string Label
-        => "Unlockable Items";
+    public ReadOnlySpan<byte> Label
+        => "Unlockable Items"u8;
 
     public bool Disabled
         => false;
@@ -36,10 +36,10 @@ public class UnlockableItemsPanel(ItemUnlockManager _itemUnlocks, ItemManager _i
         ImGui.TableNextColumn();
         var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
         ImGui.TableNextRow();
-        var remainder = ImGuiClip.ClippedDraw(_itemUnlocks.Unlockable, skips, t =>
+        var remainder = ImGuiClip.ClippedDraw(itemUnlocks.Unlockable, skips, t =>
         {
             ImGuiUtil.DrawTableColumn(t.Key.ToString());
-            if (_items.ItemData.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
+            if (items.ItemData.TryGetValue(t.Key, EquipSlot.MainHand, out var equip))
             {
                 ImGuiUtil.DrawTableColumn(equip.Name);
                 ImGuiUtil.DrawTableColumn(equip.Type.ToName());
@@ -52,13 +52,13 @@ public class UnlockableItemsPanel(ItemUnlockManager _itemUnlocks, ItemManager _i
                 ImGui.TableNextColumn();
             }
 
-            ImGuiUtil.DrawTableColumn(_itemUnlocks.IsUnlocked(t.Key, out var time)
+            ImGuiUtil.DrawTableColumn(itemUnlocks.IsUnlocked(t.Key, out var time)
                 ? time == DateTimeOffset.MinValue
                     ? "Always"
                     : time.LocalDateTime.ToString("g")
                 : "Never");
             ImGuiUtil.DrawTableColumn(t.Value.ToString());
-        }, _itemUnlocks.Unlockable.Count);
+        }, itemUnlocks.Unlockable.Count);
         ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
     }
 }

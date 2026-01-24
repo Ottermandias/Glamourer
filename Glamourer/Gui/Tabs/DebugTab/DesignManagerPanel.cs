@@ -1,9 +1,9 @@
 ﻿using Dalamud.Interface;
 using Glamourer.Designs;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Extensions;
-using OtterGui.Filesystem;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
@@ -11,10 +11,10 @@ using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _designFileSystem) : IGameDataDrawer
+public sealed class DesignManagerPanel(DesignManager designManager, DesignFileSystem designFileSystem) : IGameDataDrawer
 {
-    public string Label
-        => $"Design Manager ({_designManager.Designs.Count} Designs)###Design Manager";
+    public ReadOnlySpan<byte> Label
+        => new StringU8($"Design Manager ({designManager.Designs.Count} Designs)###Design Manager");
 
     public bool Disabled
         => false;
@@ -22,13 +22,13 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
     public void Draw()
     {
         DrawButtons();
-        foreach (var (design, idx) in _designManager.Designs.WithIndex())
+        foreach (var (design, idx) in designManager.Designs.WithIndex())
         {
             using var t = ImRaii.TreeNode($"{design.Name}##{idx}");
             if (!t)
                 continue;
 
-            DrawDesign(design, _designFileSystem);
+            DrawDesign(design, designFileSystem);
             var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.Application.Equip, design.Application.Customize,
                 design.Application.Meta,
                 design.WriteProtected());
@@ -44,18 +44,18 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
         if (ImUtf8.Button("Generate 500 Test Designs"u8))
             for (var i = 0; i < 500; ++i)
             {
-                var design = _designManager.CreateEmpty($"Test Designs/Test Design {i}", true);
-                _designManager.AddTag(design, "_DebugTest");
+                var design = designManager.CreateEmpty($"Test Designs/Test Design {i}", true);
+                designManager.AddTag(design, "_DebugTest");
             }
 
         ImUtf8.SameLineInner();
         if (ImUtf8.Button("Remove All Test Designs"u8))
         {
-            var designs = _designManager.Designs.Where(d => d.Tags.Contains("_DebugTest")).ToArray();
+            var designs = designManager.Designs.Where(d => d.Tags.Contains("_DebugTest")).ToArray();
             foreach (var design in designs)
-                _designManager.Delete(design);
-            if (_designFileSystem.Find("Test Designs", out var path) && path is DesignFileSystem.Folder { TotalChildren: 0 })
-                _designFileSystem.Delete(path);
+                designManager.Delete(design);
+            if (designFileSystem.Find("Test Designs", out var path) && path is DesignFileSystem.Folder { TotalChildren: 0 })
+                designFileSystem.Delete(path);
         }
     }
 

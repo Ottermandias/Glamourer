@@ -1,7 +1,7 @@
 ﻿using Glamourer.Designs.Links;
 using Glamourer.Services;
 using Glamourer.State;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 

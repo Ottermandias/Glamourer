@@ -1,5 +1,5 @@
 ﻿using Glamourer.Api.Api;
-using OtterGui.Services;
+using Luna;
 
 namespace Glamourer.Api;
 

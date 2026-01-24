@@ -426,7 +426,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         {
             _jobs        =  jobs;
             _values      =  _jobs.Jobs.Ordered.Select(j => j.Flag).ToArray();
-            _names       =  _jobs.Jobs.Ordered.Select(j => j.Abbreviation).ToArray();
+            _names       =  _jobs.Jobs.Ordered.Select(j => j.Abbreviation.ToString()).ToArray();
             AllFlags     =  _values.Aggregate((l, r) => l | r);
             _filterValue =  AllFlags;
             Flags        &= ~ImGuiTableColumnFlags.NoResize;
@@ -498,7 +498,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             {
                 var group = _jobs.AllJobGroups[Math.Max((int)item.JobRestrictions.Id, 1)];
                 if (group.Name.Length > 0)
-                    text = group.Name;
+                    text = group.Name.ToString();
             }
 
             ImGui.TextUnformatted(text);

@@ -4,16 +4,15 @@ using Dalamud.Interface.Utility.Raii;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Dalamud.Bindings.ImGui;
+using Luna;
 using OtterGui;
-using OtterGui.Services;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
-using Penumbra.GameData.Gui;
 
 namespace Glamourer.Gui.Materials;
 
-public class MaterialDrawer(DesignManager _designManager, Configuration _config) : IService
+public class MaterialDrawer(DesignManager designManager, Configuration config) : IService
 {
     public const float GlossWidth            = 100;
     public const float SpecularStrengthWidth = 125;
@@ -48,34 +47,34 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
     private void DrawMultiButtons(Design design)
     {
         var any      = design.Materials.Count > 0;
-        var disabled = !_config.DeleteDesignModifier.IsActive();
+        var disabled = !config.DeleteDesignModifier.IsActive();
         var size     = new Vector2(200 * ImUtf8.GlobalScale, 0);
         if (ImUtf8.ButtonEx("Enable All Advanced Dyes"u8,
                 any
                     ? "Enable the application of all contained advanced dyes without deleting them."u8
                     : "This design does not contain any advanced dyes."u8, size,
                 !any || disabled))
-            _designManager.ChangeApplyMulti(design, null, null, null, null, null, null, true, null);
+            designManager.ChangeApplyMulti(design, null, null, null, null, null, null, true, null);
         ;
         if (disabled && any)
-            ImUtf8.HoverTooltip($"Hold {_config.DeleteDesignModifier} while clicking to enable.");
+            ImUtf8.HoverTooltip($"Hold {config.DeleteDesignModifier} while clicking to enable.");
         ImGui.SameLine();
         if (ImUtf8.ButtonEx("Disable All Advanced Dyes"u8,
                 any
                     ? "Disable the application of all contained advanced dyes without deleting them."u8
                     : "This design does not contain any advanced dyes."u8, size,
                 !any || disabled))
-            _designManager.ChangeApplyMulti(design, null, null, null, null, null, null, false, null);
+            designManager.ChangeApplyMulti(design, null, null, null, null, null, null, false, null);
         if (disabled && any)
-            ImUtf8.HoverTooltip($"Hold {_config.DeleteDesignModifier} while clicking to disable.");
+            ImUtf8.HoverTooltip($"Hold {config.DeleteDesignModifier} while clicking to disable.");
 
         if (ImUtf8.ButtonEx("Delete All Advanced Dyes"u8, any ? ""u8 : "This design does not contain any advanced dyes."u8, size,
                 !any || disabled))
             while (design.Materials.Count > 0)
-                _designManager.ChangeMaterialValue(design, MaterialValueIndex.FromKey(design.Materials[0].Item1), null);
+                designManager.ChangeMaterialValue(design, MaterialValueIndex.FromKey(design.Materials[0].Item1), null);
 
         if (disabled && any)
-            ImUtf8.HoverTooltip($"Hold {_config.DeleteDesignModifier} while clicking to delete.");
+            ImUtf8.HoverTooltip($"Hold {config.DeleteDesignModifier} while clicking to delete.");
     }
 
     private void DrawName(MaterialValueIndex index)
@@ -138,13 +137,13 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
 
     private void DeleteButton(Design design, MaterialValueIndex index, ref int idx)
     {
-        var deleteEnabled = _config.DeleteDesignModifier.IsActive();
+        var deleteEnabled = config.DeleteDesignModifier.IsActive();
         if (!ImUtf8.IconButton(FontAwesomeIcon.Trash,
-                $"Delete this color row.{(deleteEnabled ? string.Empty : $"\nHold {_config.DeleteDesignModifier} to delete.")}", disabled:
+                $"Delete this color row.{(deleteEnabled ? string.Empty : $"\nHold {config.DeleteDesignModifier} to delete.")}", disabled:
                 !deleteEnabled || design.WriteProtected()))
             return;
 
-        _designManager.ChangeMaterialValue(design, index, null);
+        designManager.ChangeMaterialValue(design, index, null);
         --idx;
     }
 
@@ -158,19 +157,19 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
     {
         if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported row from your clipboard onto this row."u8,
                 disabled: !ColorRowClipboard.IsSet || design.WriteProtected()))
-            _designManager.ChangeMaterialValue(design, index, ColorRowClipboard.Row);
+            designManager.ChangeMaterialValue(design, index, ColorRowClipboard.Row);
     }
 
     private void EnabledToggle(Design design, MaterialValueIndex index, bool enabled)
     {
         if (ImUtf8.Checkbox("Enabled"u8, ref enabled))
-            _designManager.ChangeApplyMaterialValue(design, index, enabled);
+            designManager.ChangeApplyMaterialValue(design, index, enabled);
     }
 
     private void RevertToggle(Design design, MaterialValueIndex index, bool revert)
     {
         if (ImUtf8.Checkbox("Revert"u8, ref revert))
-            _designManager.ChangeMaterialRevert(design, index, revert);
+            designManager.ChangeMaterialRevert(design, index, revert);
         ImUtf8.HoverTooltip(
             "If this is checked, Glamourer will try to revert the advanced dye row to its game state instead of applying a specific row."u8);
     }
@@ -222,7 +221,7 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
         if (ImUtf8.ButtonEx("Add New Row"u8,
                 exists ? "The selected advanced dye row already exists."u8 : "Add the selected advanced dye row."u8, Vector2.Zero,
                 exists || design.WriteProtected()))
-            _designManager.ChangeMaterialValue(design, _newKey, ColorRow.Empty);
+            designManager.ChangeMaterialValue(design, _newKey, ColorRow.Empty);
     }
 
     private void DrawMaterialIdxDrag()
@@ -270,6 +269,6 @@ public class MaterialDrawer(DesignManager _designManager, Configuration _config)
         applied |= AdvancedDyePopup.DragSpecularStrength(ref tmp.SpecularStrength);
         ImUtf8.HoverTooltip("Change the specular strength for this row."u8);
         if (applied)
-            _designManager.ChangeMaterialValue(design, index, tmp);
+            designManager.ChangeMaterialValue(design, index, tmp);
     }
 }

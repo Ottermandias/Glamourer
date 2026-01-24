@@ -7,17 +7,17 @@ using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class AutoDesignPanel(AutoDesignManager _autoDesignManager) : IGameDataDrawer
+public sealed class AutoDesignPanel(AutoDesignManager autoDesignManager) : IGameDataDrawer
 {
-    public string Label
-        => "Auto Designs";
+    public ReadOnlySpan<byte> Label
+        => "Auto Designs"u8;
 
     public bool Disabled
         => false;
 
     public void Draw()
     {
-        foreach (var (set, idx) in _autoDesignManager.WithIndex())
+        foreach (var (set, idx) in autoDesignManager.WithIndex())
         {
             using var id   = ImRaii.PushId(idx);
             using var tree = ImRaii.TreeNode(set.Name);

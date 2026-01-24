@@ -6,10 +6,10 @@ using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class InventoryPanel : IGameDataDrawer
+public sealed unsafe class InventoryPanel : IGameDataDrawer
 {
-    public string Label
-        => "Inventory";
+    public ReadOnlySpan<byte> Label
+        => "Inventory"u8;
 
     public bool Disabled
         => false;

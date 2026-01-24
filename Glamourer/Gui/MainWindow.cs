@@ -1,5 +1,4 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Designs;
 using Glamourer.Events;
@@ -13,13 +12,16 @@ using Glamourer.Gui.Tabs.SettingsTab;
 using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Interop.Penumbra;
 using Dalamud.Bindings.ImGui;
+using Luna;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Custom;
 using OtterGui.Raii;
-using OtterGui.Services;
 using OtterGui.Text;
 using OtterGui.Widgets;
+using Changelog = OtterGui.Widgets.Changelog;
+using ITab = OtterGui.Widgets.ITab;
+using Window = Dalamud.Interface.Windowing.Window;
 
 namespace Glamourer.Gui;
 

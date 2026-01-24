@@ -10,14 +10,13 @@ using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Classes;
+using Luna;
 using OtterGui.Extensions;
-using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
+using SeStringBuilderExtensions = OtterGui.Classes.SeStringBuilderExtensions;
 
 namespace Glamourer.Services;
 
@@ -104,10 +103,10 @@ public class CommandService : IDisposable, IApiService
                     return;
                 default:
                     _chat.Print("Use without argument to toggle the main window.");
-                    _chat.Print(new SeStringBuilder().AddText("Use ").AddPurple("/glamour").AddText(" instead of ").AddRed("/glamourer")
+                    _chat.Print(SeStringBuilderExtensions.AddRed(new SeStringBuilder().AddText("Use ").AddPurple("/glamour").AddText(" instead of "), "/glamourer")
                         .AddText(" for application commands.").BuiltString);
-                    _chat.Print(new SeStringBuilder().AddCommand("qdb",  "Toggles the quick design bar on or off.").BuiltString);
-                    _chat.Print(new SeStringBuilder().AddCommand("lock", "Toggles the lock of the main window on or off.").BuiltString);
+                    _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(),       "qdb",  "Toggles the quick design bar on or off.").BuiltString);
+                    _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "lock", "Toggles the lock of the main window on or off.").BuiltString);
                     return;
             }
 
@@ -146,35 +145,28 @@ public class CommandService : IDisposable, IApiService
     private bool PrintHelp(string argument)
     {
         if (!string.Equals(argument, "help", StringComparison.OrdinalIgnoreCase) && argument != "?")
-            _chat.Print(new SeStringBuilder().AddText("The given argument ").AddRed(argument, true)
+            _chat.Print(SeStringBuilderExtensions.AddRed(new SeStringBuilder().AddText("The given argument "), argument, true)
                 .AddText(" is not valid. Valid arguments are:").BuiltString);
         else
             _chat.Print("Valid arguments for /glamour are:");
 
-        _chat.Print(new SeStringBuilder().AddCommand("apply", "Applies a given design to a given character. Use without arguments for help.")
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "apply", "Applies a given design to a given character. Use without arguments for help.")
             .BuiltString);
-        _chat.Print(new SeStringBuilder()
-            .AddCommand("reapply", "Re-applies the current supposed state of a given character. Use without arguments for help.").BuiltString);
-        _chat.Print(new SeStringBuilder().AddCommand("revert", "Reverts a given character to its game state. Use without arguments for help.")
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "reapply", "Re-applies the current supposed state of a given character. Use without arguments for help.").BuiltString);
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "revert", "Reverts a given character to its game state. Use without arguments for help.")
             .BuiltString);
-        _chat.Print(new SeStringBuilder().AddCommand("reapplyautomation",
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "reapplyautomation",
             "Reapplies the current automation state on top of the characters current state.. Use without arguments for help.").BuiltString);
-        _chat.Print(new SeStringBuilder().AddCommand("reverttoautomation",
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "reverttoautomation",
             "Reverts a given character to its supposed state using automated designs. Use without arguments for help.").BuiltString);
-        _chat.Print(new SeStringBuilder().AddCommand("resetdesign",
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "resetdesign",
             "Reapplies the current automation and resets the random design. Use without arguments for help.").BuiltString);
-        _chat.Print(new SeStringBuilder()
-            .AddCommand("clearsettings", "Clears all temporary settings applied by Glamourer. Use without arguments for help.").BuiltString);
-        _chat.Print(new SeStringBuilder()
-            .AddCommand("copy", "Copy the current state of a character to clipboard. Use without arguments for help.").BuiltString);
-        _chat.Print(new SeStringBuilder()
-            .AddCommand("save", "Save the current state of a character to a named design. Use without arguments for help.").BuiltString);
-        _chat.Print(new SeStringBuilder()
-            .AddCommand("automation", "Change the state of automated design sets. Use without arguments for help.").BuiltString);
-        _chat.Print(new SeStringBuilder()
-            .AddCommand("applyitem", "Apply a specific item to a character. Use without arguments for help.").BuiltString);
-        _chat.Print(new SeStringBuilder()
-            .AddCommand("applycustomization", "Apply a specific customization value to a character. Use without arguments for help.")
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "clearsettings", "Clears all temporary settings applied by Glamourer. Use without arguments for help.").BuiltString);
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "copy", "Copy the current state of a character to clipboard. Use without arguments for help.").BuiltString);
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "save", "Save the current state of a character to a named design. Use without arguments for help.").BuiltString);
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "automation", "Change the state of automated design sets. Use without arguments for help.").BuiltString);
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "applyitem", "Apply a specific item to a character. Use without arguments for help.").BuiltString);
+        _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "applycustomization", "Apply a specific customization value to a character. Use without arguments for help.")
             .BuiltString);
         return true;
     }
@@ -184,15 +176,15 @@ public class CommandService : IDisposable, IApiService
         var argumentList = argument.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (argumentList.Length < 1)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour clearsettings ").AddGreen("[Character Identifier]").AddText(" | ")
-                .AddPurple("<true or false>").AddText(" | ").AddBlue("<true or false>").BuiltString);
+            _chat.Print(SeStringBuilderExtensions.AddBlue(new SeStringBuilder().AddText("Use with /glamour clearsettings ").AddGreen("[Character Identifier]").AddText(" | ")
+   .AddPurple("<true or false>").AddText(" | "), "<true or false>").BuiltString);
             PlayerIdentifierHelp(false, true);
-            _chat.Print(new SeStringBuilder()
-                .AddText("    》 The character identifier specifies the collection to clear settings from. It also accepts '").AddGreen("all")
+            _chat.Print(SeStringBuilderExtensions.AddGreen(new SeStringBuilder()
+   .AddText("    》 The character identifier specifies the collection to clear settings from. It also accepts '"), "all")
                 .AddText("' to clear all collections.").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》 The booleans are optional and default to 'true', the ").AddPurple("first")
-                .AddText(" determines whether ").AddPurple("manually").AddText(" applied settings are cleared, the ").AddBlue("second")
-                .AddText(" determines whether ").AddBlue("automatically").AddText(" applied settings are cleared.").BuiltString);
+            _chat.Print(SeStringBuilderExtensions.AddBlue(new SeStringBuilder().AddText("    》 The booleans are optional and default to 'true', the ").AddPurple("first")
+   .AddText(" determines whether ").AddPurple("manually").AddText(" applied settings are cleared, the ").AddBlue("second")
+   .AddText(" determines whether "), "automatically").AddText(" applied settings are cleared.").BuiltString);
             return false;
         }
 
@@ -242,25 +234,24 @@ public class CommandService : IDisposable, IApiService
         var argumentList = arguments.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (argumentList.Length != 2)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour automation ").AddBlue("enable, disable or application", true)
-                .AddText(" ")
-                .AddRed("Automated Design Set Index or Name", true).AddText(" | ").AddYellow("<Design Index>").AddText(" ")
-                .AddPurple("<Application Flags>")
+            _chat.Print(SeStringBuilderExtensions.AddPurple(new SeStringBuilder().AddText("Use with /glamour automation ").AddBlue("enable, disable or application", true)
+   .AddText(" ")
+   .AddRed("Automated Design Set Index or Name", true).AddText(" | ").AddYellow("<Design Index>").AddText(" "), "<Application Flags>")
                 .BuiltString);
             _chat.Print(
                 "    》 If the design set name is a valid natural number it will be used as a index. Design names that are such numbers can not be dealt with.");
             _chat.Print("    》 If multiple design sets have the same name, the first one will be changed.");
             _chat.Print("    》 The name is case-insensitive.");
-            _chat.Print(new SeStringBuilder().AddText("    》 If the command is ").AddBlue("application")
-                .AddText(" the ").AddYellow("design index").AddText(" and ").AddPurple("flags").AddText(" are required.").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》 The ").AddYellow("design index")
+            _chat.Print(SeStringBuilderExtensions.AddPurple(new SeStringBuilder().AddText("    》 If the command is ").AddBlue("application")
+   .AddText(" the ").AddYellow("design index").AddText(" and "), "flags").AddText(" are required.").BuiltString);
+            _chat.Print(SeStringBuilderExtensions.AddYellow(new SeStringBuilder().AddText("    》 The "), "design index")
                 .AddText(" is the number in front of the relevant design in the automated design set.").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》 The ").AddPurple("Application Flags").AddText(" are a combination of the letters ")
-                .AddInitialPurple("Customizations, ")
-                .AddInitialPurple("Equipment, ")
-                .AddInitialPurple("Accessories, ")
-                .AddInitialPurple("Dyes & Crests and ")
-                .AddInitialPurple("Weapons, where ").AddPurple("CEADW")
+            _chat.Print(SeStringBuilderExtensions.AddPurple(new SeStringBuilder().AddText("    》 The ").AddPurple("Application Flags").AddText(" are a combination of the letters ")
+   .AddInitialPurple("Customizations, ")
+   .AddInitialPurple("Equipment, ")
+   .AddInitialPurple("Accessories, ")
+   .AddInitialPurple("Dyes & Crests and ")
+   .AddInitialPurple("Weapons, where "), "CEADW")
                 .AddText(" means everything should be toggled on, and no value means nothing should be toggled on.")
                 .BuiltString);
             return false;
@@ -286,9 +277,9 @@ public class CommandService : IDisposable, IApiService
                 break;
             case "application": return HandleApplication(argumentList[1]);
             default:
-                _chat.Print(new SeStringBuilder().AddText("The command ")
-                    .AddBlue(argumentList[0], true).AddText(" is unknown. Currently only ").AddBlue("enable").AddText(", ").AddBlue("disable")
-                    .AddText(" or ").AddBlue("application")
+                _chat.Print(SeStringBuilderExtensions.AddBlue(new SeStringBuilder().AddText("The command ")
+   .AddBlue(argumentList[0], true).AddText(" is unknown. Currently only ").AddBlue("enable").AddText(", ").AddBlue("disable")
+   .AddText(" or "), "application")
                     .AddText(" are supported.").BuiltString);
                 return false;
         }
@@ -310,8 +301,7 @@ public class CommandService : IDisposable, IApiService
         if (idx >= 0)
             return true;
 
-        _chat.Print(new SeStringBuilder().AddText("Could not change state of automated design set ")
-            .AddRed(name, true).AddText(" No automated design set of that name or index exists.").BuiltString);
+        _chat.Print(SeStringBuilderExtensions.AddRed(new SeStringBuilder().AddText("Could not change state of automated design set "), name, true).AddText(" No automated design set of that name or index exists.").BuiltString);
         return false;
     }
 
@@ -320,7 +310,7 @@ public class CommandService : IDisposable, IApiService
         var split = argument.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (split.Length != 2)
         {
-            _chat.Print(new SeStringBuilder().AddText("The command ").AddBlue("automation")
+            _chat.Print(SeStringBuilderExtensions.AddBlue(new SeStringBuilder().AddText("The command "), "automation")
                 .AddText(" requires a design index and application flags.").BuiltString);
             return false;
         }
@@ -334,7 +324,7 @@ public class CommandService : IDisposable, IApiService
         var split2 = split[1].Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (!int.TryParse(split2[0], out var designIdx) || designIdx <= 0)
         {
-            _chat.Print(new SeStringBuilder().AddText("The value ").AddYellow(split2[0], true)
+            _chat.Print(SeStringBuilderExtensions.AddYellow(new SeStringBuilder().AddText("The value "), split2[0], true)
                 .AddText(" is not a valid design index.").BuiltString);
             return false;
         }
@@ -358,7 +348,7 @@ public class CommandService : IDisposable, IApiService
                     case 'd': applicationFlags |= ApplicationType.GearCustomization; break;
                     case 'w': applicationFlags |= ApplicationType.Weapons; break;
                     default:
-                        _chat.Print(new SeStringBuilder().AddText("The value ").AddPurple(split2[1], true)
+                        _chat.Print(SeStringBuilderExtensions.AddPurple(new SeStringBuilder().AddText("The value "), split2[1], true)
                             .AddText(" is not a valid set of application flags.").BuiltString);
                         return false;
                 }
@@ -372,7 +362,7 @@ public class CommandService : IDisposable, IApiService
     {
         if (argument.Length == 0)
         {
-            _chat.Print(new SeStringBuilder().AddText($"Use with /glamour {command} ").AddGreen("[Character Identifier]").BuiltString);
+            _chat.Print(SeStringBuilderExtensions.AddGreen(new SeStringBuilder().AddText($"Use with /glamour {command} "), "[Character Identifier]").BuiltString);
             PlayerIdentifierHelp(false, true);
             return true;
         }
@@ -402,7 +392,7 @@ public class CommandService : IDisposable, IApiService
     {
         if (argument.Length == 0)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour revert ").AddGreen("[Character Identifier]").BuiltString);
+            _chat.Print(SeStringBuilderExtensions.AddGreen(new SeStringBuilder().AddText("Use with /glamour revert "), "[Character Identifier]").BuiltString);
             PlayerIdentifierHelp(false, true);
             return true;
         }
@@ -424,7 +414,7 @@ public class CommandService : IDisposable, IApiService
     {
         if (argument.Length == 0)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour revert ").AddGreen("[Character Identifier]").BuiltString);
+            _chat.Print(SeStringBuilderExtensions.AddGreen(new SeStringBuilder().AddText("Use with /glamour revert "), "[Character Identifier]").BuiltString);
             PlayerIdentifierHelp(false, true);
             return true;
         }
@@ -450,9 +440,8 @@ public class CommandService : IDisposable, IApiService
         var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (split.Length is not 2)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour applyitem ").AddYellow("[Item ID or Item Name]")
-                .AddText(" | ")
-                .AddGreen("[Character Identifier]")
+            _chat.Print(SeStringBuilderExtensions.AddGreen(new SeStringBuilder().AddText("Use with /glamour applyitem ").AddYellow("[Item ID or Item Name]")
+   .AddText(" | "), "[Character Identifier]")
                 .BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText(
@@ -468,7 +457,7 @@ public class CommandService : IDisposable, IApiService
             if (_items.ItemData.Primary.TryGetValue(id, out var main))
                 items[0] = main;
         }
-        else if (_items.ItemData.Primary.FindFirst(pair => string.Equals(pair.Value.Name, split[0], StringComparison.OrdinalIgnoreCase),
+        else if (ArrayExtensions.FindFirst(_items.ItemData.Primary, pair => string.Equals(pair.Value.Name, split[0], StringComparison.OrdinalIgnoreCase),
                      out var i))
         {
             items[0] = i.Value;
@@ -476,7 +465,7 @@ public class CommandService : IDisposable, IApiService
 
         if (!items[0].Valid)
         {
-            _chat.Print(new SeStringBuilder().AddText("The item ").AddYellow(split[0], true)
+            _chat.Print(SeStringBuilderExtensions.AddYellow(new SeStringBuilder().AddText("The item "), split[0], true)
                 .AddText(" could not be identified as a valid item.").BuiltString);
             return false;
         }
@@ -534,7 +523,7 @@ public class CommandService : IDisposable, IApiService
              || customizeInt < 0
              || customizeInt >= CustomizationExtensions.AllBasic.Length)
             {
-                _chat.Print(new SeStringBuilder().AddText("The customization type ").AddYellow(customizationSplit[0], true)
+                _chat.Print(SeStringBuilderExtensions.AddYellow(new SeStringBuilder().AddText("The customization type "), customizationSplit[0], true)
                     .AddText(" could not be identified as a valid type.").BuiltString);
                 return false;
             }
@@ -560,7 +549,7 @@ public class CommandService : IDisposable, IApiService
             }
             else
             {
-                _chat.Print(new SeStringBuilder().AddText("The customization value ").AddPurple(valueString, true)
+                _chat.Print(SeStringBuilderExtensions.AddPurple(new SeStringBuilder().AddText("The customization value "), valueString, true)
                     .AddText(" could not be parsed.")
                     .BuiltString);
                 return false;
@@ -634,26 +623,24 @@ public class CommandService : IDisposable, IApiService
 
         bool PrintCustomizationHelp()
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour applycustomization ").AddYellow("[Customization Type]")
-                .AddPurple(" [Value, Next, Previous, Minus, or Plus] ")
-                .AddBlue("<Amount>")
-                .AddText(" | ")
-                .AddGreen("[Character Identifier]")
+            _chat.Print(SeStringBuilderExtensions.AddGreen(new SeStringBuilder().AddText("Use with /glamour applycustomization ").AddYellow("[Customization Type]")
+   .AddPurple(" [Value, Next, Previous, Minus, or Plus] ")
+   .AddBlue("<Amount>")
+   .AddText(" | "), "[Character Identifier]")
                 .BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》 Valid ").AddPurple("values")
+            _chat.Print(SeStringBuilderExtensions.AddPurple(new SeStringBuilder().AddText("    》 Valid "), "values")
                 .AddText(" depend on the the character's gender, clan, and the customization type.").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》 ").AddPurple("Plus").AddText(" and ").AddPurple("Minus")
-                .AddText(" are the same as pressing the + and - buttons in the UI, times the optional ").AddBlue(" amount").AddText(".")
+            _chat.Print(SeStringBuilderExtensions.AddBlue(new SeStringBuilder().AddText("    》 ").AddPurple("Plus").AddText(" and ").AddPurple("Minus")
+   .AddText(" are the same as pressing the + and - buttons in the UI, times the optional "), " amount").AddText(".")
                 .BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("    》 ").AddPurple("Next").AddText(" and ").AddPurple("Previous")
+            _chat.Print(SeStringBuilderExtensions.AddPurple(new SeStringBuilder().AddText("    》 ").AddPurple("Next").AddText(" and "), "Previous")
                 .AddText(" is similar to Plus and Minus, but with wrap-around on reaching the end.").BuiltString);
-            var builder = new SeStringBuilder().AddText("    》 Available ").AddYellow("Customization Types")
-                .AddText(" are either a number in ")
-                .AddYellow($"[0, {CustomizationExtensions.AllBasic.Length}]")
+            var builder = SeStringBuilderExtensions.AddYellow(new SeStringBuilder().AddText("    》 Available ").AddYellow("Customization Types")
+   .AddText(" are either a number in "), $"[0, {CustomizationExtensions.AllBasic.Length}]")
                 .AddText(" or one of ");
             foreach (var index in CustomizationExtensions.AllBasic.SkipLast(1))
-                builder.AddYellow(index.ToString()).AddText(", ");
-            _chat.Print(builder.AddYellow(CustomizationExtensions.AllBasic[^1].ToString()).AddText(".").BuiltString);
+                SeStringBuilderExtensions.AddYellow(builder, index.ToString()).AddText(", ");
+            _chat.Print(SeStringBuilderExtensions.AddYellow(builder, CustomizationExtensions.AllBasic[^1].ToString()).AddText(".").BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 The item name is case-insensitive. Numeric IDs are preferred before item names.")
                 .BuiltString);
@@ -667,12 +654,11 @@ public class CommandService : IDisposable, IApiService
         var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (split.Length is not 2)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour apply ")
-                .AddYellow("[Design Name, Path or Identifier, Quick, Selection, Random, or Clipboard]")
-                .AddText(" | ")
-                .AddGreen("[Character Identifier]")
-                .AddText("; ")
-                .AddBlue("<Apply Mods>")
+            _chat.Print(SeStringBuilderExtensions.AddBlue(new SeStringBuilder().AddText("Use with /glamour apply ")
+   .AddYellow("[Design Name, Path or Identifier, Quick, Selection, Random, or Clipboard]")
+   .AddText(" | ")
+   .AddGreen("[Character Identifier]")
+   .AddText("; "), "<Apply Mods>")
                 .BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText(
@@ -691,15 +677,15 @@ public class CommandService : IDisposable, IApiService
                 .AddText("    》 Selection will use the design currently selected in the main interfaces Designs tab, if any.").BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText("    》 Clipboard as a single word will try to apply a design string currently in your clipboard.").BuiltString);
-            _chat.Print(new SeStringBuilder()
-                .AddText("    》 ").AddYellow("Random")
+            _chat.Print(SeStringBuilderExtensions.AddYellow(new SeStringBuilder()
+   .AddText("    》 "), "Random")
                 .AddText(
                     " supports many restrictions, see the Restriction Builder when adding a Random design to Automations for valid strings.")
                 .BuiltString);
-            _chat.Print(new SeStringBuilder()
-                .AddText("    》 ").AddBlue("<Enable Mods>").AddText(" is optional and can be omitted (together with the ;), ").AddBlue("true")
-                .AddText(" or ").AddBlue("false").AddText(".").BuiltString);
-            _chat.Print(new SeStringBuilder().AddText("If ").AddBlue("true")
+            _chat.Print(SeStringBuilderExtensions.AddBlue(new SeStringBuilder()
+   .AddText("    》 ").AddBlue("<Enable Mods>").AddText(" is optional and can be omitted (together with the ;), ").AddBlue("true")
+   .AddText(" or "), "false").AddText(".").BuiltString);
+            _chat.Print(SeStringBuilderExtensions.AddBlue(new SeStringBuilder().AddText("If "), "true")
                 .AddText(", it will try to apply mod associations to the collection assigned to the identified character.").BuiltString);
             PlayerIdentifierHelp(false, true);
             return true;
@@ -763,7 +749,7 @@ public class CommandService : IDisposable, IApiService
     {
         if (argument.Length == 0)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour delete ").AddYellow("[Design Name, Path or Identifier]").BuiltString);
+            _chat.Print(SeStringBuilderExtensions.AddYellow(new SeStringBuilder().AddText("Use with /glamour delete "), "[Design Name, Path or Identifier]").BuiltString);
             _chat.Print(new SeStringBuilder()
                 .AddText(
                     "    》 The design name is case-insensitive. If multiple designs of that name up to case exist, the first one is chosen.")
@@ -790,7 +776,7 @@ public class CommandService : IDisposable, IApiService
     {
         if (argument.Length == 0)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour copy ").AddGreen("[Character Identifier]").BuiltString);
+            _chat.Print(SeStringBuilderExtensions.AddGreen(new SeStringBuilder().AddText("Use with /glamour copy "), "[Character Identifier]").BuiltString);
             PlayerIdentifierHelp(false, true);
         }
 
@@ -829,8 +815,7 @@ public class CommandService : IDisposable, IApiService
         var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (split.Length != 2)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour save ").AddYellow("[New Design Name]").AddText(" | ")
-                .AddGreen("[Character Identifier]").BuiltString);
+            _chat.Print(SeStringBuilderExtensions.AddGreen(new SeStringBuilder().AddText("Use with /glamour save ").AddYellow("[New Design Name]").AddText(" | "), "[Character Identifier]").BuiltString);
             PlayerIdentifierHelp(false, true);
         }
 
@@ -850,7 +835,7 @@ public class CommandService : IDisposable, IApiService
             return true;
         }
 
-        _chat.Print(new SeStringBuilder().AddText("Could not save state to design ").AddYellow(split[0], true)
+        _chat.Print(SeStringBuilderExtensions.AddYellow(new SeStringBuilder().AddText("Could not save state to design "), split[0], true)
             .AddText(": No identified object is available or has stored state.").BuiltString);
         return false;
     }
@@ -864,7 +849,7 @@ public class CommandService : IDisposable, IApiService
                 var identifier = _actors.FromObject(obj.AsObject, out _, true, true, true);
                 if (!identifier.IsValid)
                 {
-                    _chat.Print(new SeStringBuilder().AddText("The placeholder ").AddGreen(argument)
+                    _chat.Print(SeStringBuilderExtensions.AddGreen(new SeStringBuilder().AddText("The placeholder "), argument)
                         .AddText(" did not resolve to a game object with a valid identifier.").BuiltString);
                     identifiers = [];
                     return false;
@@ -884,7 +869,7 @@ public class CommandService : IDisposable, IApiService
                  && identifiers[0].Type is IdentifierType.Player or IdentifierType.Owned
                  && identifiers[0].HomeWorld == ushort.MaxValue)
                 {
-                    _chat.Print(new SeStringBuilder().AddText("The argument ").AddRed(argument, true)
+                    _chat.Print(SeStringBuilderExtensions.AddRed(new SeStringBuilder().AddText("The argument "), argument, true)
                         .AddText(" did not specify a world.").BuiltString);
                     return false;
                 }
@@ -894,7 +879,7 @@ public class CommandService : IDisposable, IApiService
         }
         catch (ActorIdentifierFactory.IdentifierParseError e)
         {
-            _chat.Print(new SeStringBuilder().AddText("The argument ").AddRed(argument, true)
+            _chat.Print(SeStringBuilderExtensions.AddRed(new SeStringBuilder().AddText("The argument "), argument, true)
                 .AddText($" could not be converted to an identifier. {e.Message}")
                 .BuiltString);
             identifiers = [];
@@ -904,27 +889,27 @@ public class CommandService : IDisposable, IApiService
 
     private void PlayerIdentifierHelp(bool allowAnyWorld, bool allowIndex)
     {
-        var npcGuide = new SeStringBuilder().AddText("    》》》").AddGreen("n").AddText(" | ").AddPurple("[NPC Type]").AddText(" : ")
-            .AddRed("[NPC Name]").AddBlue(allowIndex ? "@<Object Index>" : string.Empty).AddText(", where NPC Type can be ")
-            .AddInitialPurple("Mount")
-            .AddInitialPurple("Companion")
-            .AddInitialPurple("Accessory").AddInitialPurple("Event NPC").AddText("or ").AddInitialPurple("Battle NPC", false);
+        var npcGuide = SeStringBuilderExtensions.AddInitialPurple(new SeStringBuilder().AddText("    》》》").AddGreen("n").AddText(" | ").AddPurple("[NPC Type]").AddText(" : ")
+   .AddRed("[NPC Name]").AddBlue(allowIndex ? "@<Object Index>" : string.Empty).AddText(", where NPC Type can be ")
+   .AddInitialPurple("Mount")
+   .AddInitialPurple("Companion")
+   .AddInitialPurple("Accessory").AddInitialPurple("Event NPC").AddText("or "), "Battle NPC", false);
         if (allowIndex)
-            npcGuide = npcGuide.AddText(", and the ").AddBlue("index").AddText(" is an optional non-negative number in the object table.");
+            npcGuide = SeStringBuilderExtensions.AddBlue(npcGuide.AddText(", and the "), "index").AddText(" is an optional non-negative number in the object table.");
         else
             npcGuide = npcGuide.AddText(".");
 
         _chat.Print(new SeStringBuilder().AddText("    》 Valid Character Identifiers have the form:").BuiltString);
-        _chat.Print(new SeStringBuilder().AddText("    》》》").AddGreen("<me>").AddText(" or ").AddGreen("<t>").AddText(" or ").AddGreen("<mo>")
-            .AddText(" or ").AddGreen("<f>")
+        _chat.Print(SeStringBuilderExtensions.AddGreen(new SeStringBuilder().AddText("    》》》").AddGreen("<me>").AddText(" or ").AddGreen("<t>").AddText(" or ").AddGreen("<mo>")
+   .AddText(" or "), "<f>")
             .AddText(" as placeholders for your character, your target, your mouseover or your focus, if they exist.").BuiltString);
-        _chat.Print(new SeStringBuilder().AddText("    》》》").AddGreen("p").AddText(" | ").AddWhite("[Player Name]@[World Name]")
+        _chat.Print(SeStringBuilderExtensions.AddWhite(new SeStringBuilder().AddText("    》》》").AddGreen("p").AddText(" | "), "[Player Name]@[World Name]")
             .AddText(allowAnyWorld ? ", if no @ is provided, Any World is used." : ".")
             .BuiltString);
-        _chat.Print(new SeStringBuilder().AddText("    》》》").AddGreen("r").AddText(" | ").AddWhite("[Retainer Name]").AddText(".").BuiltString);
+        _chat.Print(SeStringBuilderExtensions.AddWhite(new SeStringBuilder().AddText("    》》》").AddGreen("r").AddText(" | "), "[Retainer Name]").AddText(".").BuiltString);
         _chat.Print(npcGuide.BuiltString);
-        _chat.Print(new SeStringBuilder().AddText("    》》》 ").AddGreen("o").AddText(" | ").AddPurple("[NPC Type]")
-            .AddText(" : ")
-            .AddRed("[NPC Name]").AddText(" | ").AddWhite("[Player Name]@<World Name>").AddText(".").BuiltString);
+        _chat.Print(SeStringBuilderExtensions.AddWhite(new SeStringBuilder().AddText("    》》》 ").AddGreen("o").AddText(" | ").AddPurple("[NPC Type]")
+   .AddText(" : ")
+   .AddRed("[NPC Name]").AddText(" | "), "[Player Name]@<World Name>").AddText(".").BuiltString);
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Glamourer.Designs.Links;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;

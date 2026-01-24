@@ -14,11 +14,11 @@ using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class NpcAppearancePanel(NpcCombo npcCombo, StateManager stateManager, ActorObjectManager objectManager, DesignConverter designConverter)
+public sealed class NpcAppearancePanel(NpcCombo npcCombo, StateManager stateManager, ActorObjectManager objectManager, DesignConverter designConverter)
     : IGameDataDrawer
 {
-    public string Label
-        => "NPC Appearance";
+    public ReadOnlySpan<byte> Label
+        => "NPC Appearance"u8;
 
     public bool Disabled
         => false;

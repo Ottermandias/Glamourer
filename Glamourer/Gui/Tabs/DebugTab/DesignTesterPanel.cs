@@ -11,10 +11,10 @@ using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DesignTesterPanel(ItemManager _items, HumanModelList _humans) : IGameDataDrawer
+public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) : IGameDataDrawer
 {
-    public string Label
-        => "Base64 Design Tester";
+    public ReadOnlySpan<byte> Label
+        => "Base64 Design Tester"u8;
 
     public bool Disabled
         => false;
@@ -56,7 +56,7 @@ public class DesignTesterPanel(ItemManager _items, HumanModelList _humans) : IGa
 
         try
         {
-            _parse64 = DesignBase64Migration.MigrateBase64(_items, _humans, _base64, out var ef, out var cf, out var wp, out var meta);
+            _parse64 = DesignBase64Migration.MigrateBase64(items, humans, _base64, out var ef, out var cf, out var wp, out var meta);
             _restore      = DesignBase64Migration.CreateOldBase64(in _parse64, ef, cf, meta, wp);
             _restoreBytes = Convert.FromBase64String(_restore);
         }
