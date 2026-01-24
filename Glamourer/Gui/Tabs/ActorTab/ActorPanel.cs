@@ -12,15 +12,16 @@ using Glamourer.Gui.Materials;
 using Glamourer.Interop;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
-using OtterGui.Text.HelperObjects;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
+using TextStringHandlerBuffer = OtterGui.Text.HelperObjects.TextStringHandlerBuffer;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
@@ -165,7 +166,7 @@ public class ActorPanel
                 -Vector2.UnitX, Colors.SelectedRed);
 
         DrawApplyToSelf();
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawApplyToTarget();
 
         RevertButtons();
@@ -276,7 +277,7 @@ public class ActorPanel
         ImUtf8.DrawTableColumn("Game Object ID"u8);
         DrawCopyColumn($"{string.Join(", ", _data.Objects.Select(d => d.AsObject->GetGameObjectId().ObjectId))}");
 
-        static void DrawCopyColumn(ref Utf8StringHandler<TextStringHandlerBuffer> text)
+        static void DrawCopyColumn(ref OtterGui.Text.HelperObjects.Utf8StringHandler<TextStringHandlerBuffer> text)
         {
             ImUtf8.DrawTableColumn(ref text);
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
@@ -292,21 +293,21 @@ public class ActorPanel
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.Head, _stateManager, _state!));
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         using (_ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(MetaIndex.VisorState, _stateManager, _state!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.Body, _stateManager, _state!));
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         using (_ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(MetaIndex.WeaponState, _stateManager, _state!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromState(CrestFlag.OffHand, _stateManager, _state!));
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         using (_ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(MetaIndex.EarState, _stateManager, _state!));
@@ -340,7 +341,7 @@ public class ActorPanel
                     ImGui.TextUnformatted($"{b.Value,3}");
                 }
 
-                ImGui.SameLine();
+                Im.Line.Same();
                 if (ImGui.GetContentRegionAvail().X < ImGui.GetStyle().ItemSpacing.X + ImGui.CalcTextSize("XXX").X)
                     ImGui.NewLine();
             }
@@ -361,7 +362,7 @@ public class ActorPanel
                     ImGui.TextUnformatted($"{b,3}");
                 }
 
-                ImGui.SameLine();
+                Im.Line.Same();
                 if (ImGui.GetContentRegionAvail().X < ImGui.GetStyle().ItemSpacing.X + ImGui.CalcTextSize("XXX").X)
                     ImGui.NewLine();
             }
@@ -394,7 +395,7 @@ public class ActorPanel
                 _state!.IsLocked))
             _stateManager.ResetState(_state!, StateSource.Manual, isFinal: true);
 
-        ImGui.SameLine();
+        Im.Line.Same();
 
         if (ImGuiUtil.DrawDisabledButton("Reapply Automation", Vector2.Zero,
                 "Reapply the current automation state for the character on top of its current state..",
@@ -404,7 +405,7 @@ public class ActorPanel
             _stateManager.ReapplyAutomationState(_actor, forcedRedraw, false, StateSource.Manual);
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGuiUtil.DrawDisabledButton("Revert to Automation", Vector2.Zero,
                 "Try to revert the character to the state it would have using automated designs.",
                 !_config.EnableAutoDesigns || _state!.IsLocked))
@@ -413,7 +414,7 @@ public class ActorPanel
             _stateManager.ReapplyAutomationState(_actor, forcedRedraw, true, StateSource.Manual);
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGuiUtil.DrawDisabledButton("Reapply", Vector2.Zero,
                 "Try to reapply the configured state if something went wrong. Should generally not be necessary.",
                 _state!.IsLocked))

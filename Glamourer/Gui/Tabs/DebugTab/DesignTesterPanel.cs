@@ -2,6 +2,7 @@
 using Glamourer.Designs;
 using Glamourer.Services;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Raii;
@@ -87,7 +88,7 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
             {
                 using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF4040D0, c1 != c2);
                 ImGui.TextUnformatted(c1.ToString());
-                ImGui.SameLine();
+                Im.Line.Same();
             }
         }
 
@@ -103,7 +104,7 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
                 ImGui.TextUnformatted(b2.ToString("X2"));
             }
 
-            ImGui.SameLine();
+            Im.Line.Same();
         }
 
         ImGui.NewLine();
@@ -123,7 +124,7 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
                 ImGui.TextUnformatted(b.ToString("X2"));
             }
 
-            ImGui.SameLine();
+            Im.Line.Same();
         }
 
         ImGui.NewLine();

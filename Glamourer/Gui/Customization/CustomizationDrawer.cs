@@ -4,9 +4,8 @@ using Dalamud.Plugin.Services;
 using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.Unlocks;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -14,10 +13,10 @@ namespace Glamourer.Gui.Customization;
 
 public partial class CustomizationDrawer(
     ITextureProvider textures,
-    CustomizeService _service,
-    Configuration _config,
-    FavoriteManager _favorites,
-    HeightService _heightService)
+    CustomizeService service,
+    Configuration config,
+    FavoriteManager favorites,
+    HeightService heightService)
     : IDisposable
 {
     private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
@@ -61,7 +60,7 @@ public partial class CustomizationDrawer(
     {
         ChangeApply   = apply;
         _initialApply = apply;
-        _withApply    = !_config.HideApplyCheckmarks;
+        _withApply    = !config.HideApplyCheckmarks;
         Init(current, locked, lockedRedraw);
         return DrawInternal();
     }
@@ -85,7 +84,7 @@ public partial class CustomizationDrawer(
     private string         _currentOption = string.Empty;
 
     // Prepare a new customization option.
-    private ImRaii.Id SetId(CustomizeIndex index)
+    private Im.IdDisposable SetId(CustomizeIndex index)
     {
         _currentIndex  = index;
         _currentFlag   = index.ToFlag();
@@ -93,7 +92,7 @@ public partial class CustomizationDrawer(
         _currentByte   = _customize[index];
         _currentCount  = _set.Count(index, _customize.Face);
         _currentOption = _set.Option(index);
-        return ImRaii.PushId((int)index);
+        return Im.Id.Push((int)index);
     }
 
     // Update the current id with a new value.
@@ -112,19 +111,24 @@ public partial class CustomizationDrawer(
 
     private bool DrawInternal()
     {
-        using var spacing = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _spacing);
+        using var spacing = ImStyleDouble.ItemSpacing.Push(_spacing);
 
         try
         {
             DrawRaceGenderSelector();
             DrawBodyType();
 
-            _set = _service.Manager.GetSet(_customize.Clan, _customize.Gender);
+            _set = service.Manager.GetSet(_customize.Clan, _customize.Gender);
 
             foreach (var id in _set.Order[MenuType.Percentage])
                 PercentageSelector(id);
 
-            Functions.IteratePairwise(_set.Order[MenuType.IconSelector], DrawIconSelector, ImGui.SameLine);
+            foreach (var (i, icon) in _set.Order[MenuType.IconSelector].Index())
+            {
+                if ((i & 1) is 1)
+                    Im.Line.Same();
+                DrawIconSelector(icon);
+            }
 
             DrawMultiIconSelector();
 
@@ -134,29 +138,40 @@ public partial class CustomizationDrawer(
             foreach (var id in _set.Order[MenuType.List1Selector])
                 DrawListSelector(id, true);
 
-            Functions.IteratePairwise(_set.Order[MenuType.ColorPicker], DrawColorPicker, ImGui.SameLine);
+            foreach (var (i, color) in _set.Order[MenuType.ColorPicker].Index())
+            {
+                if ((i & 1) is 1)
+                    Im.Line.Same();
+                DrawColorPicker(color);
+            }
 
-            Functions.IteratePairwise(_set.Order[MenuType.Checkmark], DrawCheckbox,
-                () => ImGui.SameLine(_comboSelectorSize - _framedIconSize.X + ImGui.GetStyle().WindowPadding.X));
-            return Changed != 0 || ChangeApply != _initialApply;
+            var offset = _comboSelectorSize - _framedIconSize.X + Im.Style.WindowPadding.X;
+            foreach (var (i, check) in _set.Order[MenuType.Checkmark].Index())
+            {
+                if ((i & 1) is 1)
+                    Im.Line.Same(offset);
+                DrawCheckbox(check);
+            }
+
+            return Changed is not 0 || ChangeApply != _initialApply;
         }
         catch (Exception ex)
         {
             _terminate = ex;
-            using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF4040FF);
-            ImGui.NewLine();
-            ImGuiUtil.TextWrapped(_terminate.ToString());
+            using var color = ImGuiColor.Text.Push(LunaStyle.ErrorBorderColor);
+            Im.Line.New();
+            Im.TextWrapped($"{_terminate}");
             return false;
         }
     }
 
     private void UpdateSizes()
     {
-        _spacing               = ImGui.GetStyle().ItemSpacing with { X = ImGui.GetStyle().ItemInnerSpacing.X };
-        _iconSize              = new Vector2(ImGui.GetTextLineHeight() * 2 + _spacing.Y + 2 * ImGui.GetStyle().FramePadding.Y);
-        _framedIconSize        = _iconSize + 2 * ImGui.GetStyle().FramePadding;
+        _spacing               = Im.Style.ItemSpacing with { X = Im.Style.ItemInnerSpacing.X };
+        _iconSize              = new Vector2(Im.Style.TextHeight * 2 + _spacing.Y + 2 * Im.Style.FramePadding.Y);
+        _framedIconSize        = _iconSize + 2 * Im.Style.FramePadding;
         _inputIntSize          = 2 * _framedIconSize.X + 1 * _spacing.X;
-        _inputIntSizeNoButtons = _inputIntSize - 2 * _spacing.X - 2 * ImGui.GetFrameHeight();
+        _inputIntSizeNoButtons = _inputIntSize - 2 * _spacing.X - 2 * Im.Style.FrameHeight;
         _comboSelectorSize     = 4 * _framedIconSize.X + 3 * _spacing.X;
         _raceSelectorWidth     = _inputIntSize + _comboSelectorSize - _framedIconSize.X;
     }

@@ -7,6 +7,7 @@ using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Log;
@@ -16,6 +17,7 @@ using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Action = System.Action;
+using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
@@ -81,7 +83,7 @@ public class SetPanel(
             }
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         using (ImUtf8.Group())
         {
             using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing))
@@ -381,12 +383,12 @@ public class SetPanel(
                     $"{type.ToDefaultName()} Customization {customizeUnlocks.Unlockable[data.Value].Name} is not unlocked but should be applied.");
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         tt = config.UnlockedItemMode
             ? "\nThese customizations will be skipped when applied automatically.\n\nTo change this, disable the Obtained Item Mode setting."
             : string.Empty;
         DrawWarning(sb2, config.UnlockedItemMode ? 0xA03030F0 : 0x0, size, tt, "All customizations to be applied are unlocked.");
-        ImGui.SameLine();
+        Im.Line.Same();
         return;
 
         static void DrawWarning(StringBuilder sb, uint color, Vector2 size, string suffix, string good)
@@ -466,17 +468,17 @@ public class SetPanel(
                 ImUtf8.HoverTooltip(description);
             }
 
-            ImGui.SameLine();
+            Im.Line.Same();
             Box(0);
-            ImGui.SameLine();
+            Im.Line.Same();
             Box(1);
             if (singleLine)
-                ImGui.SameLine();
+                Im.Line.Same();
 
             Box(2);
-            ImGui.SameLine();
+            Im.Line.Same();
             Box(3);
-            ImGui.SameLine();
+            Im.Line.Same();
             Box(4);
         }
 
@@ -487,19 +489,19 @@ public class SetPanel(
     {
         using var id = ImUtf8.PushId("Identifiers"u8);
         identifierDrawer.DrawWorld(130);
-        ImGui.SameLine();
+        Im.Line.Same();
         identifierDrawer.DrawName(200 - ImGui.GetStyle().ItemSpacing.X);
         identifierDrawer.DrawNpcs(330);
         var buttonWidth = new Vector2(165 * ImGuiHelpers.GlobalScale - ImGui.GetStyle().ItemSpacing.X / 2, 0);
         if (ImUtf8.ButtonEx("Set to Character"u8, string.Empty, buttonWidth, !identifierDrawer.CanSetPlayer))
             manager.ChangeIdentifier(setIndex, identifierDrawer.PlayerIdentifier);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Set to NPC"u8, string.Empty, buttonWidth, !identifierDrawer.CanSetNpc))
             manager.ChangeIdentifier(setIndex, identifierDrawer.NpcIdentifier);
 
         if (ImUtf8.ButtonEx("Set to Retainer"u8, string.Empty, buttonWidth, !identifierDrawer.CanSetRetainer))
             manager.ChangeIdentifier(setIndex, identifierDrawer.RetainerIdentifier);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Set to Mannequin"u8, string.Empty, buttonWidth, !identifierDrawer.CanSetRetainer))
             manager.ChangeIdentifier(setIndex, identifierDrawer.MannequinIdentifier);
 

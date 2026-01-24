@@ -3,6 +3,7 @@ using Dalamud.Interface.Utility;
 using Glamourer.Automation;
 using Glamourer.Events;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Extensions;
@@ -141,7 +142,7 @@ public class SetSelector : IDisposable
         ImGui.SetNextItemWidth(_width - ImGui.GetFrameHeight());
         if (LowerString.InputWithHint("##filter", "Filter...", ref _filter, 64))
             _dirty = true;
-        ImGui.SameLine();
+        Im.Line.Same();
         var f = _enabledFilter;
 
         if (ImGui.CheckboxFlags("##enabledFilter", ref f, 3u))
@@ -214,11 +215,11 @@ public class SetSelector : IDisposable
             .Push(ImGuiStyleVar.FrameRounding, 0);
         var buttonWidth = new Vector2(_width / 4, 0);
         NewSetButton(buttonWidth);
-        ImGui.SameLine();
+        Im.Line.Same();
         DuplicateSetButton(buttonWidth);
-        ImGui.SameLine();
+        Im.Line.Same();
         HelpButton(buttonWidth);
-        ImGui.SameLine();
+        Im.Line.Same();
         DeleteSetButton(buttonWidth);
     }
 

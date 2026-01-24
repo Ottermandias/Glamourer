@@ -4,6 +4,7 @@ using Glamourer.GameData;
 using Glamourer.Interop.PalettePlus;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Raii;
@@ -131,7 +132,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         DrawColorDisplayOptions();
         DrawColorFormatOptions(withApply);
         var value = config.ShowColorConfig;
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.Checkbox("Show Config", ref value))
         {
             config.ShowColorConfig = value;
@@ -151,7 +152,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
             config.Save();
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.RadioButton("HSV", !config.UseRgbForColors) && config.UseRgbForColors)
         {
             config.UseRgbForColors = false;
@@ -177,7 +178,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
             config.Save();
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.RadioButton("Integer", !config.UseFloatForColors) && config.UseFloatForColors)
         {
             config.UseFloatForColors = false;

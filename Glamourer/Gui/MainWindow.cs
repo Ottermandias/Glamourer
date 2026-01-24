@@ -12,6 +12,7 @@ using Glamourer.Gui.Tabs.SettingsTab;
 using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Interop.Penumbra;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Raii;
@@ -260,7 +261,7 @@ public class MainWindow : Window, IDisposable
             _penumbra.Reattach();
 
         var ignoreAllowed = _config.DeleteDesignModifier.IsActive();
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Ignore Penumbra This Time"u8,
                 $"Some functionality, like automation or retaining state, will not work correctly without Penumbra.\n\nIgnore this at your own risk!{(ignoreAllowed ? string.Empty : $"\n\nHold {_config.DeleteDesignModifier} while clicking to enable this button.")}",
                 default, !ignoreAllowed))
@@ -269,7 +270,7 @@ public class MainWindow : Window, IDisposable
         ImGui.NewLine();
         ImGui.NewLine();
         SupportButton.Discord(Glamourer.Messager, 0);
-        ImGui.SameLine();
+        Im.Line.Same();
         ImGui.NewLine();
         ImGui.NewLine();
     }

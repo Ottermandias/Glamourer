@@ -2,6 +2,7 @@
 using Glamourer.Designs;
 using Glamourer.Interop;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
@@ -21,7 +22,7 @@ public class DesignTab(DesignFileSystemSelector selector, DesignPanel panel, Imp
             Glamourer.Messager.NotificationMessage($"Imported Anamnesis .chara file {name} as new design {newDesign.Name}", NotificationType.Success, false);
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         panel.Draw();
         importService.CreateCharaSource();
     }

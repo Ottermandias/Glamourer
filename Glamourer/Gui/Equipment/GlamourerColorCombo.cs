@@ -3,9 +3,11 @@ using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Widgets;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Structs;
+using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Equipment;
 
@@ -26,7 +28,7 @@ public sealed class GlamourerColorCombo(float _comboWidth, DictStain _stains, Fa
                 UiHelpers.DrawFavoriteStar(_favorites, Items[globalIdx].Key);
             }
 
-            ImGui.SameLine();
+            Im.Line.Same();
         }
 
         var       buttonWidth = ImGui.GetContentRegionAvail().X;

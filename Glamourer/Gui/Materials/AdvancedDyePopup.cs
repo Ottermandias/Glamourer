@@ -4,11 +4,11 @@ using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
-using FFXIVClientStructs.Interop;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui.Raii;
 using OtterGui.Text;
@@ -60,7 +60,7 @@ public sealed unsafe class AdvancedDyePopup(
         if (config.HideDesignPanel.HasFlag(DesignPanelFlag.AdvancedDyes))
             return;
 
-        ImGui.SameLine();
+        Im.Line.Same();
         using var id     = ImUtf8.PushId(index.SlotIndex | ((int)index.DrawObject << 8));
         var       isOpen = index == _drawIndex;
 
@@ -98,7 +98,7 @@ public sealed unsafe class AdvancedDyePopup(
         return (path, gamePath);
     }
 
-    private void DrawTabBar(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials, ref bool firstAvailable)
+    private void DrawTabBar(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures, ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials, ref bool firstAvailable)
     {
         using var bar = ImUtf8.TabBar("tabs"u8);
         if (!bar)
@@ -180,7 +180,7 @@ public sealed unsafe class AdvancedDyePopup(
         }
     }
 
-    private void DrawContent(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials)
+    private void DrawContent(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures, ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials)
     {
         var firstAvailable = true;
         DrawTabBar(textures, materials, ref firstAvailable);
@@ -189,7 +189,7 @@ public sealed unsafe class AdvancedDyePopup(
             ImUtf8.Text("No Editable Materials available."u8);
     }
 
-    private void DrawWindow(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials)
+    private void DrawWindow(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures, ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials)
     {
         var flags = ImGuiWindowFlags.NoFocusOnAppearing
           | ImGuiWindowFlags.NoCollapse
@@ -326,7 +326,7 @@ public sealed unsafe class AdvancedDyePopup(
         ImUtf8.IconButton(FontAwesomeIcon.Crosshairs, "Highlight all affected colors on the character."u8, buttonSize);
         if (ImGui.IsItemHovered())
             preview.OnHover(materialIndex with { RowIndex = byte.MaxValue }, _actor.Index, table);
-        ImGui.SameLine();
+        Im.Line.Same();
         ImGui.AlignTextToFramePadding();
         using (ImRaii.PushFont(UiBuilder.MonoFont))
         {
@@ -391,7 +391,7 @@ public sealed unsafe class AdvancedDyePopup(
         if (ImGui.IsItemHovered())
             preview.OnHover(index, _actor.Index, table);
 
-        ImGui.SameLine();
+        Im.Line.Same();
         ImGui.AlignTextToFramePadding();
         using (ImRaii.PushFont(UiBuilder.MonoFont))
         {

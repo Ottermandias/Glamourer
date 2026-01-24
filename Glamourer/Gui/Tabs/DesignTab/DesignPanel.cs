@@ -13,6 +13,7 @@ using Glamourer.Gui.Materials;
 using Glamourer.Interop;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Raii;
@@ -141,21 +142,21 @@ public class DesignPanel
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.Head, _manager, _selector.Selected!));
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         using (var _ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.VisorState, _manager, _selector.Selected!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.Body, _manager, _selector.Selected!));
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         using (var _ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.WeaponState, _manager, _selector.Selected!));
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.CrestFromDesign(CrestFlag.OffHand, _manager, _selector.Selected!));
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         using (var _ = ImRaii.Group())
         {
             EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.EarState, _manager, _selector.Selected!));
@@ -338,7 +339,7 @@ public class DesignPanel
         if (!enabled)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Enable Everything"u8,
                 "Enable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness."u8, size,
                 !enabled))
@@ -361,7 +362,7 @@ public class DesignPanel
         if (!enabled)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Customization Only"u8,
                 "Enable application of anything related to customization, disable anything that is not related to customization."u8, size,
                 !enabled))
@@ -385,7 +386,7 @@ public class DesignPanel
         if (!enabled)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {_config.DeleteDesignModifier} while clicking.");
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Disable Advanced"u8, "Disable all advanced dyes and customizations but keep everything else as is."u8,
                 size,
                 !enabled))
@@ -530,11 +531,11 @@ public class DesignPanel
     private void DrawButtonRow()
     {
         DrawApplyToSelf();
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawApplyToTarget();
-        ImGui.SameLine();
+        Im.Line.Same();
         _modAssociations.DrawApplyButton();
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawSaveToDat();
     }
 

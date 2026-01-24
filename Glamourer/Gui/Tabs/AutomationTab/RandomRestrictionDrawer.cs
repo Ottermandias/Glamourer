@@ -5,6 +5,7 @@ using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Raii;
@@ -260,7 +261,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 _autoDesignManager.ChangeData(_set!, _designIndex, list);
             }
 
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawLookup(predicate, buttonSize);
         }
     }

@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Raii;
 
@@ -88,7 +89,7 @@ public static class HeaderDrawer
         foreach (var button in leftButtons.Where(b => b.Visible))
         {
             button.Draw(width);
-            ImGui.SameLine();
+            Im.Line.Same();
             leftButtonSize += width;
         }
 
@@ -106,7 +107,7 @@ public static class HeaderDrawer
 
         foreach (var button in rightButtons.Where(b => b.Visible))
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             button.Draw(width);
         }
     }

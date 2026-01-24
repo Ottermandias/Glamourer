@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.Utility;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
@@ -12,7 +13,7 @@ public class ActorTab(ActorSelector selector, ActorPanel panel) : ITab
     public void DrawContent()
     {
         selector.Draw(200 * ImGuiHelpers.GlobalScale);
-        ImGui.SameLine();
+        Im.Line.Same();
         panel.Draw();
     }
 }

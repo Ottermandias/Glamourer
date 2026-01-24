@@ -1,6 +1,7 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.State;
+using ImSharp;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui;
@@ -17,8 +18,8 @@ public struct ToggleDrawData
     public bool CurrentValue;
     public bool CurrentApply;
 
-    public string Label   = string.Empty;
-    public string Tooltip = string.Empty;
+    public StringU8 Label   = StringU8.Empty;
+    public StringU8 Tooltip = StringU8.Empty;
 
 
     public ToggleDrawData()
@@ -58,8 +59,8 @@ public struct ToggleDrawData
             _index             = index,
             _editor            = manager,
             _data              = design,
-            Label              = index.ToName(),
-            Tooltip            = string.Empty,
+            Label              = index.ToNameU8(),
+            Tooltip            = StringU8.Empty,
             Locked             = design.WriteProtected(),
             DisplayApplication = true,
             CurrentValue       = design.DesignData.GetMeta(index),
@@ -72,8 +73,8 @@ public struct ToggleDrawData
             _index       = index,
             _editor      = manager,
             _data        = state,
-            Label        = index.ToName(),
-            Tooltip      = index.ToTooltip(),
+            Label        = index.ToNameU8(),
+            Tooltip      = index.Tooltip(),
             Locked       = state.IsLocked,
             CurrentValue = state.ModelData.GetMeta(index),
         };
@@ -84,13 +85,15 @@ public struct ToggleDrawData
             _index             = slot,
             _editor            = manager,
             _data              = design,
-            Label              = $"{slot.ToLabel()} Crest",
-            Tooltip            = string.Empty,
+            Label              = slot.Tooltip(),
+            Tooltip            = StringU8.Empty,
             Locked             = design.WriteProtected(),
             DisplayApplication = true,
             CurrentValue       = design.DesignData.Crest(slot),
             CurrentApply       = design.DoApplyCrest(slot),
         };
+
+    private static readonly StringU8 CrestTooltip = new("Hide or show your free company crest on this piece of gear."u8);
 
     public static ToggleDrawData CrestFromState(CrestFlag slot, StateManager manager, ActorState state)
         => new()
@@ -98,8 +101,8 @@ public struct ToggleDrawData
             _index       = slot,
             _editor      = manager,
             _data        = state,
-            Label        = $"{slot.ToLabel()} Crest",
-            Tooltip      = "Hide or show your free company crest on this piece of gear.",
+            Label        = slot.Tooltip(),
+            Tooltip      = CrestTooltip,
             Locked       = state.IsLocked,
             CurrentValue = state.ModelData.Crest(slot),
         };
@@ -108,8 +111,8 @@ public struct ToggleDrawData
         => new()
         {
             _index       = index,
-            Label        = index.ToName(),
-            Tooltip      = index.ToTooltip(),
+            Label        = index.ToNameU8(),
+            Tooltip      = index.Tooltip(),
             Locked       = true,
             CurrentValue = value,
         };

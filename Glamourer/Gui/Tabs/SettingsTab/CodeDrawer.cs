@@ -2,6 +2,7 @@
 using Glamourer.Services;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui.Filesystem;
 using OtterGui.Raii;
@@ -49,7 +50,7 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
             _currentCode = string.Empty;
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         ImUtf8.Icon(FontAwesomeIcon.ExclamationCircle, ImGui.GetColorU32(ImGuiCol.TextDisabled));
         DrawTooltip();
     }
@@ -62,7 +63,7 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
         ImUtf8.HoverTooltip(
             "Copy your characters actual current appearance including cheat codes or holiday events to the clipboard as a design."u8);
 
-        ImGui.SameLine();
+        Im.Line.Same();
 
         if (ImUtf8.Button("Who is that!?!"u8, buttonSize))
             funModule.WhoIsThat();
@@ -102,7 +103,7 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
             }
 
             var hovered = ImGui.IsItemHovered();
-            ImGui.SameLine();
+            Im.Line.Same();
             ImUtf8.Selectable(code, false);
             hovered |= ImGui.IsItemHovered();
             DrawSource(i, code);

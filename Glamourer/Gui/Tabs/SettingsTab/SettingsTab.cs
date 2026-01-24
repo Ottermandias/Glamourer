@@ -126,7 +126,7 @@ public class SettingsTab(
             "Add the actor's glamourer state when a PCP is created by Penumbra, and create a design and apply it if possible when a PCP is installed by Penumbra."u8,
             config.AttachToPcp, pcpService.Set);
         var active = config.DeleteDesignModifier.IsActive();
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Delete all PCP Designs"u8, "Deletes all designs tagged with 'PCP' from the design list."u8, disabled: !active))
             pcpService.CleanPcpDesigns();
         if (!active)
@@ -371,7 +371,7 @@ public class SettingsTab(
         if (!config.ShowPalettePlusImport)
             return;
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.Button("Import Palette+ to Designs"u8))
             paletteImport.ImportDesigns();
         ImUtf8.HoverTooltip(
@@ -416,7 +416,7 @@ public class SettingsTab(
             config.Save();
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         ImUtf8.LabeledHelpMarker(label, tooltip);
     }
 
@@ -431,7 +431,7 @@ public class SettingsTab(
             config.Ephemeral.Save();
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         ImUtf8.LabeledHelpMarker(label, tooltip);
     }
 
@@ -479,11 +479,11 @@ public class SettingsTab(
                 }
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         const string tt =
             "Select which of the two renaming input fields are visible when opening the right-click context menu of a design in the design selector.";
         ImGuiComponents.HelpMarker(tt);
-        ImGui.SameLine();
+        Im.Line.Same();
         ImUtf8.Text("Rename Fields in Design Context Menu"u8);
         ImUtf8.HoverTooltip(tt);
     }
@@ -504,10 +504,10 @@ public class SettingsTab(
                 }
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         const string tt = "Select how to display the height of characters in real-world units, if at all.";
         ImGuiComponents.HelpMarker(tt);
-        ImGui.SameLine();
+        Im.Line.Same();
         ImUtf8.Text("Character Height Display Type"u8);
         ImUtf8.HoverTooltip(tt);
     }

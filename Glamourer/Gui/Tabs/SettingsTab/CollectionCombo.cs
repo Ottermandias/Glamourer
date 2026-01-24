@@ -1,11 +1,13 @@
 ﻿using Dalamud.Interface;
 using Glamourer.Interop.Penumbra;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Widgets;
 using Logger = OtterGui.Log.Logger;
+using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
@@ -24,7 +26,7 @@ public sealed class CollectionCombo(Configuration config, PenumbraService penumb
             }
 
         var ret = ImGui.Selectable(name, selected);
-        ImGui.SameLine();
+        Im.Line.Same();
         using (ImRaii.PushFont(UiBuilder.MonoFont))
         {
             using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));

@@ -4,6 +4,7 @@ using Dalamud.Interface.Utility.Raii;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Text;
@@ -58,7 +59,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         ;
         if (disabled && any)
             ImUtf8.HoverTooltip($"Hold {config.DeleteDesignModifier} while clicking to enable.");
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Disable All Advanced Dyes"u8,
                 any
                     ? "Disable the application of all contained advanced dyes without deleting them."u8

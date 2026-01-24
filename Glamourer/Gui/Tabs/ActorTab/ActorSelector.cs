@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Raii;
@@ -124,7 +125,7 @@ public class ActorSelector(ActorObjectManager objects, ActorManager actors, Ephe
         if (ImUtf8.IconButton(FontAwesomeIcon.UserCircle, "Select the local player character."u8, buttonWidth, !objects.Player))
             _identifier = objects.Player.GetIdentifier(actors);
 
-        ImGui.SameLine();
+        Im.Line.Same();
         var (id, data) = objects.TargetData;
         var tt = data.Valid ? $"Select the current target {id} in the list." :
             id.IsValid      ? $"The target {id} is not in the list." : "No target selected.";

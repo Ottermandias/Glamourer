@@ -6,15 +6,16 @@ using Glamourer.Gui.Materials;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Text.EndObjects;
-using OtterGui.Widgets;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Equipment;
 
@@ -149,7 +150,7 @@ public class EquipmentDrawer
     {
         if (data.DisplayApplication)
         {
-            var (valueChanged, applyChanged) = UiHelpers.DrawMetaToggle(data.Label, data.CurrentValue, data.CurrentApply, out var newValue,
+            var (valueChanged, applyChanged) = UiHelpers.DrawMetaToggle(data.Label.ToString(), data.CurrentValue, data.CurrentApply, out var newValue,
                 out var newApply, data.Locked);
             if (valueChanged)
                 data.SetValue(newValue);
@@ -158,7 +159,7 @@ public class EquipmentDrawer
         }
         else
         {
-            if (UiHelpers.DrawCheckbox(data.Label, data.Tooltip, data.CurrentValue, out var newValue, data.Locked))
+            if (UiHelpers.DrawCheckbox(data.Label.ToString(), data.Tooltip.ToString(), data.CurrentValue, out var newValue, data.Locked))
                 data.SetValue(newValue);
         }
     }
@@ -194,13 +195,13 @@ public class EquipmentDrawer
     private void DrawEquipSmall(in EquipDrawData equipDrawData)
     {
         DrawStain(equipDrawData, true);
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawItem(equipDrawData, out var label, true, false, false);
         if (equipDrawData.DisplayApplication)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApply(equipDrawData);
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApplyStain(equipDrawData);
         }
         else if (equipDrawData.IsState)
@@ -217,11 +218,11 @@ public class EquipmentDrawer
     private void DrawBonusItemSmall(in BonusDrawData bonusDrawData)
     {
         ImGui.Dummy(new Vector2(StainId.NumStains * ImUtf8.FrameHeight + (StainId.NumStains - 1) * ImUtf8.ItemSpacing.X, ImUtf8.FrameHeight));
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawBonusItem(bonusDrawData, out var label, true, false, false);
         if (bonusDrawData.DisplayApplication)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApply(bonusDrawData);
         }
         else if (bonusDrawData.IsState)
@@ -235,13 +236,13 @@ public class EquipmentDrawer
     private void DrawWeaponsSmall(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
     {
         DrawStain(mainhand, true);
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawMainhand(ref mainhand, ref offhand, out var mainhandLabel, allWeapons, true, false);
         if (mainhand.DisplayApplication)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApply(mainhand);
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApplyStain(mainhand);
         }
         else if (mainhand.IsState)
@@ -257,13 +258,13 @@ public class EquipmentDrawer
             return;
 
         DrawStain(offhand, true);
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawOffhand(mainhand, offhand, out var offhandLabel, true, false, false);
         if (offhand.DisplayApplication)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApply(offhand);
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApplyStain(offhand);
         }
         else if (offhand.IsState)
@@ -283,12 +284,12 @@ public class EquipmentDrawer
         equipDrawData.CurrentItem.DrawIcon(_textures, _iconSize, equipDrawData.Slot);
         var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
         var left  = ImGui.IsItemClicked(ImGuiMouseButton.Left);
-        ImGui.SameLine();
+        Im.Line.Same();
         using var group = ImRaii.Group();
         DrawItem(equipDrawData, out var label, false, right, left);
         if (equipDrawData.DisplayApplication)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApply(equipDrawData);
         }
 
@@ -297,7 +298,7 @@ public class EquipmentDrawer
         DrawStain(equipDrawData, false);
         if (equipDrawData.DisplayApplication)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApplyStain(equipDrawData);
         }
         else if (equipDrawData.IsState)
@@ -307,7 +308,7 @@ public class EquipmentDrawer
 
         if (VerifyRestrictedGear(equipDrawData))
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             ImUtf8.Text("(Restricted)"u8);
         }
     }
@@ -317,11 +318,11 @@ public class EquipmentDrawer
         bonusDrawData.CurrentItem.DrawIcon(_textures, _iconSize, bonusDrawData.Slot);
         var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
         var left  = ImGui.IsItemClicked(ImGuiMouseButton.Left);
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawBonusItem(bonusDrawData, out var label, false, right, left);
         if (bonusDrawData.DisplayApplication)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApply(bonusDrawData);
         }
         else if (bonusDrawData.IsState)
@@ -339,13 +340,13 @@ public class EquipmentDrawer
 
         mainhand.CurrentItem.DrawIcon(_textures, _iconSize, EquipSlot.MainHand);
         var left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
-        ImGui.SameLine();
+        Im.Line.Same();
         using (ImUtf8.Group())
         {
             DrawMainhand(ref mainhand, ref offhand, out var mainhandLabel, allWeapons, false, left);
             if (mainhand.DisplayApplication)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 DrawApply(mainhand);
             }
 
@@ -355,7 +356,7 @@ public class EquipmentDrawer
             DrawStain(mainhand, false);
             if (mainhand.DisplayApplication)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 DrawApplyStain(mainhand);
             }
             else if (mainhand.IsState)
@@ -370,13 +371,13 @@ public class EquipmentDrawer
         offhand.CurrentItem.DrawIcon(_textures, _iconSize, EquipSlot.OffHand);
         var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
         left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
-        ImGui.SameLine();
+        Im.Line.Same();
         using (ImUtf8.Group())
         {
             DrawOffhand(mainhand, offhand, out var offhandLabel, false, right, left);
             if (offhand.DisplayApplication)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 DrawApply(offhand);
             }
 
@@ -385,7 +386,7 @@ public class EquipmentDrawer
             DrawStain(offhand, false);
             if (offhand.DisplayApplication)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 DrawApplyStain(offhand);
             }
             else if (offhand.IsState)
@@ -671,7 +672,7 @@ public class EquipmentDrawer
 
     private void WeaponHelpMarker(bool hasAdvancedDyes, string label, string? type = null)
     {
-        ImGui.SameLine();
+        Im.Line.Same();
         ImGuiComponents.HelpMarker(
             "Changing weapons to weapons of different types can cause crashes, freezes, soft- and hard locks and cheating, "
           + "thus it is only allowed to change weapons to other weapons of the same type.");
@@ -688,7 +689,7 @@ public class EquipmentDrawer
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private void DrawEquipLabel(bool hasAdvancedDyes, string label)
     {
-        ImGui.SameLine();
+        Im.Line.Same();
         using (ImRaii.PushColor(ImGuiCol.Text, _advancedMaterialColor, hasAdvancedDyes))
         {
             ImUtf8.Text(label);

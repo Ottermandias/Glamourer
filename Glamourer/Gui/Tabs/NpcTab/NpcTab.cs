@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.Utility;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
@@ -12,7 +13,7 @@ public class NpcTab(NpcSelector _selector, NpcPanel _panel) : ITab
     public void DrawContent()
     {
         _selector.Draw(200 * ImGuiHelpers.GlobalScale);
-        ImGui.SameLine();
+        Im.Line.Same();
         _panel.Draw();
     }
 }

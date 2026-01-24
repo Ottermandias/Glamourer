@@ -4,8 +4,8 @@ using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Gui;
 using Glamourer.Gui.Tabs.DesignTab;
-using Dalamud.Bindings.ImGui;
 using Luna;
+using ImSharp;
 
 namespace Glamourer.Services;
 
@@ -91,7 +91,7 @@ public class DesignResolver(
     {
         try
         {
-            var clipboardText = ImGui.GetClipboardText();
+            var clipboardText = Im.Clipboard.GetUtf16();
             if (clipboardText.Length > 0)
                 design = converter.FromBase64(clipboardText, true, true, out _);
         }

@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
@@ -12,7 +13,7 @@ public partial class CustomizationDrawer
     private void DrawRaceGenderSelector()
     {
         DrawGenderSelector();
-        ImGui.SameLine();
+        Im.Line.Same();
         using var group = ImRaii.Group();
         DrawRaceCombo();
         if (_withApply)
@@ -21,11 +22,11 @@ public partial class CustomizationDrawer
             if (UiHelpers.DrawCheckbox("##applyGender", "Apply gender of this design.", ChangeApply.HasFlag(CustomizeFlag.Gender),
                     out var applyGender, _locked))
                 ChangeApply = applyGender ? ChangeApply | CustomizeFlag.Gender : ChangeApply & ~CustomizeFlag.Gender;
-            ImGui.SameLine();
+            Im.Line.Same();
             if (UiHelpers.DrawCheckbox("##applyClan", "Apply clan of this design.", ChangeApply.HasFlag(CustomizeFlag.Clan), out var applyClan,
                     _locked))
                 ChangeApply = applyClan ? ChangeApply | CustomizeFlag.Clan : ChangeApply & ~CustomizeFlag.Clan;
-            ImGui.SameLine();
+            Im.Line.Same();
         }
 
         ImGui.AlignTextToFramePadding();
@@ -45,7 +46,7 @@ public partial class CustomizationDrawer
 
             if (ImGuiUtil.DrawDisabledButton(icon.ToIconString(), _framedIconSize, string.Empty,
                     icon is not FontAwesomeIcon.Mars and not FontAwesomeIcon.Venus, true))
-                Changed |= _service.ChangeGender(ref _customize, icon is FontAwesomeIcon.Mars ? Gender.Female : Gender.Male);
+                Changed |= service.ChangeGender(ref _customize, icon is FontAwesomeIcon.Mars ? Gender.Female : Gender.Male);
         }
 
         if (_lockedRedraw && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
@@ -58,13 +59,13 @@ public partial class CustomizationDrawer
         using (ImRaii.Disabled(_locked || _lockedRedraw))
         {
             ImGui.SetNextItemWidth(_raceSelectorWidth);
-            using (var combo = ImRaii.Combo("##subRaceCombo", _service.ClanName(_customize.Clan, _customize.Gender)))
+            using (var combo = ImRaii.Combo("##subRaceCombo", service.ClanName(_customize.Clan, _customize.Gender)))
             {
                 if (combo)
                     foreach (var subRace in Enum.GetValues<SubRace>().Skip(1)) // Skip Unknown
                     {
-                        if (ImGui.Selectable(_service.ClanName(subRace, _customize.Gender), subRace == _customize.Clan))
-                            Changed |= _service.ChangeClan(ref _customize, subRace);
+                        if (ImGui.Selectable(service.ClanName(subRace, _customize.Gender), subRace == _customize.Clan))
+                            Changed |= service.ChangeClan(ref _customize, subRace);
                     }
             }
         }

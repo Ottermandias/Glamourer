@@ -8,6 +8,7 @@ using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Text;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
@@ -117,7 +118,7 @@ public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDispos
         {
             var comboSize = width - _numButtons * (buttonSize.X + spacing.X);
             _designCombo.Draw(comboSize);
-            ImGui.SameLine();
+            Im.Line.Same();
             DrawApplyButton(buttonSize);
         }
 
@@ -183,7 +184,7 @@ public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDispos
 
 
         var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.PlayCircle, size, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (!clicked)
             return;
 
@@ -227,7 +228,7 @@ public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDispos
                 "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
             _stateManager.ResetState(state!, StateSource.Manual, isFinal: true);
     }
@@ -264,7 +265,7 @@ public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDispos
                 "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
         var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.SyncAlt, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (!clicked)
             return;
 
@@ -307,7 +308,7 @@ public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDispos
                 "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
         var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.Repeat, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (!clicked)
             return;
 
@@ -346,7 +347,7 @@ public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDispos
             _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.PaintBrush, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
             _stateManager.ResetAdvancedCustomizations(state!, StateSource.Manual);
     }
@@ -379,7 +380,7 @@ public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDispos
             _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Palette, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
             _stateManager.ResetAdvancedDyes(state!, StateSource.Manual);
     }
@@ -412,7 +413,7 @@ public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDispos
             _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.User, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
             _stateManager.ResetCustomize(state!, StateSource.Manual);
     }
@@ -445,7 +446,7 @@ public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDispos
             _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Vest, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
             _stateManager.ResetEquip(state!, StateSource.Manual);
     }
@@ -484,7 +485,7 @@ public sealed class DesignQuickBar : Dalamud.Interface.Windowing.Window, IDispos
             _tooltipBuilder.Append("Neither player character nor target are available to identify their collections.");
 
         var (clicked, _, data, _) = ResolveTarget(FontAwesomeIcon.Cog, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
         {
             _penumbra.RemoveAllTemporarySettings(data.Objects[0].Index, StateSource.Manual);

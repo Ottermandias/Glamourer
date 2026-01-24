@@ -6,6 +6,7 @@ using Glamourer.Designs;
 using Glamourer.Services;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Extensions;
 using OtterGui.Text;
 using Penumbra.GameData;
@@ -51,13 +52,13 @@ public sealed unsafe class GlamourPlatePanel : IGameDataDrawer
             ImUtf8.Text("Is Applying Glamour Plates:"u8);
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         using (ImRaii.Group())
         {
             ImUtf8.CopyOnClickSelectable($"0x{(ulong)manager:X}");
             ImUtf8.Text(manager == null ? "-" : manager->GlamourPlates.Length.ToString());
             ImUtf8.Text(manager == null ? "-" : manager->GlamourPlatesRequested.ToString());
-            ImGui.SameLine();
+            Im.Line.Same();
             if (ImUtf8.SmallButton("Request Update"u8))
                 RequestGlamour();
             ImUtf8.Text(manager == null ? "-" : manager->GlamourPlatesLoaded.ToString());
@@ -90,7 +91,7 @@ public sealed unsafe class GlamourPlatePanel : IGameDataDrawer
                     ImUtf8.Text(slot.ToName());
             }
 
-            ImGui.SameLine();
+            Im.Line.Same();
             using (ImRaii.Group())
             {
                 foreach (var (_, index) in EquipSlotExtensions.FullSlots.WithIndex())

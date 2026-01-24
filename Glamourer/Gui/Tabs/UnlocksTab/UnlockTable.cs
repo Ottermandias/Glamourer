@@ -7,6 +7,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Table;
@@ -192,7 +193,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
                 ImGuiUtil.HoverIcon(iconHandle, new Vector2(ImGui.GetFrameHeight()));
             else
                 ImGui.Dummy(new Vector2(ImGui.GetFrameHeight()));
-            ImGui.SameLine();
+            Im.Line.Same();
             ImGui.AlignTextToFramePadding();
             if (ImGui.Selectable(item.Name) && item.Id is { IsBonusItem: false, IsCustom: false })
                 Glamourer.Messager.Chat.Print(new SeStringBuilder().AddItemLink(item.ItemId.Id, false).BuiltString);

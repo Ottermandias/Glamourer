@@ -4,7 +4,7 @@ using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Gui;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
@@ -471,7 +471,7 @@ public unsafe class FunModule : IDisposable
             var tmp = _designManager.CreateTemporary();
             tmp.SetDesignData(_customizations, _stateManager.FromActor(actor, true, true));
             var data = _designConverter.ShareBase64(tmp);
-            ImGui.SetClipboardText(data);
+            Im.Clipboard.Set(data);
             Glamourer.Messager.NotificationMessage($"Copied current actual design of {actor.Utf8Name} to clipboard.", NotificationType.Info,
                 false);
         }

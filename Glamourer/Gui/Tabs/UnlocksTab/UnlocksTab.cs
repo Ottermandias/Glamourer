@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Raii;
 using OtterGui;
 using OtterGui.Widgets;
@@ -70,14 +71,14 @@ public class UnlocksTab : Window, ITab
         if (ImGuiUtil.DrawDisabledButton("Overview Mode", buttonSize, "Show tinted icons of sets of unlocks.", !DetailMode))
             DetailMode = false;
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGuiUtil.DrawDisabledButton("Detailed Mode", buttonSize, "Show all unlockable data as a combined filterable and sortable table.",
                 DetailMode))
             DetailMode = true;
 
         if (DetailMode)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Expand.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
                     "Restore all columns to their original size.", false, true))
                 _table.Flags &= ~ImGuiTableFlags.Resizable;
@@ -85,7 +86,7 @@ public class UnlocksTab : Window, ITab
 
         if (!IsOpen)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.SquareArrowUpRight.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
                     "Pop the unlocks tab out into its own window.", false, true))
                 IsOpen = true;

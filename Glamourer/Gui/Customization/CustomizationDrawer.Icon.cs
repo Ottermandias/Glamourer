@@ -2,6 +2,7 @@
 using Glamourer.GameData;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Raii;
@@ -31,7 +32,7 @@ public partial class CustomizationDrawer
             npc     = true;
         }
 
-        var icon    = _service.Manager.GetIcon(custom!.Value.IconId);
+        var icon    = service.Manager.GetIcon(custom!.Value.IconId);
         var hasIcon = icon.TryGetWrap(out var wrap, out _);
         using (_ = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw))
         {
@@ -49,7 +50,7 @@ public partial class CustomizationDrawer
         if (hasIcon)
             ImGuiUtil.HoverIconTooltip(wrap!, _iconSize);
 
-        ImGui.SameLine();
+        Im.Line.Same();
         using (_ = ImRaii.Group())
         {
             DataInputInt(current, npc);
@@ -60,7 +61,7 @@ public partial class CustomizationDrawer
             if (_withApply)
             {
                 ApplyCheckbox();
-                ImGui.SameLine();
+                Im.Line.Same();
             }
 
             ImGui.TextUnformatted(label);
@@ -80,10 +81,10 @@ public partial class CustomizationDrawer
         for (var i = 0; i < _currentCount; ++i)
         {
             var custom = _set.Data(_currentIndex, i, _customize.Face);
-            var icon   = _service.Manager.GetIcon(custom.IconId);
+            var icon   = service.Manager.GetIcon(custom.IconId);
             using (var _ = ImRaii.Group())
             {
-                var isFavorite = _favorites.Contains(_set.Gender, _set.Clan, _currentIndex, custom.Value);
+                var isFavorite = favorites.Contains(_set.Gender, _set.Clan, _currentIndex, custom.Value);
                 using var frameColor = current == i
                     ? ImRaii.PushColor(ImGuiCol.Button, Colors.SelectedRed)
                     : ImRaii.PushColor(ImGuiCol.Button, ColorId.FavoriteStarOn.Value(), isFavorite);
@@ -97,9 +98,9 @@ public partial class CustomizationDrawer
 
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                     if (isFavorite)
-                        _favorites.Remove(_set.Gender, _set.Clan, _currentIndex, custom.Value);
+                        favorites.Remove(_set.Gender, _set.Clan, _currentIndex, custom.Value);
                     else
-                        _favorites.TryAdd(_set.Gender, _set.Clan, _currentIndex, custom.Value);
+                        favorites.TryAdd(_set.Gender, _set.Clan, _currentIndex, custom.Value);
 
                 if (hasIcon)
                     ImGuiUtil.HoverIconTooltip(wrap!, _iconSize,
@@ -112,7 +113,7 @@ public partial class CustomizationDrawer
             }
 
             if (i % 8 != 7)
-                ImGui.SameLine();
+                Im.Line.Same();
         }
     }
 
@@ -123,19 +124,19 @@ public partial class CustomizationDrawer
         using var bigGroup = ImRaii.Group();
         using var disabled = ImRaii.Disabled(_locked);
         DrawMultiIcons();
-        ImGui.SameLine();
+        Im.Line.Same();
         using var group = ImRaii.Group();
 
         _currentCount = 256;
         if (_withApply)
         {
             ApplyCheckbox(CustomizeIndex.FacialFeature1);
-            ImGui.SameLine();
+            Im.Line.Same();
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + _spacing.X);
             ApplyCheckbox(CustomizeIndex.FacialFeature2);
-            ImGui.SameLine();
+            Im.Line.Same();
             ApplyCheckbox(CustomizeIndex.FacialFeature3);
-            ImGui.SameLine();
+            Im.Line.Same();
             ApplyCheckbox(CustomizeIndex.FacialFeature4);
         }
         else
@@ -166,7 +167,7 @@ public partial class CustomizationDrawer
 
         if (_set.DataByValue(CustomizeIndex.Face, _customize.Face, out _, _customize.Face) < 0)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             ImGui.AlignTextToFramePadding();
             using var _ = ImRaii.Enabled();
             ImGui.TextUnformatted("(Using Face 1)");
@@ -182,12 +183,12 @@ public partial class CustomizationDrawer
         if (_withApply)
         {
             ApplyCheckbox(CustomizeIndex.FacialFeature5);
-            ImGui.SameLine();
+            Im.Line.Same();
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + _spacing.X);
             ApplyCheckbox(CustomizeIndex.FacialFeature6);
-            ImGui.SameLine();
+            Im.Line.Same();
             ApplyCheckbox(CustomizeIndex.FacialFeature7);
-            ImGui.SameLine();
+            Im.Line.Same();
             ApplyCheckbox(CustomizeIndex.LegacyTattoo);
         }
     }
@@ -204,7 +205,7 @@ public partial class CustomizationDrawer
             var                  feature = _set.Data(featureIdx, 0, face);
             bool                 hasIcon;
             IDalamudTextureWrap? wrap;
-            var                  icon = _service.Manager.GetIcon(feature.IconId);
+            var                  icon = service.Manager.GetIcon(feature.IconId);
             if (featureIdx is CustomizeIndex.LegacyTattoo)
             {
                 wrap    = _legacyTattoo;
@@ -225,7 +226,7 @@ public partial class CustomizationDrawer
             if (hasIcon)
                 ImGuiUtil.HoverIconTooltip(wrap!, _iconSize);
             if (idx % 4 != 3)
-                ImGui.SameLine();
+                Im.Line.Same();
         }
     }
 }

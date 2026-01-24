@@ -1,5 +1,6 @@
 ﻿using Glamourer.Api.Enums;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
@@ -11,17 +12,17 @@ public static class IpcTesterHelpers
         if (ImGui.Checkbox("Apply Once", ref value))
             flags = value ? flags | ApplyFlag.Once : flags & ~ApplyFlag.Once;
 
-        ImGui.SameLine();
+        Im.Line.Same();
         value = (flags & ApplyFlag.Equipment) != 0;
         if (ImGui.Checkbox("Apply Equipment", ref value))
             flags = value ? flags | ApplyFlag.Equipment : flags & ~ApplyFlag.Equipment;
 
-        ImGui.SameLine();
+        Im.Line.Same();
         value = (flags & ApplyFlag.Customization) != 0;
         if (ImGui.Checkbox("Apply Customization", ref value))
             flags = value ? flags | ApplyFlag.Customization : flags & ~ApplyFlag.Customization;
 
-        ImGui.SameLine();
+        Im.Line.Same();
         value = (flags & ApplyFlag.Lock) != 0;
         if (ImGui.Checkbox("Lock Actor", ref value))
             flags = value ? flags | ApplyFlag.Lock : flags & ~ApplyFlag.Lock;

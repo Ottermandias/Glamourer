@@ -26,7 +26,7 @@ public class DesignLinkDrawer(
     public void Draw()
     {
         using var h = DesignPanelFlag.DesignLinks.Header(config);
-        if (h.Disposed)
+        if (!h.Alive)
             return;
 
         ImGuiUtil.HoverTooltip(
@@ -185,7 +185,7 @@ public class DesignLinkDrawer(
             linkManager.MoveDesignLink(selector.Selected!, selector.Selected!.Links.Before.Count - 1, LinkOrder.Before, 0, LinkOrder.Before);
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.ArrowCircleDown.ToIconString(), buttonSize, ttAfter, !canAddAfter, true))
             linkManager.AddDesignLink(selector.Selected!, design!, LinkOrder.After);
     }
@@ -227,16 +227,16 @@ public class DesignLinkDrawer(
 
         ImGuiUtil.HoverTooltip("Toggle all application modes at once.");
 
-        ImGui.SameLine();
+        Im.Line.Same();
         Box(0);
-        ImGui.SameLine();
+        Im.Line.Same();
         Box(1);
-        ImGui.SameLine();
+        Im.Line.Same();
 
         Box(2);
-        ImGui.SameLine();
+        Im.Line.Same();
         Box(3);
-        ImGui.SameLine();
+        Im.Line.Same();
         Box(4);
         if (newType != current)
             linkManager.ChangeApplicationType(selector.Selected!, idx, order, newType);

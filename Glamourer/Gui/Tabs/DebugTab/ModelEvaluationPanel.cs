@@ -3,6 +3,7 @@ using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
@@ -129,10 +130,10 @@ public sealed unsafe class ModelEvaluationPanel(
 
         if (ImGui.SmallButton("Set True"))
             visorService.SetVisorState(model, true);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.SmallButton("Set False"))
             visorService.SetVisorState(model, false);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.SmallButton("Toggle"))
             visorService.SetVisorState(model, !VisorService.GetVisorState(model));
     }
@@ -149,10 +150,10 @@ public sealed unsafe class ModelEvaluationPanel(
 
         if (ImGui.SmallButton("Set True"))
             vieraEarService.SetVieraEarState(model, true);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.SmallButton("Set False"))
             vieraEarService.SetVieraEarState(model, false);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.SmallButton("Toggle"))
             vieraEarService.SetVieraEarState(model, !model.VieraEarsVisible);
     }
@@ -173,10 +174,10 @@ public sealed unsafe class ModelEvaluationPanel(
 
         if (ImGui.SmallButton("Hide"))
             updateSlotService.UpdateEquipSlot(model, EquipSlot.Head, CharacterArmor.Empty);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.SmallButton("Show"))
             updateSlotService.UpdateEquipSlot(model, EquipSlot.Head, actor.GetArmor(EquipSlot.Head));
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.SmallButton("Toggle"))
             updateSlotService.UpdateEquipSlot(model, EquipSlot.Head,
                 model.AsHuman->Head.Value == 0 ? actor.GetArmor(EquipSlot.Head) : CharacterArmor.Empty);
@@ -226,10 +227,10 @@ public sealed unsafe class ModelEvaluationPanel(
 
         if (ImGui.SmallButton("GPose On"))
             actor.IsGPoseWet = true;
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.SmallButton("GPose Off"))
             actor.IsGPoseWet = false;
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.SmallButton("GPose Toggle"))
             actor.IsGPoseWet = !actor.IsGPoseWet;
     }
@@ -250,10 +251,10 @@ public sealed unsafe class ModelEvaluationPanel(
             if (ImGui.SmallButton("Change Piece"))
                 updateSlotService.UpdateArmor(model, slot,
                     new CharacterArmor((PrimaryId)(slot == EquipSlot.Hands ? 6064 : slot == EquipSlot.Head ? 6072 : 1), 1, StainIds.None));
-            ImGui.SameLine();
+            Im.Line.Same();
             if (ImGui.SmallButton("Change Stain"))
                 updateSlotService.UpdateStain(model, slot, new StainIds(5, 7));
-            ImGui.SameLine();
+            Im.Line.Same();
             if (ImGui.SmallButton("Reset"))
                 updateSlotService.UpdateEquipSlot(model, slot, actor.GetArmor(slot));
         }
@@ -314,7 +315,7 @@ public sealed unsafe class ModelEvaluationPanel(
                 changeCustomizeService.UpdateCustomize(model, modelCustomize);
             }
 
-            ImGui.SameLine();
+            Im.Line.Same();
             if (ImGui.SmallButton("--"))
             {
                 var value = modelCustomize[type].Value;
@@ -325,7 +326,7 @@ public sealed unsafe class ModelEvaluationPanel(
                 changeCustomizeService.UpdateCustomize(model, modelCustomize);
             }
 
-            ImGui.SameLine();
+            Im.Line.Same();
             if (ImGui.SmallButton("Reset"))
             {
                 modelCustomize.Set(type, actorCustomize[type]);

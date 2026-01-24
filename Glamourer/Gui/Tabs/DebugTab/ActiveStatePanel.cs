@@ -28,7 +28,7 @@ public sealed class ActiveStatePanel(StateManager stateManager, ActorObjectManag
                     string.Empty, !stateManager.ContainsKey(identifier), true))
                 stateManager.DeleteState(identifier);
 
-            ImGui.SameLine();
+            Im.Line.Same();
             using var t = ImRaii.TreeNode(actors.Label);
             if (!t)
                 continue;

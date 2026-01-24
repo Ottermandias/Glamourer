@@ -6,6 +6,7 @@ using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Classes;
@@ -24,7 +25,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
     public void Draw()
     {
         using var h = DesignPanelFlag.ModAssociations.Header(config);
-        if (h.Disposed)
+        if (!h.Alive)
             return;
 
         ImGuiUtil.HoverTooltip(
@@ -46,7 +47,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         if (ImGui.Button("Copy All to Clipboard", size))
             _copy = selector.Selected!.AssociatedMods.Select(kvp => (kvp.Key, kvp.Value)).ToArray();
 
-        ImGui.SameLine();
+        Im.Line.Same();
 
         if (ImGuiUtil.DrawDisabledButton("Add from Clipboard", size,
                 _copy != null
@@ -55,7 +56,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
             foreach (var (mod, setting) in _copy!)
                 manager.UpdateMod(selector.Selected!, mod, setting);
 
-        ImGui.SameLine();
+        Im.Line.Same();
 
         if (ImGuiUtil.DrawDisabledButton("Set from Clipboard", size,
                 _copy != null

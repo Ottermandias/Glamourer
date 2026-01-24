@@ -2,6 +2,7 @@
 using Dalamud.Plugin.Services;
 using Glamourer.Api.IpcSubscribers;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
@@ -30,12 +31,12 @@ public sealed class IpcTesterPanel(
             Subscribe();
             ImGui.TextUnformatted(ApiVersion.Label);
             var (major, minor) = new ApiVersion(pluginInterface).Invoke();
-            ImGui.SameLine();
+            Im.Line.Same();
             ImGui.TextUnformatted($"({major}.{minor:D4})");
 
             ImGui.TextUnformatted(AutoReloadGearEnabled.Label);
             var autoRedraw = new AutoReloadGearEnabled(pluginInterface).Invoke();
-            ImGui.SameLine();
+            Im.Line.Same();
             ImGui.TextUnformatted(autoRedraw ? "Enabled" : "Disabled");
 
             designs.Draw();

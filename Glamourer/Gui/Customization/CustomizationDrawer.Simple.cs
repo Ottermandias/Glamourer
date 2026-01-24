@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGuiInternal;
@@ -17,16 +18,16 @@ public partial class CustomizationDrawer
         using (var disabled = ImRaii.Disabled(_locked))
         {
             DrawPercentageSlider();
-            ImGui.SameLine();
+            Im.Line.Same();
             PercentageInputInt();
             if (_withApply)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 ApplyCheckbox();
             }
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(_currentOption);
         if (_currentIndex is CustomizeIndex.Height)
@@ -35,13 +36,13 @@ public partial class CustomizationDrawer
 
     private void DrawHeight()
     {
-        if (_config.HeightDisplayType is HeightDisplayType.None)
+        if (config.HeightDisplayType is HeightDisplayType.None)
             return;
 
-        var height = _heightService.Height(_customize);
-        ImGui.SameLine();
+        var height = heightService.Height(_customize);
+        Im.Line.Same();
 
-        var heightString = _config.HeightDisplayType switch
+        var heightString = config.HeightDisplayType switch
         {
             HeightDisplayType.Centimetre  => FormattableString.Invariant($"({height * 100:F1} cm)"),
             HeightDisplayType.Metre       => FormattableString.Invariant($"({height:F2} m)"),
@@ -105,13 +106,13 @@ public partial class CustomizationDrawer
         if (!_withApply)
             ImGuiUtil.HoverTooltip("Hold Control to force updates with invalid/unknown options at your own risk.");
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGuiUtil.DrawDisabledButton("-", new Vector2(ImGui.GetFrameHeight()), "Select the previous available option in order.",
                 currentIndex <= 0))
             UpdateValue(_set.Data(_currentIndex, currentIndex - 1, _customize.Face).Value);
         else
             CheckWheel();
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGuiUtil.DrawDisabledButton("+", new Vector2(ImGui.GetFrameHeight()), "Select the next available option in order.",
                 currentIndex >= _currentCount - 1 || npc))
             UpdateValue(_set.Data(_currentIndex, currentIndex + 1, _customize.Face).Value);
@@ -139,24 +140,24 @@ public partial class CustomizationDrawer
             if (indexedBy1)
             {
                 ListCombo1();
-                ImGui.SameLine();
+                Im.Line.Same();
                 ListInputInt1();
             }
             else
             {
                 ListCombo0();
-                ImGui.SameLine();
+                Im.Line.Same();
                 ListInputInt0();
             }
 
             if (_withApply)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 ApplyCheckbox();
             }
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(_currentOption);
     }
@@ -282,7 +283,7 @@ public partial class CustomizationDrawer
                 }
             }
 
-            ImGui.SameLine();
+            Im.Line.Same();
             ImGui.TextUnformatted(_currentIndex.ToDefaultName());
         }
     }

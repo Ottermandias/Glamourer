@@ -138,7 +138,7 @@ public class NpcPanel
     private void DrawButtonRow()
     {
         DrawApplyToSelf();
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawApplyToTarget();
     }
 
@@ -277,13 +277,13 @@ public class NpcPanel
 
         if (_colors.TryGetValue(color, out var currentColor))
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             if (DesignColorUi.DrawColorButton($"Color associated with {color}", currentColor, out var newColor))
                 _colors.SetColor(color, newColor);
         }
         else if (color.Length is not 0)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             var       size = new Vector2(ImGui.GetFrameHeight());
             using var font = ImRaii.PushFont(UiBuilder.IconFont);
             ImEx.TextFramed(LunaStyle.WarningIcon.Span, size, _colors.MissingColor);

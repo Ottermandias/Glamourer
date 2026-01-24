@@ -1,5 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
@@ -114,9 +114,7 @@ public sealed unsafe class LiveColorTablePreviewer : IService, IDisposable
         var        frame       = DateTimeOffset.UtcNow.UtcTicks;
         var        hueByte     = frame % (steps * frameLength) / frameLength;
         var        hue         = (float)hueByte / steps;
-        Vector3    ret;
-        ImGui.ColorConvertHSVtoRGB(hue, 1, 1, &ret.X, &ret.Y, &ret.Z);
-        return ret;
+        return Im.Color.ToRgb(new Vector3(hue, 1, 1));
     }
 
     public void Dispose()

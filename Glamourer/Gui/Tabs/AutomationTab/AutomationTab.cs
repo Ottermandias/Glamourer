@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.Utility;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
@@ -15,7 +16,7 @@ public class AutomationTab(SetSelector selector, SetPanel panel, Configuration c
     public void DrawContent()
     {
         selector.Draw(GetSetSelectorSize());
-        ImGui.SameLine();
+        Im.Line.Same();
         panel.Draw();
     }
 

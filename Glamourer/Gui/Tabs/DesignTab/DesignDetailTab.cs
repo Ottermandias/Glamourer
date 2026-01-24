@@ -135,7 +135,7 @@ public class DesignDetailTab
         if (ImUtf8.RadioButton("Display##qdb"u8, _selector.Selected.QuickDesign))
             _manager.SetQuickDesign(_selector.Selected!, true);
         var hovered = ImGui.IsItemHovered();
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.RadioButton("Hide##qdb"u8, !_selector.Selected.QuickDesign))
             _manager.SetQuickDesign(_selector.Selected!, false);
         if (hovered || ImGui.IsItemHovered())
@@ -184,13 +184,13 @@ public class DesignDetailTab
 
         if (_colors.TryGetValue(_selector.Selected!.Color, out var currentColor))
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             if (DesignColorUi.DrawColorButton($"Color associated with {_selector.Selected!.Color}", currentColor, out var newColor))
                 _colors.SetColor(_selector.Selected!.Color, newColor);
         }
         else if (_selector.Selected!.Color.Length != 0)
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             ImEx.Icon.Draw(LunaStyle.WarningIcon, _colors.MissingColor);
             Im.Tooltip.OnHover("The color associated with this design does not exist."u8);
         }

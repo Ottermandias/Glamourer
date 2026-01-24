@@ -6,6 +6,7 @@ using Glamourer.Api.Enums;
 using Glamourer.Api.Helpers;
 using Glamourer.Api.IpcSubscribers;
 using Glamourer.Designs;
+using ImSharp;
 using Luna;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -136,14 +137,14 @@ public class StateIpcTester : IUiService, IDisposable
         IpcTesterHelpers.DrawIntro(ApplyState.Label);
         if (ImGuiUtil.DrawDisabledButton("Apply Last##Idx", Vector2.Zero, string.Empty, _state == null))
             _lastError = new ApplyState(_pluginInterface).Invoke(_state!, _gameObjectIndex, _key, _flags);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.Button("Apply Base64##Idx"u8))
             _lastError = new ApplyState(_pluginInterface).Invoke(_base64State, _gameObjectIndex, _key, _flags);
 
         IpcTesterHelpers.DrawIntro(ApplyStateName.Label);
         if (ImGuiUtil.DrawDisabledButton("Apply Last##Name", Vector2.Zero, string.Empty, _state == null))
             _lastError = new ApplyStateName(_pluginInterface).Invoke(_state!, _gameObjectName, _key, _flags);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.Button("Apply Base64##Name"u8))
             _lastError = new ApplyStateName(_pluginInterface).Invoke(_base64State, _gameObjectName, _key, _flags);
 
@@ -174,7 +175,7 @@ public class StateIpcTester : IUiService, IDisposable
         IpcTesterHelpers.DrawIntro(UnlockAll.Label);
         if (ImUtf8.Button("Unlock##All"u8))
             _numUnlocked = new UnlockAll(_pluginInterface).Invoke(_key);
-        ImGui.SameLine();
+        Im.Line.Same();
         ImGui.TextUnformatted($"Unlocked {_numUnlocked}");
 
         IpcTesterHelpers.DrawIntro(RevertToAutomation.Label);
@@ -200,7 +201,7 @@ public class StateIpcTester : IUiService, IDisposable
             ImUtf8.SetClipboardText(_stateString);
         if (_stateString[0] is '{')
         {
-            ImGui.SameLine();
+            Im.Line.Same();
             if (ImUtf8.Button("Copy as Base64"u8) && _state != null)
                 ImUtf8.SetClipboardText(DesignConverter.ToBase64(_state));
         }
@@ -217,13 +218,13 @@ public class StateIpcTester : IUiService, IDisposable
         ImUtf8.Text(_lastStateChangeName.Span);
         ImGui.SameLine(0, 0);
         ImUtf8.Text($" ({_lastStateChangeType})");
-        ImGui.SameLine();
+        Im.Line.Same();
         using (ImRaii.PushFont(UiBuilder.MonoFont))
         {
             ImUtf8.CopyOnClickSelectable($"0x{_lastStateChangeActor:X}");
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         ImUtf8.Text($"at {_lastStateChangeTime.ToLocalTime().TimeOfDay}");
     }
 
@@ -232,13 +233,13 @@ public class StateIpcTester : IUiService, IDisposable
         ImUtf8.Text(_lastStateFinalizeName.Span);
         ImGui.SameLine(0, 0);
         ImUtf8.Text($" ({_lastStateFinalizeType})");
-        ImGui.SameLine();
+        Im.Line.Same();
         using (ImRaii.PushFont(UiBuilder.MonoFont))
         {
             ImUtf8.CopyOnClickSelectable($"0x{_lastStateFinalizeActor:X}");
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         ImUtf8.Text($"at {_lastStateFinalizeTime.ToLocalTime().TimeOfDay}");
     }
 

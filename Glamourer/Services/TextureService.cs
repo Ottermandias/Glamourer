@@ -1,7 +1,8 @@
-using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
+using ImSharp;
+using Luna;
 using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -13,21 +14,21 @@ public sealed class TextureService(IUiBuilder uiBuilder, IDataManager dataManage
 {
     private readonly IDalamudTextureWrap?[] _slotIcons = CreateSlotIcons(uiBuilder);
 
-    public (ImTextureID, Vector2, bool) GetIcon(EquipItem item, EquipSlot slot)
+    public (ImTextureId, Vector2, bool) GetIcon(EquipItem item, EquipSlot slot)
     {
         if (item.IconId.Id != 0 && TryLoadIcon(item.IconId.Id, out var ret))
-            return (ret.Handle, new Vector2(ret.Width, ret.Height), false);
+            return (ret.Id, new Vector2(ret.Width, ret.Height), false);
 
         var idx = slot.ToIndex();
         return idx < 12 && _slotIcons[idx] != null
-            ? (_slotIcons[idx]!.Handle, new Vector2(_slotIcons[idx]!.Width, _slotIcons[idx]!.Height), true)
+            ? (_slotIcons[idx]!.Id, new Vector2(_slotIcons[idx]!.Width, _slotIcons[idx]!.Height), true)
             : (default, Vector2.Zero, true);
     }
 
-    public (ImTextureID, Vector2, bool) GetIcon(EquipItem item, BonusItemFlag slot)
+    public (ImTextureId, Vector2, bool) GetIcon(EquipItem item, BonusItemFlag slot)
     {
         if (item.IconId.Id != 0 && TryLoadIcon(item.IconId.Id, out var ret))
-            return (ret.Handle, new Vector2(ret.Width, ret.Height), false);
+            return (ret.Id, new Vector2(ret.Width, ret.Height), false);
 
         var idx = slot.ToIndex();
         if (idx == uint.MaxValue)
@@ -35,7 +36,7 @@ public sealed class TextureService(IUiBuilder uiBuilder, IDataManager dataManage
 
         idx += 12;
         return idx < 13 && _slotIcons[idx] != null
-            ? (_slotIcons[idx]!.Handle, new Vector2(_slotIcons[idx]!.Width, _slotIcons[idx]!.Height), true)
+            ? (_slotIcons[idx]!.Id, new Vector2(_slotIcons[idx]!.Width, _slotIcons[idx]!.Height), true)
             : (default, Vector2.Zero, true);
     }
 

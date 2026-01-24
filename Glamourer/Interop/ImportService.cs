@@ -3,7 +3,7 @@ using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Interop.CharaFile;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
@@ -16,16 +16,17 @@ public class ImportService(CustomizeService customizations, IDragDropManager dra
     public void CreateDatSource()
         => dragDropManager.CreateImGuiSource("DatDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".dat"), m =>
         {
-            ImGui.TextUnformatted($"Dragging {Path.GetFileName(m.Files[0])} to import customizations for Glamourer...");
+            Im.Text($"Dragging {Path.GetFileName(m.Files[0])} to import customizations for Glamourer...");
             return true;
         });
 
     public void CreateCharaSource()
-        => dragDropManager.CreateImGuiSource("CharaDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".chara") || m.Extensions.Contains(".cma"), m =>
-        {
-            ImGui.TextUnformatted($"Dragging {Path.GetFileName(m.Files[0])} to import Anamnesis/CMTool data for Glamourer...");
-            return true;
-        });
+        => dragDropManager.CreateImGuiSource("CharaDragger",
+            m => m.Files.Count == 1 && m.Extensions.Contains(".chara") || m.Extensions.Contains(".cma"), m =>
+            {
+                Im.Text($"Dragging {Path.GetFileName(m.Files[0])} to import Anamnesis/CMTool data for Glamourer...");
+                return true;
+            });
 
     public bool CreateDatTarget(out DatCharacterFile file)
     {
@@ -46,7 +47,7 @@ public class ImportService(CustomizeService customizations, IDragDropManager dra
             name   = string.Empty;
             return false;
         }
-        
+
         return Path.GetExtension(files[0]) is ".chara" ? LoadChara(files[0], out design, out name) : LoadCma(files[0], out design, out name);
     }
 

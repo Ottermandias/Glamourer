@@ -6,6 +6,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
@@ -84,7 +85,7 @@ public class UnlockOverview(
     {
         using var color = ImRaii.PushColor(ImGuiCol.Border, ImGui.GetColorU32(ImGuiCol.TableBorderStrong));
         DrawSelector();
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawPanel();
     }
 
@@ -143,7 +144,7 @@ public class UnlockOverview(
 
             if (counter != iconsPerRow - 1)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 ++counter;
             }
             else
@@ -172,7 +173,7 @@ public class UnlockOverview(
             DrawItem(item);
             if (counter != iconsPerRow - 1)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 ++counter;
             }
             else
@@ -243,7 +244,7 @@ public class UnlockOverview(
             DrawItem(value[idx]);
             if (counter != iconsPerRow - 1)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 ++counter;
             }
             else

@@ -2,6 +2,7 @@
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Lumina.Excel.Sheets;
 using OtterGui.Classes;
 using OtterGui.Extensions;
@@ -11,6 +12,7 @@ using OtterGui.Text;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Equipment;
 
@@ -72,9 +74,9 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
             CurrentSelection    = default;
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         var ret = ImGui.Selectable(name, selected);
-        ImGui.SameLine();
+        Im.Line.Same();
         using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
         ImUtf8.TextRightAligned($"({obj.PrimaryId.Id}-{obj.Variant.Id})");
         return ret;

@@ -3,6 +3,7 @@ using Dalamud.Interface.Utility;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Extensions;
 using OtterGui.Raii;
 using OtterGui.Text;
@@ -159,7 +160,7 @@ public class MultiDesignPanel(
     private float DrawMultiTagger(Vector2 width)
     {
         ImUtf8.TextFrameAligned("Multi Tagger:"u8);
-        ImGui.SameLine();
+        Im.Line.Same();
         var offset = ImGui.GetItemRectSize().X + ImGui.GetStyle().WindowPadding.X;
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 2 * (width.X + ImGui.GetStyle().ItemSpacing.X));
         ImUtf8.InputText("##tag"u8, ref _tag, "Tag Name..."u8);
@@ -173,7 +174,7 @@ public class MultiDesignPanel(
                 ? "No tag specified."
                 : $"All designs selected already contain the tag \"{_tag}\"."
             : $"Add the tag \"{_tag}\" to {_addDesigns.Count} designs as a local tag:\n\n\t{string.Join("\n\t", _addDesigns.Select(m => m.Name.Text))}";
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx(label, tooltip, width, _addDesigns.Count == 0))
             foreach (var design in _addDesigns)
                 editor.AddTag(design, _tag);
@@ -186,7 +187,7 @@ public class MultiDesignPanel(
                 ? "No tag specified."
                 : $"No selected design contains the tag \"{_tag}\" locally."
             : $"Remove the local tag \"{_tag}\" from {_removeDesigns.Count} designs:\n\n\t{string.Join("\n\t", _removeDesigns.Select(m => m.Item1.Name.Text))}";
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx(label, tooltip, width, _removeDesigns.Count == 0))
             foreach (var (design, index) in _removeDesigns)
                 editor.RemoveTag(design, index);
@@ -209,7 +210,7 @@ public class MultiDesignPanel(
                 editor.SetQuickDesign(design.Value, true);
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         tt = _numQuickDesignEnabled == 0
             ? $"All {_numDesigns} selected designs are already hidden in the quick design bar."
             : $"Hide all {_numDesigns} selected designs in the quick design bar. Changes {_numQuickDesignEnabled} designs.";
@@ -235,7 +236,7 @@ public class MultiDesignPanel(
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetWriteProtection(design.Value, true);
 
-        ImGui.SameLine();
+        Im.Line.Same();
         tt = _numDesignsLocked == 0
             ? $"None of the {_numDesigns} selected designs are write-protected."
             : $"Remove the write protection of the {_numDesigns} selected designs. Changes {_numDesignsLocked} designs.";
@@ -258,7 +259,7 @@ public class MultiDesignPanel(
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeResetTemporarySettings(design.Value, true);
 
-        ImGui.SameLine();
+        Im.Line.Same();
         tt = _numDesignsResetSettings == 0
             ? $"None of the {_numDesigns} selected designs reset temporary settings."
             : $"Stop all {_numDesigns} selected designs from resetting temporary settings. Changes {_numDesignsResetSettings} designs.";
@@ -281,7 +282,7 @@ public class MultiDesignPanel(
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeResetAdvancedDyes(design.Value, true);
 
-        ImGui.SameLine();
+        Im.Line.Same();
         tt = _numDesignsLocked == 0
             ? $"None of the {_numDesigns} selected designs reset advanced dyes."
             : $"Stop all {_numDesigns} selected designs from resetting advanced dyes. Changes {_numDesignsResetDyes} designs.";
@@ -304,7 +305,7 @@ public class MultiDesignPanel(
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeForcedRedraw(design.Value, true);
 
-        ImGui.SameLine();
+        Im.Line.Same();
         tt = _numDesignsLocked == 0
             ? $"None of the {_numDesigns} selected designs force redraws."
             : $"Stop all {_numDesigns} selected designs from forcing redraws. Changes {_numDesignsForcedRedraw} designs.";
@@ -333,7 +334,7 @@ public class MultiDesignPanel(
                 _                          => $"All designs selected are already set to the color \"{_colorCombo.CurrentSelection}\".",
             }
             : $"Set the color of {_addDesigns.Count} designs to \"{_colorCombo.CurrentSelection}\"\n\n\t{string.Join("\n\t", _addDesigns.Select(m => m.Name.Text))}";
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx(label, tooltip, width, _addDesigns.Count == 0))
         {
             foreach (var design in _addDesigns)
@@ -346,7 +347,7 @@ public class MultiDesignPanel(
         tooltip = _removeDesigns.Count == 0
             ? "No selected design is set to a non-automatic color."
             : $"Set {_removeDesigns.Count} designs to use automatic color again:\n\n\t{string.Join("\n\t", _removeDesigns.Select(m => m.Item1.Name.Text))}";
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx(label, tooltip, width, _removeDesigns.Count == 0))
         {
             foreach (var (design, _) in _removeDesigns)
@@ -399,7 +400,7 @@ public class MultiDesignPanel(
         if (!enabled)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Enable Everything"u8,
                 _numDesigns > 0
                     ? $"Enable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness for all {_numDesigns} designs."
@@ -424,7 +425,7 @@ public class MultiDesignPanel(
         if (!enabled)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Customization Only"u8,
                 _numDesigns > 0
                     ? $"Enable application of anything related to customization, disable anything that is not related to customization for all {_numDesigns} designs."
@@ -450,7 +451,7 @@ public class MultiDesignPanel(
         if (!enabled)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImUtf8.ButtonEx("Disable Advanced"u8, _numDesigns > 0
                 ? $"Disable all advanced dyes and customizations but keep everything else as is for all {_numDesigns} designs."
                 : "No designs selected.", width, !enabled))

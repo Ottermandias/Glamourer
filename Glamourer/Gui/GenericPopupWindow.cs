@@ -4,6 +4,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Glamourer.Gui.Materials;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Raii;
 
@@ -84,7 +85,7 @@ public class GenericPopupWindow : Window
             ImGui.CloseCurrentPopup();
         }
 
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.Button("Not Right Now.", buttonWidth))
         {
             _config.DisableFestivals = 2;

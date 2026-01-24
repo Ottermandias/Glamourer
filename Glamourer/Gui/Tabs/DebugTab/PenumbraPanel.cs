@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.Utility;
 using Glamourer.Interop.Penumbra;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.Api.Enums;
@@ -33,7 +34,7 @@ public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemT
         ImGui.TableNextColumn();
         if (ImGui.SmallButton("Unattach"))
             penumbra.Unattach();
-        ImGui.SameLine();
+        Im.Line.Same();
         if (ImGui.SmallButton("Reattach"))
             penumbra.Reattach();
 

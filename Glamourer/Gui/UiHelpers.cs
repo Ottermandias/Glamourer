@@ -3,6 +3,7 @@ using Dalamud.Interface.Utility;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Lumina.Misc;
 using OtterGui;
 using OtterGui.Raii;
@@ -33,14 +34,14 @@ public static class UiHelpers
                 : (ImGui.GetColorU32(ImGuiCol.FrameBgActive), new Vector4(0.3f, 0.3f, 0.3f, 1f));
             var pos = ImGui.GetCursorScreenPos();
             ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * ImGuiHelpers.GlobalScale);
-            if (ptr != nint.Zero)
-                ImGui.Image(ptr, size, Vector2.Zero, Vector2.One, tint);
+            if (!ptr.IsNull)
+                Im.Image.Draw(ptr, size, Vector2.Zero, Vector2.One, tint);
             else
                 ImGui.Dummy(size);
         }
         else
         {
-            ImGuiUtil.HoverIcon(ptr, textureSize, size);
+            Im.Image.DrawScaled(ptr, size, textureSize);
         }
     }
 
@@ -55,14 +56,14 @@ public static class UiHelpers
                 : (ImGui.GetColorU32(ImGuiCol.FrameBgActive), new Vector4(0.3f, 0.3f, 0.3f, 1f));
             var pos = ImGui.GetCursorScreenPos();
             ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * ImGuiHelpers.GlobalScale);
-            if (ptr != nint.Zero)
-                ImGui.Image(ptr, size, Vector2.Zero, Vector2.One, tint);
+            if (!ptr.IsNull)
+                Im.Image.Draw(ptr, size, Vector2.Zero, Vector2.One, tint);
             else
                 ImGui.Dummy(size);
         }
         else
         {
-            ImGuiUtil.HoverIcon(ptr, textureSize, size);
+            Im.Image.DrawScaled(ptr, size, textureSize);
         }
     }
 
