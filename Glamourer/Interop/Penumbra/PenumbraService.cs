@@ -44,15 +44,16 @@ public class PenumbraService : IDisposable
     private const int    KeyManual  = -6160;
     private const string NameManual = "Glamourer (Manually)";
 
-    private readonly IDalamudPluginInterface                               _pluginInterface;
-    private readonly Configuration                                         _config;
-    private readonly EventSubscriber<ChangedItemType, uint>                _tooltipSubscriber;
-    private readonly EventSubscriber<MouseButton, ChangedItemType, uint>   _clickSubscriber;
-    private readonly EventSubscriber<nint, Guid, nint, nint, nint>         _creatingCharacterBase;
-    private readonly EventSubscriber<nint, Guid, nint>                     _createdCharacterBase;
-    private readonly EventSubscriber<ModSettingChange, Guid, string, bool> _modSettingChanged;
-    private readonly EventSubscriber<JObject, string, Guid>                _pcpParsed;
-    private readonly EventSubscriber<JObject, ushort, string>              _pcpCreated;
+    private readonly IDalamudPluginInterface                                               _pluginInterface;
+    private readonly Configuration                                                         _config;
+    private readonly EventSubscriber<ChangedItemType, uint>                                _tooltipSubscriber;
+    private readonly EventSubscriber<MouseButton, ChangedItemType, uint>                   _clickSubscriber;
+    private readonly EventSubscriber<nint, Guid, nint, nint, nint>                         _creatingCharacterBase;
+    private readonly EventSubscriber<nint, Guid, nint>                                     _createdCharacterBase;
+    private readonly EventSubscriber<ModSettingChange, Guid, string, bool>                 _modSettingChanged;
+    private readonly EventSubscriber<JObject, string, Guid>                                _pcpParsed;
+    private readonly EventSubscriber<JObject, ushort, string>                              _pcpCreated;
+    private readonly EventSubscriber<string, string, Dictionary<Assembly, (bool, string)>> _modUsageQueried;
 
     private global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier?                          _collectionByIdentifier;
     private global::Penumbra.Api.IpcSubscribers.GetCollections?                                      _collections;
@@ -109,6 +110,7 @@ public class PenumbraService : IDisposable
         _modSettingChanged     = global::Penumbra.Api.IpcSubscribers.ModSettingChanged.Subscriber(pi);
         _pcpCreated            = global::Penumbra.Api.IpcSubscribers.CreatingPcp.Subscriber(pi);
         _pcpParsed             = global::Penumbra.Api.IpcSubscribers.ParsingPcp.Subscriber(pi);
+        _modUsageQueried       = global::Penumbra.Api.IpcSubscribers.ModUsageQueried.Subscriber(pi);
         Reattach();
     }
 
@@ -153,6 +155,12 @@ public class PenumbraService : IDisposable
     {
         add => _pcpParsed.Event += value;
         remove => _pcpParsed.Event -= value;
+    }
+
+    public event Action<string, string, Dictionary<Assembly, (bool, string)>> ModUsageQueried
+    {
+        add => _modUsageQueried.Event += value;
+        remove => _modUsageQueried.Event -= value;
     }
 
     public event Action? DrawSettingsSection;
@@ -573,7 +581,7 @@ public class PenumbraService : IDisposable
             _changedItems               = new global::Penumbra.Api.IpcSubscribers.GetChangedItemAdapterList(_pluginInterface).Invoke();
             _checkCurrentChangedItems =
                 new global::Penumbra.Api.IpcSubscribers.CheckCurrentChangedItemFunc(_pluginInterface).Invoke();
-            _registerSettingsSection = new global::Penumbra.Api.IpcSubscribers.RegisterSettingsSection(_pluginInterface);
+            _registerSettingsSection   = new global::Penumbra.Api.IpcSubscribers.RegisterSettingsSection(_pluginInterface);
             _unregisterSettingsSection = new global::Penumbra.Api.IpcSubscribers.UnregisterSettingsSection(_pluginInterface);
 
             _registerSettingsSection.Invoke(InvokeDrawSettingsSection);
