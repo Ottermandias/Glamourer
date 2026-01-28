@@ -9,7 +9,6 @@ using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.GameData;
 using Penumbra.GameData.DataContainers;
@@ -602,14 +601,21 @@ public class StateListener : IDisposable
             change = UpdateState.Change;
         }
 
-        if (baseData.Skeleton.Id != weapon.Skeleton.Id || baseData.Weapon.Id != weapon.Weapon.Id || baseData.Variant != weapon.Variant)
+        var idsDiffer = baseData.Skeleton.Id != weapon.Skeleton.Id
+         || baseData.Weapon.Id != weapon.Weapon.Id
+         || baseData.Variant != weapon.Variant;
+        // Special case when nothing is equipped to the offhand which is already nothing, but we need to update the type.
+        var nothingDiffers = baseData.Skeleton.Id is 0 && slot is EquipSlot.OffHand;
+
+        if (idsDiffer || nothingDiffers)
         {
             if (_isPlayerNpc)
                 return UpdateState.Transformed;
 
             var item = _items.Identify(slot, weapon.Skeleton, weapon.Weapon, weapon.Variant,
                 slot is EquipSlot.OffHand ? state.BaseData.MainhandType : FullEquipType.Unknown);
-            state.BaseData.SetItem(slot, item);
+            if (idsDiffer || item.Type != state.BaseData.OffhandType)
+                state.BaseData.SetItem(slot, item);
             change = UpdateState.Change;
         }
 
