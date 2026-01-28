@@ -1,4 +1,4 @@
-﻿using OtterGui;
+﻿using ImSharp;
 using OtterGui.Extensions;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -27,7 +27,7 @@ public class CustomizeSet
     public SubRace Clan   { get; }
     public Race    Race   { get; }
 
-    public string Name { get; internal init; } = string.Empty;
+    public StringU8 Name { get; internal init; } = StringU8.Empty;
 
     public CustomizeFlag SettingAvailable { get; internal set; }
 
@@ -38,9 +38,9 @@ public class CustomizeSet
         => SettingAvailable.HasFlag(index.ToFlag());
 
     // Meta
-    public IReadOnlyList<string> OptionName { get; internal init; } = null!;
+    public IReadOnlyList<StringU8> OptionName { get; internal init; } = null!;
 
-    public string Option(CustomizeIndex index)
+    public StringU8 Option(CustomizeIndex index)
         => OptionName[(int)index];
 
     public IReadOnlyList<byte>                             Voices { get; internal init; } = null!;

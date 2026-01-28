@@ -81,7 +81,7 @@ public partial class CustomizationDrawer(
     private CustomizeValue _currentByte = CustomizeValue.Zero;
     private bool           _currentApply;
     private int            _currentCount;
-    private string         _currentOption = string.Empty;
+    private StringU8         _currentOption = StringU8.Empty;
 
     // Prepare a new customization option.
     private Im.IdDisposable SetId(CustomizeIndex index)

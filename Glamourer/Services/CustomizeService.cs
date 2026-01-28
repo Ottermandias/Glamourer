@@ -1,4 +1,5 @@
 using Glamourer.GameData;
+using ImSharp;
 using Luna;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -73,12 +74,14 @@ public sealed class CustomizeService(
     }
 
     /// <summary> In languages other than english the actual clan name may depend on gender. </summary>
-    public string ClanName(SubRace race, Gender gender)
+    public StringU8 ClanName(SubRace race, Gender gender)
     {
-        if (gender == Gender.FemaleNpc)
-            gender = Gender.Female;
-        if (gender == Gender.MaleNpc)
-            gender = Gender.Male;
+        gender = gender switch
+        {
+            Gender.FemaleNpc => Gender.Female,
+            Gender.MaleNpc   => Gender.Male,
+            _                => gender,
+        };
         return Manager.GetSet(race, gender).Name;
     }
 

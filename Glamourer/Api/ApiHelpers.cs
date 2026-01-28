@@ -3,12 +3,12 @@ using Glamourer.Designs;
 using Glamourer.State;
 using Luna;
 using OtterGui.Extensions;
-using OtterGui.Log;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 using Penumbra.String;
+using LazyString = Luna.LazyString;
 
 namespace Glamourer.Api;
 
@@ -85,14 +85,14 @@ public class ApiHelpers(ActorObjectManager objects, StateManager stateManager, A
 
         return stateManager.Values.Where(state => state.Identifier.Type is IdentifierType.Player && state.Identifier.PlayerName == byteString)
             .Concat(ArrayExtensions.SelectWhere(objects
-   .Where(kvp => kvp.Key is { IsValid: true, Type: IdentifierType.Player } && kvp.Key.PlayerName == byteString), kvp =>
-                {
-                    if (stateManager.ContainsKey(kvp.Key))
-                        return (false, null);
+                .Where(kvp => kvp.Key is { IsValid: true, Type: IdentifierType.Player } && kvp.Key.PlayerName == byteString), kvp =>
+            {
+                if (stateManager.ContainsKey(kvp.Key))
+                    return (false, null);
 
-                    var ret = stateManager.GetOrCreate(kvp.Key, kvp.Value.Objects[0], out var state);
-                    return (ret, state);
-                }));
+                var ret = stateManager.GetOrCreate(kvp.Key, kvp.Value.Objects[0], out var state);
+                return (ret, state);
+            }));
     }
 
 
@@ -109,8 +109,8 @@ public class ApiHelpers(ActorObjectManager objects, StateManager stateManager, A
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     internal static LazyString Args(params object[] arguments)
     {
-        if (arguments.Length == 0)
-            return new LazyString(() => "no arguments");
+        if (arguments.Length is 0)
+            return new LazyString("no arguments");
 
         return new LazyString(() =>
         {
