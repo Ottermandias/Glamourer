@@ -39,7 +39,7 @@ public class UnlockOverview(
 
     private void DrawSelector()
     {
-        using var child = ImRaii.Child("Selector", new Vector2(200 * ImGuiHelpers.GlobalScale, -1), true);
+        using var child = ImRaii.Child("Selector", new Vector2(200 * Im.Style.GlobalScale, -1), true);
         if (!child)
             return;
 
@@ -129,7 +129,7 @@ public class UnlockOverview(
 
             if (favorites.Contains(_selected3, _selected2, customize.Index, customize.Value))
                 ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), _favoriteColor,
-                    12 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 6 * ImGuiHelpers.GlobalScale);
+                    12 * Im.Style.GlobalScale, ImDrawFlags.RoundCornersAll, 6 * Im.Style.GlobalScale);
 
             if (hasIcon && ImGui.IsItemHovered())
             {
@@ -201,7 +201,7 @@ public class UnlockOverview(
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (favorites.Contains(item))
                 ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), _favoriteColor,
-                    2 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * ImGuiHelpers.GlobalScale);
+                    2 * Im.Style.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * Im.Style.GlobalScale);
 
             var mods = DrawModdedMarker(item, iconSize);
 
@@ -272,7 +272,7 @@ public class UnlockOverview(
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (favorites.Contains(item))
                 ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
-                    2 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * ImGuiHelpers.GlobalScale);
+                    2 * Im.Style.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * Im.Style.GlobalScale);
 
             var mods = DrawModdedMarker(item, iconSize);
 

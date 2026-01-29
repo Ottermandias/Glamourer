@@ -12,7 +12,7 @@ namespace Glamourer.Events;
 /// </list>
 /// </summary>
 public sealed class TabSelected()
-    : EventWrapper<MainWindow.TabType, Design?, TabSelected.Priority>(nameof(TabSelected))
+    : EventWrapper<MainTabType, Design?, TabSelected.Priority>(nameof(TabSelected))
 {
     public enum Priority
     {

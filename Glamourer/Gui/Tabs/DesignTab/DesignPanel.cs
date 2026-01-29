@@ -274,7 +274,7 @@ public class DesignPanel
             DrawMetaApplication();
         }
 
-        ImGui.SameLine(210 * ImUtf8.GlobalScale + ImGui.GetStyle().ItemSpacing.X);
+        ImGui.SameLine(210 * ImUtf8.GlobalScale + Im.Style.ItemSpacing.X);
         using (var _ = ImRaii.Group())
         {
             void ApplyEquip(string label, EquipFlag allFlags, bool stain, IEnumerable<EquipSlot> slots)
@@ -457,13 +457,13 @@ public class DesignPanel
 
     private void DrawParameterApplication()
     {
-        using var id        = ImUtf8.PushId("Parameter");
-        var       flags     = (uint)_selector.Selected!.Application.Parameters;
-        var       bigChange = ImGui.CheckboxFlags("Apply All Customize Parameters", ref flags, (uint)CustomizeParameterExtensions.All);
+        using var id        = Im.Id.Push("Parameter"u8);
+        var       flags     = (ulong)_selector.Selected!.Application.Parameters;
+        var       bigChange = Im.Checkbox("Apply All Customize Parameters"u8, ref flags, (ulong)CustomizeParameterExtensions.All);
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
         {
             var apply = bigChange ? ((CustomizeParameterFlag)flags).HasFlag(flag) : _selector.Selected!.DoApplyParameter(flag);
-            if (ImUtf8.Checkbox($"Apply {flag.ToName()}", ref apply) || bigChange)
+            if (Im.Checkbox($"Apply {flag.ToNameU8()}", ref apply) || bigChange)
                 _manager.ChangeApplyParameter(_selector.Selected!, flag, apply);
         }
     }

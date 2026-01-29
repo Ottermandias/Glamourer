@@ -36,7 +36,7 @@ public class CollectionOverrideDrawer(
         if (!table)
             return;
 
-        var buttonSize = new Vector2(ImGui.GetFrameHeight());
+        var buttonSize = new Vector2(Im.Style.FrameHeight);
         ImGui.TableSetupColumn("buttons",     ImGuiTableColumnFlags.WidthFixed,   buttonSize.X);
         ImGui.TableSetupColumn("identifiers", ImGuiTableColumnFlags.WidthStretch, 0.35f);
         ImGui.TableSetupColumn("collections", ImGuiTableColumnFlags.WidthStretch, 0.4f);
@@ -161,7 +161,7 @@ public class CollectionOverrideDrawer(
         if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), buttonSize, tt, tt[0] is not 'A', true))
             collectionOverrides.AddOverride(_identifiers, currentId, currentName);
 
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        ImGui.SameLine(0, Im.Style.ItemInnerSpacing.X);
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {
             using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));

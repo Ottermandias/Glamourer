@@ -1,147 +1,66 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
-using Glamourer.Designs;
-using Glamourer.Events;
-using Glamourer.Gui.Tabs;
-using Glamourer.Gui.Tabs.ActorTab;
-using Glamourer.Gui.Tabs.AutomationTab;
-using Glamourer.Gui.Tabs.DebugTab;
-using Glamourer.Gui.Tabs.DesignTab;
-using Glamourer.Gui.Tabs.NpcTab;
-using Glamourer.Gui.Tabs.SettingsTab;
-using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Interop.Penumbra;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 using Luna;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Text;
-using OtterGui.Widgets;
-using Changelog = Luna.Changelog;
-using ITab = OtterGui.Widgets.ITab;
-using Window = Dalamud.Interface.Windowing.Window;
 
 namespace Glamourer.Gui;
 
-public class MainWindowPosition : IService
+public sealed class MainWindow : Window, IDisposable
 {
-    public bool    IsOpen   { get; set; }
-    public Vector2 Position { get; set; }
-    public Vector2 Size     { get; set; }
-}
+    private readonly Configuration   _config;
+    private readonly PenumbraService _penumbra;
+    private readonly DesignQuickBar  _quickBar;
+    private readonly MainTabBar      _mainTabBar;
+    private          bool            _ignorePenumbra;
 
-public class MainWindow : Window, IDisposable
-{
-    public enum TabType
-    {
-        None       = -1,
-        Settings   = 0,
-        Debug      = 1,
-        Actors     = 2,
-        Designs    = 3,
-        Automation = 4,
-        Unlocks    = 5,
-        Messages   = 6,
-        Npcs       = 7,
-    }
-
-    private readonly Configuration      _config;
-    private readonly PenumbraService    _penumbra;
-    private readonly DesignQuickBar     _quickBar;
-    private readonly TabSelected        _event;
-    private readonly MainWindowPosition _position;
-    private readonly ITab[]             _tabs;
-    private          bool               _ignorePenumbra;
-
-    public readonly SettingsTab   Settings;
-    public readonly ActorTab      Actors;
-    public readonly DebugTab      Debug;
-    public readonly DesignTab     Designs;
-    public readonly AutomationTab Automation;
-    public readonly UnlocksTab    Unlocks;
-    public readonly NpcTab        Npcs;
-    public readonly MessagesTab   Messages;
-
-    public TabType SelectTab;
-
-    public MainWindow(IDalamudPluginInterface pi, Configuration config, SettingsTab settings, ActorTab actors, DesignTab designs,
-        DebugTab debugTab, AutomationTab automation, UnlocksTab unlocks, TabSelected @event, MessagesTab messages, DesignQuickBar quickBar,
-        NpcTab npcs, MainWindowPosition position, PenumbraService penumbra)
+    public MainWindow(IDalamudPluginInterface pi, Configuration config, PenumbraService penumbra,
+        MainTabBar mainTabBar, DesignQuickBar quickBar)
         : base("GlamourerMainWindow")
     {
         pi.UiBuilder.DisableGposeUiHide = true;
-        SizeConstraints = new WindowSizeConstraints()
+        SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(700, 675),
-            MaximumSize = ImGui.GetIO().DisplaySize,
+            MaximumSize = Im.Io.DisplaySize,
         };
-        Settings   = settings;
-        Actors     = actors;
-        Designs    = designs;
-        Automation = automation;
-        Debug      = debugTab;
-        Unlocks    = unlocks;
-        _event     = @event;
-        Messages   = messages;
-        _quickBar  = quickBar;
-        Npcs       = npcs;
-        _position  = position;
-        _config    = config;
-        _penumbra  = penumbra;
-        _tabs =
-        [
-            settings,
-            actors,
-            designs,
-            automation,
-            unlocks,
-            npcs,
-            messages,
-            debugTab,
-        ];
-        SelectTab = _config.Ephemeral.SelectedTab;
-        _event.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
-        IsOpen = _config.OpenWindowAtStart;
+        _mainTabBar = mainTabBar;
+        _quickBar   = quickBar;
+        _config     = config;
+        _penumbra   = penumbra;
+        _mainTabBar = mainTabBar;
+        IsOpen      = _config.OpenWindowAtStart;
 
-        _penumbra.DrawSettingsSection += Settings.DrawPenumbraIntegrationSettings;
+        _penumbra.DrawSettingsSection += _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
     }
 
     public void OpenSettings()
     {
-        IsOpen    = true;
-        SelectTab = TabType.Settings;
+        IsOpen              = true;
+        _mainTabBar.NextTab = MainTabType.Settings;
     }
 
     public override void PreDraw()
     {
         Flags = _config.Ephemeral.LockMainWindow
-            ? Flags | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize
-            : Flags & ~(ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize);
-        _position.IsOpen = IsOpen;
-        WindowName       = GetLabel();
+            ? Flags | WindowFlags.NoMove | WindowFlags.NoResize
+            : Flags & ~(WindowFlags.NoMove | WindowFlags.NoResize);
+        WindowName = GetLabel();
     }
 
     public void Dispose()
-    {
-        _event.Unsubscribe(OnTabSelected);
-        _penumbra.DrawSettingsSection -= Settings.DrawPenumbraIntegrationSettings;
-    }
+        => _penumbra.DrawSettingsSection -= _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
 
     public override void Draw()
     {
-        var yPos = ImGui.GetCursorPosY();
-        _position.Size     = ImGui.GetWindowSize();
-        _position.Position = ImGui.GetWindowPos();
-
+        var yPos = Im.Cursor.Y;
         if (!_penumbra.Available && !_ignorePenumbra)
         {
-            if (_penumbra.CurrentMajor == 0)
+            if (_penumbra.CurrentMajor is 0)
                 DrawProblemWindow(
-                    "Could not attach to Penumbra. Please make sure Penumbra is installed and running.\n\nPenumbra is required for Glamourer to work properly.");
+                    "Could not attach to Penumbra. Please make sure Penumbra is installed and running.\n\nPenumbra is required for Glamourer to work properly."u8);
             else if (_penumbra is
                      {
-
                          CurrentMajor: PenumbraService.RequiredPenumbraBreakingVersion,
                          CurrentMinor: >= PenumbraService.RequiredPenumbraFeatureVersion,
                      })
@@ -153,48 +72,10 @@ public class MainWindow : Window, IDisposable
         }
         else
         {
-            if (TabBar.Draw("##tabs", ImGuiTabBarFlags.None, ToLabel(SelectTab), out var currentTab, () => { }, _tabs))
-                SelectTab = TabType.None;
-            var tab = FromLabel(currentTab);
-
-            if (tab != _config.Ephemeral.SelectedTab)
-            {
-                _config.Ephemeral.SelectedTab = FromLabel(currentTab);
-                _config.Ephemeral.Save();
-            }
-
+            _mainTabBar.Draw();
             if (_config.ShowQuickBarInTabs)
                 _quickBar.DrawAtEnd(yPos);
         }
-    }
-
-    private ReadOnlySpan<byte> ToLabel(TabType type)
-        => type switch
-        {
-            TabType.Settings   => Settings.Label,
-            TabType.Debug      => Debug.Label,
-            TabType.Actors     => Actors.Label,
-            TabType.Designs    => Designs.Label,
-            TabType.Automation => Automation.Label,
-            TabType.Unlocks    => Unlocks.Label,
-            TabType.Messages   => Messages.Label,
-            TabType.Npcs       => Npcs.Label,
-            _                  => ReadOnlySpan<byte>.Empty,
-        };
-
-    private TabType FromLabel(ReadOnlySpan<byte> label)
-    {
-        // @formatter:off
-        if (label == Actors.Label)     return TabType.Actors;
-        if (label == Designs.Label)    return TabType.Designs;
-        if (label == Settings.Label)   return TabType.Settings;
-        if (label == Automation.Label) return TabType.Automation;
-        if (label == Unlocks.Label)    return TabType.Unlocks;
-        if (label == Npcs.Label)       return TabType.Npcs;
-        if (label == Messages.Label)   return TabType.Messages;
-        if (label == Debug.Label)      return TabType.Debug;
-        // @formatter:on
-        return TabType.None;
     }
 
     /// <summary> The longest support button text. </summary>
@@ -204,19 +85,19 @@ public class MainWindow : Window, IDisposable
     /// <summary> Draw the support button group on the right-hand side of the window. </summary>
     public static void DrawSupportButtons(Glamourer glamourer, Changelog changelog)
     {
-        var width = ImUtf8.CalcTextSize(SupportInfoButtonText).X + ImGui.GetStyle().FramePadding.X * 2;
-        var xPos  = ImGui.GetWindowWidth() - width;
-        ImGui.SetCursorPos(new Vector2(xPos, 0));
+        var width = Im.Font.CalculateSize(SupportInfoButtonText).X + Im.Style.FramePadding.X * 2;
+        var xPos  = Im.Window.Width - width;
+        Im.Cursor.Position = new Vector2(xPos, 0);
         SupportButton.Discord(Glamourer.Messager, width);
 
-        ImGui.SetCursorPos(new Vector2(xPos, ImGui.GetFrameHeightWithSpacing()));
-        DrawSupportButton(glamourer); 
+        Im.Cursor.Position = new Vector2(xPos, Im.Style.FrameHeightWithSpacing);
+        DrawSupportButton(glamourer);
 
-        ImGui.SetCursorPos(new Vector2(xPos, 2 * ImGui.GetFrameHeightWithSpacing()));
+        Im.Cursor.Position = new Vector2(xPos, 2 * Im.Style.FrameHeightWithSpacing);
         SupportButton.ReniGuide(Glamourer.Messager, width);
 
-        ImGui.SetCursorPos(new Vector2(xPos, 3 * ImGui.GetFrameHeightWithSpacing()));
-        if (ImGui.Button("Show Changelogs", new Vector2(width, 0)))
+        Im.Cursor.Position = new Vector2(xPos, 3 * Im.Style.FrameHeightWithSpacing);
+        if (Im.Button("Show Changelogs"u8, new Vector2(width, 0)))
             changelog.ForceOpen = true;
     }
 
@@ -225,22 +106,16 @@ public class MainWindow : Window, IDisposable
     /// </summary>
     private static void DrawSupportButton(Glamourer glamourer)
     {
-        if (!ImUtf8.Button(SupportInfoButtonText))
+        if (!Im.Button(SupportInfoButtonText))
             return;
 
         var text = glamourer.GatherSupportInformation();
-        ImGui.SetClipboardText(text);
+        Im.Clipboard.Set(text);
         Glamourer.Messager.NotificationMessage("Copied Support Info to Clipboard.", NotificationType.Success, false);
     }
 
-    private void OnTabSelected(TabType type, Design? _)
-    {
-        SelectTab = type;
-        IsOpen    = true;
-    }
-
     private string GetLabel()
-        => (Glamourer.Version.Length == 0, _config.Ephemeral.IncognitoMode) switch
+        => (Glamourer.Version.Length is 0, _config.Ephemeral.IncognitoMode) switch
         {
             (true, true)   => "Glamourer (Incognito Mode)###GlamourerMainWindow",
             (true, false)  => "Glamourer###GlamourerMainWindow",
@@ -248,30 +123,43 @@ public class MainWindow : Window, IDisposable
             (false, true)  => $"Glamourer v{Glamourer.Version} (Incognito Mode)###GlamourerMainWindow",
         };
 
-    private void DrawProblemWindow(string text)
+    private void DrawProblemWindow(Utf8StringHandler<TextStringHandlerBuffer> text)
     {
-        using var color = ImRaii.PushColor(ImGuiCol.Text, Colors.SelectedRed);
-        ImGui.NewLine();
-        ImGui.NewLine();
-        ImGuiUtil.TextWrapped(text);
+        using var color = ImGuiColor.Text.Push(Colors.SelectedRed);
+        Im.Line.New();
+        Im.Line.New();
+        Im.TextWrapped(text);
         color.Pop();
 
-        ImGui.NewLine();
-        if (ImUtf8.Button("Try Attaching Again"u8))
+        Im.Line.New();
+        if (ImEx.Button("Try Attaching Again"u8))
             _penumbra.Reattach();
 
         var ignoreAllowed = _config.DeleteDesignModifier.IsActive();
         Im.Line.Same();
-        if (ImUtf8.ButtonEx("Ignore Penumbra This Time"u8,
+        if (ImEx.Button("Ignore Penumbra This Time"u8, default,
                 $"Some functionality, like automation or retaining state, will not work correctly without Penumbra.\n\nIgnore this at your own risk!{(ignoreAllowed ? string.Empty : $"\n\nHold {_config.DeleteDesignModifier} while clicking to enable this button.")}",
-                default, !ignoreAllowed))
+                !ignoreAllowed))
             _ignorePenumbra = true;
 
-        ImGui.NewLine();
-        ImGui.NewLine();
+        Im.Line.New();
+        Im.Line.New();
         SupportButton.Discord(Glamourer.Messager, 0);
         Im.Line.Same();
-        ImGui.NewLine();
-        ImGui.NewLine();
+        Im.Line.New();
+        Im.Line.New();
     }
+}
+
+public enum MainTabType
+{
+    None       = -1,
+    Settings   = 0,
+    Debug      = 1,
+    Actors     = 2,
+    Designs    = 3,
+    Automation = 4,
+    Unlocks    = 5,
+    Messages   = 6,
+    Npcs       = 7,
 }

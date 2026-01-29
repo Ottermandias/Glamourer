@@ -1,19 +1,20 @@
-﻿using Dalamud.Interface.Utility;
-using Dalamud.Bindings.ImGui;
-using ImSharp;
-using OtterGui.Widgets;
+﻿using ImSharp;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
 
-public class NpcTab(NpcSelector _selector, NpcPanel _panel) : ITab
+public sealed class NpcTab(NpcSelector selector, NpcPanel panel) : ITab<MainTabType>
 {
     public ReadOnlySpan<byte> Label
         => "NPCs"u8;
 
+    public MainTabType Identifier
+        => MainTabType.Npcs;
+
     public void DrawContent()
     {
-        _selector.Draw(200 * ImGuiHelpers.GlobalScale);
+        selector.Draw(200 * Im.Style.GlobalScale);
         Im.Line.Same();
-        _panel.Draw();
+        panel.Draw();
     }
 }

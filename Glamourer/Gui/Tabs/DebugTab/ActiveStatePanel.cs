@@ -24,7 +24,7 @@ public sealed class ActiveStatePanel(StateManager stateManager, ActorObjectManag
     {
         foreach (var (identifier, actors) in objectManager)
         {
-            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Trash.ToIconString()}##{actors.Label}", new Vector2(ImGui.GetFrameHeight()),
+            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Trash.ToIconString()}##{actors.Label}", new Vector2(Im.Style.FrameHeight),
                     string.Empty, !stateManager.ContainsKey(identifier), true))
                 stateManager.DeleteState(identifier);
 

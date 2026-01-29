@@ -93,10 +93,13 @@ public class GlamourerChangelog
 
     private static void Add1_4_0_0(Changelog log)
         => log.NextVersion("Version 1.4.0.0"u8)
-            .RegisterHighlight("The design selector width is now draggable within certain restrictions that depend on the total window width."u8)
+            .RegisterHighlight(
+                "The design selector width is now draggable within certain restrictions that depend on the total window width."u8)
             .RegisterEntry("The current behavior may not be final, let me know if you have any comments."u8, 1)
             .RegisterEntry("Regular customization colors can now be dragged & dropped onto other customizations."u8)
-            .RegisterEntry("If no identical color is available in the target slot, the most similar color available (for certain values of similar) will be chosen instead."u8, 1)
+            .RegisterEntry(
+                "If no identical color is available in the target slot, the most similar color available (for certain values of similar) will be chosen instead."u8,
+                1)
             .RegisterEntry("Resetting advanced dyes and customizations has been split into two buttons for the quick design bar."u8)
             .RegisterEntry("Weapons now also support custom ID input in the combo search box."u8)
             .RegisterEntry("Added new IPC methods GetExtendedDesignData, AddDesign, DeleteDesign, GetDesignBase64, GetDesignJObject."u8)
@@ -118,7 +121,8 @@ public class GlamourerChangelog
         => log.NextVersion("Version 1.3.8.0"u8)
             .RegisterImportant("Updated Glamourer for update 7.20 and Dalamud API 12."u8)
             .RegisterEntry(
-                "This is not thoroughly tested, but I decided to push to stable instead of testing because otherwise a lot of people would just go to testing just for early access again despite having no business doing so."u8, 1)
+                "This is not thoroughly tested, but I decided to push to stable instead of testing because otherwise a lot of people would just go to testing just for early access again despite having no business doing so."u8,
+                1)
             .RegisterEntry(
                 "I also do not use most of the functionality of Glamourer myself, so I am unable to even encounter most issues myself."u8, 1)
             .RegisterEntry("If you encounter any issues, please report them quickly on the discord."u8,                                    1)
@@ -136,7 +140,8 @@ public class GlamourerChangelog
             .RegisterEntry("Added an optional button to the Quick Design Bar to reset all temporary settings applied by Glamourer."u8)
             .RegisterHighlight(
                 "Any existing advanced dyes will now be highlighted on the corresponding Advanced Dye buttons in the actors panel and on the corresponding equip slot name in the design panel."u8)
-            .RegisterEntry("This also affects currently inactive advanced dyes, which can now be manually removed on the inactive materials."u8, 1)
+            .RegisterEntry("This also affects currently inactive advanced dyes, which can now be manually removed on the inactive materials."u8,
+                1)
             .RegisterHighlight(
                 "In the design list of an automation set, the design indices are now highlighted if a design contains advanced dyes, mod associations, or links to other designs."u8)
             .RegisterHighlight("Some quality of life improvements:"u8)
@@ -178,12 +183,14 @@ public class GlamourerChangelog
             .RegisterEntry("Designs now have a setting to always reset all prior temporary settings made by Glamourer on application."u8, 1)
             .RegisterEntry("Automation Sets also have a setting to do this, independently of the designs contained in them."u8,           1)
             .RegisterHighlight("More NPC customization options should now be accepted as valid for designs, regardless of clan/gender."u8)
-            .RegisterHighlight("The 'Apply' chat command had the currently selected design and the current quick bar design added as choices."u8)
+            .RegisterHighlight(
+                "The 'Apply' chat command had the currently selected design and the current quick bar design added as choices."u8)
             .RegisterEntry(
                 "The application buttons for designs, NPCs or actors should now stick at the top of their respective panels even when scrolling down."u8)
             .RegisterHighlight("Randomly chosen designs should now stay across loading screens or redrawing. (1.3.4.3)"u8)
             .RegisterEntry(
-                "In automation, Random designs now have an option to always choose another design, including during loading screens or redrawing."u8, 1)
+                "In automation, Random designs now have an option to always choose another design, including during loading screens or redrawing."u8,
+                1)
             .RegisterEntry("Fixed an issue where disabling auto designs did not work as expected."u8)
             .RegisterEntry("Fixed the inversion of application flags in IPC calls."u8)
             .RegisterEntry("Fixed an issue with the scaling of the Advanced Dye popup with increased font sizes."u8)
@@ -235,13 +242,17 @@ public class GlamourerChangelog
             .RegisterEntry("Unfortunately, this is slightly based on guesswork and may cause false-positive migrations."u8,            1)
             .RegisterEntry("In general, the values for Gloss and Specular Strength were swapped, so the migration swaps them back."u8, 1)
             .RegisterEntry(
-                "In some cases this may not be correct, or the values stored were problematic to begin with and will now cause further issues."u8, 1)
+                "In some cases this may not be correct, or the values stored were problematic to begin with and will now cause further issues."u8,
+                1)
             .RegisterImportant(
-                "If your designs lose their specular color, you need to verify that the Specular Strength is non-zero (usually in 0-100%)."u8, 1)
+                "If your designs lose their specular color, you need to verify that the Specular Strength is non-zero (usually in 0-100%)."u8,
+                1)
             .RegisterImportant(
-                "If your designs are extremely glossy and reflective, you need to verify that the Gloss value is greater than zero (usually a power of 2 >= 1, it should never be 0)."u8, 1)
+                "If your designs are extremely glossy and reflective, you need to verify that the Gloss value is greater than zero (usually a power of 2 >= 1, it should never be 0)."u8,
+                1)
             .RegisterEntry(
-                "I am very sorry for the inconvenience but there is no way to salvage this sanely in all cases, especially with user-input values."u8, 1)
+                "I am very sorry for the inconvenience but there is no way to salvage this sanely in all cases, especially with user-input values."u8,
+                1)
             .RegisterImportant(
                 "Any materials already using Dawntrails shaders will currently not be able to edit the Gloss or Specular Strength Values in Advanced Dyes."u8)
             .RegisterImportant(
@@ -320,17 +331,20 @@ public class GlamourerChangelog
               + "Please let me know if something does not work right anymore."u8, 1)
             .RegisterHighlight("Added advanced dye options for equipment. You can now live-edit the color sets of your gear."u8)
             .RegisterEntry(
-                "The logic for this is very complicated and may interfere with other options or not update correctly, it will need a lot of testing."u8, 1)
+                "The logic for this is very complicated and may interfere with other options or not update correctly, it will need a lot of testing."u8,
+                1)
             .RegisterEntry("Like Advanced Customization options, this can be turned off in the behaviour settings."u8, 1)
             .RegisterEntry(
-                "To access the options, click the palette buttons in the Equipment Panel - the popup can also be detached from the main window in the settings."u8, 1)
+                "To access the options, click the palette buttons in the Equipment Panel - the popup can also be detached from the main window in the settings."u8,
+                1)
             .RegisterEntry("In designs, only actually changed rows will be stored. You can manually add rows, too."u8, 1)
             .RegisterHighlight(
                 "Added an option so that manual application of a mainhand weapon will also automatically apply its associated offhand (and gloves, for certain fist weapons). This is off by default."u8)
             .RegisterHighlight(
                 "Added an option that always tries to apply associated mod settings for designs to the Penumbra collection associated with the character the design is applied to."u8)
             .RegisterEntry(
-                "This is off by default and I strongly recommend AGAINST using it, since Glamourer has no way to revert such changes. You are responsible for keeping your collection in order."u8, 1)
+                "This is off by default and I strongly recommend AGAINST using it, since Glamourer has no way to revert such changes. You are responsible for keeping your collection in order."u8,
+                1)
             .RegisterHighlight(
                 "Added mouse wheel scrolling to many selectors, e.g. for equipment, dyes or customizations. You need to hold Control while scrolling in most places."u8)
             .RegisterEntry("Improved handling for highlights with advanced customization colors and normal customization settings."u8)
@@ -391,9 +405,11 @@ public class GlamourerChangelog
             .RegisterHighlight("Added support for picking advanced colors for your characters customizations."u8)
             .RegisterEntry("The display and application of those can be toggled off in Glamourers behaviour settings."u8, 1)
             .RegisterEntry(
-                "This provides the same functionality as Palette+, and Palette+ will probably be discontinued soonish (in accordance with Chirp)."u8, 1)
+                "This provides the same functionality as Palette+, and Palette+ will probably be discontinued soonish (in accordance with Chirp)."u8,
+                1)
             .RegisterEntry(
-                "An option to import existing palettes from Palette+ by name is provided for designs, and can be toggled off in the settings."u8, 1)
+                "An option to import existing palettes from Palette+ by name is provided for designs, and can be toggled off in the settings."u8,
+                1)
             .RegisterHighlight(
                 "Advanced colors, equipment and dyes can now be reset to their game state separately by Control-Rightclicking them."u8)
             .RegisterHighlight("Hairstyles and face paints can now be made favourites."u8)
@@ -421,11 +437,14 @@ public class GlamourerChangelog
             .RegisterHighlight("Added the option to define custom color groups and associate designs with them."u8)
             .RegisterEntry("You can create and name design colors in Settings -> Colors -> Custom Design Colors."u8, 1)
             .RegisterEntry(
-                "By default, all designs have an automatic coloring corresponding to the current system, that chooses a color dynamically based on application rules."u8, 1)
+                "By default, all designs have an automatic coloring corresponding to the current system, that chooses a color dynamically based on application rules."u8,
+                1)
             .RegisterEntry(
-                "Example: You create a custom color named 'Test' and make it bright blue. Now you assign 'Test' to some design in its Design Details, and it will always display bright blue in the design list."u8, 1)
-            .RegisterEntry("Design colors are stored by name. If a color can not be found, the design will display the Missing Color instead."u8, 1)
-            .RegisterEntry("You can filter for designs using specific colors via c:"u8, 1)
+                "Example: You create a custom color named 'Test' and make it bright blue. Now you assign 'Test' to some design in its Design Details, and it will always display bright blue in the design list."u8,
+                1)
+            .RegisterEntry(
+                "Design colors are stored by name. If a color can not be found, the design will display the Missing Color instead."u8, 1)
+            .RegisterEntry("You can filter for designs using specific colors via c:"u8,                                                1)
             .RegisterHighlight(
                 "You can now filter for the special case 'None' for filters where that makes sense (like Tags or Mod Associations)."u8)
             .RegisterHighlight(
@@ -453,7 +472,8 @@ public class GlamourerChangelog
                 "When overwriting a saved designs data entirely from clipboard, you can now undo this change and restore the prior design data once via a button top-left."u8)
             .RegisterEntry("Removed the \"Enabled\" checkbox in the settings since it was barely doing anything but breaking Glamourer."u8)
             .RegisterEntry(
-                "If you want to disable Glamourers state-tracking and hooking, you will need to disable the entire Plugin via Dalamud now."u8, 1)
+                "If you want to disable Glamourers state-tracking and hooking, you will need to disable the entire Plugin via Dalamud now."u8,
+                1)
             .RegisterEntry("Added a reference to \"/glamour\" in the \"/glamourer help\" section."u8)
             .RegisterEntry("Updated BNPC Data with new crowd-sourced data from the gubal library."u8)
             .RegisterEntry("Fixed an issue with the quick design bar when no designs are saved."u8)
@@ -493,9 +513,11 @@ public class GlamourerChangelog
         => log.NextVersion("Version 1.0.2.0"u8)
             .RegisterHighlight("Added option to favorite items so they appear first in the item selection combos."u8)
             .RegisterEntry(
-                "The reordering in the combo only happens after closing and opening it again so items do not vanish from view when you (un)favor them."u8, 1)
-            .RegisterEntry("Favored items also get a highlighting border in the overview panels of the unlocks tab, but do not reorder those."u8, 1)
-            .RegisterEntry("In the details panel of the unlocks tab items can be sorted and filtered on favorites."u8, 1)
+                "The reordering in the combo only happens after closing and opening it again so items do not vanish from view when you (un)favor them."u8,
+                1)
+            .RegisterEntry(
+                "Favored items also get a highlighting border in the overview panels of the unlocks tab, but do not reorder those."u8, 1)
+            .RegisterEntry("In the details panel of the unlocks tab items can be sorted and filtered on favorites."u8,                 1)
             .RegisterEntry("Added drag & drop support to drag an automated design into a different automated design set."u8)
             .RegisterEntry("This will remove said design from your current set and add it to the dragged-on set at the end."u8, 1)
             .RegisterEntry("Fixed ONE issue with hat visibility state. There are probably more. This is weird."u8)
@@ -593,37 +615,48 @@ public class GlamourerChangelog
             .RegisterHighlight(
                 "Glamourer has been reworked entirely. Basically everything has been written anew from the ground up, even though some things may look the same."u8)
             .RegisterEntry(
-                "The new version has been tested for quite a while, but there still may be bugs, unintended changes or other issues that slipped through, given the limited amount of testers."u8, 1)
+                "The new version has been tested for quite a while, but there still may be bugs, unintended changes or other issues that slipped through, given the limited amount of testers."u8,
+                1)
             .RegisterEntry(
-                "Migration of configuration and existing designs should mostly work, though some fixed designs may not migrate correctly."u8,  1)
-            .RegisterEntry("All your data should be backed up before being changed, so restauration should always be possible in some way."u8, 1)
+                "Migration of configuration and existing designs should mostly work, though some fixed designs may not migrate correctly."u8, 1)
+            .RegisterEntry("All your data should be backed up before being changed, so restauration should always be possible in some way."u8,
+                1)
             .RegisterImportant(
                 "If you encounter any problems, please report them on the discord. If you encounter data loss, please do so immediately."u8, 1)
             .RegisterHighlight("Major Changes"u8)
             .RegisterEntry(
-                "Redrawing characters is mostly gone. All equipment changes, and all customization changes except race, gender or face, can be applied instantaneously without redrawing."u8, 1)
+                "Redrawing characters is mostly gone. All equipment changes, and all customization changes except race, gender or face, can be applied instantaneously without redrawing."u8,
+                1)
             .RegisterEntry(
-                "As a side effect, Glamourer should no longer be dangerous to use with the aesthetician, since the games data of your character is no longer manipulated, only its visualization."u8, 2)
+                "As a side effect, Glamourer should no longer be dangerous to use with the aesthetician, since the games data of your character is no longer manipulated, only its visualization."u8,
+                2)
             .RegisterEntry("Things like the Lalafell/Dwarf cave in Kholusia also no longer send invalid data to the server."u8, 2)
             .RegisterEntry("Portraits should also be entirely safe."u8,                                                         2)
             .RegisterEntry(
-                "As another side effect, any changes you apply in any way will be kept across zone changes or character switches until they are actively overwritten by something or you restart the entire game, even without automation."u8, 2)
+                "As another side effect, any changes you apply in any way will be kept across zone changes or character switches until they are actively overwritten by something or you restart the entire game, even without automation."u8,
+                2)
             .RegisterImportant(
-                "Compatibility with Anamnesis is questionable. Anamnesis will not be able to detect Glamourers changes, and changes in Anamnesis may confuse Glamourer."u8, 2)
+                "Compatibility with Anamnesis is questionable. Anamnesis will not be able to detect Glamourers changes, and changes in Anamnesis may confuse Glamourer."u8,
+                2)
             .RegisterHighlight("Mare Synchronos compatibility is retained."u8, 2)
             .RegisterEntry("Reverting changes made works far more dependably."u8, 1)
             .RegisterEntry(
-                "You can enable auto-reloading of gear, which will cause your equipment to be reloaded whenever you make changes to the mod collection affecting your character. Great for immediate comparisons of mod options!"u8, 1)
+                "You can enable auto-reloading of gear, which will cause your equipment to be reloaded whenever you make changes to the mod collection affecting your character. Great for immediate comparisons of mod options!"u8,
+                1)
             .RegisterEntry("Customizations can be toggled to apply or not apply individually instead of as a group for each design."u8, 1)
             .RegisterImportant("Replacing your weapons was slightly restricted."u8, 1)
             .RegisterEntry(
-                "Outside of GPose, you can only replace weapons with other weapons of the same type. In GPose, you should still be able to change across types."u8, 2)
+                "Outside of GPose, you can only replace weapons with other weapons of the same type. In GPose, you should still be able to change across types."u8,
+                2)
             .RegisterEntry(
-                "This restriction is because changing some weapon types can lead to game freezes, crashes, soft- and hard locks of your character, and can transmit invalid data to the server."u8, 2)
+                "This restriction is because changing some weapon types can lead to game freezes, crashes, soft- and hard locks of your character, and can transmit invalid data to the server."u8,
+                2)
             .RegisterEntry(
-                "Designs now can carry more information, like tags, their creation or last update date, a description, and associated mods."u8, 1)
+                "Designs now can carry more information, like tags, their creation or last update date, a description, and associated mods."u8,
+                1)
             .RegisterEntry(
-                "Fixed Designs are now called Automated Designs and can be found in the Automation tab. This tab has a help button in the selector."u8, 1)
+                "Fixed Designs are now called Automated Designs and can be found in the Automation tab. This tab has a help button in the selector."u8,
+                1)
             .RegisterEntry("Automated designs use Penumbras way of identifying characters, thus they do not apply by pure name anymore."u8, 2)
             .RegisterImportant(
                 "Please look through them after the migration, because not all names in fixed designs could necessarily be migrated."u8, 2)
@@ -633,12 +666,15 @@ public class GlamourerChangelog
                 1)
             .RegisterHighlight("Notable Minor Changes"u8)
             .RegisterEntry("Hrothgar faces should be fixed."u8, 1)
-            .RegisterEntry("Alpha value is gone. It may be brought back later on, but generally should not be, and was not often used, so eh."u8,
+            .RegisterEntry(
+                "Alpha value is gone. It may be brought back later on, but generally should not be, and was not often used, so eh."u8,
                 1)
             .RegisterEntry(
-                "Glamourer now can optionally protect you from gender- or race-restricted gear not appearing when you switch, by automatically using an appropriate replacement."u8, 1)
+                "Glamourer now can optionally protect you from gender- or race-restricted gear not appearing when you switch, by automatically using an appropriate replacement."u8,
+                1)
             .RegisterEntry(
-                "Glamourer has some fun optional easter eggs and cheat codes, like You've got to think for yourselves! You're all individuals!"u8, 1)
+                "Glamourer has some fun optional easter eggs and cheat codes, like You've got to think for yourselves! You're all individuals!"u8,
+                1)
             .RegisterEntry("You can enable game context menus so you can equip linked items via Glamourer."u8,         1)
             .RegisterEntry("A lot of configuration and options was learned from Penumbra and is available, like..."u8, 1)
             .RegisterEntry("... configurable color coding for the Glamourer UI."u8,                                    2)

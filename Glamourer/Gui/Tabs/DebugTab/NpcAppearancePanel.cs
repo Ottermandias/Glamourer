@@ -33,7 +33,7 @@ public sealed class NpcAppearancePanel(NpcCombo npcCombo, StateManager stateMana
         var resetScroll = ImUtf8.InputText("##npcFilter"u8, ref _npcFilter, "Filter..."u8);
 
         using var table = ImRaii.Table("npcs", 7, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingFixedFit,
-            new Vector2(-1, 400 * ImGuiHelpers.GlobalScale));
+            new Vector2(-1, 400 * Im.Style.GlobalScale));
         if (!table)
             return;
 
@@ -41,7 +41,7 @@ public sealed class NpcAppearancePanel(NpcCombo npcCombo, StateManager stateMana
             ImGui.SetScrollY(0);
 
         ImUtf8.TableSetupColumn("Button"u8,  ImGuiTableColumnFlags.WidthFixed);
-        ImUtf8.TableSetupColumn("Name"u8,    ImGuiTableColumnFlags.WidthFixed, ImGuiHelpers.GlobalScale * 300);
+        ImUtf8.TableSetupColumn("Name"u8,    ImGuiTableColumnFlags.WidthFixed, Im.Style.GlobalScale * 300);
         ImUtf8.TableSetupColumn("Kind"u8,    ImGuiTableColumnFlags.WidthFixed);
         ImUtf8.TableSetupColumn("Id"u8,      ImGuiTableColumnFlags.WidthFixed);
         ImUtf8.TableSetupColumn("Model"u8,   ImGuiTableColumnFlags.WidthFixed);
@@ -49,13 +49,13 @@ public sealed class NpcAppearancePanel(NpcCombo npcCombo, StateManager stateMana
         ImUtf8.TableSetupColumn("Compare"u8, ImGuiTableColumnFlags.WidthStretch);
 
         ImGui.TableNextColumn();
-        var skips = ImGuiClip.GetNecessarySkips(ImGui.GetFrameHeightWithSpacing());
+        var skips = ImGuiClip.GetNecessarySkips(Im.Style.FrameHeightWithSpacing);
         ImGui.TableNextRow();
         var idx = 0;
         var remainder = ImGuiClip.FilteredClippedDraw(npcCombo.Items, skips,
             d => d.Name.Contains(_npcFilter, StringComparison.OrdinalIgnoreCase), DrawData);
         ImGui.TableNextColumn();
-        ImGuiClip.DrawEndDummy(remainder, ImGui.GetFrameHeightWithSpacing());
+        ImGuiClip.DrawEndDummy(remainder, Im.Style.FrameHeightWithSpacing);
         return;
 
         void DrawData(NpcData data)

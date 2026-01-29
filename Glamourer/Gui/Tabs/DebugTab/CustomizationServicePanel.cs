@@ -2,6 +2,8 @@
 using Glamourer.GameData;
 using Glamourer.Services;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
+using Luna;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
@@ -57,6 +59,7 @@ public sealed class CustomizationServicePanel(CustomizeService customize) : IGam
                 : FontAwesomeIcon.Times.ToIconString());
         }
     }
+
     private void DrawColorInfo()
     {
         using var tree = ImUtf8.TreeNode("NPC Colors"u8);
@@ -100,21 +103,21 @@ public sealed class CustomizationServicePanel(CustomizeService customize) : IGam
 
     private void DrawCustomizationInfo(CustomizeSet set)
     {
-        using var tree = ImRaii.TreeNode($"{customize.ClanName(set.Clan, set.Gender)} {set.Gender}");
+        using var tree = Im.Tree.Node($"{customize.ClanName(set.Clan, set.Gender)} {set.Gender}");
         if (!tree)
             return;
 
-        using var table = ImRaii.Table("data", 5, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        using var table = Im.Table.Begin("data"u8, 5, TableFlags.SizingFixedFit | TableFlags.RowBackground);
         if (!table)
             return;
 
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        foreach (var index in CustomizeIndex.Values)
         {
-            ImGuiUtil.DrawTableColumn(index.ToString());
-            ImGuiUtil.DrawTableColumn(set.Option(index));
-            ImGuiUtil.DrawTableColumn(set.IsAvailable(index) ? "Available" : "Unavailable");
-            ImGuiUtil.DrawTableColumn(set.Type(index).ToString());
-            ImGuiUtil.DrawTableColumn(set.Count(index).ToString());
+            table.DrawColumn(index.ToDefaultName());
+            table.DrawColumn(set.Option(index));
+            table.DrawColumn(set.IsAvailable(index) ? "Available"u8 : "Unavailable"u8);
+            table.DrawColumn(set.Type(index).ToNameU8());
+            table.DrawColumn($"{set.Count(index)}");
         }
     }
 

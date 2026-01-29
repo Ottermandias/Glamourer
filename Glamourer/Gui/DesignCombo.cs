@@ -1,5 +1,4 @@
-﻿using Dalamud.Interface.Utility;
-using Dalamud.Interface.Utility.Raii;
+﻿using Dalamud.Interface.Utility.Raii;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Designs.History;
@@ -91,7 +90,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
     {
         _currentDesign = currentDesign;
         UpdateCurrentSelection();
-        InnerWidth = 400 * ImGuiHelpers.GlobalScale;
+        InnerWidth = 400 * Im.Style.GlobalScale;
         var  name = label ?? "Select Design Here...";
         bool ret;
         using (currentDesign is not null ? ImGuiColor.Text.Push(DesignColors.GetColor(currentDesign as Design)) : null)
@@ -102,7 +101,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         if (currentDesign is Design design)
         {
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyCtrl)
-                TabSelected.Invoke(MainWindow.TabType.Designs, design);
+                TabSelected.Invoke(MainTabType.Designs, design);
             ImGuiUtil.HoverTooltip("Control + Right-Click to move to design.");
         }
 
@@ -116,7 +115,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         => obj.Item1.ResolveName(Incognito);
 
     protected override float GetFilterWidth()
-        => InnerWidth - 2 * ImGui.GetStyle().FramePadding.X;
+        => InnerWidth - 2 * Im.Style.FramePadding.X;
 
     protected override bool IsVisible(int globalIndex, LowerString filter)
     {
@@ -209,12 +208,12 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         var pos            = start.X + ImGui.CalcTextSize(leftText).X;
         var maxSize        = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
         var remainingSpace = maxSize - pos;
-        var requiredSize   = ImGui.CalcTextSize(text).X + ImGui.GetStyle().ItemInnerSpacing.X;
+        var requiredSize   = ImGui.CalcTextSize(text).X + Im.Style.ItemInnerSpacing.X;
         var offset         = remainingSpace - requiredSize;
         if (ImGui.GetScrollMaxY() == 0)
-            offset -= ImGui.GetStyle().ItemInnerSpacing.X;
+            offset -= Im.Style.ItemInnerSpacing.X;
 
-        if (offset < ImGui.GetStyle().ItemSpacing.X)
+        if (offset < Im.Style.ItemSpacing.X)
             ImGuiUtil.HoverTooltip(text);
         else
             Im.Window.DrawList.Text(start with { X = pos + offset }, color, text);

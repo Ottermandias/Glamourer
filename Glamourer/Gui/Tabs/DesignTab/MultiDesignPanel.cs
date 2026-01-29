@@ -106,8 +106,8 @@ public class MultiDesignPanel(
         if (!tree)
             return selector.SelectedPaths.Count(CountLeaves);
 
-        var sizeType             = new Vector2(ImGui.GetFrameHeight());
-        var availableSizePercent = (ImGui.GetContentRegionAvail().X - sizeType.X - 4 * ImGui.GetStyle().CellPadding.X) / 100;
+        var sizeType             = new Vector2(Im.Style.FrameHeight);
+        var availableSizePercent = (ImGui.GetContentRegionAvail().X - sizeType.X - 4 * Im.Style.CellPadding.X) / 100;
         var sizeMods             = availableSizePercent * 35;
         var sizeFolders          = availableSizePercent * 65;
 
@@ -161,8 +161,8 @@ public class MultiDesignPanel(
     {
         ImUtf8.TextFrameAligned("Multi Tagger:"u8);
         Im.Line.Same();
-        var offset = ImGui.GetItemRectSize().X + ImGui.GetStyle().WindowPadding.X;
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 2 * (width.X + ImGui.GetStyle().ItemSpacing.X));
+        var offset = ImGui.GetItemRectSize().X + Im.Style.WindowPadding.X;
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 2 * (width.X + Im.Style.ItemSpacing.X));
         ImUtf8.InputText("##tag"u8, ref _tag, "Tag Name..."u8);
 
         UpdateTagCache();
@@ -198,8 +198,8 @@ public class MultiDesignPanel(
     private void DrawMultiQuickDesignBar(float offset)
     {
         ImUtf8.TextFrameAligned("Multi QDB:"u8);
-        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
-        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numQuickDesignEnabled;
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs are already displayed in the quick design bar."
@@ -226,8 +226,8 @@ public class MultiDesignPanel(
     private void DrawMultiLock(float offset)
     {
         ImUtf8.TextFrameAligned("Multi Lock:"u8);
-        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
-        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsLocked;
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs are already write protected."
@@ -249,8 +249,8 @@ public class MultiDesignPanel(
     private void DrawMultiResetSettings(float offset)
     {
         ImUtf8.TextFrameAligned("Settings:"u8);
-        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
-        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsResetSettings;
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs already reset temporary settings."
@@ -272,8 +272,8 @@ public class MultiDesignPanel(
     private void DrawMultiResetDyes(float offset)
     {
         ImUtf8.TextFrameAligned("Adv. Dyes:"u8);
-        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
-        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsResetDyes;
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs already reset advanced dyes."
@@ -295,8 +295,8 @@ public class MultiDesignPanel(
     private void DrawMultiForceRedraw(float offset)
     {
         ImUtf8.TextFrameAligned("Redrawing:"u8);
-        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
-        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsForcedRedraw;
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs already force redraws."
@@ -318,9 +318,9 @@ public class MultiDesignPanel(
     private void DrawMultiColor(Vector2 width, float offset)
     {
         ImUtf8.TextFrameAligned("Multi Colors:"u8);
-        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
+        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
         _colorCombo.Draw("##color", _colorCombo.CurrentSelection ?? string.Empty, "Select a design color.",
-            ImGui.GetContentRegionAvail().X - 2 * (width.X + ImGui.GetStyle().ItemSpacing.X), ImGui.GetTextLineHeight());
+            ImGui.GetContentRegionAvail().X - 2 * (width.X + Im.Style.ItemSpacing.X), ImGui.GetTextLineHeight());
 
         UpdateColorCache();
         var label = _addDesigns.Count > 0
@@ -360,7 +360,7 @@ public class MultiDesignPanel(
     private void DrawAdvancedButtons(float offset)
     {
         ImUtf8.TextFrameAligned("Delete Adv."u8);
-        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
+        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
         var enabled = config.DeleteDesignModifier.IsActive();
         var tt = _numDesignsWithAdvancedDyes is 0
             ? "No selected designs contain any advanced dyes."
@@ -382,8 +382,8 @@ public class MultiDesignPanel(
     private void DrawApplicationButtons(float offset)
     {
         ImUtf8.TextFrameAligned("Application"u8);
-        ImGui.SameLine(offset, ImGui.GetStyle().ItemSpacing.X);
-        var   width     = new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2, 0);
+        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        var   width     = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
         var   enabled   = config.DeleteDesignModifier.IsActive();
         bool? equip     = null;
         bool? customize = null;

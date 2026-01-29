@@ -1,17 +1,18 @@
-﻿using Dalamud.Interface.Utility;
-using Dalamud.Bindings.ImGui;
-using ImSharp;
-using OtterGui.Widgets;
+﻿using ImSharp;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public class AutomationTab(SetSelector selector, SetPanel panel, Configuration config) : ITab
+public class AutomationTab(SetSelector selector, SetPanel panel, Configuration config) : ITab<MainTabType>
 {
+    public bool IsVisible
+        => config.EnableAutoDesigns;
+
     public ReadOnlySpan<byte> Label
         => "Automation"u8;
 
-    public bool IsVisible
-        => config.EnableAutoDesigns;
+    public MainTabType Identifier
+        => MainTabType.Automation;
 
     public void DrawContent()
     {
@@ -21,5 +22,5 @@ public class AutomationTab(SetSelector selector, SetPanel panel, Configuration c
     }
 
     public float GetSetSelectorSize()
-        => 200f * ImGuiHelpers.GlobalScale;
+        => 200f * Im.Style.GlobalScale;
 }

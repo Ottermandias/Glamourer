@@ -26,11 +26,11 @@ public sealed class UnlockableItemsPanel(ItemUnlockManager itemUnlocks, ItemMana
         if (!table)
             return;
 
-        ImGui.TableSetupColumn("ItemId",   ImGuiTableColumnFlags.WidthFixed, 30 * ImGuiHelpers.GlobalScale);
-        ImGui.TableSetupColumn("Name",     ImGuiTableColumnFlags.WidthFixed, 400 * ImGuiHelpers.GlobalScale);
-        ImGui.TableSetupColumn("Slot",     ImGuiTableColumnFlags.WidthFixed, 120 * ImGuiHelpers.GlobalScale);
-        ImGui.TableSetupColumn("Model",    ImGuiTableColumnFlags.WidthFixed, 80 * ImGuiHelpers.GlobalScale);
-        ImGui.TableSetupColumn("Unlock",   ImGuiTableColumnFlags.WidthFixed, 120 * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("ItemId",   ImGuiTableColumnFlags.WidthFixed, 30 * Im.Style.GlobalScale);
+        ImGui.TableSetupColumn("Name",     ImGuiTableColumnFlags.WidthFixed, 400 * Im.Style.GlobalScale);
+        ImGui.TableSetupColumn("Slot",     ImGuiTableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
+        ImGui.TableSetupColumn("Model",    ImGuiTableColumnFlags.WidthFixed, 80 * Im.Style.GlobalScale);
+        ImGui.TableSetupColumn("Unlock",   ImGuiTableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
         ImGui.TableSetupColumn("Criteria", ImGuiTableColumnFlags.WidthStretch);
 
         ImGui.TableNextColumn();

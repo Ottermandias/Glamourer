@@ -82,7 +82,7 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
         DrawDesignData(_parse64);
         using var font = ImRaii.PushFont(UiBuilder.MonoFont);
         ImGui.TextUnformatted(_base64);
-        using (_ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing with { X = 0 }))
+        using (_ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Im.Style.ItemSpacing with { X = 0 }))
         {
             foreach (var (c1, c2) in _restore.Zip(_base64))
             {

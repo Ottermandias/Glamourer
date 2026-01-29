@@ -41,7 +41,7 @@ public class ActorSelector(ActorObjectManager objects, ActorManager actors, Ephe
     {
         _width = width;
         using var group = ImUtf8.Group();
-        _defaultItemSpacing = ImGui.GetStyle().ItemSpacing;
+        _defaultItemSpacing = Im.Style.ItemSpacing;
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
         ImGui.SetNextItemWidth(_width);
@@ -84,7 +84,7 @@ public class ActorSelector(ActorObjectManager objects, ActorManager actors, Ephe
 
     private void DrawSelector()
     {
-        using var child = ImUtf8.Child("##Selector"u8, new Vector2(_width, -ImGui.GetFrameHeight()), true);
+        using var child = ImUtf8.Child("##Selector"u8, new Vector2(_width, -Im.Style.FrameHeight), true);
         if (!child)
             return;
 

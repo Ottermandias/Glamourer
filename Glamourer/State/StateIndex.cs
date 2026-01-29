@@ -1,7 +1,11 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.GameData;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
+using System.Collections.Frozen;
+using static OtterGui.ItemSelector<T>;
 
 namespace Glamourer.State;
 
@@ -218,17 +222,17 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
     public static IEnumerable<StateIndex> All
         => Enumerable.Range(0, Size - 1).Select(i => new StateIndex(i));
 
-    public string ToName()
+    public ReadOnlySpan<byte> ToName()
         => GetFlag() switch
         {
             EquipFlag e              => GetName(e),
             CustomizeFlag c          => c.ToIndex().ToDefaultName(),
-            MetaFlag m               => m.ToIndex().ToName(),
-            CrestFlag c              => c.ToLabel(),
-            CustomizeParameterFlag c => c.ToName(),
-            BonusItemFlag b          => b.ToName(),
-            bool v                   => "Model ID",
-            _                        => "Unknown",
+            MetaFlag m               => m.ToIndex().ToNameU8(),
+            CrestFlag c              => c.ToLabelU8(),
+            CustomizeParameterFlag c => c.ToNameU8(),
+            BonusItemFlag b          => b.ToNameU8(),
+            bool v                   => "Model ID"u8,
+            _                        => "Unknown"u8,
         };
 
     public object GetFlag()
@@ -329,11 +333,14 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
             _ => -1,
         };
 
-    private static string GetName(EquipFlag flag)
+    private static StringU8 GetName(EquipFlag flag)
+        => StainNames.TryGetValue(flag, out var v) ? v : StringU8.Empty;
+
+    private static readonly FrozenDictionary<EquipFlag, StringU8> StainNames = EquipFlag.Values.ToFrozenDictionary(f => f, f =>
     {
-        var slot = flag.ToSlot(out var stain);
-        return stain ? $"{slot.ToName()} Stain" : slot.ToName();
-    }
+        var slot = f.ToSlot(out var stain);
+        return stain ? new StringU8($"{slot.ToNameU8()} Stain") : slot.ToNameU8();
+    });
 }
 
 public static class StateExtensions

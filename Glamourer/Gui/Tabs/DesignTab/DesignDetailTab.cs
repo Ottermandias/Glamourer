@@ -172,7 +172,7 @@ public class DesignDetailTab
         if (_colorCombo.Draw("##colorCombo", colorName, "Associate a color with this design.\n"
               + "Right-Click to revert to automatic coloring.\n"
               + "Hold Control and scroll the mousewheel to scroll.",
-                width.X - ImGui.GetStyle().ItemSpacing.X - ImGui.GetFrameHeight(), ImGui.GetTextLineHeight())
+                width.X - Im.Style.ItemSpacing.X - Im.Style.FrameHeight, ImGui.GetTextLineHeight())
          && _colorCombo.CurrentSelection != null)
         {
             colorName = _colorCombo.CurrentSelection is DesignColors.AutomaticName ? string.Empty : _colorCombo.CurrentSelection;

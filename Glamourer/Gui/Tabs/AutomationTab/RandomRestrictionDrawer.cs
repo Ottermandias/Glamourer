@@ -55,8 +55,8 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                    .Push(ImGuiCol.Text,   ColorId.HeaderButtons.Value(), isOpen)
                    .Push(ImGuiCol.Border, ColorId.HeaderButtons.Value(), isOpen))
         {
-            using var frame = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * ImGuiHelpers.GlobalScale, isOpen);
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Edit.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
+            using var frame = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * Im.Style.GlobalScale, isOpen);
+            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Edit.ToIconString(), new Vector2(Im.Style.FrameHeight),
                     string.Empty, false, true))
             {
                 if (isOpen)
@@ -117,15 +117,15 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
         if (_config.KeepAdvancedDyesAttached)
         {
             var position = ImGui.GetWindowPos();
-            position.X += ImGui.GetWindowSize().X + ImGui.GetStyle().WindowPadding.X;
+            position.X += ImGui.GetWindowSize().X + Im.Style.WindowPadding.X;
             ImGui.SetNextWindowPos(position);
             flags |= ImGuiWindowFlags.NoMove;
         }
 
         using var color = ImRaii.PushColor(ImGuiCol.TitleBgActive, ImGui.GetColorU32(ImGuiCol.TitleBg));
 
-        var size = new Vector2(7 * ImGui.GetFrameHeight() + 3 * ImGui.GetStyle().ItemInnerSpacing.X + 300 * ImGuiHelpers.GlobalScale,
-            18 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + ImGui.GetStyle().ItemSpacing.Y);
+        var size = new Vector2(7 * Im.Style.FrameHeight + 3 * Im.Style.ItemInnerSpacing.X + 300 * Im.Style.GlobalScale,
+            18 * Im.Style.FrameHeightWithSpacing + Im.Style.WindowPadding.Y + Im.Style.ItemSpacing.Y);
         ImGui.SetNextWindowSize(size);
 
         var open   = true;
@@ -150,12 +150,12 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
         if (!table)
             return;
 
-        using var spacing    = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
-        var       buttonSize = new Vector2(ImGui.GetFrameHeight());
+        using var spacing    = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Im.Style.ItemInnerSpacing);
+        var       buttonSize = new Vector2(Im.Style.FrameHeight);
         var       descWidth  = ImGui.CalcTextSize("or that are set to the color").X;
         ImGui.TableSetupColumn("desc",  ImGuiTableColumnFlags.WidthFixed, descWidth);
         ImGui.TableSetupColumn("input", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("del",   ImGuiTableColumnFlags.WidthFixed, buttonSize.X * 2 + ImGui.GetStyle().ItemInnerSpacing.X);
+        ImGui.TableSetupColumn("del",   ImGuiTableColumnFlags.WidthFixed, buttonSize.X * 2 + Im.Style.ItemInnerSpacing.X);
 
         var orSize = ImGui.CalcTextSize("or ");
         for (var i = 0; i < random.Predicates.Count; ++i)
@@ -291,7 +291,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     {
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         ImGui.InputTextWithHint("##newText", "Add New Restriction...", ref _newText, 128);
-        var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
+        var spacing = Im.Style.ItemInnerSpacing.X;
         var invalid = _newText.Length == 0;
 
         var buttonSize = new Vector2((ImGui.GetContentRegionAvail().X - 3 * spacing) / 4, 0);
@@ -347,7 +347,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
         definition = definition.Replace(";", ";\n\t").Replace("{", "{\n\t").Replace("}", "\n}");
         var lines = definition.Count(c => c is '\n');
         if (ImGui.InputTextMultiline("##definition", ref definition, 2000,
-                new Vector2(ImGui.GetContentRegionAvail().X, (lines + 1) * ImGui.GetTextLineHeight() + ImGui.GetFrameHeight()),
+                new Vector2(ImGui.GetContentRegionAvail().X, (lines + 1) * ImGui.GetTextLineHeight() + Im.Style.FrameHeight),
                 ImGuiInputTextFlags.CtrlEnterForNewLine))
             _newDefinition = definition;
         if (ImGui.IsItemDeactivatedAfterEdit() && _newDefinition != null && _newDefinition != currentDefinition)
@@ -384,7 +384,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
 
     private void DrawContent(RandomDesign random)
     {
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetStyle().WindowPadding.Y + ImGuiHelpers.GlobalScale);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - Im.Style.WindowPadding.Y + Im.Style.GlobalScale);
         ImGui.Separator();
         ImGui.Dummy(Vector2.Zero);
         var reset = random.ResetOnRedraw;

@@ -49,7 +49,7 @@ public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemT
         ImGuiUtil.DrawTableColumn("Draw Object");
         ImGui.TableNextColumn();
         var address = _drawObject.Address;
-        ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(200 * Im.Style.GlobalScale);
         if (ImGui.InputScalar("##drawObjectPtr", ImGuiDataType.U64, ref address, nint.Zero, nint.Zero, "%llx",
                 ImGuiInputTextFlags.CharsHexadecimal))
             _drawObject = address;
@@ -59,7 +59,7 @@ public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemT
 
         ImGuiUtil.DrawTableColumn("Cutscene Object");
         ImGui.TableNextColumn();
-        ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(200 * Im.Style.GlobalScale);
         ImGui.InputInt("##CutsceneIndex", ref _gameObjectIndex, 0, 0);
         ImGuiUtil.DrawTableColumn(penumbra.Available
             ? penumbra.CutsceneParent((ushort)_gameObjectIndex).ToString()
@@ -67,7 +67,7 @@ public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemT
 
         ImGuiUtil.DrawTableColumn("Redraw Object");
         ImGui.TableNextColumn();
-        ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(200 * Im.Style.GlobalScale);
         ImGui.InputInt("##redrawObject", ref _gameObjectIndex, 0, 0);
         ImGui.TableNextColumn();
         using (_ = ImRaii.Disabled(!penumbra.Available))

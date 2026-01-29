@@ -15,7 +15,7 @@ public class EphemeralConfig : ISavable
     public bool               ShowDesignQuickBar  { get; set; } = false;
     public bool               LockDesignQuickBar  { get; set; } = false;
     public bool               LockMainWindow      { get; set; } = false;
-    public MainWindow.TabType SelectedTab         { get; set; } = MainWindow.TabType.Settings;
+    public MainTabType SelectedMainTab         { get; set; } = MainTabType.Settings;
     public Guid               SelectedDesign      { get; set; } = Guid.Empty;
     public Guid               SelectedQuickDesign { get; set; } = Guid.Empty;
     public int                LastSeenVersion     { get; set; } = GlamourerChangelog.LastChangelogVersion;

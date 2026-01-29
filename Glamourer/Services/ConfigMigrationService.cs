@@ -69,7 +69,7 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
         _config.Ephemeral.ShowDesignQuickBar = _data["ShowDesignQuickBar"]?.ToObject<bool>() ?? _config.Ephemeral.ShowDesignQuickBar;
         _config.Ephemeral.LockDesignQuickBar = _data["LockDesignQuickBar"]?.ToObject<bool>() ?? _config.Ephemeral.LockDesignQuickBar;
         _config.Ephemeral.LockMainWindow     = _data["LockMainWindow"]?.ToObject<bool>() ?? _config.Ephemeral.LockMainWindow;
-        _config.Ephemeral.SelectedTab        = _data["SelectedTab"]?.ToObject<MainWindow.TabType>() ?? _config.Ephemeral.SelectedTab;
+        _config.Ephemeral.SelectedMainTab        = _data["SelectedTab"]?.ToObject<MainTabType>() ?? _config.Ephemeral.SelectedMainTab;
         _config.Ephemeral.LastSeenVersion    = _data["LastSeenVersion"]?.ToObject<int>() ?? _config.Ephemeral.LastSeenVersion;
         _config.Version                      = 5;
         _config.Ephemeral.Version            = 5;

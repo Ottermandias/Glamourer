@@ -80,7 +80,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
     private sealed class FavoriteColumn : YesNoColumn<EquipItem>
     {
         public override float Width
-            => ImGui.GetFrameHeightWithSpacing();
+            => Im.Style.FrameHeightWithSpacing;
 
         private readonly FavoriteManager _favorites;
         private readonly ObjectUnlocked  _hackEvent; // used to trigger the table dirty.
@@ -112,7 +112,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
     private sealed class ModdedColumn : YesNoColumn<EquipItem>
     {
         public override float Width
-            => ImGui.GetFrameHeightWithSpacing();
+            => Im.Style.FrameHeightWithSpacing;
 
         private readonly PenumbraService               _penumbra;
         private readonly Dictionary<CustomItemId, int> _compareCache = [];
@@ -175,7 +175,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         private readonly PenumbraChangedItemTooltip _tooltip;
 
         public override float Width
-            => 400 * ImGuiHelpers.GlobalScale;
+            => 400 * Im.Style.GlobalScale;
 
         public NameColumn(TextureService textures, PenumbraChangedItemTooltip tooltip)
         {
@@ -190,9 +190,9 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         public override void DrawColumn(EquipItem item, int _)
         {
             if (_textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
-                ImGuiUtil.HoverIcon(iconHandle, new Vector2(ImGui.GetFrameHeight()));
+                ImGuiUtil.HoverIcon(iconHandle, new Vector2(Im.Style.FrameHeight));
             else
-                ImGui.Dummy(new Vector2(ImGui.GetFrameHeight()));
+                ImGui.Dummy(new Vector2(Im.Style.FrameHeight));
             Im.Line.Same();
             ImGui.AlignTextToFramePadding();
             if (ImGui.Selectable(item.Name) && item.Id is { IsBonusItem: false, IsCustom: false })
@@ -311,7 +311,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         private readonly ItemUnlockManager _unlocks;
 
         public override float Width
-            => 110 * ImGuiHelpers.GlobalScale;
+            => 110 * Im.Style.GlobalScale;
 
         public UnlockDateColumn(ItemUnlockManager unlocks)
         {
@@ -340,7 +340,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
     private sealed class ItemIdColumn : ColumnNumber<EquipItem>
     {
         public override float Width
-            => 70 * ImGuiHelpers.GlobalScale;
+            => 70 * Im.Style.GlobalScale;
 
         public override int ToValue(EquipItem item)
             => (int)item.Id.Id;
@@ -355,7 +355,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
         private readonly ItemManager _items;
 
         public override float Width
-            => 100 * ImGuiHelpers.GlobalScale;
+            => 100 * Im.Style.GlobalScale;
 
         public ModelDataColumn(ItemManager items)
             => _items = items;
@@ -396,7 +396,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
     private sealed class RequiredLevelColumn : ColumnNumber<EquipItem>
     {
         public override float Width
-            => 70 * ImGuiHelpers.GlobalScale;
+            => 70 * Im.Style.GlobalScale;
 
         public override string ToName(EquipItem item)
             => item.Level.ToString();
@@ -412,7 +412,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
     private sealed class JobColumn : ColumnFlags<JobFlag, EquipItem>
     {
         public override float Width
-            => 200 * ImGuiHelpers.GlobalScale;
+            => 200 * Im.Style.GlobalScale;
 
         private readonly JobService _jobs;
 
@@ -464,7 +464,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             ImUtf8.HoverTooltip("Right-Click to disable all other jobs."u8);
 
             if (idx < _names.Length - 1 && idx % 2 == 0)
-                ImGui.SameLine(ImGui.GetFrameHeight() * 4);
+                ImGui.SameLine(Im.Style.FrameHeight * 4);
             return r;
         }
 
@@ -532,7 +532,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             => _filterValue = enable ? _filterValue | value : _filterValue & ~value;
 
         public override float Width
-            => ImGui.GetFrameHeight() * 2;
+            => Im.Style.FrameHeight * 2;
 
         public override bool FilterFunc(EquipItem item)
             => GetValue(item) switch

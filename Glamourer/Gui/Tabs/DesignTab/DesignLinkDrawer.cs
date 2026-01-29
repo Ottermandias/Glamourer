@@ -78,12 +78,12 @@ public class DesignLinkDrawer(
         if (!table)
             return;
 
-        ImGui.TableSetupColumn("Del",  ImGuiTableColumnFlags.WidthFixed, ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("Del",  ImGuiTableColumnFlags.WidthFixed, Im.Style.FrameHeight);
         ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch);
         ImGui.TableSetupColumn("Detail", ImGuiTableColumnFlags.WidthFixed,
-            6 * ImGui.GetFrameHeight() + 5 * ImGui.GetStyle().ItemInnerSpacing.X);
+            6 * Im.Style.FrameHeight + 5 * Im.Style.ItemInnerSpacing.X);
 
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemInnerSpacing);
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Im.Style.ItemInnerSpacing);
         DrawSubList(selector.Selected!.Links.Before, LinkOrder.Before);
         DrawSelf();
         DrawSubList(selector.Selected!.Links.After, LinkOrder.After);
@@ -125,7 +125,7 @@ public class DesignLinkDrawer(
     {
         using var id = ImRaii.PushId((int)order);
 
-        var buttonSize = new Vector2(ImGui.GetFrameHeight());
+        var buttonSize = new Vector2(Im.Style.FrameHeight);
         for (var i = 0; i < list.Count; ++i)
         {
             id.Push(i);
@@ -154,7 +154,7 @@ public class DesignLinkDrawer(
 
     private void DrawNew()
     {
-        var buttonSize = new Vector2(ImGui.GetFrameHeight());
+        var buttonSize = new Vector2(Im.Style.FrameHeight);
         ImGui.TableNextColumn();
         ImGui.TableNextColumn();
         combo.Draw(ImGui.GetContentRegionAvail().X);
@@ -218,7 +218,7 @@ public class DesignLinkDrawer(
     {
         var newType    = current;
         var newTypeInt = (uint)newType;
-        using (ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale))
+        using (ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, Im.Style.GlobalScale))
         {
             using var _ = ImRaii.PushColor(ImGuiCol.Border, ColorId.FolderLine.Value());
             if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)ApplicationType.All))

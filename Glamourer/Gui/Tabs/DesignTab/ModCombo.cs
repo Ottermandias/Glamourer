@@ -40,10 +40,10 @@ public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings, 
 
         if (ImGui.IsItemHovered())
         {
-            using var style          = ImRaii.PushStyle(ImGuiStyleVar.PopupBorderSize, 2 * ImGuiHelpers.GlobalScale);
+            using var style          = ImRaii.PushStyle(ImGuiStyleVar.PopupBorderSize, 2 * Im.Style.GlobalScale);
             using var tt             = ImUtf8.Tooltip();
             var       namesDifferent = mod.Name != mod.DirectoryName;
-            ImGui.Dummy(new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
+            ImGui.Dummy(new Vector2(300 * Im.Style.GlobalScale, 0));
             using (ImUtf8.Group())
             {
                 if (namesDifferent)
@@ -54,7 +54,7 @@ public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings, 
                 DrawSettingsLeft(settings);
             }
 
-            ImGui.SameLine(Math.Max(ImGui.GetItemRectSize().X + 3 * ImGui.GetStyle().ItemSpacing.X, 150 * ImGuiHelpers.GlobalScale));
+            ImGui.SameLine(Math.Max(ImGui.GetItemRectSize().X + 3 * Im.Style.ItemSpacing.X, 150 * Im.Style.GlobalScale));
             using (ImUtf8.Group())
             {
                 if (namesDifferent)

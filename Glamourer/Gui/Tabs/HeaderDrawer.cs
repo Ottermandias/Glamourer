@@ -38,7 +38,7 @@ public static class HeaderDrawer
 
             using var color = ImRaii.PushColor(ImGuiCol.Border, BorderColor)
                 .Push(ImGuiCol.Text, TextColor, TextColor != 0);
-            if (ImGuiUtil.DrawDisabledButton(Icon.ToIconString(), new Vector2(width, ImGui.GetFrameHeight()), string.Empty, Disabled, true))
+            if (ImGuiUtil.DrawDisabledButton(Icon.ToIconString(), new Vector2(width, Im.Style.FrameHeight), string.Empty, Disabled, true))
                 OnClick();
             color.Pop();
             ImGuiUtil.HoverTooltip(Description);
@@ -80,10 +80,10 @@ public static class HeaderDrawer
 
     public static void Draw(string text, uint textColor, uint frameColor, Button[] leftButtons, Button[] rightButtons)
     {
-        var width = ImGui.GetFrameHeightWithSpacing();
+        var width = Im.Style.FrameHeightWithSpacing;
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding,   0)
-            .Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
+            .Push(ImGuiStyleVar.FrameBorderSize, Im.Style.GlobalScale);
 
         var leftButtonSize = 0f;
         foreach (var button in leftButtons.Where(b => b.Visible))
@@ -94,16 +94,16 @@ public static class HeaderDrawer
         }
 
         var rightButtonSize = rightButtons.Count(b => b.Visible) * width;
-        var midSize         = ImGui.GetContentRegionAvail().X - rightButtonSize - ImGuiHelpers.GlobalScale;
+        var midSize         = ImGui.GetContentRegionAvail().X - rightButtonSize - Im.Style.GlobalScale;
 
         style.Pop();
         style.Push(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.5f + (rightButtonSize - leftButtonSize) / midSize, 0.5f));
         if (textColor != 0)
-            ImGuiUtil.DrawTextButton(text, new Vector2(midSize, ImGui.GetFrameHeight()), frameColor, textColor);
+            ImGuiUtil.DrawTextButton(text, new Vector2(midSize, Im.Style.FrameHeight), frameColor, textColor);
         else
-            ImGuiUtil.DrawTextButton(text, new Vector2(midSize, ImGui.GetFrameHeight()), frameColor);
+            ImGuiUtil.DrawTextButton(text, new Vector2(midSize, Im.Style.FrameHeight), frameColor);
         style.Pop();
-        style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
+        style.Push(ImGuiStyleVar.FrameBorderSize, Im.Style.GlobalScale);
 
         foreach (var button in rightButtons.Where(b => b.Visible))
         {

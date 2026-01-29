@@ -62,7 +62,7 @@ public class NpcSelector : IDisposable
     {
         _width = width;
         using var group = ImRaii.Group();
-        _defaultItemSpacing = ImGui.GetStyle().ItemSpacing;
+        _defaultItemSpacing = Im.Style.ItemSpacing;
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
 

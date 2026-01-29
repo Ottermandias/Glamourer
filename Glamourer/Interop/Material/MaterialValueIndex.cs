@@ -1,6 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
-using FFXIVClientStructs.Interop;
+using ImSharp;
 using Newtonsoft.Json;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
@@ -50,16 +50,16 @@ public readonly record struct MaterialValueIndex(
         return idx > 2 ? Invalid : new MaterialValueIndex(DrawObjectType.Human, (byte)(idx + 16), 0, 0);
     }
 
-    public string SlotName()
+    public StringU8 SlotName()
     {
         var slot = ToEquipSlot();
         if (slot is not EquipSlot.Unknown)
-            return slot.ToName();
+            return slot.ToNameU8();
 
         if (DrawObject is DrawObjectType.Human && SlotIndex is 16)
-            return BonusItemFlag.Glasses.ToString();
+            return BonusItemFlag.Glasses.ToNameU8();
 
-        return EquipSlot.Unknown.ToName();
+        return EquipSlot.Unknown.ToNameU8();
     }
 
     public EquipSlot ToEquipSlot()
@@ -96,7 +96,8 @@ public readonly record struct MaterialValueIndex(
         return model.IsCharacterBase;
     }
 
-    public unsafe bool TryGetTextures(Actor actor, out ReadOnlySpan<Pointer<Texture>> textures, out ReadOnlySpan<Pointer<CsMaterial>> materials)
+    public unsafe bool TryGetTextures(Actor actor, out ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures,
+        out ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<CsMaterial>> materials)
     {
         if (!TryGetModel(actor, out var model)
          || SlotIndex >= model.AsCharacterBase->SlotCount
@@ -113,7 +114,7 @@ public readonly record struct MaterialValueIndex(
         return true;
     }
 
-    public unsafe bool TryGetTextures(Actor actor, out ReadOnlySpan<Pointer<Texture>> textures)
+    public unsafe bool TryGetTextures(Actor actor, out ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures)
     {
         if (!TryGetModel(actor, out var model)
          || SlotIndex >= model.AsCharacterBase->SlotCount
@@ -148,7 +149,8 @@ public readonly record struct MaterialValueIndex(
         return false;
     }
 
-    public unsafe bool TryGetTexture(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<CsMaterial>> materials,
+    public unsafe bool TryGetTexture(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures,
+        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<CsMaterial>> materials,
         out Texture** texture, out ColorRow.Mode mode)
     {
         mode = MaterialIndex >= materials.Length
@@ -162,7 +164,7 @@ public readonly record struct MaterialValueIndex(
             return false;
         }
 
-        fixed (Pointer<Texture>* ptr = textures)
+        fixed (FFXIVClientStructs.Interop.Pointer<Texture>* ptr = textures)
         {
             texture = (Texture**)ptr + MaterialIndex;
         }
@@ -170,7 +172,7 @@ public readonly record struct MaterialValueIndex(
         return true;
     }
 
-    public unsafe bool TryGetTexture(ReadOnlySpan<Pointer<Texture>> textures, out Texture** texture)
+    public unsafe bool TryGetTexture(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures, out Texture** texture)
     {
         if (MaterialIndex >= textures.Length || textures[MaterialIndex].Value == null)
         {
@@ -178,7 +180,7 @@ public readonly record struct MaterialValueIndex(
             return false;
         }
 
-        fixed (Pointer<Texture>* ptr = textures)
+        fixed (FFXIVClientStructs.Interop.Pointer<Texture>* ptr = textures)
         {
             texture = (Texture**)ptr + MaterialIndex;
         }

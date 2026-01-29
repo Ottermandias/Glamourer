@@ -581,7 +581,7 @@ public class StateListener : IDisposable
     /// <summary> Update base data for a single changed weapon slot. </summary>
     private unsafe UpdateState UpdateBaseData(Actor actor, ActorState state, EquipSlot slot, CharacterWeapon weapon)
     {
-        if (actor.AsCharacter->CharacterData.TransformationId != 0)
+        if (actor.AsCharacter->CharacterData.TransformationId is not 0)
         {
             var actorWeapon = slot is EquipSlot.MainHand ? actor.GetMainhand() : actor.GetOffhand();
             if (weapon.Value != actorWeapon.Value)
@@ -592,7 +592,7 @@ public class StateListener : IDisposable
         var change   = UpdateState.NoChange;
 
         // Fist weapon bug hack
-        if (slot is EquipSlot.OffHand && weapon.Value == 0 && actor.GetMainhand().Skeleton.Id is > 1600 and < 1651)
+        if (slot is EquipSlot.OffHand && weapon.Value is 0 && actor.GetMainhand().Skeleton.Id is > 1600 and < 1651)
             return UpdateState.NoChange;
 
         if (baseData.Stains != weapon.Stains)

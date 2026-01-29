@@ -59,7 +59,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
     }
 
     protected override float GetFilterWidth()
-        => _innerWidth - 2 * ImGui.GetStyle().FramePadding.X;
+        => _innerWidth - 2 * Im.Style.FramePadding.X;
 
 
     protected override bool DrawSelectable(int globalIdx, bool selected)

@@ -307,9 +307,9 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         _newName = string.Empty;
     }
 
-    private void OnTabSelected(MainWindow.TabType type, Design? design)
+    private void OnTabSelected(MainTabType type, Design? design)
     {
-        if (type == MainWindow.TabType.Designs && design != null)
+        if (type == MainTabType.Designs && design != null)
             SelectByValue(design);
     }
 

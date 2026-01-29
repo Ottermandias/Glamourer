@@ -1,4 +1,3 @@
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 
 namespace Glamourer.Gui;

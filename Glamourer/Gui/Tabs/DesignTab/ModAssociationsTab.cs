@@ -43,7 +43,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
 
     private void DrawCopyButtons()
     {
-        var size = new Vector2((ImGui.GetContentRegionAvail().X - 2 * ImGui.GetStyle().ItemSpacing.X) / 3, 0);
+        var size = new Vector2((ImGui.GetContentRegionAvail().X - 2 * Im.Style.ItemSpacing.X) / 3, 0);
         if (ImGui.Button("Copy All to Clipboard", size))
             _copy = selector.Selected!.AssociatedMods.Select(kvp => (kvp.Key, kvp.Value)).ToArray();
 
@@ -102,7 +102,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
             return;
 
         ImUtf8.TableSetupColumn("##Buttons"u8, ImGuiTableColumnFlags.WidthFixed,
-            ImGui.GetFrameHeight() * 3 + ImGui.GetStyle().ItemInnerSpacing.X * 2);
+            Im.Style.FrameHeight * 3 + Im.Style.ItemInnerSpacing.X * 2);
         ImUtf8.TableSetupColumn("Mod Name"u8, ImGuiTableColumnFlags.WidthStretch);
         if (config.UseTemporarySettings)
             ImUtf8.TableSetupColumn("Remove"u8, ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Remove"u8).X);
@@ -162,13 +162,13 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
             if (ImGui.IsItemClicked())
                 updatedMod = (mod, newSettings);
 
-            using var style = ImRaii.PushStyle(ImGuiStyleVar.PopupBorderSize, 2 * ImGuiHelpers.GlobalScale);
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.PopupBorderSize, 2 * Im.Style.GlobalScale);
             using var tt    = ImUtf8.Tooltip();
             if (source.Length > 0)
                 ImUtf8.Text($"Using temporary settings made by {source}.");
             ImGui.Separator();
             var namesDifferent = mod.Name != mod.DirectoryName;
-            ImGui.Dummy(new Vector2(300 * ImGuiHelpers.GlobalScale, 0));
+            ImGui.Dummy(new Vector2(300 * Im.Style.GlobalScale, 0));
             using (ImRaii.Group())
             {
                 if (namesDifferent)
@@ -179,7 +179,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
                 ModCombo.DrawSettingsLeft(newSettings);
             }
 
-            ImGui.SameLine(Math.Max(ImGui.GetItemRectSize().X + 3 * ImGui.GetStyle().ItemSpacing.X, 150 * ImGuiHelpers.GlobalScale));
+            ImGui.SameLine(Math.Max(ImGui.GetItemRectSize().X + 3 * Im.Style.ItemSpacing.X, 150 * Im.Style.GlobalScale));
             using (ImRaii.Group())
             {
                 if (namesDifferent)
@@ -266,7 +266,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
                 ? "The design already contains an association with the selected mod."
                 : string.Empty;
 
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), new Vector2(ImGui.GetFrameHeight()), tt, tt.Length > 0,
+        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), new Vector2(Im.Style.FrameHeight), tt, tt.Length > 0,
                 true))
             manager.AddMod(selector.Selected!, _modCombo.CurrentSelection.Mod, _modCombo.CurrentSelection.Settings);
         ImGui.TableNextColumn();

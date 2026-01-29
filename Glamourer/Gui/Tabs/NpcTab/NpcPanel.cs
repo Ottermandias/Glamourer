@@ -262,7 +262,7 @@ public class NpcPanel
                 "Associate a color with this NPC appearance.\n"
               + "Right-Click to revert to automatic coloring.\n"
               + "Hold Control and scroll the mousewheel to scroll.",
-                width - ImGui.GetStyle().ItemSpacing.X - ImGui.GetFrameHeight(), ImGui.GetTextLineHeight())
+                width - Im.Style.ItemSpacing.X - Im.Style.FrameHeight, ImGui.GetTextLineHeight())
          && _colorCombo.CurrentSelection != null)
         {
             color = _colorCombo.CurrentSelection is DesignColors.AutomaticName ? string.Empty : _colorCombo.CurrentSelection;
@@ -284,7 +284,7 @@ public class NpcPanel
         else if (color.Length is not 0)
         {
             Im.Line.Same();
-            var       size = new Vector2(ImGui.GetFrameHeight());
+            var       size = new Vector2(Im.Style.FrameHeight);
             using var font = ImRaii.PushFont(UiBuilder.IconFont);
             ImEx.TextFramed(LunaStyle.WarningIcon.Span, size, _colors.MissingColor);
             ImUtf8.HoverTooltip("The color associated with this design does not exist."u8);

@@ -59,7 +59,7 @@ public class SetPanel(
         if (!child || !selector.HasSelection)
             return;
 
-        var spacing = ImGui.GetStyle().ItemInnerSpacing with { Y = ImGui.GetStyle().ItemSpacing.Y };
+        var spacing = Im.Style.ItemInnerSpacing with { Y = Im.Style.ItemSpacing.Y };
 
         using (ImUtf8.Group())
         {
@@ -118,7 +118,7 @@ public class SetPanel(
 
             var name  = _tempName ?? Selection.Name;
             var flags = selector.IncognitoMode ? ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.Password : ImGuiInputTextFlags.None;
-            ImGui.SetNextItemWidth(330 * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(330 * Im.Style.GlobalScale);
             if (ImGui.InputText("Rename Set##Name", ref name, 128, flags))
                 _tempName = name;
 
@@ -149,10 +149,10 @@ public class SetPanel(
             (false, false) => (2, 0),
         };
 
-        var requiredSizeOneLine = numCheckboxes * ImGui.GetFrameHeight()
-          + (30 + 220 + numSpacing) * ImGuiHelpers.GlobalScale
-          + 5 * ImGui.GetStyle().CellPadding.X
-          + 150 * ImGuiHelpers.GlobalScale;
+        var requiredSizeOneLine = numCheckboxes * Im.Style.FrameHeight
+          + (30 + 220 + numSpacing) * Im.Style.GlobalScale
+          + 5 * Im.Style.CellPadding.X
+          + 150 * Im.Style.GlobalScale;
 
         var singleRow = ImGui.GetContentRegionAvail().X >= requiredSizeOneLine || numSpacing == 0;
         var numRows = (singleRow, config.ShowUnlockedItemWarnings) switch
@@ -167,25 +167,25 @@ public class SetPanel(
         if (!table)
             return;
 
-        ImUtf8.TableSetupColumn("##del"u8,   ImGuiTableColumnFlags.WidthFixed, ImGui.GetFrameHeight());
-        ImUtf8.TableSetupColumn("##Index"u8, ImGuiTableColumnFlags.WidthFixed, 30 * ImGuiHelpers.GlobalScale);
+        ImUtf8.TableSetupColumn("##del"u8,   ImGuiTableColumnFlags.WidthFixed, Im.Style.FrameHeight);
+        ImUtf8.TableSetupColumn("##Index"u8, ImGuiTableColumnFlags.WidthFixed, 30 * Im.Style.GlobalScale);
 
         if (singleRow)
         {
-            ImUtf8.TableSetupColumn("Design"u8, ImGuiTableColumnFlags.WidthFixed, 220 * ImGuiHelpers.GlobalScale);
+            ImUtf8.TableSetupColumn("Design"u8, ImGuiTableColumnFlags.WidthFixed, 220 * Im.Style.GlobalScale);
             if (config.ShowAllAutomatedApplicationRules)
                 ImUtf8.TableSetupColumn("Application"u8, ImGuiTableColumnFlags.WidthFixed,
-                    6 * ImGui.GetFrameHeight() + 10 * ImGuiHelpers.GlobalScale);
+                    6 * Im.Style.FrameHeight + 10 * Im.Style.GlobalScale);
             else
                 ImUtf8.TableSetupColumn("Use"u8, ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
         }
         else
         {
             ImUtf8.TableSetupColumn("Design / Job Restrictions"u8, ImGuiTableColumnFlags.WidthFixed,
-                250 * ImGuiHelpers.GlobalScale - (ImGui.GetScrollMaxY() > 0 ? ImGui.GetStyle().ScrollbarSize : 0));
+                250 * Im.Style.GlobalScale - (ImGui.GetScrollMaxY() > 0 ? Im.Style.ScrollbarSize : 0));
             if (config.ShowAllAutomatedApplicationRules)
                 ImUtf8.TableSetupColumn("Application"u8, ImGuiTableColumnFlags.WidthFixed,
-                    3 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
+                    3 * Im.Style.FrameHeight + 4 * Im.Style.GlobalScale);
             else
                 ImUtf8.TableSetupColumn("Use"u8, ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
         }
@@ -194,7 +194,7 @@ public class SetPanel(
             ImUtf8.TableSetupColumn("Job Restrictions"u8, ImGuiTableColumnFlags.WidthStretch);
 
         if (config.ShowUnlockedItemWarnings)
-            ImUtf8.TableSetupColumn(""u8, ImGuiTableColumnFlags.WidthFixed, 2 * ImGui.GetFrameHeight() + 4 * ImGuiHelpers.GlobalScale);
+            ImUtf8.TableSetupColumn(""u8, ImGuiTableColumnFlags.WidthFixed, 2 * Im.Style.FrameHeight + 4 * Im.Style.GlobalScale);
 
         ImGui.TableHeadersRow();
         foreach (var (design, idx) in Selection.Designs.WithIndex())
@@ -206,7 +206,7 @@ public class SetPanel(
                 ? "Remove this design from the set."
                 : $"Remove this design from the set.\nHold {config.DeleteDesignModifier} to remove.";
 
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), new Vector2(ImGui.GetFrameHeight()), tt, !keyValid, true))
+            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), new Vector2(Im.Style.FrameHeight), tt, !keyValid, true))
                 _endAction = () => manager.DeleteDesign(Selection, idx);
             ImGui.TableNextColumn();
             DrawSelectable(idx, design.Design);
@@ -299,7 +299,7 @@ public class SetPanel(
 
         ImUtf8.HoverTooltip("Click to switch between Job and Gearset restrictions."u8);
 
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        ImGui.SameLine(0, Im.Style.ItemInnerSpacing.X);
         if (usingGearset)
         {
             var set = 1 + (_tmpGearset == int.MaxValue || _whichIndex != idx ? design.GearsetIndex : _tmpGearset);
@@ -329,7 +329,7 @@ public class SetPanel(
             return;
 
         randomDrawer.DrawButton(set, designIdx);
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        ImGui.SameLine(0, Im.Style.ItemInnerSpacing.X);
     }
 
     private void DrawWarnings(AutoDesign design)
@@ -337,8 +337,8 @@ public class SetPanel(
         if (design.Design is not DesignBase)
             return;
 
-        var size = new Vector2(ImGui.GetFrameHeight());
-        size.X += ImGuiHelpers.GlobalScale;
+        var size = new Vector2(Im.Style.FrameHeight);
+        size.X += Im.Style.GlobalScale;
 
         var collection = design.ApplyWhat();
         var sb         = new StringBuilder();
@@ -354,7 +354,7 @@ public class SetPanel(
                 sb.AppendLine($"{item.Name} in {slot.ToName()} slot is not unlocked. Consider obtaining it via gameplay means!");
         }
 
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * ImGuiHelpers.GlobalScale, 0));
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * Im.Style.GlobalScale, 0));
 
         var tt = config.UnlockedItemMode
             ? "\nThese items will be skipped when applied automatically.\n\nTo change this, disable the Obtained Item Mode setting."
@@ -393,7 +393,7 @@ public class SetPanel(
 
         static void DrawWarning(StringBuilder sb, uint color, Vector2 size, string suffix, string good)
         {
-            using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, Im.Style.GlobalScale);
             if (sb.Length > 0)
             {
                 sb.Append(suffix);
@@ -445,10 +445,10 @@ public class SetPanel(
 
     private void DrawApplicationTypeBoxes(AutoDesignSet set, AutoDesign design, int autoDesignIndex, bool singleLine)
     {
-        using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * ImGuiHelpers.GlobalScale));
+        using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * Im.Style.GlobalScale));
         var       newType    = design.Type;
         var       newTypeInt = (uint)newType;
-        style.Push(ImGuiStyleVar.FrameBorderSize, ImGuiHelpers.GlobalScale);
+        style.Push(ImGuiStyleVar.FrameBorderSize, Im.Style.GlobalScale);
         using (_ = ImRaii.PushColor(ImGuiCol.Border, ColorId.FolderLine.Value()))
         {
             if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)ApplicationType.All))
@@ -490,9 +490,9 @@ public class SetPanel(
         using var id = ImUtf8.PushId("Identifiers"u8);
         identifierDrawer.DrawWorld(130);
         Im.Line.Same();
-        identifierDrawer.DrawName(200 - ImGui.GetStyle().ItemSpacing.X);
+        identifierDrawer.DrawName(200 - Im.Style.ItemSpacing.X);
         identifierDrawer.DrawNpcs(330);
-        var buttonWidth = new Vector2(165 * ImGuiHelpers.GlobalScale - ImGui.GetStyle().ItemSpacing.X / 2, 0);
+        var buttonWidth = new Vector2(165 * Im.Style.GlobalScale - Im.Style.ItemSpacing.X / 2, 0);
         if (ImUtf8.ButtonEx("Set to Character"u8, string.Empty, buttonWidth, !identifierDrawer.CanSetPlayer))
             manager.ChangeIdentifier(setIndex, identifierDrawer.PlayerIdentifier);
         Im.Line.Same();

@@ -136,10 +136,10 @@ public class SetSelector : IDisposable
     {
         _width = width;
         using var group = ImRaii.Group();
-        _defaultItemSpacing = ImGui.GetStyle().ItemSpacing;
+        _defaultItemSpacing = Im.Style.ItemSpacing;
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
-        ImGui.SetNextItemWidth(_width - ImGui.GetFrameHeight());
+        ImGui.SetNextItemWidth(_width - Im.Style.FrameHeight);
         if (LowerString.InputWithHint("##filter", "Filter...", ref _filter, 64))
             _dirty = true;
         Im.Line.Same();
@@ -157,9 +157,9 @@ public class SetSelector : IDisposable
         }
 
         var pos = ImGui.GetItemRectMin();
-        pos.X -= ImGuiHelpers.GlobalScale;
+        pos.X -= Im.Style.GlobalScale;
         ImGui.GetWindowDrawList().AddLine(pos, pos with { Y = ImGui.GetItemRectMax().Y }, ImGui.GetColorU32(ImGuiCol.Border),
-            ImGuiHelpers.GlobalScale);
+            Im.Style.GlobalScale);
 
         ImGuiUtil.HoverTooltip("Filter to show only enabled or disabled sets.");
 
@@ -169,14 +169,14 @@ public class SetSelector : IDisposable
 
     private void DrawSelector()
     {
-        using var child = ImRaii.Child("##Selector", new Vector2(_width, -ImGui.GetFrameHeight()), true);
+        using var child = ImRaii.Child("##Selector", new Vector2(_width, -Im.Style.FrameHeight), true);
         if (!child)
             return;
 
         UpdateList();
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
-        _selectableSize = new Vector2(0, 2 * ImGui.GetTextLineHeight() + ImGui.GetStyle().ItemSpacing.Y);
-        ImGuiClip.ClippedDraw(_list, DrawSetSelectable, _selectableSize.Y + 2 * ImGui.GetStyle().ItemSpacing.Y);
+        _selectableSize = new Vector2(0, 2 * ImGui.GetTextLineHeight() + Im.Style.ItemSpacing.Y);
+        ImGuiClip.ClippedDraw(_list, DrawSetSelectable, _selectableSize.Y + 2 * Im.Style.ItemSpacing.Y);
         _endAction?.Invoke();
         _endAction = null;
     }
@@ -195,7 +195,7 @@ public class SetSelector : IDisposable
 
         var lineEnd   = ImGui.GetItemRectMax();
         var lineStart = new Vector2(ImGui.GetItemRectMin().X, lineEnd.Y);
-        ImGui.GetWindowDrawList().AddLine(lineStart, lineEnd, ImGui.GetColorU32(ImGuiCol.Border), ImGuiHelpers.GlobalScale);
+        ImGui.GetWindowDrawList().AddLine(lineStart, lineEnd, ImGui.GetColorU32(ImGuiCol.Border), Im.Style.GlobalScale);
 
         DrawDragDrop(pair.Set, pair.Index);
 
@@ -206,7 +206,7 @@ public class SetSelector : IDisposable
         var textColor = pair.Set.Identifiers.Any(_objects.ContainsKey) ? ColorId.AutomationActorAvailable : ColorId.AutomationActorUnavailable;
         ImGui.SetCursorPos(new Vector2(ImGui.GetContentRegionAvail().X - textSize.X,
             ImGui.GetCursorPosY() - ImGui.GetTextLineHeightWithSpacing()));
-        ImGuiUtil.TextColored(textColor.Value(), text);
+        Im.Text(text, textColor.Value());
     }
 
     private void DrawSelectionButtons()
@@ -235,7 +235,7 @@ public class SetSelector : IDisposable
             "A single set can contain multiple automated designs that apply under different conditions and different parts of their design.";
 
         ImGuiUtil.HelpPopup("Automation Help",
-            new Vector2(ImGui.CalcTextSize(longestLine).X + 50 * ImGuiHelpers.GlobalScale, 33 * ImGui.GetTextLineHeightWithSpacing()), () =>
+            new Vector2(ImGui.CalcTextSize(longestLine).X + 50 * Im.Style.GlobalScale, 33 * ImGui.GetTextLineHeightWithSpacing()), () =>
             {
                 HalfLine();
                 ImGui.TextUnformatted("What is Automation?");
@@ -245,8 +245,8 @@ public class SetSelector : IDisposable
                 ImGui.TextUnformatted("Automated Design Sets");
                 ImGui.BulletText("First, you create automated design sets. An automated design set can be... ");
                 using var indent = ImRaii.PushIndent();
-                ImGuiUtil.BulletTextColored(ColorId.EnabledAutoSet.Value(),  "... enabled, or");
-                ImGuiUtil.BulletTextColored(ColorId.DisabledAutoSet.Value(), "... disabled.");
+                Im.BulletText("... enabled, or"u8, ColorId.EnabledAutoSet.Value());
+                Im.BulletText("... disabled."u8, ColorId.DisabledAutoSet.Value());
                 indent.Pop(1);
                 ImGui.BulletText("You can create new, empty automated design sets, or duplicate existing ones.");
                 ImGui.BulletText("You can name automated design sets arbitrarily.");

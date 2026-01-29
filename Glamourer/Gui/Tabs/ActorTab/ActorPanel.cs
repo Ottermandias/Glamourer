@@ -342,7 +342,7 @@ public class ActorPanel
                 }
 
                 Im.Line.Same();
-                if (ImGui.GetContentRegionAvail().X < ImGui.GetStyle().ItemSpacing.X + ImGui.CalcTextSize("XXX").X)
+                if (ImGui.GetContentRegionAvail().X < Im.Style.ItemSpacing.X + ImGui.CalcTextSize("XXX").X)
                     ImGui.NewLine();
             }
 
@@ -363,7 +363,7 @@ public class ActorPanel
                 }
 
                 Im.Line.Same();
-                if (ImGui.GetContentRegionAvail().X < ImGui.GetStyle().ItemSpacing.X + ImGui.CalcTextSize("XXX").X)
+                if (ImGui.GetContentRegionAvail().X < Im.Style.ItemSpacing.X + ImGui.CalcTextSize("XXX").X)
                     ImGui.NewLine();
             }
 

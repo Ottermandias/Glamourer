@@ -1,5 +1,4 @@
 using Dalamud.Interface;
-using Dalamud.Interface.Utility;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
@@ -7,7 +6,6 @@ using ImSharp;
 using Lumina.Misc;
 using OtterGui;
 using OtterGui.Raii;
-using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -33,7 +31,7 @@ public static class UiHelpers
                 ? (ImGui.GetColorU32(ImGuiCol.FrameBg), Vector4.One)
                 : (ImGui.GetColorU32(ImGuiCol.FrameBgActive), new Vector4(0.3f, 0.3f, 0.3f, 1f));
             var pos = ImGui.GetCursorScreenPos();
-            ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * ImGuiHelpers.GlobalScale);
+            ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * Im.Style.GlobalScale);
             if (!ptr.IsNull)
                 Im.Image.Draw(ptr, size, Vector2.Zero, Vector2.One, tint);
             else
@@ -55,7 +53,7 @@ public static class UiHelpers
                 ? (ImGui.GetColorU32(ImGuiCol.FrameBg), Vector4.One)
                 : (ImGui.GetColorU32(ImGuiCol.FrameBgActive), new Vector4(0.3f, 0.3f, 0.3f, 1f));
             var pos = ImGui.GetCursorScreenPos();
-            ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * ImGuiHelpers.GlobalScale);
+            ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * Im.Style.GlobalScale);
             if (!ptr.IsNull)
                 Im.Image.Draw(ptr, size, Vector2.Zero, Vector2.One, tint);
             else
@@ -78,7 +76,7 @@ public static class UiHelpers
 
         if (!startsWithHash)
         {
-            ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+            ImGui.SameLine(0, Im.Style.ItemInnerSpacing.X);
             ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted(label);
         }
@@ -94,7 +92,7 @@ public static class UiHelpers
         var flags = (sbyte)(currentApply ? currentValue ? 1 : -1 : 0);
         using (_ = ImRaii.Disabled(locked))
         {
-            if (new TristateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw(
+            if (ImEx.TriStateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw(
                     "##" + label, flags, out flags))
             {
                 (newValue, newApply) = flags switch
@@ -113,7 +111,7 @@ public static class UiHelpers
 
         ImGuiUtil.HoverTooltip($"This attribute will be {(currentApply ? currentValue ? "enabled." : "disabled." : "kept as is.")}");
 
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        ImGui.SameLine(0, Im.Style.ItemInnerSpacing.X);
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(label);
 
@@ -154,7 +152,7 @@ public static class UiHelpers
     {
         var favorite = favorites.Contains(stain);
         var hovering = ImGui.IsMouseHoveringRect(ImGui.GetCursorScreenPos(),
-            ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetFrameHeight()));
+            ImGui.GetCursorScreenPos() + new Vector2(Im.Style.FrameHeight));
 
         using var font = ImRaii.PushFont(UiBuilder.IconFont);
         using var c = ImRaii.PushColor(ImGuiCol.Text,

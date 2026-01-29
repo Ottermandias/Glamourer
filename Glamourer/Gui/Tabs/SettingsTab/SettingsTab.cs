@@ -2,7 +2,6 @@
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Designs;
@@ -10,7 +9,6 @@ using Glamourer.Events;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop;
 using Glamourer.Interop.PalettePlus;
-using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using ImSharp;
 using Luna;
@@ -18,11 +16,10 @@ using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Widgets;
-using ITab = OtterGui.Widgets.ITab;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
-public class SettingsTab(
+public sealed class SettingsTab(
     Configuration config,
     DesignFileSystemSelector selector,
     ContextMenuService contextMenuService,
@@ -37,12 +34,15 @@ public class SettingsTab(
     AutoDesignApplier autoDesignApplier,
     AutoRedrawChanged autoRedraw,
     PcpService pcpService)
-    : ITab
+    : ITab<MainTabType>
 {
     private readonly VirtualKey[] _validKeys = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
 
     public ReadOnlySpan<byte> Label
         => "Settings"u8;
+
+    public MainTabType Identifier
+        => MainTabType.Settings;
 
     public void DrawContent()
     {
@@ -197,8 +197,9 @@ public class SettingsTab(
         EphemeralCheckbox("Lock Quick Design Bar"u8, "Prevent the quick design bar from being moved and lock it in place."u8,
             config.Ephemeral.LockDesignQuickBar,
             v => config.Ephemeral.LockDesignQuickBar = v);
-        if (KeySelector.ModifiableKeySelector("Hotkey to Toggle Quick Design Bar"u8, "Set a hotkey that opens or closes the quick design bar."u8,
-                100 * ImGuiHelpers.GlobalScale, config.ToggleQuickDesignBar, v => config.ToggleQuickDesignBar = v, _validKeys))
+        if (KeySelector.ModifiableKeySelector("Hotkey to Toggle Quick Design Bar"u8,
+                "Set a hotkey that opens or closes the quick design bar."u8,
+                100 * Im.Style.GlobalScale, config.ToggleQuickDesignBar, v => config.ToggleQuickDesignBar = v, _validKeys))
             config.Save();
 
         Checkbox("Show Quick Design Bar in Main Window"u8,
@@ -249,11 +250,11 @@ public class SettingsTab(
             "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules."u8,
             !config.HideApplyCheckmarks, v => config.HideApplyCheckmarks = !v);
         if (KeySelector.DoubleModifier("Design Deletion Modifier"u8,
-                "A modifier you need to hold while clicking the Delete Design button for it to take effect."u8, 100 * ImGuiHelpers.GlobalScale,
+                "A modifier you need to hold while clicking the Delete Design button for it to take effect."u8, 100 * Im.Style.GlobalScale,
                 config.DeleteDesignModifier, v => config.DeleteDesignModifier = v))
             config.Save();
         if (KeySelector.DoubleModifier("Incognito Modifier"u8,
-                "A modifier you need to hold while clicking the Incognito button for it to take effect."u8, 100 * ImGuiHelpers.GlobalScale,
+                "A modifier you need to hold while clicking the Incognito button for it to take effect."u8, 100 * Im.Style.GlobalScale,
                 config.IncognitoModifier, v => config.IncognitoModifier = v))
             config.Save();
         DrawRenameSettings();
@@ -351,7 +352,7 @@ public class SettingsTab(
             var       flag = columns[i].Item3;
             using var id   = ImUtf8.PushId((int)flag);
             ImGui.TableNextColumn();
-            var offset = (ImGui.GetContentRegionAvail().X - ImGui.GetFrameHeight()) / 2;
+            var offset = (ImGui.GetContentRegionAvail().X - Im.Style.FrameHeight) / 2;
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + offset);
             var value = config.QdbButtons.HasFlag(flag);
             if (!ImUtf8.Checkbox(""u8, ref value))
@@ -439,7 +440,7 @@ public class SettingsTab(
     private void DrawFolderSortType()
     {
         var sortMode = config.SortMode;
-        ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(300 * Im.Style.GlobalScale);
         using (var combo = ImUtf8.Combo("##sortMode"u8, sortMode.Name))
         {
             if (combo)
@@ -461,7 +462,7 @@ public class SettingsTab(
 
     private void DrawRenameSettings()
     {
-        ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(300 * Im.Style.GlobalScale);
         using (var combo = ImUtf8.Combo("##renameSettings"u8, config.ShowRename.GetData().Name))
         {
             if (combo)
@@ -490,7 +491,7 @@ public class SettingsTab(
 
     private void DrawHeightUnitSettings()
     {
-        ImGui.SetNextItemWidth(300 * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(300 * Im.Style.GlobalScale);
         using (var combo = ImUtf8.Combo("##heightUnit"u8, HeightDisplayTypeName(config.HeightDisplayType)))
         {
             if (combo)
