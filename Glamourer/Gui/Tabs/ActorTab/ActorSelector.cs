@@ -40,7 +40,7 @@ public class ActorSelector(ActorObjectManager objects, ActorManager actors, Ephe
     public void Draw(float width)
     {
         _width = width;
-        using var group = ImUtf8.Group();
+        using var group = Im.Group();
         _defaultItemSpacing = Im.Style.ItemSpacing;
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
             .Push(ImGuiStyleVar.FrameRounding, 0);
@@ -50,30 +50,30 @@ public class ActorSelector(ActorObjectManager objects, ActorManager actors, Ephe
         {
             using var tt = ImUtf8.Tooltip();
             ImUtf8.Text("Filter for names containing the input."u8);
-            ImGui.Dummy(new Vector2(0, ImGui.GetTextLineHeight() / 2));
+            Im.Dummy(new Vector2(0, Im.Style.TextHeight / 2));
             ImUtf8.Text("Special filters are:"u8);
             var color = ColorId.HeaderButtons.Value();
-            ImUtf8.Text("<p>"u8, color);
+            Im.Text("<p>"u8, color);
             ImGui.SameLine(0, 0);
             ImUtf8.Text(": show only player characters."u8);
 
-            ImUtf8.Text("<o>"u8, color);
+            Im.Text("<o>"u8, color);
             ImGui.SameLine(0, 0);
             ImUtf8.Text(": show only owned game objects."u8);
 
-            ImUtf8.Text("<n>"u8, color);
+            Im.Text("<n>"u8, color);
             ImGui.SameLine(0, 0);
             ImUtf8.Text(": show only NPCs."u8);
 
-            ImUtf8.Text("<r>"u8, color);
+            Im.Text("<r>"u8, color);
             ImGui.SameLine(0, 0);
             ImUtf8.Text(": show only retainers."u8);
 
-            ImUtf8.Text("<s>"u8, color);
+            Im.Text("<s>"u8, color);
             ImGui.SameLine(0, 0);
             ImUtf8.Text(": show only special screen characters."u8);
 
-            ImUtf8.Text("<w>"u8, color);
+            Im.Text("<w>"u8, color);
             ImGui.SameLine(0, 0);
             ImUtf8.Text(": show only players from your world."u8);
         }
@@ -90,10 +90,10 @@ public class ActorSelector(ActorObjectManager objects, ActorManager actors, Ephe
 
         _world = new WorldId(objects.Player.Valid ? objects.Player.HomeWorld : (ushort)0);
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
-        var       skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeight());
+        var       skips = ImGuiClip.GetNecessarySkips(Im.Style.TextHeight);
         var remainder = ImGuiClip.FilteredClippedDraw(objects.Where(p => p.Value.Objects.Any(a => a.Model)), skips, CheckFilter,
             DrawSelectable);
-        ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
+        ImGuiClip.DrawEndDummy(remainder, Im.Style.TextHeight);
     }
 
     private bool CheckFilter(KeyValuePair<ActorIdentifier, ActorData> pair)

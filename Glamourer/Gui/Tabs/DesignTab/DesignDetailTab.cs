@@ -52,23 +52,23 @@ public class DesignDetailTab
 
         DrawDesignInfoTable();
         DrawDescription();
-        ImGui.NewLine();
+        Im.Line.New();
     }
 
 
     private void DrawDesignInfoTable()
     {
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f));
-        using var table = ImUtf8.Table("Details"u8, 2);
+        using var table = Im.Table.Begin("Details"u8, 2);
         if (!table)
             return;
 
-        ImUtf8.TableSetupColumn("Type"u8, ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Reset Temporary Settings"u8).X);
-        ImUtf8.TableSetupColumn("Data"u8, ImGuiTableColumnFlags.WidthStretch);
+        table.SetupColumn("Type"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Reset Temporary Settings"u8).X);
+        table.SetupColumn("Data"u8, TableColumnFlags.WidthStretch);
 
         ImUtf8.DrawFrameColumn("Design Name"u8);
         ImGui.TableNextColumn();
-        var width = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+        var width = new Vector2(Im.ContentRegion.Available.X, 0);
         var name  = _newName ?? _selector.Selected!.Name;
         ImGui.SetNextItemWidth(width.X);
         if (ImUtf8.InputText("##Name"u8, ref name))
@@ -88,7 +88,7 @@ public class DesignDetailTab
         ImUtf8.DrawFrameColumn("Unique Identifier"u8);
         ImGui.TableNextColumn();
         var fileName = _saveService.FileNames.DesignFile(_selector.Selected!);
-        using (ImRaii.PushFont(UiBuilder.MonoFont))
+        using (Im.Font.PushMono())
         {
             if (ImGui.Button(identifier, width))
                 try
@@ -101,7 +101,7 @@ public class DesignDetailTab
                         NotificationType.Warning);
                 }
 
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            if (Im.Item.RightClicked())
                 ImGui.SetClipboardText(identifier);
         }
 
@@ -172,14 +172,14 @@ public class DesignDetailTab
         if (_colorCombo.Draw("##colorCombo", colorName, "Associate a color with this design.\n"
               + "Right-Click to revert to automatic coloring.\n"
               + "Hold Control and scroll the mousewheel to scroll.",
-                width.X - Im.Style.ItemSpacing.X - Im.Style.FrameHeight, ImGui.GetTextLineHeight())
+                width.X - Im.Style.ItemSpacing.X - Im.Style.FrameHeight, Im.Style.TextHeight)
          && _colorCombo.CurrentSelection != null)
         {
             colorName = _colorCombo.CurrentSelection is DesignColors.AutomaticName ? string.Empty : _colorCombo.CurrentSelection;
             _manager.ChangeColor(_selector.Selected!, colorName);
         }
 
-        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+        if (Im.Item.RightClicked())
             _manager.ChangeColor(_selector.Selected!, string.Empty);
 
         if (_colors.TryGetValue(_selector.Selected!.Color, out var currentColor))
@@ -230,7 +230,7 @@ public class DesignDetailTab
     private void DrawDescription()
     {
         var desc = _selector.Selected!.Description;
-        var size = new Vector2(ImGui.GetContentRegionAvail().X, 12 * ImGui.GetTextLineHeightWithSpacing());
+        var size = new Vector2(Im.ContentRegion.Available.X, 12 * Im.Style.TextHeightWithSpacing);
         if (!_editDescriptionMode)
         {
             using (var textBox = ImUtf8.ListBox("##desc"u8, size))

@@ -1,6 +1,4 @@
 ﻿using Dalamud.Interface;
-using Dalamud.Interface.ImGuiNotification;
-using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
@@ -302,7 +300,7 @@ public sealed unsafe class AdvancedDyePopup(
         catch (Exception ex)
         {
             Glamourer.Messager.AddMessage(new Notification(ex, "Could not paste color table from clipboard.",
-                "Could not paste color table from clipboard.", NotificationType.Error));
+                "Could not paste color table from clipboard."));
         }
 
         table = default;
@@ -311,7 +309,7 @@ public sealed unsafe class AdvancedDyePopup(
 
     private void DrawAllRow(MaterialValueIndex materialIndex, in ColorTable.Table table)
     {
-        using var id         = Im.Id.Push(100);
+        using var id = Im.Id.Push(100);
         ImEx.Icon.Button(LunaStyle.OnHoverIcon, "Highlight all affected colors on the character."u8);
         if (Im.Item.Hovered())
             preview.OnHover(materialIndex with { RowIndex = byte.MaxValue }, _actor.Index, table);
@@ -387,56 +385,55 @@ public sealed unsafe class AdvancedDyePopup(
         }
 
         Im.Line.Same(0, Im.Style.ItemSpacing.X * 2);
-        var applied = ImEx.ColorPicker("##diffuse"u8, "Change the diffuse value for this row."u8, value.Model.Diffuse, out var newColor, "D"u8);
-        if (applied)
-            value.Model.Diffuse = newColor;
+        var applied = ImEx.ColorPickerButton("##diffuse"u8, "Change the diffuse value for this row."u8, value.Model.Diffuse,
+            out value.Model.Diffuse, 'D');
 
         var spacing = Im.Style.ItemInnerSpacing;
-        ImGui.SameLine(0, spacing.X);
-        applied |= ImUtf8.ColorPicker("##specular"u8, "Change the specular value for this row."u8, value.Model.Specular,
-            v => value.Model.Specular = v, "S"u8);
+        Im.Line.Same(0, spacing.X);
+        applied |= ImEx.ColorPickerButton("##specular"u8, "Change the specular value for this row."u8, value.Model.Specular,
+            out value.Model.Specular, 'S');
 
-        ImGui.SameLine(0, spacing.X);
-        applied |= ImUtf8.ColorPicker("##emissive"u8, "Change the emissive value for this row."u8, value.Model.Emissive,
-            v => value.Model.Emissive = v, "E"u8);
+        Im.Line.Same(0, spacing.X);
+        applied |= ImEx.ColorPickerButton("##emissive"u8, "Change the emissive value for this row."u8, value.Model.Emissive,
+            out value.Model.Emissive, 'E');
 
-        ImGui.SameLine(0, spacing.X);
+        Im.Line.Same(0, spacing.X);
         if (_mode is not ColorRow.Mode.Dawntrail)
         {
-            ImGui.SetNextItemWidth(100 * Im.Style.GlobalScale);
+            Im.Item.SetNextWidthScaled(100);
             applied |= DragGloss(ref value.Model.GlossStrength);
-            ImUtf8.HoverTooltip("Change the gloss strength for this row."u8);
+            Im.Tooltip.OnHover("Change the gloss strength for this row."u8);
         }
         else
         {
-            ImGui.Dummy(new Vector2(100 * Im.Style.GlobalScale, 0));
+            Im.Dummy(new Vector2(100 * Im.Style.GlobalScale, 0));
         }
 
-        ImGui.SameLine(0, spacing.X);
+        Im.Line.Same(0, spacing.X);
         if (_mode is not ColorRow.Mode.Dawntrail)
         {
-            ImGui.SetNextItemWidth(100 * Im.Style.GlobalScale);
+            Im.Item.SetNextWidthScaled(100);
             applied |= DragSpecularStrength(ref value.Model.SpecularStrength);
-            ImUtf8.HoverTooltip("Change the specular strength for this row."u8);
+            Im.Tooltip.OnHover("Change the specular strength for this row."u8);
         }
         else
         {
-            ImGui.Dummy(new Vector2(100 * Im.Style.GlobalScale, 0));
+            Im.Dummy(new Vector2(100 * Im.Style.GlobalScale, 0));
         }
 
-        ImGui.SameLine(0, spacing.X);
-        if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Export this row to your clipboard."u8, buttonSize))
+        Im.Line.Same(0, spacing.X);
+        if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "Export this row to your clipboard."u8))
             ColorRowClipboard.Row = value.Model;
-        ImGui.SameLine(0, spacing.X);
-        if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported row from your clipboard onto this row."u8, buttonSize,
+        Im.Line.Same(0, spacing.X);
+        if (ImEx.Icon.Button(LunaStyle.FromClipboardIcon, "Import an exported row from your clipboard onto this row."u8,
                 !ColorRowClipboard.IsSet))
         {
             value.Model = ColorRowClipboard.Row;
             applied     = true;
         }
 
-        ImGui.SameLine(0, spacing.X);
-        if (ImUtf8.IconButton(FontAwesomeIcon.UndoAlt, "Reset this row to game state."u8, buttonSize, !changed))
+        Im.Line.Same(0, spacing.X);
+        if (ImEx.Icon.Button(LunaStyle.UndoIcon, "Reset this row to game state."u8, !changed))
             stateManager.ResetMaterialValue(_state, index, ApplySettings.Game);
 
         if (applied)
@@ -446,9 +443,8 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragGloss(ref float value)
     {
         var tmp      = value;
-        var minValue = ImGui.GetIO().KeyCtrl ? 0f : (float)Half.Epsilon;
-        if (!ImUtf8.DragScalar("##Gloss"u8, ref tmp, "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value),
-                ImGuiSliderFlags.AlwaysClamp))
+        var minValue = Im.Io.KeyControl ? 0f : (float)Half.Epsilon;
+        if (!Im.Drag("##Gloss"u8, ref tmp, "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value), SliderFlags.AlwaysClamp))
             return false;
 
         var tmp2 = Math.Clamp(tmp, minValue, (float)Half.MaxValue);
@@ -462,8 +458,7 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragSpecularStrength(ref float value)
     {
         var tmp = value * 100f;
-        if (!ImUtf8.DragScalar("##SpecularStrength"u8, ref tmp, "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f, 0.05f,
-                ImGuiSliderFlags.AlwaysClamp))
+        if (!Im.Drag("##SpecularStrength"u8, ref tmp, "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f, 0.05f, SliderFlags.AlwaysClamp))
             return false;
 
         var tmp2 = Math.Clamp(tmp, 0f, (float)Half.MaxValue * 100f) / 100f;

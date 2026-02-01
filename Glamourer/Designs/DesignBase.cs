@@ -2,6 +2,7 @@
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
+using ImSharp;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -303,7 +304,7 @@ public class DesignBase
 
         var customize = _designData.Customize;
         if (_designData.IsHuman)
-            foreach (var idx in Enum.GetValues<CustomizeIndex>())
+            foreach (var idx in CustomizeIndex.Values)
             {
                 ret[idx.ToString()] = new JObject()
                 {

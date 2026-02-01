@@ -6,6 +6,7 @@ using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.State;
+using ImSharp;
 using Luna;
 using Penumbra.GameData.Interop;
 using Logger = OtterGui.Log.Logger;
@@ -109,7 +110,7 @@ public class Glamourer : IDalamudPlugin
             sb.AppendLine("**State**");
             foreach (var (ident, state) in states)
             {
-                var sources = Enum.GetValues<StateSource>().Select(s => (0, s)).ToArray();
+                var sources = StateSource.Values.Select(s => (0, s)).ToArray();
                 foreach (var source in StateIndex.All.Select(s => state.Sources[s]))
                     ++sources[(int)source].Item1;
                 foreach (var material in state.Materials.Values)

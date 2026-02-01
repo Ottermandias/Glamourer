@@ -427,7 +427,7 @@ public unsafe class FunModule : IDisposable
             return;
 
         var set = _customizations.Manager.GetSet(customize.Clan, customize.Gender);
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        foreach (var index in CustomizeIndex.Values)
         {
             if (index is CustomizeIndex.Face || !set.IsAvailable(index))
                 continue;

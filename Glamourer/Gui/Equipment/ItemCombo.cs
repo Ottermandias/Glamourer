@@ -57,7 +57,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
         _innerWidth   = innerWidth;
         _currentItem  = previewIdx;
         CustomVariant = 0;
-        return Draw($"##{Label}", previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
+        return Draw($"##{Label}", previewName, string.Empty, width, Im.Style.TextHeightWithSpacing);
     }
 
     protected override float GetFilterWidth()
@@ -77,7 +77,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
         Im.Line.Same();
         var ret = ImGui.Selectable(name, selected);
         Im.Line.Same();
-        using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
+        using var color = ImGuiColor.Text.Push(0xFF808080);
         ImUtf8.TextRightAligned($"({obj.PrimaryId.Id}-{obj.Variant.Id})");
         return ret;
     }
@@ -123,7 +123,7 @@ public sealed class ItemCombo : FilterComboCache<EquipItem>
     protected override void OnClosePopup()
     {
         // If holding control while the popup closes, try to parse the input as a full pair of set id and variant, and set a custom item for that.
-        if (!ImGui.GetIO().KeyCtrl)
+        if (!Im.Io.KeyControl)
             return;
 
         var split = Filter.Text.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

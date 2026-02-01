@@ -51,7 +51,7 @@ public class SetPanel(
     }
 
     private void DrawHeader()
-        => HeaderDrawer.Draw(selector.SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg), [], _rightButtons);
+        => HeaderDrawer.Draw(selector.SelectionName, 0, ImGuiColor.FrameBackground.Get().Color, [], _rightButtons);
 
     private void DrawPanel()
     {
@@ -112,14 +112,14 @@ public class SetPanel(
 
         if (config.ShowAutomationSetEditing)
         {
-            ImGui.Dummy(Vector2.Zero);
-            ImGui.Separator();
-            ImGui.Dummy(Vector2.Zero);
+            Im.Dummy(Vector2.Zero);
+            Im.Separator();
+            Im.Dummy(Vector2.Zero);
 
             var name  = _tempName ?? Selection.Name;
-            var flags = selector.IncognitoMode ? ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.Password : ImGuiInputTextFlags.None;
+            var flags = selector.IncognitoMode ? InputTextFlags.ReadOnly | InputTextFlags.Password : InputTextFlags.None;
             ImGui.SetNextItemWidth(330 * Im.Style.GlobalScale);
-            if (ImGui.InputText("Rename Set##Name", ref name, 128, flags))
+            if (Im.Input.Text("Rename Set##Name"u8, ref name, StringU8.Empty, flags))
                 _tempName = name;
 
             if (ImGui.IsItemDeactivated())
@@ -131,9 +131,9 @@ public class SetPanel(
             DrawIdentifierSelection(selector.SelectionIndex);
         }
 
-        ImGui.Dummy(Vector2.Zero);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
+        Im.Separator();
+        Im.Dummy(Vector2.Zero);
         DrawDesignTable();
         randomDrawer.Draw();
     }
@@ -154,7 +154,7 @@ public class SetPanel(
           + 5 * Im.Style.CellPadding.X
           + 150 * Im.Style.GlobalScale;
 
-        var singleRow = ImGui.GetContentRegionAvail().X >= requiredSizeOneLine || numSpacing == 0;
+        var singleRow = Im.ContentRegion.Available.X >= requiredSizeOneLine || numSpacing == 0;
         var numRows = (singleRow, config.ShowUnlockedItemWarnings) switch
         {
             (true, true)   => 6,
@@ -163,40 +163,40 @@ public class SetPanel(
             (false, false) => 4,
         };
 
-        using var table = ImUtf8.Table("SetTable"u8, numRows, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY);
+        using var table = Im.Table.Begin("SetTable"u8, numRows, TableFlags.RowBackground | TableFlags.ScrollX | TableFlags.ScrollY);
         if (!table)
             return;
 
-        ImUtf8.TableSetupColumn("##del"u8,   ImGuiTableColumnFlags.WidthFixed, Im.Style.FrameHeight);
-        ImUtf8.TableSetupColumn("##Index"u8, ImGuiTableColumnFlags.WidthFixed, 30 * Im.Style.GlobalScale);
+        table.SetupColumn("##del"u8,   TableColumnFlags.WidthFixed, Im.Style.FrameHeight);
+        table.SetupColumn("##Index"u8, TableColumnFlags.WidthFixed, 30 * Im.Style.GlobalScale);
 
         if (singleRow)
         {
-            ImUtf8.TableSetupColumn("Design"u8, ImGuiTableColumnFlags.WidthFixed, 220 * Im.Style.GlobalScale);
+            table.SetupColumn("Design"u8, TableColumnFlags.WidthFixed, 220 * Im.Style.GlobalScale);
             if (config.ShowAllAutomatedApplicationRules)
-                ImUtf8.TableSetupColumn("Application"u8, ImGuiTableColumnFlags.WidthFixed,
+                table.SetupColumn("Application"u8, TableColumnFlags.WidthFixed,
                     6 * Im.Style.FrameHeight + 10 * Im.Style.GlobalScale);
             else
-                ImUtf8.TableSetupColumn("Use"u8, ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
+                table.SetupColumn("Use"u8, TableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
         }
         else
         {
-            ImUtf8.TableSetupColumn("Design / Job Restrictions"u8, ImGuiTableColumnFlags.WidthFixed,
+            table.SetupColumn("Design / Job Restrictions"u8, TableColumnFlags.WidthFixed,
                 250 * Im.Style.GlobalScale - (ImGui.GetScrollMaxY() > 0 ? Im.Style.ScrollbarSize : 0));
             if (config.ShowAllAutomatedApplicationRules)
-                ImUtf8.TableSetupColumn("Application"u8, ImGuiTableColumnFlags.WidthFixed,
+                table.SetupColumn("Application"u8, TableColumnFlags.WidthFixed,
                     3 * Im.Style.FrameHeight + 4 * Im.Style.GlobalScale);
             else
-                ImUtf8.TableSetupColumn("Use"u8, ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
+                table.SetupColumn("Use"u8, TableColumnFlags.WidthFixed, ImGui.CalcTextSize("Use").X);
         }
 
         if (singleRow)
-            ImUtf8.TableSetupColumn("Job Restrictions"u8, ImGuiTableColumnFlags.WidthStretch);
+            table.SetupColumn("Job Restrictions"u8, TableColumnFlags.WidthStretch);
 
         if (config.ShowUnlockedItemWarnings)
-            ImUtf8.TableSetupColumn(""u8, ImGuiTableColumnFlags.WidthFixed, 2 * Im.Style.FrameHeight + 4 * Im.Style.GlobalScale);
+            table.SetupColumn(""u8, TableColumnFlags.WidthFixed, 2 * Im.Style.FrameHeight + 4 * Im.Style.GlobalScale);
 
-        ImGui.TableHeadersRow();
+        table.HeaderRow();
         foreach (var (design, idx) in Selection.Designs.WithIndex())
         {
             using var id = ImUtf8.PushId(idx);
@@ -249,8 +249,8 @@ public class SetPanel(
 
     private void DrawSelectable(int idx, IDesignStandIn design)
     {
-        var highlight = 0u;
-        var sb        = new StringBuilder();
+        var highlight = Rgba32.Transparent;
+        var    sb        = new StringBuilder();
         if (design is Design d)
         {
             var count = design.AllLinks(true).Count();
@@ -275,7 +275,7 @@ public class SetPanel(
             }
         }
 
-        using (ImRaii.PushColor(ImGuiCol.Text, highlight, highlight != 0))
+        using (ImGuiColor.Text.Push(highlight, highlight.IsTransparent))
         {
             ImUtf8.Selectable($"#{idx + 1:D2}");
         }
@@ -303,7 +303,7 @@ public class SetPanel(
         if (usingGearset)
         {
             var set = 1 + (_tmpGearset == int.MaxValue || _whichIndex != idx ? design.GearsetIndex : _tmpGearset);
-            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+            ImGui.SetNextItemWidth(Im.ContentRegion.Available.X);
             if (ImUtf8.InputScalar("##whichGearset"u8, ref set))
             {
                 _whichIndex = idx;
@@ -375,12 +375,12 @@ public class SetPanel(
                 continue;
 
             if (flag.RequiresRedraw())
-                sb.AppendLine($"{type.ToDefaultName()} Customization should not be changed automatically.");
+                sb.AppendLine($"{type.ToName()} Customization should not be changed automatically.");
             else if (type is CustomizeIndex.Hairstyle or CustomizeIndex.FacePaint
                   && set.DataByValue(type, customize[type], out var data, customize.Face) >= 0
                   && !customizeUnlocks.IsUnlocked(data!.Value, out _))
                 sb2.AppendLine(
-                    $"{type.ToDefaultName()} Customization {customizeUnlocks.Unlockable[data.Value].Name} is not unlocked but should be applied.");
+                    $"{type.ToName()} Customization {customizeUnlocks.Unlockable[data.Value].Name} is not unlocked but should be applied.");
         }
 
         Im.Line.Same();
@@ -448,8 +448,7 @@ public class SetPanel(
         using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(2 * Im.Style.GlobalScale));
         var       newType    = design.Type;
         var       newTypeInt = (uint)newType;
-        style.Push(ImGuiStyleVar.FrameBorderSize, Im.Style.GlobalScale);
-        using (_ = ImRaii.PushColor(ImGuiCol.Border, ColorId.FolderLine.Value()))
+        using (ImStyleBorder.Frame.Push(ColorId.FolderLine.Value()))
         {
             if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)ApplicationType.All))
                 newType = (ApplicationType)newTypeInt;
@@ -518,10 +517,10 @@ public class SetPanel(
             CurrentSelectionIdx = jobs.JobGroups.Values.IndexOf(j => j.Id == design.Jobs.Id);
             if (Draw("##JobGroups", design.Jobs.Name.ToString(),
                     "Select for which job groups this design should be applied.\nControl + Right-Click to set to all classes.",
-                    ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeightWithSpacing())
+                    Im.ContentRegion.Available.X, Im.Style.TextHeightWithSpacing)
              && CurrentSelectionIdx >= 0)
                 manager.ChangeJobCondition(set, autoDesignIndex, CurrentSelection);
-            else if (ImGui.GetIO().KeyCtrl && ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            else if (Im.Io.KeyControl && Im.Item.RightClicked())
                 manager.ChangeJobCondition(set, autoDesignIndex, jobs.JobGroups[1]);
         }
 

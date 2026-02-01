@@ -1,7 +1,8 @@
-﻿using Dalamud.Interface;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Raii;
@@ -32,15 +33,15 @@ public class CollectionOverrideDrawer(
         if (!header)
             return;
 
-        using var table = ImRaii.Table("table", 4, ImGuiTableFlags.RowBg);
+        using var table = Im.Table.Begin("table"u8, 4, TableFlags.RowBackground);
         if (!table)
             return;
 
         var buttonSize = new Vector2(Im.Style.FrameHeight);
-        ImGui.TableSetupColumn("buttons",     ImGuiTableColumnFlags.WidthFixed,   buttonSize.X);
-        ImGui.TableSetupColumn("identifiers", ImGuiTableColumnFlags.WidthStretch, 0.35f);
-        ImGui.TableSetupColumn("collections", ImGuiTableColumnFlags.WidthStretch, 0.4f);
-        ImGui.TableSetupColumn("name",        ImGuiTableColumnFlags.WidthStretch, 0.25f);
+        table.SetupColumn("buttons"u8,     TableColumnFlags.WidthFixed,   buttonSize.X);
+        table.SetupColumn("identifiers"u8, TableColumnFlags.WidthStretch, 0.35f);
+        table.SetupColumn("collections"u8, TableColumnFlags.WidthStretch, 0.4f);
+        table.SetupColumn("name"u8,        TableColumnFlags.WidthStretch, 0.25f);
 
         for (var i = 0; i < collectionOverrides.Overrides.Count; ++i)
             DrawCollectionRow(ref i, buttonSize);
@@ -50,7 +51,7 @@ public class CollectionOverrideDrawer(
 
     private void DrawCollectionRow(ref int idx, Vector2 buttonSize)
     {
-        using var id = ImRaii.PushId(idx);
+        using var id = Im.Id.Push(idx);
         var (exists, actor, collection, name) = collectionOverrides.Fetch(idx);
 
         ImGui.TableNextColumn();
@@ -61,8 +62,8 @@ public class CollectionOverrideDrawer(
         DrawActorIdentifier(idx, actor);
 
         ImGui.TableNextColumn();
-        if (combo.Draw("##collection", name, $"Select the overriding collection. Current GUID:", ImGui.GetContentRegionAvail().X,
-                ImGui.GetTextLineHeight()))
+        if (combo.Draw("##collection", name, $"Select the overriding collection. Current GUID:", Im.ContentRegion.Available.X,
+                Im.Style.TextHeight))
         {
             var (guid, _, newName) = combo.CurrentSelection;
             collectionOverrides.ChangeOverride(idx, guid, newName);
@@ -71,7 +72,7 @@ public class CollectionOverrideDrawer(
         if (ImGui.IsItemHovered())
         {
             using var tt   = ImRaii.Tooltip();
-            using var font = ImRaii.PushFont(UiBuilder.MonoFont);
+            using var font = Im.Font.PushMono();
             ImGui.TextUnformatted($"    {collection}");
         }
 
@@ -89,7 +90,7 @@ public class CollectionOverrideDrawer(
 
             using var tt1 = ImRaii.Tooltip();
             ImGui.TextUnformatted($"The design {name} with the GUID");
-            using (ImRaii.PushFont(UiBuilder.MonoFont))
+            using (Im.Font.PushMono())
             {
                 ImGui.TextUnformatted($"    {collection}");
             }
@@ -103,7 +104,7 @@ public class CollectionOverrideDrawer(
             return;
 
         using var tt2 = ImRaii.Tooltip();
-        using var f   = ImRaii.PushFont(UiBuilder.MonoFont);
+        using var f   = Im.Font.PushMono();
         ImGui.TextUnformatted(collection.ToString());
     }
 
@@ -139,7 +140,7 @@ public class CollectionOverrideDrawer(
             collectionOverrides.AddOverride([objects.PlayerData.Identifier], currentId, currentName);
 
         ImGui.TableNextColumn();
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        ImGui.SetNextItemWidth(Im.ContentRegion.Available.X);
         if (ImGui.InputTextWithHint("##newActor", "New Identifier...", ref _newIdentifier, 80))
             try
             {
@@ -164,7 +165,7 @@ public class CollectionOverrideDrawer(
         ImGui.SameLine(0, Im.Style.ItemInnerSpacing.X);
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {
-            using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+            using var color = ImGuiColor.Text.Push(Im.Style[ImGuiColor.TextDisabled]);
             ImGui.TextUnformatted(FontAwesomeIcon.InfoCircle.ToIconString());
         }
 

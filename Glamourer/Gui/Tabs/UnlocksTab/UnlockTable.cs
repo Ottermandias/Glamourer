@@ -136,7 +136,7 @@ public class UnlockTable : Table<EquipItem>, IDisposable
 
             using (ImRaii.PushFont(UiBuilder.IconFont))
             {
-                using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.ModdedItemMarker.Value());
+                using var color = ImGuiColor.Text.Push(ColorId.ModdedItemMarker.Value());
                 ImGuiUtil.Center(FontAwesomeIcon.Circle.ToIconString());
             }
 
@@ -192,13 +192,13 @@ public class UnlockTable : Table<EquipItem>, IDisposable
             if (_textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
                 ImGuiUtil.HoverIcon(iconHandle, new Vector2(Im.Style.FrameHeight));
             else
-                ImGui.Dummy(new Vector2(Im.Style.FrameHeight));
+                Im.Dummy(new Vector2(Im.Style.FrameHeight));
             Im.Line.Same();
             ImGui.AlignTextToFramePadding();
             if (ImGui.Selectable(item.Name) && item.Id is { IsBonusItem: false, IsCustom: false })
                 Glamourer.Messager.Chat.Print(new SeStringBuilder().AddItemLink(item.ItemId.Id, false).BuiltString);
 
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && _tooltip.Player(out var state))
+            if (Im.Item.RightClicked() && _tooltip.Player(out var state))
                 _tooltip.ApplyItem(state, item);
 
             if (ImGui.IsItemHovered() && _tooltip.Player())
@@ -446,15 +446,15 @@ public class UnlockTable : Table<EquipItem>, IDisposable
                 Job.JobRole.Healer         => 0xFFD0FFD0,
                 Job.JobRole.Crafter        => 0xFF808080,
                 Job.JobRole.Gatherer       => 0xFFD0D0D0,
-                _                          => ImGui.GetColorU32(ImGuiCol.Text),
+                _                          => ImGuiColor.Text.Get(),
             };
             bool r;
-            using (ImRaii.PushColor(ImGuiCol.Text, color))
+            using (ImGuiColor.Text.Push(color))
             {
                 r = base.DrawCheckbox(idx, out ret);
             }
 
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            if (Im.Item.RightClicked())
             {
                 _filterValue = job.Flag & _filterValue;
                 ret          = true;

@@ -1,3 +1,5 @@
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Services;
@@ -36,7 +38,7 @@ public class CodeService
     }
 
     public static readonly CodeFlag AllHintCodes =
-        Enum.GetValues<CodeFlag>().Where(f => GetData(f).Display).Aggregate((CodeFlag)0, (f1, f2) => f1 | f2);
+        CodeFlag.Values.Where(f => GetData(f).Display).Aggregate((CodeFlag)0, (f1, f2) => f1 | f2);
 
     public const CodeFlag DyeCodes =
         CodeFlag.Clown | CodeFlag.World | CodeFlag.Elephants | CodeFlag.Dolphins;
@@ -138,7 +140,7 @@ public class CodeService
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(name));
         var       sha    = (ReadOnlySpan<byte>)_hasher.ComputeHash(stream);
 
-        foreach (var flag in Enum.GetValues<CodeFlag>())
+        foreach (var flag in CodeFlag.Values)
         {
             if (sha.SequenceEqual(GetSha(flag)))
                 return flag;

@@ -57,10 +57,10 @@ public sealed class SettingsTab(
                 config.EnableAutoDesigns = v;
                 autoDesignApplier.OnEnableAutoDesignsChanged(v);
             });
-        ImGui.NewLine();
-        ImGui.NewLine();
-        ImGui.NewLine();
-        ImGui.NewLine();
+        Im.Line.New();
+        Im.Line.New();
+        Im.Line.New();
+        Im.Line.New();
 
         using (ImUtf8.Child("SettingsChild"u8, default))
         {
@@ -110,7 +110,7 @@ public sealed class SettingsTab(
         Checkbox("Prevent Random Design Repeats"u8,
             "When using random designs, prevent the same design from being chosen twice in a row."u8,
             config.PreventRandomRepeats, v => config.PreventRandomRepeats = v);
-        ImGui.NewLine();
+        Im.Line.New();
     }
 
     private void DrawPenumbraIntegrationSettings1()
@@ -164,7 +164,7 @@ public sealed class SettingsTab(
             config.DefaultDesignSettings.ResetTemporarySettings, v => config.DefaultDesignSettings.ResetTemporarySettings = v);
 
         var tmp = config.PcpFolder;
-        ImGui.SetNextItemWidth(0.4f * ImGui.GetContentRegionAvail().X);
+        ImGui.SetNextItemWidth(0.4f * Im.ContentRegion.Available.X);
         if (ImUtf8.InputText("##pcpFolder"u8, ref tmp))
             config.PcpFolder = tmp;
 
@@ -175,7 +175,7 @@ public sealed class SettingsTab(
             "The folder any designs created due to penumbra character packs are moved to on creation.\nLeave blank to import into Root.");
 
         tmp = config.PcpColor;
-        ImGui.SetNextItemWidth(0.4f * ImGui.GetContentRegionAvail().X);
+        ImGui.SetNextItemWidth(0.4f * Im.ContentRegion.Available.X);
         if (ImUtf8.InputText("##pcpColor"u8, ref tmp))
             config.PcpColor = tmp;
 
@@ -207,9 +207,9 @@ public sealed class SettingsTab(
             config.ShowQuickBarInTabs, v => config.ShowQuickBarInTabs = v);
         DrawQuickDesignBoxes();
 
-        ImGui.Dummy(Vector2.Zero);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
+        Im.Separator();
+        Im.Dummy(Vector2.Zero);
 
         Checkbox("Enable Game Context Menus"u8, "Whether to show a Try On via Glamourer button on context menus for equippable items."u8,
             config.EnableGameContextMenu,       v =>
@@ -239,9 +239,9 @@ public sealed class SettingsTab(
             v => config.Ephemeral.LockMainWindow = v);
         Checkbox("Open Main Window at Game Start"u8, "Whether the main Glamourer window should be open or closed after launching the game."u8,
             config.OpenWindowAtStart,                v => config.OpenWindowAtStart = v);
-        ImGui.Dummy(Vector2.Zero);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
+        Im.Separator();
+        Im.Dummy(Vector2.Zero);
 
         Checkbox("Smaller Equip Display"u8, "Use single-line display without icons and small dye buttons instead of double-line display."u8,
             config.SmallEquip,              v => config.SmallEquip = v);
@@ -263,9 +263,9 @@ public sealed class SettingsTab(
             v => config.OpenFoldersByDefault = v);
         DrawFolderSortType();
 
-        ImGui.NewLine();
+        Im.Line.New();
         ImUtf8.Text("Show the following panels in their respective tabs:"u8);
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
         DesignPanelFlagExtensions.DrawTable("##panelTable"u8, config.HideDesignPanel, config.AutoExpandDesignPanel, v =>
         {
             config.HideDesignPanel = v;
@@ -277,9 +277,9 @@ public sealed class SettingsTab(
         });
 
 
-        ImGui.Dummy(Vector2.Zero);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
+        Im.Separator();
+        Im.Dummy(Vector2.Zero);
 
         Checkbox("Allow Double-Clicking Designs to Apply"u8,
             "Tries to apply a design to the current player character When double-clicking it in the design selector."u8,
@@ -295,7 +295,7 @@ public sealed class SettingsTab(
         Checkbox("Show Palette+ Import Button"u8,
             "Show the import button that allows you to import Palette+ palettes onto a design in the Advanced Customization options section for designs."u8,
             config.ShowPalettePlusImport, v => config.ShowPalettePlusImport = v);
-        using (ImRaii.PushId(1))
+        using (Im.Id.Push(1))
         {
             PaletteImportButton();
         }
@@ -307,18 +307,17 @@ public sealed class SettingsTab(
         Checkbox("Debug Mode"u8, "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general."u8,
             config.DebugMode,
             v => config.DebugMode = v);
-        ImGui.NewLine();
+        Im.Line.New();
     }
 
     private void DrawQuickDesignBoxes()
     {
         var showAuto   = config.EnableAutoDesigns;
         var numColumns = 9 - (showAuto ? 0 : 2) - (config.UseTemporarySettings ? 0 : 1);
-        ImGui.NewLine();
+        Im.Line.New();
         ImUtf8.Text("Show the Following Buttons in the Quick Design Bar:"u8);
-        ImGui.Dummy(Vector2.Zero);
-        using var table = ImUtf8.Table("##tableQdb"u8, numColumns,
-            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.Borders | ImGuiTableFlags.NoHostExtendX);
+        Im.Dummy(Vector2.Zero);
+        using var table = Im.Table.Begin("##tableQdb"u8, numColumns, TableFlags.SizingFixedFit | TableFlags.Borders | TableFlags.NoHostExtendX);
         if (!table)
             return;
 
@@ -352,7 +351,7 @@ public sealed class SettingsTab(
             var       flag = columns[i].Item3;
             using var id   = ImUtf8.PushId((int)flag);
             ImGui.TableNextColumn();
-            var offset = (ImGui.GetContentRegionAvail().X - Im.Style.FrameHeight) / 2;
+            var offset = (Im.ContentRegion.Available.X - Im.Style.FrameHeight) / 2;
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + offset);
             var value = config.QdbButtons.HasFlag(flag);
             if (!ImUtf8.Checkbox(""u8, ref value))
@@ -394,7 +393,7 @@ public sealed class SettingsTab(
         using (var tree = ImUtf8.TreeNode("Color Settings"u8))
         {
             if (tree)
-                foreach (var color in Enum.GetValues<ColorId>())
+                foreach (var color in ColorId.Values)
                 {
                     var (defaultColor, name, description) = color.Data();
                     var currentColor = config.Colors.GetValueOrDefault(color, defaultColor);
@@ -403,7 +402,7 @@ public sealed class SettingsTab(
                 }
         }
 
-        ImGui.NewLine();
+        Im.Line.New();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -466,7 +465,7 @@ public sealed class SettingsTab(
         using (var combo = ImUtf8.Combo("##renameSettings"u8, config.ShowRename.GetData().Name))
         {
             if (combo)
-                foreach (var value in Enum.GetValues<RenameField>())
+                foreach (var value in RenameField.Values)
                 {
                     var (name, desc) = value.GetData();
                     if (ImGui.Selectable(name, config.ShowRename == value))
@@ -495,7 +494,7 @@ public sealed class SettingsTab(
         using (var combo = ImUtf8.Combo("##heightUnit"u8, HeightDisplayTypeName(config.HeightDisplayType)))
         {
             if (combo)
-                foreach (var type in Enum.GetValues<HeightDisplayType>())
+                foreach (var type in HeightDisplayType.Values)
                 {
                     if (ImUtf8.Selectable(HeightDisplayTypeName(type), type == config.HeightDisplayType) && type != config.HeightDisplayType)
                     {

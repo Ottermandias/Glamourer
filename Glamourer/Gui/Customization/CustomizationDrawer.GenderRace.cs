@@ -21,11 +21,11 @@ public partial class CustomizationDrawer
         if (_withApply)
         {
             using var disabled = Im.Disabled(_locked);
-            if (UiHelpers.DrawCheckbox("##applyGender", "Apply gender of this design.", ChangeApply.HasFlag(CustomizeFlag.Gender),
+            if (UiHelpers.DrawCheckbox("##applyGender"u8, "Apply gender of this design."u8, ChangeApply.HasFlag(CustomizeFlag.Gender),
                     out var applyGender, _locked))
                 ChangeApply = applyGender ? ChangeApply | CustomizeFlag.Gender : ChangeApply & ~CustomizeFlag.Gender;
             Im.Line.Same();
-            if (UiHelpers.DrawCheckbox("##applyClan", "Apply clan of this design.", ChangeApply.HasFlag(CustomizeFlag.Clan), out var applyClan,
+            if (UiHelpers.DrawCheckbox("##applyClan"u8, "Apply clan of this design."u8, ChangeApply.HasFlag(CustomizeFlag.Clan), out var applyClan,
                     _locked))
                 ChangeApply = applyClan ? ChangeApply | CustomizeFlag.Clan : ChangeApply & ~CustomizeFlag.Clan;
             Im.Line.Same();

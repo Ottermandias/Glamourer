@@ -1,11 +1,8 @@
-using Dalamud.Interface;
 using Glamourer.Services;
 using Glamourer.Unlocks;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 using Lumina.Misc;
-using OtterGui;
-using OtterGui.Raii;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -16,26 +13,26 @@ public static class UiHelpers
     /// <summary> Open a combo popup with another method than the combo itself. </summary>
     public static void OpenCombo(string comboLabel)
     {
-        var windowId = ImGui.GetID(comboLabel);
-        var popupId  = ~Crc32.Get("##ComboPopup", windowId);
-        ImGui.OpenPopup(popupId);
+        var windowId = Im.Id.Get(comboLabel);
+        var popupId  = ~Crc32.Get("##ComboPopup", windowId.Id);
+        Im.Popup.Open(popupId);
     }
 
     public static void DrawIcon(this EquipItem item, TextureService textures, Vector2 size, EquipSlot slot)
     {
-        var isEmpty = item.PrimaryId.Id == 0;
+        var isEmpty = item.PrimaryId.Id is 0;
         var (ptr, textureSize, empty) = textures.GetIcon(item, slot);
         if (empty)
         {
             var (bgColor, tint) = isEmpty
-                ? (ImGui.GetColorU32(ImGuiCol.FrameBg), Vector4.One)
-                : (ImGui.GetColorU32(ImGuiCol.FrameBgActive), new Vector4(0.3f, 0.3f, 0.3f, 1f));
-            var pos = ImGui.GetCursorScreenPos();
-            ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * Im.Style.GlobalScale);
+                ? (ImGuiColor.FrameBackground.Get(), Vector4.One)
+                : (ImGuiColor.FrameBackgroundActive.Get(), new Vector4(0.3f, 0.3f, 0.3f, 1f));
+            var pos = Im.Cursor.ScreenPosition;
+            Im.Window.DrawList.Shape.RectangleFilled(pos, pos + size, bgColor, 5 * Im.Style.GlobalScale);
             if (!ptr.IsNull)
                 Im.Image.Draw(ptr, size, Vector2.Zero, Vector2.One, tint);
             else
-                ImGui.Dummy(size);
+                Im.Dummy(size);
         }
         else
         {
@@ -50,14 +47,14 @@ public static class UiHelpers
         if (empty)
         {
             var (bgColor, tint) = isEmpty
-                ? (ImGui.GetColorU32(ImGuiCol.FrameBg), Vector4.One)
-                : (ImGui.GetColorU32(ImGuiCol.FrameBgActive), new Vector4(0.3f, 0.3f, 0.3f, 1f));
-            var pos = ImGui.GetCursorScreenPos();
-            ImGui.GetWindowDrawList().AddRectFilled(pos, pos + size, bgColor, 5 * Im.Style.GlobalScale);
+                ? (ImGuiColor.FrameBackground.Get(), Vector4.One)
+                : (ImGuiColor.FrameBackgroundActive.Get(), new Vector4(0.3f, 0.3f, 0.3f, 1f));
+            var pos = Im.Cursor.ScreenPosition;
+            Im.Window.DrawList.Shape.RectangleFilled(pos, pos + size, bgColor, 5 * Im.Style.GlobalScale);
             if (!ptr.IsNull)
                 Im.Image.Draw(ptr, size, Vector2.Zero, Vector2.One, tint);
             else
-                ImGui.Dummy(size);
+                Im.Dummy(size);
         }
         else
         {
@@ -65,41 +62,41 @@ public static class UiHelpers
         }
     }
 
-    public static bool DrawCheckbox(string label, string tooltip, bool value, out bool on, bool locked)
+    public static bool DrawCheckbox(ReadOnlySpan<byte> label, Utf8StringHandler<TextStringHandlerBuffer> tooltip, bool value, out bool on, bool locked)
     {
-        var  startsWithHash = label.StartsWith("##");
         bool ret;
-        using (_ = ImRaii.Disabled(locked))
+        using (Im.Disabled(locked))
         {
-            ret = ImGuiUtil.Checkbox(startsWithHash ? label : "##" + label, string.Empty, value, v => value = v);
+            using var id = Im.Id.Push(label);
+            ret = Im.Checkbox(StringU8.Empty, ref value);
         }
 
-        if (!startsWithHash)
+        if (!label.StartsWith("##"u8))
         {
-            ImGui.SameLine(0, Im.Style.ItemInnerSpacing.X);
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(label);
+            Im.Line.SameInner();
+            ImEx.TextFrameAligned(label);
         }
 
-        ImGuiUtil.HoverTooltip(tooltip, ImGuiHoveredFlags.AllowWhenDisabled);
+        Im.Tooltip.OnHover(tooltip, HoveredFlags.AllowWhenDisabled);
         on = value;
         return ret;
     }
 
-    public static (bool, bool) DrawMetaToggle(string label, bool currentValue, bool currentApply, out bool newValue,
+    public static (bool, bool) DrawMetaToggle(ReadOnlySpan<byte> label, bool currentValue, bool currentApply, out bool newValue,
         out bool newApply, bool locked)
     {
-        var flags = (sbyte)(currentApply ? currentValue ? 1 : -1 : 0);
-        using (_ = ImRaii.Disabled(locked))
+        bool? apply = currentApply ? currentValue : null;
+        using (Im.Disabled(locked))
         {
-            if (ImEx.TriStateCheckbox(ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateNeutral.Value()).Draw(
-                    "##" + label, flags, out flags))
+            using var id = Im.Id.Push(label);
+            if (ImEx.TriStateCheckbox(StringU8.Empty, ref apply, ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(),
+                    ColorId.TriStateNeutral.Value()))
             {
-                (newValue, newApply) = flags switch
+                (newValue, newApply) = apply switch
                 {
-                    -1 => (false, true),
-                    0  => (true, false),
-                    _  => (true, true),
+                    true  => (true, true),
+                    false => (false, true),
+                    _     => (true, false),
                 };
             }
             else
@@ -109,17 +106,17 @@ public static class UiHelpers
             }
         }
 
-        ImGuiUtil.HoverTooltip($"This attribute will be {(currentApply ? currentValue ? "enabled." : "disabled." : "kept as is.")}");
+        Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
+            $"This attribute will be {(currentApply ? currentValue ? "enabled." : "disabled." : "kept as is.")}");
 
-        ImGui.SameLine(0, Im.Style.ItemInnerSpacing.X);
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted(label);
+        Im.Line.SameInner();
+        ImEx.TextFrameAligned(label);
 
         return (currentValue != newValue, currentApply != newApply);
     }
 
     public static (bool, bool) ConvertKeysToBool()
-        => (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift) switch
+        => (Im.Io.KeyControl, Im.Io.KeyShift) switch
         {
             (false, false) => (true, true),
             (true, true)   => (true, true),
@@ -130,14 +127,11 @@ public static class UiHelpers
     public static bool DrawFavoriteStar(FavoriteManager favorites, EquipItem item)
     {
         var favorite = favorites.Contains(item);
-        var hovering = ImGui.IsMouseHoveringRect(ImGui.GetCursorScreenPos(),
-            ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetTextLineHeight()));
+        var hovering = Im.Mouse.IsHoveringRectangle(Rectangle.FromSize(Im.Cursor.ScreenPosition, new Vector2(Im.Style.TextHeight)));
 
-        using var font = ImRaii.PushFont(UiBuilder.IconFont);
-        using var c = ImRaii.PushColor(ImGuiCol.Text,
+        ImEx.Icon.DrawAligned(LunaStyle.FavoriteIcon,
             hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
-        ImGui.TextUnformatted(FontAwesomeIcon.Star.ToIconString());
-        if (!ImGui.IsItemClicked())
+        if (!Im.Item.Clicked())
             return false;
 
         if (favorite)
@@ -145,21 +139,16 @@ public static class UiHelpers
         else
             favorites.TryAdd(item);
         return true;
-
     }
 
     public static bool DrawFavoriteStar(FavoriteManager favorites, StainId stain)
     {
         var favorite = favorites.Contains(stain);
-        var hovering = ImGui.IsMouseHoveringRect(ImGui.GetCursorScreenPos(),
-            ImGui.GetCursorScreenPos() + new Vector2(Im.Style.FrameHeight));
+        var hovering = Im.Mouse.IsHoveringRectangle(Rectangle.FromSize(Im.Cursor.ScreenPosition, new Vector2(Im.Style.TextHeight)));
 
-        using var font = ImRaii.PushFont(UiBuilder.IconFont);
-        using var c = ImRaii.PushColor(ImGuiCol.Text,
+        ImEx.Icon.DrawAligned(LunaStyle.FavoriteIcon,
             hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted(FontAwesomeIcon.Star.ToIconString());
-        if (!ImGui.IsItemClicked())
+        if (!Im.Item.Clicked())
             return false;
 
         if (favorite)
@@ -167,6 +156,5 @@ public static class UiHelpers
         else
             favorites.TryAdd(stain);
         return true;
-
     }
 }

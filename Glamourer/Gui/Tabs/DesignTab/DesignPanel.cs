@@ -96,7 +96,7 @@ public class DesignPanel
     }
 
     private void DrawHeader()
-        => HeaderDrawer.Draw(SelectionName, 0, ImGui.GetColorU32(ImGuiCol.FrameBg), _leftButtons, _rightButtons);
+        => HeaderDrawer.Draw(SelectionName, 0, ImGuiColor.FrameBackground.Get().Color, _leftButtons, _rightButtons);
 
     private string SelectionName
         => _selector.Selected == null ? "No Selection" : _selector.IncognitoMode ? _selector.Selected.Incognito : _selector.Selected.Name.Text;
@@ -128,9 +128,9 @@ public class DesignPanel
             _equipmentDrawer.DrawBonusItem(data);
         }
 
-        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
         DrawEquipmentMetaToggles();
-        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
         _equipmentDrawer.DrawDragDropTooltip();
     }
 
@@ -168,17 +168,17 @@ public class DesignPanel
         if (_config.HideDesignPanel.HasFlag(DesignPanelFlag.Customization))
             return;
 
-        var header = _selector.Selected!.DesignData.ModelId == 0
-            ? "Customization"
-            : $"Customization (Model Id #{_selector.Selected!.DesignData.ModelId})###Customization";
-        var       expand = _config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
-        using var h      = ImUtf8.CollapsingHeaderId(header, expand ? ImGuiTreeNodeFlags.DefaultOpen : ImGuiTreeNodeFlags.None);
+        var expand = _config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
+        using var h = Im.Tree.HeaderId(_selector.Selected!.DesignData.ModelId is 0
+                ? "Customization"
+                : $"Customization (Model Id #{_selector.Selected!.DesignData.ModelId})###Customization",
+            expand ? TreeNodeFlags.DefaultOpen : TreeNodeFlags.None);
         if (!h)
             return;
 
         if (_customizationDrawer.Draw(_selector.Selected!.DesignData.Customize, _selector.Selected.Application.Customize,
                 _selector.Selected!.WriteProtected(), false))
-            foreach (var idx in Enum.GetValues<CustomizeIndex>())
+            foreach (var idx in CustomizeIndex.Values)
             {
                 var flag     = idx.ToFlag();
                 var newValue = _customizationDrawer.ChangeApply.HasFlag(flag);
@@ -188,7 +188,7 @@ public class DesignPanel
             }
 
         EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromDesign(MetaIndex.Wetness, _manager, _selector.Selected!));
-        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
     }
 
     private void DrawCustomizeParameters()
@@ -226,11 +226,11 @@ public class DesignPanel
         }
 
         var applyClan = _selector.Selected!.DoApplyCustomize(CustomizeIndex.Clan);
-        if (ImUtf8.Checkbox($"Apply {CustomizeIndex.Clan.ToDefaultName()}", ref applyClan))
+        if (ImUtf8.Checkbox($"Apply {CustomizeIndex.Clan.ToNameU8()}", ref applyClan))
             _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Clan, applyClan);
 
         var applyGender = _selector.Selected!.DoApplyCustomize(CustomizeIndex.Gender);
-        if (ImUtf8.Checkbox($"Apply {CustomizeIndex.Gender.ToDefaultName()}", ref applyGender))
+        if (ImUtf8.Checkbox($"Apply {CustomizeIndex.Gender.ToNameU8()}", ref applyGender))
             _manager.ChangeApplyCustomize(_selector.Selected!, CustomizeIndex.Gender, applyGender);
 
 
@@ -261,7 +261,7 @@ public class DesignPanel
         if (!h)
             return;
 
-        using var disabled = ImRaii.Disabled(_selector.Selected!.WriteProtected());
+        using var disabled = Im.Disabled(_selector.Selected!.WriteProtected());
 
         DrawAllButtons();
 
@@ -274,7 +274,7 @@ public class DesignPanel
             DrawMetaApplication();
         }
 
-        ImGui.SameLine(210 * ImUtf8.GlobalScale + Im.Style.ItemSpacing.X);
+        ImGui.SameLine(210 * Im.Style.GlobalScale + Im.Style.ItemSpacing.X);
         using (var _ = ImRaii.Group())
         {
             void ApplyEquip(string label, EquipFlag allFlags, bool stain, IEnumerable<EquipSlot> slots)
@@ -327,7 +327,7 @@ public class DesignPanel
         var   enabled   = _config.DeleteDesignModifier.IsActive();
         bool? equip     = null;
         bool? customize = null;
-        var   size      = new Vector2(210 * ImUtf8.GlobalScale, 0);
+        var   size      = new Vector2(210 * Im.Style.GlobalScale, 0);
         if (ImUtf8.ButtonEx("Disable Everything"u8,
                 "Disable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness."u8, size,
                 !enabled))
@@ -505,16 +505,16 @@ public class DesignPanel
 
     private void DrawPanel()
     {
-        using var table = ImUtf8.Table("##Panel", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY, ImGui.GetContentRegionAvail());
-        if (!table || _selector.Selected == null)
+        using var table = Im.Table.Begin("##Panel"u8, 1, TableFlags.BordersOuter | TableFlags.ScrollY, Im.ContentRegion.Available);
+        if (!table || _selector.Selected is null)
             return;
 
         ImGui.TableSetupScrollFreeze(0, 1);
         ImGui.TableNextColumn();
-        if (_selector.Selected == null)
+        if (_selector.Selected is null)
             return;
 
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
         DrawButtonRow();
         ImGui.TableNextColumn();
 

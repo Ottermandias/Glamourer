@@ -262,7 +262,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
     private static void DrawApply(in CustomizeParameterDrawData data)
     {
-        if (UiHelpers.DrawCheckbox("##apply", "Apply this custom parameter when applying the Design.", data.CurrentApply, out var enabled,
+        if (UiHelpers.DrawCheckbox("##apply"u8, "Apply this custom parameter when applying the Design."u8, data.CurrentApply, out var enabled,
                 data.Locked))
             data.ChangeApplyParameter(enabled);
     }

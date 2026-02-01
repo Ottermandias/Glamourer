@@ -1,12 +1,7 @@
-﻿using Dalamud.Interface;
-using Glamourer.GameData;
+﻿using Glamourer.GameData;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 using Luna;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
 using Penumbra.GameData.Structs;
@@ -34,70 +29,65 @@ public sealed class CustomizationServicePanel(CustomizeService customize) : IGam
         DrawColorInfo();
     }
 
+
     private void DrawFacepaintInfo()
     {
-        using var tree = ImUtf8.TreeNode("NPC Facepaints"u8);
+        using var tree = Im.Tree.Node("NPC Facepaints"u8);
         if (!tree)
             return;
 
-        using var table = ImUtf8.Table("data"u8, 2, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        using var table = Im.Table.Begin("data"u8, 2, TableFlags.SizingFixedFit | TableFlags.RowBackground);
         if (!table)
             return;
 
-        ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Id"u8);
-        ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Facepaint"u8);
+        table.NextColumn();
+        table.Header("Id"u8);
+        table.NextColumn();
+        table.Header("Facepaint"u8);
 
         for (var i = 0; i < 128; ++i)
         {
             var index = new CustomizeValue((byte)i);
-            ImUtf8.DrawTableColumn($"{i:D3}");
-            using var font = ImRaii.PushFont(UiBuilder.IconFont);
-            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.FacePaint, index)
-                ? FontAwesomeIcon.Check.ToIconString()
-                : FontAwesomeIcon.Times.ToIconString());
+            table.DrawColumn($"{i:D3}");
+            table.NextColumn();
+            ImEx.Icon.Draw(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.FacePaint, index) ? LunaStyle.TrueIcon : LunaStyle.FalseIcon);
         }
     }
 
     private void DrawColorInfo()
     {
-        using var tree = ImUtf8.TreeNode("NPC Colors"u8);
+        using var tree = Im.Tree.Node("NPC Colors"u8);
         if (!tree)
             return;
 
-        using var table = ImUtf8.Table("data"u8, 5, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        using var table = Im.Table.Begin("data"u8, 5, TableFlags.SizingFixedFit | TableFlags.RowBackground);
         if (!table)
             return;
 
-        ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Id"u8);
-        ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Hair"u8);
-        ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Eyes"u8);
-        ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Facepaint"u8);
-        ImGui.TableNextColumn();
-        ImUtf8.TableHeader("Tattoos"u8);
+        table.NextColumn();
+        table.Header("Id"u8);
+        table.NextColumn();
+        table.Header("Hair"u8);
+        table.NextColumn();
+        table.Header("Eyes"u8);
+        table.NextColumn();
+        table.Header("Facepaint"u8);
+        table.NextColumn();
+        table.Header("Tattoos"u8);
 
         for (var i = 192; i < 256; ++i)
         {
             var index = new CustomizeValue((byte)i);
-            ImUtf8.DrawTableColumn($"{i:D3}");
-            using var font = ImRaii.PushFont(UiBuilder.IconFont);
-            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.HairColor, index)
-                ? FontAwesomeIcon.Check.ToIconString()
-                : FontAwesomeIcon.Times.ToIconString());
-            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.EyeColorLeft, index)
-                ? FontAwesomeIcon.Check.ToIconString()
-                : FontAwesomeIcon.Times.ToIconString());
-            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.FacePaintColor, index)
-                ? FontAwesomeIcon.Check.ToIconString()
-                : FontAwesomeIcon.Times.ToIconString());
-            ImUtf8.DrawTableColumn(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.TattooColor, index)
-                ? FontAwesomeIcon.Check.ToIconString()
-                : FontAwesomeIcon.Times.ToIconString());
+            table.DrawColumn($"{i:D3}");
+            table.NextColumn();
+            ImEx.Icon.Draw(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.HairColor, index) ? LunaStyle.TrueIcon : LunaStyle.FalseIcon);
+            table.NextColumn();
+            ImEx.Icon.Draw(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.EyeColorLeft, index) ? LunaStyle.TrueIcon : LunaStyle.FalseIcon);
+            table.NextColumn();
+            ImEx.Icon.Draw(
+                customize.NpcCustomizeSet.CheckValue(CustomizeIndex.FacePaintColor, index) ? LunaStyle.TrueIcon : LunaStyle.FalseIcon);
+            table.NextColumn();
+            ImEx.Icon.Draw(customize.NpcCustomizeSet.CheckValue(CustomizeIndex.TattooColor, index) ? LunaStyle.TrueIcon : LunaStyle.FalseIcon);
         }
     }
 
@@ -113,7 +103,7 @@ public sealed class CustomizationServicePanel(CustomizeService customize) : IGam
 
         foreach (var index in CustomizeIndex.Values)
         {
-            table.DrawColumn(index.ToDefaultName());
+            table.DrawColumn(index.ToNameU8());
             table.DrawColumn(set.Option(index));
             table.DrawColumn(set.IsAvailable(index) ? "Available"u8 : "Unavailable"u8);
             table.DrawColumn(set.Type(index).ToNameU8());
@@ -123,18 +113,18 @@ public sealed class CustomizationServicePanel(CustomizeService customize) : IGam
 
     private void DrawNpcCustomizationInfo(CustomizeSet set)
     {
-        using var tree = ImRaii.TreeNode($"{customize.ClanName(set.Clan, set.Gender)} {set.Gender} (NPC Options)");
+        using var tree = Im.Tree.Node($"{customize.ClanName(set.Clan, set.Gender)} {set.Gender} (NPC Options)");
         if (!tree)
             return;
 
-        using var table = ImRaii.Table("npc", 2, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        using var table = Im.Table.Begin("npc"u8, 2, TableFlags.SizingFixedFit | TableFlags.RowBackground);
         if (!table)
             return;
 
         foreach (var (index, value) in set.NpcOptions)
         {
-            ImGuiUtil.DrawTableColumn(index.ToString());
-            ImGuiUtil.DrawTableColumn(value.Value.ToString());
+            table.DrawColumn($"{index}");
+            table.DrawColumn($"{value.Value}");
         }
     }
 }

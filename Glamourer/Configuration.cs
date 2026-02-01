@@ -5,6 +5,7 @@ using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Services;
+using ImSharp;
 using Newtonsoft.Json;
 using OtterGui.Filesystem;
 using Luna;
@@ -99,7 +100,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public int Version { get; set; } = Constants.CurrentVersion;
 
     public Dictionary<ColorId, uint> Colors { get; private set; }
-        = Enum.GetValues<ColorId>().ToDictionary(c => c, c => c.Data().DefaultColor);
+        = ColorId.Values.ToDictionary(c => c, c => c.Data().DefaultColor);
 
     [JsonIgnore]
     private readonly SaveService _saveService;

@@ -74,13 +74,13 @@ public class DesignLinkDrawer(
 
     private void DrawList()
     {
-        using var table = ImRaii.Table("table", 3, ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuter);
+        using var table = Im.Table.Begin("table"u8, 3, TableFlags.RowBackground | TableFlags.BordersOuter);
         if (!table)
             return;
 
-        ImGui.TableSetupColumn("Del",  ImGuiTableColumnFlags.WidthFixed, Im.Style.FrameHeight);
-        ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("Detail", ImGuiTableColumnFlags.WidthFixed,
+        table.SetupColumn("Del"u8,  TableColumnFlags.WidthFixed, Im.Style.FrameHeight);
+        table.SetupColumn("Name"u8, TableColumnFlags.WidthStretch);
+        table.SetupColumn("Detail"u8, TableColumnFlags.WidthFixed,
             6 * Im.Style.FrameHeight + 5 * Im.Style.ItemInnerSpacing.X);
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Im.Style.ItemInnerSpacing);
@@ -93,7 +93,7 @@ public class DesignLinkDrawer(
 
     private void DrawSelf()
     {
-        using var id = ImRaii.PushId((int)LinkOrder.Self);
+        using var id = Im.Id.Push((int)LinkOrder.Self);
         ImGui.TableNextColumn();
         var color = colorManager.GetColor(selector.Selected!);
         using (ImRaii.PushFont(UiBuilder.IconFont))
@@ -123,7 +123,7 @@ public class DesignLinkDrawer(
 
     private void DrawSubList(IReadOnlyList<DesignLink> list, LinkOrder order)
     {
-        using var id = ImRaii.PushId((int)order);
+        using var id = Im.Id.Push((int)order);
 
         var buttonSize = new Vector2(Im.Style.FrameHeight);
         for (var i = 0; i < list.Count; ++i)
@@ -157,7 +157,7 @@ public class DesignLinkDrawer(
         var buttonSize = new Vector2(Im.Style.FrameHeight);
         ImGui.TableNextColumn();
         ImGui.TableNextColumn();
-        combo.Draw(ImGui.GetContentRegionAvail().X);
+        combo.Draw(Im.ContentRegion.Available.X);
         ImGui.TableNextColumn();
         string ttBefore,     ttAfter;
         bool   canAddBefore, canAddAfter;
@@ -218,9 +218,8 @@ public class DesignLinkDrawer(
     {
         var newType    = current;
         var newTypeInt = (uint)newType;
-        using (ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, Im.Style.GlobalScale))
+        using (ImStyleBorder.Frame.Push(ColorId.FolderLine.Value()))
         {
-            using var _ = ImRaii.PushColor(ImGuiCol.Border, ColorId.FolderLine.Value());
             if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)ApplicationType.All))
                 newType = (ApplicationType)newTypeInt;
         }

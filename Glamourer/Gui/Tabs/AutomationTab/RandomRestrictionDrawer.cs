@@ -1,15 +1,10 @@
 ﻿using Dalamud.Interface;
-using Dalamud.Interface.Utility;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 using Luna;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Text;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
@@ -28,7 +23,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
 
     private string  _newText = string.Empty;
     private string? _newDefinition;
-    private Design? _newDesign = null;
+    private Design? _newDesign;
 
     public RandomRestrictionDrawer(AutomationChanged automationChanged, Configuration config, AutoDesignManager autoDesignManager,
         RandomDesignCombo randomDesignCombo, SetSelector selector, DesignFileSystem designFileSystem, DesignStorage designs)
@@ -51,13 +46,12 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     public void DrawButton(AutoDesignSet set, int designIndex)
     {
         var isOpen = set == _set && designIndex == _designIndex;
-        using (var color = ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ButtonActive), isOpen)
-                   .Push(ImGuiCol.Text,   ColorId.HeaderButtons.Value(), isOpen)
-                   .Push(ImGuiCol.Border, ColorId.HeaderButtons.Value(), isOpen))
+        using (ImGuiColor.Button.Push(Im.Style[ImGuiColor.ButtonActive], isOpen)
+                   .Push(ImGuiColor.Text,   ColorId.HeaderButtons.Value(), isOpen)
+                   .Push(ImGuiColor.Border, ColorId.HeaderButtons.Value(), isOpen))
         {
-            using var frame = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * Im.Style.GlobalScale, isOpen);
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Edit.ToIconString(), new Vector2(Im.Style.FrameHeight),
-                    string.Empty, false, true))
+            using var frame = ImStyleSingle.FrameBorderThickness.Push(2 * Im.Style.GlobalScale, isOpen);
+            if (ImEx.Icon.Button(LunaStyle.EditIcon))
             {
                 if (isOpen)
                     Close();
@@ -66,7 +60,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
             }
         }
 
-        ImGuiUtil.HoverTooltip("Edit restrictions for this random design.");
+        Im.Tooltip.OnHover("Edit restrictions for this random design."u8);
     }
 
     private void Open(AutoDesignSet set, int designIndex)
@@ -90,7 +84,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
 
     public void Draw()
     {
-        if (_set == null || _designIndex < 0 || _designIndex >= _set.Designs.Count)
+        if (_set is null || _designIndex < 0 || _designIndex >= _set.Designs.Count)
             return;
 
         if (_set != _selector.Selection)
@@ -108,28 +102,28 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
 
     private void DrawWindow(RandomDesign random)
     {
-        var flags = ImGuiWindowFlags.NoFocusOnAppearing
-          | ImGuiWindowFlags.NoCollapse
-          | ImGuiWindowFlags.NoResize;
+        var flags = WindowFlags.NoFocusOnAppearing
+          | WindowFlags.NoCollapse
+          | WindowFlags.NoResize;
 
         // Set position to the right of the main window when attached
         // The downwards offset is implicit through child position.
         if (_config.KeepAdvancedDyesAttached)
         {
-            var position = ImGui.GetWindowPos();
-            position.X += ImGui.GetWindowSize().X + Im.Style.WindowPadding.X;
-            ImGui.SetNextWindowPos(position);
-            flags |= ImGuiWindowFlags.NoMove;
+            var position = Im.Window.Position;
+            position.X += Im.Window.Size.X + Im.Style.WindowPadding.X;
+            Im.Window.SetNextPosition(position);
+            flags |= WindowFlags.NoMove;
         }
 
-        using var color = ImRaii.PushColor(ImGuiCol.TitleBgActive, ImGui.GetColorU32(ImGuiCol.TitleBg));
+        using var color = ImGuiColor.TitleBackgroundActive.Push(Im.Style[ImGuiColor.TitleBackground]);
 
         var size = new Vector2(7 * Im.Style.FrameHeight + 3 * Im.Style.ItemInnerSpacing.X + 300 * Im.Style.GlobalScale,
             18 * Im.Style.FrameHeightWithSpacing + Im.Style.WindowPadding.Y + Im.Style.ItemSpacing.Y);
-        ImGui.SetNextWindowSize(size);
+        Im.Window.SetNextSize(size);
 
         var open   = true;
-        var window = ImGui.Begin($"{_set!.Name} #{_designIndex + 1:D2}###Glamourer Random Design", ref open, flags);
+        var window = Im.Window.Begin($"{_set!.Name} #{_designIndex + 1:D2}###Glamourer Random Design", ref open, flags);
         try
         {
             if (window)
@@ -137,7 +131,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
         }
         finally
         {
-            ImGui.End();
+            window.Dispose();
         }
 
         if (!open)
@@ -146,41 +140,39 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
 
     private void DrawTable(RandomDesign random, List<IDesignPredicate> list)
     {
-        using var table = ImRaii.Table("##table", 3);
+        using var table = Im.Table.Begin("##table"u8, 3);
         if (!table)
             return;
 
-        using var spacing    = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Im.Style.ItemInnerSpacing);
+        using var spacing    = ImStyleDouble.ItemSpacing.Push(Im.Style.ItemInnerSpacing);
         var       buttonSize = new Vector2(Im.Style.FrameHeight);
-        var       descWidth  = ImGui.CalcTextSize("or that are set to the color").X;
-        ImGui.TableSetupColumn("desc",  ImGuiTableColumnFlags.WidthFixed, descWidth);
-        ImGui.TableSetupColumn("input", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableSetupColumn("del",   ImGuiTableColumnFlags.WidthFixed, buttonSize.X * 2 + Im.Style.ItemInnerSpacing.X);
+        var       descWidth  = Im.Font.CalculateSize("or that are set to the color"u8).X;
+        table.SetupColumn("desc"u8,  TableColumnFlags.WidthFixed, descWidth);
+        table.SetupColumn("input"u8, TableColumnFlags.WidthStretch);
+        table.SetupColumn("del"u8,   TableColumnFlags.WidthFixed, buttonSize.X * 2 + Im.Style.ItemInnerSpacing.X);
 
-        var orSize = ImGui.CalcTextSize("or ");
+        var orSize = Im.Font.CalculateSize("or "u8);
         for (var i = 0; i < random.Predicates.Count; ++i)
         {
-            using var id        = ImRaii.PushId(i);
+            using var id        = Im.Id.Push(i);
             var       predicate = random.Predicates[i];
-            ImGui.TableNextColumn();
-            ImGui.AlignTextToFramePadding();
-            if (i != 0)
-                ImGui.TextUnformatted("or ");
+            table.NextColumn();
+            if (i is not 0)
+                ImEx.TextFrameAligned("or "u8);
             else
-                ImGui.Dummy(orSize);
-            ImGui.SameLine(0, 0);
-            ImGui.AlignTextToFramePadding();
+                Im.Dummy(orSize);
+            Im.Line.NoSpacing();
             switch (predicate)
             {
                 case RandomPredicate.Contains contains:
                 {
-                    ImGui.TextUnformatted("that contain");
-                    ImGui.TableNextColumn();
+                    ImEx.TextFrameAligned("that contain"u8);
+                    table.NextColumn();
                     var data = contains.Value.Text;
-                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                    if (ImGui.InputTextWithHint("##match", "Name, Path, or Identifier Contains...", ref data, 128))
+                    Im.Item.SetNextWidthFull();
+                    if (Im.Input.Text("##match"u8, ref data, "Name, Path, or Identifier Contains..."u8))
                     {
-                        if (data.Length == 0)
+                        if (data.Length is 0)
                             list.RemoveAt(i);
                         else
                             list[i] = new RandomPredicate.Contains(data);
@@ -191,13 +183,13 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 }
                 case RandomPredicate.StartsWith startsWith:
                 {
-                    ImGui.TextUnformatted("whose path starts with");
-                    ImGui.TableNextColumn();
+                    ImEx.TextFrameAligned("whose path starts with"u8);
+                    table.NextColumn();
                     var data = startsWith.Value.Text;
-                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                    if (ImGui.InputTextWithHint("##startsWith", "Path Starts With...", ref data, 128))
+                    Im.Item.SetNextWidthFull();
+                    if (Im.Input.Text("##startsWith"u8, ref data, "Path Starts With..."u8))
                     {
-                        if (data.Length == 0)
+                        if (data.Length is 0)
                             list.RemoveAt(i);
                         else
                             list[i] = new RandomPredicate.StartsWith(data);
@@ -208,13 +200,13 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 }
                 case RandomPredicate.Exact { Which: RandomPredicate.Exact.Type.Tag } exact:
                 {
-                    ImGui.TextUnformatted("that contain the tag");
-                    ImGui.TableNextColumn();
-                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                    ImEx.TextFrameAligned("that contain the tag"u8);
+                    table.NextColumn();
+                    Im.Item.SetNextWidthFull();
                     var data = exact.Value.Text;
-                    if (ImGui.InputTextWithHint("##color", "Contained tag...", ref data, 128))
+                    if (Im.Input.Text("##color"u8, ref data, "Contained tag..."u8))
                     {
-                        if (data.Length == 0)
+                        if (data.Length is 0)
                             list.RemoveAt(i);
                         else
                             list[i] = new RandomPredicate.Exact(RandomPredicate.Exact.Type.Tag, data);
@@ -225,13 +217,13 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 }
                 case RandomPredicate.Exact { Which: RandomPredicate.Exact.Type.Color } exact:
                 {
-                    ImGui.TextUnformatted("that are set to the color");
-                    ImGui.TableNextColumn();
-                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                    ImEx.TextFrameAligned("that are set to the color"u8);
+                    table.NextColumn();
+                    Im.Item.SetNextWidthFull();
                     var data = exact.Value.Text;
-                    if (ImGui.InputTextWithHint("##color", "Assigned Color is...", ref data, 128))
+                    if (Im.Input.Text("##color"u8, ref data, "Assigned Color is..."u8))
                     {
-                        if (data.Length == 0)
+                        if (data.Length is 0)
                             list.RemoveAt(i);
                         else
                             list[i] = new RandomPredicate.Exact(RandomPredicate.Exact.Type.Color, data);
@@ -242,9 +234,9 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 }
                 case RandomPredicate.Exact exact:
                 {
-                    ImGui.TextUnformatted("that are exactly");
-                    ImGui.TableNextColumn();
-                    if (_randomDesignCombo.Draw(exact, ImGui.GetContentRegionAvail().X) && _randomDesignCombo.Design is Design d)
+                    ImEx.TextFrameAligned("that are exactly"u8);
+                    table.NextColumn();
+                    if (_randomDesignCombo.Draw(exact, Im.ContentRegion.Available.X) && _randomDesignCombo.Design is Design d)
                     {
                         list[i] = new RandomPredicate.Exact(RandomPredicate.Exact.Type.Identifier, d.Identifier.ToString());
                         _autoDesignManager.ChangeData(_set!, _designIndex, list);
@@ -254,22 +246,22 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 }
             }
 
-            ImGui.TableNextColumn();
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), buttonSize, "Delete this restriction.", false, true))
+            table.NextColumn();
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this restriction."u8))
             {
                 list.RemoveAt(i);
                 _autoDesignManager.ChangeData(_set!, _designIndex, list);
             }
 
             Im.Line.Same();
-            DrawLookup(predicate, buttonSize);
+            DrawLookup(predicate);
         }
     }
 
-    private void DrawLookup(IDesignPredicate predicate, Vector2 buttonSize)
+    private void DrawLookup(IDesignPredicate predicate)
     {
-        ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.MagnifyingGlassChart.ToIconString(), buttonSize, string.Empty, false, true);
-        if (!ImGui.IsItemHovered())
+        ImEx.Icon.Button(FontAwesomeIcon.MagnifyingGlassChart.Icon(), StringU8.Empty);
+        if (!Im.Item.Hovered())
             return;
 
         var designs = predicate.Get(_designs, _designFileSystem);
@@ -278,46 +270,54 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
 
     private void LookupTooltip(IEnumerable<Design> designs)
     {
-        using var _ = ImRaii.Tooltip();
-        var tt = string.Join('\n', designs.Select(d => _designFileSystem.TryGetValue(d, out var l) ? l.FullName() : d.Name.Text).OrderBy(t => t));
-        ImGui.TextUnformatted(tt.Length == 0
-            ? "Matches no currently existing designs."
-            : "Matches the following designs:");
-        ImGui.Separator();
-        ImGui.TextUnformatted(tt);
+        using var _          = Im.Tooltip.Begin();
+        using var enumerator = designs.GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            Im.Text("Matches the following designs:"u8);
+            var name = _designFileSystem.TryGetValue(enumerator.Current, out var l) ? l.FullName() : enumerator.Current.Name.Text;
+            Im.Separator();
+            Im.BulletText(name);
+            while (enumerator.MoveNext())
+            {
+                name = _designFileSystem.TryGetValue(enumerator.Current, out l) ? l.FullName() : enumerator.Current.Name.Text;
+                Im.BulletText(name);
+            }
+            return;
+        }
+        Im.Text("Matches no currently existing designs."u8);
     }
 
     private void DrawNewButtons(List<IDesignPredicate> list)
     {
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-        ImGui.InputTextWithHint("##newText", "Add New Restriction...", ref _newText, 128);
-        var spacing = Im.Style.ItemInnerSpacing.X;
-        var invalid = _newText.Length == 0;
+        Im.Item.SetNextWidthFull();
+        Im.Input.Text("##newText"u8, ref _newText, "Add New Restriction..."u8);
+        var invalid = _newText.Length is 0;
 
-        var buttonSize = new Vector2((ImGui.GetContentRegionAvail().X - 3 * spacing) / 4, 0);
-        var changed = ImGuiUtil.DrawDisabledButton("Starts With", buttonSize,
-                "Add a new condition that design paths must start with the given text.", invalid)
+        var buttonSize = new Vector2((Im.ContentRegion.Available.X - 3 * Im.Style.ItemInnerSpacing.X) / 4, 0);
+        var changed = ImEx.Button("Starts With"u8, buttonSize,
+                "Add a new condition that design paths must start with the given text."u8, invalid)
          && Add(new RandomPredicate.StartsWith(_newText));
 
-        ImGui.SameLine(0, spacing);
-        changed |= ImGuiUtil.DrawDisabledButton("Contains", buttonSize,
-                "Add a new condition that design paths, names or identifiers must contain the given text.", invalid)
+        Im.Line.SameInner();
+        changed |= ImEx.Button("Contains"u8, buttonSize,
+                "Add a new condition that design paths, names or identifiers must contain the given text."u8, invalid)
          && Add(new RandomPredicate.Contains(_newText));
 
-        ImGui.SameLine(0, spacing);
-        changed |= ImGuiUtil.DrawDisabledButton("Has Tag", buttonSize,
-                "Add a new condition that the design must contain the given tag.", invalid)
+        Im.Line.SameInner();
+        changed |= ImEx.Button("Has Tag"u8, buttonSize,
+                "Add a new condition that the design must contain the given tag."u8, invalid)
          && Add(new RandomPredicate.Exact(RandomPredicate.Exact.Type.Tag, _newText));
 
-        ImGui.SameLine(0, spacing);
-        changed |= ImGuiUtil.DrawDisabledButton("Assigned Color", buttonSize,
-                "Add a new condition that the design must be assigned to the given color.", invalid)
+        Im.Line.SameInner();
+        changed |= ImEx.Button("Assigned Color"u8, buttonSize,
+                "Add a new condition that the design must be assigned to the given color."u8, invalid)
          && Add(new RandomPredicate.Exact(RandomPredicate.Exact.Type.Color, _newText));
 
-        if (_randomDesignCombo.Draw(_newDesign, ImGui.GetContentRegionAvail().X - spacing - buttonSize.X))
+        if (_randomDesignCombo.Draw(_newDesign, Im.ContentRegion.Available.X - Im.Style.ItemInnerSpacing.X - buttonSize.X))
             _newDesign = _randomDesignCombo.CurrentSelection?.Item1 as Design;
-        ImGui.SameLine(0, spacing);
-        if (ImGuiUtil.DrawDisabledButton("Exact Design", buttonSize, "Add a single, specific design.", _newDesign == null))
+        Im.Line.SameInner();
+        if (ImEx.Button("Exact Design"u8, buttonSize, "Add a single, specific design."u8, _newDesign is null))
         {
             Add(new RandomPredicate.Exact(RandomPredicate.Exact.Type.Identifier, _newDesign!.Identifier.ToString()));
             changed    = true;
@@ -338,30 +338,29 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
 
     private void DrawManualInput(IReadOnlyList<IDesignPredicate> list)
     {
-        ImGui.Dummy(Vector2.Zero);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
+        Im.Separator();
+        Im.Dummy(Vector2.Zero);
         DrawTotalPreview(list);
         var currentDefinition = RandomPredicate.GeneratePredicateString(list);
         var definition        = _newDefinition ?? currentDefinition;
         definition = definition.Replace(";", ";\n\t").Replace("{", "{\n\t").Replace("}", "\n}");
         var lines = definition.Count(c => c is '\n');
-        if (ImGui.InputTextMultiline("##definition", ref definition, 2000,
-                new Vector2(ImGui.GetContentRegionAvail().X, (lines + 1) * ImGui.GetTextLineHeight() + Im.Style.FrameHeight),
-                ImGuiInputTextFlags.CtrlEnterForNewLine))
+        if (Im.Input.MultiLine("##definition"u8, ref definition, Im.ContentRegion.Available with { Y = (lines + 1) * Im.Style.TextHeight + Im.Style.FrameHeight },
+                InputTextFlags.CtrlEnterForNewLine))
             _newDefinition = definition;
-        if (ImGui.IsItemDeactivatedAfterEdit() && _newDefinition != null && _newDefinition != currentDefinition)
+        if (Im.Item.DeactivatedAfterEdit && _newDefinition is not null && _newDefinition != currentDefinition)
         {
             var predicates = RandomPredicate.GeneratePredicates(_newDefinition.Replace("\n", string.Empty).Replace("\t", string.Empty));
             _autoDesignManager.ChangeData(_set!, _designIndex, predicates);
             _newDefinition = null;
         }
 
-        if (ImGui.Button("Copy to Clipboard Without Line Breaks", new Vector2(ImGui.GetContentRegionAvail().X, 0)))
+        if (Im.Button("Copy to Clipboard Without Line Breaks"u8, Im.ContentRegion.Available with { Y = 0 }))
         {
             try
             {
-                ImGui.SetClipboardText(currentDefinition);
+                Im.Clipboard.Set(currentDefinition);
             }
             catch
             {
@@ -373,40 +372,38 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     private void DrawTotalPreview(IReadOnlyList<IDesignPredicate> list)
     {
         var designs = IDesignPredicate.Get(list, _designs, _designFileSystem).ToList();
-        var button = designs.Count > 0
-            ? $"All Restrictions Combined Match {designs.Count} Designs"
-            : "None of the Restrictions Matches Any Designs";
-        ImGuiUtil.DrawDisabledButton(button, new Vector2(ImGui.GetContentRegionAvail().X, 0),
-            string.Empty, false, false);
-        if (ImGui.IsItemHovered())
+        Im.Button(designs.Count > 0
+                ? $"All Restrictions Combined Match {designs.Count} Designs"
+                : "None of the Restrictions Matches Any Designs"u8, Im.ContentRegion.Available with { Y = 0 });
+        if (Im.Item.Hovered())
             LookupTooltip(designs);
     }
 
     private void DrawContent(RandomDesign random)
     {
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - Im.Style.WindowPadding.Y + Im.Style.GlobalScale);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.Zero);
+        Im.Cursor.Y += Im.Style.GlobalScale - Im.Style.WindowPadding.Y;
+        Im.Separator();
+        Im.Dummy(Vector2.Zero);
         var reset = random.ResetOnRedraw;
-        if (ImUtf8.Checkbox("Reset Chosen Design On Every Redraw"u8, ref reset))
+        if (Im.Checkbox("Reset Chosen Design On Every Redraw"u8, ref reset))
             _autoDesignManager.ChangeData(_set!, _designIndex, reset);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.Zero);
+        Im.Separator();
+        Im.Dummy(Vector2.Zero);
 
         var list = random.Predicates.ToList();
-        if (list.Count == 0)
+        if (list.Count is 0)
         {
-            ImGui.TextUnformatted("No Restrictions Set. Selects among all existing Designs.");
+            Im.Text("No Restrictions Set. Selects among all existing Designs."u8);
         }
         else
         {
-            ImGui.TextUnformatted("Select among designs...");
+            Im.Text("Select among designs..."u8);
             DrawTable(random, list);
         }
 
-        ImGui.Dummy(Vector2.Zero);
-        ImGui.Separator();
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
+        Im.Separator();
+        Im.Dummy(Vector2.Zero);
 
         DrawNewButtons(list);
         DrawManualInput(list);
@@ -414,7 +411,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
 
     private void OnAutomationChange(AutomationChanged.Type type, AutoDesignSet? set, object? data)
     {
-        if (set != _set || _set == null)
+        if (set != _set || _set is null)
             return;
 
         switch (type)

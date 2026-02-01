@@ -1,5 +1,7 @@
 ﻿using Glamourer.Automation;
 using Glamourer.Gui;
+using ImSharp;
+using Luna;
 using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Services;
@@ -104,7 +106,7 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
     private static void AddColors(Configuration config, bool forceSave)
     {
         var save = false;
-        foreach (var color in Enum.GetValues<ColorId>())
+        foreach (var color in ColorId.Values)
             save |= config.Colors.TryAdd(color, color.Data().DefaultColor);
 
         if (save || forceSave)

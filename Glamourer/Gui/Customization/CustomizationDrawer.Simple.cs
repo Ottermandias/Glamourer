@@ -252,7 +252,7 @@ public partial class CustomizationDrawer
         var       tmp = _currentByte != CustomizeValue.Zero;
         if (_withApply)
         {
-            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToDefaultName(), tmp, _currentApply, out var newValue, out var newApply, _locked))
+            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToNameU8(), tmp, _currentApply, out var newValue, out var newApply, _locked))
             {
                 case (true, false):
                     _customize.Set(idx, newValue ? CustomizeValue.Max : CustomizeValue.Zero);
@@ -278,20 +278,20 @@ public partial class CustomizationDrawer
             }
 
             Im.Line.Same();
-            Im.Text(_currentIndex.ToDefaultName());
+            Im.Text(_currentIndex.ToNameU8());
         }
     }
 
     private void ApplyCheckbox()
     {
-        if (UiHelpers.DrawCheckbox("##apply", $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
+        if (UiHelpers.DrawCheckbox("##apply"u8, $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
             ToggleApply();
     }
 
     private void ApplyCheckbox(CustomizeIndex index)
     {
         using var id = SetId(index);
-        if (UiHelpers.DrawCheckbox("##apply", $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
+        if (UiHelpers.DrawCheckbox("##apply"u8, $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
             ToggleApply();
     }
 

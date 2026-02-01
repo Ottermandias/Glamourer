@@ -1,16 +1,15 @@
 ﻿using Dalamud.Interface.Components;
-using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using Glamourer.Events;
 using Glamourer.Gui.Materials;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImSharp;
+using Luna;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Equipment;
 
@@ -51,7 +50,7 @@ public class EquipmentDrawer
         _itemCombo      = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log, favorites)).ToArray();
         _bonusItemCombo = BonusExtensions.AllFlags.Select(f => new BonusItemCombo(gameData, items, f, Glamourer.Log, favorites)).ToArray();
         _weaponCombo    = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
-        foreach (var type in Enum.GetValues<FullEquipType>())
+        foreach (var type in FullEquipType.Values)
         {
             if (type.ToSlot() is EquipSlot.MainHand)
                 _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log, favorites));
@@ -142,7 +141,7 @@ public class EquipmentDrawer
     {
         if (data.DisplayApplication)
         {
-            var (valueChanged, applyChanged) = UiHelpers.DrawMetaToggle(data.Label.ToString(), data.CurrentValue, data.CurrentApply,
+            var (valueChanged, applyChanged) = UiHelpers.DrawMetaToggle(data.Label, data.CurrentValue, data.CurrentApply,
                 out var newValue,
                 out var newApply, data.Locked);
             if (valueChanged)
@@ -152,7 +151,7 @@ public class EquipmentDrawer
         }
         else
         {
-            if (UiHelpers.DrawCheckbox(data.Label.ToString(), data.Tooltip.ToString(), data.CurrentValue, out var newValue, data.Locked))
+            if (UiHelpers.DrawCheckbox(data.Label, data.Tooltip, data.CurrentValue, out var newValue, data.Locked))
                 data.SetValue(newValue);
         }
     }
@@ -160,7 +159,7 @@ public class EquipmentDrawer
     public bool DrawAllStain(out StainIds ret, bool locked)
     {
         using var disabled = Im.Disabled(locked);
-        var       change   = _stainCombo.Draw("Dye All Slots", Stain.None.RgbaColor, string.Empty, false, false, MouseWheelType.None);
+        var       change   = _stainCombo.Draw("Dye All Slots", Stain.None.RgbaColor, string.Empty, false, false, OtterGui.Widgets.MouseWheelType.None);
         ret = StainIds.None;
         if (change)
             if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out var stain))
@@ -210,7 +209,8 @@ public class EquipmentDrawer
 
     private void DrawBonusItemSmall(in BonusDrawData bonusDrawData)
     {
-        ImGui.Dummy(new Vector2(StainId.NumStains * ImUtf8.FrameHeight + (StainId.NumStains - 1) * ImUtf8.ItemSpacing.X, ImUtf8.FrameHeight));
+        Im.Dummy(new Vector2(StainId.NumStains * Im.Style.FrameHeight + (StainId.NumStains - 1) * Im.Style.ItemSpacing.X,
+            Im.Style.FrameHeight));
         Im.Line.Same();
         DrawBonusItem(bonusDrawData, out var label, true, false, false);
         if (bonusDrawData.DisplayApplication)
@@ -275,10 +275,10 @@ public class EquipmentDrawer
     private void DrawEquipNormal(in EquipDrawData equipDrawData)
     {
         equipDrawData.CurrentItem.DrawIcon(_textures, _iconSize, equipDrawData.Slot);
-        var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
-        var left  = ImGui.IsItemClicked(ImGuiMouseButton.Left);
+        var right = Im.Item.RightClicked();
+        var left  = Im.Item.Clicked();
         Im.Line.Same();
-        using var group = ImRaii.Group();
+        using var group = Im.Group();
         DrawItem(equipDrawData, out var label, false, right, left);
         if (equipDrawData.DisplayApplication)
         {
@@ -302,15 +302,15 @@ public class EquipmentDrawer
         if (VerifyRestrictedGear(equipDrawData))
         {
             Im.Line.Same();
-            ImUtf8.Text("(Restricted)"u8);
+            Im.Text("(Restricted)"u8);
         }
     }
 
     private void DrawBonusItemNormal(in BonusDrawData bonusDrawData)
     {
         bonusDrawData.CurrentItem.DrawIcon(_textures, _iconSize, bonusDrawData.Slot);
-        var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
-        var left  = ImGui.IsItemClicked(ImGuiMouseButton.Left);
+        var right = Im.Item.RightClicked();
+        var left  = Im.Item.Clicked();
         Im.Line.Same();
         DrawBonusItem(bonusDrawData, out var label, false, right, left);
         if (bonusDrawData.DisplayApplication)
@@ -328,13 +328,12 @@ public class EquipmentDrawer
 
     private void DrawWeaponsNormal(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
     {
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing,
-            Im.Style.ItemInnerSpacing with { Y = Im.Style.ItemSpacing.Y });
+        using var style = ImStyleDouble.ItemSpacing.PushX(Im.Style.ItemInnerSpacing.X);
 
         mainhand.CurrentItem.DrawIcon(_textures, _iconSize, EquipSlot.MainHand);
-        var left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
+        var left = Im.Item.Clicked();
         Im.Line.Same();
-        using (ImUtf8.Group())
+        using (Im.Group())
         {
             DrawMainhand(ref mainhand, ref offhand, out var mainhandLabel, allWeapons, false, left);
             if (mainhand.DisplayApplication)
@@ -362,10 +361,10 @@ public class EquipmentDrawer
             return;
 
         offhand.CurrentItem.DrawIcon(_textures, _iconSize, EquipSlot.OffHand);
-        var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
-        left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
+        var right = Im.Item.RightClicked();
+        left = Im.Item.Clicked();
         Im.Line.Same();
-        using (ImUtf8.Group())
+        using (Im.Group())
         {
             DrawOffhand(mainhand, offhand, out var offhandLabel, false, right, left);
             if (offhand.DisplayApplication)
@@ -391,11 +390,11 @@ public class EquipmentDrawer
 
     private void DrawStain(in EquipDrawData data, bool small)
     {
-        using var disabled = ImRaii.Disabled(data.Locked);
-        var       width    = (_comboLength - ImUtf8.ItemInnerSpacing.X * (data.CurrentStains.Count - 1)) / data.CurrentStains.Count;
-        foreach (var (stainId, index) in data.CurrentStains.WithIndex())
+        using var disabled = Im.Disabled(data.Locked);
+        var       width    = (_comboLength - Im.Style.ItemInnerSpacing.X * (data.CurrentStains.Count - 1)) / data.CurrentStains.Count;
+        foreach (var (index, stainId) in data.CurrentStains.Index())
         {
-            using var id    = ImUtf8.PushId(index);
+            using var id    = Im.Id.Push(index);
             var       found = _stainData.TryGetValue(stainId, out var stain);
             var change = small
                 ? _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss)
@@ -406,7 +405,7 @@ public class EquipmentDrawer
                 DrawStainDragDrop(data, index, stain, found);
 
             if (index < data.CurrentStains.Count - 1)
-                ImUtf8.SameLineInner();
+                Im.Line.SameInner();
 
             if (change)
                 if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
@@ -423,16 +422,16 @@ public class EquipmentDrawer
     {
         if (found)
         {
-            using var dragSource = ImUtf8.DragDropSource();
+            using var dragSource = Im.DragDrop.Source();
             if (dragSource.Success)
             {
-                DragDropSource.SetPayload("stainDragDrop"u8);
+                dragSource.SetPayload("stainDragDrop"u8);
                 _draggedStain = stain;
-                ImUtf8.Text($"Dragging {stain.Name}...");
+                Im.Text($"Dragging {stain.Name}...");
             }
         }
 
-        using var dragTarget = ImUtf8.DragDropTarget();
+        using var dragTarget = Im.DragDrop.Target();
         if (dragTarget.IsDropping("stainDragDrop"u8) && _draggedStain.HasValue)
         {
             data.SetStains(data.CurrentStains.With(index, _draggedStain.Value.RowIndex));
@@ -449,7 +448,7 @@ public class EquipmentDrawer
         if (!data.Locked && open)
             UiHelpers.OpenCombo($"##{combo.Label}");
 
-        using var disabled = ImRaii.Disabled(data.Locked);
+        using var disabled = Im.Disabled(data.Locked);
         var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.ItemId, small ? _comboLength - Im.Style.FrameHeight : _comboLength,
             _requiredComboWidth);
         DrawGearDragDrop(data);
@@ -471,15 +470,15 @@ public class EquipmentDrawer
         if (!data.Locked && open)
             UiHelpers.OpenCombo($"##{combo.Label}");
 
-        using var disabled = ImRaii.Disabled(data.Locked);
+        using var disabled = Im.Disabled(data.Locked);
         var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.Id.BonusItem,
             small ? _comboLength - Im.Style.FrameHeight : _comboLength,
             _requiredComboWidth);
-        if (ImGui.IsItemHovered() && ImGui.GetIO().KeyCtrl)
+        if (Im.Item.Hovered() && Im.Io.KeyControl)
         {
-            if (ImGui.IsKeyPressed(ImGuiKey.C))
+            if (Im.Keyboard.IsPressed(Key.C))
                 _itemCopy.Copy(combo.CurrentSelection);
-            else if (ImGui.IsKeyPressed(ImGuiKey.V))
+            else if (Im.Keyboard.IsPressed(Key.V))
                 _itemCopy.Paste(data.Slot.ToEquipType(), data.SetItem);
         }
 
@@ -497,15 +496,15 @@ public class EquipmentDrawer
     {
         if (data.CurrentItem.Valid)
         {
-            using var dragSource = ImUtf8.DragDropSource();
+            using var dragSource = Im.DragDrop.Source();
             if (dragSource.Success)
             {
-                DragDropSource.SetPayload("equipDragDrop"u8);
+                dragSource.SetPayload("equipDragDrop"u8);
                 _draggedItem.Update(_items, data.CurrentItem, data.Slot);
             }
         }
 
-        using var dragTarget = ImUtf8.DragDropTarget();
+        using var dragTarget = Im.DragDrop.Target();
         if (!dragTarget)
             return;
 
@@ -521,21 +520,20 @@ public class EquipmentDrawer
         _draggedItem.Clear();
     }
 
-    public unsafe void DrawDragDropTooltip()
+    public void DrawDragDropTooltip()
     {
-        var payload = ImGui.GetDragDropPayload().Handle;
-        if (payload is null)
+        var payload = Im.DragDrop.PeekPayload();
+        if (!payload.Valid)
             return;
 
-        if (!MemoryMarshal.CreateReadOnlySpanFromNullTerminated((byte*)Unsafe.AsPointer(ref payload->DataType_0))
-                .SequenceEqual("equipDragDrop"u8))
+        if (!payload.CheckType("equipDragDrop"u8))
             return;
 
-        using var tt = ImUtf8.Tooltip();
+        using var tt = Im.Tooltip.Begin();
         if (_dragTarget is EquipSlot.Unknown)
-            ImUtf8.Text($"Dragging {_draggedItem.Dragged.Name}...");
+            Im.Text($"Dragging {_draggedItem.Dragged.Name}...");
         else
-            ImUtf8.Text($"Converting to {_draggedItem[_dragTarget].Name}...");
+            Im.Text($"Converting to {_draggedItem[_dragTarget].Name}...");
     }
 
     private static bool ResetOrClear<T>(bool locked, bool clicked, bool allowRevert, bool allowClear,
@@ -547,21 +545,25 @@ public class EquipmentDrawer
             return false;
         }
 
-        clicked = clicked || ImGui.IsItemClicked(ImGuiMouseButton.Right);
+        clicked = clicked || Im.Item.RightClicked();
 
         (var tt, item, var valid) = (allowRevert && !revertItem.Equals(currentItem), allowClear && !clearItem.Equals(currentItem),
-                ImGui.GetIO().KeyCtrl) switch
+                Im.Io.KeyControl) switch
             {
-                (true, true, true) => ("Right-click to clear. Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.",
+                (true, true, true) => RefTuple.Create(
+                    "Right-click to clear. Control and Right-Click to revert to game.\nControl and mouse wheel to scroll."u8,
                     revertItem, true),
-                (true, true, false) => ("Right-click to clear. Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.",
+                (true, true, false) => RefTuple.Create(
+                    "Right-click to clear. Control and Right-Click to revert to game.\nControl and mouse wheel to scroll."u8,
                     clearItem, true),
-                (true, false, true)  => ("Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.", revertItem, true),
-                (true, false, false) => ("Control and Right-Click to revert to game.\nControl and mouse wheel to scroll.", default, false),
-                (false, true, _)     => ("Right-click to clear.\nControl and mouse wheel to scroll.", clearItem, true),
-                (false, false, _)    => ("Control and mouse wheel to scroll.", default, false),
+                (true, false, true) => RefTuple.Create("Control and Right-Click to revert to game.\nControl and mouse wheel to scroll."u8,
+                    revertItem, true),
+                (true, false, false) => RefTuple.Create("Control and Right-Click to revert to game.\nControl and mouse wheel to scroll."u8,
+                    (T?)default!, false),
+                (false, true, _)  => RefTuple.Create("Right-click to clear.\nControl and mouse wheel to scroll."u8, clearItem,    true),
+                (false, false, _) => RefTuple.Create("Control and mouse wheel to scroll."u8,                        (T?)default!, false),
             };
-        ImUtf8.HoverTooltip(tt);
+        Im.Tooltip.OnHover(tt);
 
         return clicked && valid;
     }
@@ -577,9 +579,9 @@ public class EquipmentDrawer
 
         label = combo.Label;
         var        unknown     = !_gPose.InGPose && mainhand.CurrentItem.Type is FullEquipType.Unknown;
-        using var  style       = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Im.Style.ItemInnerSpacing);
+        using var  style       = ImStyleDouble.ItemSpacing.Push(Im.Style.ItemInnerSpacing);
         EquipItem? changedItem = null;
-        using (var _ = ImRaii.Disabled(mainhand.Locked | unknown))
+        using (Im.Disabled(mainhand.Locked | unknown))
         {
             if (!mainhand.Locked && open)
                 UiHelpers.OpenCombo($"##{label}");
@@ -609,7 +611,7 @@ public class EquipmentDrawer
         }
 
         if (unknown)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled,
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled,
                 "The weapon type could not be identified, thus changing it to other weapons of that type is not possible."u8);
     }
 
@@ -624,7 +626,7 @@ public class EquipmentDrawer
         label = combo.Label;
         var locked = offhand.Locked
          || !_gPose.InGPose && (offhand.CurrentItem.Type.IsUnknown() || mainhand.CurrentItem.Type.IsUnknown());
-        using var disabled = ImRaii.Disabled(locked);
+        using var disabled = Im.Disabled(locked);
         if (!locked && open)
             UiHelpers.OpenCombo($"##{combo.Label}");
         if (combo.Draw(offhand.CurrentItem.Name, offhand.CurrentItem.ItemId, small ? _comboLength - Im.Style.FrameHeight : _comboLength,
@@ -642,21 +644,24 @@ public class EquipmentDrawer
 
     private static void DrawApply(in EquipDrawData data)
     {
-        if (UiHelpers.DrawCheckbox($"##apply{data.Slot}", "Apply this item when applying the Design.", data.CurrentApply, out var enabled,
+        using var id = Im.Id.Push((int)data.Slot);
+        if (UiHelpers.DrawCheckbox("##apply"u8, "Apply this item when applying the Design."u8, data.CurrentApply, out var enabled,
                 data.Locked))
             data.SetApplyItem(enabled);
     }
 
     private static void DrawApply(in BonusDrawData data)
     {
-        if (UiHelpers.DrawCheckbox($"##apply{data.Slot}", "Apply this bonus item when applying the Design.", data.CurrentApply, out var enabled,
+        using var id = Im.Id.Push((int)data.Slot);
+        if (UiHelpers.DrawCheckbox("##apply"u8, "Apply this bonus item when applying the Design."u8, data.CurrentApply, out var enabled,
                 data.Locked))
             data.SetApplyItem(enabled);
     }
 
     private static void DrawApplyStain(in EquipDrawData data)
     {
-        if (UiHelpers.DrawCheckbox($"##applyStain{data.Slot}", "Apply this dye to the item when applying the Design.", data.CurrentApplyStain,
+        using var id = Im.Id.Push((int)data.Slot);
+        if (UiHelpers.DrawCheckbox("##applyStain"u8, "Apply this dye to the item when applying the Design."u8, data.CurrentApplyStain,
                 out var enabled,
                 data.Locked))
             data.SetApplyStain(enabled);
@@ -666,30 +671,29 @@ public class EquipmentDrawer
 
     private void WeaponHelpMarker(bool hasAdvancedDyes, string label, string? type = null)
     {
-        Im.Line.Same();
-        ImGuiComponents.HelpMarker(
-            "Changing weapons to weapons of different types can cause crashes, freezes, soft- and hard locks and cheating, "
-          + "thus it is only allowed to change weapons to other weapons of the same type.");
+        LunaStyle.DrawAlignedHelpMarker(
+            "Changing weapons to weapons of different types can cause crashes, freezes, soft- and hard locks and cheating, "u8
+          + "thus it is only allowed to change weapons to other weapons of the same type."u8);
         DrawEquipLabel(hasAdvancedDyes, label);
 
-        if (type == null)
+        if (type is null)
             return;
 
-        var pos = ImGui.GetItemRectMin();
+        var pos = Im.Item.UpperLeftCorner;
         pos.Y += Im.Style.FrameHeightWithSpacing;
-        ImGui.GetWindowDrawList().AddText(pos, ImGui.GetColorU32(ImGuiCol.Text), $"({type})");
+        Im.Window.DrawList.Text(pos, ImGuiColor.Text.Get(), $"({type})");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private void DrawEquipLabel(bool hasAdvancedDyes, string label)
     {
         Im.Line.Same();
-        using (ImRaii.PushColor(ImGuiCol.Text, _advancedMaterialColor, hasAdvancedDyes))
+        using (ImGuiColor.Text.Push(_advancedMaterialColor, hasAdvancedDyes))
         {
-            ImUtf8.Text(label);
+            Im.Text(label);
         }
 
         if (hasAdvancedDyes)
-            ImUtf8.HoverTooltip("This design has advanced dyes setup for this slot."u8);
+            Im.Tooltip.OnHover("This design has advanced dyes setup for this slot."u8);
     }
 }

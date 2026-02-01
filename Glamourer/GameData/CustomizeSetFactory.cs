@@ -1,8 +1,10 @@
 ﻿using Dalamud.Game;
+using Dalamud.Interface.Textures;
 using Dalamud.Plugin.Services;
+using ImSharp;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
-using OtterGui.Classes;
+using Luna;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -11,24 +13,24 @@ using Race = Penumbra.GameData.Enums.Race;
 namespace Glamourer.GameData;
 
 internal class CustomizeSetFactory(
-    IDataManager _gameData,
-    IPluginLog _log,
-    TextureCache _icons,
-    NpcCustomizeSet _npcCustomizeSet,
-    ColorParameters _colors)
+    IDataManager gameData,
+    ITextureProvider textures,
+    IPluginLog log,
+    NpcCustomizeSet npcCustomizeSet,
+    ColorParameters colors)
 {
-    public CustomizeSetFactory(IDataManager gameData, IPluginLog log, TextureCache icons, NpcCustomizeSet npcCustomizeSet)
-        : this(gameData, log, icons, npcCustomizeSet, new ColorParameters(gameData, log))
+    public CustomizeSetFactory(IDataManager gameData, ITextureProvider textures, IPluginLog log, NpcCustomizeSet npcCustomizeSet)
+        : this(gameData, textures, log, npcCustomizeSet, new ColorParameters(gameData, log))
     { }
 
     /// <summary> Create the set of all available customization options for a given clan and gender. </summary>
     public CustomizeSet CreateSet(SubRace race, Gender gender)
     {
         var (skin, hair) = GetSkinHairColors(race, gender);
-        var row      = _charaMakeSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender)!;
+        var row      = _charaMakeSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender);
         var hrothgar = race.ToRace() == Race.Hrothgar;
         // Create the initial set with all the easily accessible parameters available for anyone.
-        var set = new CustomizeSet(_npcCustomizeSet, race, gender)
+        var set = new CustomizeSet(npcCustomizeSet, race, gender)
         {
             Name                 = GetName(race, gender),
             Voices               = row.VoiceStruct,
@@ -79,12 +81,12 @@ internal class CustomizeSetFactory(
             CustomizeIndex.TailShape,
         };
 
-        var npcCustomizations = new HashSet<(CustomizeIndex, CustomizeValue)>()
+        var npcCustomizations = new HashSet<(CustomizeIndex, CustomizeValue)>
         {
             (CustomizeIndex.Height, CustomizeValue.Max),
         };
-        _npcCustomizeSet.Awaiter.Wait();
-        foreach (var customize in _npcCustomizeSet.Select(s => s.Customize)
+        npcCustomizeSet.Awaiter.Wait();
+        foreach (var customize in npcCustomizeSet.Select(s => s.Customize)
                      .Where(c => c.Clan == race && c.Gender == gender && c.BodyType.Value == 1))
         {
             foreach (var customizeIndex in customizeIndices)
@@ -103,22 +105,22 @@ internal class CustomizeSetFactory(
         set.NpcOptions = npcCustomizations.OrderBy(p => p.Item1).ThenBy(p => p.Item2.Value).ToArray();
     }
 
-    private readonly ColorParameters                _colorParameters = new(_gameData, _log);
-    private readonly ExcelSheet<CharaMakeCustomize> _customizeSheet  = _gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English);
-    private readonly ExcelSheet<Lobby>              _lobbySheet      = _gameData.GetExcelSheet<Lobby>(ClientLanguage.English);
-    private readonly ExcelSheet<RawRow>             _hairSheet       = _gameData.GetExcelSheet<RawRow>(ClientLanguage.English, "HairMakeType");
-    private readonly ExcelSheet<Tribe>              _tribeSheet      = _gameData.GetExcelSheet<Tribe>(ClientLanguage.English);
+    private readonly ColorParameters                _colorParameters = new(gameData, log);
+    private readonly ExcelSheet<CharaMakeCustomize> _customizeSheet  = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English);
+    private readonly ExcelSheet<Lobby>              _lobbySheet      = gameData.GetExcelSheet<Lobby>(ClientLanguage.English);
+    private readonly ExcelSheet<RawRow>             _hairSheet       = gameData.GetExcelSheet<RawRow>(ClientLanguage.English, "HairMakeType");
+    private readonly ExcelSheet<Tribe>              _tribeSheet      = gameData.GetExcelSheet<Tribe>(ClientLanguage.English);
 
     // Those color pickers are shared between all races.
-    private readonly CustomizeData[] _highlightPicker           = CreateColors(_colors, CustomizeIndex.HighlightsColor, 256,  192);
-    private readonly CustomizeData[] _lipColorPickerDark        = CreateColors(_colors, CustomizeIndex.LipColor,        512,  96);
-    private readonly CustomizeData[] _lipColorPickerLight       = CreateColors(_colors, CustomizeIndex.LipColor,        1024, 96, true);
-    private readonly CustomizeData[] _eyeColorPicker            = CreateColors(_colors, CustomizeIndex.EyeColorLeft,    0,    192);
-    private readonly CustomizeData[] _facePaintColorPickerDark  = CreateColors(_colors, CustomizeIndex.FacePaintColor,  640,  96);
-    private readonly CustomizeData[] _facePaintColorPickerLight = CreateColors(_colors, CustomizeIndex.FacePaintColor,  1152, 96, true);
-    private readonly CustomizeData[] _tattooColorPicker         = CreateColors(_colors, CustomizeIndex.TattooColor,     0,    192);
+    private readonly CustomizeData[] _highlightPicker           = CreateColors(colors, CustomizeIndex.HighlightsColor, 256,  192);
+    private readonly CustomizeData[] _lipColorPickerDark        = CreateColors(colors, CustomizeIndex.LipColor,        512,  96);
+    private readonly CustomizeData[] _lipColorPickerLight       = CreateColors(colors, CustomizeIndex.LipColor,        1024, 96, true);
+    private readonly CustomizeData[] _eyeColorPicker            = CreateColors(colors, CustomizeIndex.EyeColorLeft,    0,    192);
+    private readonly CustomizeData[] _facePaintColorPickerDark  = CreateColors(colors, CustomizeIndex.FacePaintColor,  640,  96);
+    private readonly CustomizeData[] _facePaintColorPickerLight = CreateColors(colors, CustomizeIndex.FacePaintColor,  1152, 96, true);
+    private readonly CustomizeData[] _tattooColorPicker         = CreateColors(colors, CustomizeIndex.TattooColor,     0,    192);
 
-    private readonly ExcelSheet<CharaMakeType> _charaMakeSheet = _gameData.Excel.GetSheet<CharaMakeType>();
+    private readonly ExcelSheet<CharaMakeType> _charaMakeSheet = gameData.Excel.GetSheet<CharaMakeType>();
 
     /// <summary> Obtain available skin and hair colors for the given clan and gender. </summary>
     private (CustomizeData[] Skin, CustomizeData[] Hair) GetSkinHairColors(SubRace race, Gender gender)
@@ -134,12 +136,12 @@ internal class CustomizeSetFactory(
     }
 
     /// <summary> Obtain the gender-specific clan name. </summary>
-    private string GetName(SubRace race, Gender gender)
+    private StringU8 GetName(SubRace race, Gender gender)
         => gender switch
         {
-            Gender.Male   => _tribeSheet.TryGetRow((uint)race, out var row) ? row.Masculine.ExtractText() : race.ToName(),
-            Gender.Female => _tribeSheet.TryGetRow((uint)race, out var row) ? row.Feminine.ExtractText() : race.ToName(),
-            _             => "Unknown",
+            Gender.Male   => _tribeSheet.TryGetRow((uint)race, out var row) ? new StringU8(row.Masculine.ExtractText()) : race.ToNameU8(),
+            Gender.Female => _tribeSheet.TryGetRow((uint)race, out var row) ? new StringU8(row.Feminine.ExtractText()) : race.ToNameU8(),
+            _             => new StringU8("Unknown"u8),
         };
 
     /// <summary> Obtain available hairstyles via reflection from the Hair sheet for the given subrace and gender. </summary>
@@ -160,13 +162,14 @@ internal class CustomizeSetFactory(
             // Hair Row from CustomizeSheet might not be set in case of unlockable hair.
             if (!_customizeSheet.TryGetRow(customizeIdx, out var hairRow))
                 hairList.Add(new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)i, customizeIdx));
-            else if (_icons.IconExists(hairRow.Icon))
+            else if (IconExists(hairRow.Icon))
                 hairList.Add(new CustomizeData(CustomizeIndex.Hairstyle, (CustomizeValue)hairRow.FeatureID, hairRow.Icon,
                     (ushort)hairRow.RowId));
         }
 
         return [.. hairList.OrderBy(h => h.Value.Value)];
     }
+
 
     /// <summary> Specific icons for tails or ears. </summary>
     private CustomizeData[] GetTailEarShapes(CharaMakeType row)
@@ -189,11 +192,11 @@ internal class CustomizeSetFactory(
     /// <summary> Get face paints from the hair sheet via reflection since there are also unlockable face paints. </summary>
     private CustomizeData[] GetFacePaints(SubRace race, Gender gender)
     {
-        var row       = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender);
+        var row = _hairSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender);
         // Number of available face paints is at Unknown37.
-        var numPaints  = row.ReadUInt8Column(37);
+        var numPaints = row.ReadUInt8Column(37);
         var paintList = new List<CustomizeData>(numPaints);
-        
+
         for (var i = 0; i < numPaints; ++i)
         {
             // Face paints start at Unknown73.
@@ -242,43 +245,43 @@ internal class CustomizeSetFactory(
     }
 
     /// <summary> Set the specific option names for the given set of parameters. </summary>
-    private string[] GetOptionNames(CharaMakeType row)
+    private StringU8[] GetOptionNames(CharaMakeType row)
     {
-        var nameArray = Enum.GetValues<CustomizeIndex>().Select(c =>
+        var nameArray = CustomizeIndex.Values.Select(c =>
         {
             // Find the first menu that corresponds to the Id.
             var byteId = c.ToByteAndMask().ByteIdx;
             var menu   = row.CharaMakeStruct.FirstOrNull(m => m.Customize == byteId);
-            if (menu == null)
+            if (menu is null)
             {
                 // If none exists and the id corresponds to highlights, set the Highlights name.
                 if (c == CustomizeIndex.Highlights)
-                    return string.Intern(_lobbySheet.TryGetRow(237, out var text) ? text.Text.ExtractText() : "Highlights");
+                    return _lobbySheet.TryGetRow(237, out var text) ? new StringU8(text.Text.ExtractText()) : new StringU8("Highlights"u8);
 
                 // Otherwise there is an error and we use the default name.
-                return c.ToDefaultName();
+                return c.ToNameU8();
             }
 
             // Otherwise all is normal, get the menu name or if it does not work the default name.
-            return string.Intern(_lobbySheet.TryGetRow(menu.Value.Menu.RowId, out var textRow)
-                ? textRow.Text.ExtractText()
-                : c.ToDefaultName());
+            return _lobbySheet.TryGetRow(menu.Value.Menu.RowId, out var textRow)
+                ? new StringU8(textRow.Text.ExtractText())
+                : c.ToNameU8();
         }).ToArray();
 
         // Add names for both eye colors.
-        nameArray[(int)CustomizeIndex.EyeColorLeft]      = CustomizeIndex.EyeColorLeft.ToDefaultName();
-        nameArray[(int)CustomizeIndex.EyeColorRight]     = CustomizeIndex.EyeColorRight.ToDefaultName();
-        nameArray[(int)CustomizeIndex.FacialFeature1]    = CustomizeIndex.FacialFeature1.ToDefaultName();
-        nameArray[(int)CustomizeIndex.FacialFeature2]    = CustomizeIndex.FacialFeature2.ToDefaultName();
-        nameArray[(int)CustomizeIndex.FacialFeature3]    = CustomizeIndex.FacialFeature3.ToDefaultName();
-        nameArray[(int)CustomizeIndex.FacialFeature4]    = CustomizeIndex.FacialFeature4.ToDefaultName();
-        nameArray[(int)CustomizeIndex.FacialFeature5]    = CustomizeIndex.FacialFeature5.ToDefaultName();
-        nameArray[(int)CustomizeIndex.FacialFeature6]    = CustomizeIndex.FacialFeature6.ToDefaultName();
-        nameArray[(int)CustomizeIndex.FacialFeature7]    = CustomizeIndex.FacialFeature7.ToDefaultName();
-        nameArray[(int)CustomizeIndex.LegacyTattoo]      = CustomizeIndex.LegacyTattoo.ToDefaultName();
-        nameArray[(int)CustomizeIndex.SmallIris]         = CustomizeIndex.SmallIris.ToDefaultName();
-        nameArray[(int)CustomizeIndex.Lipstick]          = CustomizeIndex.Lipstick.ToDefaultName();
-        nameArray[(int)CustomizeIndex.FacePaintReversed] = CustomizeIndex.FacePaintReversed.ToDefaultName();
+        nameArray[(int)CustomizeIndex.EyeColorLeft]      = CustomizeIndex.EyeColorLeft.ToNameU8();
+        nameArray[(int)CustomizeIndex.EyeColorRight]     = CustomizeIndex.EyeColorRight.ToNameU8();
+        nameArray[(int)CustomizeIndex.FacialFeature1]    = CustomizeIndex.FacialFeature1.ToNameU8();
+        nameArray[(int)CustomizeIndex.FacialFeature2]    = CustomizeIndex.FacialFeature2.ToNameU8();
+        nameArray[(int)CustomizeIndex.FacialFeature3]    = CustomizeIndex.FacialFeature3.ToNameU8();
+        nameArray[(int)CustomizeIndex.FacialFeature4]    = CustomizeIndex.FacialFeature4.ToNameU8();
+        nameArray[(int)CustomizeIndex.FacialFeature5]    = CustomizeIndex.FacialFeature5.ToNameU8();
+        nameArray[(int)CustomizeIndex.FacialFeature6]    = CustomizeIndex.FacialFeature6.ToNameU8();
+        nameArray[(int)CustomizeIndex.FacialFeature7]    = CustomizeIndex.FacialFeature7.ToNameU8();
+        nameArray[(int)CustomizeIndex.LegacyTattoo]      = CustomizeIndex.LegacyTattoo.ToNameU8();
+        nameArray[(int)CustomizeIndex.SmallIris]         = CustomizeIndex.SmallIris.ToNameU8();
+        nameArray[(int)CustomizeIndex.Lipstick]          = CustomizeIndex.Lipstick.ToNameU8();
+        nameArray[(int)CustomizeIndex.FacePaintReversed] = CustomizeIndex.FacePaintReversed.ToNameU8();
         return nameArray;
     }
 
@@ -286,7 +289,7 @@ internal class CustomizeSetFactory(
     private static MenuType[] GetMenuTypes(CharaMakeType row)
     {
         // Set up the menu types for all customizations.
-        return Enum.GetValues<CustomizeIndex>().Select(c =>
+        return CustomizeIndex.Values.Select(c =>
         {
             // Those types are not correctly given in the menu, so special case them to color pickers.
             switch (c)
@@ -370,13 +373,13 @@ internal class CustomizeSetFactory(
 
     internal static void SetOrder(CustomizeSet set)
     {
-        var ret = Enum.GetValues<CustomizeIndex>().ToArray();
+        var ret = CustomizeIndex.Values.ToArray();
         ret[(int)CustomizeIndex.TattooColor]   = CustomizeIndex.EyeColorLeft;
         ret[(int)CustomizeIndex.EyeColorLeft]  = CustomizeIndex.EyeColorRight;
         ret[(int)CustomizeIndex.EyeColorRight] = CustomizeIndex.TattooColor;
 
         var dict = ret.Skip(2).Where(set.IsAvailable).GroupBy(set.Type).ToDictionary(k => k.Key, k => k.ToArray());
-        foreach (var type in Enum.GetValues<MenuType>())
+        foreach (var type in MenuType.Values)
             dict.TryAdd(type, []);
         set.Order = dict;
     }
@@ -443,4 +446,9 @@ internal class CustomizeSetFactory(
         static (CustomizeData, CustomizeData) Create(CustomizeIndex i, uint data)
             => (new CustomizeData(i, CustomizeValue.Zero, data), new CustomizeData(i, CustomizeValue.Max, data, 1));
     }
+
+    /// <summary> Check whether an icon exists. </summary>
+    private bool IconExists(uint iconId)
+        => textures.TryGetIconPath(new GameIconLookup(iconId),                out _)
+         || textures.TryGetIconPath(new GameIconLookup(iconId, false, false), out _);
 }

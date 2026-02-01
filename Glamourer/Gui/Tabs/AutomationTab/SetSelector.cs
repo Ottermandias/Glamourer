@@ -158,7 +158,7 @@ public class SetSelector : IDisposable
 
         var pos = ImGui.GetItemRectMin();
         pos.X -= Im.Style.GlobalScale;
-        ImGui.GetWindowDrawList().AddLine(pos, pos with { Y = ImGui.GetItemRectMax().Y }, ImGui.GetColorU32(ImGuiCol.Border),
+        ImGui.GetWindowDrawList().AddLine(pos, pos with { Y = ImGui.GetItemRectMax().Y }, ImGuiColor.Border.Get().Color,
             Im.Style.GlobalScale);
 
         ImGuiUtil.HoverTooltip("Filter to show only enabled or disabled sets.");
@@ -175,7 +175,7 @@ public class SetSelector : IDisposable
 
         UpdateList();
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
-        _selectableSize = new Vector2(0, 2 * ImGui.GetTextLineHeight() + Im.Style.ItemSpacing.Y);
+        _selectableSize = new Vector2(0, 2 * Im.Style.TextHeight + Im.Style.ItemSpacing.Y);
         ImGuiClip.ClippedDraw(_list, DrawSetSelectable, _selectableSize.Y + 2 * Im.Style.ItemSpacing.Y);
         _endAction?.Invoke();
         _endAction = null;
@@ -183,8 +183,8 @@ public class SetSelector : IDisposable
 
     private void DrawSetSelectable((AutoDesignSet Set, int Index) pair)
     {
-        using var id = ImRaii.PushId(pair.Index);
-        using (ImRaii.PushColor(ImGuiCol.Text, pair.Set.Enabled ? ColorId.EnabledAutoSet.Value() : ColorId.DisabledAutoSet.Value()))
+        using var id = Im.Id.Push(pair.Index);
+        using (ImGuiColor.Text.Push(pair.Set.Enabled ? ColorId.EnabledAutoSet.Value() : ColorId.DisabledAutoSet.Value()))
         {
             if (ImGui.Selectable(GetSetName(pair.Set, pair.Index), pair.Set == Selection, ImGuiSelectableFlags.None, _selectableSize))
             {
@@ -195,7 +195,7 @@ public class SetSelector : IDisposable
 
         var lineEnd   = ImGui.GetItemRectMax();
         var lineStart = new Vector2(ImGui.GetItemRectMin().X, lineEnd.Y);
-        ImGui.GetWindowDrawList().AddLine(lineStart, lineEnd, ImGui.GetColorU32(ImGuiCol.Border), Im.Style.GlobalScale);
+        ImGui.GetWindowDrawList().AddLine(lineStart, lineEnd, ImGuiColor.Border.Get().Color, Im.Style.GlobalScale);
 
         DrawDragDrop(pair.Set, pair.Index);
 
@@ -204,8 +204,8 @@ public class SetSelector : IDisposable
             text = pair.Set.Identifiers[0].Incognito(text);
         var textSize  = ImGui.CalcTextSize(text);
         var textColor = pair.Set.Identifiers.Any(_objects.ContainsKey) ? ColorId.AutomationActorAvailable : ColorId.AutomationActorUnavailable;
-        ImGui.SetCursorPos(new Vector2(ImGui.GetContentRegionAvail().X - textSize.X,
-            ImGui.GetCursorPosY() - ImGui.GetTextLineHeightWithSpacing()));
+        ImGui.SetCursorPos(new Vector2(Im.ContentRegion.Available.X - textSize.X,
+            ImGui.GetCursorPosY() - Im.Style.TextHeightWithSpacing));
         Im.Text(text, textColor.Value());
     }
 
@@ -229,13 +229,13 @@ public class SetSelector : IDisposable
             ImGui.OpenPopup("Automation Help");
 
         static void HalfLine()
-            => ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+            => Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
 
         const string longestLine =
             "A single set can contain multiple automated designs that apply under different conditions and different parts of their design.";
 
         ImGuiUtil.HelpPopup("Automation Help",
-            new Vector2(ImGui.CalcTextSize(longestLine).X + 50 * Im.Style.GlobalScale, 33 * ImGui.GetTextLineHeightWithSpacing()), () =>
+            new Vector2(ImGui.CalcTextSize(longestLine).X + 50 * Im.Style.GlobalScale, 33 * Im.Style.TextHeightWithSpacing), () =>
             {
                 HalfLine();
                 ImGui.TextUnformatted("What is Automation?");

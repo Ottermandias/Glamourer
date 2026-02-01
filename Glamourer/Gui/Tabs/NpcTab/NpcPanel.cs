@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;
@@ -6,11 +7,9 @@ using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.State;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 using Luna;
 using OtterGui;
-using OtterGui.Classes;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
@@ -80,8 +79,8 @@ public class NpcPanel
 
     private void DrawHeader()
     {
-        HeaderDrawer.Draw(_selector.HasSelection ? _selector.Selection.Name : "No Selection", ColorId.NormalDesign.Value(),
-            ImGui.GetColorU32(ImGuiCol.FrameBg), _leftButtons, _rightButtons);
+        HeaderDrawer.Draw(_selector.HasSelection ? _selector.Selection.Name : "No Selection", ColorId.NormalDesign.Value().Color,
+            ImGuiColor.FrameBackground.Get().Color, _leftButtons, _rightButtons);
         SaveDesignDrawPopup();
     }
 
@@ -92,7 +91,7 @@ public class NpcPanel
                 ? "Remove this NPC appearance from your favorites."
                 : "Add this NPC Appearance to your favorites.";
 
-        protected override uint TextColor
+        protected override Rgba32 TextColor
             => panel._favorites.IsFavorite(panel._selector.Selection)
                 ? ColorId.FavoriteStarOn.Value()
                 : 0x80000000;
@@ -120,13 +119,13 @@ public class NpcPanel
 
     private void DrawPanel()
     {
-        using var table = ImUtf8.Table("##Panel", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY, ImGui.GetContentRegionAvail());
+        using var table = Im.Table.Begin("##Panel"u8, 1, TableFlags.BordersOuter | TableFlags.ScrollY, Im.ContentRegion.Available);
         if (!table || !_selector.HasSelection)
             return;
 
         ImGui.TableSetupScrollFreeze(0, 1);
         ImGui.TableNextColumn();
-        ImGui.Dummy(Vector2.Zero);
+        Im.Dummy(Vector2.Zero);
         DrawButtonRow();
 
         ImGui.TableNextColumn();
@@ -147,16 +146,16 @@ public class NpcPanel
         if (_config.HideDesignPanel.HasFlag(DesignPanelFlag.Customization))
             return;
 
-        var header = _selector.Selection.ModelId == 0
-            ? "Customization"
-            : $"Customization (Model Id #{_selector.Selection.ModelId})###Customization";
-        var       expand = _config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
-        using var h      = ImUtf8.CollapsingHeaderId(header, expand ? ImGuiTreeNodeFlags.DefaultOpen : ImGuiTreeNodeFlags.None);
+        var expand = _config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
+        using var h = Im.Tree.HeaderId(_selector.Selection.ModelId is 0
+                ? "Customization"u8
+                : $"Customization (Model Id #{_selector.Selection.ModelId})###Customization",
+            expand ? TreeNodeFlags.DefaultOpen : TreeNodeFlags.None);
         if (!h)
             return;
 
         _customizeDrawer.Draw(_selector.Selection.Customize, true, true);
-        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
     }
 
     private void DrawEquipment()
@@ -178,9 +177,9 @@ public class NpcPanel
         var offhandData  = new EquipDrawData(EquipSlot.OffHand,  designData) { Locked = true };
         _equipDrawer.DrawWeapons(mainhandData, offhandData, false);
 
-        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
         EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromValue(MetaIndex.VisorState, _selector.Selection.VisorToggled));
-        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
     }
 
     private DesignData ToDesignData()
@@ -237,22 +236,22 @@ public class NpcPanel
         if (!h)
             return;
 
-        using var table = ImUtf8.Table("Details"u8, 2);
+        using var table = Im.Table.Begin("Details"u8, 2);
         if (!table)
             return;
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f));
-        ImUtf8.TableSetupColumn("Type"u8, ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("Last Update Datem").X);
-        ImUtf8.TableSetupColumn("Data"u8, ImGuiTableColumnFlags.WidthStretch);
+        table.SetupColumn("Type"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Last Update Datem"u8).X);
+        table.SetupColumn("Data"u8, TableColumnFlags.WidthStretch);
 
         var selection = _selector.Selection;
         CopyButton("NPC Name"u8, selection.Name);
         CopyButton("NPC ID"u8,   selection.Id.Id.ToString());
         ImGuiUtil.DrawFrameColumn("NPC Type");
         ImGui.TableNextColumn();
-        var width = ImGui.GetContentRegionAvail().X;
-        ImGuiUtil.DrawTextButton(selection.Kind is ObjectKind.BattleNpc ? "Battle NPC" : "Event NPC", new Vector2(width, 0),
-            ImGui.GetColorU32(ImGuiCol.FrameBg));
+        var width = Im.ContentRegion.Available.X;
+        ImEx.TextFramed(selection.Kind is ObjectKind.BattleNpc ? "Battle NPC"u8 : "Event NPC"u8, new Vector2(width, 0),
+            ImGuiColor.FrameBackground.Get());
 
         ImUtf8.DrawFrameColumn("Color"u8);
         var color     = _favorites.GetColor(selection);
@@ -262,14 +261,14 @@ public class NpcPanel
                 "Associate a color with this NPC appearance.\n"
               + "Right-Click to revert to automatic coloring.\n"
               + "Hold Control and scroll the mousewheel to scroll.",
-                width - Im.Style.ItemSpacing.X - Im.Style.FrameHeight, ImGui.GetTextLineHeight())
+                width - Im.Style.ItemSpacing.X - Im.Style.FrameHeight, Im.Style.TextHeight)
          && _colorCombo.CurrentSelection != null)
         {
             color = _colorCombo.CurrentSelection is DesignColors.AutomaticName ? string.Empty : _colorCombo.CurrentSelection;
             _favorites.SetColor(selection, color);
         }
 
-        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+        if (Im.Item.RightClicked())
         {
             _favorites.SetColor(selection, string.Empty);
             color = string.Empty;
@@ -296,7 +295,7 @@ public class NpcPanel
         {
             ImUtf8.DrawFrameColumn(label);
             ImGui.TableNextColumn();
-            if (ImUtf8.Button(text, new Vector2(ImGui.GetContentRegionAvail().X, 0)))
+            if (ImUtf8.Button(text, new Vector2(Im.ContentRegion.Available.X, 0)))
                 ImUtf8.SetClipboardText(text);
             ImUtf8.HoverTooltip("Click to copy to clipboard."u8);
         }

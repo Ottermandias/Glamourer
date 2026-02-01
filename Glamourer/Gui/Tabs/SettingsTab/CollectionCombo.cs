@@ -1,10 +1,7 @@
 ﻿using Dalamud.Interface;
 using Glamourer.Interop.Penumbra;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 using Luna;
-using OtterGui;
-using OtterGui.Raii;
 using OtterGui.Widgets;
 using Logger = OtterGui.Log.Logger;
 using MouseWheelType = OtterGui.Widgets.MouseWheelType;
@@ -20,17 +17,17 @@ public sealed class CollectionCombo(Configuration config, PenumbraService penumb
     {
         var (_, idShort, name) = Items[globalIdx];
         if (config.Ephemeral.IncognitoMode)
-            using (ImRaii.PushFont(UiBuilder.MonoFont))
+            using (Im.Font.PushMono())
             {
-                return ImGui.Selectable(idShort);
+                return Im.Selectable(idShort);
             }
 
-        var ret = ImGui.Selectable(name, selected);
+        var ret = Im.Selectable(name, selected);
         Im.Line.Same();
-        using (ImRaii.PushFont(UiBuilder.MonoFont))
+        using (Im.Font.PushMono())
         {
-            using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
-            ImGuiUtil.RightAlign($"({idShort})");
+            using var color = ImGuiColor.Text.Push(ImGuiColor.TextDisabled.Get());
+            ImEx.TextRightAligned($"({idShort})");
         }
 
         return ret;

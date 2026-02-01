@@ -4,6 +4,7 @@ using Dalamud.Plugin;
 using Glamourer.Api.Enums;
 using Glamourer.Api.IpcSubscribers;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Luna;
 using OtterGui;
 using OtterGui.Raii;
@@ -34,10 +35,10 @@ public class DesignIpcTester(IDalamudPluginInterface pluginInterface) : IUiServi
         IpcTesterHelpers.NameInput(ref _gameObjectName);
         ImUtf8.InputText("##designName"u8, ref _designName, "Design Name..."u8);
         ImGuiUtil.GuidInput("##identifier", "Design Identifier...", string.Empty, ref _design, ref _designText,
-            ImGui.GetContentRegionAvail().X);
+            Im.ContentRegion.Available.X);
         IpcTesterHelpers.DrawFlagInput(ref _flags);
 
-        using var table = ImRaii.Table("##table", 2, ImGuiTableFlags.SizingFixedFit);
+        using var table = Im.Table.Begin("##table"u8, 2, TableFlags.SizingFixedFit);
 
         IpcTesterHelpers.DrawIntro("Last Error");
         ImGui.TextUnformatted(_lastError.ToString());
@@ -108,11 +109,11 @@ public class DesignIpcTester(IDalamudPluginInterface pluginInterface) : IUiServi
         if (!p)
             return;
 
-        using var table = ImRaii.Table("Designs", 2, ImGuiTableFlags.SizingFixedFit);
+        using var table = Im.Table.Begin("Designs"u8, 2, TableFlags.SizingFixedFit);
         foreach (var (guid, name) in _designs)
         {
             ImGuiUtil.DrawTableColumn(name);
-            using var f = ImRaii.PushFont(UiBuilder.MonoFont);
+            using var f = Im.Font.PushMono();
             ImGui.TableNextColumn();
             ImGuiUtil.CopyOnClickSelectable(guid.ToString());
         }

@@ -30,13 +30,13 @@ public static class IpcTesterHelpers
 
     public static void IndexInput(ref int index)
     {
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X / 2);
+        ImGui.SetNextItemWidth(Im.ContentRegion.Available.X / 2);
         ImGui.InputInt("Game Object Index", ref index, 0, 0);
     }
 
     public static void KeyInput(ref uint key)
     {
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X / 2);
+        ImGui.SetNextItemWidth(Im.ContentRegion.Available.X / 2);
         var keyI = (int)key;
         if (ImGui.InputInt("Key", ref keyI, 0, 0))
             key = (uint)keyI;
@@ -44,7 +44,7 @@ public static class IpcTesterHelpers
 
     public static void NameInput(ref string name)
     {
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        ImGui.SetNextItemWidth(Im.ContentRegion.Available.X);
         ImGui.InputTextWithHint("##gameObject", "Character Name...", ref name, 64);
     }
 

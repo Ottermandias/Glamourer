@@ -2,8 +2,8 @@
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
-using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
 using ImGuiClip = OtterGui.ImGuiClip;
@@ -20,20 +20,20 @@ public sealed class ItemUnlockPanel(ItemUnlockManager itemUnlocks, ItemManager i
 
     public void Draw()
     {
-        using var table = ImRaii.Table("itemUnlocks", 5,
-            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
-            new Vector2(ImGui.GetContentRegionAvail().X, 12 * ImGui.GetTextLineHeight()));
+        using var table = Im.Table.Begin("itemUnlocks"u8, 5,
+            TableFlags.SizingFixedFit | TableFlags.RowBackground | TableFlags.ScrollY | TableFlags.BordersOuter,
+            Im.ContentRegion.Available with { Y = 12 * Im.Style.TextHeight });
         if (!table)
             return;
 
-        ImGui.TableSetupColumn("ItemId", ImGuiTableColumnFlags.WidthFixed, 30 * Im.Style.GlobalScale);
-        ImGui.TableSetupColumn("Name",   ImGuiTableColumnFlags.WidthFixed, 400 * Im.Style.GlobalScale);
-        ImGui.TableSetupColumn("Slot",   ImGuiTableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
-        ImGui.TableSetupColumn("Model",  ImGuiTableColumnFlags.WidthFixed, 80 * Im.Style.GlobalScale);
-        ImGui.TableSetupColumn("Unlock", ImGuiTableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
+        table.SetupColumn("ItemId"u8, TableColumnFlags.WidthFixed, 30 * Im.Style.GlobalScale);
+        table.SetupColumn("Name"u8,   TableColumnFlags.WidthFixed, 400 * Im.Style.GlobalScale);
+        table.SetupColumn("Slot"u8,   TableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
+        table.SetupColumn("Model"u8,  TableColumnFlags.WidthFixed, 80 * Im.Style.GlobalScale);
+        table.SetupColumn("Unlock"u8, TableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
 
         ImGui.TableNextColumn();
-        var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
+        var skips = ImGuiClip.GetNecessarySkips(Im.Style.TextHeightWithSpacing);
         ImGui.TableNextRow();
         var remainder = ImGuiClip.ClippedDraw(itemUnlocks, skips, t =>
         {
@@ -57,6 +57,6 @@ public sealed class ItemUnlockPanel(ItemUnlockManager itemUnlocks, ItemManager i
                     : time.LocalDateTime.ToString("g")
                 : "Never");
         }, itemUnlocks.Count);
-        ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
+        ImGuiClip.DrawEndDummy(remainder, Im.Style.TextHeight);
     }
 }

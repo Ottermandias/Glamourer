@@ -1,5 +1,4 @@
 ﻿using Dalamud.Interface;
-using Dalamud.Interface.Utility;
 using Dalamud.Bindings.ImGui;
 using ImSharp;
 using OtterGui;
@@ -16,10 +15,10 @@ public static class HeaderDrawer
         protected virtual string Description
             => string.Empty;
 
-        protected virtual uint BorderColor
+        protected virtual Rgba32 BorderColor
             => ColorId.HeaderButtons.Value();
 
-        protected virtual uint TextColor
+        protected virtual Rgba32 TextColor
             => ColorId.HeaderButtons.Value();
 
         protected virtual FontAwesomeIcon Icon
@@ -36,8 +35,8 @@ public static class HeaderDrawer
             if (!Visible)
                 return;
 
-            using var color = ImRaii.PushColor(ImGuiCol.Border, BorderColor)
-                .Push(ImGuiCol.Text, TextColor, TextColor != 0);
+            using var color = ImGuiColor.Border.Push(BorderColor)
+                .Push(ImGuiColor.Text, TextColor, TextColor.IsVisible);
             if (ImGuiUtil.DrawDisabledButton(Icon.ToIconString(), new Vector2(width, Im.Style.FrameHeight), string.Empty, Disabled, true))
                 OnClick();
             color.Pop();
@@ -94,7 +93,7 @@ public static class HeaderDrawer
         }
 
         var rightButtonSize = rightButtons.Count(b => b.Visible) * width;
-        var midSize         = ImGui.GetContentRegionAvail().X - rightButtonSize - Im.Style.GlobalScale;
+        var midSize         = Im.ContentRegion.Available.X - rightButtonSize - Im.Style.GlobalScale;
 
         style.Pop();
         style.Push(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.5f + (rightButtonSize - leftButtonSize) / midSize, 0.5f));

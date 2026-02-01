@@ -21,7 +21,7 @@ public sealed class GlamourerColorCombo(float _comboWidth, DictStain _stains, Fa
             if (globalIdx == 0)
             {
                 using var font = ImRaii.PushFont(UiBuilder.IconFont);
-                ImGui.Dummy(ImGui.CalcTextSize(FontAwesomeIcon.Star.ToIconString()));
+                Im.Dummy(ImGui.CalcTextSize(FontAwesomeIcon.Star.ToIconString()));
             }
             else
             {
@@ -31,7 +31,7 @@ public sealed class GlamourerColorCombo(float _comboWidth, DictStain _stains, Fa
             Im.Line.Same();
         }
 
-        var       buttonWidth = ImGui.GetContentRegionAvail().X;
+        var       buttonWidth = Im.ContentRegion.Available.X;
         var       totalWidth  = ImGui.GetContentRegionMax().X;
         using var style       = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(buttonWidth / 2 / totalWidth, 0.5f));
 

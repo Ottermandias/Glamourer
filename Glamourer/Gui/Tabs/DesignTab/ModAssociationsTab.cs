@@ -43,7 +43,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
 
     private void DrawCopyButtons()
     {
-        var size = new Vector2((ImGui.GetContentRegionAvail().X - 2 * Im.Style.ItemSpacing.X) / 3, 0);
+        var size = new Vector2((Im.ContentRegion.Available.X - 2 * Im.Style.ItemSpacing.X) / 3, 0);
         if (ImGui.Button("Copy All to Clipboard", size))
             _copy = selector.Selected!.AssociatedMods.Select(kvp => (kvp.Key, kvp.Value)).ToArray();
 
@@ -76,7 +76,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         if (config.Ephemeral.IncognitoMode)
             name = id.ShortGuid();
         if (ImGuiUtil.DrawDisabledButton($"Try Applying All Associated Mods to {name}##applyAll",
-                new Vector2(ImGui.GetContentRegionAvail().X, 0), string.Empty, id == Guid.Empty))
+                new Vector2(Im.ContentRegion.Available.X, 0), string.Empty, id == Guid.Empty))
             ApplyAll();
     }
 
@@ -97,26 +97,25 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
 
     private void DrawTable()
     {
-        using var table = ImUtf8.Table("Mods"u8, config.UseTemporarySettings ? 7 : 6, ImGuiTableFlags.RowBg);
+        using var table = Im.Table.Begin("Mods"u8, config.UseTemporarySettings ? 7 : 6, TableFlags.RowBackground);
         if (!table)
             return;
 
-        ImUtf8.TableSetupColumn("##Buttons"u8, ImGuiTableColumnFlags.WidthFixed,
-            Im.Style.FrameHeight * 3 + Im.Style.ItemInnerSpacing.X * 2);
-        ImUtf8.TableSetupColumn("Mod Name"u8, ImGuiTableColumnFlags.WidthStretch);
+        table.SetupColumn("##Buttons"u8, TableColumnFlags.WidthFixed, Im.Style.FrameHeight * 3 + Im.Style.ItemInnerSpacing.X * 2);
+        table.SetupColumn("Mod Name"u8,  TableColumnFlags.WidthStretch);
         if (config.UseTemporarySettings)
-            ImUtf8.TableSetupColumn("Remove"u8, ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Remove"u8).X);
-        ImUtf8.TableSetupColumn("Inherit"u8,   ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Inherit"u8).X);
-        ImUtf8.TableSetupColumn("State"u8,     ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("State"u8).X);
-        ImUtf8.TableSetupColumn("Priority"u8,  ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Priority"u8).X);
-        ImUtf8.TableSetupColumn("##Options"u8, ImGuiTableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Applym"u8).X);
-        ImGui.TableHeadersRow();
+            table.SetupColumn("Remove"u8, TableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Remove"u8).X);
+        table.SetupColumn("Inherit"u8,   TableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Inherit"u8).X);
+        table.SetupColumn("State"u8,     TableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("State"u8).X);
+        table.SetupColumn("Priority"u8,  TableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Priority"u8).X);
+        table.SetupColumn("##Options"u8, TableColumnFlags.WidthFixed, ImUtf8.CalcTextSize("Applym"u8).X);
+        table.HeaderRow();
 
         Mod?                             removedMod = null;
         (Mod mod, ModSettings settings)? updatedMod = null;
         foreach (var ((mod, settings), idx) in selector.Selected!.AssociatedMods.WithIndex())
         {
-            using var id = ImRaii.PushId(idx);
+            using var id = Im.Id.Push(idx);
             DrawAssociatedModRow(mod, settings, out var removedModTmp, out var updatedModTmp);
             if (removedModTmp.HasValue)
                 removedMod = removedModTmp;
@@ -150,11 +149,11 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
                 disabled: true);
         }
 
-        ImUtf8.SameLineInner();
+        Im.Line.SameInner();
         if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Copy this mod setting to clipboard."u8))
             _copy = [(mod, settings)];
 
-        ImUtf8.SameLineInner();
+        Im.Line.SameInner();
         ImUtf8.IconButton(FontAwesomeIcon.RedoAlt, "Update the settings of this mod association."u8);
         if (ImGui.IsItemHovered())
         {
@@ -166,9 +165,9 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
             using var tt    = ImUtf8.Tooltip();
             if (source.Length > 0)
                 ImUtf8.Text($"Using temporary settings made by {source}.");
-            ImGui.Separator();
+            Im.Separator();
             var namesDifferent = mod.Name != mod.DirectoryName;
-            ImGui.Dummy(new Vector2(300 * Im.Style.GlobalScale, 0));
+            Im.Dummy(new Vector2(300 * Im.Style.GlobalScale, 0));
             using (ImRaii.Group())
             {
                 if (namesDifferent)
@@ -220,11 +219,11 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
 
         ImGui.TableNextColumn();
         var priority = settings.Priority;
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        ImGui.SetNextItemWidth(Im.ContentRegion.Available.X);
         if (ImUtf8.InputScalarOnDeactivated("##Priority"u8, ref priority))
             updatedMod = (mod, settings with { Priority = priority });
         ImGui.TableNextColumn();
-        if (ImGuiUtil.DrawDisabledButton("Apply", new Vector2(ImGui.GetContentRegionAvail().X, 0), string.Empty,
+        if (ImGuiUtil.DrawDisabledButton("Apply", new Vector2(Im.ContentRegion.Available.X, 0), string.Empty,
                 !penumbra.Available))
         {
             var text = penumbra.SetMod(mod, settings, StateSource.Manual, false);
@@ -243,13 +242,13 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         using var t = ImRaii.Tooltip();
         ImGui.TextUnformatted("This will also try to apply the following settings to the current collection:");
 
-        ImGui.NewLine();
+        Im.Line.New();
         using (var _ = ImRaii.Group())
         {
             ModCombo.DrawSettingsLeft(settings);
         }
 
-        ImGui.SameLine(ImGui.GetContentRegionAvail().X / 2);
+        ImGui.SameLine(Im.ContentRegion.Available.X / 2);
         using (var _ = ImRaii.Group())
         {
             ModCombo.DrawSettingsRight(settings);
@@ -271,6 +270,6 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
             manager.AddMod(selector.Selected!, _modCombo.CurrentSelection.Mod, _modCombo.CurrentSelection.Settings);
         ImGui.TableNextColumn();
         _modCombo.Draw("##new", currentName.IsNullOrEmpty() ? "Select new Mod..." : currentName, string.Empty,
-            ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeight());
+            Im.ContentRegion.Available.X, Im.Style.TextHeight);
     }
 }

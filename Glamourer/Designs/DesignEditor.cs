@@ -4,6 +4,8 @@ using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -71,7 +73,7 @@ public class DesignEditor(
         }
 
         design.LastEdit = DateTimeOffset.UtcNow;
-        Glamourer.Log.Debug($"Changed customize {idx.ToDefaultName()} in design {design.Identifier} from {oldValue.Value} to {value.Value}.");
+        Glamourer.Log.Debug($"Changed customize {idx.ToName()} in design {design.Identifier} from {oldValue.Value} to {value.Value}.");
         SaveService.QueueSave(design);
         DesignChanged.Invoke(DesignChanged.Type.Customize, design, new CustomizeTransaction(idx, oldValue, value));
     }
@@ -336,7 +338,7 @@ public class DesignEditor(
                 ChangeBonusItem(design, slot, other.DesignData.BonusItem(slot));
         }
 
-        foreach (var slot in Enum.GetValues<CrestFlag>().Where(other.DoApplyCrest))
+        foreach (var slot in CrestFlag.Values.Where(other.DoApplyCrest))
             ChangeCrest(design, slot, other.DesignData.Crest(slot));
 
         foreach (var parameter in CustomizeParameterExtensions.AllFlags.Where(other.DoApplyParameter))

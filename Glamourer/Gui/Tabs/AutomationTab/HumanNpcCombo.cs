@@ -1,12 +1,14 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Utility;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Extensions;
 using OtterGui.Log;
 using OtterGui.Widgets;
 using Penumbra.GameData.DataContainers;
 using OtterGui.Custom;
+using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
@@ -36,7 +38,7 @@ public sealed class HumanNpcCombo(
 
     public bool Draw(float width)
         => Draw(label, CurrentSelection.Name.IsNullOrEmpty() ? "Human Non-Player-Characters..." : CurrentSelection.Name, string.Empty, width,
-            ImGui.GetTextLineHeightWithSpacing());
+            Im.Style.TextHeightWithSpacing);
 
 
     /// <summary> Compare strings in a way that letters and numbers are sorted before any special symbols. </summary>

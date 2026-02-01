@@ -56,7 +56,7 @@ public class StateEditor(
 
         var actors = Applier.ChangeCustomize(state, settings.Source.RequiresChange());
         Glamourer.Log.Verbose(
-            $"Set {idx.ToDefaultName()} customizations in state {state.Identifier.Incognito(null)} from {old.Value} to {value.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Set {idx.ToName()} customizations in state {state.Identifier.Incognito(null)} from {old.Value} to {value.Value}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(StateChangeType.Customize, settings.Source, state, actors, new CustomizeTransaction(idx, old, value));
     }
 

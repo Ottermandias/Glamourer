@@ -1,7 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Raii;
-using OtterGui.Text;
+using ImSharp;
 using Penumbra.GameData.Gui.Debug;
 using Penumbra.GameData.Interop;
 
@@ -17,17 +15,17 @@ public sealed unsafe class AdvancedCustomizationDrawer(ActorObjectManager object
 
     public void Draw()
     {
-        var (player, data) = objects.PlayerData;
+        var (_, data) = objects.PlayerData;
         if (!data.Valid)
         {
-            ImUtf8.Text("Invalid player."u8);
+            Im.Text("Invalid player."u8);
             return;
         }
 
         var model = data.Objects[0].Model;
         if (!model.IsHuman)
         {
-            ImUtf8.Text("Invalid model."u8);
+            Im.Text("Invalid model."u8);
             return;
         }
 
@@ -40,36 +38,36 @@ public sealed unsafe class AdvancedCustomizationDrawer(ActorObjectManager object
 
     private static void DrawCBuffer(ReadOnlySpan<byte> label, ConstantBuffer* cBuffer, int type)
     {
-        using var tree = ImUtf8.TreeNode(label);
+        using var tree = Im.Tree.Node(label);
         if (!tree)
             return;
 
-        if (cBuffer == null)
+        if (cBuffer is null)
         {
-            ImUtf8.Text("Invalid CBuffer."u8);
+            Im.Text("Invalid CBuffer."u8);
             return;
         }
 
-        ImUtf8.Text($"{cBuffer->ByteSize / 4}");
-        ImUtf8.Text($"{cBuffer->Flags}");
-        ImUtf8.Text($"0x{(ulong)cBuffer:X}");
+        Im.Text($"{cBuffer->ByteSize / 4}");
+        Im.Text($"{cBuffer->Flags}");
+        Glamourer.Dynamis.DrawPointer(cBuffer);
         var parameters = (float*)cBuffer->UnsafeSourcePointer;
-        if (parameters == null)
+        if (parameters is null)
         {
-            ImUtf8.Text("No Parameters."u8);
+            Im.Text("No Parameters."u8);
             return;
         }
 
         var start = parameters;
-        using (ImUtf8.Group())
+        using (Im.Group())
         {
             for (var end = start + cBuffer->ByteSize / 4; parameters < end; parameters += 2)
                 DrawParameters(parameters, type, (int)(parameters - start));
         }
 
-        ImGui.SameLine(0, 50 * ImUtf8.GlobalScale);
+        Im.Line.Same(0, 50 * Im.Style.GlobalScale);
         parameters = start + 1;
-        using (ImUtf8.Group())
+        using (Im.Group())
         {
             for (var end = start + cBuffer->ByteSize / 4; parameters < end; parameters += 2)
                 DrawParameters(parameters, type, (int)(parameters - start));
@@ -78,24 +76,24 @@ public sealed unsafe class AdvancedCustomizationDrawer(ActorObjectManager object
 
     private static void DrawParameters(float* param, int type, int idx)
     {
-        using var id = ImUtf8.PushId((nint)param);
-        ImUtf8.TextFrameAligned($"{idx:D2}: ");
-        ImUtf8.SameLineInner();
-        ImGui.SetNextItemWidth(200 * ImUtf8.GlobalScale);
+        using var id = Im.Id.Push((nint)param);
+        ImEx.TextFrameAligned($"{idx:D2}: ");
+        Im.Line.SameInner();
+        Im.Item.SetNextWidthScaled(200);
         if (TryGetKnown(type, idx, out var known))
         {
-            ImUtf8.DragScalar(known, ref *param, float.MinValue, float.MaxValue, 0.01f);
+            Im.Drag(known, ref *param, float.MinValue, float.MaxValue, 0.01f);
         }
         else
         {
-            using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
-            ImUtf8.DragScalar($"+0x{idx * 4:X2}", ref *param, float.MinValue, float.MaxValue, 0.01f);
+            using var color = ImGuiColor.Text.Push(Im.Style[ImGuiColor.TextDisabled]);
+            Im.Drag($"+0x{idx * 4:X2}", ref *param, float.MinValue, float.MaxValue, 0.01f);
         }
     }
 
     private static bool TryGetKnown(int type, int idx, out ReadOnlySpan<byte> text)
     {
-        if (type == 0)
+        if (type is 0)
             text = idx switch
             {
                 0  => "Diffuse.R"u8,

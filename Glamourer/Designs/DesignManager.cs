@@ -377,7 +377,7 @@ public sealed class DesignManager : DesignEditor
 
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Set applying of customization {idx.ToDefaultName()} to {value}.");
+        Glamourer.Log.Debug($"Set applying of customization {idx.ToName()} to {value}.");
         DesignChanged.Invoke(DesignChanged.Type.ApplyCustomize, design, new ApplicationTransaction(idx, !value, value));
     }
 

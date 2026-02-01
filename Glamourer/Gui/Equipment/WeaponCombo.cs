@@ -11,6 +11,7 @@ using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using MouseWheelType = OtterGui.Widgets.MouseWheelType;
+using Luna;
 
 namespace Glamourer.Gui.Equipment;
 
@@ -25,7 +26,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
     public SecondaryId CustomWeaponId { get; private set; }
     public Variant     CustomVariant  { get; private set; }
 
-    public WeaponCombo(ItemManager items, FullEquipType type, Logger log, FavoriteManager favorites)
+    public WeaponCombo(ItemManager items, FullEquipType type, OtterGui.Log.Logger log, FavoriteManager favorites)
         : base(() => GetWeapons(favorites, items, type), MouseWheelType.Control, log)
     {
         _favorites    = favorites;
@@ -55,7 +56,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
         _innerWidth   = innerWidth;
         _currentItem  = previewIdx;
         CustomVariant = 0;
-        return Draw($"##{Label}", previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
+        return Draw($"##{Label}", previewName, string.Empty, width, Im.Style.TextHeightWithSpacing);
     }
 
     protected override float GetFilterWidth()
@@ -76,7 +77,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
         Im.Line.Same();
         var ret = ImGui.Selectable(name, selected);
         Im.Line.Same();
-        using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
+        using var color = ImGuiColor.Text.Push(0xFF808080);
         ImUtf8.TextRightAligned($"({obj.PrimaryId.Id}-{obj.SecondaryId.Id}-{obj.Variant.Id})");
         return ret;
     }
@@ -84,7 +85,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
     protected override void OnClosePopup()
     {
         // If holding control while the popup closes, try to parse the input as a full tuple of set id, weapon id and variant, and set a custom item for that.
-        if (!ImGui.GetIO().KeyCtrl)
+        if (!Im.Io.KeyControl)
             return;
 
         var split = Filter.Text.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -113,7 +114,7 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
         if (type is FullEquipType.Unknown)
         {
             var enumerable = Array.Empty<EquipItem>().AsEnumerable();
-            foreach (var t in Enum.GetValues<FullEquipType>().Where(e => e.ToSlot() is EquipSlot.MainHand))
+            foreach (var t in FullEquipType.Values.Where(e => e.ToSlot() is EquipSlot.MainHand))
             {
                 if (items.ItemData.ByType.TryGetValue(t, out var l))
                     enumerable = enumerable.Concat(l);

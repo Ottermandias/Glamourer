@@ -9,6 +9,7 @@ using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
+using ImSharp;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -248,7 +249,7 @@ public sealed class StateManager(
 
         state.ModelData = state.BaseData;
         state.ModelData.SetIsWet(false);
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        foreach (var index in CustomizeIndex.Values)
             state.Sources[index] = StateSource.Game;
 
         foreach (var slot in EquipSlotExtensions.FullSlots)
@@ -260,7 +261,7 @@ public sealed class StateManager(
         foreach (var slot in BonusExtensions.AllFlags)
             state.Sources[slot] = StateSource.Game;
 
-        foreach (var type in Enum.GetValues<MetaIndex>())
+        foreach (var type in MetaIndex.Values)
             state.Sources[type] = StateSource.Game;
 
         foreach (var slot in CrestExtensions.AllRelevantSet)
@@ -432,7 +433,7 @@ public sealed class StateManager(
         if (!state.Unlock(key))
             return;
 
-        foreach (var index in Enum.GetValues<CustomizeIndex>().Where(i => state.Sources[i] is StateSource.Fixed))
+        foreach (var index in CustomizeIndex.Values.Where(i => state.Sources[i] is StateSource.Fixed))
         {
             state.Sources[index]             = StateSource.Game;
             state.ModelData.Customize[index] = state.BaseData.Customize[index];

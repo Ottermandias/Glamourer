@@ -4,6 +4,7 @@ using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
+using ImSharp;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -64,7 +65,7 @@ public class InternalStateEditor(
             state.Sources[CustomizeIndex.Clan]   = source;
             state.Sources[CustomizeIndex.Gender] = source;
             var set = customizations.Manager.GetSet(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
-            foreach (var index in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
+            foreach (var index in CustomizeIndex.Values.Where(set.IsAvailable))
                 state.Sources[index] = source;
         }
         else
@@ -107,7 +108,7 @@ public class InternalStateEditor(
 
         state.ModelData.Customize =  customize;
         applied                   |= changed;
-        foreach (var type in Enum.GetValues<CustomizeIndex>())
+        foreach (var type in CustomizeIndex.Values)
         {
             if (applied.HasFlag(type.ToFlag()))
                 state.Sources[type] = source(type);
@@ -120,7 +121,7 @@ public class InternalStateEditor(
     public bool ChangeHumanCustomize(ActorState state, in CustomizeArray customizeInput, Func<CustomizeIndex, bool> applyWhich,
         Func<CustomizeIndex, StateSource> source, out CustomizeArray old, out CustomizeFlag changed, uint key = 0)
     {
-        var apply = Enum.GetValues<CustomizeIndex>().Where(applyWhich).Aggregate((CustomizeFlag)0, (current, type) => current | type.ToFlag());
+        var apply = CustomizeIndex.Values.Where(applyWhich).Aggregate((CustomizeFlag)0, (current, type) => current | type.ToFlag());
         return ChangeHumanCustomize(state, customizeInput, apply, source, out old, out changed, key);
     }
 

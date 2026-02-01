@@ -1,7 +1,5 @@
 ﻿using Glamourer.Unlocks;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
+using ImSharp;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
 
@@ -17,28 +15,25 @@ public sealed class CustomizationUnlockPanel(CustomizeUnlockManager customizeUnl
 
     public void Draw()
     {
-        using var table = ImRaii.Table("customizationUnlocks", 6,
-            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
-            new Vector2(ImGui.GetContentRegionAvail().X, 12 * ImGui.GetTextLineHeight()));
+        using var table = Im.Table.Begin("customizationUnlocks"u8, 6,
+            TableFlags.SizingFixedFit | TableFlags.RowBackground | TableFlags.ScrollY | TableFlags.BordersOuter,
+            Im.ContentRegion.Available with { Y = 12 * Im.Style.TextHeight });
         if (!table)
             return;
 
-        ImGui.TableNextColumn();
-        var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
-        ImGui.TableNextRow();
-        var remainder = ImGuiClip.ClippedDraw(customizeUnlocks.Unlockable, skips, t =>
+        using var clipper = new Im.ListClipper(customizeUnlocks.Unlockable.Count, Im.Style.TextHeightWithSpacing);
+        foreach (var (key, value) in clipper.Iterate(customizeUnlocks.Unlockable))
         {
-            ImGuiUtil.DrawTableColumn(t.Key.Index.ToDefaultName());
-            ImGuiUtil.DrawTableColumn(t.Key.CustomizeId.ToString());
-            ImGuiUtil.DrawTableColumn(t.Key.Value.Value.ToString());
-            ImGuiUtil.DrawTableColumn(t.Value.Data.ToString());
-            ImGuiUtil.DrawTableColumn(t.Value.Name);
-            ImGuiUtil.DrawTableColumn(customizeUnlocks.IsUnlocked(t.Key, out var time)
+            table.DrawColumn(key.Index.ToNameU8());
+            table.DrawColumn($"{key.CustomizeId}");
+            table.DrawColumn($"{key.Value.Value}");
+            table.DrawColumn($"{value.Data}");
+            table.DrawColumn(value.Name);
+            table.DrawColumn(customizeUnlocks.IsUnlocked(key, out var time)
                 ? time == DateTimeOffset.MinValue
-                    ? "Always"
-                    : time.LocalDateTime.ToString("g")
-                : "Never");
-        }, customizeUnlocks.Unlockable.Count);
-        ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
+                    ? "Always"u8
+                    : $"{time.LocalDateTime:g}"
+                : "Never"u8);
+        }
     }
 }

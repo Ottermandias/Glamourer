@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Text;
 using Penumbra.GameData.Actors;
@@ -21,7 +22,7 @@ public sealed class ObjectManagerPanel(ActorObjectManager objectManager, ActorMa
     {
         objectManager.Objects.DrawDebug();
 
-        using (var table = ImUtf8.Table("##data"u8, 3, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit))
+        using (var table = Im.Table.Begin("##data"u8, 3, TableFlags.RowBackground | TableFlags.SizingFixedFit))
         {
             if (!table)
                 return;
@@ -57,9 +58,9 @@ public sealed class ObjectManagerPanel(ActorObjectManager objectManager, ActorMa
         }
 
         var filterChanged = ImUtf8.InputText("##Filter"u8, ref _objectFilter, "Filter..."u8);
-        using var table2 = ImUtf8.Table("##data2"u8, 3,
-            ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY,
-            new Vector2(-1, 20 * ImGui.GetTextLineHeightWithSpacing()));
+        using var table2 = Im.Table.Begin("##data2"u8, 3,
+            TableFlags.RowBackground | TableFlags.BordersOuter | TableFlags.ScrollY,
+            new Vector2(-1, 20 * Im.Style.TextHeightWithSpacing));
         if (!table2)
             return;
 
@@ -67,7 +68,7 @@ public sealed class ObjectManagerPanel(ActorObjectManager objectManager, ActorMa
             ImGui.SetScrollY(0);
 
         ImGui.TableNextColumn();
-        var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
+        var skips = ImGuiClip.GetNecessarySkips(Im.Style.TextHeightWithSpacing);
         ImGui.TableNextRow();
 
         var remainder = ImGuiClip.FilteredClippedDraw(objectManager, skips,
@@ -78,6 +79,6 @@ public sealed class ObjectManagerPanel(ActorObjectManager objectManager, ActorMa
                 ImUtf8.DrawTableColumn(p.Value.Label);
                 ImUtf8.DrawTableColumn(string.Join(", ", p.Value.Objects.OrderBy(a => a.Index).Select(a => a.Index.ToString())));
             });
-        ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeightWithSpacing());
+        ImGuiClip.DrawEndDummy(remainder, Im.Style.TextHeightWithSpacing);
     }
 }

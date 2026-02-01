@@ -35,7 +35,7 @@ public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiServic
         DrawItemInput();
         IpcTesterHelpers.NameInput(ref _gameObjectName);
         IpcTesterHelpers.DrawFlagInput(ref _flags);
-        using var table = ImRaii.Table("##table", 2, ImGuiTableFlags.SizingFixedFit);
+        using var table = Im.Table.Begin("##table"u8, 2, TableFlags.SizingFixedFit);
 
         IpcTesterHelpers.DrawIntro("Last Error");
         ImGui.TextUnformatted(_lastError.ToString());
@@ -64,7 +64,7 @@ public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiServic
     private void DrawItemInput()
     {
         var tmp   = _customItemId.Id;
-        var width = ImGui.GetContentRegionAvail().X / 2;
+        var width = Im.ContentRegion.Available.X / 2;
         ImGui.SetNextItemWidth(width);
         if (ImGuiUtil.InputUlong("Custom Item ID", ref tmp))
             _customItemId = tmp;

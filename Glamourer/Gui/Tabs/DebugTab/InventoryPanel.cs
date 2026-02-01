@@ -1,5 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Gui.Debug;
@@ -28,7 +29,7 @@ public sealed unsafe class InventoryPanel : IGameDataDrawer
 
         ImGuiUtil.CopyOnClickSelectable($"0x{(ulong)equip:X}");
 
-        using var table = ImRaii.Table("items", 4, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
+        using var table = Im.Table.Begin("items"u8, 4, TableFlags.RowBackground | TableFlags.SizingFixedFit);
         if (!table)
             return;
 

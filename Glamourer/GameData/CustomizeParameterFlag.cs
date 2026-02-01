@@ -1,4 +1,5 @@
-﻿using Luna.Generators;
+﻿using ImSharp;
+using Luna.Generators;
 
 namespace Glamourer.GameData;
 
@@ -69,7 +70,7 @@ public static partial class CustomizeParameterExtensions
     public const CustomizeParameterFlag Values = CustomizeParameterFlag.FacePaintUvOffset | CustomizeParameterFlag.FacePaintUvMultiplier;
 
     public static readonly IReadOnlyList<CustomizeParameterFlag> AllFlags =
-        [.. Enum.GetValues<CustomizeParameterFlag>().Where(f => All.HasFlag(f))];
+        [.. CustomizeParameterFlag.Values.Where(f => All.HasFlag(f))];
 
     public static readonly IReadOnlyList<CustomizeParameterFlag> RgbaFlags       = AllFlags.Where(f => RgbaQuadruples.HasFlag(f)).ToArray();
     public static readonly IReadOnlyList<CustomizeParameterFlag> RgbFlags        = AllFlags.Where(f => RgbTriples.HasFlag(f)).ToArray();

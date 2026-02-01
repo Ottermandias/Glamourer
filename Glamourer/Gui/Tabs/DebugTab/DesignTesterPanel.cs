@@ -1,14 +1,10 @@
-﻿using Dalamud.Interface;
-using Glamourer.Designs;
+﻿using Glamourer.Designs;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
-using OtterGui;
-using OtterGui.Extensions;
-using OtterGui.Raii;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
@@ -36,9 +32,9 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
 
     private void DrawBase64Input()
     {
-        ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##base64", "Base 64 input...", ref _base64, 2047);
-        if (!ImGui.IsItemDeactivatedAfterEdit())
+        Im.Item.SetNextWidthFull();
+        Im.Input.Text("##base64"u8, ref _base64, "Base 64 input..."u8);
+        if (!Im.Item.DeactivatedAfterEdit)
             return;
 
         try
@@ -48,16 +44,16 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
         }
         catch (Exception ex)
         {
-            _base64Bytes    = Array.Empty<byte>();
+            _base64Bytes    = [];
             _parse64Failure = ex;
         }
 
-        if (_parse64Failure != null)
+        if (_parse64Failure is not null)
             return;
 
         try
         {
-            _parse64 = DesignBase64Migration.MigrateBase64(items, humans, _base64, out var ef, out var cf, out var wp, out var meta);
+            _parse64      = DesignBase64Migration.MigrateBase64(items, humans, _base64, out var ef, out var cf, out var wp, out var meta);
             _restore      = DesignBase64Migration.CreateOldBase64(in _parse64, ef, cf, meta, wp);
             _restoreBytes = Convert.FromBase64String(_restore);
         }
@@ -70,9 +66,9 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
 
     private void DrawDesignData()
     {
-        if (_parse64Failure != null)
+        if (_parse64Failure is not null)
         {
-            ImGuiUtil.TextWrapped(_parse64Failure.ToString());
+            Im.TextWrapped($"{_parse64Failure}");
             return;
         }
 
@@ -80,54 +76,51 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
             return;
 
         DrawDesignData(_parse64);
-        using var font = ImRaii.PushFont(UiBuilder.MonoFont);
-        ImGui.TextUnformatted(_base64);
-        using (_ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Im.Style.ItemSpacing with { X = 0 }))
+        using var font = Im.Font.PushMono();
+        Im.Text(_base64);
+        foreach (var (c1, c2) in _restore.Zip(_base64))
         {
-            foreach (var (c1, c2) in _restore.Zip(_base64))
-            {
-                using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF4040D0, c1 != c2);
-                ImGui.TextUnformatted(c1.ToString());
-                Im.Line.Same();
-            }
+            using var color = ImGuiColor.Text.Push(0xFF4040D0, c1 != c2);
+            Im.Text($"{c1}");
+            Im.Line.NoSpacing();
         }
 
-        ImGui.NewLine();
+        Im.Line.New();
 
-        foreach (var ((b1, b2), idx) in _base64Bytes.Zip(_restoreBytes).WithIndex())
+        foreach (var (idx, (b1, b2)) in _base64Bytes.Zip(_restoreBytes).Index())
         {
-            using (_ = ImRaii.Group())
+            using (Im.Group())
             {
-                ImGui.TextUnformatted(idx.ToString("D2"));
-                ImGui.TextUnformatted(b1.ToString("X2"));
-                using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF4040D0, b1 != b2);
-                ImGui.TextUnformatted(b2.ToString("X2"));
+                Im.Text($"{idx:D2}");
+                Im.Text($"{b1:X2}");
+                using var color = ImGuiColor.Text.Push(0xFF4040D0, b1 != b2);
+                Im.Text($"{b2:X2}");
             }
 
-            Im.Line.Same();
+            Im.Line.NoSpacing();
         }
 
-        ImGui.NewLine();
+        Im.Line.New();
     }
 
     private void DrawBytes()
     {
-        if (_parse64Failure == null || _base64Bytes.Length <= 0)
+        if (_parse64Failure is null || _base64Bytes.Length <= 0)
             return;
 
-        using var font = ImRaii.PushFont(UiBuilder.MonoFont);
-        foreach (var (b, idx) in _base64Bytes.WithIndex())
+        using var font = Im.Font.PushMono();
+        foreach (var (idx, b) in _base64Bytes.Index())
         {
-            using (_ = ImRaii.Group())
+            using (Im.Group())
             {
-                ImGui.TextUnformatted(idx.ToString("D2"));
-                ImGui.TextUnformatted(b.ToString("X2"));
+                Im.Text($"{idx:D2}");
+                Im.Text($"{b:X2}");
             }
 
             Im.Line.Same();
         }
 
-        ImGui.NewLine();
+        Im.Line.New();
     }
 
     public static void DrawDesignData(in DesignData data)
@@ -140,7 +133,7 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
 
     private static void DrawHumanData(in DesignData data)
     {
-        using var table = ImRaii.Table("##equip", 5, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
+        using var table = Im.Table.Begin("##equip"u8, 5, TableFlags.RowBackground | TableFlags.SizingFixedFit);
         if (!table)
             return;
 
@@ -149,51 +142,45 @@ public sealed class DesignTesterPanel(ItemManager items, HumanModelList humans) 
             var item  = data.Item(slot);
             var stain = data.Stain(slot);
             var crest = data.Crest(slot.ToCrestFlag());
-            ImGuiUtil.DrawTableColumn(slot.ToName());
-            ImGuiUtil.DrawTableColumn(item.Name);
-            ImGuiUtil.DrawTableColumn(item.ItemId.ToString());
-            ImGuiUtil.DrawTableColumn(stain.ToString());
-            ImGuiUtil.DrawTableColumn(crest.ToString());
+            table.DrawColumn(slot.ToNameU8());
+            table.DrawColumn(item.Name);
+            table.DrawColumn($"{item.ItemId}");
+            table.DrawColumn($"{stain}");
+            table.DrawColumn($"{crest}");
         }
 
-        ImGuiUtil.DrawTableColumn("Hat Visible");
-        ImGuiUtil.DrawTableColumn(data.IsHatVisible().ToString());
-        ImGui.TableNextRow();
-        ImGuiUtil.DrawTableColumn("Visor Toggled");
-        ImGuiUtil.DrawTableColumn(data.IsVisorToggled().ToString());
-        ImGui.TableNextRow();
-        ImGuiUtil.DrawTableColumn("Weapon Visible");
-        ImGuiUtil.DrawTableColumn(data.IsWeaponVisible().ToString());
-        ImGui.TableNextRow();
+        table.DrawDataPair("Hat Visible"u8, data.IsHatVisible());
+        table.NextRow();
+        table.DrawDataPair("Visor Toggled"u8, data.IsVisorToggled());
+        table.NextRow();
+        table.DrawDataPair("Weapon Visible"u8, data.IsWeaponVisible());
+        table.NextRow();
 
-        ImGuiUtil.DrawTableColumn("Model ID");
-        ImGuiUtil.DrawTableColumn(data.ModelId.ToString());
-        ImGui.TableNextRow();
+        table.DrawDataPair("Model ID"u8,data.ModelId);
+        table.NextRow();
 
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        foreach (var index in CustomizeIndex.Values)
         {
             var value = data.Customize[index];
-            ImGuiUtil.DrawTableColumn(index.ToDefaultName());
-            ImGuiUtil.DrawTableColumn(value.Value.ToString());
-            ImGui.TableNextRow();
+            table.DrawDataPair(index.ToNameU8(), value.Value);
+            table.NextRow();
         }
 
-        ImGuiUtil.DrawTableColumn("Is Wet");
-        ImGuiUtil.DrawTableColumn(data.IsWet().ToString());
-        ImGui.TableNextRow();
+        table.DrawDataPair("Is Wet"u8, data.IsWet());
+        table.NextRow();
     }
 
     private static void DrawMonsterData(in DesignData data)
     {
-        ImGui.TextUnformatted($"Model ID {data.ModelId}");
-        ImGui.Separator();
-        using var font = ImRaii.PushFont(UiBuilder.MonoFont);
-        ImGui.TextUnformatted("Customize Array");
-        ImGui.Separator();
-        ImGuiUtil.TextWrapped(string.Join(" ", data.GetCustomizeBytes().Select(b => b.ToString("X2"))));
+        Im.Text($"Model ID {data.ModelId}");
+        Im.Separator();
+        using var font = Im.Font.PushMono();
+        Im.Text("Customize Array"u8);
+        Im.Separator();
+        Im.TextWrapped(StringU8.Join((byte)' ', data.GetCustomizeBytes().Select(b => b.ToString("X2"))));
 
-        ImGui.TextUnformatted("Equipment Array");
-        ImGui.Separator();
-        ImGuiUtil.TextWrapped(string.Join(" ", data.GetEquipmentBytes().Select(b => b.ToString("X2"))));
+        Im.Text("Equipment Array"u8);
+        Im.Separator();
+        Im.TextWrapped(StringU8.Join((byte)' ', data.GetEquipmentBytes().Select(b => b.ToString("X2"))));
     }
 }

@@ -59,7 +59,7 @@ public sealed unsafe class GlamourPlatePanel : IGameDataDrawer
             ImUtf8.Text(manager == null ? "-" : manager->GlamourPlates.Length.ToString());
             ImUtf8.Text(manager == null ? "-" : manager->GlamourPlatesRequested.ToString());
             Im.Line.Same();
-            if (ImUtf8.SmallButton("Request Update"u8))
+            if (Im.SmallButton("Request Update"u8))
                 RequestGlamour();
             ImUtf8.Text(manager == null ? "-" : manager->GlamourPlatesLoaded.ToString());
             ImUtf8.Text(manager == null ? "-" : manager->IsApplyingGlamourPlate.ToString());

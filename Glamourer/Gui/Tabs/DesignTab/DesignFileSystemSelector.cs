@@ -49,10 +49,10 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     { }
 
     protected override float CurrentWidth
-        => _config.Ephemeral.CurrentDesignSelectorWidth * ImUtf8.GlobalScale;
+        => _config.Ephemeral.CurrentDesignSelectorWidth * Im.Style.GlobalScale;
 
     protected override float MinimumAbsoluteRemainder
-        => 470 * ImUtf8.GlobalScale;
+        => 470 * Im.Style.GlobalScale;
 
     protected override float MinimumScaling
         => _config.Ephemeral.DesignSelectorMinimumScale;
@@ -63,7 +63,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     protected override void SetSize(Vector2 size)
     {
         base.SetSize(size);
-        var adaptedSize = MathF.Round(size.X / ImUtf8.GlobalScale);
+        var adaptedSize = MathF.Round(size.X / Im.Style.GlobalScale);
         if (adaptedSize == _config.Ephemeral.CurrentDesignSelectorWidth)
             return;
 
@@ -136,18 +136,18 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
 
     private void RenameLeafDesign(DesignFileSystem.Leaf leaf)
     {
-        ImGui.Separator();
+        Im.Separator();
         RenameLeaf(leaf);
     }
 
     private void RenameDesign(DesignFileSystem.Leaf leaf)
     {
-        ImGui.Separator();
+        Im.Separator();
         var currentName = leaf.Value.Name.Text;
         if (ImGui.IsWindowAppearing())
             ImGui.SetKeyboardFocusHere(0);
         ImGui.TextUnformatted("Rename Design:");
-        if (ImGui.InputText("##RenameDesign", ref currentName, 256, ImGuiInputTextFlags.EnterReturnsTrue))
+        if (Im.Input.Text("##RenameDesign"u8, ref currentName, StringU8.Empty, InputTextFlags.EnterReturnsTrue))
         {
             _designManager.Rename(leaf.Value, currentName);
             ImGui.CloseCurrentPopup();
@@ -194,13 +194,13 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
         => _config.SortMode;
 
     protected override uint ExpandedFolderColor
-        => ColorId.FolderExpanded.Value();
+        => ColorId.FolderExpanded.Value().Color;
 
     protected override uint CollapsedFolderColor
-        => ColorId.FolderCollapsed.Value();
+        => ColorId.FolderCollapsed.Value().Color;
 
     protected override uint FolderLineColor
-        => ColorId.FolderLine.Value();
+        => ColorId.FolderLine.Value().Color;
 
     protected override bool FoldersDefaultOpen
         => _config.OpenFoldersByDefault;

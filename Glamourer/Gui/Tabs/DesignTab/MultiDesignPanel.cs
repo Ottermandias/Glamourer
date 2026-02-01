@@ -27,7 +27,7 @@ public class MultiDesignPanel(
         if (selector.SelectedPaths.Count == 0)
             return;
 
-        HeaderDrawer.Draw(string.Empty, 0, ImGui.GetColorU32(ImGuiCol.FrameBg), _leftButtons, _rightButtons);
+        HeaderDrawer.Draw(string.Empty, 0, ImGuiColor.FrameBackground.Get().Color, _leftButtons, _rightButtons);
         using var child = ImUtf8.Child("##MultiPanel"u8, default, true);
         if (!child)
             return;
@@ -101,31 +101,31 @@ public class MultiDesignPanel(
     private int DrawDesignList()
     {
         ResetCounts();
-        using var tree = ImUtf8.TreeNode("Currently Selected Objects"u8, ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.NoTreePushOnOpen);
-        ImGui.Separator();
+        using var tree = Im.Tree.Node("Currently Selected Objects"u8, TreeNodeFlags.DefaultOpen | TreeNodeFlags.NoTreePushOnOpen);
+        Im.Separator();
         if (!tree)
             return selector.SelectedPaths.Count(CountLeaves);
 
         var sizeType             = new Vector2(Im.Style.FrameHeight);
-        var availableSizePercent = (ImGui.GetContentRegionAvail().X - sizeType.X - 4 * Im.Style.CellPadding.X) / 100;
+        var availableSizePercent = (Im.ContentRegion.Available.X - sizeType.X - 4 * Im.Style.CellPadding.X) / 100;
         var sizeMods             = availableSizePercent * 35;
         var sizeFolders          = availableSizePercent * 65;
 
         var numDesigns = 0;
-        using (var table = ImUtf8.Table("mods"u8, 3, ImGuiTableFlags.RowBg))
+        using (var table = Im.Table.Begin("mods"u8, 3, TableFlags.RowBackground))
         {
             if (!table)
                 return selector.SelectedPaths.Count(l => l is DesignFileSystem.Leaf);
 
-            ImUtf8.TableSetupColumn("type"u8, ImGuiTableColumnFlags.WidthFixed, sizeType.X);
-            ImUtf8.TableSetupColumn("mod"u8,  ImGuiTableColumnFlags.WidthFixed, sizeMods);
-            ImUtf8.TableSetupColumn("path"u8, ImGuiTableColumnFlags.WidthFixed, sizeFolders);
+            table.SetupColumn("type"u8, TableColumnFlags.WidthFixed, sizeType.X);
+            table.SetupColumn("mod"u8,  TableColumnFlags.WidthFixed, sizeMods);
+            table.SetupColumn("path"u8, TableColumnFlags.WidthFixed, sizeFolders);
 
             var i = 0;
             foreach (var (fullName, path) in selector.SelectedPaths.Select(p => (p.FullName(), p))
                          .OrderBy(p => p.Item1, StringComparer.OrdinalIgnoreCase))
             {
-                using var id = ImRaii.PushId(i++);
+                using var id = Im.Id.Push(i++);
                 var (icon, text) = path is DesignFileSystem.Leaf l
                     ? (FontAwesomeIcon.FileCircleMinus, l.Value.Name.Text)
                     : (FontAwesomeIcon.FolderMinus, string.Empty);
@@ -141,7 +141,7 @@ public class MultiDesignPanel(
             }
         }
 
-        ImGui.Separator();
+        Im.Separator();
         return numDesigns;
     }
 
@@ -162,7 +162,7 @@ public class MultiDesignPanel(
         ImUtf8.TextFrameAligned("Multi Tagger:"u8);
         Im.Line.Same();
         var offset = ImGui.GetItemRectSize().X + Im.Style.WindowPadding.X;
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 2 * (width.X + Im.Style.ItemSpacing.X));
+        ImGui.SetNextItemWidth(Im.ContentRegion.Available.X - 2 * (width.X + Im.Style.ItemSpacing.X));
         ImUtf8.InputText("##tag"u8, ref _tag, "Tag Name..."u8);
 
         UpdateTagCache();
@@ -191,7 +191,7 @@ public class MultiDesignPanel(
         if (ImUtf8.ButtonEx(label, tooltip, width, _removeDesigns.Count == 0))
             foreach (var (design, index) in _removeDesigns)
                 editor.RemoveTag(design, index);
-        ImGui.Separator();
+        Im.Separator();
         return offset;
     }
 
@@ -199,7 +199,7 @@ public class MultiDesignPanel(
     {
         ImUtf8.TextFrameAligned("Multi QDB:"u8);
         ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
-        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
+        var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numQuickDesignEnabled;
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs are already displayed in the quick design bar."
@@ -220,14 +220,14 @@ public class MultiDesignPanel(
                 editor.SetQuickDesign(design.Value, false);
         }
 
-        ImGui.Separator();
+        Im.Separator();
     }
 
     private void DrawMultiLock(float offset)
     {
         ImUtf8.TextFrameAligned("Multi Lock:"u8);
         ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
-        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
+        var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsLocked;
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs are already write protected."
@@ -243,14 +243,14 @@ public class MultiDesignPanel(
         if (ImUtf8.ButtonEx("Remove Write-Protection"u8, tt, buttonWidth, _numDesignsLocked == 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetWriteProtection(design.Value, false);
-        ImGui.Separator();
+        Im.Separator();
     }
 
     private void DrawMultiResetSettings(float offset)
     {
         ImUtf8.TextFrameAligned("Settings:"u8);
         ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
-        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
+        var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsResetSettings;
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs already reset temporary settings."
@@ -266,14 +266,14 @@ public class MultiDesignPanel(
         if (ImUtf8.ButtonEx("Remove Reset Temp. Settings"u8, tt, buttonWidth, _numDesignsResetSettings == 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeResetTemporarySettings(design.Value, false);
-        ImGui.Separator();
+        Im.Separator();
     }
 
     private void DrawMultiResetDyes(float offset)
     {
         ImUtf8.TextFrameAligned("Adv. Dyes:"u8);
         ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
-        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
+        var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsResetDyes;
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs already reset advanced dyes."
@@ -289,14 +289,14 @@ public class MultiDesignPanel(
         if (ImUtf8.ButtonEx("Remove Reset Dyes"u8, tt, buttonWidth, _numDesignsResetDyes == 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeResetAdvancedDyes(design.Value, false);
-        ImGui.Separator();
+        Im.Separator();
     }
 
     private void DrawMultiForceRedraw(float offset)
     {
         ImUtf8.TextFrameAligned("Redrawing:"u8);
         ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
-        var buttonWidth = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
+        var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsForcedRedraw;
         var tt = diff == 0
             ? $"All {_numDesigns} selected designs already force redraws."
@@ -312,7 +312,7 @@ public class MultiDesignPanel(
         if (ImUtf8.ButtonEx("Remove Forced Redraws"u8, tt, buttonWidth, _numDesignsForcedRedraw == 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeForcedRedraw(design.Value, false);
-        ImGui.Separator();
+        Im.Separator();
     }
 
     private void DrawMultiColor(Vector2 width, float offset)
@@ -320,7 +320,7 @@ public class MultiDesignPanel(
         ImUtf8.TextFrameAligned("Multi Colors:"u8);
         ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
         _colorCombo.Draw("##color", _colorCombo.CurrentSelection ?? string.Empty, "Select a design color.",
-            ImGui.GetContentRegionAvail().X - 2 * (width.X + Im.Style.ItemSpacing.X), ImGui.GetTextLineHeight());
+            Im.ContentRegion.Available.X - 2 * (width.X + Im.Style.ItemSpacing.X), Im.Style.TextHeight);
 
         UpdateColorCache();
         var label = _addDesigns.Count > 0
@@ -354,7 +354,7 @@ public class MultiDesignPanel(
                 editor.ChangeColor(design, string.Empty);
         }
 
-        ImGui.Separator();
+        Im.Separator();
     }
 
     private void DrawAdvancedButtons(float offset)
@@ -365,7 +365,7 @@ public class MultiDesignPanel(
         var tt = _numDesignsWithAdvancedDyes is 0
             ? "No selected designs contain any advanced dyes."
             : $"Delete {_numAdvancedDyes} advanced dyes from {_numDesignsWithAdvancedDyes} of the selected designs.";
-        if (ImUtf8.ButtonEx("Delete All Advanced Dyes"u8, tt, new Vector2(ImGui.GetContentRegionAvail().X, 0),
+        if (ImUtf8.ButtonEx("Delete All Advanced Dyes"u8, tt, new Vector2(Im.ContentRegion.Available.X, 0),
                 !enabled || _numDesignsWithAdvancedDyes is 0))
 
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
@@ -376,14 +376,14 @@ public class MultiDesignPanel(
 
         if (!enabled && _numDesignsWithAdvancedDyes is not 0)
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking to delete.");
-        ImGui.Separator();
+        Im.Separator();
     }
 
     private void DrawApplicationButtons(float offset)
     {
         ImUtf8.TextFrameAligned("Application"u8);
         ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
-        var   width     = new Vector2((ImGui.GetContentRegionAvail().X - Im.Style.ItemSpacing.X) / 2, 0);
+        var   width     = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var   enabled   = config.DeleteDesignModifier.IsActive();
         bool? equip     = null;
         bool? customize = null;
@@ -462,7 +462,7 @@ public class MultiDesignPanel(
             ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
 
         group.Dispose();
-        ImGui.Separator();
+        Im.Separator();
         if (equip is null && customize is null)
             return;
 

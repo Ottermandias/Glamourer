@@ -5,6 +5,7 @@ using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Unlocks;
+using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -284,7 +285,7 @@ public class DesignMerger(
 
         var set  = customizeService.Manager.GetSet(customize.Clan, customize.Gender);
         var face = customize.Face;
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        foreach (var index in CustomizeIndex.Values)
         {
             var flag = index.ToFlag();
             if (!customizeFlags.HasFlag(flag))
@@ -314,7 +315,7 @@ public class DesignMerger(
         var source = ret.Design.DoApplyCustomize(CustomizeIndex.Clan)
             ? ret.Sources[CustomizeIndex.Clan]
             : ret.Sources[CustomizeIndex.Gender];
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        foreach (var index in CustomizeIndex.Values)
         {
             var flag = index.ToFlag();
             if (!fixFlags.HasFlag(flag))

@@ -5,7 +5,6 @@ using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
 using System.Collections.Frozen;
-using static OtterGui.ItemSelector<T>;
 
 namespace Glamourer.State;
 
@@ -226,7 +225,7 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
         => GetFlag() switch
         {
             EquipFlag e              => GetName(e),
-            CustomizeFlag c          => c.ToIndex().ToDefaultName(),
+            CustomizeFlag c          => c.ToIndex().ToNameU8(),
             MetaFlag m               => m.ToIndex().ToNameU8(),
             CrestFlag c              => c.ToLabelU8(),
             CustomizeParameterFlag c => c.ToNameU8(),

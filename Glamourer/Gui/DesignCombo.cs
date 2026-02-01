@@ -60,7 +60,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
             }
             case QuickSelectedDesign quickDesign:
             {
-                using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.NormalDesign.Value());
+                using var color = ImGuiColor.Text.Push(ColorId.NormalDesign.Value());
                 ret = base.DrawSelectable(globalIdx, selected);
                 DrawResolvedDesign(quickDesign);
                 return ret;
@@ -74,7 +74,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         if (path.Length <= 0 || realDesign.Name == path)
             return;
 
-        DrawRightAligned(realDesign.Name, path, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+        DrawRightAligned(realDesign.Name, path, ImGuiColor.TextDisabled.Get().Color);
     }
 
     private void DrawResolvedDesign(QuickSelectedDesign quickDesign)
@@ -95,12 +95,12 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         bool ret;
         using (currentDesign is not null ? ImGuiColor.Text.Push(DesignColors.GetColor(currentDesign as Design)) : null)
         {
-            ret = Draw("##design", name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing()) && CurrentSelection is not null;
+            ret = Draw("##design", name, string.Empty, width, Im.Style.TextHeightWithSpacing) && CurrentSelection is not null;
         }
 
         if (currentDesign is Design design)
         {
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyCtrl)
+            if (Im.Item.RightClicked() && Im.Io.KeyControl)
                 TabSelected.Invoke(MainTabType.Designs, design);
             ImGuiUtil.HoverTooltip("Control + Right-Click to move to design.");
         }
@@ -363,7 +363,7 @@ public sealed class SpecialDesignCombo(
 {
     public void Draw(AutoDesignSet set, AutoDesign? design, int autoDesignIndex)
     {
-        if (!Draw(design?.Design, design?.Design.ResolveName(Incognito), ImGui.GetContentRegionAvail().X))
+        if (!Draw(design?.Design, design?.Design.ResolveName(Incognito), Im.ContentRegion.Available.X))
             return;
 
         if (autoDesignIndex >= 0)

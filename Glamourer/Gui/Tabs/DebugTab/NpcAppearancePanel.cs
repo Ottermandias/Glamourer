@@ -5,6 +5,7 @@ using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
@@ -29,10 +30,10 @@ public sealed class NpcAppearancePanel(NpcCombo npcCombo, StateManager stateMana
     public void Draw()
     {
         ImUtf8.Checkbox("Compare Customize (or Gear)"u8, ref _customizeOrGear);
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        ImGui.SetNextItemWidth(Im.ContentRegion.Available.X);
         var resetScroll = ImUtf8.InputText("##npcFilter"u8, ref _npcFilter, "Filter..."u8);
 
-        using var table = ImRaii.Table("npcs", 7, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingFixedFit,
+        using var table = Im.Table.Begin("npcs"u8, 7, TableFlags.RowBackground | TableFlags.ScrollY | TableFlags.SizingFixedFit,
             new Vector2(-1, 400 * Im.Style.GlobalScale));
         if (!table)
             return;
@@ -40,13 +41,13 @@ public sealed class NpcAppearancePanel(NpcCombo npcCombo, StateManager stateMana
         if (resetScroll)
             ImGui.SetScrollY(0);
 
-        ImUtf8.TableSetupColumn("Button"u8,  ImGuiTableColumnFlags.WidthFixed);
-        ImUtf8.TableSetupColumn("Name"u8,    ImGuiTableColumnFlags.WidthFixed, Im.Style.GlobalScale * 300);
-        ImUtf8.TableSetupColumn("Kind"u8,    ImGuiTableColumnFlags.WidthFixed);
-        ImUtf8.TableSetupColumn("Id"u8,      ImGuiTableColumnFlags.WidthFixed);
-        ImUtf8.TableSetupColumn("Model"u8,   ImGuiTableColumnFlags.WidthFixed);
-        ImUtf8.TableSetupColumn("Visor"u8,   ImGuiTableColumnFlags.WidthFixed);
-        ImUtf8.TableSetupColumn("Compare"u8, ImGuiTableColumnFlags.WidthStretch);
+        table.SetupColumn("Button"u8,  TableColumnFlags.WidthFixed);
+        table.SetupColumn("Name"u8,    TableColumnFlags.WidthFixed, Im.Style.GlobalScale * 300);
+        table.SetupColumn("Kind"u8,    TableColumnFlags.WidthFixed);
+        table.SetupColumn("Id"u8,      TableColumnFlags.WidthFixed);
+        table.SetupColumn("Model"u8,   TableColumnFlags.WidthFixed);
+        table.SetupColumn("Visor"u8,   TableColumnFlags.WidthFixed);
+        table.SetupColumn("Compare"u8, TableColumnFlags.WidthStretch);
 
         ImGui.TableNextColumn();
         var skips = ImGuiClip.GetNecessarySkips(Im.Style.FrameHeightWithSpacing);
@@ -60,7 +61,7 @@ public sealed class NpcAppearancePanel(NpcCombo npcCombo, StateManager stateMana
 
         void DrawData(NpcData data)
         {
-            using var id       = ImRaii.PushId(idx++);
+            using var id       = Im.Id.Push(idx++);
             var       disabled = !stateManager.GetOrCreate(objectManager.Player, out var state);
             ImGui.TableNextColumn();
             if (ImUtf8.ButtonEx("Apply"u8, ""u8, Vector2.Zero, disabled))
@@ -84,7 +85,7 @@ public sealed class NpcAppearancePanel(NpcCombo npcCombo, StateManager stateMana
                 ImUtf8.DrawFrameColumn(data.VisorToggled ? FontAwesomeIcon.Check.ToIconString() : FontAwesomeIcon.Times.ToIconString());
             }
 
-            using var mono = ImRaii.PushFont(UiBuilder.MonoFont);
+            using var mono = Im.Font.PushMono();
             ImUtf8.DrawFrameColumn(_customizeOrGear ? data.Customize.ToString() : data.WriteGear());
         }
     }

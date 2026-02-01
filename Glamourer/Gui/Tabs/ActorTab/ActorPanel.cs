@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.ClientState.Conditions;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
@@ -11,7 +12,6 @@ using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Materials;
 using Glamourer.Interop;
 using Glamourer.State;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 using Luna;
 using OtterGui;
@@ -133,9 +133,9 @@ public class ActorPanel
 
     private void DrawHeader()
     {
-        var textColor = !_identifier.IsValid ? ImGui.GetColorU32(ImGuiCol.Text) :
+        var textColor = !_identifier.IsValid ? ImGuiColor.Text.Get() :
             _data.Valid                      ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value();
-        HeaderDrawer.Draw(_actorName, textColor, ImGui.GetColorU32(ImGuiCol.FrameBg), _leftButtons, _rightButtons);
+        HeaderDrawer.Draw(_actorName, textColor.Color, ImGuiColor.FrameBackground.Get().Color, _leftButtons, _rightButtons);
 
         SaveDesignDrawPopup();
     }
@@ -153,15 +153,15 @@ public class ActorPanel
 
     private unsafe void DrawPanel()
     {
-        using var table = ImUtf8.Table("##Panel", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY, ImGui.GetContentRegionAvail());
+        using var table = Im.Table.Begin("##Panel"u8, 1, TableFlags.BordersOuter | TableFlags.ScrollY, Im.ContentRegion.Available);
         if (!table || !_selector.HasSelection || !_stateManager.GetOrCreate(_identifier, _actor, out _state))
             return;
 
-        ImGui.TableSetupScrollFreeze(0, 1);
-        ImGui.TableNextColumn();
-        ImGui.Dummy(Vector2.Zero);
+        table.SetupScrollFreeze(0, 1);
+        table.NextColumn();
+        Im.Dummy(Vector2.Zero);
         var transformationId = _actor.IsCharacter ? _actor.AsCharacter->CharacterData.TransformationId : 0;
-        if (transformationId != 0)
+        if (transformationId is not 0)
             ImGuiUtil.DrawTextButton($"Currently transformed to Transformation {transformationId}.",
                 -Vector2.UnitX, Colors.SelectedRed);
 
@@ -170,9 +170,9 @@ public class ActorPanel
         DrawApplyToTarget();
 
         RevertButtons();
-        ImGui.TableNextColumn();
+        table.NextColumn();
 
-        using var disabled = ImRaii.Disabled(transformationId != 0);
+        using var disabled = Im.Disabled(transformationId is not 0);
         if (_state.ModelData.IsHuman)
             DrawHumanPanel();
         else
@@ -198,7 +198,7 @@ public class ActorPanel
             ? "Customization"
             : $"Customization (Model Id #{_state.ModelData.ModelId})###Customization";
         var       expand = _config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
-        using var h      = ImUtf8.CollapsingHeaderId(header, expand ? ImGuiTreeNodeFlags.DefaultOpen : ImGuiTreeNodeFlags.None);
+        using var h      = Im.Tree.HeaderId(header, expand ? TreeNodeFlags.DefaultOpen : TreeNodeFlags.None);
         if (!h)
             return;
 
@@ -206,7 +206,7 @@ public class ActorPanel
             _stateManager.ChangeEntireCustomize(_state, _customizationDrawer.Customize, _customizationDrawer.Changed, ApplySettings.Manual);
 
         EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromState(MetaIndex.Wetness, _stateManager, _state));
-        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
     }
 
     private void DrawEquipmentHeader()
@@ -236,9 +236,9 @@ public class ActorPanel
             _equipmentDrawer.DrawBonusItem(data);
         }
 
-        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
         DrawEquipmentMetaToggles();
-        ImGui.Dummy(new Vector2(ImGui.GetTextLineHeight() / 2));
+        Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
         _equipmentDrawer.DrawDragDropTooltip();
     }
 
@@ -260,7 +260,7 @@ public class ActorPanel
         if (!h)
             return;
 
-        using var t = ImUtf8.Table("table"u8, 2, ImGuiTableFlags.SizingFixedFit);
+        using var t = Im.Table.Begin("table"u8, 2, TableFlags.SizingFixedFit);
         if (!t)
             return;
 
@@ -280,7 +280,7 @@ public class ActorPanel
         static void DrawCopyColumn(ref OtterGui.Text.HelperObjects.Utf8StringHandler<TextStringHandlerBuffer> text)
         {
             ImUtf8.DrawTableColumn(ref text);
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            if (Im.Item.RightClicked())
                 ImUtf8.SetClipboardText(TextStringHandlerBuffer.Span);
         }
     }
@@ -317,58 +317,57 @@ public class ActorPanel
     private void DrawMonsterPanel()
     {
         var names     = _modelChara[_state!.ModelData.ModelId];
-        var turnHuman = ImGui.Button("Turn Human");
-        ImGui.Separator();
-        using (_ = ImRaii.ListBox("##MonsterList",
-                   new Vector2(ImGui.GetContentRegionAvail().X, 10 * ImGui.GetTextLineHeightWithSpacing())))
+        var turnHuman = Im.Button("Turn Human"u8);
+        Im.Separator();
+        using (Im.ListBox.Begin("##MonsterList"u8, Im.ContentRegion.Available with { Y = 10 * Im.Style.TextHeightWithSpacing }))
         {
-            if (names.Count == 0)
-                ImGui.TextUnformatted("Unknown Monster");
+            if (names.Count is 0)
+                Im.Text("Unknown Monster"u8);
             else
-                ImGuiClip.ClippedDraw(names, p => ImGui.TextUnformatted($"{p.Name} ({p.Kind.ToName()} #{p.Id})"),
-                    ImGui.GetTextLineHeightWithSpacing());
+                ImGuiClip.ClippedDraw(names, p => Im.Text($"{p.Name} ({p.Kind.ToName()} #{p.Id})"),
+                    Im.Style.TextHeightWithSpacing);
         }
 
-        ImGui.Separator();
-        ImGui.TextUnformatted("Customization Data");
-        using (_ = ImRaii.PushFont(UiBuilder.MonoFont))
+        Im.Separator();
+        Im.Text("Customization Data"u8);
+        using (Im.Font.PushMono())
         {
             foreach (var b in _state.ModelData.Customize)
             {
-                using (_ = ImRaii.Group())
+                using (Im.Group())
                 {
-                    ImGui.TextUnformatted($" {b.Value:X2}");
-                    ImGui.TextUnformatted($"{b.Value,3}");
+                    Im.Text($" {b.Value:X2}");
+                    Im.Text($"{b.Value,3}");
                 }
 
                 Im.Line.Same();
-                if (ImGui.GetContentRegionAvail().X < Im.Style.ItemSpacing.X + ImGui.CalcTextSize("XXX").X)
-                    ImGui.NewLine();
+                if (Im.ContentRegion.Available.X < Im.Style.ItemSpacing.X + Im.Font.CalculateSize("XXX"u8).X)
+                    Im.Line.New();
             }
 
-            if (ImGui.GetCursorPosX() != 0)
-                ImGui.NewLine();
+            if (Im.Cursor.X is not 0)
+                Im.Line.New();
         }
 
-        ImGui.Separator();
-        ImGui.TextUnformatted("Equipment Data");
-        using (_ = ImRaii.PushFont(UiBuilder.MonoFont))
+        Im.Separator();
+        Im.Text("Equipment Data"u8);
+        using (Im.Font.PushMono())
         {
             foreach (var b in _state.ModelData.GetEquipmentBytes())
             {
-                using (_ = ImRaii.Group())
+                using (Im.Group())
                 {
-                    ImGui.TextUnformatted($" {b:X2}");
-                    ImGui.TextUnformatted($"{b,3}");
+                    Im.Text($" {b:X2}");
+                    Im.Text($"{b,3}");
                 }
 
                 Im.Line.Same();
-                if (ImGui.GetContentRegionAvail().X < Im.Style.ItemSpacing.X + ImGui.CalcTextSize("XXX").X)
-                    ImGui.NewLine();
+                if (Im.ContentRegion.Available.X < Im.Style.ItemSpacing.X + Im.Font.CalculateSize("XXX"u8).X)
+                    Im.Line.New();
             }
 
-            if (ImGui.GetCursorPosX() != 0)
-                ImGui.NewLine();
+            if (Im.Cursor.X is not 0)
+                Im.Line.New();
         }
 
         if (turnHuman)
@@ -562,10 +561,10 @@ public class ActorPanel
         protected override bool Disabled
             => true;
 
-        protected override uint BorderColor
+        protected override Rgba32 BorderColor
             => ColorId.ActorUnavailable.Value();
 
-        protected override uint TextColor
+        protected override Rgba32 TextColor
             => ColorId.ActorUnavailable.Value();
 
         protected override void OnClick()

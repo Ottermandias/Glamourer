@@ -85,9 +85,9 @@ public class StateIpcTester : IUiService, IDisposable
         IpcTesterHelpers.KeyInput(ref _key);
         IpcTesterHelpers.NameInput(ref _gameObjectName);
         IpcTesterHelpers.DrawFlagInput(ref _flags);
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        ImGui.SetNextItemWidth(Im.ContentRegion.Available.X);
         ImGui.InputTextWithHint("##base64", "Base 64 State...", ref _base64State, 2000);
-        using var table = ImRaii.Table("##table", 2, ImGuiTableFlags.SizingFixedFit);
+        using var table = Im.Table.Begin("##table"u8, 2, TableFlags.SizingFixedFit);
 
         IpcTesterHelpers.DrawIntro("Last Error");
         ImGui.TextUnformatted(_lastError.ToString());
@@ -206,7 +206,7 @@ public class StateIpcTester : IUiService, IDisposable
                 ImUtf8.SetClipboardText(DesignConverter.ToBase64(_state));
         }
 
-        using var font = ImRaii.PushFont(UiBuilder.MonoFont);
+        using var font = Im.Font.PushMono();
         ImUtf8.TextWrapped(_stateString ?? string.Empty);
 
         if (ImUtf8.Button("Close"u8, -Vector2.UnitX) || !ImGui.IsWindowFocused())
@@ -219,7 +219,7 @@ public class StateIpcTester : IUiService, IDisposable
         ImGui.SameLine(0, 0);
         ImUtf8.Text($" ({_lastStateChangeType})");
         Im.Line.Same();
-        using (ImRaii.PushFont(UiBuilder.MonoFont))
+        using (Im.Font.PushMono())
         {
             ImUtf8.CopyOnClickSelectable($"0x{_lastStateChangeActor:X}");
         }
@@ -234,7 +234,7 @@ public class StateIpcTester : IUiService, IDisposable
         ImGui.SameLine(0, 0);
         ImUtf8.Text($" ({_lastStateFinalizeType})");
         Im.Line.Same();
-        using (ImRaii.PushFont(UiBuilder.MonoFont))
+        using (Im.Font.PushMono())
         {
             ImUtf8.CopyOnClickSelectable($"0x{_lastStateFinalizeActor:X}");
         }

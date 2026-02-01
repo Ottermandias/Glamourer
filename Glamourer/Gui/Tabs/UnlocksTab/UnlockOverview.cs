@@ -7,6 +7,7 @@ using Glamourer.Services;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
 using ImSharp;
+using Luna;
 using OtterGui.Raii;
 using OtterGui.Text;
 using Penumbra.GameData.Enums;
@@ -34,8 +35,8 @@ public class UnlockOverview(
     private Gender        _selected3 = Gender.Unknown;
     private BonusItemFlag _selected4 = BonusItemFlag.Unknown;
 
-    private uint _favoriteColor;
-    private uint _moddedColor;
+    private Rgba32 _favoriteColor;
+    private Rgba32 _moddedColor;
 
     private void DrawSelector()
     {
@@ -43,7 +44,7 @@ public class UnlockOverview(
         if (!child)
             return;
 
-        foreach (var type in Enum.GetValues<FullEquipType>())
+        foreach (var type in FullEquipType.Values)
         {
             if (type.IsOffhandType() || type.IsBonus() || !items.ItemData.ByType.TryGetValue(type, out var value) || value.Count == 0)
                 continue;
@@ -83,7 +84,7 @@ public class UnlockOverview(
 
     public void Draw()
     {
-        using var color = ImRaii.PushColor(ImGuiCol.Border, ImGui.GetColorU32(ImGuiCol.TableBorderStrong));
+        using var color = ImGuiColor.Border.Push(Im.Style[ImGuiColor.TableBorderStrong]);
         DrawSelector();
         Im.Line.Same();
         DrawPanel();
@@ -128,8 +129,8 @@ public class UnlockOverview(
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
 
             if (favorites.Contains(_selected3, _selected2, customize.Index, customize.Value))
-                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), _favoriteColor,
-                    12 * Im.Style.GlobalScale, ImDrawFlags.RoundCornersAll, 6 * Im.Style.GlobalScale);
+                Im.Window.DrawList.Shape.Rectangle(Im.Item.UpperLeftCorner, Im.Item.LowerRightCorner, _favoriteColor, 12 * Im.Style.GlobalScale,
+                    ImDrawFlagsRectangle.RoundCornersAll, 6 * Im.Style.GlobalScale);
 
             if (hasIcon && ImGui.IsItemHovered())
             {
@@ -138,7 +139,7 @@ public class UnlockOverview(
                 if (size.X >= iconSize.X && size.Y >= iconSize.Y)
                     ImGui.Image(wrap.Handle, size);
                 ImGui.TextUnformatted(unlockData.Name);
-                ImGui.TextUnformatted($"{customize.Index.ToDefaultName()} {customize.Value.Value}");
+                ImGui.TextUnformatted($"{customize.Index.ToNameU8()} {customize.Value.Value}");
                 ImGui.TextUnformatted(unlocked ? $"Unlocked on {time:g}" : "Not unlocked.");
             }
 
@@ -161,7 +162,7 @@ public class UnlockOverview(
         var       iconSize       = ImGuiHelpers.ScaledVector2(64);
         var       iconsPerRow    = IconsPerRow(iconSize.X, spacing.X);
         var       numRows        = (items.DictBonusItems.Count + iconsPerRow - 1) / iconsPerRow;
-        var       numVisibleRows = (int)(Math.Ceiling(ImGui.GetContentRegionAvail().Y / (iconSize.Y + spacing.Y)) + 0.5f) + 1;
+        var       numVisibleRows = (int)(Math.Ceiling(Im.ContentRegion.Available.Y / (iconSize.Y + spacing.Y)) + 0.5f) + 1;
 
         var skips   = ImGuiClip.GetNecessarySkips(iconSize.Y + spacing.Y);
         var start   = skips * iconsPerRow;
@@ -183,7 +184,7 @@ public class UnlockOverview(
         }
 
         if (ImGui.GetCursorPosX() != 0)
-            ImGui.NewLine();
+            Im.Line.New();
         var remainder = numRows - numVisibleRows - skips;
         if (remainder > 0)
             ImGuiClip.DrawEndDummy(remainder, iconSize.Y + spacing.Y);
@@ -200,8 +201,8 @@ public class UnlockOverview(
             ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (favorites.Contains(item))
-                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), _favoriteColor,
-                    2 * Im.Style.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * Im.Style.GlobalScale);
+                Im.Window.DrawList.Shape.Rectangle(Im.Item.UpperLeftCorner, Im.Item.LowerRightCorner, _favoriteColor,
+                    2 * Im.Style.GlobalScale, ImDrawFlagsRectangle.RoundCornersAll, 4 * Im.Style.GlobalScale);
 
             var mods = DrawModdedMarker(item, iconSize);
 
@@ -234,7 +235,7 @@ public class UnlockOverview(
         var       iconSize       = ImGuiHelpers.ScaledVector2(64);
         var       iconsPerRow    = IconsPerRow(iconSize.X, spacing.X);
         var       numRows        = (value.Count + iconsPerRow - 1) / iconsPerRow;
-        var       numVisibleRows = (int)(Math.Ceiling(ImGui.GetContentRegionAvail().Y / (iconSize.Y + spacing.Y)) + 0.5f) + 1;
+        var       numVisibleRows = (int)(Math.Ceiling(Im.ContentRegion.Available.Y / (iconSize.Y + spacing.Y)) + 0.5f) + 1;
 
         var skips   = ImGuiClip.GetNecessarySkips(iconSize.Y + spacing.Y);
         var end     = Math.Min(numVisibleRows * iconsPerRow + skips * iconsPerRow, value.Count);
@@ -254,7 +255,7 @@ public class UnlockOverview(
         }
 
         if (ImGui.GetCursorPosX() != 0)
-            ImGui.NewLine();
+            Im.Line.New();
         var remainder = numRows - numVisibleRows - skips;
         if (remainder > 0)
             ImGuiClip.DrawEndDummy(remainder, iconSize.Y + spacing.Y);
@@ -271,15 +272,15 @@ public class UnlockOverview(
             ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (favorites.Contains(item))
-                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
-                    2 * Im.Style.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * Im.Style.GlobalScale);
+                Im.Window.DrawList.Shape.Rectangle(Im.Item.UpperLeftCorner, Im.Item.LowerRightCorner, ColorId.FavoriteStarOn.Value(),
+                    2 * Im.Style.GlobalScale, ImDrawFlagsRectangle.RoundCornersAll, 4 * Im.Style.GlobalScale);
 
             var mods = DrawModdedMarker(item, iconSize);
 
             if (ImGui.IsItemClicked())
                 Glamourer.Messager.Chat.Print(new SeStringBuilder().AddItemLink(item.ItemId.Id, false).BuiltString);
 
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && tooltip.Player(out var state))
+            if (Im.Item.RightClicked() && tooltip.Player(out var state))
                 tooltip.ApplyItem(state, item);
 
             if (ImGui.IsItemHovered())
@@ -329,18 +330,18 @@ public class UnlockOverview(
         => ImGuiHelpers.ScaledVector2(2);
 
     private static int IconsPerRow(float iconWidth, float iconSpacing)
-        => (int)(ImGui.GetContentRegionAvail().X / (iconWidth + iconSpacing));
+        => (int)(Im.ContentRegion.Available.X / (iconWidth + iconSpacing));
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private (string ModDirectory, string ModName)[] DrawModdedMarker(in EquipItem item, Vector2 iconSize)
     {
         var mods = penumbra.CheckCurrentChangedItem(item.Name);
-        if (mods.Length == 0)
+        if (mods.Length is 0)
             return mods;
 
         var center = ImGui.GetItemRectMin() + new Vector2(iconSize.X * 0.85f, iconSize.Y * 0.15f);
-        ImGui.GetWindowDrawList().AddCircleFilled(center, iconSize.X * 0.1f, _moddedColor);
-        ImGui.GetWindowDrawList().AddCircle(center, iconSize.X * 0.1f, 0xFF000000);
+        Im.Window.DrawList.Shape.CircleFilled(center, iconSize.X * 0.1f, _moddedColor);
+        Im.Window.DrawList.Shape.Circle(center, iconSize.X * 0.1f, Rgba32.Black);
         return mods;
     }
 
@@ -351,14 +352,14 @@ public class UnlockOverview(
         {
             case 0: return;
             case 1:
-                ImUtf8.Text("Modded by: "u8, _moddedColor);
-                ImGui.SameLine(0, 0);
-                ImUtf8.Text(mods[0].ModName);
+                Im.Text("Modded by: "u8, _moddedColor);
+                Im.Line.NoSpacing();
+                Im.Text(mods[0].ModName);
                 return;
             default:
-                ImUtf8.Text("Modded by:"u8, _moddedColor);
+                Im.Text("Modded by:"u8, _moddedColor);
                 foreach (var (_, mod) in mods)
-                    ImUtf8.BulletText(mod);
+                    Im.BulletText(mod);
                 return;
         }
     }

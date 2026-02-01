@@ -49,7 +49,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
                     ? "Enable the application of all contained advanced dyes without deleting them."u8
                     : "This design does not contain any advanced dyes."u8,
                 !any || disabled))
-            designManager.ChangeApplyMulti(design, null, null, null, null, null, null, true, null); 
+            designManager.ChangeApplyMulti(design, null, null, null, null, null, null, true, null);
 
         if (disabled && any)
             Im.Tooltip.OnHover($"Hold {config.DeleteDesignModifier} while clicking to enable.");
@@ -134,7 +134,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
     {
         var deleteEnabled = config.DeleteDesignModifier.IsActive();
         if (!ImEx.Icon.Button(LunaStyle.DeleteIcon,
-                $"Delete this color row.{(deleteEnabled ? string.Empty : $"\nHold {config.DeleteDesignModifier} to delete.")}", disabled:
+                $"Delete this color row.{(deleteEnabled ? string.Empty : $"\nHold {config.DeleteDesignModifier} to delete.")}",
                 !deleteEnabled || design.WriteProtected()))
             return;
 
@@ -151,7 +151,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
     private void PasteButton(Design design, MaterialValueIndex index)
     {
         if (ImEx.Icon.Button(LunaStyle.FromClipboardIcon, "Import an exported row from your clipboard onto this row."u8,
-                disabled: !ColorRowClipboard.IsSet || design.WriteProtected()))
+                !ColorRowClipboard.IsSet || design.WriteProtected()))
             designManager.ChangeMaterialValue(design, index, ColorRowClipboard.Row);
     }
 
@@ -222,7 +222,8 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
     private void DrawMaterialIdxDrag()
     {
         Im.Item.SetNextWidth(Im.Font.CalculateSize("Material AA"u8).X);
-        if (Im.Drag("##Material"u8, ref _newMaterialIdx, $"Material {(char)('A' + _newMaterialIdx)}", 0, MaterialService.MaterialsPerModel - 1, 0.01f, SliderFlags.NoInput))
+        if (Im.Drag("##Material"u8, ref _newMaterialIdx, $"Material {(char)('A' + _newMaterialIdx)}", 0, MaterialService.MaterialsPerModel - 1,
+                0.01f, SliderFlags.NoInput))
         {
             _newMaterialIdx = Math.Clamp(_newMaterialIdx, 0, MaterialService.MaterialsPerModel - 1);
             _newKey         = _newKey with { MaterialIndex = (byte)_newMaterialIdx };
@@ -234,7 +235,8 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
     private void DrawRowIdxDrag()
     {
         Im.Item.SetNextWidth(Im.Font.CalculateSize("Row 0000"u8).X);
-        if (Im.Drag("##Row"u8, ref _newRowIdx, $"Row {_newRowIdx / 2 + 1}{(char)(_newRowIdx % 2 + 'A')}", 0, ColorTable.NumRows - 1, 0.01f, SliderFlags.NoInput))
+        if (Im.Drag("##Row"u8, ref _newRowIdx, $"Row {_newRowIdx / 2 + 1}{(char)(_newRowIdx % 2 + 'A')}", 0, ColorTable.NumRows - 1, 0.01f,
+                SliderFlags.NoInput))
         {
             _newRowIdx = Math.Clamp(_newRowIdx, 0, ColorTable.NumRows - 1);
             _newKey    = _newKey with { RowIndex = (byte)_newRowIdx };
@@ -247,11 +249,11 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
     {
         var tmp = row;
         using var _ = Im.Disabled(disabled);
-        var applied = ImGuiUtil.ColorPicker("##diffuse", "Change the diffuse value for this row.", row.Diffuse, v => tmp.Diffuse = v, "D");
+        var applied = ImEx.ColorPickerButton("##diffuse"u8, "Change the diffuse value for this row."u8, row.Diffuse, out tmp.Diffuse, 'D');
         Im.Line.SameInner();
-        applied |= ImGuiUtil.ColorPicker("##specular", "Change the specular value for this row.", row.Specular, v => tmp.Specular = v, "S");
+        applied |= ImEx.ColorPickerButton("##specular"u8, "Change the specular value for this row."u8, row.Specular, out tmp.Specular, 'S');
         Im.Line.SameInner();
-        applied |= ImGuiUtil.ColorPicker("##emissive", "Change the emissive value for this row.", row.Emissive, v => tmp.Emissive = v, "E");
+        applied |= ImEx.ColorPickerButton("##emissive"u8, "Change the emissive value for this row."u8, row.Emissive, out tmp.Emissive, 'E');
         Im.Line.SameInner();
         Im.Item.SetNextWidth(GlossWidth * Im.Style.GlobalScale);
         applied |= AdvancedDyePopup.DragGloss(ref tmp.GlossStrength);

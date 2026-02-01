@@ -254,10 +254,10 @@ public class DesignColors : ISavable, IReadOnlyDictionary<string, Rgba32>
         return false;
     }
 
-    public static uint AutoColor(DesignBase design)
+    public static Rgba32 AutoColor(DesignBase design)
     {
-        var customize = design.ApplyCustomizeExcludingBodyType == 0;
-        var equip     = design.Application.Equip == 0;
+        var customize = design.ApplyCustomizeExcludingBodyType is 0;
+        var equip     = design.Application.Equip is 0;
         return (customize, equip) switch
         {
             (true, true)   => ColorId.StateDesign.Value(),

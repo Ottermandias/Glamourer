@@ -1,11 +1,13 @@
 ﻿using Dalamud.Interface.Utility;
 using Glamourer.Interop.Penumbra;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui.Classes;
 using OtterGui.Log;
 using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Widgets;
+using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
@@ -29,11 +31,11 @@ public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings, 
         var color = settings.Enabled
             ? count > 0
                 ? ColorId.ContainsItemsEnabled.Value()
-                : ImGui.GetColorU32(ImGuiCol.Text)
+                : ImGuiColor.Text.Get()
             : count > 0
                 ? ColorId.ContainsItemsDisabled.Value()
-                : ImGui.GetColorU32(ImGuiCol.TextDisabled);
-        using (ImRaii.PushColor(ImGuiCol.Text, color))
+                : ImGuiColor.TextDisabled.Get();
+        using (ImGuiColor.Text.Push(color))
         {
             ret = ImUtf8.Selectable(mod.Name, selected);
         }
@@ -43,7 +45,7 @@ public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings, 
             using var style          = ImRaii.PushStyle(ImGuiStyleVar.PopupBorderSize, 2 * Im.Style.GlobalScale);
             using var tt             = ImUtf8.Tooltip();
             var       namesDifferent = mod.Name != mod.DirectoryName;
-            ImGui.Dummy(new Vector2(300 * Im.Style.GlobalScale, 0));
+            Im.Dummy(new Vector2(300 * Im.Style.GlobalScale, 0));
             using (ImUtf8.Group())
             {
                 if (namesDifferent)
@@ -75,7 +77,7 @@ public sealed class ModCombo : FilterComboCache<(Mod Mod, ModSettings Settings, 
         {
             ImUtf8.Text(setting.Key);
             for (var i = 1; i < setting.Value.Count; ++i)
-                ImGui.NewLine();
+                Im.Line.New();
         }
     }
 

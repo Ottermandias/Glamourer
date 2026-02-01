@@ -74,17 +74,17 @@ public class NpcSelector : IDisposable
 
     private void DrawSelector()
     {
-        using var child = ImRaii.Child("##Selector", new Vector2(_width, ImGui.GetContentRegionAvail().Y), true);
+        using var child = ImRaii.Child("##Selector", new Vector2(_width, Im.ContentRegion.Available.Y), true);
         if (!child)
             return;
 
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
-        ImGuiClip.ClippedDraw(_visibleOrdered, DrawSelectable, ImGui.GetTextLineHeight());
+        ImGuiClip.ClippedDraw(_visibleOrdered, DrawSelectable, Im.Style.TextHeight);
     }
 
     private void DrawSelectable(int globalIndex)
     {
-        using var id    = ImRaii.PushId(globalIndex);
+        using var id    = Im.Id.Push(globalIndex);
         using var color = ImGuiColor.Text.Push(_favorites.GetData(_npcs[globalIndex]).Color);
         if (ImGui.Selectable(_npcs[globalIndex].Name, _selectedGlobalIndex == globalIndex, ImGuiSelectableFlags.AllowItemOverlap))
             _selectedGlobalIndex = globalIndex;

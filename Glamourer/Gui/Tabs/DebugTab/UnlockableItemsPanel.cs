@@ -2,6 +2,7 @@
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using Dalamud.Bindings.ImGui;
+using ImSharp;
 using OtterGui;
 using OtterGui.Raii;
 using Penumbra.GameData.Enums;
@@ -20,21 +21,21 @@ public sealed class UnlockableItemsPanel(ItemUnlockManager itemUnlocks, ItemMana
 
     public void Draw()
     {
-        using var table = ImRaii.Table("unlockableItem", 6,
-            ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
-            new Vector2(ImGui.GetContentRegionAvail().X, 12 * ImGui.GetTextLineHeight()));
+        using var table = Im.Table.Begin("unlockableItem"u8, 6,
+            TableFlags.SizingFixedFit | TableFlags.RowBackground | TableFlags.ScrollY | TableFlags.BordersOuter,
+            Im.ContentRegion.Available with { Y = 12 * Im.Style.TextHeight });
         if (!table)
             return;
 
-        ImGui.TableSetupColumn("ItemId",   ImGuiTableColumnFlags.WidthFixed, 30 * Im.Style.GlobalScale);
-        ImGui.TableSetupColumn("Name",     ImGuiTableColumnFlags.WidthFixed, 400 * Im.Style.GlobalScale);
-        ImGui.TableSetupColumn("Slot",     ImGuiTableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
-        ImGui.TableSetupColumn("Model",    ImGuiTableColumnFlags.WidthFixed, 80 * Im.Style.GlobalScale);
-        ImGui.TableSetupColumn("Unlock",   ImGuiTableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
-        ImGui.TableSetupColumn("Criteria", ImGuiTableColumnFlags.WidthStretch);
+        table.SetupColumn("ItemId"u8,   TableColumnFlags.WidthFixed, 30 * Im.Style.GlobalScale);
+        table.SetupColumn("Name"u8,     TableColumnFlags.WidthFixed, 400 * Im.Style.GlobalScale);
+        table.SetupColumn("Slot"u8,     TableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
+        table.SetupColumn("Model"u8,    TableColumnFlags.WidthFixed, 80 * Im.Style.GlobalScale);
+        table.SetupColumn("Unlock"u8,   TableColumnFlags.WidthFixed, 120 * Im.Style.GlobalScale);
+        table.SetupColumn("Criteria"u8, TableColumnFlags.WidthStretch);
 
         ImGui.TableNextColumn();
-        var skips = ImGuiClip.GetNecessarySkips(ImGui.GetTextLineHeightWithSpacing());
+        var skips = ImGuiClip.GetNecessarySkips(Im.Style.TextHeightWithSpacing);
         ImGui.TableNextRow();
         var remainder = ImGuiClip.ClippedDraw(itemUnlocks.Unlockable, skips, t =>
         {
@@ -59,6 +60,6 @@ public sealed class UnlockableItemsPanel(ItemUnlockManager itemUnlocks, ItemMana
                 : "Never");
             ImGuiUtil.DrawTableColumn(t.Value.ToString());
         }, itemUnlocks.Unlockable.Count);
-        ImGuiClip.DrawEndDummy(remainder, ImGui.GetTextLineHeight());
+        ImGuiClip.DrawEndDummy(remainder, Im.Style.TextHeight);
     }
 }
