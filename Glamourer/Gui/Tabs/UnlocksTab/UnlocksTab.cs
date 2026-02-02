@@ -21,8 +21,8 @@ public sealed class UnlocksTab : Window, ITab<MainTabType>
         IsOpen =  false;
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(700, 675),
-            MaximumSize = Im.Io.DisplaySize,
+            MinimumSize = new Vector2(700,  675),
+            MaximumSize = new Vector2(3840, 2160),
         };
     }
 

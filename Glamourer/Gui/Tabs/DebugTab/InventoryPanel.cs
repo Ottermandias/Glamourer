@@ -1,8 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
-using OtterGui;
-using OtterGui.Raii;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
@@ -18,16 +15,16 @@ public sealed unsafe class InventoryPanel : IGameDataDrawer
     public void Draw()
     {
         var inventory = InventoryManager.Instance();
-        if (inventory == null)
+        if (inventory is null)
             return;
 
-        ImGuiUtil.CopyOnClickSelectable($"0x{(ulong)inventory:X}");
+        Glamourer.Dynamis.DrawPointer(inventory);
 
         var equip = inventory->GetInventoryContainer(InventoryType.EquippedItems);
-        if (equip == null || equip->IsLoaded)
+        if (equip is null || equip->IsLoaded)
             return;
 
-        ImGuiUtil.CopyOnClickSelectable($"0x{(ulong)equip:X}");
+        Glamourer.Dynamis.DrawPointer(equip);
 
         using var table = Im.Table.Begin("items"u8, 4, TableFlags.RowBackground | TableFlags.SizingFixedFit);
         if (!table)
@@ -35,19 +32,19 @@ public sealed unsafe class InventoryPanel : IGameDataDrawer
 
         for (var i = 0; i < equip->Size; ++i)
         {
-            ImGuiUtil.DrawTableColumn(i.ToString());
+            table.DrawColumn($"{i}");
             var item = equip->GetInventorySlot(i);
-            if (item == null)
+            if (item is null)
             {
-                ImGuiUtil.DrawTableColumn("NULL");
-                ImGui.TableNextRow();
+                table.DrawColumn("NULL"u8);
+                table.NextRow();
             }
             else
             {
-                ImGuiUtil.DrawTableColumn(item->ItemId.ToString());
-                ImGuiUtil.DrawTableColumn(item->GlamourId.ToString());
-                ImGui.TableNextColumn();
-                ImGuiUtil.CopyOnClickSelectable($"0x{(ulong)item:X}");
+                table.DrawColumn($"{item->ItemId}");
+                table.DrawColumn($"{item->GlamourId}");
+                table.NextColumn();
+                Glamourer.Dynamis.DrawPointer(item);
             }
         }
     }

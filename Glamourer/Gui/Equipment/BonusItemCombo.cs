@@ -1,20 +1,79 @@
-﻿using Dalamud.Plugin.Services;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Plugin.Services;
 using Glamourer.Services;
 using Glamourer.Unlocks;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
-using Lumina.Excel.Sheets;
 using OtterGui;
 using OtterGui.Classes;
 using OtterGui.Extensions;
 using OtterGui.Log;
-using OtterGui.Raii;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Addon = Lumina.Excel.Sheets.Addon;
 using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Equipment;
+
+public sealed class BonusItemCombo2(IDataManager gameData, ItemManager items, FavoriteManager favorites, BonusItemFlag slot)
+    : ImSharp.FilterComboBase<BonusItemCombo2.CacheItem>(new ItemFilter())
+{
+    public readonly StringU8      Label = GetLabel(gameData, slot);
+    public readonly BonusItemFlag Slot  = slot;
+
+    public readonly struct CacheItem(EquipItem item) : IDisposable
+    {
+        public readonly EquipItem   Item  = item;
+        public readonly StringPair  Name  = new(item.Name);
+        public readonly SizedString Model = new($"({item.PrimaryId.Id}-{item.Variant.Id})");
+
+        public void Dispose()
+            => Model.Dispose();
+    }
+
+    private sealed class ItemFilter : PartwiseFilterBase<CacheItem>
+    {
+        protected override string ToFilterString(in CacheItem item, int globalIndex)
+            => item.Name.Utf16;
+    }
+
+    protected override IEnumerable<CacheItem> GetItems()
+    {
+        var nothing = EquipItem.BonusItemNothing(Slot);
+        return items.ItemData.ByType[Slot.ToEquipType()].OrderByDescending(favorites.Contains).ThenBy(i => i.Id.Id).Prepend(nothing)
+            .Select(i => new CacheItem(i));
+    }
+
+    protected override float ItemHeight
+        => Im.Style.TextHeightWithSpacing;
+
+    protected override bool DrawItem(in CacheItem item, int globalIndex, bool selected)
+    {
+        UiHelpers.DrawFavoriteStar(favorites, item.Item);
+        Im.Line.Same();
+        var ret = Im.Selectable(item.Name.Utf8, selected);
+        Im.Line.Same();
+        using var color = ImGuiColor.Text.Push(Rgba32.Gray);
+        ImEx.TextRightAligned(item.Model);
+        return ret;
+    }
+
+    protected override bool IsSelected(CacheItem item, int globalIndex)
+        => throw new NotImplementedException();
+
+    private static StringU8 GetLabel(IDataManager gameData, BonusItemFlag slot)
+    {
+        var sheet = gameData.GetExcelSheet<Addon>()!;
+
+        return slot switch
+        {
+            BonusItemFlag.Glasses => sheet.TryGetRow(16050, out var text) ? new StringU8(text.Text.Data, false) : new StringU8("Facewear"u8),
+            BonusItemFlag.UnkSlot => sheet.TryGetRow(16051, out var text) ? new StringU8(text.Text.Data, false) : new StringU8("Facewear"u8),
+
+            _ => StringU8.Empty,
+        };
+    }
+}
 
 public sealed class BonusItemCombo : FilterComboCache<EquipItem>
 {

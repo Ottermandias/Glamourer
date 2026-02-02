@@ -1,5 +1,5 @@
 ﻿using Glamourer.State;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
@@ -14,20 +14,20 @@ public sealed class FunPanel(FunModule funModule, Configuration config) : IGameD
 
     public void Draw()
     {
-        ImGui.TextUnformatted($"Current Festival: {funModule.CurrentFestival}");
-        ImGui.TextUnformatted($"Festivals Enabled: {config.DisableFestivals switch { 1 => "Undecided", 0 => "Enabled", _ => "Disabled" }}");
-        ImGui.TextUnformatted($"Popup Open: {ImGui.IsPopupOpen("FestivalPopup", ImGuiPopupFlags.AnyPopup)}");
-        if (ImGui.Button("Force Christmas"))
+        Im.Text($"Current Festival: {funModule.CurrentFestival}");
+        Im.Text($"Festivals Enabled: {config.DisableFestivals switch { 1 => "Undecided"u8, 0 => "Enabled"u8, _ => "Disabled"u8 }}");
+        Im.Text($"Popup Open: {Im.Popup.IsOpen("FestivalPopup"u8, PopupQueryFlags.AnyPopup)}");
+        if (Im.Button("Force Christmas"u8))
             funModule.ForceFestival(FunModule.FestivalType.Christmas);
-        if (ImGui.Button("Force Halloween"))
+        if (Im.Button("Force Halloween"u8))
             funModule.ForceFestival(FunModule.FestivalType.Halloween);
-        if (ImGui.Button("Force April First"))
+        if (Im.Button("Force April First"u8))
             funModule.ForceFestival(FunModule.FestivalType.AprilFirst);
-        if (ImGui.Button("Force None"))
+        if (Im.Button("Force None"u8))
             funModule.ForceFestival(FunModule.FestivalType.None);
-        if (ImGui.Button("Revert"))
+        if (Im.Button("Revert"u8))
             funModule.ResetFestival();
-        if (ImGui.Button("Reset Popup"))
+        if (Im.Button("Reset Popup"u8))
         {
             config.DisableFestivals = 1;
             config.Save();

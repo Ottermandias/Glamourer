@@ -250,7 +250,7 @@ public unsafe class FunModule : IDisposable
         customize = npc.Customize;
         var idx = 0;
         foreach (ref var a in armor)
-            a = npc.Equip[idx++];
+            a = npc.Item(idx++);
         return true;
     }
 

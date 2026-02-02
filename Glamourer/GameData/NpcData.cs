@@ -4,22 +4,22 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.GameData;
 
 /// <summary> A struct containing everything to replicate the appearance of a human NPC. </summary>
-public unsafe struct NpcData
+public struct NpcData
 {
     /// <summary> The name of the NPC. </summary>
     public string Name;
 
-    /// <summary> The customizations of the NPC. </summary>
-    public CustomizeArray Customize;
-
     /// <summary> The equipment appearance of the NPC, 10 * CharacterArmor. </summary>
-    private fixed byte _equip[CharacterArmor.Size * 10];
+    private EquipArray _equip;
 
     /// <summary> The mainhand weapon appearance of the NPC. </summary>
     public CharacterWeapon Mainhand;
 
     /// <summary> The offhand weapon appearance of the NPC. </summary>
     public CharacterWeapon Offhand;
+
+    /// <summary> The customizations of the NPC. </summary>
+    public CustomizeArray Customize;
 
     /// <summary> The data ID of the NPC, either event NPC or battle NPC name. </summary>
     public NpcId Id;
@@ -33,57 +33,50 @@ public unsafe struct NpcData
     /// <summary> Whether the NPC is an event NPC or a battle NPC. </summary>
     public ObjectKind Kind;
 
+    /// <summary> Obtain an equipment piece. </summary>
+    public readonly CharacterArmor Item(int i)
+        => _equip[i];
+
     /// <summary> Obtain the equipment as CharacterArmors. </summary>
-    public ReadOnlySpan<CharacterArmor> Equip
-    {
-        get
-        {
-            fixed (byte* ptr = _equip)
-            {
-                return new ReadOnlySpan<CharacterArmor>((CharacterArmor*)ptr, 10);
-            }
-        }
-    }
+    public readonly CharacterArmor[] Equip()
+        => ((ReadOnlySpan<CharacterArmor>)_equip).ToArray();
 
     /// <summary> Write all the gear appearance to a single string. </summary>
     public string WriteGear()
     {
-        var sb   = new StringBuilder(128);
-        var span = Equip;
+        var sb = new StringBuilder(256);
+
         for (var i = 0; i < 10; ++i)
         {
-            sb.Append(span[i].Set.Id.ToString("D4"))
+            sb.Append($"{_equip[i].Set.Id:D4}")
                 .Append('-')
-                .Append(span[i].Variant.Id.ToString("D3"));
-            foreach (var stain in span[i].Stains)
-                sb.Append('-').Append(stain.Id.ToString("D3"));
+                .Append($"{_equip[i].Variant.Id:D3}");
+            foreach (var stain in _equip[i].Stains)
+                sb.Append('-').Append($"{stain.Id:D3}");
         }
 
-        sb.Append(Mainhand.Skeleton.Id.ToString("D4"))
+        sb.Append($"{Mainhand.Skeleton.Id:D4}")
             .Append('-')
-            .Append(Mainhand.Weapon.Id.ToString("D4"))
+            .Append($"{Mainhand.Weapon.Id:D4}")
             .Append('-')
-            .Append(Mainhand.Variant.Id.ToString("D3"));
+            .Append($"{Mainhand.Variant.Id:D3}");
         foreach (var stain in Mainhand.Stains)
-            sb.Append('-').Append(stain.Id.ToString("D3"));
+            sb.Append('-').Append($"{stain.Id:D3}");
         sb.Append(",  ")
-            .Append(Offhand.Skeleton.Id.ToString("D4"))
+            .Append($"{Offhand.Skeleton.Id:D4}")
             .Append('-')
-            .Append(Offhand.Weapon.Id.ToString("D4"))
+            .Append($"{Offhand.Weapon.Id:D4}")
             .Append('-')
-            .Append(Offhand.Variant.Id.ToString("D3"));
+            .Append($"{Offhand.Variant.Id:D3}");
         foreach (var stain in Mainhand.Stains)
-            sb.Append('-').Append(stain.Id.ToString("D3"));
+            sb.Append('-').Append($"{stain.Id:D3}");
         return sb.ToString();
     }
 
     /// <summary> Set an equipment piece to a given value. </summary>
     internal void Set(int idx, ulong value)
     {
-        fixed (byte* ptr = _equip)
-        {
-            ((ulong*)ptr)[idx] = value;
-        }
+        _equip[idx] = Unsafe.As<ulong, CharacterArmor>(ref value);
     }
 
     /// <summary> Check if the appearance data, excluding ID and Name, of two NpcData is equal. </summary>
@@ -104,9 +97,12 @@ public unsafe struct NpcData
         if (!Offhand.Equals(other.Offhand))
             return false;
 
-        fixed (byte* ptr1 = _equip, ptr2 = other._equip)
-        {
-            return new ReadOnlySpan<byte>(ptr1, 40).SequenceEqual(new ReadOnlySpan<byte>(ptr2, 40));
-        }
+        return ((ReadOnlySpan<CharacterArmor>)_equip).SequenceEqual(other._equip);
+    }
+
+    [InlineArray(10)]
+    private struct EquipArray
+    {
+        private CharacterArmor _element;
     }
 }

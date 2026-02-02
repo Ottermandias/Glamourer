@@ -22,7 +22,7 @@ public sealed class MainWindow : Window, IDisposable
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(700, 675),
-            MaximumSize = Im.Io.DisplaySize,
+            MaximumSize = new Vector2(3840, 2160),
         };
         _mainTabBar = mainTabBar;
         _quickBar   = quickBar;

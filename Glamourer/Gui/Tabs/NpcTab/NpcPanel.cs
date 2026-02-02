@@ -185,7 +185,7 @@ public class NpcPanel
     private DesignData ToDesignData()
     {
         var selection  = _selector.Selection;
-        var items      = _converter.FromDrawData(selection.Equip.ToArray(), selection.Mainhand, selection.Offhand, true).ToArray();
+        var items      = _converter.FromDrawData(selection.Equip(), selection.Mainhand, selection.Offhand, true).ToArray();
         var designData = new DesignData { Customize = selection.Customize };
         foreach (var (slot, item, stain) in items)
         {

@@ -7,7 +7,6 @@ using Lumina.Excel.Sheets;
 using OtterGui.Classes;
 using OtterGui.Extensions;
 using OtterGui.Log;
-using OtterGui.Raii;
 using OtterGui.Text;
 using OtterGui.Widgets;
 using Penumbra.GameData.Enums;
