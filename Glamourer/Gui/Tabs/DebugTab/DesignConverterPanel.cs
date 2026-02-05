@@ -7,7 +7,7 @@ using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public sealed class DesignConverterPanel : IGameDataDrawer
+public sealed class DesignConverterPanel(DesignConverter designConverter) : IGameDataDrawer
 {
     public ReadOnlySpan<byte> Label
         => "Design Converter"u8;
@@ -15,7 +15,7 @@ public sealed class DesignConverterPanel : IGameDataDrawer
     public bool Disabled
         => false;
 
-    public sealed class Cache(DesignConverter designConverter) : BasicCache(TimeSpan.FromMinutes(10), IManagedCache.DirtyFlags.Clean), IService
+    private sealed class Cache(DesignConverter designConverter) : BasicCache(TimeSpan.FromMinutes(10), IManagedCache.DirtyFlags.Clean), IService
     {
         private StringU8    _clipboardText    = StringU8.Empty;
         private StringU8    _clipboardData    = StringU8.Empty;
@@ -96,7 +96,7 @@ public sealed class DesignConverterPanel : IGameDataDrawer
 
     public void Draw()
     {
-        var cache = CacheManager.Instance.GetOrCreateCache<Cache>(Im.Id.Current);
+        var cache = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new Cache(designConverter));
         cache.Draw();
     }
 }

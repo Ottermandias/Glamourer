@@ -1,18 +1,22 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Gui;
-using Penumbra.GameData.Structs;
 using Penumbra.String;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public class IdentifierDrawer
+public class IdentifierDrawer(
+    ActorManager actors,
+    DictWorld dictWorld,
+    DictModelChara dictModelChara,
+    DictBNpcNames bNpcNames,
+    DictBNpc bNpc,
+    HumanModelList humans)
 {
-    private readonly WorldCombo    _worldCombo;
-    private readonly HumanNpcCombo _humanNpcCombo;
-    private readonly ActorManager  _actors;
+    private readonly WorldCombo    _worldCombo    = new(dictWorld);
+    private readonly HumanNpcCombo _humanNpcCombo = new("##npcs", dictModelChara, bNpcNames, bNpc, humans, Glamourer.Log);
 
     private string _characterName = string.Empty;
 
@@ -22,18 +26,10 @@ public class IdentifierDrawer
     public ActorIdentifier MannequinIdentifier { get; private set; } = ActorIdentifier.Invalid;
     public ActorIdentifier OwnedIdentifier     { get; private set; } = ActorIdentifier.Invalid;
 
-    public IdentifierDrawer(ActorManager actors, DictWorld dictWorld, DictModelChara dictModelChara, DictBNpcNames bNpcNames, DictBNpc bNpc,
-        HumanModelList humans)
-    {
-        _actors        = actors;
-        _worldCombo    = new WorldCombo(dictWorld);
-        _humanNpcCombo = new HumanNpcCombo("##npcs", dictModelChara, bNpcNames, bNpc, humans, Glamourer.Log);
-    }
-
     public void DrawName(float width)
     {
-        ImGui.SetNextItemWidth(width);
-        if (ImGui.InputTextWithHint("##Name", "Character Name...", ref _characterName, 32))
+        Im.Item.SetNextWidth(width);
+        if (Im.Input.Text("##Name"u8, ref _characterName, "Character Name..."u8))
             UpdateIdentifiers();
     }
 
@@ -68,18 +64,19 @@ public class IdentifierDrawer
     {
         if (ByteString.FromString(_characterName, out var byteName))
         {
-            PlayerIdentifier    = _actors.CreatePlayer(byteName, _worldCombo.Selected.Key);
-            RetainerIdentifier  = _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Bell);
-            MannequinIdentifier = _actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Mannequin);
+            PlayerIdentifier    = actors.CreatePlayer(byteName, _worldCombo.Selected.Key);
+            RetainerIdentifier  = actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Bell);
+            MannequinIdentifier = actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Mannequin);
 
             if (_humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc)
-                OwnedIdentifier = _actors.CreateOwned(byteName, _worldCombo.Selected.Key, _humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0]);
+                OwnedIdentifier = actors.CreateOwned(byteName, _worldCombo.Selected.Key, _humanNpcCombo.CurrentSelection.Kind,
+                    _humanNpcCombo.CurrentSelection.Ids[0]);
             else
                 OwnedIdentifier = ActorIdentifier.Invalid;
         }
 
         NpcIdentifier = _humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc
-            ? _actors.CreateNpc(_humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0])
+            ? actors.CreateNpc(_humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0])
             : ActorIdentifier.Invalid;
     }
 }

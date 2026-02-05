@@ -41,7 +41,7 @@ public sealed class NpcAppearancePanel(
         public readonly StringU8    ModelId       = new($"{data.ModelId}");
         public readonly AwesomeIcon Visor         = data.VisorToggled ? LunaStyle.TrueIcon : LunaStyle.FalseIcon;
         public readonly StringU8    CustomizeData = new($"{data.Customize}");
-        public readonly StringU8    GearData      = StringU8.Empty; //new(data.WriteGear());
+        public readonly StringU8    GearData      = new(data.WriteGear());
     }
 
     private sealed class Cache(NpcCustomizeSet npcData, NpcDataFilter filter) : BasicFilterCache<CacheItem>(filter)

@@ -1,5 +1,4 @@
-﻿using Dalamud.Interface.Components;
-using Dalamud.Plugin.Services;
+﻿using Dalamud.Plugin.Services;
 using Glamourer.Events;
 using Glamourer.Gui.Materials;
 using Glamourer.Services;
@@ -46,7 +45,7 @@ public class EquipmentDrawer
         _advancedDyes   = advancedDyes;
         _itemCopy       = itemCopy;
         _stainData      = items.Stains;
-        _stainCombo     = new GlamourerColorCombo(DefaultWidth - 20, _stainData, favorites);
+        _stainCombo     = new GlamourerColorCombo(_stainData, favorites);
         _itemCombo      = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log, favorites)).ToArray();
         _bonusItemCombo = BonusExtensions.AllFlags.Select(f => new BonusItemCombo(gameData, items, f, Glamourer.Log, favorites)).ToArray();
         _weaponCombo    = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
@@ -159,13 +158,10 @@ public class EquipmentDrawer
     public bool DrawAllStain(out StainIds ret, bool locked)
     {
         using var disabled = Im.Disabled(locked);
-        var       change   = _stainCombo.Draw("Dye All Slots", Stain.None.RgbaColor, string.Empty, false, false, OtterGui.Widgets.MouseWheelType.None);
+        var       change   = _stainCombo.Draw("Dye All Slots"u8, Stain.None, out var newAllStain, Im.Style.FrameHeight);
         ret = StainIds.None;
         if (change)
-            if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out var stain))
-                ret = StainIds.All(stain.RowIndex);
-            else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
-                ret = StainIds.None;
+            ret = newAllStain.RowIndex != Stain.None.RowIndex ? StainIds.All(newAllStain.RowIndex) : StainIds.None;
 
         if (!locked)
         {
@@ -390,15 +386,16 @@ public class EquipmentDrawer
 
     private void DrawStain(in EquipDrawData data, bool small)
     {
+        using var id       = Im.Id.Push((uint)data.Slot);
         using var disabled = Im.Disabled(data.Locked);
         var       width    = (_comboLength - Im.Style.ItemInnerSpacing.X * (data.CurrentStains.Count - 1)) / data.CurrentStains.Count;
         foreach (var (index, stainId) in data.CurrentStains.Index())
         {
-            using var id    = Im.Id.Push(index);
-            var       found = _stainData.TryGetValue(stainId, out var stain);
+            id.Push(index);
+            var found = _stainData.TryGetValue(stainId, out var stain);
             var change = small
-                ? _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss)
-                : _stainCombo.Draw($"##stain{data.Slot}", stain.RgbaColor, stain.Name, found, stain.Gloss, width);
+                ? _stainCombo.Draw("##stain"u8, stain, out var newStain, Im.Style.FrameHeight)
+                : _stainCombo.Draw("##stain"u8, stain, out newStain,     width);
 
             _itemCopy.HandleCopyPaste(data, index);
             if (!change)
@@ -408,13 +405,11 @@ public class EquipmentDrawer
                 Im.Line.SameInner();
 
             if (change)
-                if (_stainData.TryGetValue(_stainCombo.CurrentSelection.Key, out stain))
-                    data.SetStains(data.CurrentStains.With(index, stain.RowIndex));
-                else if (_stainCombo.CurrentSelection.Key == Stain.None.RowIndex)
-                    data.SetStains(data.CurrentStains.With(index, Stain.None.RowIndex));
+                data.SetStains(data.CurrentStains.With(index, newStain.RowIndex));
             if (ResetOrClear(data.Locked, false, data.AllowRevert, true, stainId, data.GameStains[index], Stain.None.RowIndex,
-                    out var newStain))
-                data.SetStains(data.CurrentStains.With(index, newStain));
+                    out var newStainId))
+                data.SetStains(data.CurrentStains.With(index, newStainId));
+            id.Pop(index);
         }
     }
 

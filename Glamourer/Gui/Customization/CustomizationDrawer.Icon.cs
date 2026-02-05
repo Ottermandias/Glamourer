@@ -46,7 +46,7 @@ public partial class CustomizationDrawer
         }
 
         if (hasIcon)
-            Im.Tooltip.ImageOnHover(wrap!.Id, _iconSize);
+            Im.Tooltip.ImageOnHover(wrap!.Id, wrap.Size);
 
         Im.Line.Same();
         using (Im.Group())
@@ -212,8 +212,8 @@ public partial class CustomizationDrawer
                 hasIcon = icon.TryGetWrap(out wrap, out _);
             }
 
-            if (Im.Image.Button(wrap?.Id ?? icon.GetWrapOrEmpty().Id, _iconSize, Vector2.Zero, Vector2.One, Vector4.Zero,
-                    enabled ? Vector4.One : _redTint,
+            if (Im.Image.Button(wrap?.Id ?? icon.GetWrapOrEmpty().Id, _iconSize, Vector2.Zero, Vector2.One,
+                    enabled ? Vector4.One : _redTint, Vector4.Zero,
                     (int)Im.Style.FramePadding.X))
             {
                 _customize.Set(featureIdx, enabled ? CustomizeValue.Zero : CustomizeValue.Max);
@@ -221,7 +221,7 @@ public partial class CustomizationDrawer
             }
 
             if (hasIcon)
-                Im.Tooltip.ImageOnHover(wrap!.Id, _iconSize);
+                Im.Tooltip.ImageOnHover(wrap!.Id, wrap.Size);
             if (idx % 4 is not 3)
                 Im.Line.Same();
         }

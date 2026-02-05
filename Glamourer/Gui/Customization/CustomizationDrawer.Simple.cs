@@ -40,17 +40,19 @@ public partial class CustomizationDrawer
 
         Span<byte> t  = stackalloc byte[64];
         var        ic = CultureInfo.InvariantCulture;
+        int        written;
         if (config.HeightDisplayType switch
             {
-                HeightDisplayType.Centimetre  => Utf8.TryWrite(t, ic, $"({height * 100:F1} cm)",                                      out _),
-                HeightDisplayType.Metre       => Utf8.TryWrite(t, ic, $"({height:F2} m)",                                             out _),
-                HeightDisplayType.Wrong       => Utf8.TryWrite(t, ic, $"({height * 100 / 2.539:F1} in)",                              out _),
-                HeightDisplayType.WrongFoot   => Utf8.TryWrite(t, ic, $"({(int)(height * 3.2821)}'{(int)(height * 39.3856) % 12}'')", out _),
-                HeightDisplayType.Corgi       => Utf8.TryWrite(t, ic, $"({height * 100 / 40.0:F1} Corgis)",                           out _),
-                HeightDisplayType.OlympicPool => Utf8.TryWrite(t, ic, $"({height / 3.0:F3} Pools)",                                   out _),
-                _                             => Utf8.TryWrite(t, ic, $"({height})",                                                  out _),
+                HeightDisplayType.Centimetre => Utf8.TryWrite(t, ic, $"({height * 100:F1} cm)",         out written),
+                HeightDisplayType.Metre      => Utf8.TryWrite(t, ic, $"({height:F2} m)",                out written),
+                HeightDisplayType.Wrong      => Utf8.TryWrite(t, ic, $"({height * 100 / 2.539:F1} in)", out written),
+                HeightDisplayType.WrongFoot => Utf8.TryWrite(t, ic, $"({(int)(height * 3.2821)}'{(int)(height * 39.3856) % 12}'')",
+                    out written),
+                HeightDisplayType.Corgi       => Utf8.TryWrite(t, ic, $"({height * 100 / 40.0:F1} Corgis)", out written),
+                HeightDisplayType.OlympicPool => Utf8.TryWrite(t, ic, $"({height / 3.0:F3} Pools)",         out written),
+                _                             => Utf8.TryWrite(t, ic, $"({height})",                        out written),
             })
-            Im.Text(t);
+            Im.Text(t[..written]);
     }
 
     private void DrawPercentageSlider()

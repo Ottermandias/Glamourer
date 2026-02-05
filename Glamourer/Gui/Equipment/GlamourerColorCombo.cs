@@ -1,46 +1,70 @@
-﻿using Dalamud.Interface;
-using Dalamud.Interface.Utility;
-using Dalamud.Interface.Utility.Raii;
-using Glamourer.Unlocks;
-using Dalamud.Bindings.ImGui;
+﻿using Glamourer.Unlocks;
 using ImSharp;
-using OtterGui.Widgets;
+using Luna;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Structs;
-using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Equipment;
 
-public sealed class GlamourerColorCombo(float _comboWidth, DictStain _stains, FavoriteManager _favorites)
-    : FilterComboColors(_comboWidth, MouseWheelType.Control, CreateFunc(_stains, _favorites), Glamourer.Log)
+public sealed class GlamourerColorCombo(DictStain stains, FavoriteManager favorites) : FilterComboColors
 {
-    protected override bool DrawSelectable(int globalIdx, bool selected)
-    {
-        using (var _ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, ImGuiHelpers.ScaledVector2(4, 0)))
-        {
-            if (globalIdx == 0)
-            {
-                using var font = ImRaii.PushFont(UiBuilder.IconFont);
-                Im.Dummy(ImGui.CalcTextSize(FontAwesomeIcon.Star.ToIconString()));
-            }
-            else
-            {
-                UiHelpers.DrawFavoriteStar(_favorites, Items[globalIdx].Key);
-            }
+    protected override float AdditionalSpace
+        => AwesomeIcon.Font.CalculateTextSize(LunaStyle.FavoriteIcon.Span).X + 4 * Im.Style.GlobalScale;
 
-            Im.Line.Same();
-        }
+    protected override bool DrawItem(in Item item, int globalIndex, bool selected)
+    {
+        if (globalIndex is 0)
+            Im.Dummy(AwesomeIcon.Font.CalculateTextSize(LunaStyle.FavoriteIcon.Span));
+        else
+            UiHelpers.DrawFavoriteStar(favorites, item.Id);
+        Im.Line.Same(0, 4 * Im.Style.GlobalScale);
 
         var       buttonWidth = Im.ContentRegion.Available.X;
-        var       totalWidth  = ImGui.GetContentRegionMax().X;
-        using var style       = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(buttonWidth / 2 / totalWidth, 0.5f));
-
-        return base.DrawSelectable(globalIdx, selected);
+        var       totalWidth  = Im.ContentRegion.Maximum.X;
+        using var style       = ImStyleDouble.ButtonTextAlign.PushX(buttonWidth / 2 / totalWidth);
+        return base.DrawItem(item, globalIndex, selected);
     }
 
-    private static Func<IReadOnlyList<KeyValuePair<byte, (string Name, uint Color, bool Gloss)>>> CreateFunc(DictStain stains,
-        FavoriteManager favorites)
-        => () => stains.Select(kvp => (kvp, favorites.Contains(kvp.Key))).OrderBy(p => !p.Item2).Select(p => p.kvp)
-            .Prepend(new KeyValuePair<StainId, Stain>(Stain.None.RowIndex, Stain.None)).Select(kvp
-                => new KeyValuePair<byte, (string, uint, bool)>(kvp.Key.Id, (kvp.Value.Name, kvp.Value.RgbaColor, kvp.Value.Gloss))).ToList();
+    protected override void PreDrawCombo(float width)
+    {
+        base.PreDrawCombo(width);
+        Style.Push(ImGuiColor.Text, CurrentSelection.Color.ContrastColor(), !CurrentSelection.Color.IsTransparent);
+    }
+
+    protected override void PostDrawCombo(float width)
+    {
+        if (!CurrentSelection.Color.IsTransparent)
+            Style.PopColor();
+        base.PostDrawCombo(width);
+    }
+
+    public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, in Stain current, out Stain newStain, float width)
+    {
+        // Push the preview color.
+        using var color = ImGuiColor.FrameBackground.Push(current.RgbaColor, !current.RgbaColor.IsTransparent);
+
+        // Set the current selection only for the IsSelected and Gloss checks.
+        CurrentSelection = new Item(current.Name, current.RgbaColor, current.RowIndex.Id, current.Gloss);
+
+        // Skip the named preview if it does not fit.
+        var name = Im.Font.CalculateSize(current.Name).X <= width && !current.RgbaColor.IsTransparent ? current.Name : StringU8.Empty;
+        if (base.Draw(label, name, StringU8.Empty, width, out var newItem))
+        {
+            if (newItem.Id is 0)
+                newStain = Stain.None;
+            else if (!stains.TryGetValue(newItem.Id, out newStain))
+                return false;
+
+            return true;
+        }
+
+        newStain = current;
+        return false;
+    }
+
+    protected override IEnumerable<Item> GetItems()
+        => stains.Select(kvp => (new Item(kvp.Value.Name, kvp.Value.RgbaColor, kvp.Key.Id, kvp.Value.Gloss), favorites.Contains(kvp.Key)))
+            .OrderBy(p => !p.Item2)
+            .Select(p => p.Item1)
+            .Prepend(None);
 }

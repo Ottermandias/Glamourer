@@ -37,8 +37,11 @@ public class Glamourer : IDalamudPlugin
             _services = StaticServiceManager.CreateProvider(pluginInterface, Log, this);
             Messager  = _services.GetService<MessageService>();
             Dynamis   = _services.GetService<DynamisIpc>();
+            foreach (var _ in _services.GetServicesImplementing<IHookService>())
+                ;
+            _ = _services.GetService<ImSharpDalamudContext>();
             _services.EnsureRequiredServices();
-
+            
             _services.GetService<VisorService>();
             _services.GetService<WeaponService>();
             _services.GetService<ScalingService>();

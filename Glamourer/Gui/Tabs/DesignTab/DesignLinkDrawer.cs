@@ -1,13 +1,9 @@
 ﻿using Dalamud.Interface;
-using Dalamud.Interface.Utility;
 using Glamourer.Automation;
 using Glamourer.Designs;
 using Glamourer.Designs.Links;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 using Luna;
-using OtterGui;
-using OtterGui.Raii;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
@@ -29,10 +25,10 @@ public class DesignLinkDrawer(
         if (!h.Alive)
             return;
 
-        ImGuiUtil.HoverTooltip(
-            "Design links are links to other designs that will be applied to characters or during automation according to the rules set.\n"
-          + "They apply from top to bottom just like automated design sets, so anything set by an earlier design will not not be set again by later designs, and order is important.\n"
-          + "If a linked design links to other designs, they will also be applied, so circular links are prohibited. ");
+        Im.Tooltip.OnHover(
+            "Design links are links to other designs that will be applied to characters or during automation according to the rules set.\n"u8
+          + "They apply from top to bottom just like automated design sets, so anything set by an earlier design will not not be set again by later designs, and order is important.\n"u8
+          + "If a linked design links to other designs, they will also be applied, so circular links are prohibited."u8);
         if (!h)
             return;
 
@@ -83,68 +79,67 @@ public class DesignLinkDrawer(
         table.SetupColumn("Detail"u8, TableColumnFlags.WidthFixed,
             6 * Im.Style.FrameHeight + 5 * Im.Style.ItemInnerSpacing.X);
 
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Im.Style.ItemInnerSpacing);
-        DrawSubList(selector.Selected!.Links.Before, LinkOrder.Before);
-        DrawSelf();
-        DrawSubList(selector.Selected!.Links.After, LinkOrder.After);
-        DrawNew();
+        using var style = ImStyleDouble.ItemSpacing.Push(Im.Style.ItemInnerSpacing);
+        DrawSubList(table, selector.Selected!.Links.Before, LinkOrder.Before);
+        DrawSelf(table);
+        DrawSubList(table, selector.Selected!.Links.After, LinkOrder.After);
+        DrawNew(table);
         MoveLink();
     }
 
-    private void DrawSelf()
+    private void DrawSelf(in Im.TableDisposable table)
     {
         using var id = Im.Id.Push((int)LinkOrder.Self);
-        ImGui.TableNextColumn();
+        table.NextColumn();
         var color = colorManager.GetColor(selector.Selected!);
-        using (ImRaii.PushFont(UiBuilder.IconFont))
+        using (AwesomeIcon.Font.Push())
         {
             using var c = ImGuiColor.Text.Push(color);
-            ImGui.AlignTextToFramePadding();
-            ImGuiUtil.RightAlign(FontAwesomeIcon.ArrowRightLong.ToIconString());
+            Im.Cursor.FrameAlign();
+            ImEx.TextRightAligned(FontAwesomeIcon.ArrowRightLong.Icon().Span);
         }
 
-        ImGui.TableNextColumn();
+        table.NextColumn();
         using (ImGuiColor.Text.Push(color))
         {
-            ImGui.AlignTextToFramePadding();
-            ImGui.Selectable(selector.IncognitoMode ? selector.Selected!.Incognito : selector.Selected!.Name.Text);
+            Im.Cursor.FrameAlign();
+            Im.Selectable(selector.IncognitoMode ? selector.Selected!.Incognito : selector.Selected!.Name.Text);
         }
 
-        ImGuiUtil.HoverTooltip("Current Design");
+        Im.Tooltip.OnHover("Current Design"u8);
         DrawDragDrop(selector.Selected!, LinkOrder.Self, 0);
-        ImGui.TableNextColumn();
-        using (ImRaii.PushFont(UiBuilder.IconFont))
+        table.NextColumn();
+        using (AwesomeIcon.Font.Push())
         {
             using var c = ImGuiColor.Text.Push(color);
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(FontAwesomeIcon.ArrowLeftLong.ToIconString());
+            Im.Cursor.FrameAlign();
+            ImEx.TextRightAligned(FontAwesomeIcon.ArrowLeftLong.Icon().Span);
         }
     }
 
-    private void DrawSubList(IReadOnlyList<DesignLink> list, LinkOrder order)
+    private void DrawSubList(in Im.TableDisposable table, IReadOnlyList<DesignLink> list, LinkOrder order)
     {
         using var id = Im.Id.Push((int)order);
 
-        var buttonSize = new Vector2(Im.Style.FrameHeight);
         for (var i = 0; i < list.Count; ++i)
         {
             id.Push(i);
 
-            ImGui.TableNextColumn();
-            var delete = ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), buttonSize, "Delete this link.", false, true);
+            table.NextColumn();
+            var delete = ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this link."u8);
             var (design, flags) = list[i];
-            ImGui.TableNextColumn();
+            table.NextColumn();
 
             using (ImGuiColor.Text.Push(colorManager.GetColor(design)))
             {
-                ImGui.AlignTextToFramePadding();
-                ImGui.Selectable(selector.IncognitoMode ? design.Incognito : design.Name.Text);
+                Im.Cursor.FrameAlign();
+                Im.Selectable(selector.IncognitoMode ? design.Incognito : design.Name.Text);
             }
 
             DrawDragDrop(design, order, i);
 
-            ImGui.TableNextColumn();
-            ImGui.AlignTextToFramePadding();
+            table.NextColumn();
+            Im.Cursor.FrameAlign();
             DrawApplicationBoxes(i, order, flags);
 
             if (delete)
@@ -152,13 +147,12 @@ public class DesignLinkDrawer(
         }
     }
 
-    private void DrawNew()
+    private void DrawNew(in Im.TableDisposable table)
     {
-        var buttonSize = new Vector2(Im.Style.FrameHeight);
-        ImGui.TableNextColumn();
-        ImGui.TableNextColumn();
+        table.NextColumn();
+        table.NextColumn();
         combo.Draw(Im.ContentRegion.Available.X);
-        ImGui.TableNextColumn();
+        table.NextColumn();
         string ttBefore,     ttAfter;
         bool   canAddBefore, canAddAfter;
         var    design = combo.Design as Design;
@@ -179,35 +173,32 @@ public class DesignLinkDrawer(
                 : $"Can not add a link to {design.Name}:\n{error}";
         }
 
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.ArrowCircleUp.ToIconString(), buttonSize, ttBefore, !canAddBefore, true))
+        if (ImEx.Icon.Button(FontAwesomeIcon.ArrowCircleUp.Icon(), ttBefore, !canAddBefore))
         {
             linkManager.AddDesignLink(selector.Selected!, design!, LinkOrder.Before);
             linkManager.MoveDesignLink(selector.Selected!, selector.Selected!.Links.Before.Count - 1, LinkOrder.Before, 0, LinkOrder.Before);
         }
 
         Im.Line.Same();
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.ArrowCircleDown.ToIconString(), buttonSize, ttAfter, !canAddAfter, true))
+        if (ImEx.Icon.Button(FontAwesomeIcon.ArrowCircleUp.Icon(), ttAfter, !canAddAfter))
             linkManager.AddDesignLink(selector.Selected!, design!, LinkOrder.After);
     }
 
     private void DrawDragDrop(Design design, LinkOrder order, int index)
     {
-        using (var source = ImRaii.DragDropSource())
+        using (var source = Im.DragDrop.Source())
         {
             if (source)
             {
-                ImGui.SetDragDropPayload("DraggingLink", null, 0);
-                ImGui.TextUnformatted($"Reordering {design.Name}...");
+                source.SetPayload("DraggingLink"u8);
+                Im.Text($"Reordering {design.Name}...");
                 _dragDropIndex = index;
                 _dragDropOrder = order;
             }
         }
 
-        using var target = ImRaii.DragDropTarget();
-        if (!target)
-            return;
-
-        if (!ImGuiUtil.IsDropping("DraggingLink"))
+        using var target = Im.DragDrop.Target();
+        if (!target.IsDropping("DraggingLink"u8))
             return;
 
         _dragDropTargetIndex = index;
@@ -216,15 +207,13 @@ public class DesignLinkDrawer(
 
     private void DrawApplicationBoxes(int idx, LinkOrder order, ApplicationType current)
     {
-        var newType    = current;
-        var newTypeInt = (uint)newType;
+        var newType = current;
         using (ImStyleBorder.Frame.Push(ColorId.FolderLine.Value()))
         {
-            if (ImGui.CheckboxFlags("##all", ref newTypeInt, (uint)ApplicationType.All))
-                newType = (ApplicationType)newTypeInt;
+            Im.Checkbox("##all"u8, ref newType, ApplicationType.All);
         }
 
-        ImGuiUtil.HoverTooltip("Toggle all application modes at once.");
+        Im.Tooltip.OnHover("Toggle all application modes at once."u8);
 
         Im.Line.Same();
         Box(0);
@@ -244,10 +233,11 @@ public class DesignLinkDrawer(
         void Box(int i)
         {
             var (applicationType, description) = ApplicationTypeExtensions.Types[i];
-            var value = current.HasFlag(applicationType);
-            if (ImGui.Checkbox($"##{(byte)applicationType}", ref value))
+            using var id    = Im.Id.Push((uint)applicationType);
+            var       value = current.HasFlag(applicationType);
+            if (Im.Checkbox(StringU8.Empty, ref value))
                 newType = value ? newType | applicationType : newType & ~applicationType;
-            ImGuiUtil.HoverTooltip(description);
+            Im.Tooltip.OnHover(description);
         }
     }
 }

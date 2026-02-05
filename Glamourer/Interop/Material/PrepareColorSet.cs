@@ -27,7 +27,6 @@ public sealed unsafe class PrepareColorSet
         : base("Prepare Color Set ")
     {
         _updateColorSets = updateColorSets;
-        hooks.Provider.InitializeFromAttributes(this);
         _task = hooks.CreateHook<Delegate>(Name, Sigs.PrepareColorSet, Detour, true);
     }
 
@@ -35,6 +34,12 @@ public sealed unsafe class PrepareColorSet
 
     public nint Address
         => (nint)CharacterBase.MemberFunctionPointers.Destroy;
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        _task.Result.Dispose();
+    }
 
     public void Enable()
         => _task.Result.Enable();

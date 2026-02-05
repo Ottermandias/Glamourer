@@ -1,32 +1,44 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.GameData;
+using ImSharp;
+using Luna.Generators;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Automation;
 
 [Flags]
+[TooltipEnum]
 public enum ApplicationType : byte
 {
-    Armor             = 0x01,
-    Customizations    = 0x02,
-    Weapons           = 0x04,
+    [Tooltip("Apply all armor piece changes that are enabled in this design and that are valid in a fixed design.")]
+    Armor = 0x01,
+
+    [Tooltip(
+        "Apply all customization changes that are enabled in this design and that are valid in a fixed design and for the given race and gender.")]
+    Customizations = 0x02,
+
+    [Tooltip("Apply all weapon changes that are enabled in this design and that are valid with the current weapon worn.")]
+    Weapons = 0x04,
+
+    [Tooltip("Apply all dye and crest changes that are enabled in this design.")]
     GearCustomization = 0x08,
-    Accessories       = 0x10,
+
+    [Tooltip("Apply all accessory changes that are enabled in this design and that are valid in a fixed design.")]
+    Accessories = 0x10,
 
     All = Armor | Accessories | Customizations | Weapons | GearCustomization,
 }
 
-public static class ApplicationTypeExtensions
+public static partial class ApplicationTypeExtensions
 {
-    public static readonly IReadOnlyList<(ApplicationType, string)> Types =
+    public static readonly IReadOnlyList<(ApplicationType, StringU8)> Types =
     [
-        (ApplicationType.Customizations,
-            "Apply all customization changes that are enabled in this design and that are valid in a fixed design and for the given race and gender."),
-        (ApplicationType.Armor, "Apply all armor piece changes that are enabled in this design and that are valid in a fixed design."),
-        (ApplicationType.Accessories, "Apply all accessory changes that are enabled in this design and that are valid in a fixed design."),
-        (ApplicationType.GearCustomization, "Apply all dye and crest changes that are enabled in this design."),
-        (ApplicationType.Weapons, "Apply all weapon changes that are enabled in this design and that are valid with the current weapon worn."),
+        (ApplicationType.Customizations, ApplicationType.Customizations.Tooltip()),
+        (ApplicationType.Armor, ApplicationType.Armor.Tooltip()),
+        (ApplicationType.Accessories, ApplicationType.Accessories.Tooltip()),
+        (ApplicationType.GearCustomization, ApplicationType.GearCustomization.Tooltip()),
+        (ApplicationType.Weapons, ApplicationType.Weapons.Tooltip()),
     ];
 
     public static ApplicationCollection Collection(this ApplicationType type)
@@ -48,9 +60,10 @@ public static class ApplicationTypeExtensions
 
     public static ApplicationCollection ApplyWhat(this ApplicationType type, IDesignStandIn designStandIn)
     {
-        if(designStandIn is not DesignBase design)
+        if (designStandIn is not DesignBase design)
             return type.Collection();
-        var ret = type.Collection().Restrict(design.Application); 
+
+        var ret = type.Collection().Restrict(design.Application);
         ret.CustomizeRaw = ret.CustomizeRaw.FixApplication(design.CustomizeSet);
         return ret;
     }

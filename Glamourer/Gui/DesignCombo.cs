@@ -15,6 +15,62 @@ using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui;
 
+//public abstract class DesignComboBase2 : ImSharp.FilterComboBase<DesignComboBase2.CacheItem>, IDisposable
+//{
+//    protected readonly EphemeralConfig Config;
+//    protected readonly DesignChanged   DesignChanged;
+//    protected readonly DesignColors    DesignColors;
+//    protected readonly TabSelected     TabSelected;
+//    protected          IDesignStandIn? _currentDesign;
+//
+//    private CacheItem CreateItem(IDesignStandIn design)
+//    {
+//
+//    }
+//
+//    public readonly struct CacheItem(IDesignStandIn design, Vector4 color)
+//    {
+//        public readonly IDesignStandIn Design    = design;
+//        public readonly StringPair     Name      = new(design.ResolveName(false));
+//        public readonly StringPair     Incognito = new(design.ResolveName(true));
+//        public readonly StringPair     FullPath  = StringPair.Empty;
+//        public readonly Vector4        Color = color;
+//    }
+//
+//    public DesignComboBase2(EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected)
+//    {
+//        Config        = config;
+//        DesignChanged = designChanged;
+//        DesignColors  = designColors;
+//        TabSelected   = tabSelected;
+//
+//        DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
+//    }
+//
+//    private void OnDesignChanged(DesignChanged.Type type, Design? _1, ITransaction? _2 = null)
+//    {
+//        _isCurrentSelectionDirty = type switch
+//        {
+//            DesignChanged.Type.Created        => true,
+//            DesignChanged.Type.Renamed        => true,
+//            DesignChanged.Type.ChangedColor   => true,
+//            DesignChanged.Type.Deleted        => true,
+//            DesignChanged.Type.QuickDesignBar => true,
+//            _                                 => _isCurrentSelectionDirty,
+//        };
+//    }
+//
+//    protected override bool DrawItem(in CacheItem item, int globalIndex, bool selected)
+//    {
+//
+//    }
+//
+//    public void Dispose()
+//    {
+//        DesignChanged.Unsubscribe(OnDesignChanged);
+//    }
+//}
+
 public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, string>>, IDisposable
 {
     protected readonly EphemeralConfig Config;

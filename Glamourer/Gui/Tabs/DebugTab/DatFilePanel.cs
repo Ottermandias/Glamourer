@@ -6,7 +6,7 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public sealed class DatFilePanel : IGameDataDrawer
+public sealed class DatFilePanel(ImportService importService) : IGameDataDrawer
 {
     public ReadOnlySpan<byte> Label
         => "Character Dat File"u8;
@@ -14,7 +14,7 @@ public sealed class DatFilePanel : IGameDataDrawer
     public bool Disabled
         => false;
 
-    public sealed class Cache(ImportService importService) : BasicCache(TimeSpan.FromMinutes(10)), IService
+    private sealed class Cache(ImportService importService) : BasicCache(TimeSpan.FromMinutes(10))
     {
         private string            _datFilePath = string.Empty;
         private DatCharacterFile? _datFile;
@@ -48,7 +48,7 @@ public sealed class DatFilePanel : IGameDataDrawer
 
     public void Draw()
     {
-        var cache = CacheManager.Instance.GetOrCreateCache<Cache>(Im.Id.Current);
+        var cache = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new Cache(importService));
         cache.Draw();
     }
 }

@@ -45,7 +45,7 @@ public partial class CustomizationDrawer
                 _             => Unknown,
             };
 
-            if (ImEx.Icon.Button(icon, StringU8.Empty, icon != Unknown, _framedIconSize))
+            if (ImEx.Icon.Button(icon, StringU8.Empty, icon == Unknown, _framedIconSize))
                 Changed |= service.ChangeGender(ref _customize, icon == Male ? Gender.Female : Gender.Male);
         }
 

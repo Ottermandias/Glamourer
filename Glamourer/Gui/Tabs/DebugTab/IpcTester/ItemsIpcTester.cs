@@ -1,11 +1,8 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Api.Enums;
 using Glamourer.Api.IpcSubscribers;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 using Luna;
-using OtterGui;
-using OtterGui.Raii;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui;
 using Penumbra.GameData.Structs;
@@ -26,7 +23,7 @@ public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiServic
 
     public void Draw()
     {
-        using var tree = ImRaii.TreeNode("Items");
+        using var tree = Im.Tree.Node("Items"u8);
         if (!tree)
             return;
 
@@ -37,26 +34,26 @@ public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiServic
         IpcTesterHelpers.DrawFlagInput(ref _flags);
         using var table = Im.Table.Begin("##table"u8, 2, TableFlags.SizingFixedFit);
 
-        IpcTesterHelpers.DrawIntro("Last Error");
-        ImGui.TextUnformatted(_lastError.ToString());
+        IpcTesterHelpers.DrawIntro("Last Error"u8);
+        Im.Text($"{_lastError}");
 
-        IpcTesterHelpers.DrawIntro(SetItem.Label);
-        if (ImGui.Button("Set##Idx"))
+        IpcTesterHelpers.DrawIntro(SetItem.LabelU8);
+        if (Im.Button("Set##Idx"u8))
             _lastError = new SetItem(pluginInterface).Invoke(_gameObjectIndex, (ApiEquipSlot)_slot, _customItemId.Id, [_stainId.Id], _key,
                 _flags);
 
-        IpcTesterHelpers.DrawIntro(SetItemName.Label);
-        if (ImGui.Button("Set##Name"))
+        IpcTesterHelpers.DrawIntro(SetItemName.LabelU8);
+        if (Im.Button("Set##Name"u8))
             _lastError = new SetItemName(pluginInterface).Invoke(_gameObjectName, (ApiEquipSlot)_slot, _customItemId.Id, [_stainId.Id], _key,
                 _flags);
 
-        IpcTesterHelpers.DrawIntro(SetBonusItem.Label);
-        if (ImGui.Button("Set##BonusIdx"))
+        IpcTesterHelpers.DrawIntro(SetBonusItem.LabelU8);
+        if (Im.Button("Set##BonusIdx"u8))
             _lastError = new SetBonusItem(pluginInterface).Invoke(_gameObjectIndex, ToApi(_bonusSlot), _customItemId.Id, _key,
                 _flags);
 
-        IpcTesterHelpers.DrawIntro(SetBonusItemName.Label);
-        if (ImGui.Button("Set##BonusName"))
+        IpcTesterHelpers.DrawIntro(SetBonusItemName.LabelU8);
+        if (Im.Button("Set##BonusName"u8))
             _lastError = new SetBonusItemName(pluginInterface).Invoke(_gameObjectName, ToApi(_bonusSlot), _customItemId.Id, _key,
                 _flags);
     }
@@ -65,14 +62,14 @@ public class ItemsIpcTester(IDalamudPluginInterface pluginInterface) : IUiServic
     {
         var tmp   = _customItemId.Id;
         var width = Im.ContentRegion.Available.X / 2;
-        ImGui.SetNextItemWidth(width);
-        if (ImGuiUtil.InputUlong("Custom Item ID", ref tmp))
+        Im.Item.SetNextWidth(width);
+        if (Im.Input.Scalar("Custom Item ID"u8, ref tmp))
             _customItemId = tmp;
         EquipSlotCombo.Draw("Equip Slot"u8, StringU8.Empty, ref _slot, width);
         BonusSlotCombo.Draw("Bonus Slot"u8, StringU8.Empty, ref _bonusSlot, width);
         var value = (int)_stainId.Id;
-        ImGui.SetNextItemWidth(width);
-        if (ImGui.InputInt("Stain ID", ref value, 1, 3))
+        Im.Item.SetNextWidth(width);
+        if (Im.Input.Scalar("Stain ID"u8, ref value, 1, 3))
         {
             value    = Math.Clamp(value, 0, byte.MaxValue);
             _stainId = (StainId)value;

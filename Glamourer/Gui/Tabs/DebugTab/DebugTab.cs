@@ -32,7 +32,7 @@ public sealed class DebugTab(ServiceManager manager) : ITab<MainTabType>
             return;
 
         if (Im.Tree.Header("General"u8))
-            StartTimeTracker.Draw("Timers"u8);
+            StartTimeTracker.Draw("Timers"u8, manager.GetService<StartTimeTracker>());
 
         foreach (var header in _headers)
             header.Draw();
