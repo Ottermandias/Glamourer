@@ -103,7 +103,7 @@ public class DesignLinkDrawer(
         using (ImGuiColor.Text.Push(color))
         {
             Im.Cursor.FrameAlign();
-            Im.Selectable(selector.IncognitoMode ? selector.Selected!.Incognito : selector.Selected!.Name.Text);
+            Im.Selectable(config.Ephemeral.IncognitoMode ? selector.Selected!.Incognito : selector.Selected!.Name.Text);
         }
 
         Im.Tooltip.OnHover("Current Design"u8);
@@ -133,7 +133,7 @@ public class DesignLinkDrawer(
             using (ImGuiColor.Text.Push(colorManager.GetColor(design)))
             {
                 Im.Cursor.FrameAlign();
-                Im.Selectable(selector.IncognitoMode ? design.Incognito : design.Name.Text);
+                Im.Selectable(config.Ephemeral.IncognitoMode ? design.Incognito : design.Name.Text);
             }
 
             DrawDragDrop(design, order, i);

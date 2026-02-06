@@ -32,16 +32,6 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     private Design? _cloneDesign;
     private string  _newName = string.Empty;
 
-    public bool IncognitoMode
-    {
-        get => _config.Ephemeral.IncognitoMode;
-        set
-        {
-            _config.Ephemeral.IncognitoMode = value;
-            _config.Ephemeral.Save();
-        }
-    }
-
     public new DesignFileSystem.Leaf? SelectedLeaf
         => base.SelectedLeaf;
 
@@ -175,7 +165,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     protected override void DrawLeafName(FileSystem<Design>.Leaf leaf, in DesignState state, bool selected)
     {
         var       flag  = selected ? ImGuiTreeNodeFlags.Selected | LeafFlags : LeafFlags;
-        var       name  = IncognitoMode ? leaf.Value.Incognito : leaf.Value.Name.Text;
+        var       name  = _config.Ephemeral.IncognitoMode ? leaf.Value.Incognito : leaf.Value.Name.Text;
         using var color = ImGuiColor.Text.Push(state.Color);
         using var _     = ImUtf8.TreeNode(name, flag);
         if (_config.AllowDoubleClickToApply && ImGui.IsItemHovered() && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))

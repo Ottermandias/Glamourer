@@ -25,16 +25,6 @@ public class SetSelector : IDisposable
     public AutoDesignSet? Selection      { get; private set; }
     public int            SelectionIndex { get; private set; } = -1;
 
-    public bool IncognitoMode
-    {
-        get => _config.Ephemeral.IncognitoMode;
-        set
-        {
-            _config.Ephemeral.IncognitoMode = value;
-            _config.Ephemeral.Save();
-        }
-    }
-
     private int     _dragIndex = -1;
     private Action? _endAction;
 
@@ -58,7 +48,7 @@ public class SetSelector : IDisposable
         => GetSetName(Selection, SelectionIndex);
 
     public string GetSetName(AutoDesignSet? set, int index)
-        => set == null ? "No Selection" : IncognitoMode ? $"Auto Design Set #{index + 1}" : set.Name;
+        => set == null ? "No Selection" : _config.Ephemeral.IncognitoMode ? $"Auto Design Set #{index + 1}" : set.Name;
 
     private void OnAutomationChange(AutomationChanged.Type type, AutoDesignSet? set, object? data)
     {
@@ -200,7 +190,7 @@ public class SetSelector : IDisposable
         DrawDragDrop(pair.Set, pair.Index);
 
         var text = pair.Set.Identifiers[0].ToString();
-        if (IncognitoMode)
+        if (_config.Ephemeral.IncognitoMode)
             text = pair.Set.Identifiers[0].Incognito(text);
         var textSize  = ImGui.CalcTextSize(text);
         var textColor = pair.Set.Identifiers.Any(_objects.ContainsKey) ? ColorId.AutomationActorAvailable : ColorId.AutomationActorUnavailable;

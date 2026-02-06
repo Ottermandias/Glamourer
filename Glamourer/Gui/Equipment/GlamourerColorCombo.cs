@@ -9,7 +9,7 @@ namespace Glamourer.Gui.Equipment;
 public sealed class GlamourerColorCombo(DictStain stains, FavoriteManager favorites) : FilterComboColors
 {
     protected override float AdditionalSpace
-        => AwesomeIcon.Font.CalculateTextSize(LunaStyle.FavoriteIcon.Span).X + 4 * Im.Style.GlobalScale;
+        => AwesomeIcon.Font.CalculateTextSize(LunaStyle.FavoriteIcon.Span).X + 8 * Im.Style.GlobalScale;
 
     protected override bool DrawItem(in Item item, int globalIndex, bool selected)
     {
@@ -17,7 +17,7 @@ public sealed class GlamourerColorCombo(DictStain stains, FavoriteManager favori
             Im.Dummy(AwesomeIcon.Font.CalculateTextSize(LunaStyle.FavoriteIcon.Span));
         else
             UiHelpers.DrawFavoriteStar(favorites, item.Id);
-        Im.Line.Same(0, 4 * Im.Style.GlobalScale);
+        Im.Line.Same(0, 8 * Im.Style.GlobalScale);
 
         var       buttonWidth = Im.ContentRegion.Available.X;
         var       totalWidth  = Im.ContentRegion.Maximum.X;

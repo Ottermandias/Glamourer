@@ -45,13 +45,13 @@ public sealed unsafe class AdvancedDyePopup(
         return true;
     }
 
-    public void DrawButton(EquipSlot slot, Rgba32 color)
+    public void DrawButton(EquipSlot slot, ColorParameter color)
         => DrawButton(MaterialValueIndex.FromSlot(slot), color);
 
-    public void DrawButton(BonusItemFlag slot, Rgba32 color)
+    public void DrawButton(BonusItemFlag slot, ColorParameter color)
         => DrawButton(MaterialValueIndex.FromSlot(slot), color);
 
-    private void DrawButton(MaterialValueIndex index, Rgba32 color)
+    private void DrawButton(MaterialValueIndex index, ColorParameter color)
     {
         if (config.HideDesignPanel.HasFlag(DesignPanelFlag.AdvancedDyes))
             return;
@@ -62,7 +62,7 @@ public sealed unsafe class AdvancedDyePopup(
 
         var (textColor, buttonColor) = isOpen
             ? (ColorId.HeaderButtons.Value(), ImGuiColor.ButtonActive.Get())
-            : (color, 0u);
+            : (color, ColorParameter.Default);
 
         using (ImStyleBorder.Frame.Push(textColor, 2 * Im.Style.GlobalScale, isOpen))
         {

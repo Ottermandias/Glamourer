@@ -27,7 +27,7 @@ public class SetPanel(
     RandomRestrictionDrawer randomDrawer)
 {
     private readonly JobGroupCombo         _jobGroupCombo = new(manager, jobs, Glamourer.Log);
-    private readonly HeaderDrawer.Button[] _rightButtons  = [new HeaderDrawer.IncognitoButton(config)];
+    private readonly HeaderDrawer.Button[] _rightButtons  = []; // [new IncognitoButton(config)];
     private          string?               _tempName;
     private          int                   _dragIndex = -1;
 
@@ -96,7 +96,7 @@ public class SetPanel(
             Im.Dummy(Vector2.Zero);
 
             var name  = _tempName ?? Selection.Name;
-            var flags = selector.IncognitoMode ? InputTextFlags.ReadOnly | InputTextFlags.Password : InputTextFlags.None;
+            var flags = config.Ephemeral.IncognitoMode ? InputTextFlags.ReadOnly | InputTextFlags.Password : InputTextFlags.None;
             Im.Item.SetNextWidthScaled(330);
             if (Im.Input.Text("Rename Set##Name"u8, ref name, StringU8.Empty, flags))
                 _tempName = name;

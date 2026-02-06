@@ -92,9 +92,6 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
         DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
     }
 
-    public bool Incognito
-        => Config.IncognitoMode;
-
     void IDisposable.Dispose()
     {
         DesignChanged.Unsubscribe(OnDesignChanged);
@@ -168,7 +165,7 @@ public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, s
     }
 
     protected override string ToString(Tuple<IDesignStandIn, string> obj)
-        => obj.Item1.ResolveName(Incognito);
+        => obj.Item1.ResolveName(Config.IncognitoMode);
 
     protected override float GetFilterWidth()
         => InnerWidth - 2 * Im.Style.FramePadding.X;
@@ -294,7 +291,7 @@ public abstract class DesignCombo : DesignComboBase
         => CurrentSelection?.Item1;
 
     public void Draw(float width)
-        => Draw(Design, Design?.ResolveName(Incognito) ?? string.Empty, width);
+        => Draw(Design, Design?.ResolveName(Config.IncognitoMode) ?? string.Empty, width);
 }
 
 public sealed class QuickDesignCombo : DesignCombo
@@ -392,11 +389,11 @@ public sealed class RandomDesignCombo(
     public bool Draw(RandomPredicate.Exact exact, float width)
     {
         var design = GetDesign(exact);
-        return Draw(design, design?.ResolveName(Incognito) ?? $"Not Found [{exact.Value.Text}]", width);
+        return Draw(design, design?.ResolveName(Config.IncognitoMode) ?? $"Not Found [{exact.Value.Text}]", width);
     }
 
     public bool Draw(IDesignStandIn? design, float width)
-        => Draw(design, design?.ResolveName(Incognito) ?? string.Empty, width);
+        => Draw(design, design?.ResolveName(Config.IncognitoMode) ?? string.Empty, width);
 }
 
 public sealed class SpecialDesignCombo(
@@ -419,7 +416,7 @@ public sealed class SpecialDesignCombo(
 {
     public void Draw(AutoDesignSet set, AutoDesign? design, int autoDesignIndex)
     {
-        if (!Draw(design?.Design, design?.Design.ResolveName(Incognito), Im.ContentRegion.Available.X))
+        if (!Draw(design?.Design, design?.Design.ResolveName(Config.IncognitoMode), Im.ContentRegion.Available.X))
             return;
 
         if (autoDesignIndex >= 0)

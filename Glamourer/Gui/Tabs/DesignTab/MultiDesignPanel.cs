@@ -18,7 +18,7 @@ public class MultiDesignPanel(
     Configuration config)
 {
     private readonly Button[] _leftButtons  = [];
-    private readonly Button[] _rightButtons = [new IncognitoButton(config)];
+    private readonly Button[] _rightButtons = []; //[new IncognitoButton(config)];
 
     private readonly DesignColorCombo _colorCombo = new(colors, true);
 

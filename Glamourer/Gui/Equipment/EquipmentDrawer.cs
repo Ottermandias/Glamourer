@@ -5,7 +5,6 @@ using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImSharp;
 using Luna;
-using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -19,7 +18,7 @@ public class EquipmentDrawer
     private readonly ItemManager                            _items;
     private readonly GlamourerColorCombo                    _stainCombo;
     private readonly DictStain                              _stainData;
-    private readonly ItemCombo[]                            _itemCombo;
+    private readonly EquipCombo[]                           _equipCombo;
     private readonly BonusItemCombo[]                       _bonusItemCombo;
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
     private readonly TextureService                         _textures;
@@ -27,9 +26,6 @@ public class EquipmentDrawer
     private readonly GPoseService                           _gPose;
     private readonly AdvancedDyePopup                       _advancedDyes;
     private readonly ItemCopyService                        _itemCopy;
-
-    private float _requiredComboWidthUnscaled;
-    private float _requiredComboWidth;
 
     private Stain?             _draggedStain;
     private EquipItemSlotCache _draggedItem;
@@ -46,18 +42,16 @@ public class EquipmentDrawer
         _itemCopy       = itemCopy;
         _stainData      = items.Stains;
         _stainCombo     = new GlamourerColorCombo(_stainData, favorites);
-        _itemCombo      = EquipSlotExtensions.EqdpSlots.Select(e => new ItemCombo(gameData, items, e, Glamourer.Log, favorites)).ToArray();
-        _bonusItemCombo = BonusExtensions.AllFlags.Select(f => new BonusItemCombo(gameData, items, f, Glamourer.Log, favorites)).ToArray();
+        _equipCombo     = EquipSlotExtensions.EqdpSlots.Select(e => new EquipCombo(favorites, items, gameData, e)).ToArray();
+        _bonusItemCombo = BonusExtensions.AllFlags.Select(f => new BonusItemCombo(favorites, items, gameData, f)).ToArray();
         _weaponCombo    = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
         foreach (var type in FullEquipType.Values)
         {
-            if (type.ToSlot() is EquipSlot.MainHand)
-                _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log, favorites));
-            else if (type.ToSlot() is EquipSlot.OffHand)
-                _weaponCombo.TryAdd(type, new WeaponCombo(items, type, Glamourer.Log, favorites));
+            if (type.ToSlot() is EquipSlot.MainHand or EquipSlot.OffHand)
+                _weaponCombo.TryAdd(type, new WeaponCombo(favorites, items, type));
         }
 
-        _weaponCombo.Add(FullEquipType.Unknown, new WeaponCombo(items, FullEquipType.Unknown, Glamourer.Log, favorites));
+        _weaponCombo.Add(FullEquipType.Unknown, new WeaponCombo(favorites, items, FullEquipType.Unknown));
     }
 
     private Vector2 _iconSize;
@@ -66,15 +60,8 @@ public class EquipmentDrawer
 
     public void Prepare()
     {
-        _iconSize    = new Vector2(2 * Im.Style.FrameHeight + Im.Style.ItemSpacing.Y);
-        _comboLength = DefaultWidth * Im.Style.GlobalScale;
-        if (_requiredComboWidthUnscaled is 0)
-            _requiredComboWidthUnscaled = _items.ItemData.AllItems(true)
-                    .Concat(_items.ItemData.AllItems(false))
-                    .Max(i => Im.Font.CalculateSize($"{i.Item2.Name} ({i.Item2.ModelString})").X)
-              / Im.Style.GlobalScale;
-
-        _requiredComboWidth    = _requiredComboWidthUnscaled * Im.Style.GlobalScale;
+        _iconSize              = new Vector2(2 * Im.Style.FrameHeight + Im.Style.ItemSpacing.Y);
+        _comboLength           = DefaultWidth * Im.Style.GlobalScale;
         _advancedMaterialColor = ColorId.AdvancedDyeActive.Value();
         _dragTarget            = EquipSlot.Unknown;
     }
@@ -194,11 +181,11 @@ public class EquipmentDrawer
         }
         else if (equipDrawData.IsState)
         {
-            _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : 0u);
+            _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
 
         if (VerifyRestrictedGear(equipDrawData))
-            label += " (Restricted)";
+            label += " (Restricted)"u8;
 
         DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
     }
@@ -216,7 +203,7 @@ public class EquipmentDrawer
         }
         else if (bonusDrawData.IsState)
         {
-            _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : 0u);
+            _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
 
         DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
@@ -236,11 +223,11 @@ public class EquipmentDrawer
         }
         else if (mainhand.IsState)
         {
-            _advancedDyes.DrawButton(EquipSlot.MainHand, mainhand.HasAdvancedDyes ? _advancedMaterialColor : 0u);
+            _advancedDyes.DrawButton(EquipSlot.MainHand, mainhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
 
         if (allWeapons)
-            mainhandLabel += $" ({mainhand.CurrentItem.Type.ToName()})";
+            mainhandLabel = new StringU8($"{mainhandLabel} ({mainhand.CurrentItem.Type.ToName()})");
         WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel);
 
         if (offhand.CurrentItem.Type is FullEquipType.Unknown)
@@ -258,7 +245,7 @@ public class EquipmentDrawer
         }
         else if (offhand.IsState)
         {
-            _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : 0u);
+            _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
 
         WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel);
@@ -292,7 +279,7 @@ public class EquipmentDrawer
         }
         else if (equipDrawData.IsState)
         {
-            _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : 0u);
+            _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
 
         if (VerifyRestrictedGear(equipDrawData))
@@ -316,7 +303,7 @@ public class EquipmentDrawer
         }
         else if (bonusDrawData.IsState)
         {
-            _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : 0u);
+            _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
 
         DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
@@ -339,7 +326,7 @@ public class EquipmentDrawer
             }
 
             WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel,
-                allWeapons ? mainhand.CurrentItem.Type.ToName() : null);
+                allWeapons ? new StringU8(mainhand.CurrentItem.Type.ToName()) : null);
 
             DrawStain(mainhand, false);
             if (mainhand.DisplayApplication)
@@ -349,7 +336,7 @@ public class EquipmentDrawer
             }
             else if (mainhand.IsState)
             {
-                _advancedDyes.DrawButton(EquipSlot.MainHand, mainhand.HasAdvancedDyes ? _advancedMaterialColor : 0u);
+                _advancedDyes.DrawButton(EquipSlot.MainHand, mainhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
             }
         }
 
@@ -379,7 +366,7 @@ public class EquipmentDrawer
             }
             else if (offhand.IsState)
             {
-                _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : 0u);
+                _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
             }
         }
     }
@@ -434,23 +421,20 @@ public class EquipmentDrawer
         }
     }
 
-    private void DrawItem(in EquipDrawData data, out string label, bool small, bool clear, bool open)
+    private void DrawItem(in EquipDrawData data, out StringU8 label, bool small, bool clear, bool open)
     {
         Debug.Assert(data.Slot.IsEquipment() || data.Slot.IsAccessory(), $"Called {nameof(DrawItem)} on {data.Slot}.");
 
-        var combo = _itemCombo[data.Slot.ToIndex()];
+        var combo = _equipCombo[data.Slot.ToIndex()];
         label = combo.Label;
         if (!data.Locked && open)
             UiHelpers.OpenCombo($"##{combo.Label}");
 
         using var disabled = Im.Disabled(data.Locked);
-        var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.ItemId, small ? _comboLength - Im.Style.FrameHeight : _comboLength,
-            _requiredComboWidth);
+        var       change   = combo.Draw(data.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength);
         DrawGearDragDrop(data);
         if (change)
-            data.SetItem(combo.CurrentSelection);
-        else if (combo.CustomVariant.Id > 0)
-            data.SetItem(_items.Identify(data.Slot, combo.CustomSetId, combo.CustomVariant));
+            data.SetItem(newItem);
         _itemCopy.HandleCopyPaste(data);
 
         if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, ItemManager.NothingItem(data.Slot),
@@ -458,7 +442,7 @@ public class EquipmentDrawer
             data.SetItem(item);
     }
 
-    private void DrawBonusItem(in BonusDrawData data, out string label, bool small, bool clear, bool open)
+    private void DrawBonusItem(in BonusDrawData data, out StringU8 label, bool small, bool clear, bool open)
     {
         var combo = _bonusItemCombo[data.Slot.ToIndex()];
         label = combo.Label;
@@ -466,21 +450,17 @@ public class EquipmentDrawer
             UiHelpers.OpenCombo($"##{combo.Label}");
 
         using var disabled = Im.Disabled(data.Locked);
-        var change = combo.Draw(data.CurrentItem.Name, data.CurrentItem.Id.BonusItem,
-            small ? _comboLength - Im.Style.FrameHeight : _comboLength,
-            _requiredComboWidth);
+        var       change   = combo.Draw(data.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength);
         if (Im.Item.Hovered() && Im.Io.KeyControl)
         {
             if (Im.Keyboard.IsPressed(Key.C))
-                _itemCopy.Copy(combo.CurrentSelection);
+                _itemCopy.Copy(newItem);
             else if (Im.Keyboard.IsPressed(Key.V))
                 _itemCopy.Paste(data.Slot.ToEquipType(), data.SetItem);
         }
 
         if (change)
-            data.SetItem(combo.CurrentSelection);
-        else if (combo.CustomVariant.Id > 0)
-            data.SetItem(_items.Identify(data.Slot, combo.CustomSetId, combo.CustomVariant));
+            data.SetItem(newItem);
 
         if (ResetOrClear(data.Locked, clear, data.AllowRevert, true, data.CurrentItem, data.GameItem, EquipItem.BonusItemNothing(data.Slot),
                 out var item))
@@ -563,12 +543,12 @@ public class EquipmentDrawer
         return clicked && valid;
     }
 
-    private void DrawMainhand(ref EquipDrawData mainhand, ref EquipDrawData offhand, out string label, bool drawAll, bool small,
+    private void DrawMainhand(ref EquipDrawData mainhand, ref EquipDrawData offhand, out StringU8 label, bool drawAll, bool small,
         bool open)
     {
         if (!_weaponCombo.TryGetValue(drawAll ? FullEquipType.Unknown : mainhand.CurrentItem.Type, out var combo))
         {
-            label = string.Empty;
+            label = StringU8.Empty;
             return;
         }
 
@@ -580,11 +560,8 @@ public class EquipmentDrawer
         {
             if (!mainhand.Locked && open)
                 UiHelpers.OpenCombo($"##{label}");
-            if (combo.Draw(mainhand.CurrentItem.Name, mainhand.CurrentItem.ItemId, small ? _comboLength - Im.Style.FrameHeight : _comboLength,
-                    _requiredComboWidth))
-                changedItem = combo.CurrentSelection;
-            else if (combo.CustomVariant.Id > 0 && (drawAll || ItemData.ConvertWeaponId(combo.CustomSetId) == mainhand.CurrentItem.Type))
-                changedItem = _items.Identify(mainhand.Slot, combo.CustomSetId, combo.CustomWeaponId, combo.CustomVariant);
+            if (combo.Draw(mainhand.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength))
+                changedItem = newItem;
             _itemCopy.HandleCopyPaste(mainhand);
             DrawGearDragDrop(mainhand);
 
@@ -610,11 +587,11 @@ public class EquipmentDrawer
                 "The weapon type could not be identified, thus changing it to other weapons of that type is not possible."u8);
     }
 
-    private void DrawOffhand(in EquipDrawData mainhand, in EquipDrawData offhand, out string label, bool small, bool clear, bool open)
+    private void DrawOffhand(in EquipDrawData mainhand, in EquipDrawData offhand, out StringU8 label, bool small, bool clear, bool open)
     {
         if (!_weaponCombo.TryGetValue(offhand.CurrentItem.Type, out var combo))
         {
-            label = string.Empty;
+            label = StringU8.Empty;
             return;
         }
 
@@ -624,11 +601,8 @@ public class EquipmentDrawer
         using var disabled = Im.Disabled(locked);
         if (!locked && open)
             UiHelpers.OpenCombo($"##{combo.Label}");
-        if (combo.Draw(offhand.CurrentItem.Name, offhand.CurrentItem.ItemId, small ? _comboLength - Im.Style.FrameHeight : _comboLength,
-                _requiredComboWidth))
-            offhand.SetItem(combo.CurrentSelection);
-        else if (combo.CustomVariant.Id > 0 && ItemData.ConvertWeaponId(combo.CustomSetId) == offhand.CurrentItem.Type)
-            offhand.SetItem(_items.Identify(mainhand.Slot, combo.CustomSetId, combo.CustomWeaponId, combo.CustomVariant));
+        if (combo.Draw(offhand.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength))
+            offhand.SetItem(newItem);
         _itemCopy.HandleCopyPaste(offhand);
         DrawGearDragDrop(offhand);
 
@@ -664,8 +638,9 @@ public class EquipmentDrawer
 
     #endregion
 
-    private void WeaponHelpMarker(bool hasAdvancedDyes, string label, string? type = null)
+    private void WeaponHelpMarker(bool hasAdvancedDyes, StringU8 label, StringU8? type = null)
     {
+        Im.Line.SameInner();
         LunaStyle.DrawAlignedHelpMarker(
             "Changing weapons to weapons of different types can cause crashes, freezes, soft- and hard locks and cheating, "u8
           + "thus it is only allowed to change weapons to other weapons of the same type."u8);
@@ -680,7 +655,7 @@ public class EquipmentDrawer
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
-    private void DrawEquipLabel(bool hasAdvancedDyes, string label)
+    private void DrawEquipLabel(bool hasAdvancedDyes, StringU8 label)
     {
         Im.Line.Same();
         using (ImGuiColor.Text.Push(_advancedMaterialColor, hasAdvancedDyes))

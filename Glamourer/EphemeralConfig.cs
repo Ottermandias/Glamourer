@@ -2,23 +2,27 @@
 using Glamourer.Gui;
 using Glamourer.Services;
 using Luna;
+using Luna.Generators;
 using Newtonsoft.Json;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace Glamourer;
 
-public class EphemeralConfig : ISavable
+public partial class EphemeralConfig : ISavable
 {
-    public int                Version             { get; set; } = Configuration.Constants.CurrentVersion;
-    public bool               IncognitoMode       { get; set; } = false;
-    public bool               UnlockDetailMode    { get; set; } = true;
-    public bool               ShowDesignQuickBar  { get; set; } = false;
-    public bool               LockDesignQuickBar  { get; set; } = false;
-    public bool               LockMainWindow      { get; set; } = false;
-    public MainTabType SelectedMainTab         { get; set; } = MainTabType.Settings;
-    public Guid               SelectedDesign      { get; set; } = Guid.Empty;
-    public Guid               SelectedQuickDesign { get; set; } = Guid.Empty;
-    public int                LastSeenVersion     { get; set; } = GlamourerChangelog.LastChangelogVersion;
+    public int Version { get; set; } = Configuration.Constants.CurrentVersion;
+
+    [ConfigProperty]
+    private bool _incognitoMode;
+
+    public bool        UnlockDetailMode    { get; set; } = true;
+    public bool        ShowDesignQuickBar  { get; set; } = false;
+    public bool        LockDesignQuickBar  { get; set; } = false;
+    public bool        LockMainWindow      { get; set; } = false;
+    public MainTabType SelectedMainTab     { get; set; } = MainTabType.Settings;
+    public Guid        SelectedDesign      { get; set; } = Guid.Empty;
+    public Guid        SelectedQuickDesign { get; set; } = Guid.Empty;
+    public int         LastSeenVersion     { get; set; } = GlamourerChangelog.LastChangelogVersion;
 
     public float CurrentDesignSelectorWidth { get; set; } = 200f;
     public float DesignSelectorMinimumScale { get; set; } = 0.1f;
@@ -70,9 +74,9 @@ public class EphemeralConfig : ISavable
 
     public void Save(StreamWriter writer)
     {
-        using var jWriter    = new JsonTextWriter(writer);
+        using var jWriter = new JsonTextWriter(writer);
         jWriter.Formatting = Formatting.Indented;
-        var       serializer = new JsonSerializer { Formatting         = Formatting.Indented };
+        var serializer = new JsonSerializer { Formatting = Formatting.Indented };
         serializer.Serialize(jWriter, this);
     }
 }

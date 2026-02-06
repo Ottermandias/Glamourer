@@ -46,7 +46,7 @@ public partial class CustomizationDrawer
         }
 
         if (hasIcon)
-            Im.Tooltip.ImageOnHover(wrap!.Id, wrap.Size);
+            Im.Tooltip.ImageOnHover(wrap!.Id, wrap!.Size);
 
         Im.Line.Same();
         using (Im.Group())
@@ -221,7 +221,7 @@ public partial class CustomizationDrawer
             }
 
             if (hasIcon)
-                Im.Tooltip.ImageOnHover(wrap!.Id, wrap.Size);
+                Im.Tooltip.ImageOnHover(wrap!.Id, wrap!.Size);
             if (idx % 4 is not 3)
                 Im.Line.Same();
         }

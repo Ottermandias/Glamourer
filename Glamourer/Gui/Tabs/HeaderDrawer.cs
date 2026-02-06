@@ -44,39 +44,6 @@ public static class HeaderDrawer
         }
     }
 
-    public sealed class IncognitoButton(Configuration config) : Button
-    {
-        protected override string Description
-        {
-            get
-            {
-                var hold = config.IncognitoModifier.IsActive();
-                return (config.Ephemeral.IncognitoMode, hold)
-                    switch
-                    {
-                        (true, true)   => "Toggle incognito mode off.",
-                        (false, true)  => "Toggle incognito mode on.",
-                        (true, false)  => $"Toggle incognito mode off.\n\nHold {config.IncognitoModifier} while clicking to toggle.",
-                        (false, false) => $"Toggle incognito mode on.\n\nHold {config.IncognitoModifier} while clicking to toggle.",
-                    };
-            }
-        }
-
-        protected override FontAwesomeIcon Icon
-            => config.Ephemeral.IncognitoMode
-                ? FontAwesomeIcon.EyeSlash
-                : FontAwesomeIcon.Eye;
-
-        protected override void OnClick()
-        {
-            if (!config.IncognitoModifier.IsActive())
-                return;
-
-            config.Ephemeral.IncognitoMode = !config.Ephemeral.IncognitoMode;
-            config.Ephemeral.Save();
-        }
-    }
-
     public static void Draw(string text, uint textColor, uint frameColor, Button[] leftButtons, Button[] rightButtons)
     {
         var width = Im.Style.FrameHeightWithSpacing;

@@ -91,7 +91,7 @@ public class DesignPanel
         _rightButtons =
         [
             new LockButton(this),
-            new IncognitoButton(_config),
+            //new IncognitoButton(_config),
         ];
     }
 
@@ -99,7 +99,7 @@ public class DesignPanel
         => HeaderDrawer.Draw(SelectionName, 0, ImGuiColor.FrameBackground.Get().Color, _leftButtons, _rightButtons);
 
     private string SelectionName
-        => _selector.Selected == null ? "No Selection" : _selector.IncognitoMode ? _selector.Selected.Incognito : _selector.Selected.Name.Text;
+        => _selector.Selected == null ? "No Selection" : _config.Ephemeral.IncognitoMode ? _selector.Selected.Incognito : _selector.Selected.Name.Text;
 
     private void DrawEquipment()
     {
