@@ -311,9 +311,6 @@ public sealed class ActorPanel : IPanel
             if (Im.Cursor.X is not 0)
                 Im.Line.New();
         }
-
-        if (turnHuman)
-            _stateManager.TurnHuman(_selection.State, StateSource.Manual);
     }
 
 
