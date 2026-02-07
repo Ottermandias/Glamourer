@@ -10,6 +10,7 @@ using Lumina.Excel.Sheets;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
+using StringU8 = ImSharp.StringU8;
 
 namespace Glamourer.Unlocks;
 
@@ -21,7 +22,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     private readonly ActorObjectManager     _objects;
     private readonly Dictionary<uint, long> _unlocked = new();
 
-    public readonly IReadOnlyDictionary<CustomizeData, (uint Data, string Name)> Unlockable;
+    public readonly IReadOnlyDictionary<CustomizeData, (uint Data, StringU8 Name)> Unlockable;
 
     public IReadOnlyDictionary<uint, long> Unlocked
         => _unlocked;
@@ -172,10 +173,10 @@ public class CustomizeUnlockManager : IDisposable, ISavable
             "customization");
 
     /// <summary> Create a list of all unlockable hairstyles and face paints. </summary>
-    private static Dictionary<CustomizeData, (uint Data, string Name)> CreateUnlockableCustomizations(CustomizeService customizations,
+    private static Dictionary<CustomizeData, (uint Data, StringU8 Name)> CreateUnlockableCustomizations(CustomizeService customizations,
         IDataManager gameData)
     {
-        var ret   = new Dictionary<CustomizeData, (uint Data, string Name)>();
+        var ret   = new Dictionary<CustomizeData, (uint Data, StringU8 Name)>();
         var sheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English);
         foreach (var (clan, gender) in CustomizeManager.AllSets())
         {
@@ -183,24 +184,24 @@ public class CustomizeUnlockManager : IDisposable, ISavable
             foreach (var hair in list.HairStyles)
             {
                 var x = sheet.FirstOrNull(f => f.FeatureID == hair.Value.Value);
-                if (x?.IsPurchasable == true)
+                if (x?.IsPurchasable is true)
                 {
-                    var name = x.Value.FeatureID == 61
+                    var name = x.Value.FeatureID is 61
                         ? "Eternal Bond"
                         : x.Value.HintItem.ValueNullable?.Name.ExtractText().Replace("Modern Aesthetics - ", string.Empty)
                      ?? string.Empty;
-                    ret.TryAdd(hair, (x.Value.UnlockLink, name));
+                    ret.TryAdd(hair, (x.Value.UnlockLink, new StringU8(name)));
                 }
             }
 
             foreach (var paint in list.FacePaints)
             {
                 var x = sheet.FirstOrNull(f => f.FeatureID == paint.Value.Value);
-                if (x?.IsPurchasable == true)
+                if (x?.IsPurchasable is true)
                 {
                     var name = x.Value.HintItem.ValueNullable?.Name.ExtractText().Replace("Modern Cosmetics - ", string.Empty)
                      ?? string.Empty;
-                    ret.TryAdd(paint, (x.Value.UnlockLink, name));
+                    ret.TryAdd(paint, (x.Value.UnlockLink, new StringU8(name)));
                 }
             }
         }

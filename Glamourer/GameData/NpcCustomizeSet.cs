@@ -199,7 +199,7 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
         }
 
         // Sort non-alphanumeric entries at the end instead of the beginning.
-        var lastWeird = _data.FindIndex(d => char.IsAsciiLetterOrDigit(d.Name[0]));
+        var lastWeird = _data.FindIndex(d => char.IsAsciiLetterOrDigit((char)d.Name[0]));
         if (lastWeird is not -1)
         {
             _data.AddRange(_data.Take(lastWeird));

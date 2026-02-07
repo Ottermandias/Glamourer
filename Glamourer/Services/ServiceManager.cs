@@ -179,6 +179,5 @@ public static class StaticServiceManager
             .AddSingleton<GlamourerChangelog>()
             .AddSingleton<DesignQuickBar>()
             .AddSingleton<DesignColorUi>()
-            .AddSingleton<NpcCombo>()
             .AddSingleton<TextureCache>();
 }

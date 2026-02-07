@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
-using Dalamud.Interface.Utility;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
