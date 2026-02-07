@@ -16,7 +16,7 @@ public class IdentifierDrawer(
     HumanModelList humans)
 {
     private readonly WorldCombo    _worldCombo    = new(dictWorld);
-    private readonly HumanNpcCombo _humanNpcCombo = new("##npcs", dictModelChara, bNpcNames, bNpc, humans, Glamourer.Log);
+    private readonly HumanNpcCombo _humanNpcCombo = new(bNpcNames, dictModelChara, humans, bNpc);
 
     private string _characterName = string.Empty;
 
@@ -41,7 +41,7 @@ public class IdentifierDrawer(
 
     public void DrawNpcs(float width)
     {
-        if (_humanNpcCombo.Draw(width))
+        if (_humanNpcCombo.Draw("##npcs"u8, width))
             UpdateIdentifiers();
     }
 
@@ -68,15 +68,15 @@ public class IdentifierDrawer(
             RetainerIdentifier  = actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Bell);
             MannequinIdentifier = actors.CreateRetainer(byteName, ActorIdentifier.RetainerType.Mannequin);
 
-            if (_humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc)
-                OwnedIdentifier = actors.CreateOwned(byteName, _worldCombo.Selected.Key, _humanNpcCombo.CurrentSelection.Kind,
-                    _humanNpcCombo.CurrentSelection.Ids[0]);
+            if (_humanNpcCombo.Selection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc)
+                OwnedIdentifier = actors.CreateOwned(byteName, _worldCombo.Selected.Key, _humanNpcCombo.Selection.Kind,
+                    _humanNpcCombo.Selection.Ids.First());
             else
                 OwnedIdentifier = ActorIdentifier.Invalid;
         }
 
-        NpcIdentifier = _humanNpcCombo.CurrentSelection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc
-            ? actors.CreateNpc(_humanNpcCombo.CurrentSelection.Kind, _humanNpcCombo.CurrentSelection.Ids[0])
+        NpcIdentifier = _humanNpcCombo.Selection.Kind is ObjectKind.EventNpc or ObjectKind.BattleNpc
+            ? actors.CreateNpc(_humanNpcCombo.Selection.Kind, _humanNpcCombo.Selection.Ids.First())
             : ActorIdentifier.Invalid;
     }
 }

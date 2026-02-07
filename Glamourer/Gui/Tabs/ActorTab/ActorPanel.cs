@@ -262,8 +262,6 @@ public sealed class ActorPanel : IPanel
     private void DrawMonsterPanel()
     {
         var names     = _modelChara[_selection.State!.ModelData.ModelId];
-        var turnHuman = Im.Button("Turn Human"u8);
-        Im.Separator();
         using (Im.ListBox.Begin("##MonsterList"u8, Im.ContentRegion.Available with { Y = 10 * Im.Style.TextHeightWithSpacing }))
         {
             if (names.Count is 0)
