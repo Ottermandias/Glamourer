@@ -82,6 +82,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool   AllowDoubleClickToApply          { get; set; } = false;
     public bool   RespectManualOnAutomationUpdate  { get; set; } = false;
     public bool   PreventRandomRepeats             { get; set; } = false;
+    public bool?  AlwaysEditAsRoughness            { get; set; } = null;
     public string PcpFolder                        { get; set; } = "PCP";
     public string PcpColor                         { get; set; } = "";
 

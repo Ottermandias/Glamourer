@@ -80,7 +80,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             var     idx           = MaterialValueIndex.FromKey(values[i].Key);
             var     materialValue = values[i].Value;
             ref var row           = ref colorTable[idx.RowIndex];
-            var     newGame       = new ColorRow(row);
+            var     newGame       = ColorRow.From(row, mode);
             if (materialValue.EqualGame(newGame, drawData))
                 materialValue.Model.Apply(ref row, mode);
             else

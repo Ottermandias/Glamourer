@@ -119,16 +119,18 @@ public readonly record struct ModUpdatedTransaction(Mod Mod, ModSettings Old, Mo
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct MaterialTransaction(MaterialValueIndex Index, ColorRow? Old, ColorRow? New)
+public readonly record struct MaterialTransaction(MaterialValueIndex Index, ColorRow? Old, ColorRow? New, ColorRow.Mode? OldMode, ColorRow.Mode? NewMode)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
-        => older is MaterialTransaction other && Index == other.Index ? new MaterialTransaction(Index, other.Old, New) : null;
+        => older is MaterialTransaction other && Index == other.Index
+            ? new MaterialTransaction(Index, other.Old, New, other.OldMode ?? OldMode, NewMode ?? other.NewMode)
+            : null;
 
     public void Revert(IDesignEditor editor, object data)
     {
         if (editor is DesignManager e)
-            e.ChangeMaterialValue((Design)data, Index, Old);
+            e.ChangeMaterialValue((Design)data, Index, Old, OldMode);
     }
 }
 
@@ -141,6 +143,17 @@ public readonly record struct MaterialRevertTransaction(MaterialValueIndex Index
 
     public void Revert(IDesignEditor editor, object data)
         => ((DesignManager)editor).ChangeMaterialRevert((Design)data, Index, Old);
+}
+
+/// <remarks> Only Designs. </remarks>
+public readonly record struct MaterialModeTransaction(MaterialValueIndex Index, ColorRow.Mode Old, ColorRow.Mode New)
+    : ITransaction
+{
+    public ITransaction? Merge(ITransaction other)
+        => null;
+
+    public void Revert(IDesignEditor editor, object data)
+        => ((DesignManager)editor).ChangeMaterialMode((Design)data, Index, Old);
 }
 
 /// <remarks> Only Designs. </remarks>

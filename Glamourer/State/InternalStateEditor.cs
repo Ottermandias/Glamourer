@@ -253,7 +253,7 @@ public class InternalStateEditor(
             }
 
             // Update if edited.
-            state.Materials.UpdateValue(index, newValue, out _);
+            state.Materials.UpdateValue(index, newValue.MergeOnto(old.Model), out _);
             return true;
         }
 

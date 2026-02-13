@@ -235,6 +235,7 @@ public sealed class SettingsTab(
         Checkbox("Smaller Equip Display"u8, "Use single-line display without icons and small dye buttons instead of double-line display."u8,
             config.SmallEquip,              v => config.SmallEquip = v);
         DrawHeightUnitSettings();
+        DrawRoughnessSettings();
         Checkbox("Show Application Checkboxes"u8,
             "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules."u8,
             !config.HideApplyCheckmarks, v => config.HideApplyCheckmarks = !v);
@@ -501,5 +502,35 @@ public sealed class SettingsTab(
 
         LunaStyle.DrawAlignedHelpMarkerLabel("Character Height Display Type"u8,
             "Select how to display the height of characters in real-world units, if at all."u8);
+    }
+
+    private void DrawRoughnessSettings()
+    {
+        Im.Item.SetNextWidthScaled(300);
+        using (var combo = Im.Combo.Begin("##alwaysEditAsRoughness"u8, ToRoughnessSettingString(config.AlwaysEditAsRoughness)))
+        {
+            if (combo)
+                foreach (var type in (IEnumerable<bool?>)[null, true, false,])
+                {
+                    if (Im.Selectable(ToRoughnessSettingString(type), config.AlwaysEditAsRoughness == type))
+                    {
+                        config.AlwaysEditAsRoughness = type;
+                        config.Save();
+                    }
+                }
+        }
+
+        LunaStyle.DrawAlignedHelpMarkerLabel("Gloss Strength and Roughness Display Type"u8,
+            "Select how to display and edit Gloss Strength and Roughness values.\nThe conversion formula used is an approximation and does not account for all the subtleties of legacy vs PBR shaders."u8);
+
+        return;
+
+        static ReadOnlySpan<byte> ToRoughnessSettingString(bool? alwaysEditAsRoughness)
+            => alwaysEditAsRoughness switch
+            {
+                null  => "As-Is"u8,
+                true  => "Always Roughness"u8,
+                false => "Always Gloss Strength"u8,
+            };
     }
 }

@@ -256,7 +256,21 @@ public class DesignEditor(
         DesignChanged.Invoke(DesignChanged.Type.MaterialRevert, design, new MaterialRevertTransaction(index, !revert, revert));
     }
 
-    public void ChangeMaterialValue(Design design, MaterialValueIndex index, ColorRow? row)
+    public void ChangeMaterialMode(Design design, MaterialValueIndex index, ColorRow.Mode mode)
+    {
+        var materials = design.GetMaterialDataRef();
+        if (!materials.TryGetValue(index, out var oldValue))
+            return;
+
+        var oldMode = oldValue.Mode;
+        materials.AddOrUpdateValue(index, oldValue with { Mode = mode });
+        Glamourer.Log.Debug($"Changed advanced dye value for {index} from {oldMode} to {mode} mode.");
+        design.LastEdit = DateTimeOffset.UtcNow;
+        SaveService.QueueSave(design);
+        DesignChanged.Invoke(DesignChanged.Type.MaterialMode, design, new MaterialModeTransaction(index, oldMode, mode));
+    }
+
+    public void ChangeMaterialValue(Design design, MaterialValueIndex index, ColorRow? row, ColorRow.Mode? mode = null)
     {
         var materials = design.GetMaterialDataRef();
         if (materials.TryGetValue(index, out var oldValue))
@@ -268,8 +282,13 @@ public class DesignEditor(
             }
             else if (!row.Value.NearEqual(oldValue.Value))
             {
-                materials.UpdateValue(index, new MaterialValueDesign(row.Value, oldValue.Enabled, oldValue.Revert), out _);
+                materials.UpdateValue(index, new MaterialValueDesign(row.Value, oldValue.Enabled, oldValue.Revert, mode ?? oldValue.Mode), out _);
                 Glamourer.Log.Debug($"Updated advanced dye value for {index} to new value.");
+            }
+            else if (mode.HasValue && mode.Value != oldValue.Mode)
+            {
+                ChangeMaterialMode(design, index, mode.Value);
+                return;
             }
             else
             {
@@ -280,7 +299,7 @@ public class DesignEditor(
         {
             if (!row.HasValue)
                 return;
-            if (!materials.TryAddValue(index, new MaterialValueDesign(row.Value, true, false)))
+            if (!materials.TryAddValue(index, new MaterialValueDesign(row.Value, true, false, mode ?? ColorRow.Mode.Legacy)))
                 return;
 
             Glamourer.Log.Debug($"Added new advanced dye value for {index}.");
@@ -288,7 +307,8 @@ public class DesignEditor(
 
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.DelaySave(design);
-        DesignChanged.Invoke(DesignChanged.Type.Material, design, new MaterialTransaction(index, oldValue.Value, row));
+        DesignChanged.Invoke(DesignChanged.Type.Material, design,
+            new MaterialTransaction(index, oldValue.Value, row, mode.HasValue ? oldValue.Mode : null, mode));
     }
 
     public void ChangeApplyMaterialValue(Design design, MaterialValueIndex index, bool value)
