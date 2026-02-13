@@ -1,6 +1,5 @@
 ﻿using Luna.Generators;
 using ImSharp;
-using Luna;
 
 namespace Glamourer;
 
@@ -41,8 +40,8 @@ public enum DesignPanelFlag : uint
 
 public static partial class DesignPanelFlagExtensions
 {
-    private static readonly SizedString Expand                = new("Expand"u8);
-    private static readonly SizedString AdvancedCustomization = new(DesignPanelFlag.AdvancedCustomizations.ToNameU8());
+    private static readonly StringU8 Expand                = new("Expand"u8);
+    private static readonly StringU8 AdvancedCustomization = DesignPanelFlag.AdvancedCustomizations.ToNameU8();
 
     public static Im.HeaderDisposable Header(this DesignPanelFlag flag, Configuration config)
     {
@@ -56,8 +55,8 @@ public static partial class DesignPanelFlagExtensions
     public static void DrawTable(ReadOnlySpan<byte> label, DesignPanelFlag hidden, DesignPanelFlag expanded, Action<DesignPanelFlag> setterHide,
         Action<DesignPanelFlag> setterExpand)
     {
-        var checkBoxWidth = Math.Max(Im.Style.FrameHeight, Expand.Size.X);
-        var textWidth     = AdvancedCustomization.Size.X;
+        var checkBoxWidth = Math.Max(Im.Style.FrameHeight, Expand.CalculateSize().X);
+        var textWidth     = AdvancedCustomization.CalculateSize().X;
         var tableSize = 2 * (textWidth + 2 * checkBoxWidth)
           + 10 * Im.Style.CellPadding.X
           + 2 * Im.Style.WindowPadding.X

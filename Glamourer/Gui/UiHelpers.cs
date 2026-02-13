@@ -89,8 +89,7 @@ public static class UiHelpers
         using (Im.Disabled(locked))
         {
             using var id = Im.Id.Push(label);
-            if (ImEx.TriStateCheckbox(StringU8.Empty, ref apply, ColorId.TriStateCross.Value(), ColorId.TriStateCheck.Value(),
-                    ColorId.TriStateNeutral.Value()))
+            if (ImEx.TriStateCheckbox(StringU8.Empty, ref apply, ColorId.TriStateNeutral.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateCross.Value()))
             {
                 (newValue, newApply) = apply switch
                 {

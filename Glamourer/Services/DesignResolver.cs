@@ -78,8 +78,8 @@ public class DesignResolver(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool GetQuickDesign(ref DesignBase? design, ref SeString? error)
     {
-        design = quickDesignCombo.Design as Design;
-        if (design != null)
+        design = quickDesignCombo.QuickDesign;
+        if (design is not null)
             return true;
 
         error = "You do not have selected any design in the Quick Design Bar.";

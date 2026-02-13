@@ -109,7 +109,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         if (_config.QdbButtons.HasFlag(QdbButtons.ApplyDesign))
         {
             var comboSize = width - _numButtons * (buttonSize.X + spacing.X);
-            _designCombo.Draw(comboSize);
+            _designCombo.Draw(StringU8.Empty, comboSize);
             Im.Line.Same();
             DrawApplyButton(buttonSize);
         }
@@ -142,7 +142,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     private void DrawApplyButton(Vector2 size)
     {
-        var design    = _designCombo.Design as Design;
+        var design    = _designCombo.QuickDesign;
         var available = 0;
         _tooltipBuilder.Clear();
 

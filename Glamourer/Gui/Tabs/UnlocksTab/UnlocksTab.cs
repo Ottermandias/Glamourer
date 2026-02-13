@@ -1,5 +1,4 @@
-﻿using Dalamud.Bindings.ImGui;
-using ImSharp;
+﻿using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.UnlocksTab;
@@ -46,10 +45,10 @@ public sealed class UnlocksTab : Window, ITab<MainTabType>
     {
         DrawTypeSelection();
         if (DetailMode)
-            _table.Draw(Im.Style.FrameHeightWithSpacing);
+            _table.Draw();
         else
             _overview.Draw();
-        _table.Flags |= ImGuiTableFlags.Resizable;
+        _table.Flags |= TableFlags.Resizable;
     }
 
     public override void Draw()
@@ -79,7 +78,7 @@ public sealed class UnlocksTab : Window, ITab<MainTabType>
         {
             Im.Line.Same();
             if (ImEx.Icon.Button(LunaStyle.AutoResizeIcon, "Restore all columns to their original size."u8))
-                _table.Flags &= ~ImGuiTableFlags.Resizable;
+                _table.Flags &= ~TableFlags.Resizable;
         }
 
         if (!IsOpen)

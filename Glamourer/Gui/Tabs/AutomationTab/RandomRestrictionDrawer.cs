@@ -236,9 +236,9 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 {
                     ImEx.TextFrameAligned("that are exactly"u8);
                     table.NextColumn();
-                    if (_randomDesignCombo.Draw(exact, Im.ContentRegion.Available.X) && _randomDesignCombo.Design is Design d)
+                    if (_randomDesignCombo.Draw(exact, out var newDesign, Im.ContentRegion.Available.X))
                     {
-                        list[i] = new RandomPredicate.Exact(RandomPredicate.Exact.Type.Identifier, d.Identifier.ToString());
+                        list[i] = new RandomPredicate.Exact(RandomPredicate.Exact.Type.Identifier, newDesign.Identifier.ToString());
                         _autoDesignManager.ChangeData(_set!, _designIndex, list);
                     }
 
@@ -314,8 +314,8 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 "Add a new condition that the design must be assigned to the given color."u8, invalid)
          && Add(new RandomPredicate.Exact(RandomPredicate.Exact.Type.Color, _newText));
 
-        if (_randomDesignCombo.Draw(_newDesign, Im.ContentRegion.Available.X - Im.Style.ItemInnerSpacing.X - buttonSize.X))
-            _newDesign = _randomDesignCombo.CurrentSelection?.Item1 as Design;
+        if (_randomDesignCombo.Draw(StringU8.Empty, _newDesign, out var newDesign, Im.ContentRegion.Available.X - Im.Style.ItemInnerSpacing.X - buttonSize.X))
+            _newDesign = newDesign as Design;
         Im.Line.SameInner();
         if (ImEx.Button("Exact Design"u8, buttonSize, "Add a single, specific design."u8, _newDesign is null))
         {

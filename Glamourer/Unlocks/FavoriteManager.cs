@@ -7,9 +7,9 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Unlocks;
 
-public class FavoriteManager : ISavable
+public sealed class FavoriteManager : ISavable
 {
-    private readonly record struct FavoriteHairStyle(Gender Gender, SubRace Race, CustomizeIndex Type, CustomizeValue Id)
+    public readonly record struct FavoriteHairStyle(Gender Gender, SubRace Race, CustomizeIndex Type, CustomizeValue Id)
     {
         public uint ToValue()
             => Id.Value | ((uint)Type << 8) | ((uint)Race << 16) | ((uint)Gender << 24);
@@ -26,6 +26,17 @@ public class FavoriteManager : ISavable
     private readonly HashSet<StainId>           _favoriteColors     = [];
     private readonly HashSet<FavoriteHairStyle> _favoriteHairStyles = [];
     private readonly HashSet<BonusItemId>       _favoriteBonusItems = [];
+
+    public enum FavoriteType : byte
+    {
+        Item,
+        Stain,
+        Customization,
+        BonusItem,
+    }
+
+    /// <summary> Event invoked with type, ID (or <see cref="FavoriteHairStyle"/>) and whether the item was favorited or removed. </summary>
+    public event Action<FavoriteType, uint, bool>? FavoriteChanged;
 
     public FavoriteManager(SaveService saveService)
     {
@@ -135,36 +146,44 @@ public class FavoriteManager : ISavable
 
     public bool TryAdd(ItemId item)
     {
-        if (item.Id == 0 || !_favorites.Add(item))
+        if (item.Id is 0 || !_favorites.Add(item))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.Item, item.Id, true);
         Save();
         return true;
     }
 
     public bool TryAdd(BonusItemId item)
     {
-        if (item.Id == 0 || !_favoriteBonusItems.Add(item))
+        if (item.Id is 0 || !_favoriteBonusItems.Add(item))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.BonusItem, item.Id, true);
         Save();
         return true;
     }
 
     public bool TryAdd(StainId stain)
     {
-        if (stain.Id == 0 || !_favoriteColors.Add(stain))
+        if (stain.Id is 0 || !_favoriteColors.Add(stain))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.Stain, stain.Id, true);
         Save();
         return true;
     }
 
     public bool TryAdd(Gender gender, SubRace race, CustomizeIndex type, CustomizeValue value)
     {
-        if (!TypeAllowed(type) || !_favoriteHairStyles.Add(new FavoriteHairStyle(gender, race, type, value)))
+        if (!TypeAllowed(type))
             return false;
 
+        var id = new FavoriteHairStyle(gender, race, type, value);
+        if (!_favoriteHairStyles.Add(id))
+            return false;
+
+        FavoriteChanged?.Invoke(FavoriteType.Customization, id.ToValue(), true);
         Save();
         return true;
     }
@@ -181,6 +200,7 @@ public class FavoriteManager : ISavable
         if (!_favorites.Remove(item))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.Item, item.Id, false);
         Save();
         return true;
     }
@@ -190,6 +210,7 @@ public class FavoriteManager : ISavable
         if (!_favoriteBonusItems.Remove(item))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.BonusItem, item.Id, false);
         Save();
         return true;
     }
@@ -199,15 +220,18 @@ public class FavoriteManager : ISavable
         if (!_favoriteColors.Remove(stain))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.Stain, stain.Id, false);
         Save();
         return true;
     }
 
     public bool Remove(Gender gender, SubRace race, CustomizeIndex type, CustomizeValue value)
     {
-        if (!_favoriteHairStyles.Remove(new FavoriteHairStyle(gender, race, type, value)))
+        var id = new FavoriteHairStyle(gender, race, type, value);
+        if (!_favoriteHairStyles.Remove(id))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.Customization, id.ToValue(), true);
         Save();
         return true;
     }

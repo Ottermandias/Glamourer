@@ -151,12 +151,12 @@ public class DesignLinkDrawer(
     {
         table.NextColumn();
         table.NextColumn();
-        combo.Draw(Im.ContentRegion.Available.X);
+        combo.Draw(StringU8.Empty, Im.ContentRegion.Available.X);
         table.NextColumn();
         string ttBefore,     ttAfter;
         bool   canAddBefore, canAddAfter;
-        var    design = combo.Design as Design;
-        if (design == null)
+        var    design = combo.NewSelection;
+        if (design is null)
         {
             ttAfter      = ttBefore    = "Select a design first.";
             canAddBefore = canAddAfter = false;
@@ -180,7 +180,7 @@ public class DesignLinkDrawer(
         }
 
         Im.Line.Same();
-        if (ImEx.Icon.Button(FontAwesomeIcon.ArrowCircleUp.Icon(), ttAfter, !canAddAfter))
+        if (ImEx.Icon.Button(FontAwesomeIcon.ArrowCircleDown.Icon(), ttAfter, !canAddAfter))
             linkManager.AddDesignLink(selector.Selected!, design!, LinkOrder.After);
     }
 

@@ -34,14 +34,11 @@ public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items
         return false;
     }
 
-    public readonly struct CacheItem(EquipItem item) : IDisposable
+    public readonly struct CacheItem(EquipItem item)
     {
-        public readonly EquipItem       Item  = item;
-        public readonly StringPair      Name  = new(item.Name);
-        public readonly SizedStringPair Model = new($"({item.PrimaryId.Id}-{item.Variant.Id})");
-
-        public void Dispose()
-            => Model.Dispose();
+        public readonly EquipItem  Item  = item;
+        public readonly StringPair Name  = new(item.Name);
+        public readonly StringPair Model = new($"({item.PrimaryId.Id}-{item.Variant.Id})");
     }
 
     protected sealed class ItemFilter : PartwiseFilterBase<CacheItem>
@@ -85,7 +82,7 @@ public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items
         var ret = Im.Selectable(item.Name.Utf8, selected);
         Im.Line.Same();
         using var color = ImGuiColor.Text.Push(Rgba32.Gray);
-        ImEx.TextRightAligned(item.Model);
+        ImEx.TextRightAligned(item.Model.Utf8);
         return ret;
     }
 
