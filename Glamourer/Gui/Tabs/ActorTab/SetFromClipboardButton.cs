@@ -1,5 +1,4 @@
-﻿using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.ImGuiNotification;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.State;
 using ImSharp;
@@ -30,7 +29,7 @@ public sealed class SetFromClipboardButton(ActorSelection selection, DesignConve
         try
         {
             var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToBool();
-            var text = ImGui.GetClipboardText();
+            var text = Im.Clipboard.GetUtf16();
             var design = converter.FromBase64(text, applyCustomize, applyGear, out _)
              ?? throw new Exception("The clipboard did not contain valid data.");
             stateManager.ApplyDesign(selection.State!, design, ApplySettings.ManualWithLinks with { IsFinal = true });

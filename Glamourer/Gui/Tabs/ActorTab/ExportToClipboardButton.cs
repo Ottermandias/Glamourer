@@ -1,5 +1,4 @@
-﻿using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.ImGuiNotification;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using ImSharp;
 using Luna;
@@ -30,7 +29,7 @@ public sealed class ExportToClipboardButton(ActorSelection selection, DesignConv
         try
         {
             var text = converter.ShareBase64(selection.State!, ApplicationRules.FromModifiers(selection.State!));
-            ImGui.SetClipboardText(text);
+            Im.Clipboard.Set(text);
         }
         catch (Exception ex)
         {
