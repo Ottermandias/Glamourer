@@ -1,7 +1,5 @@
-﻿using Dalamud.Bindings.ImGui;
-using Dalamud.Game.ClientState.Keys;
+﻿using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
-using Dalamud.Interface.Components;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Designs;
@@ -12,10 +10,6 @@ using Glamourer.Interop.PalettePlus;
 using Glamourer.Services;
 using ImSharp;
 using Luna;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Text;
-using OtterGui.Widgets;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
@@ -46,7 +40,7 @@ public sealed class SettingsTab(
 
     public void DrawContent()
     {
-        using var child = ImUtf8.Child("MainWindowChild"u8, default);
+        using var child = Im.Child.Begin("MainWindowChild"u8);
         if (!child)
             return;
 
@@ -57,12 +51,9 @@ public sealed class SettingsTab(
                 config.EnableAutoDesigns = v;
                 autoDesignApplier.OnEnableAutoDesignsChanged(v);
             });
-        Im.Line.New();
-        Im.Line.New();
-        Im.Line.New();
-        Im.Line.New();
+        Im.Cursor.Y += Im.Style.FrameHeightWithSpacing * 4;
 
-        using (ImUtf8.Child("SettingsChild"u8, default))
+        using (Im.Child.Begin("SettingsChild"u8))
         {
             DrawBehaviorSettings();
             DrawDesignDefaultSettings();
@@ -83,7 +74,7 @@ public sealed class SettingsTab(
 
     private void DrawBehaviorSettings()
     {
-        if (!ImUtf8.CollapsingHeader("Glamourer Behavior"u8))
+        if (!Im.Tree.Header("Glamourer Behavior"u8))
             return;
 
         Checkbox("Always Apply Entire Weapon for Mainhand"u8,
@@ -127,10 +118,10 @@ public sealed class SettingsTab(
             config.AttachToPcp, pcpService.Set);
         var active = config.DeleteDesignModifier.IsActive();
         Im.Line.Same();
-        if (ImUtf8.ButtonEx("Delete all PCP Designs"u8, "Deletes all designs tagged with 'PCP' from the design list."u8, disabled: !active))
+        if (ImEx.Button("Delete all PCP Designs"u8, default, "Deletes all designs tagged with 'PCP' from the design list."u8, !active))
             pcpService.CleanPcpDesigns();
         if (!active)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"\nHold {config.DeleteDesignModifier} while clicking.");
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"\nHold {config.DeleteDesignModifier} while clicking.");
     }
 
     private void DrawPenumbraIntegrationSettings2()
@@ -148,7 +139,7 @@ public sealed class SettingsTab(
 
     private void DrawDesignDefaultSettings()
     {
-        if (!ImUtf8.CollapsingHeader("Design Defaults"))
+        if (!Im.Tree.Header("Design Defaults"u8))
             return;
 
         Checkbox("Locked Designs"u8, "Newly created designs will be locked to prevent unintended changes."u8,
@@ -163,32 +154,30 @@ public sealed class SettingsTab(
             "Newly created designs will be configured to clear all advanced settings applied by Glamourer to the collection by default."u8,
             config.DefaultDesignSettings.ResetTemporarySettings, v => config.DefaultDesignSettings.ResetTemporarySettings = v);
 
-        var tmp = config.PcpFolder;
-        ImGui.SetNextItemWidth(0.4f * Im.ContentRegion.Available.X);
-        if (ImUtf8.InputText("##pcpFolder"u8, ref tmp))
-            config.PcpFolder = tmp;
-
-        if (ImGui.IsItemDeactivatedAfterEdit())
+        Im.Item.SetNextWidth(0.4f * Im.ContentRegion.Available.X);
+        if (ImEx.InputOnDeactivation.Text("##pcpFolder"u8, config.PcpFolder, out string newPcpFolder))
+        {
+            config.PcpFolder = newPcpFolder;
             config.Save();
+        }
 
-        ImGuiUtil.LabeledHelpMarker("Default PCP Organizational Folder",
-            "The folder any designs created due to penumbra character packs are moved to on creation.\nLeave blank to import into Root.");
+        LunaStyle.DrawAlignedHelpMarkerLabel("Default PCP Organizational Folder"u8,
+            "The folder any designs created due to penumbra character packs are moved to on creation.\nLeave blank to import into Root."u8);
 
-        tmp = config.PcpColor;
-        ImGui.SetNextItemWidth(0.4f * Im.ContentRegion.Available.X);
-        if (ImUtf8.InputText("##pcpColor"u8, ref tmp))
-            config.PcpColor = tmp;
-
-        if (ImGui.IsItemDeactivatedAfterEdit())
+        Im.Item.SetNextWidth(0.4f * Im.ContentRegion.Available.X);
+        if (ImEx.InputOnDeactivation.Text("##pcpColor"u8, config.PcpColor, out string newPcpColor))
+        {
+            config.PcpColor = newPcpColor;
             config.Save();
+        }
 
-        ImGuiUtil.LabeledHelpMarker("Default PCP Design Color",
-            "The name of the color group any designs created due to penumbra character packs are assigned.\nLeave blank for no specific color assignment.");
+        LunaStyle.DrawAlignedHelpMarkerLabel("Default PCP Design Color"u8,
+            "The name of the color group any designs created due to penumbra character packs are assigned.\nLeave blank for no specific color assignment."u8);
     }
 
     private void DrawInterfaceSettings()
     {
-        if (!ImUtf8.CollapsingHeader("Interface"u8))
+        if (!Im.Tree.Header("Interface"u8))
             return;
 
         EphemeralCheckbox("Show Quick Design Bar"u8,
@@ -264,7 +253,7 @@ public sealed class SettingsTab(
         DrawFolderSortType();
 
         Im.Line.New();
-        ImUtf8.Text("Show the following panels in their respective tabs:"u8);
+        Im.Text("Show the following panels in their respective tabs:"u8);
         Im.Dummy(Vector2.Zero);
         DesignPanelFlagExtensions.DrawTable("##panelTable"u8, config.HideDesignPanel, config.AutoExpandDesignPanel, v =>
         {
@@ -315,46 +304,47 @@ public sealed class SettingsTab(
         var showAuto   = config.EnableAutoDesigns;
         var numColumns = 9 - (showAuto ? 0 : 2) - (config.UseTemporarySettings ? 0 : 1);
         Im.Line.New();
-        ImUtf8.Text("Show the Following Buttons in the Quick Design Bar:"u8);
+        Im.Text("Show the Following Buttons in the Quick Design Bar:"u8);
         Im.Dummy(Vector2.Zero);
         using var table = Im.Table.Begin("##tableQdb"u8, numColumns, TableFlags.SizingFixedFit | TableFlags.Borders | TableFlags.NoHostExtendX);
         if (!table)
             return;
 
-        ReadOnlySpan<(string, bool, QdbButtons)> columns =
+        IEnumerable<RefTuple<ReadOnlySpan<byte>, bool, QdbButtons>> columns =
         [
-            ("Apply Design", true, QdbButtons.ApplyDesign),
-            ("Revert All", true, QdbButtons.RevertAll),
-            ("Revert to Auto", showAuto, QdbButtons.RevertAutomation),
-            ("Reapply Auto", showAuto, QdbButtons.ReapplyAutomation),
-            ("Revert Equip", true, QdbButtons.RevertEquip),
-            ("Revert Customize", true, QdbButtons.RevertCustomize),
-            ("Revert Advanced Customization", true, QdbButtons.RevertAdvancedCustomization),
-            ("Revert Advanced Dyes", true, QdbButtons.RevertAdvancedDyes),
-            ("Reset Settings", config.UseTemporarySettings, QdbButtons.ResetSettings),
+            RefTuple.Create("Apply Design"u8,                  true,                        QdbButtons.ApplyDesign),
+            RefTuple.Create("Revert All"u8,                    true,                        QdbButtons.RevertAll),
+            RefTuple.Create("Revert to Auto"u8,                showAuto,                    QdbButtons.RevertAutomation),
+            RefTuple.Create("Reapply Auto"u8,                  showAuto,                    QdbButtons.ReapplyAutomation),
+            RefTuple.Create("Revert Equip"u8,                  true,                        QdbButtons.RevertEquip),
+            RefTuple.Create("Revert Customize"u8,              true,                        QdbButtons.RevertCustomize),
+            RefTuple.Create("Revert Advanced Customization"u8, true,                        QdbButtons.RevertAdvancedCustomization),
+            RefTuple.Create("Revert Advanced Dyes"u8,          true,                        QdbButtons.RevertAdvancedDyes),
+            RefTuple.Create("Reset Settings"u8,                config.UseTemporarySettings, QdbButtons.ResetSettings),
         ];
 
-        for (var i = 0; i < columns.Length; ++i)
+        // ReSharper disable once PossibleMultipleEnumeration
+        foreach (var (text, display, _) in columns)
         {
-            if (!columns[i].Item2)
+            if (!display)
                 continue;
 
-            ImGui.TableNextColumn();
-            ImUtf8.TableHeader(columns[i].Item1);
+            table.NextColumn();
+            table.Header(text);
         }
 
-        for (var i = 0; i < columns.Length; ++i)
+        // ReSharper disable once PossibleMultipleEnumeration
+        foreach (var (_, display, flag) in columns)
         {
-            if (!columns[i].Item2)
+            if (!display)
                 continue;
 
-            var       flag = columns[i].Item3;
-            using var id   = ImUtf8.PushId((int)flag);
-            ImGui.TableNextColumn();
+            using var id = Im.Id.Push((int)flag);
+            table.NextColumn();
             var offset = (Im.ContentRegion.Available.X - Im.Style.FrameHeight) / 2;
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + offset);
+            Im.Cursor.X += offset;
             var value = config.QdbButtons.HasFlag(flag);
-            if (!ImUtf8.Checkbox(""u8, ref value))
+            if (!Im.Checkbox(""u8, ref value))
                 continue;
 
             var buttons = value ? config.QdbButtons | flag : config.QdbButtons & ~flag;
@@ -372,33 +362,36 @@ public sealed class SettingsTab(
             return;
 
         Im.Line.Same();
-        if (ImUtf8.Button("Import Palette+ to Designs"u8))
+        if (Im.Button("Import Palette+ to Designs"u8))
             paletteImport.ImportDesigns();
-        ImUtf8.HoverTooltip(
+        Im.Tooltip.OnHover(
             $"Import all existing Palettes from your Palette+ Config into Designs at PalettePlus/[Name] if these do not exist. Existing Palettes are:\n\n\t - {string.Join("\n\t - ", paletteImport.Data.Keys)}");
     }
 
     /// <summary> Draw the entire Color subsection. </summary>
     private void DrawColorSettings()
     {
-        if (!ImUtf8.CollapsingHeader("Colors"u8))
+        if (!Im.Tree.Header("Colors"u8))
             return;
 
-        using (var tree = ImUtf8.TreeNode("Custom Design Colors"u8))
+        using (var tree = Im.Tree.Node("Custom Design Colors"u8))
         {
             if (tree)
                 designColorUi.Draw();
         }
 
-        using (var tree = ImUtf8.TreeNode("Color Settings"u8))
+        using (var tree = Im.Tree.Node("Color Settings"u8))
         {
             if (tree)
                 foreach (var color in ColorId.Values)
                 {
                     var (defaultColor, name, description) = color.Data();
                     var currentColor = config.Colors.GetValueOrDefault(color, defaultColor);
-                    if (Widget.ColorPicker(name, description, currentColor, c => config.Colors[color] = c, defaultColor))
-                        config.Save();
+                    if (!ImEx.ColorPicker(name, description, currentColor, out var newColor, defaultColor))
+                        continue;
+
+                    config.Colors[color] = newColor.Color;
+                    config.Save();
                 }
         }
 
@@ -408,95 +401,87 @@ public sealed class SettingsTab(
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private void Checkbox(ReadOnlySpan<byte> label, ReadOnlySpan<byte> tooltip, bool current, Action<bool> setter)
     {
-        using var id  = ImUtf8.PushId(label);
+        using var id  = Im.Id.Push(label);
         var       tmp = current;
-        if (ImUtf8.Checkbox(""u8, ref tmp) && tmp != current)
+        if (Im.Checkbox(""u8, ref tmp) && tmp != current)
         {
             setter(tmp);
             config.Save();
         }
 
-        Im.Line.Same();
-        ImUtf8.LabeledHelpMarker(label, tooltip);
+        LunaStyle.DrawAlignedHelpMarkerLabel(label, tooltip);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private void EphemeralCheckbox(ReadOnlySpan<byte> label, ReadOnlySpan<byte> tooltip, bool current, Action<bool> setter)
     {
-        using var id  = ImUtf8.PushId(label);
+        using var id  = Im.Id.Push(label);
         var       tmp = current;
-        if (ImUtf8.Checkbox(""u8, ref tmp) && tmp != current)
+        if (Im.Checkbox(""u8, ref tmp) && tmp != current)
         {
             setter(tmp);
             config.Ephemeral.Save();
         }
 
-        Im.Line.Same();
-        ImUtf8.LabeledHelpMarker(label, tooltip);
+        LunaStyle.DrawAlignedHelpMarkerLabel(label, tooltip);
     }
 
     /// <summary> Different supported sort modes as a combo. </summary>
     private void DrawFolderSortType()
     {
         var sortMode = config.SortMode;
-        ImGui.SetNextItemWidth(300 * Im.Style.GlobalScale);
-        using (var combo = ImUtf8.Combo("##sortMode"u8, sortMode.Name))
+        Im.Item.SetNextWidthScaled(300);
+        using (var combo = Im.Combo.Begin("##sortMode"u8, sortMode.Name))
         {
             if (combo)
                 foreach (var val in Configuration.Constants.ValidSortModes)
                 {
-                    if (ImUtf8.Selectable(val.Name, val.GetType() == sortMode.GetType()) && val.GetType() != sortMode.GetType())
+                    if (Im.Selectable(val.Name, val.GetType() == sortMode.GetType()) && val.GetType() != sortMode.GetType())
                     {
                         config.SortMode = val;
                         selector.SetFilterDirty();
                         config.Save();
                     }
 
-                    ImUtf8.HoverTooltip(val.Description);
+                    Im.Tooltip.OnHover(val.Description);
                 }
         }
 
-        ImUtf8.LabeledHelpMarker("Sort Mode"u8, "Choose the sort mode for the mod selector in the designs tab."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("Sort Mode"u8, "Choose the sort mode for the mod selector in the designs tab."u8);
     }
 
     private void DrawRenameSettings()
     {
-        ImGui.SetNextItemWidth(300 * Im.Style.GlobalScale);
-        using (var combo = ImUtf8.Combo("##renameSettings"u8, config.ShowRename.GetData().Name))
+        Im.Item.SetNextWidthScaled(300);
+        using (var combo = Im.Combo.Begin("##renameSettings"u8, config.ShowRename.ToNameU8()))
         {
             if (combo)
                 foreach (var value in RenameField.Values)
                 {
-                    var (name, desc) = value.GetData();
-                    if (ImGui.Selectable(name, config.ShowRename == value))
+                    if (Im.Selectable(value.ToNameU8(), config.ShowRename == value))
                     {
                         config.ShowRename = value;
                         selector.SetRenameSearchPath(value);
                         config.Save();
                     }
 
-                    ImUtf8.HoverTooltip(desc);
+                    Im.Tooltip.OnHover(value.Tooltip());
                 }
         }
 
-        Im.Line.Same();
-        const string tt =
-            "Select which of the two renaming input fields are visible when opening the right-click context menu of a design in the design selector.";
-        ImGuiComponents.HelpMarker(tt);
-        Im.Line.Same();
-        ImUtf8.Text("Rename Fields in Design Context Menu"u8);
-        ImUtf8.HoverTooltip(tt);
+        LunaStyle.DrawAlignedHelpMarkerLabel("Rename Fields in Design Context Menu"u8,
+            "Select which of the two renaming input fields are visible when opening the right-click context menu of a design in the design selector."u8);
     }
 
     private void DrawHeightUnitSettings()
     {
-        ImGui.SetNextItemWidth(300 * Im.Style.GlobalScale);
-        using (var combo = ImUtf8.Combo("##heightUnit"u8, HeightDisplayTypeName(config.HeightDisplayType)))
+        Im.Item.SetNextWidthScaled(300);
+        using (var combo = Im.Combo.Begin("##heightUnit"u8, config.HeightDisplayType.Tooltip()))
         {
             if (combo)
                 foreach (var type in HeightDisplayType.Values)
                 {
-                    if (ImUtf8.Selectable(HeightDisplayTypeName(type), type == config.HeightDisplayType) && type != config.HeightDisplayType)
+                    if (Im.Selectable(type.Tooltip(), type == config.HeightDisplayType) && type != config.HeightDisplayType)
                     {
                         config.HeightDisplayType = type;
                         config.Save();
@@ -504,24 +489,7 @@ public sealed class SettingsTab(
                 }
         }
 
-        Im.Line.Same();
-        const string tt = "Select how to display the height of characters in real-world units, if at all.";
-        ImGuiComponents.HelpMarker(tt);
-        Im.Line.Same();
-        ImUtf8.Text("Character Height Display Type"u8);
-        ImUtf8.HoverTooltip(tt);
+        LunaStyle.DrawAlignedHelpMarkerLabel("Character Height Display Type"u8,
+            "Select how to display the height of characters in real-world units, if at all."u8);
     }
-
-    private static ReadOnlySpan<byte> HeightDisplayTypeName(HeightDisplayType type)
-        => type switch
-        {
-            HeightDisplayType.None        => "Do Not Display"u8,
-            HeightDisplayType.Centimetre  => "Centimetres (000.0 cm)"u8,
-            HeightDisplayType.Metre       => "Metres (0.00 m)"u8,
-            HeightDisplayType.Wrong       => "Inches (00.0 in)"u8,
-            HeightDisplayType.WrongFoot   => "Feet (0'00'')"u8,
-            HeightDisplayType.Corgi       => "Corgis (0.0 Corgis)"u8,
-            HeightDisplayType.OlympicPool => "Olympic-size swimming Pools (0.000 Pools)"u8,
-            _                             => ""u8,
-        };
 }

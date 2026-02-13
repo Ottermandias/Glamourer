@@ -85,20 +85,23 @@ public sealed class MainWindow : Window, IDisposable
     /// <summary> Draw the support button group on the right-hand side of the window. </summary>
     public static void DrawSupportButtons(Glamourer glamourer, Changelog changelog)
     {
-        var width = Im.Font.CalculateSize(SupportInfoButtonText).X + Im.Style.FramePadding.X * 2;
-        var xPos  = Im.Window.Width - width;
+        var width = new Vector2(Im.Font.CalculateSize(SupportInfoButtonText).X + Im.Style.FramePadding.X * 2, 0);
+        var xPos  = Im.Window.Width - width.X;
         Im.Cursor.Position = new Vector2(xPos, 0);
-        SupportButton.Discord(Glamourer.Messager, width);
+        SupportButton.Discord(Glamourer.Messager, width.X);
 
         Im.Cursor.Position = new Vector2(xPos, Im.Style.FrameHeightWithSpacing);
         DrawSupportButton(glamourer);
 
         Im.Cursor.Position = new Vector2(xPos, 2 * Im.Style.FrameHeightWithSpacing);
-        SupportButton.ReniGuide(Glamourer.Messager, width);
+        SupportButton.ReniGuide(Glamourer.Messager, width.X);
 
         Im.Cursor.Position = new Vector2(xPos, 3 * Im.Style.FrameHeightWithSpacing);
-        if (Im.Button("Show Changelogs"u8, new Vector2(width, 0)))
+        if (Im.Button("Show Changelogs"u8, new Vector2(width.X, 0)))
             changelog.ForceOpen = true;
+
+        Im.Cursor.Position = new Vector2(xPos, 4 * Im.Style.FrameHeightWithSpacing);
+        SupportButton.KoFiPatreon(Glamourer.Messager, width);
     }
 
     /// <summary>
