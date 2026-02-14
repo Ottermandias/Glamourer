@@ -41,7 +41,6 @@ public enum DesignPanelFlag : uint
 public static partial class DesignPanelFlagExtensions
 {
     private static readonly StringU8 Expand                = new("Expand"u8);
-    private static readonly StringU8 AdvancedCustomization = DesignPanelFlag.AdvancedCustomizations.ToNameU8();
 
     public static Im.HeaderDisposable Header(this DesignPanelFlag flag, Configuration config)
     {
@@ -56,12 +55,13 @@ public static partial class DesignPanelFlagExtensions
         Action<DesignPanelFlag> setterExpand)
     {
         var checkBoxWidth = Math.Max(Im.Style.FrameHeight, Expand.CalculateSize().X);
-        var textWidth     = AdvancedCustomization.CalculateSize().X;
+        var test          = DesignPanelFlag.AdvancedCustomizations.ToNameU8();
+        var textWidth     = AdvancedCustomizations_Name__GenU8.CalculateSize().X;
         var tableSize = 2 * (textWidth + 2 * checkBoxWidth)
           + 10 * Im.Style.CellPadding.X
           + 2 * Im.Style.WindowPadding.X
           + 2 * Im.Style.FrameBorderThickness;
-        using var table = Im.Table.Begin(label, 6, TableFlags.RowBackground | TableFlags.SizingFixedFit | TableFlags.Borders,
+        using var table = Im.Table.Begin(label, 6, TableFlags.RowBackground | TableFlags.Borders,
             new Vector2(tableSize, 6 * Im.Style.FrameHeight));
         if (!table)
             return;

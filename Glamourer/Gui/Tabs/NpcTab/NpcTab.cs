@@ -3,18 +3,24 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
 
-public sealed class NpcTab(NpcSelector selector, NpcPanel panel) : ITab<MainTabType>
+public sealed class NpcTab : TwoPanelLayout, ITab<MainTabType>
 {
-    public ReadOnlySpan<byte> Label
+    public NpcTab(NpcFilter filter, NpcSelector selector, NpcPanel panel, NpcHeader header)
+    {
+        LeftHeader  = new FilterHeader<NpcCacheItem>(filter, new StringU8("Filter..."u8));
+        LeftPanel   = selector;
+        LeftFooter  = NopHeaderFooter.Instance;
+        RightHeader = header;
+        RightPanel  = panel;
+        RightFooter = NopHeaderFooter.Instance;
+    }
+
+    public override ReadOnlySpan<byte> Label
         => "NPCs"u8;
 
     public MainTabType Identifier
         => MainTabType.Npcs;
 
     public void DrawContent()
-    {
-        selector.Draw(200 * Im.Style.GlobalScale);
-        Im.Line.Same();
-        panel.Draw();
-    }
+        => Draw(TwoPanelWidth.IndeterminateRelative);
 }

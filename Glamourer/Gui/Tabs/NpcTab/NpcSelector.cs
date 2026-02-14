@@ -1,92 +1,85 @@
 ﻿using Glamourer.GameData;
-using Dalamud.Bindings.ImGui;
+using Glamourer.Designs;
 using ImSharp;
-using OtterGui.Extensions;
-using OtterGui.Raii;
-using ImGuiClip = OtterGui.ImGuiClip;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
 
-public class NpcSelector : IDisposable
+public sealed class NpcSelector(
+    NpcCustomizeSet npcs,
+    LocalNpcAppearanceData favorites,
+    NpcFilter filter,
+    DesignColors designColors,
+    NpcSelection selection) : IPanel
 {
-    private readonly NpcCustomizeSet _npcs;
-    private readonly LocalNpcAppearanceData _favorites;
+    private readonly NpcCustomizeSet        _npcs         = npcs;
+    private readonly LocalNpcAppearanceData _favorites    = favorites;
+    private readonly NpcFilter              _filter       = filter;
+    private readonly DesignColors           _designColors = designColors;
 
-    private          NpcFilter _filter;
-    private readonly List<int> _visibleOrdered = [];
-    private          int       _selectedGlobalIndex;
-    private          bool      _listDirty = true;
-    private          Vector2   _defaultItemSpacing;
-    private          float     _width;
+    public ReadOnlySpan<byte> Id
+        => "NpcSelector"u8;
 
-
-    public NpcSelector(NpcCustomizeSet npcs, LocalNpcAppearanceData favorites)
+    public void Draw()
     {
-        _npcs                  =  npcs;
-        _favorites             =  favorites;
-        _filter                =  new NpcFilter(_favorites);
-        _favorites.DataChanged += OnFavoriteChange;
+        Im.Cursor.Y += Im.Style.FramePadding.Y;
+        var       cache   = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new Cache(this));
+        using var clipper = new Im.ListClipper(cache.Count, Im.Style.TextHeightWithSpacing);
+        using var color   = new Im.ColorDisposable();
+        foreach (var item in clipper.Iterate(cache))
+        {
+            Im.Cursor.X += Im.Style.FramePadding.X;
+            using var id = Im.Id.Push(item.Npc.Id.Id);
+            color.Push(ImGuiColor.Text, item.Color);
+            if (Im.Selectable(item.Name.Utf8, item.Npc.Id == selection.Id))
+                selection.Update(item);
+            color.Pop();
+            var size = item.Id.CalculateSize();
+            Im.Line.Same();
+            if (Im.ContentRegion.Available.X >= size.X)
+            {
+                color.Push(ImGuiColor.Text, Im.Style[ImGuiColor.TextDisabled]);
+                ImEx.TextRightAligned(item.Id, 0, size.X);
+                color.Pop();
+            }
+            else
+            {
+                Im.Tooltip.OnHover(item.Id);
+                Im.Line.New();
+            }
+        }
     }
 
-    public void Dispose()
+    private NpcCacheItem CreateItem(in NpcData data)
     {
-        _favorites.DataChanged -= OnFavoriteChange;
+        var colorText = _favorites.GetColor(data);
+        var (color, favorite) = _favorites.GetData(data);
+        return new NpcCacheItem(data, colorText, color, favorite);
     }
 
-    private void OnFavoriteChange()
-        => _listDirty = true;
-
-    public void UpdateList()
+    private sealed class Cache : BasicFilterCache<NpcCacheItem>
     {
-        if (!_listDirty)
-            return;
+        private readonly NpcSelector _parent;
 
-        _listDirty = false;
-        _visibleOrdered.Clear();
-        var enumerable = _npcs.WithIndex();
-        if (!_filter.IsEmpty)
-            enumerable = enumerable.Where(d => _filter.ApplyFilter(d.Value));
-        var range = enumerable.OrderByDescending(d => _favorites.IsFavorite(d.Value))
-            .ThenBy(d => d.Index)
-            .Select(d => d.Index);
-        _visibleOrdered.AddRange(range);
-    }
+        public Cache(NpcSelector parent)
+            : base(parent._filter)
+        {
+            _parent                            =  parent;
+            _parent._favorites.DataChanged     += OnDataChange;
+            _parent._designColors.ColorChanged += OnDataChange;
+        }
 
-    public bool HasSelection
-        => _selectedGlobalIndex >= 0 && _selectedGlobalIndex < _npcs.Count;
+        private void OnDataChange()
+            => Dirty |= IManagedCache.DirtyFlags.Custom;
 
-    public NpcData Selection
-        => HasSelection ? _npcs[_selectedGlobalIndex] : default;
+        protected override void Dispose(bool disposing)
+        {
+            _parent._favorites.DataChanged     -= OnDataChange;
+            _parent._designColors.ColorChanged -= OnDataChange;
+            base.Dispose(disposing);
+        }
 
-    public void Draw(float width)
-    {
-        _width = width;
-        using var group = ImRaii.Group();
-        _defaultItemSpacing = Im.Style.ItemSpacing;
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
-            .Push(ImGuiStyleVar.FrameRounding, 0);
-
-        if (_filter.Draw(width))
-            _listDirty = true;
-        UpdateList();
-        DrawSelector();
-    }
-
-    private void DrawSelector()
-    {
-        using var child = ImRaii.Child("##Selector", new Vector2(_width, Im.ContentRegion.Available.Y), true);
-        if (!child)
-            return;
-
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, _defaultItemSpacing);
-        ImGuiClip.ClippedDraw(_visibleOrdered, DrawSelectable, Im.Style.TextHeight);
-    }
-
-    private void DrawSelectable(int globalIndex)
-    {
-        using var id    = Im.Id.Push(globalIndex);
-        using var color = ImGuiColor.Text.Push(_favorites.GetData(_npcs[globalIndex]).Color);
-        if (ImGui.Selectable(_npcs[globalIndex].Name, _selectedGlobalIndex == globalIndex, ImGuiSelectableFlags.AllowItemOverlap))
-            _selectedGlobalIndex = globalIndex;
+        protected override IEnumerable<NpcCacheItem> GetItems()
+            => _parent._npcs.Select(n => _parent.CreateItem(n)).OrderByDescending(n => n.Favorite);
     }
 }

@@ -167,17 +167,13 @@ public class DesignDetailTab
             "Set this design to reset any temporary settings previously applied to the associated collection when it is applied through any means."u8);
 
         ImUtf8.DrawFrameColumn("Color"u8);
-        var colorName = _selector.Selected!.Color.Length == 0 ? DesignColors.AutomaticName : _selector.Selected!.Color;
         ImGui.TableNextColumn();
-        if (_colorCombo.Draw("##colorCombo", colorName, "Associate a color with this design.\n"
-              + "Right-Click to revert to automatic coloring.\n"
-              + "Hold Control and scroll the mousewheel to scroll.",
-                width.X - Im.Style.ItemSpacing.X - Im.Style.FrameHeight, Im.Style.TextHeight)
-         && _colorCombo.CurrentSelection != null)
-        {
-            colorName = _colorCombo.CurrentSelection is DesignColors.AutomaticName ? string.Empty : _colorCombo.CurrentSelection;
-            _manager.ChangeColor(_selector.Selected!, colorName);
-        }
+        if (_colorCombo.Draw("##colorCombo"u8, _selector.Selected!.Color.Length is 0 ? DesignColors.AutomaticName : _selector.Selected!.Color,
+                "Associate a color with this design.\n"u8
+              + "Right-Click to revert to automatic coloring.\n"u8
+              + "Hold Control and scroll the mousewheel to scroll."u8,
+                width.X - Im.Style.ItemSpacing.X - Im.Style.FrameHeight, out var newColorName))
+            _manager.ChangeColor(_selector.Selected!, newColorName == DesignColors.AutomaticName ? string.Empty : newColorName);
 
         if (Im.Item.RightClicked())
             _manager.ChangeColor(_selector.Selected!, string.Empty);

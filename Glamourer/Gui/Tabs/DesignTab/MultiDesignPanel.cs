@@ -315,30 +315,33 @@ public class MultiDesignPanel(
         Im.Separator();
     }
 
+    private string _colorComboSelection = string.Empty;
+
     private void DrawMultiColor(Vector2 width, float offset)
     {
         ImUtf8.TextFrameAligned("Multi Colors:"u8);
         ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
-        _colorCombo.Draw("##color", _colorCombo.CurrentSelection ?? string.Empty, "Select a design color.",
-            Im.ContentRegion.Available.X - 2 * (width.X + Im.Style.ItemSpacing.X), Im.Style.TextHeight);
+        if (_colorCombo.Draw("##color"u8, _colorComboSelection, "Select a design color."u8,
+                Im.ContentRegion.Available.X - 2 * (width.X + Im.Style.ItemSpacing.X), out var newSelection))
+            _colorComboSelection = newSelection;
 
         UpdateColorCache();
         var label = _addDesigns.Count > 0
             ? $"Set for {_addDesigns.Count} Designs"
             : "Set";
-        var tooltip = _addDesigns.Count == 0
-            ? _colorCombo.CurrentSelection switch
+        var tooltip = _addDesigns.Count is 0
+            ? _colorComboSelection switch
             {
                 null                       => "No color specified.",
                 DesignColors.AutomaticName => "Use the other button to set to automatic.",
-                _                          => $"All designs selected are already set to the color \"{_colorCombo.CurrentSelection}\".",
+                _                          => $"All designs selected are already set to the color \"{_colorComboSelection}\".",
             }
-            : $"Set the color of {_addDesigns.Count} designs to \"{_colorCombo.CurrentSelection}\"\n\n\t{string.Join("\n\t", _addDesigns.Select(m => m.Name.Text))}";
+            : $"Set the color of {_addDesigns.Count} designs to \"{_colorComboSelection}\"\n\n\t{string.Join("\n\t", _addDesigns.Select(m => m.Name.Text))}";
         Im.Line.Same();
-        if (ImUtf8.ButtonEx(label, tooltip, width, _addDesigns.Count == 0))
+        if (ImEx.Button(label, width, tooltip, _addDesigns.Count is 0))
         {
             foreach (var design in _addDesigns)
-                editor.ChangeColor(design, _colorCombo.CurrentSelection!);
+                editor.ChangeColor(design, _colorComboSelection!);
         }
 
         label = _removeDesigns.Count > 0
@@ -348,7 +351,7 @@ public class MultiDesignPanel(
             ? "No selected design is set to a non-automatic color."
             : $"Set {_removeDesigns.Count} designs to use automatic color again:\n\n\t{string.Join("\n\t", _removeDesigns.Select(m => m.Item1.Name.Text))}";
         Im.Line.Same();
-        if (ImUtf8.ButtonEx(label, tooltip, width, _removeDesigns.Count == 0))
+        if (ImEx.Button(label, width, tooltip, _removeDesigns.Count is 0))
         {
             foreach (var (design, _) in _removeDesigns)
                 editor.ChangeColor(design, string.Empty);
@@ -503,7 +506,7 @@ public class MultiDesignPanel(
     {
         _addDesigns.Clear();
         _removeDesigns.Clear();
-        var selection = _colorCombo.CurrentSelection ?? DesignColors.AutomaticName;
+        var selection = string.IsNullOrEmpty(_colorComboSelection) ? DesignColors.AutomaticName : _colorComboSelection;
         foreach (var leaf in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
         {
             if (leaf.Value.Color.Length > 0)

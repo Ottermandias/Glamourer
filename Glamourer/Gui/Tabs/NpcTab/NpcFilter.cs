@@ -1,44 +1,92 @@
-﻿using Glamourer.Designs;
-using Glamourer.GameData;
-using OtterGui.Classes;
+﻿using ImSharp;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
 
-public sealed class NpcFilter(LocalNpcAppearanceData _favorites) : FilterUtility<NpcData>
+public sealed class NpcFilter : TokenizedFilter<NpcFilter.TokenType, NpcCacheItem, NpcFilter.NpcFilterToken>, IUiService
 {
-    protected override string Tooltip
-        => "Filter NPC appearances for those where their names contain the given substring.\n"
-          + "Enter i:[number] to filter for NPCs of certain IDs.\n"
-          + "Enter c:[string] to filter for NPC appearances set to specific colors.";
-
-    protected override (LowerString, long, int) FilterChange(string input)
-        => input.Length switch
-        {
-            0 => (LowerString.Empty, 0, -1),
-            > 1 when input[1] == ':' =>
-                input[0] switch
-                {
-                    'i' or 'I' => input.Length == 2     ? (LowerString.Empty, 0, -1) :
-                        long.TryParse(input.AsSpan(2), out var r) ? (LowerString.Empty, r, 1) : (LowerString.Empty, 0, -1),
-                    'c' or 'C' => input.Length == 2 ? (LowerString.Empty, 0, -1) : (new LowerString(input[2..]), 0, 2),
-                    _          => (new LowerString(input), 0, 0),
-                },
-            _ => (new LowerString(input), 0, 0),
-        };
-
-    public override bool ApplyFilter(in NpcData value)
-        => FilterMode switch
-        {
-            -1 => false,
-            0  => Filter.IsContained(value.Name),
-            1  => value.Id.Id == NumericalFilter,
-            2  => Filter.IsContained(GetColor(value)),
-            _  => false, // Should never happen
-        };
-
-    private string GetColor(in NpcData value)
+    public enum TokenType : byte
     {
-        var color = _favorites.GetColor(value);
-        return color.Length == 0 ? DesignColors.AutomaticName : color;
+        Name,
+        Id,
+        Color,
     }
+
+    protected override void DrawTooltip()
+    {
+        if (!Im.Item.Hovered())
+            return;
+
+        using var style = Im.Style.PushDefault();
+        using var tt    = Im.Tooltip.Begin();
+        Im.Text("Filter NPC appearances for those where their names contain the given substring."u8);
+        ImEx.TextMultiColored("Enter "u8).Then("i:[number]"u8, ColorId.TriStateCheck.Value()).Then(" to filter for NPCs of certain IDs."u8)
+            .End();
+        ImEx.TextMultiColored("Enter "u8).Then("c:[string]"u8, ColorId.TriStateCheck.Value())
+            .Then(" to filter for NPC appearances set to specific colors."u8).End();
+    }
+
+    public readonly struct NpcFilterToken() : IFilterToken<TokenType, NpcFilterToken>
+    {
+        public string    Needle       { get; init; }         = string.Empty;
+        public uint      ParsedNeedle { get; private init; } = 0;
+        public TokenType Type         { get; init; }
+
+        public bool Contains(NpcFilterToken other)
+        {
+            if (Type != other.Type)
+                return false;
+            if (Type is TokenType.Id)
+                return ParsedNeedle == other.ParsedNeedle;
+
+            return Needle.Contains(other.Needle);
+        }
+
+        public static bool ConvertToken(char tokenCharacter, out TokenType type)
+        {
+            type = tokenCharacter switch
+            {
+                'i' or 'I' => TokenType.Id,
+                'c' or 'C' => TokenType.Color,
+                _          => TokenType.Name,
+            };
+            return type is not TokenType.Name;
+        }
+
+        public static bool AllowsNone(TokenType type)
+            => false;
+
+        public static void ProcessList(List<NpcFilterToken> list)
+        {
+            for (var i = 0; i < list.Count; ++i)
+            {
+                var entry = list[i];
+                if (entry.Type is not TokenType.Id)
+                    continue;
+
+                if (!uint.TryParse(entry.Needle, out var value))
+                    list.RemoveAt(i--);
+                else
+                    list[i] = new NpcFilterToken
+                    {
+                        ParsedNeedle = value,
+                        Type         = TokenType.Id,
+                    };
+            }
+        }
+    }
+
+    protected override bool Matches(in NpcFilterToken token, in NpcCacheItem npcCacheItem)
+    {
+        return token.Type switch
+        {
+            TokenType.Name  => npcCacheItem.Name.Utf16.Contains(token.Needle, StringComparison.InvariantCultureIgnoreCase),
+            TokenType.Id    => npcCacheItem.Npc.Id == token.ParsedNeedle,
+            TokenType.Color => npcCacheItem.ColorText.Contains(token.Needle, StringComparison.InvariantCultureIgnoreCase),
+            _               => false,
+        };
+    }
+
+    protected override bool MatchesNone(TokenType type, bool negated, in NpcCacheItem npcCacheItem)
+        => false;
 }

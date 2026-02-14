@@ -36,7 +36,7 @@ public class LocalNpcAppearanceData : ISavable
 
     private Rgba32 GetColor(string color, bool favorite, ObjectKind kind)
     {
-        if (color.Length == 0)
+        if (color.Length is 0)
         {
             if (favorite)
                 return ColorId.FavoriteStarOn.Value();

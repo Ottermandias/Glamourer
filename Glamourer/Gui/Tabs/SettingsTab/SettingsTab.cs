@@ -299,6 +299,28 @@ public sealed class SettingsTab(
         Im.Line.New();
     }
 
+    private readonly (StringU8, QdbButtons)[] _columns =
+    [
+        (new StringU8("Apply Design"u8), QdbButtons.ApplyDesign),
+        (new StringU8("Revert All"u8), QdbButtons.RevertAll),
+        (new StringU8("Revert to Auto"u8), QdbButtons.RevertAutomation),
+        (new StringU8("Reapply Auto"u8), QdbButtons.ReapplyAutomation),
+        (new StringU8("Revert Equip"u8), QdbButtons.RevertEquip),
+        (new StringU8("Revert Customize"u8), QdbButtons.RevertCustomize),
+        (new StringU8("Revert Advanced Customization"u8), QdbButtons.RevertAdvancedCustomization),
+        (new StringU8("Revert Advanced Dyes"u8), QdbButtons.RevertAdvancedDyes),
+        (new StringU8("Reset Settings"u8), QdbButtons.ResetSettings),
+    ];
+
+    private static bool DisplayButton(QdbButtons button, bool showAuto, bool useTemporarySettings)
+        => button switch
+        {
+            QdbButtons.RevertAutomation  => showAuto,
+            QdbButtons.ReapplyAutomation => showAuto,
+            QdbButtons.ResetSettings     => useTemporarySettings,
+            _                            => true,
+        };
+
     private void DrawQuickDesignBoxes()
     {
         var showAuto   = config.EnableAutoDesigns;
@@ -310,23 +332,11 @@ public sealed class SettingsTab(
         if (!table)
             return;
 
-        IEnumerable<RefTuple<ReadOnlySpan<byte>, bool, QdbButtons>> columns =
-        [
-            RefTuple.Create("Apply Design"u8,                  true,                        QdbButtons.ApplyDesign),
-            RefTuple.Create("Revert All"u8,                    true,                        QdbButtons.RevertAll),
-            RefTuple.Create("Revert to Auto"u8,                showAuto,                    QdbButtons.RevertAutomation),
-            RefTuple.Create("Reapply Auto"u8,                  showAuto,                    QdbButtons.ReapplyAutomation),
-            RefTuple.Create("Revert Equip"u8,                  true,                        QdbButtons.RevertEquip),
-            RefTuple.Create("Revert Customize"u8,              true,                        QdbButtons.RevertCustomize),
-            RefTuple.Create("Revert Advanced Customization"u8, true,                        QdbButtons.RevertAdvancedCustomization),
-            RefTuple.Create("Revert Advanced Dyes"u8,          true,                        QdbButtons.RevertAdvancedDyes),
-            RefTuple.Create("Reset Settings"u8,                config.UseTemporarySettings, QdbButtons.ResetSettings),
-        ];
 
         // ReSharper disable once PossibleMultipleEnumeration
-        foreach (var (text, display, _) in columns)
+        foreach (var (text, flag) in _columns)
         {
-            if (!display)
+            if (!DisplayButton(flag, showAuto, config.UseTemporarySettings))
                 continue;
 
             table.NextColumn();
@@ -334,9 +344,9 @@ public sealed class SettingsTab(
         }
 
         // ReSharper disable once PossibleMultipleEnumeration
-        foreach (var (_, display, flag) in columns)
+        foreach (var (_, flag) in _columns)
         {
-            if (!display)
+            if (!DisplayButton(flag, showAuto, config.UseTemporarySettings))
                 continue;
 
             using var id = Im.Id.Push((int)flag);

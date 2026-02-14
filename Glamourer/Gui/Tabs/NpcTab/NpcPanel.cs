@@ -1,7 +1,4 @@
-﻿using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
-using Dalamud.Interface.ImGuiNotification;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.Designs;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
@@ -9,126 +6,38 @@ using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.State;
 using ImSharp;
 using Luna;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Text;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
-using static Glamourer.Gui.Tabs.HeaderDrawer;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
 
-public class NpcPanel
+public sealed class NpcPanel(
+    Configuration config,
+    NpcSelection selection,
+    CustomizationDrawer customizeDrawer,
+    EquipmentDrawer equipmentDrawer,
+    ActorObjectManager objects,
+    StateManager stateManager,
+    LocalNpcAppearanceData favorites,
+    DesignColors designColors) : IPanel
 {
-    private readonly Configuration          _config;
-    private readonly DesignColorCombo       _colorCombo;
-    private          string                 _newName = string.Empty;
-    private          DesignBase?            _newDesign;
-    private readonly NpcSelector            _selector;
-    private readonly LocalNpcAppearanceData _favorites;
-    private readonly CustomizationDrawer    _customizeDrawer;
-    private readonly EquipmentDrawer        _equipDrawer;
-    private readonly DesignConverter        _converter;
-    private readonly DesignManager          _designManager;
-    private readonly StateManager           _state;
-    private readonly ActorObjectManager     _objects;
-    private readonly DesignColors           _colors;
-    private readonly Button[]               _leftButtons;
-    private readonly Button[]               _rightButtons;
+    private readonly DesignColorCombo _combo = new(designColors, true);
 
-    public NpcPanel(NpcSelector selector,
-        LocalNpcAppearanceData favorites,
-        CustomizationDrawer customizeDrawer,
-        EquipmentDrawer equipDrawer,
-        DesignConverter converter,
-        DesignManager designManager,
-        StateManager state,
-        ActorObjectManager objects,
-        DesignColors colors,
-        Configuration config)
-    {
-        _selector        = selector;
-        _favorites       = favorites;
-        _customizeDrawer = customizeDrawer;
-        _equipDrawer     = equipDrawer;
-        _converter       = converter;
-        _designManager   = designManager;
-        _state           = state;
-        _objects         = objects;
-        _colors          = colors;
-        _config          = config;
-        _colorCombo      = new DesignColorCombo(colors, true);
-        _leftButtons =
-        [
-            new ExportToClipboardButton(this),
-            new SaveAsDesignButton(this),
-        ];
-        _rightButtons =
-        [
-            new FavoriteButton(this),
-        ];
-    }
+    public ReadOnlySpan<byte> Id
+        => "NpcPanel"u8;
 
     public void Draw()
     {
-        using var group = ImRaii.Group();
-
-        DrawHeader();
-        DrawPanel();
-    }
-
-    private void DrawHeader()
-    {
-        HeaderDrawer.Draw(_selector.HasSelection ? _selector.Selection.Name : "No Selection", ColorId.NormalDesign.Value().Color,
-            ImGuiColor.FrameBackground.Get().Color, _leftButtons, _rightButtons);
-        SaveDesignDrawPopup();
-    }
-
-    private sealed class FavoriteButton(NpcPanel panel) : Button
-    {
-        protected override string Description
-            => panel._favorites.IsFavorite(panel._selector.Selection)
-                ? "Remove this NPC appearance from your favorites."
-                : "Add this NPC Appearance to your favorites.";
-
-        protected override Rgba32 TextColor
-            => panel._favorites.IsFavorite(panel._selector.Selection)
-                ? ColorId.FavoriteStarOn.Value()
-                : 0x80000000;
-
-        protected override FontAwesomeIcon Icon
-            => FontAwesomeIcon.Star;
-
-        public override bool Visible
-            => panel._selector.HasSelection;
-
-        protected override void OnClick()
-            => panel._favorites.ToggleFavorite(panel._selector.Selection);
-    }
-
-    private void SaveDesignDrawPopup()
-    {
-        if (!ImGuiUtil.OpenNameField("Save as Design", ref _newName))
+        using var table = Im.Table.Begin("##Panel"u8, 1, TableFlags.None, Im.ContentRegion.Available);
+        if (!table || !selection.HasSelection)
             return;
 
-        if (_newDesign != null && _newName.Length > 0)
-            _designManager.CreateClone(_newDesign, _newName, true);
-        _newDesign = null;
-        _newName   = string.Empty;
-    }
-
-    private void DrawPanel()
-    {
-        using var table = Im.Table.Begin("##Panel"u8, 1, TableFlags.BordersOuter | TableFlags.ScrollY, Im.ContentRegion.Available);
-        if (!table || !_selector.HasSelection)
-            return;
-
-        ImGui.TableSetupScrollFreeze(0, 1);
-        ImGui.TableNextColumn();
+        table.SetupScrollFreeze(0, 1);
+        table.NextColumn();
         Im.Dummy(Vector2.Zero);
         DrawButtonRow();
 
-        ImGui.TableNextColumn();
+        table.NextColumn();
         DrawCustomization();
         DrawEquipment();
         DrawAppearanceInfo();
@@ -143,96 +52,82 @@ public class NpcPanel
 
     private void DrawCustomization()
     {
-        if (_config.HideDesignPanel.HasFlag(DesignPanelFlag.Customization))
+        if (config.HideDesignPanel.HasFlag(DesignPanelFlag.Customization))
             return;
 
-        var expand = _config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
-        using var h = Im.Tree.HeaderId(_selector.Selection.ModelId is 0
+        var expand = config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
+        using var h = Im.Tree.HeaderId(selection.Data.ModelId is 0
                 ? "Customization"u8
-                : $"Customization (Model Id #{_selector.Selection.ModelId})###Customization",
+                : $"Customization (Model Id #{selection.Data.ModelId})###Customization",
             expand ? TreeNodeFlags.DefaultOpen : TreeNodeFlags.None);
         if (!h)
             return;
 
-        _customizeDrawer.Draw(_selector.Selection.Customize, true, true);
+        customizeDrawer.Draw(selection.Data.Customize, true, true);
         Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
     }
 
     private void DrawEquipment()
     {
-        using var h = DesignPanelFlag.Equipment.Header(_config);
+        using var h = DesignPanelFlag.Equipment.Header(config);
         if (!h)
             return;
 
-        _equipDrawer.Prepare();
-        var designData = ToDesignData();
+        equipmentDrawer.Prepare();
+        var designData = selection.ToDesignData();
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var data = new EquipDrawData(slot, designData) { Locked = true };
-            _equipDrawer.DrawEquip(data);
+            equipmentDrawer.DrawEquip(data);
         }
 
         var mainhandData = new EquipDrawData(EquipSlot.MainHand, designData) { Locked = true };
         var offhandData  = new EquipDrawData(EquipSlot.OffHand,  designData) { Locked = true };
-        _equipDrawer.DrawWeapons(mainhandData, offhandData, false);
+        equipmentDrawer.DrawWeapons(mainhandData, offhandData, false);
 
         Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
-        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromValue(MetaIndex.VisorState, _selector.Selection.VisorToggled));
+        EquipmentDrawer.DrawMetaToggle(ToggleDrawData.FromValue(MetaIndex.VisorState, selection.Data.VisorToggled));
         Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
-    }
-
-    private DesignData ToDesignData()
-    {
-        var selection  = _selector.Selection;
-        var items      = _converter.FromDrawData(selection.Equip(), selection.Mainhand, selection.Offhand, true).ToArray();
-        var designData = new DesignData { Customize = selection.Customize };
-        foreach (var (slot, item, stain) in items)
-        {
-            designData.SetItem(slot, item);
-            designData.SetStain(slot, stain);
-        }
-
-        return designData;
     }
 
     private void DrawApplyToSelf()
     {
-        var (id, data) = _objects.PlayerData;
-        if (!ImUtf8.ButtonEx("Apply to Yourself"u8,
+        var (id, data) = objects.PlayerData;
+        if (!ImEx.Button("Apply to Yourself"u8, Vector2.Zero,
                 "Apply the current NPC appearance to your character.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8,
-                Vector2.Zero, !data.Valid))
+                !data.Valid))
             return;
 
-        if (_state.GetOrCreate(id, data.Objects[0], out var state))
+        if (stateManager.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var design = _converter.Convert(ToDesignData(), new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
-            _state.ApplyDesign(state, design, ApplySettings.Manual with { IsFinal = true });
+            var design = selection.ToDesignBase();
+            stateManager.ApplyDesign(state, design, ApplySettings.Manual with { IsFinal = true });
         }
     }
 
     private void DrawApplyToTarget()
     {
-        var (id, data) = _objects.TargetData;
+        var (id, data) = objects.TargetData;
         var tt = id.IsValid
             ? data.Valid
                 ? "Apply the current NPC appearance to your current target.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8
                 : "The current target can not be manipulated."u8
             : "No valid target selected."u8;
-        if (!ImUtf8.ButtonEx("Apply to Target"u8, tt, Vector2.Zero, !data.Valid))
+        if (!ImEx.Button("Apply to Target"u8, Vector2.Zero, tt, !data.Valid))
             return;
 
-        if (_state.GetOrCreate(id, data.Objects[0], out var state))
+        if (stateManager.GetOrCreate(id, data.Objects[0], out var state))
         {
-            var design = _converter.Convert(ToDesignData(), new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
-            _state.ApplyDesign(state, design, ApplySettings.Manual with { IsFinal = true });
+            var design = selection.ToDesignBase();
+            stateManager.ApplyDesign(state, design, ApplySettings.Manual with { IsFinal = true });
         }
     }
 
 
     private void DrawAppearanceInfo()
     {
-        using var h = DesignPanelFlag.AppearanceDetails.Header(_config);
+        using var h = DesignPanelFlag.AppearanceDetails.Header(config);
         if (!h)
             return;
 
@@ -240,112 +135,64 @@ public class NpcPanel
         if (!table)
             return;
 
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f));
-        table.SetupColumn("Type"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Last Update Datem"u8).X);
+        using var style = ImStyleDouble.ButtonTextAlign.Push(new Vector2(0, 0.5f));
+        table.SetupColumn("Type"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateButtonSize("Last Update Date"u8).X);
         table.SetupColumn("Data"u8, TableColumnFlags.WidthStretch);
 
-        var selection = _selector.Selection;
-        CopyButton("NPC Name"u8, selection.Name);
-        CopyButton("NPC ID"u8,   selection.Id.Id.ToString());
-        ImGuiUtil.DrawFrameColumn("NPC Type");
-        ImGui.TableNextColumn();
+        CopyButton(table, "NPC Name"u8, selection.Name);
+        CopyButton(table, "NPC ID"u8,   $"{selection.Data.Id.Id}");
+        table.DrawFrameColumn("NPC Type"u8);
+        table.NextColumn();
         var width = Im.ContentRegion.Available.X;
-        ImEx.TextFramed(selection.Kind is ObjectKind.BattleNpc ? "Battle NPC"u8 : "Event NPC"u8, new Vector2(width, 0),
+        ImEx.TextFramed(selection.Data.Kind is ObjectKind.BattleNpc ? "Battle NPC"u8 : "Event NPC"u8, new Vector2(width, 0),
             ImGuiColor.FrameBackground.Get());
 
-        ImUtf8.DrawFrameColumn("Color"u8);
-        var color     = _favorites.GetColor(selection);
-        var colorName = color.Length == 0 ? DesignColors.AutomaticName : color;
-        ImGui.TableNextColumn();
-        if (_colorCombo.Draw("##colorCombo", colorName,
-                "Associate a color with this NPC appearance.\n"
-              + "Right-Click to revert to automatic coloring.\n"
-              + "Hold Control and scroll the mousewheel to scroll.",
-                width - Im.Style.ItemSpacing.X - Im.Style.FrameHeight, Im.Style.TextHeight)
-         && _colorCombo.CurrentSelection != null)
-        {
-            color = _colorCombo.CurrentSelection is DesignColors.AutomaticName ? string.Empty : _colorCombo.CurrentSelection;
-            _favorites.SetColor(selection, color);
-        }
+        table.DrawFrameColumn("Color"u8);
+        table.NextColumn();
+        var color = selection.ColorText;
+        if (_combo.Draw("##colorCombo"u8, selection.ColorTextU8,
+                "Associate a color with this NPC appearance.\n"u8
+              + "Right-Click to revert to automatic coloring.\n"u8
+              + "Hold Control and scroll the mousewheel to scroll."u8,
+                width - Im.Style.ItemInnerSpacing.X - Im.Style.FrameHeight, out var newColorText))
+            favorites.SetColor(selection.Data, newColorText.Item == DesignColors.AutomaticName ? string.Empty : newColorText.Item);
 
         if (Im.Item.RightClicked())
         {
-            _favorites.SetColor(selection, string.Empty);
+            favorites.SetColor(selection.Data, string.Empty);
             color = string.Empty;
         }
 
-        if (_colors.TryGetValue(color, out var currentColor))
+        if (designColors.TryGetValue(color, out var currentColor))
         {
-            Im.Line.Same();
+            Im.Line.SameInner();
             if (DesignColorUi.DrawColorButton($"Color associated with {color}", currentColor, out var newColor))
-                _colors.SetColor(color, newColor);
+                designColors.SetColor(color, newColor);
         }
         else if (color.Length is not 0)
         {
-            Im.Line.Same();
-            var       size = new Vector2(Im.Style.FrameHeight);
-            using var font = ImRaii.PushFont(UiBuilder.IconFont);
-            ImEx.TextFramed(LunaStyle.WarningIcon.Span, size, _colors.MissingColor);
-            ImUtf8.HoverTooltip("The color associated with this design does not exist."u8);
+            Im.Line.SameInner();
+            var size = new Vector2(Im.Style.FrameHeight);
+            using (AwesomeIcon.Font.Push())
+            {
+                ImEx.TextFramed(LunaStyle.WarningIcon.Span, size, designColors.MissingColor);
+            }
+
+            Im.Tooltip.OnHover("The color associated with this design does not exist."u8);
         }
 
         return;
 
-        static void CopyButton(ReadOnlySpan<byte> label, string text)
+        static void CopyButton(in Im.TableDisposable table, ReadOnlySpan<byte> label, Utf8StringHandler<HintStringHandlerBuffer> text)
         {
-            ImUtf8.DrawFrameColumn(label);
-            ImGui.TableNextColumn();
-            if (ImUtf8.Button(text, new Vector2(Im.ContentRegion.Available.X, 0)))
-                ImUtf8.SetClipboardText(text);
-            ImUtf8.HoverTooltip("Click to copy to clipboard."u8);
-        }
-    }
+            table.DrawFrameColumn(label);
+            table.NextColumn();
+            if (!text.GetSpan(out var span))
+                return;
 
-    private sealed class ExportToClipboardButton(NpcPanel panel) : Button
-    {
-        protected override string Description
-            => "Copy the current NPCs appearance to your clipboard.\nHold Control to disable applying of customizations for the copied design.\nHold Shift to disable applying of gear for the copied design.";
-
-        protected override FontAwesomeIcon Icon
-            => FontAwesomeIcon.Copy;
-
-        public override bool Visible
-            => panel._selector.HasSelection;
-
-        protected override void OnClick()
-        {
-            try
-            {
-                var data = panel.ToDesignData();
-                var text = panel._converter.ShareBase64(data, new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
-                ImGui.SetClipboardText(text);
-            }
-            catch (Exception ex)
-            {
-                Glamourer.Messager.NotificationMessage(ex, $"Could not copy {panel._selector.Selection.Name}'s data to clipboard.",
-                    $"Could not copy data from NPC appearance {panel._selector.Selection.Kind} {panel._selector.Selection.Id.Id} to clipboard",
-                    NotificationType.Error);
-            }
-        }
-    }
-
-    private sealed class SaveAsDesignButton(NpcPanel panel) : Button
-    {
-        protected override string Description
-            => "Save this NPCs appearance as a design.\nHold Control to disable applying of customizations for the saved design.\nHold Shift to disable applying of gear for the saved design.";
-
-        protected override FontAwesomeIcon Icon
-            => FontAwesomeIcon.Save;
-
-        public override bool Visible
-            => panel._selector.HasSelection;
-
-        protected override void OnClick()
-        {
-            ImGui.OpenPopup("Save as Design");
-            panel._newName = panel._selector.Selection.Name;
-            var data = panel.ToDesignData();
-            panel._newDesign = panel._converter.Convert(data, new StateMaterialManager(), ApplicationRules.NpcFromModifiers());
+            if (Im.Button(span, Im.ContentRegion.Available with { Y = 0 }))
+                Im.Clipboard.Set(span);
+            Im.Tooltip.OnHover("Click to copy to clipboard."u8);
         }
     }
 }
