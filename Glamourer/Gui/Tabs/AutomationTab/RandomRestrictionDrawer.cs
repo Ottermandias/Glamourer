@@ -13,26 +13,26 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     private AutoDesignSet? _set;
     private int            _designIndex = -1;
 
-    private readonly AutomationChanged _automationChanged;
-    private readonly Configuration     _config;
-    private readonly AutoDesignManager _autoDesignManager;
-    private readonly RandomDesignCombo _randomDesignCombo;
-    private readonly SetSelector       _selector;
-    private readonly DesignStorage     _designs;
-    private readonly DesignFileSystem  _designFileSystem;
+    private readonly AutomationChanged   _automationChanged;
+    private readonly Configuration       _config;
+    private readonly AutoDesignManager   _autoDesignManager;
+    private readonly RandomDesignCombo   _randomDesignCombo;
+    private readonly AutomationSelection _selection;
+    private readonly DesignStorage       _designs;
+    private readonly DesignFileSystem    _designFileSystem;
 
     private string  _newText = string.Empty;
     private string? _newDefinition;
     private Design? _newDesign;
 
     public RandomRestrictionDrawer(AutomationChanged automationChanged, Configuration config, AutoDesignManager autoDesignManager,
-        RandomDesignCombo randomDesignCombo, SetSelector selector, DesignFileSystem designFileSystem, DesignStorage designs)
+        RandomDesignCombo randomDesignCombo, AutomationSelection selection, DesignFileSystem designFileSystem, DesignStorage designs)
     {
         _automationChanged = automationChanged;
         _config            = config;
         _autoDesignManager = autoDesignManager;
         _randomDesignCombo = randomDesignCombo;
-        _selector          = selector;
+        _selection         = selection;
         _designFileSystem  = designFileSystem;
         _designs           = designs;
         _automationChanged.Subscribe(OnAutomationChange, AutomationChanged.Priority.RandomRestrictionDrawer);
@@ -87,7 +87,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
         if (_set is null || _designIndex < 0 || _designIndex >= _set.Designs.Count)
             return;
 
-        if (_set != _selector.Selection)
+        if (_set != _selection.Set)
         {
             Close();
             return;
@@ -283,8 +283,10 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 name = _designFileSystem.TryGetValue(enumerator.Current, out l) ? l.FullName() : enumerator.Current.Name.Text;
                 Im.BulletText(name);
             }
+
             return;
         }
+
         Im.Text("Matches no currently existing designs."u8);
     }
 
@@ -314,7 +316,8 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 "Add a new condition that the design must be assigned to the given color."u8, invalid)
          && Add(new RandomPredicate.Exact(RandomPredicate.Exact.Type.Color, _newText));
 
-        if (_randomDesignCombo.Draw(StringU8.Empty, _newDesign, out var newDesign, Im.ContentRegion.Available.X - Im.Style.ItemInnerSpacing.X - buttonSize.X))
+        if (_randomDesignCombo.Draw(StringU8.Empty, _newDesign, out var newDesign,
+                Im.ContentRegion.Available.X - Im.Style.ItemInnerSpacing.X - buttonSize.X))
             _newDesign = newDesign as Design;
         Im.Line.SameInner();
         if (ImEx.Button("Exact Design"u8, buttonSize, "Add a single, specific design."u8, _newDesign is null))
@@ -346,7 +349,8 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
         var definition        = _newDefinition ?? currentDefinition;
         definition = definition.Replace(";", ";\n\t").Replace("{", "{\n\t").Replace("}", "\n}");
         var lines = definition.Count(c => c is '\n');
-        if (Im.Input.MultiLine("##definition"u8, ref definition, Im.ContentRegion.Available with { Y = (lines + 1) * Im.Style.TextHeight + Im.Style.FrameHeight },
+        if (Im.Input.MultiLine("##definition"u8, ref definition,
+                Im.ContentRegion.Available with { Y = (lines + 1) * Im.Style.TextHeight + Im.Style.FrameHeight },
                 InputTextFlags.CtrlEnterForNewLine))
             _newDefinition = definition;
         if (Im.Item.DeactivatedAfterEdit && _newDefinition is not null && _newDefinition != currentDefinition)
@@ -373,8 +377,8 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     {
         var designs = IDesignPredicate.Get(list, _designs, _designFileSystem).ToList();
         Im.Button(designs.Count > 0
-                ? $"All Restrictions Combined Match {designs.Count} Designs"
-                : "None of the Restrictions Matches Any Designs"u8, Im.ContentRegion.Available with { Y = 0 });
+            ? $"All Restrictions Combined Match {designs.Count} Designs"
+            : "None of the Restrictions Matches Any Designs"u8, Im.ContentRegion.Available with { Y = 0 });
         if (Im.Item.Hovered())
             LookupTooltip(designs);
     }

@@ -64,7 +64,10 @@ public sealed class AutomationChanged()
 
     public enum Priority
     {
-        /// <seealso cref="Gui.Tabs.AutomationTab.SetSelector.OnAutomationChange"/>
+        /// <seealso cref="Gui.Tabs.AutomationTab.AutomationSelection.OnAutomationChanged"/>
+        AutomationSelection = 0,
+
+        /// <seealso cref="Gui.Tabs.AutomationTab.SetSelector.Cache.OnAutomationChanged"/>
         SetSelector = 0,
 
         /// <seealso cref="AutoDesignApplier.OnAutomationChange"/>

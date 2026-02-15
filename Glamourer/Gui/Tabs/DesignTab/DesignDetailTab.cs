@@ -1,15 +1,8 @@
-﻿using Dalamud.Interface;
-using Dalamud.Interface.ImGuiNotification;
+﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
 using Luna;
-using OtterGui;
-using OtterGui.Classes;
-using OtterGui.Raii;
-using OtterGui.Text;
-using TagButtons = OtterGui.Widgets.TagButtons;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
@@ -22,15 +15,8 @@ public class DesignDetailTab
     private readonly DesignManager            _manager;
     private readonly DesignColors             _colors;
     private readonly DesignColorCombo         _colorCombo;
-    private readonly TagButtons               _tagButtons = new();
 
-    private string? _newPath;
-    private string? _newDescription;
-    private string? _newName;
-
-    private bool                   _editDescriptionMode;
-    private Design?                _changeDesign;
-    private DesignFileSystem.Leaf? _changeLeaf;
+    private bool _editDescriptionMode;
 
     public DesignDetailTab(SaveService saveService, DesignFileSystemSelector selector, DesignManager manager, DesignFileSystem fileSystem,
         DesignColors colors, Configuration config)
@@ -58,7 +44,7 @@ public class DesignDetailTab
 
     private void DrawDesignInfoTable()
     {
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ButtonTextAlign, new Vector2(0, 0.5f));
+        using var style = ImStyleDouble.ButtonTextAlign.Push(new Vector2(0, 0.5f));
         using var table = Im.Table.Begin("Details"u8, 2);
         if (!table)
             return;
@@ -66,31 +52,20 @@ public class DesignDetailTab
         table.SetupColumn("Type"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Reset Temporary Settings"u8).X);
         table.SetupColumn("Data"u8, TableColumnFlags.WidthStretch);
 
-        ImUtf8.DrawFrameColumn("Design Name"u8);
-        ImGui.TableNextColumn();
-        var width = new Vector2(Im.ContentRegion.Available.X, 0);
-        var name  = _newName ?? _selector.Selected!.Name;
-        ImGui.SetNextItemWidth(width.X);
-        if (ImUtf8.InputText("##Name"u8, ref name))
-        {
-            _newName      = name;
-            _changeDesign = _selector.Selected;
-        }
-
-        if (ImGui.IsItemDeactivatedAfterEdit() && _changeDesign != null)
-        {
-            _manager.Rename(_changeDesign, name);
-            _newName      = null;
-            _changeDesign = null;
-        }
+        table.DrawFrameColumn("Design Name"u8);
+        table.NextColumn();
+        var width = Im.ContentRegion.Available with { Y = 0 };
+        Im.Item.SetNextWidth(width.X);
+        if (ImEx.InputOnDeactivation.Text("##Name"u8, _selector.Selected!.Name.Text, out string newName))
+            _manager.Rename(_selector.Selected!, newName);
 
         var identifier = _selector.Selected!.Identifier.ToString();
-        ImUtf8.DrawFrameColumn("Unique Identifier"u8);
-        ImGui.TableNextColumn();
+        table.DrawFrameColumn("Unique Identifier"u8);
+        table.NextColumn();
         var fileName = _saveService.FileNames.DesignFile(_selector.Selected!);
         using (Im.Font.PushMono())
         {
-            if (ImGui.Button(identifier, width))
+            if (Im.Button(identifier, width))
                 try
                 {
                     Process.Start(new ProcessStartInfo(fileName) { UseShellExecute = true });
@@ -102,72 +77,60 @@ public class DesignDetailTab
                 }
 
             if (Im.Item.RightClicked())
-                ImGui.SetClipboardText(identifier);
+                Im.Clipboard.Set(identifier);
         }
 
-        ImUtf8.HoverTooltip(
+        Im.Tooltip.OnHover(
             $"Open the file\n\t{fileName}\ncontaining this design in the .json-editor of your choice.\n\nRight-Click to copy identifier to clipboard.");
 
-        ImUtf8.DrawFrameColumn("Full Selector Path"u8);
-        ImGui.TableNextColumn();
-        var path = _newPath ?? _selector.SelectedLeaf!.FullName();
-        ImGui.SetNextItemWidth(width.X);
-        if (ImUtf8.InputText("##Path"u8, ref path))
-        {
-            _newPath    = path;
-            _changeLeaf = _selector.SelectedLeaf!;
-        }
-
-        if (ImGui.IsItemDeactivatedAfterEdit() && _changeLeaf != null)
+        table.DrawFrameColumn("Full Selector Path"u8);
+        table.NextColumn();
+        Im.Item.SetNextWidth(width.X);
+        if (ImEx.InputOnDeactivation.Text("##Path"u8, _selector.SelectedLeaf!.FullName(), out string newPath))
             try
             {
-                _fileSystem.RenameAndMove(_changeLeaf, path);
-                _newPath    = null;
-                _changeLeaf = null;
+                _fileSystem.RenameAndMove(_selector.SelectedLeaf, newPath);
             }
             catch (Exception ex)
             {
                 Glamourer.Messager.NotificationMessage(ex, ex.Message, "Could not rename or move design", NotificationType.Error);
             }
 
-        ImUtf8.DrawFrameColumn("Quick Design Bar"u8);
-        ImGui.TableNextColumn();
-        if (ImUtf8.RadioButton("Display##qdb"u8, _selector.Selected.QuickDesign))
+        table.DrawFrameColumn("Quick Design Bar"u8);
+        table.NextColumn();
+        if (Im.RadioButton("Display##qdb"u8, _selector.Selected.QuickDesign))
             _manager.SetQuickDesign(_selector.Selected!, true);
-        var hovered = ImGui.IsItemHovered();
-        Im.Line.Same();
-        if (ImUtf8.RadioButton("Hide##qdb"u8, !_selector.Selected.QuickDesign))
+        var hovered = Im.Item.Hovered();
+        Im.Line.SameInner();
+        if (Im.RadioButton("Hide##qdb"u8, !_selector.Selected.QuickDesign))
             _manager.SetQuickDesign(_selector.Selected!, false);
-        if (hovered || ImGui.IsItemHovered())
-        {
-            using var tt = ImUtf8.Tooltip();
-            ImUtf8.Text("Display or hide this design in your quick design bar."u8);
-        }
+        if (hovered || Im.Item.Hovered())
+            Im.Tooltip.Set("Display or hide this design in your quick design bar."u8);
 
         var forceRedraw = _selector.Selected!.ForcedRedraw;
-        ImUtf8.DrawFrameColumn("Force Redrawing"u8);
-        ImGui.TableNextColumn();
-        if (ImUtf8.Checkbox("##ForceRedraw"u8, ref forceRedraw))
+        table.DrawFrameColumn("Force Redrawing"u8);
+        table.NextColumn();
+        if (Im.Checkbox("##ForceRedraw"u8, ref forceRedraw))
             _manager.ChangeForcedRedraw(_selector.Selected!, forceRedraw);
-        ImUtf8.HoverTooltip("Set this design to always force a redraw when it is applied through any means."u8);
+        Im.Tooltip.OnHover("Set this design to always force a redraw when it is applied through any means."u8);
 
         var resetAdvancedDyes = _selector.Selected!.ResetAdvancedDyes;
-        ImUtf8.DrawFrameColumn("Reset Advanced Dyes"u8);
-        ImGui.TableNextColumn();
-        if (ImUtf8.Checkbox("##ResetAdvancedDyes"u8, ref resetAdvancedDyes))
+        table.DrawFrameColumn("Reset Advanced Dyes"u8);
+        table.NextColumn();
+        if (Im.Checkbox("##ResetAdvancedDyes"u8, ref resetAdvancedDyes))
             _manager.ChangeResetAdvancedDyes(_selector.Selected!, resetAdvancedDyes);
-        ImUtf8.HoverTooltip("Set this design to reset any previously applied advanced dyes when it is applied through any means."u8);
+        Im.Tooltip.OnHover("Set this design to reset any previously applied advanced dyes when it is applied through any means."u8);
 
         var resetTemporarySettings = _selector.Selected!.ResetTemporarySettings;
-        ImUtf8.DrawFrameColumn("Reset Temporary Settings"u8);
-        ImGui.TableNextColumn();
-        if (ImUtf8.Checkbox("##ResetTemporarySettings"u8, ref resetTemporarySettings))
+        table.DrawFrameColumn("Reset Temporary Settings"u8);
+        table.NextColumn();
+        if (Im.Checkbox("##ResetTemporarySettings"u8, ref resetTemporarySettings))
             _manager.ChangeResetTemporarySettings(_selector.Selected!, resetTemporarySettings);
-        ImUtf8.HoverTooltip(
+        Im.Tooltip.OnHover(
             "Set this design to reset any temporary settings previously applied to the associated collection when it is applied through any means."u8);
 
-        ImUtf8.DrawFrameColumn("Color"u8);
-        ImGui.TableNextColumn();
+        table.DrawFrameColumn("Color"u8);
+        table.NextColumn();
         if (_colorCombo.Draw("##colorCombo"u8, _selector.Selected!.Color.Length is 0 ? DesignColors.AutomaticName : _selector.Selected!.Color,
                 "Associate a color with this design.\n"u8
               + "Right-Click to revert to automatic coloring.\n"u8
@@ -191,28 +154,28 @@ public class DesignDetailTab
             Im.Tooltip.OnHover("The color associated with this design does not exist."u8);
         }
 
-        ImUtf8.DrawFrameColumn("Creation Date"u8);
-        ImGui.TableNextColumn();
-        ImGuiUtil.DrawTextButton(_selector.Selected!.CreationDate.LocalDateTime.ToString("F"), width, 0);
+        table.DrawFrameColumn("Creation Date"u8);
+        table.NextColumn();
+        ImEx.TextFramed($"{_selector.Selected!.CreationDate.LocalDateTime:F}", width, 0);
 
-        ImUtf8.DrawFrameColumn("Last Update Date"u8);
-        ImGui.TableNextColumn();
-        ImGuiUtil.DrawTextButton(_selector.Selected!.LastEdit.LocalDateTime.ToString("F"), width, 0);
+        table.DrawFrameColumn("Last Update Date"u8);
+        table.NextColumn();
+        ImEx.TextFramed($"{_selector.Selected!.LastEdit.LocalDateTime:F}", width, 0);
 
-        ImUtf8.DrawFrameColumn("Tags"u8);
-        ImGui.TableNextColumn();
+        table.DrawFrameColumn("Tags"u8);
+        table.NextColumn();
         DrawTags();
     }
 
     private void DrawTags()
     {
-        var idx = _tagButtons.Draw(string.Empty, string.Empty, _selector.Selected!.Tags, out var editedTag);
+        var idx = TagButtons.Draw(StringU8.Empty, StringU8.Empty, _selector.Selected!.Tags, out var editedTag);
         if (idx < 0)
             return;
 
         if (idx < _selector.Selected!.Tags.Length)
         {
-            if (editedTag.Length == 0)
+            if (editedTag.Length is 0)
                 _manager.RemoveTag(_selector.Selected!, idx);
             else
                 _manager.RenameTag(_selector.Selected!, idx, editedTag);
@@ -226,30 +189,24 @@ public class DesignDetailTab
     private void DrawDescription()
     {
         var desc = _selector.Selected!.Description;
-        var size = new Vector2(Im.ContentRegion.Available.X, 12 * Im.Style.TextHeightWithSpacing);
+        var size = Im.ContentRegion.Available with { Y = 12 * Im.Style.TextHeightWithSpacing };
         if (!_editDescriptionMode)
         {
-            using (var textBox = ImUtf8.ListBox("##desc"u8, size))
+            using (var textBox = Im.ListBox.Begin("##desc"u8, size))
             {
-                ImUtf8.TextWrapped(desc);
+                if (textBox)
+                    Im.TextWrapped(desc);
             }
 
-            if (ImUtf8.Button("Edit Description"u8))
+            if (Im.Button("Edit Description"u8))
                 _editDescriptionMode = true;
         }
         else
         {
-            var edit = _newDescription ?? desc;
-            if (ImUtf8.InputMultiLine("##desc"u8, ref edit, size))
-                _newDescription = edit;
+            if (ImEx.InputOnDeactivation.MultiLine("##desc"u8, desc, out string newDescription, size))
+                _manager.ChangeDescription(_selector.Selected!, newDescription);
 
-            if (ImGui.IsItemDeactivatedAfterEdit())
-            {
-                _manager.ChangeDescription(_selector.Selected!, edit);
-                _newDescription = null;
-            }
-
-            if (ImUtf8.Button("Stop Editing"u8))
+            if (Im.Button("Stop Editing"u8))
                 _editDescriptionMode = false;
         }
     }
