@@ -1,13 +1,7 @@
-﻿using Dalamud.Interface;
-using Dalamud.Interface.Utility;
-using Glamourer.Designs;
+﻿using Glamourer.Designs;
 using Glamourer.Interop.Material;
-using Dalamud.Bindings.ImGui;
 using ImSharp;
-using OtterGui.Extensions;
-using OtterGui.Raii;
-using OtterGui.Text;
-using static Glamourer.Gui.Tabs.HeaderDrawer;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
@@ -17,9 +11,6 @@ public class MultiDesignPanel(
     DesignColors colors,
     Configuration config)
 {
-    private readonly Button[] _leftButtons  = [];
-    private readonly Button[] _rightButtons = []; //[new IncognitoButton(config)];
-
     private readonly DesignColorCombo _colorCombo = new(colors, true);
 
     public void Draw()
@@ -27,13 +18,8 @@ public class MultiDesignPanel(
         if (selector.SelectedPaths.Count == 0)
             return;
 
-        HeaderDrawer.Draw(string.Empty, 0, ImGuiColor.FrameBackground.Get().Color, _leftButtons, _rightButtons);
-        using var child = ImUtf8.Child("##MultiPanel"u8, default, true);
-        if (!child)
-            return;
-
-        var width       = ImGuiHelpers.ScaledVector2(145, 0);
-        var treeNodePos = ImGui.GetCursorPos();
+        var width       = ImEx.ScaledVectorX(145);
+        var treeNodePos = Im.Cursor.Position;
         _numDesigns = DrawDesignList();
         DrawCounts(treeNodePos);
         var offset = DrawMultiTagger(width);
@@ -49,18 +35,17 @@ public class MultiDesignPanel(
 
     private void DrawCounts(Vector2 treeNodePos)
     {
-        var startPos   = ImGui.GetCursorPos();
+        var startPos   = Im.Cursor.Position;
         var numFolders = selector.SelectedPaths.Count - _numDesigns;
-        var text = (_numDesigns, numFolders) switch
+        Im.Cursor.Position = treeNodePos;
+        ImEx.TextRightAligned((_numDesigns, numFolders) switch
         {
-            (0, 0)   => string.Empty, // should not happen
-            (> 0, 0) => $"{_numDesigns} Designs",
-            (0, > 0) => $"{numFolders} Folders",
-            _        => $"{_numDesigns} Designs, {numFolders} Folders",
-        };
-        ImGui.SetCursorPos(treeNodePos);
-        ImUtf8.TextRightAligned(text);
-        ImGui.SetCursorPos(startPos);
+            (0, 0)    => StringU8.Empty, // should not happen
+            ( > 0, 0) => $"{_numDesigns} Designs",
+            (0, > 0)  => $"{numFolders} Folders",
+            _         => $"{_numDesigns} Designs, {numFolders} Folders",
+        });
+        Im.Cursor.Position = startPos;
     }
 
     private void ResetCounts()
@@ -127,14 +112,14 @@ public class MultiDesignPanel(
             {
                 using var id = Im.Id.Push(i++);
                 var (icon, text) = path is DesignFileSystem.Leaf l
-                    ? (FontAwesomeIcon.FileCircleMinus, l.Value.Name.Text)
-                    : (FontAwesomeIcon.FolderMinus, string.Empty);
-                ImGui.TableNextColumn();
-                if (ImUtf8.IconButton(icon, "Remove from selection."u8, sizeType))
+                    ? (LunaStyle.RemoveFileIcon, l.Value.Name.Text)
+                    : (LunaStyle.RemoveFolderIcon, string.Empty);
+                table.NextColumn();
+                if (ImEx.Icon.Button(icon, "Remove from selection."u8, sizeType))
                     selector.RemovePathFromMultiSelection(path);
 
-                ImUtf8.DrawFrameColumn(text);
-                ImUtf8.DrawFrameColumn(fullName);
+                table.DrawFrameColumn(text);
+                table.DrawFrameColumn(fullName);
 
                 if (CountLeaves(path))
                     ++numDesigns;
@@ -159,36 +144,32 @@ public class MultiDesignPanel(
 
     private float DrawMultiTagger(Vector2 width)
     {
-        ImUtf8.TextFrameAligned("Multi Tagger:"u8);
+        ImEx.TextFrameAligned("Multi Tagger:"u8);
         Im.Line.Same();
-        var offset = ImGui.GetItemRectSize().X + Im.Style.WindowPadding.X;
-        ImGui.SetNextItemWidth(Im.ContentRegion.Available.X - 2 * (width.X + Im.Style.ItemSpacing.X));
-        ImUtf8.InputText("##tag"u8, ref _tag, "Tag Name..."u8);
+        var offset = Im.Item.Size.X + Im.Style.WindowPadding.X;
+        Im.Item.SetNextWidth(Im.ContentRegion.Available.X - 2 * (width.X + Im.Style.ItemSpacing.X));
+        Im.Input.Text("##tag"u8, ref _tag, "Tag Name..."u8);
 
         UpdateTagCache();
-        var label = _addDesigns.Count > 0
-            ? $"Add to {_addDesigns.Count} Designs"
-            : "Add";
-        var tooltip = _addDesigns.Count == 0
-            ? _tag.Length == 0
-                ? "No tag specified."
-                : $"All designs selected already contain the tag \"{_tag}\"."
-            : $"Add the tag \"{_tag}\" to {_addDesigns.Count} designs as a local tag:\n\n\t{string.Join("\n\t", _addDesigns.Select(m => m.Name.Text))}";
         Im.Line.Same();
-        if (ImUtf8.ButtonEx(label, tooltip, width, _addDesigns.Count == 0))
+        if (ImEx.Button(_addDesigns.Count > 0
+                ? $"Add to {_addDesigns.Count} Designs"
+                : "Add"u8, width, _addDesigns.Count is 0
+                ? _tag.Length is 0
+                    ? "No tag specified."u8
+                    : $"All designs selected already contain the tag \"{_tag}\"."
+                : $"Add the tag \"{_tag}\" to {_addDesigns.Count} designs as a local tag:\n\n\t{StringU8.Join("\n\t"u8, _addDesigns.Select(m => m.Name.Text))}", _addDesigns.Count is 0))
             foreach (var design in _addDesigns)
                 editor.AddTag(design, _tag);
 
-        label = _removeDesigns.Count > 0
-            ? $"Remove from {_removeDesigns.Count} Designs"
-            : "Remove";
-        tooltip = _removeDesigns.Count == 0
-            ? _tag.Length == 0
-                ? "No tag specified."
-                : $"No selected design contains the tag \"{_tag}\" locally."
-            : $"Remove the local tag \"{_tag}\" from {_removeDesigns.Count} designs:\n\n\t{string.Join("\n\t", _removeDesigns.Select(m => m.Item1.Name.Text))}";
         Im.Line.Same();
-        if (ImUtf8.ButtonEx(label, tooltip, width, _removeDesigns.Count == 0))
+        if (ImEx.Button(_removeDesigns.Count > 0
+                ? $"Remove from {_removeDesigns.Count} Designs"
+                : "Remove", width, _removeDesigns.Count is 0
+                ? _tag.Length is 0
+                    ? "No tag specified."u8
+                    : $"No selected design contains the tag \"{_tag}\" locally."
+                : $"Remove the local tag \"{_tag}\" from {_removeDesigns.Count} designs:\n\n\t{string.Join("\n\t", _removeDesigns.Select(m => m.Item1.Name.Text))}", _removeDesigns.Count is 0))
             foreach (var (design, index) in _removeDesigns)
                 editor.RemoveTag(design, index);
         Im.Separator();
@@ -197,24 +178,22 @@ public class MultiDesignPanel(
 
     private void DrawMultiQuickDesignBar(float offset)
     {
-        ImUtf8.TextFrameAligned("Multi QDB:"u8);
-        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        ImEx.TextFrameAligned("Multi QDB:"u8);
+        Im.Line.Same(offset, Im.Style.ItemSpacing.X);
         var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numQuickDesignEnabled;
-        var tt = diff == 0
-            ? $"All {_numDesigns} selected designs are already displayed in the quick design bar."
-            : $"Display all {_numDesigns} selected designs in the quick design bar. Changes {diff} designs.";
-        if (ImUtf8.ButtonEx("Display Selected Designs in QDB"u8, tt, buttonWidth, diff == 0))
+        if (ImEx.Button("Display Selected Designs in QDB"u8, buttonWidth, diff is 0
+                ? $"All {_numDesigns} selected designs are already displayed in the quick design bar."
+                : $"Display all {_numDesigns} selected designs in the quick design bar. Changes {diff} designs.", diff is 0))
         {
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetQuickDesign(design.Value, true);
         }
 
         Im.Line.Same();
-        tt = _numQuickDesignEnabled == 0
-            ? $"All {_numDesigns} selected designs are already hidden in the quick design bar."
-            : $"Hide all {_numDesigns} selected designs in the quick design bar. Changes {_numQuickDesignEnabled} designs.";
-        if (ImUtf8.ButtonEx("Hide Selected Designs in QDB"u8, tt, buttonWidth, _numQuickDesignEnabled == 0))
+        if (ImEx.Button("Hide Selected Designs in QDB"u8, buttonWidth, _numQuickDesignEnabled is 0
+                ? $"All {_numDesigns} selected designs are already hidden in the quick design bar."
+                : $"Hide all {_numDesigns} selected designs in the quick design bar. Changes {_numQuickDesignEnabled} designs.", _numQuickDesignEnabled is 0))
         {
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetQuickDesign(design.Value, false);
@@ -225,22 +204,20 @@ public class MultiDesignPanel(
 
     private void DrawMultiLock(float offset)
     {
-        ImUtf8.TextFrameAligned("Multi Lock:"u8);
-        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        ImEx.TextFrameAligned("Multi Lock:"u8);
+        Im.Line.Same(offset, Im.Style.ItemSpacing.X);
         var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsLocked;
-        var tt = diff == 0
-            ? $"All {_numDesigns} selected designs are already write protected."
-            : $"Write-protect all {_numDesigns} designs. Changes {diff} designs.";
-        if (ImUtf8.ButtonEx("Turn Write-Protected"u8, tt, buttonWidth, diff == 0))
+        if (ImEx.Button("Turn Write-Protected"u8, buttonWidth, diff is 0
+                ? $"All {_numDesigns} selected designs are already write protected."
+                : $"Write-protect all {_numDesigns} designs. Changes {diff} designs.", diff is 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetWriteProtection(design.Value, true);
 
         Im.Line.Same();
-        tt = _numDesignsLocked == 0
-            ? $"None of the {_numDesigns} selected designs are write-protected."
-            : $"Remove the write protection of the {_numDesigns} selected designs. Changes {_numDesignsLocked} designs.";
-        if (ImUtf8.ButtonEx("Remove Write-Protection"u8, tt, buttonWidth, _numDesignsLocked == 0))
+        if (ImEx.Button("Remove Write-Protection"u8, buttonWidth, _numDesignsLocked is 0
+                ? $"None of the {_numDesigns} selected designs are write-protected."
+                : $"Remove the write protection of the {_numDesigns} selected designs. Changes {_numDesignsLocked} designs.", _numDesignsLocked is 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.SetWriteProtection(design.Value, false);
         Im.Separator();
@@ -248,22 +225,20 @@ public class MultiDesignPanel(
 
     private void DrawMultiResetSettings(float offset)
     {
-        ImUtf8.TextFrameAligned("Settings:"u8);
-        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        ImEx.TextFrameAligned("Settings:"u8);
+        Im.Line.Same(offset, Im.Style.ItemSpacing.X);
         var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsResetSettings;
-        var tt = diff == 0
-            ? $"All {_numDesigns} selected designs already reset temporary settings."
-            : $"Make all {_numDesigns} selected designs reset temporary settings. Changes {diff} designs.";
-        if (ImUtf8.ButtonEx("Set Reset Temp. Settings"u8, tt, buttonWidth, diff == 0))
+        if (ImEx.Button("Set Reset Temp. Settings"u8, buttonWidth, diff is 0
+                ? $"All {_numDesigns} selected designs already reset temporary settings."
+                : $"Make all {_numDesigns} selected designs reset temporary settings. Changes {diff} designs.", diff is 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeResetTemporarySettings(design.Value, true);
 
         Im.Line.Same();
-        tt = _numDesignsResetSettings == 0
-            ? $"None of the {_numDesigns} selected designs reset temporary settings."
-            : $"Stop all {_numDesigns} selected designs from resetting temporary settings. Changes {_numDesignsResetSettings} designs.";
-        if (ImUtf8.ButtonEx("Remove Reset Temp. Settings"u8, tt, buttonWidth, _numDesignsResetSettings == 0))
+        if (ImEx.Button("Remove Reset Temp. Settings"u8, buttonWidth, _numDesignsResetSettings is 0
+                ? $"None of the {_numDesigns} selected designs reset temporary settings."
+                : $"Stop all {_numDesigns} selected designs from resetting temporary settings. Changes {_numDesignsResetSettings} designs.", _numDesignsResetSettings is 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeResetTemporarySettings(design.Value, false);
         Im.Separator();
@@ -271,22 +246,20 @@ public class MultiDesignPanel(
 
     private void DrawMultiResetDyes(float offset)
     {
-        ImUtf8.TextFrameAligned("Adv. Dyes:"u8);
-        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        ImEx.TextFrameAligned("Adv. Dyes:"u8);
+        Im.Line.Same(offset, Im.Style.ItemSpacing.X);
         var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsResetDyes;
-        var tt = diff == 0
-            ? $"All {_numDesigns} selected designs already reset advanced dyes."
-            : $"Make all {_numDesigns} selected designs reset advanced dyes. Changes {diff} designs.";
-        if (ImUtf8.ButtonEx("Set Reset Dyes"u8, tt, buttonWidth, diff == 0))
+        if (ImEx.Button("Set Reset Dyes"u8, buttonWidth, diff is 0
+                ? $"All {_numDesigns} selected designs already reset advanced dyes."
+                : $"Make all {_numDesigns} selected designs reset advanced dyes. Changes {diff} designs.", diff is 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeResetAdvancedDyes(design.Value, true);
 
         Im.Line.Same();
-        tt = _numDesignsLocked == 0
-            ? $"None of the {_numDesigns} selected designs reset advanced dyes."
-            : $"Stop all {_numDesigns} selected designs from resetting advanced dyes. Changes {_numDesignsResetDyes} designs.";
-        if (ImUtf8.ButtonEx("Remove Reset Dyes"u8, tt, buttonWidth, _numDesignsResetDyes == 0))
+        if (ImEx.Button("Remove Reset Dyes"u8, buttonWidth, _numDesignsLocked is 0
+                ? $"None of the {_numDesigns} selected designs reset advanced dyes."
+                : $"Stop all {_numDesigns} selected designs from resetting advanced dyes. Changes {_numDesignsResetDyes} designs.", _numDesignsResetDyes is 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeResetAdvancedDyes(design.Value, false);
         Im.Separator();
@@ -294,22 +267,20 @@ public class MultiDesignPanel(
 
     private void DrawMultiForceRedraw(float offset)
     {
-        ImUtf8.TextFrameAligned("Redrawing:"u8);
-        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        ImEx.TextFrameAligned("Redrawing:"u8);
+        Im.Line.Same(offset, Im.Style.ItemSpacing.X);
         var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = _numDesigns - _numDesignsForcedRedraw;
-        var tt = diff == 0
-            ? $"All {_numDesigns} selected designs already force redraws."
-            : $"Make all {_numDesigns} designs force redraws. Changes {diff} designs.";
-        if (ImUtf8.ButtonEx("Force Redraws"u8, tt, buttonWidth, diff == 0))
+        if (ImEx.Button("Force Redraws"u8, buttonWidth, diff is 0
+                ? $"All {_numDesigns} selected designs already force redraws."
+                : $"Make all {_numDesigns} designs force redraws. Changes {diff} designs.", diff is 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeForcedRedraw(design.Value, true);
 
         Im.Line.Same();
-        tt = _numDesignsLocked == 0
-            ? $"None of the {_numDesigns} selected designs force redraws."
-            : $"Stop all {_numDesigns} selected designs from forcing redraws. Changes {_numDesignsForcedRedraw} designs.";
-        if (ImUtf8.ButtonEx("Remove Forced Redraws"u8, tt, buttonWidth, _numDesignsForcedRedraw == 0))
+        if (ImEx.Button("Remove Forced Redraws"u8, buttonWidth, _numDesignsLocked is 0
+                ? $"None of the {_numDesigns} selected designs force redraws."
+                : $"Stop all {_numDesigns} selected designs from forcing redraws. Changes {_numDesignsForcedRedraw} designs.", _numDesignsForcedRedraw is 0))
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
                 editor.ChangeForcedRedraw(design.Value, false);
         Im.Separator();
@@ -319,39 +290,35 @@ public class MultiDesignPanel(
 
     private void DrawMultiColor(Vector2 width, float offset)
     {
-        ImUtf8.TextFrameAligned("Multi Colors:"u8);
-        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        ImEx.TextFrameAligned("Multi Colors:"u8);
+        Im.Line.Same(offset, Im.Style.ItemSpacing.X);
         if (_colorCombo.Draw("##color"u8, _colorComboSelection, "Select a design color."u8,
                 Im.ContentRegion.Available.X - 2 * (width.X + Im.Style.ItemSpacing.X), out var newSelection))
             _colorComboSelection = newSelection;
 
         UpdateColorCache();
-        var label = _addDesigns.Count > 0
-            ? $"Set for {_addDesigns.Count} Designs"
-            : "Set";
-        var tooltip = _addDesigns.Count is 0
-            ? _colorComboSelection switch
-            {
-                null                       => "No color specified.",
-                DesignColors.AutomaticName => "Use the other button to set to automatic.",
-                _                          => $"All designs selected are already set to the color \"{_colorComboSelection}\".",
-            }
-            : $"Set the color of {_addDesigns.Count} designs to \"{_colorComboSelection}\"\n\n\t{string.Join("\n\t", _addDesigns.Select(m => m.Name.Text))}";
         Im.Line.Same();
-        if (ImEx.Button(label, width, tooltip, _addDesigns.Count is 0))
+        if (ImEx.Button(_addDesigns.Count > 0
+                ? $"Set for {_addDesigns.Count} Designs"
+                : "Set"u8, width, _addDesigns.Count is 0
+                ? _colorComboSelection switch
+                {
+                    null                       => "No color specified."u8,
+                    DesignColors.AutomaticName => "Use the other button to set to automatic."u8,
+                    _                          => $"All designs selected are already set to the color \"{_colorComboSelection}\".",
+                }
+                : $"Set the color of {_addDesigns.Count} designs to \"{_colorComboSelection}\"\n\n\t{StringU8.Join("\n\t"u8, _addDesigns.Select(m => m.Name.Text))}", _addDesigns.Count is 0))
         {
             foreach (var design in _addDesigns)
                 editor.ChangeColor(design, _colorComboSelection!);
         }
 
-        label = _removeDesigns.Count > 0
-            ? $"Unset {_removeDesigns.Count} Designs"
-            : "Unset";
-        tooltip = _removeDesigns.Count == 0
-            ? "No selected design is set to a non-automatic color."
-            : $"Set {_removeDesigns.Count} designs to use automatic color again:\n\n\t{string.Join("\n\t", _removeDesigns.Select(m => m.Item1.Name.Text))}";
         Im.Line.Same();
-        if (ImEx.Button(label, width, tooltip, _removeDesigns.Count is 0))
+        if (ImEx.Button(_removeDesigns.Count > 0
+                ? $"Unset {_removeDesigns.Count} Designs"
+                : "Unset"u8, width, _removeDesigns.Count is 0
+                ? "No selected design is set to a non-automatic color."u8
+                : $"Set {_removeDesigns.Count} designs to use automatic color again:\n\n\t{StringU8.Join("\n\t"u8, _removeDesigns.Select(m => m.Item1.Name.Text))}", _removeDesigns.Count is 0))
         {
             foreach (var (design, _) in _removeDesigns)
                 editor.ChangeColor(design, string.Empty);
@@ -362,13 +329,12 @@ public class MultiDesignPanel(
 
     private void DrawAdvancedButtons(float offset)
     {
-        ImUtf8.TextFrameAligned("Delete Adv."u8);
-        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        ImEx.TextFrameAligned("Delete Adv."u8);
+        Im.Line.Same(offset, Im.Style.ItemSpacing.X);
         var enabled = config.DeleteDesignModifier.IsActive();
-        var tt = _numDesignsWithAdvancedDyes is 0
-            ? "No selected designs contain any advanced dyes."
-            : $"Delete {_numAdvancedDyes} advanced dyes from {_numDesignsWithAdvancedDyes} of the selected designs.";
-        if (ImUtf8.ButtonEx("Delete All Advanced Dyes"u8, tt, new Vector2(Im.ContentRegion.Available.X, 0),
+        if (ImEx.Button("Delete All Advanced Dyes"u8, Im.ContentRegion.Available with { Y = 0 }, _numDesignsWithAdvancedDyes is 0
+                ? "No selected designs contain any advanced dyes."u8
+                : $"Delete {_numAdvancedDyes} advanced dyes from {_numDesignsWithAdvancedDyes} of the selected designs.", 
                 !enabled || _numDesignsWithAdvancedDyes is 0))
 
             foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())
@@ -378,93 +344,94 @@ public class MultiDesignPanel(
             }
 
         if (!enabled && _numDesignsWithAdvancedDyes is not 0)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking to delete.");
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking to delete.");
         Im.Separator();
     }
 
     private void DrawApplicationButtons(float offset)
     {
-        ImUtf8.TextFrameAligned("Application"u8);
-        ImGui.SameLine(offset, Im.Style.ItemSpacing.X);
+        ImEx.TextFrameAligned("Application"u8);
+        Im.Line.Same(offset, Im.Style.ItemSpacing.X);
         var   width     = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var   enabled   = config.DeleteDesignModifier.IsActive();
         bool? equip     = null;
         bool? customize = null;
-        var   group     = ImUtf8.Group();
-        if (ImUtf8.ButtonEx("Disable Everything"u8,
-                _numDesigns > 0
-                    ? $"Disable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness for all {_numDesigns} designs."
-                    : "No designs selected.", width, !enabled))
+        using (Im.Group())
         {
-            equip     = false;
-            customize = false;
-        }
-
-        if (!enabled)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
-
-        Im.Line.Same();
-        if (ImUtf8.ButtonEx("Enable Everything"u8,
-                _numDesigns > 0
-                    ? $"Enable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness for all {_numDesigns} designs."
-                    : "No designs selected.", width, !enabled))
-        {
-            equip     = true;
-            customize = true;
-        }
-
-        if (!enabled)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
-
-        if (ImUtf8.ButtonEx("Equipment Only"u8,
-                _numDesigns > 0
-                    ? $"Enable application of anything related to gear, disable anything that is not related to gear for all {_numDesigns} designs."
-                    : "No designs selected.", width, !enabled))
-        {
-            equip     = true;
-            customize = false;
-        }
-
-        if (!enabled)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
-
-        Im.Line.Same();
-        if (ImUtf8.ButtonEx("Customization Only"u8,
-                _numDesigns > 0
-                    ? $"Enable application of anything related to customization, disable anything that is not related to customization for all {_numDesigns} designs."
-                    : "No designs selected.", width, !enabled))
-        {
-            equip     = false;
-            customize = true;
-        }
-
-        if (!enabled)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
-
-        if (ImUtf8.ButtonEx("Default Application"u8,
-                _numDesigns > 0
-                    ? $"Set the application rules to the default values as if the {_numDesigns} were newly created,without any advanced features or wetness."
-                    : "No designs selected.", width, !enabled))
-            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>().Select(l => l.Value))
+            if (ImEx.Button("Disable Everything"u8, width,
+                    _numDesigns > 0
+                        ? $"Disable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness for all {_numDesigns} designs."
+                        : "No designs selected."u8, !enabled))
             {
-                editor.ChangeApplyMulti(design, true, true, true, false, true, true, false, true);
-                editor.ChangeApplyMeta(design, MetaIndex.Wetness, false);
+                equip     = false;
+                customize = false;
             }
 
-        if (!enabled)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+            if (!enabled)
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
 
-        Im.Line.Same();
-        if (ImUtf8.ButtonEx("Disable Advanced"u8, _numDesigns > 0
-                ? $"Disable all advanced dyes and customizations but keep everything else as is for all {_numDesigns} designs."
-                : "No designs selected.", width, !enabled))
-            foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>().Select(l => l.Value))
-                editor.ChangeApplyMulti(design, null, null, null, false, null, null, false, null);
+            Im.Line.Same();
+            if (ImEx.Button("Enable Everything"u8, width,
+                    _numDesigns > 0
+                        ? $"Enable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness for all {_numDesigns} designs."
+                        : "No designs selected."u8, !enabled))
+            {
+                equip     = true;
+                customize = true;
+            }
 
-        if (!enabled)
-            ImUtf8.HoverTooltip(ImGuiHoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+            if (!enabled)
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
 
-        group.Dispose();
+            if (ImEx.Button("Equipment Only"u8, width,
+                    _numDesigns > 0
+                        ? $"Enable application of anything related to gear, disable anything that is not related to gear for all {_numDesigns} designs."
+                        : "No designs selected."u8, !enabled))
+            {
+                equip     = true;
+                customize = false;
+            }
+
+            if (!enabled)
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+
+            Im.Line.Same();
+            if (ImEx.Button("Customization Only"u8, width,
+                    _numDesigns > 0
+                        ? $"Enable application of anything related to customization, disable anything that is not related to customization for all {_numDesigns} designs."
+                        : "No designs selected."u8, !enabled))
+            {
+                equip     = false;
+                customize = true;
+            }
+
+            if (!enabled)
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+
+            if (ImEx.Button("Default Application"u8, width,
+                    _numDesigns > 0
+                        ? $"Set the application rules to the default values as if the {_numDesigns} were newly created,without any advanced features or wetness."
+                        : "No designs selected."u8, !enabled))
+                foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>().Select(l => l.Value))
+                {
+                    editor.ChangeApplyMulti(design, true, true, true, false, true, true, false, true);
+                    editor.ChangeApplyMeta(design, MetaIndex.Wetness, false);
+                }
+
+            if (!enabled)
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+
+            Im.Line.Same();
+            if (ImEx.Button("Disable Advanced"u8, width, _numDesigns > 0
+                    ? $"Disable all advanced dyes and customizations but keep everything else as is for all {_numDesigns} designs."
+                    : "No designs selected."u8, !enabled))
+                foreach (var design in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>().Select(l => l.Value))
+                    editor.ChangeApplyMulti(design, null, null, null, false, null, null, false, null);
+
+            if (!enabled)
+                Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
+        }
+
         Im.Separator();
         if (equip is null && customize is null)
             return;
@@ -489,7 +456,7 @@ public class MultiDesignPanel(
     {
         _addDesigns.Clear();
         _removeDesigns.Clear();
-        if (_tag.Length == 0)
+        if (_tag.Length is 0)
             return;
 
         foreach (var leaf in selector.SelectedPaths.OfType<DesignFileSystem.Leaf>())

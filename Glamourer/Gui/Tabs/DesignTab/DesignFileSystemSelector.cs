@@ -18,7 +18,7 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public sealed class DesignFileSystemSelector : FileSystemSelector<Design, DesignFileSystemSelector.DesignState>
+public sealed class DesignFileSystemSelector : FileSystemSelector<Design, DesignFileSystemSelector.DesignState>, IPanel
 {
     private readonly DesignManager   _designManager;
     private readonly DesignChanged   _event;
@@ -399,4 +399,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     }
 
     #endregion
+
+    public ReadOnlySpan<byte> Id
+        => "DesignSelector"u8;
 }
