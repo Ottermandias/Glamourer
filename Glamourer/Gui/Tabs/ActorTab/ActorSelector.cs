@@ -122,13 +122,13 @@ public class ActorSelector(ActorObjectManager objects, ActorManager actors, Ephe
         var buttonWidth = new Vector2(_width / 2, 0);
 
         if (ImUtf8.IconButton(FontAwesomeIcon.UserCircle, "Select the local player character."u8, buttonWidth, !objects.Player))
-            _identifier = objects.Player.GetIdentifier(actors);
+            _identifier = objects.Player.GetIdentifier(actors).CreatePermanent();
 
         ImGui.SameLine();
         var (id, data) = objects.TargetData;
         var tt = data.Valid ? $"Select the current target {id} in the list." :
             id.IsValid      ? $"The target {id} is not in the list." : "No target selected.";
         if (ImUtf8.IconButton(FontAwesomeIcon.HandPointer, tt, buttonWidth, objects.IsInGPose || !data.Valid))
-            _identifier = id;
+            _identifier = id.CreatePermanent();
     }
 }
