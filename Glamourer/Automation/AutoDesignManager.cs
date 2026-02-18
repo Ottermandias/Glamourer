@@ -381,7 +381,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         _event.Invoke(AutomationChanged.Type.ChangedData, set, (which, data));
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.AutomationFile;
 
     public void Save(StreamWriter writer)

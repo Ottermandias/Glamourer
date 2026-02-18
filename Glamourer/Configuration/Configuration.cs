@@ -6,52 +6,20 @@ using Glamourer.Gui;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Services;
 using ImSharp;
+using Luna;
 using Newtonsoft.Json;
 using OtterGui.Filesystem;
-using Luna;
-using Luna.Generators;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
-namespace Glamourer;
-
-[TooltipEnum]
-public enum HeightDisplayType
-{
-    [Tooltip("Do Not Display")]
-    None,
-
-    [Tooltip("Centimetres (000.0 cm)")]
-    Centimetre,
-
-    [Tooltip("Metres (0.00 m)")]
-    Metre,
-
-    [Tooltip("Inches (00.0 in)")]
-    Wrong,
-
-    [Tooltip("Feet (0'00'')")]
-    WrongFoot,
-
-    [Tooltip("Corgis (0.0 Corgis)")]
-    Corgi,
-
-    [Tooltip("Olympic-size swimming Pools (0.000 Pools)")]
-    OlympicPool,
-}
-
-public class DefaultDesignSettings
-{
-    public bool AlwaysForceRedrawing   = false;
-    public bool ResetAdvancedDyes      = false;
-    public bool ShowQuickDesignBar     = true;
-    public bool ResetTemporarySettings = false;
-    public bool Locked                 = false;
-}
+namespace Glamourer.Configuration;
 
 public class Configuration : IPluginConfiguration, ISavable
 {
     [JsonIgnore]
     public readonly EphemeralConfig Ephemeral;
+
+    [JsonIgnore]
+    public readonly UiConfig Ui;
 
     public bool   AttachToPcp                      { get; set; } = true;
     public bool   UseRestrictedGearProtection      { get; set; } = false;
@@ -120,10 +88,11 @@ public class Configuration : IPluginConfiguration, ISavable
     [JsonIgnore]
     private readonly SaveService _saveService;
 
-    public Configuration(SaveService saveService, ConfigMigrationService migrator, EphemeralConfig ephemeral)
+    public Configuration(SaveService saveService, ConfigMigrationService migrator, EphemeralConfig ephemeral, UiConfig ui)
     {
         _saveService = saveService;
         Ephemeral    = ephemeral;
+        Ui           = ui;
         Load(migrator);
     }
 
@@ -132,13 +101,13 @@ public class Configuration : IPluginConfiguration, ISavable
 
     private void Load(ConfigMigrationService migrator)
     {
-        if (!File.Exists(_saveService.FileNames.ConfigFile))
+        if (!File.Exists(_saveService.FileNames.ConfigurationFile))
             return;
 
-        if (File.Exists(_saveService.FileNames.ConfigFile))
+        if (File.Exists(_saveService.FileNames.ConfigurationFile))
             try
             {
-                var text = File.ReadAllText(_saveService.FileNames.ConfigFile);
+                var text = File.ReadAllText(_saveService.FileNames.ConfigurationFile);
                 JsonConvert.PopulateObject(text, this, new JsonSerializerSettings
                 {
                     Error = HandleDeserializationError,
@@ -162,8 +131,8 @@ public class Configuration : IPluginConfiguration, ISavable
         }
     }
 
-    public string ToFilename(FilenameService fileNames)
-        => fileNames.ConfigFile;
+    public string ToFilePath(FilenameService fileNames)
+        => fileNames.ConfigurationFile;
 
     public void Save(StreamWriter writer)
     {

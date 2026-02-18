@@ -139,7 +139,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         _setUnlockLinkValueHook.Original(uiState, data, value);
         try
         {
-            if (value == 0)
+            if (value is 0)
                 return;
 
             var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -159,7 +159,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         }
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.UnlockFileCustomize;
 
     public void Save()
@@ -169,7 +169,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         => UnlockDictionaryHelpers.Save(writer, Unlocked);
 
     private void Load()
-        => UnlockDictionaryHelpers.Load(ToFilename(_saveService.FileNames), _unlocked, id => Unlockable.Any(c => c.Value.Data == id),
+        => UnlockDictionaryHelpers.Load(ToFilePath(_saveService.FileNames), _unlocked, id => Unlockable.Any(c => c.Value.Data == id),
             "customization");
 
     /// <summary> Create a list of all unlockable hairstyles and face paints. </summary>

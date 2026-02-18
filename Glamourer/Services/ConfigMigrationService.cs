@@ -8,19 +8,19 @@ namespace Glamourer.Services;
 
 public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator, BackupService backupService)
 {
-    private Configuration _config = null!;
-    private JObject       _data   = null!;
+    private Configuration.Configuration _config = null!;
+    private JObject                     _data   = null!;
 
-    public void Migrate(Configuration config)
+    public void Migrate(Configuration.Configuration config)
     {
         _config = config;
-        if (config.Version >= Configuration.Constants.CurrentVersion || !File.Exists(saveService.FileNames.ConfigFile))
+        if (config.Version >= Configuration.Configuration.Constants.CurrentVersion || !File.Exists(saveService.FileNames.ConfigurationFile))
         {
             AddColors(config, false);
             return;
         }
 
-        _data = JObject.Parse(File.ReadAllText(saveService.FileNames.ConfigFile));
+        _data = JObject.Parse(File.ReadAllText(saveService.FileNames.ConfigurationFile));
         MigrateV1To2();
         MigrateV2To4();
         MigrateV4To5();
@@ -103,7 +103,7 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
         _config.Codes   = _config.Codes.DistinctBy(c => c.Code).ToList();
     }
 
-    private static void AddColors(Configuration config, bool forceSave)
+    private static void AddColors(Configuration.Configuration config, bool forceSave)
     {
         var save = false;
         foreach (var color in ColorId.Values)

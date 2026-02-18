@@ -20,18 +20,18 @@ public class StateEditor(
     StateChanged stateChanged,
     StateFinalized stateFinalized,
     JobChangeState jobChange,
-    Configuration config,
+    Configuration.Configuration config,
     ItemManager items,
     DesignMerger merger,
     ModSettingApplier modApplier,
     GPoseService gPose) : IDesignEditor
 {
-    protected readonly InternalStateEditor Editor         = editor;
-    protected readonly StateApplier        Applier        = applier;
-    protected readonly StateChanged        StateChanged   = stateChanged;
-    protected readonly StateFinalized      StateFinalized = stateFinalized;
-    protected readonly Configuration       Config         = config;
-    protected readonly ItemManager         Items          = items;
+    protected readonly InternalStateEditor         Editor         = editor;
+    protected readonly StateApplier                Applier        = applier;
+    protected readonly StateChanged                StateChanged   = stateChanged;
+    protected readonly StateFinalized              StateFinalized = stateFinalized;
+    protected readonly Configuration.Configuration Config         = config;
+    protected readonly ItemManager                 Items          = items;
 
     /// <summary> Turn an actor to. </summary>
     public void ChangeModelId(ActorState state, uint modelId, CustomizeArray customize, nint equipData, StateSource source,

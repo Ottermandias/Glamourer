@@ -13,6 +13,7 @@ using Glamourer.Gui.Materials;
 using Glamourer.Interop;
 using Glamourer.State;
 using Dalamud.Bindings.ImGui;
+using Glamourer.Configuration;
 using ImSharp;
 using Luna;
 using OtterGui;
@@ -26,25 +27,25 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public class DesignPanel : IPanel
 {
-    private readonly FileDialogManager        _fileDialog = new();
-    private readonly DesignSelection          _selection;
-    private readonly CustomizationDrawer      _customizationDrawer;
-    private readonly DesignManager            _manager;
-    private readonly ActorObjectManager       _objects;
-    private readonly StateManager             _state;
-    private readonly EquipmentDrawer          _equipmentDrawer;
-    private readonly ModAssociationsTab       _modAssociations;
-    private readonly Configuration            _config;
-    private readonly DesignDetailTab          _designDetails;
-    private readonly ImportService            _importService;
-    private readonly DesignConverter          _converter;
-    private readonly MultiDesignPanel         _multiDesignPanel;
-    private readonly CustomizeParameterDrawer _parameterDrawer;
-    private readonly DesignLinkDrawer         _designLinkDrawer;
-    private readonly MaterialDrawer           _materials;
-    private readonly EditorHistory            _history;
-    private readonly Button[]                 _leftButtons;
-    private readonly Button[]                 _rightButtons;
+    private readonly FileDialogManager           _fileDialog = new();
+    private readonly DesignSelection             _selection;
+    private readonly CustomizationDrawer         _customizationDrawer;
+    private readonly DesignManager               _manager;
+    private readonly ActorObjectManager          _objects;
+    private readonly StateManager                _state;
+    private readonly EquipmentDrawer             _equipmentDrawer;
+    private readonly ModAssociationsTab          _modAssociations;
+    private readonly Configuration.Configuration _config;
+    private readonly DesignDetailTab             _designDetails;
+    private readonly ImportService               _importService;
+    private readonly DesignConverter             _converter;
+    private readonly MultiDesignPanel            _multiDesignPanel;
+    private readonly CustomizeParameterDrawer    _parameterDrawer;
+    private readonly DesignLinkDrawer            _designLinkDrawer;
+    private readonly MaterialDrawer              _materials;
+    private readonly EditorHistory               _history;
+    private readonly Button[]                    _leftButtons;
+    private readonly Button[]                    _rightButtons;
 
 
     public DesignPanel(CustomizationDrawer customizationDrawer,
@@ -53,7 +54,7 @@ public class DesignPanel : IPanel
         StateManager state,
         EquipmentDrawer equipmentDrawer,
         ModAssociationsTab modAssociations,
-        Configuration config,
+        Configuration.Configuration config,
         DesignDetailTab designDetails,
         DesignConverter converter,
         ImportService importService,
@@ -473,7 +474,8 @@ public class DesignPanel : IPanel
     public void Draw()
     {
         using var group = ImUtf8.Group();
-        if (_selection.DesignPaths.Count > 1)
+        //if (_selection.DesignPaths.Count > 1)
+        if (false)
         {
             _multiDesignPanel.Draw();
         }
@@ -597,163 +599,164 @@ public class DesignPanel : IPanel
     private static unsafe string GetUserPath()
         => Framework.Instance()->UserPathString;
 
-}
 
-private sealed class LockButton(DesignPanel panel) : Button
-{
-    public override bool Visible
-        => panel._selection.Design != null;
 
-    protected override string Description
-        => panel._selection.Design!.WriteProtected()
-            ? "Make this design editable."
-            : "Write-protect this design.";
-
-    protected override FontAwesomeIcon Icon
-        => panel._selection.Design!.WriteProtected()
-            ? FontAwesomeIcon.Lock
-            : FontAwesomeIcon.LockOpen;
-
-    protected override void OnClick()
-        => panel._manager.SetWriteProtection(panel._selection.Design!, !panel._selection.Design!.WriteProtected());
-}
-
-private sealed class SetFromClipboardButton(DesignPanel panel) : Button
-{
-    public override bool Visible
-        => panel._selection.Design != null;
-
-    protected override bool Disabled
-        => panel._selection.Design?.WriteProtected() ?? true;
-
-    protected override string Description
-        => "Try to apply a design from your clipboard over this design.\nHold Control to only apply gear.\nHold Shift to only apply customizations.";
-
-    protected override FontAwesomeIcon Icon
-        => FontAwesomeIcon.Clipboard;
-
-    protected override void OnClick()
+    private sealed class LockButton(DesignPanel panel) : Button
     {
-        try
+        public override bool Visible
+            => panel._selection.Design != null;
+
+        protected override string Description
+            => panel._selection.Design!.WriteProtected()
+                ? "Make this design editable."
+                : "Write-protect this design.";
+
+        protected override FontAwesomeIcon Icon
+            => panel._selection.Design!.WriteProtected()
+                ? FontAwesomeIcon.Lock
+                : FontAwesomeIcon.LockOpen;
+
+        protected override void OnClick()
+            => panel._manager.SetWriteProtection(panel._selection.Design!, !panel._selection.Design!.WriteProtected());
+    }
+
+    private sealed class SetFromClipboardButton(DesignPanel panel) : Button
+    {
+        public override bool Visible
+            => panel._selection.Design != null;
+
+        protected override bool Disabled
+            => panel._selection.Design?.WriteProtected() ?? true;
+
+        protected override string Description
+            => "Try to apply a design from your clipboard over this design.\nHold Control to only apply gear.\nHold Shift to only apply customizations.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Clipboard;
+
+        protected override void OnClick()
         {
-            var text = ImGui.GetClipboardText();
-            var (applyEquip, applyCustomize) = UiHelpers.ConvertKeysToBool();
-            var design = panel._converter.FromBase64(text, applyCustomize, applyEquip, out _)
-             ?? throw new Exception("The clipboard did not contain valid data.");
-            panel._manager.ApplyDesign(panel._selection.Design!, design);
-        }
-        catch (Exception ex)
-        {
-            Glamourer.Messager.NotificationMessage(ex, $"Could not apply clipboard to {panel._selection.Design!.Name}.",
-                $"Could not apply clipboard to design {panel._selection.Design!.Identifier}", NotificationType.Error, false);
+            try
+            {
+                var text = ImGui.GetClipboardText();
+                var (applyEquip, applyCustomize) = UiHelpers.ConvertKeysToBool();
+                var design = panel._converter.FromBase64(text, applyCustomize, applyEquip, out _)
+                 ?? throw new Exception("The clipboard did not contain valid data.");
+                panel._manager.ApplyDesign(panel._selection.Design!, design);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Could not apply clipboard to {panel._selection.Design!.Name}.",
+                    $"Could not apply clipboard to design {panel._selection.Design!.Identifier}", NotificationType.Error, false);
+            }
         }
     }
-}
 
-private sealed class DesignUndoButton(DesignPanel panel) : Button
-{
-    public override bool Visible
-        => panel._selection.Design != null;
-
-    protected override bool Disabled
-        => !panel._manager.CanUndo(panel._selection.Design) || (panel._selection.Design?.WriteProtected() ?? true);
-
-    protected override string Description
-        => "Undo the last time you applied an entire design onto this design, if you accidentally overwrote your design with a different one.";
-
-    protected override FontAwesomeIcon Icon
-        => FontAwesomeIcon.SyncAlt;
-
-    protected override void OnClick()
+    private sealed class DesignUndoButton(DesignPanel panel) : Button
     {
-        try
+        public override bool Visible
+            => panel._selection.Design != null;
+
+        protected override bool Disabled
+            => !panel._manager.CanUndo(panel._selection.Design) || (panel._selection.Design?.WriteProtected() ?? true);
+
+        protected override string Description
+            => "Undo the last time you applied an entire design onto this design, if you accidentally overwrote your design with a different one.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.SyncAlt;
+
+        protected override void OnClick()
         {
-            panel._manager.UndoDesignChange(panel._selection.Design!);
-        }
-        catch (Exception ex)
-        {
-            Glamourer.Messager.NotificationMessage(ex, $"Could not undo last changes to {panel._selection.Design!.Name}.",
-                NotificationType.Error,
-                false);
+            try
+            {
+                panel._manager.UndoDesignChange(panel._selection.Design!);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Could not undo last changes to {panel._selection.Design!.Name}.",
+                    NotificationType.Error,
+                    false);
+            }
         }
     }
-}
 
-private sealed class ExportToClipboardButton(DesignPanel panel) : Button
-{
-    public override bool Visible
-        => panel._selection.Design != null;
-
-    protected override string Description
-        => "Copy the current design to your clipboard.";
-
-    protected override FontAwesomeIcon Icon
-        => FontAwesomeIcon.Copy;
-
-    protected override void OnClick()
+    private sealed class ExportToClipboardButton(DesignPanel panel) : Button
     {
-        try
+        public override bool Visible
+            => panel._selection.Design != null;
+
+        protected override string Description
+            => "Copy the current design to your clipboard.";
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Copy;
+
+        protected override void OnClick()
         {
-            var text = panel._converter.ShareBase64(panel._selection.Design!);
-            ImGui.SetClipboardText(text);
-        }
-        catch (Exception ex)
-        {
-            Glamourer.Messager.NotificationMessage(ex, $"Could not copy {panel._selection.Design!.Name} data to clipboard.",
-                $"Could not copy data from design {panel._selection.Design!.Identifier} to clipboard", NotificationType.Error, false);
+            try
+            {
+                var text = panel._converter.ShareBase64(panel._selection.Design!);
+                ImGui.SetClipboardText(text);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Could not copy {panel._selection.Design!.Name} data to clipboard.",
+                    $"Could not copy data from design {panel._selection.Design!.Identifier} to clipboard", NotificationType.Error, false);
+            }
         }
     }
-}
 
-private sealed class ApplyCharacterButton(DesignPanel panel) : Button
-{
-    public override bool Visible
-        => panel._selection.Design != null && panel._objects.Player.Valid;
-
-    protected override string Description
-        => "Overwrite this design with your character's current state.";
-
-    protected override bool Disabled
-        => panel._selection.Design?.WriteProtected() ?? true;
-
-    protected override FontAwesomeIcon Icon
-        => FontAwesomeIcon.UserEdit;
-
-    protected override void OnClick()
+    private sealed class ApplyCharacterButton(DesignPanel panel) : Button
     {
-        try
-        {
-            var (player, actor) = panel._objects.PlayerData;
-            if (!player.IsValid || !actor.Valid || !panel._state.GetOrCreate(player, actor.Objects[0], out var state))
-                throw new Exception("No player state available.");
+        public override bool Visible
+            => panel._selection.Design != null && panel._objects.Player.Valid;
 
-            var design = panel._converter.Convert(state, ApplicationRules.FromModifiers(state))
-             ?? throw new Exception("The clipboard did not contain valid data.");
-            panel._selection.Design!.GetMaterialDataRef().Clear();
-            panel._manager.ApplyDesign(panel._selection.Design!, design);
-        }
-        catch (Exception ex)
+        protected override string Description
+            => "Overwrite this design with your character's current state.";
+
+        protected override bool Disabled
+            => panel._selection.Design?.WriteProtected() ?? true;
+
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.UserEdit;
+
+        protected override void OnClick()
         {
-            Glamourer.Messager.NotificationMessage(ex, $"Could not apply player state to {panel._selection.Design!.Name}.",
-                $"Could not apply player state to design {panel._selection.Design!.Identifier}", NotificationType.Error, false);
+            try
+            {
+                var (player, actor) = panel._objects.PlayerData;
+                if (!player.IsValid || !actor.Valid || !panel._state.GetOrCreate(player, actor.Objects[0], out var state))
+                    throw new Exception("No player state available.");
+
+                var design = panel._converter.Convert(state, ApplicationRules.FromModifiers(state))
+                 ?? throw new Exception("The clipboard did not contain valid data.");
+                panel._selection.Design!.GetMaterialDataRef().Clear();
+                panel._manager.ApplyDesign(panel._selection.Design!, design);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Could not apply player state to {panel._selection.Design!.Name}.",
+                    $"Could not apply player state to design {panel._selection.Design!.Identifier}", NotificationType.Error, false);
+            }
         }
     }
-}
 
-private sealed class UndoButton(DesignPanel panel) : Button
-{
-    protected override string Description
-        => "Undo the last change.";
+    private sealed class UndoButton(DesignPanel panel) : Button
+    {
+        protected override string Description
+            => "Undo the last change.";
 
-    protected override FontAwesomeIcon Icon
-        => FontAwesomeIcon.Undo;
+        protected override FontAwesomeIcon Icon
+            => FontAwesomeIcon.Undo;
 
-    public override bool Visible
-        => panel._selection.Design != null;
+        public override bool Visible
+            => panel._selection.Design != null;
 
-    protected override bool Disabled
-        => (panel._selection.Design?.WriteProtected() ?? true) || !panel._history.CanUndo(panel._selection.Design);
+        protected override bool Disabled
+            => (panel._selection.Design?.WriteProtected() ?? true) || !panel._history.CanUndo(panel._selection.Design);
 
-    protected override void OnClick()
-        => panel._history.Undo(panel._selection.Design!);
+        protected override void OnClick()
+            => panel._history.Undo(panel._selection.Design!);
+    }
 }

@@ -3,7 +3,7 @@ using ImSharp;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public sealed class ModCombo(PenumbraService penumbra, DesignSelection selection) : ImSharp.FilterComboBase<ModCombo.CacheItem>(new ModFilter())
+public sealed class ModCombo(PenumbraService penumbra, DesignSelection selection) : FilterComboBase<ModCombo.CacheItem>(new ModFilter())
 {
     public readonly struct CacheItem(in Mod mod, in ModSettings settings, int count)
     {
@@ -21,6 +21,21 @@ public sealed class ModCombo(PenumbraService penumbra, DesignSelection selection
                 : Im.Style[ImGuiColor.TextDisabled];
 
         public readonly bool DifferingNames = string.Equals(mod.Name, mod.DirectoryName, StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    public StringPair  SelectionName { get; private set; } = new("Select new Mod...", new StringU8("Select new Mod..."u8));
+    public string      Selection     { get; private set; } = string.Empty;
+    public ModSettings Settings      { get; private set; } = ModSettings.Empty;
+
+    public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, float previewWidth)
+    {
+        if (!Draw(label, SelectionName.Utf8, StringU8.Empty, previewWidth, out var newItem))
+            return false;
+
+        SelectionName = newItem.Name;
+        Selection     = newItem.Directory.Utf16;
+        Settings      = newItem.Settings;
+        return true;
     }
 
     protected override float ItemHeight
@@ -48,7 +63,7 @@ public sealed class ModCombo(PenumbraService penumbra, DesignSelection selection
         using var style = ImStyleSingle.PopupBorderThickness.Push(2 * Im.Style.GlobalScale);
         using var tt    = Im.Tooltip.Begin();
 
-        Im.Dummy(new Vector2(300 * Im.Style.GlobalScale, 0));
+        Im.Dummy(ImEx.ScaledVectorX(300));
         using (Im.Group())
         {
             if (item.DifferingNames)
@@ -71,7 +86,7 @@ public sealed class ModCombo(PenumbraService penumbra, DesignSelection selection
         }
     }
 
-    private static void DrawSettingsLeft(in ModSettings settings)
+    public static void DrawSettingsLeft(in ModSettings settings)
     {
         foreach (var setting in settings.Settings)
         {
@@ -81,7 +96,7 @@ public sealed class ModCombo(PenumbraService penumbra, DesignSelection selection
         }
     }
 
-    private static void DrawSettingsRight(in ModSettings settings)
+    public static void DrawSettingsRight(in ModSettings settings)
     {
         foreach (var setting in settings.Settings)
         {
@@ -94,7 +109,7 @@ public sealed class ModCombo(PenumbraService penumbra, DesignSelection selection
     }
 
     protected override bool IsSelected(CacheItem item, int globalIndex)
-        => throw new NotImplementedException();
+        => Selection.Equals(item.Directory.Utf16, StringComparison.OrdinalIgnoreCase);
 
     private sealed class ModFilter : TextFilterBase<CacheItem>
     {

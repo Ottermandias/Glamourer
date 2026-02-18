@@ -19,7 +19,7 @@ public class SetPanel(
     CustomizeUnlockManager customizeUnlocks,
     CustomizeService customizations,
     IdentifierDrawer identifierDrawer,
-    Configuration config,
+    Configuration.Configuration config,
     RandomRestrictionDrawer randomDrawer,
     AutomationSelection selection) : IPanel
 {
@@ -33,8 +33,7 @@ public class SetPanel(
 
     public void Draw()
     {
-        using var child = Im.Child.Begin("##Panel"u8, Im.ContentRegion.Available, true);
-        if (!child || selection.Index < 0)
+        if (selection.Index < 0)
             return;
 
         using (Im.Group())

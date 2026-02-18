@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
+using Glamourer.Configuration;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
@@ -7,9 +8,9 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelector selector, DesignManager manager, Configuration config)
+public class ModAssociationsTab(PenumbraService penumbra, DesignSelection selection, DesignManager manager, Configuration.Configuration config)
 {
-    private readonly ModCombo              _modCombo = new(penumbra, Glamourer.Log, selector);
+    private readonly ModCombo              _modCombo = new(penumbra, selection);
     private          (Mod, ModSettings)[]? _copy;
 
     public void Draw()
@@ -35,7 +36,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
     {
         var size = new Vector2((Im.ContentRegion.Available.X - 2 * Im.Style.ItemSpacing.X) / 3, 0);
         if (Im.Button("Copy All to Clipboard"u8, size))
-            _copy = selector.Selected!.AssociatedMods.Select(kvp => (kvp.Key, kvp.Value)).ToArray();
+            _copy = selection.Design!.AssociatedMods.Select(kvp => (kvp.Key, kvp.Value)).ToArray();
 
         Im.Line.Same();
 
@@ -44,7 +45,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
                     ? $"Add {_copy.Length} mod association(s) from clipboard."
                     : "Copy some mod associations to the clipboard, first."u8, _copy is null))
             foreach (var (mod, setting) in _copy!)
-                manager.UpdateMod(selector.Selected!, mod, setting);
+                manager.UpdateMod(selection.Design!, mod, setting);
 
         Im.Line.Same();
 
@@ -53,10 +54,10 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
                     ? $"Set {_copy.Length} mod association(s) from clipboard and discard existing."
                     : "Copy some mod associations to the clipboard, first."u8, _copy is null))
         {
-            while (selector.Selected!.AssociatedMods.Count > 0)
-                manager.RemoveMod(selector.Selected!, selector.Selected!.AssociatedMods.Keys[0]);
+            while (selection.Design!.AssociatedMods.Count > 0)
+                manager.RemoveMod(selection.Design!, selection.Design!.AssociatedMods.Keys[0]);
             foreach (var (mod, setting) in _copy!)
-                manager.AddMod(selector.Selected!, mod, setting);
+                manager.AddMod(selection.Design!, mod, setting);
         }
     }
 
@@ -75,13 +76,13 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         var (id, name) = penumbra.CurrentCollection;
         if (ImEx.Button("Apply Mod Associations"u8, Vector2.Zero,
                 $"Try to apply all associated mod settings to Penumbras current collection {name}",
-                selector.Selected!.AssociatedMods.Count is 0 || id == Guid.Empty))
+                selection.Design!.AssociatedMods.Count is 0 || id == Guid.Empty))
             ApplyAll();
     }
 
     public void ApplyAll()
     {
-        foreach (var (mod, settings) in selector.Selected!.AssociatedMods)
+        foreach (var (mod, settings) in selection.Design!.AssociatedMods)
             penumbra.SetMod(mod, settings, StateSource.Manual, false);
     }
 
@@ -103,7 +104,7 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
 
         Mod?                             removedMod = null;
         (Mod mod, ModSettings settings)? updatedMod = null;
-        foreach (var (idx, (mod, settings)) in selector.Selected!.AssociatedMods.Index())
+        foreach (var (idx, (mod, settings)) in selection.Design!.AssociatedMods.Index())
         {
             using var id = Im.Id.Push(idx);
             DrawAssociatedModRow(table, mod, settings, out var removedModTmp, out var updatedModTmp);
@@ -116,10 +117,10 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
         DrawNewModRow(table);
 
         if (removedMod.HasValue)
-            manager.RemoveMod(selector.Selected!, removedMod.Value);
+            manager.RemoveMod(selection.Design!, removedMod.Value);
 
         if (updatedMod.HasValue)
-            manager.UpdateMod(selector.Selected!, updatedMod.Value.mod, updatedMod.Value.settings);
+            manager.UpdateMod(selection.Design!, updatedMod.Value.mod, updatedMod.Value.settings);
     }
 
     private void DrawAssociatedModRow(in Im.TableDisposable table, Mod mod, ModSettings settings, out Mod? removedMod,
@@ -240,18 +241,17 @@ public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystemSelect
 
     private void DrawNewModRow(in Im.TableDisposable table)
     {
-        var currentName = _modCombo.CurrentSelection.Mod.Name;
+        var currentDir = _modCombo.Selection;
         table.NextColumn();
-        var tt = string.IsNullOrEmpty(currentName)
+        var tt = currentDir.Length is 0
             ? "Please select a mod first."u8
-            : selector.Selected!.AssociatedMods.ContainsKey(_modCombo.CurrentSelection.Mod)
+            : selection.Design!.AssociatedMods.ContainsKey(new Mod(_modCombo.SelectionName, currentDir))
                 ? "The design already contains an association with the selected mod."u8
                 : StringU8.Empty;
 
         if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, tt.Length > 0))
-            manager.AddMod(selector.Selected!, _modCombo.CurrentSelection.Mod, _modCombo.CurrentSelection.Settings);
+            manager.AddMod(selection.Design!, new Mod(_modCombo.SelectionName, _modCombo.Selection), _modCombo.Settings);
         table.NextColumn();
-        _modCombo.Draw("##new", string.IsNullOrEmpty(currentName) ? "Select new Mod..." : currentName, string.Empty,
-            Im.ContentRegion.Available.X, Im.Style.TextHeight);
+        _modCombo.Draw("##new"u8, Im.ContentRegion.Available.X);
     }
 }

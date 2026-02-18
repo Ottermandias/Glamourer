@@ -9,7 +9,7 @@ public class MultiDesignPanel(
     DesignFileSystemSelector selector,
     DesignManager editor,
     DesignColors colors,
-    Configuration config)
+    Configuration.Configuration config)
 {
     private readonly DesignColorCombo _colorCombo = new(colors, true);
 

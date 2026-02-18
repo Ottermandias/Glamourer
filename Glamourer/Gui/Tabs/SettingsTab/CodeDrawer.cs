@@ -10,7 +10,7 @@ using OtterGui.Text.EndObjects;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
-public class CodeDrawer(Configuration config, CodeService codeService, FunModule funModule) : IUiService
+public class CodeDrawer(Configuration.Configuration config, CodeService codeService, FunModule funModule) : IUiService
 {
     private static ReadOnlySpan<byte> Tooltip
         => "Cheat Codes are not actually for cheating in the game, but for 'cheating' in Glamourer. "u8

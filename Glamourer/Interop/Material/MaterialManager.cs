@@ -24,7 +24,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     private readonly ThreadLocal<List<MaterialValueIndex>> _deleteList = new(() => []);
 
     public MaterialManager(PrepareColorSet prepareColorSet, StateManager stateManager, ActorManager actors, PenumbraService penumbra,
-        Configuration config)
+        Configuration.Configuration config)
     {
         _stateManager = stateManager;
         _actors       = actors;

@@ -8,13 +8,13 @@ namespace Glamourer.Gui;
 
 public sealed class MainWindow : Window, IDisposable
 {
-    private readonly Configuration   _config;
-    private readonly PenumbraService _penumbra;
-    private readonly DesignQuickBar  _quickBar;
-    private readonly MainTabBar      _mainTabBar;
-    private          bool            _ignorePenumbra;
+    private readonly Configuration.Configuration _config;
+    private readonly PenumbraService             _penumbra;
+    private readonly DesignQuickBar              _quickBar;
+    private readonly MainTabBar                  _mainTabBar;
+    private          bool                        _ignorePenumbra;
 
-    public MainWindow(IDalamudPluginInterface pi, Configuration config, PenumbraService penumbra,
+    public MainWindow(IDalamudPluginInterface pi, Configuration.Configuration config, PenumbraService penumbra,
         MainTabBar mainTabBar, DesignQuickBar quickBar)
         : base("GlamourerMainWindow")
     {

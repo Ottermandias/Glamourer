@@ -5,11 +5,11 @@ namespace Glamourer.Gui;
 
 public class GlamourerChangelog
 {
-    public const     int           LastChangelogVersion = 0;
-    private readonly Configuration _config;
-    public readonly  Changelog     Changelog;
+    public const     int                         LastChangelogVersion = 0;
+    private readonly Configuration.Configuration _config;
+    public readonly  Changelog                   Changelog;
 
-    public GlamourerChangelog(Configuration config)
+    public GlamourerChangelog(Configuration.Configuration config)
     {
         _config   = config;
         Changelog = new Changelog("Glamourer Changelog", ConfigData, Save);

@@ -13,19 +13,19 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     private AutoDesignSet? _set;
     private int            _designIndex = -1;
 
-    private readonly AutomationChanged   _automationChanged;
-    private readonly Configuration       _config;
-    private readonly AutoDesignManager   _autoDesignManager;
-    private readonly RandomDesignCombo   _randomDesignCombo;
-    private readonly AutomationSelection _selection;
-    private readonly DesignStorage       _designs;
-    private readonly DesignFileSystem    _designFileSystem;
+    private readonly AutomationChanged           _automationChanged;
+    private readonly Configuration.Configuration _config;
+    private readonly AutoDesignManager           _autoDesignManager;
+    private readonly RandomDesignCombo           _randomDesignCombo;
+    private readonly AutomationSelection         _selection;
+    private readonly DesignStorage               _designs;
+    private readonly DesignFileSystem            _designFileSystem;
 
     private string  _newText = string.Empty;
     private string? _newDefinition;
     private Design? _newDesign;
 
-    public RandomRestrictionDrawer(AutomationChanged automationChanged, Configuration config, AutoDesignManager autoDesignManager,
+    public RandomRestrictionDrawer(AutomationChanged automationChanged, Configuration.Configuration config, AutoDesignManager autoDesignManager,
         RandomDesignCombo randomDesignCombo, AutomationSelection selection, DesignFileSystem designFileSystem, DesignStorage designs)
     {
         _automationChanged = automationChanged;

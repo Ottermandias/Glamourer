@@ -6,7 +6,7 @@ using Luna.Generators;
 using Newtonsoft.Json;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
-namespace Glamourer;
+namespace Glamourer.Configuration;
 
 public partial class EphemeralConfig : ISavable
 {
@@ -69,7 +69,7 @@ public partial class EphemeralConfig : ISavable
         }
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.EphemeralConfigFile;
 
     public void Save(StreamWriter writer)

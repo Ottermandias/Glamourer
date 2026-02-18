@@ -14,8 +14,8 @@ public class BackupService : IAsyncService
     {
         _logger          = logger;
         _fileNames       = GlamourerFiles(fileNames);
-        _configDirectory = new DirectoryInfo(fileNames.ConfigDirectory);
-        Awaiter          = Task.Run(() => Backup.CreateAutomaticBackup(logger, new DirectoryInfo(fileNames.ConfigDirectory), _fileNames));
+        _configDirectory = new DirectoryInfo(fileNames.ConfigurationDirectory);
+        Awaiter          = Task.Run(() => Backup.CreateAutomaticBackup(logger, new DirectoryInfo(fileNames.ConfigurationDirectory), _fileNames));
     }
 
     /// <summary> Create a permanent backup with a given name for migrations. </summary>
@@ -27,7 +27,8 @@ public class BackupService : IAsyncService
     {
         var list = new List<FileInfo>(16)
         {
-            new(fileNames.ConfigFile),
+            new(fileNames.ConfigurationFile),
+            new(fileNames.UiConfiguration),
             new(fileNames.DesignFileSystem),
             new(fileNames.MigrationDesignFile),
             new(fileNames.AutomationFile),

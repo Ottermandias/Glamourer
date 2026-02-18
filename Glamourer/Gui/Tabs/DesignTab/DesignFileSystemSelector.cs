@@ -20,13 +20,13 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public sealed class DesignFileSystemSelector : FileSystemSelector<Design, DesignFileSystemSelector.DesignState>, IPanel
 {
-    private readonly DesignManager   _designManager;
-    private readonly DesignChanged   _event;
-    private readonly Configuration   _config;
-    private readonly DesignConverter _converter;
-    private readonly TabSelected     _selectionEvent;
-    private readonly DesignColors    _designColors;
-    private readonly DesignApplier   _designApplier;
+    private readonly DesignManager               _designManager;
+    private readonly DesignChanged               _event;
+    private readonly Configuration.Configuration _config;
+    private readonly DesignConverter             _converter;
+    private readonly TabSelected                 _selectionEvent;
+    private readonly DesignColors                _designColors;
+    private readonly DesignApplier               _designApplier;
 
     private string? _clipboardText;
     private Design? _cloneDesign;
@@ -62,7 +62,7 @@ public sealed class DesignFileSystemSelector : FileSystemSelector<Design, Design
     }
 
     public DesignFileSystemSelector(DesignManager designManager, DesignFileSystem fileSystem, IKeyState keyState, DesignChanged @event,
-        Configuration config, DesignConverter converter, TabSelected selectionEvent, OtterGui.Log.Logger log, DesignColors designColors,
+        Configuration.Configuration config, DesignConverter converter, TabSelected selectionEvent, OtterGui.Log.Logger log, DesignColors designColors,
         DesignApplier designApplier)
         : base(fileSystem, keyState, log, allowMultipleSelection: true)
     {

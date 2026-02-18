@@ -1,7 +1,7 @@
-﻿using Luna.Generators;
-using ImSharp;
+﻿using ImSharp;
+using Luna.Generators;
 
-namespace Glamourer;
+namespace Glamourer.Configuration;
 
 [Flags]
 [NamedEnum(Utf16: false)]
@@ -42,7 +42,7 @@ public static partial class DesignPanelFlagExtensions
 {
     private static readonly StringU8 Expand                = new("Expand"u8);
 
-    public static Im.HeaderDisposable Header(this DesignPanelFlag flag, Configuration config)
+    public static Im.HeaderDisposable Header(this DesignPanelFlag flag, global::Glamourer.Configuration.Configuration config)
     {
         if (config.HideDesignPanel.HasFlag(flag))
             return default;
@@ -55,7 +55,6 @@ public static partial class DesignPanelFlagExtensions
         Action<DesignPanelFlag> setterExpand)
     {
         var checkBoxWidth = Math.Max(Im.Style.FrameHeight, Expand.CalculateSize().X);
-        var test          = DesignPanelFlag.AdvancedCustomizations.ToNameU8();
         var textWidth     = AdvancedCustomizations_Name__GenU8.CalculateSize().X;
         var tableSize = 2 * (textWidth + 2 * checkBoxWidth)
           + 10 * Im.Style.CellPadding.X

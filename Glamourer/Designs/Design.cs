@@ -11,7 +11,6 @@ using OtterGui.Classes;
 using Penumbra.GameData.Structs;
 using Luna;
 using Notification = Luna.Notification;
-using SaveType = OtterGui.Classes.SaveType;
 
 namespace Glamourer.Designs;
 
@@ -232,7 +231,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
             Glamourer.Messager.AddMessage(new Notification(
                 $"Swapped Gloss and Specular Strength in {materialDesignData.Values.Count} Rows in design {design.Incognito} {reason}",
                 NotificationType.Info));
-            saveService.Save(SaveType.ImmediateSync, design);
+            saveService.Save(Luna.SaveType.ImmediateSync, design);
         }
     }
 
@@ -329,15 +328,13 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
 
     #region ISavable
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.DesignFile(this);
 
     public void Save(StreamWriter writer)
     {
-        using var j = new JsonTextWriter(writer)
-        {
-            Formatting = Formatting.Indented,
-        };
+        using var j = new JsonTextWriter(writer);
+        j.Formatting = Formatting.Indented;
         var obj = JsonSerialize();
         obj.WriteTo(j);
     }

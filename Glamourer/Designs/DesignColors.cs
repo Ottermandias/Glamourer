@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Designs;
 
-public class DesignColorUi(DesignColors colors, Configuration config)
+public class DesignColorUi(DesignColors colors, Configuration.Configuration config)
 {
     private string _newName = string.Empty;
 
@@ -183,7 +183,7 @@ public class DesignColors : ISavable, IReadOnlyDictionary<string, Rgba32>
             SaveAndInvoke();
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.DesignColorFile;
 
     public void Save(StreamWriter writer)

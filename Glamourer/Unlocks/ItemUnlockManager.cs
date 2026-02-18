@@ -254,7 +254,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
             Save();
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.UnlockFileItems;
 
     public void Save()
@@ -265,7 +265,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
 
     private void Load()
     {
-        var version = UnlockDictionaryHelpers.Load(ToFilename(_saveService.FileNames), _unlocked,
+        var version = UnlockDictionaryHelpers.Load(ToFilePath(_saveService.FileNames), _unlocked,
             id => _items.ItemData.TryGetValue(id, EquipSlot.MainHand, out _), "item");
         UpdateModels(version);
     }

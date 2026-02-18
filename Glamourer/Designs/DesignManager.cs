@@ -21,7 +21,7 @@ public sealed class DesignManager : DesignEditor
     private readonly HumanModelList _humans;
 
     public DesignManager(SaveService saveService, ItemManager items, CustomizeService customizations,
-        DesignChanged @event, HumanModelList humans, DesignStorage storage, DesignLinkLoader designLinkLoader, Configuration config)
+        DesignChanged @event, HumanModelList humans, DesignStorage storage, DesignLinkLoader designLinkLoader, Configuration.Configuration config)
         : base(saveService, @event, customizations, items, config)
     {
         Designs = storage;

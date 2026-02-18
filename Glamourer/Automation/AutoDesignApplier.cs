@@ -16,22 +16,22 @@ namespace Glamourer.Automation;
 
 public sealed class AutoDesignApplier : IDisposable
 {
-    private readonly Configuration      _config;
-    private readonly AutoDesignManager  _manager;
-    private readonly StateManager       _state;
-    private readonly JobService         _jobs;
-    private readonly EquippedGearset    _equippedGearset;
-    private readonly ActorManager       _actors;
-    private readonly AutomationChanged  _event;
-    private readonly ActorObjectManager _objects;
-    private readonly WeaponLoading      _weapons;
-    private readonly HumanModelList     _humans;
-    private readonly DesignMerger       _designMerger;
-    private readonly IClientState       _clientState;
+    private readonly Configuration.Configuration _config;
+    private readonly AutoDesignManager           _manager;
+    private readonly StateManager                _state;
+    private readonly JobService                  _jobs;
+    private readonly EquippedGearset             _equippedGearset;
+    private readonly ActorManager                _actors;
+    private readonly AutomationChanged           _event;
+    private readonly ActorObjectManager          _objects;
+    private readonly WeaponLoading               _weapons;
+    private readonly HumanModelList              _humans;
+    private readonly DesignMerger                _designMerger;
+    private readonly IClientState                _clientState;
 
     private readonly JobChangeState _jobChangeState;
 
-    public AutoDesignApplier(Configuration config, AutoDesignManager manager, StateManager state, JobService jobs, ActorManager actors,
+    public AutoDesignApplier(Configuration.Configuration config, AutoDesignManager manager, StateManager state, JobService jobs, ActorManager actors,
         AutomationChanged @event, ActorObjectManager objects, WeaponLoading weapons, HumanModelList humans, IClientState clientState,
         EquippedGearset equippedGearset, DesignMerger designMerger, JobChangeState jobChangeState)
     {

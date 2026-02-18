@@ -10,7 +10,7 @@ namespace Glamourer.Gui.Tabs.SettingsTab;
 
 public class CollectionOverrideDrawer(
     CollectionOverrideService collectionOverrides,
-    Configuration config,
+    Configuration.Configuration config,
     ActorObjectManager objects,
     ActorManager actors,
     PenumbraService penumbra,

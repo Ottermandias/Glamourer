@@ -61,7 +61,7 @@ public class Glamourer : IDalamudPlugin
     public string GatherSupportInformation()
     {
         var sb     = new StringBuilder(10240);
-        var config = _services.GetService<Configuration>();
+        var config = _services.GetService<Configuration.Configuration>();
         sb.AppendLine("**Settings**");
         sb.Append($"> **`Plugin Version:       `** {Version}\n");
         sb.Append($"> **`Commit Hash:          `** {CommitHash}\n");

@@ -187,7 +187,7 @@ public sealed class DesignFileSystem : OtterGui.Filesystem.FileSystem<Design>, I
         }
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.DesignFileSystem;
 
     public void Save(StreamWriter writer)

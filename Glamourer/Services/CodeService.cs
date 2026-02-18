@@ -6,8 +6,8 @@ namespace Glamourer.Services;
 
 public class CodeService
 {
-    private readonly Configuration _config;
-    private readonly SHA256        _hasher = SHA256.Create();
+    private readonly Configuration.Configuration _config;
+    private readonly SHA256                      _hasher = SHA256.Create();
 
     [Flags]
     public enum CodeFlag : ulong
@@ -87,7 +87,7 @@ public class CodeService
             _                     => Race.Unknown,
         };
 
-    public CodeService(Configuration config)
+    public CodeService(Configuration.Configuration config)
     {
         _config = config;
         Load();

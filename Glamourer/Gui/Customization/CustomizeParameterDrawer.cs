@@ -7,7 +7,7 @@ using Luna;
 
 namespace Glamourer.Gui.Customization;
 
-public class CustomizeParameterDrawer(Configuration config, PaletteImport import) : IService
+public class CustomizeParameterDrawer(Configuration.Configuration config, PaletteImport import) : IService
 {
     private readonly Dictionary<Design, CustomizeParameterData> _lastData    = [];
     private          StringU8                                   _paletteName = StringU8.Empty;

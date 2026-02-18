@@ -8,7 +8,7 @@ using MouseWheelType = OtterGui.Widgets.MouseWheelType;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
-public sealed class CollectionCombo(Configuration config, PenumbraService penumbra, Logger log)
+public sealed class CollectionCombo(Configuration.Configuration config, PenumbraService penumbra, Logger log)
     : FilterComboCache<(Guid Id, string IdShort, string Name)>(
         () => penumbra.GetCollections().Select(kvp => (kvp.Key, kvp.Key.ToString()[..8], kvp.Value)).ToArray(),
         MouseWheelType.Control, log), IUiService

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
+using Glamourer.Configuration;
 using Glamourer.Designs;
 using Glamourer.Interop;
 using ImSharp;
@@ -29,4 +30,13 @@ public sealed class DesignTab(DesignFileSystemSelector selector, DesignPanel pan
         panel.Draw();
         importService.CreateCharaSource();
     }
+
+    //protected override void SetWidth(float width, ScalingMode mode)
+    //    => _uiConfig.ActorsTabScale = new TwoPanelWidth(width, mode);
+    //
+    //protected override float MinimumWidth
+    //    => LeftFooter.MinimumWidth;
+    //
+    //protected override float MaximumWidth
+    //    => Im.Window.Width - 500 * Im.Style.GlobalScale;
 }

@@ -11,7 +11,7 @@ public class GlamourerWindowSystem : IDisposable
     private readonly MainWindow   _ui;
 
     public GlamourerWindowSystem(IUiBuilder uiBuilder, MainWindow ui, GenericPopupWindow popups,
-        Configuration config, UnlocksTab unlocksTab, GlamourerChangelog changelog, DesignQuickBar quick)
+        Configuration.Configuration config, UnlocksTab unlocksTab, GlamourerChangelog changelog, DesignQuickBar quick)
     {
         _uiBuilder = uiBuilder;
         _ui        = ui;

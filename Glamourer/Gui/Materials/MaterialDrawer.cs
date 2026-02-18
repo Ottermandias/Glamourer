@@ -7,7 +7,7 @@ using Penumbra.GameData.Files.MaterialStructs;
 
 namespace Glamourer.Gui.Materials;
 
-public class MaterialDrawer(DesignManager designManager, Configuration config) : IService
+public class MaterialDrawer(DesignManager designManager, Configuration.Configuration config) : IService
 {
     public const float GlossWidth            = 100;
     public const float SpecularStrengthWidth = 125;

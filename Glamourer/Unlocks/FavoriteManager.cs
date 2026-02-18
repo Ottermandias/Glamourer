@@ -94,7 +94,7 @@ public sealed class FavoriteManager : ISavable
         Save();
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.FavoriteFile;
 
     private void Save()

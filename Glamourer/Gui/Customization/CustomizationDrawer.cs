@@ -14,7 +14,7 @@ namespace Glamourer.Gui.Customization;
 public partial class CustomizationDrawer(
     ITextureProvider textures,
     CustomizeService service,
-    Configuration config,
+    Configuration.Configuration config,
     FavoriteManager favorites,
     HeightService heightService)
     : IDisposable

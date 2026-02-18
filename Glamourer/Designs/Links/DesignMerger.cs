@@ -15,7 +15,7 @@ namespace Glamourer.Designs.Links;
 public class DesignMerger(
     DesignManager designManager,
     CustomizeService customizeService,
-    Configuration config,
+    Configuration.Configuration config,
     ItemUnlockManager itemUnlocks,
     CustomizeUnlockManager customizeUnlocks) : IService
 {

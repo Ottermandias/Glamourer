@@ -73,8 +73,8 @@ public static class StaticServiceManager
             .AddSingleton<SaveService>()
             .AddSingleton<CodeService>()
             .AddSingleton<ConfigMigrationService>()
-            .AddSingleton<Configuration>()
-            .AddSingleton<EphemeralConfig>()
+            .AddSingleton<Configuration.Configuration>()
+            .AddSingleton<Configuration.EphemeralConfig>()
             .AddSingleton<TextureService>()
             .AddSingleton<FavoriteManager>();
 

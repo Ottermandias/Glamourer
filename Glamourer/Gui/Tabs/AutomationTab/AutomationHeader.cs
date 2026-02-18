@@ -3,7 +3,7 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public sealed class AutomationHeader(Configuration config, AutomationSelection selection) : IHeader
+public sealed class AutomationHeader(Configuration.Configuration config, AutomationSelection selection) : IHeader
 {
     public bool Collapsed
         => false;

@@ -1,4 +1,5 @@
 ﻿using System.Text.Unicode;
+using Glamourer.Configuration;
 using ImSharp;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;

@@ -5,7 +5,7 @@ namespace Glamourer.Gui.Tabs.DebugTab;
 
 public sealed class DebugTab(ServiceManager manager) : ITab<MainTabType>
 {
-    private readonly Configuration _config = manager.GetService<Configuration>();
+    private readonly Configuration.Configuration _config = manager.GetService<Configuration.Configuration>();
 
     public bool IsVisible
         => _config.DebugMode;

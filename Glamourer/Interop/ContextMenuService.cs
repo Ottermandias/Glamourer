@@ -23,7 +23,7 @@ public class ContextMenuService : IDisposable
 
     private readonly MenuItem _inventoryItem;
 
-    public ContextMenuService(ItemManager items, StateManager state, ActorObjectManager objects, Configuration config,
+    public ContextMenuService(ItemManager items, StateManager state, ActorObjectManager objects, Configuration.Configuration config,
         IContextMenu context)
     {
         _contextMenu = context;

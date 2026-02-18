@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
+using Glamourer.Configuration;
 using Glamourer.Designs;
 using Glamourer.Services;
 using ImSharp;
@@ -8,18 +9,18 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public class DesignDetailTab
 {
-    private readonly SaveService              _saveService;
-    private readonly Configuration            _config;
-    private readonly DesignFileSystemSelector _selector;
-    private readonly DesignFileSystem         _fileSystem;
-    private readonly DesignManager            _manager;
-    private readonly DesignColors             _colors;
-    private readonly DesignColorCombo         _colorCombo;
+    private readonly SaveService                 _saveService;
+    private readonly Configuration.Configuration _config;
+    private readonly DesignFileSystemSelector    _selector;
+    private readonly DesignFileSystem            _fileSystem;
+    private readonly DesignManager               _manager;
+    private readonly DesignColors                _colors;
+    private readonly DesignColorCombo            _colorCombo;
 
     private bool _editDescriptionMode;
 
     public DesignDetailTab(SaveService saveService, DesignFileSystemSelector selector, DesignManager manager, DesignFileSystem fileSystem,
-        DesignColors colors, Configuration config)
+        DesignColors colors, Configuration.Configuration config)
     {
         _saveService = saveService;
         _selector    = selector;

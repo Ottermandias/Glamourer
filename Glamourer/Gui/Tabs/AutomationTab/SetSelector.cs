@@ -8,7 +8,7 @@ namespace Glamourer.Gui.Tabs.AutomationTab;
 
 public sealed class SetSelector(
     AutomationSelection selection,
-    Configuration config,
+    Configuration.Configuration config,
     AutoDesignManager manager,
     AutomationFilter filter,
     ActorObjectManager objects,

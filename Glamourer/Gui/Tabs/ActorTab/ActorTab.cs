@@ -1,4 +1,5 @@
-﻿using ImSharp;
+﻿using Glamourer.Configuration;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
@@ -6,11 +7,13 @@ namespace Glamourer.Gui.Tabs.ActorTab;
 public sealed class ActorTab : TwoPanelLayout, ITab<MainTabType>
 {
     private readonly ActorSelection _selection;
+    private readonly UiConfig       _uiConfig;
 
     public ActorTab(ActorSelector selector, ActorPanel panel, ActorFilter filter, SelectPlayerButton selectPlayer,
-        SelectTargetButton selectTarget, ActorsHeader header, ActorSelection selection)
+        SelectTargetButton selectTarget, ActorsHeader header, ActorSelection selection, UiConfig uiConfig)
     {
         _selection = selection;
+        _uiConfig  = uiConfig;
         LeftPanel  = selector;
         LeftHeader = new FilterHeader<ActorCacheItem>(filter, new StringU8("Filter..."u8));
         var footer = new ButtonFooter();
@@ -29,8 +32,17 @@ public sealed class ActorTab : TwoPanelLayout, ITab<MainTabType>
     public void DrawContent()
     {
         _selection.Update();
-        Draw(TwoPanelWidth.IndeterminateRelative);
+        Draw(_uiConfig.ActorsTabScale);
     }
+
+    protected override void SetWidth(float width, ScalingMode mode)
+        => _uiConfig.ActorsTabScale = new TwoPanelWidth(width, mode);
+
+    protected override float MinimumWidth
+        => LeftHeader.MinimumWidth;
+
+    protected override float MaximumWidth
+        => Im.Window.Width - 500 * Im.Style.GlobalScale;
 
     public MainTabType Identifier
         => MainTabType.Actors;

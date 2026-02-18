@@ -9,7 +9,7 @@ using Luna;
 namespace Glamourer.Gui;
 
 public abstract class DesignComboBase(
-    EphemeralConfig config,
+    Configuration.EphemeralConfig config,
     DesignManager designs,
     DesignChanged designChanged,
     DesignColors designColors,
@@ -17,13 +17,13 @@ public abstract class DesignComboBase(
     DesignFileSystem designFileSystem)
     : FilterComboBase<DesignComboBase.CacheItem>(new DesignFilter(), ConfigData.Default with { ComputeWidth = true })
 {
-    protected readonly EphemeralConfig  Config           = config;
-    protected readonly DesignChanged    DesignChanged    = designChanged;
-    protected readonly DesignColors     DesignColors     = designColors;
-    protected readonly DesignFileSystem DesignFileSystem = designFileSystem;
-    protected readonly TabSelected      TabSelected      = tabSelected;
-    protected readonly DesignManager    Designs          = designs;
-    protected          IDesignStandIn?  CurrentDesign;
+    protected readonly Configuration.EphemeralConfig Config           = config;
+    protected readonly DesignChanged                 DesignChanged    = designChanged;
+    protected readonly DesignColors                  DesignColors     = designColors;
+    protected readonly DesignFileSystem              DesignFileSystem = designFileSystem;
+    protected readonly TabSelected                   TabSelected      = tabSelected;
+    protected readonly DesignManager                 Designs          = designs;
+    protected          IDesignStandIn?               CurrentDesign;
 
     protected CacheItem CreateItem(IDesignStandIn design)
     {
@@ -203,7 +203,7 @@ public sealed class QuickDesignCombo : DesignComboBase, IDisposable, IUiService
     }
 
 
-    public QuickDesignCombo(EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
+    public QuickDesignCombo(Configuration.EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
         DesignFileSystem designFileSystem, DesignManager designs)
         : base(config, designs, designChanged, designColors, tabSelected, designFileSystem)
     {
@@ -264,7 +264,7 @@ public sealed class LinkDesignCombo : DesignComboBase, IUiService, IDisposable
 {
     public Design? NewSelection { get; private set; }
 
-    public LinkDesignCombo(EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
+    public LinkDesignCombo(Configuration.EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
         DesignFileSystem designFileSystem, DesignManager designs)
         : base(config, designs, designChanged, designColors, tabSelected, designFileSystem)
     {
@@ -295,7 +295,7 @@ public sealed class LinkDesignCombo : DesignComboBase, IUiService, IDisposable
 }
 
 public sealed class RandomDesignCombo(
-    EphemeralConfig config,
+    Configuration.EphemeralConfig config,
     DesignManager designs,
     DesignChanged designChanged,
     DesignColors designColors,
@@ -346,7 +346,7 @@ public sealed class SpecialDesignCombo : DesignComboBase, IUiService
     private readonly CacheItem _revert;
     private readonly CacheItem _quick;
 
-    public SpecialDesignCombo(EphemeralConfig config,
+    public SpecialDesignCombo(Configuration.EphemeralConfig config,
         DesignManager designs,
         DesignChanged designChanged,
         DesignColors designColors,

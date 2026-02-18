@@ -41,7 +41,7 @@ public sealed class CollectionOverrideService : IService, ISavable
     public IReadOnlyList<(ActorIdentifier Actor, Guid CollectionId, string DisplayName)> Overrides
         => _overrides;
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.CollectionOverrideFile;
 
     public void AddOverride(IEnumerable<ActorIdentifier> identifiers, Guid collectionId, string displayName)

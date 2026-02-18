@@ -27,7 +27,7 @@ public sealed class StateManager(
     InternalStateEditor editor,
     HumanModelList humans,
     IClientState clientState,
-    Configuration config,
+    Configuration.Configuration config,
     JobChangeState jobChange,
     DesignMerger merger,
     ModSettingApplier modApplier,

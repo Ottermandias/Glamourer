@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Glamourer.Automation;
+using Glamourer.Configuration;
 using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using ImSharp;
@@ -12,7 +13,7 @@ public class DesignLinkDrawer(
     DesignFileSystemSelector selector,
     LinkDesignCombo combo,
     DesignColors colorManager,
-    Configuration config) : IUiService
+    Configuration.Configuration config) : IUiService
 {
     private int       _dragDropIndex       = -1;
     private LinkOrder _dragDropOrder       = LinkOrder.None;

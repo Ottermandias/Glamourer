@@ -93,7 +93,7 @@ public class LocalNpcAppearanceData : ISavable
 
     public event Action DataChanged = null!;
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.NpcAppearanceFile;
 
     public void Save(StreamWriter writer)

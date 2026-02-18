@@ -2,6 +2,7 @@
 using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
+using Glamourer.Configuration;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui.Tabs.DesignTab;
@@ -14,7 +15,7 @@ using Luna;
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
 public sealed class SettingsTab(
-    Configuration config,
+    Configuration.Configuration config,
     DesignFileSystemSelector selector,
     ContextMenuService contextMenuService,
     IUiBuilder uiBuilder,
@@ -255,7 +256,7 @@ public sealed class SettingsTab(
         Im.Line.New();
         Im.Text("Show the following panels in their respective tabs:"u8);
         Im.Dummy(Vector2.Zero);
-        DesignPanelFlagExtensions.DrawTable("##panelTable"u8, config.HideDesignPanel, config.AutoExpandDesignPanel, v =>
+        Configuration.DesignPanelFlagExtensions.DrawTable("##panelTable"u8, config.HideDesignPanel, config.AutoExpandDesignPanel, v =>
         {
             config.HideDesignPanel = v;
             config.Save();
@@ -444,7 +445,7 @@ public sealed class SettingsTab(
         using (var combo = Im.Combo.Begin("##sortMode"u8, sortMode.Name))
         {
             if (combo)
-                foreach (var val in Configuration.Constants.ValidSortModes)
+                foreach (var val in Configuration.Configuration.Constants.ValidSortModes)
                 {
                     if (Im.Selectable(val.Name, val.GetType() == sortMode.GetType()) && val.GetType() != sortMode.GetType())
                     {

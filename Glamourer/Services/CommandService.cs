@@ -24,26 +24,26 @@ public class CommandService : IDisposable, IApiService
     private const string MainCommandString  = "/glamourer";
     private const string ApplyCommandString = "/glamour";
 
-    private readonly ICommandManager    _commands;
-    private readonly MainWindow         _mainWindow;
-    private readonly IChatGui           _chat;
-    private readonly ActorManager       _actors;
-    private readonly ActorObjectManager _objects;
-    private readonly StateManager       _stateManager;
-    private readonly AutoDesignApplier  _autoDesignApplier;
-    private readonly AutoDesignManager  _autoDesignManager;
-    private readonly Configuration      _config;
-    private readonly ModSettingApplier  _modApplier;
-    private readonly ItemManager        _items;
-    private readonly CustomizeService   _customizeService;
-    private readonly DesignManager      _designManager;
-    private readonly DesignConverter    _converter;
-    private readonly DesignResolver     _resolver;
-    private readonly PenumbraService    _penumbra;
+    private readonly ICommandManager             _commands;
+    private readonly MainWindow                  _mainWindow;
+    private readonly IChatGui                    _chat;
+    private readonly ActorManager                _actors;
+    private readonly ActorObjectManager          _objects;
+    private readonly StateManager                _stateManager;
+    private readonly AutoDesignApplier           _autoDesignApplier;
+    private readonly AutoDesignManager           _autoDesignManager;
+    private readonly Configuration.Configuration _config;
+    private readonly ModSettingApplier           _modApplier;
+    private readonly ItemManager                 _items;
+    private readonly CustomizeService            _customizeService;
+    private readonly DesignManager               _designManager;
+    private readonly DesignConverter             _converter;
+    private readonly DesignResolver              _resolver;
+    private readonly PenumbraService             _penumbra;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ActorObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
-        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier,
+        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration.Configuration config, ModSettingApplier modApplier,
         ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService, DesignFileSystemSelector designSelector,
         QuickDesignCombo quickDesignCombo, DesignResolver resolver, PenumbraService penumbra)
     {
