@@ -32,6 +32,7 @@ public sealed class MainWindow : Window, IDisposable
         IsOpen      = _config.OpenWindowAtStart;
 
         _penumbra.DrawSettingsSection += _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
+        _quickBar.ToggleMainWindow    += Toggle;
     }
 
     public void OpenSettings()
@@ -49,7 +50,10 @@ public sealed class MainWindow : Window, IDisposable
     }
 
     public void Dispose()
-        => _penumbra.DrawSettingsSection -= _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
+    {
+        _penumbra.DrawSettingsSection -= _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
+        _quickBar.ToggleMainWindow    -= Toggle;
+    }
 
     public override void Draw()
     {
@@ -74,7 +78,7 @@ public sealed class MainWindow : Window, IDisposable
         {
             _mainTabBar.Draw();
             if (_config.ShowQuickBarInTabs)
-                _quickBar.DrawAtEnd(yPos);
+                _quickBar.DrawAtEnd(yPos, true);
         }
     }
 
