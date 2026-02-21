@@ -304,6 +304,7 @@ public sealed class SettingsTab(
 
     private readonly (StringU8, QdbButtons)[] _columns =
     [
+        (new StringU8("Toggle Main Window"u8), QdbButtons.ToggleMainWindow),
         (new StringU8("Apply Design"u8), QdbButtons.ApplyDesign),
         (new StringU8("Revert All"u8), QdbButtons.RevertAll),
         (new StringU8("Revert to Auto"u8), QdbButtons.RevertAutomation),
@@ -327,7 +328,7 @@ public sealed class SettingsTab(
     private void DrawQuickDesignBoxes()
     {
         var showAuto   = config.EnableAutoDesigns;
-        var numColumns = 9 - (showAuto ? 0 : 2) - (config.UseTemporarySettings ? 0 : 1);
+        var numColumns = 10 - (showAuto ? 0 : 2) - (config.UseTemporarySettings ? 0 : 1);
         Im.Line.New();
         Im.Text("Show the Following Buttons in the Quick Design Bar:"u8);
         Im.Dummy(Vector2.Zero);
