@@ -2,6 +2,7 @@
 using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
@@ -33,19 +34,19 @@ public sealed class DesignQuickBar : Window, IDisposable
             ? WindowFlags.NoDecoration | WindowFlags.NoDocking | WindowFlags.NoFocusOnAppearing | WindowFlags.NoMove
             : WindowFlags.NoDecoration | WindowFlags.NoDocking | WindowFlags.NoFocusOnAppearing;
 
-    private readonly Configuration.Configuration _config;
-    private readonly QuickDesignCombo            _designCombo;
-    private readonly StateManager                _stateManager;
-    private readonly AutoDesignApplier           _autoDesignApplier;
-    private readonly ActorObjectManager          _objects;
-    private readonly PenumbraService             _penumbra;
-    private readonly IKeyState                   _keyState;
-    private readonly Im.ColorStyleDisposable     _style          = new();
-    private          DateTime                    _keyboardToggle = DateTime.UnixEpoch;
-    private          int                         _numButtons;
-    private readonly StringBuilder               _tooltipBuilder = new(512);
+    private readonly Configuration           _config;
+    private readonly QuickDesignCombo        _designCombo;
+    private readonly StateManager            _stateManager;
+    private readonly AutoDesignApplier       _autoDesignApplier;
+    private readonly ActorObjectManager      _objects;
+    private readonly PenumbraService         _penumbra;
+    private readonly IKeyState               _keyState;
+    private readonly Im.ColorStyleDisposable _style          = new();
+    private          DateTime                _keyboardToggle = DateTime.UnixEpoch;
+    private          int                     _numButtons;
+    private readonly StringBuilder           _tooltipBuilder = new(512);
 
-    public DesignQuickBar(Configuration.Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
+    public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
         ActorObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra)
         : base("Glamourer Quick Bar", WindowFlags.NoDecoration | WindowFlags.NoDocking)
     {

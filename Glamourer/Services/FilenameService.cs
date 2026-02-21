@@ -6,10 +6,11 @@ namespace Glamourer.Services;
 
 public class FilenameService(IDalamudPluginInterface pi) : BaseFilePathProvider(pi)
 {
-    public readonly string DesignFileSystem          = Path.Combine(pi.ConfigDirectory.FullName, "sort_order.json");
+    public readonly string MigrationDesignFileSystem = Path.Combine(pi.ConfigDirectory.FullName, "sort_order.json");
     public readonly string MigrationDesignFile       = Path.Combine(pi.ConfigDirectory.FullName, "Designs.json");
     public readonly string DesignDirectory           = Path.Combine(pi.ConfigDirectory.FullName, "designs");
     public readonly string AutomationFile            = Path.Combine(pi.ConfigDirectory.FullName, "automation.json");
+    public readonly string IgnoredModsFile           = Path.Combine(pi.ConfigDirectory.FullName, "ignored_mods.json");
     public readonly string UnlockFileCustomize       = Path.Combine(pi.ConfigDirectory.FullName, "unlocks_customize.json");
     public readonly string UnlockFileItems           = Path.Combine(pi.ConfigDirectory.FullName, "unlocks_items.json");
     public readonly string FavoriteFile              = Path.Combine(pi.ConfigDirectory.FullName, "favorites.json");
@@ -39,7 +40,22 @@ public class FilenameService(IDalamudPluginInterface pi) : BaseFilePathProvider(
     public string DesignFile(Design design)
         => DesignFile(design.Identifier.ToString());
 
-    // TODO
     public override List<FileInfo> GetBackupFiles()
-        => [];
+    {
+        var list = new List<FileInfo>(16)
+        {
+            new(ConfigurationFile),
+            new(AutomationFile),
+            new(IgnoredModsFile),
+            new(UnlockFileCustomize),
+            new(UnlockFileItems),
+            new(FavoriteFile),
+            new(DesignColorFile),
+            new(FileSystemEmptyFolders),
+            new(FileSystemLockedNodes),
+        };
+        // Do not back up expanded folders, selected nodes, ui configuration or ephemeral config.
+        list.AddRange(Designs());
+        return list;
+    }
 }

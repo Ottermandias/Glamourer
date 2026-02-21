@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Gui;
@@ -23,19 +24,19 @@ public unsafe class FunModule : IDisposable
         AprilFirst,
     }
 
-    private readonly WorldSets                   _worldSets = new();
-    private readonly ItemManager                 _items;
-    private readonly CustomizeService            _customizations;
-    private readonly Configuration.Configuration _config;
-    private readonly CodeService                 _codes;
-    private readonly Random                      _rng;
-    private readonly GenericPopupWindow          _popupWindow;
-    private readonly StateManager                _stateManager;
-    private readonly DesignConverter             _designConverter;
-    private readonly DesignManager               _designManager;
-    private readonly ActorObjectManager          _objects;
-    private readonly NpcCustomizeSet             _npcs;
-    private readonly StainId[]                   _stains;
+    private readonly WorldSets          _worldSets = new();
+    private readonly ItemManager        _items;
+    private readonly CustomizeService   _customizations;
+    private readonly Configuration      _config;
+    private readonly CodeService        _codes;
+    private readonly Random             _rng;
+    private readonly GenericPopupWindow _popupWindow;
+    private readonly StateManager       _stateManager;
+    private readonly DesignConverter    _designConverter;
+    private readonly DesignManager      _designManager;
+    private readonly ActorObjectManager _objects;
+    private readonly NpcCustomizeSet    _npcs;
+    private readonly StainId[]          _stains;
 
     public  FestivalType CurrentFestival { get; private set; } = FestivalType.None;
     private FunEquipSet? _festivalSet;
@@ -66,7 +67,7 @@ public unsafe class FunModule : IDisposable
     internal void ResetFestival()
         => OnDayChange(DateTime.Now.Day, DateTime.Now.Month, DateTime.Now.Year);
 
-    public FunModule(CodeService codes, CustomizeService customizations, ItemManager items, Configuration.Configuration config,
+    public FunModule(CodeService codes, CustomizeService customizations, ItemManager items, Configuration config,
         GenericPopupWindow popupWindow, StateManager stateManager, ActorObjectManager objects, DesignConverter designConverter,
         DesignManager designManager, NpcCustomizeSet npcs)
     {

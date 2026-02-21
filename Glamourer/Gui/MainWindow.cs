@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
+using Glamourer.Config;
 using Glamourer.Interop.Penumbra;
 using ImSharp;
 using Luna;
@@ -8,20 +9,20 @@ namespace Glamourer.Gui;
 
 public sealed class MainWindow : Window, IDisposable
 {
-    private readonly Configuration.Configuration _config;
-    private readonly PenumbraService             _penumbra;
-    private readonly DesignQuickBar              _quickBar;
-    private readonly MainTabBar                  _mainTabBar;
-    private          bool                        _ignorePenumbra;
+    private readonly Configuration   _config;
+    private readonly PenumbraService _penumbra;
+    private readonly DesignQuickBar  _quickBar;
+    private readonly MainTabBar      _mainTabBar;
+    private          bool            _ignorePenumbra;
 
-    public MainWindow(IDalamudPluginInterface pi, Configuration.Configuration config, PenumbraService penumbra,
+    public MainWindow(IDalamudPluginInterface pi, Configuration config, PenumbraService penumbra,
         MainTabBar mainTabBar, DesignQuickBar quickBar)
         : base("GlamourerMainWindow")
     {
         pi.UiBuilder.DisableGposeUiHide = true;
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(700, 675),
+            MinimumSize = new Vector2(700,  675),
             MaximumSize = new Vector2(3840, 2160),
         };
         _mainTabBar = mainTabBar;

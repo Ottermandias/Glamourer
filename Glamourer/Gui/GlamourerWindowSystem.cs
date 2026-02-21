@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
+using Glamourer.Config;
 using Glamourer.Gui.Tabs.UnlocksTab;
 
 namespace Glamourer.Gui;
@@ -11,7 +12,7 @@ public class GlamourerWindowSystem : IDisposable
     private readonly MainWindow   _ui;
 
     public GlamourerWindowSystem(IUiBuilder uiBuilder, MainWindow ui, GenericPopupWindow popups,
-        Configuration.Configuration config, UnlocksTab unlocksTab, GlamourerChangelog changelog, DesignQuickBar quick)
+        Configuration config, UnlocksTab unlocksTab, GlamourerChangelog changelog, DesignQuickBar quick)
     {
         _uiBuilder = uiBuilder;
         _ui        = ui;

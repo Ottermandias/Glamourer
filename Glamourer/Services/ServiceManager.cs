@@ -2,6 +2,7 @@
 using Glamourer.Api;
 using Glamourer.Api.Api;
 using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui;
@@ -73,8 +74,8 @@ public static class StaticServiceManager
             .AddSingleton<SaveService>()
             .AddSingleton<CodeService>()
             .AddSingleton<ConfigMigrationService>()
-            .AddSingleton<Configuration.Configuration>()
-            .AddSingleton<Configuration.EphemeralConfig>()
+            .AddSingleton<Configuration>()
+            .AddSingleton<EphemeralConfig>()
             .AddSingleton<TextureService>()
             .AddSingleton<FavoriteManager>();
 
@@ -158,7 +159,7 @@ public static class StaticServiceManager
             .AddSingleton<GlamourerWindowSystem>()
             .AddSingleton<CustomizationDrawer>()
             .AddSingleton<EquipmentDrawer>()
-            .AddSingleton<DesignFileSystemSelector>()
+            .AddSingleton<DesignFileSystemDrawer>()
             .AddSingleton<MultiDesignPanel>()
             .AddSingleton<DesignPanel>()
             .AddSingleton<DesignTab>()

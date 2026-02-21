@@ -1,6 +1,6 @@
 ﻿using Dalamud.Interface;
 using Glamourer.Automation;
-using Glamourer.Configuration;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using ImSharp;
@@ -10,15 +10,18 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public class DesignLinkDrawer(
     DesignLinkManager linkManager,
-    DesignFileSystemSelector selector,
+    DesignFileSystem fileSystem,
     LinkDesignCombo combo,
     DesignColors colorManager,
-    Configuration.Configuration config) : IUiService
+    Configuration config) : IUiService
 {
     private int       _dragDropIndex       = -1;
     private LinkOrder _dragDropOrder       = LinkOrder.None;
     private int       _dragDropTargetIndex = -1;
     private LinkOrder _dragDropTargetOrder = LinkOrder.None;
+
+    private Design Selected
+        => (Design)fileSystem.Selection.Selection!.Value;
 
     public void Draw()
     {
@@ -45,23 +48,23 @@ public class DesignLinkDrawer(
             switch (_dragDropTargetOrder)
             {
                 case LinkOrder.Before:
-                    for (var i = selector.Selected!.Links.Before.Count - 1; i >= _dragDropTargetIndex; --i)
-                        linkManager.MoveDesignLink(selector.Selected!, i, LinkOrder.Before, 0, LinkOrder.After);
+                    for (var i = Selected.Links.Before.Count - 1; i >= _dragDropTargetIndex; --i)
+                        linkManager.MoveDesignLink(Selected, i, LinkOrder.Before, 0, LinkOrder.After);
                     break;
                 case LinkOrder.After:
                     for (var i = 0; i <= _dragDropTargetIndex; ++i)
                     {
-                        linkManager.MoveDesignLink(selector.Selected!, 0, LinkOrder.After, selector.Selected!.Links.Before.Count,
+                        linkManager.MoveDesignLink(Selected, 0, LinkOrder.After, Selected.Links.Before.Count,
                             LinkOrder.Before);
                     }
 
                     break;
             }
         else if (_dragDropTargetOrder is LinkOrder.Self)
-            linkManager.MoveDesignLink(selector.Selected!, _dragDropIndex, _dragDropOrder, selector.Selected!.Links.Before.Count,
+            linkManager.MoveDesignLink(Selected, _dragDropIndex, _dragDropOrder, Selected.Links.Before.Count,
                 LinkOrder.Before);
         else
-            linkManager.MoveDesignLink(selector.Selected!, _dragDropIndex, _dragDropOrder, _dragDropTargetIndex, _dragDropTargetOrder);
+            linkManager.MoveDesignLink(Selected, _dragDropIndex, _dragDropOrder, _dragDropTargetIndex, _dragDropTargetOrder);
 
         _dragDropIndex       = -1;
         _dragDropTargetIndex = -1;
@@ -81,9 +84,9 @@ public class DesignLinkDrawer(
             6 * Im.Style.FrameHeight + 5 * Im.Style.ItemInnerSpacing.X);
 
         using var style = ImStyleDouble.ItemSpacing.Push(Im.Style.ItemInnerSpacing);
-        DrawSubList(table, selector.Selected!.Links.Before, LinkOrder.Before);
+        DrawSubList(table, Selected.Links.Before, LinkOrder.Before);
         DrawSelf(table);
-        DrawSubList(table, selector.Selected!.Links.After, LinkOrder.After);
+        DrawSubList(table, Selected.Links.After, LinkOrder.After);
         DrawNew(table);
         MoveLink();
     }
@@ -92,7 +95,7 @@ public class DesignLinkDrawer(
     {
         using var id = Im.Id.Push((int)LinkOrder.Self);
         table.NextColumn();
-        var color = colorManager.GetColor(selector.Selected!);
+        var color = colorManager.GetColor(Selected);
         using (AwesomeIcon.Font.Push())
         {
             using var c = ImGuiColor.Text.Push(color);
@@ -104,11 +107,11 @@ public class DesignLinkDrawer(
         using (ImGuiColor.Text.Push(color))
         {
             Im.Cursor.FrameAlign();
-            Im.Selectable(config.Ephemeral.IncognitoMode ? selector.Selected!.Incognito : selector.Selected!.Name.Text);
+            Im.Selectable(config.Ephemeral.IncognitoMode ? Selected.Incognito : Selected.Name.Text);
         }
 
         Im.Tooltip.OnHover("Current Design"u8);
-        DrawDragDrop(selector.Selected!, LinkOrder.Self, 0);
+        DrawDragDrop(Selected, LinkOrder.Self, 0);
         table.NextColumn();
         using (AwesomeIcon.Font.Push())
         {
@@ -144,7 +147,7 @@ public class DesignLinkDrawer(
             DrawApplicationBoxes(i, order, flags);
 
             if (delete)
-                linkManager.RemoveDesignLink(selector.Selected!, i--, order);
+                linkManager.RemoveDesignLink(Selected, i--, order);
         }
     }
 
@@ -164,11 +167,11 @@ public class DesignLinkDrawer(
         }
         else
         {
-            canAddBefore = LinkContainer.CanAddLink(selector.Selected!, design, LinkOrder.Before, out var error);
+            canAddBefore = LinkContainer.CanAddLink(Selected, design, LinkOrder.Before, out var error);
             ttBefore = canAddBefore
                 ? $"Add a link at the top of the list to {design.Name}."
                 : $"Can not add a link to {design.Name}:\n{error}";
-            canAddAfter = LinkContainer.CanAddLink(selector.Selected!, design, LinkOrder.After, out error);
+            canAddAfter = LinkContainer.CanAddLink(Selected, design, LinkOrder.After, out error);
             ttAfter = canAddAfter
                 ? $"Add a link at the bottom of the list to {design.Name}."
                 : $"Can not add a link to {design.Name}:\n{error}";
@@ -176,13 +179,13 @@ public class DesignLinkDrawer(
 
         if (ImEx.Icon.Button(FontAwesomeIcon.ArrowCircleUp.Icon(), ttBefore, !canAddBefore))
         {
-            linkManager.AddDesignLink(selector.Selected!, design!, LinkOrder.Before);
-            linkManager.MoveDesignLink(selector.Selected!, selector.Selected!.Links.Before.Count - 1, LinkOrder.Before, 0, LinkOrder.Before);
+            linkManager.AddDesignLink(Selected, design!, LinkOrder.Before);
+            linkManager.MoveDesignLink(Selected, Selected.Links.Before.Count - 1, LinkOrder.Before, 0, LinkOrder.Before);
         }
 
         Im.Line.Same();
         if (ImEx.Icon.Button(FontAwesomeIcon.ArrowCircleDown.Icon(), ttAfter, !canAddAfter))
-            linkManager.AddDesignLink(selector.Selected!, design!, LinkOrder.After);
+            linkManager.AddDesignLink(Selected, design!, LinkOrder.After);
     }
 
     private void DrawDragDrop(Design design, LinkOrder order, int index)
@@ -228,7 +231,7 @@ public class DesignLinkDrawer(
         Im.Line.Same();
         Box(4);
         if (newType != current)
-            linkManager.ChangeApplicationType(selector.Selected!, idx, order, newType);
+            linkManager.ChangeApplicationType(Selected, idx, order, newType);
         return;
 
         void Box(int i)

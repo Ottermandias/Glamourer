@@ -14,11 +14,11 @@ namespace Glamourer.Gui;
 
 public sealed class MainTabBar : TabBar<MainTabType>
 {
-    private readonly Configuration.EphemeralConfig _config;
+    private readonly Config.EphemeralConfig _config;
     public readonly  TabSelected                   Event;
     public readonly  SettingsTab                   Settings;
 
-    public MainTabBar(Logger log, Configuration.EphemeralConfig config, SettingsTab settings, ActorTab actors, DesignTab designs,
+    public MainTabBar(Logger log, Config.EphemeralConfig config, SettingsTab settings, ActorTab actors, DesignTab designs,
         AutomationTab automation, UnlocksTab unlocks, NpcTab npcs, MessagesTab messages, DebugTab debug, TabSelected @event)
         : base("MainTabBar", log, settings, actors, designs, automation, unlocks, npcs, messages, debug)
     {

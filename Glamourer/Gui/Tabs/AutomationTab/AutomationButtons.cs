@@ -1,4 +1,5 @@
 ﻿using Glamourer.Automation;
+using Glamourer.Config;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Actors;
@@ -10,7 +11,7 @@ namespace Glamourer.Gui.Tabs.AutomationTab;
 
 public sealed class AutomationButtons : ButtonFooter
 {
-    public AutomationButtons(Configuration.Configuration config, AutoDesignManager manager, AutomationSelection selection, ActorObjectManager objects)
+    public AutomationButtons(Configuration config, AutoDesignManager manager, AutomationSelection selection, ActorObjectManager objects)
     {
         Buttons.AddButton(new AddButton(objects, manager),              100);
         Buttons.AddButton(new DuplicateButton(selection, manager),      90);
@@ -134,7 +135,7 @@ public sealed class AutomationButtons : ButtonFooter
         }
     }
 
-    private sealed class DeleteButton(AutomationSelection selection, Configuration.Configuration config, AutoDesignManager manager)
+    private sealed class DeleteButton(AutomationSelection selection, Configuration config, AutoDesignManager manager)
         : BaseIconButton<AwesomeIcon>
     {
         private bool _enabled;

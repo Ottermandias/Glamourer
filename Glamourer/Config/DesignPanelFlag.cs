@@ -1,7 +1,7 @@
 ﻿using ImSharp;
 using Luna.Generators;
 
-namespace Glamourer.Configuration;
+namespace Glamourer.Config;
 
 [Flags]
 [NamedEnum(Utf16: false)]
@@ -40,9 +40,9 @@ public enum DesignPanelFlag : uint
 
 public static partial class DesignPanelFlagExtensions
 {
-    private static readonly StringU8 Expand                = new("Expand"u8);
+    private static readonly StringU8 Expand = new("Expand"u8);
 
-    public static Im.HeaderDisposable Header(this DesignPanelFlag flag, global::Glamourer.Configuration.Configuration config)
+    public static Im.HeaderDisposable Header(this DesignPanelFlag flag, Configuration config)
     {
         if (config.HideDesignPanel.HasFlag(flag))
             return default;

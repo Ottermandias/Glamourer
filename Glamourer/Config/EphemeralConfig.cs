@@ -6,11 +6,11 @@ using Luna.Generators;
 using Newtonsoft.Json;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
-namespace Glamourer.Configuration;
+namespace Glamourer.Config;
 
 public partial class EphemeralConfig : ISavable
 {
-    public int Version { get; set; } = Configuration.Constants.CurrentVersion;
+    public int Version { get; set; } = Configuration.CurrentVersion;
 
     [ConfigProperty]
     private bool _incognitoMode;

@@ -1,4 +1,5 @@
 using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using Penumbra.GameData.Data;
@@ -15,7 +16,7 @@ public class ItemManager
     public const string SmallClothesNpc      = "Smallclothes (NPC)";
     public const ushort SmallClothesNpcModel = 9903;
 
-    private readonly Configuration.Configuration _config;
+    private readonly Configuration _config;
 
     public readonly ObjectIdentification ObjectIdentification;
     public readonly ExcelSheet<Item>     ItemSheet;
@@ -26,7 +27,7 @@ public class ItemManager
 
     public readonly EquipItem DefaultSword;
 
-    public ItemManager(Configuration.Configuration config, IDataManager gameData, ObjectIdentification objectIdentification,
+    public ItemManager(Configuration config, IDataManager gameData, ObjectIdentification objectIdentification,
         ItemData itemData, DictStain stains, RestrictedGear restrictedGear, DictBonusItems dictBonusItems)
     {
         _config              = config;

@@ -47,7 +47,7 @@ public class FixedDesignMigrator(JobService jobs)
             var set = autoManager[^1];
             foreach (var design in data.AsEnumerable().Reverse())
             {
-                if (!designFileSystem.Find(design.Item1, out var child) || child is not DesignFileSystem.Leaf leaf)
+                if (!designFileSystem.Find(design.Item1, out var child) || child is not IFileSystemData<Design> leaf)
                 {
                     Glamourer.Messager.NotificationMessage($"Could not find design with path {design.Item1}, skipped fixed design.",
                         NotificationType.Warning);

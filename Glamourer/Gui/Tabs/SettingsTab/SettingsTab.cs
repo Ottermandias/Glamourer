@@ -2,7 +2,7 @@
 using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
-using Glamourer.Configuration;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui.Tabs.DesignTab;
@@ -15,8 +15,8 @@ using Luna;
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
 public sealed class SettingsTab(
-    Configuration.Configuration config,
-    DesignFileSystemSelector selector,
+    Configuration config,
+    DesignFileSystemDrawer drawer,
     ContextMenuService contextMenuService,
     IUiBuilder uiBuilder,
     GlamourerChangelog changelog,
@@ -28,7 +28,8 @@ public sealed class SettingsTab(
     Glamourer glamourer,
     AutoDesignApplier autoDesignApplier,
     AutoRedrawChanged autoRedraw,
-    PcpService pcpService)
+    PcpService pcpService,
+    IgnoredMods ignoredMods)
     : ITab<MainTabType>
 {
     private readonly VirtualKey[] _validKeys = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
@@ -61,6 +62,7 @@ public sealed class SettingsTab(
             DrawInterfaceSettings();
             DrawColorSettings();
             overrides.Draw();
+            DrawIgnoredMods();
             codeDrawer.Draw();
         }
 
@@ -256,7 +258,7 @@ public sealed class SettingsTab(
         Im.Line.New();
         Im.Text("Show the following panels in their respective tabs:"u8);
         Im.Dummy(Vector2.Zero);
-        Configuration.DesignPanelFlagExtensions.DrawTable("##panelTable"u8, config.HideDesignPanel, config.AutoExpandDesignPanel, v =>
+        DesignPanelFlagExtensions.DrawTable("##panelTable"u8, config.HideDesignPanel, config.AutoExpandDesignPanel, v =>
         {
             config.HideDesignPanel = v;
             config.Save();
@@ -280,8 +282,8 @@ public sealed class SettingsTab(
         Checkbox("Show Unobtained Item Warnings"u8,
             "Show information whether you have unlocked all items and customizations in your automated design or not."u8,
             config.ShowUnlockedItemWarnings, v => config.ShowUnlockedItemWarnings = v);
-        Checkbox("Show Color Display Config"u8, "Show the Color Display configuration options in the Advanced Customization panels."u8,
-            config.ShowColorConfig,             v => config.ShowColorConfig = v);
+        Checkbox("Show Color Display Configuration"u8, "Show the Color Display configuration options in the Advanced Customization panels."u8,
+            config.ShowColorConfig,                    v => config.ShowColorConfig = v);
         Checkbox("Show Palette+ Import Button"u8,
             "Show the import button that allows you to import Palette+ palettes onto a design in the Advanced Customization options section for designs."u8,
             config.ShowPalettePlusImport, v => config.ShowPalettePlusImport = v);
@@ -376,7 +378,7 @@ public sealed class SettingsTab(
         if (Im.Button("Import Palette+ to Designs"u8))
             paletteImport.ImportDesigns();
         Im.Tooltip.OnHover(
-            $"Import all existing Palettes from your Palette+ Config into Designs at PalettePlus/[Name] if these do not exist. Existing Palettes are:\n\n\t - {string.Join("\n\t - ", paletteImport.Data.Keys)}");
+            $"Import all existing Palettes from your Palette+ Configuration into Designs at PalettePlus/[Name] if these do not exist. Existing Palettes are:\n\n\t - {string.Join("\n\t - ", paletteImport.Data.Keys)}");
     }
 
     /// <summary> Draw the entire Color subsection. </summary>
@@ -402,6 +404,7 @@ public sealed class SettingsTab(
                         continue;
 
                     config.Colors[color] = newColor.Color;
+                    CacheManager.Instance.SetColorsDirty();
                     config.Save();
                 }
         }
@@ -445,20 +448,20 @@ public sealed class SettingsTab(
         using (var combo = Im.Combo.Begin("##sortMode"u8, sortMode.Name))
         {
             if (combo)
-                foreach (var val in Configuration.Configuration.Constants.ValidSortModes)
+                foreach (var (_, value) in ISortMode.Valid)
                 {
-                    if (Im.Selectable(val.Name, val.GetType() == sortMode.GetType()) && val.GetType() != sortMode.GetType())
+                    if (Im.Selectable(value.Name, value.GetType() == sortMode.GetType()) && value.GetType() != sortMode.GetType())
                     {
-                        config.SortMode = val;
-                        selector.SetFilterDirty();
+                        config.SortMode = value;
+                        drawer.SortMode = value;
                         config.Save();
                     }
 
-                    Im.Tooltip.OnHover(val.Description);
+                    Im.Tooltip.OnHover(value.Description);
                 }
         }
 
-        LunaStyle.DrawAlignedHelpMarkerLabel("Sort Mode"u8, "Choose the sort mode for the mod selector in the designs tab."u8);
+        LunaStyle.DrawAlignedHelpMarkerLabel("Sort Mode"u8, "Choose the sort mode for the design selector in the designs tab."u8);
     }
 
     private void DrawRenameSettings()
@@ -472,7 +475,6 @@ public sealed class SettingsTab(
                     if (Im.Selectable(value.ToNameU8(), config.ShowRename == value))
                     {
                         config.ShowRename = value;
-                        selector.SetRenameSearchPath(value);
                         config.Save();
                     }
 
@@ -502,5 +504,47 @@ public sealed class SettingsTab(
 
         LunaStyle.DrawAlignedHelpMarkerLabel("Character Height Display Type"u8,
             "Select how to display the height of characters in real-world units, if at all."u8);
+    }
+
+    private string _newIgnoredMod = string.Empty;
+
+    private void DrawIgnoredMods()
+    {
+        using var header = Im.Tree.HeaderId("Ignored Mods"u8);
+        Im.Tooltip.OnHover("Add mods that are ignored for the 'modded' column in the Unlocks tab."u8);
+        if (!header)
+            return;
+
+        using var listBox = Im.ListBox.Begin("##box"u8, new Vector2(0.4f * Im.ContentRegion.Available.X, Im.Style.FrameHeightWithSpacing * 10));
+        if (!listBox)
+            return;
+
+        var       delete    = string.Empty;
+        using var alignment = ImStyleDouble.ButtonTextAlign.PushX(0);
+        foreach (var (idx, mod) in ignoredMods.Index())
+        {
+            using var id = Im.Id.Push(idx);
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this ignored mod."u8))
+                delete = mod;
+
+            Im.Line.SameInner();
+            ImEx.TextFramed(mod, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight});
+        }
+
+        if (delete.Length > 0)
+            ignoredMods.Remove(delete);
+
+        var tt = _newIgnoredMod.Length is 0       ? "Please enter a new mod name or mod directory to ignore."u8 :
+            ignoredMods.Contains(_newIgnoredMod) ? "This mod is already ignored."u8 :
+                                                    "Ignore all mods with this name or directory in the Unlocks tab."u8;
+        if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, tt[0] is not (byte)'I'))
+        {
+            ignoredMods.Add(_newIgnoredMod);
+            _newIgnoredMod = string.Empty;
+        }
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidthFull();
+        Im.Input.Text("##newMod"u8, ref _newIgnoredMod, "Ignore this Mod..."u8);
     }
 }

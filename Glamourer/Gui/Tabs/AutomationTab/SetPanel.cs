@@ -4,6 +4,7 @@ using Glamourer.Designs.Special;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Unlocks;
+using Glamourer.Config;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
@@ -19,7 +20,7 @@ public class SetPanel(
     CustomizeUnlockManager customizeUnlocks,
     CustomizeService customizations,
     IdentifierDrawer identifierDrawer,
-    Configuration.Configuration config,
+    Configuration config,
     RandomRestrictionDrawer randomDrawer,
     AutomationSelection selection) : IPanel
 {

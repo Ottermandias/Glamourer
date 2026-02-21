@@ -1,4 +1,5 @@
 using Dalamud.Interface.ImGuiNotification;
+using Glamourer.Config;
 using Glamourer.Gui;
 using Glamourer.Services;
 using ImSharp;
@@ -8,7 +9,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Designs;
 
-public class DesignColorUi(DesignColors colors, Configuration.Configuration config)
+public class DesignColorUi(DesignColors colors, Configuration config)
 {
     private string _newName = string.Empty;
 

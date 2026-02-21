@@ -4,7 +4,7 @@ using Luna.Generators;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Glamourer.Configuration;
+namespace Glamourer.Config;
 
 public sealed partial class UiConfig : ConfigurationFile<FilenameService>
 {

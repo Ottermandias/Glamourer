@@ -15,6 +15,7 @@ using Penumbra.GameData.DataContainers;
 using Glamourer.Designs;
 using Penumbra.GameData.Interop;
 using Glamourer.Api.Enums;
+using Glamourer.Config;
 
 namespace Glamourer.State;
 
@@ -25,31 +26,31 @@ namespace Glamourer.State;
 /// </summary>
 public class StateListener : IDisposable
 {
-    private readonly Configuration.Configuration _config;
-    private readonly ActorManager                _actors;
-    private readonly ActorObjectManager          _objects;
-    private readonly StateManager                _manager;
-    private readonly StateApplier                _applier;
-    private readonly ItemManager                 _items;
-    private readonly CustomizeService            _customizations;
-    private readonly PenumbraService             _penumbra;
-    private readonly EquipSlotUpdating           _equipSlotUpdating;
-    private readonly BonusSlotUpdating           _bonusSlotUpdating;
-    private readonly GearsetDataLoaded           _gearsetDataLoaded;
-    private readonly WeaponLoading               _weaponLoading;
-    private readonly HeadGearVisibilityChanged   _headGearVisibility;
-    private readonly VisorStateChanged           _visorState;
-    private readonly VieraEarStateChanged        _vieraEarState;
-    private readonly WeaponVisibilityChanged     _weaponVisibility;
-    private readonly StateFinalized              _stateFinalized;
-    private readonly AutoDesignApplier           _autoDesignApplier;
-    private readonly FunModule                   _funModule;
-    private readonly HumanModelList              _humans;
-    private readonly MovedEquipment              _movedEquipment;
-    private readonly GPoseService                _gPose;
-    private readonly ChangeCustomizeService      _changeCustomizeService;
-    private readonly CrestService                _crestService;
-    private readonly ICondition                  _condition;
+    private readonly Configuration             _config;
+    private readonly ActorManager              _actors;
+    private readonly ActorObjectManager        _objects;
+    private readonly StateManager              _manager;
+    private readonly StateApplier              _applier;
+    private readonly ItemManager               _items;
+    private readonly CustomizeService          _customizations;
+    private readonly PenumbraService           _penumbra;
+    private readonly EquipSlotUpdating         _equipSlotUpdating;
+    private readonly BonusSlotUpdating         _bonusSlotUpdating;
+    private readonly GearsetDataLoaded         _gearsetDataLoaded;
+    private readonly WeaponLoading             _weaponLoading;
+    private readonly HeadGearVisibilityChanged _headGearVisibility;
+    private readonly VisorStateChanged         _visorState;
+    private readonly VieraEarStateChanged      _vieraEarState;
+    private readonly WeaponVisibilityChanged   _weaponVisibility;
+    private readonly StateFinalized            _stateFinalized;
+    private readonly AutoDesignApplier         _autoDesignApplier;
+    private readonly FunModule                 _funModule;
+    private readonly HumanModelList            _humans;
+    private readonly MovedEquipment            _movedEquipment;
+    private readonly GPoseService              _gPose;
+    private readonly ChangeCustomizeService    _changeCustomizeService;
+    private readonly CrestService              _crestService;
+    private readonly ICondition                _condition;
 
     private readonly Dictionary<Actor, CharacterWeapon> _fistOffhands = [];
 
@@ -58,7 +59,7 @@ public class StateListener : IDisposable
     private ActorState?     _creatingState;
     private ActorState?     _customizeState;
 
-    public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorManager actors, Configuration.Configuration config,
+    public StateListener(StateManager manager, ItemManager items, PenumbraService penumbra, ActorManager actors, Configuration config,
         EquipSlotUpdating equipSlotUpdating, GearsetDataLoaded gearsetDataLoaded, WeaponLoading weaponLoading, VisorStateChanged visorState,
         WeaponVisibilityChanged weaponVisibility, HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier,
         FunModule funModule, HumanModelList humans, StateApplier applier, MovedEquipment movedEquipment, ActorObjectManager objects,

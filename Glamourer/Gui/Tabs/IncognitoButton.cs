@@ -1,9 +1,10 @@
-﻿using ImSharp;
+﻿using Glamourer.Config;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs;
 
-public sealed class IncognitoButton(Configuration.Configuration config) : BaseIconButton<AwesomeIcon>, IUiService
+public sealed class IncognitoButton(Configuration config) : BaseIconButton<AwesomeIcon>, IUiService
 {
     public override AwesomeIcon Icon
         => config.Ephemeral.IncognitoMode

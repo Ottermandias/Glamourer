@@ -1,5 +1,5 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
-using Glamourer.Configuration;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Services;
 using ImSharp;
@@ -9,21 +9,19 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public class DesignDetailTab
 {
-    private readonly SaveService                 _saveService;
-    private readonly Configuration.Configuration _config;
-    private readonly DesignFileSystemSelector    _selector;
-    private readonly DesignFileSystem            _fileSystem;
-    private readonly DesignManager               _manager;
-    private readonly DesignColors                _colors;
-    private readonly DesignColorCombo            _colorCombo;
+    private readonly SaveService      _saveService;
+    private readonly Configuration    _config;
+    private readonly DesignFileSystem _fileSystem;
+    private readonly DesignManager    _manager;
+    private readonly DesignColors     _colors;
+    private readonly DesignColorCombo _colorCombo;
 
     private bool _editDescriptionMode;
 
-    public DesignDetailTab(SaveService saveService, DesignFileSystemSelector selector, DesignManager manager, DesignFileSystem fileSystem,
-        DesignColors colors, Configuration.Configuration config)
+    public DesignDetailTab(SaveService saveService, DesignManager manager, DesignFileSystem fileSystem,
+        DesignColors colors, Configuration config)
     {
         _saveService = saveService;
-        _selector    = selector;
         _manager     = manager;
         _fileSystem  = fileSystem;
         _colors      = colors;
@@ -42,6 +40,8 @@ public class DesignDetailTab
         Im.Line.New();
     }
 
+    private Design Selected
+        => (Design) _fileSystem.Selection.Selection!.Value;
 
     private void DrawDesignInfoTable()
     {
@@ -57,13 +57,13 @@ public class DesignDetailTab
         table.NextColumn();
         var width = Im.ContentRegion.Available with { Y = 0 };
         Im.Item.SetNextWidth(width.X);
-        if (ImEx.InputOnDeactivation.Text("##Name"u8, _selector.Selected!.Name.Text, out string newName))
-            _manager.Rename(_selector.Selected!, newName);
+        if (ImEx.InputOnDeactivation.Text("##Name"u8, Selected.Name.Text, out string newName))
+            _manager.Rename(Selected, newName);
 
-        var identifier = _selector.Selected!.Identifier.ToString();
+        var identifier = Selected.Identifier.ToString();
         table.DrawFrameColumn("Unique Identifier"u8);
         table.NextColumn();
-        var fileName = _saveService.FileNames.DesignFile(_selector.Selected!);
+        var fileName = _saveService.FileNames.DesignFile(Selected);
         using (Im.Font.PushMono())
         {
             if (Im.Button(identifier, width))
@@ -87,10 +87,10 @@ public class DesignDetailTab
         table.DrawFrameColumn("Full Selector Path"u8);
         table.NextColumn();
         Im.Item.SetNextWidth(width.X);
-        if (ImEx.InputOnDeactivation.Text("##Path"u8, _selector.SelectedLeaf!.FullName(), out string newPath))
+        if (ImEx.InputOnDeactivation.Text("##Path"u8, Selected.Path.CurrentPath, out string newPath))
             try
             {
-                _fileSystem.RenameAndMove(_selector.SelectedLeaf, newPath);
+                _fileSystem.RenameAndMove(Selected.Node!, newPath);
             }
             catch (Exception ex)
             {
@@ -99,56 +99,56 @@ public class DesignDetailTab
 
         table.DrawFrameColumn("Quick Design Bar"u8);
         table.NextColumn();
-        if (Im.RadioButton("Display##qdb"u8, _selector.Selected.QuickDesign))
-            _manager.SetQuickDesign(_selector.Selected!, true);
+        if (Im.RadioButton("Display##qdb"u8, Selected.QuickDesign))
+            _manager.SetQuickDesign(Selected, true);
         var hovered = Im.Item.Hovered();
         Im.Line.SameInner();
-        if (Im.RadioButton("Hide##qdb"u8, !_selector.Selected.QuickDesign))
-            _manager.SetQuickDesign(_selector.Selected!, false);
+        if (Im.RadioButton("Hide##qdb"u8, !Selected.QuickDesign))
+            _manager.SetQuickDesign(Selected, false);
         if (hovered || Im.Item.Hovered())
             Im.Tooltip.Set("Display or hide this design in your quick design bar."u8);
 
-        var forceRedraw = _selector.Selected!.ForcedRedraw;
+        var forceRedraw = Selected.ForcedRedraw;
         table.DrawFrameColumn("Force Redrawing"u8);
         table.NextColumn();
         if (Im.Checkbox("##ForceRedraw"u8, ref forceRedraw))
-            _manager.ChangeForcedRedraw(_selector.Selected!, forceRedraw);
+            _manager.ChangeForcedRedraw(Selected, forceRedraw);
         Im.Tooltip.OnHover("Set this design to always force a redraw when it is applied through any means."u8);
 
-        var resetAdvancedDyes = _selector.Selected!.ResetAdvancedDyes;
+        var resetAdvancedDyes = Selected.ResetAdvancedDyes;
         table.DrawFrameColumn("Reset Advanced Dyes"u8);
         table.NextColumn();
         if (Im.Checkbox("##ResetAdvancedDyes"u8, ref resetAdvancedDyes))
-            _manager.ChangeResetAdvancedDyes(_selector.Selected!, resetAdvancedDyes);
+            _manager.ChangeResetAdvancedDyes(Selected, resetAdvancedDyes);
         Im.Tooltip.OnHover("Set this design to reset any previously applied advanced dyes when it is applied through any means."u8);
 
-        var resetTemporarySettings = _selector.Selected!.ResetTemporarySettings;
+        var resetTemporarySettings = Selected.ResetTemporarySettings;
         table.DrawFrameColumn("Reset Temporary Settings"u8);
         table.NextColumn();
         if (Im.Checkbox("##ResetTemporarySettings"u8, ref resetTemporarySettings))
-            _manager.ChangeResetTemporarySettings(_selector.Selected!, resetTemporarySettings);
+            _manager.ChangeResetTemporarySettings(Selected, resetTemporarySettings);
         Im.Tooltip.OnHover(
             "Set this design to reset any temporary settings previously applied to the associated collection when it is applied through any means."u8);
 
         table.DrawFrameColumn("Color"u8);
         table.NextColumn();
-        if (_colorCombo.Draw("##colorCombo"u8, _selector.Selected!.Color.Length is 0 ? DesignColors.AutomaticName : _selector.Selected!.Color,
+        if (_colorCombo.Draw("##colorCombo"u8, Selected.Color.Length is 0 ? DesignColors.AutomaticName : Selected.Color,
                 "Associate a color with this design.\n"u8
               + "Right-Click to revert to automatic coloring.\n"u8
               + "Hold Control and scroll the mousewheel to scroll."u8,
                 width.X - Im.Style.ItemSpacing.X - Im.Style.FrameHeight, out var newColorName))
-            _manager.ChangeColor(_selector.Selected!, newColorName == DesignColors.AutomaticName ? string.Empty : newColorName);
+            _manager.ChangeColor(Selected, newColorName == DesignColors.AutomaticName ? string.Empty : newColorName);
 
         if (Im.Item.RightClicked())
-            _manager.ChangeColor(_selector.Selected!, string.Empty);
+            _manager.ChangeColor(Selected, string.Empty);
 
-        if (_colors.TryGetValue(_selector.Selected!.Color, out var currentColor))
+        if (_colors.TryGetValue(Selected.Color, out var currentColor))
         {
             Im.Line.Same();
-            if (DesignColorUi.DrawColorButton($"Color associated with {_selector.Selected!.Color}", currentColor, out var newColor))
-                _colors.SetColor(_selector.Selected!.Color, newColor);
+            if (DesignColorUi.DrawColorButton($"Color associated with {Selected.Color}", currentColor, out var newColor))
+                _colors.SetColor(Selected.Color, newColor);
         }
-        else if (_selector.Selected!.Color.Length != 0)
+        else if (Selected.Color.Length is not 0)
         {
             Im.Line.Same();
             ImEx.Icon.Draw(LunaStyle.WarningIcon, _colors.MissingColor);
@@ -157,11 +157,11 @@ public class DesignDetailTab
 
         table.DrawFrameColumn("Creation Date"u8);
         table.NextColumn();
-        ImEx.TextFramed($"{_selector.Selected!.CreationDate.LocalDateTime:F}", width, 0);
+        ImEx.TextFramed($"{Selected.CreationDate.LocalDateTime:F}", width, 0);
 
         table.DrawFrameColumn("Last Update Date"u8);
         table.NextColumn();
-        ImEx.TextFramed($"{_selector.Selected!.LastEdit.LocalDateTime:F}", width, 0);
+        ImEx.TextFramed($"{Selected.LastEdit.LocalDateTime:F}", width, 0);
 
         table.DrawFrameColumn("Tags"u8);
         table.NextColumn();
@@ -170,26 +170,26 @@ public class DesignDetailTab
 
     private void DrawTags()
     {
-        var idx = TagButtons.Draw(StringU8.Empty, StringU8.Empty, _selector.Selected!.Tags, out var editedTag);
+        var idx = TagButtons.Draw(StringU8.Empty, StringU8.Empty, Selected.Tags, out var editedTag);
         if (idx < 0)
             return;
 
-        if (idx < _selector.Selected!.Tags.Length)
+        if (idx < Selected.Tags.Length)
         {
             if (editedTag.Length is 0)
-                _manager.RemoveTag(_selector.Selected!, idx);
+                _manager.RemoveTag(Selected, idx);
             else
-                _manager.RenameTag(_selector.Selected!, idx, editedTag);
+                _manager.RenameTag(Selected, idx, editedTag);
         }
         else
         {
-            _manager.AddTag(_selector.Selected!, editedTag);
+            _manager.AddTag(Selected, editedTag);
         }
     }
 
     private void DrawDescription()
     {
-        var desc = _selector.Selected!.Description;
+        var desc = Selected.Description;
         var size = Im.ContentRegion.Available with { Y = 12 * Im.Style.TextHeightWithSpacing };
         if (!_editDescriptionMode)
         {
@@ -205,7 +205,7 @@ public class DesignDetailTab
         else
         {
             if (ImEx.InputOnDeactivation.MultiLine("##desc"u8, desc, out string newDescription, size))
-                _manager.ChangeDescription(_selector.Selected!, newDescription);
+                _manager.ChangeDescription(Selected, newDescription);
 
             if (Im.Button("Stop Editing"u8))
                 _editDescriptionMode = false;

@@ -1,5 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Glamourer.Api.Enums;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
@@ -27,7 +28,7 @@ public sealed class StateManager(
     InternalStateEditor editor,
     HumanModelList humans,
     IClientState clientState,
-    Configuration.Configuration config,
+    Configuration config,
     JobChangeState jobChange,
     DesignMerger merger,
     ModSettingApplier modApplier,

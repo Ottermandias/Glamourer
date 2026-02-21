@@ -1,3 +1,4 @@
+using Glamourer.Config;
 using ImSharp;
 
 namespace Glamourer.Gui;
@@ -83,6 +84,6 @@ public static class Colors
         => _colors.TryGetValue(color, out var value) ? value : color.Data().DefaultColor;
 
     /// <summary> Set the configurable colors dictionary to a value. </summary>
-    public static void SetColors(Configuration.Configuration config)
+    public static void SetColors(Configuration config)
         => _colors = config.Colors;
 }

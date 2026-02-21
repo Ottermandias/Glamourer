@@ -1,6 +1,6 @@
 ﻿using Luna.Generators;
 
-namespace Glamourer.Configuration;
+namespace Glamourer.Config;
 
 [TooltipEnum]
 public enum HeightDisplayType

@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc.Exceptions;
+using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.State;
 using Luna;
@@ -45,7 +46,7 @@ public class PenumbraService : IDisposable
     private const string NameManual = "Glamourer (Manually)";
 
     private readonly IDalamudPluginInterface                                               _pluginInterface;
-    private readonly Configuration.Configuration                                           _config;
+    private readonly Configuration                                                         _config;
     private readonly EventSubscriber<ChangedItemType, uint>                                _tooltipSubscriber;
     private readonly EventSubscriber<MouseButton, ChangedItemType, uint>                   _clickSubscriber;
     private readonly EventSubscriber<nint, Guid, nint, nint, nint>                         _creatingCharacterBase;
@@ -96,7 +97,7 @@ public class PenumbraService : IDisposable
     public int      CurrentMinor { get; private set; }
     public DateTime AttachTime   { get; private set; }
 
-    public PenumbraService(IDalamudPluginInterface pi, PenumbraReloaded penumbraReloaded, Configuration.Configuration config)
+    public PenumbraService(IDalamudPluginInterface pi, PenumbraReloaded penumbraReloaded, Configuration config)
     {
         _pluginInterface       = pi;
         _penumbraReloaded      = penumbraReloaded;

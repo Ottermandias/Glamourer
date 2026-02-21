@@ -1,9 +1,9 @@
-﻿
+﻿using Glamourer.Config;
 using Luna;
 
 namespace Glamourer.Designs.Special;
 
-public class RandomDesignGenerator(DesignStorage designs, DesignFileSystem fileSystem, Configuration.Configuration config) : IService
+public class RandomDesignGenerator(DesignStorage designs, DesignFileSystem fileSystem, Configuration config) : IService
 {
     private readonly Random                _rng        = new();
     private readonly WeakReference<Design> _lastDesign = new(null!, false);

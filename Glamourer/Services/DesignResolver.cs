@@ -3,14 +3,13 @@ using Dalamud.Plugin.Services;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Gui;
-using Glamourer.Gui.Tabs.DesignTab;
 using Luna;
 using ImSharp;
 
 namespace Glamourer.Services;
 
 public class DesignResolver(
-    DesignFileSystemSelector designSelector,
+    DesignFileSystem fileSystem,
     QuickDesignCombo quickDesignCombo,
     DesignConverter converter,
     DesignManager manager,
@@ -66,8 +65,8 @@ public class DesignResolver(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool GetSelectedDesign(ref DesignBase? design, ref SeString? error)
     {
-        design = designSelector.Selected;
-        if (design != null)
+        design = (Design?)fileSystem.Selection.Selection?.Value;
+        if (design is not null)
             return true;
 
         error = "You do not have selected any design in the Designs Tab.";
@@ -147,7 +146,7 @@ public class DesignResolver(
             // Search for design by name and partial identifier.
             design = manager.Designs.FirstOrDefault(MatchNameAndIdentifier(lower));
             // Search for design by path, if nothing was found.
-            if (design == null && designFileSystem.Find(lower, out var child) && child is DesignFileSystem.Leaf leaf)
+            if (design is null && designFileSystem.Find(lower, out var child) && child is IFileSystemData<Design> leaf)
                 design = leaf.Value;
         }
 

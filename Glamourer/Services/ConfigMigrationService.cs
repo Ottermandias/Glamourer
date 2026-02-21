@@ -1,20 +1,20 @@
 ﻿using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Gui;
 using ImSharp;
-using Luna;
 using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Services;
 
 public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator, BackupService backupService)
 {
-    private Configuration.Configuration _config = null!;
-    private JObject                     _data   = null!;
+    private Configuration _config = null!;
+    private JObject       _data   = null!;
 
-    public void Migrate(Configuration.Configuration config)
+    public void Migrate(Configuration config)
     {
         _config = config;
-        if (config.Version >= Configuration.Configuration.Constants.CurrentVersion || !File.Exists(saveService.FileNames.ConfigurationFile))
+        if (config.Version >= Configuration.CurrentVersion || !File.Exists(saveService.FileNames.ConfigurationFile))
         {
             AddColors(config, false);
             return;
@@ -27,7 +27,20 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
         MigrateV5To6();
         MigrateV6To7();
         MigrateV7To8();
+        MigrateV8To9();
         AddColors(config, true);
+    }
+
+    private void MigrateV8To9()
+    {
+        if (_config.Version > 8)
+            return;
+
+        backupService.CreateMigrationBackup("pre_filesystem_update", saveService.FileNames.MigrationDesignFileSystem);
+        _config.Version           = 9;
+        _config.Ephemeral.Version = 9;
+        _config.Save();
+        _config.Ephemeral.Save();
     }
 
     private void MigrateV7To8()
@@ -60,7 +73,7 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
         _config.Version = 6;
     }
 
-    // Ephemeral Config.
+    // Ephemeral Configuration.
     private void MigrateV4To5()
     {
         if (_config.Version > 4)
@@ -71,7 +84,7 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
         _config.Ephemeral.ShowDesignQuickBar = _data["ShowDesignQuickBar"]?.ToObject<bool>() ?? _config.Ephemeral.ShowDesignQuickBar;
         _config.Ephemeral.LockDesignQuickBar = _data["LockDesignQuickBar"]?.ToObject<bool>() ?? _config.Ephemeral.LockDesignQuickBar;
         _config.Ephemeral.LockMainWindow     = _data["LockMainWindow"]?.ToObject<bool>() ?? _config.Ephemeral.LockMainWindow;
-        _config.Ephemeral.SelectedMainTab        = _data["SelectedTab"]?.ToObject<MainTabType>() ?? _config.Ephemeral.SelectedMainTab;
+        _config.Ephemeral.SelectedMainTab    = _data["SelectedTab"]?.ToObject<MainTabType>() ?? _config.Ephemeral.SelectedMainTab;
         _config.Ephemeral.LastSeenVersion    = _data["LastSeenVersion"]?.ToObject<int>() ?? _config.Ephemeral.LastSeenVersion;
         _config.Version                      = 5;
         _config.Ephemeral.Version            = 5;
@@ -83,7 +96,7 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
         if (_config.Version > 1)
             return;
 
-        backupService.CreateMigrationBackup("pre_v1_to_v2_migration");
+        backupService.CreateMigrationBackup("pre_v1_to_v2_migration", saveService.FileNames.MigrationDesignFile);
         fixedDesignMigrator.Migrate(_data["FixedDesigns"]);
         _config.Version = 2;
         var customizationColor = _data["CustomizationColor"]?.ToObject<uint>() ?? ColorId.CustomizationDesign.Data().DefaultColor;
@@ -103,7 +116,7 @@ public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator
         _config.Codes   = _config.Codes.DistinctBy(c => c.Code).ToList();
     }
 
-    private static void AddColors(Configuration.Configuration config, bool forceSave)
+    private static void AddColors(Configuration config, bool forceSave)
     {
         var save = false;
         foreach (var color in ColorId.Values)

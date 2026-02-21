@@ -1,11 +1,12 @@
-﻿using ImSharp;
+﻿using Glamourer.Config;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
 public sealed class DebugTab(ServiceManager manager) : ITab<MainTabType>
 {
-    private readonly Configuration.Configuration _config = manager.GetService<Configuration.Configuration>();
+    private readonly Configuration _config = manager.GetService<Configuration>();
 
     public bool IsVisible
         => _config.DebugMode;

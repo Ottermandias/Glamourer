@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Automation;
-using Glamourer.Configuration;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.History;
 using Glamourer.Gui.Customization;
@@ -25,7 +25,7 @@ public sealed class ActorPanel : IPanel
     private readonly CustomizationDrawer         _customizationDrawer;
     private readonly EquipmentDrawer             _equipmentDrawer;
     private readonly AutoDesignApplier           _autoDesignApplier;
-    private readonly Configuration.Configuration _config;
+    private readonly Configuration _config;
     private readonly DesignConverter             _converter;
     private readonly ActorObjectManager          _objects;
     private readonly ImportService               _importService;
@@ -37,7 +37,7 @@ public sealed class ActorPanel : IPanel
         CustomizationDrawer customizationDrawer,
         EquipmentDrawer equipmentDrawer,
         AutoDesignApplier autoDesignApplier,
-        Configuration.Configuration config,
+        Configuration config,
         DesignConverter converter,
         ActorObjectManager objects,
         DesignManager designManager,

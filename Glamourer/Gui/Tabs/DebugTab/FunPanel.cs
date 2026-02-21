@@ -1,10 +1,11 @@
-﻿using Glamourer.State;
+﻿using Glamourer.Config;
+using Glamourer.State;
 using ImSharp;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public sealed class FunPanel(FunModule funModule, Configuration.Configuration config) : IGameDataDrawer
+public sealed class FunPanel(FunModule funModule, Configuration config) : IGameDataDrawer
 {
     public ReadOnlySpan<byte> Label
         => "Fun Module"u8;

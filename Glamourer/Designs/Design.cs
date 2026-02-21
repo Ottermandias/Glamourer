@@ -14,7 +14,7 @@ using Notification = Luna.Notification;
 
 namespace Glamourer.Designs;
 
-public sealed class Design : DesignBase, ISavable, IDesignStandIn
+public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemValue<Design>
 {
     #region Data
 
@@ -44,6 +44,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     public new const int FileVersion = 2;
 
     public Guid                         Identifier             { get; internal init; }
+    public IFileSystemData<Design>?     Node                   { get; set; }
     public DateTimeOffset               CreationDate           { get; internal init; }
     public DateTimeOffset               LastEdit               { get; internal set; }
     public LowerString                  Name                   { get; internal set; } = LowerString.Empty;
@@ -57,6 +58,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     public string                       Color                  { get; internal set; } = string.Empty;
     public SortedList<Mod, ModSettings> AssociatedMods         { get; private set; }  = [];
     public LinkContainer                Links                  { get; private set; }  = [];
+    public DataPath                     Path                   { get; }               = new();
 
     public string Incognito
         => Identifier.ToString()[..8];
@@ -124,6 +126,12 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
             ["Mods"]                   = SerializeMods(),
             ["Links"]                  = Links.Serialize(),
         };
+        if (Path.Folder.Length > 0)
+            ret["FileSystemFolder"] = Path.Folder;
+        if (Path.SortName is not null)
+            ret["SortOrderName"] = Path.SortName;
+
+
         return ret;
     }
 
@@ -251,6 +259,9 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
         };
         if (design.LastEdit < creationDate)
             design.LastEdit = creationDate;
+        design.Path.Folder   = json["FileSystemFolder"]?.Value<string>() ?? string.Empty;
+        design.Path.SortName = json["SortOrderName"]?.Value<string>()?.FixName();
+
         design.SetWriteProtected(json["WriteProtected"]?.ToObject<bool>() ?? false);
         LoadCustomize(customizations, json["Customize"], design, design.Name, true, false);
         LoadEquip(items, json["Equipment"], design, design.Name, true);
@@ -340,7 +351,13 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     }
 
     public string LogName(string fileName)
-        => Path.GetFileNameWithoutExtension(fileName);
+        => System.IO.Path.GetFileNameWithoutExtension(fileName);
 
     #endregion
+
+    string IFileSystemValue.Identifier
+        => Identifier.ToString();
+
+    public string DisplayName
+        => Name.Text;
 }

@@ -1,9 +1,10 @@
-﻿using Glamourer.Interop.Penumbra;
+﻿using Glamourer.Designs;
+using Glamourer.Interop.Penumbra;
 using ImSharp;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public sealed class ModCombo(PenumbraService penumbra, DesignSelection selection) : FilterComboBase<ModCombo.CacheItem>(new ModFilter())
+public sealed class ModCombo(PenumbraService penumbra, DesignFileSystem fileSystem) : FilterComboBase<ModCombo.CacheItem>(new ModFilter())
 {
     public readonly struct CacheItem(in Mod mod, in ModSettings settings, int count)
     {
@@ -42,7 +43,7 @@ public sealed class ModCombo(PenumbraService penumbra, DesignSelection selection
         => Im.Style.TextHeightWithSpacing;
 
     protected override IEnumerable<CacheItem> GetItems()
-        => penumbra.GetMods(selection.Design?.FilteredItemNames.ToArray() ?? []).Select(t => new CacheItem(t.Mod, t.Settings, t.Count));
+        => penumbra.GetMods(fileSystem.Selection.Selection?.GetValue<Design>()?.FilteredItemNames.ToArray() ?? []).Select(t => new CacheItem(t.Mod, t.Settings, t.Count));
 
     protected override bool DrawItem(in CacheItem item, int globalIndex, bool selected)
     {

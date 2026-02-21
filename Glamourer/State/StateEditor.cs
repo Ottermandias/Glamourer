@@ -1,4 +1,5 @@
 using Glamourer.Api.Enums;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.History;
 using Glamourer.Designs.Links;
@@ -6,7 +7,6 @@ using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
-using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
@@ -20,18 +20,18 @@ public class StateEditor(
     StateChanged stateChanged,
     StateFinalized stateFinalized,
     JobChangeState jobChange,
-    Configuration.Configuration config,
+    Configuration config,
     ItemManager items,
     DesignMerger merger,
     ModSettingApplier modApplier,
     GPoseService gPose) : IDesignEditor
 {
-    protected readonly InternalStateEditor         Editor         = editor;
-    protected readonly StateApplier                Applier        = applier;
-    protected readonly StateChanged                StateChanged   = stateChanged;
-    protected readonly StateFinalized              StateFinalized = stateFinalized;
-    protected readonly Configuration.Configuration Config         = config;
-    protected readonly ItemManager                 Items          = items;
+    protected readonly InternalStateEditor Editor         = editor;
+    protected readonly StateApplier        Applier        = applier;
+    protected readonly StateChanged        StateChanged   = stateChanged;
+    protected readonly StateFinalized      StateFinalized = stateFinalized;
+    protected readonly Configuration       Config         = config;
+    protected readonly ItemManager         Items          = items;
 
     /// <summary> Turn an actor to. </summary>
     public void ChangeModelId(ActorState state, uint modelId, CustomizeArray customize, nint equipData, StateSource source,

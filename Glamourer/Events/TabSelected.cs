@@ -1,5 +1,6 @@
 ﻿using Glamourer.Designs;
 using Glamourer.Gui;
+using Glamourer.Gui.Tabs.DesignTab;
 using OtterGui.Classes;
 
 namespace Glamourer.Events;
@@ -16,7 +17,7 @@ public sealed class TabSelected()
 {
     public enum Priority
     {
-        /// <seealso cref="Gui.Tabs.DesignTab.DesignFileSystemSelector.OnTabSelected"/>
+        /// <seealso cref="DesignFileSystemDrawer.OnTabSelected"/>
         DesignSelector = 0,
 
         /// <seealso cref="Gui.MainWindow.OnTabSelected"/>

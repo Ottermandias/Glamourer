@@ -1,13 +1,13 @@
+using Glamourer.Config;
 using ImSharp;
-using Luna;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Services;
 
 public class CodeService
 {
-    private readonly Configuration.Configuration _config;
-    private readonly SHA256                      _hasher = SHA256.Create();
+    private readonly Configuration _config;
+    private readonly SHA256        _hasher = SHA256.Create();
 
     [Flags]
     public enum CodeFlag : ulong
@@ -25,16 +25,17 @@ public class CodeService
         OopsAuRa     = 0x000400,
         OopsHrothgar = 0x000800,
         OopsViera    = 0x001000,
+
         //Artisan      = 0x002000,
-        SixtyThree   = 0x004000,
-        Shirts       = 0x008000,
-        World        = 0x010000,
-        Elephants    = 0x020000,
-        Crown        = 0x040000,
-        Dolphins     = 0x080000,
-        Face         = 0x100000,
-        Manderville  = 0x200000,
-        Smiles       = 0x400000,
+        SixtyThree  = 0x004000,
+        Shirts      = 0x008000,
+        World       = 0x010000,
+        Elephants   = 0x020000,
+        Crown       = 0x040000,
+        Dolphins    = 0x080000,
+        Face        = 0x100000,
+        Manderville = 0x200000,
+        Smiles      = 0x400000,
     }
 
     public static readonly CodeFlag AllHintCodes =
@@ -87,7 +88,7 @@ public class CodeService
             _                     => Race.Unknown,
         };
 
-    public CodeService(Configuration.Configuration config)
+    public CodeService(Configuration config)
     {
         _config = config;
         Load();
@@ -253,4 +254,3 @@ public class CodeService
         _                     => (false, 0, string.Empty, string.Empty, string.Empty),
     };
 }
-

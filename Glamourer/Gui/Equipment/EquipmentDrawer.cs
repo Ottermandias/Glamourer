@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.Gui.Materials;
 using Glamourer.Services;
@@ -22,7 +23,7 @@ public class EquipmentDrawer
     private readonly BonusItemCombo[]                       _bonusItemCombo;
     private readonly Dictionary<FullEquipType, WeaponCombo> _weaponCombo;
     private readonly TextureService                         _textures;
-    private readonly Configuration.Configuration            _config;
+    private readonly Configuration                          _config;
     private readonly GPoseService                           _gPose;
     private readonly AdvancedDyePopup                       _advancedDyes;
     private readonly ItemCopyService                        _itemCopy;
@@ -32,7 +33,7 @@ public class EquipmentDrawer
     private EquipSlot          _dragTarget;
 
     public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, TextureService textures,
-        Configuration.Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes, ItemCopyService itemCopy)
+        Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes, ItemCopyService itemCopy)
     {
         _items          = items;
         _textures       = textures;

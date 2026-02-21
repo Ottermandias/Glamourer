@@ -1,4 +1,5 @@
-﻿using Glamourer.Designs;
+﻿using Glamourer.Config;
+using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using Luna;
@@ -10,14 +11,14 @@ namespace Glamourer.Services;
 
 public class PcpService : IRequiredService
 {
-    private readonly Configuration.Configuration _config;
-    private readonly PenumbraService             _penumbra;
-    private readonly ActorObjectManager          _objects;
-    private readonly StateManager                _state;
-    private readonly DesignConverter             _designConverter;
-    private readonly DesignManager               _designManager;
+    private readonly Configuration      _config;
+    private readonly PenumbraService    _penumbra;
+    private readonly ActorObjectManager _objects;
+    private readonly StateManager       _state;
+    private readonly DesignConverter    _designConverter;
+    private readonly DesignManager      _designManager;
 
-    public PcpService(Configuration.Configuration config, PenumbraService penumbra, ActorObjectManager objects, StateManager state,
+    public PcpService(Configuration config, PenumbraService penumbra, ActorObjectManager objects, StateManager state,
         DesignConverter designConverter, DesignManager designManager)
     {
         _config          = config;

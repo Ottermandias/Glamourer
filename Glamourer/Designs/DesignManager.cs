@@ -1,4 +1,5 @@
 ﻿using Dalamud.Utility;
+using Glamourer.Config;
 using Glamourer.Designs.History;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
@@ -21,7 +22,7 @@ public sealed class DesignManager : DesignEditor
     private readonly HumanModelList _humans;
 
     public DesignManager(SaveService saveService, ItemManager items, CustomizeService customizations,
-        DesignChanged @event, HumanModelList humans, DesignStorage storage, DesignLinkLoader designLinkLoader, Configuration.Configuration config)
+        DesignChanged @event, HumanModelList humans, DesignStorage storage, DesignLinkLoader designLinkLoader, Configuration config)
         : base(saveService, @event, customizations, items, config)
     {
         Designs = storage;
@@ -545,7 +546,6 @@ public sealed class DesignManager : DesignEditor
                 }
             }
 
-            DesignFileSystem.MigrateOldPaths(SaveService, migratedFileSystemPaths);
             Glamourer.Log.Information(
                 $"Successfully migrated {successes} old designs. Skipped {skips} already migrated designs. Failed to migrate {errors} designs.");
         }

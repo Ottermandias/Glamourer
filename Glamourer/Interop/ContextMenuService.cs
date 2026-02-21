@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Services;
 using Glamourer.State;
@@ -23,7 +24,7 @@ public class ContextMenuService : IDisposable
 
     private readonly MenuItem _inventoryItem;
 
-    public ContextMenuService(ItemManager items, StateManager state, ActorObjectManager objects, Configuration.Configuration config,
+    public ContextMenuService(ItemManager items, StateManager state, ActorObjectManager objects, Configuration config,
         IContextMenu context)
     {
         _contextMenu = context;

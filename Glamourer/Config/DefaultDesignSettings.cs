@@ -1,4 +1,4 @@
-﻿namespace Glamourer.Configuration;
+﻿namespace Glamourer.Config;
 
 public class DefaultDesignSettings
 {

@@ -7,14 +7,16 @@ using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Services;
 using ImSharp;
 using Luna;
+using Luna.Generators;
 using Newtonsoft.Json;
-using OtterGui.Filesystem;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
-namespace Glamourer.Configuration;
+namespace Glamourer.Config;
 
-public class Configuration : IPluginConfiguration, ISavable
+public sealed partial class Configuration : IPluginConfiguration, ISavable
 {
+    public const int CurrentVersion = 9;
+
     [JsonIgnore]
     public readonly EphemeralConfig Ephemeral;
 
@@ -58,8 +60,11 @@ public class Configuration : IPluginConfiguration, ISavable
 
     public DefaultDesignSettings DefaultDesignSettings { get; set; } = new();
 
-    public HeightDisplayType    HeightDisplayType    { get; set; } = HeightDisplayType.Centimetre;
-    public RenameField          ShowRename           { get; set; } = RenameField.BothDataPrio;
+    public HeightDisplayType HeightDisplayType { get; set; } = HeightDisplayType.Centimetre;
+
+    [ConfigProperty(EventName = "OnRenameChanged")]
+    private RenameField _showRename = RenameField.BothDataPrio;
+
     public ModifiableHotkey     ToggleQuickDesignBar { get; set; } = new(VirtualKey.NO_KEY);
     public DoubleModifier       DeleteDesignModifier { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
     public DoubleModifier       IncognitoModifier    { get; set; } = new(ModifierHotkey.Control);
@@ -70,7 +75,7 @@ public class Configuration : IPluginConfiguration, ISavable
 
     [JsonConverter(typeof(SortModeConverter))]
     [JsonProperty(Order = int.MaxValue)]
-    public ISortMode<Design> SortMode { get; set; } = ISortMode<Design>.FoldersFirst;
+    public ISortMode SortMode { get; set; } = ISortMode.FoldersFirst;
 
     public List<(string Code, bool Enabled)> Codes { get; set; } = [];
 
@@ -80,7 +85,7 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool DebugMode { get; set; } = false;
 #endif
 
-    public int Version { get; set; } = Constants.CurrentVersion;
+    public int Version { get; set; } = CurrentVersion;
 
     public Dictionary<ColorId, uint> Colors { get; private set; }
         = ColorId.Values.ToDictionary(c => c, c => c.Data().DefaultColor);
@@ -142,45 +147,22 @@ public class Configuration : IPluginConfiguration, ISavable
         serializer.Serialize(jWriter, this);
     }
 
-    public static class Constants
-    {
-        public const int CurrentVersion = 8;
-
-        public static readonly ISortMode<Design>[] ValidSortModes =
-        [
-            ISortMode<Design>.FoldersFirst,
-            ISortMode<Design>.Lexicographical,
-            new DesignFileSystem.CreationDate(),
-            new DesignFileSystem.InverseCreationDate(),
-            new DesignFileSystem.UpdateDate(),
-            new DesignFileSystem.InverseUpdateDate(),
-            ISortMode<Design>.InverseFoldersFirst,
-            ISortMode<Design>.InverseLexicographical,
-            ISortMode<Design>.FoldersLast,
-            ISortMode<Design>.InverseFoldersLast,
-            ISortMode<Design>.InternalOrder,
-            ISortMode<Design>.InverseInternalOrder,
-        ];
-    }
-
     /// <summary> Convert SortMode Types to their name. </summary>
-    private class SortModeConverter : JsonConverter<ISortMode<Design>>
+    private class SortModeConverter : JsonConverter<ISortMode>
     {
-        public override void WriteJson(JsonWriter writer, ISortMode<Design>? value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, ISortMode? value, JsonSerializer serializer)
         {
-            value ??= ISortMode<Design>.FoldersFirst;
+            value ??= ISortMode.FoldersFirst;
             serializer.Serialize(writer, value.GetType().Name);
         }
 
-        public override ISortMode<Design> ReadJson(JsonReader reader, Type objectType, ISortMode<Design>? existingValue,
-            bool hasExistingValue,
+        public override ISortMode ReadJson(JsonReader reader, Type objectType, ISortMode? existingValue, bool hasExistingValue,
             JsonSerializer serializer)
         {
-            var name = serializer.Deserialize<string>(reader);
-            if (name == null || !Constants.ValidSortModes.FindFirst(s => s.GetType().Name == name, out var mode))
-                return existingValue ?? ISortMode<Design>.FoldersFirst;
+            if (serializer.Deserialize<string>(reader) is { } name)
+                return ISortMode.Valid.GetValueOrDefault(name, existingValue ?? ISortMode.FoldersFirst);
 
-            return mode;
+            return existingValue ?? ISortMode.FoldersFirst;
         }
     }
 }

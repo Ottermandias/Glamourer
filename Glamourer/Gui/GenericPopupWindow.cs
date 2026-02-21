@@ -1,17 +1,18 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using ImSharp;
 
 namespace Glamourer.Gui;
 
 public class GenericPopupWindow : Luna.Window
 {
-    private readonly Configuration.Configuration _config;
-    private readonly ICondition                  _condition;
-    private readonly IClientState                _state;
-    public           bool                        OpenFestivalPopup { get; internal set; }
+    private readonly Configuration _config;
+    private readonly ICondition    _condition;
+    private readonly IClientState  _state;
+    public           bool          OpenFestivalPopup { get; internal set; }
 
-    public GenericPopupWindow(Configuration.Configuration config, IClientState state, ICondition condition)
+    public GenericPopupWindow(Configuration config, IClientState state, ICondition condition)
         : base("Glamourer Popups",
             WindowFlags.NoBringToFrontOnFocus
           | WindowFlags.NoDecoration

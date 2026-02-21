@@ -1,4 +1,5 @@
-﻿using Glamourer.Designs;
+﻿using Glamourer.Config;
+using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Interop.PalettePlus;
 using Glamourer.State;
@@ -7,7 +8,7 @@ using Luna;
 
 namespace Glamourer.Gui.Customization;
 
-public class CustomizeParameterDrawer(Configuration.Configuration config, PaletteImport import) : IService
+public class CustomizeParameterDrawer(Configuration config, PaletteImport import) : IService
 {
     private readonly Dictionary<Design, CustomizeParameterData> _lastData    = [];
     private          StringU8                                   _paletteName = StringU8.Empty;
@@ -125,7 +126,7 @@ public class CustomizeParameterDrawer(Configuration.Configuration config, Palett
         DrawColorFormatOptions(withApply);
         var value = config.ShowColorConfig;
         Im.Line.Same();
-        if (Im.Checkbox("Show Config"u8, ref value))
+        if (Im.Checkbox("Show Configuration"u8, ref value))
         {
             config.ShowColorConfig = value;
             config.Save();

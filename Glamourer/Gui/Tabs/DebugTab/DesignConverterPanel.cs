@@ -84,7 +84,7 @@ public sealed class DesignConverterPanel(DesignConverter designConverter) : IGam
                 Im.Text("JSON Parsing Successful!"u8);
 
             if (_tmpDesign is not null)
-                DesignManagerPanel.DrawDesign(_tmpDesign, null);
+                DesignManagerPanel.DrawDesign(_tmpDesign);
 
             if (_clipboardProblem.Length > 0)
             {

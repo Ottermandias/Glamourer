@@ -1,5 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
@@ -24,7 +25,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     private readonly ThreadLocal<List<MaterialValueIndex>> _deleteList = new(() => []);
 
     public MaterialManager(PrepareColorSet prepareColorSet, StateManager stateManager, ActorManager actors, PenumbraService penumbra,
-        Configuration.Configuration config)
+        Configuration config)
     {
         _stateManager = stateManager;
         _actors       = actors;

@@ -1,6 +1,7 @@
 using Glamourer.Designs;
 using Glamourer.Designs.History;
 using Glamourer.Gui;
+using Glamourer.Gui.Tabs.DesignTab;
 using OtterGui.Classes;
 
 namespace Glamourer.Events;
@@ -135,10 +136,13 @@ public sealed class DesignChanged()
         /// <seealso cref="Automation.AutoDesignManager.OnDesignChange"/>
         AutoDesignManager = 1,
 
-        /// <seealso cref="DesignFileSystem.OnDesignChange"/>
+        /// <seealso cref="DesignFileSystem.OnDesignChanged"/>
         DesignFileSystem = 0,
 
-        /// <seealso cref="Gui.Tabs.DesignTab.DesignFileSystemSelector.OnDesignChange"/>
+        /// <seealso cref="DesignHeader.OnDesignChanged"/>
+        DesignHeader = 0,
+
+        /// <seealso cref="DesignFileSystemDrawer.OnDesignChanged"/>
         DesignFileSystemSelector = -1,
 
         /// <seealso cref="DesignComboBase.OnDesignChanged"/>

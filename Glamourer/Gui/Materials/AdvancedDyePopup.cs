@@ -2,7 +2,7 @@
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
-using Glamourer.Configuration;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Glamourer.State;
@@ -17,7 +17,7 @@ using Notification = Luna.Notification;
 namespace Glamourer.Gui.Materials;
 
 public sealed unsafe class AdvancedDyePopup(
-    Configuration.Configuration config,
+    Configuration config,
     StateManager stateManager,
     LiveColorTablePreviewer preview,
     DirectXService directX) : IService

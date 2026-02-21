@@ -1,4 +1,4 @@
-﻿using Glamourer.Configuration;
+﻿using Glamourer.Config;
 using ImSharp;
 using Luna;
 

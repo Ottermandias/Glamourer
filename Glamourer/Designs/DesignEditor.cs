@@ -1,3 +1,4 @@
+using Glamourer.Config;
 using Glamourer.Designs.History;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
@@ -5,7 +6,6 @@ using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
 using ImSharp;
-using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -16,14 +16,14 @@ public class DesignEditor(
     DesignChanged designChanged,
     CustomizeService customizations,
     ItemManager items,
-    Configuration.Configuration config)
+    Configuration config)
     : IDesignEditor
 {
     protected readonly DesignChanged                DesignChanged  = designChanged;
     protected readonly SaveService                  SaveService    = saveService;
     protected readonly ItemManager                  Items          = items;
     protected readonly CustomizeService             Customizations = customizations;
-    protected readonly Configuration.Configuration  Config         = config;
+    protected readonly Configuration                Config         = config;
     protected readonly Dictionary<Guid, DesignData> UndoStore      = [];
 
     private bool _forceFullItemOff;

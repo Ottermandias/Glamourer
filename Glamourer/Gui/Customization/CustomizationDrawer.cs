@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.Unlocks;
@@ -14,7 +15,7 @@ namespace Glamourer.Gui.Customization;
 public partial class CustomizationDrawer(
     ITextureProvider textures,
     CustomizeService service,
-    Configuration.Configuration config,
+    Configuration config,
     FavoriteManager favorites,
     HeightService heightService)
     : IDisposable
@@ -81,7 +82,7 @@ public partial class CustomizationDrawer(
     private CustomizeValue _currentByte = CustomizeValue.Zero;
     private bool           _currentApply;
     private int            _currentCount;
-    private StringU8         _currentOption = StringU8.Empty;
+    private StringU8       _currentOption = StringU8.Empty;
 
     // Prepare a new customization option.
     private Im.IdDisposable SetId(CustomizeIndex index)

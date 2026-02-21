@@ -1,9 +1,10 @@
 ﻿using Glamourer.Api.Api;
+using Glamourer.Config;
 using Luna;
 
 namespace Glamourer.Api;
 
-public class GlamourerApi(Configuration.Configuration config, DesignsApi designs, StateApi state, ItemsApi items) : IGlamourerApi, IApiService
+public class GlamourerApi(Configuration config, DesignsApi designs, StateApi state, ItemsApi items) : IGlamourerApi, IApiService
 {
     public const int CurrentApiVersionMajor = 1;
     public const int CurrentApiVersionMinor = 7;

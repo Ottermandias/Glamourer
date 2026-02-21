@@ -1,6 +1,7 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Api;
 using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Interop;
@@ -61,7 +62,7 @@ public class Glamourer : IDalamudPlugin
     public string GatherSupportInformation()
     {
         var sb     = new StringBuilder(10240);
-        var config = _services.GetService<Configuration.Configuration>();
+        var config = _services.GetService<Configuration>();
         sb.AppendLine("**Settings**");
         sb.Append($"> **`Plugin Version:       `** {Version}\n");
         sb.Append($"> **`Commit Hash:          `** {CommitHash}\n");

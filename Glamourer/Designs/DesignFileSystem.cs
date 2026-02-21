@@ -3,195 +3,64 @@ using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Services;
 using Luna;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Designs;
 
-public sealed class DesignFileSystem : OtterGui.Filesystem.FileSystem<Design>, IDisposable, ISavable
+public sealed class DesignFileSystem : BaseFileSystem, IDisposable, IRequiredService
 {
-    private readonly DesignChanged _designChanged;
+    private readonly DesignFileSystemSaver _saver;
+    private readonly DesignChanged         _designChanged;
 
-    private readonly SaveService   _saveService;
-    private readonly DesignManager _designManager;
-
-    public DesignFileSystem(DesignManager designManager, SaveService saveService, DesignChanged designChanged)
+    public DesignFileSystem(Logger log, SaveService saveService, DesignStorage designs, DesignChanged designChanged)
+        : base("DesignFileSystem", log, true)
     {
-        _designManager = designManager;
-        _saveService   = saveService;
         _designChanged = designChanged;
-        _designChanged.Subscribe(OnDesignChange, DesignChanged.Priority.DesignFileSystem);
-        Changed += OnChange;
-        Reload();
+        _saver         = new DesignFileSystemSaver(log, this, saveService, designs);
+
+        _saver.Load();
+        _designChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignFileSystem);
     }
 
-    private void Reload()
+    private void OnDesignChanged(DesignChanged.Type type, Design design, ITransaction? _)
     {
-        if (Load(new FileInfo(_saveService.FileNames.DesignFileSystem), _designManager.Designs, DesignToIdentifier, DesignToName))
-            _saveService.ImmediateSave(this);
+        switch (type)
+        {
+            case DesignChanged.Type.ReloadedAll: _saver.Load(); break;
+            case DesignChanged.Type.Created:
+                var parent = Root;
+                if (design.Path.Folder.Length > 0)
+                    try
+                    {
+                        parent = FindOrCreateAllFolders(design.Path.Folder);
+                    }
+                    catch (Exception ex)
+                    {
+                        Glamourer.Messager.NotificationMessage(ex,
+                            $"Could not move design to {design.Path} because the folder could not be created.",
+                            NotificationType.Error);
+                    }
 
-        Glamourer.Log.Debug("Reloaded design filesystem.");
+                var (data, _) = CreateDuplicateDataNode(parent, design.Path.SortName ?? design.Name, design);
+                Selection.Select(data);
+                break;
+            case DesignChanged.Type.Deleted:
+                if (design.Node is { } node)
+                {
+                    if (node.Selected)
+                        Selection.UnselectAll();
+                    Delete(node);
+                }
+
+                break;
+            case DesignChanged.Type.Renamed when design.Path.SortName is null:
+                RenameWithDuplicates(design.Node!, design.Path.GetIntendedName(design.Name.Text));
+                break;
+            // TODO: Maybe add path changes?
+        }
     }
 
     public void Dispose()
     {
-        _designChanged.Unsubscribe(OnDesignChange);
-    }
-
-    public struct CreationDate : OtterGui.Filesystem.ISortMode<Design>
-    {
-        public ReadOnlySpan<byte> Name
-            => "Creation Date (Older First)"u8;
-
-        public ReadOnlySpan<byte> Description
-            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their creation date."u8;
-
-        public IEnumerable<IPath> GetChildren(Folder f)
-            => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderBy(l => l.Value.CreationDate));
-    }
-
-    public struct UpdateDate : OtterGui.Filesystem.ISortMode<Design>
-    {
-        public ReadOnlySpan<byte> Name
-            => "Update Date (Older First)"u8;
-
-        public ReadOnlySpan<byte> Description
-            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their last update date."u8;
-
-        public IEnumerable<IPath> GetChildren(Folder f)
-            => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderBy(l => l.Value.LastEdit));
-    }
-
-    public struct InverseCreationDate : OtterGui.Filesystem.ISortMode<Design>
-    {
-        public ReadOnlySpan<byte> Name
-            => "Creation Date (Newer First)"u8;
-
-        public ReadOnlySpan<byte> Description
-            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse creation date."u8;
-
-        public IEnumerable<IPath> GetChildren(Folder f)
-            => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderByDescending(l => l.Value.CreationDate));
-    }
-
-    public struct InverseUpdateDate : OtterGui.Filesystem.ISortMode<Design>
-    {
-        public ReadOnlySpan<byte> Name
-            => "Update Date (Newer First)"u8;
-
-        public ReadOnlySpan<byte> Description
-            => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse last update date."u8;
-
-        public IEnumerable<IPath> GetChildren(Folder f)
-            => f.GetSubFolders().Cast<IPath>().Concat(f.GetLeaves().OrderByDescending(l => l.Value.LastEdit));
-    }
-
-    private void OnChange(OtterGui.Filesystem.FileSystemChangeType type, IPath _1, IPath? _2, IPath? _3)
-    {
-        if (type != OtterGui.Filesystem.FileSystemChangeType.Reload)
-            _saveService.QueueSave(this);
-    }
-
-    private void OnDesignChange(DesignChanged.Type type, Design design, ITransaction? data)
-    {
-        switch (type)
-        {
-            case DesignChanged.Type.Created:
-                var parent = Root;
-                if ((data as CreationTransaction?)?.Path is { } path)
-                    try
-                    {
-                        parent = FindOrCreateAllFolders(path);
-                    }
-                    catch (Exception ex)
-                    {
-                        Glamourer.Messager.NotificationMessage(ex, $"Could not move design to {path} because the folder could not be created.",
-                            NotificationType.Error);
-                    }
-
-                CreateDuplicateLeaf(parent, design.Name.Text, design);
-
-                return;
-            case DesignChanged.Type.Deleted:
-                if (TryGetValue(design, out var leaf1))
-                    Delete(leaf1);
-                return;
-            case DesignChanged.Type.ReloadedAll:
-                Reload();
-                return;
-            case DesignChanged.Type.Renamed when (data as RenameTransaction?)?.Old is { } oldName:
-                if (!TryGetValue(design, out var leaf2))
-                    return;
-
-                var old = oldName.FixName();
-                if (old == leaf2.Name || leaf2.Name.IsDuplicateName(out var baseName, out _) && baseName == old)
-                    RenameWithDuplicates(leaf2, design.Name);
-                return;
-        }
-    }
-
-    // Used for saving and loading.
-    private static string DesignToIdentifier(Design design)
-        => design.Identifier.ToString();
-
-    private static string DesignToName(Design design)
-        => design.Name.Text.FixName();
-
-    private static bool DesignHasDefaultPath(Design design, string fullPath)
-    {
-        var regex = new Regex($@"^{Regex.Escape(DesignToName(design))}( \(\d+\))?$");
-        return regex.IsMatch(fullPath);
-    }
-
-    private static (string, bool) SaveDesign(Design design, string fullPath)
-        // Only save pairs with non-default paths.
-        => DesignHasDefaultPath(design, fullPath)
-            ? (string.Empty, false)
-            : (DesignToIdentifier(design), true);
-
-    internal static void MigrateOldPaths(SaveService saveService, Dictionary<string, string> oldPaths)
-    {
-        if (oldPaths.Count == 0)
-            return;
-
-        var file = saveService.FileNames.DesignFileSystem;
-        try
-        {
-            JObject jObject;
-            if (File.Exists(file))
-            {
-                var text = File.ReadAllText(file);
-                jObject = JObject.Parse(text);
-                var dict = jObject["Data"]?.ToObject<Dictionary<string, string>>();
-                if (dict != null)
-                    foreach (var (key, value) in dict)
-                        oldPaths.TryAdd(key, value);
-
-                jObject["Data"] = JToken.FromObject(oldPaths);
-            }
-            else
-            {
-                jObject = new JObject
-                {
-                    ["Data"]         = JToken.FromObject(oldPaths),
-                    ["EmptyFolders"] = JToken.FromObject(Array.Empty<string>()),
-                };
-            }
-
-            var data = jObject.ToString(Formatting.Indented);
-            File.WriteAllText(file, data);
-        }
-        catch (Exception ex)
-        {
-            Glamourer.Log.Error($"Could not migrate old folder paths to new version:\n{ex}");
-        }
-    }
-
-    public string ToFilePath(FilenameService fileNames)
-        => fileNames.DesignFileSystem;
-
-    public void Save(StreamWriter writer)
-    {
-        SaveToFile(writer, SaveDesign, true);
+        _designChanged.Unsubscribe(OnDesignChanged);
     }
 }

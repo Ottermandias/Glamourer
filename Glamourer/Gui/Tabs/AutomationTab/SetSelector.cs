@@ -1,4 +1,5 @@
 ﻿using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Events;
 using ImSharp;
 using Luna;
@@ -8,7 +9,7 @@ namespace Glamourer.Gui.Tabs.AutomationTab;
 
 public sealed class SetSelector(
     AutomationSelection selection,
-    Configuration.Configuration config,
+    Configuration config,
     AutoDesignManager manager,
     AutomationFilter filter,
     ActorObjectManager objects,
@@ -54,7 +55,8 @@ public sealed class SetSelector(
         var identifier = config.Ephemeral.IncognitoMode ? item.IdentifierIncognito : item.IdentifierString;
         var textSize   = identifier.CalculateSize();
         var textColor  = item.Set.Identifiers.Any(objects.ContainsKey) ? cache.AutomationAvailable : cache.AutomationUnavailable;
-        Im.Cursor.Position = new Vector2(Im.ContentRegion.Available.X - textSize.X - Im.Style.FramePadding.X, Im.Cursor.Y - Im.Style.TextHeightWithSpacing);
+        Im.Cursor.Position = new Vector2(Im.ContentRegion.Available.X - textSize.X - Im.Style.FramePadding.X,
+            Im.Cursor.Y - Im.Style.TextHeightWithSpacing);
         Im.Text(identifier, textColor);
     }
 

@@ -1,5 +1,6 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
@@ -15,7 +16,7 @@ namespace Glamourer.Designs.Links;
 public class DesignMerger(
     DesignManager designManager,
     CustomizeService customizeService,
-    Configuration.Configuration config,
+    Configuration config,
     ItemUnlockManager itemUnlocks,
     CustomizeUnlockManager customizeUnlocks) : IService
 {

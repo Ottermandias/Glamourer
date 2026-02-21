@@ -1,5 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Glamourer.Api.Enums;
+using Glamourer.Config;
 using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.State;
@@ -11,17 +12,17 @@ namespace Glamourer.Interop.Penumbra;
 
 public class PenumbraAutoRedraw : IDisposable, IRequiredService
 {
-    private const    int                         WaitFrames = 5;
-    private readonly Configuration.Configuration _config;
-    private readonly PenumbraService             _penumbra;
-    private readonly StateManager                _state;
-    private readonly ActorObjectManager          _objects;
-    private readonly IFramework                  _framework;
-    private readonly StateChanged                _stateChanged;
-    private readonly PenumbraAutoRedrawSkip      _skip;
+    private const    int                    WaitFrames = 5;
+    private readonly Configuration          _config;
+    private readonly PenumbraService        _penumbra;
+    private readonly StateManager           _state;
+    private readonly ActorObjectManager     _objects;
+    private readonly IFramework             _framework;
+    private readonly StateChanged           _stateChanged;
+    private readonly PenumbraAutoRedrawSkip _skip;
 
 
-    public PenumbraAutoRedraw(PenumbraService penumbra, Configuration.Configuration config, StateManager state, ActorObjectManager objects,
+    public PenumbraAutoRedraw(PenumbraService penumbra, Configuration config, StateManager state, ActorObjectManager objects,
         IFramework framework,
         StateChanged stateChanged, PenumbraAutoRedrawSkip skip)
     {

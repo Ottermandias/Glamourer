@@ -1,14 +1,15 @@
-﻿using ImSharp;
+﻿using Glamourer.Config;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
 public class AutomationTab : TwoPanelLayout, ITab<MainTabType>
 {
-    private readonly Configuration.Configuration _config;
+    private readonly Configuration _config;
 
     public AutomationTab(AutomationFilter filter, SetSelector selector, SetPanel panel, AutomationButtons buttons, AutomationHeader header,
-        Configuration.Configuration config)
+        Configuration config)
     {
         _config    = config;
         LeftHeader = new FilterHeader<AutomationCacheItem>(filter, new StringU8("Filter..."u8));

@@ -1,5 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using Glamourer.Configuration;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
@@ -13,7 +13,7 @@ using Penumbra.GameData.Interop;
 namespace Glamourer.Gui.Tabs.NpcTab;
 
 public sealed class NpcPanel(
-    Configuration.Configuration config,
+    Configuration config,
     NpcSelection selection,
     CustomizationDrawer customizeDrawer,
     EquipmentDrawer equipmentDrawer,

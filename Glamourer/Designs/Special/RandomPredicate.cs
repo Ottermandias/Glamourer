@@ -10,19 +10,19 @@ public interface IDesignPredicate
         => Invoke(args.Design, args.LowerName, args.Identifier, args.LowerPath);
 
     public IEnumerable<Design> Get(IEnumerable<Design> designs, DesignFileSystem fileSystem)
-        => designs.Select(d => Transform(d, fileSystem))
+        => designs.Select(Transform)
             .Where(Invoke)
             .Select(t => t.Design);
 
     public static IEnumerable<Design> Get(IReadOnlyList<IDesignPredicate> predicates, IEnumerable<Design> designs, DesignFileSystem fileSystem)
         => predicates.Count > 0
-            ? designs.Select(d => Transform(d, fileSystem))
+            ? designs.Select(Transform)
                 .Where(t => predicates.Any(p => p.Invoke(t)))
                 .Select(t => t.Design)
             : designs;
 
-    private static (Design Design, string LowerName, string Identifier, string LowerPath) Transform(Design d, DesignFileSystem fs)
-        => (d, d.Name.Lower, d.Identifier.ToString(), fs.TryGetValue(d, out var l) ? l.FullName().ToLowerInvariant() : string.Empty);
+    private static (Design Design, string LowerName, string Identifier, string LowerPath) Transform(Design d)
+        => (d, d.Name.Lower, d.Identifier.ToString(), d.Path.CurrentPath.ToLowerInvariant());
 }
 
 public static class RandomPredicate
