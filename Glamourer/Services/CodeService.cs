@@ -1,10 +1,11 @@
 using Glamourer.Config;
 using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Services;
 
-public class CodeService
+public sealed class CodeService : IService
 {
     private readonly Configuration _config;
     private readonly SHA256        _hasher = SHA256.Create();

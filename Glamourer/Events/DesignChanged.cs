@@ -2,20 +2,13 @@ using Glamourer.Designs;
 using Glamourer.Designs.History;
 using Glamourer.Gui;
 using Glamourer.Gui.Tabs.DesignTab;
-using OtterGui.Classes;
+using Luna;
 
 namespace Glamourer.Events;
 
-/// <summary>
-/// Triggered when a Design is edited in any way.
-/// <list type="number">
-///     <item>Parameter is the type of the change </item>
-///     <item>Parameter is the changed Design. </item>
-///     <item>Parameter is any additional data depending on the type of change. </item>
-/// </list>
-/// </summary>
-public sealed class DesignChanged()
-    : EventWrapper<DesignChanged.Type, Design, ITransaction?, DesignChanged.Priority>(nameof(DesignChanged))
+/// <summary> Triggered when a Design is edited in any way. </summary>
+public sealed class DesignChanged(Logger log)
+    : EventBase<DesignChanged.Arguments, DesignChanged.Priority>(nameof(DesignChanged), log)
 {
     public enum Type
     {
@@ -151,4 +144,10 @@ public sealed class DesignChanged()
         /// <seealso cref="EditorHistory.OnDesignChanged" />
         EditorHistory = -1000,
     }
+
+    /// <summary> Arguments for the DesignChanged event. </summary>
+    /// <param name="Type"> The type of changed. </param>
+    /// <param name="Design"> The changed design. </param>
+    /// <param name="Transaction"> A transaction with further data corresponding to the change. </param>
+    public readonly record struct Arguments(Type Type, Design Design, ITransaction? Transaction = null);
 }

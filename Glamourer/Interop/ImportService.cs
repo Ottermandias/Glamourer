@@ -11,7 +11,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
-public class ImportService(CustomizeService customizations, IDragDropManager dragDropManager, ItemManager items)
+public sealed class ImportService(CustomizeService customizations, IDragDropManager dragDropManager, ItemManager items) : IService
 {
     public void CreateDatSource()
         => dragDropManager.CreateImGuiSource("DatDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".dat"), m =>

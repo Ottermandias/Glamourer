@@ -8,7 +8,7 @@ using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace Glamourer.Config;
 
-public partial class EphemeralConfig : ISavable
+public partial class EphemeralConfig : ISavable, IService
 {
     public int Version { get; set; } = Configuration.CurrentVersion;
 
@@ -16,17 +16,12 @@ public partial class EphemeralConfig : ISavable
     private bool _incognitoMode;
 
     public bool        UnlockDetailMode    { get; set; } = true;
-    public bool        ShowDesignQuickBar  { get; set; } = false;
-    public bool        LockDesignQuickBar  { get; set; } = false;
-    public bool        LockMainWindow      { get; set; } = false;
+    public bool        ShowDesignQuickBar  { get; set; }
+    public bool        LockDesignQuickBar  { get; set; }
+    public bool        LockMainWindow      { get; set; }
     public MainTabType SelectedMainTab     { get; set; } = MainTabType.Settings;
-    public Guid        SelectedDesign      { get; set; } = Guid.Empty;
     public Guid        SelectedQuickDesign { get; set; } = Guid.Empty;
     public int         LastSeenVersion     { get; set; } = GlamourerChangelog.LastChangelogVersion;
-
-    public float CurrentDesignSelectorWidth { get; set; } = 200f;
-    public float DesignSelectorMinimumScale { get; set; } = 0.1f;
-    public float DesignSelectorMaximumScale { get; set; } = 0.5f;
 
 
     [JsonIgnore]

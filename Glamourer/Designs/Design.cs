@@ -7,7 +7,6 @@ using Glamourer.Services;
 using Glamourer.State;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OtterGui.Classes;
 using Penumbra.GameData.Structs;
 using Luna;
 using Notification = Luna.Notification;
@@ -47,7 +46,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
     public IFileSystemData<Design>?     Node                   { get; set; }
     public DateTimeOffset               CreationDate           { get; internal init; }
     public DateTimeOffset               LastEdit               { get; internal set; }
-    public LowerString                  Name                   { get; internal set; } = LowerString.Empty;
+    public string                       Name                   { get; internal set; } = string.Empty;
     public string                       Description            { get; internal set; } = string.Empty;
     public string[]                     Tags                   { get; internal set; } = [];
     public int                          Index                  { get; internal set; }
@@ -71,7 +70,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
     #region IDesignStandIn
 
     public string ResolveName(bool incognito)
-        => incognito ? Incognito : Name.Text;
+        => incognito ? Incognito : Name;
 
     public string SerializeName()
         => Identifier.ToString();
@@ -109,7 +108,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
             ["Identifier"]             = Identifier,
             ["CreationDate"]           = CreationDate,
             ["LastEdit"]               = LastEdit,
-            ["Name"]                   = Name.Text,
+            ["Name"]                   = Name,
             ["Description"]            = Description,
             ["ForcedRedraw"]           = ForcedRedraw,
             ["ResetAdvancedDyes"]      = ResetAdvancedDyes,
@@ -200,7 +199,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
             var hasNegativeGloss    = false;
             var hasNonPositiveGloss = false;
             var specularLarger      = 0;
-            foreach (var (key, value) in materialData.GetValues(MaterialValueIndex.Min(), MaterialValueIndex.Max()))
+            foreach (var (_, value) in materialData.GetValues(MaterialValueIndex.Min(), MaterialValueIndex.Max()))
             {
                 hasNegativeGloss    |= value.Value.GlossStrength < 0;
                 hasNonPositiveGloss |= value.Value.GlossStrength <= 0;
@@ -239,7 +238,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
             Glamourer.Messager.AddMessage(new Notification(
                 $"Swapped Gloss and Specular Strength in {materialDesignData.Values.Count} Rows in design {design.Incognito} {reason}",
                 NotificationType.Info));
-            saveService.Save(Luna.SaveType.ImmediateSync, design);
+            saveService.Save(SaveType.ImmediateSync, design);
         }
     }
 
@@ -251,7 +250,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         {
             CreationDate = creationDate,
             Identifier   = json["Identifier"]?.ToObject<Guid>() ?? throw new ArgumentNullException("Identifier"),
-            Name         = new LowerString(json["Name"]?.ToObject<string>() ?? throw new ArgumentNullException("Name")),
+            Name         = json["Name"]?.ToObject<string>() ?? throw new ArgumentNullException("Name"),
             Description  = json["Description"]?.ToObject<string>() ?? string.Empty,
             Tags         = ParseTags(json),
             LastEdit     = json["LastEdit"]?.ToObject<DateTimeOffset>() ?? creationDate,
@@ -359,5 +358,5 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         => Identifier.ToString();
 
     public string DisplayName
-        => Name.Text;
+        => Name;
 }

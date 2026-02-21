@@ -125,9 +125,9 @@ public sealed class SetSelector(
             base.Dispose(disposing);
         }
 
-        private void OnAutomationChanged(AutomationChanged.Type type, AutoDesignSet? set, object? data)
+        private void OnAutomationChanged(in AutomationChanged.Arguments arguments)
         {
-            switch (type)
+            switch (arguments.Type)
             {
                 case AutomationChanged.Type.DeletedSet:
                 case AutomationChanged.Type.AddedSet:

@@ -20,21 +20,19 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     private readonly RandomDesignCombo   _randomDesignCombo;
     private readonly AutomationSelection _selection;
     private readonly DesignStorage       _designs;
-    private readonly DesignFileSystem    _designFileSystem;
 
     private string  _newText = string.Empty;
     private string? _newDefinition;
     private Design? _newDesign;
 
     public RandomRestrictionDrawer(AutomationChanged automationChanged, Configuration config, AutoDesignManager autoDesignManager,
-        RandomDesignCombo randomDesignCombo, AutomationSelection selection, DesignFileSystem designFileSystem, DesignStorage designs)
+        RandomDesignCombo randomDesignCombo, AutomationSelection selection, DesignStorage designs)
     {
         _automationChanged = automationChanged;
         _config            = config;
         _autoDesignManager = autoDesignManager;
         _randomDesignCombo = randomDesignCombo;
         _selection         = selection;
-        _designFileSystem  = designFileSystem;
         _designs           = designs;
         _automationChanged.Subscribe(OnAutomationChange, AutomationChanged.Priority.RandomRestrictionDrawer);
     }
@@ -169,7 +167,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 {
                     ImEx.TextFrameAligned("that contain"u8);
                     table.NextColumn();
-                    var data = contains.Value.Text;
+                    var data = contains.Value;
                     Im.Item.SetNextWidthFull();
                     if (Im.Input.Text("##match"u8, ref data, "Name, Path, or Identifier Contains..."u8))
                     {
@@ -186,7 +184,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 {
                     ImEx.TextFrameAligned("whose path starts with"u8);
                     table.NextColumn();
-                    var data = startsWith.Value.Text;
+                    var data = startsWith.Value;
                     Im.Item.SetNextWidthFull();
                     if (Im.Input.Text("##startsWith"u8, ref data, "Path Starts With..."u8))
                     {
@@ -204,7 +202,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                     ImEx.TextFrameAligned("that contain the tag"u8);
                     table.NextColumn();
                     Im.Item.SetNextWidthFull();
-                    var data = exact.Value.Text;
+                    var data = exact.Value;
                     if (Im.Input.Text("##color"u8, ref data, "Contained tag..."u8))
                     {
                         if (data.Length is 0)
@@ -221,7 +219,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                     ImEx.TextFrameAligned("that are set to the color"u8);
                     table.NextColumn();
                     Im.Item.SetNextWidthFull();
-                    var data = exact.Value.Text;
+                    var data = exact.Value;
                     if (Im.Input.Text("##color"u8, ref data, "Assigned Color is..."u8))
                     {
                         if (data.Length is 0)
@@ -265,7 +263,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
         if (!Im.Item.Hovered())
             return;
 
-        var designs = predicate.Get(_designs, _designFileSystem);
+        var designs = predicate.Get(_designs);
         LookupTooltip(designs);
     }
 
@@ -376,7 +374,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
 
     private void DrawTotalPreview(IReadOnlyList<IDesignPredicate> list)
     {
-        var designs = IDesignPredicate.Get(list, _designs, _designFileSystem).ToList();
+        var designs = IDesignPredicate.Get(list, _designs).ToList();
         Im.Button(designs.Count > 0
             ? $"All Restrictions Combined Match {designs.Count} Designs"
             : "None of the Restrictions Matches Any Designs"u8, Im.ContentRegion.Available with { Y = 0 });
@@ -414,26 +412,27 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
         DrawManualInput(list);
     }
 
-    private void OnAutomationChange(AutomationChanged.Type type, AutoDesignSet? set, object? data)
+    private void OnAutomationChange(in AutomationChanged.Arguments arguments)
     {
-        if (set != _set || _set is null)
+        if (arguments.Set != _set || _set is null)
             return;
 
-        switch (type)
+        switch (arguments.Type)
         {
             case AutomationChanged.Type.DeletedSet:
-            case AutomationChanged.Type.DeletedDesign when data is int index && _designIndex == index:
+            case AutomationChanged.Type.DeletedDesign when arguments.As<AutomationChanged.DeletedDesignArguments>().Index == _designIndex:
                 Close();
                 break;
-            case AutomationChanged.Type.MovedDesign when data is (int from, int to):
-                if (_designIndex == from)
-                    _designIndex = to;
-                else if (_designIndex < from && _designIndex > to)
+            case AutomationChanged.Type.MovedDesign:
+                var data = arguments.As<AutomationChanged.MovedDesignArguments>();
+                if (_designIndex == data.OldIndex)
+                    _designIndex = data.NewIndex;
+                else if (_designIndex < data.OldIndex && _designIndex > data.NewIndex)
                     _designIndex++;
-                else if (_designIndex > to && _designIndex < from)
+                else if (_designIndex > data.NewIndex && _designIndex < data.OldIndex)
                     _designIndex--;
                 break;
-            case AutomationChanged.Type.ChangedDesign when data is (int index, IDesignStandIn _, IDesignStandIn _) && index == _designIndex:
+            case AutomationChanged.Type.ChangedDesign when arguments.As<AutomationChanged.ChangedDesignArguments>().DesignIndex == _designIndex:
                 Close();
                 break;
         }

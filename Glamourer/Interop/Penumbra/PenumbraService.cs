@@ -35,7 +35,7 @@ public readonly record struct ModSettings(Dictionary<string, List<string>> Setti
         => new();
 }
 
-public class PenumbraService : IDisposable
+public sealed class PenumbraService : IDisposable, IService
 {
     public const int RequiredPenumbraBreakingVersion = 5;
     public const int RequiredPenumbraFeatureVersion  = 13;

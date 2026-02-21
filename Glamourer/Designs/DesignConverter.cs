@@ -3,6 +3,7 @@ using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
 using Glamourer.Utility;
+using Luna;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
@@ -12,13 +13,13 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
-public class DesignConverter(
+public sealed class DesignConverter(
     SaveService saveService,
-    ItemManager _items,
-    DesignManager _designs,
-    CustomizeService _customize,
-    HumanModelList _humans,
-    DesignLinkLoader _linkLoader)
+    ItemManager items,
+    DesignManager designs,
+    CustomizeService customizeService,
+    HumanModelList humans,
+    DesignLinkLoader linkLoader) : IService
 {
     public const byte Version = 6;
 
@@ -54,9 +55,9 @@ public class DesignConverter(
 
     public DesignBase Convert(in DesignData data, in StateMaterialManager materials, in ApplicationRules rules)
     {
-        var design = _designs.CreateTemporary();
+        var design = designs.CreateTemporary();
         rules.Apply(design);
-        design.SetDesignData(_customize, data);
+        design.SetDesignData(customizeService, data);
         if (rules.Materials)
             ComputeMaterials(design.GetMaterialDataRef(), materials, rules.Equip);
         return design;
@@ -70,8 +71,8 @@ public class DesignConverter(
         try
         {
             var ret = jObject["Identifier"] != null
-                ? Design.LoadDesign(saveService, _customize, _items, _linkLoader, jObject)
-                : DesignBase.LoadDesignBase(_customize, _items, jObject);
+                ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObject)
+                : DesignBase.LoadDesignBase(customizeService, items, jObject);
 
             if (!customize)
                 ret.Application.RemoveCustomize();
@@ -101,14 +102,14 @@ public class DesignConverter(
                 case (byte)'{':
                     var jObj1 = JObject.Parse(Encoding.UTF8.GetString(bytes));
                     ret = jObj1["Identifier"] != null
-                        ? Design.LoadDesign(saveService, _customize, _items, _linkLoader, jObj1)
-                        : DesignBase.LoadDesignBase(_customize, _items, jObj1);
+                        ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj1)
+                        : DesignBase.LoadDesignBase(customizeService, items, jObj1);
                     break;
                 case 1:
                 case 2:
                 case 4:
-                    ret = _designs.CreateTemporary();
-                    ret.MigrateBase64(_customize, _items, _humans, base64);
+                    ret = designs.CreateTemporary();
+                    ret.MigrateBase64(customizeService, items, humans, base64);
                     break;
                 case 3:
                 {
@@ -116,8 +117,8 @@ public class DesignConverter(
                     var jObj2 = JObject.Parse(decompressed);
                     Debug.Assert(version == 3);
                     ret = jObj2["Identifier"] != null
-                        ? Design.LoadDesign(saveService, _customize, _items, _linkLoader, jObj2)
-                        : DesignBase.LoadDesignBase(_customize, _items, jObj2);
+                        ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj2)
+                        : DesignBase.LoadDesignBase(customizeService, items, jObj2);
                     break;
                 }
                 case 5:
@@ -127,8 +128,8 @@ public class DesignConverter(
                     var jObj2 = JObject.Parse(decompressed);
                     Debug.Assert(version == 5);
                     ret = jObj2["Identifier"] != null
-                        ? Design.LoadDesign(saveService, _customize, _items, _linkLoader, jObj2)
-                        : DesignBase.LoadDesignBase(_customize, _items, jObj2);
+                        ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj2)
+                        : DesignBase.LoadDesignBase(customizeService, items, jObj2);
                     break;
                 }
                 case 6:
@@ -137,8 +138,8 @@ public class DesignConverter(
                     var jObj2 = JObject.Parse(decompressed);
                     Debug.Assert(version == 6);
                     ret = jObj2["Identifier"] != null
-                        ? Design.LoadDesign(saveService, _customize, _items, _linkLoader, jObj2)
-                        : DesignBase.LoadDesignBase(_customize, _items, jObj2);
+                        ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj2)
+                        : DesignBase.LoadDesignBase(customizeService, items, jObj2);
                     break;
                 }
 
@@ -177,7 +178,7 @@ public class DesignConverter(
         {
             var index = (int)slot.ToIndex();
             var armor = armors[index];
-            var item  = _items.Identify(slot, armor.Set, armor.Variant);
+            var item  = items.Identify(slot, armor.Set, armor.Variant);
             if (!item.Valid)
             {
                 if (!skipWarnings)
@@ -188,20 +189,20 @@ public class DesignConverter(
             yield return (slot, item, armor.Stains);
         }
 
-        var mh = _items.Identify(EquipSlot.MainHand, mainhand.Skeleton, mainhand.Weapon, mainhand.Variant);
+        var mh = items.Identify(EquipSlot.MainHand, mainhand.Skeleton, mainhand.Weapon, mainhand.Variant);
         if (!skipWarnings && !mh.Valid)
         {
             Glamourer.Log.Warning($"Appearance data {mainhand} for mainhand weapon invalid, item could not be identified.");
-            mh = _items.DefaultSword;
+            mh = items.DefaultSword;
         }
 
         yield return (EquipSlot.MainHand, mh, mainhand.Stains);
 
-        var oh = _items.Identify(EquipSlot.OffHand, offhand.Skeleton, offhand.Weapon, offhand.Variant, mh.Type);
+        var oh = items.Identify(EquipSlot.OffHand, offhand.Skeleton, offhand.Weapon, offhand.Variant, mh.Type);
         if (!skipWarnings && !oh.Valid)
         {
             Glamourer.Log.Warning($"Appearance data {offhand} for offhand weapon invalid, item could not be identified.");
-            oh = _items.GetDefaultOffhand(mh);
+            oh = items.GetDefaultOffhand(mh);
             if (!oh.Valid)
                 oh = ItemManager.NothingItem(FullEquipType.Shield);
         }

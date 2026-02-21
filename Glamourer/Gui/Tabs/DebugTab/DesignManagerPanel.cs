@@ -20,7 +20,7 @@ public sealed class DesignManagerPanel(DesignManager designManager, DesignFileSy
         foreach (var (idx, design) in designManager.Designs.Index())
         {
             using var id = Im.Id.Push(idx);
-            using var t  = Im.Tree.Node(design.Name.Text);
+            using var t  = Im.Tree.Node(design.Name);
             if (!t)
                 continue;
 
@@ -61,7 +61,7 @@ public sealed class DesignManagerPanel(DesignManager designManager, DesignFileSy
         if (design is Design d)
         {
             table.DrawColumn("Name"u8);
-            table.DrawColumn(d.Name.Text);
+            table.DrawColumn(d.Name);
             table.DrawColumn($"({d.Index})");
             table.DrawColumn("Description (Hover)"u8);
             Im.Tooltip.OnHover(d.Description);

@@ -9,7 +9,7 @@ using Penumbra.String;
 
 namespace Glamourer.Automation;
 
-public class FixedDesignMigrator(JobService jobs)
+public sealed class FixedDesignMigrator(JobService jobs) : IRequiredService
 {
     private List<(string Name, List<(string, JobGroup, bool)> Data)>? _migratedData;
 

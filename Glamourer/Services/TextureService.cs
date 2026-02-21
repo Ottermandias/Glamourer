@@ -1,41 +1,56 @@
 using Dalamud.Interface;
+using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
 using ImSharp;
 using Luna;
-using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Services;
 
-public sealed class TextureService(IUiBuilder uiBuilder, IDataManager dataManager, ITextureProvider textureProvider)
-    : TextureCache(dataManager, textureProvider), IDisposable
+public sealed class TextureService(IUiBuilder uiBuilder, ITextureProvider textureProvider)
+    : IDisposable, IUiService
 {
     private readonly IDalamudTextureWrap?[] _slotIcons = CreateSlotIcons(uiBuilder);
 
+    public IDalamudTextureWrap? LoadIcon(uint iconId)
+    {
+        var icon = textureProvider.GetFromGameIcon(new GameIconLookup(iconId));
+        if (!icon.TryGetWrap(out var wrap, out _))
+            return null;
+
+        return wrap;
+    }
+
+    public bool TryLoadIcon(uint iconId, [NotNullWhen(true)] out IDalamudTextureWrap? wrap)
+    {
+        wrap = LoadIcon(iconId);
+        return wrap is not null;
+    }
+
     public (ImTextureId, Vector2, bool) GetIcon(EquipItem item, EquipSlot slot)
     {
-        if (item.IconId.Id != 0 && TryLoadIcon(item.IconId.Id, out var ret))
+        if (item.IconId.Id is not 0 && TryLoadIcon(item.IconId.Id, out var ret))
             return (ret.Id, new Vector2(ret.Width, ret.Height), false);
 
         var idx = slot.ToIndex();
-        return idx < 12 && _slotIcons[idx] != null
+        return idx < 12 && _slotIcons[idx] is not null
             ? (_slotIcons[idx]!.Id, new Vector2(_slotIcons[idx]!.Width, _slotIcons[idx]!.Height), true)
             : (default, Vector2.Zero, true);
     }
 
     public (ImTextureId, Vector2, bool) GetIcon(EquipItem item, BonusItemFlag slot)
     {
-        if (item.IconId.Id != 0 && TryLoadIcon(item.IconId.Id, out var ret))
+        if (item.IconId.Id is not 0 && TryLoadIcon(item.IconId.Id, out var ret))
             return (ret.Id, new Vector2(ret.Width, ret.Height), false);
 
         var idx = slot.ToIndex();
-        if (idx == uint.MaxValue)
+        if (idx is uint.MaxValue)
             return (default, Vector2.Zero, true);
 
         idx += 12;
-        return idx < 13 && _slotIcons[idx] != null
+        return idx < 13 && _slotIcons[idx] is not null
             ? (_slotIcons[idx]!.Id, new Vector2(_slotIcons[idx]!.Width, _slotIcons[idx]!.Height), true)
             : (default, Vector2.Zero, true);
     }
@@ -72,7 +87,7 @@ public sealed class TextureService(IUiBuilder uiBuilder, IDataManager dataManage
         SetIcon(EquipSlot.RFinger,  28);
         SetIcon(EquipSlot.MainHand, 17);
         SetIcon(EquipSlot.OffHand,  18);
-        Set(BonusItemFlag.Glasses.ToName(), (int) BonusItemFlag.Glasses.ToIndex() + 12, 55);
+        Set(BonusItemFlag.Glasses.ToName(), (int)BonusItemFlag.Glasses.ToIndex() + 12, 55);
         ret[EquipSlot.LFinger.ToIndex()] = ret[EquipSlot.RFinger.ToIndex()];
 
         return ret;

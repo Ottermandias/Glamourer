@@ -5,13 +5,14 @@ using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Services;
 using Glamourer.State;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
-public class ContextMenuService : IDisposable
+public sealed class ContextMenuService : IDisposable, IRequiredService
 {
     public const int ChatLogContextItemId = 0x958;
 

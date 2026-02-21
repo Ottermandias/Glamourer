@@ -1,12 +1,9 @@
-using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Interop.Penumbra;
 using Luna;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OtterGui.Extensions;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
-using Extensions = OtterGui.Filesystem.Extensions;
 using Notification = Luna.Notification;
 
 namespace Glamourer.Services;
@@ -31,7 +28,7 @@ public sealed class CollectionOverrideService : IService, ISavable
         if (!identifier.IsValid)
             identifier = _actors.FromObject(actor.AsObject, out _, true, true, true);
 
-        return ArrayExtensions.FindFirst(_overrides, p => p.Actor.Matches(identifier), out var ret)
+        return _overrides.FindFirst(p => p.Actor.Matches(identifier), out var ret)
             ? (ret.CollectionId, ret.DisplayName, true)
             : (_penumbra.GetActorCollection(actor, out var name), name, false);
     }
@@ -78,7 +75,7 @@ public sealed class CollectionOverrideService : IService, ISavable
         if (idx < 0 || idx >= _overrides.Count)
             return;
 
-        if (newCollectionId == Guid.Empty || newDisplayName.Length == 0)
+        if (newCollectionId == Guid.Empty || newDisplayName.Length is 0)
             return;
 
         var current = _overrides[idx];
@@ -106,7 +103,7 @@ public sealed class CollectionOverrideService : IService, ISavable
 
     public void MoveOverride(int idxFrom, int idxTo)
     {
-        if (!Extensions.Move(_overrides, idxFrom, idxTo))
+        if (!_overrides.Move(idxFrom, idxTo))
             return;
 
         Glamourer.Log.Debug($"Moved collection override {idxFrom + 1} to {idxTo + 1}.");
@@ -192,7 +189,7 @@ public sealed class CollectionOverrideService : IService, ISavable
 
     public void Save(StreamWriter writer)
     {
-        var jObj = new JObject()
+        var jObj = new JObject
         {
             ["Version"]   = Version,
             ["Overrides"] = SerializeOverrides(),

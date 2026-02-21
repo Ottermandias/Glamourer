@@ -6,6 +6,7 @@ using Penumbra.GameData;
 using Penumbra.GameData.Interop;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Glamourer.State;
+using Luna;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Character = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
@@ -13,7 +14,7 @@ using CustomizeIndex = Dalamud.Game.ClientState.Objects.Enums.CustomizeIndex;
 
 namespace Glamourer.Interop;
 
-public unsafe class ScalingService : IDisposable
+public sealed unsafe class ScalingService : IDisposable, IRequiredService
 {
     private readonly ActorManager _actors;
     private readonly StateManager _state;

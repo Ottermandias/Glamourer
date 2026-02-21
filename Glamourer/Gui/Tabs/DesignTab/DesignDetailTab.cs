@@ -1,13 +1,14 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Config;
 using Glamourer.Designs;
+using Glamourer.Gui.Tabs.SettingsTab;
 using Glamourer.Services;
 using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class DesignDetailTab
+public sealed class DesignDetailTab : IUiService
 {
     private readonly SaveService      _saveService;
     private readonly Configuration    _config;
@@ -57,7 +58,7 @@ public class DesignDetailTab
         table.NextColumn();
         var width = Im.ContentRegion.Available with { Y = 0 };
         Im.Item.SetNextWidth(width.X);
-        if (ImEx.InputOnDeactivation.Text("##Name"u8, Selected.Name.Text, out string newName))
+        if (ImEx.InputOnDeactivation.Text("##Name"u8, Selected.Name, out string newName))
             _manager.Rename(Selected, newName);
 
         var identifier = Selected.Identifier.ToString();

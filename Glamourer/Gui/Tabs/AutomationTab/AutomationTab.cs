@@ -4,7 +4,7 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public class AutomationTab : TwoPanelLayout, ITab<MainTabType>
+public sealed class AutomationTab : TwoPanelLayout, ITab<MainTabType>
 {
     private readonly Configuration _config;
 

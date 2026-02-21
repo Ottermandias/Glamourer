@@ -12,7 +12,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public class EquipmentDrawer
+public sealed class EquipmentDrawer : IUiService
 {
     private const float DefaultWidth = 280;
 

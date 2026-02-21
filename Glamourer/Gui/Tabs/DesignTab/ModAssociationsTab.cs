@@ -8,7 +8,7 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class ModAssociationsTab(PenumbraService penumbra, DesignFileSystem fileSystem, DesignManager manager, Configuration config)
+public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSystem fileSystem, DesignManager manager, Configuration config) : IUiService
 {
     private readonly ModCombo              _modCombo = new(penumbra, fileSystem);
     private          (Mod, ModSettings)[]? _copy;

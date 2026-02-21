@@ -1,5 +1,4 @@
 ﻿using Glamourer.Designs;
-using Glamourer.Designs.History;
 using Glamourer.Events;
 using ImSharp;
 using Luna;
@@ -21,9 +20,9 @@ public sealed class DesignFileSystemCache : FileSystemCache<DesignFileSystemCach
             node.Dirty = true;
     }
 
-    private void OnDesignChanged(DesignChanged.Type type, Design design, ITransaction? _2)
+    private void OnDesignChanged(in DesignChanged.Arguments arguments)
     {
-        switch (type)
+        switch (arguments.Type)
         {
             case DesignChanged.Type.Created:
             case DesignChanged.Type.Deleted:
@@ -45,7 +44,7 @@ public sealed class DesignFileSystemCache : FileSystemCache<DesignFileSystemCach
                 break;
         }
 
-        if (design.Node is { } node && AllNodes.TryGetValue(node, out var cache))
+        if (arguments.Design.Node is { } node && AllNodes.TryGetValue(node, out var cache))
             cache.Dirty = true;
     }
 
@@ -78,14 +77,14 @@ public sealed class DesignFileSystemCache : FileSystemCache<DesignFileSystemCach
     {
         public readonly IFileSystemData<Design> Node = node;
         public          Vector4                 Color;
-        public          StringU8                Name      = new(node.Value.Name.Text);
+        public          StringU8                Name      = new(node.Value.Name);
         public          StringU8                Incognito = new(node.Value.Incognito);
 
         public override void Update(FileSystemCache cache, IFileSystemNode node)
         {
             var drawer = (DesignFileSystemDrawer)cache.Parent;
             Color = drawer.DesignColors.GetColor(Node.Value).ToVector();
-            Name  = new StringU8(Node.Value.Name.Text);
+            Name  = new StringU8(Node.Value.Name);
         }
 
         protected override void DrawInternal(FileSystemCache<DesignData> cache, IFileSystemNode node)

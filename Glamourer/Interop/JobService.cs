@@ -2,6 +2,7 @@ using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using Luna;
 using Penumbra.GameData;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Interop;
@@ -9,7 +10,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
-public class JobService : IDisposable
+public sealed class JobService : IDisposable, IRequiredService
 {
     private readonly nint _characterDataOffset;
 

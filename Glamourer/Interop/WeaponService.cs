@@ -2,13 +2,14 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
-public unsafe class WeaponService : IDisposable
+public sealed unsafe class WeaponService : IDisposable, IRequiredService
 {
     private readonly WeaponLoading     _event;
     private readonly ThreadLocal<bool> _inUpdate = new(() => false);
@@ -59,17 +60,17 @@ public unsafe class WeaponService : IDisposable
             var tmpWeapon = weapon;
             // First call the regular function.
             if (equipSlot is not EquipSlot.Unknown)
-                _event.Invoke(actor, equipSlot, ref tmpWeapon);
+                _event.Invoke(new WeaponLoading.Arguments(actor, equipSlot, ref tmpWeapon));
             // Sage hack for weapons appearing in animations?
             // Check for weapon value 0 for certain cases (e.g. carbuncles transforming to humans) because that breaks some stuff (weapon hiding?) otherwise.
-            else if (weaponValue == actor.GetMainhand().Value && weaponValue != 0)
-                _event.Invoke(actor, EquipSlot.MainHand, ref tmpWeapon);
+            else if (weaponValue == actor.GetMainhand().Value && weaponValue is not 0)
+                _event.Invoke(new WeaponLoading.Arguments(actor, EquipSlot.MainHand, ref tmpWeapon));
 
             _loadWeaponHook.Original(drawData, slot, weapon.Value, redrawOnEquality, unk2, skipGameObject, unk4, unk5);
 
             if (tmpWeapon.Value != weapon.Value)
             {
-                if (tmpWeapon.Skeleton.Id == 0)
+                if (tmpWeapon.Skeleton.Id is 0)
                     tmpWeapon.Stains = StainIds.None;
                 _loadWeaponHook.Original(drawData, slot, tmpWeapon.Value, 1, unk2, 1, unk4, unk5);
             }

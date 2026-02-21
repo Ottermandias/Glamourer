@@ -4,7 +4,7 @@ using Luna;
 
 namespace Glamourer.Services;
 
-public class FilenameService(IDalamudPluginInterface pi) : BaseFilePathProvider(pi)
+public sealed class FilenameService(IDalamudPluginInterface pi) : BaseFilePathProvider(pi)
 {
     public readonly string MigrationDesignFileSystem = Path.Combine(pi.ConfigDirectory.FullName, "sort_order.json");
     public readonly string MigrationDesignFile       = Path.Combine(pi.ConfigDirectory.FullName, "Designs.json");

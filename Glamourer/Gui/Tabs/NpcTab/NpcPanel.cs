@@ -4,6 +4,7 @@ using Glamourer.Designs;
 using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs.DesignTab;
+using Glamourer.Gui.Tabs.SettingsTab;
 using Glamourer.State;
 using ImSharp;
 using Luna;

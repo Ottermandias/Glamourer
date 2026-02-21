@@ -16,7 +16,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.UnlocksTab;
 
-public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
+public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>, IUiService
 {
     private readonly JobService        _jobs;
     private readonly ItemManager       _items;
@@ -554,16 +554,17 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
             }
         }
 
-        private void OnItemUnlock(ObjectUnlocked.Type type, uint id, DateTimeOffset timestamp)
+        private void OnItemUnlock(in ObjectUnlocked.Arguments arguments)
         {
-            if (type is not ObjectUnlocked.Type.Item)
+            if (arguments.Type is not ObjectUnlocked.Type.Item)
                 return;
 
             FilterDirty = true;
             SortDirty   = true;
+            var id  = arguments.Id;
             var idx = UnfilteredItems.IndexOf(i => i.Item.ItemId == id);
             if (idx >= 0)
-                UpdateSingleItem(idx, UnfilteredItems[idx] with { UnlockTimestamp = timestamp }, false);
+                UpdateSingleItem(idx, UnfilteredItems[idx] with { UnlockTimestamp = arguments.Timestamp }, false);
         }
 
         public override void Update()

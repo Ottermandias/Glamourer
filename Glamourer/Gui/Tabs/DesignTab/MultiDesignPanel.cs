@@ -6,11 +6,11 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class MultiDesignPanel(
+public sealed class MultiDesignPanel(
     DesignFileSystem fileSystem,
     DesignManager editor,
     DesignColors colors,
-    Configuration config)
+    Configuration config) : IUiService
 {
     private readonly DesignColorCombo _colorCombo = new(colors, true);
 
@@ -109,7 +109,7 @@ public class MultiDesignPanel(
             {
                 using var id = Im.Id.Push(index);
                 var (icon, text) = node is IFileSystemData<Design> l
-                    ? (LunaStyle.RemoveFileIcon, l.Value.Name.Text)
+                    ? (LunaStyle.RemoveFileIcon, l.Value.Name)
                     : (LunaStyle.RemoveFolderIcon, string.Empty);
                 table.NextColumn();
                 if (ImEx.Icon.Button(icon, "Remove from selection."u8, sizeType))
@@ -152,7 +152,7 @@ public class MultiDesignPanel(
                     ? _tag.Length is 0
                         ? "No tag specified."u8
                         : $"All designs selected already contain the tag \"{_tag}\"."
-                    : $"Add the tag \"{_tag}\" to {_addDesigns.Count} designs as a local tag:\n\n\t{StringU8.Join("\n\t"u8, _addDesigns.Select(m => m.Name.Text))}",
+                    : $"Add the tag \"{_tag}\" to {_addDesigns.Count} designs as a local tag:\n\n\t{StringU8.Join("\n\t"u8, _addDesigns.Select(m => m.Name))}",
                 _addDesigns.Count is 0))
             foreach (var design in _addDesigns)
                 editor.AddTag(design, _tag);
@@ -164,7 +164,7 @@ public class MultiDesignPanel(
                     ? _tag.Length is 0
                         ? "No tag specified."u8
                         : $"No selected design contains the tag \"{_tag}\" locally."
-                    : $"Remove the local tag \"{_tag}\" from {_removeDesigns.Count} designs:\n\n\t{string.Join("\n\t", _removeDesigns.Select(m => m.Item1.Name.Text))}",
+                    : $"Remove the local tag \"{_tag}\" from {_removeDesigns.Count} designs:\n\n\t{string.Join("\n\t", _removeDesigns.Select(m => m.Item1.Name))}",
                 _removeDesigns.Count is 0))
             foreach (var (design, index) in _removeDesigns)
                 editor.RemoveTag(design, index);
@@ -306,7 +306,7 @@ public class MultiDesignPanel(
                         DesignColors.AutomaticName => "Use the other button to set to automatic."u8,
                         _                          => $"All designs selected are already set to the color \"{_colorComboSelection}\".",
                     }
-                    : $"Set the color of {_addDesigns.Count} designs to \"{_colorComboSelection}\"\n\n\t{StringU8.Join("\n\t"u8, _addDesigns.Select(m => m.Name.Text))}",
+                    : $"Set the color of {_addDesigns.Count} designs to \"{_colorComboSelection}\"\n\n\t{StringU8.Join("\n\t"u8, _addDesigns.Select(m => m.Name))}",
                 _addDesigns.Count is 0))
             foreach (var design in _addDesigns)
                 editor.ChangeColor(design, _colorComboSelection!);
@@ -316,7 +316,7 @@ public class MultiDesignPanel(
                     ? $"Unset {_removeDesigns.Count} Designs"
                     : "Unset"u8, width, _removeDesigns.Count is 0
                     ? "No selected design is set to a non-automatic color."u8
-                    : $"Set {_removeDesigns.Count} designs to use automatic color again:\n\n\t{StringU8.Join("\n\t"u8, _removeDesigns.Select(m => m.Item1.Name.Text))}",
+                    : $"Set {_removeDesigns.Count} designs to use automatic color again:\n\n\t{StringU8.Join("\n\t"u8, _removeDesigns.Select(m => m.Item1.Name))}",
                 _removeDesigns.Count is 0))
             foreach (var (design, _) in _removeDesigns)
                 editor.ChangeColor(design, string.Empty);

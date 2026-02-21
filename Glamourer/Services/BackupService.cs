@@ -2,7 +2,7 @@ using Luna;
 
 namespace Glamourer.Services;
 
-public class BackupService(Logger log, FilenameService provider) : BaseBackupService<FilenameService>(log, provider)
+public sealed class BackupService(Logger log, FilenameService provider) : BaseBackupService<FilenameService>(log, provider)
 {
     /// <summary> Collect all relevant files for glamourer configuration. </summary>
     private static IReadOnlyList<FileInfo> GlamourerFiles(FilenameService fileNames)

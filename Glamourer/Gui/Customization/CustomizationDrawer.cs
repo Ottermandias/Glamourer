@@ -12,13 +12,13 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
-public partial class CustomizationDrawer(
+public sealed partial class CustomizationDrawer(
     ITextureProvider textures,
     CustomizeService service,
     Configuration config,
     FavoriteManager favorites,
     HeightService heightService)
-    : IDisposable
+    : IDisposable, IUiService
 {
     private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
     private readonly IDalamudTextureWrap? _legacyTattoo = GetLegacyTattooIcon(textures);

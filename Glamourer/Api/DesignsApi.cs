@@ -16,14 +16,14 @@ public class DesignsApi(
     : IGlamourerApiDesigns, IApiService
 {
     public Dictionary<Guid, string> GetDesignList()
-        => designs.Designs.ToDictionary(d => d.Identifier, d => d.Name.Text);
+        => designs.Designs.ToDictionary(d => d.Identifier, d => d.Name);
 
     public Dictionary<Guid, (string DisplayName, string FullPath, uint DisplayColor, bool ShownInQdb)> GetDesignListExtended()
         => designs.Designs.ToDictionary(d => d.Identifier, d => (d.DisplayName, d.Path.CurrentPath, color.GetColor(d).Color, d.QuickDesign));
 
     public (string DisplayName, string FullPath, uint DisplayColor, bool ShowInQdb) GetExtendedDesignData(Guid designId)
         => designs.Designs.ByIdentifier(designId) is { } d
-            ? (d.Name.Text, d.Path.CurrentPath, color.GetColor(d).Color, d.QuickDesign)
+            ? (d.Name, d.Path.CurrentPath, color.GetColor(d).Color, d.QuickDesign)
             : (string.Empty, string.Empty, 0, false);
 
     public GlamourerApiEc ApplyDesign(Guid designId, int objectIndex, uint key, ApplyFlag flags)

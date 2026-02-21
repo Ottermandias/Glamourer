@@ -42,12 +42,12 @@ public sealed class DesignFilter : TokenizedFilter<DesignFilterTokenType, Design
         => token.Type switch
         {
             DesignFilterTokenType.Default => cacheItem.Node.FullPath.Contains(token.Needle, StringComparison.OrdinalIgnoreCase)
-             || cacheItem.Node.Value.Name.Text.Contains(token.Needle, StringComparison.OrdinalIgnoreCase),
+             || cacheItem.Node.Value.Name.Contains(token.Needle, StringComparison.OrdinalIgnoreCase),
             DesignFilterTokenType.Mod         => CheckMods(token.Needle, cacheItem),
             DesignFilterTokenType.Tag         => CheckTags(token.Needle, cacheItem),
             DesignFilterTokenType.Color       => cacheItem.Node.Value.Color.Contains(token.Needle, StringComparison.OrdinalIgnoreCase),
             DesignFilterTokenType.Item        => cacheItem.Node.Value.DesignData.ContainsName(token.Needle),
-            DesignFilterTokenType.Name        => cacheItem.Node.Value.Name.Text.Contains(token.Needle, StringComparison.OrdinalIgnoreCase),
+            DesignFilterTokenType.Name        => cacheItem.Node.Value.Name.Contains(token.Needle, StringComparison.OrdinalIgnoreCase),
             DesignFilterTokenType.FullContext => CheckFullContext(token.Needle, cacheItem),
             _                                 => true,
         };
@@ -77,7 +77,7 @@ public sealed class DesignFilter : TokenizedFilter<DesignFilterTokenType, Design
             return true;
 
         var design = cacheItem.Node.Value;
-        if (design.Name.Text.Contains(needle, StringComparison.OrdinalIgnoreCase))
+        if (design.Name.Contains(needle, StringComparison.OrdinalIgnoreCase))
             return true;
 
         if (design.Description.Contains(needle, StringComparison.OrdinalIgnoreCase))

@@ -14,7 +14,7 @@ using Luna;
 
 namespace Glamourer.State;
 
-public unsafe class FunModule : IDisposable
+public sealed unsafe class FunModule : IDisposable, IRequiredService
 {
     public enum FestivalType
     {

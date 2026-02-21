@@ -7,7 +7,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Unlocks;
 
-public sealed class FavoriteManager : ISavable
+public sealed class FavoriteManager : ISavable, IService
 {
     public readonly record struct FavoriteHairStyle(Gender Gender, SubRace Race, CustomizeIndex Type, CustomizeValue Id)
     {

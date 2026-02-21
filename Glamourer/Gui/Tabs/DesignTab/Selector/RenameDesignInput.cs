@@ -15,7 +15,7 @@ public sealed class RenameDesignInput(DesignFileSystemDrawer fileSystem) : BaseB
     public override bool DrawMenuItem(in IFileSystemData data)
     {
         var       design      = (Design)data.Value;
-        var       currentName = design.Name.Text;
+        var       currentName = design.Name;
         using var style       = Im.Style.PushDefault(ImStyleDouble.FramePadding);
         MenuSeparator.DrawSeparator();
         Im.Text("Rename Design:"u8);

@@ -3,12 +3,13 @@ using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Services;
 using ImSharp;
+using Luna;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
 
-public class LocalNpcAppearanceData : ISavable
+public sealed class LocalNpcAppearanceData : ISavable, IUiService
 {
     private readonly DesignColors _colors;
 

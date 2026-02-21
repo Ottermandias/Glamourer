@@ -2,7 +2,6 @@
 using Glamourer.Designs;
 using Glamourer.State;
 using Luna;
-using OtterGui.Extensions;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
@@ -73,26 +72,26 @@ public class ApiHelpers(ActorObjectManager objects, StateManager stateManager, A
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     internal static void Lock(ActorState state, uint key, ApplyFlag flags)
     {
-        if ((flags & ApplyFlag.Lock) != 0 && key != 0)
+        if ((flags & ApplyFlag.Lock) is not 0 && key is not 0)
             state.Lock(key);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     internal IEnumerable<ActorState> FindStates(string objectName)
     {
-        if (objectName.Length == 0 || !ByteString.FromString(objectName, out var byteString))
+        if (objectName.Length is 0 || !ByteString.FromString(objectName, out var byteString))
             return [];
 
         return stateManager.Values.Where(state => state.Identifier.Type is IdentifierType.Player && state.Identifier.PlayerName == byteString)
-            .Concat(ArrayExtensions.SelectWhere(objects
-                .Where(kvp => kvp.Key is { IsValid: true, Type: IdentifierType.Player } && kvp.Key.PlayerName == byteString), kvp =>
-            {
-                if (stateManager.ContainsKey(kvp.Key))
-                    return (false, null);
+            .Concat(objects
+                .Where(kvp => kvp.Key is { IsValid: true, Type: IdentifierType.Player } && kvp.Key.PlayerName == byteString).SelectWhere(kvp =>
+                {
+                    if (stateManager.ContainsKey(kvp.Key))
+                        return (false, null);
 
-                var ret = stateManager.GetOrCreate(kvp.Key, kvp.Value.Objects[0], out var state);
-                return (ret, state);
-            }));
+                    var ret = stateManager.GetOrCreate(kvp.Key, kvp.Value.Objects[0], out var state);
+                    return (ret, state);
+                }));
     }
 
 

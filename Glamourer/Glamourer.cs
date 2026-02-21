@@ -10,7 +10,7 @@ using Glamourer.State;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Interop;
-using Logger = OtterGui.Log.Logger;
+using Vortice.Direct3D11.Debug;
 
 namespace Glamourer;
 

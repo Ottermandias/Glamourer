@@ -19,10 +19,12 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
     public InventoryService(MovedEquipment movedItemsEvent, IGameInteropProvider interop, EquippedGearset gearsetEvent)
     {
         _movedItemsEvent = movedItemsEvent;
-        _gearsetEvent = gearsetEvent;
+        _gearsetEvent    = gearsetEvent;
 
         _moveItemHook = interop.HookFromAddress<MoveItemDelegate>((nint)InventoryManager.MemberFunctionPointers.MoveItemSlot, MoveItemDetour);
-        _equipGearsetHook = interop.HookFromAddress<EquipGearsetInternalDelegate>((nint)RaptureGearsetModule.MemberFunctionPointers.EquipGearsetInternal, EquipGearSetDetour);
+        _equipGearsetHook =
+            interop.HookFromAddress<EquipGearsetInternalDelegate>((nint)RaptureGearsetModule.MemberFunctionPointers.EquipGearsetInternal,
+                EquipGearSetDetour);
 
         _moveItemHook.Enable();
         _equipGearsetHook.Enable();
@@ -36,14 +38,14 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
 
     private delegate nint EquipGearsetInternalDelegate(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId);
 
-    private readonly Hook<EquipGearsetInternalDelegate> _equipGearsetHook = null!;
+    private readonly Hook<EquipGearsetInternalDelegate> _equipGearsetHook;
 
     private nint EquipGearSetDetour(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId)
     {
         var prior = module->CurrentGearsetIndex;
-        var ret = _equipGearsetHook.Original(module, gearsetId, glamourPlateId);
-        var set = module->GetGearset((int)gearsetId);
-        _gearsetEvent.Invoke(new ByteString(set->Name).ToString(), (int)gearsetId, prior, glamourPlateId, set->ClassJob);
+        var ret   = _equipGearsetHook.Original(module, gearsetId, glamourPlateId);
+        var set   = module->GetGearset((int)gearsetId);
+        _gearsetEvent.Invoke(new EquippedGearset.Arguments(new ByteString(set->Name), (int)gearsetId, prior, glamourPlateId, set->ClassJob));
         Glamourer.Log.Verbose($"[InventoryService] Applied gear set {gearsetId} with glamour plate {glamourPlateId} (Returned {ret})");
         if (ret == 0)
         {
@@ -111,7 +113,7 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
                 Add(EquipSlot.LFinger,  ref entry->Items[12]);
             }
 
-            _movedItemsEvent.Invoke(_itemList.ToArray());
+            _movedItemsEvent.Invoke(new MovedEquipment.Arguments(_itemList.ToArray()));
         }
 
         return ret;
@@ -130,25 +132,15 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
     {
         var ret = _moveItemHook.Original(manager, sourceContainer, sourceSlot, targetContainer, targetSlot, unk);
         Glamourer.Log.Excessive($"[InventoryService] Moved {sourceContainer} {sourceSlot} {targetContainer} {targetSlot} (Returned {ret})");
-        if (ret == 0)
+        if (ret is 0)
         {
             if (InvokeSource(sourceContainer, sourceSlot, out var source))
                 if (InvokeTarget(manager, targetContainer, targetSlot, out var target))
-                    _movedItemsEvent.Invoke(new[]
-                    {
-                        source,
-                        target,
-                    });
+                    _movedItemsEvent.Invoke(new MovedEquipment.Arguments(source, target));
                 else
-                    _movedItemsEvent.Invoke(new[]
-                    {
-                        source,
-                    });
+                    _movedItemsEvent.Invoke(new MovedEquipment.Arguments(source));
             else if (InvokeTarget(manager, targetContainer, targetSlot, out var target))
-                _movedItemsEvent.Invoke(new[]
-                {
-                    target,
-                });
+                _movedItemsEvent.Invoke(new MovedEquipment.Arguments(target));
         }
 
         return ret;

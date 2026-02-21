@@ -13,7 +13,7 @@ using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace Glamourer.Config;
 
-public sealed partial class Configuration : IPluginConfiguration, ISavable
+public sealed partial class Configuration : IPluginConfiguration, ISavable, IService
 {
     public const int CurrentVersion = 9;
 

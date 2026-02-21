@@ -11,6 +11,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
 using ImSharp;
+using Luna;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -34,7 +35,7 @@ public sealed class StateManager(
     ModSettingApplier modApplier,
     GPoseService gPose)
     : StateEditor(editor, applier, changeEvent, finalizeEvent, jobChange, config, items, merger, modApplier, gPose),
-        IReadOnlyDictionary<ActorIdentifier, ActorState>
+        IReadOnlyDictionary<ActorIdentifier, ActorState>, IService
 {
     private readonly Dictionary<ActorIdentifier, ActorState> _states = [];
 
@@ -279,10 +280,10 @@ public sealed class StateManager(
 
         Glamourer.Log.Verbose(
             $"Reset entire state of {state.Identifier.Incognito(null)} to game base. [Affecting {objects.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Reset, source, state, objects, null);
+        StateChanged.Invoke(new StateChanged.Arguments(StateChangeType.Reset, source, state, objects));
         // only invoke if we define this reset call as the final call in our state update.
         if (isFinal)
-            StateFinalized.Invoke(StateFinalizationType.Revert, objects);
+            StateFinalized.Invoke(new StateFinalized.Arguments(StateFinalizationType.Revert, objects));
     }
 
     public void ResetAdvancedDyes(ActorState state, StateSource source, uint key = 0)
@@ -304,9 +305,9 @@ public sealed class StateManager(
 
         Glamourer.Log.Verbose(
             $"Reset advanced dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {objects.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Reset, source, state, objects, null);
+        StateChanged.Invoke(new StateChanged.Arguments(StateChangeType.Reset, source, state, objects));
         // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
-        StateFinalized.Invoke(StateFinalizationType.RevertAdvanced, objects);
+        StateFinalized.Invoke(new StateFinalized.Arguments(StateFinalizationType.RevertAdvanced, objects));
     }
 
     public void ResetAdvancedCustomizations(ActorState state, StateSource source, uint key = 0)
@@ -327,9 +328,9 @@ public sealed class StateManager(
 
         Glamourer.Log.Verbose(
             $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {objects.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Reset, source, state, objects, null);
+        StateChanged.Invoke(new StateChanged.Arguments(StateChangeType.Reset, source, state, objects));
         // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
-        StateFinalized.Invoke(StateFinalizationType.RevertAdvanced, objects);
+        StateFinalized.Invoke(new StateFinalized.Arguments(StateFinalizationType.RevertAdvanced, objects));
     }
 
     public void ResetAdvancedState(ActorState state, StateSource source, uint key = 0)
@@ -342,21 +343,21 @@ public sealed class StateManager(
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
             state.Sources[flag] = StateSource.Game;
 
-        var actors = ActorData.Invalid;
+        var data = ActorData.Invalid;
         if (source is not StateSource.Game)
         {
-            actors = Applier.ChangeParameters(state, CustomizeParameterExtensions.All, true);
+            data = Applier.ChangeParameters(state, CustomizeParameterExtensions.All, true);
             foreach (var (idx, mat) in state.Materials.Values)
-                Applier.ChangeMaterialValue(state, actors, MaterialValueIndex.FromKey(idx), mat.Game);
+                Applier.ChangeMaterialValue(state, data, MaterialValueIndex.FromKey(idx), mat.Game);
         }
 
         state.Materials.Clear();
 
         Glamourer.Log.Verbose(
-            $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(StateChangeType.Reset, source, state, actors, null);
+            $"Reset advanced customization and dye state of {state.Identifier.Incognito(null)} to game base. [Affecting {data.ToLazyString("nothing")}.]");
+        StateChanged.Invoke(new StateChanged.Arguments(StateChangeType.Reset, source, state, data));
         // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
-        StateFinalized.Invoke(StateFinalizationType.RevertAdvanced, actors);
+        StateFinalized.Invoke(new StateFinalized.Arguments(StateFinalizationType.RevertAdvanced, data));
     }
 
     public void ResetCustomize(ActorState state, StateSource source, uint key = 0)
@@ -369,13 +370,13 @@ public sealed class StateManager(
 
         state.ModelData.ModelId   = state.BaseData.ModelId;
         state.ModelData.Customize = state.BaseData.Customize;
-        var actors = ActorData.Invalid;
+        var data = ActorData.Invalid;
         if (source is not StateSource.Game)
-            actors = Applier.ChangeCustomize(state, true);
+            data = Applier.ChangeCustomize(state, true);
         Glamourer.Log.Verbose(
-            $"Reset customization state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Reset customization state of {state.Identifier.Incognito(null)} to game base. [Affecting {data.ToLazyString("nothing")}.]");
         // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
-        StateFinalized.Invoke(StateFinalizationType.RevertCustomize, actors);
+        StateFinalized.Invoke(new StateFinalized.Arguments(StateFinalizationType.RevertCustomize, data));
     }
 
     public void ResetEquip(ActorState state, StateSource source, uint key = 0)
@@ -401,32 +402,32 @@ public sealed class StateManager(
                 state.ModelData.SetBonusItem(slot, state.BaseData.BonusItem(slot));
         }
 
-        var actors = ActorData.Invalid;
+        var data = ActorData.Invalid;
         if (source is not StateSource.Game)
         {
-            actors = Applier.ChangeArmor(state, EquipSlotExtensions.EqdpSlots[0], true);
+            data = Applier.ChangeArmor(state, EquipSlotExtensions.EqdpSlots[0], true);
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Skip(1))
             {
-                Applier.ChangeArmor(actors, slot, state.ModelData.Armor(slot), !state.Sources[slot, false].IsIpc(),
+                Applier.ChangeArmor(data, slot, state.ModelData.Armor(slot), !state.Sources[slot, false].IsIpc(),
                     state.ModelData.IsHatVisible());
             }
 
             foreach (var slot in BonusExtensions.AllFlags)
             {
                 var item = state.ModelData.BonusItem(slot);
-                Applier.ChangeBonusItem(actors, slot, item.PrimaryId, item.Variant);
+                Applier.ChangeBonusItem(data, slot, item.PrimaryId, item.Variant);
             }
 
-            var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
+            var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? data.OnlyGPose() : data;
             Applier.ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
-            var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? actors.OnlyGPose() : actors;
+            var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? data.OnlyGPose() : data;
             Applier.ChangeOffhand(offhandActors, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
         }
 
         Glamourer.Log.Verbose(
-            $"Reset equipment state of {state.Identifier.Incognito(null)} to game base. [Affecting {actors.ToLazyString("nothing")}.]");
+            $"Reset equipment state of {state.Identifier.Incognito(null)} to game base. [Affecting {data.ToLazyString("nothing")}.]");
         // Update that we have completed a full operation. (We can do this directly as nothing else is linked)
-        StateFinalized.Invoke(StateFinalizationType.RevertEquipment, actors);
+        StateFinalized.Invoke(new StateFinalized.Arguments(StateFinalizationType.RevertEquipment, data));
     }
 
     public void ResetStateFixed(ActorState state, bool respectManualPalettes, uint key = 0)
@@ -517,9 +518,9 @@ public sealed class StateManager(
             forceRedraw
          || !actor.Model.IsHuman
          || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
-        StateChanged.Invoke(StateChangeType.Reapply, source, state, data, null);
+        StateChanged.Invoke(new StateChanged.Arguments(StateChangeType.Reapply, source, state, data));
         if (isFinal)
-            StateFinalized.Invoke(StateFinalizationType.Reapply, data);
+            StateFinalized.Invoke(new StateFinalized.Arguments(StateFinalizationType.Reapply, data));
     }
 
     /// <summary> Automation variant for reapply, to fire the correct StateUpdateType once reapplied. </summary>
@@ -538,9 +539,9 @@ public sealed class StateManager(
             forceRedraw
          || !actor.Model.IsHuman
          || CustomizeArray.Compare(actor.Model.GetCustomize(), state.ModelData.Customize).RequiresRedraw(), false);
-        StateChanged.Invoke(StateChangeType.Reapply, source, state, data, null);
+        StateChanged.Invoke(new StateChanged.Arguments(StateChangeType.Reapply, source, state, data));
         // invoke the automation update based on what reset is.
-        StateFinalized.Invoke(wasReset ? StateFinalizationType.RevertAutomation : StateFinalizationType.ReapplyAutomation, data);
+        StateFinalized.Invoke(new StateFinalized.Arguments(wasReset ? StateFinalizationType.RevertAutomation : StateFinalizationType.ReapplyAutomation, data));
     }
 
     public void DeleteState(ActorIdentifier identifier)

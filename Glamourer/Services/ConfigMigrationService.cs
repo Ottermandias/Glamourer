@@ -2,11 +2,12 @@
 using Glamourer.Config;
 using Glamourer.Gui;
 using ImSharp;
+using Luna;
 using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Services;
 
-public class ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator, BackupService backupService)
+public sealed class ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator, BackupService backupService) : IRequiredService
 {
     private Configuration _config = null!;
     private JObject       _data   = null!;

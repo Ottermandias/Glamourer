@@ -12,7 +12,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public class SetPanel(
+public sealed class SetPanel(
     AutoDesignManager manager,
     JobService jobs,
     ItemUnlockManager itemUnlocks,

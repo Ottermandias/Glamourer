@@ -8,4 +8,4 @@ namespace Glamourer.Services;
 public interface ISavable : ISavable<FilenameService>;
 
 public sealed class SaveService(Logger log, FrameworkManager framework, FilenameService fileNames)
-    : BaseSaveService<FilenameService>(log, framework, fileNames);
+    : BaseSaveService<FilenameService>(log, framework, fileNames), IService;

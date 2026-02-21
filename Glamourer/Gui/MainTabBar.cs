@@ -1,4 +1,4 @@
-﻿using Glamourer.Designs;
+﻿using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
@@ -14,11 +14,11 @@ namespace Glamourer.Gui;
 
 public sealed class MainTabBar : TabBar<MainTabType>
 {
-    private readonly Config.EphemeralConfig _config;
-    public readonly  TabSelected                   Event;
-    public readonly  SettingsTab                   Settings;
+    private readonly EphemeralConfig _config;
+    public readonly  TabSelected     Event;
+    public readonly  SettingsTab     Settings;
 
-    public MainTabBar(Logger log, Config.EphemeralConfig config, SettingsTab settings, ActorTab actors, DesignTab designs,
+    public MainTabBar(Logger log, EphemeralConfig config, SettingsTab settings, ActorTab actors, DesignTab designs,
         AutomationTab automation, UnlocksTab unlocks, NpcTab npcs, MessagesTab messages, DebugTab debug, TabSelected @event)
         : base("MainTabBar", log, settings, actors, designs, automation, unlocks, npcs, messages, debug)
     {
@@ -30,8 +30,8 @@ public sealed class MainTabBar : TabBar<MainTabType>
         NextTab = _config.SelectedMainTab;
     }
 
-    private void OnEvent(MainTabType tab, Design? _)
-        => NextTab = tab;
+    private void OnEvent(in TabSelected.Arguments arguments)
+        => NextTab = arguments.Type;
 
     private void OnTabSelected(in MainTabType arguments)
     {

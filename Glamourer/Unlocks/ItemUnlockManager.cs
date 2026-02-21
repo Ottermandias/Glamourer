@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Glamourer.Events;
 using Glamourer.Services;
 using Lumina.Excel.Sheets;
+using Luna;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -11,13 +12,13 @@ using Cabinet = Lumina.Excel.Sheets.Cabinet;
 
 namespace Glamourer.Unlocks;
 
-public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<ItemId, long>
+public sealed class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<ItemId, long>, IService
 {
-    private readonly SaveService       _saveService;
-    private readonly ItemManager       _items;
-    private readonly IClientState       _clientState;
-    private readonly IFramework         _framework;
-    private readonly ObjectUnlocked    _event;
+    private readonly SaveService          _saveService;
+    private readonly ItemManager          _items;
+    private readonly IClientState         _clientState;
+    private readonly IFramework           _framework;
+    private readonly ObjectUnlocked       _event;
     private readonly ObjectIdentification _identifier;
 
     private readonly Dictionary<uint, long> _unlocked = new();
@@ -100,12 +101,13 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
          || !_unlocked.TryAdd(equip.ItemId.Id, time))
             return false;
 
-        _event.Invoke(ObjectUnlocked.Type.Item, equip.ItemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time));
+        _event.Invoke(new ObjectUnlocked.Arguments(ObjectUnlocked.Type.Item, equip.ItemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time)));
         var ident = _identifier.Identify(equip.PrimaryId, equip.SecondaryId, equip.Variant, equip.Type.ToSlot());
         foreach (var item in ident)
         {
             if (_unlocked.TryAdd(item.ItemId.Id, time))
-                _event.Invoke(ObjectUnlocked.Type.Item, item.ItemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time));
+                _event.Invoke(new ObjectUnlocked.Arguments(ObjectUnlocked.Type.Item, item.ItemId.Id,
+                    DateTimeOffset.FromUnixTimeMilliseconds(time)));
         }
 
         return true;
@@ -192,7 +194,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
     public bool IsUnlocked(CustomItemId itemId, out DateTimeOffset time)
     {
         // Pseudo items are always unlocked.
-        if (itemId.Id >= (uint) _items.ItemSheet.Count)
+        if (itemId.Id >= (uint)_items.ItemSheet.Count)
         {
             time = DateTimeOffset.MinValue;
             return true;
@@ -210,7 +212,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
             time = DateTimeOffset.UtcNow;
             if (_unlocked.TryAdd(id, time.ToUnixTimeMilliseconds()))
             {
-                _event.Invoke(ObjectUnlocked.Type.Item, id, time);
+                _event.Invoke(new ObjectUnlocked.Arguments(ObjectUnlocked.Type.Item, id, time));
                 Save();
             }
 
@@ -221,7 +223,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
         return false;
     }
 
-    public unsafe bool IsGameUnlocked(ItemId itemId)
+    public bool IsGameUnlocked(ItemId itemId)
     {
         if (Unlockable.TryGetValue(itemId, out var req))
             return req.IsUnlocked(this);
@@ -244,7 +246,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
         {
             if (unlock.IsUnlocked(this) && _unlocked.TryAdd(itemId.Id, time))
             {
-                _event.Invoke(ObjectUnlocked.Type.Item, itemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time));
+                _event.Invoke(new ObjectUnlocked.Arguments(ObjectUnlocked.Type.Item, itemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time)));
                 changes = true;
             }
         }
@@ -296,13 +298,13 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
             {
                 if (quest1 == 0)
                     quest1 = shop.Quest.RowId;
-                else if (quest2 == 0)
+                else if (quest2 is 0)
                     quest2 = shop.Quest.RowId;
             }
 
-            var type = (quest1 != 0 ? UnlockType.Quest1 : 0)
-              | (quest2 != 0 ? UnlockType.Quest2 : 0)
-              | (achievement != 0 ? UnlockType.Achievement : 0);
+            var type = (quest1 is not 0 ? UnlockType.Quest1 : 0)
+              | (quest2 is not 0 ? UnlockType.Quest2 : 0)
+              | (achievement is not 0 ? UnlockType.Achievement : 0);
             ret.TryAdd(item.ItemId, new UnlockRequirements(quest1, quest2, achievement, state, type));
         }
 
@@ -323,7 +325,7 @@ public class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictionary<Item
             foreach (var item2 in ident)
             {
                 if (_unlocked.TryAdd(item2.ItemId.Id, time))
-                    _event.Invoke(ObjectUnlocked.Type.Item, item2.ItemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time));
+                    _event.Invoke(new ObjectUnlocked.Arguments(ObjectUnlocked.Type.Item, item2.ItemId.Id, DateTimeOffset.FromUnixTimeMilliseconds(time)));
             }
         }
     }

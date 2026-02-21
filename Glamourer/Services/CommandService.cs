@@ -16,7 +16,6 @@ using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
-using SeStringBuilderExtensions = OtterGui.Classes.SeStringBuilderExtensions;
 
 namespace Glamourer.Services;
 

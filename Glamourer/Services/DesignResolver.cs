@@ -142,11 +142,10 @@ public class DesignResolver(
         }
         else
         {
-            var lower = argument.ToLowerInvariant();
             // Search for design by name and partial identifier.
-            design = manager.Designs.FirstOrDefault(MatchNameAndIdentifier(lower));
+            design = manager.Designs.FirstOrDefault(MatchNameAndIdentifier(argument));
             // Search for design by path, if nothing was found.
-            if (design is null && designFileSystem.Find(lower, out var child) && child is IFileSystemData<Design> leaf)
+            if (design is null && designFileSystem.Find(argument, out var child) && child is IFileSystemData<Design> leaf)
                 design = leaf.Value;
         }
 
@@ -159,13 +158,13 @@ public class DesignResolver(
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Func<Design, bool> MatchNameAndIdentifier(string lower)
+    private static Func<Design, bool> MatchNameAndIdentifier(string text)
     {
         // Check for names and identifiers, prefer names
-        if (lower.Length > 3)
-            return d => d.Name.Lower == lower || d.Identifier.ToString().StartsWith(lower);
+        if (text.Length > 3)
+            return d => string.Equals(d.Name, text, StringComparison.OrdinalIgnoreCase) || d.Identifier.ToString().StartsWith(text, StringComparison.OrdinalIgnoreCase);
 
         // Check only for names.
-        return d => d.Name.Lower == lower;
+        return d => string.Equals(d.Name, text, StringComparison.OrdinalIgnoreCase);
     }
 }

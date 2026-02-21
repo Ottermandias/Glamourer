@@ -1,6 +1,5 @@
 ﻿using Glamourer.Automation;
 using Glamourer.Designs;
-using Glamourer.Designs.History;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
 using ImSharp;
@@ -54,7 +53,7 @@ public abstract class DesignComboBase(
         if (CurrentDesign is Design design)
         {
             if (Im.Item.RightClicked() && Im.Io.KeyControl)
-                TabSelected.Invoke(MainTabType.Designs, design);
+                TabSelected.Invoke(new TabSelected.Arguments(MainTabType.Designs, design));
             Im.Tooltip.OnHover("Control + Right-Click to move to design."u8);
         }
         else
@@ -81,7 +80,7 @@ public abstract class DesignComboBase(
             Im.Text("Currently resolving to "u8);
             using var color = ImGuiColor.Text.Push(DesignColors.GetColor(linkedDesign));
             Im.Line.NoSpacing();
-            Im.Text(linkedDesign.Name.Text);
+            Im.Text(linkedDesign.Name);
         }
         else
         {
@@ -133,9 +132,9 @@ public abstract class DesignComboBase(
         private void OnDesignColorChanged()
             => Dirty |= IManagedCache.DirtyFlags.Custom;
 
-        private void OnDesignChanged(DesignChanged.Type type, Design? _1, ITransaction? _2 = null)
+        private void OnDesignChanged(in DesignChanged.Arguments arguments)
         {
-            if (type switch
+            if (arguments.Type switch
                 {
                     DesignChanged.Type.Created        => true,
                     DesignChanged.Type.Renamed        => true,
@@ -215,18 +214,18 @@ public sealed class QuickDesignCombo : DesignComboBase, IDisposable, IUiService
         DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
     }
 
-    private void OnDesignChanged(DesignChanged.Type type, Design changedDesign, ITransaction? _)
+    private void OnDesignChanged(in DesignChanged.Arguments arguments)
     {
-        switch (type)
+        switch (arguments.Type)
         {
             case DesignChanged.Type.Created:
                 // If the quick design bar has no selection, select the new design if it supports the bar.
-                if (QuickDesign is null && changedDesign.QuickDesign)
-                    QuickDesign = changedDesign;
+                if (QuickDesign is null && arguments.Design.QuickDesign)
+                    QuickDesign = arguments.Design;
                 break;
             case DesignChanged.Type.Deleted:
                 // If the deleted design was selected, select the first design that supports the bar, if any.
-                if (QuickDesign == changedDesign)
+                if (QuickDesign == arguments.Design)
                     QuickDesign = Designs.Designs.FirstOrDefault(d => d.QuickDesign);
                 break;
             case DesignChanged.Type.ReloadedAll:
@@ -235,10 +234,10 @@ public sealed class QuickDesignCombo : DesignComboBase, IDisposable, IUiService
                 break;
             case DesignChanged.Type.QuickDesignBar:
                 // If the quick design support of a design was changed, select the new design if the bar has no selection and the design now supports it,
-                if (QuickDesign is null && changedDesign.QuickDesign)
-                    QuickDesign = changedDesign;
+                if (QuickDesign is null && arguments.Design.QuickDesign)
+                    QuickDesign = arguments.Design;
                 // or select the first design that supports the bar, if any, if the support was removed from the currently selected design.
-                else if (QuickDesign == changedDesign && !changedDesign.QuickDesign)
+                else if (QuickDesign == arguments.Design && !arguments.Design.QuickDesign)
                     QuickDesign = Designs.Designs.FirstOrDefault(d => d.QuickDesign);
                 break;
         }
@@ -290,9 +289,10 @@ public sealed class LinkDesignCombo : DesignComboBase, IUiService, IDisposable
     public void Dispose()
         => DesignChanged.Unsubscribe(OnDesignChanged);
 
-    private void OnDesignChanged(DesignChanged.Type type, Design design, ITransaction? _)
+    private void OnDesignChanged(in DesignChanged.Arguments arguments)
     {
-        if (type is DesignChanged.Type.Deleted && design == NewSelection || type is DesignChanged.Type.ReloadedAll)
+        if (arguments.Type is DesignChanged.Type.Deleted && arguments.Design == NewSelection
+         || arguments.Type is DesignChanged.Type.ReloadedAll)
             NewSelection = null;
     }
 }
@@ -311,8 +311,8 @@ public sealed class RandomDesignCombo(
         return exact.Which switch
         {
             RandomPredicate.Exact.Type.Name       => Designs.Designs.FirstOrDefault(d => d.Name == exact.Value),
-            RandomPredicate.Exact.Type.Path       => Designs.Designs.FirstOrDefault(d => d.Node!.FullPath == exact.Value.Text),
-            RandomPredicate.Exact.Type.Identifier => Designs.Designs.ByIdentifier(Guid.TryParse(exact.Value.Text, out var g) ? g : Guid.Empty),
+            RandomPredicate.Exact.Type.Path       => Designs.Designs.FirstOrDefault(d => d.Node!.FullPath == exact.Value),
+            RandomPredicate.Exact.Type.Identifier => Designs.Designs.ByIdentifier(Guid.TryParse(exact.Value, out var g) ? g : Guid.Empty),
             _                                     => null,
         };
     }
@@ -320,7 +320,7 @@ public sealed class RandomDesignCombo(
     public bool Draw(RandomPredicate.Exact exact, [NotNullWhen(true)] out Design? newDesign, float width)
     {
         var design = GetDesign(exact);
-        if (Draw(StringU8.Empty, design?.ResolveName(Config.IncognitoMode) ?? $"Not Found [{exact.Value.Text}]", StringU8.Empty, width,
+        if (Draw(StringU8.Empty, design?.ResolveName(Config.IncognitoMode) ?? $"Not Found [{exact.Value}]", StringU8.Empty, width,
                 out var newItem)
          && newItem.Design is Design d)
         {

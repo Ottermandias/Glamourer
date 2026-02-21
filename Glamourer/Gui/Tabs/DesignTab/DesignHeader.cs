@@ -1,5 +1,4 @@
-﻿using System.Security.AccessControl;
-using Glamourer.Config;
+﻿using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.History;
 using Glamourer.Events;
@@ -31,29 +30,29 @@ public sealed class DesignHeader : SplitButtonHeader, IDisposable
         LeftButtons.AddButton(new ApplyCharacterButton(fileSystem, manager, objects, stateManager, converter), 70);
         LeftButtons.AddButton(new UndoButton(fileSystem, history),                                             60);
 
-        RightButtons.AddButton(incognito,                    50);
+        RightButtons.AddButton(incognito,                             50);
         RightButtons.AddButton(new LockedButton(fileSystem, manager), 100);
         _fileSystem.Selection.Changed += OnSelectionChanged;
         OnSelectionChanged();
         designChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignHeader);
     }
 
-    private void OnDesignChanged(DesignChanged.Type arg1, Design arg2, ITransaction? arg3)
+    private void OnDesignChanged(in DesignChanged.Arguments arguments)
     {
-        if (arg1 is not DesignChanged.Type.Renamed)
+        if (arguments.Type is not DesignChanged.Type.Renamed)
             return;
 
-        if (arg2 != _fileSystem.Selection.Selection?.Value)
+        if (arguments.Design != _fileSystem.Selection.Selection?.Value)
             return;
 
-        _header = new StringU8(arg2.Name.Text);
+        _header = new StringU8(arguments.Design.Name);
     }
 
     private void OnSelectionChanged()
     {
         if (_fileSystem.Selection.Selection?.GetValue<Design>() is { } selection)
         {
-            _header    = new StringU8(selection.Name.Text);
+            _header    = new StringU8(selection.Name);
             _incognito = new StringU8(selection.Incognito);
         }
         else if (_fileSystem.Selection.OrderedNodes.Count > 0)
