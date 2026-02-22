@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
 using ImSharp;
+using Luna;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Gui;
@@ -7,13 +8,13 @@ using Penumbra.String;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public class IdentifierDrawer(
+public sealed class IdentifierDrawer(
     ActorManager actors,
     DictWorld dictWorld,
     DictModelChara dictModelChara,
     DictBNpcNames bNpcNames,
     DictBNpc bNpc,
-    HumanModelList humans)
+    HumanModelList humans) : IUiService
 {
     private readonly WorldCombo    _worldCombo    = new(dictWorld);
     private readonly HumanNpcCombo _humanNpcCombo = new(bNpcNames, dictModelChara, humans, bNpc);

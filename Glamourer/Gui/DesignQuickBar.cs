@@ -2,6 +2,7 @@
 using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
@@ -24,6 +25,7 @@ public enum QdbButtons
     ReapplyAutomation           = 0x40,
     ResetSettings               = 0x80,
     RevertAdvancedCustomization = 0x100,
+    ToggleMainWindow            = 0x200,
 }
 
 public sealed class DesignQuickBar : Window, IDisposable
@@ -44,6 +46,8 @@ public sealed class DesignQuickBar : Window, IDisposable
     private          DateTime                _keyboardToggle = DateTime.UnixEpoch;
     private          int                     _numButtons;
     private readonly StringBuilder           _tooltipBuilder = new(512);
+
+    public event Action? ToggleMainWindow;
 
     public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
         ActorObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra)
@@ -77,38 +81,41 @@ public sealed class DesignQuickBar : Window, IDisposable
     public override void PreDraw()
     {
         Flags = GetFlags;
-        UpdateWidth();
 
         _style.Push(ImStyleDouble.WindowPadding, new Vector2(Im.Style.GlobalScale * 4))
             .Push(ImStyleSingle.WindowBorderThickness, 0);
         _style.Push(ImGuiColor.WindowBackground, ColorId.QuickDesignBg.Value())
             .Push(ImGuiColor.Button,          ColorId.QuickDesignButton.Value())
             .Push(ImGuiColor.FrameBackground, ColorId.QuickDesignFrame.Value());
+
+        UpdateWidth();
     }
 
     public override void PostDraw()
         => _style.Dispose();
 
-    public void DrawAtEnd(float yPos)
+    public void DrawAtEnd(float yPos, bool mainWindow)
     {
-        var width = UpdateWidth();
+        var numButtons = CalculateButtonCount(mainWindow);
+        var width      = CalculateWidth(numButtons, mainWindow);
         Im.Cursor.Position = new Vector2(Im.ContentRegion.Maximum.X - width, yPos - Im.Style.GlobalScale);
-        Draw();
+        Draw(Im.ContentRegion.Available.X, numButtons, mainWindow);
     }
 
     public override void Draw()
-        => Draw(Im.ContentRegion.Available.X);
+        => Draw(Im.ContentRegion.Available.X, _numButtons, false);
 
-    private void Draw(float width)
+    private void Draw(float width, int numButtons, bool mainWindow)
     {
         using var group      = Im.Group();
         var       spacing    = Im.Style.ItemInnerSpacing;
         using var style      = ImStyleDouble.ItemSpacing.Push(spacing);
         var       buttonSize = new Vector2(Im.Style.FrameHeight);
         PrepareButtons();
+        DrawToggleMainWindowButton(buttonSize, mainWindow);
         if (_config.QdbButtons.HasFlag(QdbButtons.ApplyDesign))
         {
-            var comboSize = width - _numButtons * (buttonSize.X + spacing.X);
+            var comboSize = width - numButtons * (buttonSize.X + spacing.X);
             _designCombo.Draw(StringU8.Empty, comboSize);
             Im.Line.Same();
             DrawApplyButton(buttonSize);
@@ -485,6 +492,16 @@ public sealed class DesignQuickBar : Window, IDisposable
         }
     }
 
+    private void DrawToggleMainWindowButton(Vector2 buttonSize, bool mainWindow)
+    {
+        if (mainWindow || !_config.QdbButtons.HasFlag(QdbButtons.ToggleMainWindow))
+            return;
+
+        if (ImEx.Icon.Button(FontAwesomeIcon.TheaterMasks.Icon(), "Toggle Glamourer's main window."u8, ToggleMainWindow is null, buttonSize))
+            ToggleMainWindow?.Invoke();
+        Im.Line.Same();
+    }
+
     private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(AwesomeIcon icon, Vector2 buttonSize, int available)
     {
         var enumerator = _tooltipBuilder.GetChunks();
@@ -516,44 +533,51 @@ public sealed class DesignQuickBar : Window, IDisposable
         return _keyState[key.Hotkey] && key.Modifiers.IsActive();
     }
 
-    private float UpdateWidth()
+    private int CalculateButtonCount(bool mainWindow)
     {
-        _numButtons = 0;
+        var numButtons = 0;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertAll))
-            ++_numButtons;
+            ++numButtons;
         if (_config.EnableAutoDesigns)
         {
             if (_config.QdbButtons.HasFlag(QdbButtons.RevertAutomation))
-                ++_numButtons;
+                ++numButtons;
             if (_config.QdbButtons.HasFlag(QdbButtons.ReapplyAutomation))
-                ++_numButtons;
+                ++numButtons;
         }
 
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertAdvancedCustomization))
-            ++_numButtons;
+            ++numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertAdvancedDyes))
-            ++_numButtons;
+            ++numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertCustomize))
-            ++_numButtons;
+            ++numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertEquip))
-            ++_numButtons;
+            ++numButtons;
         if (_config.UseTemporarySettings && _config.QdbButtons.HasFlag(QdbButtons.ResetSettings))
-            ++_numButtons;
+            ++numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.ApplyDesign))
-        {
-            ++_numButtons;
-            Size = new Vector2((7 + _numButtons) * Im.Style.FrameHeight + _numButtons * Im.Style.ItemInnerSpacing.X,
-                Im.Style.FrameHeight);
-        }
-        else
-        {
-            Size = new Vector2(
-                _numButtons * Im.Style.FrameHeight
-              + (_numButtons - 1) * Im.Style.ItemInnerSpacing.X
-              + Im.Style.WindowPadding.X * 2,
-                Im.Style.FrameHeight);
-        }
+            ++numButtons;
+        if (!mainWindow && _config.QdbButtons.HasFlag(QdbButtons.ToggleMainWindow))
+            ++numButtons;
 
-        return Size.Value.X;
+        return numButtons;
+    }
+
+    private float CalculateWidth(int numButtons, bool mainWindow)
+    {
+        var content = _config.QdbButtons.HasFlag(QdbButtons.ApplyDesign)
+            ? (7 + numButtons) * Im.Style.FrameHeight + numButtons * Im.Style.ItemInnerSpacing.X
+            : numButtons * Im.Style.FrameHeight + (numButtons - 1) * Im.Style.ItemInnerSpacing.X;
+        var padding = mainWindow ? 0 : Im.Style.WindowPadding.X * 2;
+
+        return content + padding;
+    }
+
+    private void UpdateWidth()
+    {
+        _numButtons = CalculateButtonCount(false);
+        var width = CalculateWidth(_numButtons, false);
+        Size = new Vector2(width, Im.Style.FrameHeight);
     }
 }

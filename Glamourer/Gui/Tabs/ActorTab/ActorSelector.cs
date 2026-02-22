@@ -14,7 +14,7 @@ public readonly struct ActorCacheItem(ActorIdentifier identifier, ActorData data
     public readonly StringU8        IncognitoText = new(identifier.Incognito(data.Label));
 }
 
-public sealed class ActorSelector(ActorSelection selection, ActorObjectManager objects, ActorFilter filter, PenumbraService penumbra, EphemeralConfig config) : IPanel
+public sealed class ActorSelector(ActorSelection selection, ActorObjectManager objects, ActorFilter filter, PenumbraService penumbra, Config.EphemeralConfig config) : IPanel
 {
     public ReadOnlySpan<byte> Id
         => "ActorSelector"u8;

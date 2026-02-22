@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc.Exceptions;
+using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.State;
 using Luna;
@@ -34,7 +35,7 @@ public readonly record struct ModSettings(Dictionary<string, List<string>> Setti
         => new();
 }
 
-public class PenumbraService : IDisposable
+public sealed class PenumbraService : IDisposable, IService
 {
     public const int RequiredPenumbraBreakingVersion = 5;
     public const int RequiredPenumbraFeatureVersion  = 13;

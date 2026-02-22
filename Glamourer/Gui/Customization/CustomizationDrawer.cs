@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using Glamourer.GameData;
 using Glamourer.Services;
 using Glamourer.Unlocks;
@@ -11,13 +12,13 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Customization;
 
-public partial class CustomizationDrawer(
+public sealed partial class CustomizationDrawer(
     ITextureProvider textures,
     CustomizeService service,
     Configuration config,
     FavoriteManager favorites,
     HeightService heightService)
-    : IDisposable
+    : IDisposable, IUiService
 {
     private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
     private readonly IDalamudTextureWrap? _legacyTattoo = GetLegacyTattooIcon(textures);
@@ -81,7 +82,7 @@ public partial class CustomizationDrawer(
     private CustomizeValue _currentByte = CustomizeValue.Zero;
     private bool           _currentApply;
     private int            _currentCount;
-    private StringU8         _currentOption = StringU8.Empty;
+    private StringU8       _currentOption = StringU8.Empty;
 
     // Prepare a new customization option.
     private Im.IdDisposable SetId(CustomizeIndex index)

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.Gui.Materials;
 using Glamourer.Services;
@@ -11,7 +12,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public class EquipmentDrawer
+public sealed class EquipmentDrawer : IUiService
 {
     private const float DefaultWidth = 280;
 

@@ -1,4 +1,4 @@
-﻿using Glamourer.Designs;
+﻿using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.Gui.Tabs;
 using Glamourer.Gui.Tabs.ActorTab;
@@ -30,8 +30,8 @@ public sealed class MainTabBar : TabBar<MainTabType>
         NextTab = _config.SelectedMainTab;
     }
 
-    private void OnEvent(MainTabType tab, Design? _)
-        => NextTab = tab;
+    private void OnEvent(in TabSelected.Arguments arguments)
+        => NextTab = arguments.Type;
 
     private void OnTabSelected(in MainTabType arguments)
     {

@@ -1,4 +1,5 @@
-﻿using Glamourer.State;
+﻿using Glamourer.Config;
+using Glamourer.State;
 using ImSharp;
 using Penumbra.GameData.Gui.Debug;
 

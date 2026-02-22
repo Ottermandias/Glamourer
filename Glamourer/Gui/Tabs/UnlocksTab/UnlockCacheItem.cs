@@ -38,7 +38,8 @@ public readonly struct UnlockCacheItem(in EquipItem item, in EquipItem offhand, 
     public readonly StringPair         OffhandModelString  = offhand.Valid ? new StringPair(offhand.ModelString) : StringPair.Empty;
     public readonly StringPair         GauntletModelString = gauntlets.Valid ? new StringPair(gauntlets.ModelString) : StringPair.Empty;
     public readonly StringPair         RequiredLevel       = new($"{item.Level.Value}");
-    public required (string, string)[] Mods { get; init; }
+    public required (string, string)[] Mods         { get; init; }
+    public          int                RelevantMods { get; init; }
     public readonly JobFlag            Jobs    = jobs.Flags;
     public readonly StringU8           JobText = jobs.Name.IsEmpty ? new StringU8($"Unknown {jobs.Id.Id}") : jobs.Name;
     public required bool               Favorite { get; init; }

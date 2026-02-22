@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Gui;
@@ -13,7 +14,7 @@ using Luna;
 
 namespace Glamourer.State;
 
-public unsafe class FunModule : IDisposable
+public sealed unsafe class FunModule : IDisposable, IRequiredService
 {
     public enum FestivalType
     {

@@ -1,4 +1,5 @@
-﻿using ImSharp;
+﻿using Glamourer.Config;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.DebugTab;

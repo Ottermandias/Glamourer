@@ -1,61 +1,59 @@
-﻿using OtterGui.Classes;
-
-namespace Glamourer.Designs.Special;
+﻿namespace Glamourer.Designs.Special;
 
 public interface IDesignPredicate
 {
-    public bool Invoke(Design design, string lowerName, string identifier, string lowerPath);
+    bool Invoke(Design design, string name, string identifier, string path);
 
-    public bool Invoke((Design Design, string LowerName, string Identifier, string LowerPath) args)
-        => Invoke(args.Design, args.LowerName, args.Identifier, args.LowerPath);
+    bool Invoke((Design Design, string Name, string Identifier, string Path) args)
+        => Invoke(args.Design, args.Name, args.Identifier, args.Path);
 
-    public IEnumerable<Design> Get(IEnumerable<Design> designs, DesignFileSystem fileSystem)
-        => designs.Select(d => Transform(d, fileSystem))
+    IEnumerable<Design> Get(IEnumerable<Design> designs)
+        => designs.Select(Transform)
             .Where(Invoke)
             .Select(t => t.Design);
 
-    public static IEnumerable<Design> Get(IReadOnlyList<IDesignPredicate> predicates, IEnumerable<Design> designs, DesignFileSystem fileSystem)
+    static IEnumerable<Design> Get(IReadOnlyList<IDesignPredicate> predicates, IEnumerable<Design> designs)
         => predicates.Count > 0
-            ? designs.Select(d => Transform(d, fileSystem))
+            ? designs.Select(Transform)
                 .Where(t => predicates.Any(p => p.Invoke(t)))
                 .Select(t => t.Design)
             : designs;
 
-    private static (Design Design, string LowerName, string Identifier, string LowerPath) Transform(Design d, DesignFileSystem fs)
-        => (d, d.Name.Lower, d.Identifier.ToString(), fs.TryGetValue(d, out var l) ? l.FullName().ToLowerInvariant() : string.Empty);
+    private static (Design Design, string Name, string Identifier, string Path) Transform(Design d)
+        => (d, d.Name, d.Identifier.ToString(), d.Path.CurrentPath);
 }
 
 public static class RandomPredicate
 {
     public readonly struct StartsWith(string value) : IDesignPredicate
     {
-        public LowerString Value { get; } = value;
+        public string Value { get; } = value;
 
-        public bool Invoke(Design design, string lowerName, string identifier, string lowerPath)
-            => lowerPath.StartsWith(Value.Lower);
+        public bool Invoke(Design design, string name, string identifier, string path)
+            => path.StartsWith(Value, StringComparison.OrdinalIgnoreCase);
 
         public override string ToString()
-            => $"/{Value.Text}";
+            => $"/{Value}";
     }
 
     public readonly struct Contains(string value) : IDesignPredicate
     {
-        public LowerString Value { get; } = value;
+        public string Value { get; } = value;
 
-        public bool Invoke(Design design, string lowerName, string identifier, string lowerPath)
+        public bool Invoke(Design design, string name, string identifier, string path)
         {
-            if (lowerName.Contains(Value.Lower))
+            if (name.Contains(Value, StringComparison.OrdinalIgnoreCase))
                 return true;
-            if (identifier.Contains(Value.Lower))
+            if (identifier.Contains(Value, StringComparison.OrdinalIgnoreCase))
                 return true;
-            if (lowerPath.Contains(Value.Lower))
+            if (path.Contains(Value, StringComparison.OrdinalIgnoreCase))
                 return true;
 
             return false;
         }
 
         public override string ToString()
-            => Value.Text;
+            => Value;
     }
 
     public readonly struct Exact(Exact.Type type, string value) : IDesignPredicate
@@ -69,25 +67,25 @@ public static class RandomPredicate
             Color,
         }
 
-        public Type        Which { get; } = type;
-        public LowerString Value { get; } = value;
+        public Type   Which { get; } = type;
+        public string Value { get; } = value;
 
-        public bool Invoke(Design design, string lowerName, string identifier, string lowerPath)
+        public bool Invoke(Design design, string name, string identifier, string path)
             => Which switch
             {
-                Type.Name       => lowerName == Value.Lower,
-                Type.Path       => lowerPath == Value.Lower,
-                Type.Identifier => identifier == Value.Lower,
+                Type.Name       => string.Equals(name,       Value, StringComparison.OrdinalIgnoreCase),
+                Type.Path       => string.Equals(path,       Value, StringComparison.OrdinalIgnoreCase),
+                Type.Identifier => string.Equals(identifier, Value, StringComparison.OrdinalIgnoreCase),
                 Type.Tag        => IsContained(Value, design.Tags),
-                Type.Color      => design.Color == Value,
+                Type.Color      => string.Equals(design.Color, Value, StringComparison.OrdinalIgnoreCase),
                 _               => false,
             };
 
-        private static bool IsContained(LowerString value, IEnumerable<string> data)
-            => data.Any(t => t == value);
+        private static bool IsContained(string value, IEnumerable<string> data)
+            => data.Any(t => string.Equals(t, value, StringComparison.OrdinalIgnoreCase));
 
         public override string ToString()
-            => $"\"{Which switch { Type.Name => 'n', Type.Identifier => 'i', Type.Path => 'p', Type.Tag => 't', Type.Color => 'c', _ => '?' }}?{Value.Text}\"";
+            => $"\"{Which switch { Type.Name => 'n', Type.Identifier => 'i', Type.Path => 'p', Type.Tag => 't', Type.Color => 'c', _ => '?' }}?{Value}\"";
     }
 
     public static IDesignPredicate CreateSinglePredicate(string restriction)
@@ -125,7 +123,7 @@ public static class RandomPredicate
 
     public static List<IDesignPredicate> GeneratePredicates(string restrictions)
     {
-        if (restrictions.Length == 0)
+        if (restrictions.Length is 0)
             return [];
 
         List<IDesignPredicate> predicates = new(1);
@@ -153,9 +151,9 @@ public static class RandomPredicate
 
     public static string GeneratePredicateString(IReadOnlyCollection<IDesignPredicate> predicates)
     {
-        if (predicates.Count == 0)
+        if (predicates.Count is 0)
             return string.Empty;
-        if (predicates.Count == 1)
+        if (predicates.Count is 1)
             return predicates.First()!.ToString()!;
 
         return $"{{{string.Join("; ", predicates)}}}";

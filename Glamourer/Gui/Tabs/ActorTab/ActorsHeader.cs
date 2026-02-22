@@ -5,11 +5,11 @@ namespace Glamourer.Gui.Tabs.ActorTab;
 
 public sealed class ActorsHeader : SplitButtonHeader
 {
-    private readonly ActorSelection  _selection;
-    private readonly EphemeralConfig _config;
+    private readonly ActorSelection                _selection;
+    private readonly Config.EphemeralConfig _config;
 
     public ActorsHeader(SetFromClipboardButton setFromClipboard, ExportToClipboardButton exportToClipboard, SaveAsDesignButton save,
-        UndoButton undo, LockedButton locked, IncognitoButton incognito, ActorSelection selection, EphemeralConfig config)
+        UndoButton undo, LockedButton locked, IncognitoButton incognito, ActorSelection selection, Config.EphemeralConfig config)
     {
         _selection = selection;
         _config    = config;

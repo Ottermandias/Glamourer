@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.3.11415.281 d18.3
+VisualStudioVersion = 18.3.11415.281
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{383AEE76-D423-431C-893A-7AB3DEA13630}"
 	ProjectSection(SolutionItems) = preProject
@@ -19,8 +19,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penumbra.GameData", "Penumbra.GameData\Penumbra.GameData.csproj", "{C0A2FAF8-C3AE-4B7B-ADDB-4AAC1A855428}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penumbra.String", "Penumbra.String\Penumbra.String.csproj", "{AAFE22E7-0F9B-462A-AAA3-6EE3B268F3F8}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OtterGui", "OtterGui\OtterGui.csproj", "{EF233CE2-F243-449E-BE05-72B9D110E419}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Glamourer.Api", "Glamourer.Api\Glamourer.Api.csproj", "{9B46691B-FAB2-4CC3-9B89-C8B91A590F47}"
 EndProject
@@ -68,14 +66,6 @@ Global
 		{AAFE22E7-0F9B-462A-AAA3-6EE3B268F3F8}.Release|Any CPU.Build.0 = Release|x64
 		{AAFE22E7-0F9B-462A-AAA3-6EE3B268F3F8}.Release|x64.ActiveCfg = Release|x64
 		{AAFE22E7-0F9B-462A-AAA3-6EE3B268F3F8}.Release|x64.Build.0 = Release|x64
-		{EF233CE2-F243-449E-BE05-72B9D110E419}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{EF233CE2-F243-449E-BE05-72B9D110E419}.Debug|Any CPU.Build.0 = Debug|x64
-		{EF233CE2-F243-449E-BE05-72B9D110E419}.Debug|x64.ActiveCfg = Debug|x64
-		{EF233CE2-F243-449E-BE05-72B9D110E419}.Debug|x64.Build.0 = Debug|x64
-		{EF233CE2-F243-449E-BE05-72B9D110E419}.Release|Any CPU.ActiveCfg = Release|x64
-		{EF233CE2-F243-449E-BE05-72B9D110E419}.Release|Any CPU.Build.0 = Release|x64
-		{EF233CE2-F243-449E-BE05-72B9D110E419}.Release|x64.ActiveCfg = Release|x64
-		{EF233CE2-F243-449E-BE05-72B9D110E419}.Release|x64.Build.0 = Release|x64
 		{9B46691B-FAB2-4CC3-9B89-C8B91A590F47}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{9B46691B-FAB2-4CC3-9B89-C8B91A590F47}.Debug|Any CPU.Build.0 = Debug|x64
 		{9B46691B-FAB2-4CC3-9B89-C8B91A590F47}.Debug|x64.ActiveCfg = Debug|x64

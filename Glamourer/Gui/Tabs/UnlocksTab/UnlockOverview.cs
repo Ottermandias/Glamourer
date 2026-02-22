@@ -11,7 +11,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.UnlocksTab;
 
-public class UnlockOverview(
+public sealed class UnlockOverview(
     ItemManager items,
     CustomizeService customizations,
     ItemUnlockManager itemUnlocks,
@@ -21,7 +21,7 @@ public class UnlockOverview(
     CodeService codes,
     JobService jobs,
     FavoriteManager favorites,
-    PenumbraService penumbra)
+    PenumbraService penumbra) : IUiService
 {
     private static readonly Vector4 UnavailableTint = new(0.3f, 0.3f, 0.3f, 1.0f);
 

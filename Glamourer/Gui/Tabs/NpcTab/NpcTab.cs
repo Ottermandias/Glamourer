@@ -1,12 +1,16 @@
-﻿using ImSharp;
+﻿using Glamourer.Config;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
 
 public sealed class NpcTab : TwoPanelLayout, ITab<MainTabType>
 {
-    public NpcTab(NpcFilter filter, NpcSelector selector, NpcPanel panel, NpcHeader header)
+    private readonly UiConfig _uiConfig;
+
+    public NpcTab(NpcFilter filter, NpcSelector selector, NpcPanel panel, NpcHeader header, UiConfig uiConfig)
     {
+        _uiConfig   = uiConfig;
         LeftHeader  = new FilterHeader<NpcCacheItem>(filter, new StringU8("Filter..."u8));
         LeftPanel   = selector;
         LeftFooter  = NopHeaderFooter.Instance;
@@ -22,5 +26,14 @@ public sealed class NpcTab : TwoPanelLayout, ITab<MainTabType>
         => MainTabType.Npcs;
 
     public void DrawContent()
-        => Draw(TwoPanelWidth.IndeterminateRelative);
+        => Draw(_uiConfig.NpcTabScale);
+
+    protected override void SetWidth(float width, ScalingMode mode)
+        => _uiConfig.NpcTabScale = new TwoPanelWidth(width, mode);
+
+    protected override float MinimumWidth
+        => LeftHeader.MinimumWidth;
+
+    protected override float MaximumWidth
+        => Im.Window.Width - 500 * Im.Style.GlobalScale;
 }

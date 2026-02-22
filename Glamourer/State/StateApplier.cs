@@ -5,6 +5,7 @@ using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Interop.Structs;
 using Glamourer.Services;
+using Luna;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
@@ -17,22 +18,22 @@ namespace Glamourer.State;
 /// It handles applying those changes as well as redrawing the actor if necessary.
 /// </summary>
 public class StateApplier(
-    UpdateSlotService _updateSlot,
-    VisorService _visor,
-    WeaponService _weapon,
-    ChangeCustomizeService _changeCustomize,
-    ItemManager _items,
-    PenumbraService _penumbra,
-    MetaService _metaService,
-    ActorObjectManager _objects,
-    CrestService _crests,
-    DirectXService _directX)
+    UpdateSlotService updateSlot,
+    VisorService visor,
+    WeaponService weaponService,
+    ChangeCustomizeService changeCustomize,
+    ItemManager items,
+    PenumbraService penumbra,
+    MetaService metaService,
+    ActorObjectManager objects,
+    CrestService crests,
+    DirectXService directX) : IRequiredService
 {
     /// <summary> Simply force a redraw regardless of conditions. </summary>
     public void ForceRedraw(ActorData data)
     {
         foreach (var actor in data.Objects)
-            _penumbra.RedrawObject(actor, RedrawType.Redraw);
+            penumbra.RedrawObject(actor, RedrawType.Redraw);
     }
 
     /// <inheritdoc cref="ForceRedraw(ActorData)"/>
@@ -60,17 +61,17 @@ public class StateApplier(
             var flags = CustomizeArray.Compare(mdl.GetCustomize(), customize);
             if (!flags.RequiresRedraw() || !mdl.IsHuman)
             {
-                _changeCustomize.UpdateCustomize(mdl, customize);
+                changeCustomize.UpdateCustomize(mdl, customize);
             }
-            else if (data.Objects.Count > 1 && _objects.IsInGPose && !actor.IsGPoseOrCutscene)
+            else if (data.Objects.Count > 1 && objects.IsInGPose && !actor.IsGPoseOrCutscene)
             {
                 var mdlCustomize = (CustomizeArray*)&mdl.AsHuman->Customize;
                 *mdlCustomize = customize;
-                _penumbra.RedrawObject(actor, RedrawType.AfterGPose);
+                penumbra.RedrawObject(actor, RedrawType.AfterGPose);
             }
             else
             {
-                _penumbra.RedrawObject(actor, RedrawType.Redraw);
+                penumbra.RedrawObject(actor, RedrawType.Redraw);
             }
         }
     }
@@ -104,12 +105,12 @@ public class StateApplier(
             if (checkRestrictions)
             {
                 var customize = mdl.GetCustomize();
-                var (_, resolvedItem) = _items.ResolveRestrictedGear(armor, slot, customize.Race, customize.Gender);
-                _updateSlot.UpdateEquipSlot(actor.Model, slot, resolvedItem);
+                var (_, resolvedItem) = items.ResolveRestrictedGear(armor, slot, customize.Race, customize.Gender);
+                updateSlot.UpdateEquipSlot(actor.Model, slot, resolvedItem);
             }
             else
             {
-                _updateSlot.UpdateEquipSlot(actor.Model, slot, armor);
+                updateSlot.UpdateEquipSlot(actor.Model, slot, armor);
             }
         }
     }
@@ -134,7 +135,7 @@ public class StateApplier(
             if (!mdl.IsHuman)
                 continue;
 
-            _updateSlot.UpdateBonusSlot(actor.Model, slot, item);
+            updateSlot.UpdateBonusSlot(actor.Model, slot, item);
         }
     }
 
@@ -164,15 +165,15 @@ public class StateApplier(
         {
             case < 10:
                 foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-                    _updateSlot.UpdateStain(actor.Model, slot, stains);
+                    updateSlot.UpdateStain(actor.Model, slot, stains);
                 break;
             case 10:
                 foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-                    _weapon.LoadStain(actor, EquipSlot.MainHand, stains);
+                    weaponService.LoadStain(actor, EquipSlot.MainHand, stains);
                 break;
             case 11:
                 foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-                    _weapon.LoadStain(actor, EquipSlot.OffHand, stains);
+                    weaponService.LoadStain(actor, EquipSlot.OffHand, stains);
                 break;
         }
     }
@@ -217,7 +218,7 @@ public class StateApplier(
     {
         var slot = weapon.Type.ValidOffhand() == FullEquipType.Unknown ? EquipSlot.BothHand : EquipSlot.MainHand;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-            _weapon.LoadWeapon(actor, slot, weapon.Weapon().With(stains));
+            weaponService.LoadWeapon(actor, slot, weapon.Weapon().With(stains));
     }
 
     /// <summary> Apply a weapon to the offhand. </summary>
@@ -225,7 +226,7 @@ public class StateApplier(
     {
         stains = weapon.PrimaryId.Id == 0 ? StainIds.None : stains;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-            _weapon.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stains));
+            weaponService.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stains));
     }
 
     /// <summary> Change a meta state. </summary>
@@ -242,24 +243,24 @@ public class StateApplier(
             case MetaIndex.HatState:
             {
                 foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-                    _metaService.SetHatState(actor, value);
+                    metaService.SetHatState(actor, value);
                 return;
             }
             case MetaIndex.WeaponState:
             {
                 // Only apply to the GPose character because otherwise we get some weird incompatibility when leaving GPose.
-                if (_objects.IsInGPose)
+                if (objects.IsInGPose)
                     foreach (var actor in data.Objects.Where(a => a.IsGPoseOrCutscene))
-                        _metaService.SetWeaponState(actor, value);
+                        metaService.SetWeaponState(actor, value);
                 else
                     foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-                        _metaService.SetWeaponState(actor, value);
+                        metaService.SetWeaponState(actor, value);
                 return;
             }
             case MetaIndex.VisorState:
             {
                 foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
-                    _visor.SetVisorState(actor.Model, value);
+                    visor.SetVisorState(actor.Model, value);
                 return;
             }
             case MetaIndex.EarState:
@@ -286,7 +287,7 @@ public class StateApplier(
     public void ChangeCrests(ActorData data, CrestFlag flags)
     {
         foreach (var actor in data.Objects.Where(a => a.IsCharacter))
-            _crests.UpdateCrests(actor, flags);
+            crests.UpdateCrests(actor, flags);
     }
 
     /// <inheritdoc cref="ChangeCrests(ActorData, CrestFlag)"/>
@@ -337,7 +338,7 @@ public class StateApplier(
                     value.Model.Apply(ref baseTable[MaterialValueIndex.FromKey(index).RowIndex], mode);
             }
 
-            _directX.ReplaceColorTable(texture, baseTable);
+            directX.ReplaceColorTable(texture, baseTable);
         }
     }
 
@@ -370,7 +371,7 @@ public class StateApplier(
                 foreach (var (key, value) in values)
                     value.Model.Apply(ref table[key.RowIndex], mode);
 
-                _directX.ReplaceColorTable(texture, table);
+                directX.ReplaceColorTable(texture, table);
             }
         }
     }
@@ -421,5 +422,5 @@ public class StateApplier(
     }
 
     public ActorData GetData(ActorState state)
-        => _objects.TryGetValue(state.Identifier, out var data) ? data : ActorData.Invalid;
+        => objects.TryGetValue(state.Identifier, out var data) ? data : ActorData.Invalid;
 }

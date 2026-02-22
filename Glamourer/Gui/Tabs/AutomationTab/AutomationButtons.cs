@@ -1,4 +1,5 @@
 ﻿using Glamourer.Automation;
+using Glamourer.Config;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Actors;

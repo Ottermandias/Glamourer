@@ -1,4 +1,5 @@
 ﻿using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Events;
 using ImSharp;
 using Luna;
@@ -54,7 +55,8 @@ public sealed class SetSelector(
         var identifier = config.Ephemeral.IncognitoMode ? item.IdentifierIncognito : item.IdentifierString;
         var textSize   = identifier.CalculateSize();
         var textColor  = item.Set.Identifiers.Any(objects.ContainsKey) ? cache.AutomationAvailable : cache.AutomationUnavailable;
-        Im.Cursor.Position = new Vector2(Im.ContentRegion.Available.X - textSize.X - Im.Style.FramePadding.X, Im.Cursor.Y - Im.Style.TextHeightWithSpacing);
+        Im.Cursor.Position = new Vector2(Im.ContentRegion.Available.X - textSize.X - Im.Style.FramePadding.X,
+            Im.Cursor.Y - Im.Style.TextHeightWithSpacing);
         Im.Text(identifier, textColor);
     }
 
@@ -123,9 +125,9 @@ public sealed class SetSelector(
             base.Dispose(disposing);
         }
 
-        private void OnAutomationChanged(AutomationChanged.Type type, AutoDesignSet? set, object? data)
+        private void OnAutomationChanged(in AutomationChanged.Arguments arguments)
         {
-            switch (type)
+            switch (arguments.Type)
             {
                 case AutomationChanged.Type.DeletedSet:
                 case AutomationChanged.Type.AddedSet:

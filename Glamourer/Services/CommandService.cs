@@ -2,6 +2,7 @@
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.GameData;
@@ -15,7 +16,6 @@ using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
-using SeStringBuilderExtensions = OtterGui.Classes.SeStringBuilderExtensions;
 
 namespace Glamourer.Services;
 
@@ -44,7 +44,7 @@ public class CommandService : IDisposable, IApiService
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ActorObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier,
-        ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService, DesignFileSystemSelector designSelector,
+        ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService, DesignFileSystemDrawer designDrawer,
         QuickDesignCombo quickDesignCombo, DesignResolver resolver, PenumbraService penumbra)
     {
         _commands          = commands;

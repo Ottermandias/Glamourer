@@ -1,5 +1,6 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
@@ -36,11 +37,11 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
     public void Dispose()
         => _event.Unsubscribe(OnPrepareColorSet);
 
-    private void OnPrepareColorSet(CharacterBase* characterBase, MaterialResourceHandle* material, ref StainIds stain, ref nint ret)
+    private void OnPrepareColorSet(in PrepareColorSet.Arguments arguments)
     {
-        var actor     = _penumbra.GameObjectFromDrawObject(characterBase);
-        var validType = FindType(characterBase, actor, out var type);
-        var (slotId, materialId) = FindMaterial(characterBase, material);
+        var actor     = _penumbra.GameObjectFromDrawObject(arguments.Model);
+        var validType = FindType(arguments.Model.AsCharacterBase, actor, out var type);
+        var (slotId, materialId) = FindMaterial(arguments.Model.AsCharacterBase, arguments.Handle);
 
         if (!validType
          || type is not MaterialValueIndex.DrawObjectType.Human && slotId > 0
@@ -54,19 +55,19 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         if (values.Length == 0)
             return;
 
-        if (!PrepareColorSet.TryGetColorTable(material, stain, out var baseColorSet))
+        if (!PrepareColorSet.TryGetColorTable(arguments.Handle, arguments.Ids, out var baseColorSet))
             return;
 
         var drawData = type switch
         {
-            MaterialValueIndex.DrawObjectType.Human => GetTempSlot((Human*)characterBase, (HumanSlot)slotId),
-            _                                       => GetTempSlot((Weapon*)characterBase),
+            MaterialValueIndex.DrawObjectType.Human => GetTempSlot(arguments.Model.AsHuman, (HumanSlot)slotId),
+            _                                       => GetTempSlot(arguments.Model.AsWeapon),
         };
-        var mode = PrepareColorSet.GetMode(material);
+        var mode = PrepareColorSet.GetMode(arguments.Handle);
         UpdateMaterialValues(state, values, drawData, ref baseColorSet, mode);
 
         if (MaterialService.GenerateNewColorTable(baseColorSet, out var texture))
-            ret = (nint)texture;
+            arguments.ReturnValue = (nint)texture;
     }
 
     /// <summary> Update and apply the glamourer state of an actor according to the application sources when updated by the game. </summary>

@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Table;
+using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -15,7 +16,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.UnlocksTab;
 
-public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
+public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>, IUiService
 {
     private readonly JobService        _jobs;
     private readonly ItemManager       _items;
@@ -23,9 +24,10 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
     private readonly FavoriteManager   _favorites;
     private readonly PenumbraService   _penumbra;
     private readonly ObjectUnlocked    _unlockEvent;
+    private readonly IgnoredMods       _ignoredMods;
 
     public UnlockTable(JobService jobs, ItemManager items, ItemUnlockManager unlocks, PenumbraChangedItemTooltip tooltip,
-        ObjectUnlocked unlockEvent, FavoriteManager favorites, PenumbraService penumbra, TextureService textures)
+        ObjectUnlocked unlockEvent, FavoriteManager favorites, PenumbraService penumbra, TextureService textures, IgnoredMods ignoredMods)
         : base(new StringU8("Unlock Table"u8), new FavoriteColumn(favorites), new ModdedColumn(), new NameColumn(textures, tooltip),
             new SlotColumn(), new TypeColumn(), new UnlockDateColumn(), new ItemIdColumn(), new ModelDataColumn(), new JobColumn(jobs),
             new RequiredLevelColumn(), new DyableColumn(), new CrestColumn(), new TradableColumn())
@@ -36,6 +38,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
         _unlockEvent = unlockEvent;
         _favorites   = favorites;
         _penumbra    = penumbra;
+        _ignoredMods = ignoredMods;
 
         Flags |= TableFlags.Hideable | TableFlags.Reorderable | TableFlags.Resizable;
     }
@@ -72,6 +75,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
             UnlockTimestamp = unlocked,
             Mods            = mods,
             Favorite        = favorite,
+            RelevantMods    = mods.Count(m => !_ignoredMods.Contains(m.ModName) && !_ignoredMods.Contains(m.ModDirectory)),
         };
     }
 
@@ -94,24 +98,29 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
             => Im.Style.FrameHeightWithSpacing;
 
         public override void DrawColumn(in UnlockCacheItem item, int globalIndex)
-        {
-            Im.Cursor.FrameAlign();
-            UiHelpers.DrawFavoriteStar(_favorites, item.Item);
-        }
+            => UiHelpers.DrawFavoriteStar(_favorites, item.Item);
 
         protected override bool GetValue(in UnlockCacheItem item, int globalIndex, int triEnumIndex)
             => item.Favorite;
     }
 
-    private sealed class ModdedColumn : YesNoColumn<UnlockCacheItem>
+    private sealed class ModdedColumn : FlagColumn<ModdedColumn.Modded, UnlockCacheItem>
     {
-        private static readonly AwesomeIcon Dot = FontAwesomeIcon.Circle;
+        [Flags]
+        public enum Modded
+        {
+            Relevant = 1,
+            Ignored  = 2,
+            None     = 4,
+        }
+
+        private static readonly AwesomeIcon Dot    = FontAwesomeIcon.Circle;
+        private static readonly AwesomeIcon Hollow = FontAwesomeIcon.DotCircle;
 
         public ModdedColumn()
         {
-            Flags       |= TableColumnFlags.NoResize;
-            Label       =  new StringU8("M");
-            FilterLabel =  new StringU8("Modded"u8);
+            Flags |= TableColumnFlags.NoResize;
+            Label =  new StringU8("M");
         }
 
         public override float ComputeWidth(IEnumerable<UnlockCacheItem> allItems)
@@ -124,8 +133,11 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
 
             using (AwesomeIcon.Font.Push())
             {
-                using var color = ImGuiColor.Text.Push(ColorId.ModdedItemMarker.Value());
-                ImEx.TextCentered(Dot.Span);
+                var (color, text) = item.RelevantMods > 0
+                    ? (ColorId.ModdedItemMarker.Value(), Dot)
+                    : (ColorId.ModdedItemMarker.Value().HalfTransparent(), Hollow);
+                using var c = ImGuiColor.Text.Push(color);
+                Im.Text(text.Span);
             }
 
             if (Im.Item.Hovered())
@@ -137,11 +149,29 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
             }
         }
 
-        protected override bool GetValue(in UnlockCacheItem item, int globalIndex, int triEnumIndex)
-            => item.Mods.Length > 0;
+        protected override Modded GetValue(in UnlockCacheItem item, int globalIndex)
+            => item.RelevantMods > 0 ? Modded.Relevant : item.Mods.Length > 0 ? Modded.Ignored : Modded.None;
+
+        protected override StringU8 DisplayString(in UnlockCacheItem item, int globalIndex)
+            => StringU8.Empty;
+
+        protected override IReadOnlyList<(Modded Value, StringU8 Name)> EnumData
+            =>
+            [
+                (Modded.Relevant, new StringU8("Any Relevant Mods"u8)),
+                (Modded.Ignored, new StringU8("Only Ignored Mods"u8)),
+                (Modded.None, new StringU8("Unmodded"u8)),
+            ];
+
 
         public override int Compare(in UnlockCacheItem lhs, int lhsGlobalIndex, in UnlockCacheItem rhs, int rhsGlobalIndex)
-            => lhs.Mods.Length.CompareTo(rhs.Mods.Length);
+        {
+            var relevant = lhs.RelevantMods.CompareTo(rhs.RelevantMods);
+            if (relevant is not 0)
+                return relevant;
+
+            return lhs.Mods.Length.CompareTo(rhs.Mods.Length);
+        }
     }
 
     private sealed class NameColumn : TextColumn<UnlockCacheItem>
@@ -241,9 +271,9 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
     {
         public UnlockDateColumn()
         {
-            Flags         &= ~TableColumnFlags.NoResize;
-            Label         =  new StringU8("Unlocked"u8);
-            FilterLabel   =  Label;
+            Flags       &= ~TableColumnFlags.NoResize;
+            Label       =  new StringU8("Unlocked"u8);
+            FilterLabel =  Label;
         }
 
         public override float ComputeWidth(IEnumerable<UnlockCacheItem> allItems)
@@ -524,16 +554,17 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>
             }
         }
 
-        private void OnItemUnlock(ObjectUnlocked.Type type, uint id, DateTimeOffset timestamp)
+        private void OnItemUnlock(in ObjectUnlocked.Arguments arguments)
         {
-            if (type is not ObjectUnlocked.Type.Item)
+            if (arguments.Type is not ObjectUnlocked.Type.Item)
                 return;
 
             FilterDirty = true;
             SortDirty   = true;
+            var id  = arguments.Id;
             var idx = UnfilteredItems.IndexOf(i => i.Item.ItemId == id);
             if (idx >= 0)
-                UpdateSingleItem(idx, UnfilteredItems[idx] with { UnlockTimestamp = timestamp }, false);
+                UpdateSingleItem(idx, UnfilteredItems[idx] with { UnlockTimestamp = arguments.Timestamp }, false);
         }
 
         public override void Update()

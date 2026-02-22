@@ -2,6 +2,7 @@
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Glamourer.State;

@@ -1,3 +1,4 @@
+using Glamourer.Config;
 using ImSharp;
 
 namespace Glamourer.Gui;

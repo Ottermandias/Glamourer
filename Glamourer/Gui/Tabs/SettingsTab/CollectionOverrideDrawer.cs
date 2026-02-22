@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface;
+using Glamourer.Config;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using ImSharp;
@@ -58,18 +59,15 @@ public class CollectionOverrideDrawer(
         DrawActorIdentifier(idx, actor);
 
         table.NextColumn();
-        if (combo.Draw("##collection", name, "Select the overriding collection. Current GUID:", Im.ContentRegion.Available.X,
-                Im.Style.TextHeight))
-        {
-            var (guid, _, newName) = combo.CurrentSelection;
-            collectionOverrides.ChangeOverride(idx, guid, newName);
-        }
+        if (combo.Draw("##collection"u8, name, out var newName, ref collection, Im.ContentRegion.Available.X))
+            collectionOverrides.ChangeOverride(idx, collection, newName);
 
         if (Im.Item.Hovered())
         {
-            using var tt   = Im.Tooltip.Begin();
-            using var font = Im.Font.PushMono();
-            Im.Text($"    {collection}");
+            using var tt = Im.Tooltip.Begin();
+            Im.Text("Select the overriding collection. Current GUID:"u8);
+            using var indent = Im.Indent();
+            ImEx.MonoText($"{collection}");
         }
 
         table.NextColumn();

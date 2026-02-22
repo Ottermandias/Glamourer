@@ -2,7 +2,6 @@
 using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.State;
-using ImSharp;
 using Luna;
 using Newtonsoft.Json.Linq;
 
@@ -12,21 +11,19 @@ public class DesignsApi(
     ApiHelpers helpers,
     DesignManager designs,
     StateManager stateManager,
-    DesignFileSystem fileSystem,
     DesignColors color,
     DesignConverter converter)
     : IGlamourerApiDesigns, IApiService
 {
     public Dictionary<Guid, string> GetDesignList()
-        => designs.Designs.ToDictionary(d => d.Identifier, d => d.Name.Text);
+        => designs.Designs.ToDictionary(d => d.Identifier, d => d.Name);
 
     public Dictionary<Guid, (string DisplayName, string FullPath, uint DisplayColor, bool ShownInQdb)> GetDesignListExtended()
-        => fileSystem.ToDictionary(kvp => kvp.Key.Identifier,
-            kvp => (kvp.Key.Name.Text, kvp.Value.FullName(), color.GetColor(kvp.Key).Color, kvp.Key.QuickDesign));
+        => designs.Designs.ToDictionary(d => d.Identifier, d => (d.DisplayName, d.Path.CurrentPath, color.GetColor(d).Color, d.QuickDesign));
 
     public (string DisplayName, string FullPath, uint DisplayColor, bool ShowInQdb) GetExtendedDesignData(Guid designId)
         => designs.Designs.ByIdentifier(designId) is { } d
-            ? (d.Name.Text, fileSystem.TryGetValue(d, out var leaf) ? leaf.FullName() : d.Name.Text, color.GetColor(d).Color, d.QuickDesign)
+            ? (d.Name, d.Path.CurrentPath, color.GetColor(d).Color, d.QuickDesign)
             : (string.Empty, string.Empty, 0, false);
 
     public GlamourerApiEc ApplyDesign(Guid designId, int objectIndex, uint key, ApplyFlag flags)

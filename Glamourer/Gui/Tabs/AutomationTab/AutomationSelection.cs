@@ -13,7 +13,7 @@ public sealed class AutomationSelection : IUiService, IDisposable
 
     public int DraggedDesignIndex = -1;
 
-    public AutoDesignSet? Set { get; private set; }
+    public AutoDesignSet? Set       { get; private set; }
     public int            Index     { get; private set; } = -1;
     public StringU8       Name      { get; private set; } = NoSelection;
     public StringU8       Incognito { get; private set; } = NoSelection;
@@ -29,16 +29,16 @@ public sealed class AutomationSelection : IUiService, IDisposable
         _automationChanged.Unsubscribe(OnAutomationChanged);
     }
 
-    private void OnAutomationChanged(AutomationChanged.Type type, AutoDesignSet? set, object? data)
+    private void OnAutomationChanged(in AutomationChanged.Arguments arguments)
     {
-        if (set != Set)
+        if (arguments.Set != Set)
             return;
 
-        switch (type)
+        switch (arguments.Type)
         {
             case AutomationChanged.Type.DeletedSet: Update(null); break;
-            case AutomationChanged.Type.RenamedSet: Name  = new StringU8(set!.Name); break;
-            case AutomationChanged.Type.MovedSet:   Index = (((int, int))data!).Item2; break;
+            case AutomationChanged.Type.RenamedSet: Name  = new StringU8(arguments.Set!.Name); break;
+            case AutomationChanged.Type.MovedSet:   Index = arguments.As<AutomationChanged.MovedSetArguments>().NewIndex; break;
         }
     }
 

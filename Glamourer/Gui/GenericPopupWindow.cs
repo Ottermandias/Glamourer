@@ -1,10 +1,12 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using ImSharp;
+using Luna;
 
 namespace Glamourer.Gui;
 
-public class GenericPopupWindow : Luna.Window
+public sealed class GenericPopupWindow : Window
 {
     private readonly Configuration _config;
     private readonly ICondition    _condition;

@@ -1,10 +1,12 @@
 ﻿using Dalamud.Interface;
-using Dalamud.Interface.Windowing;
+using Glamourer.Config;
 using Glamourer.Gui.Tabs.UnlocksTab;
+using Luna;
+using WindowSystem = Dalamud.Interface.Windowing.WindowSystem;
 
 namespace Glamourer.Gui;
 
-public class GlamourerWindowSystem : IDisposable
+public sealed class GlamourerWindowSystem : IDisposable, IUiService
 {
     private readonly WindowSystem _windowSystem = new("Glamourer");
     private readonly IUiBuilder   _uiBuilder;

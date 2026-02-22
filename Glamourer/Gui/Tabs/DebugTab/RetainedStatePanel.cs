@@ -1,5 +1,5 @@
 ﻿using Glamourer.State;
-using OtterGui.Raii;
+using ImSharp;
 using Penumbra.GameData.Gui.Debug;
 using Penumbra.GameData.Interop;
 
@@ -17,7 +17,7 @@ public sealed class RetainedStatePanel(StateManager stateManager, ActorObjectMan
     {
         foreach (var (identifier, state) in stateManager.Where(kvp => !objectManager.ContainsKey(kvp.Key)))
         {
-            using var t = ImRaii.TreeNode(identifier.ToString());
+            using var t = Im.Tree.Node($"{identifier}");
             if (t)
                 ActiveStatePanel.DrawState(stateManager, ActorData.Invalid, state);
         }

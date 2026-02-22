@@ -7,6 +7,7 @@ using Glamourer.GameData;
 using Glamourer.Events;
 using Glamourer.Services;
 using Lumina.Excel.Sheets;
+using Luna;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
@@ -14,7 +15,7 @@ using StringU8 = ImSharp.StringU8;
 
 namespace Glamourer.Unlocks;
 
-public class CustomizeUnlockManager : IDisposable, ISavable
+public sealed class CustomizeUnlockManager : IDisposable, ISavable, IRequiredService
 {
     private readonly SaveService            _saveService;
     private readonly IClientState           _clientState;
@@ -78,7 +79,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
 
         _unlocked.TryAdd(pair.Data, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         time = DateTimeOffset.UtcNow;
-        _event.Invoke(ObjectUnlocked.Type.Customization, pair.Data, time);
+        _event.Invoke(new ObjectUnlocked.Arguments(ObjectUnlocked.Type.Customization, pair.Data, time));
         Save();
         return true;
     }
@@ -87,7 +88,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
     public unsafe bool IsUnlockedGame(uint dataId)
     {
         var instance = UIState.Instance();
-        if (instance == null)
+        if (instance is null)
             return false;
 
         return UIState.Instance()->IsUnlockLinkUnlocked(dataId);
@@ -101,7 +102,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
 
         Glamourer.Log.Debug("[UnlockManager] Scanning for new unlocked customizations.");
         var instance = UIState.Instance();
-        if (instance == null)
+        if (instance is null)
             return;
 
         try
@@ -112,7 +113,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
             {
                 if (instance->IsUnlockLinkUnlocked(id) && _unlocked.TryAdd(id, time))
                 {
-                    _event.Invoke(ObjectUnlocked.Type.Customization, id, DateTimeOffset.FromUnixTimeMilliseconds(time));
+                    _event.Invoke(new ObjectUnlocked.Arguments(ObjectUnlocked.Type.Customization, id, DateTimeOffset.FromUnixTimeMilliseconds(time)));
                     ++count;
                 }
             }
@@ -139,7 +140,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         _setUnlockLinkValueHook.Original(uiState, data, value);
         try
         {
-            if (value == 0)
+            if (value is 0)
                 return;
 
             var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -148,7 +149,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
                 if (id != data || !_unlocked.TryAdd(id, time))
                     continue;
 
-                _event.Invoke(ObjectUnlocked.Type.Customization, id, DateTimeOffset.FromUnixTimeMilliseconds(time));
+                _event.Invoke(new ObjectUnlocked.Arguments(ObjectUnlocked.Type.Customization, id, DateTimeOffset.FromUnixTimeMilliseconds(time)));
                 Save();
                 break;
             }
@@ -159,7 +160,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         }
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.UnlockFileCustomize;
 
     public void Save()
@@ -169,7 +170,7 @@ public class CustomizeUnlockManager : IDisposable, ISavable
         => UnlockDictionaryHelpers.Save(writer, Unlocked);
 
     private void Load()
-        => UnlockDictionaryHelpers.Load(ToFilename(_saveService.FileNames), _unlocked, id => Unlockable.Any(c => c.Value.Data == id),
+        => UnlockDictionaryHelpers.Load(ToFilePath(_saveService.FileNames), _unlocked, id => Unlockable.Any(c => c.Value.Data == id),
             "customization");
 
     /// <summary> Create a list of all unlockable hairstyles and face paints. </summary>

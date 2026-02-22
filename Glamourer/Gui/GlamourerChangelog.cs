@@ -1,9 +1,10 @@
+using Glamourer.Config;
 using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui;
 
-public class GlamourerChangelog
+public sealed class GlamourerChangelog : IUiService
 {
     public const     int           LastChangelogVersion = 0;
     private readonly Configuration _config;

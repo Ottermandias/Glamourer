@@ -1,5 +1,4 @@
 ﻿using Glamourer.Automation;
-using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Services;
 using Luna;
@@ -32,7 +31,7 @@ public sealed class DesignLinkManager : IService, IDisposable
         parent.LastEdit = DateTimeOffset.UtcNow;
         _saveService.QueueSave(parent);
         Glamourer.Log.Debug($"Moved link from {orderFrom} {idxFrom} to {idxTo} {orderTo}.");
-        _event.Invoke(DesignChanged.Type.ChangedLink, parent, null);
+        _event.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedLink, parent));
     }
 
     public void AddDesignLink(Design parent, Design child, LinkOrder order)
@@ -43,7 +42,7 @@ public sealed class DesignLinkManager : IService, IDisposable
         parent.LastEdit = DateTimeOffset.UtcNow;
         _saveService.QueueSave(parent);
         Glamourer.Log.Debug($"Added new {order} link to {child.Identifier} for {parent.Identifier}.");
-        _event.Invoke(DesignChanged.Type.ChangedLink, parent, null);
+        _event.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedLink, parent));
     }
 
     public void RemoveDesignLink(Design parent, int idx, LinkOrder order)
@@ -54,7 +53,7 @@ public sealed class DesignLinkManager : IService, IDisposable
         parent.LastEdit = DateTimeOffset.UtcNow;
         _saveService.QueueSave(parent);
         Glamourer.Log.Debug($"Removed the {order} link at {idx} for {parent.Identifier}.");
-        _event.Invoke(DesignChanged.Type.ChangedLink, parent, null);
+        _event.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedLink, parent));
     }
 
     public void ChangeApplicationType(Design parent, int idx, LinkOrder order, ApplicationType applicationType)
@@ -64,22 +63,23 @@ public sealed class DesignLinkManager : IService, IDisposable
             return;
 
         _saveService.QueueSave(parent);
-        Glamourer.Log.Debug($"Changed link application type from {old} to {applicationType} for design link {order} {idx + 1} in design {parent.Identifier}.");
-        _event.Invoke(DesignChanged.Type.ChangedLink, parent, null);
+        Glamourer.Log.Debug(
+            $"Changed link application type from {old} to {applicationType} for design link {order} {idx + 1} in design {parent.Identifier}.");
+        _event.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedLink, parent));
     }
 
-    private void OnDesignChanged(DesignChanged.Type type, Design deletedDesign, ITransaction? _)
+    private void OnDesignChanged(in DesignChanged.Arguments arguments)
     {
-        if (type is not DesignChanged.Type.Deleted)
+        if (arguments.Type is not DesignChanged.Type.Deleted)
             return;
 
         foreach (var design in _storage)
         {
-            if (!design.Links.Remove(deletedDesign))
+            if (!design.Links.Remove(arguments.Design))
                 continue;
 
             design.LastEdit = DateTimeOffset.UtcNow;
-            Glamourer.Log.Debug($"Removed {deletedDesign.Identifier} from {design.Identifier} links due to deletion.");
+            Glamourer.Log.Debug($"Removed {arguments.Design.Identifier} from {design.Identifier} links due to deletion.");
             _saveService.QueueSave(design);
         }
     }

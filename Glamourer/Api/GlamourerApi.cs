@@ -1,4 +1,5 @@
 ﻿using Glamourer.Api.Api;
+using Glamourer.Config;
 using Luna;
 
 namespace Glamourer.Api;

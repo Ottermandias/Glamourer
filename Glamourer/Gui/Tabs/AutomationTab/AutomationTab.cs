@@ -1,9 +1,10 @@
-﻿using ImSharp;
+﻿using Glamourer.Config;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public class AutomationTab : TwoPanelLayout, ITab<MainTabType>
+public sealed class AutomationTab : TwoPanelLayout, ITab<MainTabType>
 {
     private readonly Configuration _config;
 
@@ -30,7 +31,11 @@ public class AutomationTab : TwoPanelLayout, ITab<MainTabType>
         => MainTabType.Automation;
 
     public void DrawContent()
-    {
-        Draw(TwoPanelWidth.IndeterminateRelative);
-    }
+        => Draw(_config.Ui.AutomationTabScale);
+
+    protected override float MinimumWidth
+        => LeftFooter.MinimumWidth;
+
+    protected override float MaximumWidth
+        => Im.Window.Width - 500 * Im.Style.GlobalScale;
 }

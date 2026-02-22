@@ -4,6 +4,7 @@ using Glamourer.Designs.Special;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Unlocks;
+using Glamourer.Config;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
@@ -11,7 +12,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public class SetPanel(
+public sealed class SetPanel(
     AutoDesignManager manager,
     JobService jobs,
     ItemUnlockManager itemUnlocks,
@@ -33,8 +34,7 @@ public class SetPanel(
 
     public void Draw()
     {
-        using var child = Im.Child.Begin("##Panel"u8, Im.ContentRegion.Available, true);
-        if (!child || selection.Index < 0)
+        if (selection.Index < 0)
             return;
 
         using (Im.Group())

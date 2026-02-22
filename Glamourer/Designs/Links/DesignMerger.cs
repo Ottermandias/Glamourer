@@ -1,5 +1,6 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;

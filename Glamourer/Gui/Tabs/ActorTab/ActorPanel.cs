@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.History;
 using Glamourer.Gui.Customization;
@@ -19,18 +20,18 @@ namespace Glamourer.Gui.Tabs.ActorTab;
 
 public sealed class ActorPanel : IPanel
 {
-    private readonly ActorSelection           _selection;
-    private readonly StateManager             _stateManager;
-    private readonly CustomizationDrawer      _customizationDrawer;
-    private readonly EquipmentDrawer          _equipmentDrawer;
-    private readonly AutoDesignApplier        _autoDesignApplier;
-    private readonly Configuration            _config;
-    private readonly DesignConverter          _converter;
-    private readonly ActorObjectManager       _objects;
-    private readonly ImportService            _importService;
-    private readonly DictModelChara           _modelChara;
-    private readonly CustomizeParameterDrawer _parameterDrawer;
-    private readonly AdvancedDyePopup         _advancedDyes;
+    private readonly ActorSelection              _selection;
+    private readonly StateManager                _stateManager;
+    private readonly CustomizationDrawer         _customizationDrawer;
+    private readonly EquipmentDrawer             _equipmentDrawer;
+    private readonly AutoDesignApplier           _autoDesignApplier;
+    private readonly Configuration _config;
+    private readonly DesignConverter             _converter;
+    private readonly ActorObjectManager          _objects;
+    private readonly ImportService               _importService;
+    private readonly DictModelChara              _modelChara;
+    private readonly CustomizeParameterDrawer    _parameterDrawer;
+    private readonly AdvancedDyePopup            _advancedDyes;
 
     public ActorPanel(StateManager stateManager,
         CustomizationDrawer customizationDrawer,

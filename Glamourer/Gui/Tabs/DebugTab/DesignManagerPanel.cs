@@ -20,11 +20,11 @@ public sealed class DesignManagerPanel(DesignManager designManager, DesignFileSy
         foreach (var (idx, design) in designManager.Designs.Index())
         {
             using var id = Im.Id.Push(idx);
-            using var t  = Im.Tree.Node(design.Name.Text);
+            using var t  = Im.Tree.Node(design.Name);
             if (!t)
                 continue;
 
-            DrawDesign(design, designFileSystem);
+            DrawDesign(design);
             var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.Application.Equip, design.Application.Customize,
                 design.Application.Meta,
                 design.WriteProtected());
@@ -50,18 +50,18 @@ public sealed class DesignManagerPanel(DesignManager designManager, DesignFileSy
             var designs = designManager.Designs.Where(d => d.Tags.Contains("_DebugTest")).ToArray();
             foreach (var design in designs)
                 designManager.Delete(design);
-            if (designFileSystem.Find("Test Designs", out var path) && path is DesignFileSystem.Folder { TotalChildren: 0 })
+            if (designFileSystem.Find("Test Designs", out var path) && path is IFileSystemFolder { TotalDescendants: 0 })
                 designFileSystem.Delete(path);
         }
     }
 
-    public static void DrawDesign(DesignBase design, DesignFileSystem? fileSystem)
+    public static void DrawDesign(DesignBase design)
     {
         using var table = Im.Table.Begin("##equip"u8, 8, TableFlags.RowBackground | TableFlags.SizingFixedFit);
         if (design is Design d)
         {
             table.DrawColumn("Name"u8);
-            table.DrawColumn(d.Name.Text);
+            table.DrawColumn(d.Name);
             table.DrawColumn($"({d.Index})");
             table.DrawColumn("Description (Hover)"u8);
             Im.Tooltip.OnHover(d.Description);
@@ -70,8 +70,7 @@ public sealed class DesignManagerPanel(DesignManager designManager, DesignFileSy
             table.DrawDataPair("Identifier"u8, d.Identifier);
             table.NextRow();
             table.DrawColumn("Design File System Path"u8);
-            if (fileSystem is not null)
-                table.DrawColumn(fileSystem.TryGetValue(d, out var leaf) ? leaf.FullName() : "No Path Known"u8);
+            table.DrawColumn(d.Path.CurrentPath);
             table.NextRow();
 
             table.DrawDataPair("Creation"u8, d.CreationDate);
