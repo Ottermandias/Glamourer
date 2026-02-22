@@ -5,7 +5,8 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items) : FilterComboBase<BaseItemCombo.CacheItem>(new ItemFilter())
+public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items)
+    : FilterComboBase<BaseItemCombo.CacheItem>(new ItemFilter(), ConfigData.Default with { ComputeWidth = true })
 {
     public abstract StringU8 Label { get; }
 
@@ -32,6 +33,17 @@ public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items
 
         newItem = item;
         return false;
+    }
+
+    protected override void PreDrawList()
+    {
+        ImStyleDouble.ItemSpacing.PushY(0)
+            .PushY(ImStyleDouble.SelectableTextAlign, 0.5f);
+    }
+
+    protected override void PostDrawList()
+    {
+        Im.StyleDisposable.PopUnsafe(2);
     }
 
     public readonly struct CacheItem(EquipItem item)
@@ -66,7 +78,7 @@ public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items
                     .MaxBy(i => Im.Font.CalculateSize($"{i.Item2.Name} ({i.Item2.ModelString})").X).Item2;
             }
 
-            ComboWidth = Im.Font.CalculateSize($"{_longestItem.Name} ({_longestItem.Name})").X
+            ComboWidth = Im.Font.CalculateSize($"{_longestItem.Name} ({_longestItem.ModelString})").X
               + Im.Style.FrameHeight
               + Im.Style.ItemSpacing.X * 3;
         }
@@ -79,7 +91,8 @@ public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items
     {
         UiHelpers.DrawFavoriteStar(Favorites, item.Item);
         Im.Line.Same();
-        var ret = Im.Selectable(item.Name.Utf8, selected);
+        Im.Cursor.Y -= Im.Style.FramePadding.Y;
+        var ret = Im.Selectable(item.Name.Utf8, selected, SelectableFlags.None, new Vector2(0, Im.Style.FrameHeight));
         Im.Line.Same();
         using var color = ImGuiColor.Text.Push(Rgba32.Gray);
         ImEx.TextRightAligned(item.Model.Utf8);

@@ -269,9 +269,9 @@ public sealed class EquipmentDrawer : IUiService
             Im.Line.Same();
             DrawApply(equipDrawData);
         }
-
+        
         DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
-
+        
         DrawStain(equipDrawData, false);
         if (equipDrawData.DisplayApplication)
         {
@@ -282,7 +282,7 @@ public sealed class EquipmentDrawer : IUiService
         {
             _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
-
+        
         if (VerifyRestrictedGear(equipDrawData))
         {
             Im.Line.Same();
