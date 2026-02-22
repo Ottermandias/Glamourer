@@ -453,14 +453,14 @@ public sealed unsafe class AdvancedDyePopup(
         else
         {
             Im.Item.SetNextWidthScaled(100);
-            var editAsRoughness = config.AlwaysEditAsRoughness ?? _mode is ColorRow.Mode.Dawntrail;
+            var editAsRoughness = config.RoughnessSetting.Get(_mode is ColorRow.Mode.Dawntrail);
             applied |= (_mode, editAsRoughness) switch
             {
                 (ColorRow.Mode.Legacy, false)    => DragGloss(ref value.Model.GlossStrength, false),
                 (ColorRow.Mode.Legacy, true)     => DragGlossAsRoughness(ref value.Model.GlossStrength, false),
                 (ColorRow.Mode.Dawntrail, false) => DragRoughnessAsGloss(ref value.Model.Roughness, false),
                 (ColorRow.Mode.Dawntrail, true)  => DragRoughness(ref value.Model.Roughness, false),
-                _                                => throw new NotImplementedException(),
+                _                                => false,
             };
             Im.Tooltip.OnHover(editAsRoughness ? "Change the roughness for this row."u8 : "Change the gloss strength for this row."u8);
 

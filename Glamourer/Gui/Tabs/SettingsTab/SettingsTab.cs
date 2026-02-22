@@ -508,7 +508,7 @@ public sealed class SettingsTab(
             "Select how to display the height of characters in real-world units, if at all."u8);
     }
 
-private string _newIgnoredMod = string.Empty;
+    private string _newIgnoredMod = string.Empty;
 
     private void DrawIgnoredMods()
     {
@@ -530,15 +530,15 @@ private string _newIgnoredMod = string.Empty;
                 delete = mod;
 
             Im.Line.SameInner();
-            ImEx.TextFramed(mod, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight});
+            ImEx.TextFramed(mod, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
         }
 
         if (delete.Length > 0)
             ignoredMods.Remove(delete);
 
-        var tt = _newIgnoredMod.Length is 0       ? "Please enter a new mod name or mod directory to ignore."u8 :
+        var tt = _newIgnoredMod.Length is 0      ? "Please enter a new mod name or mod directory to ignore."u8 :
             ignoredMods.Contains(_newIgnoredMod) ? "This mod is already ignored."u8 :
-                                                    "Ignore all mods with this name or directory in the Unlocks tab."u8;
+                                                   "Ignore all mods with this name or directory in the Unlocks tab."u8;
         if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, tt[0] is not (byte)'I'))
         {
             ignoredMods.Add(_newIgnoredMod);
@@ -553,30 +553,20 @@ private string _newIgnoredMod = string.Empty;
     private void DrawRoughnessSettings()
     {
         Im.Item.SetNextWidthScaled(300);
-        using (var combo = Im.Combo.Begin("##alwaysEditAsRoughness"u8, ToRoughnessSettingString(config.AlwaysEditAsRoughness)))
+        using (var combo = Im.Combo.Begin("##alwaysEditAsRoughness"u8, config.RoughnessSetting.ToNameU8()))
         {
             if (combo)
-                foreach (var type in (IEnumerable<bool?>)[null, true, false,])
+                foreach (var type in RoughnessSetting.Values)
                 {
-                    if (Im.Selectable(ToRoughnessSettingString(type), config.AlwaysEditAsRoughness == type))
+                    if (Im.Selectable(type.ToNameU8(), config.RoughnessSetting == type))
                     {
-                        config.AlwaysEditAsRoughness = type;
+                        config.RoughnessSetting = type;
                         config.Save();
                     }
                 }
         }
 
         LunaStyle.DrawAlignedHelpMarkerLabel("Gloss Strength and Roughness Display Type"u8,
-            "Select how to display and edit Gloss Strength and Roughness values.\nThe conversion formula used is an approximation and does not account for all the subtleties of legacy vs PBR shaders."u8);
-
-        return;
-
-        static ReadOnlySpan<byte> ToRoughnessSettingString(bool? alwaysEditAsRoughness)
-            => alwaysEditAsRoughness switch
-            {
-                null  => "As-Is"u8,
-                true  => "Always Roughness"u8,
-                false => "Always Gloss Strength"u8,
-            };
+            "Select how to display and edit Gloss Strength and Roughness values.\nThe conversion formula used is an approximation and does not account for all the subtleties of legacy versus PBR shaders."u8);
     }
 }

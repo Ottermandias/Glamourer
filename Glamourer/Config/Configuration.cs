@@ -52,9 +52,10 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     public bool   AllowDoubleClickToApply          { get; set; } = false;
     public bool   RespectManualOnAutomationUpdate  { get; set; } = false;
     public bool   PreventRandomRepeats             { get; set; } = false;
-    public bool?  AlwaysEditAsRoughness            { get; set; } = null;
     public string PcpFolder                        { get; set; } = "PCP";
     public string PcpColor                         { get; set; } = "";
+
+    public RoughnessSetting RoughnessSetting { get; set; } = RoughnessSetting.AsIs;
 
     public DesignPanelFlag HideDesignPanel       { get; set; } = 0;
     public DesignPanelFlag AutoExpandDesignPanel { get; set; } = 0;
