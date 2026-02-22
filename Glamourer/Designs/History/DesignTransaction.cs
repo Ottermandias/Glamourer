@@ -1,13 +1,12 @@
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
-using Glamourer.State;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Designs.History;
 
 /// <remarks> Only Designs. Can not be reverted. </remarks>
-public readonly record struct CreationTransaction(string Name, string? Path)
+public record CreationTransaction(string Name, string? Path)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction other)
@@ -18,7 +17,7 @@ public readonly record struct CreationTransaction(string Name, string? Path)
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct RenameTransaction(string Old, string New)
+public record RenameTransaction(string Old, string New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -29,7 +28,7 @@ public readonly record struct RenameTransaction(string Old, string New)
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct DescriptionTransaction(string Old, string New)
+public record DescriptionTransaction(string Old, string New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -40,7 +39,7 @@ public readonly record struct DescriptionTransaction(string Old, string New)
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct DesignColorTransaction(string Old, string New)
+public record DesignColorTransaction(string Old, string New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -51,7 +50,7 @@ public readonly record struct DesignColorTransaction(string Old, string New)
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct TagAddedTransaction(string New, int Index)
+public record TagAddedTransaction(string New, int Index)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction other)
@@ -62,7 +61,7 @@ public readonly record struct TagAddedTransaction(string New, int Index)
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct TagRemovedTransaction(string Old, int Index)
+public record TagRemovedTransaction(string Old, int Index)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction other)
@@ -73,7 +72,7 @@ public readonly record struct TagRemovedTransaction(string Old, int Index)
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct TagChangedTransaction(string Old, string New, int IndexOld, int IndexNew)
+public record TagChangedTransaction(string Old, string New, int IndexOld, int IndexNew)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -86,7 +85,7 @@ public readonly record struct TagChangedTransaction(string Old, string New, int 
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct ModAddedTransaction(Mod Mod, ModSettings Settings)
+public record ModAddedTransaction(Mod Mod, ModSettings Settings)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction other)
@@ -97,7 +96,7 @@ public readonly record struct ModAddedTransaction(Mod Mod, ModSettings Settings)
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct ModRemovedTransaction(Mod Mod, ModSettings Settings)
+public record ModRemovedTransaction(Mod Mod, ModSettings Settings)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction other)
@@ -108,7 +107,7 @@ public readonly record struct ModRemovedTransaction(Mod Mod, ModSettings Setting
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct ModUpdatedTransaction(Mod Mod, ModSettings Old, ModSettings New)
+public record ModUpdatedTransaction(Mod Mod, ModSettings Old, ModSettings New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -119,7 +118,7 @@ public readonly record struct ModUpdatedTransaction(Mod Mod, ModSettings Old, Mo
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct MaterialTransaction(MaterialValueIndex Index, ColorRow? Old, ColorRow? New, ColorRow.Mode? OldMode, ColorRow.Mode? NewMode)
+public record MaterialTransaction(MaterialValueIndex Index, ColorRow? Old, ColorRow? New, ColorRow.Mode? OldMode, ColorRow.Mode? NewMode)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -135,7 +134,7 @@ public readonly record struct MaterialTransaction(MaterialValueIndex Index, Colo
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct MaterialRevertTransaction(MaterialValueIndex Index, bool Old, bool New)
+public record MaterialRevertTransaction(MaterialValueIndex Index, bool Old, bool New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction other)
@@ -146,7 +145,7 @@ public readonly record struct MaterialRevertTransaction(MaterialValueIndex Index
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct MaterialModeTransaction(MaterialValueIndex Index, ColorRow.Mode Old, ColorRow.Mode New)
+public record MaterialModeTransaction(MaterialValueIndex Index, ColorRow.Mode Old, ColorRow.Mode New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction other)
@@ -157,7 +156,7 @@ public readonly record struct MaterialModeTransaction(MaterialValueIndex Index, 
 }
 
 /// <remarks> Only Designs. </remarks>
-public readonly record struct ApplicationTransaction(object Index, bool Old, bool New)
+public record ApplicationTransaction(object Index, bool Old, bool New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction other)
