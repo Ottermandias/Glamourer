@@ -81,6 +81,9 @@ public sealed class DesignChanged(Logger log)
         /// <summary> An existing design had an advanced dye rows Revert state changed. </summary>
         MaterialRevert,
 
+        /// <summary> An existing design had an advanced dye rows mode changed. </summary>
+        MaterialMode,
+
         /// <summary> An existing design had changed whether it always forces a redraw or not. </summary>
         ForceRedraw,
 

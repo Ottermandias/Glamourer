@@ -231,7 +231,7 @@ public class StateEditor(
         Glamourer.Log.Verbose(
             $"Set material value in state {state.Identifier.Incognito(null)} from {oldValue} to {newValue.Game}. [Affecting {actors.ToLazyString("nothing")}.]");
         StateChanged.Invoke(new StateChanged.Arguments(StateChangeType.MaterialValue, settings.Source, state, actors,
-            new MaterialTransaction(index, oldValue, newValue.Game)));
+            new MaterialTransaction(index, oldValue, newValue.Game, null, null)));
     }
 
     public void ResetMaterialValue(object data, MaterialValueIndex index, ApplySettings settings)
@@ -243,7 +243,7 @@ public class StateEditor(
         var actors = Applier.ChangeMaterialValue(state, index, true);
         Glamourer.Log.Verbose(
             $"Reset material value in state {state.Identifier.Incognito(null)} to game value. [Affecting {actors.ToLazyString("nothing")}.]");
-        StateChanged.Invoke(new StateChanged.Arguments(StateChangeType.MaterialValue, settings.Source, state, actors, new MaterialTransaction(index, null, null)));
+        StateChanged.Invoke(new StateChanged.Arguments(StateChangeType.MaterialValue, settings.Source, state, actors, new MaterialTransaction(index, null, null, null, null)));
     }
 
     /// <inheritdoc/>

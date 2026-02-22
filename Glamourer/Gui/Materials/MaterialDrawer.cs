@@ -10,8 +10,9 @@ namespace Glamourer.Gui.Materials;
 
 public class MaterialDrawer(DesignManager designManager, Configuration config) : IService
 {
-    public const float GlossWidth            = 100;
-    public const float SpecularStrengthWidth = 125;
+    public const float SliderWidth      = 90;
+    public const float ModeWidth        = 45;
+    public const float SheenSliderWidth = (2 * SliderWidth + ModeWidth) / 3;
 
     private int                _newMaterialIdx;
     private int                _newRowIdx;
@@ -26,17 +27,17 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         _spacing    = Im.Style.ItemInnerSpacing.X;
         _buttonSize = new Vector2(Im.Style.FrameHeight);
         var colorWidth = 4 * _buttonSize.X
-          + (GlossWidth + SpecularStrengthWidth) * Im.Style.GlobalScale
-          + 6 * _spacing
+          + (SliderWidth * 2 + ModeWidth) * Im.Style.GlobalScale
+          + 7 * _spacing
           + Im.Font.CalculateSize("Revert"u8).X;
         DrawMultiButtons(design);
         Im.Dummy(0);
         Im.Separator();
         Im.Dummy(0);
-        if (available > 1.95 * colorWidth)
+        if (available > 2.6f * colorWidth)
             DrawSingleRow(design);
         else
-            DrawTwoRow(design);
+            DrawMultipleRow(design);
         DrawNew(design);
     }
 
@@ -76,7 +77,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
     private void DrawName(MaterialValueIndex index)
     {
         using var style = ImStyleDouble.ButtonTextAlign.Push(new Vector2(0.05f, 0.5f));
-        ImEx.TextFramed($"{index}", new Vector2((GlossWidth + SpecularStrengthWidth) * Im.Style.GlobalScale + _spacing, 0),
+        ImEx.TextFramed($"{index}", new Vector2((SliderWidth * 2 + ModeWidth) * Im.Style.GlobalScale + _spacing * 2, 0),
             borderColor: ImGuiColor.Text.Get());
     }
 
@@ -92,20 +93,21 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
             Im.Line.Same(0, _spacing);
             DeleteButton(design, key, ref i);
             Im.Line.Same(0, _spacing);
-            CopyButton(value.Value);
+            CopyButton(value.Value, value.Mode);
             Im.Line.Same(0, _spacing);
             PasteButton(design, key);
             Im.Line.Same(0, _spacing);
             using var disabled = Im.Disabled(design.WriteProtected());
             EnabledToggle(design, key, value.Enabled);
             Im.Line.Same(0, _spacing);
-            DrawRow(design, key, value.Value, value.Revert);
+            DrawRow(design, key, value.Value, value.Revert, value.Mode);
+            DrawRowExtra(design, key, value.Value, value.Revert, value.Mode, true);
             Im.Line.Same(0, _spacing);
             RevertToggle(design, key, value.Revert);
         }
     }
 
-    private void DrawTwoRow(Design design)
+    private void DrawMultipleRow(Design design)
     {
         for (var i = 0; i < design.Materials.Count; ++i)
         {
@@ -117,16 +119,18 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
             Im.Line.Same(0, _spacing);
             DeleteButton(design, key, ref i);
             Im.Line.Same(0, _spacing);
-            CopyButton(value.Value);
+            CopyButton(value.Value, value.Mode);
             Im.Line.Same(0, _spacing);
             PasteButton(design, key);
             Im.Line.Same(0, _spacing);
+            using var disabled = Im.Disabled(design.WriteProtected());
             EnabledToggle(design, key, value.Enabled);
 
 
-            DrawRow(design, key, value.Value, value.Revert);
+            DrawRow(design, key, value.Value, value.Revert, value.Mode);
             Im.Line.Same(0, _spacing);
             RevertToggle(design, key, value.Revert);
+            DrawRowExtra(design, key, value.Value, value.Revert, value.Mode, false);
             Im.Separator();
         }
     }
@@ -143,17 +147,20 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         --idx;
     }
 
-    private void CopyButton(in ColorRow row)
+    private void CopyButton(in ColorRow row, ColorRow.Mode mode)
     {
         if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "Export this row to your clipboard."u8))
-            ColorRowClipboard.Row = row;
+        {
+            ColorRowClipboard.Row     = row;
+            ColorRowClipboard.RowMode = mode;
+        }
     }
 
     private void PasteButton(Design design, MaterialValueIndex index)
     {
         if (ImEx.Icon.Button(LunaStyle.FromClipboardIcon, "Import an exported row from your clipboard onto this row."u8,
                 !ColorRowClipboard.IsSet || design.WriteProtected()))
-            designManager.ChangeMaterialValue(design, index, ColorRowClipboard.Row);
+            designManager.ChangeMaterialValue(design, index, ColorRowClipboard.Row, ColorRowClipboard.RowMode);
     }
 
     private void EnabledToggle(Design design, MaterialValueIndex index, bool enabled)
@@ -168,6 +175,39 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
             designManager.ChangeMaterialRevert(design, index, revert);
         Im.Tooltip.OnHover(
             "If this is checked, Glamourer will try to revert the advanced dye row to its game state instead of applying a specific row."u8);
+    }
+
+    private void ModeToggle(Design design, MaterialValueIndex index, ColorRow.Mode mode)
+    {
+        if (Im.Button(ToCallsignString(mode), ImEx.ScaledVectorX(ModeWidth)))
+            designManager.ChangeMaterialMode(design, index, GetNextMode(mode));
+        Im.Tooltip.OnHover(ToTooltipString(mode));
+
+        return;
+
+        static ReadOnlySpan<byte> ToCallsignString(ColorRow.Mode mode)
+            => mode switch
+            {
+                ColorRow.Mode.Legacy    => "Lgc###mode"u8,
+                ColorRow.Mode.Dawntrail => "DT###mode"u8,
+                _                       => StringU8.Empty,
+            };
+
+        static ColorRow.Mode GetNextMode(ColorRow.Mode mode)
+            => mode switch
+            {
+                ColorRow.Mode.Legacy    => ColorRow.Mode.Dawntrail,
+                ColorRow.Mode.Dawntrail => ColorRow.Mode.Legacy,
+                _                       => ColorRow.Mode.Dawntrail,
+            };
+
+        static ReadOnlySpan<byte> ToTooltipString(ColorRow.Mode mode)
+            => mode switch
+            {
+                ColorRow.Mode.Legacy    => "This color row currently contains Legacy material parameters.\nClick this button to switch it to Dawntrail parameters."u8,
+                ColorRow.Mode.Dawntrail => "This color row currently contains Dawntrail material parameters.\nClick this button to switch it to Legacy parameters."u8,
+                _                       => StringU8.Empty,
+            };
     }
 
     public sealed class MaterialSlotCombo;
@@ -246,23 +286,76 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         Im.Tooltip.OnHover("Drag this to the left or right to change its value."u8);
     }
 
-    private void DrawRow(Design design, MaterialValueIndex index, in ColorRow row, bool disabled)
+    private void DrawRow(Design design, MaterialValueIndex index, in ColorRow row, bool disabled, ColorRow.Mode mode)
     {
         var tmp = row;
         using var _ = Im.Disabled(disabled);
-        var applied = ImEx.ColorPickerButton("##diffuse"u8, "Change the diffuse value for this row."u8, row.Diffuse, out tmp.Diffuse, 'D');
+        var applied = ImEx.ColorPickerButton("##diffuse"u8, "Change the diffuse color for this row."u8, row.Diffuse, out tmp.Diffuse, 'D');
         Im.Line.SameInner();
-        applied |= ImEx.ColorPickerButton("##specular"u8, "Change the specular value for this row."u8, row.Specular, out tmp.Specular, 'S');
+        applied |= ImEx.ColorPickerButton("##specular"u8, "Change the specular color for this row."u8, row.Specular, out tmp.Specular, 'S');
         Im.Line.SameInner();
-        applied |= ImEx.ColorPickerButton("##emissive"u8, "Change the emissive value for this row."u8, row.Emissive, out tmp.Emissive, 'E');
+        applied |= ImEx.ColorPickerButton("##emissive"u8, "Change the emissive color for this row."u8, row.Emissive, out tmp.Emissive, 'E');
         Im.Line.SameInner();
-        Im.Item.SetNextWidth(GlossWidth * Im.Style.GlobalScale);
-        applied |= AdvancedDyePopup.DragGloss(ref tmp.GlossStrength);
-        Im.Tooltip.OnHover("Change the gloss strength for this row."u8);
+        ModeToggle(design, index, mode);
         Im.Line.SameInner();
-        Im.Item.SetNextWidth(SpecularStrengthWidth * Im.Style.GlobalScale);
-        applied |= AdvancedDyePopup.DragSpecularStrength(ref tmp.SpecularStrength);
-        Im.Tooltip.OnHover("Change the specular strength for this row."u8);
+        Im.Item.SetNextWidthScaled(SliderWidth);
+        var editAsRoughness = config.RoughnessSetting.Get(mode is ColorRow.Mode.Dawntrail);
+        applied |= (mode, editAsRoughness) switch
+        {
+            (ColorRow.Mode.Legacy, false)    => AdvancedDyePopup.DragGloss(ref tmp.GlossStrength, true),
+            (ColorRow.Mode.Legacy, true)     => AdvancedDyePopup.DragGlossAsRoughness(ref tmp.GlossStrength, true),
+            (ColorRow.Mode.Dawntrail, false) => AdvancedDyePopup.DragRoughnessAsGloss(ref tmp.Roughness, true),
+            (ColorRow.Mode.Dawntrail, true)  => AdvancedDyePopup.DragRoughness(ref tmp.Roughness, true),
+            _                                => false,
+        };
+        Im.Tooltip.OnHover(editAsRoughness
+            ? "Change the roughness for this row.\nControl and Right-Click to unset."u8
+            : "Change the gloss strength for this row.\nControl and Right-Click to unset."u8);
+        if (mode is ColorRow.Mode.Dawntrail)
+        {
+            Im.Line.SameInner();
+            Im.Item.SetNextWidthScaled(SliderWidth);
+            applied |= AdvancedDyePopup.DragMetalness(ref tmp.Metalness, true);
+            Im.Tooltip.OnHover("Change the metalness for this row.\nControl and Right-Click to unset."u8);
+        }
+        else
+        {
+            Im.Line.SameInner();
+            Im.Item.SetNextWidthScaled(SliderWidth);
+            applied |= AdvancedDyePopup.DragSpecularStrength(ref tmp.SpecularStrength, true);
+            Im.Tooltip.OnHover("Change the specular strength for this row.\nControl and Right-Click to unset."u8);
+        }
+
+        if (applied)
+            designManager.ChangeMaterialValue(design, index, tmp);
+    }
+
+    private void DrawRowExtra(Design design, MaterialValueIndex index, in ColorRow row, bool disabled, ColorRow.Mode mode, bool compact)
+    {
+        if (mode is not ColorRow.Mode.Dawntrail)
+            return;
+
+        var tmp = row;
+        using var _ = Im.Disabled(disabled);
+
+        if (!compact)
+            Im.Dummy(_buttonSize with { X = _buttonSize.X * 3 + _spacing * 2 });
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidthScaled(SheenSliderWidth);
+        var applied = AdvancedDyePopup.DragSheen(ref tmp.Sheen, true);
+        Im.Tooltip.OnHover("Change the sheen strength for this row.\nControl and Right-Click to unset."u8);
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidthScaled(SheenSliderWidth);
+        applied |= AdvancedDyePopup.DragSheenTint(ref tmp.SheenTint, true);
+        Im.Tooltip.OnHover("Change the sheen tint for this row.\nControl and Right-Click to unset."u8);
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidthScaled(SheenSliderWidth);
+        applied |= AdvancedDyePopup.DragSheenRoughness(ref tmp.SheenAperture, true);
+        Im.Tooltip.OnHover("Change the sheen roughness for this row.\nControl and Right-Click to unset."u8);
+
         if (applied)
             designManager.ChangeMaterialValue(design, index, tmp);
     }

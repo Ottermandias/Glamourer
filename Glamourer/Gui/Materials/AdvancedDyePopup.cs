@@ -32,8 +32,9 @@ public sealed unsafe class AdvancedDyePopup(
     private bool                _anyChanged;
     private bool                _forceFocus;
 
-    private const int RowsPerPage = 16;
-    private       int _rowOffset;
+    private const int  RowsPerPage = 16;
+    private       int  _rowOffset;
+    private       bool _editSheen;
 
     private bool ShouldBeDrawn()
     {
@@ -150,28 +151,51 @@ public sealed unsafe class AdvancedDyePopup(
             if ((tab.Success || select is TabItemFlags.SetSelected) && available)
             {
                 _selectedMaterial = i;
-                DrawToggle();
+                DrawToggles();
                 DrawTable(index, table);
             }
         }
     }
 
-    private void DrawToggle()
+    private void DrawToggles()
     {
-        var       buttonWidth = new Vector2(Im.ContentRegion.Available.X / 2, 0);
-        using var font        = Im.Font.PushMono();
-        using var hoverColor  = ImGuiColor.ButtonHovered.Push(Im.Style[ImGuiColor.TabHovered]);
+        var layerButtonWidth = _mode is ColorRow.Mode.Dawntrail ? Im.Font.Mono.GetCharacterAdvance(' ') * 5 + Im.Style.FramePadding.X * 2 : 0;
+        var buttonWidth =
+            (Im.ContentRegion.Available.X - (_mode is ColorRow.Mode.Dawntrail ? layerButtonWidth * 2 + Im.Style.ItemSpacing.X : 0)) / 2;
+        var       buttonSize = new Vector2(buttonWidth, 0);
+        using var font       = Im.Font.PushMono();
+        using var hoverColor = ImGuiColor.ButtonHovered.Push(Im.Style[ImGuiColor.TabHovered]);
 
         hoverColor.Push(ImGuiColor.Button, Im.Style[_rowOffset is 0 ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
-        if (ImEx.ButtonCorners("Row Pairs 1-8 "u8, buttonWidth, ButtonFlags.MouseButtonLeft, Corners.Left))
+        if (ImEx.ButtonCorners("Row Pairs 1-8 "u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Left))
             _rowOffset = 0;
         hoverColor.Pop();
 
         Im.Line.NoSpacing();
 
         hoverColor.Push(ImGuiColor.Button, Im.Style[_rowOffset is RowsPerPage ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
-        if (ImEx.ButtonCorners("Row Pairs 9-16"u8, buttonWidth, ButtonFlags.MouseButtonLeft, Corners.Right))
+        if (ImEx.ButtonCorners("Row Pairs 9-16"u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Right))
             _rowOffset = RowsPerPage;
+        hoverColor.Pop();
+
+        if (_mode is ColorRow.Mode.Dawntrail)
+        {
+            Im.Line.Same();
+
+            buttonSize = new Vector2(layerButtonWidth, 0);
+
+            hoverColor.Push(ImGuiColor.Button, Im.Style[!_editSheen ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
+            if (ImEx.ButtonCorners("Base"u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Left))
+                _editSheen = false;
+            hoverColor.Pop();
+
+            Im.Line.NoSpacing();
+
+            hoverColor.Push(ImGuiColor.Button, Im.Style[_editSheen ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
+            if (ImEx.ButtonCorners("Sheen"u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Right))
+                _editSheen = true;
+            hoverColor.Pop();
+        }
     }
 
     private void DrawContent(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures,
@@ -324,7 +348,8 @@ public sealed unsafe class AdvancedDyePopup(
         Im.Line.Same(Im.Window.Size.X - 3 * Im.Style.FrameHeight - 2 * spacing - Im.Style.WindowPadding.X);
         if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "Export this table to your clipboard."u8))
         {
-            ColorRowClipboard.Table = table;
+            ColorRowClipboard.Table     = table;
+            ColorRowClipboard.TableMode = _mode;
             CopyToClipboard(table);
         }
 
@@ -334,7 +359,7 @@ public sealed unsafe class AdvancedDyePopup(
             for (var idx = 0; idx < ColorTable.NumRows; ++idx)
             {
                 var row         = newTable[idx];
-                var internalRow = new ColorRow(row);
+                var internalRow = ColorRow.From(row, _mode);
                 var slot        = materialIndex.ToEquipSlot();
                 var weapon = slot is EquipSlot.MainHand or EquipSlot.OffHand
                     ? _state.ModelData.Weapon(slot)
@@ -355,7 +380,7 @@ public sealed unsafe class AdvancedDyePopup(
         var       changed = _state.Materials.TryGetValue(index, out var value);
         if (!changed)
         {
-            var internalRow = new ColorRow(row);
+            var internalRow = ColorRow.From(row, _mode);
             var slot        = index.ToEquipSlot();
             var weapon = slot switch
             {
@@ -370,7 +395,9 @@ public sealed unsafe class AdvancedDyePopup(
         else
         {
             _anyChanged = true;
-            value       = new MaterialValueState(value.Game, value.Model, value.DrawData, StateSource.Manual);
+            value = new MaterialValueState(value.Game,
+                value.Model.IsPartial(_mode) ? value.Model.MergeOnto(ColorRow.From(row, _mode)) : value.Model,
+                value.DrawData, StateSource.Manual);
         }
 
         ImEx.Icon.Button(LunaStyle.OnHoverIcon, "Highlight the affected colors on the character."u8);
@@ -386,45 +413,79 @@ public sealed unsafe class AdvancedDyePopup(
         }
 
         Im.Line.Same(0, Im.Style.ItemSpacing.X * 2);
-        var applied = ImEx.ColorPickerButton("##diffuse"u8, "Change the diffuse value for this row."u8, value.Model.Diffuse,
+        var applied = ImEx.ColorPickerButton("##diffuse"u8, "Change the diffuse color for this row."u8, value.Model.Diffuse,
             out value.Model.Diffuse, 'D');
 
         var spacing = Im.Style.ItemInnerSpacing;
         Im.Line.Same(0, spacing.X);
-        applied |= ImEx.ColorPickerButton("##specular"u8, "Change the specular value for this row."u8, value.Model.Specular,
+        applied |= ImEx.ColorPickerButton("##specular"u8, "Change the specular color for this row."u8, value.Model.Specular,
             out value.Model.Specular, 'S');
 
         Im.Line.Same(0, spacing.X);
-        applied |= ImEx.ColorPickerButton("##emissive"u8, "Change the emissive value for this row."u8, value.Model.Emissive,
+        applied |= ImEx.ColorPickerButton("##emissive"u8, "Change the emissive color for this row."u8, value.Model.Emissive,
             out value.Model.Emissive, 'E');
-
+        
         Im.Line.Same(0, spacing.X);
-        if (_mode is not ColorRow.Mode.Dawntrail)
+
+        if (_mode is ColorRow.Mode.Dawntrail && _editSheen)
         {
-            Im.Item.SetNextWidthScaled(100);
-            applied |= DragGloss(ref value.Model.GlossStrength);
-            Im.Tooltip.OnHover("Change the gloss strength for this row."u8);
+            // The other layout has 2 items of width 100*sc and one spacing, for a total of 200*sc + 1*sp.
+            // This layout has 3 items and two spacings: 3*w + 2*sp = 200*sc + 1*sp.
+            var allItemsWidth = 200 * Im.Style.GlobalScale - spacing.X;
+            var itemWidth     = MathF.Floor(allItemsWidth / 3);
+
+            Im.Item.SetNextWidth(allItemsWidth - itemWidth * 2);
+            applied |= DragSheen(ref value.Model.Sheen, false);
+            Im.Tooltip.OnHover("Change the sheen strength for this row."u8);
+
+            Im.Line.Same(0, spacing.X);
+
+            Im.Item.SetNextWidth(itemWidth);
+            applied |= DragSheenTint(ref value.Model.SheenTint, false);
+            Im.Tooltip.OnHover("Change the sheen tint for this row."u8);
+
+            Im.Line.Same(0, spacing.X);
+
+            Im.Item.SetNextWidth(itemWidth);
+            applied |= DragSheenRoughness(ref value.Model.SheenAperture, false);
+            Im.Tooltip.OnHover("Change the sheen roughness for this row."u8);
         }
         else
         {
-            Im.Dummy(new Vector2(100 * Im.Style.GlobalScale, 0));
-        }
-
-        Im.Line.Same(0, spacing.X);
-        if (_mode is not ColorRow.Mode.Dawntrail)
-        {
             Im.Item.SetNextWidthScaled(100);
-            applied |= DragSpecularStrength(ref value.Model.SpecularStrength);
-            Im.Tooltip.OnHover("Change the specular strength for this row."u8);
-        }
-        else
-        {
-            Im.Dummy(new Vector2(100 * Im.Style.GlobalScale, 0));
+            var editAsRoughness = config.RoughnessSetting.Get(_mode is ColorRow.Mode.Dawntrail);
+            applied |= (_mode, editAsRoughness) switch
+            {
+                (ColorRow.Mode.Legacy, false)    => DragGloss(ref value.Model.GlossStrength, false),
+                (ColorRow.Mode.Legacy, true)     => DragGlossAsRoughness(ref value.Model.GlossStrength, false),
+                (ColorRow.Mode.Dawntrail, false) => DragRoughnessAsGloss(ref value.Model.Roughness, false),
+                (ColorRow.Mode.Dawntrail, true)  => DragRoughness(ref value.Model.Roughness, false),
+                _                                => false,
+            };
+            Im.Tooltip.OnHover(editAsRoughness ? "Change the roughness for this row."u8 : "Change the gloss strength for this row."u8);
+
+            Im.Line.Same(0, spacing.X);
+            if (_mode is not ColorRow.Mode.Dawntrail)
+            {
+                Im.Item.SetNextWidthScaled(100);
+                applied |= DragSpecularStrength(ref value.Model.SpecularStrength, false);
+                Im.Tooltip.OnHover("Change the specular strength for this row."u8);
+            }
+            else
+            {
+                Im.Item.SetNextWidthScaled(100);
+                applied |= DragMetalness(ref value.Model.Metalness, false);
+                Im.Tooltip.OnHover("Change the metalness for this row."u8);
+            }
         }
 
         Im.Line.Same(0, spacing.X);
         if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "Export this row to your clipboard."u8))
-            ColorRowClipboard.Row = value.Model;
+        {
+            ColorRowClipboard.Row     = value.Model;
+            ColorRowClipboard.RowMode = _mode;
+        }
+
         Im.Line.Same(0, spacing.X);
         if (ImEx.Icon.Button(LunaStyle.FromClipboardIcon, "Import an exported row from your clipboard onto this row."u8,
                 !ColorRowClipboard.IsSet))
@@ -441,12 +502,12 @@ public sealed unsafe class AdvancedDyePopup(
             stateManager.ChangeMaterialValue(_state, index, value, ApplySettings.Manual);
     }
 
-    public static bool DragGloss(ref float value)
+    public static bool DragGloss(ref float value, bool canUnset)
     {
-        var tmp      = value;
+        var tmp      = float.IsNaN(value) ? ColorRow.DefaultGlossStrength : value;
         var minValue = Im.Io.KeyControl ? 0f : (float)Half.Epsilon;
-        if (!Im.Drag("##Gloss"u8, ref tmp, "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value), SliderFlags.AlwaysClamp))
-            return false;
+        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? "\u2014 G"u8 : "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value), SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, minValue, (float)Half.MaxValue);
         if (tmp2 == value)
@@ -456,17 +517,128 @@ public sealed unsafe class AdvancedDyePopup(
         return true;
     }
 
-    public static bool DragSpecularStrength(ref float value)
+    public static bool DragGlossAsRoughness(ref float value, bool canUnset)
     {
-        var tmp = value * 100f;
-        if (!Im.Drag("##SpecularStrength"u8, ref tmp, "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f, 0.05f, SliderFlags.AlwaysClamp))
+        var roughness = ColorTableRow.RoughnessFromShininess(float.IsNaN(value) ? ColorRow.DefaultGlossStrength : value);
+        var tmp       = roughness * 100f;
+        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? "\u2014 Rg"u8 : "%.0f%% Rg"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
+        if (tmp2 == roughness)
             return false;
+
+        value = ColorTableRow.ShininessFromRoughness(tmp2);
+        return true;
+    }
+
+    public static bool DragSpecularStrength(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultSpecularStrength : value) * 100f;
+        if (!Im.Drag("##SpecularStrength"u8, ref tmp, float.IsNaN(value) ? "\u2014 SS"u8 : "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f, 0.05f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, 0f, (float)Half.MaxValue * 100f) / 100f;
         if (tmp2 == value)
             return false;
 
         value = tmp2;
+        return true;
+    }
+
+    public static bool DragRoughness(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultRoughness : value) * 100f;
+        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? "\u2014 Rg"u8 : "%.0f%% Rg"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragRoughnessAsGloss(ref float value, bool canUnset)
+    {
+        var gloss = ColorTableRow.ShininessFromRoughness(float.IsNaN(value) ? ColorRow.DefaultRoughness : value);
+        var tmp   = gloss;
+        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? "\u2014 G"u8 : "%.1f G"u8, 0.001f, (float)Half.Epsilon, Math.Max(0.01f, 0.005f * gloss), SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, (float)Half.Epsilon, (float)Half.MaxValue);
+        if (tmp2 == gloss)
+            return false;
+
+        value = ColorTableRow.RoughnessFromShininess(tmp2);
+        return true;
+    }
+
+    public static bool DragMetalness(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultMetalness : value) * 100f;
+        if (!Im.Drag("##Metalness"u8, ref tmp, float.IsNaN(value) ? "\u2014 Mt"u8 : "%.0f%% Mt"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragSheen(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultSheen : value) * 100f;
+        if (!Im.Drag("##Sheen"u8, ref tmp, float.IsNaN(value) ? "\u2014 Sh"u8 : "%.0f%% Sh"u8, 0f, 100f * (float)Half.MaxValue, 0.25f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, 0f, 100f * (float)Half.MaxValue) / 100f;
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragSheenTint(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultSheenTint : value) * 100f;
+        if (!Im.Drag("##SheenTint"u8, ref tmp, float.IsNaN(value) ? "\u2014 ST"u8 : "%.0f%% ST"u8, -100f * (float)Half.MaxValue, 100f * (float)Half.MaxValue, 0.25f,
+                SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, -100f * (float)Half.MaxValue, 100f * (float)Half.MaxValue) / 100f;
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragSheenRoughness(ref float value, bool canUnset)
+    {
+        var tmp = 100f / (float.IsNaN(value) ? ColorRow.DefaultSheenAperture : value);
+        if (!Im.Drag("##SheenAperture"u8, ref tmp, float.IsNaN(value) ? "\u2014 SR"u8 : "%.0f%% SR"u8, 100f / (float)Half.MaxValue, 100f / (float)Half.Epsilon, 0.25f,
+                SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(100f / tmp, (float)Half.Epsilon, (float)Half.MaxValue);
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    private static bool UnsetBehavior(ref float value, bool canUnset)
+    {
+        if (!(canUnset && Im.Item.RightClicked() && Im.Io.KeyControl))
+            return false;
+
+        value = float.NaN;
         return true;
     }
 

@@ -18,6 +18,8 @@ public static class ColorRowClipboard
             field      = value;
         }
     }
+    
+    public static ColorRow.Mode TableMode { get; set; }
 
     public static ColorRow Row
     {
@@ -28,4 +30,6 @@ public static class ColorRowClipboard
             field = value;
         }
     }
+    
+    public static ColorRow.Mode RowMode { get; set; }
 }

@@ -238,6 +238,7 @@ public sealed class SettingsTab(
         Checkbox("Smaller Equip Display"u8, "Use single-line display without icons and small dye buttons instead of double-line display."u8,
             config.SmallEquip,              v => config.SmallEquip = v);
         DrawHeightUnitSettings();
+        DrawRoughnessSettings();
         Checkbox("Show Application Checkboxes"u8,
             "Show the application checkboxes in the Customization and Equipment panels of the design tab, instead of only showing them under Application Rules."u8,
             !config.HideApplyCheckmarks, v => config.HideApplyCheckmarks = !v);
@@ -529,15 +530,15 @@ public sealed class SettingsTab(
                 delete = mod;
 
             Im.Line.SameInner();
-            ImEx.TextFramed(mod, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight});
+            ImEx.TextFramed(mod, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
         }
 
         if (delete.Length > 0)
             ignoredMods.Remove(delete);
 
-        var tt = _newIgnoredMod.Length is 0       ? "Please enter a new mod name or mod directory to ignore."u8 :
+        var tt = _newIgnoredMod.Length is 0      ? "Please enter a new mod name or mod directory to ignore."u8 :
             ignoredMods.Contains(_newIgnoredMod) ? "This mod is already ignored."u8 :
-                                                    "Ignore all mods with this name or directory in the Unlocks tab."u8;
+                                                   "Ignore all mods with this name or directory in the Unlocks tab."u8;
         if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, tt[0] is not (byte)'I'))
         {
             ignoredMods.Add(_newIgnoredMod);
@@ -547,5 +548,25 @@ public sealed class SettingsTab(
         Im.Line.SameInner();
         Im.Item.SetNextWidthFull();
         Im.Input.Text("##newMod"u8, ref _newIgnoredMod, "Ignore this Mod..."u8);
+    }
+
+    private void DrawRoughnessSettings()
+    {
+        Im.Item.SetNextWidthScaled(300);
+        using (var combo = Im.Combo.Begin("##alwaysEditAsRoughness"u8, config.RoughnessSetting.ToNameU8()))
+        {
+            if (combo)
+                foreach (var type in RoughnessSetting.Values)
+                {
+                    if (Im.Selectable(type.ToNameU8(), config.RoughnessSetting == type))
+                    {
+                        config.RoughnessSetting = type;
+                        config.Save();
+                    }
+                }
+        }
+
+        LunaStyle.DrawAlignedHelpMarkerLabel("Gloss Strength and Roughness Display Type"u8,
+            "Select how to display and edit Gloss Strength and Roughness values.\nThe conversion formula used is an approximation and does not account for all the subtleties of legacy versus PBR shaders."u8);
     }
 }

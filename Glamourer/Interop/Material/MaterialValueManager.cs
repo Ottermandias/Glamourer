@@ -11,7 +11,7 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Interop.Material;
 
 /// <summary> Values are not squared. </summary>
-public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, float specularStrength, float glossStrength)
+public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, float specularStrength, float glossStrength, float roughness, float metalness, float sheen, float sheenTint, float sheenAperture)
 {
     public enum Mode
     {
@@ -19,26 +19,50 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
         Dawntrail,
     }
 
-    public static readonly ColorRow Empty = new(Vector3.Zero, Vector3.Zero, Vector3.Zero, 1f, 1f);
+    public const float DefaultSpecularStrength = 1f;
+    public const float DefaultGlossStrength    = 20f;
+    public const float DefaultRoughness        = 0.5f;
+    public const float DefaultMetalness        = 0f;
+    public const float DefaultSheen            = 0.1f;
+    public const float DefaultSheenTint        = 0.2f;
+    public const float DefaultSheenAperture    = 5f;
+
+    public static readonly ColorRow Empty = new(Vector3.Zero, Vector3.Zero, Vector3.Zero, float.NaN, float.NaN, float.NaN, float.NaN, float.NaN,
+        float.NaN, float.NaN);
 
     public Vector3 Diffuse          = diffuse;
     public Vector3 Specular         = specular;
     public Vector3 Emissive         = emissive;
     public float   SpecularStrength = specularStrength;
     public float   GlossStrength    = glossStrength;
+    public float   Roughness        = roughness;
+    public float   Metalness        = metalness;
+    public float   Sheen            = sheen;
+    public float   SheenTint        = sheenTint;
+    public float   SheenAperture    = sheenAperture;
 
-    public ColorRow(in ColorTableRow row)
-        : this(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
-            (float)row.LegacySpecularStrength(),
-            (float)row.LegacyGloss())
-    { }
+    public static ColorRow From(in ColorTableRow row, Mode mode)
+        => mode switch
+        {
+            Mode.Legacy => new(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
+                (float)row.LegacySpecularStrength(), (float)row.LegacyGloss(), float.NaN, float.NaN, float.NaN, float.NaN, float.NaN),
+            Mode.Dawntrail => new(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
+                float.NaN, float.NaN, (float)row.DawntrailRoughness(), (float)row.DawntrailMetalness(), (float)row.DawntrailSheen(),
+                (float)row.DawntrailSheenTint(), (float)row.DawntrailSheenAperture()),
+            _ => throw new NotImplementedException(),
+        };
 
-    public readonly bool NearEqual(in ColorRow rhs)
+    public readonly bool NearEqual(in ColorRow rhs, bool skipEmpty = false)
         => Diffuse.NearEqual(rhs.Diffuse)
          && Specular.NearEqual(rhs.Specular)
          && Emissive.NearEqual(rhs.Emissive)
-         && SpecularStrength.NearEqual(rhs.SpecularStrength)
-         && GlossStrength.NearEqual(rhs.GlossStrength);
+         && (float.IsNaN(SpecularStrength) ? skipEmpty || float.IsNaN(rhs.SpecularStrength) : SpecularStrength.NearEqual(rhs.SpecularStrength))
+         && (float.IsNaN(GlossStrength) ? skipEmpty || float.IsNaN(rhs.GlossStrength) : GlossStrength.NearEqual(rhs.GlossStrength))
+         && (float.IsNaN(Roughness) ? skipEmpty || float.IsNaN(rhs.Roughness) : Roughness.NearEqual(rhs.Roughness))
+         && (float.IsNaN(Metalness) ? skipEmpty || float.IsNaN(rhs.Metalness) : Metalness.NearEqual(rhs.Metalness))
+         && (float.IsNaN(Sheen) ? skipEmpty || float.IsNaN(rhs.Sheen) : Sheen.NearEqual(rhs.Sheen))
+         && (float.IsNaN(SheenAperture) ? skipEmpty || float.IsNaN(rhs.SheenAperture) : SheenAperture.NearEqual(rhs.SheenAperture))
+         && (float.IsNaN(SheenTint) ? skipEmpty || float.IsNaN(rhs.SheenTint) : SheenTint.NearEqual(rhs.SheenTint));
 
     private static Vector3 Square(Vector3 value)
         => new(Square(value.X), Square(value.Y), Square(value.Z));
@@ -76,23 +100,85 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
             ret               = true;
         }
 
-        if (mode is Mode.Legacy)
+        switch (mode)
         {
-            if (!((float)row.LegacySpecularStrength()).NearEqual(SpecularStrength))
-            {
-                row.LegacySpecularStrengthWrite() = (Half)SpecularStrength;
-                ret                               = true;
-            }
+            case Mode.Legacy:
+                if (!float.IsNaN(SpecularStrength) && !((float)row.LegacySpecularStrength()).NearEqual(SpecularStrength))
+                {
+                    row.LegacySpecularStrengthWrite() = (Half)SpecularStrength;
+                    ret                               = true;
+                }
 
-            if (!((float)row.LegacyGloss()).NearEqual(GlossStrength))
-            {
-                row.LegacyGlossWrite() = (Half)GlossStrength;
-                ret                    = true;
-            }
+                if (!float.IsNaN(GlossStrength) && !((float)row.LegacyGloss()).NearEqual(GlossStrength))
+                {
+                    row.LegacyGlossWrite() = (Half)GlossStrength;
+                    ret                    = true;
+                }
+
+                break;
+            case Mode.Dawntrail:
+                if (!float.IsNaN(Roughness) && !((float)row.DawntrailRoughness()).NearEqual(Roughness))
+                {
+                    row.DawntrailRoughnessWrite() = (Half)Roughness;
+                    ret                           = true;
+                }
+
+                if (!float.IsNaN(Metalness) && !((float)row.DawntrailMetalness()).NearEqual(Metalness))
+                {
+                    row.DawntrailMetalnessWrite() = (Half)Metalness;
+                    ret                           = true;
+                }
+
+                if (!float.IsNaN(Sheen) && !((float)row.DawntrailSheen()).NearEqual(Sheen))
+                {
+                    row.DawntrailSheenWrite() = (Half)Sheen;
+                    ret                       = true;
+                }
+
+                if (!float.IsNaN(SheenAperture) && !((float)row.DawntrailSheenAperture()).NearEqual(SheenAperture))
+                {
+                    row.DawntrailSheenApertureWrite() = (Half)SheenAperture;
+                    ret                               = true;
+                }
+
+                if (!float.IsNaN(SheenTint) && !((float)row.DawntrailSheenTint()).NearEqual(SheenTint))
+                {
+                    row.DawntrailSheenTintWrite() = (Half)SheenTint;
+                    ret                           = true;
+                }
+
+                break;
+            default: throw new NotImplementedException();
         }
 
         return ret;
     }
+
+    public readonly ColorRow MergeOnto(ColorRow previous)
+        => new(Diffuse, Specular, Emissive, float.IsNaN(SpecularStrength) ? previous.SpecularStrength : SpecularStrength,
+            float.IsNaN(GlossStrength) ? previous.GlossStrength : GlossStrength, float.IsNaN(Roughness) ? previous.Roughness : Roughness,
+            float.IsNaN(Metalness) ? previous.Metalness : Metalness, float.IsNaN(Sheen) ? previous.Sheen : Sheen,
+            float.IsNaN(SheenTint) ? previous.SheenTint : SheenTint, float.IsNaN(SheenAperture) ? previous.SheenAperture : SheenAperture);
+
+    public readonly bool IsPartial(Mode mode)
+        => mode switch
+        {
+            Mode.Legacy => float.IsNaN(SpecularStrength) || float.IsNaN(GlossStrength),
+            Mode.Dawntrail => float.IsNaN(Roughness)
+             || float.IsNaN(Metalness)
+             || float.IsNaN(Sheen)
+             || float.IsNaN(SheenTint)
+             || float.IsNaN(SheenAperture),
+            _ => throw new NotImplementedException(),
+        };
+
+    public readonly Mode GuessMode()
+        => float.IsNaN(Roughness) && float.IsNaN(Metalness) && float.IsNaN(Sheen) && float.IsNaN(SheenTint) && float.IsNaN(SheenAperture)
+            ? Mode.Legacy
+            : Mode.Dawntrail;
+
+    public override readonly string ToString()
+        => $"[ColorRow Diffuse={Diffuse} Specular={Specular} Emissive={Emissive} SpecularStrength={SpecularStrength} GlossStrength={GlossStrength} Roughness={Roughness} Metalness={Metalness} Sheen={Sheen} SheenTint={SheenTint} SheenAperture={SheenAperture}]";
 }
 
 internal static class ColorTableRowExtensions
@@ -103,19 +189,50 @@ internal static class ColorTableRowExtensions
     internal static Half LegacyGloss(this in ColorTableRow row)
         => row[3];
 
+    internal static Half DawntrailSheen(this in ColorTableRow row)
+        => row[12];
+
+    internal static Half DawntrailSheenTint(this in ColorTableRow row)
+        => row[13];
+
+    internal static Half DawntrailSheenAperture(this in ColorTableRow row)
+        => row[14];
+
+    internal static Half DawntrailRoughness(this in ColorTableRow row)
+        => row[16];
+
+    internal static Half DawntrailMetalness(this in ColorTableRow row)
+        => row[18];
+
     internal static ref Half LegacySpecularStrengthWrite(this ref ColorTableRow row)
         => ref row[7];
 
     internal static ref Half LegacyGlossWrite(this ref ColorTableRow row)
         => ref row[3];
+
+    internal static ref Half DawntrailSheenWrite(this ref ColorTableRow row)
+        => ref row[12];
+
+    internal static ref Half DawntrailSheenTintWrite(this ref ColorTableRow row)
+        => ref row[13];
+
+    internal static ref Half DawntrailSheenApertureWrite(this ref ColorTableRow row)
+        => ref row[14];
+
+    internal static ref Half DawntrailRoughnessWrite(this ref ColorTableRow row)
+        => ref row[16];
+
+    internal static ref Half DawntrailMetalnessWrite(this ref ColorTableRow row)
+        => ref row[18];
 }
 
 [JsonConverter(typeof(Converter))]
-public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert)
+public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, ColorRow.Mode mode)
 {
-    public ColorRow Value   = value;
-    public bool     Enabled = enabled;
-    public bool     Revert  = revert;
+    public ColorRow      Value   = value;
+    public bool          Enabled = enabled;
+    public bool          Revert  = revert;
+    public ColorRow.Mode Mode    = mode;
 
     public readonly bool Apply(ref MaterialValueState state)
     {
@@ -145,6 +262,8 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert)
             writer.WriteStartObject();
             writer.WritePropertyName("Revert");
             writer.WriteValue(value.Revert);
+            writer.WritePropertyName("Mode");
+            writer.WriteValue(value.Mode.ToString());
             writer.WritePropertyName("DiffuseR");
             writer.WriteValue(value.Value.Diffuse.X);
             writer.WritePropertyName("DiffuseG");
@@ -157,16 +276,54 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert)
             writer.WriteValue(value.Value.Specular.Y);
             writer.WritePropertyName("SpecularB");
             writer.WriteValue(value.Value.Specular.Z);
-            writer.WritePropertyName("SpecularA");
-            writer.WriteValue(value.Value.SpecularStrength);
+            if (!float.IsNaN(value.Value.SpecularStrength))
+            {
+                writer.WritePropertyName("SpecularA");
+                writer.WriteValue(value.Value.SpecularStrength);
+            }
+
             writer.WritePropertyName("EmissiveR");
             writer.WriteValue(value.Value.Emissive.X);
             writer.WritePropertyName("EmissiveG");
             writer.WriteValue(value.Value.Emissive.Y);
             writer.WritePropertyName("EmissiveB");
             writer.WriteValue(value.Value.Emissive.Z);
-            writer.WritePropertyName("Gloss");
-            writer.WriteValue(value.Value.GlossStrength);
+            if (!float.IsNaN(value.Value.GlossStrength))
+            {
+                writer.WritePropertyName("Gloss");
+                writer.WriteValue(value.Value.GlossStrength);
+            }
+
+            if (!float.IsNaN(value.Value.Roughness))
+            {
+                writer.WritePropertyName("Roughness");
+                writer.WriteValue(value.Value.Roughness);
+            }
+
+            if (!float.IsNaN(value.Value.Metalness))
+            {
+                writer.WritePropertyName("Metalness");
+                writer.WriteValue(value.Value.Metalness);
+            }
+
+            if (!float.IsNaN(value.Value.Sheen))
+            {
+                writer.WritePropertyName("Sheen");
+                writer.WriteValue(value.Value.Sheen);
+            }
+
+            if (!float.IsNaN(value.Value.SheenTint))
+            {
+                writer.WritePropertyName("SheenTint");
+                writer.WriteValue(value.Value.SheenTint);
+            }
+
+            if (!float.IsNaN(value.Value.SheenAperture))
+            {
+                writer.WritePropertyName("SheenAperture");
+                writer.WriteValue(value.Value.SheenAperture);
+            }
+
             writer.WritePropertyName("Enabled");
             writer.WriteValue(value.Enabled);
             writer.WriteEndObject();
@@ -177,19 +334,26 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert)
             JsonSerializer serializer)
         {
             var obj = JObject.Load(reader);
-            Set(ref existingValue.Revert,                 obj["Revert"]?.Value<bool>());
-            Set(ref existingValue.Value.Diffuse.X,        obj["DiffuseR"]?.Value<float>());
-            Set(ref existingValue.Value.Diffuse.Y,        obj["DiffuseG"]?.Value<float>());
-            Set(ref existingValue.Value.Diffuse.Z,        obj["DiffuseB"]?.Value<float>());
-            Set(ref existingValue.Value.Specular.X,       obj["SpecularR"]?.Value<float>());
-            Set(ref existingValue.Value.Specular.Y,       obj["SpecularG"]?.Value<float>());
-            Set(ref existingValue.Value.Specular.Z,       obj["SpecularB"]?.Value<float>());
-            Set(ref existingValue.Value.SpecularStrength, obj["SpecularA"]?.Value<float>());
-            Set(ref existingValue.Value.Emissive.X,       obj["EmissiveR"]?.Value<float>());
-            Set(ref existingValue.Value.Emissive.Y,       obj["EmissiveG"]?.Value<float>());
-            Set(ref existingValue.Value.Emissive.Z,       obj["EmissiveB"]?.Value<float>());
-            Set(ref existingValue.Value.GlossStrength,    obj["Gloss"]?.Value<float>());
-            existingValue.Enabled = obj["Enabled"]?.Value<bool>() ?? false;
+            if (obj["Mode"]?.Value<string>() is { } mode)
+                Enum.TryParse(mode, true, out existingValue.Mode);
+            Set(ref existingValue.Revert,           obj["Revert"]?.Value<bool>());
+            Set(ref existingValue.Value.Diffuse.X,  obj["DiffuseR"]?.Value<float>());
+            Set(ref existingValue.Value.Diffuse.Y,  obj["DiffuseG"]?.Value<float>());
+            Set(ref existingValue.Value.Diffuse.Z,  obj["DiffuseB"]?.Value<float>());
+            Set(ref existingValue.Value.Specular.X, obj["SpecularR"]?.Value<float>());
+            Set(ref existingValue.Value.Specular.Y, obj["SpecularG"]?.Value<float>());
+            Set(ref existingValue.Value.Specular.Z, obj["SpecularB"]?.Value<float>());
+            Set(ref existingValue.Value.Emissive.X, obj["EmissiveR"]?.Value<float>());
+            Set(ref existingValue.Value.Emissive.Y, obj["EmissiveG"]?.Value<float>());
+            Set(ref existingValue.Value.Emissive.Z, obj["EmissiveB"]?.Value<float>());
+            existingValue.Value.SpecularStrength = obj["SpecularA"]?.Value<float>() ?? float.NaN;
+            existingValue.Value.GlossStrength    = obj["Gloss"]?.Value<float>() ?? float.NaN;
+            existingValue.Value.Roughness        = obj["Roughness"]?.Value<float>() ?? float.NaN;
+            existingValue.Value.Metalness        = obj["Metalness"]?.Value<float>() ?? float.NaN;
+            existingValue.Value.Sheen            = obj["Sheen"]?.Value<float>() ?? float.NaN;
+            existingValue.Value.SheenTint        = obj["SheenTint"]?.Value<float>() ?? float.NaN;
+            existingValue.Value.SheenAperture    = obj["SheenAperture"]?.Value<float>() ?? float.NaN;
+            existingValue.Enabled                = obj["Enabled"]?.Value<bool>() ?? false;
             return existingValue;
 
             static void Set<T>(ref T target, T? value)
@@ -222,10 +386,13 @@ public struct MaterialValueState(
          && DrawData.Weapon == rhsData.Weapon
          && DrawData.Variant == rhsData.Variant
          && DrawData.Stains == rhsData.Stains
-         && Game.NearEqual(rhsRow);
+         && rhsRow.NearEqual(Game, true);
 
     public readonly MaterialValueDesign Convert()
-        => new(Model, true, false);
+        => new(Model, true, false, Model.GuessMode());
+
+    public readonly MaterialValueState MergeOnto(in ColorRow previous)
+        => new(Game, Model.MergeOnto(previous), DrawData, Source);
 }
 
 public readonly struct MaterialValueManager<T>
