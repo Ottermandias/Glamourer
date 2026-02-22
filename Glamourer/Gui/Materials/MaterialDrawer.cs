@@ -12,7 +12,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
 {
     public const float SliderWidth      = 90;
     public const float ModeWidth        = 45;
-    public const float SheenSliderWidth = 75; // Should satisfy 2*Slider + Mode = 3*SheenSlider
+    public const float SheenSliderWidth = (2 * SliderWidth + ModeWidth) / 3;
 
     private int                _newMaterialIdx;
     private int                _newRowIdx;
@@ -179,7 +179,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
 
     private void ModeToggle(Design design, MaterialValueIndex index, ColorRow.Mode mode)
     {
-        if (Im.Button(ToCallsignString(mode), new Vector2(ModeWidth * Im.Style.GlobalScale, 0)))
+        if (Im.Button(ToCallsignString(mode), ImEx.ScaledVectorX(ModeWidth)))
             designManager.ChangeMaterialMode(design, index, GetNextMode(mode));
         Im.Tooltip.OnHover(ToTooltipString(mode));
 
@@ -190,7 +190,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
             {
                 ColorRow.Mode.Legacy    => "Lgc###mode"u8,
                 ColorRow.Mode.Dawntrail => "DT###mode"u8,
-                _                       => throw new NotImplementedException(),
+                _                       => StringU8.Empty,
             };
 
         static ColorRow.Mode GetNextMode(ColorRow.Mode mode)
@@ -198,7 +198,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
             {
                 ColorRow.Mode.Legacy    => ColorRow.Mode.Dawntrail,
                 ColorRow.Mode.Dawntrail => ColorRow.Mode.Legacy,
-                _                       => throw new NotImplementedException(),
+                _                       => ColorRow.Mode.Dawntrail,
             };
 
         static ReadOnlySpan<byte> ToTooltipString(ColorRow.Mode mode)
@@ -206,7 +206,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
             {
                 ColorRow.Mode.Legacy    => "This color row currently contains Legacy material parameters.\nClick this button to switch it to Dawntrail parameters."u8,
                 ColorRow.Mode.Dawntrail => "This color row currently contains Dawntrail material parameters.\nClick this button to switch it to Legacy parameters."u8,
-                _                       => throw new NotImplementedException(),
+                _                       => StringU8.Empty,
             };
     }
 
@@ -298,15 +298,15 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         Im.Line.SameInner();
         ModeToggle(design, index, mode);
         Im.Line.SameInner();
-        Im.Item.SetNextWidth(SliderWidth * Im.Style.GlobalScale);
-        var editAsRoughness = config.AlwaysEditAsRoughness ?? mode is ColorRow.Mode.Dawntrail;
+        Im.Item.SetNextWidthScaled(SliderWidth);
+        var editAsRoughness = config.RoughnessSetting.Get(mode is ColorRow.Mode.Dawntrail);
         applied |= (mode, editAsRoughness) switch
         {
             (ColorRow.Mode.Legacy, false)    => AdvancedDyePopup.DragGloss(ref tmp.GlossStrength, true),
             (ColorRow.Mode.Legacy, true)     => AdvancedDyePopup.DragGlossAsRoughness(ref tmp.GlossStrength, true),
             (ColorRow.Mode.Dawntrail, false) => AdvancedDyePopup.DragRoughnessAsGloss(ref tmp.Roughness, true),
             (ColorRow.Mode.Dawntrail, true)  => AdvancedDyePopup.DragRoughness(ref tmp.Roughness, true),
-            _                                => throw new NotImplementedException(),
+            _                                => false,
         };
         Im.Tooltip.OnHover(editAsRoughness
             ? "Change the roughness for this row.\nControl and Right-Click to unset."u8
@@ -314,14 +314,14 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         if (mode is ColorRow.Mode.Dawntrail)
         {
             Im.Line.SameInner();
-            Im.Item.SetNextWidth(SliderWidth * Im.Style.GlobalScale);
+            Im.Item.SetNextWidthScaled(SliderWidth);
             applied |= AdvancedDyePopup.DragMetalness(ref tmp.Metalness, true);
             Im.Tooltip.OnHover("Change the metalness for this row.\nControl and Right-Click to unset."u8);
         }
         else
         {
             Im.Line.SameInner();
-            Im.Item.SetNextWidth(SliderWidth * Im.Style.GlobalScale);
+            Im.Item.SetNextWidthScaled(SliderWidth);
             applied |= AdvancedDyePopup.DragSpecularStrength(ref tmp.SpecularStrength, true);
             Im.Tooltip.OnHover("Change the specular strength for this row.\nControl and Right-Click to unset."u8);
         }
@@ -339,20 +339,20 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         using var _ = Im.Disabled(disabled);
 
         if (!compact)
-            Im.Dummy(new Vector2(_buttonSize.X * 3 + _spacing * 2, _buttonSize.Y));
+            Im.Dummy(_buttonSize with { X = _buttonSize.X * 3 + _spacing * 2 });
 
         Im.Line.SameInner();
-        Im.Item.SetNextWidth(SheenSliderWidth * Im.Style.GlobalScale);
+        Im.Item.SetNextWidthScaled(SheenSliderWidth);
         var applied = AdvancedDyePopup.DragSheen(ref tmp.Sheen, true);
         Im.Tooltip.OnHover("Change the sheen strength for this row.\nControl and Right-Click to unset."u8);
 
         Im.Line.SameInner();
-        Im.Item.SetNextWidth(SheenSliderWidth * Im.Style.GlobalScale);
+        Im.Item.SetNextWidthScaled(SheenSliderWidth);
         applied |= AdvancedDyePopup.DragSheenTint(ref tmp.SheenTint, true);
         Im.Tooltip.OnHover("Change the sheen tint for this row.\nControl and Right-Click to unset."u8);
 
         Im.Line.SameInner();
-        Im.Item.SetNextWidth(SheenSliderWidth * Im.Style.GlobalScale);
+        Im.Item.SetNextWidthScaled(SheenSliderWidth);
         applied |= AdvancedDyePopup.DragSheenRoughness(ref tmp.SheenAperture, true);
         Im.Tooltip.OnHover("Change the sheen roughness for this row.\nControl and Right-Click to unset."u8);
 
