@@ -384,14 +384,14 @@ public sealed class EquipmentDrawer : IUiService
             var change = small
                 ? _stainCombo.Draw("##stain"u8, stain, out var newStain, Im.Style.FrameHeight)
                 : _stainCombo.Draw("##stain"u8, stain, out newStain,     width);
-
+            
             _itemCopy.HandleCopyPaste(data, index);
             if (!change)
                 DrawStainDragDrop(data, index, stain, found);
-
+            
             if (index < data.CurrentStains.Count - 1)
                 Im.Line.SameInner();
-
+            
             if (change)
                 data.SetStains(data.CurrentStains.With(index, newStain.RowIndex));
             if (ResetOrClear(data.Locked, false, data.AllowRevert, true, stainId, data.GameStains[index], Stain.None.RowIndex,
