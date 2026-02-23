@@ -1,4 +1,5 @@
-﻿using Glamourer.Designs;
+﻿using Glamourer.Config;
+using Glamourer.Designs;
 using Glamourer.GameData;
 using ImSharp;
 using Luna;
@@ -10,15 +11,18 @@ public sealed class NpcSelection : IUiService, IDisposable
     private readonly LocalNpcAppearanceData _data;
     private readonly DesignColors           _colors;
     private readonly DesignConverter        _converter;
+    private readonly UiConfig               _config;
 
-    public NpcSelection(LocalNpcAppearanceData data, DesignColors colors, DesignConverter converter)
+    public NpcSelection(LocalNpcAppearanceData data, DesignColors colors, DesignConverter converter, UiConfig config, NpcCustomizeSet npcs)
     {
         _data      = data;
         _colors    = colors;
         _converter = converter;
+        _config    = config;
 
         _data.DataChanged    += OnDataChanged;
         _colors.ColorChanged += OnColorChanged;
+        InitialSelect(npcs);
     }
 
     private void OnColorChanged()
@@ -81,17 +85,34 @@ public sealed class NpcSelection : IUiService, IDisposable
 
     public void Update(in NpcCacheItem item)
     {
-        Data        = item.Npc;
-        Name        = item.Name.Utf8;
-        Favorite    = item.Favorite;
-        ColorText   = item.ColorText;
-        ColorTextU8 = ColorText.Length > 0 ? new StringU8(ColorText) : DesignColors.AutomaticNameU8;
-        Color       = item.Color;
+        Data                = item.Npc;
+        Name                = item.Name.Utf8;
+        Favorite            = item.Favorite;
+        ColorText           = item.ColorText;
+        ColorTextU8         = ColorText.Length > 0 ? new StringU8(ColorText) : DesignColors.AutomaticNameU8;
+        Color               = item.Color;
+        _config.SelectedNpc = Data.Id;
     }
 
     public void Dispose()
     {
         _data.DataChanged    -= OnDataChanged;
         _colors.ColorChanged -= OnColorChanged;
+    }
+
+    private void InitialSelect(NpcCustomizeSet npcs)
+    {
+        if (_config.SelectedNpc.Id is 0)
+            return;
+
+        if (!npcs.FindFirst(n => n.Id == _config.SelectedNpc.Id, out var npc))
+            return;
+
+        Data                  = npc;
+        Name                  = new StringU8(npc.Name);
+        ColorText             = _data.GetColor(npc);
+        ColorTextU8           = ColorText.Length is not 0 ? new StringU8(ColorText) : DesignColors.AutomaticNameU8;
+        (var color, Favorite) = _data.GetData(npc);
+        Color                 = color.ToVector();
     }
 }

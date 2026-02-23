@@ -300,6 +300,31 @@ public sealed class SettingsTab(
         Checkbox("Debug Mode"u8, "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general."u8,
             config.DebugMode,
             v => config.DebugMode = v);
+
+        Im.Dummy(Vector2.Zero);
+        Im.Separator();
+        Im.Dummy(Vector2.Zero);
+
+        Checkbox("Remember Design Filter Across Sessions"u8,
+            "Whether the filter in the Designs tab should remember its input and start with its list filtered identically to the last session."u8,
+            config.RememberDesignFilter, v => config.RememberDesignFilter = v);
+
+        Checkbox("Remember Actor Filter Across Sessions"u8,
+            "Whether the filter in the Actors tab should remember its input and start with its list filtered identically to the last session."u8,
+            config.RememberActorFilter, v => config.RememberActorFilter = v);
+
+        Checkbox("Remember Automation Filters Across Sessions"u8,
+            "Whether the filters in the Automation tab should remember their respective inputs and start with their list filtered identically to the last session."u8,
+            config.RememberAutomationFilter, v => config.RememberAutomationFilter = v);
+
+        Checkbox("Remember NPC Filter Across Sessions"u8,
+            "Whether the filter in the NPCs tab should remember its input and start with its list filtered identically to the last session."u8,
+            config.RememberNpcFilter, v => config.RememberNpcFilter = v);
+
+        Checkbox("Remember Unlocks Filters Across Sessions"u8,
+            "Whether the filters in the Unlocks tab should remember their respective inputs and start with its table filtered identically to the last session."u8,
+            config.RememberUnlocksFilters, v => config.RememberUnlocksFilters = v);
+
         Im.Line.New();
     }
 

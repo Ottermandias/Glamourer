@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using Glamourer.State;
 using ImSharp;
 using Luna;
@@ -9,7 +10,7 @@ using Penumbra.GameData.Interop;
 
 namespace Glamourer.Gui.Tabs.ActorTab;
 
-public sealed class ActorSelection(StateManager manager, ActorObjectManager objects, ICondition conditions) : IUiService
+public sealed class ActorSelection(StateManager manager, ActorObjectManager objects, ICondition conditions, UiConfig config) : IUiService
 {
     private static readonly StringU8 NoSelection = new("No Actor Selected"u8);
 
@@ -23,7 +24,8 @@ public sealed class ActorSelection(StateManager manager, ActorObjectManager obje
 
     public void Select(ActorIdentifier identifier, ActorData data)
     {
-        Identifier = identifier.CreatePermanent();
+        Identifier           = identifier.CreatePermanent();
+        config.SelectedActor = Identifier;
         if (Identifier.IsValid)
         {
             ActorName     = new StringU8(data.Label);

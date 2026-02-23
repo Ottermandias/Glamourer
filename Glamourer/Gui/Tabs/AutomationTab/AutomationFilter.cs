@@ -1,4 +1,5 @@
-﻿using ImSharp;
+﻿using Glamourer.Config;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
@@ -9,6 +10,21 @@ public sealed class AutomationFilter : TextFilterBase<AutomationCacheItem>, IUiS
 
     protected override string ToFilterString(in AutomationCacheItem item, int globalIndex)
         => item.Name.Utf16;
+
+    public AutomationFilter(Configuration config)
+    {
+        if (config.RememberAutomationFilter)
+        {
+            _setStateFilter = config.Filters.AutomationStateFilter;
+            Set(config.Filters.AutomationFilter);
+        }
+
+        FilterChanged += () =>
+        {
+            config.Filters.AutomationFilter      = Text;
+            config.Filters.AutomationStateFilter = _setStateFilter;
+        };
+    }
 
     public override bool WouldBeVisible(in AutomationCacheItem item, int globalIndex)
         => _setStateFilter switch
@@ -54,11 +70,15 @@ public sealed class AutomationFilter : TextFilterBase<AutomationCacheItem>, IUiS
         return ret;
     }
 
-    public override void Clear()
+    public override bool Clear()
     {
         var changes = _setStateFilter is not null;
         _setStateFilter = null;
-        if (!Set(string.Empty) && changes)
-            InvokeEvent();
+        if (!SetInternal(string.Empty) && !changes)
+            return false;
+
+        InvokeEvent();
+        return true;
+
     }
 }

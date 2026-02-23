@@ -35,6 +35,15 @@ public readonly record struct ModSettings(Dictionary<string, List<string>> Setti
         => new();
 }
 
+public sealed class CutsceneResolveService : IService
+{
+    public Func<int, int>? CheckCutsceneParent;
+
+    /// <summary> Obtain the parent of a cutscene actor if it is known. </summary>
+    public short CutsceneParent(ushort idx)
+        => (short)(CheckCutsceneParent?.Invoke(idx) ?? -1);
+}
+
 public sealed class PenumbraService : IDisposable, IService
 {
     public const int RequiredPenumbraBreakingVersion = 5;
@@ -44,6 +53,8 @@ public sealed class PenumbraService : IDisposable, IService
     private const string NameFixed  = "Glamourer (Automation)";
     private const int    KeyManual  = -6160;
     private const string NameManual = "Glamourer (Manually)";
+
+    public readonly CutsceneResolveService ResolveService;
 
     private readonly IDalamudPluginInterface                                               _pluginInterface;
     private readonly Configuration                                                         _config;
@@ -84,7 +95,6 @@ public sealed class PenumbraService : IDisposable, IService
     private global::Penumbra.Api.IpcSubscribers.UnregisterSettingsSection?                           _unregisterSettingsSection;
     private IReadOnlyList<(string ModDirectory, IReadOnlyDictionary<string, object?> ChangedItems)>? _changedItems;
     private Func<string, (string ModDirectory, string ModName)[]>?                                   _checkCurrentChangedItems;
-    private Func<int, int>?                                                                          _checkCutsceneParent;
     private Func<nint, nint>?                                                                        _getGameObject;
 
     private readonly IDisposable _initializedEvent;
@@ -97,10 +107,12 @@ public sealed class PenumbraService : IDisposable, IService
     public int      CurrentMinor { get; private set; }
     public DateTime AttachTime   { get; private set; }
 
-    public PenumbraService(IDalamudPluginInterface pi, PenumbraReloaded penumbraReloaded, Configuration config)
+    public PenumbraService(IDalamudPluginInterface pi, PenumbraReloaded penumbraReloaded, CutsceneResolveService resolveService,
+        Configuration config)
     {
         _pluginInterface       = pi;
         _penumbraReloaded      = penumbraReloaded;
+        ResolveService         = resolveService;
         _config                = config;
         _initializedEvent      = global::Penumbra.Api.IpcSubscribers.Initialized.Subscriber(pi, Reattach);
         _disposedEvent         = global::Penumbra.Api.IpcSubscribers.Disposed.Subscriber(pi, Unattach);
@@ -192,7 +204,7 @@ public sealed class PenumbraService : IDisposable, IService
 
     private ModSettings GetSettings(Guid collection, string modDirectory, string modName, out string source)
     {
-        if (_getCurrentSettingsWithTemp != null)
+        if (_getCurrentSettingsWithTemp is not null)
         {
             source          = string.Empty;
             var (ec, tuple) = _getCurrentSettingsWithTemp!.Invoke(collection, modDirectory, modName, false, false, KeyFixed);
@@ -204,7 +216,7 @@ public sealed class PenumbraService : IDisposable, IService
                 : ModSettings.Empty;
         }
 
-        if (_queryTemporaryModSettings != null)
+        if (_queryTemporaryModSettings is not null)
         {
             var tempEc = _queryTemporaryModSettings.Invoke(collection, modDirectory, out var tempTuple, out source, 0, modName);
             if (tempEc is PenumbraApiEc.Success && tempTuple != null)
@@ -485,9 +497,6 @@ public sealed class PenumbraService : IDisposable, IService
     public Actor GameObjectFromDrawObject(Model drawObject)
         => _getGameObject?.Invoke(drawObject.Address) ?? Actor.Null;
 
-    /// <summary> Obtain the parent of a cutscene actor if it is known. </summary>
-    public short CutsceneParent(ushort idx)
-        => (short)(_checkCutsceneParent?.Invoke(idx) ?? -1);
 
     /// <summary> Try to redraw the given actor. </summary>
     public void RedrawObject(Actor actor, RedrawType settings)
@@ -554,7 +563,7 @@ public sealed class PenumbraService : IDisposable, IService
             _collectionByIdentifier = new global::Penumbra.Api.IpcSubscribers.GetCollectionsByIdentifier(_pluginInterface);
             _collections = new global::Penumbra.Api.IpcSubscribers.GetCollections(_pluginInterface);
             _redraw = new global::Penumbra.Api.IpcSubscribers.RedrawObject(_pluginInterface);
-            _checkCutsceneParent = new global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndexFunc(_pluginInterface).Invoke();
+            ResolveService.CheckCutsceneParent = new global::Penumbra.Api.IpcSubscribers.GetCutsceneParentIndexFunc(_pluginInterface).Invoke();
             _getGameObject = new global::Penumbra.Api.IpcSubscribers.GetGameObjectFromDrawObjectFunc(_pluginInterface).Invoke();
             _objectCollection = new global::Penumbra.Api.IpcSubscribers.GetCollectionForObject(_pluginInterface);
             _getMods = new global::Penumbra.Api.IpcSubscribers.GetModList(_pluginInterface);
@@ -623,7 +632,7 @@ public sealed class PenumbraService : IDisposable, IService
             _collections                         = null;
             _redraw                              = null;
             _getGameObject                       = null;
-            _checkCutsceneParent                 = null;
+            ResolveService.CheckCutsceneParent   = null;
             _objectCollection                    = null;
             _getMods                             = null;
             _currentCollection                   = null;

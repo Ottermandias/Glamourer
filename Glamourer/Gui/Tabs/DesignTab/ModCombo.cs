@@ -101,7 +101,7 @@ public sealed class ModCombo(PenumbraService penumbra, DesignFileSystem fileSyst
     {
         foreach (var setting in settings.Settings)
         {
-            if (setting.Value.Count == 0)
+            if (setting.Value.Count is 0)
                 Im.Text("<None Enabled>"u8);
             else
                 foreach (var option in setting.Value)

@@ -1,4 +1,5 @@
-﻿using ImSharp;
+﻿using Glamourer.Config;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
@@ -10,6 +11,13 @@ public sealed class NpcFilter : TokenizedFilter<NpcFilter.TokenType, NpcCacheIte
         Name,
         Id,
         Color,
+    }
+
+    public NpcFilter(Configuration config)
+    {
+        if (config.RememberNpcFilter)
+            Set(config.Filters.NpcFilter);
+        FilterChanged += () => config.Filters.NpcFilter = Text;
     }
 
     protected override void DrawTooltip()

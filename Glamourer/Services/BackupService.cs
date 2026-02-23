@@ -10,7 +10,7 @@ public sealed class BackupService(Logger log, FilenameService provider) : BaseBa
         var list = new List<FileInfo>(16)
         {
             new(fileNames.ConfigurationFile),
-            new(fileNames.UiConfiguration),
+            new(fileNames.UiConfigurationFile),
             new(fileNames.MigrationDesignFileSystem),
             new(fileNames.MigrationDesignFile),
             new(fileNames.AutomationFile),

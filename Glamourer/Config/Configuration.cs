@@ -23,6 +23,9 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     [JsonIgnore]
     public readonly UiConfig Ui;
 
+    [JsonIgnore]
+    public readonly FilterConfig Filters;
+
     public bool   AttachToPcp                      { get; set; } = true;
     public bool   UseRestrictedGearProtection      { get; set; } = false;
     public bool   OpenFoldersByDefault             { get; set; } = false;
@@ -54,6 +57,11 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     public bool   PreventRandomRepeats             { get; set; } = false;
     public string PcpFolder                        { get; set; } = "PCP";
     public string PcpColor                         { get; set; } = "";
+    public bool   RememberActorFilter              { get; set; } = false;
+    public bool   RememberDesignFilter             { get; set; } = false;
+    public bool   RememberNpcFilter                { get; set; } = true;
+    public bool   RememberAutomationFilter         { get; set; } = false;
+    public bool   RememberUnlocksFilters           { get; set; } = true;
 
     public RoughnessSetting RoughnessSetting { get; set; } = RoughnessSetting.AsIs;
 
@@ -95,11 +103,12 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     [JsonIgnore]
     private readonly SaveService _saveService;
 
-    public Configuration(SaveService saveService, ConfigMigrationService migrator, EphemeralConfig ephemeral, UiConfig ui)
+    public Configuration(SaveService saveService, ConfigMigrationService migrator, EphemeralConfig ephemeral, UiConfig ui, FilterConfig filters)
     {
         _saveService = saveService;
         Ephemeral    = ephemeral;
         Ui           = ui;
+        Filters      = filters;
         Load(migrator);
     }
 

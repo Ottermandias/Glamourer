@@ -18,7 +18,8 @@ public sealed class FilenameService(IDalamudPluginInterface pi) : BaseFilePathPr
     public readonly string EphemeralConfigFile       = Path.Combine(pi.ConfigDirectory.FullName, "ephemeral_config.json");
     public readonly string NpcAppearanceFile         = Path.Combine(pi.ConfigDirectory.FullName, "npc_appearance_data.json");
     public readonly string CollectionOverrideFile    = Path.Combine(pi.ConfigDirectory.FullName, "collection_overrides.json");
-    public readonly string UiConfiguration           = Path.Combine(pi.ConfigDirectory.FullName, "ui_config.json");
+    public readonly string UiConfigurationFile       = Path.Combine(pi.ConfigDirectory.FullName, "ui_config.json");
+    public readonly string FilterFile                = Path.Combine(pi.ConfigDirectory.FullName, "filters.json");
     public readonly string FileSystemFolder          = Path.Combine(pi.ConfigDirectory.FullName, "design_filesystem");
     public readonly string FileSystemEmptyFolders    = Path.Combine(pi.ConfigDirectory.FullName, "design_filesystem", "empty_folders.json");
     public readonly string FileSystemExpandedFolders = Path.Combine(pi.ConfigDirectory.FullName, "design_filesystem", "expanded_folders.json");

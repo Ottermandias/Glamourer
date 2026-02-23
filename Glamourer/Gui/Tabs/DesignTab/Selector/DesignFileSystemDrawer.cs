@@ -16,7 +16,7 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
 
     public DesignFileSystemDrawer(DesignFileSystem fileSystem, DesignManager manager, DesignConverter converter, Configuration config,
         DesignApplier designApplier, DesignChanged designChanged, DesignColors designColors)
-        : base(fileSystem, new DesignFilter())
+        : base(fileSystem, new DesignFilter(config))
     {
         Manager       = manager;
         Config        = config;

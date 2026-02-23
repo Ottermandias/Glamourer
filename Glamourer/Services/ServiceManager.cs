@@ -18,7 +18,7 @@ public static class StaticServiceManager
             .AddExistingService(log)
             .AddSingleton<MessageService>()
             .AddSingleton<ActorObjectManager>()
-            .AddSingleton(p => new CutsceneResolver(p.GetRequiredService<PenumbraService>().CutsceneParent))
+            .AddSingleton(p => new CutsceneResolver(p.GetRequiredService<CutsceneResolveService>().CutsceneParent))
             .AddExistingService(glamourer);
         services.AddIServices(typeof(EquipItem).Assembly);
         services.AddIServices(typeof(Glamourer).Assembly);

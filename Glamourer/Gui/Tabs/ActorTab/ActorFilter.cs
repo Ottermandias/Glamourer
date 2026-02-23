@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
@@ -23,7 +24,7 @@ public sealed class ActorFilter : TextFilterBase<ActorCacheItem>, IUiService
 
     private FilterMethod _method = FilterMethod.Empty;
 
-    public ActorFilter(IPlayerState playerState)
+    public ActorFilter(IPlayerState playerState, Configuration config)
     {
         _playerState = playerState;
         FilterChanged += () =>
@@ -39,7 +40,10 @@ public sealed class ActorFilter : TextFilterBase<ActorCacheItem>, IUiService
                 "<w>" or "<W>" => FilterMethod.Homeworld,
                 _              => FilterMethod.Text,
             };
+            config.Filters.ActorFilter = Text;
         };
+        if (config.RememberActorFilter)
+            Set(config.Filters.ActorFilter);
     }
 
     public override bool DrawFilter(ReadOnlySpan<byte> label, Vector2 availableRegion)
@@ -78,7 +82,19 @@ public sealed class ActorFilter : TextFilterBase<ActorCacheItem>, IUiService
         Im.Text("<w>"u8, color);
         Im.Line.NoSpacing();
         Im.Text(": show only players from your world."u8);
+
+        if (Text.Length > 0)
+            Im.Text("\nMiddle-click to clear filters."u8);
         return ret;
+    }
+
+    protected override bool OnMiddleClick()
+    {
+        if (!Im.Item.MiddleClicked())
+            return false;
+
+        Im.Id.ClearActive();
+        return Clear();
     }
 
     protected override string ToFilterString(in ActorCacheItem item, int globalIndex)

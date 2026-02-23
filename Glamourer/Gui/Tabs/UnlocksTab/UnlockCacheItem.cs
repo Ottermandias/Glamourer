@@ -16,6 +16,30 @@ public readonly struct UnlockCacheItem(in EquipItem item, in EquipItem offhand, 
         Two = 4,
     }
 
+    [Flags]
+    public enum Modded
+    {
+        Relevant = 1,
+        Ignored  = 2,
+        None     = 4,
+    }
+
+    public const Modded ModdedAll = Modded.Relevant | Modded.Ignored | Modded.None;
+
+    public const Dyability DyableAll = Dyability.No | Dyability.Yes | Dyability.Two;
+
+    public const EquipFlag SlotsAll = EquipFlag.Head
+      | EquipFlag.Body
+      | EquipFlag.Hands
+      | EquipFlag.Legs
+      | EquipFlag.Feet
+      | EquipFlag.Ears
+      | EquipFlag.Neck
+      | EquipFlag.Wrist
+      | EquipFlag.RFinger
+      | EquipFlag.Mainhand
+      | EquipFlag.Offhand;
+
     public readonly EquipItem  Item = item;
     public readonly StringPair Name = new(item.Name);
     public readonly EquipFlag  Slot = item.Type.ToSlot().ToFlag();

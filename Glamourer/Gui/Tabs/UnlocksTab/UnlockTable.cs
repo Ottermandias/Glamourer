@@ -27,10 +27,22 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
     private readonly IgnoredMods       _ignoredMods;
 
     public UnlockTable(JobService jobs, ItemManager items, ItemUnlockManager unlocks, PenumbraChangedItemTooltip tooltip,
-        ObjectUnlocked unlockEvent, FavoriteManager favorites, PenumbraService penumbra, TextureService textures, IgnoredMods ignoredMods)
-        : base(new StringU8("Unlock Table"u8), new FavoriteColumn(favorites), new ModdedColumn(), new NameColumn(textures, tooltip),
-            new SlotColumn(), new TypeColumn(), new UnlockDateColumn(), new ItemIdColumn(), new ModelDataColumn(), new JobColumn(jobs),
-            new RequiredLevelColumn(), new DyableColumn(), new CrestColumn(), new TradableColumn())
+        ObjectUnlocked unlockEvent, FavoriteManager favorites, PenumbraService penumbra, TextureService textures, IgnoredMods ignoredMods,
+        Configuration config)
+        : base(new StringU8("Unlock Table"u8),
+            new FavoriteColumn(config, favorites),
+            new ModdedColumn(config),
+            new NameColumn(config, textures, tooltip),
+            new SlotColumn(config),
+            new TypeColumn(config),
+            new UnlockDateColumn(config),
+            new ItemIdColumn(config),
+            new ModelDataColumn(config),
+            new JobColumn(config, jobs),
+            new RequiredLevelColumn(config),
+            new DyableColumn(config),
+            new CrestColumn(config),
+            new TradableColumn(config))
     {
         _jobs        = jobs;
         _items       = items;
@@ -86,12 +98,15 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
     {
         private readonly FavoriteManager _favorites;
 
-        public FavoriteColumn(FavoriteManager favorites)
+        public FavoriteColumn(Configuration config, FavoriteManager favorites)
         {
             _favorites  =  favorites;
             Flags       |= TableColumnFlags.NoResize;
             Label       =  new StringU8("F"u8);
             FilterLabel =  new StringU8("Favorite"u8);
+            if (config.RememberUnlocksFilters)
+                Filter.LoadValue(config.Filters.UnlocksFavoriteFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksFavoriteFilter = Filter.FilterValue;
         }
 
         public override float ComputeWidth(IEnumerable<UnlockCacheItem> allItems)
@@ -104,23 +119,18 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             => item.Favorite;
     }
 
-    private sealed class ModdedColumn : FlagColumn<ModdedColumn.Modded, UnlockCacheItem>
+    private sealed class ModdedColumn : FlagColumn<UnlockCacheItem.Modded, UnlockCacheItem>
     {
-        [Flags]
-        public enum Modded
-        {
-            Relevant = 1,
-            Ignored  = 2,
-            None     = 4,
-        }
-
         private static readonly AwesomeIcon Dot    = FontAwesomeIcon.Circle;
         private static readonly AwesomeIcon Hollow = FontAwesomeIcon.DotCircle;
 
-        public ModdedColumn()
+        public ModdedColumn(Configuration config)
         {
             Flags |= TableColumnFlags.NoResize;
             Label =  new StringU8("M");
+            if (config.RememberUnlocksFilters)
+                Filter.LoadValue(config.Filters.UnlocksModdedFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksModdedFilter = Filter.FilterValue;
         }
 
         public override float ComputeWidth(IEnumerable<UnlockCacheItem> allItems)
@@ -149,18 +159,19 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             }
         }
 
-        protected override Modded GetValue(in UnlockCacheItem item, int globalIndex)
-            => item.RelevantMods > 0 ? Modded.Relevant : item.Mods.Length > 0 ? Modded.Ignored : Modded.None;
+        protected override UnlockCacheItem.Modded GetValue(in UnlockCacheItem item, int globalIndex)
+            => item.RelevantMods > 0 ? UnlockCacheItem.Modded.Relevant :
+                item.Mods.Length > 0 ? UnlockCacheItem.Modded.Ignored : UnlockCacheItem.Modded.None;
 
         protected override StringU8 DisplayString(in UnlockCacheItem item, int globalIndex)
             => StringU8.Empty;
 
-        protected override IReadOnlyList<(Modded Value, StringU8 Name)> EnumData
+        protected override IReadOnlyList<(UnlockCacheItem.Modded Value, StringU8 Name)> EnumData
             =>
             [
-                (Modded.Relevant, new StringU8("Any Relevant Mods"u8)),
-                (Modded.Ignored, new StringU8("Only Ignored Mods"u8)),
-                (Modded.None, new StringU8("Unmodded"u8)),
+                (UnlockCacheItem.Modded.Relevant, new StringU8("Any Relevant Mods"u8)),
+                (UnlockCacheItem.Modded.Ignored, new StringU8("Only Ignored Mods"u8)),
+                (UnlockCacheItem.Modded.None, new StringU8("Unmodded"u8)),
             ];
 
 
@@ -179,13 +190,16 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
         private readonly TextureService             _textures;
         private readonly PenumbraChangedItemTooltip _tooltip;
 
-        public NameColumn(TextureService textures, PenumbraChangedItemTooltip tooltip)
+        public NameColumn(Configuration config, TextureService textures, PenumbraChangedItemTooltip tooltip)
         {
             _textures     =  textures;
             _tooltip      =  tooltip;
             Flags         |= TableColumnFlags.NoHide | TableColumnFlags.NoReorder;
             Label         =  new StringU8("Item Name..."u8);
             UnscaledWidth =  400;
+            if (config.RememberUnlocksFilters)
+                Filter.Set(config.Filters.UnlocksNameFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksNameFilter = Filter.Text;
         }
 
         public override void DrawColumn(in UnlockCacheItem item, int _)
@@ -215,8 +229,13 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
     private sealed class TypeColumn : TextColumn<UnlockCacheItem>
     {
-        public TypeColumn()
-            => Label = new StringU8("Item Type..."u8);
+        public TypeColumn(Configuration config)
+        {
+            Label = new StringU8("Item Type..."u8);
+            if (config.RememberUnlocksFilters)
+                Filter.Set(config.Filters.UnlocksTypeFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksTypeFilter = Filter.Text;
+        }
 
         public override float ComputeWidth(IEnumerable<UnlockCacheItem> _)
             => FullEquipType.CrossPeinHammer.ToNameU8().CalculateSize().X;
@@ -233,10 +252,13 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
     private sealed class SlotColumn : FlagColumn<EquipFlag, UnlockCacheItem>
     {
-        public SlotColumn()
+        public SlotColumn(Configuration config)
         {
             Flags &= ~TableColumnFlags.NoResize;
             Label =  new StringU8("Equip Slot"u8);
+            if (config.RememberUnlocksFilters)
+                Filter.LoadValue(config.Filters.UnlocksSlotFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksSlotFilter = Filter.FilterValue;
         }
 
         public override float ComputeWidth(IEnumerable<UnlockCacheItem> _)
@@ -269,11 +291,14 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
     private sealed class UnlockDateColumn : YesNoColumn<UnlockCacheItem>
     {
-        public UnlockDateColumn()
+        public UnlockDateColumn(Configuration config)
         {
             Flags       &= ~TableColumnFlags.NoResize;
             Label       =  new StringU8("Unlocked"u8);
             FilterLabel =  Label;
+            if (config.RememberUnlocksFilters)
+                Filter.LoadValue(config.Filters.UnlocksUnlockedFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksUnlockedFilter = Filter.FilterValue;
         }
 
         public override float ComputeWidth(IEnumerable<UnlockCacheItem> allItems)
@@ -297,10 +322,13 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
     private sealed class ItemIdColumn : NumberColumn<uint, UnlockCacheItem>
     {
-        public ItemIdColumn()
+        public ItemIdColumn(Configuration config)
         {
             Label         = new StringU8("Item Id..."u8);
             UnscaledWidth = 70;
+            if (config.RememberUnlocksFilters)
+                Filter.Set(config.Filters.UnlocksItemIdFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksItemIdFilter = Filter.Text;
         }
 
         public override uint ToValue(in UnlockCacheItem item, int globalIndex)
@@ -315,10 +343,13 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
     private sealed class ModelDataColumn : TextColumn<UnlockCacheItem>
     {
-        public ModelDataColumn()
+        public ModelDataColumn(Configuration config)
         {
             Label         = new StringU8("Model Data..."u8);
             UnscaledWidth = 100;
+            if (config.RememberUnlocksFilters)
+                Filter.Set(config.Filters.UnlocksModelDataFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksModelDataFilter = Filter.Text;
         }
 
         public override void DrawColumn(in UnlockCacheItem item, int globalIndex)
@@ -363,10 +394,13 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
     private sealed class RequiredLevelColumn : NumberColumn<byte, UnlockCacheItem>
     {
-        public RequiredLevelColumn()
+        public RequiredLevelColumn(Configuration config)
         {
             Label         = new StringU8("Level..."u8);
             UnscaledWidth = 70;
+            if (config.RememberUnlocksFilters)
+                Filter.Set(config.Filters.UnlocksLevelFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksLevelFilter = Filter.Text;
         }
 
         public override byte ToValue(in UnlockCacheItem item, int globalIndex)
@@ -383,7 +417,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
     {
         private readonly JobService _jobs;
 
-        public JobColumn(JobService jobs)
+        public JobColumn(Configuration config, JobService jobs)
             : base(false)
         {
             _jobs         =  jobs;
@@ -392,6 +426,9 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             Label         =  new StringU8("Jobs"u8);
             Filter        =  new JobFilter(this);
             UnscaledWidth =  200;
+            if (config.RememberUnlocksFilters)
+                Filter.LoadValue(config.Filters.UnlocksJobFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksJobFilter = Filter.FilterValue;
         }
 
         protected override StringU8 DisplayString(in UnlockCacheItem item, int globalIndex)
@@ -444,10 +481,13 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
     private sealed class DyableColumn : FlagColumn<UnlockCacheItem.Dyability, UnlockCacheItem>
     {
-        public DyableColumn()
+        public DyableColumn(Configuration config)
         {
             Flags &= ~TableColumnFlags.NoResize;
             Label =  new StringU8("Dye"u8);
+            if (config.RememberUnlocksFilters)
+                Filter.LoadValue(config.Filters.UnlocksDyabilityFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksDyabilityFilter = Filter.FilterValue;
         }
 
         public override float ComputeWidth(IEnumerable<UnlockCacheItem> _)
@@ -487,8 +527,13 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
     private sealed class TradableColumn : LunaStyle.YesNoColumn<UnlockCacheItem>
     {
-        public TradableColumn()
-            => Label = new StringU8("Trade"u8);
+        public TradableColumn(Configuration config)
+        {
+            Label = new StringU8("Trade"u8);
+            if (config.RememberUnlocksFilters)
+                Filter.LoadValue(config.Filters.UnlocksTradableFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksTradableFilter = Filter.FilterValue;
+        }
 
         protected override bool GetValue(in UnlockCacheItem item, int globalIndex, int triEnumIndex)
             => item.Tradable;
@@ -496,8 +541,13 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
     private sealed class CrestColumn : LunaStyle.YesNoColumn<UnlockCacheItem>
     {
-        public CrestColumn()
-            => Label = new StringU8("Crest"u8);
+        public CrestColumn(Configuration config)
+        {
+            Label = new StringU8("Crest"u8);
+            if (config.RememberUnlocksFilters)
+                Filter.LoadValue(config.Filters.UnlocksCrestFilter);
+            Filter.FilterChanged += () => config.Filters.UnlocksCrestFilter = Filter.FilterValue;
+        }
 
         protected override bool GetValue(in UnlockCacheItem item, int globalIndex, int triEnumIndex)
             => item.Crest;

@@ -1,6 +1,10 @@
 ﻿using Glamourer.Config;
+using Glamourer.Services;
 using ImSharp;
+using InteropGenerator.Runtime;
 using Luna;
+using Penumbra.GameData.Files.ShaderStructs;
+using Vortice.Direct3D11.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
@@ -33,9 +37,29 @@ public sealed class DebugTab(ServiceManager manager) : ITab<MainTabType>
             return;
 
         if (Im.Tree.Header("General"u8))
+        {
+            if (Im.Button("Open Config Directory"u8))
+                OpenFileOrFolder(manager.GetService<FilenameService>().ConfigurationDirectory);
             StartTimeTracker.Draw("Timers"u8, manager.GetService<StartTimeTracker>());
+        }
 
         foreach (var header in _headers)
             header.Draw();
+    }
+
+    private static void OpenFileOrFolder(string text)
+    {
+        try
+        {
+            var process = new ProcessStartInfo(text)
+            {
+                UseShellExecute = true,
+            };
+            Process.Start(process);
+        }
+        catch
+        {
+            // Ignored
+        }
     }
 }

@@ -55,7 +55,7 @@ public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemT
         table.NextColumn();
         Im.Item.SetNextWidthScaled(200);
         Im.Input.Scalar("##CutsceneIndex"u8, ref _gameObjectIndex);
-        table.DrawColumn(penumbra.Available ? $"{penumbra.CutsceneParent((ushort)_gameObjectIndex)}" : "Penumbra Unavailable"u8);
+        table.DrawColumn(penumbra.Available ? $"{penumbra.ResolveService.CutsceneParent((ushort)_gameObjectIndex)}" : "Penumbra Unavailable"u8);
 
         table.DrawFrameColumn("Redraw Object"u8);
         table.NextColumn();

@@ -1,4 +1,5 @@
-﻿using ImSharp;
+﻿using Glamourer.Config;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
@@ -6,6 +7,13 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 public sealed class DesignFilter : TokenizedFilter<DesignFilterTokenType, DesignFileSystemCache.DesignData, DesignFilterToken>,
     IFileSystemFilter<DesignFileSystemCache.DesignData>, IUiService
 {
+    public DesignFilter(Configuration config)
+    {
+        if (config.RememberDesignFilter)
+            Set(config.Filters.DesignFilter);
+        FilterChanged += () => config.Filters.DesignFilter = Text;
+    }
+
     protected override void DrawTooltip()
     {
         if (!Im.Item.Hovered())

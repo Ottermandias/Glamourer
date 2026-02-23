@@ -81,12 +81,16 @@ public sealed class DesignColors : ISavable, IReadOnlyDictionary<string, Rgba32>
 
     public void Save(StreamWriter writer)
     {
+        var dict = new JObject();
+        foreach (var (name, color) in _colors)
+            dict[name] = color.Color;
         var jObj = new JObject
         {
             ["Version"]      = 1,
             ["MissingColor"] = MissingColor.Color,
-            ["Definitions"]  = JToken.FromObject(_colors),
+            ["Definitions"]  = dict,
         };
+
         writer.Write(jObj.ToString(Formatting.Indented));
     }
 
