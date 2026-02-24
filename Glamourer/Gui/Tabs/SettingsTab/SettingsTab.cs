@@ -28,6 +28,7 @@ public sealed class SettingsTab(
     Glamourer glamourer,
     AutoDesignApplier autoDesignApplier,
     AutoRedrawChanged autoRedraw,
+    PredefinedTagManager predefinedTags,
     PcpService pcpService,
     IgnoredMods ignoredMods)
     : ITab<MainTabType>
@@ -61,6 +62,7 @@ public sealed class SettingsTab(
             DrawDesignDefaultSettings();
             DrawInterfaceSettings();
             DrawColorSettings();
+            DrawPredefinedTags();
             overrides.Draw();
             DrawIgnoredMods();
             codeDrawer.Draw();
@@ -406,6 +408,19 @@ public sealed class SettingsTab(
             paletteImport.ImportDesigns();
         Im.Tooltip.OnHover(
             $"Import all existing Palettes from your Palette+ Configuration into Designs at PalettePlus/[Name] if these do not exist. Existing Palettes are:\n\n\t - {string.Join("\n\t - ", paletteImport.Data.Keys)}");
+    }
+
+    private void DrawPredefinedTags()
+    {
+        if (!Im.Tree.Header("Tags"u8))
+            return;
+
+        var tagIdx = TagButtons.Draw("Predefined Tags: "u8,
+            "Predefined tags that can be added or removed from designs with a single click."u8, predefinedTags,
+            out var editedTag);
+
+        if (tagIdx >= 0)
+            predefinedTags.ChangeSharedTag(tagIdx, editedTag);
     }
 
     /// <summary> Draw the entire Color subsection. </summary>

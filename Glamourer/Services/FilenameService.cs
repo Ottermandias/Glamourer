@@ -19,6 +19,7 @@ public sealed class FilenameService(IDalamudPluginInterface pi) : BaseFilePathPr
     public readonly string NpcAppearanceFile         = Path.Combine(pi.ConfigDirectory.FullName, "npc_appearance_data.json");
     public readonly string CollectionOverrideFile    = Path.Combine(pi.ConfigDirectory.FullName, "collection_overrides.json");
     public readonly string UiConfigurationFile       = Path.Combine(pi.ConfigDirectory.FullName, "ui_config.json");
+    public readonly string PredefinedTagFile         = Path.Combine(pi.ConfigDirectory.FullName, "predefined_tags.json");
     public readonly string FilterFile                = Path.Combine(pi.ConfigDirectory.FullName, "filters.json");
     public readonly string FileSystemFolder          = Path.Combine(pi.ConfigDirectory.FullName, "design_filesystem");
     public readonly string FileSystemEmptyFolders    = Path.Combine(pi.ConfigDirectory.FullName, "design_filesystem", "empty_folders.json");
@@ -47,6 +48,7 @@ public sealed class FilenameService(IDalamudPluginInterface pi) : BaseFilePathPr
         {
             new(ConfigurationFile),
             new(AutomationFile),
+            new(PredefinedTagFile),
             new(IgnoredModsFile),
             new(UnlockFileCustomize),
             new(UnlockFileItems),

@@ -10,24 +10,26 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 
 public sealed class DesignDetailTab : IUiService
 {
-    private readonly SaveService      _saveService;
-    private readonly Configuration    _config;
-    private readonly DesignFileSystem _fileSystem;
-    private readonly DesignManager    _manager;
-    private readonly DesignColors     _colors;
-    private readonly DesignColorCombo _colorCombo;
+    private readonly SaveService          _saveService;
+    private readonly Configuration        _config;
+    private readonly DesignFileSystem     _fileSystem;
+    private readonly DesignManager        _manager;
+    private readonly DesignColors         _colors;
+    private readonly DesignColorCombo     _colorCombo;
+    private readonly PredefinedTagManager _predefinedTags;
 
     private bool _editDescriptionMode;
 
     public DesignDetailTab(SaveService saveService, DesignManager manager, DesignFileSystem fileSystem,
-        DesignColors colors, Configuration config)
+        DesignColors colors, Configuration config, PredefinedTagManager predefinedTags)
     {
-        _saveService = saveService;
-        _manager     = manager;
-        _fileSystem  = fileSystem;
-        _colors      = colors;
-        _config      = config;
-        _colorCombo  = new DesignColorCombo(_colors, false);
+        _saveService    = saveService;
+        _manager        = manager;
+        _fileSystem     = fileSystem;
+        _colors         = colors;
+        _config         = config;
+        _predefinedTags = predefinedTags;
+        _colorCombo     = new DesignColorCombo(_colors, false);
     }
 
     public void Draw()
@@ -42,7 +44,7 @@ public sealed class DesignDetailTab : IUiService
     }
 
     private Design Selected
-        => (Design) _fileSystem.Selection.Selection!.Value;
+        => (Design)_fileSystem.Selection.Selection!.Value;
 
     private void DrawDesignInfoTable()
     {
@@ -171,7 +173,13 @@ public sealed class DesignDetailTab : IUiService
 
     private void DrawTags()
     {
-        var idx = TagButtons.Draw(StringU8.Empty, StringU8.Empty, Selected.Tags, out var editedTag);
+        var predefinedTagButtonOffset = _predefinedTags.Enabled
+            ? Im.Style.FrameHeight + Im.Style.WindowPadding.X + (Im.Scroll.MaximumY > 0 ? Im.Style.ScrollbarSize : 0)
+            : 0;
+        var idx = TagButtons.Draw(StringU8.Empty, StringU8.Empty, Selected.Tags, out var editedTag, rightEndOffset: predefinedTagButtonOffset);
+        if (_predefinedTags.Enabled)
+            _predefinedTags.DrawAddFromSharedTagsAndUpdateTags(Selected, true);
+
         if (idx < 0)
             return;
 

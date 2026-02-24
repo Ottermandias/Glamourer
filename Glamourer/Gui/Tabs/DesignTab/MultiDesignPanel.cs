@@ -1,6 +1,7 @@
 ﻿using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
+using Glamourer.Services;
 using ImSharp;
 using Luna;
 
@@ -10,7 +11,8 @@ public sealed class MultiDesignPanel(
     DesignFileSystem fileSystem,
     DesignManager editor,
     DesignColors colors,
-    Configuration config) : IUiService
+    Configuration config,
+    PredefinedTagManager predefinedTags) : IUiService
 {
     private readonly DesignColorCombo _colorCombo = new(colors, true);
 
@@ -19,19 +21,18 @@ public sealed class MultiDesignPanel(
         if (fileSystem.Selection.OrderedNodes.Count is 0)
             return;
 
-        var width       = ImEx.ScaledVectorX(145);
         var treeNodePos = Im.Cursor.Position;
         DrawDesignList();
         DrawCounts(treeNodePos);
-        var offset = DrawMultiTagger(width);
+        var offset = DrawMultiTagger(out var width);
         DrawMultiColor(width, offset);
-        DrawMultiQuickDesignBar(offset);
-        DrawMultiLock(offset);
-        DrawMultiResetSettings(offset);
-        DrawMultiResetDyes(offset);
-        DrawMultiForceRedraw(offset);
+        DrawMultiQuickDesignBar(width, offset);
+        DrawMultiLock(width, offset);
+        DrawMultiResetSettings(width, offset);
+        DrawMultiResetDyes(width, offset);
+        DrawMultiForceRedraw(width, offset);
         DrawAdvancedButtons(offset);
-        DrawApplicationButtons(offset);
+        DrawApplicationButtons(width, offset);
     }
 
     private void DrawCounts(Vector2 treeNodePos)
@@ -136,19 +137,21 @@ public sealed class MultiDesignPanel(
     private readonly List<Design>        _addDesigns    = [];
     private readonly List<(Design, int)> _removeDesigns = [];
 
-    private float DrawMultiTagger(Vector2 width)
+    private float DrawMultiTagger(out Vector2 width)
     {
         ImEx.TextFrameAligned("Multi Tagger:"u8);
         Im.Line.Same();
+        width  = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemInnerSpacing.X) / 2, 0);
         var offset = Im.Item.Size.X + Im.Style.WindowPadding.X;
-        Im.Item.SetNextWidth(Im.ContentRegion.Available.X - 2 * (width.X + Im.Style.ItemSpacing.X));
+        Im.Item.SetNextWidth(width.X);
         Im.Input.Text("##tag"u8, ref _tag, "Tag Name..."u8);
 
+        var buttonWidth = new Vector2((width.X - Im.Style.ItemInnerSpacing.X) / 2, 0);
         UpdateTagCache();
-        Im.Line.Same();
+        Im.Line.SameInner();
         if (ImEx.Button(_addDesigns.Count > 0
                     ? $"Add to {_addDesigns.Count} Designs"
-                    : "Add"u8, width, _addDesigns.Count is 0
+                    : "Add"u8, buttonWidth, _addDesigns.Count is 0
                     ? _tag.Length is 0
                         ? "No tag specified."u8
                         : $"All designs selected already contain the tag \"{_tag}\"."
@@ -157,10 +160,13 @@ public sealed class MultiDesignPanel(
             foreach (var design in _addDesigns)
                 editor.AddTag(design, _tag);
 
-        Im.Line.Same();
+        Im.Line.SameInner();
+        if (predefinedTags.Enabled)
+            buttonWidth.X -= Im.Style.ItemInnerSpacing.X + Im.Style.FrameHeight;
+
         if (ImEx.Button(_removeDesigns.Count > 0
                     ? $"Remove from {_removeDesigns.Count} Designs"
-                    : "Remove", width, _removeDesigns.Count is 0
+                    : "Remove", buttonWidth, _removeDesigns.Count is 0
                     ? _tag.Length is 0
                         ? "No tag specified."u8
                         : $"No selected design contains the tag \"{_tag}\" locally."
@@ -168,25 +174,31 @@ public sealed class MultiDesignPanel(
                 _removeDesigns.Count is 0))
             foreach (var (design, index) in _removeDesigns)
                 editor.RemoveTag(design, index);
+
+        if (predefinedTags.Enabled)
+        {
+            Im.Line.SameInner();
+            predefinedTags.DrawToggleButton();
+            predefinedTags.DrawListMulti(fileSystem.Selection.DataNodes.Select(n => (Design)n.Value));
+        }
         Im.Separator();
         return offset;
     }
 
-    private void DrawMultiQuickDesignBar(float offset)
+    private void DrawMultiQuickDesignBar(Vector2 width, float offset)
     {
         ImEx.TextFrameAligned("Multi QDB:"u8);
         Im.Line.Same(offset, Im.Style.ItemSpacing.X);
-        var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = fileSystem.Selection.DataNodes.Count - _numQuickDesignEnabled;
-        if (ImEx.Button("Display Selected Designs in QDB"u8, buttonWidth, diff is 0
+        if (ImEx.Button("Display Selected Designs in QDB"u8, width, diff is 0
                     ? $"All {fileSystem.Selection.DataNodes.Count} selected designs are already displayed in the quick design bar."
                     : $"Display all {fileSystem.Selection.DataNodes.Count} selected designs in the quick design bar. Changes {diff} designs.",
                 diff is 0))
             foreach (var design in fileSystem.Selection.DataNodes)
                 editor.SetQuickDesign(design.GetValue<Design>()!, true);
 
-        Im.Line.Same();
-        if (ImEx.Button("Hide Selected Designs in QDB"u8, buttonWidth, _numQuickDesignEnabled is 0
+        Im.Line.SameInner();
+        if (ImEx.Button("Hide Selected Designs in QDB"u8, width, _numQuickDesignEnabled is 0
                     ? $"All {fileSystem.Selection.DataNodes.Count} selected designs are already hidden in the quick design bar."
                     : $"Hide all {fileSystem.Selection.DataNodes.Count} selected designs in the quick design bar. Changes {_numQuickDesignEnabled} designs.",
                 _numQuickDesignEnabled is 0))
@@ -196,20 +208,19 @@ public sealed class MultiDesignPanel(
         Im.Separator();
     }
 
-    private void DrawMultiLock(float offset)
+    private void DrawMultiLock(Vector2 width, float offset)
     {
         ImEx.TextFrameAligned("Multi Lock:"u8);
         Im.Line.Same(offset, Im.Style.ItemSpacing.X);
-        var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = fileSystem.Selection.DataNodes.Count - _numDesignsLocked;
-        if (ImEx.Button("Turn Write-Protected"u8, buttonWidth, diff is 0
+        if (ImEx.Button("Turn Write-Protected"u8, width, diff is 0
                 ? $"All {fileSystem.Selection.DataNodes.Count} selected designs are already write protected."
                 : $"Write-protect all {fileSystem.Selection.DataNodes.Count} designs. Changes {diff} designs.", diff is 0))
             foreach (var design in fileSystem.Selection.DataNodes)
                 editor.SetWriteProtection(design.GetValue<Design>()!, true);
 
-        Im.Line.Same();
-        if (ImEx.Button("Remove Write-Protection"u8, buttonWidth, _numDesignsLocked is 0
+        Im.Line.SameInner();
+        if (ImEx.Button("Remove Write-Protection"u8, width, _numDesignsLocked is 0
                     ? $"None of the {fileSystem.Selection.DataNodes.Count} selected designs are write-protected."
                     : $"Remove the write protection of the {fileSystem.Selection.DataNodes.Count} selected designs. Changes {_numDesignsLocked} designs.",
                 _numDesignsLocked is 0))
@@ -218,21 +229,20 @@ public sealed class MultiDesignPanel(
         Im.Separator();
     }
 
-    private void DrawMultiResetSettings(float offset)
+    private void DrawMultiResetSettings(Vector2 width, float offset)
     {
         ImEx.TextFrameAligned("Settings:"u8);
         Im.Line.Same(offset, Im.Style.ItemSpacing.X);
-        var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = fileSystem.Selection.DataNodes.Count - _numDesignsResetSettings;
-        if (ImEx.Button("Set Reset Temp. Settings"u8, buttonWidth, diff is 0
+        if (ImEx.Button("Set Reset Temp. Settings"u8, width, diff is 0
                     ? $"All {fileSystem.Selection.DataNodes.Count} selected designs already reset temporary settings."
                     : $"Make all {fileSystem.Selection.DataNodes.Count} selected designs reset temporary settings. Changes {diff} designs.",
                 diff is 0))
             foreach (var design in fileSystem.Selection.DataNodes)
                 editor.ChangeResetTemporarySettings(design.GetValue<Design>()!, true);
 
-        Im.Line.Same();
-        if (ImEx.Button("Remove Reset Temp. Settings"u8, buttonWidth, _numDesignsResetSettings is 0
+        Im.Line.SameInner();
+        if (ImEx.Button("Remove Reset Temp. Settings"u8, width, _numDesignsResetSettings is 0
                     ? $"None of the {fileSystem.Selection.DataNodes.Count} selected designs reset temporary settings."
                     : $"Stop all {fileSystem.Selection.DataNodes.Count} selected designs from resetting temporary settings. Changes {_numDesignsResetSettings} designs.",
                 _numDesignsResetSettings is 0))
@@ -241,20 +251,19 @@ public sealed class MultiDesignPanel(
         Im.Separator();
     }
 
-    private void DrawMultiResetDyes(float offset)
+    private void DrawMultiResetDyes(Vector2 width, float offset)
     {
         ImEx.TextFrameAligned("Adv. Dyes:"u8);
         Im.Line.Same(offset, Im.Style.ItemSpacing.X);
-        var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = fileSystem.Selection.DataNodes.Count - _numDesignsResetDyes;
-        if (ImEx.Button("Set Reset Dyes"u8, buttonWidth, diff is 0
+        if (ImEx.Button("Set Reset Dyes"u8, width, diff is 0
                 ? $"All {fileSystem.Selection.DataNodes.Count} selected designs already reset advanced dyes."
                 : $"Make all {fileSystem.Selection.DataNodes.Count} selected designs reset advanced dyes. Changes {diff} designs.", diff is 0))
             foreach (var design in fileSystem.Selection.DataNodes)
                 editor.ChangeResetAdvancedDyes(design.GetValue<Design>()!, true);
 
-        Im.Line.Same();
-        if (ImEx.Button("Remove Reset Dyes"u8, buttonWidth, _numDesignsLocked is 0
+        Im.Line.SameInner();
+        if (ImEx.Button("Remove Reset Dyes"u8, width, _numDesignsLocked is 0
                     ? $"None of the {fileSystem.Selection.DataNodes.Count} selected designs reset advanced dyes."
                     : $"Stop all {fileSystem.Selection.DataNodes.Count} selected designs from resetting advanced dyes. Changes {_numDesignsResetDyes} designs.",
                 _numDesignsResetDyes is 0))
@@ -263,20 +272,19 @@ public sealed class MultiDesignPanel(
         Im.Separator();
     }
 
-    private void DrawMultiForceRedraw(float offset)
+    private void DrawMultiForceRedraw(Vector2 width, float offset)
     {
         ImEx.TextFrameAligned("Redrawing:"u8);
         Im.Line.Same(offset, Im.Style.ItemSpacing.X);
-        var buttonWidth = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var diff        = fileSystem.Selection.DataNodes.Count - _numDesignsForcedRedraw;
-        if (ImEx.Button("Force Redraws"u8, buttonWidth, diff is 0
+        if (ImEx.Button("Force Redraws"u8, width, diff is 0
                 ? $"All {fileSystem.Selection.DataNodes.Count} selected designs already force redraws."
                 : $"Make all {fileSystem.Selection.DataNodes.Count} designs force redraws. Changes {diff} designs.", diff is 0))
             foreach (var design in fileSystem.Selection.DataNodes)
                 editor.ChangeForcedRedraw(design.GetValue<Design>()!, true);
 
-        Im.Line.Same();
-        if (ImEx.Button("Remove Forced Redraws"u8, buttonWidth, _numDesignsLocked is 0
+        Im.Line.SameInner();
+        if (ImEx.Button("Remove Forced Redraws"u8, width, _numDesignsLocked is 0
                     ? $"None of the {fileSystem.Selection.DataNodes.Count} selected designs force redraws."
                     : $"Stop all {fileSystem.Selection.DataNodes.Count} selected designs from forcing redraws. Changes {_numDesignsForcedRedraw} designs.",
                 _numDesignsForcedRedraw is 0))
@@ -291,15 +299,15 @@ public sealed class MultiDesignPanel(
     {
         ImEx.TextFrameAligned("Multi Colors:"u8);
         Im.Line.Same(offset, Im.Style.ItemSpacing.X);
-        if (_colorCombo.Draw("##color"u8, _colorComboSelection, "Select a design color."u8,
-                Im.ContentRegion.Available.X - 2 * (width.X + Im.Style.ItemSpacing.X), out var newSelection))
+        if (_colorCombo.Draw("##color"u8, _colorComboSelection, "Select a design color."u8, width.X, out var newSelection))
             _colorComboSelection = newSelection;
 
+        var buttonWidth = new Vector2((width.X - Im.Style.ItemInnerSpacing.X) / 2, 0); 
         UpdateColorCache();
-        Im.Line.Same();
+        Im.Line.SameInner();
         if (ImEx.Button(_addDesigns.Count > 0
                     ? $"Set for {_addDesigns.Count} Designs"
-                    : "Set"u8, width, _addDesigns.Count is 0
+                    : "Set"u8, buttonWidth, _addDesigns.Count is 0
                     ? _colorComboSelection switch
                     {
                         null                       => "No color specified."u8,
@@ -311,10 +319,10 @@ public sealed class MultiDesignPanel(
             foreach (var design in _addDesigns)
                 editor.ChangeColor(design, _colorComboSelection!);
 
-        Im.Line.Same();
+        Im.Line.SameInner();
         if (ImEx.Button(_removeDesigns.Count > 0
                     ? $"Unset {_removeDesigns.Count} Designs"
-                    : "Unset"u8, width, _removeDesigns.Count is 0
+                    : "Unset"u8, buttonWidth, _removeDesigns.Count is 0
                     ? "No selected design is set to a non-automatic color."u8
                     : $"Set {_removeDesigns.Count} designs to use automatic color again:\n\n\t{StringU8.Join("\n\t"u8, _removeDesigns.Select(m => m.Item1.Name))}",
                 _removeDesigns.Count is 0))
@@ -346,11 +354,10 @@ public sealed class MultiDesignPanel(
         Im.Separator();
     }
 
-    private void DrawApplicationButtons(float offset)
+    private void DrawApplicationButtons(Vector2 width, float offset)
     {
         ImEx.TextFrameAligned("Application"u8);
         Im.Line.Same(offset, Im.Style.ItemSpacing.X);
-        var   width     = new Vector2((Im.ContentRegion.Available.X - Im.Style.ItemSpacing.X) / 2, 0);
         var   enabled   = config.DeleteDesignModifier.IsActive();
         bool? equip     = null;
         bool? customize = null;
@@ -368,7 +375,7 @@ public sealed class MultiDesignPanel(
             if (!enabled)
                 Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
 
-            Im.Line.Same();
+            Im.Line.SameInner();
             if (ImEx.Button("Enable Everything"u8, width,
                     fileSystem.Selection.DataNodes.Count > 0
                         ? $"Enable application of everything, including any existing advanced dyes, advanced customizations, crests and wetness for all {fileSystem.Selection.DataNodes.Count} designs."
@@ -393,7 +400,7 @@ public sealed class MultiDesignPanel(
             if (!enabled)
                 Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
 
-            Im.Line.Same();
+            Im.Line.SameInner();
             if (ImEx.Button("Customization Only"u8, width,
                     fileSystem.Selection.DataNodes.Count > 0
                         ? $"Enable application of anything related to customization, disable anything that is not related to customization for all {fileSystem.Selection.DataNodes.Count} designs."
@@ -419,7 +426,7 @@ public sealed class MultiDesignPanel(
             if (!enabled)
                 Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} while clicking.");
 
-            Im.Line.Same();
+            Im.Line.SameInner();
             if (ImEx.Button("Disable Advanced"u8, width, fileSystem.Selection.DataNodes.Count > 0
                     ? $"Disable all advanced dyes and customizations but keep everything else as is for all {fileSystem.Selection.DataNodes.Count} designs."
                     : "No designs selected."u8, !enabled))
