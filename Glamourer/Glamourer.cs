@@ -10,7 +10,6 @@ using Glamourer.State;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Interop;
-using Vortice.Direct3D11.Debug;
 
 namespace Glamourer;
 
@@ -25,7 +24,7 @@ public class Glamourer : IDalamudPlugin
         Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "Unknown";
 
 
-    public static readonly Logger         Log = new();
+    public static readonly Logger         Log = new("Glamourer");
     public static          MessageService Messager { get; private set; } = null!;
     public static          DynamisIpc     Dynamis  { get; private set; } = null!;
 
