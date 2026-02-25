@@ -5,6 +5,8 @@ namespace Glamourer.Gui.Tabs.ActorTab;
 
 public sealed class LockedButton(ActorSelection selection) : BaseIconButton<AwesomeIcon>, IUiService
 {
+    private readonly Im.ColorDisposable _color = new();
+
     public override AwesomeIcon Icon
         => LunaStyle.LockedIcon;
 
@@ -23,10 +25,10 @@ public sealed class LockedButton(ActorSelection selection) : BaseIconButton<Awes
     protected override void PreDraw()
     {
         var color = ColorId.ActorAvailable.Value();
-        ImGuiColor.Border.Push(color)
+        _color.Push(ImGuiColor.Border, color)
             .Push(ImGuiColor.Text, color);
     }
 
     protected override void PostDraw()
-        => Im.ColorDisposable.PopUnsafe(2);
+        => _color.Dispose();
 }

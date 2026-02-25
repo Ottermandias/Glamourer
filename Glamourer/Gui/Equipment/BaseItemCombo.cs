@@ -8,7 +8,8 @@ namespace Glamourer.Gui.Equipment;
 public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items)
     : FilterComboBase<BaseItemCombo.CacheItem>(new ItemFilter(), ConfigData.Default with { ComputeWidth = true })
 {
-    public abstract StringU8 Label { get; }
+    private readonly Im.StyleDisposable _style = new();
+    public abstract  StringU8           Label { get; }
 
     protected readonly FavoriteManager Favorites = favorites;
     protected readonly ItemManager     Items     = items;
@@ -37,14 +38,12 @@ public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items
 
     protected override void PreDrawList()
     {
-        ImStyleDouble.ItemSpacing.PushY(0)
+        _style.PushY(ImStyleDouble.ItemSpacing, 0)
             .PushY(ImStyleDouble.SelectableTextAlign, 0.5f);
     }
 
     protected override void PostDrawList()
-    {
-        Im.StyleDisposable.PopUnsafe(2);
-    }
+        => _style.Dispose();
 
     public readonly struct CacheItem(EquipItem item)
     {

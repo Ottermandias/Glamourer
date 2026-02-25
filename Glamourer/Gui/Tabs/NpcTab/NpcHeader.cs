@@ -33,6 +33,8 @@ public sealed class NpcHeader : SplitButtonHeader
 
     private sealed class FavoriteButton(NpcSelection selection, LocalNpcAppearanceData favorites) : BaseIconButton<AwesomeIcon>
     {
+        private readonly Im.ColorDisposable _color = new();
+
         public override bool HasTooltip
             => true;
 
@@ -50,10 +52,10 @@ public sealed class NpcHeader : SplitButtonHeader
             => favorites.ToggleFavorite(selection.Data);
 
         protected override void PreDraw()
-            => ImGuiColor.Text.Push(selection.Favorite ? ColorId.FavoriteStarOn.Value() : 0x80000000);
+            => _color.Push(ImGuiColor.Text, selection.Favorite ? ColorId.FavoriteStarOn.Value() : 0x80000000);
 
         protected override void PostDraw()
-            => Im.ColorDisposable.PopUnsafe();
+            => _color.Dispose();
     }
 
     private sealed class ExportToClipboardButton(NpcSelection selection) : BaseIconButton<AwesomeIcon>
