@@ -116,11 +116,11 @@ public abstract class DesignComboBase(
         }
 
         protected override void ComputeWidth()
-            => ComboWidth = UnfilteredItems.Max(d
+            => ComboWidth = UnfilteredItems.Count > 0 ? UnfilteredItems.Max(d
                 => d.Name.Utf8.CalculateSize(false).X
               + d.FullPath.Utf8.CalculateSize(false).X
               + 2 * Im.Style.ItemSpacing.X
-              + Im.Style.ScrollbarSize);
+              + Im.Style.ScrollbarSize) : 100 * Im.Style.GlobalScale;
 
         protected override void Dispose(bool disposing)
         {
