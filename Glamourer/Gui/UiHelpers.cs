@@ -11,7 +11,7 @@ namespace Glamourer.Gui;
 public static class UiHelpers
 {
     /// <summary> Open a combo popup with another method than the combo itself. </summary>
-    public static void OpenCombo(string comboLabel)
+    public static void OpenCombo(ReadOnlySpan<byte> comboLabel)
     {
         var windowId = Im.Id.Get(comboLabel);
         var popupId  = ~Crc32.Get("##ComboPopup", windowId.Id);

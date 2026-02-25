@@ -429,7 +429,7 @@ public sealed class EquipmentDrawer : IUiService
         var combo = _equipCombo[data.Slot.ToIndex()];
         label = combo.Label;
         if (!data.Locked && open)
-            UiHelpers.OpenCombo($"##{combo.Label}");
+            UiHelpers.OpenCombo(combo.Label);
 
         using var disabled = Im.Disabled(data.Locked);
         var       change   = combo.Draw(data.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength);
@@ -448,7 +448,7 @@ public sealed class EquipmentDrawer : IUiService
         var combo = _bonusItemCombo[data.Slot.ToIndex()];
         label = combo.Label;
         if (!data.Locked && open)
-            UiHelpers.OpenCombo($"##{combo.Label}");
+            UiHelpers.OpenCombo(combo.Label);
 
         using var disabled = Im.Disabled(data.Locked);
         var       change   = combo.Draw(data.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength);
@@ -560,7 +560,7 @@ public sealed class EquipmentDrawer : IUiService
         using (Im.Disabled(mainhand.Locked | unknown))
         {
             if (!mainhand.Locked && open)
-                UiHelpers.OpenCombo($"##{label}");
+                UiHelpers.OpenCombo(label);
             if (combo.Draw(mainhand.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength))
                 changedItem = newItem;
             _itemCopy.HandleCopyPaste(mainhand);
@@ -601,7 +601,7 @@ public sealed class EquipmentDrawer : IUiService
          || !_gPose.InGPose && (offhand.CurrentItem.Type.IsUnknown() || mainhand.CurrentItem.Type.IsUnknown());
         using var disabled = Im.Disabled(locked);
         if (!locked && open)
-            UiHelpers.OpenCombo($"##{combo.Label}");
+            UiHelpers.OpenCombo(combo.Label);
         if (combo.Draw(offhand.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength))
             offhand.SetItem(newItem);
         _itemCopy.HandleCopyPaste(offhand);
