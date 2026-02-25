@@ -1,101 +1,148 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Utility;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Extensions;
-using OtterGui.Log;
-using OtterGui.Widgets;
+using ImSharp;
+using Luna;
+using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
-using OtterGui.Custom;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
-public sealed class HumanNpcCombo(
-    string label,
-    DictModelChara modelCharaDict,
-    DictBNpcNames bNpcNames,
-    DictBNpc bNpcs,
-    HumanModelList humans,
-    Logger log)
-    : FilterComboCache<(string Name, ObjectKind Kind, uint[] Ids)>(() => CreateList(modelCharaDict, bNpcNames, bNpcs, humans), MouseWheelType.None, log)
+public sealed class HumanNpcCombo(DictBNpcNames bNpcNames, DictModelChara modelCharaDict, HumanModelList humans, DictBNpc bNpcs)
+    : FilterComboBase<HumanNpcCombo.NpcCacheItem>(new NpcFilter())
 {
-    protected override string ToString((string Name, ObjectKind Kind, uint[] Ids) obj)
-        => obj.Name;
+    private NpcCacheItem _selection = new(string.Empty, ObjectKind.None, new HashSet<uint>());
 
-    protected override bool DrawSelectable(int globalIdx, bool selected)
+    public NpcCacheItem Selection
+        => _selection;
+
+    public readonly struct NpcCacheItem(string name, ObjectKind kind, IReadOnlySet<uint> ids) : IComparable<NpcCacheItem>
     {
-        var (name, kind, ids) = Items[globalIdx];
-        if (globalIdx > 0 && Items[globalIdx - 1].Name == name || globalIdx + 1 < Items.Count && Items[globalIdx + 1].Name == name)
-            name = $"{name} ({kind.ToName()})";
-        var ret = ImGui.Selectable(name, selected);
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(string.Join('\n', ids.Select(i => i.ToString())));
+        public readonly StringPair         Name = new(name);
+        public readonly ObjectKind         Kind = kind;
+        public readonly IReadOnlySet<uint> Ids  = ids;
 
-        return ret;
-    }
-
-    public bool Draw(float width)
-        => Draw(label, CurrentSelection.Name.IsNullOrEmpty() ? "Human Non-Player-Characters..." : CurrentSelection.Name, string.Empty, width,
-            ImGui.GetTextLineHeightWithSpacing());
-
-
-    /// <summary> Compare strings in a way that letters and numbers are sorted before any special symbols. </summary>
-    private class NameComparer : IComparer<(string, ObjectKind)>
-    {
-        public int Compare((string, ObjectKind) x, (string, ObjectKind) y)
+        /// <summary> Compare strings in a way that letters and numbers are sorted before any special symbols. </summary>
+        public int CompareTo(NpcCacheItem other)
         {
-            if (x.Item1.IsNullOrWhitespace() || y.Item1.IsNullOrWhitespace())
-                return StringComparer.OrdinalIgnoreCase.Compare(x.Item1, y.Item1);
+            if (Name.Utf16.IsNullOrWhitespace() || other.Name.Utf16.IsNullOrWhitespace())
+                return StringComparer.OrdinalIgnoreCase.Compare(Name.Utf16, other.Name.Utf16);
 
-            var comp = (char.IsAsciiLetterOrDigit(x.Item1[0]), char.IsAsciiLetterOrDigit(y.Item1[0])) switch
+            var comp = (char.IsAsciiLetterOrDigit(Name.Utf16[0]), char.IsAsciiLetterOrDigit(other.Name.Utf16[0])) switch
             {
                 (true, false) => -1,
                 (false, true) => 1,
-                _             => StringComparer.OrdinalIgnoreCase.Compare(x.Item1, y.Item1),
+                _             => StringComparer.OrdinalIgnoreCase.Compare(Name.Utf16, other.Name.Utf16),
             };
 
-            if (comp != 0)
+            if (comp is not 0)
                 return comp;
 
-            return Comparer<ObjectKind>.Default.Compare(x.Item2, y.Item2);
+            return Comparer<ObjectKind>.Default.Compare(Kind, other.Kind);
         }
     }
 
-    private static IReadOnlyList<(string Name, ObjectKind Kind, uint[] Ids)> CreateList(DictModelChara modelCharaDict, DictBNpcNames bNpcNames,
-        DictBNpc bNpcs, HumanModelList humans)
+    private sealed class NpcFilter : TextFilterBase<NpcCacheItem>
     {
-        var ret = new List<(string Name, ObjectKind Kind, uint Id)>(1024);
+        protected override string ToFilterString(in NpcCacheItem item, int globalIndex)
+            => item.Name.Utf16;
+    }
+
+    protected override IEnumerable<NpcCacheItem> GetItems()
+    {
+        var bNpcDict = new SetDictionary<string, uint>(1024);
+        var eNpcDict = new SetDictionary<string, uint>(1024);
+        var bothSet  = new HashSet<string>(1024);
         for (var modelChara = 0u; modelChara < modelCharaDict.Count; ++modelChara)
         {
             if (!humans.IsHuman(modelChara))
                 continue;
 
             var list = modelCharaDict[modelChara];
-            if (list.Count == 0)
+            if (list.Count is 0)
                 continue;
 
             foreach (var (name, kind, id) in list.Where(t => !t.Name.IsNullOrWhitespace()))
             {
+                string actualName;
                 switch (kind)
                 {
                     case ObjectKind.BattleNpc:
                         if (!bNpcNames.TryGetValue(id, out var nameIds))
                             continue;
 
-                        ret.AddRange(nameIds.SelectWhere(nameId => (bNpcs.TryGetValue(nameId, out var s), (s!, kind, nameId.Id))));
+                        foreach (var nameId in nameIds)
+                        {
+                            if (!bNpcs.TryGetValue(nameId, out var s))
+                                continue;
+
+                            if (bothSet.Contains(s))
+                            {
+                                actualName = $"{s} ({ObjectKind.BattleNpc.ToName()})";
+                            }
+                            else if (eNpcDict.Remove(s, out var values))
+                            {
+                                actualName = $"{s} ({ObjectKind.BattleNpc.ToName()})";
+                                eNpcDict.TryAdd(actualName, values);
+                                bothSet.Add(s);
+                            }
+                            else
+                            {
+                                actualName = s;
+                            }
+
+                            bNpcDict.TryAdd(actualName, nameId.Id);
+                        }
+
                         break;
                     case ObjectKind.EventNpc:
-                        ret.Add((name, kind, id));
+                        if (bothSet.Contains(name))
+                        {
+                            actualName = $"{name} ({ObjectKind.EventNpc.ToName()})";
+                        }
+                        else if (bNpcDict.Remove(name, out var values))
+                        {
+                            actualName = $"{name} ({ObjectKind.EventNpc.ToName()})";
+                            bNpcDict.TryAdd(actualName, values);
+                            bothSet.Add(name);
+                        }
+                        else
+                        {
+                            actualName = name;
+                        }
+
+                        eNpcDict.TryAdd(actualName, id);
                         break;
                 }
             }
         }
 
-        return ret.GroupBy(t => (t.Name, t.Kind))
-            .OrderBy(g => g.Key, Comparer)
-            .Select(g => (g.Key.Name, g.Key.Kind, g.Select(g => g.Id).Distinct().ToArray()))
-            .ToList();
+        return bNpcDict.Grouped.Select(p => new NpcCacheItem(p.Key, ObjectKind.BattleNpc, p.Value))
+            .Concat(eNpcDict.Grouped.Select(p => new NpcCacheItem(p.Key, ObjectKind.EventNpc, p.Value)))
+            .OrderBy(p => p);
     }
 
-    private static readonly NameComparer Comparer = new();
+
+    protected override float ItemHeight
+        => Im.Style.TextHeightWithSpacing;
+
+    protected override bool DrawItem(in NpcCacheItem item, int globalIndex, bool selected)
+    {
+        var ret = Im.Selectable(item.Name.Utf8, selected);
+        if (Im.Item.Hovered())
+        {
+            using var style = Im.Style.PushDefault();
+            using var tt    = Im.Tooltip.Begin();
+            foreach (var id in item.Ids)
+                Im.Text($"{id}");
+        }
+
+        return ret;
+    }
+
+    public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, float width)
+        => base.Draw(label, _selection.Kind is ObjectKind.None ? "Human Non-Player-Characters..."u8 : _selection.Name.Utf8, StringU8.Empty,
+            width, out _selection);
+
+    protected override bool IsSelected(NpcCacheItem item, int globalIndex)
+        => item.Kind == _selection.Kind && item.Name.Utf16 == _selection.Name.Utf16;
 }

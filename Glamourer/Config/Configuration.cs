@@ -5,40 +5,26 @@ using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Services;
+using ImSharp;
+using Luna;
+using Luna.Generators;
 using Newtonsoft.Json;
-using OtterGui;
-using OtterGui.Classes;
-using OtterGui.Extensions;
-using OtterGui.Filesystem;
-using OtterGui.Widgets;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
-namespace Glamourer;
+namespace Glamourer.Config;
 
-public enum HeightDisplayType
+public sealed partial class Configuration : IPluginConfiguration, ISavable, IService
 {
-    None,
-    Centimetre,
-    Metre,
-    Wrong,
-    WrongFoot,
-    Corgi,
-    OlympicPool,
-}
+    public const int CurrentVersion = 9;
 
-public class DefaultDesignSettings
-{
-    public bool AlwaysForceRedrawing   = false;
-    public bool ResetAdvancedDyes      = false;
-    public bool ShowQuickDesignBar     = true;
-    public bool ResetTemporarySettings = false;
-    public bool Locked                 = false;
-}
-
-public class Configuration : IPluginConfiguration, ISavable
-{
     [JsonIgnore]
     public readonly EphemeralConfig Ephemeral;
+
+    [JsonIgnore]
+    public readonly UiConfig Ui;
+
+    [JsonIgnore]
+    public readonly FilterConfig Filters;
 
     public bool   AttachToPcp                      { get; set; } = true;
     public bool   UseRestrictedGearProtection      { get; set; } = false;
@@ -71,14 +57,24 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool   PreventRandomRepeats             { get; set; } = false;
     public string PcpFolder                        { get; set; } = "PCP";
     public string PcpColor                         { get; set; } = "";
+    public bool   RememberActorFilter              { get; set; } = false;
+    public bool   RememberDesignFilter             { get; set; } = false;
+    public bool   RememberNpcFilter                { get; set; } = true;
+    public bool   RememberAutomationFilter         { get; set; } = false;
+    public bool   RememberUnlocksFilters           { get; set; } = true;
+
+    public RoughnessSetting RoughnessSetting { get; set; } = RoughnessSetting.AsIs;
 
     public DesignPanelFlag HideDesignPanel       { get; set; } = 0;
     public DesignPanelFlag AutoExpandDesignPanel { get; set; } = 0;
 
     public DefaultDesignSettings DefaultDesignSettings { get; set; } = new();
 
-    public HeightDisplayType    HeightDisplayType    { get; set; } = HeightDisplayType.Centimetre;
-    public RenameField          ShowRename           { get; set; } = RenameField.BothDataPrio;
+    public HeightDisplayType HeightDisplayType { get; set; } = HeightDisplayType.Centimetre;
+
+    [ConfigProperty(EventName = "OnRenameChanged")]
+    private RenameField _showRename = RenameField.BothDataPrio;
+
     public ModifiableHotkey     ToggleQuickDesignBar { get; set; } = new(VirtualKey.NO_KEY);
     public DoubleModifier       DeleteDesignModifier { get; set; } = new(ModifierHotkey.Control, ModifierHotkey.Shift);
     public DoubleModifier       IncognitoModifier    { get; set; } = new(ModifierHotkey.Control);
@@ -89,7 +85,7 @@ public class Configuration : IPluginConfiguration, ISavable
 
     [JsonConverter(typeof(SortModeConverter))]
     [JsonProperty(Order = int.MaxValue)]
-    public ISortMode<Design> SortMode { get; set; } = ISortMode<Design>.FoldersFirst;
+    public ISortMode SortMode { get; set; } = ISortMode.FoldersFirst;
 
     public List<(string Code, bool Enabled)> Codes { get; set; } = [];
 
@@ -99,18 +95,20 @@ public class Configuration : IPluginConfiguration, ISavable
     public bool DebugMode { get; set; } = false;
 #endif
 
-    public int Version { get; set; } = Constants.CurrentVersion;
+    public int Version { get; set; } = CurrentVersion;
 
     public Dictionary<ColorId, uint> Colors { get; private set; }
-        = Enum.GetValues<ColorId>().ToDictionary(c => c, c => c.Data().DefaultColor);
+        = ColorId.Values.ToDictionary(c => c, c => c.Data().DefaultColor);
 
     [JsonIgnore]
     private readonly SaveService _saveService;
 
-    public Configuration(SaveService saveService, ConfigMigrationService migrator, EphemeralConfig ephemeral)
+    public Configuration(SaveService saveService, ConfigMigrationService migrator, EphemeralConfig ephemeral, UiConfig ui, FilterConfig filters)
     {
         _saveService = saveService;
         Ephemeral    = ephemeral;
+        Ui           = ui;
+        Filters      = filters;
         Load(migrator);
     }
 
@@ -119,13 +117,13 @@ public class Configuration : IPluginConfiguration, ISavable
 
     private void Load(ConfigMigrationService migrator)
     {
-        if (!File.Exists(_saveService.FileNames.ConfigFile))
+        if (!File.Exists(_saveService.FileNames.ConfigurationFile))
             return;
 
-        if (File.Exists(_saveService.FileNames.ConfigFile))
+        if (File.Exists(_saveService.FileNames.ConfigurationFile))
             try
             {
-                var text = File.ReadAllText(_saveService.FileNames.ConfigFile);
+                var text = File.ReadAllText(_saveService.FileNames.ConfigurationFile);
                 JsonConvert.PopulateObject(text, this, new JsonSerializerSettings
                 {
                     Error = HandleDeserializationError,
@@ -149,8 +147,8 @@ public class Configuration : IPluginConfiguration, ISavable
         }
     }
 
-    public string ToFilename(FilenameService fileNames)
-        => fileNames.ConfigFile;
+    public string ToFilePath(FilenameService fileNames)
+        => fileNames.ConfigurationFile;
 
     public void Save(StreamWriter writer)
     {
@@ -160,45 +158,22 @@ public class Configuration : IPluginConfiguration, ISavable
         serializer.Serialize(jWriter, this);
     }
 
-    public static class Constants
-    {
-        public const int CurrentVersion = 8;
-
-        public static readonly ISortMode<Design>[] ValidSortModes =
-        [
-            ISortMode<Design>.FoldersFirst,
-            ISortMode<Design>.Lexicographical,
-            new DesignFileSystem.CreationDate(),
-            new DesignFileSystem.InverseCreationDate(),
-            new DesignFileSystem.UpdateDate(),
-            new DesignFileSystem.InverseUpdateDate(),
-            ISortMode<Design>.InverseFoldersFirst,
-            ISortMode<Design>.InverseLexicographical,
-            ISortMode<Design>.FoldersLast,
-            ISortMode<Design>.InverseFoldersLast,
-            ISortMode<Design>.InternalOrder,
-            ISortMode<Design>.InverseInternalOrder,
-        ];
-    }
-
     /// <summary> Convert SortMode Types to their name. </summary>
-    private class SortModeConverter : JsonConverter<ISortMode<Design>>
+    private class SortModeConverter : JsonConverter<ISortMode>
     {
-        public override void WriteJson(JsonWriter writer, ISortMode<Design>? value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, ISortMode? value, JsonSerializer serializer)
         {
-            value ??= ISortMode<Design>.FoldersFirst;
+            value ??= ISortMode.FoldersFirst;
             serializer.Serialize(writer, value.GetType().Name);
         }
 
-        public override ISortMode<Design> ReadJson(JsonReader reader, Type objectType, ISortMode<Design>? existingValue,
-            bool hasExistingValue,
+        public override ISortMode ReadJson(JsonReader reader, Type objectType, ISortMode? existingValue, bool hasExistingValue,
             JsonSerializer serializer)
         {
-            var name = serializer.Deserialize<string>(reader);
-            if (name == null || !Constants.ValidSortModes.FindFirst(s => s.GetType().Name == name, out var mode))
-                return existingValue ?? ISortMode<Design>.FoldersFirst;
+            if (serializer.Deserialize<string>(reader) is { } name)
+                return ISortMode.Valid.GetValueOrDefault(name, existingValue ?? ISortMode.FoldersFirst);
 
-            return mode;
+            return existingValue ?? ISortMode.FoldersFirst;
         }
     }
 }

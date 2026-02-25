@@ -1,6 +1,6 @@
 using Glamourer.Api.Enums;
 using Glamourer.GameData;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Designs;
@@ -28,7 +28,7 @@ public record struct ApplicationCollection(
         CustomizeFlagExtensions.AllRelevant, CrestExtensions.AllRelevant, 0, MetaFlag.HatState | MetaFlag.VisorState | MetaFlag.WeaponState | MetaFlag.EarState);
 
     public static ApplicationCollection FromKeys()
-        => (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift) switch
+        => (Im.Io.KeyControl, Im.Io.KeyShift) switch
         {
             (false, false) => All,
             (true, true)   => All,

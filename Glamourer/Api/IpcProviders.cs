@@ -1,8 +1,8 @@
 using Dalamud.Plugin;
 using Glamourer.Api.Api;
 using Glamourer.Api.Helpers;
-using OtterGui.Services;
 using Glamourer.Api.Enums;
+using Luna;
 
 namespace Glamourer.Api;
 

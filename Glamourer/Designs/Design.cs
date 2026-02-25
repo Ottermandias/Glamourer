@@ -7,13 +7,13 @@ using Glamourer.Services;
 using Glamourer.State;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OtterGui.Classes;
 using Penumbra.GameData.Structs;
-using Notification = OtterGui.Classes.Notification;
+using Luna;
+using Notification = Luna.Notification;
 
 namespace Glamourer.Designs;
 
-public sealed class Design : DesignBase, ISavable, IDesignStandIn
+public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemValue<Design>
 {
     #region Data
 
@@ -43,9 +43,10 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     public new const int FileVersion = 2;
 
     public Guid                         Identifier             { get; internal init; }
+    public IFileSystemData<Design>?     Node                   { get; set; }
     public DateTimeOffset               CreationDate           { get; internal init; }
     public DateTimeOffset               LastEdit               { get; internal set; }
-    public LowerString                  Name                   { get; internal set; } = LowerString.Empty;
+    public string                       Name                   { get; internal set; } = string.Empty;
     public string                       Description            { get; internal set; } = string.Empty;
     public string[]                     Tags                   { get; internal set; } = [];
     public int                          Index                  { get; internal set; }
@@ -56,6 +57,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     public string                       Color                  { get; internal set; } = string.Empty;
     public SortedList<Mod, ModSettings> AssociatedMods         { get; private set; }  = [];
     public LinkContainer                Links                  { get; private set; }  = [];
+    public DataPath                     Path                   { get; }               = new();
 
     public string Incognito
         => Identifier.ToString()[..8];
@@ -68,7 +70,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
     #region IDesignStandIn
 
     public string ResolveName(bool incognito)
-        => incognito ? Incognito : Name.Text;
+        => incognito ? Incognito : Name;
 
     public string SerializeName()
         => Identifier.ToString();
@@ -106,7 +108,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
             ["Identifier"]             = Identifier,
             ["CreationDate"]           = CreationDate,
             ["LastEdit"]               = LastEdit,
-            ["Name"]                   = Name.Text,
+            ["Name"]                   = Name,
             ["Description"]            = Description,
             ["ForcedRedraw"]           = ForcedRedraw,
             ["ResetAdvancedDyes"]      = ResetAdvancedDyes,
@@ -123,6 +125,12 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
             ["Mods"]                   = SerializeMods(),
             ["Links"]                  = Links.Serialize(),
         };
+        if (Path.Folder.Length > 0)
+            ret["FileSystemFolder"] = Path.Folder;
+        if (Path.SortName is not null)
+            ret["SortOrderName"] = Path.SortName;
+
+
         return ret;
     }
 
@@ -191,7 +199,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
             var hasNegativeGloss    = false;
             var hasNonPositiveGloss = false;
             var specularLarger      = 0;
-            foreach (var (key, value) in materialData.GetValues(MaterialValueIndex.Min(), MaterialValueIndex.Max()))
+            foreach (var (_, value) in materialData.GetValues(MaterialValueIndex.Min(), MaterialValueIndex.Max()))
             {
                 hasNegativeGloss    |= value.Value.GlossStrength < 0;
                 hasNonPositiveGloss |= value.Value.GlossStrength <= 0;
@@ -242,7 +250,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
         {
             CreationDate = creationDate,
             Identifier   = json["Identifier"]?.ToObject<Guid>() ?? throw new ArgumentNullException("Identifier"),
-            Name         = new LowerString(json["Name"]?.ToObject<string>() ?? throw new ArgumentNullException("Name")),
+            Name         = json["Name"]?.ToObject<string>() ?? throw new ArgumentNullException("Name"),
             Description  = json["Description"]?.ToObject<string>() ?? string.Empty,
             Tags         = ParseTags(json),
             LastEdit     = json["LastEdit"]?.ToObject<DateTimeOffset>() ?? creationDate,
@@ -250,6 +258,9 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
         };
         if (design.LastEdit < creationDate)
             design.LastEdit = creationDate;
+        design.Path.Folder   = json["FileSystemFolder"]?.Value<string>() ?? string.Empty;
+        design.Path.SortName = json["SortOrderName"]?.Value<string>()?.FixName();
+
         design.SetWriteProtected(json["WriteProtected"]?.ToObject<bool>() ?? false);
         LoadCustomize(customizations, json["Customize"], design, design.Name, true, false);
         LoadEquip(items, json["Equipment"], design, design.Name, true);
@@ -327,21 +338,25 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn
 
     #region ISavable
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.DesignFile(this);
 
     public void Save(StreamWriter writer)
     {
-        using var j = new JsonTextWriter(writer)
-        {
-            Formatting = Formatting.Indented,
-        };
+        using var j = new JsonTextWriter(writer);
+        j.Formatting = Formatting.Indented;
         var obj = JsonSerialize();
         obj.WriteTo(j);
     }
 
     public string LogName(string fileName)
-        => Path.GetFileNameWithoutExtension(fileName);
+        => System.IO.Path.GetFileNameWithoutExtension(fileName);
 
     #endregion
+
+    string IFileSystemValue.Identifier
+        => Identifier.ToString();
+
+    public string DisplayName
+        => Name;
 }

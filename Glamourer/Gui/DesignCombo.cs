@@ -1,375 +1,382 @@
-﻿using Dalamud.Interface.Utility;
-using Dalamud.Interface.Utility.Raii;
-using Glamourer.Automation;
+﻿using Glamourer.Automation;
 using Glamourer.Designs;
-using Glamourer.Designs.History;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Classes;
-using OtterGui.Extensions;
-using OtterGui.Log;
-using OtterGui.Widgets;
+using ImSharp;
+using Luna;
 
 namespace Glamourer.Gui;
 
-public abstract class DesignComboBase : FilterComboCache<Tuple<IDesignStandIn, string>>, IDisposable
+public abstract class DesignComboBase(
+    Config.EphemeralConfig config,
+    DesignManager designs,
+    DesignChanged designChanged,
+    DesignColors designColors,
+    TabSelected tabSelected,
+    DesignFileSystem designFileSystem)
+    : FilterComboBase<DesignComboBase.CacheItem>(new DesignFilter(), ConfigData.Default with { ComputeWidth = true })
 {
-    protected readonly EphemeralConfig Config;
-    protected readonly DesignChanged   DesignChanged;
-    protected readonly DesignColors    DesignColors;
-    protected readonly TabSelected     TabSelected;
-    protected          float           InnerWidth;
-    private            IDesignStandIn? _currentDesign;
-    private            bool            _isCurrentSelectionDirty;
+    protected readonly Config.EphemeralConfig Config           = config;
+    protected readonly DesignChanged          DesignChanged    = designChanged;
+    protected readonly DesignColors           DesignColors     = designColors;
+    protected readonly DesignFileSystem       DesignFileSystem = designFileSystem;
+    protected readonly TabSelected            TabSelected      = tabSelected;
+    protected readonly DesignManager          Designs          = designs;
+    protected          IDesignStandIn?        CurrentDesign;
 
-    protected DesignComboBase(Func<IReadOnlyList<Tuple<IDesignStandIn, string>>> generator, Logger log, DesignChanged designChanged,
-        TabSelected tabSelected, EphemeralConfig config, DesignColors designColors)
-        : base(generator, MouseWheelType.Control, log)
+    protected CacheItem CreateItem(IDesignStandIn design)
     {
-        DesignChanged = designChanged;
-        TabSelected   = tabSelected;
-        Config        = config;
-        DesignColors  = designColors;
-        DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
+        var color = design is Design d1 ? DesignColors.GetColor(d1).ToVector() : ColorId.NormalDesign.Value().ToVector();
+        var path  = design is Design d2 ? d2.Node!.FullPath : string.Empty;
+        var name  = design.ResolveName(false);
+        if (path == name)
+            path = string.Empty;
+        return new CacheItem(design, color, path, name);
     }
 
-    public bool Incognito
-        => Config.IncognitoMode;
+    protected override bool IsSelected(CacheItem item, int globalIndex)
+        => item.Design == CurrentDesign;
 
-    void IDisposable.Dispose()
+    public virtual bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, IDesignStandIn? currentDesign, out IDesignStandIn? newSelection,
+        float width)
     {
-        DesignChanged.Unsubscribe(OnDesignChanged);
-        GC.SuppressFinalize(this);
-    }
-
-    protected override bool DrawSelectable(int globalIdx, bool selected)
-    {
-        var (design, path) = Items[globalIdx];
+        CurrentDesign = currentDesign;
         bool ret;
-        switch (design)
+        using (ImGuiColor.Text.Push(DesignColors.GetColor(CurrentDesign as Design)))
         {
-            case Design realDesign:
-            {
-                using var color = ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(realDesign));
-                ret = base.DrawSelectable(globalIdx, selected);
-                DrawPath(path, realDesign);
-                return ret;
-            }
-            case QuickSelectedDesign quickDesign:
-            {
-                using var color = ImRaii.PushColor(ImGuiCol.Text, ColorId.NormalDesign.Value());
-                ret = base.DrawSelectable(globalIdx, selected);
-                DrawResolvedDesign(quickDesign);
-                return ret;
-            }
-            default: return base.DrawSelectable(globalIdx, selected);
+            ret = currentDesign is null
+                ? base.Draw(label, "Select Design Here..."u8,                       StringU8.Empty, width, out var result)
+                : base.Draw(label, currentDesign.ResolveName(Config.IncognitoMode), StringU8.Empty, width, out result);
+            newSelection = ret ? result.Design : currentDesign;
         }
-    }
 
-    private static void DrawPath(string path, Design realDesign)
-    {
-        if (path.Length <= 0 || realDesign.Name == path)
-            return;
-
-        DrawRightAligned(realDesign.Name, path, ImGui.GetColorU32(ImGuiCol.TextDisabled));
-    }
-
-    private void DrawResolvedDesign(QuickSelectedDesign quickDesign)
-    {
-        var linkedDesign = quickDesign.CurrentDesign;
-        if (linkedDesign != null)
-            DrawRightAligned(quickDesign.ResolveName(false), linkedDesign.Name.Text, DesignColors.GetColor(linkedDesign));
+        if (CurrentDesign is Design design)
+        {
+            if (Im.Item.RightClicked() && Im.Io.KeyControl)
+                TabSelected.Invoke(new TabSelected.Arguments(MainTabType.Designs, design));
+            Im.Tooltip.OnHover("Control + Right-Click to move to design."u8);
+        }
         else
-            DrawRightAligned(quickDesign.ResolveName(false), "[Nothing]", DesignColors.MissingColor);
-    }
-
-    protected bool Draw(IDesignStandIn? currentDesign, string? label, float width)
-    {
-        _currentDesign = currentDesign;
-        UpdateCurrentSelection();
-        InnerWidth = 400 * ImGuiHelpers.GlobalScale;
-        var  name = label ?? "Select Design Here...";
-        bool ret;
-        using (_ = currentDesign != null ? ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(currentDesign as Design)) : null)
         {
-            ret = Draw("##design", name, string.Empty, width, ImGui.GetTextLineHeightWithSpacing())
-             && CurrentSelection != null;
+            QuickSelectedDesignTooltip(CurrentDesign as QuickSelectedDesign);
         }
 
-        if (currentDesign is Design design)
-        {
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyCtrl)
-                TabSelected.Invoke(MainWindow.TabType.Designs, design);
-            ImGuiUtil.HoverTooltip("Control + Right-Click to move to design.");
-        }
-
-        QuickSelectedDesignTooltip(currentDesign);
-
-        _currentDesign = null;
+        CurrentDesign = null;
         return ret;
     }
 
-    protected override string ToString(Tuple<IDesignStandIn, string> obj)
-        => obj.Item1.ResolveName(Incognito);
-
-    protected override float GetFilterWidth()
-        => InnerWidth - 2 * ImGui.GetStyle().FramePadding.X;
-
-    protected override bool IsVisible(int globalIndex, LowerString filter)
+    private void QuickSelectedDesignTooltip(QuickSelectedDesign? design)
     {
-        var (design, path) = Items[globalIndex];
-        return filter.IsContained(path) || filter.IsContained(design.ResolveName(false));
-    }
-
-    protected override void OnMouseWheel(string preview, ref int _2, int steps)
-    {
-        if (!ReferenceEquals(_currentDesign, CurrentSelection?.Item1))
-            CurrentSelectionIdx = -1;
-
-        base.OnMouseWheel(preview, ref _2, steps);
-    }
-
-    private void UpdateCurrentSelection()
-    {
-        if (!_isCurrentSelectionDirty)
+        if (design is null)
             return;
 
-        var priorState = IsInitialized;
-        if (priorState)
-            Cleanup();
-        CurrentSelectionIdx = Items.IndexOf(s => ReferenceEquals(s.Item1, CurrentSelection?.Item1));
-        if (CurrentSelectionIdx >= 0)
+        if (!Im.Item.Hovered())
+            return;
+
+        using var tt           = Im.Tooltip.Begin();
+        var       linkedDesign = design.CurrentDesign;
+        if (linkedDesign is not null)
         {
-            UpdateSelection(Items[CurrentSelectionIdx]);
-        }
-        else if (Items.Count > 0)
-        {
-            CurrentSelectionIdx = 0;
-            UpdateSelection(Items[0]);
+            Im.Text("Currently resolving to "u8);
+            using var color = ImGuiColor.Text.Push(DesignColors.GetColor(linkedDesign));
+            Im.Line.NoSpacing();
+            Im.Text(linkedDesign.Name);
         }
         else
         {
-            UpdateSelection(null);
-        }
-
-        if (!priorState)
-            Cleanup();
-        _isCurrentSelectionDirty = false;
-    }
-
-    protected override int UpdateCurrentSelected(int currentSelected)
-    {
-        CurrentSelectionIdx = Items.IndexOf(p => _currentDesign == p.Item1);
-        UpdateSelection(CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : null);
-        return CurrentSelectionIdx;
-    }
-
-    private void OnDesignChanged(DesignChanged.Type type, Design? _1, ITransaction? _2 = null)
-    {
-        _isCurrentSelectionDirty = type switch
-        {
-            DesignChanged.Type.Created        => true,
-            DesignChanged.Type.Renamed        => true,
-            DesignChanged.Type.ChangedColor   => true,
-            DesignChanged.Type.Deleted        => true,
-            DesignChanged.Type.QuickDesignBar => true,
-            _                                 => _isCurrentSelectionDirty,
-        };
-    }
-
-    private void QuickSelectedDesignTooltip(IDesignStandIn? design)
-    {
-        if (!ImGui.IsItemHovered())
-            return;
-
-        if (design is not QuickSelectedDesign q)
-            return;
-
-        using var tt           = ImRaii.Tooltip();
-        var       linkedDesign = q.CurrentDesign;
-        if (linkedDesign != null)
-        {
-            ImGui.TextUnformatted("Currently resolving to ");
-            using var color = ImRaii.PushColor(ImGuiCol.Text, DesignColors.GetColor(linkedDesign));
-            ImGui.SameLine(0, 0);
-            ImGui.TextUnformatted(linkedDesign.Name.Text);
-        }
-        else
-        {
-            ImGui.TextUnformatted("No design selected in the Quick Design Bar.");
+            Im.Text("No design selected in the Quick Design Bar."u8);
         }
     }
 
-    private static void DrawRightAligned(string leftText, string text, uint color)
+    protected sealed class DesignFilter : Utf8FilterBase<CacheItem>
     {
-        var start          = ImGui.GetItemRectMin();
-        var pos            = start.X + ImGui.CalcTextSize(leftText).X;
-        var maxSize        = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
-        var remainingSpace = maxSize - pos;
-        var requiredSize   = ImGui.CalcTextSize(text).X + ImGui.GetStyle().ItemInnerSpacing.X;
-        var offset         = remainingSpace - requiredSize;
-        if (ImGui.GetScrollMaxY() == 0)
-            offset -= ImGui.GetStyle().ItemInnerSpacing.X;
+        public override bool DrawFilter(ReadOnlySpan<byte> label, Vector2 availableRegion)
+        {
+            using var _ = ImGuiColor.Text.PushDefault();
+            return base.DrawFilter(label, availableRegion);
+        }
 
-        if (offset < ImGui.GetStyle().ItemSpacing.X)
-            ImGuiUtil.HoverTooltip(text);
-        else
-            ImGui.GetWindowDrawList().AddText(start with { X = pos + offset },
-                color, text);
+        public override bool WouldBeVisible(in CacheItem item, int globalIndex)
+            => WouldBeVisible(item.Name.Utf8) || WouldBeVisible(item.Incognito.Utf8) || WouldBeVisible(item.FullPath.Utf8);
+
+        protected override ReadOnlySpan<byte> ToFilterString(in CacheItem item, int globalIndex)
+            => item.Name.Utf8;
     }
+
+    protected sealed class Cache : FilterComboBaseCache<CacheItem>
+    {
+        private new DesignComboBase Parent
+            => (DesignComboBase)base.Parent;
+
+        public Cache(DesignComboBase parent)
+            : base(parent)
+        {
+            Parent.DesignColors.ColorChanged += OnDesignColorChanged;
+            Parent.DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
+        }
+
+        protected override void ComputeWidth()
+            => ComboWidth = UnfilteredItems.Max(d
+                => d.Name.Utf8.CalculateSize(false).X
+              + d.FullPath.Utf8.CalculateSize(false).X
+              + 2 * Im.Style.ItemSpacing.X
+              + Im.Style.ScrollbarSize);
+
+        protected override void Dispose(bool disposing)
+        {
+            Parent.DesignColors.ColorChanged -= OnDesignColorChanged;
+            Parent.DesignChanged.Unsubscribe(OnDesignChanged);
+            base.Dispose(disposing);
+        }
+
+        private void OnDesignColorChanged()
+            => Dirty |= IManagedCache.DirtyFlags.Custom;
+
+        private void OnDesignChanged(in DesignChanged.Arguments arguments)
+        {
+            if (arguments.Type switch
+                {
+                    DesignChanged.Type.Created        => true,
+                    DesignChanged.Type.Renamed        => true,
+                    DesignChanged.Type.ChangedColor   => true,
+                    DesignChanged.Type.Deleted        => true,
+                    DesignChanged.Type.QuickDesignBar => true,
+                    _                                 => false,
+                })
+                Dirty |= IManagedCache.DirtyFlags.Custom;
+        }
+    }
+
+    protected override FilterComboBaseCache<CacheItem> CreateCache()
+        => new Cache(this);
+
+    public readonly struct CacheItem(IDesignStandIn design, Vector4 color, string path, string name)
+    {
+        public readonly IDesignStandIn Design    = design;
+        public readonly StringPair     Name      = new(name);
+        public readonly StringPair     Incognito = new(design.ResolveName(true));
+        public readonly StringPair     FullPath  = new(path);
+        public readonly Vector4        Color     = color;
+
+        public static string Ordering(CacheItem item)
+            => item.FullPath.Utf16.Length > 0 ? item.FullPath.Utf16 : item.Name.Utf16;
+    }
+
+
+    protected override bool DrawItem(in CacheItem item, int globalIndex, bool selected)
+    {
+        using var color = ImGuiColor.Text.Push(item.Color);
+        var       name  = Config.IncognitoMode ? item.Incognito.Utf8 : item.Name.Utf8;
+        var       ret   = Im.Selectable(name, selected);
+        if (!item.FullPath.IsEmpty && !Config.IncognitoMode)
+        {
+            Im.Line.Same();
+            color.Push(ImGuiColor.Text, Im.Style[ImGuiColor.TextDisabled]);
+            ImEx.TextRightAligned(item.FullPath.Utf8);
+        }
+        else if (item.Design is QuickSelectedDesign { CurrentDesign: { } d })
+        {
+            Im.Line.Same();
+            color.Push(ImGuiColor.Text, DesignColors.GetColor(d));
+            ImEx.TextRightAligned(d.ResolveName(Config.IncognitoMode));
+        }
+
+        return ret;
+    }
+
+    protected override float ItemHeight
+        => Im.Style.TextHeightWithSpacing;
 }
 
-public abstract class DesignCombo : DesignComboBase
+public sealed class QuickDesignCombo : DesignComboBase, IDisposable, IUiService
 {
-    protected DesignCombo(Logger log, DesignChanged designChanged, TabSelected tabSelected,
-        EphemeralConfig config, DesignColors designColors, Func<IReadOnlyList<Tuple<IDesignStandIn, string>>> generator)
-        : base(generator, log, designChanged, tabSelected, config, designColors)
+    public Design? QuickDesign
     {
-        if (Items.Count == 0)
-            return;
-
-        CurrentSelection    = Items[0];
-        CurrentSelectionIdx = 0;
-        base.Cleanup();
-    }
-
-    public IDesignStandIn? Design
-        => CurrentSelection?.Item1;
-
-    public void Draw(float width)
-        => Draw(Design, Design?.ResolveName(Incognito) ?? string.Empty, width);
-}
-
-public sealed class QuickDesignCombo : DesignCombo
-{
-    public QuickDesignCombo(DesignFileSystem fileSystem,
-        Logger log,
-        DesignChanged designChanged,
-        TabSelected tabSelected,
-        EphemeralConfig config,
-        DesignColors designColors)
-        : base(log, designChanged, tabSelected, config, designColors, () =>
-        [
-            .. fileSystem
-                .Where(kvp => kvp.Key.QuickDesign)
-                .Select(kvp => new Tuple<IDesignStandIn, string>(kvp.Key, kvp.Value.FullName()))
-                .OrderBy(d => d.Item2),
-        ])
-    {
-        if (config.SelectedQuickDesign != Guid.Empty)
+        get;
+        private set
         {
-            CurrentSelectionIdx = Items.IndexOf(t => t.Item1 is Design d && d.Identifier == config.SelectedQuickDesign);
-            if (CurrentSelectionIdx >= 0)
-                CurrentSelection = Items[CurrentSelectionIdx];
-            else if (Items.Count > 0)
-                CurrentSelectionIdx = 0;
-        }
-
-        AllowMouseWheel  =  MouseWheelType.Unmodified;
-        SelectionChanged += OnSelectionChange;
-    }
-
-    private void OnSelectionChange(Tuple<IDesignStandIn, string>? old, Tuple<IDesignStandIn, string>? @new)
-    {
-        if (old == null)
-        {
-            if (@new?.Item1 is not Design d)
+            if (field == value)
                 return;
 
-            Config.SelectedQuickDesign = d.Identifier;
-            Config.Save();
-        }
-        else if (@new?.Item1 is not Design d)
-        {
-            Config.SelectedQuickDesign = Guid.Empty;
-            Config.Save();
-        }
-        else if (!old.Item1.Equals(@new.Item1))
-        {
-            Config.SelectedQuickDesign = d.Identifier;
+            field                      = value;
+            Config.SelectedQuickDesign = field?.Identifier ?? Guid.Empty;
             Config.Save();
         }
     }
+
+
+    public QuickDesignCombo(Config.EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
+        DesignFileSystem designFileSystem, DesignManager designs)
+        : base(config, designs, designChanged, designColors, tabSelected, designFileSystem)
+    {
+        if (Designs.Designs.TryGetValue(config.SelectedQuickDesign, out var design) && design.QuickDesign)
+            QuickDesign = design;
+        DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
+    }
+
+    private void OnDesignChanged(in DesignChanged.Arguments arguments)
+    {
+        switch (arguments.Type)
+        {
+            case DesignChanged.Type.Created:
+                // If the quick design bar has no selection, select the new design if it supports the bar.
+                if (QuickDesign is null && arguments.Design.QuickDesign)
+                    QuickDesign = arguments.Design;
+                break;
+            case DesignChanged.Type.Deleted:
+                // If the deleted design was selected, select the first design that supports the bar, if any.
+                if (QuickDesign == arguments.Design)
+                    QuickDesign = Designs.Designs.FirstOrDefault(d => d.QuickDesign);
+                break;
+            case DesignChanged.Type.ReloadedAll:
+                // If all designs were reloaded, update the selection.
+                QuickDesign = Designs.Designs.TryGetValue(Config.SelectedQuickDesign, out var design) && design.QuickDesign ? design : null;
+                break;
+            case DesignChanged.Type.QuickDesignBar:
+                // If the quick design support of a design was changed, select the new design if the bar has no selection and the design now supports it,
+                if (QuickDesign is null && arguments.Design.QuickDesign)
+                    QuickDesign = arguments.Design;
+                // or select the first design that supports the bar, if any, if the support was removed from the currently selected design.
+                else if (QuickDesign == arguments.Design && !arguments.Design.QuickDesign)
+                    QuickDesign = Designs.Designs.FirstOrDefault(d => d.QuickDesign);
+                break;
+        }
+    }
+
+    public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, float width)
+    {
+        if (!base.Draw(label, QuickDesign, out var newDesign, width))
+            return false;
+
+        QuickDesign = newDesign as Design;
+        return true;
+    }
+
+    protected override IEnumerable<CacheItem> GetItems()
+        => Designs.Designs
+            .Where(design => design.QuickDesign)
+            .Select(CreateItem)
+            .OrderBy(CacheItem.Ordering);
+
+    public void Dispose()
+        => DesignChanged.Unsubscribe(OnDesignChanged);
 }
 
-public sealed class LinkDesignCombo(
-    DesignFileSystem fileSystem,
-    Logger log,
-    DesignChanged designChanged,
-    TabSelected tabSelected,
-    EphemeralConfig config,
-    DesignColors designColors)
-    : DesignCombo(log, designChanged, tabSelected, config, designColors, () =>
-    [
-        .. fileSystem
-            .Select(kvp => new Tuple<IDesignStandIn, string>(kvp.Key, kvp.Value.FullName()))
-            .OrderBy(d => d.Item2),
-    ]);
+public sealed class LinkDesignCombo : DesignComboBase, IUiService, IDisposable
+{
+    public Design? NewSelection { get; private set; }
+
+    public LinkDesignCombo(Config.EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
+        DesignFileSystem designFileSystem, DesignManager designs)
+        : base(config, designs, designChanged, designColors, tabSelected, designFileSystem)
+    {
+        DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
+    }
+
+    public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, float width)
+    {
+        if (!base.Draw(label, NewSelection, out var newSelection, width))
+            return false;
+
+        NewSelection = newSelection as Design;
+        return true;
+    }
+
+    protected override IEnumerable<CacheItem> GetItems()
+        => Designs.Designs.Select(CreateItem)
+            .OrderBy(CacheItem.Ordering);
+
+    public void Dispose()
+        => DesignChanged.Unsubscribe(OnDesignChanged);
+
+    private void OnDesignChanged(in DesignChanged.Arguments arguments)
+    {
+        if (arguments.Type is DesignChanged.Type.Deleted && arguments.Design == NewSelection
+         || arguments.Type is DesignChanged.Type.ReloadedAll)
+            NewSelection = null;
+    }
+}
 
 public sealed class RandomDesignCombo(
+    Config.EphemeralConfig config,
     DesignManager designs,
-    DesignFileSystem fileSystem,
-    Logger log,
     DesignChanged designChanged,
+    DesignColors designColors,
     TabSelected tabSelected,
-    EphemeralConfig config,
-    DesignColors designColors)
-    : DesignCombo(log, designChanged, tabSelected, config, designColors, () =>
-    [
-        .. fileSystem
-            .Select(kvp => new Tuple<IDesignStandIn, string>(kvp.Key, kvp.Value.FullName()))
-            .OrderBy(d => d.Item2),
-    ])
+    DesignFileSystem designFileSystem) : DesignComboBase(config, designs, designChanged, designColors, tabSelected, designFileSystem),
+    IUiService
 {
     private Design? GetDesign(RandomPredicate.Exact exact)
     {
         return exact.Which switch
         {
-            RandomPredicate.Exact.Type.Name => designs.Designs.FirstOrDefault(d => d.Name == exact.Value),
-            RandomPredicate.Exact.Type.Path => fileSystem.Find(exact.Value.Text, out var c) && c is DesignFileSystem.Leaf l ? l.Value : null,
-            RandomPredicate.Exact.Type.Identifier => designs.Designs.ByIdentifier(Guid.TryParse(exact.Value.Text, out var g) ? g : Guid.Empty),
-            _ => null,
+            RandomPredicate.Exact.Type.Name       => Designs.Designs.FirstOrDefault(d => d.Name == exact.Value),
+            RandomPredicate.Exact.Type.Path       => Designs.Designs.FirstOrDefault(d => d.Node!.FullPath == exact.Value),
+            RandomPredicate.Exact.Type.Identifier => Designs.Designs.ByIdentifier(Guid.TryParse(exact.Value, out var g) ? g : Guid.Empty),
+            _                                     => null,
         };
     }
 
-    public bool Draw(RandomPredicate.Exact exact, float width)
+    public bool Draw(RandomPredicate.Exact exact, [NotNullWhen(true)] out Design? newDesign, float width)
     {
         var design = GetDesign(exact);
-        return Draw(design, design?.ResolveName(Incognito) ?? $"Not Found [{exact.Value.Text}]", width);
+        if (Draw(StringU8.Empty, design?.ResolveName(Config.IncognitoMode) ?? $"Not Found [{exact.Value}]", StringU8.Empty, width,
+                out var newItem)
+         && newItem.Design is Design d)
+        {
+            newDesign = d;
+            return true;
+        }
+
+        newDesign = null;
+        return false;
     }
 
-    public bool Draw(IDesignStandIn? design, float width)
-        => Draw(design, design?.ResolveName(Incognito) ?? string.Empty, width);
+    protected override IEnumerable<CacheItem> GetItems()
+        => Designs.Designs.Select(CreateItem)
+            .OrderBy(CacheItem.Ordering);
 }
 
-public sealed class SpecialDesignCombo(
-    DesignFileSystem fileSystem,
-    TabSelected tabSelected,
-    DesignColors designColors,
-    Logger log,
-    DesignChanged designChanged,
-    AutoDesignManager autoDesignManager,
-    EphemeralConfig config,
-    RandomDesignGenerator rng,
-    QuickSelectedDesign quickSelectedDesign)
-    : DesignComboBase(() => fileSystem
-        .Select(kvp => new Tuple<IDesignStandIn, string>(kvp.Key, kvp.Value.FullName()))
-        .OrderBy(d => d.Item2)
-        .Prepend(new Tuple<IDesignStandIn, string>(new RandomDesign(rng), string.Empty))
-        .Prepend(new Tuple<IDesignStandIn, string>(quickSelectedDesign,   string.Empty))
-        .Prepend(new Tuple<IDesignStandIn, string>(new RevertDesign(),    string.Empty))
-        .ToList(), log, designChanged, tabSelected, config, designColors)
+public sealed class SpecialDesignCombo : DesignComboBase, IUiService
 {
+    private readonly AutoDesignManager _autoDesigns;
+
+    private readonly CacheItem _random;
+    private readonly CacheItem _revert;
+    private readonly CacheItem _quick;
+
+    public SpecialDesignCombo(Config.EphemeralConfig config,
+        DesignManager designs,
+        DesignChanged designChanged,
+        DesignColors designColors,
+        TabSelected tabSelected,
+        DesignFileSystem designFileSystem,
+        AutoDesignManager autoDesigns,
+        RandomDesignGenerator rng, QuickSelectedDesign quickSelectedDesign)
+        : base(config, designs, designChanged, designColors, tabSelected, designFileSystem)
+    {
+        _autoDesigns = autoDesigns;
+        _random      = CreateItem(new RandomDesign(rng));
+        _revert      = CreateItem(new RevertDesign());
+        _quick       = CreateItem(quickSelectedDesign);
+    }
+
     public void Draw(AutoDesignSet set, AutoDesign? design, int autoDesignIndex)
     {
-        if (!Draw(design?.Design, design?.Design.ResolveName(Incognito), ImGui.GetContentRegionAvail().X))
+        if (!Draw(StringU8.Empty, design?.Design, out var newSelection, Im.ContentRegion.Available.X) || newSelection is null)
             return;
 
         if (autoDesignIndex >= 0)
-            autoDesignManager.ChangeDesign(set, autoDesignIndex, CurrentSelection!.Item1);
+            _autoDesigns.ChangeDesign(set, autoDesignIndex, newSelection);
         else
-            autoDesignManager.AddDesign(set, CurrentSelection!.Item1);
+            _autoDesigns.AddDesign(set, newSelection);
     }
+
+    protected override IEnumerable<CacheItem> GetItems()
+        => Designs.Designs
+            .Select(CreateItem)
+            .OrderBy(CacheItem.Ordering)
+            .Prepend(_random)
+            .Prepend(_quick)
+            .Prepend(_revert);
 }

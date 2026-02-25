@@ -1,20 +1,20 @@
 ﻿using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Glamourer.Api.IpcSubscribers;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab.IpcTester;
 
-public class IpcTesterPanel(
+public sealed class IpcTesterPanel(
     IDalamudPluginInterface pluginInterface,
     DesignIpcTester designs,
     ItemsIpcTester items,
     StateIpcTester state,
     IFramework framework) : IGameDataDrawer
 {
-    public string Label
-        => "IPC Tester";
+    public ReadOnlySpan<byte> Label
+        => "IPC Tester"u8;
 
     public bool Disabled
         => false;
@@ -28,15 +28,15 @@ public class IpcTesterPanel(
         {
             _lastUpdate = framework.LastUpdateUTC.AddSeconds(1);
             Subscribe();
-            ImGui.TextUnformatted(ApiVersion.Label);
+            Im.Text(ApiVersion.LabelU8);
             var (major, minor) = new ApiVersion(pluginInterface).Invoke();
-            ImGui.SameLine();
-            ImGui.TextUnformatted($"({major}.{minor:D4})");
+            Im.Line.Same();
+            Im.Text($"({major}.{minor:D4})");
 
-            ImGui.TextUnformatted(AutoReloadGearEnabled.Label);
+            Im.Text(AutoReloadGearEnabled.LabelU8);
             var autoRedraw = new AutoReloadGearEnabled(pluginInterface).Invoke();
-            ImGui.SameLine();
-            ImGui.TextUnformatted(autoRedraw ? "Enabled" : "Disabled");
+            Im.Line.Same();
+            Im.Text(autoRedraw ? "Enabled"u8 : "Disabled"u8);
 
             designs.Draw();
             items.Draw();

@@ -1,138 +1,139 @@
-﻿using Dalamud.Interface;
-using Glamourer.GameData;
+﻿using Glamourer.GameData;
 using Glamourer.Designs;
 using Glamourer.State;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class ActiveStatePanel(StateManager _stateManager, ActorObjectManager _objectManager) : IGameDataDrawer
+public sealed class ActiveStatePanel(StateManager stateManager, ActorObjectManager objectManager) : IGameDataDrawer
 {
-    public string Label
-        => $"Active Actors ({_stateManager.Count})###Active Actors";
+    public ReadOnlySpan<byte> Label
+        => new StringU8($"Active Actors ({stateManager.Count})###Active Actors");
 
     public bool Disabled
         => false;
 
     public void Draw()
     {
-        foreach (var (identifier, actors) in _objectManager)
+        foreach (var (identifier, actors) in objectManager)
         {
-            if (ImGuiUtil.DrawDisabledButton($"{FontAwesomeIcon.Trash.ToIconString()}##{actors.Label}", new Vector2(ImGui.GetFrameHeight()),
-                    string.Empty, !_stateManager.ContainsKey(identifier), true))
-                _stateManager.DeleteState(identifier);
+            using var id = Im.Id.Push(actors.Label);
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, StringU8.Empty, !stateManager.ContainsKey(identifier)))
+                stateManager.DeleteState(identifier);
 
-            ImGui.SameLine();
-            using var t = ImRaii.TreeNode(actors.Label);
+            Im.Line.Same();
+            using var t = Im.Tree.Node(actors.Label);
             if (!t)
                 continue;
 
-            if (_stateManager.GetOrCreate(identifier, actors.Objects[0], out var state))
-                DrawState(_stateManager, actors, state);
+            if (stateManager.GetOrCreate(identifier, actors.Objects[0], out var state))
+                DrawState(stateManager, actors, state);
             else
-                ImGui.TextUnformatted("Invalid actor.");
+                Im.Text("Invalid actor."u8);
         }
     }
 
     public static void DrawState(StateManager stateManager, ActorData data, ActorState state)
     {
-        using var table = ImRaii.Table("##state", 7, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
+        using var table = Im.Table.Begin("##state"u8, 7, TableFlags.RowBackground | TableFlags.SizingFixedFit);
         if (!table)
             return;
 
-        ImGuiUtil.DrawTableColumn("Name");
-        ImGuiUtil.DrawTableColumn(state.Identifier.ToString());
-        ImGui.TableNextColumn();
-        if (ImGui.Button("Reset"))
+        table.DrawDataPair("Name"u8, state.Identifier);
+        table.NextColumn();
+        if (Im.Button("Reset"u8))
             stateManager.ResetState(state, StateSource.Manual);
 
-        ImGui.TableNextRow();
+        table.NextRow();
 
-        static void PrintRow<T>(string label, T actor, T model, StateSource source) where T : notnull
-        {
-            ImGuiUtil.DrawTableColumn(label);
-            ImGuiUtil.DrawTableColumn(actor.ToString()!);
-            ImGuiUtil.DrawTableColumn(model.ToString()!);
-            ImGuiUtil.DrawTableColumn(source.ToString());
-        }
-
-        static string ItemString(in DesignData data, EquipSlot slot)
-        {
-            var item = data.Item(slot);
-            return
-                $"{item.Name} ({item.Id.ToDiscriminatingString()} {item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
-        }
-
-        static string BonusItemString(in DesignData data, BonusItemFlag slot)
-        {
-            var item = data.BonusItem(slot);
-            return
-                $"{item.Name} ({item.Id.ToDiscriminatingString()} {item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})";
-        }
-
-        PrintRow("Model ID", state.BaseData.ModelId, state.ModelData.ModelId, state.Sources[MetaIndex.ModelId]);
-        ImGui.TableNextRow();
-        PrintRow("Wetness", state.BaseData.IsWet(), state.ModelData.IsWet(), state.Sources[MetaIndex.Wetness]);
-        ImGui.TableNextRow();
+        PrintRow("Model ID"u8, state.BaseData.ModelId, state.ModelData.ModelId, state.Sources[MetaIndex.ModelId]);
+        table.NextRow();
+        PrintRow("Wetness"u8, state.BaseData.IsWet(), state.ModelData.IsWet(), state.Sources[MetaIndex.Wetness]);
+        table.NextRow();
 
         if (state.BaseData.IsHuman && state.ModelData.IsHuman)
         {
-            PrintRow("Hat Visible", state.BaseData.IsHatVisible(), state.ModelData.IsHatVisible(), state.Sources[MetaIndex.HatState]);
-            ImGui.TableNextRow();
-            PrintRow("Visor Toggled", state.BaseData.IsVisorToggled(), state.ModelData.IsVisorToggled(),
+            PrintRow("Hat Visible"u8, state.BaseData.IsHatVisible(), state.ModelData.IsHatVisible(), state.Sources[MetaIndex.HatState]);
+            table.NextRow();
+            PrintRow("Visor Toggled"u8, state.BaseData.IsVisorToggled(), state.ModelData.IsVisorToggled(),
                 state.Sources[MetaIndex.VisorState]);
-            ImGui.TableNextRow();
-            PrintRow("Viera Ears Visible", state.BaseData.AreEarsVisible(), state.ModelData.AreEarsVisible(),
+            table.NextRow();
+            PrintRow("Viera Ears Visible"u8, state.BaseData.AreEarsVisible(), state.ModelData.AreEarsVisible(),
                 state.Sources[MetaIndex.EarState]);
-            ImGui.TableNextRow();
-            PrintRow("Weapon Visible", state.BaseData.IsWeaponVisible(), state.ModelData.IsWeaponVisible(),
+            table.NextRow();
+            PrintRow("Weapon Visible"u8, state.BaseData.IsWeaponVisible(), state.ModelData.IsWeaponVisible(),
                 state.Sources[MetaIndex.WeaponState]);
-            ImGui.TableNextRow();
+            table.NextRow();
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
             {
-                PrintRow(slot.ToName(), ItemString(state.BaseData, slot), ItemString(state.ModelData, slot), state.Sources[slot, false]);
-                ImGuiUtil.DrawTableColumn(state.BaseData.Stain(slot).ToString());
-                ImGuiUtil.DrawTableColumn(state.ModelData.Stain(slot).ToString());
-                ImGuiUtil.DrawTableColumn(state.Sources[slot, true].ToString());
+                PrintRow(slot.ToNameU8(), ItemString(state.BaseData, slot), ItemString(state.ModelData, slot), state.Sources[slot, false]);
+                table.DrawColumn($"{state.BaseData.Stain(slot)}");
+                table.DrawColumn($"{state.ModelData.Stain(slot)}");
+                table.DrawColumn($"{state.Sources[slot, true]}");
             }
 
             foreach (var slot in BonusExtensions.AllFlags)
             {
-                PrintRow(slot.ToName(), BonusItemString(state.BaseData, slot), BonusItemString(state.ModelData, slot), state.Sources[slot]);
-                ImGui.TableNextRow();
+                PrintRow(slot.ToNameU8(), BonusItemString(state.BaseData, slot), BonusItemString(state.ModelData, slot), state.Sources[slot]);
+                table.NextRow();
             }
 
-            foreach (var type in Enum.GetValues<CustomizeIndex>())
+            foreach (var type in CustomizeIndex.Values)
             {
-                PrintRow(type.ToDefaultName(), state.BaseData.Customize[type].Value, state.ModelData.Customize[type].Value,
+                PrintRow(type.ToNameU8(), state.BaseData.Customize[type].Value, state.ModelData.Customize[type].Value,
                     state.Sources[type]);
-                ImGui.TableNextRow();
+                table.NextRow();
             }
 
             foreach (var crest in CrestExtensions.AllRelevantSet)
             {
-                PrintRow(crest.ToLabel(), state.BaseData.Crest(crest), state.ModelData.Crest(crest), state.Sources[crest]);
-                ImGui.TableNextRow();
+                PrintRow(crest.ToLabelU8(), state.BaseData.Crest(crest), state.ModelData.Crest(crest), state.Sources[crest]);
+                table.NextRow();
             }
 
             foreach (var flag in CustomizeParameterExtensions.AllFlags)
             {
-                PrintRow(flag.ToString(), state.BaseData.Parameters[flag], state.ModelData.Parameters[flag], state.Sources[flag]);
-                ImGui.TableNextRow();
+                PrintRow(flag.ToNameU8(), state.BaseData.Parameters[flag], state.ModelData.Parameters[flag], state.Sources[flag]);
+                table.NextRow();
             }
         }
         else
         {
-            ImGuiUtil.DrawTableColumn(string.Join(" ", state.BaseData.GetCustomizeBytes().Select(b => b.ToString("X2"))));
-            ImGuiUtil.DrawTableColumn(string.Join(" ", state.ModelData.GetCustomizeBytes().Select(b => b.ToString("X2"))));
-            ImGui.TableNextRow();
-            ImGuiUtil.DrawTableColumn(string.Join(" ", state.BaseData.GetEquipmentBytes().Select(b => b.ToString("X2"))));
-            ImGuiUtil.DrawTableColumn(string.Join(" ", state.ModelData.GetEquipmentBytes().Select(b => b.ToString("X2"))));
+            table.DrawColumn(StringU8.Join((byte)' ', state.BaseData.GetCustomizeBytes().Select(b => b.ToString("X2"))));
+            table.DrawColumn(StringU8.Join((byte)' ', state.ModelData.GetCustomizeBytes().Select(b => b.ToString("X2"))));
+            table.NextRow();
+            table.DrawColumn(StringU8.Join((byte)' ', state.BaseData.GetEquipmentBytes().Select(b => b.ToString("X2"))));
+            table.DrawColumn(StringU8.Join((byte)' ', state.ModelData.GetEquipmentBytes().Select(b => b.ToString("X2"))));
+        }
+
+        return;
+
+        static StringU8 ItemString(in DesignData data, EquipSlot slot)
+        {
+            var item = data.Item(slot);
+            return
+                new StringU8(
+                    $"{item.Name} ({item.Id.ToDiscriminatingString()} {item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})");
+        }
+
+        static StringU8 BonusItemString(in DesignData data, BonusItemFlag slot)
+        {
+            var item = data.BonusItem(slot);
+            return
+                new StringU8(
+                    $"{item.Name} ({item.Id.ToDiscriminatingString()} {item.PrimaryId.Id}{(item.SecondaryId != 0 ? $"-{item.SecondaryId.Id}" : string.Empty)}-{item.Variant})");
+        }
+
+        static void PrintRow<T>(ReadOnlySpan<byte> label, T actor, T model, StateSource source) where T : notnull
+        {
+            Im.Table.DrawColumn(label);
+            Im.Table.DrawColumn($"{actor}");
+            Im.Table.DrawColumn($"{model}");
+            Im.Table.DrawColumn(source.ToNameU8());
         }
     }
 }

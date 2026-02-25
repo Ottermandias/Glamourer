@@ -1,5 +1,4 @@
-﻿using OtterGui;
-using OtterGui.Extensions;
+﻿using ImSharp;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Race = Penumbra.GameData.Enums.Race;
@@ -27,7 +26,7 @@ public class CustomizeSet
     public SubRace Clan   { get; }
     public Race    Race   { get; }
 
-    public string Name { get; internal init; } = string.Empty;
+    public StringU8 Name { get; internal init; } = StringU8.Empty;
 
     public CustomizeFlag SettingAvailable { get; internal set; }
 
@@ -38,9 +37,9 @@ public class CustomizeSet
         => SettingAvailable.HasFlag(index.ToFlag());
 
     // Meta
-    public IReadOnlyList<string> OptionName { get; internal init; } = null!;
+    public IReadOnlyList<StringU8> OptionName { get; internal init; } = null!;
 
-    public string Option(CustomizeIndex index)
+    public StringU8 Option(CustomizeIndex index)
         => OptionName[(int)index];
 
     public IReadOnlyList<byte>                             Voices { get; internal init; } = null!;
@@ -139,10 +138,10 @@ public class CustomizeSet
             _                      => Invalid(out custom),
         };
 
-        int Get(IEnumerable<CustomizeData> list, CustomizeValue v, out CustomizeData? output)
+        static int Get(IEnumerable<CustomizeData> list, CustomizeValue v, out CustomizeData? output)
         {
-            var (val, idx) = list.Cast<CustomizeData?>().WithIndex().FirstOrDefault(p => p.Value!.Value.Value == v);
-            if (val == null)
+            var (idx, val) = list.Cast<CustomizeData?>().Index().FirstOrDefault(p => p.Item!.Value.Value == v);
+            if (val is null)
             {
                 output = null;
                 return -1;

@@ -1,6 +1,5 @@
 ﻿using Glamourer.GameData;
 using Glamourer.Services;
-using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.String.Functions;
@@ -47,8 +46,8 @@ public unsafe struct DesignData
     { }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
-    public readonly bool ContainsName(LowerString name)
-        => ItemNames.Any(name.IsContained);
+    public readonly bool ContainsName(string name)
+        => ItemNames.Any(i => i.Contains(name, StringComparison.OrdinalIgnoreCase));
 
     public readonly StainIds Stain(EquipSlot slot)
     {

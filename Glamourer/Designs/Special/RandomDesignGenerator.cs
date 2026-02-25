@@ -1,9 +1,9 @@
-﻿using OtterGui;
-using OtterGui.Services;
+﻿using Glamourer.Config;
+using Luna;
 
 namespace Glamourer.Designs.Special;
 
-public class RandomDesignGenerator(DesignStorage designs, DesignFileSystem fileSystem, Configuration config) : IService
+public class RandomDesignGenerator(DesignStorage designs, Configuration config) : IService
 {
     private readonly Random                _rng        = new();
     private readonly WeakReference<Design> _lastDesign = new(null!, false);
@@ -34,7 +34,7 @@ public class RandomDesignGenerator(DesignStorage designs, DesignFileSystem fileS
         => Design(designs);
 
     public Design? Design(IDesignPredicate predicate)
-        => Design(predicate.Get(designs, fileSystem).ToList());
+        => Design(predicate.Get(designs).ToList());
 
     public Design? Design(IReadOnlyList<IDesignPredicate> predicates)
     {
@@ -42,7 +42,7 @@ public class RandomDesignGenerator(DesignStorage designs, DesignFileSystem fileS
         {
             0 => Design(),
             1 => Design(predicates[0]),
-            _ => Design(IDesignPredicate.Get(predicates, designs, fileSystem).ToList()),
+            _ => Design(IDesignPredicate.Get(predicates, designs).ToList()),
         };
     }
 

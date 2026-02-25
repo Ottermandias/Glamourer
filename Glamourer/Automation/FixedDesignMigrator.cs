@@ -1,15 +1,15 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Interop;
+using Luna;
 using Newtonsoft.Json.Linq;
-using OtterGui.Classes;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Structs;
 using Penumbra.String;
 
 namespace Glamourer.Automation;
 
-public class FixedDesignMigrator(JobService jobs)
+public sealed class FixedDesignMigrator(JobService jobs) : IRequiredService
 {
     private List<(string Name, List<(string, JobGroup, bool)> Data)>? _migratedData;
 
@@ -47,7 +47,7 @@ public class FixedDesignMigrator(JobService jobs)
             var set = autoManager[^1];
             foreach (var design in data.AsEnumerable().Reverse())
             {
-                if (!designFileSystem.Find(design.Item1, out var child) || child is not DesignFileSystem.Leaf leaf)
+                if (!designFileSystem.Find(design.Item1, out var child) || child is not IFileSystemData<Design> leaf)
                 {
                     Glamourer.Messager.NotificationMessage($"Could not find design with path {design.Item1}, skipped fixed design.",
                         NotificationType.Warning);

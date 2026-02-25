@@ -1,8 +1,6 @@
-using Glamourer.Api.Enums;
 using Glamourer.Events;
 using Glamourer.State;
-using OtterGui.Services;
-using Penumbra.GameData.Interop;
+using Luna;
 
 namespace Glamourer.Designs.History;
 
@@ -171,21 +169,21 @@ public class EditorHistory : IDisposable, IService
     }
 
 
-    private void OnStateChanged(StateChangeType type, StateSource source, ActorState state, ActorData actors, ITransaction? data)
+    private void OnStateChanged(in StateChanged.Arguments arguments)
     {
-        if (_undoMode || source is not StateSource.Manual)
+        if (_undoMode || arguments.Source is not StateSource.Manual)
             return;
 
-        if (data is not null)
-            AddStateTransaction(state, data);
+        if (arguments.Transaction is not null)
+            AddStateTransaction(arguments.State, arguments.Transaction);
     }
 
-    private void OnDesignChanged(DesignChanged.Type type, Design design, ITransaction? data)
+    private void OnDesignChanged(in DesignChanged.Arguments arguments)
     {
         if (_undoMode)
             return;
 
-        if (data is not null)
-            AddDesignTransaction(design, data);
+        if (arguments.Transaction is not null)
+            AddDesignTransaction(arguments.Design, arguments.Transaction);
     }
 }

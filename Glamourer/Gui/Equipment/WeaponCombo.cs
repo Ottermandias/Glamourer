@@ -1,117 +1,35 @@
 ﻿using Glamourer.Services;
 using Glamourer.Unlocks;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Classes;
-using OtterGui.Extensions;
-using OtterGui.Log;
-using OtterGui.Raii;
-using OtterGui.Text;
-using OtterGui.Widgets;
+using ImSharp;
+using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public sealed class WeaponCombo : FilterComboCache<EquipItem>
+public sealed class WeaponCombo(FavoriteManager favorites, ItemManager items, FullEquipType slot)
+    : BaseItemCombo(favorites, items)
 {
-    private readonly FavoriteManager _favorites;
-    public readonly  string          Label;
-    private          ItemId          _currentItem;
-    private          float           _innerWidth;
+    public override StringU8      Label { get; } = GetLabel(slot);
+    public readonly FullEquipType Slot = slot;
 
-    public PrimaryId   CustomSetId    { get; private set; }
-    public SecondaryId CustomWeaponId { get; private set; }
-    public Variant     CustomVariant  { get; private set; }
-
-    public WeaponCombo(ItemManager items, FullEquipType type, Logger log, FavoriteManager favorites)
-        : base(() => GetWeapons(favorites, items, type), MouseWheelType.Control, log)
+    protected override bool Identify(out EquipItem item)
     {
-        _favorites    = favorites;
-        Label         = GetLabel(type);
-        SearchByParts = true;
-    }
-
-    protected override void DrawList(float width, float itemHeight)
-    {
-        base.DrawList(width, itemHeight);
-        if (NewSelection != null && Items.Count > NewSelection.Value)
-            CurrentSelection = Items[NewSelection.Value];
-    }
-
-    protected override int UpdateCurrentSelected(int currentSelected)
-    {
-        if (CurrentSelection.ItemId == _currentItem)
-            return currentSelected;
-
-        CurrentSelectionIdx = Items.IndexOf(i => i.ItemId == _currentItem);
-        CurrentSelection    = CurrentSelectionIdx >= 0 ? Items[CurrentSelectionIdx] : default;
-        return base.UpdateCurrentSelected(CurrentSelectionIdx);
-    }
-
-    public bool Draw(string previewName, ItemId previewIdx, float width, float innerWidth)
-    {
-        _innerWidth   = innerWidth;
-        _currentItem  = previewIdx;
-        CustomVariant = 0;
-        return Draw($"##{Label}", previewName, string.Empty, width, ImGui.GetTextLineHeightWithSpacing());
-    }
-
-    protected override float GetFilterWidth()
-        => _innerWidth - 2 * ImGui.GetStyle().FramePadding.X;
-
-
-    protected override bool DrawSelectable(int globalIdx, bool selected)
-    {
-        var obj  = Items[globalIdx];
-        var name = ToString(obj);
-        if (UiHelpers.DrawFavoriteStar(_favorites, obj) && CurrentSelectionIdx == globalIdx)
+        if (Slot is not FullEquipType.Unknown && ItemData.ConvertWeaponId(CustomSetId) != CurrentItem.Type)
         {
-            CurrentSelectionIdx = -1;
-            _currentItem        = obj.ItemId;
-            CurrentSelection    = default;
+            item = default;
+            return false;
         }
-
-        ImGui.SameLine();
-        var ret = ImGui.Selectable(name, selected);
-        ImGui.SameLine();
-        using var color = ImRaii.PushColor(ImGuiCol.Text, 0xFF808080);
-        ImUtf8.TextRightAligned($"({obj.PrimaryId.Id}-{obj.SecondaryId.Id}-{obj.Variant.Id})");
-        return ret;
+        item = Items.Identify(Slot.ToSlot(), CustomSetId, CustomWeaponId, CustomVariant);
+        return true;
     }
 
-    protected override void OnClosePopup()
-    {
-        // If holding control while the popup closes, try to parse the input as a full tuple of set id, weapon id and variant, and set a custom item for that.
-        if (!ImGui.GetIO().KeyCtrl)
-            return;
-
-        var split = Filter.Text.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (split.Length != 3
-         || !ushort.TryParse(split[0], out var setId)
-         || !ushort.TryParse(split[1], out var weaponId)
-         || !byte.TryParse(split[2], out var variant))
-            return;
-
-        CustomSetId    = setId;
-        CustomWeaponId = weaponId;
-        CustomVariant  = variant;
-    }
-
-    protected override bool IsVisible(int globalIndex, LowerString filter)
-        => base.IsVisible(globalIndex, filter) || Items[globalIndex].ModelString.StartsWith(filter.Lower);
-
-    protected override string ToString(EquipItem obj)
-        => obj.Name;
-
-    private static string GetLabel(FullEquipType type)
-        => type.IsUnknown() ? "Mainhand" : type.ToName();
-
-    private static IReadOnlyList<EquipItem> GetWeapons(FavoriteManager favorites, ItemManager items, FullEquipType type)
+    private static IReadOnlyList<EquipItem> GetItems(FavoriteManager favorites, ItemManager items, FullEquipType type)
     {
         if (type is FullEquipType.Unknown)
         {
             var enumerable = Array.Empty<EquipItem>().AsEnumerable();
-            foreach (var t in Enum.GetValues<FullEquipType>().Where(e => e.ToSlot() is EquipSlot.MainHand))
+            foreach (var t in FullEquipType.Values.Where(e => e.ToSlot() is EquipSlot.MainHand))
             {
                 if (items.ItemData.ByType.TryGetValue(t, out var l))
                     enumerable = enumerable.Concat(l);
@@ -128,4 +46,30 @@ public sealed class WeaponCombo : FilterComboCache<EquipItem>
 
         return [.. list.OrderByDescending(favorites.Contains).ThenBy(e => e.Name)];
     }
+
+    protected override IEnumerable<CacheItem> GetItems()
+    {
+        if (Slot is FullEquipType.Unknown)
+        {
+            var enumerable = Array.Empty<EquipItem>().AsEnumerable();
+            foreach (var t in FullEquipType.Values.Where(e => e.ToSlot() is EquipSlot.MainHand))
+            {
+                if (Items.ItemData.ByType.TryGetValue(t, out var l))
+                    enumerable = enumerable.Concat(l);
+            }
+
+            return enumerable.OrderByDescending(Favorites.Contains).ThenBy(e => e.Name).Select(e => new CacheItem(e));
+        }
+
+        if (!Items.ItemData.ByType.TryGetValue(Slot, out var list))
+            return [];
+
+        IEnumerable<EquipItem> ret = list.OrderByDescending(Favorites.Contains).ThenBy(e => e.Name);
+        if (Slot.AllowsNothing())
+            ret = ret.Prepend(ItemManager.NothingItem(Slot));
+        return ret.Select(e => new CacheItem(e));
+    }
+
+    private static StringU8 GetLabel(FullEquipType type)
+        => type.IsUnknown() ? new StringU8("Mainhand"u8) : new StringU8(type.ToName());
 }

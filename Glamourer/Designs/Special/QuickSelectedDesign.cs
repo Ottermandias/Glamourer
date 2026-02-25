@@ -2,8 +2,8 @@
 using Glamourer.Gui;
 using Glamourer.Interop.Material;
 using Glamourer.State;
+using Luna;
 using Newtonsoft.Json.Linq;
-using OtterGui.Services;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs.Special;
@@ -20,18 +20,18 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
         => ResolvedName;
 
     public Design? CurrentDesign
-        => combo.Design as Design;
+        => combo.QuickDesign as Design;
 
     public ref readonly DesignData GetDesignData(in DesignData baseRef)
     {
-        if (combo.Design != null)
-            return ref combo.Design.GetDesignData(baseRef);
+        if (combo.QuickDesign is not null)
+            return ref combo.QuickDesign.GetDesignData(baseRef);
 
         return ref baseRef;
     }
 
     public IReadOnlyList<(uint, MaterialValueDesign)> GetMaterialData()
-        => combo.Design?.GetMaterialData() ?? [];
+        => combo.QuickDesign?.GetMaterialData() ?? [];
 
     public string SerializeName()
         => SerializedName;
@@ -40,7 +40,7 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
         => StateSource.Manual;
 
     public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication)
-        => combo.Design?.AllLinks(newApplication) ?? [];
+        => combo.QuickDesign?.AllLinks(newApplication) ?? [];
 
     public void AddData(JObject jObj)
     { }
@@ -52,11 +52,11 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
         => false;
 
     public bool ForcedRedraw
-        => combo.Design?.ForcedRedraw ?? false;
+        => combo.QuickDesign?.ForcedRedraw ?? false;
 
     public bool ResetAdvancedDyes
-        => combo.Design?.ResetAdvancedDyes ?? false;
+        => combo.QuickDesign?.ResetAdvancedDyes ?? false;
 
     public bool ResetTemporarySettings
-        => combo.Design?.ResetTemporarySettings ?? false;
+        => combo.QuickDesign?.ResetTemporarySettings ?? false;
 }

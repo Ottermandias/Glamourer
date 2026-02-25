@@ -1,6 +1,6 @@
 ﻿using Glamourer.Automation;
 using Glamourer.Designs;
-using OtterGui.Services;
+using Luna;
 
 namespace Glamourer.Interop.Penumbra;
 

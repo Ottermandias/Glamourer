@@ -1,17 +1,12 @@
-﻿using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
-using Dalamud.Interface.Utility;
-using Dalamud.Plugin;
+﻿using Dalamud.Plugin;
 using Glamourer.Api.Enums;
 using Glamourer.Api.Helpers;
 using Glamourer.Api.IpcSubscribers;
 using Glamourer.Designs;
+using ImSharp;
+using Luna;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Services;
-using OtterGui.Text;
 using Penumbra.GameData.Interop;
 using Penumbra.String;
 
@@ -55,11 +50,11 @@ public class StateIpcTester : IUiService, IDisposable
 
     public StateIpcTester(IDalamudPluginInterface pluginInterface)
     {
-        _pluginInterface    = pluginInterface;
-        AutoRedrawChanged   = AutoReloadGearChanged.Subscriber(_pluginInterface, OnAutoRedrawChanged);
-        StateChanged        = StateChangedWithType.Subscriber(_pluginInterface, OnStateChanged);
-        StateFinalized      = Api.IpcSubscribers.StateFinalized.Subscriber(_pluginInterface, OnStateFinalized);
-        GPoseChanged        = Api.IpcSubscribers.GPoseChanged.Subscriber(_pluginInterface, OnGPoseChange);
+        _pluginInterface  = pluginInterface;
+        AutoRedrawChanged = AutoReloadGearChanged.Subscriber(_pluginInterface, OnAutoRedrawChanged);
+        StateChanged      = StateChangedWithType.Subscriber(_pluginInterface, OnStateChanged);
+        StateFinalized    = Api.IpcSubscribers.StateFinalized.Subscriber(_pluginInterface, OnStateFinalized);
+        GPoseChanged      = Api.IpcSubscribers.GPoseChanged.Subscriber(_pluginInterface, OnGPoseChange);
         AutoRedrawChanged.Disable();
         StateChanged.Disable();
         StateFinalized.Disable();
@@ -76,7 +71,7 @@ public class StateIpcTester : IUiService, IDisposable
 
     public void Draw()
     {
-        using var tree = ImRaii.TreeNode("State");
+        using var tree = Im.Tree.Node("State"u8);
         if (!tree)
             return;
 
@@ -84,162 +79,156 @@ public class StateIpcTester : IUiService, IDisposable
         IpcTesterHelpers.KeyInput(ref _key);
         IpcTesterHelpers.NameInput(ref _gameObjectName);
         IpcTesterHelpers.DrawFlagInput(ref _flags);
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-        ImGui.InputTextWithHint("##base64", "Base 64 State...", ref _base64State, 2000);
-        using var table = ImRaii.Table("##table", 2, ImGuiTableFlags.SizingFixedFit);
+        Im.Item.SetNextWidthFull();
+        Im.Input.Text("##base64"u8, ref _base64State, "Base 64 State..."u8);
+        using var table = Im.Table.Begin("##table"u8, 2, TableFlags.SizingFixedFit);
 
-        IpcTesterHelpers.DrawIntro("Last Error");
-        ImGui.TextUnformatted(_lastError.ToString());
-        IpcTesterHelpers.DrawIntro("Last Auto Redraw Change");
-        ImGui.TextUnformatted($"{_lastAutoRedrawChangeValue} at {_lastAutoRedrawChangeTime.ToLocalTime().TimeOfDay}");
-        IpcTesterHelpers.DrawIntro("Last State Change");
+        IpcTesterHelpers.DrawIntro("Last Error"u8);
+        Im.Text($"{_lastError}");
+        IpcTesterHelpers.DrawIntro("Last Auto Redraw Change"u8);
+        Im.Text($"{_lastAutoRedrawChangeValue} at {_lastAutoRedrawChangeTime.ToLocalTime().TimeOfDay}");
+        IpcTesterHelpers.DrawIntro("Last State Change"u8);
         PrintChangeName();
-        IpcTesterHelpers.DrawIntro("Last State Finalization");
+        IpcTesterHelpers.DrawIntro("Last State Finalization"u8);
         PrintFinalizeName();
-        IpcTesterHelpers.DrawIntro("Last GPose Change");
-        ImGui.TextUnformatted($"{_lastGPoseChangeValue} at {_lastGPoseChangeTime.ToLocalTime().TimeOfDay}");
+        IpcTesterHelpers.DrawIntro("Last GPose Change"u8);
+        Im.Text($"{_lastGPoseChangeValue} at {_lastGPoseChangeTime.ToLocalTime().TimeOfDay}");
 
 
-        IpcTesterHelpers.DrawIntro(GetState.Label);
+        IpcTesterHelpers.DrawIntro(GetState.LabelU8);
         DrawStatePopup();
-        if (ImUtf8.Button("Get##Idx"u8))
+        if (Im.Button("Get##Idx"u8))
         {
             (_lastError, _state) = new GetState(_pluginInterface).Invoke(_gameObjectIndex, _key);
             _stateString         = _state?.ToString(Formatting.Indented) ?? "No State Available";
-            ImUtf8.OpenPopup("State"u8);
+            Im.Popup.Open("State"u8);
         }
 
-        IpcTesterHelpers.DrawIntro(GetStateName.Label);
-        if (ImUtf8.Button("Get##Name"u8))
+        IpcTesterHelpers.DrawIntro(GetStateName.LabelU8);
+        if (Im.Button("Get##Name"u8))
         {
             (_lastError, _state) = new GetStateName(_pluginInterface).Invoke(_gameObjectName, _key);
             _stateString         = _state?.ToString(Formatting.Indented) ?? "No State Available";
-            ImUtf8.OpenPopup("State"u8);
+            Im.Popup.Open("State"u8);
         }
 
-        IpcTesterHelpers.DrawIntro(GetStateBase64.Label);
-        if (ImUtf8.Button("Get##Base64Idx"u8))
+        IpcTesterHelpers.DrawIntro(GetStateBase64.LabelU8);
+        if (Im.Button("Get##Base64Idx"u8))
         {
             (_lastError, _getStateString) = new GetStateBase64(_pluginInterface).Invoke(_gameObjectIndex, _key);
             _stateString                  = _getStateString ?? "No State Available";
-            ImUtf8.OpenPopup("State"u8);
+            Im.Popup.Open("State"u8);
         }
 
-        IpcTesterHelpers.DrawIntro(GetStateBase64Name.Label);
-        if (ImUtf8.Button("Get##Base64Idx"u8))
+        IpcTesterHelpers.DrawIntro(GetStateBase64Name.LabelU8);
+        if (Im.Button("Get##Base64Idx"u8))
         {
             (_lastError, _getStateString) = new GetStateBase64Name(_pluginInterface).Invoke(_gameObjectName, _key);
             _stateString                  = _getStateString ?? "No State Available";
-            ImUtf8.OpenPopup("State"u8);
+            Im.Popup.Open("State"u8);
         }
 
-        IpcTesterHelpers.DrawIntro(ApplyState.Label);
-        if (ImGuiUtil.DrawDisabledButton("Apply Last##Idx", Vector2.Zero, string.Empty, _state == null))
+        IpcTesterHelpers.DrawIntro(ApplyState.LabelU8);
+        if (ImEx.Button("Apply Last##Idx"u8, Vector2.Zero, StringU8.Empty, _state is null))
             _lastError = new ApplyState(_pluginInterface).Invoke(_state!, _gameObjectIndex, _key, _flags);
-        ImGui.SameLine();
-        if (ImUtf8.Button("Apply Base64##Idx"u8))
+        Im.Line.Same();
+        if (Im.Button("Apply Base64##Idx"u8))
             _lastError = new ApplyState(_pluginInterface).Invoke(_base64State, _gameObjectIndex, _key, _flags);
 
-        IpcTesterHelpers.DrawIntro(ApplyStateName.Label);
-        if (ImGuiUtil.DrawDisabledButton("Apply Last##Name", Vector2.Zero, string.Empty, _state == null))
+        IpcTesterHelpers.DrawIntro(ApplyStateName.LabelU8);
+        if (ImEx.Button("Apply Last##Name"u8, Vector2.Zero, StringU8.Empty, _state is null))
             _lastError = new ApplyStateName(_pluginInterface).Invoke(_state!, _gameObjectName, _key, _flags);
-        ImGui.SameLine();
-        if (ImUtf8.Button("Apply Base64##Name"u8))
+        Im.Line.Same();
+        if (Im.Button("Apply Base64##Name"u8))
             _lastError = new ApplyStateName(_pluginInterface).Invoke(_base64State, _gameObjectName, _key, _flags);
 
-        IpcTesterHelpers.DrawIntro(ReapplyState.Label);
-        if (ImUtf8.Button("Reapply##Idx"u8))
+        IpcTesterHelpers.DrawIntro(ReapplyState.LabelU8);
+        if (Im.Button("Reapply##Idx"u8))
             _lastError = new ReapplyState(_pluginInterface).Invoke(_gameObjectIndex, _key, _flags);
 
-        IpcTesterHelpers.DrawIntro(ReapplyStateName.Label);
-        if (ImUtf8.Button("Reapply##Name"u8))
+        IpcTesterHelpers.DrawIntro(ReapplyStateName.LabelU8);
+        if (Im.Button("Reapply##Name"u8))
             _lastError = new ReapplyStateName(_pluginInterface).Invoke(_gameObjectName, _key, _flags);
 
-        IpcTesterHelpers.DrawIntro(RevertState.Label);
-        if (ImUtf8.Button("Revert##Idx"u8))
+        IpcTesterHelpers.DrawIntro(RevertState.LabelU8);
+        if (Im.Button("Revert##Idx"u8))
             _lastError = new RevertState(_pluginInterface).Invoke(_gameObjectIndex, _key, _flags);
 
-        IpcTesterHelpers.DrawIntro(RevertStateName.Label);
-        if (ImUtf8.Button("Revert##Name"u8))
+        IpcTesterHelpers.DrawIntro(RevertStateName.LabelU8);
+        if (Im.Button("Revert##Name"u8))
             _lastError = new RevertStateName(_pluginInterface).Invoke(_gameObjectName, _key, _flags);
 
-        IpcTesterHelpers.DrawIntro(UnlockState.Label);
-        if (ImUtf8.Button("Unlock##Idx"u8))
+        IpcTesterHelpers.DrawIntro(UnlockState.LabelU8);
+        if (Im.Button("Unlock##Idx"u8))
             _lastError = new UnlockState(_pluginInterface).Invoke(_gameObjectIndex, _key);
 
-        IpcTesterHelpers.DrawIntro(UnlockStateName.Label);
-        if (ImUtf8.Button("Unlock##Name"u8))
+        IpcTesterHelpers.DrawIntro(UnlockStateName.LabelU8);
+        if (Im.Button("Unlock##Name"u8))
             _lastError = new UnlockStateName(_pluginInterface).Invoke(_gameObjectName, _key);
 
-        IpcTesterHelpers.DrawIntro(UnlockAll.Label);
-        if (ImUtf8.Button("Unlock##All"u8))
+        IpcTesterHelpers.DrawIntro(UnlockAll.LabelU8);
+        if (Im.Button("Unlock##All"u8))
             _numUnlocked = new UnlockAll(_pluginInterface).Invoke(_key);
-        ImGui.SameLine();
-        ImGui.TextUnformatted($"Unlocked {_numUnlocked}");
+        Im.Line.Same();
+        Im.Text($"Unlocked {_numUnlocked}");
 
-        IpcTesterHelpers.DrawIntro(RevertToAutomation.Label);
-        if (ImUtf8.Button("Revert##AutomationIdx"u8))
+        IpcTesterHelpers.DrawIntro(RevertToAutomation.LabelU8);
+        if (Im.Button("Revert##AutomationIdx"u8))
             _lastError = new RevertToAutomation(_pluginInterface).Invoke(_gameObjectIndex, _key, _flags);
 
-        IpcTesterHelpers.DrawIntro(RevertToAutomationName.Label);
-        if (ImUtf8.Button("Revert##AutomationName"u8))
+        IpcTesterHelpers.DrawIntro(RevertToAutomationName.LabelU8);
+        if (Im.Button("Revert##AutomationName"u8))
             _lastError = new RevertToAutomationName(_pluginInterface).Invoke(_gameObjectName, _key, _flags);
     }
 
     private void DrawStatePopup()
     {
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(500, 500));
-        if (_stateString == null)
+        if (_stateString is null)
             return;
 
-        using var p = ImUtf8.Popup("State"u8);
+        Im.Window.SetNextSize(ImEx.ScaledVector(500, 500));
+        using var p = Im.Popup.Begin("State"u8);
         if (!p)
             return;
 
-        if (ImUtf8.Button("Copy to Clipboard"u8))
-            ImUtf8.SetClipboardText(_stateString);
+        if (Im.Button("Copy to Clipboard"u8))
+            Im.Clipboard.Set(_stateString);
         if (_stateString[0] is '{')
         {
-            ImGui.SameLine();
-            if (ImUtf8.Button("Copy as Base64"u8) && _state != null)
-                ImUtf8.SetClipboardText(DesignConverter.ToBase64(_state));
+            Im.Line.Same();
+            if (Im.Button("Copy as Base64"u8) && _state is not null)
+                Im.Clipboard.Set(DesignConverter.ToBase64(_state));
         }
 
-        using var font = ImRaii.PushFont(UiBuilder.MonoFont);
-        ImUtf8.TextWrapped(_stateString ?? string.Empty);
+        using var font = Im.Font.PushMono();
+        Im.TextWrapped(_stateString ?? string.Empty);
 
-        if (ImUtf8.Button("Close"u8, -Vector2.UnitX) || !ImGui.IsWindowFocused())
-            ImGui.CloseCurrentPopup();
+        if (Im.Button("Close"u8, Im.ContentRegion.Available with { Y = 0 }) || !Im.Window.Focused())
+            Im.Popup.CloseCurrent();
     }
 
     private unsafe void PrintChangeName()
     {
-        ImUtf8.Text(_lastStateChangeName.Span);
-        ImGui.SameLine(0, 0);
-        ImUtf8.Text($" ({_lastStateChangeType})");
-        ImGui.SameLine();
-        using (ImRaii.PushFont(UiBuilder.MonoFont))
-        {
-            ImUtf8.CopyOnClickSelectable($"0x{_lastStateChangeActor:X}");
-        }
+        Im.Text(_lastStateChangeName.Span);
+        Im.Line.NoSpacing();
+        Im.Text($" ({_lastStateChangeType})");
+        Im.Line.Same();
+        Glamourer.Dynamis.DrawPointer(_lastStateChangeActor);
 
-        ImGui.SameLine();
-        ImUtf8.Text($"at {_lastStateChangeTime.ToLocalTime().TimeOfDay}");
+        Im.Line.Same();
+        Im.Text($"at {_lastStateChangeTime.ToLocalTime().TimeOfDay}");
     }
 
     private unsafe void PrintFinalizeName()
     {
-        ImUtf8.Text(_lastStateFinalizeName.Span);
-        ImGui.SameLine(0, 0);
-        ImUtf8.Text($" ({_lastStateFinalizeType})");
-        ImGui.SameLine();
-        using (ImRaii.PushFont(UiBuilder.MonoFont))
-        {
-            ImUtf8.CopyOnClickSelectable($"0x{_lastStateFinalizeActor:X}");
-        }
+        Im.Text(_lastStateFinalizeName.Span);
+        Im.Line.NoSpacing();
+        Im.Text($" ({_lastStateFinalizeType})");
+        Im.Line.Same();
+        Glamourer.Dynamis.DrawPointer(_lastStateFinalizeActor);
 
-        ImGui.SameLine();
-        ImUtf8.Text($"at {_lastStateFinalizeTime.ToLocalTime().TimeOfDay}");
+        Im.Line.Same();
+        Im.Text($"at {_lastStateFinalizeTime.ToLocalTime().TimeOfDay}");
     }
 
     private void OnAutoRedrawChanged(bool value)

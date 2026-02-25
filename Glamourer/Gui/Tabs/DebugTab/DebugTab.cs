@@ -1,11 +1,14 @@
-﻿using Dalamud.Bindings.ImGui;
-using OtterGui.Raii;
-using OtterGui.Services;
-using OtterGui.Widgets;
+﻿using Glamourer.Config;
+using Glamourer.Services;
+using ImSharp;
+using InteropGenerator.Runtime;
+using Luna;
+using Penumbra.GameData.Files.ShaderStructs;
+using Vortice.Direct3D11.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class DebugTab(ServiceManager manager) : ITab
+public sealed class DebugTab(ServiceManager manager) : ITab<MainTabType>
 {
     private readonly Configuration _config = manager.GetService<Configuration>();
 
@@ -14,6 +17,9 @@ public unsafe class DebugTab(ServiceManager manager) : ITab
 
     public ReadOnlySpan<byte> Label
         => "Debug"u8;
+
+    public MainTabType Identifier
+        => MainTabType.Debug;
 
     private readonly DebugTabHeader[] _headers =
     [
@@ -26,16 +32,34 @@ public unsafe class DebugTab(ServiceManager manager) : ITab
 
     public void DrawContent()
     {
-        using var child = ImRaii.Child("MainWindowChild");
+        using var child = Im.Child.Begin("MainWindowChild"u8);
         if (!child)
             return;
 
-        if (ImGui.CollapsingHeader("General"))
+        if (Im.Tree.Header("General"u8))
         {
-            manager.Timers.Draw("Timers");
+            if (Im.Button("Open Config Directory"u8))
+                OpenFileOrFolder(manager.GetService<FilenameService>().ConfigurationDirectory);
+            StartTimeTracker.Draw("Timers"u8, manager.GetService<StartTimeTracker>());
         }
 
         foreach (var header in _headers)
             header.Draw();
+    }
+
+    private static void OpenFileOrFolder(string text)
+    {
+        try
+        {
+            var process = new ProcessStartInfo(text)
+            {
+                UseShellExecute = true,
+            };
+            Process.Start(process);
+        }
+        catch
+        {
+            // Ignored
+        }
     }
 }

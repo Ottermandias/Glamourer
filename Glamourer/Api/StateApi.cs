@@ -2,13 +2,11 @@
 using Glamourer.Api.Enums;
 using Glamourer.Automation;
 using Glamourer.Designs;
-using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.State;
+using Luna;
 using Newtonsoft.Json.Linq;
-using OtterGui.Services;
 using Penumbra.GameData.Interop;
-using Penumbra.GameData.Structs;
 using StateChanged = Glamourer.Events.StateChanged;
 
 namespace Glamourer.Api;
@@ -144,10 +142,10 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     public GlamourerApiEc ReapplyStateName(string playerName, uint key, ApplyFlag flags)
     {
-        var args = ApiHelpers.Args("Name", playerName, "Key", key, "Flags", flags);
+        var args   = ApiHelpers.Args("Name", playerName, "Key", key, "Flags", flags);
         var states = _helpers.FindExistingStates(playerName);
 
-        var any = false;
+        var any          = false;
         var anyReapplied = false;
         foreach (var state in states)
         {
@@ -155,7 +153,7 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
             if (!state.CanUnlock(key))
                 continue;
 
-            anyReapplied = true;
+            anyReapplied =  true;
             anyReapplied |= Reapply(state, key, flags) is GlamourerApiEc.Success;
         }
 
@@ -228,13 +226,14 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     public GlamourerApiEc CanUnlock(int objectIndex, uint key, out bool isLocked, out bool canUnlock)
     {
         var args = ApiHelpers.Args("Index", objectIndex, "Key", key);
-        isLocked = false;
+        isLocked  = false;
         canUnlock = true;
         if (_helpers.FindExistingState(objectIndex, out var state) is not GlamourerApiEc.Success)
             return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
         if (state is null)
-            return ApiHelpers.Return(GlamourerApiEc.Success, args); 
-        isLocked = state.IsLocked;
+            return ApiHelpers.Return(GlamourerApiEc.Success, args);
+
+        isLocked  = state.IsLocked;
         canUnlock = state.CanUnlock(key);
         return ApiHelpers.Return(GlamourerApiEc.Success, args);
     }
@@ -424,29 +423,31 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         };
     }
 
-    private void OnAutoRedrawChange(bool autoReload)
+    private void OnAutoRedrawChange(in bool autoReload)
         => AutoReloadGearChanged?.Invoke(autoReload);
 
-    private void OnStateChanged(StateChangeType type, StateSource _2, ActorState _3, ActorData actors, ITransaction? _5)
+    private void OnStateChanged(in StateChanged.Arguments arguments)
     {
-        Glamourer.Log.Excessive($"[OnStateChanged] State Changed with Type {type} [Affecting {actors.ToLazyString("nothing")}.]");
-        if (StateChanged != null)
-            foreach (var actor in actors.Objects)
+        Glamourer.Log.Excessive(
+            $"[OnStateChanged] State Changed with Type {arguments.Type} [Affecting {arguments.Actors.ToLazyString("nothing")}.]");
+        if (StateChanged is not null)
+            foreach (var actor in arguments.Actors.Objects)
                 StateChanged.Invoke(actor.Address);
 
-        if (StateChangedWithType != null)
-            foreach (var actor in actors.Objects)
-                StateChangedWithType.Invoke(actor.Address, type);
+        if (StateChangedWithType is not null)
+            foreach (var actor in arguments.Actors.Objects)
+                StateChangedWithType.Invoke(actor.Address, arguments.Type);
     }
 
-    private void OnStateFinalized(StateFinalizationType type, ActorData actors)
+    private void OnStateFinalized(in StateFinalized.Arguments arguments)
     {
-        Glamourer.Log.Verbose($"[OnStateUpdated] State Updated with Type {type}. [Affecting {actors.ToLazyString("nothing")}.]");
-        if (StateFinalized != null)
-            foreach (var actor in actors.Objects)
-                StateFinalized.Invoke(actor.Address, type);
+        Glamourer.Log.Verbose(
+            $"[OnStateUpdated] State Updated with Type {arguments.Type}. [Affecting {arguments.Actors.ToLazyString("nothing")}.]");
+        if (StateFinalized is not null)
+            foreach (var actor in arguments.Actors.Objects)
+                StateFinalized.Invoke(actor.Address, arguments.Type);
     }
 
-    private void OnGPoseChange(bool gPose)
+    private void OnGPoseChange(in bool gPose)
         => GPoseChanged?.Invoke(gPose);
 }

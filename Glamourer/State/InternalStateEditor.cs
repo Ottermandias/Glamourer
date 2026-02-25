@@ -4,6 +4,8 @@ using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -15,7 +17,7 @@ public class InternalStateEditor(
     HumanModelList humans,
     ItemManager items,
     GPoseService gPose,
-    ICondition condition)
+    ICondition condition) : IService
 {
     /// <summary> Change the model id. If the actor is changed from a human to another human, customize and equipData are unused. </summary>
     /// <remarks> We currently only allow changing things to humans, not humans to monsters. </remarks>
@@ -64,7 +66,7 @@ public class InternalStateEditor(
             state.Sources[CustomizeIndex.Clan]   = source;
             state.Sources[CustomizeIndex.Gender] = source;
             var set = customizations.Manager.GetSet(state.ModelData.Customize.Clan, state.ModelData.Customize.Gender);
-            foreach (var index in Enum.GetValues<CustomizeIndex>().Where(set.IsAvailable))
+            foreach (var index in CustomizeIndex.Values.Where(set.IsAvailable))
                 state.Sources[index] = source;
         }
         else
@@ -107,7 +109,7 @@ public class InternalStateEditor(
 
         state.ModelData.Customize =  customize;
         applied                   |= changed;
-        foreach (var type in Enum.GetValues<CustomizeIndex>())
+        foreach (var type in CustomizeIndex.Values)
         {
             if (applied.HasFlag(type.ToFlag()))
                 state.Sources[type] = source(type);
@@ -120,7 +122,7 @@ public class InternalStateEditor(
     public bool ChangeHumanCustomize(ActorState state, in CustomizeArray customizeInput, Func<CustomizeIndex, bool> applyWhich,
         Func<CustomizeIndex, StateSource> source, out CustomizeArray old, out CustomizeFlag changed, uint key = 0)
     {
-        var apply = Enum.GetValues<CustomizeIndex>().Where(applyWhich).Aggregate((CustomizeFlag)0, (current, type) => current | type.ToFlag());
+        var apply = CustomizeIndex.Values.Where(applyWhich).Aggregate((CustomizeFlag)0, (current, type) => current | type.ToFlag());
         return ChangeHumanCustomize(state, customizeInput, apply, source, out old, out changed, key);
     }
 
@@ -167,7 +169,7 @@ public class InternalStateEditor(
     public bool ChangeEquip(ActorState state, EquipSlot slot, EquipItem item, StainIds stains, StateSource source, out EquipItem oldItem,
         out StainIds oldStains, uint key = 0)
     {
-        oldItem  = state.ModelData.Item(slot);
+        oldItem   = state.ModelData.Item(slot);
         oldStains = state.ModelData.Stain(slot);
         if (!state.CanUnlock(key))
             return false;
@@ -252,7 +254,7 @@ public class InternalStateEditor(
             }
 
             // Update if edited.
-            state.Materials.UpdateValue(index, newValue, out _);
+            state.Materials.UpdateValue(index, newValue.MergeOnto(old.Model), out _);
             return true;
         }
 

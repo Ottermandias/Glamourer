@@ -1,23 +1,23 @@
-using OtterGui.Classes;
+using Luna;
+using Penumbra.String;
 
 namespace Glamourer.Events;
 
-/// <summary>
-/// Triggered when the player equips a gear set.
-/// <list type="number">
-///     <item>Parameter is the name of the gear set. </item>
-///     <item>Parameter is the id of the gear set. </item>
-///     <item>Parameter is the id of the prior gear set. </item>
-///     <item>Parameter is the id of the associated glamour. </item>
-///     <item>Parameter is the job id of the associated job. </item>
-/// </list>
-/// </summary>
-public sealed class EquippedGearset() 
-    : EventWrapper<string, int, int, byte, byte, EquippedGearset.Priority>(nameof(EquippedGearset))
+/// <summary> Triggered when the player equips a gear set. </summary>
+public sealed class EquippedGearset(Logger log)
+    : EventBase<EquippedGearset.Arguments, EquippedGearset.Priority>(nameof(EquippedGearset), log)
 {
     public enum Priority
     {
         /// <seealso cref="Automation.AutoDesignApplier.OnEquippedGearset"/>
         AutoDesignApplier = 0,
     }
+
+    /// <summary> Arguments for the EquippedGearset event. </summary>
+    /// <param name="Name"> The name of the equipped gear set. </param>
+    /// <param name="Id"> The ID of the equipped gear set.</param>
+    /// <param name="PriorId"> The ID of the gear set previously equipped.</param>
+    /// <param name="GlamourId"> The ID of the associated glamour plate. </param>
+    /// <param name="JobId"> The job ID of the associated job. </param>
+    public readonly record struct Arguments(ByteString Name, int Id, int PriorId, int GlamourId, byte JobId);
 }

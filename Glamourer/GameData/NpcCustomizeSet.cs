@@ -2,7 +2,7 @@
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Excel.Sheets;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -100,7 +100,7 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
 
             // Event NPCs have a reference to NpcEquip but also contain the appearance in their own row.
             // Prefer the NpcEquip reference if it is set and the own does not appear to be set, otherwise use the own.
-            if (row.NpcEquip.RowId != 0 && row.NpcEquip.Value is { } equip && row is { ModelBody: 0, ModelLegs: 0 })
+            if (row.NpcEquip.RowId is not 0 && row.NpcEquip.Value is { } equip && row is { ModelBody: 0, ModelLegs: 0 })
                 ApplyNpcEquip(ref ret, equip);
             else
                 ApplyNpcEquip(ref ret, row);
@@ -121,12 +121,12 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
         foreach (var baseRow in bnpcSheet)
         {
             // Only accept humans.
-            if (baseRow.ModelChara.Value.Type != 1)
+            if (baseRow.ModelChara.Value.Type is not 1)
                 continue;
 
             var bnpcNameIds = bNpcNames[baseRow.RowId];
             // Only accept battle NPCs with known associated names.
-            if (bnpcNameIds.Count == 0)
+            if (bnpcNameIds.Count is 0)
                 continue;
 
             // Check if the customization is a valid human.
@@ -186,7 +186,7 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
             }
 
             // If there is only a single entry, add that. 
-            if (duplicates.Count == 1)
+            if (duplicates.Count is 1)
             {
                 _data.Add(duplicates[0]);
                 Memory += 96;
@@ -199,8 +199,8 @@ public class NpcCustomizeSet : IAsyncDataContainer, IReadOnlyList<NpcData>
         }
 
         // Sort non-alphanumeric entries at the end instead of the beginning.
-        var lastWeird = _data.FindIndex(d => char.IsAsciiLetterOrDigit(d.Name[0]));
-        if (lastWeird != -1)
+        var lastWeird = _data.FindIndex(d => char.IsAsciiLetterOrDigit((char)d.Name[0]));
+        if (lastWeird is not -1)
         {
             _data.AddRange(_data.Take(lastWeird));
             _data.RemoveRange(0, lastWeird);

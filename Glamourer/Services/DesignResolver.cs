@@ -3,15 +3,13 @@ using Dalamud.Plugin.Services;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Gui;
-using Glamourer.Gui.Tabs.DesignTab;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Services;
-using OtterGui.Classes;
+using Luna;
+using ImSharp;
 
 namespace Glamourer.Services;
 
 public class DesignResolver(
-    DesignFileSystemSelector designSelector,
+    DesignFileSystem fileSystem,
     QuickDesignCombo quickDesignCombo,
     DesignConverter converter,
     DesignManager manager,
@@ -67,8 +65,8 @@ public class DesignResolver(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool GetSelectedDesign(ref DesignBase? design, ref SeString? error)
     {
-        design = designSelector.Selected;
-        if (design != null)
+        design = (Design?)fileSystem.Selection.Selection?.Value;
+        if (design is not null)
             return true;
 
         error = "You do not have selected any design in the Designs Tab.";
@@ -79,8 +77,8 @@ public class DesignResolver(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool GetQuickDesign(ref DesignBase? design, ref SeString? error)
     {
-        design = quickDesignCombo.Design as Design;
-        if (design != null)
+        design = quickDesignCombo.QuickDesign;
+        if (design is not null)
             return true;
 
         error = "You do not have selected any design in the Quick Design Bar.";
@@ -92,7 +90,7 @@ public class DesignResolver(
     {
         try
         {
-            var clipboardText = ImGui.GetClipboardText();
+            var clipboardText = Im.Clipboard.GetUtf16();
             if (clipboardText.Length > 0)
                 design = converter.FromBase64(clipboardText, true, true, out _);
         }
@@ -144,11 +142,10 @@ public class DesignResolver(
         }
         else
         {
-            var lower = argument.ToLowerInvariant();
             // Search for design by name and partial identifier.
-            design = manager.Designs.FirstOrDefault(MatchNameAndIdentifier(lower));
+            design = manager.Designs.FirstOrDefault(MatchNameAndIdentifier(argument));
             // Search for design by path, if nothing was found.
-            if (design == null && designFileSystem.Find(lower, out var child) && child is DesignFileSystem.Leaf leaf)
+            if (design is null && designFileSystem.Find(argument, out var child) && child is IFileSystemData<Design> leaf)
                 design = leaf.Value;
         }
 
@@ -161,13 +158,13 @@ public class DesignResolver(
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Func<Design, bool> MatchNameAndIdentifier(string lower)
+    private static Func<Design, bool> MatchNameAndIdentifier(string text)
     {
         // Check for names and identifiers, prefer names
-        if (lower.Length > 3)
-            return d => d.Name.Lower == lower || d.Identifier.ToString().StartsWith(lower);
+        if (text.Length > 3)
+            return d => string.Equals(d.Name, text, StringComparison.OrdinalIgnoreCase) || d.Identifier.ToString().StartsWith(text, StringComparison.OrdinalIgnoreCase);
 
         // Check only for names.
-        return d => d.Name.Lower == lower;
+        return d => string.Equals(d.Name, text, StringComparison.OrdinalIgnoreCase);
     }
 }

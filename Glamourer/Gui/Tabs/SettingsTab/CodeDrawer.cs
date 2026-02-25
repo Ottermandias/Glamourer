@@ -1,12 +1,8 @@
-﻿using Dalamud.Interface;
+﻿using Glamourer.Config;
 using Glamourer.Services;
 using Glamourer.State;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Filesystem;
-using OtterGui.Raii;
-using OtterGui.Services;
-using OtterGui.Text;
-using OtterGui.Text.EndObjects;
+using ImSharp;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
@@ -26,7 +22,7 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
 
     public void Draw()
     {
-        var show = ImGui.CollapsingHeader("Cheat Codes");
+        var show = Im.Tree.Header("Cheat Codes"u8);
         DrawTooltip();
 
         if (!show)
@@ -41,33 +37,31 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
     private void DrawCodeInput()
     {
         var       color  = codeService.CheckCode(_currentCode).Item2 is not 0 ? ColorId.ActorAvailable : ColorId.ActorUnavailable;
-        using var border = ImRaii.PushFrameBorder(ImUtf8.GlobalScale, color.Value(), _currentCode.Length > 0);
-        ImGui.SetNextItemWidth(500 * ImUtf8.GlobalScale + ImUtf8.ItemSpacing.X);
-        if (ImUtf8.InputText("##Code"u8, ref _currentCode, "Enter Cheat Code..."u8, ImGuiInputTextFlags.EnterReturnsTrue))
+        using var border = ImStyleBorder.Frame.Push(color.Value(), Im.Style.GlobalScale, _currentCode.Length > 0);
+        Im.Item.SetNextWidth(500 * Im.Style.GlobalScale + Im.Style.ItemSpacing.X);
+        if (Im.Input.Text("##Code"u8, ref _currentCode, "Enter Cheat Code..."u8, InputTextFlags.EnterReturnsTrue))
         {
             codeService.AddCode(_currentCode);
             _currentCode = string.Empty;
         }
 
-        ImGui.SameLine();
-        ImUtf8.Icon(FontAwesomeIcon.ExclamationCircle, ImGui.GetColorU32(ImGuiCol.TextDisabled));
+        Im.Line.Same();
+        ImEx.Icon.Draw(LunaStyle.WarningIcon, ImGuiColor.TextDisabled.Get());
         DrawTooltip();
     }
 
     private void DrawCopyButtons()
     {
-        var buttonSize = new Vector2(250 * ImUtf8.GlobalScale, 0);
-        if (ImUtf8.Button("Who am I?!?"u8, buttonSize))
+        var buttonSize = ImEx.ScaledVectorX(250);
+        if (Im.Button("Who am I?!?"u8, buttonSize))
             funModule.WhoAmI();
-        ImUtf8.HoverTooltip(
-            "Copy your characters actual current appearance including cheat codes or holiday events to the clipboard as a design."u8);
+        Im.Tooltip.OnHover("Copy your characters actual current appearance including cheat codes or holiday events to the clipboard as a design."u8);
 
-        ImGui.SameLine();
+        Im.Line.Same();
 
-        if (ImUtf8.Button("Who is that!?!"u8, buttonSize))
+        if (Im.Button("Who is that!?!"u8, buttonSize))
             funModule.WhoIsThat();
-        ImUtf8.HoverTooltip(
-            "Copy your targets actual current appearance including cheat codes or holiday events to the clipboard as a design."u8);
+        Im.Tooltip.OnHover("Copy your targets actual current appearance including cheat codes or holiday events to the clipboard as a design."u8);
     }
 
     private CodeService.CodeFlag DrawCodes()
@@ -76,7 +70,7 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
         CodeService.CodeFlag knownFlags = 0;
         for (var i = 0; i < config.Codes.Count; ++i)
         {
-            using var id = ImUtf8.PushId(i);
+            using var id = Im.Id.Push(i);
             var (code, state)  = config.Codes[i];
             var (action, flag) = codeService.CheckCode(code);
             if (flag is 0)
@@ -84,8 +78,7 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
 
             var data = CodeService.GetData(flag);
 
-            if (ImUtf8.IconButton(FontAwesomeIcon.Trash,
-                    $"Delete this cheat code.{(canDelete ? string.Empty : $"\nHold {config.DeleteDesignModifier} while clicking to delete.")}",
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, $"Delete this cheat code.{(canDelete ? StringU8.Empty : $"\nHold {config.DeleteDesignModifier} while clicking to delete.")}",
                     disabled: !canDelete))
             {
                 action!(false);
@@ -94,23 +87,23 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
             }
 
             knownFlags |= flag;
-            ImUtf8.SameLineInner();
-            if (ImUtf8.Checkbox("\0"u8, ref state))
+            Im.Line.SameInner();
+            if (Im.Checkbox(StringU8.Empty, ref state))
             {
                 action!(state);
                 codeService.SaveState();
             }
 
-            var hovered = ImGui.IsItemHovered();
-            ImGui.SameLine();
-            ImUtf8.Selectable(code, false);
-            hovered |= ImGui.IsItemHovered();
+            var hovered = Im.Item.Hovered();
+            Im.Line.Same();
+            Im.Selectable(code);
+            hovered |= Im.Item.Hovered();
             DrawSource(i, code);
             DrawTarget(i);
             if (hovered)
             {
-                using var tt = ImUtf8.Tooltip();
-                ImUtf8.Text(data.Effect);
+                using var tt = Im.Tooltip.Begin();
+                Im.Text(data.Effect);
             }
         }
 
@@ -119,19 +112,19 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
 
     private void DrawSource(int idx, string code)
     {
-        using var source = ImUtf8.DragDropSource();
+        using var source = Im.DragDrop.Source();
         if (!source)
             return;
 
-        if (!DragDropSource.SetPayload(DragDropLabel))
+        if (!source.SetPayload(DragDropLabel))
             _dragCodeIdx = idx;
-        ImUtf8.Text($"Dragging {code}...");
+        Im.Text($"Dragging {code}...");
     }
 
     private void DrawTarget(int idx)
     {
-        using var target = ImUtf8.DragDropTarget();
-        if (!target.IsDropping(DragDropLabel) || _dragCodeIdx == -1)
+        using var target = Im.DragDrop.Target();
+        if (!target.IsDropping(DragDropLabel) || _dragCodeIdx is -1)
             return;
 
         if (config.Codes.Move(_dragCodeIdx, idx))
@@ -144,13 +137,13 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
         if (knownFlags.HasFlag(CodeService.AllHintCodes))
             return;
 
-        if (ImUtf8.Button(_showCodeHints ? "Hide Hints"u8 : "Show Hints"u8))
+        if (Im.Button(_showCodeHints ? "Hide Hints"u8 : "Show Hints"u8))
             _showCodeHints = !_showCodeHints;
 
         if (!_showCodeHints)
             return;
 
-        foreach (var code in Enum.GetValues<CodeService.CodeFlag>())
+        foreach (var code in CodeService.CodeFlag.Values)
         {
             if (knownFlags.HasFlag(code))
                 continue;
@@ -159,37 +152,37 @@ public class CodeDrawer(Configuration config, CodeService codeService, FunModule
             if (!data.Display)
                 continue;
 
-            ImGui.Dummy(Vector2.Zero);
-            ImGui.Separator();
-            ImGui.Dummy(Vector2.Zero);
-            ImUtf8.Text(data.Effect);
-            using var indent = ImRaii.PushIndent(2);
-            using (ImUtf8.Group())
+            Im.Dummy(Vector2.Zero);
+            Im.Separator();
+            Im.Dummy(Vector2.Zero);
+            Im.Text(data.Effect);
+            using var indent = Im.Indent(2);
+            using (Im.Group())
             {
-                ImUtf8.Text("Capitalized letters: "u8);
-                ImUtf8.Text("Punctuation: "u8);
+                Im.Text("Capitalized letters: "u8);
+                Im.Text("Punctuation: "u8);
             }
 
-            ImUtf8.SameLineInner();
-            using (ImUtf8.Group())
+            Im.Line.SameInner();
+            using (Im.Group())
             {
-                using var mono = ImRaii.PushFont(UiBuilder.MonoFont);
-                ImUtf8.Text($"{data.CapitalCount}");
-                ImUtf8.Text($"{data.Punctuation}");
+                using var mono = Im.Font.PushMono();
+                Im.Text($"{data.CapitalCount}");
+                Im.Text($"{data.Punctuation}");
             }
 
-            ImUtf8.TextWrapped(data.Hint);
+            Im.TextWrapped(data.Hint);
         }
     }
 
 
     private static void DrawTooltip()
     {
-        if (!ImGui.IsItemHovered())
+        if (!Im.Item.Hovered())
             return;
 
-        ImGui.SetNextWindowSize(new Vector2(400, 0));
-        using var tt = ImUtf8.Tooltip();
-        ImUtf8.TextWrapped(Tooltip);
+        Im.Window.SetNextSize(new Vector2(400, 0));
+        using var tt = Im.Tooltip.Begin();
+        Im.TextWrapped(Tooltip);
     }
 }

@@ -1,14 +1,10 @@
-using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Interop.Penumbra;
+using Luna;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OtterGui;
-using OtterGui.Extensions;
-using OtterGui.Filesystem;
-using OtterGui.Services;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
-using Notification = OtterGui.Classes.Notification;
+using Notification = Luna.Notification;
 
 namespace Glamourer.Services;
 
@@ -42,7 +38,7 @@ public sealed class CollectionOverrideService : IService, ISavable
     public IReadOnlyList<(ActorIdentifier Actor, Guid CollectionId, string DisplayName)> Overrides
         => _overrides;
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.CollectionOverrideFile;
 
     public void AddOverride(IEnumerable<ActorIdentifier> identifiers, Guid collectionId, string displayName)
@@ -79,7 +75,7 @@ public sealed class CollectionOverrideService : IService, ISavable
         if (idx < 0 || idx >= _overrides.Count)
             return;
 
-        if (newCollectionId == Guid.Empty || newDisplayName.Length == 0)
+        if (newCollectionId == Guid.Empty || newDisplayName.Length is 0)
             return;
 
         var current = _overrides[idx];
@@ -166,8 +162,7 @@ public sealed class CollectionOverrideService : IService, ISavable
                             if (collection == null)
                             {
                                 Glamourer.Messager.AddMessage(new Notification(
-                                    $"The overridden collection for identifier {identifier.Incognito(null)} with name {collectionIdentifier} could not be found by Penumbra for migration.",
-                                    NotificationType.Warning));
+                                    $"The overridden collection for identifier {identifier.Incognito(null)} with name {collectionIdentifier} could not be found by Penumbra for migration."));
                                 continue;
                             }
 
@@ -194,7 +189,7 @@ public sealed class CollectionOverrideService : IService, ISavable
 
     public void Save(StreamWriter writer)
     {
-        var jObj = new JObject()
+        var jObj = new JObject
         {
             ["Version"]   = Version,
             ["Overrides"] = SerializeOverrides(),

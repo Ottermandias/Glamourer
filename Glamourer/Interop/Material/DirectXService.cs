@@ -1,5 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.String.Functions;
 using SharpGen.Runtime;
@@ -11,7 +11,7 @@ namespace Glamourer.Interop.Material;
 
 public unsafe class DirectXService(IFramework framework) : IService
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly ConcurrentDictionary<nint, (DateTime Update, ColorTable.Table Table)> _textures = [];
 
     /// <summary> Generate a color table the way the game does inside the original texture, and release the original. </summary>

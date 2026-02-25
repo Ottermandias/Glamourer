@@ -3,17 +3,18 @@ using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Raii;
+using ImSharp;
+using Luna;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
+using MouseButton = Penumbra.Api.Enums.MouseButton;
 
 namespace Glamourer.Gui;
 
-public sealed class PenumbraChangedItemTooltip : IDisposable
+public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
 {
     private readonly PenumbraService    _penumbra;
     private readonly StateManager       _stateManager;
@@ -78,11 +79,11 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
         {
             // + 2 due to weapons.
             var glasses = _lastItems[bonusSlot.ToSlot() + 2];
-            using (_ = !openTooltip ? null : ImRaii.Tooltip())
+            using (openTooltip ? Im.Tooltip.Begin() : default)
             {
-                ImGui.TextUnformatted($"{prefix}Right-Click to apply to current actor.");
+                Im.Text($"{prefix}Right-Click to apply to current actor.");
                 if (glasses.Valid)
-                    ImGui.TextUnformatted($"{prefix}Control + Right-Click to re-apply {glasses.Name} to current actor.");
+                    Im.Text($"{prefix}Control + Right-Click to re-apply {glasses.Name} to current actor.");
             }
 
             return;
@@ -96,27 +97,27 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
             case EquipSlot.OffHand when !CanApplyWeapon(EquipSlot.OffHand,   item):
                 break;
             case EquipSlot.RFinger:
-                using (_ = !openTooltip ? null : ImRaii.Tooltip())
+                using (openTooltip ? Im.Tooltip.Begin() : default)
                 {
-                    ImGui.TextUnformatted($"{prefix}Right-Click to apply to current actor (Right Finger).");
-                    ImGui.TextUnformatted($"{prefix}Shift + Right-Click to apply to current actor (Left Finger).");
+                    Im.Text($"{prefix}Right-Click to apply to current actor (Right Finger).");
+                    Im.Text($"{prefix}Shift + Right-Click to apply to current actor (Left Finger).");
                     if (last.Valid)
-                        ImGui.TextUnformatted(
+                        Im.Text(
                             $"{prefix}Control + Right-Click to re-apply {last.Name} to current actor (Right Finger).");
 
                     var last2 = _lastItems[EquipSlot.LFinger.ToIndex()];
                     if (last2.Valid)
-                        ImGui.TextUnformatted(
+                        Im.Text(
                             $"{prefix}Shift + Control + Right-Click to re-apply {last.Name} to current actor (Left Finger).");
                 }
 
                 break;
             default:
-                using (_ = !openTooltip ? null : ImRaii.Tooltip())
+                using (openTooltip ? Im.Tooltip.Begin() : default)
                 {
-                    ImGui.TextUnformatted($"{prefix}Right-Click to apply to current actor.");
+                    Im.Text($"{prefix}Right-Click to apply to current actor.");
                     if (last.Valid)
-                        ImGui.TextUnformatted($"{prefix}Control + Right-Click to re-apply {last.Name} to current actor.");
+                        Im.Text($"{prefix}Control + Right-Click to re-apply {last.Name} to current actor.");
                 }
 
                 break;
@@ -130,7 +131,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
         {
             // + 2 due to weapons.
             var glasses = _lastItems[bonusSlot.ToSlot() + 2];
-            if (ImGui.GetIO().KeyCtrl && glasses.Valid)
+            if (Im.Io.KeyControl && glasses.Valid)
             {
                 Glamourer.Log.Debug($"Re-Applying {glasses.Name} to {bonusSlot.ToName()}.");
                 SetLastItem(bonusSlot, default, state);
@@ -154,7 +155,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
             case EquipSlot.OffHand when !CanApplyWeapon(EquipSlot.OffHand,   item):
                 break;
             case EquipSlot.RFinger:
-                switch (ImGui.GetIO().KeyCtrl, ImGui.GetIO().KeyShift)
+                switch (Im.Io.KeyControl, Im.Io.KeyShift)
                 {
                     case (false, false):
                         Glamourer.Log.Debug($"Applying {item.Name} to Right Finger.");
@@ -180,7 +181,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
 
                 return;
             default:
-                if (ImGui.GetIO().KeyCtrl && last.Valid)
+                if (Im.Io.KeyControl && last.Valid)
                 {
                     Glamourer.Log.Debug($"Re-Applying {last.Name} to {slot.ToName()}.");
                     SetLastItem(slot, default, state);
@@ -232,7 +233,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable
 
                 var customize = _objects.Player.Model.GetCustomize();
                 if (CheckGenderRace(customize, race, gender) && VerifyValue(customize, index, value))
-                    ImGui.TextUnformatted("[Glamourer] Right-Click to apply to current actor.");
+                    Im.Text("[Glamourer] Right-Click to apply to current actor."u8);
 
                 return;
             }

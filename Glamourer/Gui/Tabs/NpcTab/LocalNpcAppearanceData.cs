@@ -2,13 +2,14 @@
 using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
+using ImSharp;
+using Luna;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Gui.Tabs.NpcTab;
 
-public class LocalNpcAppearanceData : ISavable
+public sealed class LocalNpcAppearanceData : ISavable, IUiService
 {
     private readonly DesignColors _colors;
 
@@ -26,7 +27,7 @@ public class LocalNpcAppearanceData : ISavable
     public bool IsFavorite(in NpcData data)
         => _data.TryGetValue(ToKey(data), out var tuple) && tuple.Favorite;
 
-    public (uint Color, bool Favorite) GetData(in NpcData data)
+    public (Rgba32 Color, bool Favorite) GetData(in NpcData data)
         => _data.TryGetValue(ToKey(data), out var t)
             ? (GetColor(t.Color,      t.Favorite, data.Kind), t.Favorite)
             : (GetColor(string.Empty, false,      data.Kind), false);
@@ -34,9 +35,9 @@ public class LocalNpcAppearanceData : ISavable
     public string GetColor(in NpcData data)
         => _data.TryGetValue(ToKey(data), out var t) ? t.Color : string.Empty;
 
-    private uint GetColor(string color, bool favorite, ObjectKind kind)
+    private Rgba32 GetColor(string color, bool favorite, ObjectKind kind)
     {
-        if (color.Length == 0)
+        if (color.Length is 0)
         {
             if (favorite)
                 return ColorId.FavoriteStarOn.Value();
@@ -47,7 +48,7 @@ public class LocalNpcAppearanceData : ISavable
         }
 
         if (_colors.TryGetValue(color, out var value))
-            return value == 0 ? ImGui.GetColorU32(ImGuiCol.Text) : value;
+            return value.IsTransparent ? Im.Color.Get(ImGuiColor.Text) : value;
 
         return _colors.MissingColor;
     }
@@ -93,7 +94,7 @@ public class LocalNpcAppearanceData : ISavable
 
     public event Action DataChanged = null!;
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.NpcAppearanceFile;
 
     public void Save(StreamWriter writer)

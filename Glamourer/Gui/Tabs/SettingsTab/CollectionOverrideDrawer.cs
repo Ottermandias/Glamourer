@@ -1,10 +1,9 @@
 ﻿using Dalamud.Interface;
+using Glamourer.Config;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Services;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
 
@@ -25,57 +24,53 @@ public class CollectionOverrideDrawer(
 
     public void Draw()
     {
-        using var header = ImRaii.CollapsingHeader("Collection Overrides");
-        ImGuiUtil.HoverTooltip(
-            "Here you can set up overrides for Penumbra collections that should have their settings changed when automatically applying mod settings from a design.\n"
-          + "Instead of the collection associated with the overridden character, the overridden collection will be manipulated.");
+        using var header = Im.Tree.HeaderId("Collection Overrides"u8);
+        Im.Tooltip.OnHover(
+            "Here you can set up overrides for Penumbra collections that should have their settings changed when automatically applying mod settings from a design.\n"u8
+          + "Instead of the collection associated with the overridden character, the overridden collection will be manipulated."u8);
         if (!header)
             return;
 
-        using var table = ImRaii.Table("table", 4, ImGuiTableFlags.RowBg);
+        using var table = Im.Table.Begin("table"u8, 4, TableFlags.RowBackground);
         if (!table)
             return;
 
-        var buttonSize = new Vector2(ImGui.GetFrameHeight());
-        ImGui.TableSetupColumn("buttons",     ImGuiTableColumnFlags.WidthFixed,   buttonSize.X);
-        ImGui.TableSetupColumn("identifiers", ImGuiTableColumnFlags.WidthStretch, 0.35f);
-        ImGui.TableSetupColumn("collections", ImGuiTableColumnFlags.WidthStretch, 0.4f);
-        ImGui.TableSetupColumn("name",        ImGuiTableColumnFlags.WidthStretch, 0.25f);
+        table.SetupColumn("buttons"u8,     TableColumnFlags.WidthFixed,   Im.Style.FrameHeight);
+        table.SetupColumn("identifiers"u8, TableColumnFlags.WidthStretch, 0.35f);
+        table.SetupColumn("collections"u8, TableColumnFlags.WidthStretch, 0.4f);
+        table.SetupColumn("name"u8,        TableColumnFlags.WidthStretch, 0.25f);
 
         for (var i = 0; i < collectionOverrides.Overrides.Count; ++i)
-            DrawCollectionRow(ref i, buttonSize);
+            DrawCollectionRow(table, ref i);
 
-        DrawNewOverride(buttonSize);
+        DrawNewOverride(table);
     }
 
-    private void DrawCollectionRow(ref int idx, Vector2 buttonSize)
+    private void DrawCollectionRow(in Im.TableDisposable table, ref int idx)
     {
-        using var id = ImRaii.PushId(idx);
+        using var id = Im.Id.Push(idx);
         var (exists, actor, collection, name) = collectionOverrides.Fetch(idx);
 
-        ImGui.TableNextColumn();
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Trash.ToIconString(), buttonSize, "Delete this override.", false, true))
+        table.NextColumn();
+        if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this override."u8))
             collectionOverrides.DeleteOverride(idx--);
 
-        ImGui.TableNextColumn();
+        table.NextColumn();
         DrawActorIdentifier(idx, actor);
 
-        ImGui.TableNextColumn();
-        if (combo.Draw("##collection", name, $"Select the overriding collection. Current GUID:", ImGui.GetContentRegionAvail().X,
-                ImGui.GetTextLineHeight()))
+        table.NextColumn();
+        if (combo.Draw("##collection"u8, name, out var newName, ref collection, Im.ContentRegion.Available.X))
+            collectionOverrides.ChangeOverride(idx, collection, newName);
+
+        if (Im.Item.Hovered())
         {
-            var (guid, _, newName) = combo.CurrentSelection;
-            collectionOverrides.ChangeOverride(idx, guid, newName);
+            using var tt = Im.Tooltip.Begin();
+            Im.Text("Select the overriding collection. Current GUID:"u8);
+            using var indent = Im.Indent();
+            ImEx.MonoText($"{collection}");
         }
 
-        if (ImGui.IsItemHovered())
-        {
-            using var tt   = ImRaii.Tooltip();
-            using var font = ImRaii.PushFont(UiBuilder.MonoFont);
-            ImGui.TextUnformatted($"    {collection}");
-        }
-
-        ImGui.TableNextColumn();
+        table.NextColumn();
         DrawCollectionName(exists, collection, name);
     }
 
@@ -83,64 +78,64 @@ public class CollectionOverrideDrawer(
     {
         if (!exists)
         {
-            ImGui.TextUnformatted("<Does not Exist>");
-            if (!ImGui.IsItemHovered())
+            Im.Text("<Does not Exist>"u8);
+            if (!Im.Item.Hovered())
                 return;
 
-            using var tt1 = ImRaii.Tooltip();
-            ImGui.TextUnformatted($"The design {name} with the GUID");
-            using (ImRaii.PushFont(UiBuilder.MonoFont))
+            using var tt1 = Im.Tooltip.Begin();
+            Im.Text($"The design {name} with the GUID");
+            using (Im.Font.PushMono())
             {
-                ImGui.TextUnformatted($"    {collection}");
+                Im.Text($"    {collection}");
             }
 
-            ImGui.TextUnformatted("does not exist in Penumbra.");
+            Im.Text("does not exist in Penumbra."u8);
             return;
         }
 
-        ImGui.TextUnformatted(config.Ephemeral.IncognitoMode ? collection.ToString()[..8] : name);
-        if (!ImGui.IsItemHovered())
+        Im.Text(config.Ephemeral.IncognitoMode ? collection.ToString()[..8] : name);
+        if (!Im.Item.Hovered())
             return;
 
-        using var tt2 = ImRaii.Tooltip();
-        using var f   = ImRaii.PushFont(UiBuilder.MonoFont);
-        ImGui.TextUnformatted(collection.ToString());
+        using var tt2 = Im.Tooltip.Begin();
+        using var f   = Im.Font.PushMono();
+        Im.Text($"{collection}");
     }
 
     private void DrawActorIdentifier(int idx, ActorIdentifier actor)
     {
-        ImGui.Selectable(config.Ephemeral.IncognitoMode ? actor.Incognito(null) : actor.ToString());
-        using (var target = ImRaii.DragDropTarget())
+        Im.Selectable(config.Ephemeral.IncognitoMode ? actor.Incognito(null) : actor.ToString());
+        using (var target = Im.DragDrop.Target())
         {
-            if (target.Success && ImGuiUtil.IsDropping("DraggingOverride"))
+            if (target.IsDropping("DraggingOverride"u8))
             {
                 collectionOverrides.MoveOverride(_dragDropIndex, idx);
                 _dragDropIndex = -1;
             }
         }
 
-        using (var source = ImRaii.DragDropSource())
+        using (var source = Im.DragDrop.Source())
         {
             if (source)
             {
-                ImGui.SetDragDropPayload("DraggingOverride", null, 0);
-                ImGui.TextUnformatted($"Reordering Override #{idx + 1}...");
+                source.SetPayload("DraggingOverride"u8);
+                Im.Text($"Reordering Override #{idx + 1}...");
                 _dragDropIndex = idx;
             }
         }
     }
 
-    private void DrawNewOverride(Vector2 buttonSize)
+    private void DrawNewOverride(in Im.TableDisposable table)
     {
         var (currentId, currentName) = penumbra.CurrentCollection;
-        ImGui.TableNextColumn();
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.PersonCirclePlus.ToIconString(), buttonSize, "Add override for current player.",
-                !objects.Player.Valid && currentId != Guid.Empty, true))
+        table.NextColumn();
+        if (ImEx.Icon.Button(FontAwesomeIcon.PersonCirclePlus.Icon(), "Add override for current player."u8,
+                !objects.Player.Valid && currentId != Guid.Empty))
             collectionOverrides.AddOverride([objects.PlayerData.Identifier], currentId, currentName);
 
-        ImGui.TableNextColumn();
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-        if (ImGui.InputTextWithHint("##newActor", "New Identifier...", ref _newIdentifier, 80))
+        table.NextColumn();
+        Im.Item.SetNextWidthFull();
+        if (Im.Input.Text("##newActor"u8, ref _newIdentifier, "New Identifier..."u8))
             try
             {
                 _identifiers = actors.FromUserString(_newIdentifier, false);
@@ -153,22 +148,17 @@ public class CollectionOverrideDrawer(
 
         var tt = _identifiers.Any(i => i.IsValid)
             ? $"Add a new override for {_identifiers.First(i => i.IsValid)}."
-            : _newIdentifier.Length == 0
+            : _newIdentifier.Length is 0
                 ? "Please enter an identifier string first."
                 : $"The identifier string {_newIdentifier} does not result in a valid identifier{(_exception == null ? "." : $":\n\n{_exception?.Message}")}";
 
-        ImGui.TableNextColumn();
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Plus.ToIconString(), buttonSize, tt, tt[0] is not 'A', true))
+        table.NextColumn();
+        if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, tt[0] is not 'A'))
             collectionOverrides.AddOverride(_identifiers, currentId, currentName);
 
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
-        using (ImRaii.PushFont(UiBuilder.IconFont))
-        {
-            using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled));
-            ImGui.TextUnformatted(FontAwesomeIcon.InfoCircle.ToIconString());
-        }
-
-        if (ImGui.IsItemHovered())
+        Im.Line.SameInner();
+        ImEx.Icon.DrawAligned(LunaStyle.InfoIcon, ImGuiColor.TextDisabled.Get());
+        if (Im.Item.Hovered())
             ActorIdentifierFactory.WriteUserStringTooltip(false);
     }
 }

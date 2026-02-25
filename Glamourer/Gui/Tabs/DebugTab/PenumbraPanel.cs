@@ -1,8 +1,5 @@
-﻿using Dalamud.Interface.Utility;
-using Glamourer.Interop.Penumbra;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
+﻿using Glamourer.Interop.Penumbra;
+using ImSharp;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
@@ -11,10 +8,10 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItemTooltip _penumbraTooltip) : IGameDataDrawer
+public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemTooltip penumbraTooltip) : IGameDataDrawer
 {
-    public string Label
-        => "Penumbra Interop";
+    public ReadOnlySpan<byte> Label
+        => "Penumbra Interop"u8;
 
     public bool Disabled
         => false;
@@ -24,80 +21,76 @@ public unsafe class PenumbraPanel(PenumbraService _penumbra, PenumbraChangedItem
 
     public void Draw()
     {
-        using var table = ImRaii.Table("##PenumbraTable", 3, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        using var table = Im.Table.Begin("##PenumbraTable"u8, 3, TableFlags.SizingFixedFit | TableFlags.RowBackground);
         if (!table)
             return;
 
-        ImGuiUtil.DrawTableColumn("Available");
-        ImGuiUtil.DrawTableColumn(_penumbra.Available.ToString());
-        ImGui.TableNextColumn();
-        if (ImGui.SmallButton("Unattach"))
-            _penumbra.Unattach();
-        ImGui.SameLine();
-        if (ImGui.SmallButton("Reattach"))
-            _penumbra.Reattach();
+        table.DrawDataPair("Available"u8, penumbra.Available);
+        table.NextColumn();
+        if (Im.SmallButton("Unattach"u8))
+            penumbra.Unattach();
+        Im.Line.SameInner();
+        if (Im.SmallButton("Reattach"u8))
+            penumbra.Reattach();
 
-        ImGuiUtil.DrawTableColumn("Version");
-        ImGuiUtil.DrawTableColumn($"{_penumbra.CurrentMajor}.{_penumbra.CurrentMinor}");
-        ImGui.TableNextColumn();
+        table.DrawDataPair("Version"u8, $"{penumbra.CurrentMajor}.{penumbra.CurrentMinor}");
+        table.NextColumn();
 
-        ImGuiUtil.DrawTableColumn("Attached When");
-        ImGuiUtil.DrawTableColumn(_penumbra.AttachTime.ToLocalTime().ToLongTimeString());
-        ImGui.TableNextColumn();
+        table.DrawDataPair("Attached When"u8, penumbra.AttachTime.ToLocalTime().ToLongTimeString());
+        table.NextColumn();
 
-        ImGuiUtil.DrawTableColumn("Draw Object");
-        ImGui.TableNextColumn();
+        table.DrawFrameColumn("Draw Object"u8);
+        table.NextColumn();
         var address = _drawObject.Address;
-        ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputScalar("##drawObjectPtr", ImGuiDataType.U64, ref address, nint.Zero, nint.Zero, "%llx",
-                ImGuiInputTextFlags.CharsHexadecimal))
+        Im.Item.SetNextWidthScaled(200);
+        if (Im.Input.Scalar("##drawObjectPtr"u8, ref address, "%llx"u8, flags: InputTextFlags.CharsHexadecimal))
             _drawObject = address;
-        ImGuiUtil.DrawTableColumn(_penumbra.Available
-            ? $"0x{_penumbra.GameObjectFromDrawObject(_drawObject).Address:X}"
-            : "Penumbra Unavailable");
+        table.NextColumn();
+        if (penumbra.Available)
+            Glamourer.Dynamis.DrawPointer(penumbra.GameObjectFromDrawObject(_drawObject).Address);
+        else
+            Im.Text("Penumbra Unavailable"u8);
 
-        ImGuiUtil.DrawTableColumn("Cutscene Object");
-        ImGui.TableNextColumn();
-        ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
-        ImGui.InputInt("##CutsceneIndex", ref _gameObjectIndex, 0, 0);
-        ImGuiUtil.DrawTableColumn(_penumbra.Available
-            ? _penumbra.CutsceneParent((ushort)_gameObjectIndex).ToString()
-            : "Penumbra Unavailable");
+        table.DrawFrameColumn("Cutscene Object"u8);
+        table.NextColumn();
+        Im.Item.SetNextWidthScaled(200);
+        Im.Input.Scalar("##CutsceneIndex"u8, ref _gameObjectIndex);
+        table.DrawColumn(penumbra.Available ? $"{penumbra.ResolveService.CutsceneParent((ushort)_gameObjectIndex)}" : "Penumbra Unavailable"u8);
 
-        ImGuiUtil.DrawTableColumn("Redraw Object");
-        ImGui.TableNextColumn();
-        ImGui.SetNextItemWidth(200 * ImGuiHelpers.GlobalScale);
-        ImGui.InputInt("##redrawObject", ref _gameObjectIndex, 0, 0);
-        ImGui.TableNextColumn();
-        using (_ = ImRaii.Disabled(!_penumbra.Available))
+        table.DrawFrameColumn("Redraw Object"u8);
+        table.NextColumn();
+        Im.Item.SetNextWidthScaled(200);
+        Im.Input.Scalar("##redrawObject"u8, ref _gameObjectIndex);
+        table.NextColumn();
+        using (Im.Disabled(!penumbra.Available))
         {
-            if (ImGui.SmallButton("Redraw"))
-                _penumbra.RedrawObject((ObjectIndex)_gameObjectIndex, RedrawType.Redraw);
+            if (Im.Button("Redraw"u8))
+                penumbra.RedrawObject((ObjectIndex)_gameObjectIndex, RedrawType.Redraw);
         }
 
-        ImGuiUtil.DrawTableColumn("Last Tooltip Date");
-        ImGuiUtil.DrawTableColumn(_penumbraTooltip.LastTooltip > DateTime.MinValue
-            ? $"{_penumbraTooltip.LastTooltip.ToLongTimeString()} ({_penumbraTooltip.LastType} {_penumbraTooltip.LastId})"
-            : "Never");
-        ImGui.TableNextColumn();
+        table.DrawColumn("Last Tooltip Date"u8);
+        table.DrawColumn(penumbraTooltip.LastTooltip > DateTime.MinValue
+            ? $"{penumbraTooltip.LastTooltip.ToLongTimeString()} ({penumbraTooltip.LastType} {penumbraTooltip.LastId})"
+            : "Never"u8);
+        table.NextColumn();
 
-        ImGuiUtil.DrawTableColumn("Last Click Date");
-        ImGuiUtil.DrawTableColumn(_penumbraTooltip.LastClick > DateTime.MinValue ? _penumbraTooltip.LastClick.ToLongTimeString() : "Never");
-        ImGui.TableNextColumn();
+        table.DrawColumn("Last Click Date"u8);
+        table.DrawColumn(penumbraTooltip.LastClick > DateTime.MinValue ? penumbraTooltip.LastClick.ToLongTimeString() : "Never"u8);
+        table.NextColumn();
 
-        ImGui.Separator();
-        ImGui.Separator();
-        foreach (var (slot, item) in _penumbraTooltip.LastItems)
+        Im.Separator();
+        Im.Separator();
+        foreach (var (slot, item) in penumbraTooltip.LastItems)
         {
             switch (slot)
             {
-                case EquipSlot e:     ImGuiUtil.DrawTableColumn($"{e.ToName()} Revert-Item"); break;
-                case BonusItemFlag f: ImGuiUtil.DrawTableColumn($"{f.ToName()} Revert-Item"); break;
-                default:              ImGuiUtil.DrawTableColumn("Unk Revert-Item"); break;
+                case EquipSlot e:     table.DrawColumn($"{e.ToNameU8()} Revert-Item"); break;
+                case BonusItemFlag f: table.DrawColumn($"{f.ToNameU8()} Revert-Item"); break;
+                default:              table.DrawColumn("Unk Revert-Item"u8); break;
             }
 
-            ImGuiUtil.DrawTableColumn(item.Valid ? item.Name : "None");
-            ImGui.TableNextColumn();
+            table.DrawColumn(item.Valid ? item.Name : "None"u8);
+            table.NextColumn();
         }
     }
 }

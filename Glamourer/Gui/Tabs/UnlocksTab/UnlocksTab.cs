@@ -1,31 +1,27 @@
-﻿using Dalamud.Interface;
-using Dalamud.Interface.Windowing;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Raii;
-using OtterGui;
-using OtterGui.Widgets;
+﻿using ImSharp;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.UnlocksTab;
 
-public class UnlocksTab : Window, ITab
+public sealed class UnlocksTab : Window, ITab<MainTabType>
 {
-    private readonly EphemeralConfig  _config;
-    private readonly UnlockOverview _overview;
-    private readonly UnlockTable    _table;
+    private readonly Config.EphemeralConfig _config;
+    private readonly UnlockOverview                _overview;
+    private readonly UnlockTable                   _table;
 
-    public UnlocksTab(EphemeralConfig config, UnlockOverview overview, UnlockTable table)
+    public UnlocksTab(Config.EphemeralConfig config, UnlockOverview overview, UnlockTable table)
         : base("Unlocked Equipment")
     {
         _config   = config;
         _overview = overview;
         _table    = table;
 
-        Flags  |= ImGuiWindowFlags.NoDocking;
+        Flags  |= WindowFlags.NoDocking;
         IsOpen =  false;
-        SizeConstraints = new WindowSizeConstraints()
+        SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(700, 675),
-            MaximumSize = ImGui.GetIO().DisplaySize,
+            MinimumSize = new Vector2(700,  675),
+            MaximumSize = new Vector2(3840, 2160),
         };
     }
 
@@ -42,14 +38,17 @@ public class UnlocksTab : Window, ITab
     public ReadOnlySpan<byte> Label
         => "Unlocks"u8;
 
+    public MainTabType Identifier
+        => MainTabType.Unlocks;
+
     public void DrawContent()
     {
         DrawTypeSelection();
         if (DetailMode)
-            _table.Draw(ImGui.GetFrameHeightWithSpacing());
+            _table.Draw();
         else
             _overview.Draw();
-        _table.Flags |= ImGuiTableFlags.Resizable;
+        _table.Flags |= TableFlags.Resizable;
     }
 
     public override void Draw()
@@ -59,35 +58,33 @@ public class UnlocksTab : Window, ITab
 
     private void DrawTypeSelection()
     {
-        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
-            .Push(ImGuiStyleVar.FrameRounding, 0);
-        var buttonSize = new Vector2(ImGui.GetContentRegionAvail().X / 2, ImGui.GetFrameHeight());
+        using var style = ImStyleDouble.ItemSpacing.Push(Vector2.Zero)
+            .Push(ImStyleSingle.FrameRounding, 0);
+        var buttonSize = new Vector2(Im.ContentRegion.Available.X / 2, Im.Style.FrameHeight);
         if (!IsOpen)
-            buttonSize.X -= ImGui.GetFrameHeight() / 2;
+            buttonSize.X -= Im.Style.FrameHeight / 2;
         if (DetailMode)
-            buttonSize.X -= ImGui.GetFrameHeight() / 2;
+            buttonSize.X -= Im.Style.FrameHeight / 2;
 
-        if (ImGuiUtil.DrawDisabledButton("Overview Mode", buttonSize, "Show tinted icons of sets of unlocks.", !DetailMode))
+        if (ImEx.Button("Overview Mode"u8, buttonSize, "Show tinted icons of sets of unlocks."u8, !DetailMode))
             DetailMode = false;
 
-        ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("Detailed Mode", buttonSize, "Show all unlockable data as a combined filterable and sortable table.",
+        Im.Line.Same();
+        if (ImEx.Button("Detailed Mode"u8, buttonSize, "Show all unlockable data as a combined filterable and sortable table."u8,
                 DetailMode))
             DetailMode = true;
 
         if (DetailMode)
         {
-            ImGui.SameLine();
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Expand.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                    "Restore all columns to their original size.", false, true))
-                _table.Flags &= ~ImGuiTableFlags.Resizable;
+            Im.Line.Same();
+            if (ImEx.Icon.Button(LunaStyle.AutoResizeIcon, "Restore all columns to their original size."u8))
+                _table.Flags &= ~TableFlags.Resizable;
         }
 
         if (!IsOpen)
         {
-            ImGui.SameLine();
-            if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.SquareArrowUpRight.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                    "Pop the unlocks tab out into its own window.", false, true))
+            Im.Line.Same();
+            if (ImEx.Icon.Button(LunaStyle.PopOutIcon, "Pop the unlocks tab out into its own window."u8))
                 IsOpen = true;
         }
     }

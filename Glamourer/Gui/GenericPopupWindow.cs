@@ -1,37 +1,32 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Interface.Utility;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using Glamourer.Gui.Materials;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
+using Glamourer.Config;
+using ImSharp;
+using Luna;
 
 namespace Glamourer.Gui;
 
-public class GenericPopupWindow : Window
+public sealed class GenericPopupWindow : Window
 {
-    private readonly Configuration    _config;
-    private readonly AdvancedDyePopup _advancedDye;
-    private readonly ICondition       _condition;
-    private readonly IClientState     _state;
-    public           bool             OpenFestivalPopup { get; internal set; } = false;
+    private readonly Configuration _config;
+    private readonly ICondition    _condition;
+    private readonly IClientState  _state;
+    public           bool          OpenFestivalPopup { get; internal set; }
 
-    public GenericPopupWindow(Configuration config, IClientState state, ICondition condition, AdvancedDyePopup advancedDye)
+    public GenericPopupWindow(Configuration config, IClientState state, ICondition condition)
         : base("Glamourer Popups",
-            ImGuiWindowFlags.NoBringToFrontOnFocus
-          | ImGuiWindowFlags.NoDecoration
-          | ImGuiWindowFlags.NoInputs
-          | ImGuiWindowFlags.NoSavedSettings
-          | ImGuiWindowFlags.NoBackground
-          | ImGuiWindowFlags.NoMove
-          | ImGuiWindowFlags.NoNav
-          | ImGuiWindowFlags.NoTitleBar, true)
+            WindowFlags.NoBringToFrontOnFocus
+          | WindowFlags.NoDecoration
+          | WindowFlags.NoInputs
+          | WindowFlags.NoSavedSettings
+          | WindowFlags.NoBackground
+          | WindowFlags.NoMove
+          | WindowFlags.NoNav
+          | WindowFlags.NoTitleBar, true)
     {
         _config             = config;
         _state              = state;
         _condition          = condition;
-        _advancedDye        = advancedDye;
         DisableWindowSounds = true;
         IsOpen              = true;
     }
@@ -40,12 +35,11 @@ public class GenericPopupWindow : Window
     {
         if (OpenFestivalPopup && CheckFestivalPopupConditions())
         {
-            ImGui.OpenPopup("FestivalPopup");
+            Im.Popup.Open("FestivalPopup"u8);
             OpenFestivalPopup = false;
         }
 
         DrawFestivalPopup();
-        //_advancedDye.Draw();
     }
 
     private bool CheckFestivalPopupConditions()
@@ -63,33 +57,33 @@ public class GenericPopupWindow : Window
 
     private void DrawFestivalPopup()
     {
-        var viewportSize = ImGui.GetWindowViewport().Size;
-        ImGui.SetNextWindowSize(new Vector2(Math.Max(viewportSize.X / 5, 400), Math.Max(viewportSize.Y / 7, 150)));
-        ImGui.SetNextWindowPos(viewportSize / 2, ImGuiCond.Always, new Vector2(0.5f));
-        using var popup = ImRaii.Popup("FestivalPopup", ImGuiWindowFlags.Modal);
+        var viewportSize = Im.Window.Viewport.Size;
+        Im.Window.SetNextSize(new Vector2(Math.Max(viewportSize.X / 5, 400), Math.Max(viewportSize.Y / 7, 150)));
+        Im.Window.SetNextPosition(viewportSize / 2, Condition.Always, new Vector2(0.5f));
+        using var popup = Im.Popup.Begin("FestivalPopup"u8, WindowFlags.Modal);
         if (!popup)
             return;
 
-        ImGuiUtil.TextWrapped(
-            "Glamourer has some festival-specific behaviour that is turned on by default. You can always turn this behaviour on or off in the general settings, and choose your current preference now.");
+        Im.TextWrapped(
+            "Glamourer has some festival-specific behaviour that is turned on by default. You can always turn this behaviour on or off in the general settings, and choose your current preference now."u8);
 
-        var buttonWidth = new Vector2(150 * ImGuiHelpers.GlobalScale, 0);
-        var yPos        = ImGui.GetWindowHeight() - 2 * ImGui.GetFrameHeight();
-        var xPos        = (ImGui.GetWindowWidth() - ImGui.GetStyle().ItemSpacing.X) / 2 - buttonWidth.X;
-        ImGui.SetCursorPos(new Vector2(xPos, yPos));
-        if (ImGui.Button("Let's Check It Out!", buttonWidth))
+        var buttonWidth = new Vector2(150 * Im.Style.GlobalScale, 0);
+        var yPos        = Im.Window.Height - 2 * Im.Style.FrameHeight;
+        var xPos        = (Im.Window.Width - Im.Style.ItemSpacing.X) / 2 - buttonWidth.X;
+        Im.Cursor.Position = new Vector2(xPos, yPos);
+        if (Im.Button("Let's Check It Out!"u8, buttonWidth))
         {
             _config.DisableFestivals = 0;
             _config.Save();
-            ImGui.CloseCurrentPopup();
+            Im.Popup.CloseCurrent();
         }
 
-        ImGui.SameLine();
-        if (ImGui.Button("Not Right Now.", buttonWidth))
+        Im.Line.Same();
+        if (Im.Button("Not Right Now."u8, buttonWidth))
         {
             _config.DisableFestivals = 2;
             _config.Save();
-            ImGui.CloseCurrentPopup();
+            Im.Popup.CloseCurrent();
         }
     }
 }

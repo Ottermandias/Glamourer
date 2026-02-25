@@ -1,18 +1,15 @@
 ﻿using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
-using Dalamud.Interface.Utility;
-using Dalamud.Interface.Utility.Raii;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Classes;
-using OtterGui.Text;
+using ImSharp;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
+using Luna;
 
 namespace Glamourer.Gui;
 
@@ -28,31 +25,33 @@ public enum QdbButtons
     ReapplyAutomation           = 0x40,
     ResetSettings               = 0x80,
     RevertAdvancedCustomization = 0x100,
+    ToggleMainWindow            = 0x200,
 }
 
 public sealed class DesignQuickBar : Window, IDisposable
 {
-    private ImGuiWindowFlags GetFlags
+    private WindowFlags GetFlags
         => _config.Ephemeral.LockDesignQuickBar
-            ? ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoMove
-            : ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoFocusOnAppearing;
+            ? WindowFlags.NoDecoration | WindowFlags.NoDocking | WindowFlags.NoFocusOnAppearing | WindowFlags.NoMove
+            : WindowFlags.NoDecoration | WindowFlags.NoDocking | WindowFlags.NoFocusOnAppearing;
 
-    private readonly Configuration      _config;
-    private readonly QuickDesignCombo   _designCombo;
-    private readonly StateManager       _stateManager;
-    private readonly AutoDesignApplier  _autoDesignApplier;
-    private readonly ActorObjectManager _objects;
-    private readonly PenumbraService    _penumbra;
-    private readonly IKeyState          _keyState;
-    private readonly ImRaii.Style       _windowPadding  = new();
-    private readonly ImRaii.Color       _windowColor    = new();
-    private          DateTime           _keyboardToggle = DateTime.UnixEpoch;
-    private          int                _numButtons;
-    private readonly StringBuilder      _tooltipBuilder = new(512);
+    private readonly Configuration           _config;
+    private readonly QuickDesignCombo        _designCombo;
+    private readonly StateManager            _stateManager;
+    private readonly AutoDesignApplier       _autoDesignApplier;
+    private readonly ActorObjectManager      _objects;
+    private readonly PenumbraService         _penumbra;
+    private readonly IKeyState               _keyState;
+    private readonly Im.ColorStyleDisposable _style          = new();
+    private          DateTime                _keyboardToggle = DateTime.UnixEpoch;
+    private          int                     _numButtons;
+    private readonly StringBuilder           _tooltipBuilder = new(512);
+
+    public event Action? ToggleMainWindow;
 
     public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
         ActorObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra)
-        : base("Glamourer Quick Bar", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoDocking)
+        : base("Glamourer Quick Bar", WindowFlags.NoDecoration | WindowFlags.NoDocking)
     {
         _config             = config;
         _designCombo        = designCombo;
@@ -68,12 +67,12 @@ public sealed class DesignQuickBar : Window, IDisposable
     }
 
     public void Dispose()
-        => _windowPadding.Dispose();
+        => _style.Dispose();
 
     public override void PreOpenCheck()
     {
         CheckHotkeys();
-        IsOpen = _config.Ephemeral.ShowDesignQuickBar && _config.QdbButtons != 0;
+        IsOpen = _config.Ephemeral.ShowDesignQuickBar && _config.QdbButtons is not 0;
     }
 
     public override bool DrawConditions()
@@ -82,43 +81,43 @@ public sealed class DesignQuickBar : Window, IDisposable
     public override void PreDraw()
     {
         Flags = GetFlags;
-        UpdateWidth();
 
-        _windowPadding.Push(ImGuiStyleVar.WindowPadding, new Vector2(ImGuiHelpers.GlobalScale * 4))
-            .Push(ImGuiStyleVar.WindowBorderSize, 0);
-        _windowColor.Push(ImGuiCol.WindowBg, ColorId.QuickDesignBg.Value())
-            .Push(ImGuiCol.Button,  ColorId.QuickDesignButton.Value())
-            .Push(ImGuiCol.FrameBg, ColorId.QuickDesignFrame.Value());
+        _style.Push(ImStyleDouble.WindowPadding, new Vector2(Im.Style.GlobalScale * 4))
+            .Push(ImStyleSingle.WindowBorderThickness, 0);
+        _style.Push(ImGuiColor.WindowBackground, ColorId.QuickDesignBg.Value())
+            .Push(ImGuiColor.Button,          ColorId.QuickDesignButton.Value())
+            .Push(ImGuiColor.FrameBackground, ColorId.QuickDesignFrame.Value());
+
+        UpdateWidth();
     }
 
     public override void PostDraw()
-    {
-        _windowPadding.Dispose();
-        _windowColor.Dispose();
-    }
+        => _style.Dispose();
 
-    public void DrawAtEnd(float yPos)
+    public void DrawAtEnd(float yPos, bool mainWindow)
     {
-        var width = UpdateWidth();
-        ImGui.SetCursorPos(new Vector2(ImGui.GetWindowContentRegionMax().X - width, yPos - ImGuiHelpers.GlobalScale));
-        Draw();
+        var numButtons = CalculateButtonCount(mainWindow);
+        var width      = CalculateWidth(numButtons, mainWindow);
+        Im.Cursor.Position = new Vector2(Im.ContentRegion.Maximum.X - width, yPos - Im.Style.GlobalScale);
+        Draw(Im.ContentRegion.Available.X, numButtons, mainWindow);
     }
 
     public override void Draw()
-        => Draw(ImGui.GetContentRegionAvail().X);
+        => Draw(Im.ContentRegion.Available.X, _numButtons, false);
 
-    private void Draw(float width)
+    private void Draw(float width, int numButtons, bool mainWindow)
     {
-        using var group      = ImUtf8.Group();
-        var       spacing    = ImGui.GetStyle().ItemInnerSpacing;
-        using var style      = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
-        var       buttonSize = new Vector2(ImGui.GetFrameHeight());
+        using var group      = Im.Group();
+        var       spacing    = Im.Style.ItemInnerSpacing;
+        using var style      = ImStyleDouble.ItemSpacing.Push(spacing);
+        var       buttonSize = new Vector2(Im.Style.FrameHeight);
         PrepareButtons();
+        DrawToggleMainWindowButton(buttonSize, mainWindow);
         if (_config.QdbButtons.HasFlag(QdbButtons.ApplyDesign))
         {
-            var comboSize = width - _numButtons * (buttonSize.X + spacing.X);
-            _designCombo.Draw(comboSize);
-            ImGui.SameLine();
+            var comboSize = width - numButtons * (buttonSize.X + spacing.X);
+            _designCombo.Draw(StringU8.Empty, comboSize);
+            Im.Line.Same();
             DrawApplyButton(buttonSize);
         }
 
@@ -150,11 +149,11 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     private void DrawApplyButton(Vector2 size)
     {
-        var design    = _designCombo.Design as Design;
+        var design    = _designCombo.QuickDesign;
         var available = 0;
         _tooltipBuilder.Clear();
 
-        if (design == null)
+        if (design is null)
         {
             _tooltipBuilder.Append("No design selected.");
         }
@@ -170,7 +169,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
             if (_targetIdentifier.IsValid && _targetData.Valid)
             {
-                if (available != 0)
+                if (available is not 0)
                     _tooltipBuilder.Append('\n');
                 available |= 2;
                 _tooltipBuilder.Append("Right-Click: Apply ")
@@ -178,13 +177,13 @@ public sealed class DesignQuickBar : Window, IDisposable
                     .Append(" to ").Append(_config.Ephemeral.IncognitoMode ? _targetIdentifier.Incognito(null) : _targetIdentifier.ToName());
             }
 
-            if (available == 0)
+            if (available is 0)
                 _tooltipBuilder.Append("Neither player character nor target available.");
         }
 
 
         var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.PlayCircle, size, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (!clicked)
             return;
 
@@ -215,7 +214,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false })
         {
-            if (available != 0)
+            if (available is not 0)
                 _tooltipBuilder.Append('\n');
             available |= 2;
             _tooltipBuilder.Append("Right-Click: Revert ")
@@ -223,12 +222,12 @@ public sealed class DesignQuickBar : Window, IDisposable
                 .Append(" to their game state.");
         }
 
-        if (available == 0)
+        if (available is 0)
             _tooltipBuilder.Append(
                 "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
-        var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.UndoAlt, buttonSize, available);
-        ImGui.SameLine();
+        var (clicked, _, _, state) = ResolveTarget(LunaStyle.UndoIcon, buttonSize, available);
+        Im.Line.Same();
         if (clicked)
             _stateManager.ResetState(state!, StateSource.Manual, isFinal: true);
     }
@@ -252,7 +251,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
-            if (available != 0)
+            if (available is not 0)
                 _tooltipBuilder.Append('\n');
             available |= 2;
             _tooltipBuilder.Append("Right-Click: Revert ")
@@ -260,12 +259,12 @@ public sealed class DesignQuickBar : Window, IDisposable
                 .Append(" to their automation state.");
         }
 
-        if (available == 0)
+        if (available is 0)
             _tooltipBuilder.Append(
                 "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
         var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.SyncAlt, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (!clicked)
             return;
 
@@ -295,7 +294,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
-            if (available != 0)
+            if (available is not 0)
                 _tooltipBuilder.Append('\n');
             available |= 2;
             _tooltipBuilder.Append("Right-Click: Reapply ")
@@ -303,12 +302,12 @@ public sealed class DesignQuickBar : Window, IDisposable
                 .Append("'s current automation on top of their current state.");
         }
 
-        if (available == 0)
+        if (available is 0)
             _tooltipBuilder.Append(
                 "Neither player character nor target are available, have state modified by Glamourer, or their state is locked.");
 
         var (clicked, id, data, state) = ResolveTarget(FontAwesomeIcon.Repeat, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (!clicked)
             return;
 
@@ -335,7 +334,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
-            if (available != 0)
+            if (available is not 0)
                 _tooltipBuilder.Append('\n');
             available |= 2;
             _tooltipBuilder.Append("Right-Click: Revert the advanced customizations of ")
@@ -343,11 +342,11 @@ public sealed class DesignQuickBar : Window, IDisposable
                 .Append(" to their game state.");
         }
 
-        if (available == 0)
+        if (available is 0)
             _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.PaintBrush, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
             _stateManager.ResetAdvancedCustomizations(state!, StateSource.Manual);
     }
@@ -368,7 +367,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
-            if (available != 0)
+            if (available is not 0)
                 _tooltipBuilder.Append('\n');
             available |= 2;
             _tooltipBuilder.Append("Right-Click: Revert the advanced dyes of ")
@@ -376,11 +375,11 @@ public sealed class DesignQuickBar : Window, IDisposable
                 .Append(" to their game state.");
         }
 
-        if (available == 0)
+        if (available is 0)
             _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Palette, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
             _stateManager.ResetAdvancedDyes(state!, StateSource.Manual);
     }
@@ -401,7 +400,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
-            if (available != 0)
+            if (available is not 0)
                 _tooltipBuilder.Append('\n');
             available |= 2;
             _tooltipBuilder.Append("Right-Click: Revert the customizations of ")
@@ -409,11 +408,11 @@ public sealed class DesignQuickBar : Window, IDisposable
                 .Append(" to their game state.");
         }
 
-        if (available == 0)
+        if (available is 0)
             _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.User, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
             _stateManager.ResetCustomize(state!, StateSource.Manual);
     }
@@ -434,7 +433,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         if (_targetIdentifier.IsValid && _targetState is { IsLocked: false } && _targetData.Valid)
         {
-            if (available != 0)
+            if (available is not 0)
                 _tooltipBuilder.Append('\n');
             available |= 2;
             _tooltipBuilder.Append("Right-Click: Revert the equipment of ")
@@ -442,11 +441,11 @@ public sealed class DesignQuickBar : Window, IDisposable
                 .Append(" to its game state.");
         }
 
-        if (available == 0)
+        if (available is 0)
             _tooltipBuilder.Append("Neither player character nor target are available or their state is locked.");
 
         var (clicked, _, _, state) = ResolveTarget(FontAwesomeIcon.Vest, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
             _stateManager.ResetEquip(state!, StateSource.Manual);
     }
@@ -471,7 +470,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
         if (_targetIdentifier.IsValid && _targetData.Valid)
         {
-            if (available != 0)
+            if (available is not 0)
                 _tooltipBuilder.Append('\n');
             available |= 2;
             _tooltipBuilder
@@ -481,11 +480,11 @@ public sealed class DesignQuickBar : Window, IDisposable
                 .Append('.');
         }
 
-        if (available == 0)
+        if (available is 0)
             _tooltipBuilder.Append("Neither player character nor target are available to identify their collections.");
 
         var (clicked, _, data, _) = ResolveTarget(FontAwesomeIcon.Cog, buttonSize, available);
-        ImGui.SameLine();
+        Im.Line.Same();
         if (clicked)
         {
             _penumbra.RemoveAllTemporarySettings(data.Objects[0].Index, StateSource.Manual);
@@ -493,14 +492,24 @@ public sealed class DesignQuickBar : Window, IDisposable
         }
     }
 
-    private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(FontAwesomeIcon icon, Vector2 buttonSize, int available)
+    private void DrawToggleMainWindowButton(Vector2 buttonSize, bool mainWindow)
+    {
+        if (mainWindow || !_config.QdbButtons.HasFlag(QdbButtons.ToggleMainWindow))
+            return;
+
+        if (ImEx.Icon.Button(FontAwesomeIcon.TheaterMasks.Icon(), "Toggle Glamourer's main window."u8, ToggleMainWindow is null, buttonSize))
+            ToggleMainWindow?.Invoke();
+        Im.Line.Same();
+    }
+
+    private (bool, ActorIdentifier, ActorData, ActorState?) ResolveTarget(AwesomeIcon icon, Vector2 buttonSize, int available)
     {
         var enumerator = _tooltipBuilder.GetChunks();
         var span       = enumerator.MoveNext() ? enumerator.Current.Span : [];
-        ImUtf8.IconButton(icon, span, buttonSize, available == 0);
-        if ((available & 1) == 1 && ImGui.IsItemClicked(ImGuiMouseButton.Left))
+        ImEx.Icon.Button(icon, span, available is 0, buttonSize);
+        if ((available & 1) is 1 && Im.Item.Clicked())
             return (true, _playerIdentifier, _playerData, _playerState);
-        if ((available & 2) == 2 && ImGui.IsItemClicked(ImGuiMouseButton.Right))
+        if ((available & 2) is 2 && Im.Item.RightClicked())
             return (true, _targetIdentifier, _targetData, _targetState);
 
         return (false, ActorIdentifier.Invalid, ActorData.Invalid, null);
@@ -518,50 +527,57 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     private bool CheckKeyState(ModifiableHotkey key, bool noKey)
     {
-        if (key.Hotkey == VirtualKey.NO_KEY)
+        if (key.Hotkey is VirtualKey.NO_KEY)
             return noKey;
 
-        return _keyState[key.Hotkey] && key.Modifier1.IsActive() && key.Modifier2.IsActive();
+        return _keyState[key.Hotkey] && key.Modifiers.IsActive();
     }
 
-    private float UpdateWidth()
+    private int CalculateButtonCount(bool mainWindow)
     {
-        _numButtons = 0;
+        var numButtons = 0;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertAll))
-            ++_numButtons;
+            ++numButtons;
         if (_config.EnableAutoDesigns)
         {
             if (_config.QdbButtons.HasFlag(QdbButtons.RevertAutomation))
-                ++_numButtons;
+                ++numButtons;
             if (_config.QdbButtons.HasFlag(QdbButtons.ReapplyAutomation))
-                ++_numButtons;
+                ++numButtons;
         }
 
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertAdvancedCustomization))
-            ++_numButtons;
+            ++numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertAdvancedDyes))
-            ++_numButtons;
+            ++numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertCustomize))
-            ++_numButtons;
+            ++numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.RevertEquip))
-            ++_numButtons;
+            ++numButtons;
         if (_config.UseTemporarySettings && _config.QdbButtons.HasFlag(QdbButtons.ResetSettings))
-            ++_numButtons;
+            ++numButtons;
         if (_config.QdbButtons.HasFlag(QdbButtons.ApplyDesign))
-        {
-            ++_numButtons;
-            Size = new Vector2((7 + _numButtons) * ImGui.GetFrameHeight() + _numButtons * ImGui.GetStyle().ItemInnerSpacing.X,
-                ImGui.GetFrameHeight());
-        }
-        else
-        {
-            Size = new Vector2(
-                _numButtons * ImGui.GetFrameHeight()
-              + (_numButtons - 1) * ImGui.GetStyle().ItemInnerSpacing.X
-              + ImGui.GetStyle().WindowPadding.X * 2,
-                ImGui.GetFrameHeight());
-        }
+            ++numButtons;
+        if (!mainWindow && _config.QdbButtons.HasFlag(QdbButtons.ToggleMainWindow))
+            ++numButtons;
 
-        return Size.Value.X;
+        return numButtons;
+    }
+
+    private float CalculateWidth(int numButtons, bool mainWindow)
+    {
+        var content = _config.QdbButtons.HasFlag(QdbButtons.ApplyDesign)
+            ? (7 + numButtons) * Im.Style.FrameHeight + numButtons * Im.Style.ItemInnerSpacing.X
+            : numButtons * Im.Style.FrameHeight + (numButtons - 1) * Im.Style.ItemInnerSpacing.X;
+        var padding = mainWindow ? 0 : Im.Style.WindowPadding.X * 2;
+
+        return content + padding;
+    }
+
+    private void UpdateWidth()
+    {
+        _numButtons = CalculateButtonCount(false);
+        var width = CalculateWidth(_numButtons, false);
+        Size = new Vector2(width, Im.Style.FrameHeight);
     }
 }

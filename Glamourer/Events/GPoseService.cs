@@ -1,9 +1,9 @@
 ﻿using Dalamud.Plugin.Services;
-using OtterGui.Classes;
+using Luna;
 
 namespace Glamourer.Events;
 
-public sealed class GPoseService : EventWrapper<bool, GPoseService.Priority>
+public sealed class GPoseService : EventBase<bool, GPoseService.Priority>
 {
     private readonly IFramework   _framework;
     private readonly IClientState _state;
@@ -19,8 +19,8 @@ public sealed class GPoseService : EventWrapper<bool, GPoseService.Priority>
 
     public bool InGPose { get; private set; }
 
-    public GPoseService(IFramework framework, IClientState state)
-        : base(nameof(GPoseService))
+    public GPoseService(IFramework framework, IClientState state, Logger log)
+        : base(nameof(GPoseService), log)
     {
         _framework        =  framework;
         _state            =  state;

@@ -1,5 +1,8 @@
-﻿namespace Glamourer.GameData;
+﻿using Luna.Generators;
 
+namespace Glamourer.GameData;
+
+[NamedEnum(Utf16: false)]
 public enum MenuType
 {
     ListSelector      = 0,

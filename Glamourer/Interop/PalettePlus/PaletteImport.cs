@@ -1,8 +1,9 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Designs;
 using Glamourer.GameData;
+using ImSharp;
+using Luna;
 using Newtonsoft.Json.Linq;
-using OtterGui.Services;
 
 namespace Glamourer.Interop.PalettePlus;
 
@@ -11,9 +12,9 @@ public class PaletteImport(IDalamudPluginInterface pluginInterface, DesignManage
     private string ConfigFile
         => Path.Combine(Path.GetDirectoryName(pluginInterface.GetPluginConfigDirectory())!, "PalettePlus.json");
 
-    private readonly Dictionary<string, (CustomizeParameterData, CustomizeParameterFlag)> _data = [];
+    private readonly Dictionary<StringU8, (CustomizeParameterData, CustomizeParameterFlag)> _data = [];
 
-    public IReadOnlyDictionary<string, (CustomizeParameterData, CustomizeParameterFlag)> Data
+    public IReadOnlyDictionary<StringU8, (CustomizeParameterData, CustomizeParameterFlag)> Data
     {
         get
         {
@@ -59,24 +60,24 @@ public class PaletteImport(IDalamudPluginInterface pluginInterface, DesignManage
             var text     = File.ReadAllText(path);
             var obj      = JObject.Parse(text);
             var palettes = obj["SavedPalettes"];
-            if (palettes == null)
+            if (palettes is null)
                 return;
 
             foreach (var child in palettes.Children())
             {
-                var name = child["Name"]?.ToObject<string>() ?? string.Empty;
-                if (name.Length == 0)
+                var name = new StringU8(child["Name"]?.ToObject<string>() ?? string.Empty);
+                if (name.Length is 0)
                     continue;
 
                 var conditions = child["Conditions"]?.ToObject<int>() ?? 0;
                 var parameters = child["ShaderParams"];
-                if (parameters == null)
+                if (parameters is null)
                     continue;
 
                 var orig    = name;
                 var counter = 1;
                 while (_data.ContainsKey(name))
-                    name = $"{orig} #{++counter}";
+                    name = new StringU8($"{orig} #{++counter}");
 
                 var                    data    = new CustomizeParameterData();
                 CustomizeParameterFlag flags   = 0;
@@ -118,14 +119,14 @@ public class PaletteImport(IDalamudPluginInterface pluginInterface, DesignManage
                 ParseSingle("MuscleTone",      CustomizeParameterFlag.MuscleTone,            ref data.MuscleTone);
 
                 while (!_data.TryAdd(name, (data, flags)))
-                    name = $"{orig} ({++counter})";
+                    name = new StringU8($"{orig} ({++counter})");
                 continue;
 
 
                 void Parse(string attribute, CustomizeParameterFlag flag, ref float x, ref float y, ref float z, ref float w)
                 {
-                    var node = parameters![attribute];
-                    if (node == null)
+                    var node = parameters[attribute];
+                    if (node is null)
                         return;
 
                     flags |= flag;
@@ -145,7 +146,7 @@ public class PaletteImport(IDalamudPluginInterface pluginInterface, DesignManage
 
                 void ParseSingle(string attribute, CustomizeParameterFlag flag, ref float value)
                 {
-                    var node = parameters![attribute]?.ToObject<float>();
+                    var node = parameters[attribute]?.ToObject<float>();
                     if (!node.HasValue)
                         return;
 

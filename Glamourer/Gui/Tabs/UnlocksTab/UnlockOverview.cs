@@ -1,20 +1,17 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface.Utility;
 using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.Unlocks;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Raii;
-using OtterGui.Text;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
-using ImGuiClip = OtterGui.ImGuiClip;
 
 namespace Glamourer.Gui.Tabs.UnlocksTab;
 
-public class UnlockOverview(
+public sealed class UnlockOverview(
     ItemManager items,
     CustomizeService customizations,
     ItemUnlockManager itemUnlocks,
@@ -24,7 +21,7 @@ public class UnlockOverview(
     CodeService codes,
     JobService jobs,
     FavoriteManager favorites,
-    PenumbraService penumbra)
+    PenumbraService penumbra) : IUiService
 {
     private static readonly Vector4 UnavailableTint = new(0.3f, 0.3f, 0.3f, 1.0f);
 
@@ -33,21 +30,21 @@ public class UnlockOverview(
     private Gender        _selected3 = Gender.Unknown;
     private BonusItemFlag _selected4 = BonusItemFlag.Unknown;
 
-    private uint _favoriteColor;
-    private uint _moddedColor;
+    private Rgba32 _favoriteColor;
+    private Rgba32 _moddedColor;
 
     private void DrawSelector()
     {
-        using var child = ImRaii.Child("Selector", new Vector2(200 * ImGuiHelpers.GlobalScale, -1), true);
+        using var child = Im.Child.Begin("Selector"u8, Im.ContentRegion.Available with { X = 200 * Im.Style.GlobalScale }, true);
         if (!child)
             return;
 
-        foreach (var type in Enum.GetValues<FullEquipType>())
+        foreach (var type in FullEquipType.Values)
         {
             if (type.IsOffhandType() || type.IsBonus() || !items.ItemData.ByType.TryGetValue(type, out var value) || value.Count == 0)
                 continue;
 
-            if (ImGui.Selectable(type.ToName(), _selected1 == type))
+            if (Im.Selectable(type.ToNameU8(), _selected1 == type))
             {
                 _selected1 = type;
                 _selected2 = SubRace.Unknown;
@@ -56,7 +53,7 @@ public class UnlockOverview(
             }
         }
 
-        if (ImGui.Selectable("Bonus Items", _selected4 == BonusItemFlag.Glasses))
+        if (Im.Selectable("Bonus Items"u8, _selected4 is BonusItemFlag.Glasses))
         {
             _selected1 = FullEquipType.Unknown;
             _selected2 = SubRace.Unknown;
@@ -66,10 +63,10 @@ public class UnlockOverview(
 
         foreach (var (clan, gender) in CustomizeManager.AllSets())
         {
-            if (customizations.Manager.GetSet(clan, gender).HairStyles.Count == 0)
+            if (customizations.Manager.GetSet(clan, gender).HairStyles.Count is 0)
                 continue;
 
-            if (ImGui.Selectable($"{(gender is Gender.Male ? '♂' : '♀')} {clan.ToShortName()} Hair & Paint",
+            if (Im.Selectable($"{(gender is Gender.Male ? '♂' : '♀')} {clan.ToShortName()} Hair & Paint",
                     _selected2 == clan && _selected3 == gender))
             {
                 _selected1 = FullEquipType.Unknown;
@@ -82,15 +79,15 @@ public class UnlockOverview(
 
     public void Draw()
     {
-        using var color = ImRaii.PushColor(ImGuiCol.Border, ImGui.GetColorU32(ImGuiCol.TableBorderStrong));
+        using var color = ImGuiColor.Border.Push(Im.Style[ImGuiColor.TableBorderStrong]);
         DrawSelector();
-        ImGui.SameLine();
+        Im.Line.Same();
         DrawPanel();
     }
 
     private void DrawPanel()
     {
-        using var child = ImRaii.Child("Panel", -Vector2.One, true);
+        using var child = Im.Child.Begin("Panel"u8, Im.ContentRegion.Available, true);
         if (!child)
             return;
 
@@ -110,8 +107,8 @@ public class UnlockOverview(
         var set = customizations.Manager.GetSet(_selected2, _selected3);
 
         var       spacing     = IconSpacing;
-        using var style       = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
-        var       iconSize    = ImGuiHelpers.ScaledVector2(128);
+        using var style       = ImStyleDouble.ItemSpacing.Push(spacing);
+        var       iconSize    = ImEx.ScaledVector(128);
         var       iconsPerRow = IconsPerRow(iconSize.X, spacing.X);
 
         var counter = 0;
@@ -123,27 +120,27 @@ public class UnlockOverview(
             var unlocked = customizeUnlocks.IsUnlocked(customize, out var time);
             var icon     = customizations.Manager.GetIcon(customize.IconId);
             var hasIcon  = icon.TryGetWrap(out var wrap, out _);
-            ImGui.Image(wrap?.Handle ?? icon.GetWrapOrEmpty().Handle, iconSize, Vector2.Zero, Vector2.One,
+            Im.Image.Draw(wrap?.Id ?? icon.GetWrapOrEmpty().Id, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
 
             if (favorites.Contains(_selected3, _selected2, customize.Index, customize.Value))
-                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), _favoriteColor,
-                    12 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 6 * ImGuiHelpers.GlobalScale);
+                Im.Window.DrawList.Shape.Rectangle(Im.Item.UpperLeftCorner, Im.Item.LowerRightCorner, _favoriteColor, 12 * Im.Style.GlobalScale,
+                    ImDrawFlagsRectangle.RoundCornersAll, 6 * Im.Style.GlobalScale);
 
-            if (hasIcon && ImGui.IsItemHovered())
+            if (hasIcon && Im.Item.Hovered())
             {
-                using var tt   = ImRaii.Tooltip();
+                using var tt   = Im.Tooltip.Begin();
                 var       size = new Vector2(wrap!.Width, wrap.Height);
                 if (size.X >= iconSize.X && size.Y >= iconSize.Y)
-                    ImGui.Image(wrap.Handle, size);
-                ImGui.TextUnformatted(unlockData.Name);
-                ImGui.TextUnformatted($"{customize.Index.ToDefaultName()} {customize.Value.Value}");
-                ImGui.TextUnformatted(unlocked ? $"Unlocked on {time:g}" : "Not unlocked.");
+                    Im.Image.Draw(wrap.Id, size);
+                Im.Text(unlockData.Name);
+                Im.Text($"{customize.Index.ToNameU8()} {customize.Value.Value}");
+                Im.Text(unlocked ? $"Unlocked on {time:g}" : "Not unlocked."u8);
             }
 
             if (counter != iconsPerRow - 1)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 ++counter;
             }
             else
@@ -156,36 +153,10 @@ public class UnlockOverview(
     private void DrawBonusItems()
     {
         var       spacing        = IconSpacing;
-        using var style          = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
-        var       iconSize       = ImGuiHelpers.ScaledVector2(64);
+        var       iconSize       = ImEx.ScaledVector(64);
         var       iconsPerRow    = IconsPerRow(iconSize.X, spacing.X);
-        var       numRows        = (items.DictBonusItems.Count + iconsPerRow - 1) / iconsPerRow;
-        var       numVisibleRows = (int)(Math.Ceiling(ImGui.GetContentRegionAvail().Y / (iconSize.Y + spacing.Y)) + 0.5f) + 1;
-
-        var skips   = ImGuiClip.GetNecessarySkips(iconSize.Y + spacing.Y);
-        var start   = skips * iconsPerRow;
-        var end     = Math.Min(numVisibleRows * iconsPerRow + skips * iconsPerRow, items.DictBonusItems.Count);
-        var counter = 0;
-
-        foreach (var item in items.DictBonusItems.Values.Skip(start).Take(end - start))
-        {
-            DrawItem(item);
-            if (counter != iconsPerRow - 1)
-            {
-                ImGui.SameLine();
-                ++counter;
-            }
-            else
-            {
-                counter = 0;
-            }
-        }
-
-        if (ImGui.GetCursorPosX() != 0)
-            ImGui.NewLine();
-        var remainder = numRows - numVisibleRows - skips;
-        if (remainder > 0)
-            ImGuiClip.DrawEndDummy(remainder, iconSize.Y + spacing.Y);
+        Im.ListClipper.DrawGrouped(items.DictBonusItems.Values, DrawItem, items.DictBonusItems.Count, iconsPerRow, iconSize.Y + spacing.Y, spacing.X);
+        return;
 
         void DrawItem(EquipItem item)
         {
@@ -194,28 +165,29 @@ public class UnlockOverview(
             if (!textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
                 return;
 
-            var (icon, size) = (iconHandle.Handle, new Vector2(iconHandle.Width, iconHandle.Height));
+            var (icon, size) = (iconHandle.Id, new Vector2(iconHandle.Width, iconHandle.Height));
 
-            ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One,
+            Im.Image.Draw(icon, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (favorites.Contains(item))
-                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), _favoriteColor,
-                    2 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * ImGuiHelpers.GlobalScale);
+                Im.Window.DrawList.Shape.Rectangle(Im.Item.UpperLeftCorner, Im.Item.LowerRightCorner, _favoriteColor,
+                    2 * Im.Style.GlobalScale, ImDrawFlagsRectangle.RoundCornersAll, 4 * Im.Style.GlobalScale);
 
             var mods = DrawModdedMarker(item, iconSize);
 
             // TODO handle clicking
-            if (ImGui.IsItemHovered())
+            if (Im.Item.Hovered())
             {
-                using var tt = ImRaii.Tooltip();
+                using var style = Im.Style.PushDefault();
+                using var tt    = Im.Tooltip.Begin();
                 if (size.X >= iconSize.X && size.Y >= iconSize.Y)
-                    ImGui.Image(icon, size);
-                ImUtf8.Text(item.Name);
-                ImUtf8.Text($"{item.Type.ToName()}");
-                ImUtf8.Text($"{item.Id.Id}");
-                ImUtf8.Text($"{item.PrimaryId.Id}-{item.Variant.Id}");
+                    Im.Image.Draw(icon, size);
+                Im.Text(item.Name);
+                Im.Text(item.Type.ToNameU8());
+                Im.Text($"{item.Id.Id}");
+                Im.Text($"{item.PrimaryId.Id}-{item.Variant.Id}");
                 // TODO
-                ImUtf8.Text("Always Unlocked"u8); // : $"Unlocked on {time:g}" : "Not Unlocked.");
+                Im.Text("Always Unlocked"u8); // : $"Unlocked on {time:g}" : "Not Unlocked.");
                 // TODO
                 //tooltip.CreateTooltip(item, string.Empty, false);
                 DrawModTooltip(mods);
@@ -229,34 +201,9 @@ public class UnlockOverview(
             return;
 
         var       spacing        = IconSpacing;
-        using var style          = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing);
-        var       iconSize       = ImGuiHelpers.ScaledVector2(64);
+        var       iconSize       = ImEx.ScaledVector(64);
         var       iconsPerRow    = IconsPerRow(iconSize.X, spacing.X);
-        var       numRows        = (value.Count + iconsPerRow - 1) / iconsPerRow;
-        var       numVisibleRows = (int)(Math.Ceiling(ImGui.GetContentRegionAvail().Y / (iconSize.Y + spacing.Y)) + 0.5f) + 1;
-
-        var skips   = ImGuiClip.GetNecessarySkips(iconSize.Y + spacing.Y);
-        var end     = Math.Min(numVisibleRows * iconsPerRow + skips * iconsPerRow, value.Count);
-        var counter = 0;
-        for (var idx = skips * iconsPerRow; idx < end; ++idx)
-        {
-            DrawItem(value[idx]);
-            if (counter != iconsPerRow - 1)
-            {
-                ImGui.SameLine();
-                ++counter;
-            }
-            else
-            {
-                counter = 0;
-            }
-        }
-
-        if (ImGui.GetCursorPosX() != 0)
-            ImGui.NewLine();
-        var remainder = numRows - numVisibleRows - skips;
-        if (remainder > 0)
-            ImGuiClip.DrawEndDummy(remainder, iconSize.Y + spacing.Y);
+        Im.ListClipper.DrawGrouped(value, DrawItem, iconsPerRow, iconSize.Y + spacing.Y, spacing.X);
         return;
 
         void DrawItem(EquipItem item)
@@ -265,59 +212,60 @@ public class UnlockOverview(
             if (!textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
                 return;
 
-            var (icon, size) = (iconHandle.Handle, new Vector2(iconHandle.Width, iconHandle.Height));
+            var (icon, size) = (iconHandle.Id, new Vector2(iconHandle.Width, iconHandle.Height));
 
-            ImGui.Image(icon, iconSize, Vector2.Zero, Vector2.One,
+            Im.Image.Draw(icon, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (favorites.Contains(item))
-                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), ColorId.FavoriteStarOn.Value(),
-                    2 * ImGuiHelpers.GlobalScale, ImDrawFlags.RoundCornersAll, 4 * ImGuiHelpers.GlobalScale);
+                Im.Window.DrawList.Shape.Rectangle(Im.Item.UpperLeftCorner, Im.Item.LowerRightCorner, ColorId.FavoriteStarOn.Value(),
+                    2 * Im.Style.GlobalScale, ImDrawFlagsRectangle.RoundCornersAll, 4 * Im.Style.GlobalScale);
 
             var mods = DrawModdedMarker(item, iconSize);
 
-            if (ImGui.IsItemClicked())
+            if (Im.Item.Clicked())
                 Glamourer.Messager.Chat.Print(new SeStringBuilder().AddItemLink(item.ItemId.Id, false).BuiltString);
 
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && tooltip.Player(out var state))
+            if (Im.Item.RightClicked() && tooltip.Player(out var state))
                 tooltip.ApplyItem(state, item);
 
-            if (ImGui.IsItemHovered())
+            if (Im.Item.Hovered())
             {
-                using var tt = ImRaii.Tooltip();
+                using var style = Im.Style.PushDefault();
+                using var tt    = Im.Tooltip.Begin();
                 if (size.X >= iconSize.X && size.Y >= iconSize.Y)
-                    ImGui.Image(icon, size);
-                ImGui.TextUnformatted(item.Name);
+                    Im.Image.Draw(icon, size);
+                Im.Text(item.Name);
                 var slot = item.Type.ToSlot();
-                ImGui.TextUnformatted($"{item.Type.ToName()} ({slot.ToName()})");
+                Im.Text($"{item.Type.ToNameU8()} ({slot.ToNameU8()})");
                 if (item.Type.ValidOffhand().IsOffhandType())
-                    ImGui.TextUnformatted(
-                        $"{item.Weapon()}{(items.ItemData.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand) ? $" | {offhand.Weapon()}" : string.Empty)}");
+                    Im.Text(
+                        $"{item.Weapon()}{(items.ItemData.TryGetValue(item.ItemId, EquipSlot.OffHand, out var offhand) ? $" | {offhand.Weapon()}" : StringU8.Empty)}");
                 else
-                    ImGui.TextUnformatted(slot is EquipSlot.MainHand ? $"{item.Weapon()}" : $"{item.Armor()}");
-                ImGui.TextUnformatted(
-                    unlocked ? time == DateTimeOffset.MinValue ? "Always Unlocked" : $"Unlocked on {time:g}" : "Not Unlocked.");
+                    Im.Text(slot is EquipSlot.MainHand ? $"{item.Weapon()}" : $"{item.Armor()}");
+                Im.Text(
+                    unlocked ? time == DateTimeOffset.MinValue ? "Always Unlocked"u8 : $"Unlocked on {time:g}" : "Not Unlocked."u8);
 
                 if (item.Level.Value <= 1)
                 {
                     if (item.JobRestrictions.Id <= 1 || item.JobRestrictions.Id >= jobs.AllJobGroups.Count)
-                        ImGui.TextUnformatted("For Everyone");
+                        Im.Text("For Everyone"u8);
                     else
-                        ImGui.TextUnformatted($"For all {jobs.AllJobGroups[item.JobRestrictions.Id].Name}");
+                        Im.Text($"For all {jobs.AllJobGroups[item.JobRestrictions.Id].Name}");
                 }
                 else
                 {
                     if (item.JobRestrictions.Id <= 1 || item.JobRestrictions.Id >= jobs.AllJobGroups.Count)
-                        ImGui.TextUnformatted($"For Everyone of at least Level {item.Level}");
+                        Im.Text($"For Everyone of at least Level {item.Level}");
                     else
-                        ImGui.TextUnformatted($"For all {jobs.AllJobGroups[item.JobRestrictions.Id].Name} of at least Level {item.Level}");
+                        Im.Text($"For all {jobs.AllJobGroups[item.JobRestrictions.Id].Name} of at least Level {item.Level}");
                 }
 
                 if (item.Flags.HasFlag(ItemFlags.IsDyable1))
-                    ImGui.TextUnformatted(item.Flags.HasFlag(ItemFlags.IsDyable2) ? "Dyable (2 Slots)" : "Dyable");
+                    Im.Text(item.Flags.HasFlag(ItemFlags.IsDyable2) ? "Dyable (2 Slots)"u8 : "Dyable"u8);
                 if (item.Flags.HasFlag(ItemFlags.IsTradable))
-                    ImGui.TextUnformatted("Tradable");
+                    Im.Text("Tradable"u8);
                 if (item.Flags.HasFlag(ItemFlags.IsCrestWorthy))
-                    ImGui.TextUnformatted("Can apply Crest");
+                    Im.Text("Can apply Crest"u8);
                 DrawModTooltip(mods);
                 tooltip.CreateTooltip(item, string.Empty, false);
             }
@@ -325,21 +273,21 @@ public class UnlockOverview(
     }
 
     private static Vector2 IconSpacing
-        => ImGuiHelpers.ScaledVector2(2);
+        => ImEx.ScaledVector(2);
 
     private static int IconsPerRow(float iconWidth, float iconSpacing)
-        => (int)(ImGui.GetContentRegionAvail().X / (iconWidth + iconSpacing));
+        => (int)(Im.ContentRegion.Available.X / (iconWidth + iconSpacing));
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private (string ModDirectory, string ModName)[] DrawModdedMarker(in EquipItem item, Vector2 iconSize)
     {
         var mods = penumbra.CheckCurrentChangedItem(item.Name);
-        if (mods.Length == 0)
+        if (mods.Length is 0)
             return mods;
 
-        var center = ImGui.GetItemRectMin() + new Vector2(iconSize.X * 0.85f, iconSize.Y * 0.15f);
-        ImGui.GetWindowDrawList().AddCircleFilled(center, iconSize.X * 0.1f, _moddedColor);
-        ImGui.GetWindowDrawList().AddCircle(center, iconSize.X * 0.1f, 0xFF000000);
+        var center = Im.Item.UpperLeftCorner + new Vector2(iconSize.X * 0.85f, iconSize.Y * 0.15f);
+        Im.Window.DrawList.Shape.CircleFilled(center, iconSize.X * 0.1f, _moddedColor);
+        Im.Window.DrawList.Shape.Circle(center, iconSize.X * 0.1f, Rgba32.Black);
         return mods;
     }
 
@@ -350,14 +298,14 @@ public class UnlockOverview(
         {
             case 0: return;
             case 1:
-                ImUtf8.Text("Modded by: "u8, _moddedColor);
-                ImGui.SameLine(0, 0);
-                ImUtf8.Text(mods[0].ModName);
+                Im.Text("Modded by: "u8, _moddedColor);
+                Im.Line.NoSpacing();
+                Im.Text(mods[0].ModName);
                 return;
             default:
-                ImUtf8.Text("Modded by:"u8, _moddedColor);
+                Im.Text("Modded by:"u8, _moddedColor);
                 foreach (var (_, mod) in mods)
-                    ImUtf8.BulletText(mod);
+                    Im.BulletText(mod);
                 return;
         }
     }

@@ -1,15 +1,16 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Api;
 using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.State;
-using OtterGui.Classes;
-using OtterGui.Log;
-using OtterGui.Services;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Interop;
+using Vortice.Direct3D11.Debug;
 
 namespace Glamourer;
 
@@ -37,8 +38,11 @@ public class Glamourer : IDalamudPlugin
             _services = StaticServiceManager.CreateProvider(pluginInterface, Log, this);
             Messager  = _services.GetService<MessageService>();
             Dynamis   = _services.GetService<DynamisIpc>();
+            foreach (var _ in _services.GetServicesImplementing<IHookService>())
+                ;
+            _ = _services.GetService<ImSharpDalamudContext>();
             _services.EnsureRequiredServices();
-
+            
             _services.GetService<VisorService>();
             _services.GetService<WeaponService>();
             _services.GetService<ScalingService>();
@@ -110,7 +114,7 @@ public class Glamourer : IDalamudPlugin
             sb.AppendLine("**State**");
             foreach (var (ident, state) in states)
             {
-                var sources = Enum.GetValues<StateSource>().Select(s => (0, s)).ToArray();
+                var sources = StateSource.Values.Select(s => (0, s)).ToArray();
                 foreach (var source in StateIndex.All.Select(s => state.Sources[s]))
                     ++sources[(int)source].Item1;
                 foreach (var material in state.Materials.Values)

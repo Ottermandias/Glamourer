@@ -2,11 +2,12 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
+using Luna;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop;
 
-public unsafe class MetaService : IDisposable
+public sealed unsafe class MetaService : IDisposable, IRequiredService
 {
     private readonly HeadGearVisibilityChanged _headGearEvent;
     private readonly WeaponVisibilityChanged   _weaponEvent;
@@ -75,8 +76,8 @@ public unsafe class MetaService : IDisposable
         }
 
         Actor actor = drawData->OwnerObject;
-        var   v     = value == 0;
-        _headGearEvent.Invoke(actor, ref v);
+        var   v     = value is 0;
+        _headGearEvent.Invoke(new HeadGearVisibilityChanged.Arguments(actor, ref v));
         value = (byte)(v ? 0 : 1);
         Glamourer.Log.Verbose($"[MetaService] Hide Hat triggered with 0x{(nint)drawData:X} {id} {value} for {actor.Utf8Name}.");
         _hideHatGearHook.Original(drawData, id, value);
@@ -85,8 +86,8 @@ public unsafe class MetaService : IDisposable
     private void HideWeaponsDetour(DrawDataContainer* drawData, byte value)
     {
         Actor actor = drawData->OwnerObject;
-        var   v     = value == 0;
-        _weaponEvent.Invoke(actor, ref v);
+        var   v     = value is 0;
+        _weaponEvent.Invoke(new WeaponVisibilityChanged.Arguments(actor, ref v));
         Glamourer.Log.Verbose($"[MetaService] Hide Weapon triggered with 0x{(nint)drawData:X} {value} for {actor.Utf8Name}.");
         _hideWeaponsHook.Original(drawData, (byte)(v ? 0 : 1));
     }
@@ -94,8 +95,8 @@ public unsafe class MetaService : IDisposable
     private void ToggleVisorDetour(DrawDataContainer* drawData, byte value)
     {
         Actor actor = drawData->OwnerObject;
-        var   v     = value != 0;
-        _visorEvent.Invoke(actor.Model, true, ref v);
+        var   v     = value is not 0;
+        _visorEvent.Invoke(new VisorStateChanged.Arguments(actor.Model, true, ref v));
         Glamourer.Log.Verbose($"[MetaService] Toggle Visor triggered with 0x{(nint)drawData:X} {value} for {actor.Utf8Name}.");
         _toggleVisorHook.Original(drawData, (byte)(v ? 1 : 0));
     }

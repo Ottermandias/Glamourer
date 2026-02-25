@@ -1,6 +1,6 @@
 ﻿using Glamourer.Designs;
 using Glamourer.State;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
 

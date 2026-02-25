@@ -1,13 +1,12 @@
 ﻿using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Services;
+using ImSharp;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public class ItemCopyService(ItemManager items, DictStain stainData) : IUiService
+public class ItemCopyService(ItemManager items, DictStain stainData) : Luna.IUiService
 {
     public EquipItem? Item  { get; private set; }
     public Stain?     Stain { get; private set; }
@@ -45,12 +44,12 @@ public class ItemCopyService(ItemManager items, DictStain stainData) : IUiServic
 
     public void HandleCopyPaste(in EquipDrawData data)
     {
-        if (ImGui.GetIO().KeyCtrl)
+        if (Im.Io.KeyControl)
         {
-            if (ImGui.IsItemHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Middle))
+            if (Im.Item.Hovered() && Im.Mouse.IsClicked(MouseButton.Middle))
                 Paste(data.CurrentItem.Type, data.SetItem);
         }
-        else if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) && ImGui.IsMouseClicked(ImGuiMouseButton.Middle))
+        else if (Im.Item.Hovered(HoveredFlags.AllowWhenDisabled) && Im.Mouse.IsClicked(MouseButton.Middle))
         {
             Copy(data.CurrentItem);
         }
@@ -58,13 +57,13 @@ public class ItemCopyService(ItemManager items, DictStain stainData) : IUiServic
 
     public void HandleCopyPaste(in EquipDrawData data, int which)
     {
-        if (ImGui.GetIO().KeyCtrl)
+        if (Im.Io.KeyControl)
         {
-            if (ImGui.IsItemHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Middle))
+            if (Im.Item.Hovered() && Im.Mouse.IsClicked(MouseButton.Middle))
                 Paste(which, data.SetStain);
         }
-        else if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)
-              && ImGui.IsMouseClicked(ImGuiMouseButton.Middle)
+        else if (Im.Item.Hovered(HoveredFlags.AllowWhenDisabled)
+              && Im.Mouse.IsClicked(MouseButton.Middle)
               && stainData.TryGetValue(data.CurrentStains[which].Id, out var stain))
         {
             Copy(stain);

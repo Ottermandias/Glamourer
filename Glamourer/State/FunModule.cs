@@ -1,21 +1,20 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Gui;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Classes;
-using OtterGui.Extensions;
+using ImSharp;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 using CustomizeIndex = Penumbra.GameData.Enums.CustomizeIndex;
+using Luna;
 
 namespace Glamourer.State;
 
-public unsafe class FunModule : IDisposable
+public sealed unsafe class FunModule : IDisposable, IRequiredService
 {
     public enum FestivalType
     {
@@ -252,7 +251,7 @@ public unsafe class FunModule : IDisposable
         customize = npc.Customize;
         var idx = 0;
         foreach (ref var a in armor)
-            a = npc.Equip[idx++];
+            a = npc.Item(idx++);
         return true;
     }
 
@@ -290,7 +289,7 @@ public unsafe class FunModule : IDisposable
         switch (_codes.Masked(CodeService.GearCodes))
         {
             case CodeService.CodeFlag.Emperor:
-                foreach (var (slot, idx) in EquipSlotExtensions.EqdpSlots.WithIndex())
+                foreach (var (idx, slot) in EquipSlotExtensions.EqdpSlots.Index())
                     SetRandomItem(slot, ref armor[idx]);
                 break;
             case CodeService.CodeFlag.Elephants:
@@ -429,7 +428,7 @@ public unsafe class FunModule : IDisposable
             return;
 
         var set = _customizations.Manager.GetSet(customize.Clan, customize.Gender);
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        foreach (var index in CustomizeIndex.Values)
         {
             if (index is CustomizeIndex.Face || !set.IsAvailable(index))
                 continue;
@@ -473,7 +472,7 @@ public unsafe class FunModule : IDisposable
             var tmp = _designManager.CreateTemporary();
             tmp.SetDesignData(_customizations, _stateManager.FromActor(actor, true, true));
             var data = _designConverter.ShareBase64(tmp);
-            ImGui.SetClipboardText(data);
+            Im.Clipboard.Set(data);
             Glamourer.Messager.NotificationMessage($"Copied current actual design of {actor.Utf8Name} to clipboard.", NotificationType.Info,
                 false);
         }

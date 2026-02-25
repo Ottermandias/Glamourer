@@ -1,28 +1,27 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Gui;
 using Glamourer.Services;
+using Luna;
+using Luna.Generators;
 using Newtonsoft.Json;
-using OtterGui.Classes;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
-namespace Glamourer;
+namespace Glamourer.Config;
 
-public class EphemeralConfig : ISavable
+public partial class EphemeralConfig : ISavable, IService
 {
-    public int                Version             { get; set; } = Configuration.Constants.CurrentVersion;
-    public bool               IncognitoMode       { get; set; } = false;
-    public bool               UnlockDetailMode    { get; set; } = true;
-    public bool               ShowDesignQuickBar  { get; set; } = false;
-    public bool               LockDesignQuickBar  { get; set; } = false;
-    public bool               LockMainWindow      { get; set; } = false;
-    public MainWindow.TabType SelectedTab         { get; set; } = MainWindow.TabType.Settings;
-    public Guid               SelectedDesign      { get; set; } = Guid.Empty;
-    public Guid               SelectedQuickDesign { get; set; } = Guid.Empty;
-    public int                LastSeenVersion     { get; set; } = GlamourerChangelog.LastChangelogVersion;
+    public int Version { get; set; } = Configuration.CurrentVersion;
 
-    public float CurrentDesignSelectorWidth { get; set; } = 200f;
-    public float DesignSelectorMinimumScale { get; set; } = 0.1f;
-    public float DesignSelectorMaximumScale { get; set; } = 0.5f;
+    [ConfigProperty]
+    private bool _incognitoMode;
+
+    public bool        UnlockDetailMode    { get; set; } = true;
+    public bool        ShowDesignQuickBar  { get; set; }
+    public bool        LockDesignQuickBar  { get; set; }
+    public bool        LockMainWindow      { get; set; }
+    public MainTabType SelectedMainTab     { get; set; } = MainTabType.Settings;
+    public Guid        SelectedQuickDesign { get; set; } = Guid.Empty;
+    public int         LastSeenVersion     { get; set; } = GlamourerChangelog.LastChangelogVersion;
 
 
     [JsonIgnore]
@@ -65,14 +64,14 @@ public class EphemeralConfig : ISavable
         }
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.EphemeralConfigFile;
 
     public void Save(StreamWriter writer)
     {
-        using var jWriter    = new JsonTextWriter(writer);
+        using var jWriter = new JsonTextWriter(writer);
         jWriter.Formatting = Formatting.Indented;
-        var       serializer = new JsonSerializer { Formatting         = Formatting.Indented };
+        var serializer = new JsonSerializer { Formatting = Formatting.Indented };
         serializer.Serialize(jWriter, this);
     }
 }
