@@ -126,7 +126,7 @@ public sealed class AutoDesignApplier : IDisposable, IRequiredService
         switch (arguments.Type)
         {
             // The automation set was disabled or deleted, no other for those identifiers can be enabled, remove existing Fixed Locks.
-            case AutomationChanged.Type.ToggleSet when arguments.Set.Enabled:
+            case AutomationChanged.Type.ToggleSet when !arguments.Set.Enabled:
             case AutomationChanged.Type.DeletedDesign when arguments.Set.Enabled:
                 RemoveOld(arguments.Set.Identifiers);
                 break;
