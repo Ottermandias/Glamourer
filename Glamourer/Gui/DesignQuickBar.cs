@@ -116,7 +116,7 @@ public sealed class DesignQuickBar : Window, IDisposable
         if (_config.QdbButtons.HasFlag(QdbButtons.ApplyDesign))
         {
             var comboSize = width - numButtons * (buttonSize.X + spacing.X);
-            _designCombo.Draw(StringU8.Empty, comboSize);
+            _designCombo.Draw("##c"u8, comboSize);
             Im.Line.Same();
             DrawApplyButton(buttonSize);
         }

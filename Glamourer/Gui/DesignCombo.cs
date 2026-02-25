@@ -1,4 +1,5 @@
 ﻿using Glamourer.Automation;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
@@ -205,7 +206,7 @@ public sealed class QuickDesignCombo : DesignComboBase, IDisposable, IUiService
     }
 
 
-    public QuickDesignCombo(Config.EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
+    public QuickDesignCombo(EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
         DesignFileSystem designFileSystem, DesignManager designs)
         : base(config, designs, designChanged, designColors, tabSelected, designFileSystem)
     {
@@ -363,7 +364,7 @@ public sealed class SpecialDesignCombo : DesignComboBase, IUiService
 
     public void Draw(AutoDesignSet set, AutoDesign? design, int autoDesignIndex)
     {
-        if (!Draw(StringU8.Empty, design?.Design, out var newSelection, Im.ContentRegion.Available.X) || newSelection is null)
+        if (!Draw("##c"u8, design?.Design, out var newSelection, Im.ContentRegion.Available.X) || newSelection is null)
             return;
 
         if (autoDesignIndex >= 0)

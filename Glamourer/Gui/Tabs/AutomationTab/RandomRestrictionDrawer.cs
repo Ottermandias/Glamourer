@@ -315,7 +315,7 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
                 "Add a new condition that the design must be assigned to the given color."u8, invalid)
          && Add(new RandomPredicate.Exact(RandomPredicate.Exact.Type.Color, _newText));
 
-        if (_randomDesignCombo.Draw(StringU8.Empty, _newDesign, out var newDesign,
+        if (_randomDesignCombo.Draw("##c"u8, _newDesign, out var newDesign,
                 Im.ContentRegion.Available.X - Im.Style.ItemInnerSpacing.X - buttonSize.X))
             _newDesign = newDesign as Design;
         Im.Line.SameInner();
