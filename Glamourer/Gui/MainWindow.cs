@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin;
 using Glamourer.Config;
+using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using ImSharp;
 using Luna;
@@ -13,10 +14,11 @@ public sealed class MainWindow : Window, IDisposable
     private readonly PenumbraService _penumbra;
     private readonly DesignQuickBar  _quickBar;
     private readonly MainTabBar      _mainTabBar;
+    private readonly TabSelected     _tabSelected;
     private          bool            _ignorePenumbra;
 
     public MainWindow(IDalamudPluginInterface pi, Configuration config, PenumbraService penumbra,
-        MainTabBar mainTabBar, DesignQuickBar quickBar)
+        MainTabBar mainTabBar, DesignQuickBar quickBar, TabSelected tabSelected)
         : base("GlamourerMainWindow")
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -25,21 +27,29 @@ public sealed class MainWindow : Window, IDisposable
             MinimumSize = new Vector2(700,  675),
             MaximumSize = new Vector2(3840, 2160),
         };
-        _mainTabBar = mainTabBar;
-        _quickBar   = quickBar;
-        _config     = config;
-        _penumbra   = penumbra;
-        _mainTabBar = mainTabBar;
-        IsOpen      = _config.OpenWindowAtStart;
+        _mainTabBar  = mainTabBar;
+        _quickBar    = quickBar;
+        _tabSelected = tabSelected;
+        _config      = config;
+        _penumbra    = penumbra;
+        _mainTabBar  = mainTabBar;
+        IsOpen       = _config.OpenWindowAtStart;
 
         _penumbra.DrawSettingsSection += _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
         _quickBar.ToggleMainWindow    += Toggle;
+        _tabSelected.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
     }
 
     public void OpenSettings()
     {
         IsOpen              = true;
         _mainTabBar.NextTab = MainTabType.Settings;
+    }
+
+    private void OnTabSelected(in TabSelected.Arguments arguments)
+    {
+        IsOpen              = true;
+        _mainTabBar.NextTab = arguments.Type;
     }
 
     public override void PreDraw()
@@ -54,6 +64,7 @@ public sealed class MainWindow : Window, IDisposable
     {
         _penumbra.DrawSettingsSection -= _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
         _quickBar.ToggleMainWindow    -= Toggle;
+        _tabSelected.Unsubscribe(OnTabSelected);
     }
 
     public override void Draw()

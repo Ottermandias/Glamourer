@@ -15,23 +15,17 @@ namespace Glamourer.Gui;
 public sealed class MainTabBar : TabBar<MainTabType>
 {
     private readonly EphemeralConfig _config;
-    public readonly  TabSelected     Event;
     public readonly  SettingsTab     Settings;
 
     public MainTabBar(Logger log, EphemeralConfig config, SettingsTab settings, ActorTab actors, DesignTab designs,
-        AutomationTab automation, UnlocksTab unlocks, NpcTab npcs, MessagesTab messages, DebugTab debug, TabSelected @event)
+        AutomationTab automation, UnlocksTab unlocks, NpcTab npcs, MessagesTab messages, DebugTab debug)
         : base("MainTabBar", log, settings, actors, designs, automation, unlocks, npcs, messages, debug)
     {
         Settings = settings;
-        Event    = @event;
         _config  = config;
         TabSelected.Subscribe(OnTabSelected, uint.MinValue);
-        Event.Subscribe(OnEvent, Events.TabSelected.Priority.MainWindow);
         NextTab = _config.SelectedMainTab;
     }
-
-    private void OnEvent(in TabSelected.Arguments arguments)
-        => NextTab = arguments.Type;
 
     private void OnTabSelected(in MainTabType arguments)
     {
