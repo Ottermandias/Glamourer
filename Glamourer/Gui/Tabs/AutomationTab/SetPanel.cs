@@ -204,7 +204,7 @@ public sealed class SetPanel(
 
     private void DrawSelectable(int idx, IDesignStandIn design)
     {
-        var highlight = Rgba32.Transparent;
+        var highlight = ColorParameter.Default;
         var sb        = new StringBuilder();
         if (design is Design d)
         {
@@ -230,7 +230,7 @@ public sealed class SetPanel(
             }
         }
 
-        using (ImGuiColor.Text.Push(highlight, highlight.IsTransparent))
+        using (ImGuiColor.Text.Push(highlight))
         {
             Im.Selectable($"#{idx + 1:D2}");
         }
@@ -385,7 +385,7 @@ public sealed class SetPanel(
 
     private void DrawApplicationTypeBoxes(AutoDesignSet set, AutoDesign design, int autoDesignIndex, bool singleLine)
     {
-        using var style   = ImStyleDouble.ItemSpacing.Push(new Vector2(2 * Im.Style.GlobalScale));
+        using var style   = ImStyleDouble.ItemSpacing.PushX(2 * Im.Style.GlobalScale);
         var       newType = design.Type;
         using (ImStyleBorder.Frame.Push(ColorId.FolderLine.Value()))
         {
@@ -394,6 +394,7 @@ public sealed class SetPanel(
 
         style.Pop();
         Im.Tooltip.OnHover("Toggle all application modes at once."u8);
+        style.PushX(ImStyleDouble.ItemSpacing, 2 * Im.Style.GlobalScale);
         if (config.ShowAllAutomatedApplicationRules)
         {
             void Box(int idx)
