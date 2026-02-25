@@ -84,7 +84,7 @@ public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items
     }
 
     protected override float ItemHeight
-        => Im.Style.FrameHeightWithSpacing;
+        => Im.Style.FrameHeight;
 
     protected override bool DrawItem(in CacheItem item, int globalIndex, bool selected)
     {
