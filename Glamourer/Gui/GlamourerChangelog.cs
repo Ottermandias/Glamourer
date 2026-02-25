@@ -47,6 +47,7 @@ public sealed class GlamourerChangelog : IUiService
         Add1_4_0_0(Changelog);
         Add1_5_0_0(Changelog);
         Add1_5_1_0(Changelog);
+        Add1_6_0_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -66,6 +67,28 @@ public sealed class GlamourerChangelog : IUiService
             _config.Save();
         }
     }
+
+    private static void Add1_6_0_0(Changelog log)
+        => log.NextVersion("Version 1.6.0.0"u8)
+            .RegisterImportant(
+                "The entire UI backend was changed with this update - this is what I was working on for the past months.\nHopefully, this should not cause many noticeable differences for users, but since every single line concerning ImGui has been changed, new or old bugs may crop up."u8)
+            .RegisterEntry("Glamourer should now remember the full selection of designs and which folders are expanded and which are not."u8, 1)
+            .RegisterEntry(
+                "Glamourer will also remember selected NPCs, automatic design sets and the last selected actor, which it will try to reselect if available unless something else was selected while unavailable."u8,
+                1)
+            .RegisterEntry(
+                "Glamourer can now remember most filter states you enter - this can also be disabled in the settings if you prefer filters to reset."u8,
+                1)
+            .RegisterHighlight("Advanced Dyes now support some more parameters like roughness and sheen on Dawntrail materials (Thanks Ny!)."u8)
+            .RegisterEntry("The Quick Design Bar can now display a button to toggle the main window (Thanky Ny!)."u8)
+            .RegisterHighlight(
+                "You can now add 'Ignored Mods' which will not be counted for the 'Is Modded' state in the unlocks table (e.g. for generic upscale mods)."u8)
+            .RegisterHighlight("Glamourer now also supports predefined tags for designs, including in multi-design editing."u8)
+            .RegisterEntry(
+                "The 'Turn Human' button for non-human NPCs was removed. This functionality caused severe issues with syncing tools and could cause even worse issues like crashing or wrong things being sent to the server if used."u8)
+            .RegisterEntry(
+                "It's originally intended usage meant for posing has been superceded by the posing tools own functionality to spawn additional actors, so keeping it was more trouble than it was worth."u8,
+                1);
 
     private static void Add1_5_1_0(Changelog log)
         => log.NextVersion("Version 1.5.1.0"u8)
