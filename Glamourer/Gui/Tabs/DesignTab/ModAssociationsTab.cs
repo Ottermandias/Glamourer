@@ -133,7 +133,7 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
         updatedMod = null;
         table.NextColumn();
         var canDelete = config.DeleteDesignModifier.IsActive();
-        if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this mod from associations."u8))
+        if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this mod from associations."u8, !canDelete))
             removedMod = mod;
         if (!canDelete)
             Im.Tooltip.OnHover($"\nHold {config.DeleteDesignModifier} to delete.");
