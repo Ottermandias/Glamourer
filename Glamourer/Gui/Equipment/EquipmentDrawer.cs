@@ -147,6 +147,10 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
     {
         using var disabled = Im.Disabled(locked);
         var       change   = _stainCombo.Draw("Dye All Slots"u8, Stain.None, out var newAllStain, Im.Style.FrameHeight);
+
+        Im.DrawList.Window.Text(AwesomeIcon.Font, AwesomeIcon.Font.Size, Im.Item.UpperLeftCorner + Im.Style.FramePadding,
+            ImGuiColor.Text.Get(), LunaStyle.DyeIcon.Span);
+
         ret = StainIds.None;
         if (change)
             ret = newAllStain.RowIndex != Stain.None.RowIndex ? StainIds.All(newAllStain.RowIndex) : StainIds.None;
@@ -673,7 +677,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         if (Im.Checkbox("Keep Item and Dye Filters After Selection"u8, config.KeepItemComboFilter))
             config.KeepItemComboFilter ^= true;
         Im.Tooltip.OnHover(
-            "Whether the filter in the item and dye combos should persist after a selection or clear after an item or dye was selected."u8);
+            "Whether the filter in the item and dye combos should persist after a selection or clear after an item or dye was selected.\n\nThis can also be used to restrict the mouse-wheel scrolling to matching items."u8);
     }
 
     public void Dispose()
