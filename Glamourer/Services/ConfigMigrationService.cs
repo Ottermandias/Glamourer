@@ -1,4 +1,5 @@
-﻿using Glamourer.Automation;
+﻿using Dalamud.Game.ClientState.Keys;
+using Glamourer.Automation;
 using Glamourer.Config;
 using Glamourer.Gui;
 using ImSharp;
@@ -7,7 +8,8 @@ using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Services;
 
-public sealed class ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator, BackupService backupService) : IRequiredService
+public sealed class ConfigMigrationService(SaveService saveService, FixedDesignMigrator fixedDesignMigrator, BackupService backupService)
+    : IRequiredService
 {
     private Configuration _config = null!;
     private JObject       _data   = null!;
@@ -29,7 +31,23 @@ public sealed class ConfigMigrationService(SaveService saveService, FixedDesignM
         MigrateV6To7();
         MigrateV7To8();
         MigrateV8To9();
+        MigrateV9To10();
         AddColors(config, true);
+    }
+
+    private void MigrateV9To10()
+    {
+        if (_config.Version > 9)
+            return;
+
+        if (_config.ToggleQuickDesignBar.Equals(new ModifiableHotkey(VirtualKey.D, ModifierHotkey.Control, ModifierHotkey.Shift))
+         || _config.ToggleQuickDesignBar.Equals(new ModifiableHotkey(VirtualKey.D)))
+            _config.ToggleQuickDesignBar = new ModifiableHotkey(VirtualKey.NO_KEY);
+
+        _config.Version           = 10;
+        _config.Ephemeral.Version = 10;
+        _config.Save();
+        _config.Ephemeral.Save();
     }
 
     private void MigrateV8To9()
