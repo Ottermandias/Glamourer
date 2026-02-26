@@ -15,7 +15,7 @@ namespace Glamourer.Config;
 
 public sealed partial class Configuration : IPluginConfiguration, ISavable, IService
 {
-    public const int CurrentVersion = 9;
+    public const int CurrentVersion = 11;
 
     [JsonIgnore]
     public readonly EphemeralConfig Ephemeral;

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Keys;
+using FFXIVClientStructs.FFXIV.Common.Lua;
 using Glamourer.Automation;
 using Glamourer.Config;
 using Glamourer.Gui;
@@ -31,21 +32,53 @@ public sealed class ConfigMigrationService(SaveService saveService, FixedDesignM
         MigrateV6To7();
         MigrateV7To8();
         MigrateV8To9();
-        MigrateV9To10();
+        MigrateV9To11();
         AddColors(config, true);
     }
 
-    private void MigrateV9To10()
+    private void MigrateV9To11()
     {
-        if (_config.Version > 9)
+        if (_config.Version > 10)
             return;
 
+        // Migrate key data.
+        if (_data["ToggleQuickDesignBar"] is JObject jObj)
+        {
+            var hotkey = jObj["Hotkey"]?.Value<ushort>() ?? 0;
+            if (jObj["Modifiers"] is JObject modifiers)
+            {
+                var modifier1 = modifiers["Modifier1"]?["Modifier"]?.Value<ushort>() ?? 0;
+                var modifier2 = modifiers["Modifier2"]?["Modifier"]?.Value<ushort>() ?? 0;
+                _config.ToggleQuickDesignBar = new ModifiableHotkey((VirtualKey)hotkey, new ModifierHotkey((VirtualKey)modifier1),
+                    new ModifierHotkey((VirtualKey)modifier2));
+            }
+            else
+            {
+                _config.ToggleQuickDesignBar = new ModifiableHotkey((VirtualKey)hotkey);
+            }
+        }
+
+        if (_data["DeleteDesignModifier"] is JObject deleteModifier)
+        {
+            var modifier1 = deleteModifier["Modifier1"]?["Modifier"]?.Value<ushort>() ?? (ushort)VirtualKey.CONTROL;
+            var modifier2 = deleteModifier["Modifier2"]?["Modifier"]?.Value<ushort>() ?? (ushort)VirtualKey.SHIFT;
+            _config.DeleteDesignModifier = new DoubleModifier((VirtualKey)modifier1, (VirtualKey)modifier2);
+        }
+
+        if (_data["IncognitoModifier"] is JObject incognitoModifier)
+        {
+            var modifier1 = incognitoModifier["Modifier1"]?["Modifier"]?.Value<ushort>() ?? (ushort)VirtualKey.CONTROL;
+            var modifier2 = incognitoModifier["Modifier2"]?["Modifier"]?.Value<ushort>() ?? 0;
+            _config.IncognitoModifier = new DoubleModifier((VirtualKey)modifier1, (VirtualKey)modifier2);
+        }
+
+        // Remove pure 'D' or 'Control + Shift + D' once.
         if (_config.ToggleQuickDesignBar.Equals(new ModifiableHotkey(VirtualKey.D, ModifierHotkey.Control, ModifierHotkey.Shift))
          || _config.ToggleQuickDesignBar.Equals(new ModifiableHotkey(VirtualKey.D)))
             _config.ToggleQuickDesignBar = new ModifiableHotkey(VirtualKey.NO_KEY);
 
-        _config.Version           = 10;
-        _config.Ephemeral.Version = 10;
+        _config.Version           = 11;
+        _config.Ephemeral.Version = 11;
         _config.Save();
         _config.Ephemeral.Save();
     }
