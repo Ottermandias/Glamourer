@@ -1,22 +1,41 @@
-﻿using Glamourer.Services;
+﻿using Glamourer.Config;
+using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImSharp;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items)
-    : FilterComboBase<BaseItemCombo.CacheItem>(new ItemFilter(), ConfigData.Default with { ComputeWidth = true })
+public abstract class BaseItemCombo : FilterComboBase<BaseItemCombo.CacheItem>, IDisposable
 {
     private readonly Im.StyleDisposable _style = new();
     public abstract  StringU8           Label { get; }
 
-    protected readonly FavoriteManager Favorites = favorites;
-    protected readonly ItemManager     Items     = items;
+    protected readonly FavoriteManager Favorites;
+    protected readonly ItemManager     Items;
+    protected readonly Configuration   Config;
     protected          EquipItem       CurrentItem;
     protected          PrimaryId       CustomSetId;
     protected          SecondaryId     CustomWeaponId;
     protected          Variant         CustomVariant;
+
+    protected BaseItemCombo(FavoriteManager favorites, ItemManager items, Configuration config)
+        : base(new ItemFilter(), ConfigData.Default with
+        {
+            ComputeWidth = true,
+            ClearFilterOnSelection = !config.KeepItemComboFilter,
+            ClearFilterOnCacheDisposal = false,
+        })
+    {
+        Favorites = favorites;
+        Items     = items;
+        Config    = config;
+
+        Config.KeepItemComboFilterChanged += OnKeepItemComboFilterChanged;
+    }
+
+    public void Dispose()
+        => Config.KeepItemComboFilterChanged -= OnKeepItemComboFilterChanged;
 
     public bool Draw(in EquipItem item, out EquipItem newItem, float width)
     {
@@ -125,4 +144,7 @@ public abstract class BaseItemCombo(FavoriteManager favorites, ItemManager items
 
     protected override bool IsSelected(CacheItem item, int globalIndex)
         => item.Item.Id == CurrentItem.Id;
+
+    private void OnKeepItemComboFilterChanged(bool newValue, bool _)
+        => ClearFilterOnSelection = !newValue;
 }

@@ -12,7 +12,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public sealed class EquipmentDrawer : IUiService
+public sealed class EquipmentDrawer : IUiService, IDisposable
 {
     private const float DefaultWidth = 280;
 
@@ -42,17 +42,17 @@ public sealed class EquipmentDrawer : IUiService
         _advancedDyes   = advancedDyes;
         _itemCopy       = itemCopy;
         _stainData      = items.Stains;
-        _stainCombo     = new GlamourerColorCombo(_stainData, favorites);
-        _equipCombo     = EquipSlotExtensions.EqdpSlots.Select(e => new EquipCombo(favorites, items, gameData, e)).ToArray();
-        _bonusItemCombo = BonusExtensions.AllFlags.Select(f => new BonusItemCombo(favorites, items, gameData, f)).ToArray();
+        _stainCombo     = new GlamourerColorCombo(_stainData, favorites, config);
+        _equipCombo     = EquipSlotExtensions.EqdpSlots.Select(e => new EquipCombo(favorites, items, config, gameData, e)).ToArray();
+        _bonusItemCombo = BonusExtensions.AllFlags.Select(f => new BonusItemCombo(favorites, items, config, gameData, f)).ToArray();
         _weaponCombo    = new Dictionary<FullEquipType, WeaponCombo>(FullEquipTypeExtensions.WeaponTypes.Count * 2);
         foreach (var type in FullEquipType.Values)
         {
             if (type.ToSlot() is EquipSlot.MainHand or EquipSlot.OffHand)
-                _weaponCombo.TryAdd(type, new WeaponCombo(favorites, items, type));
+                _weaponCombo.TryAdd(type, new WeaponCombo(favorites, items, config, type));
         }
 
-        _weaponCombo.Add(FullEquipType.Unknown, new WeaponCombo(favorites, items, FullEquipType.Unknown));
+        _weaponCombo.Add(FullEquipType.Unknown, new WeaponCombo(favorites, items, config, FullEquipType.Unknown));
     }
 
     private Vector2 _iconSize;
@@ -269,9 +269,9 @@ public sealed class EquipmentDrawer : IUiService
             Im.Line.Same();
             DrawApply(equipDrawData);
         }
-        
+
         DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
-        
+
         DrawStain(equipDrawData, false);
         if (equipDrawData.DisplayApplication)
         {
@@ -282,7 +282,7 @@ public sealed class EquipmentDrawer : IUiService
         {
             _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
-        
+
         if (VerifyRestrictedGear(equipDrawData))
         {
             Im.Line.Same();
@@ -384,14 +384,14 @@ public sealed class EquipmentDrawer : IUiService
             var change = small
                 ? _stainCombo.Draw("##stain"u8, stain, out var newStain, Im.Style.FrameHeight)
                 : _stainCombo.Draw("##stain"u8, stain, out newStain,     width);
-            
+
             _itemCopy.HandleCopyPaste(data, index);
             if (!change)
                 DrawStainDragDrop(data, index, stain, found);
-            
+
             if (index < data.CurrentStains.Count - 1)
                 Im.Line.SameInner();
-            
+
             if (change)
                 data.SetStains(data.CurrentStains.With(index, newStain.RowIndex));
             if (ResetOrClear(data.Locked, false, data.AllowRevert, true, stainId, data.GameStains[index], Stain.None.RowIndex,
@@ -666,5 +666,24 @@ public sealed class EquipmentDrawer : IUiService
 
         if (hasAdvancedDyes)
             Im.Tooltip.OnHover("This design has advanced dyes setup for this slot."u8);
+    }
+
+    public static void DrawKeepItemFilter(Configuration config)
+    {
+        if (Im.Checkbox("Keep Item and Dye Filters After Selection"u8, config.KeepItemComboFilter))
+            config.KeepItemComboFilter ^= true;
+        Im.Tooltip.OnHover(
+            "Whether the filter in the item and dye combos should persist after a selection or clear after an item or dye was selected."u8);
+    }
+
+    public void Dispose()
+    {
+        _stainCombo.Dispose();
+        foreach (var combo in _equipCombo)
+            combo.Dispose();
+        foreach (var combo in _bonusItemCombo)
+            combo.Dispose();
+        foreach (var combo in _weaponCombo.Values)
+            combo.Dispose();
     }
 }

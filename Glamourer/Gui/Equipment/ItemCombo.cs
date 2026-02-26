@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImSharp;
@@ -8,8 +9,8 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public sealed class EquipCombo(FavoriteManager favorites, ItemManager items, IDataManager gameData, EquipSlot slot)
-    : BaseItemCombo(favorites, items)
+public sealed class EquipCombo(FavoriteManager favorites, ItemManager items, Configuration config, IDataManager gameData, EquipSlot slot)
+    : BaseItemCombo(favorites, items, config)
 {
     public override StringU8  Label { get; } = GetLabel(gameData, slot);
     public readonly EquipSlot Slot = slot;

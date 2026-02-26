@@ -63,6 +63,9 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     public bool   RememberAutomationFilter         { get; set; } = false;
     public bool   RememberUnlocksFilters           { get; set; } = true;
 
+    [ConfigProperty(EventName = "KeepItemComboFilterChanged")]
+    private bool _keepItemComboFilter = true;
+
     public RoughnessSetting RoughnessSetting { get; set; } = RoughnessSetting.AsIs;
 
     public DesignPanelFlag HideDesignPanel       { get; set; } = 0;

@@ -1,4 +1,5 @@
-﻿using Glamourer.Unlocks;
+﻿using Glamourer.Config;
+using Glamourer.Unlocks;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.DataContainers;
@@ -6,8 +7,22 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public sealed class GlamourerColorCombo(DictStain stains, FavoriteManager favorites) : FilterComboColors
+public sealed class GlamourerColorCombo : FilterComboColors, IDisposable
 {
+    private readonly DictStain       _stains;
+    private readonly FavoriteManager _favorites;
+    private readonly Configuration   _config;
+
+    public GlamourerColorCombo(DictStain stains, FavoriteManager favorites, Configuration config)
+    {
+        _stains                = stains;
+        _favorites             = favorites;
+        _config                = config;
+        ClearFilterOnSelection = !config.KeepItemComboFilter;
+
+        _config.KeepItemComboFilterChanged += OnItemComboFilterChanged;
+    }
+
     protected override float AdditionalSpace
         => AwesomeIcon.Font.CalculateTextSize(LunaStyle.FavoriteIcon.Span).X + 8 * Im.Style.GlobalScale;
 
@@ -16,7 +31,7 @@ public sealed class GlamourerColorCombo(DictStain stains, FavoriteManager favori
         if (globalIndex is 0)
             Im.Dummy(AwesomeIcon.Font.CalculateTextSize(LunaStyle.FavoriteIcon.Span));
         else
-            UiHelpers.DrawFavoriteStar(favorites, item.Id);
+            UiHelpers.DrawFavoriteStar(_favorites, item.Id);
         Im.Line.Same(0, 8 * Im.Style.GlobalScale);
 
         var       buttonWidth = Im.ContentRegion.Available.X;
@@ -52,7 +67,7 @@ public sealed class GlamourerColorCombo(DictStain stains, FavoriteManager favori
         {
             if (newItem.Id is 0)
                 newStain = Stain.None;
-            else if (!stains.TryGetValue(newItem.Id, out newStain))
+            else if (!_stains.TryGetValue(newItem.Id, out newStain))
                 return false;
 
             return true;
@@ -63,8 +78,14 @@ public sealed class GlamourerColorCombo(DictStain stains, FavoriteManager favori
     }
 
     protected override IEnumerable<Item> GetItems()
-        => stains.Select(kvp => (new Item(kvp.Value.Name, kvp.Value.RgbaColor, kvp.Key.Id, kvp.Value.Gloss), favorites.Contains(kvp.Key)))
+        => _stains.Select(kvp => (new Item(kvp.Value.Name, kvp.Value.RgbaColor, kvp.Key.Id, kvp.Value.Gloss), _favorites.Contains(kvp.Key)))
             .OrderBy(p => !p.Item2)
             .Select(p => p.Item1)
             .Prepend(None);
+
+    private void OnItemComboFilterChanged(bool newValue, bool _)
+        => ClearFilterOnSelection = !newValue;
+
+    public void Dispose()
+        => _config.KeepItemComboFilterChanged -= OnItemComboFilterChanged;
 }

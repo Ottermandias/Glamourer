@@ -20,18 +20,18 @@ namespace Glamourer.Gui.Tabs.ActorTab;
 
 public sealed class ActorPanel : IPanel
 {
-    private readonly ActorSelection              _selection;
-    private readonly StateManager                _stateManager;
-    private readonly CustomizationDrawer         _customizationDrawer;
-    private readonly EquipmentDrawer             _equipmentDrawer;
-    private readonly AutoDesignApplier           _autoDesignApplier;
-    private readonly Configuration _config;
-    private readonly DesignConverter             _converter;
-    private readonly ActorObjectManager          _objects;
-    private readonly ImportService               _importService;
-    private readonly DictModelChara              _modelChara;
-    private readonly CustomizeParameterDrawer    _parameterDrawer;
-    private readonly AdvancedDyePopup            _advancedDyes;
+    private readonly ActorSelection           _selection;
+    private readonly StateManager             _stateManager;
+    private readonly CustomizationDrawer      _customizationDrawer;
+    private readonly EquipmentDrawer          _equipmentDrawer;
+    private readonly AutoDesignApplier        _autoDesignApplier;
+    private readonly Configuration            _config;
+    private readonly DesignConverter          _converter;
+    private readonly ActorObjectManager       _objects;
+    private readonly ImportService            _importService;
+    private readonly DictModelChara           _modelChara;
+    private readonly CustomizeParameterDrawer _parameterDrawer;
+    private readonly AdvancedDyePopup         _advancedDyes;
 
     public ActorPanel(StateManager stateManager,
         CustomizationDrawer customizationDrawer,
@@ -163,6 +163,8 @@ public sealed class ActorPanel : IPanel
         _equipmentDrawer.Prepare();
 
         var usedAllStain = _equipmentDrawer.DrawAllStain(out var newAllStain, _selection.State!.IsLocked);
+        Im.Line.Same();
+        EquipmentDrawer.DrawKeepItemFilter(_config);
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var data = EquipDrawData.FromState(_stateManager, _selection.State!, slot);
@@ -262,7 +264,7 @@ public sealed class ActorPanel : IPanel
 
     private void DrawMonsterPanel()
     {
-        var names     = _modelChara[_selection.State!.ModelData.ModelId];
+        var names = _modelChara[_selection.State!.ModelData.ModelId];
         using (Im.ListBox.Begin("##MonsterList"u8, Im.ContentRegion.Available with { Y = 10 * Im.Style.TextHeightWithSpacing }))
         {
             if (names.Count is 0)

@@ -1,4 +1,5 @@
-﻿using Glamourer.Services;
+﻿using Glamourer.Config;
+using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImSharp;
 using Penumbra.GameData.Data;
@@ -7,8 +8,8 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public sealed class WeaponCombo(FavoriteManager favorites, ItemManager items, FullEquipType slot)
-    : BaseItemCombo(favorites, items)
+public sealed class WeaponCombo(FavoriteManager favorites, ItemManager items, Configuration config, FullEquipType slot)
+    : BaseItemCombo(favorites, items, config)
 {
     public override StringU8      Label { get; } = GetLabel(slot);
     public readonly FullEquipType Slot = slot;
@@ -22,29 +23,6 @@ public sealed class WeaponCombo(FavoriteManager favorites, ItemManager items, Fu
         }
         item = Items.Identify(Slot.ToSlot(), CustomSetId, CustomWeaponId, CustomVariant);
         return true;
-    }
-
-    private static IReadOnlyList<EquipItem> GetItems(FavoriteManager favorites, ItemManager items, FullEquipType type)
-    {
-        if (type is FullEquipType.Unknown)
-        {
-            var enumerable = Array.Empty<EquipItem>().AsEnumerable();
-            foreach (var t in FullEquipType.Values.Where(e => e.ToSlot() is EquipSlot.MainHand))
-            {
-                if (items.ItemData.ByType.TryGetValue(t, out var l))
-                    enumerable = enumerable.Concat(l);
-            }
-
-            return [.. enumerable.OrderByDescending(favorites.Contains).ThenBy(e => e.Name)];
-        }
-
-        if (!items.ItemData.ByType.TryGetValue(type, out var list))
-            return [];
-
-        if (type.AllowsNothing())
-            return [ItemManager.NothingItem(type), .. list.OrderByDescending(favorites.Contains).ThenBy(e => e.Name)];
-
-        return [.. list.OrderByDescending(favorites.Contains).ThenBy(e => e.Name)];
     }
 
     protected override IEnumerable<CacheItem> GetItems()
