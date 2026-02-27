@@ -5,6 +5,7 @@ using Glamourer.Interop;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using Glamourer.Config;
+using Glamourer.Events;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
@@ -22,10 +23,18 @@ public sealed class SetPanel(
     IdentifierDrawer identifierDrawer,
     Configuration config,
     RandomRestrictionDrawer randomDrawer,
-    AutomationSelection selection) : IPanel
+    AutomationSelection selection,
+    AutomationChanged automationChanged) : IPanel
 {
-    private readonly JobGroupCombo         _jobGroupCombo = new(manager, jobs);
-    private          int                   _dragIndex = -1;
+    private readonly AutomationSelection _selection         = selection;
+    private readonly AutomationChanged   _automationChanged = automationChanged;
+    private readonly JobGroupCombo       _jobGroupCombo     = new(manager, jobs);
+
+    private readonly AutoDesignNameFilter    _nameFilter    = new(config);
+    private readonly AutoDesignJobFilter     _jobFilter     = new(config);
+    private readonly AutoDesignEnabledFilter _enabledFilter = new(config);
+
+    private int _dragIndex = -1;
 
     private Action? _endAction;
 
@@ -34,20 +43,20 @@ public sealed class SetPanel(
 
     public void Draw()
     {
-        if (selection.Index < 0)
+        if (_selection.Index < 0)
             return;
 
         using (Im.Group())
         {
-            var enabled = selection.Set!.Enabled;
+            var enabled = _selection.Set!.Enabled;
             if (Im.Checkbox("##Enabled"u8, ref enabled))
-                manager.SetState(selection.Index, enabled);
+                manager.SetState(_selection.Index, enabled);
             LunaStyle.DrawAlignedHelpMarkerLabel("Enabled"u8,
                 "Whether the designs in this set should be applied at all. Only one set can be enabled for a character at the same time."u8);
 
-            var useGame = selection.Set!.BaseState is AutoDesignSet.Base.Game;
+            var useGame = _selection.Set!.BaseState is AutoDesignSet.Base.Game;
             if (Im.Checkbox("##gameState"u8, ref useGame))
-                manager.ChangeBaseState(selection.Index, useGame ? AutoDesignSet.Base.Game : AutoDesignSet.Base.Current);
+                manager.ChangeBaseState(_selection.Index, useGame ? AutoDesignSet.Base.Game : AutoDesignSet.Base.Current);
             LunaStyle.DrawAlignedHelpMarkerLabel("Use Game State as Base"u8,
                 "When this is enabled, the designs matching conditions will be applied successively on top of what your character is supposed to look like for the game. "u8
               + "Otherwise, they will be applied on top of the characters actual current look using Glamourer."u8);
@@ -66,9 +75,9 @@ public sealed class SetPanel(
             LunaStyle.DrawAlignedHelpMarkerLabel("Show Editing"u8,
                 "Show options to change the name or the associated character or NPC of this design set."u8);
 
-            var resetSettings = selection.Set!.ResetTemporarySettings;
+            var resetSettings = _selection.Set!.ResetTemporarySettings;
             if (Im.Checkbox("##resetSettings"u8, ref resetSettings))
-                manager.ChangeResetSettings(selection.Index, resetSettings);
+                manager.ChangeResetSettings(_selection.Index, resetSettings);
 
             LunaStyle.DrawAlignedHelpMarkerLabel("Reset Temporary Settings"u8,
                 "Always reset all temporary settings applied by Glamourer when this automation set is applied, regardless of active designs."u8);
@@ -82,11 +91,11 @@ public sealed class SetPanel(
 
             var flags = config.Ephemeral.IncognitoMode ? InputTextFlags.ReadOnly | InputTextFlags.Password : InputTextFlags.None;
             Im.Item.SetNextWidthScaled(330);
-            if (ImEx.InputOnDeactivation.Text("Rename Set##Name"u8, selection.Name, out string newName, default, flags))
-                manager.Rename(selection.Index, newName);
+            if (ImEx.InputOnDeactivation.Text("Rename Set##Name"u8, _selection.Name, out string newName, default, flags))
+                manager.Rename(_selection.Index, newName);
 
 
-            DrawIdentifierSelection(selection.Index);
+            DrawIdentifierSelection(_selection.Index);
         }
 
         Im.Dummy(Vector2.Zero);
@@ -112,7 +121,7 @@ public sealed class SetPanel(
           + 5 * Im.Style.CellPadding.X
           + 150 * Im.Style.GlobalScale;
 
-        var singleRow = Im.ContentRegion.Available.X >= requiredSizeOneLine || numSpacing == 0;
+        var singleRow = Im.ContentRegion.Available.X >= requiredSizeOneLine || numSpacing is 0;
         var numRows = (singleRow, config.ShowUnlockedItemWarnings) switch
         {
             (true, true)   => 6,
@@ -155,60 +164,86 @@ public sealed class SetPanel(
             table.SetupColumn(""u8, TableColumnFlags.WidthFixed, 2 * Im.Style.FrameHeight + 4 * Im.Style.GlobalScale);
 
         table.HeaderRow();
-        foreach (var (idx, design) in selection.Set!.Designs.Index())
+        if (singleRow)
         {
-            using var id = Im.Id.Push(idx);
+            Im.Table.NextColumn();
+            Im.Table.NextColumn();
+            Im.Table.NextColumn();
+            _nameFilter.DrawFilter("Filter Designs..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
+            Im.Table.NextColumn();
+            _enabledFilter.DrawCheckboxFilter();
+            Im.Table.NextColumn();
+            _jobFilter.DrawFilter("Filter Jobs..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
+            Im.Table.NextRow();
+        }
+        else
+        {
+            Im.Table.NextColumn();
+            Im.Table.NextColumn();
+            Im.Table.NextColumn();
+            _nameFilter.DrawFilter("Filter Designs..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
+            _jobFilter.DrawFilter("Filter Jobs..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
+            Im.Table.NextColumn();
+            _enabledFilter.DrawCheckboxFilter();
+            Im.Table.NextRow();
+        }
+
+        var       cache = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new AutoDesignCache(this));
+        using var clip  = new Im.ListClipper(cache.Count, singleRow ? Im.Style.FrameHeightWithSpacing : 2 * Im.Style.FrameHeightWithSpacing);
+        foreach (var cacheItem in clip.Iterate(cache))
+        {
+            using var id = Im.Id.Push(cacheItem.Index);
             table.NextColumn();
             var keyValid = config.DeleteDesignModifier.IsActive();
             if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Remove this design from the set."u8, !keyValid))
-                _endAction = () => manager.DeleteDesign(selection.Set!, idx);
+                _endAction = () => manager.DeleteDesign(cacheItem.Set, cacheItem.Index);
             if (!keyValid)
                 Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, $"Hold {config.DeleteDesignModifier} to remove.");
             table.NextColumn();
-            DrawSelectable(idx, design.Design);
+            DrawSelectable(cacheItem);
 
             table.NextColumn();
-            DrawRandomEditing(selection.Set!, design, idx);
-            designCombo.Draw(selection.Set!, design, idx);
-            DrawDragDrop(selection.Set!, idx);
+            DrawRandomEditing(cacheItem.Set, cacheItem.Design, cacheItem.Index);
+            designCombo.Draw(cacheItem.Set, cacheItem.Design, cacheItem.Index);
+            DrawDragDrop(cacheItem.Set, cacheItem.Index);
             if (singleRow)
             {
                 table.NextColumn();
-                DrawApplicationTypeBoxes(selection.Set!, design, idx, singleRow);
+                DrawApplicationTypeBoxes(cacheItem.Set, cacheItem.Design, cacheItem.Index, singleRow);
                 table.NextColumn();
-                DrawConditions(design, idx);
+                DrawConditions(cacheItem);
             }
             else
             {
-                DrawConditions(design, idx);
+                DrawConditions(cacheItem);
                 table.NextColumn();
-                DrawApplicationTypeBoxes(selection.Set!, design, idx, singleRow);
+                DrawApplicationTypeBoxes(cacheItem.Set, cacheItem.Design, cacheItem.Index, singleRow);
             }
 
             if (config.ShowUnlockedItemWarnings)
             {
                 table.NextColumn();
-                DrawWarnings(design);
+                DrawWarnings(cacheItem);
             }
         }
 
         table.NextColumn();
         table.DrawFrameColumn("New"u8);
         table.NextColumn();
-        designCombo.Draw(selection.Set!, null, -1);
+        designCombo.Draw(_selection.Set!, null, -1);
         table.NextRow();
 
         _endAction?.Invoke();
         _endAction = null;
     }
 
-    private void DrawSelectable(int idx, IDesignStandIn design)
+    private void DrawSelectable(in AutoDesignCacheItem cacheItem)
     {
         var highlight = ColorParameter.Default;
         var sb        = new StringBuilder();
-        if (design is Design d)
+        if (cacheItem.Design.Design is Design d)
         {
-            var count = design.AllLinks(true).Count();
+            var count = d.AllLinks(true).Count();
             if (count > 1)
             {
                 sb.AppendLine($"This design contains {count - 1} links to other designs.");
@@ -222,7 +257,7 @@ public sealed class SetPanel(
                 highlight = ColorId.ModdedItemMarker.Value();
             }
 
-            count = design.GetMaterialData().Count(p => p.Item2.Enabled);
+            count = d.GetMaterialData().Count(p => p.Item2.Enabled);
             if (count > 0)
             {
                 sb.AppendLine($"This design contains {count} enabled advanced dyes.");
@@ -232,21 +267,21 @@ public sealed class SetPanel(
 
         using (ImGuiColor.Text.Push(highlight))
         {
-            Im.Selectable($"#{idx + 1:D2}");
+            Im.Selectable(cacheItem.IndexU8);
         }
 
         Im.Tooltip.OnHover($"{sb}");
 
-        DrawDragDrop(selection.Set!, idx);
+        DrawDragDrop(cacheItem.Set, cacheItem.Index);
     }
 
-    private void DrawConditions(AutoDesign design, int idx)
+    private void DrawConditions(in AutoDesignCacheItem item)
     {
-        var usingGearset = design.GearsetIndex >= 0;
+        var usingGearset = item.Design.GearsetIndex >= 0;
         if (Im.Button(usingGearset ? "Gearset:##usingGearset"u8 : "Jobs:##usingGearset"u8))
         {
             usingGearset = !usingGearset;
-            manager.ChangeGearsetCondition(selection.Set!, idx, (short)(usingGearset ? 0 : -1));
+            manager.ChangeGearsetCondition(item.Set, item.Index, (short)(usingGearset ? 0 : -1));
         }
 
         Im.Tooltip.OnHover("Click to switch between Job and Gearset restrictions."u8);
@@ -255,12 +290,12 @@ public sealed class SetPanel(
         if (usingGearset)
         {
             Im.Item.SetNextWidthFull();
-            if (ImEx.InputOnDeactivation.Scalar("##whichGearset"u8, design.GearsetIndex + 1, out var newIndex))
-                manager.ChangeGearsetCondition(selection.Set!, idx, (short)(Math.Clamp(newIndex, 1, 100) - 1));
+            if (ImEx.InputOnDeactivation.Scalar("##whichGearset"u8, item.Design.GearsetIndex + 1, out var newIndex))
+                manager.ChangeGearsetCondition(item.Set, item.Index, (short)(Math.Clamp(newIndex, 1, 100) - 1));
         }
         else
         {
-            _jobGroupCombo.Draw(selection.Set!, design, idx);
+            _jobGroupCombo.Draw(item.Set, item.Design, item.Index);
         }
     }
 
@@ -273,26 +308,26 @@ public sealed class SetPanel(
         Im.Line.SameInner();
     }
 
-    private void DrawWarnings(AutoDesign design)
+    private void DrawWarnings(in AutoDesignCacheItem item)
     {
-        if (design.Design is not DesignBase)
+        if (item.Design.Design is not DesignBase)
             return;
 
         var size = new Vector2(Im.Style.FrameHeight);
         size.X += Im.Style.GlobalScale;
 
-        var collection = design.ApplyWhat();
+        var collection = item.Design.ApplyWhat();
         var sb         = new StringBuilder();
-        var designData = design.Design.GetDesignData(default);
+        var designData = item.Design.Design.GetDesignData(default);
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Append(EquipSlot.MainHand).Append(EquipSlot.OffHand))
         {
             var flag = slot.ToFlag();
             if (!collection.Equip.HasFlag(flag))
                 continue;
 
-            var item = designData.Item(slot);
-            if (!itemUnlocks.IsUnlocked(item.Id, out _))
-                sb.AppendLine($"{item.Name} in {slot.ToName()} slot is not unlocked. Consider obtaining it via gameplay means!");
+            var equip = designData.Item(slot);
+            if (!itemUnlocks.IsUnlocked(equip.Id, out _))
+                sb.AppendLine($"{equip.Name} in {slot.ToName()} slot is not unlocked. Consider obtaining it via gameplay means!");
         }
 
         using var style = ImStyleDouble.ItemSpacing.Push(new Vector2(2 * Im.Style.GlobalScale, 0));
@@ -376,8 +411,8 @@ public sealed class SetPanel(
                 Im.Text($"Moving design #{index + 1:D2}...");
                 if (source.SetPayload("DesignDragDrop"u8))
                 {
-                    _dragIndex                   = index;
-                    selection.DraggedDesignIndex = index;
+                    _dragIndex                    = index;
+                    _selection.DraggedDesignIndex = index;
                 }
             }
         }
@@ -453,7 +488,9 @@ public sealed class SetPanel(
     {
         public void Draw(AutoDesignSet set, AutoDesign design, int autoDesignIndex)
         {
-            if (Draw("##jobGroups"u8, design.Jobs, "Select for which job groups this design should be applied.\nControl + Right-Click to set to all classes."u8, Im.ContentRegion.Available.X, out var newGroup))
+            if (Draw("##jobGroups"u8, design.Jobs,
+                    "Select for which job groups this design should be applied.\nControl + Right-Click to set to all classes."u8,
+                    Im.ContentRegion.Available.X, out var newGroup))
                 manager.ChangeJobCondition(set, autoDesignIndex, newGroup);
             else if (Im.Io.KeyControl && Im.Item.RightClicked())
                 manager.ChangeJobCondition(set, autoDesignIndex, jobs.JobGroups[1]);
@@ -466,6 +503,69 @@ public sealed class SetPanel(
             => value.Name.ToString();
 
         public override IEnumerable<JobGroup> GetBaseItems()
-            =>jobs.JobGroups.Values;
+            => jobs.JobGroups.Values;
+    }
+
+
+    public sealed class AutoDesignCache : BasicFilterCache<AutoDesignCacheItem>
+    {
+        private readonly AutomationSelection _selection;
+        private readonly AutomationChanged   _automationChanged;
+
+        public AutoDesignCache(SetPanel parent)
+            : base(new MultiFilter<AutoDesignCacheItem>(parent._nameFilter, parent._jobFilter, parent._enabledFilter))
+        {
+            _selection         = parent._selection;
+            _automationChanged = parent._automationChanged;
+
+            _selection.SelectionChanged += OnSelectionChanged;
+            _automationChanged.Subscribe(OnAutomationChanged, AutomationChanged.Priority.AutomationSelection);
+        }
+
+        private void OnAutomationChanged(in AutomationChanged.Arguments arguments)
+            => Dirty |= IManagedCache.DirtyFlags.Custom;
+
+        private void OnSelectionChanged()
+            => Dirty |= IManagedCache.DirtyFlags.Custom;
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            _selection.SelectionChanged -= OnSelectionChanged;
+            _automationChanged.Unsubscribe(OnAutomationChanged);
+        }
+
+        protected override IEnumerable<AutoDesignCacheItem> GetItems()
+            => _selection.Set?.Designs.Select((d, i) => new AutoDesignCacheItem(_selection.Set!, d, i)) ?? [];
+    }
+
+    private sealed class AutoDesignNameFilter : Utf8FilterBase<AutoDesignCacheItem>
+    {
+        public AutoDesignNameFilter(Configuration config)
+        { }
+
+        public override bool WouldBeVisible(in AutoDesignCacheItem item, int globalIndex)
+            => base.WouldBeVisible(in item, globalIndex) || WouldBeVisible(item.Incognito);
+
+        protected override ReadOnlySpan<byte> ToFilterString(in AutoDesignCacheItem item, int globalIndex)
+            => item.Name;
+    }
+
+    private sealed class AutoDesignJobFilter : Utf8FilterBase<AutoDesignCacheItem>
+    {
+        public AutoDesignJobFilter(Configuration config)
+        { }
+
+        protected override ReadOnlySpan<byte> ToFilterString(in AutoDesignCacheItem item, int globalIndex)
+            => item.JobRestrictions;
+    }
+
+    private sealed class AutoDesignEnabledFilter : YesNoFilter<AutoDesignCacheItem>
+    {
+        public AutoDesignEnabledFilter(Configuration config)
+        { }
+
+        public override bool GetValue(in AutoDesignCacheItem item, int globalIndex, int triEnumIndex)
+            => !item.Disabled;
     }
 }

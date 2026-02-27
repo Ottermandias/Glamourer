@@ -1,6 +1,6 @@
 ﻿using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Services;
-using ImSharp.Table;
+using ImSharp;
 using Luna;
 using Luna.Generators;
 using Newtonsoft.Json;
@@ -61,7 +61,7 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
     private string _npcFilter = string.Empty;
 
     [ConfigProperty]
-    private YesNoColumn.YesNoFlag _unlocksFavoriteFilter = YesNoColumn.YesOrNo;
+    private YesNoFlag _unlocksFavoriteFilter = YesNoFlag.Either;
 
     [ConfigProperty]
     private UnlockCacheItem.Modded _unlocksModdedFilter = UnlockCacheItem.ModdedAll;
@@ -76,7 +76,7 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
     private EquipFlag _unlocksSlotFilter = UnlockCacheItem.SlotsAll;
 
     [ConfigProperty]
-    private YesNoColumn.YesNoFlag _unlocksUnlockedFilter = YesNoColumn.YesOrNo;
+    private YesNoFlag _unlocksUnlockedFilter = YesNoFlag.Either;
 
     [ConfigProperty]
     private string _unlocksItemIdFilter = string.Empty;
@@ -94,21 +94,21 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
     private UnlockCacheItem.Dyability _unlocksDyabilityFilter = UnlockCacheItem.DyableAll;
 
     [ConfigProperty]
-    private YesNoColumn.YesNoFlag _unlocksTradableFilter = YesNoColumn.YesOrNo;
+    private YesNoFlag _unlocksTradableFilter = YesNoFlag.Either;
 
     [ConfigProperty]
-    private YesNoColumn.YesNoFlag _unlocksCrestFilter = YesNoColumn.YesOrNo;
+    private YesNoFlag _unlocksCrestFilter = YesNoFlag.Either;
 
     private void WriteUnlocksTab(JsonTextWriter j)
     {
         var obj = new JObject();
-        if (UnlocksFavoriteFilter is not YesNoColumn.YesOrNo)
+        if (UnlocksFavoriteFilter is not YesNoFlagExtensions.Either)
             obj["Favorite"] = (uint)UnlocksFavoriteFilter;
-        if (UnlocksCrestFilter is not YesNoColumn.YesOrNo)
+        if (UnlocksCrestFilter is not YesNoFlagExtensions.Either)
             obj["Crest"] = (uint)UnlocksCrestFilter;
-        if (UnlocksTradableFilter is not YesNoColumn.YesOrNo)
+        if (UnlocksTradableFilter is not YesNoFlagExtensions.Either)
             obj["Tradable"] = (uint)UnlocksTradableFilter;
-        if (UnlocksUnlockedFilter is not YesNoColumn.YesOrNo)
+        if (UnlocksUnlockedFilter is not YesNoFlagExtensions.Either)
             obj["Unlocked"] = (uint)UnlocksUnlockedFilter;
 
         if (UnlocksModdedFilter is not UnlockCacheItem.ModdedAll)
@@ -146,10 +146,10 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
         if (j["Unlocks"] is not JObject unlocks)
             return;
 
-        _unlocksFavoriteFilter  = unlocks["Favorite"]?.Value<uint>() is { } f ? (YesNoColumn.YesNoFlag)f : YesNoColumn.YesOrNo;
-        _unlocksCrestFilter     = unlocks["Crest"]?.Value<uint>() is { } c ? (YesNoColumn.YesNoFlag)c : YesNoColumn.YesOrNo;
-        _unlocksTradableFilter  = unlocks["Tradable"]?.Value<uint>() is { } t ? (YesNoColumn.YesNoFlag)t : YesNoColumn.YesOrNo;
-        _unlocksUnlockedFilter  = unlocks["Unlocked"]?.Value<uint>() is { } u ? (YesNoColumn.YesNoFlag)u : YesNoColumn.YesOrNo;
+        _unlocksFavoriteFilter  = unlocks["Favorite"]?.Value<uint>() is { } f ? (YesNoFlag)f : YesNoFlag.Either;
+        _unlocksCrestFilter     = unlocks["Crest"]?.Value<uint>() is { } c ? (YesNoFlag)c : YesNoFlag.Either;
+        _unlocksTradableFilter  = unlocks["Tradable"]?.Value<uint>() is { } t ? (YesNoFlag)t : YesNoFlag.Either;
+        _unlocksUnlockedFilter  = unlocks["Unlocked"]?.Value<uint>() is { } u ? (YesNoFlag)u : YesNoFlag.Either;
         _unlocksModdedFilter    = unlocks["Modded"]?.Value<uint>() is { } m ? (UnlockCacheItem.Modded)m : UnlockCacheItem.ModdedAll;
         _unlocksDyabilityFilter = unlocks["Dyability"]?.Value<uint>() is { } d ? (UnlockCacheItem.Dyability)d : UnlockCacheItem.DyableAll;
         _unlocksSlotFilter      = unlocks["Slot"]?.Value<uint>() is { } s ? (EquipFlag)s : UnlockCacheItem.SlotsAll;

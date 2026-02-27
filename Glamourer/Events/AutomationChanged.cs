@@ -60,6 +60,9 @@ public sealed class AutomationChanged(Logger log)
 
     public enum Priority
     {
+        /// <seealso cref="Gui.Tabs.AutomationTab.AutoDesignCache.OnAutomationChanged"/>
+        AutoDesignCache = 0,
+
         /// <seealso cref="Gui.Tabs.AutomationTab.AutomationSelection.OnAutomationChanged"/>
         AutomationSelection = 0,
 

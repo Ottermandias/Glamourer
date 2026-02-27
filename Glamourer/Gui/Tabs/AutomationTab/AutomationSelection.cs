@@ -20,6 +20,8 @@ public sealed class AutomationSelection : IUiService, IDisposable
     public StringU8       Name      { get; private set; } = NoSelection;
     public StringU8       Incognito { get; private set; } = NoSelection;
 
+    public event Action? SelectionChanged;
+
     public AutomationSelection(AutomationChanged automationChanged, UiConfig config, AutoDesignManager autoDesigns)
     {
         _automationChanged = automationChanged;
@@ -48,6 +50,7 @@ public sealed class AutomationSelection : IUiService, IDisposable
 
     public void Update(in AutomationCacheItem? item)
     {
+        SelectionChanged?.Invoke();
         Set = item?.Set;
         if (Set is null)
         {
