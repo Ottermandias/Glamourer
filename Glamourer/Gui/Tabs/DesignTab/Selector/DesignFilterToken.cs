@@ -44,6 +44,6 @@ public readonly struct DesignFilterToken() : IFilterToken<DesignFilterTokenType,
     public static bool AllowsNone(DesignFilterTokenType type)
         => type is DesignFilterTokenType.Tag or DesignFilterTokenType.Mod;
 
-    public static void ProcessList(List<DesignFilterToken> list)
-    { }
+    public static bool ProcessList(List<DesignFilterToken> list, TokenModifier modifier)
+        => false;
 }

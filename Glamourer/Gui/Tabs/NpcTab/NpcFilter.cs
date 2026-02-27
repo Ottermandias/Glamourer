@@ -64,7 +64,7 @@ public sealed class NpcFilter : TokenizedFilter<NpcFilter.TokenType, NpcCacheIte
         public static bool AllowsNone(TokenType type)
             => false;
 
-        public static void ProcessList(List<NpcFilterToken> list)
+        public static bool ProcessList(List<NpcFilterToken> list, TokenModifier modifier)
         {
             for (var i = 0; i < list.Count; ++i)
             {
@@ -73,14 +73,22 @@ public sealed class NpcFilter : TokenizedFilter<NpcFilter.TokenType, NpcCacheIte
                     continue;
 
                 if (!uint.TryParse(entry.Needle, out var value))
+                {
                     list.RemoveAt(i--);
+                    if (modifier is TokenModifier.Forced)
+                        return true;
+                }
                 else
+                {
                     list[i] = new NpcFilterToken
                     {
                         ParsedNeedle = value,
                         Type         = TokenType.Id,
                     };
+                }
             }
+
+            return false;
         }
     }
 
