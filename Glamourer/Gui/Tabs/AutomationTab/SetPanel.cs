@@ -164,29 +164,25 @@ public sealed class SetPanel(
             table.SetupColumn(""u8, TableColumnFlags.WidthFixed, 2 * Im.Style.FrameHeight + 4 * Im.Style.GlobalScale);
 
         table.HeaderRow();
+        Im.Table.NextColumn();
+        Im.Table.NextColumn();
+        Im.Table.NextColumn();
+        _nameFilter.DrawFilter("Filter Designs..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
         if (singleRow)
         {
             Im.Table.NextColumn();
-            Im.Table.NextColumn();
-            Im.Table.NextColumn();
-            _nameFilter.DrawFilter("Filter Designs..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
-            Im.Table.NextColumn();
             _enabledFilter.DrawCheckboxFilter();
             Im.Table.NextColumn();
             _jobFilter.DrawFilter("Filter Jobs..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
-            Im.Table.NextRow();
         }
         else
         {
-            Im.Table.NextColumn();
-            Im.Table.NextColumn();
-            Im.Table.NextColumn();
-            _nameFilter.DrawFilter("Filter Designs..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
             _jobFilter.DrawFilter("Filter Jobs..."u8, Im.ContentRegion.Available with { Y = Im.Style.FrameHeight });
             Im.Table.NextColumn();
             _enabledFilter.DrawCheckboxFilter();
-            Im.Table.NextRow();
         }
+
+        Im.Table.NextRow();
 
         var       cache = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new AutoDesignCache(this));
         using var clip  = new Im.ListClipper(cache.Count, singleRow ? Im.Style.FrameHeightWithSpacing : 2 * Im.Style.FrameHeightWithSpacing);
