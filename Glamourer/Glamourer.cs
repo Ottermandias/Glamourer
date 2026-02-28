@@ -61,10 +61,12 @@ public class Glamourer : IDalamudPlugin
     public string GatherSupportInformation()
     {
         var sb     = new StringBuilder(10240);
+        var pi     = _services.GetService<IDalamudPluginInterface>();
         var config = _services.GetService<Configuration>();
         sb.AppendLine("**Settings**");
         sb.Append($"> **`Plugin Version:       `** {Version}\n");
         sb.Append($"> **`Commit Hash:          `** {CommitHash}\n");
+        sb.Append($"> **`Load Reason:          `** {pi.Reason} at {pi.LoadTimeUTC:g} ({pi.LoadTimeDelta:g})\n");
         sb.Append($"> **`Enable Auto Designs:  `** {config.EnableAutoDesigns}\n");
         sb.Append($"> **`Gear Protection:      `** {config.UseRestrictedGearProtection}\n");
         sb.Append($"> **`Item Restriction:     `** {config.UnlockedItemMode}\n");

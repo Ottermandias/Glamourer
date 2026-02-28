@@ -56,14 +56,18 @@ public sealed class GlamourerColorCombo : FilterComboColors, IDisposable
     public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, in Stain current, out Stain newStain, float width)
     {
         // Push the preview color.
-        using var color = ImGuiColor.FrameBackground.Push(current.RgbaColor, !current.RgbaColor.IsTransparent);
+        using var color = ImGuiColor.FrameBackground.Push(current.RgbaColor, !current.RgbaColor.IsTransparent)
+            .Push(ImGuiColor.FrameBackgroundHovered, current.RgbaColor.Color, !current.RgbaColor.IsTransparent);
 
         // Set the current selection only for the IsSelected and Gloss checks.
         CurrentSelection = new Item(current.Name, current.RgbaColor, current.RowIndex.Id, current.Gloss);
 
         // Skip the named preview if it does not fit.
         var name = Im.Font.CalculateSize(current.Name).X <= width && !current.RgbaColor.IsTransparent ? current.Name : StringU8.Empty;
-        if (base.Draw(label, name, StringU8.Empty, width, out var newItem))
+        var ret  = base.Draw(label, name, StringU8.Empty, width, out var newItem);
+        if (name.IsEmpty)
+            Im.Tooltip.OnHover(CurrentSelection.Name);
+        if (ret)
         {
             if (newItem.Id is 0)
                 newStain = Stain.None;
