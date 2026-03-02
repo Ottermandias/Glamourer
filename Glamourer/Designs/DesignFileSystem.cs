@@ -26,7 +26,7 @@ public sealed class DesignFileSystem : BaseFileSystem, IDisposable, IRequiredSer
     private void OnTabSelected(in TabSelected.Arguments arguments)
     {
         if (arguments.Design?.Node is { } node)
-            Selection.Select(node);
+            Selection.Select(node, true);
     }
 
     private void OnDesignChanged(in DesignChanged.Arguments arguments)
@@ -49,7 +49,7 @@ public sealed class DesignFileSystem : BaseFileSystem, IDisposable, IRequiredSer
                     }
 
                 var (data, _) = CreateDuplicateDataNode(parent, arguments.Design.Path.SortName ?? arguments.Design.Name, arguments.Design);
-                Selection.Select(data);
+                Selection.Select(data, true);
                 break;
             case DesignChanged.Type.Deleted:
                 if (arguments.Design.Node is { } node)
