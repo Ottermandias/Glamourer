@@ -32,13 +32,13 @@ public enum ApplicationType : byte
 
 public static partial class ApplicationTypeExtensions
 {
-    public static readonly IReadOnlyList<(ApplicationType, StringU8)> Types =
+    public static readonly IReadOnlyList<ApplicationType> Types =
     [
-        (ApplicationType.Customizations, ApplicationType.Customizations.Tooltip()),
-        (ApplicationType.Armor, ApplicationType.Armor.Tooltip()),
-        (ApplicationType.Accessories, ApplicationType.Accessories.Tooltip()),
-        (ApplicationType.GearCustomization, ApplicationType.GearCustomization.Tooltip()),
-        (ApplicationType.Weapons, ApplicationType.Weapons.Tooltip()),
+        ApplicationType.Customizations,
+        ApplicationType.Armor,
+        ApplicationType.Accessories,
+        ApplicationType.GearCustomization,
+        ApplicationType.Weapons,
     ];
 
     public static ApplicationCollection Collection(this ApplicationType type)

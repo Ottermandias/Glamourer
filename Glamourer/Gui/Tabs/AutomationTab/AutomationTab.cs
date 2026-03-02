@@ -33,6 +33,9 @@ public sealed class AutomationTab : TwoPanelLayout, ITab<MainTabType>
     public void DrawContent()
         => Draw(_config.Ui.AutomationTabScale);
 
+    protected override void SetWidth(float width, ScalingMode mode)
+        => _config.Ui.AutomationTabScale = new TwoPanelWidth(width, mode);
+
     protected override float MinimumWidth
         => LeftFooter.MinimumWidth;
 

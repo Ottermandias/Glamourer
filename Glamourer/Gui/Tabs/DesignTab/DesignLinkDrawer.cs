@@ -236,12 +236,12 @@ public class DesignLinkDrawer(
 
         void Box(int i)
         {
-            var (applicationType, description) = ApplicationTypeExtensions.Types[i];
+            var applicationType = ApplicationTypeExtensions.Types[i];
             using var id    = Im.Id.Push((uint)applicationType);
             var       value = current.HasFlag(applicationType);
             if (Im.Checkbox(StringU8.Empty, ref value))
                 newType = value ? newType | applicationType : newType & ~applicationType;
-            Im.Tooltip.OnHover(description);
+            Im.Tooltip.OnHover(applicationType.Tooltip());
         }
     }
 }

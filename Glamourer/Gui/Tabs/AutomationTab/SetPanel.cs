@@ -134,6 +134,7 @@ public sealed class SetPanel(
         if (!table)
             return;
 
+        table.SetupScrollFreeze(0, 3);
         table.SetupColumn("##del"u8,   TableColumnFlags.WidthFixed, Im.Style.FrameHeight);
         table.SetupColumn("##Index"u8, TableColumnFlags.WidthFixed, 30 * Im.Style.GlobalScale);
 
@@ -184,6 +185,12 @@ public sealed class SetPanel(
 
         Im.Table.NextRow();
 
+        table.NextColumn();
+        table.DrawFrameColumn($"#{_selection.Set!.Designs.Count + 1}"); 
+        table.NextColumn();
+        designCombo.Draw(_selection.Set!, null, -1);
+        table.DrawFrameColumn("Add New"u8);
+
         var       cache = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new AutoDesignCache(this));
         using var clip  = new Im.ListClipper(cache.Count, singleRow ? Im.Style.FrameHeightWithSpacing : 2 * Im.Style.FrameHeightWithSpacing);
         foreach (var cacheItem in clip.Iterate(cache))
@@ -222,12 +229,6 @@ public sealed class SetPanel(
                 DrawWarnings(cacheItem);
             }
         }
-
-        table.NextColumn();
-        table.DrawFrameColumn("New"u8);
-        table.NextColumn();
-        designCombo.Draw(_selection.Set!, null, -1);
-        table.NextRow();
 
         _endAction?.Invoke();
         _endAction = null;
@@ -430,12 +431,12 @@ public sealed class SetPanel(
         {
             void Box(int idx)
             {
-                var (type, description) = ApplicationTypeExtensions.Types[idx];
+                var type = ApplicationTypeExtensions.Types[idx];
                 using var id    = Im.Id.Push((uint)type);
                 var       value = design.Type.HasFlag(type);
                 if (Im.Checkbox(StringU8.Empty, ref value))
                     newType = value ? newType | type : newType & ~type;
-                Im.Tooltip.OnHover(description);
+                Im.Tooltip.OnHover(type.Tooltip());
             }
 
             Im.Line.Same();
