@@ -124,14 +124,14 @@ public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
         }
     }
 
-    public void ApplyItem(ActorState state, EquipItem item)
+    public void ApplyItem(ActorState state, EquipItem item, bool ignoreCtrl)
     {
         var bonusSlot = item.Type.ToBonus();
         if (bonusSlot is not BonusItemFlag.Unknown)
         {
             // + 2 due to weapons.
             var glasses = _lastItems[bonusSlot.ToSlot() + 2];
-            if (Im.Io.KeyControl && glasses.Valid)
+            if (!ignoreCtrl && Im.Io.KeyControl && glasses.Valid)
             {
                 Glamourer.Log.Debug($"Re-Applying {glasses.Name} to {bonusSlot.ToName()}.");
                 SetLastItem(bonusSlot, default, state);
@@ -155,7 +155,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
             case EquipSlot.OffHand when !CanApplyWeapon(EquipSlot.OffHand,   item):
                 break;
             case EquipSlot.RFinger:
-                switch (Im.Io.KeyControl, Im.Io.KeyShift)
+                switch (!ignoreCtrl && Im.Io.KeyControl, Im.Io.KeyShift)
                 {
                     case (false, false):
                         Glamourer.Log.Debug($"Applying {item.Name} to Right Finger.");
@@ -181,7 +181,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
 
                 return;
             default:
-                if (Im.Io.KeyControl && last.Valid)
+                if (!ignoreCtrl && Im.Io.KeyControl && last.Valid)
                 {
                     Glamourer.Log.Debug($"Re-Applying {last.Name} to {slot.ToName()}.");
                     SetLastItem(slot, default, state);
@@ -270,7 +270,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
                 if (!_items.ItemData.TryGetValue(id, type is ChangedItemType.Item ? EquipSlot.MainHand : EquipSlot.OffHand, out var item))
                     return;
 
-                ApplyItem(state, item);
+                ApplyItem(state, item, false);
                 return;
             }
             case ChangedItemType.CustomArmor:
@@ -278,7 +278,7 @@ public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
                 var (model, variant, slot) = IdentifiedItem.Split(id);
                 var item = _items.Identify(slot.ToSlot(), model, variant);
                 if (item.Valid)
-                    ApplyItem(state, item);
+                    ApplyItem(state, item, false);
                 return;
             }
             case ChangedItemType.Customization:

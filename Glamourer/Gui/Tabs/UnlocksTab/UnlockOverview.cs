@@ -226,7 +226,7 @@ public sealed class UnlockOverview(
                 Glamourer.Messager.Chat.Print(new SeStringBuilder().AddItemLink(item.ItemId.Id, false).BuiltString);
 
             if (Im.Item.RightClicked() && tooltip.Player(out var state))
-                tooltip.ApplyItem(state, item);
+                tooltip.ApplyItem(state, item, false);
 
             if (Im.Item.Hovered())
             {

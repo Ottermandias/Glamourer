@@ -14,7 +14,7 @@ namespace Glamourer.Interop.Material;
 public sealed unsafe class PrepareColorSet
     : EventBase<PrepareColorSet.Arguments, PrepareColorSet.Priority>, IHookService
 {
-    private readonly UpdateColorSets _updateColorSets;
+    private readonly CreateNewModel _createNewModel;
 
     public enum Priority
     {
@@ -30,10 +30,10 @@ public sealed unsafe class PrepareColorSet
         public ref      nint                    ReturnValue = ref returnValue;
     }
 
-    public PrepareColorSet(HookManager hooks, UpdateColorSets updateColorSets, Logger log)
+    public PrepareColorSet(HookManager hooks, CreateNewModel createNewModel, Logger log)
         : base("Prepare Color Set", log)
     {
-        _updateColorSets = updateColorSets;
+        _createNewModel = createNewModel;
         _task            = hooks.CreateHook<Delegate>(Name, Sigs.PrepareColorSet, Detour, true);
     }
 
@@ -65,7 +65,7 @@ public sealed unsafe class PrepareColorSet
     private Texture* Detour(MaterialResourceHandle* material, StainId stainId1, StainId stainId2)
     {
         Glamourer.Log.Excessive($"[{Name}] Triggered with 0x{(nint)material:X} {stainId1.Id} {stainId2.Id}.");
-        var characterBase = _updateColorSets.Get();
+        var characterBase = _createNewModel.Get();
         if (!characterBase.IsCharacterBase)
             return _task.Result.Original(material, stainId1, stainId2);
 

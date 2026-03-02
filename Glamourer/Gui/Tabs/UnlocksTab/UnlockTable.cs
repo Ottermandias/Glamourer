@@ -18,13 +18,17 @@ namespace Glamourer.Gui.Tabs.UnlocksTab;
 
 public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>, IUiService
 {
-    private readonly JobService        _jobs;
-    private readonly ItemManager       _items;
-    private readonly ItemUnlockManager _unlocks;
-    private readonly FavoriteManager   _favorites;
-    private readonly PenumbraService   _penumbra;
-    private readonly ObjectUnlocked    _unlockEvent;
-    private readonly IgnoredMods       _ignoredMods;
+    private readonly JobService                 _jobs;
+    private readonly ItemManager                _items;
+    private readonly ItemUnlockManager          _unlocks;
+    private readonly FavoriteManager            _favorites;
+    private readonly PenumbraService            _penumbra;
+    private readonly ObjectUnlocked             _unlockEvent;
+    private readonly IgnoredMods                _ignoredMods;
+    private readonly PenumbraChangedItemTooltip _tooltip;
+    private readonly Configuration              _config;
+
+    private UnlockCacheItem _currentItem;
 
     public UnlockTable(JobService jobs, ItemManager items, ItemUnlockManager unlocks, PenumbraChangedItemTooltip tooltip,
         ObjectUnlocked unlockEvent, FavoriteManager favorites, PenumbraService penumbra, TextureService textures, IgnoredMods ignoredMods,
@@ -47,13 +51,82 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
         _jobs        = jobs;
         _items       = items;
         _unlocks     = unlocks;
+        _tooltip     = tooltip;
         _unlockEvent = unlockEvent;
         _favorites   = favorites;
         _penumbra    = penumbra;
         _ignoredMods = ignoredMods;
+        _config      = config;
 
         Flags |= TableFlags.Hideable | TableFlags.Reorderable | TableFlags.Resizable;
     }
+
+    public override Vector2 GetSize()
+    {
+        var available = Im.ContentRegion.Available;
+        available.Y -= Im.Style.FrameHeightWithSpacing;
+        return available;
+    }
+
+    protected override void PostDraw(in Cache cache)
+    {
+        ImEx.TextFrameAligned($"{cache.Count} / {cache.AllItems.Count} Items Visible");
+        Im.Line.Same();
+        if (Im.Checkbox("Only Show One Item Per Model Type"u8, _config.GroupUnlocksByModel))
+        {
+            _config.GroupUnlocksByModel ^= true;
+            cache.SetFilterDirty();
+        }
+
+        Im.Tooltip.OnHover("Hide all items with identical model data except for the first considering your current sort order and filters."u8);
+
+        Im.Line.Same();
+        if (Im.Checkbox("Ignore Variants"u8, _config.GroupUnlocksIgnoreVariants))
+        {
+            _config.GroupUnlocksIgnoreVariants ^= true;
+            cache.SetFilterDirty();
+        }
+
+        Im.Tooltip.OnHover(
+            "When grouping items by slot and model data, the variant (the last number in the model data) is ignored.\n\nUsually different variants are only slightly different items, with different color schemes or changing minor details, but sometimes they can cause more noticeable changes, like for glasses.");
+
+        Im.Line.Same();
+        DrawScrollCombo(cache);
+    }
+
+    private void DrawScrollCombo(in Cache cache)
+    {
+        Im.Item.SetNextWidthFull();
+        Im.Combo.DrawPreview("##select"u8, _currentItem.Item.Valid ? _currentItem.Name.Utf8 : "Scroll Here"u8, out _, out _,
+            ComboFlags.NoArrowButton);
+        if (!Im.Item.Hovered())
+            return;
+
+        // Set the item to consume the mouse wheel.
+        Im.Item.SetUsingMouseWheel();
+        // Use the mouse wheel delta to select a new item. This may require creating a new cache.
+
+        if (!_currentItem.Item.Valid)
+            Im.Tooltip.Set("Hold Control and scroll your mousewheel here to successively apply visible items to your character."u8);
+
+        var delta = (int)Im.Io.MouseWheel;
+        if (delta is 0 || !Im.Io.KeyControl)
+            return;
+
+        if (cache.Count is 0)
+        {
+            _currentItem = default;
+        }
+        else if (_tooltip.Player(out var player))
+        {
+            var index = cache.IndexOf(i => _currentItem.Item.Equals(i.Item));
+            index = ImUtility.ApplyMouseWheelDelta(delta, index, cache.Count);
+            // Can not be negative since that is handled above.
+            _currentItem = cache[index];
+            _tooltip.ApplyItem(player, _currentItem.Item, true);
+        }
+    }
+
 
     public override (int Columns, int Rows) GetFrozenScroll()
         => (3, 1);
@@ -214,7 +287,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
                 Glamourer.Messager.Chat.Print(new SeStringBuilder().AddItemLink(item.Item.ItemId.Id, false).BuiltString);
 
             if (Im.Item.RightClicked() && _tooltip.Player(out var state))
-                _tooltip.ApplyItem(state, item.Item);
+                _tooltip.ApplyItem(state, item.Item, false);
 
             if (Im.Item.Hovered() && _tooltip.Player())
                 _tooltip.CreateTooltip(item.Item, string.Empty, true);
@@ -241,7 +314,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             => FullEquipType.CrossPeinHammer.ToNameU8().CalculateSize().X;
 
         protected override string ComparisonText(in UnlockCacheItem item, int globalIndex)
-            => string.Empty;
+            => item.Item.Type.ToName();
 
         public override int Compare(in UnlockCacheItem lhs, int lhsGlobalIndex, in UnlockCacheItem rhs, int rhsGlobalIndex)
             => lhs.Item.Type.CompareTo(rhs.Item.Type);
@@ -560,6 +633,9 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
         private Guid _lastCollection;
 
+        public void SetFilterDirty()
+            => FilterDirty = true;
+
         public Cache(UnlockTable parent)
             : base(parent)
         {
@@ -621,6 +697,37 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
         {
             UpdateCollection();
             base.Update();
+        }
+
+        protected override void UpdateFilter()
+        {
+            if (!FilterDirty)
+                return;
+
+            var set = Parent._config.GroupUnlocksByModel
+                ? new HashSet<(FullEquipType, PrimaryId, SecondaryId, Variant)>(UnfilteredItems.Count)
+                : null;
+            // Add all items that are visible according to all filters.
+            FilteredItems.Clear();
+            foreach (var (idx, item) in UnfilteredItems.Index())
+            {
+                if (WouldBeVisible(item, idx) && CheckGrouping(item, set!))
+                    FilteredItems.Add(idx);
+            }
+
+            // Notify that we have filtered.
+            FilterDirty = false;
+            OnFilterUpdate();
+        }
+
+        private bool CheckGrouping(in UnlockCacheItem item, HashSet<(FullEquipType, PrimaryId, SecondaryId, Variant)> set)
+        {
+            if (!Parent._config.GroupUnlocksByModel)
+                return true;
+
+            var weapon = (item.Item.Type, item.Item.PrimaryId, item.Item.SecondaryId,
+                Parent._config.GroupUnlocksIgnoreVariants ? Variant.Zero : item.Item.Variant);
+            return set.Add(weapon);
         }
 
         private void UpdateCollection()
