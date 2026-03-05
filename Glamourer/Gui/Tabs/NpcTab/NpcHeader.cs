@@ -116,6 +116,7 @@ public sealed class NpcHeader : SplitButtonHeader
 
         protected override void PostDraw()
         {
+            using var style = Im.Style.PushDefault();
             if (!InputPopup.OpenName("Save as Design"u8, _newName, out var name))
                 return;
 
