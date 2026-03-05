@@ -15,6 +15,7 @@ public static class StaticServiceManager
     public static ServiceManager CreateProvider(IDalamudPluginInterface pi, Logger log, Glamourer glamourer)
     {
         var services = new ServiceManager(log)
+            .AddDalamudServices(pi)
             .AddExistingService(log)
             .AddSingleton<MessageService>()
             .AddSingleton<ActorObjectManager>()
@@ -24,7 +25,6 @@ public static class StaticServiceManager
         services.AddIServices(typeof(Glamourer).Assembly);
         services.AddIServices(typeof(ServiceManager).Assembly);
         services.AddSingleton<IGlamourerApi>(p => p.GetRequiredService<GlamourerApi>());
-        DalamudServices.AddServices(services, pi);
 
         services.BuildProvider();
         return services;
