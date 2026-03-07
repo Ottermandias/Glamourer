@@ -5,7 +5,7 @@ using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Gui.Tabs.SettingsTab;
-using Glamourer.State;
+using Glamourer.Services;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
@@ -19,9 +19,9 @@ public sealed class NpcPanel(
     CustomizationDrawer customizeDrawer,
     EquipmentDrawer equipmentDrawer,
     ActorObjectManager objects,
-    StateManager stateManager,
     LocalNpcAppearanceData favorites,
-    DesignColors designColors) : IPanel
+    DesignColors designColors,
+    DesignApplier designApplier) : IPanel
 {
     private readonly DesignColorCombo _combo = new(designColors, true);
 
@@ -96,36 +96,35 @@ public sealed class NpcPanel(
     private void DrawApplyToSelf()
     {
         var (id, data) = objects.PlayerData;
-        if (!ImEx.Button("Apply to Yourself"u8, Vector2.Zero,
-                "Apply the current NPC appearance to your character.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8,
-                !data.Valid))
-            return;
-
-        if (stateManager.GetOrCreate(id, data.Objects[0], out var state))
+        var canApply = designApplier.CanApplyTo(id, data);
+        var tt = canApply switch
         {
-            var design = selection.ToDesignBase();
-            stateManager.ApplyDesign(state, design, ApplySettings.Manual with { IsFinal = true });
-        }
+            DeniedApplicationReason.None =>
+                "Apply the current NPC appearance to your own character.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8,
+            DeniedApplicationReason.TargetInvalid or DeniedApplicationReason.TargetUnavailable => "Your character is unavailable."u8,
+            _                                                                                  => ""u8,
+        };
+
+        if (ImEx.Button("Apply to Yourself"u8, Vector2.Zero, tt, canApply is not DeniedApplicationReason.None))
+            designApplier.ApplyTo(selection.ToDesignBase(), id, data, false);
     }
 
     private void DrawApplyToTarget()
     {
         var (id, data) = objects.TargetData;
-        var tt = id.IsValid
-            ? data.Valid
-                ? "Apply the current NPC appearance to your current target.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8
-                : "The current target can not be manipulated."u8
-            : "No valid target selected."u8;
-        if (!ImEx.Button("Apply to Target"u8, Vector2.Zero, tt, !data.Valid))
-            return;
-
-        if (stateManager.GetOrCreate(id, data.Objects[0], out var state))
+        var canApply = designApplier.CanApplyTo(id, data);
+        var tt = canApply switch
         {
-            var design = selection.ToDesignBase();
-            stateManager.ApplyDesign(state, design, ApplySettings.Manual with { IsFinal = true });
-        }
+            DeniedApplicationReason.None =>
+                "Apply the current NPC appearance to your current target.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8,
+            DeniedApplicationReason.TargetUnavailable => "The current target can not be manipulated."u8,
+            DeniedApplicationReason.TargetInvalid     => "No valid target selected."u8,
+            DeniedApplicationReason.TargetNonHuman    => "Can not apply designs to non-humans."u8,
+            _                                         => ""u8,
+        };
+        if (ImEx.Button("Apply to Target"u8, Vector2.Zero, tt, canApply is not DeniedApplicationReason.None))
+            designApplier.ApplyTo(selection.ToDesignBase(), id, data, false);
     }
-
 
     private void DrawAppearanceInfo()
     {

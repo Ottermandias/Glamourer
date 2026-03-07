@@ -10,7 +10,7 @@ using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Materials;
 using Glamourer.Interop;
-using Glamourer.State;
+using Glamourer.Services;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
@@ -25,7 +25,6 @@ public class DesignPanel : IPanel
     private readonly DesignFileSystem         _fileSystem;
     private readonly DesignManager            _manager;
     private readonly ActorObjectManager       _objects;
-    private readonly StateManager             _state;
     private readonly EquipmentDrawer          _equipmentDrawer;
     private readonly ModAssociationsTab       _modAssociations;
     private readonly Configuration            _config;
@@ -35,12 +34,12 @@ public class DesignPanel : IPanel
     private readonly CustomizeParameterDrawer _parameterDrawer;
     private readonly DesignLinkDrawer         _designLinkDrawer;
     private readonly MaterialDrawer           _materials;
+    private readonly DesignApplier            _designApplier;
 
 
     public DesignPanel(CustomizationDrawer customizationDrawer,
         DesignManager manager,
         ActorObjectManager objects,
-        StateManager state,
         EquipmentDrawer equipmentDrawer,
         ModAssociationsTab modAssociations,
         Configuration config,
@@ -51,12 +50,12 @@ public class DesignPanel : IPanel
         CustomizeParameterDrawer parameterDrawer,
         DesignLinkDrawer designLinkDrawer,
         MaterialDrawer materials,
-        DesignFileSystem fileSystem)
+        DesignFileSystem fileSystem,
+        DesignApplier designApplier)
     {
         _customizationDrawer = customizationDrawer;
         _manager             = manager;
         _objects             = objects;
-        _state               = state;
         _equipmentDrawer     = equipmentDrawer;
         _modAssociations     = modAssociations;
         _config              = config;
@@ -67,6 +66,7 @@ public class DesignPanel : IPanel
         _designLinkDrawer    = designLinkDrawer;
         _materials           = materials;
         _fileSystem          = fileSystem;
+        _designApplier       = designApplier;
     }
 
 
@@ -507,34 +507,36 @@ public class DesignPanel : IPanel
     private void DrawApplyToSelf()
     {
         var (id, data) = _objects.PlayerData;
-        if (!ImEx.Button("Apply to Yourself"u8, Vector2.Zero,
-                "Apply the current design with its settings to your character.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8,
-                !data.Valid))
-            return;
-
-        if (_state.GetOrCreate(id, data.Objects[0], out var state))
+        var canApply = _designApplier.CanApplyTo(Selection.DesignData, id, data);
+        var tt = canApply switch
         {
-            using var _ = Selection.TemporarilyRestrictApplication(ApplicationCollection.FromKeys());
-            _state.ApplyDesign(state, Selection, ApplySettings.ManualWithLinks with { IsFinal = true });
-        }
+            DeniedApplicationReason.None =>
+                "Apply the current design with its settings to your own character.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8,
+            DeniedApplicationReason.SourceNonHuman                                             => "Can not apply non-human designs."u8,
+            DeniedApplicationReason.TargetInvalid or DeniedApplicationReason.TargetUnavailable => "Your character is unavailable."u8,
+            _                                                                                  => ""u8,
+        };
+
+        if (ImEx.Button("Apply to Yourself"u8, Vector2.Zero, tt, canApply is not DeniedApplicationReason.None))
+            _designApplier.ApplyTo(Selection, id, data, true);
     }
 
     private void DrawApplyToTarget()
     {
         var (id, data) = _objects.TargetData;
-        var tt = id.IsValid
-            ? data.Valid
-                ? "Apply the current design with its settings to your current target.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8
-                : "The current target can not be manipulated."u8
-            : "No valid target selected."u8;
-        if (!ImEx.Button("Apply to Target"u8, Vector2.Zero, tt, !data.Valid))
-            return;
-
-        if (_state.GetOrCreate(id, data.Objects[0], out var state))
+        var canApply = _designApplier.CanApplyTo(Selection.DesignData, id, data);
+        var tt = canApply switch
         {
-            using var _ = Selection.TemporarilyRestrictApplication(ApplicationCollection.FromKeys());
-            _state.ApplyDesign(state, Selection, ApplySettings.ManualWithLinks with { IsFinal = true });
-        }
+            DeniedApplicationReason.None =>
+                "Apply the current design with its settings to your current target.\nHold Control to only apply gear.\nHold Shift to only apply customizations."u8,
+            DeniedApplicationReason.TargetUnavailable => "The current target can not be manipulated."u8,
+            DeniedApplicationReason.TargetInvalid     => "No valid target selected."u8,
+            DeniedApplicationReason.SourceNonHuman    => "Can not apply non-human designs."u8,
+            DeniedApplicationReason.TargetNonHuman    => "Can not apply designs to non-humans."u8,
+            _                                         => ""u8,
+        };
+        if (ImEx.Button("Apply to Target"u8, Vector2.Zero, tt, canApply is not DeniedApplicationReason.None))
+            _designApplier.ApplyTo(Selection, id, data, true);
     }
 
     private void DrawSaveToDat()

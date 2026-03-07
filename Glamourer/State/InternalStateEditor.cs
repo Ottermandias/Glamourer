@@ -34,6 +34,10 @@ public class InternalStateEditor(
             return false;
 
         var oldIsHuman = state.ModelData.IsHuman;
+        // Do not allow turning non-humans human anymore.
+        if (!oldIsHuman)
+            return false;
+
         state.ModelData.IsHuman = humans.IsHuman(modelId);
         if (state.ModelData.IsHuman)
         {

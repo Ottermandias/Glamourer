@@ -205,18 +205,25 @@ public class DesignBase
 
     internal readonly struct FlagRestrictionResetter : IDisposable
     {
-        private readonly DesignBase            _design;
-        private readonly ApplicationCollection _oldFlags;
+        public static readonly FlagRestrictionResetter Nothing = default;
+
+        private readonly       DesignBase              _design;
+        private readonly       ApplicationCollection   _oldFlags;
+        private readonly       bool                    _alive;
 
         public FlagRestrictionResetter(DesignBase d, ApplicationCollection restrictions)
         {
             _design             = d;
             _oldFlags           = d.Application;
             _design.Application = restrictions.Restrict(_oldFlags);
+            _alive              = true;
         }
 
         public void Dispose()
-            => _design.Application = _oldFlags;
+        {
+            if (_alive)
+                _design.Application = _oldFlags;
+        }
     }
 
     private CustomizeSet SetCustomizationSet(CustomizeService customize)
@@ -285,7 +292,7 @@ public class DesignBase
         foreach (var slot in BonusExtensions.AllFlags)
         {
             var item = _designData.BonusItem(slot);
-            ret[slot.ToString()] = new JObject()
+            ret[slot.ToString()] = new JObject
             {
                 ["BonusId"] = item.Id.Id,
                 ["Apply"]   = DoApplyBonusItem(slot),
@@ -297,7 +304,7 @@ public class DesignBase
 
     protected JObject SerializeCustomize()
     {
-        var ret = new JObject()
+        var ret = new JObject
         {
             ["ModelId"] = _designData.ModelId,
         };
@@ -306,7 +313,7 @@ public class DesignBase
         if (_designData.IsHuman)
             foreach (var idx in CustomizeIndex.Values)
             {
-                ret[idx.ToString()] = new JObject()
+                ret[idx.ToString()] = new JObject
                 {
                     ["Value"] = customize[idx].Value,
                     ["Apply"] = Application.Customize.HasFlag(idx.ToFlag()),
@@ -315,7 +322,7 @@ public class DesignBase
         else
             ret["Array"] = customize.WriteBase64();
 
-        ret["Wetness"] = new JObject()
+        ret["Wetness"] = new JObject
         {
             ["Value"] = _designData.IsWet(),
             ["Apply"] = DoApplyMeta(MetaIndex.Wetness),
@@ -330,7 +337,7 @@ public class DesignBase
 
         foreach (var flag in CustomizeParameterExtensions.ValueFlags)
         {
-            ret[flag.ToString()] = new JObject()
+            ret[flag.ToString()] = new JObject
             {
                 ["Value"] = DesignData.Parameters[flag][0],
                 ["Apply"] = DoApplyParameter(flag),
@@ -339,7 +346,7 @@ public class DesignBase
 
         foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
         {
-            ret[flag.ToString()] = new JObject()
+            ret[flag.ToString()] = new JObject
             {
                 ["Percentage"] = DesignData.Parameters[flag][0],
                 ["Apply"]      = DoApplyParameter(flag),
@@ -348,7 +355,7 @@ public class DesignBase
 
         foreach (var flag in CustomizeParameterExtensions.RgbFlags)
         {
-            ret[flag.ToString()] = new JObject()
+            ret[flag.ToString()] = new JObject
             {
                 ["Red"]   = DesignData.Parameters[flag][0],
                 ["Green"] = DesignData.Parameters[flag][1],
@@ -359,7 +366,7 @@ public class DesignBase
 
         foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
         {
-            ret[flag.ToString()] = new JObject()
+            ret[flag.ToString()] = new JObject
             {
                 ["Red"]   = DesignData.Parameters[flag][0],
                 ["Green"] = DesignData.Parameters[flag][1],
