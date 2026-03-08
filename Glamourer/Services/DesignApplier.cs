@@ -4,7 +4,6 @@ using Luna;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Interop;
-using Penumbra.GameData.Structs;
 
 namespace Glamourer.Services;
 
