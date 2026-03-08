@@ -126,7 +126,7 @@ public class DesignMerger(
         StateSource source)
     {
         parameterFlags &= ~ret.Design.Application.Parameters;
-        if (parameterFlags == 0)
+        if (parameterFlags is 0)
             return;
 
         foreach (var flag in CustomizeParameterExtensions.AllFlags)
@@ -144,7 +144,7 @@ public class DesignMerger(
         bool respectOwnership)
     {
         equipFlags &= ~ret.Design.Application.Equip;
-        if (equipFlags == 0)
+        if (equipFlags is 0)
             return;
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
@@ -169,22 +169,25 @@ public class DesignMerger(
             }
         }
 
-        foreach (var slot in EquipSlotExtensions.WeaponSlots)
+        if (equipFlags.HasFlag(EquipFlag.MainhandStain))
         {
-            var stainFlag = slot.ToStainFlag();
-            if (equipFlags.HasFlag(stainFlag))
-            {
-                ret.Design.GetDesignDataRef().SetStain(slot, design.Stain(slot));
-                ret.Design.SetApplyStain(slot, true);
-                ret.Sources[slot, true] = source;
-            }
+            ret.Design.GetDesignDataRef().SetStain(EquipSlot.MainHand, design.Stain(EquipSlot.MainHand));
+            ret.Design.SetApplyStain(EquipSlot.MainHand, true);
+            ret.Sources[EquipSlot.MainHand, true] = source;
+        }
+
+        if (equipFlags.HasFlag(EquipFlag.OffhandStain) && design.MainhandType.ValidOffhand() is not FullEquipType.Unknown)
+        {
+            ret.Design.GetDesignDataRef().SetStain(EquipSlot.OffHand, design.Stain(EquipSlot.OffHand));
+            ret.Design.SetApplyStain(EquipSlot.OffHand, true);
+            ret.Sources[EquipSlot.OffHand, true] = source;
         }
     }
 
     private void ReduceBonusItems(in DesignData design, BonusItemFlag bonusItems, MergedDesign ret, StateSource source, bool respectOwnership)
     {
         bonusItems &= ~ret.Design.Application.BonusItem;
-        if (bonusItems == 0)
+        if (bonusItems is 0)
             return;
 
         foreach (var slot in BonusExtensions.AllFlags.Where(b => bonusItems.HasFlag(b)))
@@ -220,6 +223,9 @@ public class DesignMerger(
         bool respectOwnership)
     {
         if (!equipFlags.HasFlag(EquipFlag.Offhand))
+            return;
+
+        if (design.MainhandType.ValidOffhand() is FullEquipType.Unknown && !equipFlags.HasFlag(EquipFlag.Mainhand))
             return;
 
         var weapon = design.Item(EquipSlot.OffHand);
