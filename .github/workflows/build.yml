@@ -1,0 +1,22 @@
+name: .NET Build
+
+on:
+  push:
+    branches-ignore: master
+    tags-ignore: '*'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Prepare Environment
+        uses: xivdev/Penumbra/.github/actions/prepare-environment@master
+      - name: Build and Upload Artifact
+        uses: xivdev/Penumbra/.github/actions/build-with-artifact@master
+        with:
+          project: Glamourer
