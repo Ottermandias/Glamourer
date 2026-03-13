@@ -36,10 +36,9 @@ public sealed class DeleteSelectionButton(DesignFileSystem fileSystem, DesignMan
     /// <inheritdoc/>
     public override void OnClick()
     {
-        foreach (var node in fileSystem.Selection.DataNodes.ToArray())
-        {
-            if (node.GetValue<Design>() is { } design)
-                manager.Delete(design);
-        }
+        var designs = fileSystem.Selection.DataNodes.Select(n => n.Value).OfType<Design>().ToList();
+        fileSystem.Selection.UnselectAll();
+        foreach (var design in designs)
+            manager.Delete(design);
     }
 }
