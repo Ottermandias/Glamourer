@@ -2,7 +2,7 @@ name: .NET Build
 
 on:
   push:
-    branches-ignore: master
+    branches-ignore: main
     tags-ignore: '*'
   pull_request:
 
