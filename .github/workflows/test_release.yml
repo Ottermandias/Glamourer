@@ -35,4 +35,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           project: Glamourer
           version: ${{ github.ref_name }}
+          branch: main
           testing: true
