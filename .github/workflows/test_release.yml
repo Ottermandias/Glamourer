@@ -16,6 +16,7 @@ jobs:
         uses: xivdev/Penumbra/.github/actions/prepare-environment@master
         with:
           dalamud-distrib: stg/
+          project: Glamourer
       - name: Build and Upload Artifact
         uses: xivdev/Penumbra/.github/actions/build-with-artifact@master
         with:

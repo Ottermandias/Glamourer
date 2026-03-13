@@ -16,6 +16,8 @@ jobs:
           submodules: recursive
       - name: Prepare Environment
         uses: xivdev/Penumbra/.github/actions/prepare-environment@master
+        with:
+          project: Glamourer
       - name: Build and Upload Artifact
         uses: xivdev/Penumbra/.github/actions/build-with-artifact@master
         with:
