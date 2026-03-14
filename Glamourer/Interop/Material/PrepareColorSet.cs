@@ -37,7 +37,7 @@ public sealed unsafe class PrepareColorSet
         _task            = hooks.CreateHook<Delegate>(Name, Sigs.PrepareColorSet, Detour, true);
     }
 
-    private readonly Task<Hook<Delegate>> _task;
+    private readonly Task<Hook<Delegate>?> _task;
 
     public nint Address
         => (nint)CharacterBase.MemberFunctionPointers.Destroy;
@@ -45,14 +45,14 @@ public sealed unsafe class PrepareColorSet
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        _task.Result.Dispose();
+        _task.Result?.Dispose();
     }
 
     public void Enable()
-        => _task.Result.Enable();
+        => _task.Result?.Enable();
 
     public void Disable()
-        => _task.Result.Disable();
+        => _task.Result?.Disable();
 
     public Task Awaiter
         => _task;
@@ -67,7 +67,7 @@ public sealed unsafe class PrepareColorSet
         Glamourer.Log.Excessive($"[{Name}] Triggered with 0x{(nint)material:X} {stainId1.Id} {stainId2.Id}.");
         var characterBase = _createNewModel.Get();
         if (!characterBase.IsCharacterBase)
-            return _task.Result.Original(material, stainId1, stainId2);
+            return _task.Result!.Original(material, stainId1, stainId2);
 
         var ret      = nint.Zero;
         var stainIds = new StainIds(stainId1, stainId2);
@@ -75,7 +75,7 @@ public sealed unsafe class PrepareColorSet
         if (ret != nint.Zero)
             return (Texture*)ret;
 
-        return _task.Result.Original(material, stainIds.Stain1, stainIds.Stain2);
+        return _task.Result!.Original(material, stainIds.Stain1, stainIds.Stain2);
     }
 
     public static bool TryGetColorTable(MaterialResourceHandle* material, StainIds stainIds,

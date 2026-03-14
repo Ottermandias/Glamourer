@@ -16,7 +16,7 @@ public sealed class CreateNewModel : FastHook<CreateNewModel.Delegate>
     private void Detour(Model model, uint modelSlot)
     {
         _updatingModel.Value = model;
-        Task.Result.Original(model, modelSlot);
+        Task.Result!.Original(model, modelSlot);
         _updatingModel.Value = Model.Null;
     }
 
