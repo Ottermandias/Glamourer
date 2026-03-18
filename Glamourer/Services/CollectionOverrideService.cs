@@ -58,7 +58,7 @@ public sealed class CollectionOverrideService : IService, ISavable
     {
         var (identifier, id, name) = _overrides[idx];
         var collection = _penumbra.CollectionByIdentifier(id.ToString());
-        if (collection == null)
+        if (collection is null)
             return (false, identifier, id, name);
 
         if (collection.Value.Name == name)
@@ -187,13 +187,14 @@ public sealed class CollectionOverrideService : IService, ISavable
         }
     }
 
-    public void Save(StreamWriter writer)
+    public void Save(Stream stream)
     {
         var jObj = new JObject
         {
             ["Version"]   = Version,
             ["Overrides"] = SerializeOverrides(),
         };
+        using var writer = new StreamWriter(stream);
         using var j = new JsonTextWriter(writer);
         j.Formatting = Formatting.Indented;
         jObj.WriteTo(j);

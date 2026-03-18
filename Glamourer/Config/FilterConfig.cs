@@ -1,9 +1,9 @@
-﻿using Glamourer.Gui.Tabs.UnlocksTab;
+﻿using System.Text.Json;
+using Glamourer.Gui.Tabs.UnlocksTab;
 using Glamourer.Services;
 using ImSharp;
 using Luna;
 using Luna.Generators;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -26,11 +26,11 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
     public override int CurrentVersion
         => 1;
 
-    protected override void AddData(JsonTextWriter j)
+    protected override void AddData(Utf8JsonWriter j)
     {
-        WriteFilter(j, ActorFilter,  "Actors");
-        WriteFilter(j, DesignFilter, "Designs");
-        WriteFilter(j, NpcFilter,    "Npcs");
+        WriteFilter(j, ActorFilter,  "Actors"u8);
+        WriteFilter(j, DesignFilter, "Designs"u8);
+        WriteFilter(j, NpcFilter,    "Npcs"u8);
         WriteAutomation(j);
         WriteUnlocksTab(j);
     }
@@ -99,46 +99,22 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
     [ConfigProperty]
     private YesNoFlag _unlocksCrestFilter = YesNoFlag.Either;
 
-    private void WriteUnlocksTab(JsonTextWriter j)
+    private void WriteUnlocksTab(Utf8JsonWriter j)
     {
-        var obj = new JObject();
-        if (UnlocksFavoriteFilter is not YesNoFlagExtensions.Either)
-            obj["Favorite"] = (uint)UnlocksFavoriteFilter;
-        if (UnlocksCrestFilter is not YesNoFlagExtensions.Either)
-            obj["Crest"] = (uint)UnlocksCrestFilter;
-        if (UnlocksTradableFilter is not YesNoFlagExtensions.Either)
-            obj["Tradable"] = (uint)UnlocksTradableFilter;
-        if (UnlocksUnlockedFilter is not YesNoFlagExtensions.Either)
-            obj["Unlocked"] = (uint)UnlocksUnlockedFilter;
-
-        if (UnlocksModdedFilter is not UnlockCacheItem.ModdedAll)
-            obj["Modded"] = (uint)UnlocksModdedFilter;
-
-        if (UnlocksDyabilityFilter is not UnlockCacheItem.DyableAll)
-            obj["Dyability"] = (uint)UnlocksDyabilityFilter;
-
-        if (UnlocksSlotFilter is not UnlockCacheItem.SlotsAll)
-            obj["Slot"] = (uint)UnlocksSlotFilter;
-
-        if (UnlocksJobFilter != _jobs.AllAvailableJobs)
-            obj["Job"] = (ulong)UnlocksJobFilter;
-
-        if (UnlocksLevelFilter.Length > 0)
-            obj["Level"] = UnlocksLevelFilter;
-        if (UnlocksModelDataFilter.Length > 0)
-            obj["ModelData"] = UnlocksModelDataFilter;
-        if (UnlocksItemIdFilter.Length > 0)
-            obj["ItemId"] = UnlocksItemIdFilter;
-        if (UnlocksNameFilter.Length > 0)
-            obj["Name"] = UnlocksNameFilter;
-        if (UnlocksTypeFilter.Length > 0)
-            obj["Type"] = UnlocksTypeFilter;
-
-        if (obj.Count <= 0)
-            return;
-
-        j.WritePropertyName("Unlocks");
-        obj.WriteTo(j);
+        using var tmp = j.TemporaryObject("Unlocks"u8);
+        tmp.WriteUnsignedIfNot("Favorite"u8,  UnlocksFavoriteFilter,  YesNoFlagExtensions.Either);
+        tmp.WriteUnsignedIfNot("Crest"u8,     UnlocksCrestFilter,     YesNoFlagExtensions.Either);
+        tmp.WriteUnsignedIfNot("Tradable"u8,  UnlocksTradableFilter,  YesNoFlagExtensions.Either);
+        tmp.WriteUnsignedIfNot("Unlocked"u8,  UnlocksUnlockedFilter,  YesNoFlagExtensions.Either);
+        tmp.WriteUnsignedIfNot("Modded"u8,    UnlocksModdedFilter,    UnlockCacheItem.ModdedAll);
+        tmp.WriteUnsignedIfNot("Dyability"u8, UnlocksDyabilityFilter, UnlockCacheItem.DyableAll);
+        tmp.WriteUnsignedIfNot("Slot"u8,      UnlocksSlotFilter,      UnlockCacheItem.SlotsAll);
+        tmp.WriteUnsignedIfNot("Job"u8,       UnlocksJobFilter,       _jobs.AllAvailableJobs);
+        tmp.WriteNonEmptyString("Level"u8,     UnlocksLevelFilter);
+        tmp.WriteNonEmptyString("ModelData"u8, UnlocksModelDataFilter);
+        tmp.WriteNonEmptyString("ItemId"u8,    UnlocksItemIdFilter);
+        tmp.WriteNonEmptyString("Name"u8,      UnlocksNameFilter);
+        tmp.WriteNonEmptyString("Type"u8,      UnlocksTypeFilter);
     }
 
     private void LoadUnlocksTab(JObject j)
@@ -165,37 +141,22 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
     public override string ToFilePath(FilenameService fileNames)
         => fileNames.FilterFile;
 
-    private void WriteAutomation(JsonTextWriter j)
+    private void WriteAutomation(Utf8JsonWriter j)
     {
-        if (AutomationStateFilter is null && AutomationFilter.Length is 0)
-            return;
-
-        j.WritePropertyName("Automation");
-        j.WriteStartObject();
+        using var tmp = j.TemporaryObject("Automation"u8);
         if (AutomationStateFilter is not null)
-        {
-            j.WritePropertyName("State");
-            j.WriteValue(AutomationStateFilter.Value);
-        }
-
-        if (AutomationFilter.Length > 0)
-        {
-            j.WritePropertyName("Filter");
-            j.WriteValue(AutomationFilter);
-        }
-
-        j.WriteEndObject();
+            j.WriteBoolean("State"u8, AutomationStateFilter.Value);
+        tmp.WriteNonEmptyString("Filter"u8, AutomationFilter);
     }
 
-    private static void WriteFilter(JsonTextWriter j, string filter, string tabName)
+    private static void WriteFilter(Utf8JsonWriter j, string filter, ReadOnlySpan<byte> tabName)
     {
         if (filter.Length is 0)
             return;
 
         j.WritePropertyName(tabName);
         j.WriteStartObject();
-        j.WritePropertyName("Filter");
-        j.WriteValue(filter);
+        j.WriteString("Filter"u8, filter);
         j.WriteEndObject();
     }
 }

@@ -341,9 +341,10 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
     public string ToFilePath(FilenameService fileNames)
         => fileNames.DesignFile(this);
 
-    public void Save(StreamWriter writer)
+    public void Save(Stream stream)
     {
-        using var j = new JsonTextWriter(writer);
+        using var writer = new StreamWriter(stream);
+        using var j      = new JsonTextWriter(writer);
         j.Formatting = Formatting.Indented;
         var obj = JsonSerialize();
         obj.WriteTo(j);

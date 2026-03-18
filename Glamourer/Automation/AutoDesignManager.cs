@@ -382,9 +382,10 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
     public string ToFilePath(FilenameService fileNames)
         => fileNames.AutomationFile;
 
-    public void Save(StreamWriter writer)
+    public void Save(Stream stream)
     {
-        using var j = new JsonTextWriter(writer);
+        using var writer = new StreamWriter(stream);
+        using var j      = new JsonTextWriter(writer);
         j.Formatting = Formatting.Indented;
         Serialize().WriteTo(j);
     }

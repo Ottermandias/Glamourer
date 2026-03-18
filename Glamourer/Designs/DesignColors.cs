@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Gui;
 using Glamourer.Services;
@@ -79,19 +80,20 @@ public sealed class DesignColors : ISavable, IReadOnlyDictionary<string, Rgba32>
     public string ToFilePath(FilenameService fileNames)
         => fileNames.DesignColorFile;
 
-    public void Save(StreamWriter writer)
+    public void Save(Stream stream)
     {
-        var dict = new JObject();
-        foreach (var (name, color) in _colors)
-            dict[name] = color.Color;
-        var jObj = new JObject
+        using var j    = new Utf8JsonWriter(stream, JsonFunctions.WriterOptions);
+        j.WriteStartObject();
+        j.WriteNumber("Version"u8, 1);
+        j.WriteNumber("MissingColor"u8, MissingColor.Color);
+        if (_colors.Count > 0)
         {
-            ["Version"]      = 1,
-            ["MissingColor"] = MissingColor.Color,
-            ["Definitions"]  = dict,
-        };
-
-        writer.Write(jObj.ToString(Formatting.Indented));
+            j.WritePropertyName("Definitions"u8);
+            j.WriteStartObject();
+            foreach(var (name, color) in _colors)
+                j.WriteNumber(name, color.Color);
+            j.WriteEndObject();
+        }
     }
 
     private void Load()

@@ -262,8 +262,11 @@ public sealed class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictiona
     public void Save()
         => _saveService.DelaySave(this, TimeSpan.FromSeconds(10));
 
-    public void Save(StreamWriter writer)
-        => UnlockDictionaryHelpers.Save(writer, _unlocked);
+    public void Save(Stream stream)
+    {
+        using var writer = new StreamWriter(stream);
+        UnlockDictionaryHelpers.Save(writer, _unlocked);
+    }
 
     private void Load()
     {

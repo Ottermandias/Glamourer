@@ -1,4 +1,5 @@
-﻿using Glamourer.Services;
+﻿using System.Text.Json;
+using Glamourer.Services;
 using Luna;
 using Luna.Generators;
 using Newtonsoft.Json;
@@ -43,28 +44,19 @@ public sealed partial class UiConfig : ConfigurationFile<FilenameService>
     public override int CurrentVersion
         => 1;
 
-    protected override void AddData(JsonTextWriter j)
+    protected override void AddData(Utf8JsonWriter j)
     {
-        ActorsTabScale.WriteJson(j, "ActorsTab");
-        DesignsTabScale.WriteJson(j, "DesignsTab");
-        AutomationTabScale.WriteJson(j, "AutomationTab");
-        NpcTabScale.WriteJson(j, "NpcTab");
-        if (_selectedNpc.Id is not 0)
-        {
-            j.WritePropertyName("SelectedNpc");
-            j.WriteValue(_selectedNpc);
-        }
-
-        if (_selectedAutomationIndex >= 0)
-        {
-            j.WritePropertyName("SelectedAutomationIndex");
-            j.WriteValue(_selectedAutomationIndex);
-        }
-
+        ActorsTabScale.WriteJson(j, "ActorsTab"u8);
+        DesignsTabScale.WriteJson(j, "DesignsTab"u8);
+        AutomationTabScale.WriteJson(j, "AutomationTab"u8);
+        NpcTabScale.WriteJson(j, "NpcTab"u8);
+        j.WriteUnsignedIfNot("SelectedNpc"u8, _selectedNpc, NpcId.Zero);
+        j.WriteSignedIfNot("SelectedAutomationIndex"u8, _selectedAutomationIndex, -1);
         if (_selectedActor.IsValid)
         {
-            j.WritePropertyName("SelectedActor");
-            _selectedActor.ToJson().WriteTo(j);
+            // TODO
+            j.WritePropertyName("SelectedActor"u8);
+            j.WriteRawValue(_selectedActor.ToJson().ToString(Formatting.Indented));
         }
     }
 

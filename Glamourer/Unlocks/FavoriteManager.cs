@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.ImGuiNotification;
+﻿using System.Text.Json;
+using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Services;
 using Luna;
 using Newtonsoft.Json;
@@ -100,38 +101,47 @@ public sealed class FavoriteManager : ISavable, IService
     private void Save()
         => _saveService.DelaySave(this);
 
-    public void Save(StreamWriter writer)
+    public void Save(Stream stream)
     {
-        using var j = new JsonTextWriter(writer);
-        j.Formatting = Formatting.Indented;
+        using var j = new Utf8JsonWriter(stream, JsonFunctions.WriterOptions);
         j.WriteStartObject();
 
-        j.WritePropertyName(nameof(LoadIntermediary.Version));
-        j.WriteValue(CurrentVersion);
+        j.WriteNumber("Version"u8, CurrentVersion);
+        if (_favorites.Count > 0)
+        {
+            j.WritePropertyName("FavoriteItems"u8);
+            j.WriteStartArray();
+            foreach (var item in _favorites)
+                j.WriteNumberValue(item.Id);
+            j.WriteEndArray();
+        }
 
-        j.WritePropertyName(nameof(LoadIntermediary.FavoriteItems));
-        j.WriteStartArray();
-        foreach (var item in _favorites)
-            j.WriteValue(item.Id);
-        j.WriteEndArray();
+        if (_favoriteColors.Count > 0)
+        {
+            j.WritePropertyName("FavoriteColors"u8);
+            j.WriteStartArray();
+            foreach (var color in _favoriteColors)
+                j.WriteNumberValue(color.Id);
+            j.WriteEndArray();
+        }
 
-        j.WritePropertyName(nameof(LoadIntermediary.FavoriteColors));
-        j.WriteStartArray();
-        foreach (var stain in _favoriteColors)
-            j.WriteValue(stain.Id);
-        j.WriteEndArray();
+        if (_favoriteHairStyles.Count > 0)
+        {
+            j.WritePropertyName("FavoriteHairStyles"u8);
+            j.WriteStartArray();
+            foreach (var hairStyle in _favoriteHairStyles)
+                j.WriteNumberValue(hairStyle.ToValue());
+            j.WriteEndArray();
+        }
 
-        j.WritePropertyName(nameof(LoadIntermediary.FavoriteHairStyles));
-        j.WriteStartArray();
-        foreach (var hairStyle in _favoriteHairStyles)
-            j.WriteValue(hairStyle.ToValue());
-        j.WriteEndArray();
-
-        j.WritePropertyName(nameof(LoadIntermediary.FavoriteBonusItems));
-        j.WriteStartArray();
-        foreach (var item in _favoriteBonusItems)
-            j.WriteValue(item.Id);
-        j.WriteEndArray();
+        if (_favoriteBonusItems.Count > 0)
+        {
+            j.WritePropertyName("FavoriteBonusItems"u8);
+            j.WriteStartArray();
+            foreach (var item in _favoriteBonusItems)
+                j.WriteNumberValue(item.Id);
+            j.WriteEndArray();
+        }
 
         j.WriteEndObject();
     }

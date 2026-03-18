@@ -160,8 +160,9 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     public string ToFilePath(FilenameService fileNames)
         => fileNames.ConfigurationFile;
 
-    public void Save(StreamWriter writer)
+    public void Save(Stream stream)
     {
+        using var writer = new StreamWriter(stream);
         using var jWriter = new JsonTextWriter(writer);
         jWriter.Formatting = Formatting.Indented;
         var serializer = new JsonSerializer { Formatting = Formatting.Indented };

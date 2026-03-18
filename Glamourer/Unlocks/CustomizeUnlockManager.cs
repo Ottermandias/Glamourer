@@ -166,8 +166,11 @@ public sealed class CustomizeUnlockManager : IDisposable, ISavable, IRequiredSer
     public void Save()
         => _saveService.QueueSave(this);
 
-    public void Save(StreamWriter writer)
-        => UnlockDictionaryHelpers.Save(writer, Unlocked);
+    public void Save(Stream stream)
+    {
+        using var writer = new StreamWriter(stream);
+        UnlockDictionaryHelpers.Save(writer, Unlocked);
+    }
 
     private void Load()
         => UnlockDictionaryHelpers.Load(ToFilePath(_saveService.FileNames), _unlocked, id => Unlockable.Any(c => c.Value.Data == id),

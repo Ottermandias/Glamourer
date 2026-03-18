@@ -97,8 +97,9 @@ public sealed class LocalNpcAppearanceData : ISavable, IUiService
     public string ToFilePath(FilenameService fileNames)
         => fileNames.NpcAppearanceFile;
 
-    public void Save(StreamWriter writer)
+    public void Save(Stream stream)
     {
+        using var writer = new StreamWriter(stream);
         var jObj = new JObject()
         {
             ["Version"] = 1,

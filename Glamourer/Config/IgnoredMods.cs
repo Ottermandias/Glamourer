@@ -1,6 +1,6 @@
-﻿using Glamourer.Services;
+﻿using System.Text.Json;
+using Glamourer.Services;
 using Luna;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Config;
@@ -18,12 +18,12 @@ public sealed class IgnoredMods : ConfigurationFile<FilenameService>, IReadOnlyS
         Load();
     }
 
-    protected override void AddData(JsonTextWriter j)
+    protected override void AddData(Utf8JsonWriter j)
     {
-        j.WritePropertyName("IgnoredMods");
+        j.WritePropertyName("IgnoredMods"u8);
         j.WriteStartArray();
         foreach (var mod in _ignoredMods)
-            j.WriteValue(mod);
+            j.WriteStringValue(mod);
         j.WriteEndArray();
     }
 
