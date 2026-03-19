@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
+using Glamourer.Designs.History;
 using Glamourer.Events;
 using Glamourer.Services;
 using Luna;
@@ -36,15 +37,16 @@ public sealed class DesignFileSystem : BaseFileSystem, IDisposable, IRequiredSer
             case DesignChanged.Type.ReloadedAll: _saver.Load(); break;
             case DesignChanged.Type.Created:
                 var parent = Root;
-                if (arguments.Design.Path.Folder.Length > 0)
+                var folder = (arguments.Transaction as CreationTransaction)?.Path ?? arguments.Design.Path.Folder;
+                if (folder.Length > 0)
                     try
                     {
-                        parent = FindOrCreateAllFolders(arguments.Design.Path.Folder);
+                        parent = FindOrCreateAllFolders(folder);
                     }
                     catch (Exception ex)
                     {
                         Glamourer.Messager.NotificationMessage(ex,
-                            $"Could not move design to {arguments.Design.Path} because the folder could not be created.",
+                            $"Could not move design to {folder} because the folder could not be created.",
                             NotificationType.Error);
                     }
 
