@@ -1,7 +1,5 @@
 ﻿using Glamourer.Automation;
-using Glamourer.Events;
 using ImSharp;
-using Luna;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 

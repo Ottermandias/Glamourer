@@ -1,8 +1,6 @@
 ﻿using Glamourer.Designs;
 using Glamourer.Designs.Special;
-using Glamourer.GameData;
 using Newtonsoft.Json.Linq;
-using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 

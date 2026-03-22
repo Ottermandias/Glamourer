@@ -27,6 +27,15 @@ public sealed class AutomationChanged(Logger log)
         /// <summary> Change the identifier a given set is associated with to another one. </summary>
         ChangeIdentifier,
 
+        /// <summary> Changed the priority for secondary identifiers for a given set. </summary>
+        ChangedSetPriority,
+
+        /// <summary> Added a secondary identifier to a given set. </summary>
+        AddedSecondaryIdentifier,
+
+        /// <summary> Removed a secondary identifier from a given set. </summary>
+        RemovedSecondaryIdentifier,
+
         /// <summary> Toggle the enabled state of a given set. </summary>
         ToggleSet,
 
@@ -56,11 +65,14 @@ public sealed class AutomationChanged(Logger log)
 
         /// <summary> Change the additional data for a specific design type. </summary>
         ChangedData,
+
+        /// <summary> Invoked when the active sets are updated. </summary>
+        UpdatedActiveSets,
     }
 
     public enum Priority
     {
-        /// <seealso cref="Gui.Tabs.AutomationTab.AutoDesignCache.OnAutomationChanged"/>
+        /// <seealso cref="Gui.Tabs.AutomationTab.SetPanel.AutoDesignCache.OnAutomationChanged"/>
         AutoDesignCache = 0,
 
         /// <seealso cref="Gui.Tabs.AutomationTab.AutomationSelection.OnAutomationChanged"/>
@@ -102,6 +114,11 @@ public sealed class AutomationChanged(Logger log)
     /// <param name="NewIndex"> The index the set was moved to. </param>
     public sealed record MovedSetArguments(AutoDesignSet Set, int OldIndex, int NewIndex) : Arguments(Type.MovedSet, Set);
 
+    /// <param name="Set"> The set that got its priority changed. </param>
+    /// <param name="Index"> The index of the changed set from. </param>
+    /// <param name="OldPriority"> The old priority before the change. </param>
+    public sealed record ChangeSetPriorityArguments(AutoDesignSet Set, int Index, int OldPriority) : Arguments(Type.ChangedSetPriority, Set);
+
     /// <param name="Set"> The set that got its associated identifiers changed. </param>
     /// <param name="OldIdentifiers"> The prior identifiers that got removed. </param>
     /// <param name="NewIdentifier"> The new identifiers associated with the set. </param>
@@ -112,6 +129,12 @@ public sealed class AutomationChanged(Logger log)
         ActorIdentifier NewIdentifier,
         AutoDesignSet? DisabledSet) : Arguments(Type.ChangeIdentifier, Set);
 
+    /// <param name="Set"> The set that got its secondary identifiers changed. </param>
+    /// <param name="Identifiers"> The added or removed identifier group. </param>
+    /// <param name="RemovedIndex"> The prior index of the removed group or -1 for additions. </param>
+    public sealed record SecondaryIdentifierArguments(AutoDesignSet Set, ActorIdentifier[] Identifiers, int RemovedIndex)
+        : Arguments(RemovedIndex is -1 ? Type.AddedSecondaryIdentifier : Type.RemovedSecondaryIdentifier, Set);
+
     /// <param name="Set"> The set that got toggled on or off. </param>
     /// <param name="DisabledSet"> A set with the same association that got disabled due to this change, or null. </param>
     public sealed record ToggleSetArguments(AutoDesignSet Set, AutoDesignSet? DisabledSet) : Arguments(Type.ToggleSet, Set);
@@ -119,11 +142,13 @@ public sealed class AutomationChanged(Logger log)
     /// <param name="Set"> The set that changed its base state. </param>
     /// <param name="OldBase"> The old base state of the set. </param>
     /// <param name="NewBase"> The new base state of the set. </param>
-    public sealed record ChangedBaseArguments(AutoDesignSet Set, AutoDesignSet.Base OldBase, AutoDesignSet.Base NewBase) : Arguments(Type.ChangedBase, Set);
+    public sealed record ChangedBaseArguments(AutoDesignSet Set, AutoDesignSet.Base OldBase, AutoDesignSet.Base NewBase)
+        : Arguments(Type.ChangedBase, Set);
 
     /// <param name="Set"> The set that changed whether it resets all temporary settings. </param>
     /// <param name="NewValue"> The new state of resetting temporary settings. </param>
-    public sealed record ChangedTemporarySettingsResetArguments(AutoDesignSet Set, bool NewValue) : Arguments(Type.ChangedTemporarySettingsReset, Set);
+    public sealed record ChangedTemporarySettingsResetArguments(AutoDesignSet Set, bool NewValue)
+        : Arguments(Type.ChangedTemporarySettingsReset, Set);
 
     /// <param name="Set"> The set that added a new design. </param>
     /// <param name="Index"> The index the new design was added in the set. </param>
@@ -163,4 +188,8 @@ public sealed class AutomationChanged(Logger log)
     /// <param name="DesignIndex"> The index of the changed design. </param>
     /// <param name="NewData"> The new additional data for the changed design. </param>
     public sealed record ChangedDataArguments(AutoDesignSet Set, int DesignIndex, object NewData) : Arguments(Type.ChangedData, Set);
+
+    /// <summary> Invoked when the active sets are updated. </summary>
+    /// <param name="ChangedSets"> All changed assignments. </param>
+    public sealed record UpdatedActiveSetsArguments(List<(ActorIdentifier, AutoDesignSet? Old, AutoDesignSet? New)> ChangedSets) : Arguments(Type.UpdatedActiveSets, null!);
 }

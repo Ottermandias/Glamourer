@@ -120,48 +120,31 @@ public sealed class AutoDesignApplier : IDisposable, IRequiredService
 
     private void OnAutomationChange(in AutomationChanged.Arguments arguments)
     {
-        if (!_config.EnableAutoDesigns)
+        if (!_config.EnableAutoDesigns || arguments is not AutomationChanged.UpdatedActiveSetsArguments args)
             return;
 
-        switch (arguments.Type)
+        foreach (var (id, old, @new) in args.ChangedSets)
         {
-            // The automation set was disabled or deleted, no other for those identifiers can be enabled, remove existing Fixed Locks.
-            case AutomationChanged.Type.ToggleSet when !arguments.Set.Enabled:
-            case AutomationChanged.Type.DeletedDesign when arguments.Set.Enabled:
-                RemoveOld(arguments.Set.Identifiers);
-                break;
-            case AutomationChanged.Type.ChangeIdentifier
-                when arguments.As<AutomationChanged.ChangeIdentifierArguments>().Set is { Enabled: true } set:
-                // Remove fixed state from the old identifiers assigned and the old enabled set, if any.
-                RemoveOld(arguments.As<AutomationChanged.ChangeIdentifierArguments>().OldIdentifiers);
-                ApplyNew(set); // Does not need to disable oldSet because same identifiers.
-                break;
-            case AutomationChanged.Type.ToggleSet: // Does not need to disable old states because same identifiers.
-            case AutomationChanged.Type.ChangedBase:
-            case AutomationChanged.Type.AddedDesign:
-            case AutomationChanged.Type.MovedDesign:
-            case AutomationChanged.Type.ChangedDesign:
-            case AutomationChanged.Type.ChangedConditions:
-            case AutomationChanged.Type.ChangedType:
-            case AutomationChanged.Type.ChangedData:
-                ApplyNew(arguments.Set);
-                break;
-        }
-
-        return;
-
-        void ApplyNew(AutoDesignSet? newSet)
-        {
-            if (newSet is not { Enabled: true })
-                return;
-
-            foreach (var id in newSet.Identifiers)
+            // Remove Old.
+            if (old is not null)
             {
+                if (id.Type is IdentifierType.Player && id.HomeWorld == WorldId.AnyWorld)
+                    foreach (var state in _state.Where(kvp => kvp.Key.PlayerName == id.PlayerName).Select(kvp => kvp.Value))
+                        state.Sources.RemoveFixedDesignSources();
+                else if (_state.TryGetValue(id, out var state))
+                    state.Sources.RemoveFixedDesignSources();
+            }
+
+            // Add new.
+            if (@new is not null)
+            {
+                Debug.Assert(@new.Enabled, "Set added to enabled sets is not marked enabled.");
+
                 if (_objects.TryGetValue(id, out var data))
                 {
                     if (_state.GetOrCreate(id, data.Objects[0], out var state))
                     {
-                        Reduce(data.Objects[0], state, newSet, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
+                        Reduce(data.Objects[0], state, @new, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
                         foreach (var actor in data.Objects)
                             _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
                     }
@@ -173,7 +156,7 @@ public sealed class AutoDesignApplier : IDisposable, IRequiredService
                         var specificId = actor.GetIdentifier(_actors);
                         if (_state.GetOrCreate(specificId, actor, out var state))
                         {
-                            Reduce(actor, state, newSet, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
+                            Reduce(actor, state, @new, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
                             _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
                         }
                     }
@@ -182,21 +165,6 @@ public sealed class AutoDesignApplier : IDisposable, IRequiredService
                 {
                     state.Sources.RemoveFixedDesignSources();
                 }
-            }
-        }
-
-        void RemoveOld(ActorIdentifier[]? identifiers)
-        {
-            if (identifiers == null)
-                return;
-
-            foreach (var id in identifiers)
-            {
-                if (id.Type is IdentifierType.Player && id.HomeWorld == WorldId.AnyWorld)
-                    foreach (var state in _state.Where(kvp => kvp.Key.PlayerName == id.PlayerName).Select(kvp => kvp.Value))
-                        state.Sources.RemoveFixedDesignSources();
-                else if (_state.TryGetValue(id, out var state))
-                    state.Sources.RemoveFixedDesignSources();
             }
         }
     }

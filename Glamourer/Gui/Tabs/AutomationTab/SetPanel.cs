@@ -8,7 +8,10 @@ using Glamourer.Config;
 using Glamourer.Events;
 using ImSharp;
 using Luna;
+using Penumbra.GameData.Actors;
+using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
+using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
@@ -24,7 +27,9 @@ public sealed class SetPanel(
     Configuration config,
     RandomRestrictionDrawer randomDrawer,
     AutomationSelection selection,
-    AutomationChanged automationChanged) : IPanel
+    AutomationChanged automationChanged,
+    ActorObjectManager actors,
+    HumanModelList humans) : IPanel
 {
     private readonly AutomationSelection _selection         = selection;
     private readonly AutomationChanged   _automationChanged = automationChanged;
@@ -94,8 +99,41 @@ public sealed class SetPanel(
             if (ImEx.InputOnDeactivation.Text("Rename Set##Name"u8, _selection.Name, out string newName, default, flags))
                 manager.Rename(_selection.Index, newName);
 
+            Im.Item.SetNextWidthScaled(330);
+            if (ImEx.InputOnDeactivation.Scalar("##Priority"u8, _selection.Set.Priority, out var newPriority))
+                manager.ChangePriority(_selection.Index, newPriority);
+            LunaStyle.DrawAlignedHelpMarkerLabel("Priority"u8,
+                "Priority is only relevant when using secondary identifiers and can be left at 0 otherwise."u8);
 
             DrawIdentifierSelection(_selection.Index);
+
+            if (_selection.Set.SecondaryIdentifiers.Count > 0)
+            {
+                Im.Cursor.Y += Im.Style.ItemInnerSpacing.Y;
+                Im.Separator();
+                Im.Cursor.Y += Im.Style.ItemInnerSpacing.Y;
+                Im.Text("Secondary Identifiers"u8);
+                Im.Line.SameInner();
+                LunaStyle.DrawHelpMarker(
+                    "Secondary identifiers are added in order of set priority after the primary identifiers have been handled.\nAny primary identifier on an enabled set will take precedence before all secondary identifiers."u8,
+                    ColorParameter.Default, Im.Item.Hovered());
+                using var list = Im.ListBox.Begin("##lb"u8, Im.ContentRegion.Available with { Y = 8 * Im.Style.FrameHeightWithSpacing });
+                if (list)
+                {
+                    var active = config.DeleteDesignModifier.IsActive();
+                    for (var i = 0; i < _selection.Set!.SecondaryIdentifiers.Count; ++i)
+                    {
+                        var identifier = _selection.Set!.SecondaryIdentifiers[i][0];
+                        if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this secondary identifier."u8, !active))
+                            manager.RemoveSecondaryIdentifier(_selection.Index, i--);
+                        if (!active)
+                            Im.Tooltip.OnHover($"Hold {config.DeleteDesignModifier} to delete.");
+
+                        Im.Line.Same();
+                        ImEx.TextFrameAligned(config.Ephemeral.IncognitoMode ? identifier.Incognito(null) : identifier.ToName());
+                    }
+                }
+            }
         }
 
         Im.Dummy(Vector2.Zero);
@@ -186,7 +224,7 @@ public sealed class SetPanel(
         Im.Table.NextRow();
 
         table.NextColumn();
-        table.DrawFrameColumn($"#{_selection.Set!.Designs.Count + 1}"); 
+        table.DrawFrameColumn($"#{_selection.Set!.Designs.Count + 1}");
         table.NextColumn();
         designCombo.Draw(_selection.Set!, null, -1);
         table.DrawFrameColumn("Add New"u8);
@@ -431,7 +469,7 @@ public sealed class SetPanel(
         {
             void Box(int idx)
             {
-                var type = ApplicationTypeExtensions.Types[idx];
+                var       type  = ApplicationTypeExtensions.Types[idx];
                 using var id    = Im.Id.Push((uint)type);
                 var       value = design.Type.HasFlag(type);
                 if (Im.Checkbox(StringU8.Empty, ref value))
@@ -459,25 +497,105 @@ public sealed class SetPanel(
     private void DrawIdentifierSelection(int setIndex)
     {
         using var id = Im.Id.Push("Identifiers"u8);
+
         identifierDrawer.DrawWorld(130);
         Im.Line.Same();
         identifierDrawer.DrawName(200 - Im.Style.ItemSpacing.X);
         identifierDrawer.DrawNpcs(330);
         var buttonWidth = new Vector2(165 * Im.Style.GlobalScale - Im.Style.ItemSpacing.X / 2, 0);
-        if (ImEx.Button("Set to Character"u8, buttonWidth, StringU8.Empty, !identifierDrawer.CanSetPlayer))
-            manager.ChangeIdentifier(setIndex, identifierDrawer.PlayerIdentifier);
-        Im.Line.Same();
-        if (ImEx.Button("Set to NPC"u8, buttonWidth, StringU8.Empty, !identifierDrawer.CanSetNpc))
-            manager.ChangeIdentifier(setIndex, identifierDrawer.NpcIdentifier);
 
-        if (ImEx.Button("Set to Retainer"u8, buttonWidth, StringU8.Empty, !identifierDrawer.CanSetRetainer))
-            manager.ChangeIdentifier(setIndex, identifierDrawer.RetainerIdentifier);
+        var contained = IdentifierButton("Add Character"u8, "Set to Character"u8, buttonWidth, setIndex, identifierDrawer.PlayerIdentifier);
+        IdentifierTooltip("Add the selected Player identifier to the secondary identifiers of this set."u8,
+            "Set the primary identifier of this set to the selected Player identifier."u8,
+            "The current input does not provide a valid Player identifier."u8, StringU8.Empty, identifierDrawer.PlayerIdentifier, contained);
         Im.Line.Same();
-        if (ImEx.Button("Set to Mannequin"u8, buttonWidth, StringU8.Empty, !identifierDrawer.CanSetRetainer))
-            manager.ChangeIdentifier(setIndex, identifierDrawer.MannequinIdentifier);
+        contained = IdentifierButton("Add NPC"u8, "Set to NPC"u8, buttonWidth, setIndex, identifierDrawer.NpcIdentifier);
+        IdentifierTooltip("Add the selected NPC identifier to the secondary identifiers of this set."u8,
+            "Set the primary identifier of this set to the selected NPC identifier."u8,
+            "The current input does not provide a valid NPC identifier."u8, StringU8.Empty, identifierDrawer.NpcIdentifier, contained);
 
-        if (ImEx.Button("Set to Owned NPC"u8, buttonWidth, StringU8.Empty, !identifierDrawer.CanSetOwned))
-            manager.ChangeIdentifier(setIndex, identifierDrawer.OwnedIdentifier);
+        contained = IdentifierButton("Add Retainer"u8, "Set to Retainer"u8, buttonWidth, setIndex, identifierDrawer.RetainerIdentifier);
+        IdentifierTooltip("Add the selected Retainer identifier to the secondary identifiers of this set."u8,
+            "Set the primary identifier of this set to the selected Retainer identifier."u8,
+            "The current input does not provide a valid Retainer identifier."u8, StringU8.Empty, identifierDrawer.RetainerIdentifier,
+            contained);
+        Im.Line.Same();
+        contained = IdentifierButton("Add Mannequin"u8, "Set to Mannequin"u8, buttonWidth, setIndex, identifierDrawer.MannequinIdentifier);
+        IdentifierTooltip("Add the selected Mannequin identifier to the secondary identifiers of this set."u8,
+            "Set the primary identifier of this set to the selected Mannequin identifier."u8,
+            "The current input does not provide a valid Mannequin identifier."u8, StringU8.Empty, identifierDrawer.MannequinIdentifier,
+            contained);
+
+        contained = IdentifierButton("Add Owned NPC"u8, "Set to Owned NPC"u8, buttonWidth, setIndex, identifierDrawer.OwnedIdentifier);
+        IdentifierTooltip("Add the selected Owned NPC identifier to the secondary identifiers of this set."u8,
+            "Set the primary identifier of this set to the selected Owned NPC identifier."u8,
+            "The current input does not provide a valid Owned NPC identifier."u8, StringU8.Empty, identifierDrawer.OwnedIdentifier, contained);
+
+        var player = actors.PlayerData.Identifier;
+        contained = IdentifierButton("Add Current Player"u8, "Set to Current Player"u8, buttonWidth, setIndex, player);
+        IdentifierTooltip("Add your current Player character to the secondary identifiers of this set."u8,
+            "Set the primary identifier of this set to your current Player character."u8, "Your player character is unavailable."u8,
+            StringU8.Empty,                                                               player, contained);
+
+        Im.Line.Same();
+        var (target, data) = actors.TargetData;
+        var targetValid = data.Valid && data.Objects[0].IsHuman(humans);
+        contained = IdentifierButton("Add Current Target"u8, "Set to Current Target"u8, buttonWidth, setIndex, target, targetValid);
+        IdentifierTooltip("Add your current target to the secondary identifiers of this set."u8,
+            "Set the primary identifier of this set to your current target."u8, "You have not selected a valid target."u8,
+            targetValid ? StringU8.Empty : "Your current target is not a valid target for automation."u8, target, contained);
+    }
+
+    private void IdentifierTooltip(ReadOnlySpan<byte> addTooltip, ReadOnlySpan<byte> setTooltip, ReadOnlySpan<byte> invalidIdentifierLine,
+        ReadOnlySpan<byte> additionalLine, ActorIdentifier identifier, bool contained)
+    {
+        if (!Im.Item.Hovered(HoveredFlags.AllowWhenDisabled))
+            return;
+
+        using var tt   = Im.Tooltip.Begin();
+        var       ctrl = Im.Io.KeyControl;
+        Im.Text(ctrl ? addTooltip : setTooltip);
+        if (!ctrl)
+        {
+            Im.Cursor.Y += Im.Style.ItemSpacing.Y;
+            Im.Text("Hold Control to add the identifier to the secondary identifiers of this set instead of setting the primary identifier."u8);
+        }
+
+
+        var line = !identifier.IsValid
+            ? invalidIdentifierLine
+            : additionalLine.Length > 0
+                ? additionalLine
+                : contained
+                    ? ctrl
+                        ? "The secondary identifiers of this automation set already contain the selected identifier."u8
+                        : "The primary identifier of this automation set is equal to the selected identifier."u8
+                    : StringU8.Empty;
+        if (line.Length > 0)
+        {
+            Im.Cursor.Y += Im.Style.ItemInnerSpacing.Y;
+            Im.Separator();
+            Im.Cursor.Y += Im.Style.ItemInnerSpacing.Y;
+            Im.Text(line);
+        }
+    }
+
+    private bool IdentifierButton(ReadOnlySpan<byte> addLabel, ReadOnlySpan<byte> setLabel, Vector2 width, int setIndex,
+        ActorIdentifier identifier, bool additionalCondition = true)
+    {
+        var ctrl = Im.Io.KeyControl;
+        var contained = ctrl
+            ? manager[setIndex].SecondaryIdentifiers.Any(g => g.Contains(identifier))
+            : manager[setIndex].Identifiers.Contains(identifier);
+        if (ImEx.Button(ctrl ? addLabel : setLabel, width, StringU8.Empty, !identifier.IsValid || !additionalCondition || contained))
+        {
+            if (ctrl)
+                manager.AddSecondaryIdentifier(setIndex, identifier);
+            else
+                manager.ChangeIdentifier(setIndex, identifier);
+        }
+
+        return contained;
     }
 
     private sealed class JobGroupCombo(AutoDesignManager manager, JobService jobs)
