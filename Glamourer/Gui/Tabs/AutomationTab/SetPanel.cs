@@ -123,7 +123,8 @@ public sealed class SetPanel(
                     var active = config.DeleteDesignModifier.IsActive();
                     for (var i = 0; i < _selection.Set!.SecondaryIdentifiers.Count; ++i)
                     {
-                        var identifier = _selection.Set!.SecondaryIdentifiers[i][0];
+                        using var id         = Im.Id.Push(i);
+                        var       identifier = _selection.Set!.SecondaryIdentifiers[i][0];
                         if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this secondary identifier."u8, !active))
                             manager.RemoveSecondaryIdentifier(_selection.Index, i--);
                         if (!active)
