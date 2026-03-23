@@ -96,8 +96,8 @@ public sealed class SettingsTab(
             "Whether changing any currently active automation group will respect manual changes to the character before re-applying the changed automation or not."u8,
             config.RespectManualOnAutomationUpdate, v => config.RespectManualOnAutomationUpdate = v);
         Checkbox("Enable Festival Easter-Eggs"u8,
-            "Glamourer may do some fun things on specific dates. Disable this if you do not want your experience disrupted by this."u8,
-            config.DisableFestivals == 0, v => config.DisableFestivals = v ? (byte)0 : (byte)2);
+            "Glamourer may do some fun things on specific dates. Disable this if you do not want your experience disrupted by this. The global Dalamud setting takes precedence before this."u8,
+            config.DisableFestivals is 0, v => config.DisableFestivals = v ? (byte)0 : (byte)2);
         DrawPenumbraIntegrationSettings1();
         Checkbox("Revert Manual Changes on Zone Change"u8,
             "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone."u8,

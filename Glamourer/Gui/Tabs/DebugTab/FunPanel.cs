@@ -1,11 +1,12 @@
-﻿using Glamourer.Config;
+﻿using Dalamud.Plugin;
+using Glamourer.Config;
 using Glamourer.State;
 using ImSharp;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public sealed class FunPanel(FunModule funModule, Configuration config) : IGameDataDrawer
+public sealed class FunPanel(FunModule funModule, Configuration config, IDalamudPluginInterface pi) : IGameDataDrawer
 {
     public ReadOnlySpan<byte> Label
         => "Fun Module"u8;
@@ -16,6 +17,7 @@ public sealed class FunPanel(FunModule funModule, Configuration config) : IGameD
     public void Draw()
     {
         Im.Text($"Current Festival: {funModule.CurrentFestival}");
+        Im.Text($"Global Festivals Enabled: {pi.AllowSeasonalEvents}");
         Im.Text($"Festivals Enabled: {config.DisableFestivals switch { 1 => "Undecided"u8, 0 => "Enabled"u8, _ => "Disabled"u8 }}");
         Im.Text($"Popup Open: {Im.Popup.IsOpen("FestivalPopup"u8, PopupQueryFlags.AnyPopup)}");
         if (Im.Button("Force Christmas"u8))
