@@ -1,5 +1,4 @@
 ﻿using Dalamud.Game.ClientState.Keys;
-using FFXIVClientStructs.FFXIV.Common.Lua;
 using Glamourer.Automation;
 using Glamourer.Config;
 using Glamourer.Gui;
@@ -42,7 +41,7 @@ public sealed class ConfigMigrationService(SaveService saveService, FixedDesignM
         if (_config.Version > 11)
             return;
 
-        backupService.CreateMigrationBackup("pre_initial_json_update");
+        backupService.CreateMigrationBackup("pre_initial_json_update", Array.Empty<string>());
         _config.Version           = 12;
         _config.Ephemeral.Version = 12;
         _config.Save();
@@ -124,7 +123,7 @@ public sealed class ConfigMigrationService(SaveService saveService, FixedDesignM
             return;
 
         // Do not actually change anything in the config, just create a backup before designs are migrated.
-        backupService.CreateMigrationBackup("pre_gloss_specular_migration");
+        backupService.CreateMigrationBackup("pre_gloss_specular_migration", saveService.FileNames.MigrationDesignFileSystem);
         _config.Version = 7;
     }
 

@@ -153,7 +153,7 @@ public sealed class StateListener : IDisposable, IRequiredService
         }
 
         _funModule.ApplyFunOnLoad(actor, new Span<CharacterArmor>((void*)equipDataPtr, 10), ref customize);
-        if (modelId == 0 && _creatingState is not { IsLocked: true })
+        if (modelId is 0 && _creatingState is not { IsLocked: true })
             ProtectRestrictedGear(equipDataPtr, customize.Race, customize.Gender);
     }
 
@@ -392,14 +392,16 @@ public sealed class StateListener : IDisposable, IRequiredService
                 if (arguments.Weapon.Skeleton.Id is not 0)
                     arguments.Weapon = arguments.Weapon.With(newWeapon.Stains);
                 // Force unlock if necessary.
-                _manager.ChangeItem(state, arguments.Slot, state.BaseData.Item(arguments.Slot), ApplySettings.Game with { Key = state.Combination });
+                _manager.ChangeItem(state, arguments.Slot, state.BaseData.Item(arguments.Slot),
+                    ApplySettings.Game with { Key = state.Combination });
             }
         }
 
         // Fist Weapon Offhand hack.
         if (arguments.Slot is EquipSlot.MainHand && arguments.Weapon.Skeleton.Id is > 1600 and < 1651)
         {
-            lastFistOffhand = new CharacterWeapon((PrimaryId)(arguments.Weapon.Skeleton.Id + 50), arguments.Weapon.Weapon, arguments.Weapon.Variant,
+            lastFistOffhand = new CharacterWeapon((PrimaryId)(arguments.Weapon.Skeleton.Id + 50), arguments.Weapon.Weapon,
+                arguments.Weapon.Variant,
                 arguments.Weapon.Stains);
             _fistOffhands[arguments.Actor] = lastFistOffhand;
             Glamourer.Log.Excessive($"Storing fist weapon offhand {lastFistOffhand} for 0x{arguments.Actor.Address:X}.");
@@ -884,13 +886,15 @@ public sealed class StateListener : IDisposable, IRequiredService
         if (_condition[ConditionFlag.CreatingCharacter])
             return;
 
-        if (_creatingState == null)
+        if (_creatingState is null)
             return;
 
         var data = new ActorData(gameObject, _creatingIdentifier.ToName());
         _applier.ChangeMetaState(data, MetaIndex.HatState,    _creatingState.ModelData.IsHatVisible());
         _applier.ChangeMetaState(data, MetaIndex.Wetness,     _creatingState.ModelData.IsWet());
         _applier.ChangeMetaState(data, MetaIndex.WeaponState, _creatingState.ModelData.IsWeaponVisible());
+        _applier.ChangeVisorState(drawObject, _creatingState.ModelData.IsVisorToggled());
+        _applier.ChangeEarState(drawObject, _creatingState.ModelData.AreEarsVisible());
 
         ApplyParameters(_creatingState, drawObject);
     }

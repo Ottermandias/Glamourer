@@ -339,10 +339,10 @@ public unsafe struct DesignData
     }
 
     public readonly bool IsWeaponVisible()
-        => (_states & 0x08) == 0x08;
+        => (_states & 0x08) is 0x08;
 
     public readonly bool AreEarsVisible()
-        => (_states & 0x10) == 0x00;
+        => (_states & 0x10) is 0x00;
 
     public bool SetWeaponVisible(bool value)
     {

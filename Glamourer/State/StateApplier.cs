@@ -274,6 +274,20 @@ public class StateApplier(
         }
     }
 
+    /// <summary> Change a meta state. </summary>
+    public void ChangeEarState(Model drawObject, bool value)
+    {
+        if (drawObject.IsHuman && drawObject.VieraEarsVisible != value)
+            drawObject.VieraEarsVisible = value;
+    }
+
+    /// <summary> Change a meta state. </summary>
+    public unsafe void ChangeVisorState(Model drawObject, bool value)
+    {
+        if (drawObject.IsHuman && drawObject.AsHuman->VisorToggled != value)
+            visor.SetVisorState(drawObject, value);
+    }
+
     /// <inheritdoc cref="ChangeMetaState(ActorData, MetaIndex, bool)"/>
     public ActorData ChangeMetaState(ActorState state, MetaIndex index, bool apply)
     {
