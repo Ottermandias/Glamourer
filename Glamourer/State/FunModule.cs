@@ -73,19 +73,19 @@ public sealed unsafe class FunModule : IDisposable, IRequiredService
         GenericPopupWindow popupWindow, StateManager stateManager, ActorObjectManager objects, DesignConverter designConverter,
         DesignManager designManager, NpcCustomizeSet npcs, IDalamudPluginInterface pluginInterface)
     {
-        _codes                = codes;
-        _customizations       = customizations;
-        _items                = items;
-        _config               = config;
-        _popupWindow          = popupWindow;
-        _stateManager         = stateManager;
-        _objects              = objects;
-        _designConverter      = designConverter;
-        _designManager        = designManager;
-        _npcs                 = npcs;
+        _codes           = codes;
+        _customizations  = customizations;
+        _items           = items;
+        _config          = config;
+        _popupWindow     = popupWindow;
+        _stateManager    = stateManager;
+        _objects         = objects;
+        _designConverter = designConverter;
+        _designManager   = designManager;
+        _npcs            = npcs;
         _pluginInterface = pluginInterface;
-        _rng                  = new Random();
-        _stains               = _items.Stains.Keys.Prepend((StainId)0).ToArray();
+        _rng             = new Random();
+        _stains          = _items.Stains.Keys.Prepend((StainId)0).ToArray();
         ResetFestival();
         DayChangeTracker.DayChanged += OnDayChange;
     }
