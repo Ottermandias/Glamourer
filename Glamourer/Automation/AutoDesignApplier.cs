@@ -120,51 +120,77 @@ public sealed class AutoDesignApplier : IDisposable, IRequiredService
 
     private void OnAutomationChange(in AutomationChanged.Arguments arguments)
     {
-        if (!_config.EnableAutoDesigns || arguments is not AutomationChanged.UpdatedActiveSetsArguments args)
+        if (!_config.EnableAutoDesigns)
             return;
 
-        foreach (var (id, old, @new) in args.ChangedSets)
+        switch (arguments.Type)
         {
-            // Remove Old.
-            if (old is not null)
-            {
-                if (id.Type is IdentifierType.Player && id.HomeWorld == WorldId.AnyWorld)
-                    foreach (var state in _state.Where(kvp => kvp.Key.PlayerName == id.PlayerName).Select(kvp => kvp.Value))
-                        state.Sources.RemoveFixedDesignSources();
-                else if (_state.TryGetValue(id, out var state))
-                    state.Sources.RemoveFixedDesignSources();
-            }
-
-            // Add new.
-            if (@new is not null)
-            {
-                Debug.Assert(@new.Enabled, "Set added to enabled sets is not marked enabled.");
-
-                if (_objects.TryGetValue(id, out var data))
+            case AutomationChanged.Type.ChangedBase:
+            case AutomationChanged.Type.AddedDesign:
+            case AutomationChanged.Type.DeletedDesign:
+            case AutomationChanged.Type.MovedDesign:
+            case AutomationChanged.Type.ChangedDesign:
+            case AutomationChanged.Type.ChangedConditions:
+            case AutomationChanged.Type.ChangedType:
+            case AutomationChanged.Type.ChangedData:
+                foreach (var (id, set) in _manager.EnabledSets)
                 {
-                    if (_state.GetOrCreate(id, data.Objects[0], out var state))
-                    {
-                        Reduce(data.Objects[0], state, @new, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
-                        foreach (var actor in data.Objects)
-                            _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
-                    }
+                    if (set == arguments.Set)
+                        ApplyNew(id, set);
                 }
-                else if (_objects.TryGetValueAllWorld(id, out data) || _objects.TryGetValueNonOwned(id, out data))
+
+                return;
+            case AutomationChanged.Type.UpdatedActiveSets when arguments is AutomationChanged.UpdatedActiveSetsArguments args:
+                foreach (var (id, old, @new) in args.ChangedSets)
                 {
+                    // Remove Old.
+                    if (old is not null)
+                    {
+                        if (id.Type is IdentifierType.Player && id.HomeWorld == WorldId.AnyWorld)
+                            foreach (var state in _state.Where(kvp => kvp.Key.PlayerName == id.PlayerName).Select(kvp => kvp.Value))
+                                state.Sources.RemoveFixedDesignSources();
+                        else if (_state.TryGetValue(id, out var state))
+                            state.Sources.RemoveFixedDesignSources();
+                    }
+
+                    ApplyNew(id, @new);
+                }
+
+                return;
+            default: return;
+        }
+
+        void ApplyNew(ActorIdentifier id, AutoDesignSet? set)
+        {
+            if (set is null)
+                return;
+
+            Debug.Assert(set.Enabled, "Set added to enabled sets is not marked enabled.");
+
+            if (_objects.TryGetValue(id, out var data))
+            {
+                if (_state.GetOrCreate(id, data.Objects[0], out var state))
+                {
+                    Reduce(data.Objects[0], state, set, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
                     foreach (var actor in data.Objects)
+                        _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
+                }
+            }
+            else if (_objects.TryGetValueAllWorld(id, out data) || _objects.TryGetValueNonOwned(id, out data))
+            {
+                foreach (var actor in data.Objects)
+                {
+                    var specificId = actor.GetIdentifier(_actors);
+                    if (_state.GetOrCreate(specificId, actor, out var state))
                     {
-                        var specificId = actor.GetIdentifier(_actors);
-                        if (_state.GetOrCreate(specificId, actor, out var state))
-                        {
-                            Reduce(actor, state, @new, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
-                            _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
-                        }
+                        Reduce(actor, state, set, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
+                        _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
                     }
                 }
-                else if (_state.TryGetValue(id, out var state))
-                {
-                    state.Sources.RemoveFixedDesignSources();
-                }
+            }
+            else if (_state.TryGetValue(id, out var state))
+            {
+                state.Sources.RemoveFixedDesignSources();
             }
         }
     }
@@ -328,7 +354,8 @@ public sealed class AutoDesignApplier : IDisposable, IRequiredService
 
         var respectManual = arguments.PriorId == arguments.Id;
         NewGearsetId = arguments.Id;
-        Reduce(data.Objects[0], state, set, respectManual, arguments.JobId != state.LastJob, arguments.PriorId == arguments.Id, out var forcedRedraw);
+        Reduce(data.Objects[0], state, set, respectManual, arguments.JobId != state.LastJob, arguments.PriorId == arguments.Id,
+            out var forcedRedraw);
         NewGearsetId = -1;
         foreach (var actor in data.Objects)
             _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);
