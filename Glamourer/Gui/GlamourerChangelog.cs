@@ -47,6 +47,7 @@ public sealed class GlamourerChangelog : IUiService
         Add1_4_0_0(Changelog);
         Add1_5_0_0(Changelog);
         Add1_5_1_0(Changelog);
+        AddDummy(Changelog);
         Add1_6_0_0(Changelog);
     }
 
@@ -79,6 +80,8 @@ public sealed class GlamourerChangelog : IUiService
             .RegisterEntry(
                 "Glamourer can now remember most filter states you enter - this can also be disabled in the settings if you prefer filters to reset."u8,
                 1)
+            .RegisterHighlight("There is now a toggle to remember item filters or not right in the equipment sections."u8)
+            .RegisterEntry("This can be used to restrict mouse-wheel scrolling to matching items."u8, 1)
             .RegisterHighlight("Advanced Dyes now support some more parameters like roughness and sheen on Dawntrail materials (Thanks Ny!)."u8)
             .RegisterEntry("The Quick Design Bar can now display a button to toggle the main window (Thanky Ny!)."u8)
             .RegisterHighlight(
@@ -88,7 +91,17 @@ public sealed class GlamourerChangelog : IUiService
                 "The 'Turn Human' button for non-human NPCs was removed. This functionality caused severe issues with syncing tools and could cause even worse issues like crashing or wrong things being sent to the server if used."u8)
             .RegisterEntry(
                 "It's originally intended usage meant for posing has been superceded by the posing tools own functionality to spawn additional actors, so keeping it was more trouble than it was worth."u8,
-                1);
+                1)
+            .RegisterEntry("Made the 'Dye all Items' box more obviously not a checkbox."u8)
+            .RegisterEntry("The detail tab for Automation Sets can now filter for specific designs."u8)
+            .RegisterHighlight("The detail panel in the unlocks tab can now be set to only display a single item for each model ID, optionally ignoring the variant too."u8)
+            .RegisterEntry("Additionally, there is a combo available that can be used to mousewheel-scroll through the currently displayed items on your own player character."u8)
+            .RegisterEntry("Fixed an issue with offhand dyes being applied from a design when the mainhand weapon allows no offhand."u8)
+            .RegisterHighlight("Added secondary identifiers and priorities to Automation Sets."u8)
+            .RegisterEntry("Secondary identifiers of enabled sets apply in order of priority to respective actors, if no enabled set is assigned to them already."u8, 1)
+            .RegisterEntry("This can be used to, for example, group multiple versions of the same NPC in the same design, or multiple versions of your own character."u8, 1)
+            .RegisterEntry("Fixed an issue where the Viera Ear state was not applied correctly on redraws."u8)
+            .RegisterEntry("Dalamuds new globial seasonal event setting will now be respected and Glamourer will not apply its seasonal events, or ask you whether to apply them, when they are globally discouraged."u8);
 
     private static void Add1_5_1_0(Changelog log)
         => log.NextVersion("Version 1.5.1.0"u8)
