@@ -1,7 +1,9 @@
-﻿using Penumbra.GameData.Enums;
+﻿using Luna.Generators;
+using Penumbra.GameData.Enums;
 
 namespace Glamourer.State;
 
+[NamedEnum(Utf16: false)]
 public enum StateSource : byte
 {
     Game,
@@ -15,7 +17,7 @@ public enum StateSource : byte
     IpcPending,
 }
 
-public static class StateSourceExtensions
+public static partial class StateSourceExtensions
 {
     public static StateSource Base(this StateSource source)
         => source switch

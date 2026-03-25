@@ -1,24 +1,20 @@
 ﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
-using Glamourer.Designs.History;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OtterGui;
-using OtterGui.Classes;
-using OtterGui.Extensions;
-using OtterGui.Filesystem;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
+using Luna;
 
 namespace Glamourer.Automation;
 
-public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDisposable
+public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDisposable, IService
 {
     public const int CurrentVersion = 1;
 
@@ -33,7 +29,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
     private readonly QuickSelectedDesign   _quickSelectedDesign;
 
     private readonly List<AutoDesignSet>                        _data    = [];
-    private readonly Dictionary<ActorIdentifier, AutoDesignSet> _enabled = [];
+    private          Dictionary<ActorIdentifier, AutoDesignSet> _enabled = [];
 
     public IReadOnlyDictionary<ActorIdentifier, AutoDesignSet> EnabledSets
         => _enabled;
@@ -79,7 +75,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         _data.Add(newSet);
         Save();
         Glamourer.Log.Debug($"Created new design set for {newSet.Identifiers[0].Incognito(null)}.");
-        _event.Invoke(AutomationChanged.Type.AddedSet, newSet, (_data.Count - 1, name));
+        _event.Invoke(new AutomationChanged.AddedSetArguments(newSet, _data.Count - 1, name));
     }
 
     public void DuplicateDesignSet(AutoDesignSet set)
@@ -104,7 +100,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         Save();
         Glamourer.Log.Debug(
             $"Duplicated new design set for {newSet.Identifiers[0].Incognito(null)} with {newSet.Designs.Count} auto designs from existing set.");
-        _event.Invoke(AutomationChanged.Type.AddedSet, newSet, (_data.Count - 1, name));
+        _event.Invoke(new AutomationChanged.AddedSetArguments(newSet, _data.Count - 1, name));
     }
 
     public void DeleteDesignSet(int whichSet)
@@ -113,22 +109,18 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             return;
 
         var set = _data[whichSet];
-        if (set.Enabled)
-        {
-            set.Enabled = false;
-            foreach (var id in set.Identifiers)
-                _enabled.Remove(id);
-        }
-
         _data.RemoveAt(whichSet);
+        if (set.Enabled)
+            UpdateEnabled();
+
         Save();
         Glamourer.Log.Debug($"Deleted design set {whichSet + 1}.");
-        _event.Invoke(AutomationChanged.Type.DeletedSet, set, whichSet);
+        _event.Invoke(new AutomationChanged.DeletedSetArguments(set, whichSet));
     }
 
     public void Rename(int whichSet, string newName)
     {
-        if (whichSet >= _data.Count || whichSet < 0 || newName.Length == 0)
+        if (whichSet >= _data.Count || whichSet < 0 || newName.Length is 0)
             return;
 
         var set = _data[whichSet];
@@ -139,7 +131,26 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         set.Name = newName;
         Save();
         Glamourer.Log.Debug($"Renamed design set {whichSet + 1} from {old} to {newName}.");
-        _event.Invoke(AutomationChanged.Type.RenamedSet, set, (old, newName));
+        _event.Invoke(new AutomationChanged.RenamedSetArguments(set, old, newName));
+    }
+
+    public void ChangePriority(int whichSet, int newPriority)
+    {
+        if (whichSet >= _data.Count || whichSet < 0)
+            return;
+
+        var set         = _data[whichSet];
+        var oldPriority = set.Priority;
+        if (oldPriority == newPriority)
+            return;
+
+        set.Priority = newPriority;
+        if (set.Enabled)
+            UpdateEnabled();
+
+        Save();
+        Glamourer.Log.Debug($"Changed Priority of design set {whichSet + 1} from {oldPriority} to {newPriority}.");
+        _event.Invoke(new AutomationChanged.ChangeSetPriorityArguments(set, whichSet, oldPriority));
     }
 
 
@@ -150,7 +161,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
         Save();
         Glamourer.Log.Debug($"Moved design set {whichSet + 1} to position {toWhichSet + 1}.");
-        _event.Invoke(AutomationChanged.Type.MovedSet, _data[toWhichSet], (whichSet, toWhichSet));
+        _event.Invoke(new AutomationChanged.MovedSetArguments(_data[toWhichSet], whichSet, toWhichSet));
     }
 
     public void ChangeIdentifier(int whichSet, ActorIdentifier to)
@@ -167,22 +178,53 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         AutoDesignSet? oldEnabled = null;
         if (set.Enabled)
         {
-            foreach (var id in old)
-                _enabled.Remove(id);
-            if (_enabled.Remove(to, out oldEnabled))
-            {
-                foreach (var id in oldEnabled.Identifiers)
-                    _enabled.Remove(id);
+            if (_enabled.TryGetValue(set.Identifiers[0], out oldEnabled) && oldEnabled.Identifiers.Contains(set.Identifiers[0]))
                 oldEnabled.Enabled = false;
-            }
-
-            foreach (var id in group)
-                _enabled.Add(id, set);
+            UpdateEnabled();
         }
 
         Save();
         Glamourer.Log.Debug($"Changed Identifier of design set {whichSet + 1} from {old[0].Incognito(null)} to {to.Incognito(null)}.");
-        _event.Invoke(AutomationChanged.Type.ChangeIdentifier, set, (old, to, oldEnabled));
+        _event.Invoke(new AutomationChanged.ChangeIdentifierArguments(set, old, to, oldEnabled));
+    }
+
+    public void AddSecondaryIdentifier(int whichSet, ActorIdentifier add)
+    {
+        if (whichSet >= _data.Count || whichSet < 0 || !IdentifierValid(add, out var group))
+            return;
+
+        var set = _data[whichSet];
+        if (set.SecondaryIdentifiers.Any(g => g.Contains(add)))
+            return;
+
+        set.SecondaryIdentifiers.Add(group);
+        if (set.Enabled)
+            UpdateEnabled();
+
+        Save();
+        Glamourer.Log.Debug(
+            $"Added Secondary Identifier {add.Incognito(null)} (#{set.SecondaryIdentifiers.Count}) to design set {whichSet + 1}.");
+        _event.Invoke(new AutomationChanged.SecondaryIdentifierArguments(set, group, -1));
+    }
+
+    public void RemoveSecondaryIdentifier(int whichSet, int whichIdentifier)
+    {
+        if (whichSet >= _data.Count || whichSet < 0 || whichIdentifier < 0)
+            return;
+
+        var set = _data[whichSet];
+        if (whichIdentifier >= set.SecondaryIdentifiers.Count)
+            return;
+
+        var identifiers = set.SecondaryIdentifiers[whichIdentifier];
+        set.SecondaryIdentifiers.RemoveAt(whichIdentifier);
+        if (set.Enabled)
+            UpdateEnabled();
+
+        Save();
+        Glamourer.Log.Debug(
+            $"Removed Secondary Identifier {identifiers[0].Incognito(null)} (#{whichIdentifier + 1}) of design set {whichSet + 1}.");
+        _event.Invoke(new AutomationChanged.SecondaryIdentifierArguments(set, identifiers, whichIdentifier));
     }
 
     public void SetState(int whichSet, bool value)
@@ -195,28 +237,16 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
             return;
 
         set.Enabled = value;
-        AutoDesignSet? oldEnabled;
-        if (value)
-        {
-            if (_enabled.Remove(set.Identifiers[0], out oldEnabled))
-            {
-                foreach (var id in oldEnabled.Identifiers)
-                    _enabled.Remove(id);
-                oldEnabled.Enabled = false;
-            }
+        if (value && _enabled.TryGetValue(set.Identifiers[0], out var oldEnabled) && oldEnabled.Identifiers.Contains(set.Identifiers[0]))
+            oldEnabled.Enabled = false;
+        else
+            oldEnabled = null;
 
-            foreach (var id in set.Identifiers)
-                _enabled.Add(id, set);
-        }
-        else if (_enabled.Remove(set.Identifiers[0], out oldEnabled))
-        {
-            foreach (var id in oldEnabled.Identifiers)
-                _enabled.Remove(id);
-        }
+        UpdateEnabled();
 
         Save();
         Glamourer.Log.Debug($"Changed enabled state of design set {whichSet + 1} to {value}.");
-        _event.Invoke(AutomationChanged.Type.ToggleSet, set, oldEnabled);
+        _event.Invoke(new AutomationChanged.ToggleSetArguments(set, oldEnabled));
     }
 
     public void ChangeBaseState(int whichSet, AutoDesignSet.Base newBase)
@@ -232,7 +262,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         set.BaseState = newBase;
         Save();
         Glamourer.Log.Debug($"Changed base state of set {whichSet + 1} from {old} to {newBase}.");
-        _event.Invoke(AutomationChanged.Type.ChangedBase, set, (old, newBase));
+        _event.Invoke(new AutomationChanged.ChangedBaseArguments(set, old, newBase));
     }
 
     public void ChangeResetSettings(int whichSet, bool newValue)
@@ -248,12 +278,12 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         set.ResetTemporarySettings = newValue;
         Save();
         Glamourer.Log.Debug($"Changed resetting of temporary settings of set {whichSet + 1} from {old} to {newValue}.");
-        _event.Invoke(AutomationChanged.Type.ChangedTemporarySettingsReset, set, newValue);
+        _event.Invoke(new AutomationChanged.ChangedTemporarySettingsResetArguments(set, newValue));
     }
 
     public void AddDesign(AutoDesignSet set, IDesignStandIn design)
     {
-        var newDesign = new AutoDesign()
+        var newDesign = new AutoDesign
         {
             Design = design,
             Type   = ApplicationType.All,
@@ -263,7 +293,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         Save();
         Glamourer.Log.Debug(
             $"Added new associated design {design.ResolveName(true)} as design {set.Designs.Count} to design set.");
-        _event.Invoke(AutomationChanged.Type.AddedDesign, set, set.Designs.Count - 1);
+        _event.Invoke(new AutomationChanged.AddedDesignArguments(set, set.Designs.Count - 1));
     }
 
     /// <remarks> Only used to move between sets. </remarks>
@@ -277,8 +307,8 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         from.Designs.RemoveAt(idx);
         Save();
         Glamourer.Log.Debug($"Moved design {idx} from design set {from.Name} to design set {to.Name}.");
-        _event.Invoke(AutomationChanged.Type.AddedDesign,   to,   to.Designs.Count - 1);
-        _event.Invoke(AutomationChanged.Type.DeletedDesign, from, idx);
+        _event.Invoke(new AutomationChanged.AddedDesignArguments(to, to.Designs.Count - 1));
+        _event.Invoke(new AutomationChanged.DeletedDesignArguments(from, idx));
     }
 
     public void DeleteDesign(AutoDesignSet set, int which)
@@ -289,7 +319,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         set.Designs.RemoveAt(which);
         Save();
         Glamourer.Log.Debug($"Removed associated design {which + 1} from design set.");
-        _event.Invoke(AutomationChanged.Type.DeletedDesign, set, which);
+        _event.Invoke(new AutomationChanged.DeletedDesignArguments(set, which));
     }
 
     public void MoveDesign(AutoDesignSet set, int from, int to)
@@ -299,7 +329,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
         Save();
         Glamourer.Log.Debug($"Moved design {from + 1} to {to + 1} in design set.");
-        _event.Invoke(AutomationChanged.Type.MovedDesign, set, (from, to));
+        _event.Invoke(new AutomationChanged.MovedDesignArguments(set, from, to));
     }
 
     public void ChangeDesign(AutoDesignSet set, int which, IDesignStandIn newDesign)
@@ -316,7 +346,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         Save();
         Glamourer.Log.Debug(
             $"Changed linked design from {old.ResolveName(true)} to {newDesign.ResolveName(true)} for associated design {which + 1} in design set.");
-        _event.Invoke(AutomationChanged.Type.ChangedDesign, set, (which, old, newDesign));
+        _event.Invoke(new AutomationChanged.ChangedDesignArguments(set, which, old, newDesign));
     }
 
     public void ChangeJobCondition(AutoDesignSet set, int which, JobGroup jobs)
@@ -333,7 +363,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         design.Jobs = jobs;
         Save();
         Glamourer.Log.Debug($"Changed job condition from {old.Id} to {jobs.Id} for associated design {which + 1} in design set.");
-        _event.Invoke(AutomationChanged.Type.ChangedConditions, set, (which, old, jobs));
+        _event.Invoke(new AutomationChanged.ChangedConditionsArguments(set, which, old, jobs));
     }
 
     public void ChangeGearsetCondition(AutoDesignSet set, int which, short index)
@@ -349,7 +379,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         design.GearsetIndex = index;
         Save();
         Glamourer.Log.Debug($"Changed gearset condition from {old} to {index} for associated design {which + 1} in design set.");
-        _event.Invoke(AutomationChanged.Type.ChangedConditions, set, (which, old, index));
+        _event.Invoke(new AutomationChanged.ChangedConditionsArguments(set, which, default, default));
     }
 
     public void ChangeApplicationType(AutoDesignSet set, int which, ApplicationType applicationType)
@@ -366,7 +396,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         design.Type = applicationType;
         Save();
         Glamourer.Log.Debug($"Changed application type from {old} to {applicationType} for associated design {which + 1} in design set.");
-        _event.Invoke(AutomationChanged.Type.ChangedType, set, (which, old, applicationType));
+        _event.Invoke(new AutomationChanged.ChangedTypeArguments(set, which, old, applicationType));
     }
 
     public void ChangeData(AutoDesignSet set, int which, object data)
@@ -380,15 +410,72 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
         Save();
         Glamourer.Log.Debug($"Changed additional design data for associated design {which + 1} in design set.");
-        _event.Invoke(AutomationChanged.Type.ChangedData, set, (which, data));
+        _event.Invoke(new AutomationChanged.ChangedDataArguments(set, which, data));
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public void UpdateEnabled()
+    {
+        var newDict = new Dictionary<ActorIdentifier, AutoDesignSet>(_enabled.Count);
+        var save    = false;
+        foreach (var set in _data.Where(s => s.Enabled))
+        {
+            // Add primary identifiers. First one wins.
+            // Disable and remove any set with overlapping identifiers to an already existing one.
+            foreach (var (index, identifier) in set.Identifiers.Index())
+            {
+                if (newDict.TryAdd(identifier, set))
+                    continue;
+
+                // Remove all prior identifiers of this set, turn it disabled, trigger save.
+                for (var i = 0; i < index; ++i)
+                    newDict.Remove(set.Identifiers[i]);
+
+                Glamourer.Log.Warning(
+                    $"Encountered two overlapping primary identifiers in sets {_enabled[identifier].Name} (kept) and {set.Name} (disabled).");
+                set.Enabled = false;
+                save        = true;
+                break;
+            }
+        }
+
+        // Iterate again, but this time in order of priority.
+        foreach (var set in _data.Where(s => s.Enabled).OrderByDescending(s => s.Priority))
+        {
+            // Add all identifiers of all identifier groups if they do not already exist.
+            foreach (var identifier in set.SecondaryIdentifiers.SelectMany(s => s))
+                newDict.TryAdd(identifier, set);
+        }
+
+        // Gather all changes for the applier.
+        var list = new List<(ActorIdentifier Identifier, AutoDesignSet? Old, AutoDesignSet? New)>();
+        foreach (var (key, value) in _enabled)
+        {
+            if (!newDict.ContainsKey(key))
+                list.Add((key, value, null));
+        }
+
+        foreach (var (key, value) in newDict)
+        {
+            if (!_enabled.TryGetValue(key, out var oldValue))
+                list.Add((key, null, value));
+            else if (oldValue != value)
+                list.Add((key, oldValue, value));
+        }
+
+        _enabled = newDict;
+        Glamourer.Log.Debug("Updated enabled automation sets.");
+        _event.Invoke(new AutomationChanged.UpdatedActiveSetsArguments(list));
+        if (save)
+            Save();
+    }
+
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.AutomationFile;
 
-    public void Save(StreamWriter writer)
+    public void Save(Stream stream)
     {
-        using var j = new JsonTextWriter(writer);
+        using var writer = new StreamWriter(stream);
+        using var j      = new JsonTextWriter(writer);
         j.Formatting = Formatting.Indented;
         Serialize().WriteTo(j);
     }
@@ -399,7 +486,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         foreach (var set in _data)
             array.Add(set.Serialize());
 
-        return new JObject()
+        return new JObject
         {
             ["Version"] = CurrentVersion,
             ["Data"]    = array,
@@ -426,10 +513,10 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
                     Glamourer.Messager.NotificationMessage("Failure to load automated designs: No valid version available.",
                         NotificationType.Error);
                     break;
-                case 1:
-                    LoadV1(obj["Data"]);
-                    break;
+                case 1: LoadV1(obj["Data"]); break;
             }
+
+            UpdateEnabled();
         }
         catch (Exception ex)
         {
@@ -464,34 +551,46 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
                 Enabled                = obj["Enabled"]?.ToObject<bool>() ?? false,
                 ResetTemporarySettings = obj["ResetTemporarySettings"]?.ToObject<bool>() ?? false,
                 BaseState              = obj["BaseState"]?.ToObject<AutoDesignSet.Base>() ?? AutoDesignSet.Base.Current,
+                Priority               = obj["Priority"]?.ToObject<int>() ?? 0,
             };
-
-            if (set.Enabled)
-            {
-                if (_enabled.TryAdd(group[0], set))
-                    foreach (var id2 in group.Skip(1))
-                        _enabled[id2] = set;
-                else
-                    set.Enabled = false;
-            }
 
             _data.Add(set);
 
-            if (obj["Designs"] is not JArray designArray)
-                continue;
-
-            foreach (var designObj in designArray)
-            {
-                if (designObj is not JObject j)
+            if (obj["Designs"] is JArray designArray)
+                foreach (var designObj in designArray)
                 {
-                    Glamourer.Messager.NotificationMessage(
-                        $"Skipped loading design in Automation Set {name}: Unknown design.", NotificationType.Warning);
-                    continue;
+                    if (designObj is not JObject j)
+                    {
+                        Glamourer.Messager.NotificationMessage(
+                            $"Skipped loading design in Automation Set {name}: Unknown design.", NotificationType.Warning);
+                        continue;
+                    }
+
+                    if (ToDesignObject(set.Name, j) is { } design)
+                        set.Designs.Add(design);
                 }
 
-                if (ToDesignObject(set.Name, j) is { } design)
-                    set.Designs.Add(design);
-            }
+            if (obj["SecondaryIdentifiers"] is JArray identifierArray)
+                foreach (var idJObj in identifierArray)
+                {
+                    var identifier = _actors.FromJson(idJObj as JObject);
+                    if (!IdentifierValid(identifier, out var g))
+                    {
+                        Glamourer.Messager.NotificationMessage($"Invalid Secondary Identifier in Automation Set {name}, skipped.",
+                            NotificationType.Warning);
+                        continue;
+                    }
+
+                    if (g.Any(i => set.SecondaryIdentifiers.Any(g2 => g2.Contains(i))))
+                    {
+                        Glamourer.Messager.NotificationMessage(
+                            $"Secondary Identifier is listed multiple times in Automation Set {name}, skipped.",
+                            NotificationType.Warning);
+                        continue;
+                    }
+
+                    set.SecondaryIdentifiers.Add(g);
+                }
         }
     }
 
@@ -557,7 +656,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
     private bool ParseConditions(string setName, JObject jObj, AutoDesign ret)
     {
         var conditions = jObj["Conditions"];
-        if (conditions == null)
+        if (conditions is null)
             return true;
 
         var jobs = conditions["JobGroup"]?.ToObject<int>() ?? -1;
@@ -640,17 +739,17 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
         }
     }
 
-    private void OnDesignChange(DesignChanged.Type type, Design design, ITransaction? _)
+    private void OnDesignChange(in DesignChanged.Arguments arguments)
     {
-        if (type is not DesignChanged.Type.Deleted)
+        if (arguments.Type is not DesignChanged.Type.Deleted)
             return;
 
-        foreach (var (set, idx) in this.WithIndex())
+        foreach (var (idx, set) in this.Index())
         {
             var deleted = 0;
             for (var i = 0; i < set.Designs.Count; ++i)
             {
-                if (set.Designs[i].Design != design)
+                if (set.Designs[i].Design != arguments.Design)
                     continue;
 
                 DeleteDesign(set, i--);
@@ -659,7 +758,7 @@ public class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, IDispos
 
             if (deleted > 0)
                 Glamourer.Log.Information(
-                    $"Removed {deleted} automated designs from automated design set {idx} due to deletion of {design.Incognito}.");
+                    $"Removed {deleted} automated designs from automated design set {idx} due to deletion of {arguments.Design.Incognito}.");
         }
     }
 }

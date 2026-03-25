@@ -1,30 +1,61 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
-using Dalamud.Interface.Utility;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Classes;
-using OtterGui.Widgets;
+using ImSharp;
+using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public class DesignTab(DesignFileSystemSelector _selector, DesignPanel _panel, ImportService _importService, DesignManager _manager)
-    : ITab
+public sealed class DesignTab : TwoPanelLayout, ITab<MainTabType>
 {
-    public ReadOnlySpan<byte> Label
+    private readonly ImportService _importService;
+    private readonly DesignManager _manager;
+    private readonly UiConfig      _uiConfig;
+
+    public DesignTab(DesignFileSystemDrawer drawer, DesignPanel panel, ImportService importService, DesignManager manager, DesignFilter filter,
+        DesignHeader header, UiConfig uiConfig)
+    {
+        LeftHeader = drawer.Header;
+        LeftPanel  = drawer;
+        LeftFooter = drawer.Footer;
+
+        RightHeader    = header;
+        RightPanel     = panel;
+        RightFooter    = NopHeaderFooter.Instance;
+        _importService = importService;
+        _manager       = manager;
+        _uiConfig      = uiConfig;
+    }
+
+    public override ReadOnlySpan<byte> Label
         => "Designs"u8;
 
-    public void DrawContent()
+    public MainTabType Identifier
+        => MainTabType.Designs;
+
+    protected override void DrawLeftGroup(in TwoPanelWidth width)
     {
-        _selector.Draw();
+        base.DrawLeftGroup(in width);
         if (_importService.CreateCharaTarget(out var designBase, out var name))
         {
             var newDesign = _manager.CreateClone(designBase, name, true);
-            Glamourer.Messager.NotificationMessage($"Imported Anamnesis .chara file {name} as new design {newDesign.Name}", NotificationType.Success, false);
+            Glamourer.Messager.NotificationMessage($"Imported Anamnesis .chara file {name} as new design {newDesign.Name}",
+                NotificationType.Success, false);
         }
-
-        ImGui.SameLine();
-        _panel.Draw();
         _importService.CreateCharaSource();
     }
+
+    protected override float MinimumWidth
+        => LeftFooter.MinimumWidth;
+
+    protected override float MaximumWidth
+        => Im.Window.Width - 500 * Im.Style.GlobalScale;
+
+    protected override void SetWidth(float width, ScalingMode mode)
+        => _uiConfig.DesignsTabScale = new TwoPanelWidth(width, mode);
+
+
+    public void DrawContent()
+        => Draw(_uiConfig.DesignsTabScale);
 }

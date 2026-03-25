@@ -1,7 +1,5 @@
 ﻿using Glamourer.Api.Enums;
 using Glamourer.Services;
-using OtterGui;
-using OtterGui.Extensions;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -107,7 +105,7 @@ public class DesignBase64Migration
             }
 
             data.Customize = *(CustomizeArray*)(ptr + 4);
-            foreach (var (slot, idx) in EquipSlotExtensions.EqdpSlots.WithIndex())
+            foreach (var (idx, slot) in EquipSlotExtensions.EqdpSlots.Index())
             {
                 var mdl  = eq[idx];
                 var item = items.Identify(slot, mdl.Set, mdl.Variant);
@@ -121,7 +119,7 @@ public class DesignBase64Migration
                 data.SetStain(slot, mdl.Stain);
             }
 
-            var main = cur[0].Skeleton.Id == 0
+            var main = cur[0].Skeleton.Id is 0
                 ? items.DefaultSword
                 : items.Identify(EquipSlot.MainHand, cur[0].Skeleton, cur[0].Weapon, cur[0].Variant);
             if (!main.Valid)

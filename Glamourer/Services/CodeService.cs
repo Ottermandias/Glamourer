@@ -1,8 +1,11 @@
+using Glamourer.Config;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
 
 namespace Glamourer.Services;
 
-public class CodeService
+public sealed class CodeService : IService
 {
     private readonly Configuration _config;
     private readonly SHA256        _hasher = SHA256.Create();
@@ -23,20 +26,21 @@ public class CodeService
         OopsAuRa     = 0x000400,
         OopsHrothgar = 0x000800,
         OopsViera    = 0x001000,
+
         //Artisan      = 0x002000,
-        SixtyThree   = 0x004000,
-        Shirts       = 0x008000,
-        World        = 0x010000,
-        Elephants    = 0x020000,
-        Crown        = 0x040000,
-        Dolphins     = 0x080000,
-        Face         = 0x100000,
-        Manderville  = 0x200000,
-        Smiles       = 0x400000,
+        SixtyThree  = 0x004000,
+        Shirts      = 0x008000,
+        World       = 0x010000,
+        Elephants   = 0x020000,
+        Crown       = 0x040000,
+        Dolphins    = 0x080000,
+        Face        = 0x100000,
+        Manderville = 0x200000,
+        Smiles      = 0x400000,
     }
 
     public static readonly CodeFlag AllHintCodes =
-        Enum.GetValues<CodeFlag>().Where(f => GetData(f).Display).Aggregate((CodeFlag)0, (f1, f2) => f1 | f2);
+        CodeFlag.Values.Where(f => GetData(f).Display).Aggregate((CodeFlag)0, (f1, f2) => f1 | f2);
 
     public const CodeFlag DyeCodes =
         CodeFlag.Clown | CodeFlag.World | CodeFlag.Elephants | CodeFlag.Dolphins;
@@ -138,7 +142,7 @@ public class CodeService
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(name));
         var       sha    = (ReadOnlySpan<byte>)_hasher.ComputeHash(stream);
 
-        foreach (var flag in Enum.GetValues<CodeFlag>())
+        foreach (var flag in CodeFlag.Values)
         {
             if (sha.SequenceEqual(GetSha(flag)))
                 return flag;
@@ -251,4 +255,3 @@ public class CodeService
         _                     => (false, 0, string.Empty, string.Empty, string.Empty),
     };
 }
-

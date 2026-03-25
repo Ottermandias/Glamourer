@@ -1,23 +1,18 @@
 ﻿using Dalamud.Interface;
-using Dalamud.Interface.ImGuiNotification;
-using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
-using FFXIVClientStructs.Interop;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop.Material;
 using Glamourer.State;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Raii;
-using OtterGui.Services;
-using OtterGui.Text;
-using OtterGui.Widgets;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Interop;
 using Penumbra.String;
-using Notification = OtterGui.Classes.Notification;
+using Notification = Luna.Notification;
 
 namespace Glamourer.Gui.Materials;
 
@@ -27,6 +22,8 @@ public sealed unsafe class AdvancedDyePopup(
     LiveColorTablePreviewer preview,
     DirectXService directX) : IService
 {
+    public static readonly AwesomeIcon Palette = FontAwesomeIcon.Palette;
+
     private MaterialValueIndex? _drawIndex;
     private ActorState          _state = null!;
     private Actor               _actor;
@@ -35,8 +32,9 @@ public sealed unsafe class AdvancedDyePopup(
     private bool                _anyChanged;
     private bool                _forceFocus;
 
-    private const int RowsPerPage = 16;
-    private       int _rowOffset;
+    private const int  RowsPerPage = 16;
+    private       int  _rowOffset;
+    private       bool _editSheen;
 
     private bool ShouldBeDrawn()
     {
@@ -49,29 +47,28 @@ public sealed unsafe class AdvancedDyePopup(
         return true;
     }
 
-    public void DrawButton(EquipSlot slot, uint color)
+    public void DrawButton(EquipSlot slot, ColorParameter color)
         => DrawButton(MaterialValueIndex.FromSlot(slot), color);
 
-    public void DrawButton(BonusItemFlag slot, uint color)
+    public void DrawButton(BonusItemFlag slot, ColorParameter color)
         => DrawButton(MaterialValueIndex.FromSlot(slot), color);
 
-    private void DrawButton(MaterialValueIndex index, uint color)
+    private void DrawButton(MaterialValueIndex index, ColorParameter color)
     {
         if (config.HideDesignPanel.HasFlag(DesignPanelFlag.AdvancedDyes))
             return;
 
-        ImGui.SameLine();
-        using var id     = ImUtf8.PushId(index.SlotIndex | ((int)index.DrawObject << 8));
+        Im.Line.Same();
+        using var id     = Im.Id.Push(index.SlotIndex | ((int)index.DrawObject << 8));
         var       isOpen = index == _drawIndex;
 
         var (textColor, buttonColor) = isOpen
-            ? (ColorId.HeaderButtons.Value(), ImGui.GetColorU32(ImGuiCol.ButtonActive))
-            : (color, 0u);
+            ? (ColorId.HeaderButtons.Value(), ImGuiColor.ButtonActive.Get())
+            : (color, ColorParameter.Default);
 
-        using (ImRaii.PushColor(ImGuiCol.Border, textColor, isOpen))
+        using (ImStyleBorder.Frame.Push(textColor, 2 * Im.Style.GlobalScale, isOpen))
         {
-            using var frame = ImRaii.PushStyle(ImGuiStyleVar.FrameBorderSize, 2 * ImGuiHelpers.GlobalScale, isOpen);
-            if (ImUtf8.IconButton(FontAwesomeIcon.Palette, ""u8, default, false, textColor, buttonColor))
+            if (ImEx.Icon.Button(Palette, StringU8.Empty, false, buttonColor, textColor))
             {
                 _forceFocus       = true;
                 _selectedMaterial = byte.MaxValue;
@@ -79,7 +76,7 @@ public sealed unsafe class AdvancedDyePopup(
             }
         }
 
-        ImUtf8.HoverTooltip("Open advanced dyes for this slot."u8);
+        Im.Tooltip.OnHover("Open advanced dyes for this slot."u8);
     }
 
     private (string Path, string GamePath) ResourceName(MaterialValueIndex index)
@@ -98,9 +95,10 @@ public sealed unsafe class AdvancedDyePopup(
         return (path, gamePath);
     }
 
-    private void DrawTabBar(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials, ref bool firstAvailable)
+    private void DrawTabBar(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures,
+        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials, ref bool firstAvailable)
     {
-        using var bar = ImUtf8.TabBar("tabs"u8);
+        using var bar = Im.TabBar.Begin("tabs"u8);
         if (!bar)
             return;
 
@@ -116,122 +114,137 @@ public sealed unsafe class AdvancedDyePopup(
             if (index == preview.LastValueIndex with { RowIndex = 0 })
                 table = preview.LastOriginalColorTable;
 
-            using var disable = ImRaii.Disabled(!available);
+            using var disable = Im.Disabled(!available);
             var select = available && firstAvailable && _selectedMaterial == byte.MaxValue
-                ? ImGuiTabItemFlags.SetSelected
-                : ImGuiTabItemFlags.None;
+                ? TabItemFlags.SetSelected
+                : TabItemFlags.None;
 
             if (available)
                 firstAvailable = false;
 
             var       hasAdvancedDyes = _state.Materials.CheckExistenceMaterial(index);
-            using var c               = ImRaii.PushColor(ImGuiCol.Text, highLightColor, hasAdvancedDyes);
+            using var c               = ImGuiColor.Text.Push(highLightColor, hasAdvancedDyes);
             using var tab             = _label.TabItem(i, select);
             c.Pop();
-            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            if (Im.Item.Hovered(HoveredFlags.AllowWhenDisabled))
             {
-                using var enabled = ImRaii.Enabled();
+                using var enabled = Im.Enabled();
                 var (path, gamePath) = ResourceName(index);
-                using var tt = ImUtf8.Tooltip();
+                using var tt = Im.Tooltip.Begin();
 
-                if (gamePath.Length == 0 || path.Length == 0)
-                    ImUtf8.Text("This material does not exist."u8);
+                if (gamePath.Length is 0 || path.Length is 0)
+                    Im.Text("This material does not exist."u8);
                 else if (!available)
-                    ImUtf8.Text($"This material does not have an associated color set.\n\n{gamePath}\n{path}");
+                    Im.Text($"This material does not have an associated color set.\n\n{gamePath}\n{path}");
                 else
-                    ImUtf8.Text($"{gamePath}\n{path}");
+                    Im.Text($"{gamePath}\n{path}");
 
                 if (hasAdvancedDyes && !available)
                 {
-                    ImUtf8.Text("\nRight-Click to remove ineffective advanced dyes."u8);
-                    if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+                    Im.Text("\nRight-Click to remove ineffective advanced dyes."u8);
+                    if (Im.Mouse.IsClicked(MouseButton.Right))
                         for (byte row = 0; row < ColorTable.NumRows; ++row)
                             stateManager.ResetMaterialValue(_state, index with { RowIndex = row }, ApplySettings.Game);
                 }
             }
 
-            if ((tab.Success || select is ImGuiTabItemFlags.SetSelected) && available)
+            if ((tab.Success || select is TabItemFlags.SetSelected) && available)
             {
                 _selectedMaterial = i;
-                DrawToggle();
+                DrawToggles();
                 DrawTable(index, table);
             }
         }
     }
 
-    private void DrawToggle()
+    private void DrawToggles()
     {
-        var       buttonWidth = new Vector2(ImGui.GetContentRegionAvail().X / 2, 0);
-        using var font        = ImRaii.PushFont(UiBuilder.MonoFont);
-        using var hoverColor  = ImRaii.PushColor(ImGuiCol.ButtonHovered, ImGui.GetColorU32(ImGuiCol.TabHovered));
+        var layerButtonWidth = _mode is ColorRow.Mode.Dawntrail ? Im.Font.Mono.GetCharacterAdvance(' ') * 5 + Im.Style.FramePadding.X * 2 : 0;
+        var buttonWidth =
+            (Im.ContentRegion.Available.X - (_mode is ColorRow.Mode.Dawntrail ? layerButtonWidth * 2 + Im.Style.ItemSpacing.X : 0)) / 2;
+        var       buttonSize = new Vector2(buttonWidth, 0);
+        using var font       = Im.Font.PushMono();
+        using var hoverColor = ImGuiColor.ButtonHovered.Push(Im.Style[ImGuiColor.TabHovered]);
 
-        using (ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(_rowOffset == 0 ? ImGuiCol.TabActive : ImGuiCol.Tab)))
+        hoverColor.Push(ImGuiColor.Button, Im.Style[_rowOffset is 0 ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
+        if (ImEx.ButtonCorners("Row Pairs 1-8 "u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Left))
+            _rowOffset = 0;
+        hoverColor.Pop();
+
+        Im.Line.NoSpacing();
+
+        hoverColor.Push(ImGuiColor.Button, Im.Style[_rowOffset is RowsPerPage ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
+        if (ImEx.ButtonCorners("Row Pairs 9-16"u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Right))
+            _rowOffset = RowsPerPage;
+        hoverColor.Pop();
+
+        if (_mode is ColorRow.Mode.Dawntrail)
         {
-            if (ToggleButton.ButtonEx("Row Pairs 1-8 ", buttonWidth, ImGuiButtonFlags.MouseButtonLeft, ImDrawFlags.RoundCornersLeft))
-                _rowOffset = 0;
-        }
+            Im.Line.Same();
 
-        ImGui.SameLine(0, 0);
+            buttonSize = new Vector2(layerButtonWidth, 0);
 
-        using (ImRaii.PushColor(ImGuiCol.Button, ImGui.GetColorU32(_rowOffset == RowsPerPage ? ImGuiCol.TabActive : ImGuiCol.Tab)))
-        {
-            if (ToggleButton.ButtonEx("Row Pairs 9-16", buttonWidth, ImGuiButtonFlags.MouseButtonLeft, ImDrawFlags.RoundCornersRight))
-                _rowOffset = RowsPerPage;
+            hoverColor.Push(ImGuiColor.Button, Im.Style[!_editSheen ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
+            if (ImEx.ButtonCorners("Base"u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Left))
+                _editSheen = false;
+            hoverColor.Pop();
+
+            Im.Line.NoSpacing();
+
+            hoverColor.Push(ImGuiColor.Button, Im.Style[_editSheen ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
+            if (ImEx.ButtonCorners("Sheen"u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Right))
+                _editSheen = true;
+            hoverColor.Pop();
         }
     }
 
-    private void DrawContent(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials)
+    private void DrawContent(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures,
+        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials)
     {
         var firstAvailable = true;
         DrawTabBar(textures, materials, ref firstAvailable);
 
         if (firstAvailable)
-            ImUtf8.Text("No Editable Materials available."u8);
+            Im.Text("No Editable Materials available."u8);
     }
 
-    private void DrawWindow(ReadOnlySpan<Pointer<Texture>> textures, ReadOnlySpan<Pointer<Material>> materials)
+    private void DrawWindow(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures,
+        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials)
     {
-        var flags = ImGuiWindowFlags.NoFocusOnAppearing
-          | ImGuiWindowFlags.NoCollapse
-          | ImGuiWindowFlags.NoDecoration
-          | ImGuiWindowFlags.NoResize
-          | ImGuiWindowFlags.NoDocking;
+        var flags = WindowFlags.NoFocusOnAppearing
+          | WindowFlags.NoCollapse
+          | WindowFlags.NoDecoration
+          | WindowFlags.NoResize
+          | WindowFlags.NoDocking;
 
         // Set position to the right of the main window when attached
         // The downwards offset is implicit through child position.
         if (config.KeepAdvancedDyesAttached)
         {
-            var position = ImGui.GetWindowPos();
-            position.X += ImGui.GetWindowSize().X + ImGui.GetStyle().WindowPadding.X;
-            ImGui.SetNextWindowPos(position);
-            flags |= ImGuiWindowFlags.NoMove;
+            var position = Im.Window.Position;
+            position.X += Im.Window.Size.X + Im.Style.WindowPadding.X;
+            Im.Window.SetNextPosition(position);
+            flags |= WindowFlags.NoMove;
         }
 
-        var width = 7 * ImGui.GetFrameHeight() // Buttons
-          + 3 * ImGui.GetStyle().ItemSpacing.X // around text
-          + 7 * ImGui.GetStyle().ItemInnerSpacing.X
-          + 200 * ImGuiHelpers.GlobalScale                                        // Drags
-          + 7 * UiBuilder.MonoFont.GetCharAdvance(' ') * ImGuiHelpers.GlobalScale // Row
-          + 2 * ImGui.GetStyle().WindowPadding.X;
-        var height = 19 * ImGui.GetFrameHeightWithSpacing() + ImGui.GetStyle().WindowPadding.Y + 3 * ImGui.GetStyle().ItemSpacing.Y;
-        ImGui.SetNextWindowSize(new Vector2(width, height));
+        var width = 7 * Im.Style.FrameHeight // Buttons
+          + 3 * Im.Style.ItemSpacing.X       // around text
+          + 7 * Im.Style.ItemInnerSpacing.X
+          + 200 * Im.Style.GlobalScale                                       // Drags
+          + 7 * Im.Font.Mono.GetCharacterAdvance(' ') * Im.Style.GlobalScale // Row
+          + 2 * Im.Style.WindowPadding.X;
+        var height = 19 * Im.Style.FrameHeightWithSpacing + Im.Style.WindowPadding.Y + 3 * Im.Style.ItemSpacing.Y;
+        Im.Window.SetNextSize(new Vector2(width, height));
 
-        var window = ImGui.Begin("###Glamourer Advanced Dyes", flags);
-        if (ImGui.IsWindowAppearing() || _forceFocus)
+        using var window = Im.Window.Begin("###Glamourer Advanced Dyes"u8, flags);
+        if (Im.Window.Appearing || _forceFocus)
         {
-            ImGui.SetWindowFocus();
+            Im.Window.SetFocus("###Glamourer Advanced Dyes"u8);
             _forceFocus = false;
         }
 
-        try
-        {
-            if (window)
-                DrawContent(textures, materials);
-        }
-        finally
-        {
-            ImGui.End();
-        }
+        if (window)
+            DrawContent(textures, materials);
     }
 
     public void Draw(Actor actor, ActorState state)
@@ -250,7 +263,7 @@ public sealed unsafe class AdvancedDyePopup(
         if (!materialIndex.Valid)
             return;
 
-        using var disabled = ImRaii.Disabled(_state.IsLocked);
+        using var disabled = Im.Disabled(_state.IsLocked);
         _anyChanged = false;
         for (byte i = 0; i < RowsPerPage; ++i)
         {
@@ -260,7 +273,7 @@ public sealed unsafe class AdvancedDyePopup(
             DrawRow(ref row, index, table);
         }
 
-        ImGui.Separator();
+        Im.Separator();
         DrawAllRow(materialIndex, table);
     }
 
@@ -272,7 +285,7 @@ public sealed unsafe class AdvancedDyePopup(
             {
                 var data   = new ReadOnlySpan<byte>(ptr, sizeof(ColorTable.Table));
                 var base64 = Convert.ToBase64String(data);
-                ImGui.SetClipboardText(base64);
+                Im.Clipboard.Set(base64);
             }
         }
         catch (Exception ex)
@@ -285,7 +298,7 @@ public sealed unsafe class AdvancedDyePopup(
     {
         try
         {
-            var base64 = ImGui.GetClipboardText();
+            var base64 = Im.Clipboard.GetUtf16();
             if (base64.Length > 0)
             {
                 var data = Convert.FromBase64String(base64);
@@ -312,7 +325,7 @@ public sealed unsafe class AdvancedDyePopup(
         catch (Exception ex)
         {
             Glamourer.Messager.AddMessage(new Notification(ex, "Could not paste color table from clipboard.",
-                "Could not paste color table from clipboard.", NotificationType.Error));
+                "Could not paste color table from clipboard."));
         }
 
         table = default;
@@ -321,33 +334,32 @@ public sealed unsafe class AdvancedDyePopup(
 
     private void DrawAllRow(MaterialValueIndex materialIndex, in ColorTable.Table table)
     {
-        using var id         = ImRaii.PushId(100);
-        var       buttonSize = new Vector2(ImGui.GetFrameHeight());
-        ImUtf8.IconButton(FontAwesomeIcon.Crosshairs, "Highlight all affected colors on the character."u8, buttonSize);
-        if (ImGui.IsItemHovered())
+        using var id = Im.Id.Push(100);
+        ImEx.Icon.Button(LunaStyle.OnHoverIcon, "Highlight all affected colors on the character."u8);
+        if (Im.Item.Hovered())
             preview.OnHover(materialIndex with { RowIndex = byte.MaxValue }, _actor.Index, table);
-        ImGui.SameLine();
-        ImGui.AlignTextToFramePadding();
-        using (ImRaii.PushFont(UiBuilder.MonoFont))
+        Im.Line.Same();
+        using (Im.Font.PushMono())
         {
-            ImUtf8.Text("All Color Row Pairs (1-16)"u8);
+            ImEx.TextFrameAligned("All Color Row Pairs (1-16)"u8);
         }
 
-        var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
-        ImGui.SameLine(ImGui.GetWindowSize().X - 3 * buttonSize.X - 2 * spacing - ImGui.GetStyle().WindowPadding.X);
-        if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Export this table to your clipboard."u8, buttonSize))
+        var spacing = Im.Style.ItemInnerSpacing.X;
+        Im.Line.Same(Im.Window.Size.X - 3 * Im.Style.FrameHeight - 2 * spacing - Im.Style.WindowPadding.X);
+        if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "Export this table to your clipboard."u8))
         {
-            ColorRowClipboard.Table = table;
+            ColorRowClipboard.Table     = table;
+            ColorRowClipboard.TableMode = _mode;
             CopyToClipboard(table);
         }
 
-        ImGui.SameLine(0, spacing);
-        if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported table from your clipboard onto this table."u8, buttonSize)
+        Im.Line.SameInner();
+        if (ImEx.Icon.Button(LunaStyle.FromClipboardIcon, "Import an exported table from your clipboard onto this table."u8)
          && ImportFromClipboard(out var newTable))
             for (var idx = 0; idx < ColorTable.NumRows; ++idx)
             {
                 var row         = newTable[idx];
-                var internalRow = new ColorRow(row);
+                var internalRow = ColorRow.From(row, _mode);
                 var slot        = materialIndex.ToEquipSlot();
                 var weapon = slot is EquipSlot.MainHand or EquipSlot.OffHand
                     ? _state.ModelData.Weapon(slot)
@@ -356,19 +368,19 @@ public sealed unsafe class AdvancedDyePopup(
                 stateManager.ChangeMaterialValue(_state, materialIndex with { RowIndex = (byte)idx }, value, ApplySettings.Manual);
             }
 
-        ImGui.SameLine(0, spacing);
-        if (ImUtf8.IconButton(FontAwesomeIcon.UndoAlt, "Reset this table to game state."u8, buttonSize, !_anyChanged))
+        Im.Line.SameInner();
+        if (ImEx.Icon.Button(LunaStyle.UndoIcon, "Reset this table to game state."u8, !_anyChanged))
             for (byte i = 0; i < ColorTable.NumRows; ++i)
                 stateManager.ResetMaterialValue(_state, materialIndex with { RowIndex = i }, ApplySettings.Game);
     }
 
     private void DrawRow(ref ColorTableRow row, MaterialValueIndex index, in ColorTable.Table table)
     {
-        using var id      = ImUtf8.PushId(index.RowIndex);
+        using var id      = Im.Id.Push((uint)index.RowIndex);
         var       changed = _state.Materials.TryGetValue(index, out var value);
         if (!changed)
         {
-            var internalRow = new ColorRow(row);
+            var internalRow = ColorRow.From(row, _mode);
             var slot        = index.ToEquipSlot();
             var weapon = slot switch
             {
@@ -383,86 +395,119 @@ public sealed unsafe class AdvancedDyePopup(
         else
         {
             _anyChanged = true;
-            value       = new MaterialValueState(value.Game, value.Model, value.DrawData, StateSource.Manual);
+            value = new MaterialValueState(value.Game,
+                value.Model.IsPartial(_mode) ? value.Model.MergeOnto(ColorRow.From(row, _mode)) : value.Model,
+                value.DrawData, StateSource.Manual);
         }
 
-        var buttonSize = new Vector2(ImGui.GetFrameHeight());
-        ImUtf8.IconButton(FontAwesomeIcon.Crosshairs, "Highlight the affected colors on the character."u8, buttonSize);
-        if (ImGui.IsItemHovered())
+        ImEx.Icon.Button(LunaStyle.OnHoverIcon, "Highlight the affected colors on the character."u8);
+        if (Im.Item.Hovered())
             preview.OnHover(index, _actor.Index, table);
 
-        ImGui.SameLine();
-        ImGui.AlignTextToFramePadding();
-        using (ImRaii.PushFont(UiBuilder.MonoFont))
+        Im.Line.Same();
+        using (Im.Font.PushMono())
         {
             var rowIndex  = index.RowIndex / 2 + 1;
             var rowSuffix = (index.RowIndex & 1) == 0 ? 'A' : 'B';
-            ImUtf8.Text($"Row {rowIndex,2}{rowSuffix}");
+            ImEx.TextFrameAligned($"Row {rowIndex,2}{rowSuffix}");
         }
 
-        ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 2);
-        var applied = ImUtf8.ColorPicker("##diffuse"u8, "Change the diffuse value for this row."u8, value.Model.Diffuse,
-            v => value.Model.Diffuse = v, "D"u8);
+        Im.Line.Same(0, Im.Style.ItemSpacing.X * 2);
+        var applied = ImEx.ColorPickerButton("##diffuse"u8, "Change the diffuse color for this row."u8, value.Model.Diffuse,
+            out value.Model.Diffuse, 'D');
 
-        var spacing = ImGui.GetStyle().ItemInnerSpacing;
-        ImGui.SameLine(0, spacing.X);
-        applied |= ImUtf8.ColorPicker("##specular"u8, "Change the specular value for this row."u8, value.Model.Specular,
-            v => value.Model.Specular = v, "S"u8);
+        var spacing = Im.Style.ItemInnerSpacing;
+        Im.Line.Same(0, spacing.X);
+        applied |= ImEx.ColorPickerButton("##specular"u8, "Change the specular color for this row."u8, value.Model.Specular,
+            out value.Model.Specular, 'S');
 
-        ImGui.SameLine(0, spacing.X);
-        applied |= ImUtf8.ColorPicker("##emissive"u8, "Change the emissive value for this row."u8, value.Model.Emissive,
-            v => value.Model.Emissive = v, "E"u8);
+        Im.Line.Same(0, spacing.X);
+        applied |= ImEx.ColorPickerButton("##emissive"u8, "Change the emissive color for this row."u8, value.Model.Emissive,
+            out value.Model.Emissive, 'E');
+        
+        Im.Line.Same(0, spacing.X);
 
-        ImGui.SameLine(0, spacing.X);
-        if (_mode is not ColorRow.Mode.Dawntrail)
+        if (_mode is ColorRow.Mode.Dawntrail && _editSheen)
         {
-            ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-            applied |= DragGloss(ref value.Model.GlossStrength);
-            ImUtf8.HoverTooltip("Change the gloss strength for this row."u8);
+            // The other layout has 2 items of width 100*sc and one spacing, for a total of 200*sc + 1*sp.
+            // This layout has 3 items and two spacings: 3*w + 2*sp = 200*sc + 1*sp.
+            var allItemsWidth = 200 * Im.Style.GlobalScale - spacing.X;
+            var itemWidth     = MathF.Floor(allItemsWidth / 3);
+
+            Im.Item.SetNextWidth(allItemsWidth - itemWidth * 2);
+            applied |= DragSheen(ref value.Model.Sheen, false);
+            Im.Tooltip.OnHover("Change the sheen strength for this row."u8);
+
+            Im.Line.Same(0, spacing.X);
+
+            Im.Item.SetNextWidth(itemWidth);
+            applied |= DragSheenTint(ref value.Model.SheenTint, false);
+            Im.Tooltip.OnHover("Change the sheen tint for this row."u8);
+
+            Im.Line.Same(0, spacing.X);
+
+            Im.Item.SetNextWidth(itemWidth);
+            applied |= DragSheenRoughness(ref value.Model.SheenAperture, false);
+            Im.Tooltip.OnHover("Change the sheen roughness for this row."u8);
         }
         else
         {
-            ImGui.Dummy(new Vector2(100 * ImGuiHelpers.GlobalScale, 0));
+            Im.Item.SetNextWidthScaled(100);
+            var editAsRoughness = config.RoughnessSetting.Get(_mode is ColorRow.Mode.Dawntrail);
+            applied |= (_mode, editAsRoughness) switch
+            {
+                (ColorRow.Mode.Legacy, false)    => DragGloss(ref value.Model.GlossStrength, false),
+                (ColorRow.Mode.Legacy, true)     => DragGlossAsRoughness(ref value.Model.GlossStrength, false),
+                (ColorRow.Mode.Dawntrail, false) => DragRoughnessAsGloss(ref value.Model.Roughness, false),
+                (ColorRow.Mode.Dawntrail, true)  => DragRoughness(ref value.Model.Roughness, false),
+                _                                => false,
+            };
+            Im.Tooltip.OnHover(editAsRoughness ? "Change the roughness for this row."u8 : "Change the gloss strength for this row."u8);
+
+            Im.Line.Same(0, spacing.X);
+            if (_mode is not ColorRow.Mode.Dawntrail)
+            {
+                Im.Item.SetNextWidthScaled(100);
+                applied |= DragSpecularStrength(ref value.Model.SpecularStrength, false);
+                Im.Tooltip.OnHover("Change the specular strength for this row."u8);
+            }
+            else
+            {
+                Im.Item.SetNextWidthScaled(100);
+                applied |= DragMetalness(ref value.Model.Metalness, false);
+                Im.Tooltip.OnHover("Change the metalness for this row."u8);
+            }
         }
 
-        ImGui.SameLine(0, spacing.X);
-        if (_mode is not ColorRow.Mode.Dawntrail)
+        Im.Line.Same(0, spacing.X);
+        if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "Export this row to your clipboard."u8))
         {
-            ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-            applied |= DragSpecularStrength(ref value.Model.SpecularStrength);
-            ImUtf8.HoverTooltip("Change the specular strength for this row."u8);
-        }
-        else
-        {
-            ImGui.Dummy(new Vector2(100 * ImGuiHelpers.GlobalScale, 0));
+            ColorRowClipboard.Row     = value.Model;
+            ColorRowClipboard.RowMode = _mode;
         }
 
-        ImGui.SameLine(0, spacing.X);
-        if (ImUtf8.IconButton(FontAwesomeIcon.Clipboard, "Export this row to your clipboard."u8, buttonSize))
-            ColorRowClipboard.Row = value.Model;
-        ImGui.SameLine(0, spacing.X);
-        if (ImUtf8.IconButton(FontAwesomeIcon.Paste, "Import an exported row from your clipboard onto this row."u8, buttonSize,
+        Im.Line.Same(0, spacing.X);
+        if (ImEx.Icon.Button(LunaStyle.FromClipboardIcon, "Import an exported row from your clipboard onto this row."u8,
                 !ColorRowClipboard.IsSet))
         {
             value.Model = ColorRowClipboard.Row;
             applied     = true;
         }
 
-        ImGui.SameLine(0, spacing.X);
-        if (ImUtf8.IconButton(FontAwesomeIcon.UndoAlt, "Reset this row to game state."u8, buttonSize, !changed))
+        Im.Line.Same(0, spacing.X);
+        if (ImEx.Icon.Button(LunaStyle.UndoIcon, "Reset this row to game state."u8, !changed))
             stateManager.ResetMaterialValue(_state, index, ApplySettings.Game);
 
         if (applied)
             stateManager.ChangeMaterialValue(_state, index, value, ApplySettings.Manual);
     }
 
-    public static bool DragGloss(ref float value)
+    public static bool DragGloss(ref float value, bool canUnset)
     {
-        var tmp      = value;
-        var minValue = ImGui.GetIO().KeyCtrl ? 0f : (float)Half.Epsilon;
-        if (!ImUtf8.DragScalar("##Gloss"u8, ref tmp, "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value),
-                ImGuiSliderFlags.AlwaysClamp))
-            return false;
+        var tmp      = float.IsNaN(value) ? ColorRow.DefaultGlossStrength : value;
+        var minValue = Im.Io.KeyControl ? 0f : (float)Half.Epsilon;
+        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? "\u2014 G"u8 : "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value), SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, minValue, (float)Half.MaxValue);
         if (tmp2 == value)
@@ -472,12 +517,26 @@ public sealed unsafe class AdvancedDyePopup(
         return true;
     }
 
-    public static bool DragSpecularStrength(ref float value)
+    public static bool DragGlossAsRoughness(ref float value, bool canUnset)
     {
-        var tmp = value * 100f;
-        if (!ImUtf8.DragScalar("##SpecularStrength"u8, ref tmp, "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f, 0.05f,
-                ImGuiSliderFlags.AlwaysClamp))
+        var roughness = ColorTableRow.RoughnessFromShininess(float.IsNaN(value) ? ColorRow.DefaultGlossStrength : value);
+        var tmp       = roughness * 100f;
+        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? "\u2014 Rg"u8 : "%.0f%% Rg"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
+        if (tmp2 == roughness)
             return false;
+
+        value = ColorTableRow.ShininessFromRoughness(tmp2);
+        return true;
+    }
+
+    public static bool DragSpecularStrength(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultSpecularStrength : value) * 100f;
+        if (!Im.Drag("##SpecularStrength"u8, ref tmp, float.IsNaN(value) ? "\u2014 SS"u8 : "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f, 0.05f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, 0f, (float)Half.MaxValue * 100f) / 100f;
         if (tmp2 == value)
@@ -487,19 +546,112 @@ public sealed unsafe class AdvancedDyePopup(
         return true;
     }
 
+    public static bool DragRoughness(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultRoughness : value) * 100f;
+        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? "\u2014 Rg"u8 : "%.0f%% Rg"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragRoughnessAsGloss(ref float value, bool canUnset)
+    {
+        var gloss = ColorTableRow.ShininessFromRoughness(float.IsNaN(value) ? ColorRow.DefaultRoughness : value);
+        var tmp   = gloss;
+        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? "\u2014 G"u8 : "%.1f G"u8, 0.001f, (float)Half.Epsilon, Math.Max(0.01f, 0.005f * gloss), SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, (float)Half.Epsilon, (float)Half.MaxValue);
+        if (tmp2 == gloss)
+            return false;
+
+        value = ColorTableRow.RoughnessFromShininess(tmp2);
+        return true;
+    }
+
+    public static bool DragMetalness(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultMetalness : value) * 100f;
+        if (!Im.Drag("##Metalness"u8, ref tmp, float.IsNaN(value) ? "\u2014 Mt"u8 : "%.0f%% Mt"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragSheen(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultSheen : value) * 100f;
+        if (!Im.Drag("##Sheen"u8, ref tmp, float.IsNaN(value) ? "\u2014 Sh"u8 : "%.0f%% Sh"u8, 0f, 100f * (float)Half.MaxValue, 0.25f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, 0f, 100f * (float)Half.MaxValue) / 100f;
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragSheenTint(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultSheenTint : value) * 100f;
+        if (!Im.Drag("##SheenTint"u8, ref tmp, float.IsNaN(value) ? "\u2014 ST"u8 : "%.0f%% ST"u8, -100f * (float)Half.MaxValue, 100f * (float)Half.MaxValue, 0.25f,
+                SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, -100f * (float)Half.MaxValue, 100f * (float)Half.MaxValue) / 100f;
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragSheenRoughness(ref float value, bool canUnset)
+    {
+        var tmp = 100f / (float.IsNaN(value) ? ColorRow.DefaultSheenAperture : value);
+        if (!Im.Drag("##SheenAperture"u8, ref tmp, float.IsNaN(value) ? "\u2014 SR"u8 : "%.0f%% SR"u8, 100f / (float)Half.MaxValue, 100f / (float)Half.Epsilon, 0.25f,
+                SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(100f / tmp, (float)Half.Epsilon, (float)Half.MaxValue);
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    private static bool UnsetBehavior(ref float value, bool canUnset)
+    {
+        if (!(canUnset && Im.Item.RightClicked() && Im.Io.KeyControl))
+            return false;
+
+        value = float.NaN;
+        return true;
+    }
+
     private LabelStruct _label = new();
 
     private struct LabelStruct
     {
         private fixed byte _label[5];
 
-        public ImRaii.IEndObject TabItem(byte materialIndex, ImGuiTabItemFlags flags)
+        public Im.TabItemDisposable TabItem(byte materialIndex, TabItemFlags flags)
         {
             _label[4] = (byte)('A' + materialIndex);
-            fixed (byte* ptr = _label)
-            {
-                return ImRaii.TabItem(ptr, flags | ImGuiTabItemFlags.NoTooltip);
-            }
+            return Im.TabBar.BeginItem(MemoryMarshal.CreateReadOnlySpan(ref _label[0], 5), flags | TabItemFlags.NoTooltip);
         }
 
         public LabelStruct()

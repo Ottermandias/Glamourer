@@ -3,33 +3,34 @@ using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Interop.CharaFile;
 using Glamourer.Services;
-using Dalamud.Bindings.ImGui;
-using OtterGui.Classes;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
-public class ImportService(CustomizeService _customizations, IDragDropManager _dragDropManager, ItemManager _items)
+public sealed class ImportService(CustomizeService customizations, IDragDropManager dragDropManager, ItemManager items) : IService
 {
     public void CreateDatSource()
-        => _dragDropManager.CreateImGuiSource("DatDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".dat"), m =>
+        => dragDropManager.CreateImGuiSource("DatDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".dat"), m =>
         {
-            ImGui.TextUnformatted($"Dragging {Path.GetFileName(m.Files[0])} to import customizations for Glamourer...");
+            Im.Text($"Dragging {Path.GetFileName(m.Files[0])} to import customizations for Glamourer...");
             return true;
         });
 
     public void CreateCharaSource()
-        => _dragDropManager.CreateImGuiSource("CharaDragger", m => m.Files.Count == 1 && m.Extensions.Contains(".chara") || m.Extensions.Contains(".cma"), m =>
-        {
-            ImGui.TextUnformatted($"Dragging {Path.GetFileName(m.Files[0])} to import Anamnesis/CMTool data for Glamourer...");
-            return true;
-        });
+        => dragDropManager.CreateImGuiSource("CharaDragger",
+            m => m.Files.Count == 1 && m.Extensions.Contains(".chara") || m.Extensions.Contains(".cma"), m =>
+            {
+                Im.Text($"Dragging {Path.GetFileName(m.Files[0])} to import Anamnesis/CMTool data for Glamourer...");
+                return true;
+            });
 
     public bool CreateDatTarget(out DatCharacterFile file)
     {
-        if (!_dragDropManager.CreateImGuiTarget("DatDragger", out var files, out _) || files.Count != 1)
+        if (!dragDropManager.CreateImGuiTarget("DatDragger", out var files, out _) || files.Count != 1)
         {
             file = default;
             return false;
@@ -40,13 +41,13 @@ public class ImportService(CustomizeService _customizations, IDragDropManager _d
 
     public bool CreateCharaTarget([NotNullWhen(true)] out DesignBase? design, out string name)
     {
-        if (!_dragDropManager.CreateImGuiTarget("CharaDragger", out var files, out _) || files.Count != 1)
+        if (!dragDropManager.CreateImGuiTarget("CharaDragger", out var files, out _) || files.Count != 1)
         {
             design = null;
             name   = string.Empty;
             return false;
         }
-        
+
         return Path.GetExtension(files[0]) is ".chara" ? LoadChara(files[0], out design, out name) : LoadCma(files[0], out design, out name);
     }
 
@@ -62,10 +63,10 @@ public class ImportService(CustomizeService _customizations, IDragDropManager _d
         try
         {
             var text = File.ReadAllText(path);
-            var file = CharaFile.CharaFile.ParseData(_items, text, Path.GetFileNameWithoutExtension(path));
+            var file = CharaFile.CharaFile.ParseData(items, text, Path.GetFileNameWithoutExtension(path));
 
             name   = file.Name;
-            design = new DesignBase(_customizations, file.Data, file.ApplyEquip, file.ApplyCustomize, file.ApplyBonus);
+            design = new DesignBase(customizations, file.Data, file.ApplyEquip, file.ApplyCustomize, file.ApplyBonus);
         }
         catch (Exception ex)
         {
@@ -90,12 +91,12 @@ public class ImportService(CustomizeService _customizations, IDragDropManager _d
         try
         {
             var text = File.ReadAllText(path);
-            var file = CmaFile.ParseData(_items, text, Path.GetFileNameWithoutExtension(path));
+            var file = CmaFile.ParseData(items, text, Path.GetFileNameWithoutExtension(path));
             if (file == null)
                 throw new Exception();
 
             name   = file.Name;
-            design = new DesignBase(_customizations, file.Data, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, 0);
+            design = new DesignBase(customizations, file.Data, EquipFlagExtensions.All, CustomizeFlagExtensions.AllRelevant, 0);
         }
         catch (Exception ex)
         {
@@ -166,14 +167,14 @@ public class ImportService(CustomizeService _customizations, IDragDropManager _d
     public bool Verify(in CustomizeArray input, out byte voice, byte? inputVoice = null)
     {
         voice = 0;
-        if (_customizations.ValidateClan(input.Clan, input.Race, out _, out _).Length > 0)
+        if (customizations.ValidateClan(input.Clan, input.Race, out _, out _).Length > 0)
             return false;
-        if (!_customizations.IsGenderValid(input.Race, input.Gender))
+        if (!customizations.IsGenderValid(input.Race, input.Gender))
             return false;
         if (input.BodyType.Value != 1)
             return false;
 
-        var set = _customizations.Manager.GetSet(input.Clan, input.Gender);
+        var set = customizations.Manager.GetSet(input.Clan, input.Gender);
         voice = set.Voices[0];
         if (inputVoice.HasValue && !set.Voices.Contains(inputVoice.Value))
             return false;

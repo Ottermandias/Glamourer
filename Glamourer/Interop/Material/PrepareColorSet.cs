@@ -2,8 +2,7 @@
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
-using OtterGui.Classes;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
@@ -13,9 +12,9 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Interop.Material;
 
 public sealed unsafe class PrepareColorSet
-    : EventWrapperPtr12Ref34<CharacterBase, MaterialResourceHandle, StainIds, nint, PrepareColorSet.Priority>, IHookService
+    : EventBase<PrepareColorSet.Arguments, PrepareColorSet.Priority>, IHookService
 {
-    private readonly UpdateColorSets _updateColorSets;
+    private readonly CreateNewModel _createNewModel;
 
     public enum Priority
     {
@@ -23,24 +22,37 @@ public sealed unsafe class PrepareColorSet
         MaterialManager = 0,
     }
 
-    public PrepareColorSet(HookManager hooks, UpdateColorSets updateColorSets)
-        : base("Prepare Color Set ")
+    public ref struct Arguments(Model model, MaterialResourceHandle* handle, ref StainIds ids, ref nint returnValue)
     {
-        _updateColorSets = updateColorSets;
-        hooks.Provider.InitializeFromAttributes(this);
-        _task = hooks.CreateHook<Delegate>(Name, Sigs.PrepareColorSet, Detour, true);
+        public readonly Model                   Model       = model;
+        public readonly MaterialResourceHandle* Handle      = handle;
+        public ref      StainIds                Ids         = ref ids;
+        public ref      nint                    ReturnValue = ref returnValue;
     }
 
-    private readonly Task<Hook<Delegate>> _task;
+    public PrepareColorSet(HookManager hooks, CreateNewModel createNewModel, Logger log)
+        : base("Prepare Color Set", log)
+    {
+        _createNewModel = createNewModel;
+        _task            = hooks.CreateHook<Delegate>(Name, Sigs.PrepareColorSet, Detour, true);
+    }
+
+    private readonly Task<Hook<Delegate>?> _task;
 
     public nint Address
         => (nint)CharacterBase.MemberFunctionPointers.Destroy;
 
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        _task.Result?.Dispose();
+    }
+
     public void Enable()
-        => _task.Result.Enable();
+        => _task.Result?.Enable();
 
     public void Disable()
-        => _task.Result.Disable();
+        => _task.Result?.Disable();
 
     public Task Awaiter
         => _task;
@@ -53,23 +65,23 @@ public sealed unsafe class PrepareColorSet
     private Texture* Detour(MaterialResourceHandle* material, StainId stainId1, StainId stainId2)
     {
         Glamourer.Log.Excessive($"[{Name}] Triggered with 0x{(nint)material:X} {stainId1.Id} {stainId2.Id}.");
-        var characterBase = _updateColorSets.Get();
+        var characterBase = _createNewModel.Get();
         if (!characterBase.IsCharacterBase)
-            return _task.Result.Original(material, stainId1, stainId2);
+            return _task.Result!.Original(material, stainId1, stainId2);
 
         var ret      = nint.Zero;
         var stainIds = new StainIds(stainId1, stainId2);
-        Invoke(characterBase.AsCharacterBase, material, ref stainIds, ref ret);
+        Invoke(new Arguments(characterBase.AsCharacterBase, material, ref stainIds, ref ret));
         if (ret != nint.Zero)
             return (Texture*)ret;
 
-        return _task.Result.Original(material, stainIds.Stain1, stainIds.Stain2);
+        return _task.Result!.Original(material, stainIds.Stain1, stainIds.Stain2);
     }
 
     public static bool TryGetColorTable(MaterialResourceHandle* material, StainIds stainIds,
         out ColorTable.Table table)
     {
-        if (material->DataSet == null || material->DataSetSize < sizeof(ColorTable.Table) || !material->HasColorTable)
+        if (material->DataSet is null || material->DataSetSize < sizeof(ColorTable.Table) || !material->HasColorTable)
         {
             table = default;
             return false;
@@ -78,10 +90,10 @@ public sealed unsafe class PrepareColorSet
         var newTable = *(ColorTable.Table*)material->DataSet;
         if (GetDyeTable(material, out var dyeTable))
         {
-            if (stainIds.Stain1.Id != 0)
+            if (stainIds.Stain1.Id is not 0)
                 material->ReadStainingTemplate(dyeTable, stainIds.Stain1.Id, (Half*)&newTable, 0);
 
-            if (stainIds.Stain2.Id != 0)
+            if (stainIds.Stain2.Id is not 0)
                 material->ReadStainingTemplate(dyeTable, stainIds.Stain2.Id, (Half*)&newTable, 1);
         }
 

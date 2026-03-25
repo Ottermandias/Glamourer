@@ -2,11 +2,12 @@
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
+using ImSharp;
 using Newtonsoft.Json.Linq;
-using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.GameData.DataContainers;
+using Luna;
 
 namespace Glamourer.Designs;
 
@@ -204,18 +205,25 @@ public class DesignBase
 
     internal readonly struct FlagRestrictionResetter : IDisposable
     {
-        private readonly DesignBase            _design;
-        private readonly ApplicationCollection _oldFlags;
+        public static readonly FlagRestrictionResetter Nothing = default;
+
+        private readonly       DesignBase              _design;
+        private readonly       ApplicationCollection   _oldFlags;
+        private readonly       bool                    _alive;
 
         public FlagRestrictionResetter(DesignBase d, ApplicationCollection restrictions)
         {
             _design             = d;
             _oldFlags           = d.Application;
             _design.Application = restrictions.Restrict(_oldFlags);
+            _alive              = true;
         }
 
         public void Dispose()
-            => _design.Application = _oldFlags;
+        {
+            if (_alive)
+                _design.Application = _oldFlags;
+        }
     }
 
     private CustomizeSet SetCustomizationSet(CustomizeService customize)
@@ -284,7 +292,7 @@ public class DesignBase
         foreach (var slot in BonusExtensions.AllFlags)
         {
             var item = _designData.BonusItem(slot);
-            ret[slot.ToString()] = new JObject()
+            ret[slot.ToString()] = new JObject
             {
                 ["BonusId"] = item.Id.Id,
                 ["Apply"]   = DoApplyBonusItem(slot),
@@ -296,16 +304,16 @@ public class DesignBase
 
     protected JObject SerializeCustomize()
     {
-        var ret = new JObject()
+        var ret = new JObject
         {
             ["ModelId"] = _designData.ModelId,
         };
 
         var customize = _designData.Customize;
         if (_designData.IsHuman)
-            foreach (var idx in Enum.GetValues<CustomizeIndex>())
+            foreach (var idx in CustomizeIndex.Values)
             {
-                ret[idx.ToString()] = new JObject()
+                ret[idx.ToString()] = new JObject
                 {
                     ["Value"] = customize[idx].Value,
                     ["Apply"] = Application.Customize.HasFlag(idx.ToFlag()),
@@ -314,7 +322,7 @@ public class DesignBase
         else
             ret["Array"] = customize.WriteBase64();
 
-        ret["Wetness"] = new JObject()
+        ret["Wetness"] = new JObject
         {
             ["Value"] = _designData.IsWet(),
             ["Apply"] = DoApplyMeta(MetaIndex.Wetness),
@@ -329,7 +337,7 @@ public class DesignBase
 
         foreach (var flag in CustomizeParameterExtensions.ValueFlags)
         {
-            ret[flag.ToString()] = new JObject()
+            ret[flag.ToString()] = new JObject
             {
                 ["Value"] = DesignData.Parameters[flag][0],
                 ["Apply"] = DoApplyParameter(flag),
@@ -338,7 +346,7 @@ public class DesignBase
 
         foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
         {
-            ret[flag.ToString()] = new JObject()
+            ret[flag.ToString()] = new JObject
             {
                 ["Percentage"] = DesignData.Parameters[flag][0],
                 ["Apply"]      = DoApplyParameter(flag),
@@ -347,7 +355,7 @@ public class DesignBase
 
         foreach (var flag in CustomizeParameterExtensions.RgbFlags)
         {
-            ret[flag.ToString()] = new JObject()
+            ret[flag.ToString()] = new JObject
             {
                 ["Red"]   = DesignData.Parameters[flag][0],
                 ["Green"] = DesignData.Parameters[flag][1],
@@ -358,7 +366,7 @@ public class DesignBase
 
         foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
         {
-            ret[flag.ToString()] = new JObject()
+            ret[flag.ToString()] = new JObject
             {
                 ["Red"]   = DesignData.Parameters[flag][0],
                 ["Green"] = DesignData.Parameters[flag][1],
@@ -595,19 +603,19 @@ public class DesignBase
             design.SetApplyCrest(CrestFlag.OffHand,  applyCrestOff);
         }
         var metaValue = QuadBool.FromJObject(equip["Hat"], "Show", "Apply", QuadBool.NullFalse);
-        design.SetApplyMeta(MetaIndex.HatState, metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.HatState, metaValue.Set);
         design._designData.SetHatVisible(metaValue.ForcedValue);
 
         metaValue = QuadBool.FromJObject(equip["Weapon"], "Show", "Apply", QuadBool.NullFalse);
-        design.SetApplyMeta(MetaIndex.WeaponState, metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.WeaponState, metaValue.Set);
         design._designData.SetWeaponVisible(metaValue.ForcedValue);
 
         metaValue = QuadBool.FromJObject(equip["Visor"], "IsToggled", "Apply", QuadBool.NullFalse);
-        design.SetApplyMeta(MetaIndex.VisorState, metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.VisorState, metaValue.Set);
         design._designData.SetVisor(metaValue.ForcedValue);
 
         metaValue = QuadBool.FromJObject(equip["VieraEars"], "Show", "Apply", QuadBool.NullTrue);
-        design.SetApplyMeta(MetaIndex.EarState, metaValue.Enabled);
+        design.SetApplyMeta(MetaIndex.EarState, metaValue.Set);
         design._designData.SetEarsVisible(metaValue.ForcedValue);
         return;
 
@@ -652,7 +660,7 @@ public class DesignBase
 
         var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);
         design._designData.SetIsWet(wetness.ForcedValue);
-        design.SetApplyMeta(MetaIndex.Wetness, wetness.Enabled);
+        design.SetApplyMeta(MetaIndex.Wetness, wetness.Set);
 
         design._designData.ModelId = json["ModelId"]?.ToObject<uint>() ?? 0;
         PrintWarning(customizations.ValidateModelId(design._designData.ModelId, out design._designData.ModelId,

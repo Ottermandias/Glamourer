@@ -10,7 +10,7 @@ public interface ITransaction
     public void          Revert(IDesignEditor editor, object data);
 }
 
-public readonly record struct CustomizeTransaction(CustomizeIndex Slot, CustomizeValue Old, CustomizeValue New)
+public record CustomizeTransaction(CustomizeIndex Slot, CustomizeValue Old, CustomizeValue New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -20,7 +20,7 @@ public readonly record struct CustomizeTransaction(CustomizeIndex Slot, Customiz
         => editor.ChangeCustomize(data, Slot, Old, ApplySettings.Manual);
 }
 
-public readonly record struct EntireCustomizeTransaction(CustomizeFlag Apply, CustomizeArray Old, CustomizeArray New)
+public record EntireCustomizeTransaction(CustomizeFlag Apply, CustomizeArray Old, CustomizeArray New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -30,7 +30,7 @@ public readonly record struct EntireCustomizeTransaction(CustomizeFlag Apply, Cu
         => editor.ChangeEntireCustomize(data, Old, Apply, ApplySettings.Manual);
 }
 
-public readonly record struct EquipTransaction(EquipSlot Slot, EquipItem Old, EquipItem New)
+public record EquipTransaction(EquipSlot Slot, EquipItem Old, EquipItem New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -40,7 +40,7 @@ public readonly record struct EquipTransaction(EquipSlot Slot, EquipItem Old, Eq
         => editor.ChangeItem(data, Slot, Old, ApplySettings.Manual);
 }
 
-public readonly record struct BonusItemTransaction(BonusItemFlag Slot, EquipItem Old, EquipItem New)
+public record BonusItemTransaction(BonusItemFlag Slot, EquipItem Old, EquipItem New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -50,7 +50,7 @@ public readonly record struct BonusItemTransaction(BonusItemFlag Slot, EquipItem
         => editor.ChangeBonusItem(data, Slot, Old, ApplySettings.Manual);
 }
 
-public readonly record struct WeaponTransaction(
+public record WeaponTransaction(
     EquipItem OldMain,
     EquipItem OldOff,
     EquipItem OldGauntlets,
@@ -72,7 +72,7 @@ public readonly record struct WeaponTransaction(
     }
 }
 
-public readonly record struct StainTransaction(EquipSlot Slot, StainIds Old, StainIds New)
+public record StainTransaction(EquipSlot Slot, StainIds Old, StainIds New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -82,7 +82,7 @@ public readonly record struct StainTransaction(EquipSlot Slot, StainIds Old, Sta
         => editor.ChangeStains(data, Slot, Old, ApplySettings.Manual);
 }
 
-public readonly record struct CrestTransaction(CrestFlag Slot, bool Old, bool New)
+public record CrestTransaction(CrestFlag Slot, bool Old, bool New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -92,7 +92,7 @@ public readonly record struct CrestTransaction(CrestFlag Slot, bool Old, bool Ne
         => editor.ChangeCrest(data, Slot, Old, ApplySettings.Manual);
 }
 
-public readonly record struct ParameterTransaction(CustomizeParameterFlag Slot, CustomizeParameterValue Old, CustomizeParameterValue New)
+public record ParameterTransaction(CustomizeParameterFlag Slot, CustomizeParameterValue Old, CustomizeParameterValue New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)
@@ -102,7 +102,7 @@ public readonly record struct ParameterTransaction(CustomizeParameterFlag Slot, 
         => editor.ChangeCustomizeParameter(data, Slot, Old, ApplySettings.Manual);
 }
 
-public readonly record struct MetaTransaction(MetaIndex Slot, bool Old, bool New)
+public record MetaTransaction(MetaIndex Slot, bool Old, bool New)
     : ITransaction
 {
     public ITransaction? Merge(ITransaction older)

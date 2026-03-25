@@ -1,20 +1,15 @@
-﻿using Dalamud.Interface;
-using Glamourer.Designs;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Extensions;
-using OtterGui.Filesystem;
-using OtterGui.Raii;
-using OtterGui.Text;
+﻿using Glamourer.Designs;
+using ImSharp;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _designFileSystem) : IGameDataDrawer
+public sealed class DesignManagerPanel(DesignManager designManager, DesignFileSystem designFileSystem) : IGameDataDrawer
 {
-    public string Label
-        => $"Design Manager ({_designManager.Designs.Count} Designs)###Design Manager";
+    public ReadOnlySpan<byte> Label
+        => new StringU8($"Design Manager ({designManager.Designs.Count} Designs)###Design Manager");
 
     public bool Disabled
         => false;
@@ -22,73 +17,68 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
     public void Draw()
     {
         DrawButtons();
-        foreach (var (design, idx) in _designManager.Designs.WithIndex())
+        foreach (var (idx, design) in designManager.Designs.Index())
         {
-            using var t = ImRaii.TreeNode($"{design.Name}##{idx}");
+            using var id = Im.Id.Push(idx);
+            using var t  = Im.Tree.Node(design.Name);
             if (!t)
                 continue;
 
-            DrawDesign(design, _designFileSystem);
+            DrawDesign(design);
             var base64 = DesignBase64Migration.CreateOldBase64(design.DesignData, design.Application.Equip, design.Application.Customize,
                 design.Application.Meta,
                 design.WriteProtected());
-            using var font = ImRaii.PushFont(UiBuilder.MonoFont);
-            ImGuiUtil.TextWrapped(base64);
-            if (ImGui.IsItemClicked())
-                ImGui.SetClipboardText(base64);
+            using var font = Im.Font.PushMono();
+            Im.TextWrapped(base64);
+            if (Im.Item.Clicked())
+                Im.Clipboard.Set(base64);
         }
     }
 
     private void DrawButtons()
     {
-        if (ImUtf8.Button("Generate 500 Test Designs"u8))
+        if (Im.Button("Generate 500 Test Designs"u8))
             for (var i = 0; i < 500; ++i)
             {
-                var design = _designManager.CreateEmpty($"Test Designs/Test Design {i}", true);
-                _designManager.AddTag(design, "_DebugTest");
+                var design = designManager.CreateEmpty($"Test Designs/Test Design {i}", true);
+                designManager.AddTag(design, "_DebugTest");
             }
 
-        ImUtf8.SameLineInner();
-        if (ImUtf8.Button("Remove All Test Designs"u8))
+        Im.Line.SameInner();
+        if (Im.Button("Remove All Test Designs"u8))
         {
-            var designs = _designManager.Designs.Where(d => d.Tags.Contains("_DebugTest")).ToArray();
+            var designs = designManager.Designs.Where(d => d.Tags.Contains("_DebugTest")).ToArray();
             foreach (var design in designs)
-                _designManager.Delete(design);
-            if (_designFileSystem.Find("Test Designs", out var path) && path is DesignFileSystem.Folder { TotalChildren: 0 })
-                _designFileSystem.Delete(path);
+                designManager.Delete(design);
+            if (designFileSystem.Find("Test Designs", out var path) && path is IFileSystemFolder { TotalDescendants: 0 })
+                designFileSystem.Delete(path);
         }
     }
 
-    public static void DrawDesign(DesignBase design, DesignFileSystem? fileSystem)
+    public static void DrawDesign(DesignBase design)
     {
-        using var table = ImRaii.Table("##equip", 8, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingFixedFit);
+        using var table = Im.Table.Begin("##equip"u8, 8, TableFlags.RowBackground | TableFlags.SizingFixedFit);
         if (design is Design d)
         {
-            ImGuiUtil.DrawTableColumn("Name");
-            ImGuiUtil.DrawTableColumn(d.Name);
-            ImGuiUtil.DrawTableColumn($"({d.Index})");
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted("Description (Hover)");
-            ImGuiUtil.HoverTooltip(d.Description);
-            ImGui.TableNextRow();
+            table.DrawColumn("Name"u8);
+            table.DrawColumn(d.Name);
+            table.DrawColumn($"({d.Index})");
+            table.DrawColumn("Description (Hover)"u8);
+            Im.Tooltip.OnHover(d.Description);
+            table.NextRow();
 
-            ImGuiUtil.DrawTableColumn("Identifier");
-            ImGuiUtil.DrawTableColumn(d.Identifier.ToString());
-            ImGui.TableNextRow();
-            ImGuiUtil.DrawTableColumn("Design File System Path");
-            if (fileSystem != null)
-                ImGuiUtil.DrawTableColumn(fileSystem.TryGetValue(d, out var leaf) ? leaf.FullName() : "No Path Known");
-            ImGui.TableNextRow();
+            table.DrawDataPair("Identifier"u8, d.Identifier);
+            table.NextRow();
+            table.DrawColumn("Design File System Path"u8);
+            table.DrawColumn(d.Path.CurrentPath);
+            table.NextRow();
 
-            ImGuiUtil.DrawTableColumn("Creation");
-            ImGuiUtil.DrawTableColumn(d.CreationDate.ToString());
-            ImGui.TableNextRow();
-            ImGuiUtil.DrawTableColumn("Update");
-            ImGuiUtil.DrawTableColumn(d.LastEdit.ToString());
-            ImGui.TableNextRow();
-            ImGuiUtil.DrawTableColumn("Tags");
-            ImGuiUtil.DrawTableColumn(string.Join(", ", d.Tags));
-            ImGui.TableNextRow();
+            table.DrawDataPair("Creation"u8, d.CreationDate);
+            table.NextRow();
+            table.DrawDataPair("Update"u8, d.LastEdit);
+            table.NextRow();
+            table.DrawDataPair("Tags"u8, StringU8.Join(", "u8, d.Tags));
+            table.NextRow();
         }
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
@@ -99,36 +89,35 @@ public class DesignManagerPanel(DesignManager _designManager, DesignFileSystem _
             var applyStain = design.DoApplyStain(slot);
             var crest      = design.DesignData.Crest(slot.ToCrestFlag());
             var applyCrest = design.DoApplyCrest(slot.ToCrestFlag());
-            ImGuiUtil.DrawTableColumn(slot.ToName());
-            ImGuiUtil.DrawTableColumn(item.Name);
-            ImGuiUtil.DrawTableColumn(item.ItemId.ToString());
-            ImGuiUtil.DrawTableColumn(apply ? "Apply" : "Keep");
-            ImGuiUtil.DrawTableColumn(stain.ToString());
-            ImGuiUtil.DrawTableColumn(applyStain ? "Apply" : "Keep");
-            ImGuiUtil.DrawTableColumn(crest.ToString());
-            ImGuiUtil.DrawTableColumn(applyCrest ? "Apply" : "Keep");
+            table.DrawColumn(slot.ToNameU8());
+            table.DrawColumn(item.Name);
+            table.DrawColumn($"{item.ItemId}");
+            table.DrawColumn(apply ? "Apply"u8 : "Keep"u8);
+            table.DrawColumn($"{stain}");
+            table.DrawColumn(applyStain ? "Apply"u8 : "Keep"u8);
+            table.DrawColumn($"{crest}");
+            table.DrawColumn(applyCrest ? "Apply"u8 : "Keep"u8);
         }
 
         foreach (var index in MetaExtensions.AllRelevant)
         {
-            ImGuiUtil.DrawTableColumn(index.ToName());
-            ImGuiUtil.DrawTableColumn(design.DesignData.GetMeta(index).ToString());
-            ImGuiUtil.DrawTableColumn(design.DoApplyMeta(index) ? "Apply" : "Keep");
-            ImGui.TableNextRow();
+            table.DrawColumn(index.ToNameU8());
+            table.DrawColumn($"{design.DesignData.GetMeta(index)}");
+            table.DrawColumn(design.DoApplyMeta(index) ? "Apply"u8 : "Keep"u8);
+            table.NextRow();
         }
 
-        ImGuiUtil.DrawTableColumn("Model ID");
-        ImGuiUtil.DrawTableColumn(design.DesignData.ModelId.ToString());
-        ImGui.TableNextRow();
+        table.DrawDataPair("Model ID"u8, design.DesignData.ModelId);
+        table.NextRow();
 
-        foreach (var index in Enum.GetValues<CustomizeIndex>())
+        foreach (var index in CustomizeIndex.Values)
         {
             var value = design.DesignData.Customize[index];
             var apply = design.DoApplyCustomize(index);
-            ImGuiUtil.DrawTableColumn(index.ToDefaultName());
-            ImGuiUtil.DrawTableColumn(value.Value.ToString());
-            ImGuiUtil.DrawTableColumn(apply ? "Apply" : "Keep");
-            ImGui.TableNextRow();
+            table.DrawColumn(index.ToNameU8());
+            table.DrawColumn($"{value.Value}");
+            table.DrawColumn(apply ? "Apply"u8 : "Keep"u8);
+            table.NextRow();
         }
     }
 }

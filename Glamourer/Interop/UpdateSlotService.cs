@@ -4,6 +4,7 @@ using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Network;
 using Glamourer.Events;
+using Luna;
 using Penumbra.GameData;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -12,7 +13,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop;
 
-public unsafe class UpdateSlotService : IDisposable
+public sealed unsafe class UpdateSlotService : IDisposable, IRequiredService
 {
     public readonly  EquipSlotUpdating EquipSlotUpdatingEvent;
     public readonly  BonusSlotUpdating BonusSlotUpdatingEvent;
@@ -97,18 +98,18 @@ public unsafe class UpdateSlotService : IDisposable
     {
         var slot        = slotIdx.ToEquipSlot();
         var returnValue = ulong.MaxValue;
-        EquipSlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
+        EquipSlotUpdatingEvent.Invoke(new EquipSlotUpdating.Arguments(drawObject, slot, ref *data, ref returnValue));
         Glamourer.Log.Excessive($"[FlagSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
-        return returnValue == ulong.MaxValue ? _flagSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
+        return returnValue is ulong.MaxValue ? _flagSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
     }
 
     private ulong FlagBonusSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
     {
         var slot        = slotIdx.ToBonusSlot();
         var returnValue = ulong.MaxValue;
-        BonusSlotUpdatingEvent.Invoke(drawObject, slot, ref *data, ref returnValue);
+        BonusSlotUpdatingEvent.Invoke(new BonusSlotUpdating.Arguments(drawObject, slot, ref *data, ref returnValue));
         Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Called with 0x{drawObject:X} for slot {slot} with {*data} ({returnValue:X}).");
-        return returnValue == ulong.MaxValue ? _flagBonusSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
+        return returnValue is ulong.MaxValue ? _flagBonusSlotForUpdateHook.Original(drawObject, slotIdx, data) : returnValue;
     }
 
     private ulong FlagSlotForUpdateInterop(Model drawObject, EquipSlot slot, CharacterArmor armor)
@@ -120,7 +121,7 @@ public unsafe class UpdateSlotService : IDisposable
     {
         var ret = _loadGearsetDataHook.Original(drawDataContainer, gearsetData);
         var drawObject = drawDataContainer->OwnerObject->DrawObject;
-        GearsetDataLoadedEvent.Invoke(drawDataContainer->OwnerObject, drawObject);
+        GearsetDataLoadedEvent.Invoke(new GearsetDataLoaded.Arguments(drawDataContainer->OwnerObject, drawObject));
         Glamourer.Log.Excessive($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
         return ret;
     }

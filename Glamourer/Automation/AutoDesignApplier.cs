@@ -1,11 +1,13 @@
 ﻿using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.Interop;
 using Glamourer.Interop.Material;
 using Glamourer.State;
+using Luna;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -14,7 +16,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Automation;
 
-public sealed class AutoDesignApplier : IDisposable
+public sealed class AutoDesignApplier : IDisposable, IRequiredService
 {
     private readonly Configuration      _config;
     private readonly AutoDesignManager  _manager;
@@ -71,38 +73,38 @@ public sealed class AutoDesignApplier : IDisposable
         _jobs.JobChanged -= OnJobChange;
     }
 
-    private void OnWeaponLoading(Actor actor, EquipSlot slot, ref CharacterWeapon weapon)
+    private void OnWeaponLoading(in WeaponLoading.Arguments arguments)
     {
         if (!_jobChangeState.HasState || !_config.EnableAutoDesigns)
             return;
 
-        var id = actor.GetIdentifier(_actors);
+        var id = arguments.Actor.GetIdentifier(_actors);
         if (id == _jobChangeState.Identifier)
         {
             var state   = _jobChangeState.State!;
-            var current = state.BaseData.Item(slot);
-            switch (slot)
+            var current = state.BaseData.Item(arguments.Slot);
+            switch (arguments.Slot)
             {
                 case EquipSlot.MainHand:
                 {
-                    if (_jobChangeState.TryGetValue(current.Type, actor.Job, false, out var data))
+                    if (_jobChangeState.TryGetValue(current.Type, arguments.Actor.Job, false, out var data))
                     {
                         Glamourer.Log.Verbose(
-                            $"Changing Mainhand from {state.ModelData.Weapon(EquipSlot.MainHand)} | {state.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{actor.Address:X}.");
+                            $"Changing Mainhand from {state.ModelData.Weapon(EquipSlot.MainHand)} | {state.BaseData.Weapon(EquipSlot.MainHand)} to {data.Item1} for 0x{arguments.Actor.Address:X}.");
                         _state.ChangeItem(state, EquipSlot.MainHand, data.Item1, new ApplySettings(Source: data.Item2));
-                        weapon = state.ModelData.Weapon(EquipSlot.MainHand);
+                        arguments.Weapon = state.ModelData.Weapon(EquipSlot.MainHand);
                     }
 
                     break;
                 }
                 case EquipSlot.OffHand when current.Type == state.BaseData.MainhandType.Offhand():
                 {
-                    if (_jobChangeState.TryGetValue(current.Type, actor.Job, false, out var data))
+                    if (_jobChangeState.TryGetValue(current.Type, arguments.Actor.Job, false, out var data))
                     {
                         Glamourer.Log.Verbose(
-                            $"Changing Offhand from {state.ModelData.Weapon(EquipSlot.OffHand)} | {state.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{actor.Address:X}.");
+                            $"Changing Offhand from {state.ModelData.Weapon(EquipSlot.OffHand)} | {state.BaseData.Weapon(EquipSlot.OffHand)} to {data.Item1} for 0x{arguments.Actor.Address:X}.");
                         _state.ChangeItem(state, EquipSlot.OffHand, data.Item1, new ApplySettings(Source: data.Item2));
-                        weapon = state.ModelData.Weapon(EquipSlot.OffHand);
+                        arguments.Weapon = state.ModelData.Weapon(EquipSlot.OffHand);
                     }
 
                     _jobChangeState.Reset();
@@ -116,85 +118,79 @@ public sealed class AutoDesignApplier : IDisposable
         }
     }
 
-    private void OnAutomationChange(AutomationChanged.Type type, AutoDesignSet? set, object? bonusData)
+    private void OnAutomationChange(in AutomationChanged.Arguments arguments)
     {
-        if (!_config.EnableAutoDesigns || set == null)
+        if (!_config.EnableAutoDesigns)
             return;
 
-        switch (type)
+        switch (arguments.Type)
         {
-            case AutomationChanged.Type.ToggleSet when !set.Enabled:
-            case AutomationChanged.Type.DeletedDesign when set.Enabled:
-                // The automation set was disabled or deleted, no other for those identifiers can be enabled, remove existing Fixed Locks.
-                RemoveOld(set.Identifiers);
-                break;
-            case AutomationChanged.Type.ChangeIdentifier when set.Enabled:
-                // Remove fixed state from the old identifiers assigned and the old enabled set, if any.
-                var (oldIds, _, _) = ((ActorIdentifier[], ActorIdentifier, AutoDesignSet?))bonusData!;
-                RemoveOld(oldIds);
-                ApplyNew(set); // Does not need to disable oldSet because same identifiers.
-                break;
-            case AutomationChanged.Type.ToggleSet: // Does not need to disable old states because same identifiers.
             case AutomationChanged.Type.ChangedBase:
             case AutomationChanged.Type.AddedDesign:
+            case AutomationChanged.Type.DeletedDesign:
             case AutomationChanged.Type.MovedDesign:
             case AutomationChanged.Type.ChangedDesign:
             case AutomationChanged.Type.ChangedConditions:
             case AutomationChanged.Type.ChangedType:
             case AutomationChanged.Type.ChangedData:
-                ApplyNew(set);
-                break;
+                foreach (var (id, set) in _manager.EnabledSets)
+                {
+                    if (set == arguments.Set)
+                        ApplyNew(id, set);
+                }
+
+                return;
+            case AutomationChanged.Type.UpdatedActiveSets when arguments is AutomationChanged.UpdatedActiveSetsArguments args:
+                foreach (var (id, old, @new) in args.ChangedSets)
+                {
+                    // Remove Old.
+                    if (old is not null)
+                    {
+                        if (id.Type is IdentifierType.Player && id.HomeWorld == WorldId.AnyWorld)
+                            foreach (var state in _state.Where(kvp => kvp.Key.PlayerName == id.PlayerName).Select(kvp => kvp.Value))
+                                state.Sources.RemoveFixedDesignSources();
+                        else if (_state.TryGetValue(id, out var state))
+                            state.Sources.RemoveFixedDesignSources();
+                    }
+
+                    ApplyNew(id, @new);
+                }
+
+                return;
+            default: return;
         }
 
-        return;
-
-        void ApplyNew(AutoDesignSet? newSet)
+        void ApplyNew(ActorIdentifier id, AutoDesignSet? set)
         {
-            if (newSet is not { Enabled: true })
+            if (set is null)
                 return;
 
-            foreach (var id in newSet.Identifiers)
+            Debug.Assert(set.Enabled, "Set added to enabled sets is not marked enabled.");
+
+            if (_objects.TryGetValue(id, out var data))
             {
-                if (_objects.TryGetValue(id, out var data))
+                if (_state.GetOrCreate(id, data.Objects[0], out var state))
                 {
-                    if (_state.GetOrCreate(id, data.Objects[0], out var state))
-                    {
-                        Reduce(data.Objects[0], state, newSet, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
-                        foreach (var actor in data.Objects)
-                            _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
-                    }
-                }
-                else if (_objects.TryGetValueAllWorld(id, out data) || _objects.TryGetValueNonOwned(id, out data))
-                {
+                    Reduce(data.Objects[0], state, set, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
                     foreach (var actor in data.Objects)
-                    {
-                        var specificId = actor.GetIdentifier(_actors);
-                        if (_state.GetOrCreate(specificId, actor, out var state))
-                        {
-                            Reduce(actor, state, newSet, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
-                            _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
-                        }
-                    }
-                }
-                else if (_state.TryGetValue(id, out var state))
-                {
-                    state.Sources.RemoveFixedDesignSources();
+                        _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
                 }
             }
-        }
-
-        void RemoveOld(ActorIdentifier[]? identifiers)
-        {
-            if (identifiers == null)
-                return;
-
-            foreach (var id in identifiers)
+            else if (_objects.TryGetValueAllWorld(id, out data) || _objects.TryGetValueNonOwned(id, out data))
             {
-                if (id.Type is IdentifierType.Player && id.HomeWorld == WorldId.AnyWorld)
-                    foreach (var state in _state.Where(kvp => kvp.Key.PlayerName == id.PlayerName).Select(kvp => kvp.Value))
-                        state.Sources.RemoveFixedDesignSources();
-                else if (_state.TryGetValue(id, out var state))
-                    state.Sources.RemoveFixedDesignSources();
+                foreach (var actor in data.Objects)
+                {
+                    var specificId = actor.GetIdentifier(_actors);
+                    if (_state.GetOrCreate(specificId, actor, out var state))
+                    {
+                        Reduce(actor, state, set, _config.RespectManualOnAutomationUpdate, false, true, out var forcedRedraw);
+                        _state.ReapplyAutomationState(actor, forcedRedraw, false, StateSource.Fixed);
+                    }
+                }
+            }
+            else if (_state.TryGetValue(id, out var state))
+            {
+                state.Sources.RemoveFixedDesignSources();
             }
         }
     }
@@ -302,7 +298,7 @@ public sealed class AutoDesignApplier : IDisposable
             mergedDesign.ResetTemporarySettings = true;
         }
 
-        _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange, false, false, false));
+        _state.ApplyDesign(state, mergedDesign, new ApplySettings(0, StateSource.Fixed, respectManual, fromJobChange));
         forcedRedraw = mergedDesign.ForcedRedraw;
     }
 
@@ -344,7 +340,7 @@ public sealed class AutoDesignApplier : IDisposable
 
     internal static int NewGearsetId = -1;
 
-    private void OnEquippedGearset(string name, int id, int prior, byte _, byte job)
+    private void OnEquippedGearset(in EquippedGearset.Arguments arguments)
     {
         if (!_config.EnableAutoDesigns)
             return;
@@ -356,9 +352,10 @@ public sealed class AutoDesignApplier : IDisposable
         if (!GetPlayerSet(player, out var set) || !_state.TryGetValue(player, out var state))
             return;
 
-        var respectManual = prior == id;
-        NewGearsetId = id;
-        Reduce(data.Objects[0], state, set, respectManual, job != state.LastJob, prior == id, out var forcedRedraw);
+        var respectManual = arguments.PriorId == arguments.Id;
+        NewGearsetId = arguments.Id;
+        Reduce(data.Objects[0], state, set, respectManual, arguments.JobId != state.LastJob, arguments.PriorId == arguments.Id,
+            out var forcedRedraw);
         NewGearsetId = -1;
         foreach (var actor in data.Objects)
             _state.ReapplyState(actor, forcedRedraw, StateSource.Fixed);

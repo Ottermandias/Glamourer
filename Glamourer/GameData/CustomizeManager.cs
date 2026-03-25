@@ -1,7 +1,6 @@
 ﻿using Dalamud.Interface.Textures;
 using Dalamud.Plugin.Services;
-using OtterGui.Classes;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Enums;
 using Race = Penumbra.GameData.Enums.Race;
 
@@ -33,7 +32,7 @@ public class CustomizeManager : IAsyncDataContainer
 
     /// <summary> Get specific icons. </summary>
     public ISharedImmediateTexture GetIcon(uint id)
-        => _icons.TextureProvider.GetFromGameIcon(id);
+        => _textures.GetFromGameIcon(id);
 
     /// <summary> Iterate over all supported genders and clans. </summary>
     public static IEnumerable<(SubRace Clan, Gender Gender)> AllSets()
@@ -47,12 +46,12 @@ public class CustomizeManager : IAsyncDataContainer
 
     public CustomizeManager(ITextureProvider textures, IDataManager gameData, IPluginLog log, NpcCustomizeSet npcCustomizeSet)
     {
-        _icons = new TextureCache(gameData, textures);
+        _textures = textures;
         var stopwatch = new Stopwatch();
         var tmpTask = Task.Run(() =>
         {
             stopwatch.Start();
-            return new CustomizeSetFactory(gameData, log, _icons, npcCustomizeSet);
+            return new CustomizeSetFactory(gameData, textures, log, npcCustomizeSet);
         });
         var setTasks = AllSets().Select(p
             => tmpTask.ContinueWith(t => _customizationSets[ToIndex(p.Clan, p.Gender)] = t.Result.CreateSet(p.Clan, p.Gender)));
@@ -72,9 +71,9 @@ public class CustomizeManager : IAsyncDataContainer
     public bool Finished
         => Awaiter.IsCompletedSuccessfully;
 
-    private readonly        TextureCache   _icons;
-    private static readonly int            ListSize           = Clans.Count * Genders.Count;
-    private readonly        CustomizeSet[] _customizationSets = new CustomizeSet[ListSize];
+    private readonly        ITextureProvider _textures;
+    private static readonly int              ListSize           = Clans.Count * Genders.Count;
+    private readonly        CustomizeSet[]   _customizationSets = new CustomizeSet[ListSize];
 
     /// <summary> Get the index for the given pair of tribe and gender. </summary>
     private static int ToIndex(SubRace race, Gender gender)

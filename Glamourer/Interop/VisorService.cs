@@ -2,12 +2,13 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Glamourer.Events;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop;
 
-public class VisorService : IDisposable
+public sealed class VisorService : IDisposable, IRequiredService
 {
     private readonly PenumbraReloaded     _penumbra;
     private readonly IGameInteropProvider _interop;
@@ -58,11 +59,11 @@ public class VisorService : IDisposable
 
     private void SetupVisorDetour(nint human, ushort modelId, byte value)
     {
-        var originalOn = value != 0;
+        var originalOn = value is not 0;
         var on         = originalOn;
         // Invoke an event that can change the requested value
         // and also control whether the function should be called at all.
-        Event.Invoke(human, false, ref on);
+        Event.Invoke(new VisorStateChanged.Arguments(human, false, ref on));
 
         Glamourer.Log.Verbose(
             $"[SetVisorState] Invoked from game on 0x{human:X} switching to {on} (original {originalOn} from {value} with {modelId}).");

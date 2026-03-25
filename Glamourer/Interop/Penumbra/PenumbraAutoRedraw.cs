@@ -1,16 +1,15 @@
 ﻿using Dalamud.Plugin.Services;
 using Glamourer.Api.Enums;
-using Glamourer.Designs.History;
+using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.State;
-using OtterGui.Classes;
-using OtterGui.Services;
+using Luna;
 using Penumbra.Api.Enums;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop.Penumbra;
 
-public class PenumbraAutoRedraw : IDisposable, IRequiredService
+public sealed class PenumbraAutoRedraw : IDisposable, IRequiredService
 {
     private const    int                    WaitFrames = 5;
     private readonly Configuration          _config;
@@ -49,10 +48,10 @@ public class PenumbraAutoRedraw : IDisposable, IRequiredService
     private readonly ConcurrentSet<ActorState>                  _skips   = [];
     private          DateTime                                   _frame;
 
-    private void OnStateChanged(StateChangeType type, StateSource source, ActorState state, ActorData _1, ITransaction? _2)
+    private void OnStateChanged(in StateChanged.Arguments arguments)
     {
-        if (type is StateChangeType.Design && source.IsIpc())
-            _skips.TryAdd(state);
+        if (arguments.Type is StateChangeType.Design && arguments.Source.IsIpc())
+            _skips.TryAdd(arguments.State);
     }
 
     private void OnFramework(IFramework _)

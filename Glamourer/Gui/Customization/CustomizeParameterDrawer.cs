@@ -1,19 +1,17 @@
-﻿using Dalamud.Interface;
+﻿using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.GameData;
 using Glamourer.Interop.PalettePlus;
 using Glamourer.State;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGui.Services;
+using ImSharp;
+using Luna;
 
 namespace Glamourer.Gui.Customization;
 
 public class CustomizeParameterDrawer(Configuration config, PaletteImport import) : IService
 {
     private readonly Dictionary<Design, CustomizeParameterData> _lastData    = [];
-    private          string                                     _paletteName = string.Empty;
+    private          StringU8                                   _paletteName = StringU8.Empty;
     private          CustomizeParameterData                     _data;
     private          CustomizeParameterFlag                     _flags;
     private          float                                      _width;
@@ -25,7 +23,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         DrawPaletteImport(designManager, design);
         DrawConfig(true);
 
-        using (_ = ImRaii.ItemWidth(_width - 2 * ImGui.GetFrameHeight() - 2 * ImGui.GetStyle().ItemInnerSpacing.X))
+        using (Im.Item.PushWidth(_width - 2 * Im.Style.FrameHeight - 2 * Im.Style.ItemInnerSpacing.X))
         {
             foreach (var flag in CustomizeParameterExtensions.RgbFlags)
                 DrawColorInput3(CustomizeParameterDrawData.FromDesign(designManager, design, flag), true);
@@ -45,7 +43,7 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     {
         using var generalSize = EnsureSize();
         DrawConfig(false);
-        using (_ = ImRaii.ItemWidth(_width - 2 * ImGui.GetFrameHeight() - 2 * ImGui.GetStyle().ItemInnerSpacing.X))
+        using (Im.Item.PushWidth(_width - 2 * Im.Style.FrameHeight - 2 * Im.Style.ItemInnerSpacing.X))
         {
             foreach (var flag in CustomizeParameterExtensions.RgbFlags)
                 DrawColorInput3(CustomizeParameterDrawData.FromState(stateManager, state, flag), state.ModelData.Customize.Highlights);
@@ -63,14 +61,14 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
     private void DrawPaletteCombo()
     {
-        using var id    = ImRaii.PushId("Palettes");
-        using var combo = ImRaii.Combo("##import", _paletteName.Length > 0 ? _paletteName : "Select Palette...");
+        using var id    = Im.Id.Push("Palettes"u8);
+        using var combo = Im.Combo.Begin("##import"u8, _paletteName.Length > 0 ? _paletteName : "Select Palette..."u8);
         if (!combo)
             return;
 
         foreach (var (name, (palette, flags)) in import.Data)
         {
-            if (!ImGui.Selectable(name, _paletteName == name))
+            if (!Im.Selectable(name, _paletteName == name))
                 continue;
 
             _paletteName = name;
@@ -84,37 +82,33 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         if (!config.ShowPalettePlusImport)
             return;
 
-        var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
-
         DrawPaletteCombo();
 
-        ImGui.SameLine(0, spacing);
+        Im.Line.SameInner();
         var value = true;
-        if (ImGui.Checkbox("Show Import", ref value))
+        if (Im.Checkbox("Show Import"u8, ref value))
         {
             config.ShowPalettePlusImport = false;
             config.Save();
         }
 
-        ImGuiUtil.HoverTooltip("Hide the Palette+ Import bar from all designs. You can re-enable it in Glamourers interface settings.");
+        Im.Tooltip.OnHover("Hide the Palette+ Import bar from all designs. You can re-enable it in Glamourers interface settings."u8);
 
-        var buttonWidth = new Vector2((_width - spacing) / 2, 0);
-        var tt = _paletteName.Length > 0
-            ? $"Apply the imported data from the Palette+ palette [{_paletteName}] to this design."
-            : "Please select a palette first.";
-        if (ImGuiUtil.DrawDisabledButton("Apply Import", buttonWidth, tt, _paletteName.Length == 0 || design.WriteProtected()))
+        var buttonWidth = new Vector2((_width - Im.Style.ItemInnerSpacing.X) / 2, 0);
+        if (ImEx.Button("Apply Import"u8, buttonWidth, _paletteName.Length > 0
+                ? $"Apply the imported data from the Palette+ palette [{_paletteName}] to this design."
+                : "Please select a palette first.", _paletteName.Length is 0 || design.WriteProtected()))
         {
             _lastData[design] = design.DesignData.Parameters;
             foreach (var parameter in _flags.Iterate())
                 manager.ChangeCustomizeParameter(design, parameter, _data[parameter]);
         }
 
-        ImGui.SameLine(0, spacing);
+        Im.Line.SameInner();
         var enabled = _lastData.TryGetValue(design, out var oldData);
-        tt = enabled
-            ? $"Revert to the last set of advanced customization parameters of [{design.Name}] before importing."
-            : $"You have not imported any data that could be reverted for [{design.Name}].";
-        if (ImGuiUtil.DrawDisabledButton("Revert Import", buttonWidth, tt, !enabled || design.WriteProtected()))
+        if (ImEx.Button("Revert Import"u8, buttonWidth, enabled
+                ? $"Revert to the last set of advanced customization parameters of [{design.Name}] before importing."
+                : $"You have not imported any data that could be reverted for [{design.Name}].", !enabled || design.WriteProtected()))
         {
             _lastData.Remove(design);
             foreach (var parameter in CustomizeParameterExtensions.AllFlags)
@@ -131,28 +125,28 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         DrawColorDisplayOptions();
         DrawColorFormatOptions(withApply);
         var value = config.ShowColorConfig;
-        ImGui.SameLine();
-        if (ImGui.Checkbox("Show Config", ref value))
+        Im.Line.Same();
+        if (Im.Checkbox("Show Configuration"u8, ref value))
         {
             config.ShowColorConfig = value;
             config.Save();
         }
 
-        ImGuiUtil.HoverTooltip(
-            "Hide the color configuration options from the Advanced Customization panel. You can re-enable it in Glamourers interface settings.");
+        Im.Tooltip.OnHover(
+            "Hide the color configuration options from the Advanced Customization panel. You can re-enable it in Glamourers interface settings."u8);
     }
 
     private void DrawColorDisplayOptions()
     {
-        using var group = ImRaii.Group();
-        if (ImGui.RadioButton("RGB", config.UseRgbForColors) && !config.UseRgbForColors)
+        using var group = Im.Group();
+        if (Im.RadioButton("RGB"u8, config.UseRgbForColors) && !config.UseRgbForColors)
         {
             config.UseRgbForColors = true;
             config.Save();
         }
 
-        ImGui.SameLine();
-        if (ImGui.RadioButton("HSV", !config.UseRgbForColors) && config.UseRgbForColors)
+        Im.Line.Same();
+        if (Im.RadioButton("HSV"u8, !config.UseRgbForColors) && config.UseRgbForColors)
         {
             config.UseRgbForColors = false;
             config.Save();
@@ -162,23 +156,23 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     private void DrawColorFormatOptions(bool withApply)
     {
         var width = _width
-          - (ImGui.CalcTextSize("Float").X
-              + ImGui.CalcTextSize("Integer").X
-              + 2 * (ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.X)
-              + ImGui.GetStyle().ItemInnerSpacing.X
-              + ImGui.GetItemRectSize().X);
+          - (Im.Font.CalculateSize("Float"u8).X
+              + Im.Font.CalculateButtonSize("Integer"u8).X
+              + 2 * Im.Style.ItemSpacing.X)
+          + Im.Style.ItemInnerSpacing.X
+          + Im.Item.Size.X;
         if (!withApply)
-            width -= ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X;
+            width -= Im.Style.FrameHeight + Im.Style.ItemInnerSpacing.X;
 
-        ImGui.SameLine(0, width);
-        if (ImGui.RadioButton("Float", config.UseFloatForColors) && !config.UseFloatForColors)
+        Im.Line.Same(0, width);
+        if (Im.RadioButton("Float"u8, config.UseFloatForColors) && !config.UseFloatForColors)
         {
             config.UseFloatForColors = true;
             config.Save();
         }
 
-        ImGui.SameLine();
-        if (ImGui.RadioButton("Integer", !config.UseFloatForColors) && config.UseFloatForColors)
+        Im.Line.Same();
+        if (Im.RadioButton("Integer"u8, !config.UseFloatForColors) && config.UseFloatForColors)
         {
             config.UseFloatForColors = false;
             config.Save();
@@ -187,19 +181,19 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
     private void DrawColorInput3(in CustomizeParameterDrawData data, bool allowHighlights)
     {
-        using var id           = ImRaii.PushId((int)data.Flag);
+        using var id           = Im.Id.Push((int)data.Flag);
         var       value        = data.CurrentValue.InternalTriple;
         var       noHighlights = !allowHighlights && data.Flag is CustomizeParameterFlag.HairHighlight;
         DrawCopyPasteButtons(data, data.Locked || noHighlights);
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
-        using (_ = ImRaii.Disabled(data.Locked || noHighlights))
+        Im.Line.SameInner();
+        using (Im.Disabled(data.Locked || noHighlights))
         {
-            if (ImGui.ColorEdit3("##value", ref value, GetFlags()))
+            if (Im.Color.Editor("##value"u8, ref value, GetFlags()))
                 data.ChangeParameter(new CustomizeParameterValue(value));
         }
 
         if (noHighlights)
-            ImGuiUtil.HoverTooltip("Highlights are disabled in your regular customizations.", ImGuiHoveredFlags.AllowWhenDisabled);
+            Im.Tooltip.OnHover(HoveredFlags.AllowWhenDisabled, "Highlights are disabled in your regular customizations."u8);
 
         DrawRevert(data);
 
@@ -208,13 +202,13 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
     private void DrawColorInput4(in CustomizeParameterDrawData data)
     {
-        using var id    = ImRaii.PushId((int)data.Flag);
+        using var id    = Im.Id.Push((int)data.Flag);
         var       value = data.CurrentValue.InternalQuadruple;
         DrawCopyPasteButtons(data, data.Locked);
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
-        using (_ = ImRaii.Disabled(data.Locked))
+        Im.Line.SameInner();
+        using (Im.Disabled(data.Locked))
         {
-            if (ImGui.ColorEdit4("##value", ref value, GetFlags() | ImGuiColorEditFlags.AlphaPreviewHalf))
+            if (Im.Color.Editor("##value"u8, ref value, GetFlags() | ColorEditorFlags.AlphaPreviewHalf))
                 data.ChangeParameter(new CustomizeParameterValue(value));
         }
 
@@ -225,12 +219,12 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
     private void DrawValueInput(in CustomizeParameterDrawData data)
     {
-        using var id    = ImRaii.PushId((int)data.Flag);
+        using var id    = Im.Id.Push((int)data.Flag);
         var       value = data.CurrentValue[0];
 
-        using (_ = ImRaii.Disabled(data.Locked))
+        using (Im.Disabled(data.Locked))
         {
-            if (ImGui.InputFloat("##value", ref value, 0.1f, 0.5f))
+            if (Im.Input.Scalar("##value"u8, ref value, 0.1f, 0.5f))
                 data.ChangeParameter(new CustomizeParameterValue(value));
         }
 
@@ -241,14 +235,14 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
 
     private void DrawPercentageInput(in CustomizeParameterDrawData data)
     {
-        using var id    = ImRaii.PushId((int)data.Flag);
+        using var id    = Im.Id.Push((int)data.Flag);
         var       value = data.CurrentValue[0] * 100f;
 
-        using (_ = ImRaii.Disabled(data.Locked))
+        using (Im.Disabled(data.Locked))
         {
-            if (ImGui.SliderFloat("##value", ref value, -100f, 300, "%.2f"))
+            if (Im.Slider("##value"u8, ref value, "%.2f"u8, -100f, 300))
                 data.ChangeParameter(new CustomizeParameterValue(value / 100f));
-            ImGuiUtil.HoverTooltip("You can control-click this to enter arbitrary values by hand instead of dragging.");
+            Im.Tooltip.OnHover("You can control-click this to enter arbitrary values by hand instead of dragging."u8);
         }
 
         DrawRevert(data);
@@ -261,15 +255,15 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
         if (data.Locked || !data.AllowRevert)
             return;
 
-        if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && ImGui.GetIO().KeyCtrl)
+        if (Im.Item.RightClicked() && Im.Io.KeyControl)
             data.ChangeParameter(data.GameValue);
 
-        ImGuiUtil.HoverTooltip("Hold Control and Right-click to revert to game values.");
+        Im.Tooltip.OnHover("Hold Control and Right-click to revert to game values."u8);
     }
 
     private static void DrawApply(in CustomizeParameterDrawData data)
     {
-        if (UiHelpers.DrawCheckbox("##apply", "Apply this custom parameter when applying the Design.", data.CurrentApply, out var enabled,
+        if (UiHelpers.DrawCheckbox("##apply"u8, "Apply this custom parameter when applying the Design."u8, data.CurrentApply, out var enabled,
                 data.Locked))
             data.ChangeApplyParameter(enabled);
     }
@@ -278,38 +272,37 @@ public class CustomizeParameterDrawer(Configuration config, PaletteImport import
     {
         if (data.DisplayApplication && !config.HideApplyCheckmarks)
         {
-            ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+            Im.Line.SameInner();
             DrawApply(data);
         }
 
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
-        ImGui.TextUnformatted(data.Flag.ToName());
+        Im.Line.SameInner();
+        Im.Text(data.Flag.ToNameU8());
     }
 
-    private ImGuiColorEditFlags GetFlags()
-        => Format | Display | ImGuiColorEditFlags.Hdr | ImGuiColorEditFlags.NoOptions;
+    private ColorEditorFlags GetFlags()
+        => Format | Display | ColorEditorFlags.Hdr | ColorEditorFlags.NoOptions;
 
-    private ImGuiColorEditFlags Format
-        => config.UseFloatForColors ? ImGuiColorEditFlags.Float : ImGuiColorEditFlags.Uint8;
+    private ColorEditorFlags Format
+        => config.UseFloatForColors ? ColorEditorFlags.Float : ColorEditorFlags.Uint8;
 
-    private ImGuiColorEditFlags Display
-        => config.UseRgbForColors ? ImGuiColorEditFlags.DisplayRgb : ImGuiColorEditFlags.DisplayHsv;
+    private ColorEditorFlags Display
+        => config.UseRgbForColors ? ColorEditorFlags.DisplayRgb : ColorEditorFlags.DisplayHsv;
 
-    private ImRaii.IEndObject EnsureSize()
+    private Im.ItemWidthDisposable EnsureSize()
     {
-        var iconSize = ImGui.GetTextLineHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y + 4 * ImGui.GetStyle().FramePadding.Y;
-        _width = 7 * iconSize + 4 * ImGui.GetStyle().ItemInnerSpacing.X;
-        return ImRaii.ItemWidth(_width);
+        var iconSize = Im.Style.TextHeight * 2 + Im.Style.ItemSpacing.Y + 4 * Im.Style.FramePadding.Y;
+        _width = 7 * iconSize + 4 * Im.Style.ItemInnerSpacing.X;
+        return Im.Item.PushWidth(_width);
     }
 
     private void DrawCopyPasteButtons(in CustomizeParameterDrawData data, bool locked)
     {
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Copy.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                "Copy this color for later use.", false, true))
+        if (ImEx.Icon.Button(LunaStyle.ToClipboardIcon, "Copy this color for later use."u8))
             _copy = data.CurrentValue;
-        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
-        if (ImGuiUtil.DrawDisabledButton(FontAwesomeIcon.Paste.ToIconString(), new Vector2(ImGui.GetFrameHeight()),
-                _copy.HasValue ? "Paste the currently copied value." : "No value copied yet.", locked || !_copy.HasValue, true))
+        Im.Line.SameInner();
+        if (ImEx.Icon.Button(LunaStyle.FromClipboardIcon, _copy.HasValue ? "Paste the currently copied value."u8 : "No value copied yet."u8,
+                locked || !_copy.HasValue))
             data.ChangeParameter(_copy!.Value);
     }
 }

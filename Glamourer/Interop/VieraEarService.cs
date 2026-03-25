@@ -2,12 +2,13 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Glamourer.Events;
+using Luna;
 using Penumbra.GameData;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop;
 
-public unsafe class VieraEarService : IDisposable
+public unsafe sealed class VieraEarService : IDisposable, IRequiredService
 {
     private readonly PenumbraReloaded     _penumbra;
     private readonly IGameInteropProvider _interop;
@@ -57,10 +58,10 @@ public unsafe class VieraEarService : IDisposable
     private void SetupVieraEarDetour(DrawDataContainer* drawData, byte value)
     {
         Actor actor      = drawData->OwnerObject;
-        var originalOn = value != 0;
+        var originalOn = value is not 0;
         var on         = originalOn;
         // Invoke an event that can change the requested value
-        Event.Invoke(actor, ref on);
+        Event.Invoke(new VieraEarStateChanged.Arguments(actor, ref on));
 
         Glamourer.Log.Verbose(
             $"[SetVieraEarState] Invoked from game on 0x{actor.Address:X} switching to {on} (original {originalOn} from {value}).");

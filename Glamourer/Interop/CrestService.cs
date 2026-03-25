@@ -2,24 +2,16 @@
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using OtterGui.Classes;
+using Luna;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop;
 
-/// <summary>
-/// Triggered when the crest visibility is updated on a model.
-/// <list type="number">
-///     <item>Parameter is the model with an update. </item>
-///     <item>Parameter is the equipment slot changed. </item>
-///     <item>Parameter is whether the crest will be shown. </item>
-/// </list>
-/// </summary>
-public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, bool, CrestService.Priority>
+/// <summary> Triggered when the crest visibility is updated on a model. </summary>
+public sealed unsafe class CrestService : EventBase<CrestService.Arguments, CrestService.Priority>
 {
     public enum Priority
     {
@@ -27,8 +19,20 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
         StateListener = 0,
     }
 
-    public CrestService(IGameInteropProvider interop)
-        : base(nameof(CrestService))
+    public ref struct Arguments(Actor actor, CrestFlag slot, ref bool value)
+    {
+        /// <summary> The game object with a crest update. </summary>
+        public readonly Actor     Actor = actor;
+
+        /// <summary> The equipment slot changed. </summary>
+        public readonly CrestFlag Slot  = slot;
+
+        /// <summary> The new value. </summary>
+        public ref      bool      Value = ref value;
+    }
+
+    public CrestService(IGameInteropProvider interop, Logger log)
+        : base(nameof(CrestService), log)
     {
         interop.InitializeFromAttributes(this);
         _humanSetFreeCompanyCrestVisibleOnSlot =
@@ -76,7 +80,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
         foreach (var slot in CrestExtensions.AllRelevantSet)
         {
             var newValue = ((CrestFlag)crestFlags).HasFlag(slot);
-            Invoke(actor, slot, ref newValue);
+            Invoke(new Arguments(actor, slot, ref newValue));
             crestFlags = (byte)(newValue ? crestFlags | (byte)slot : crestFlags & (byte)~slot);
         }
 
@@ -98,7 +102,7 @@ public sealed unsafe class CrestService : EventWrapperRef3<Actor, CrestFlag, boo
         foreach (var slot in CrestExtensions.AllRelevantSet)
         {
             var newValue = ((CrestFlag)flags).HasFlag(slot);
-            Invoke(actor, slot, ref newValue);
+            Invoke(new Arguments(actor, slot, ref newValue));
             flags = (byte)(newValue ? flags | (byte)slot : flags & (byte)~slot);
         }
         Glamourer.Log.Verbose(

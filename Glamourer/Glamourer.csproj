@@ -1,4 +1,4 @@
-﻿<Project Sdk="Dalamud.NET.Sdk/14.0.1">
+﻿<Project Sdk="Dalamud.NET.Sdk/14.0.2">
   <PropertyGroup>
     <RootNamespace>Glamourer</RootNamespace>
     <AssemblyName>Glamourer</AssemblyName>
@@ -22,13 +22,20 @@
     <EmbeddedResource Include="LegacyTattoo.raw" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <Use_DalamudPackager>false</Use_DalamudPackager>
+    <Use_Dalamud_ImGui>false</Use_Dalamud_ImGui>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Glamourer.Api\Glamourer.Api.csproj" />
-    <ProjectReference Include="..\OtterGui\OtterGui.csproj" />
+    <ProjectReference Include="..\Luna\Luna\Luna.csproj" />
     <ProjectReference Include="..\Penumbra.Api\Penumbra.Api.csproj" />
     <ProjectReference Include="..\Penumbra.String\Penumbra.String.csproj" />
     <ProjectReference Include="..\Penumbra.GameData\Penumbra.GameData.csproj" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.4.2-beta" />
+
+    <ProjectReference Include="..\Luna\Luna.Generators\Luna.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

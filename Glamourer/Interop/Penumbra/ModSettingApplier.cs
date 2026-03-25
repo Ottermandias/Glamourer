@@ -1,20 +1,26 @@
-﻿using Glamourer.Designs.Links;
+﻿using Glamourer.Config;
+using Glamourer.Designs.Links;
 using Glamourer.Services;
 using Glamourer.State;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop.Penumbra;
 
-public class ModSettingApplier(PenumbraService penumbra, PenumbraAutoRedrawSkip autoRedrawSkip, Configuration config, ActorObjectManager objects, CollectionOverrideService overrides)
+public class ModSettingApplier(
+    PenumbraService penumbra,
+    PenumbraAutoRedrawSkip autoRedrawSkip,
+    Configuration config,
+    ActorObjectManager objects,
+    CollectionOverrideService overrides)
     : IService
 {
     private readonly HashSet<Guid> _collectionTracker = [];
 
     public void HandleStateApplication(ActorState state, MergedDesign design, StateSource source, bool skipAutoRedraw, bool respectManual)
     {
-        if (!config.AlwaysApplyAssociatedMods || (design.AssociatedMods.Count == 0 && !design.ResetTemporarySettings))
+        if (!config.AlwaysApplyAssociatedMods || design.AssociatedMods.Count == 0 && !design.ResetTemporarySettings)
             return;
 
         if (!objects.TryGetValue(state.Identifier, out var data))
@@ -90,6 +96,7 @@ public class ModSettingApplier(PenumbraService penumbra, PenumbraAutoRedrawSkip 
             if (!respectManual && source.IsFixed())
                 penumbra.RemoveAllTemporarySettings(index.Value, StateSource.Manual);
         }
+
         return index;
     }
 }

@@ -1,22 +1,22 @@
-using OtterGui.Classes;
+using Luna;
 
 namespace Glamourer.Events;
 
 /// <summary>
 /// Triggered when Penumbra is reloaded.
 /// </summary>
-public sealed class PenumbraReloaded()
-    : EventWrapper<PenumbraReloaded.Priority>(nameof(PenumbraReloaded))
+public sealed class PenumbraReloaded(Logger log)
+    : EventBase<PenumbraReloaded.Priority>(nameof(PenumbraReloaded), log)
 {
     public enum Priority
     {
-        /// <seealso cref="Interop.ChangeCustomizeService.Restore"/>
+        /// <seealso cref="global::Glamourer.Interop.ChangeCustomizeService.Restore"/>
         ChangeCustomizeService = 0,
 
-        /// <seealso cref="Interop.VisorService.Restore"/>
+        /// <seealso cref="global::Glamourer.Interop.VisorService.Restore"/>
         VisorService = 0,
 
-        /// <seealso cref="Interop.VieraEarService.Restore"/>
+        /// <seealso cref="global::Glamourer.Interop.VieraEarService.Restore"/>
         VieraEarService = 0,
     }
 }

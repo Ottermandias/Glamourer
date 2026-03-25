@@ -1,6 +1,8 @@
 using Dalamud.Plugin.Services;
+using Glamourer.Config;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
+using Luna;
 using Penumbra.GameData.Data;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
@@ -9,7 +11,7 @@ using Race = Penumbra.GameData.Enums.Race;
 
 namespace Glamourer.Services;
 
-public class ItemManager
+public sealed class ItemManager : IService
 {
     public const string Nothing              = EquipItem.Nothing;
     public const string SmallClothesNpc      = "Smallclothes (NPC)";

@@ -1,15 +1,16 @@
-﻿using Dalamud.Interface.ImGuiNotification;
+﻿using System.Text.Json;
+using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Services;
+using Luna;
 using Newtonsoft.Json;
-using OtterGui.Classes;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Unlocks;
 
-public class FavoriteManager : ISavable
+public sealed class FavoriteManager : ISavable, IService
 {
-    private readonly record struct FavoriteHairStyle(Gender Gender, SubRace Race, CustomizeIndex Type, CustomizeValue Id)
+    public readonly record struct FavoriteHairStyle(Gender Gender, SubRace Race, CustomizeIndex Type, CustomizeValue Id)
     {
         public uint ToValue()
             => Id.Value | ((uint)Type << 8) | ((uint)Race << 16) | ((uint)Gender << 24);
@@ -26,6 +27,17 @@ public class FavoriteManager : ISavable
     private readonly HashSet<StainId>           _favoriteColors     = [];
     private readonly HashSet<FavoriteHairStyle> _favoriteHairStyles = [];
     private readonly HashSet<BonusItemId>       _favoriteBonusItems = [];
+
+    public enum FavoriteType : byte
+    {
+        Item,
+        Stain,
+        Customization,
+        BonusItem,
+    }
+
+    /// <summary> Event invoked with type, ID (or <see cref="FavoriteHairStyle"/>) and whether the item was favorited or removed. </summary>
+    public event Action<FavoriteType, uint, bool>? FavoriteChanged;
 
     public FavoriteManager(SaveService saveService)
     {
@@ -83,44 +95,53 @@ public class FavoriteManager : ISavable
         Save();
     }
 
-    public string ToFilename(FilenameService fileNames)
+    public string ToFilePath(FilenameService fileNames)
         => fileNames.FavoriteFile;
 
     private void Save()
         => _saveService.DelaySave(this);
 
-    public void Save(StreamWriter writer)
+    public void Save(Stream stream)
     {
-        using var j = new JsonTextWriter(writer);
-        j.Formatting = Formatting.Indented;
+        using var j = new Utf8JsonWriter(stream, JsonFunctions.WriterOptions);
         j.WriteStartObject();
 
-        j.WritePropertyName(nameof(LoadIntermediary.Version));
-        j.WriteValue(CurrentVersion);
+        j.WriteNumber("Version"u8, CurrentVersion);
+        if (_favorites.Count > 0)
+        {
+            j.WritePropertyName("FavoriteItems"u8);
+            j.WriteStartArray();
+            foreach (var item in _favorites)
+                j.WriteNumberValue(item.Id);
+            j.WriteEndArray();
+        }
 
-        j.WritePropertyName(nameof(LoadIntermediary.FavoriteItems));
-        j.WriteStartArray();
-        foreach (var item in _favorites)
-            j.WriteValue(item.Id);
-        j.WriteEndArray();
+        if (_favoriteColors.Count > 0)
+        {
+            j.WritePropertyName("FavoriteColors"u8);
+            j.WriteStartArray();
+            foreach (var color in _favoriteColors)
+                j.WriteNumberValue(color.Id);
+            j.WriteEndArray();
+        }
 
-        j.WritePropertyName(nameof(LoadIntermediary.FavoriteColors));
-        j.WriteStartArray();
-        foreach (var stain in _favoriteColors)
-            j.WriteValue(stain.Id);
-        j.WriteEndArray();
+        if (_favoriteHairStyles.Count > 0)
+        {
+            j.WritePropertyName("FavoriteHairStyles"u8);
+            j.WriteStartArray();
+            foreach (var hairStyle in _favoriteHairStyles)
+                j.WriteNumberValue(hairStyle.ToValue());
+            j.WriteEndArray();
+        }
 
-        j.WritePropertyName(nameof(LoadIntermediary.FavoriteHairStyles));
-        j.WriteStartArray();
-        foreach (var hairStyle in _favoriteHairStyles)
-            j.WriteValue(hairStyle.ToValue());
-        j.WriteEndArray();
-
-        j.WritePropertyName(nameof(LoadIntermediary.FavoriteBonusItems));
-        j.WriteStartArray();
-        foreach (var item in _favoriteBonusItems)
-            j.WriteValue(item.Id);
-        j.WriteEndArray();
+        if (_favoriteBonusItems.Count > 0)
+        {
+            j.WritePropertyName("FavoriteBonusItems"u8);
+            j.WriteStartArray();
+            foreach (var item in _favoriteBonusItems)
+                j.WriteNumberValue(item.Id);
+            j.WriteEndArray();
+        }
 
         j.WriteEndObject();
     }
@@ -135,36 +156,44 @@ public class FavoriteManager : ISavable
 
     public bool TryAdd(ItemId item)
     {
-        if (item.Id == 0 || !_favorites.Add(item))
+        if (item.Id is 0 || !_favorites.Add(item))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.Item, item.Id, true);
         Save();
         return true;
     }
 
     public bool TryAdd(BonusItemId item)
     {
-        if (item.Id == 0 || !_favoriteBonusItems.Add(item))
+        if (item.Id is 0 || !_favoriteBonusItems.Add(item))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.BonusItem, item.Id, true);
         Save();
         return true;
     }
 
     public bool TryAdd(StainId stain)
     {
-        if (stain.Id == 0 || !_favoriteColors.Add(stain))
+        if (stain.Id is 0 || !_favoriteColors.Add(stain))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.Stain, stain.Id, true);
         Save();
         return true;
     }
 
     public bool TryAdd(Gender gender, SubRace race, CustomizeIndex type, CustomizeValue value)
     {
-        if (!TypeAllowed(type) || !_favoriteHairStyles.Add(new FavoriteHairStyle(gender, race, type, value)))
+        if (!TypeAllowed(type))
             return false;
 
+        var id = new FavoriteHairStyle(gender, race, type, value);
+        if (!_favoriteHairStyles.Add(id))
+            return false;
+
+        FavoriteChanged?.Invoke(FavoriteType.Customization, id.ToValue(), true);
         Save();
         return true;
     }
@@ -181,6 +210,7 @@ public class FavoriteManager : ISavable
         if (!_favorites.Remove(item))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.Item, item.Id, false);
         Save();
         return true;
     }
@@ -190,6 +220,7 @@ public class FavoriteManager : ISavable
         if (!_favoriteBonusItems.Remove(item))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.BonusItem, item.Id, false);
         Save();
         return true;
     }
@@ -199,15 +230,18 @@ public class FavoriteManager : ISavable
         if (!_favoriteColors.Remove(stain))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.Stain, stain.Id, false);
         Save();
         return true;
     }
 
     public bool Remove(Gender gender, SubRace race, CustomizeIndex type, CustomizeValue value)
     {
-        if (!_favoriteHairStyles.Remove(new FavoriteHairStyle(gender, race, type, value)))
+        var id = new FavoriteHairStyle(gender, race, type, value);
+        if (!_favoriteHairStyles.Remove(id))
             return false;
 
+        FavoriteChanged?.Invoke(FavoriteType.Customization, id.ToValue(), true);
         Save();
         return true;
     }

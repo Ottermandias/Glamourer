@@ -1,7 +1,6 @@
-﻿using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Raii;
-using OtterGuiInternal;
+﻿using System.Text.Unicode;
+using Glamourer.Config;
+using ImSharp;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -12,53 +11,56 @@ public partial class CustomizationDrawer
     private void PercentageSelector(CustomizeIndex index)
     {
         using var _        = SetId(index);
-        using var bigGroup = ImRaii.Group();
+        using var bigGroup = Im.Group();
 
-        using (var disabled = ImRaii.Disabled(_locked))
+        using (Im.Disabled(_locked))
         {
             DrawPercentageSlider();
-            ImGui.SameLine();
+            Im.Line.Same();
             PercentageInputInt();
             if (_withApply)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 ApplyCheckbox();
             }
         }
 
-        ImGui.SameLine();
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted(_currentOption);
+        Im.Line.Same();
+        ImEx.TextFrameAligned(_currentOption);
         if (_currentIndex is CustomizeIndex.Height)
             DrawHeight();
     }
 
     private void DrawHeight()
     {
-        if (_config.HeightDisplayType is HeightDisplayType.None)
+        if (config.HeightDisplayType is HeightDisplayType.None)
             return;
 
-        var height = _heightService.Height(_customize);
-        ImGui.SameLine();
+        var height = heightService.Height(_customize);
+        Im.Line.Same();
 
-        var heightString = _config.HeightDisplayType switch
-        {
-            HeightDisplayType.Centimetre  => FormattableString.Invariant($"({height * 100:F1} cm)"),
-            HeightDisplayType.Metre       => FormattableString.Invariant($"({height:F2} m)"),
-            HeightDisplayType.Wrong       => FormattableString.Invariant($"({height * 100 / 2.539:F1} in)"),
-            HeightDisplayType.WrongFoot   => $"({(int)(height * 100 / 2.539 / 12)}'{(int)(height * 100 / 2.539) % 12}'')",
-            HeightDisplayType.Corgi       => FormattableString.Invariant($"({height * 100 / 40.0:F1} Corgis)"),
-            HeightDisplayType.OlympicPool => FormattableString.Invariant($"({height / 3.0:F3} Pools)"),
-            _                             => FormattableString.Invariant($"({height})"),
-        };
-        ImGui.TextUnformatted(heightString);
+        Span<byte> t  = stackalloc byte[64];
+        var        ic = CultureInfo.InvariantCulture;
+        int        written;
+        if (config.HeightDisplayType switch
+            {
+                HeightDisplayType.Centimetre => Utf8.TryWrite(t, ic, $"({height * 100:F1} cm)",         out written),
+                HeightDisplayType.Metre      => Utf8.TryWrite(t, ic, $"({height:F2} m)",                out written),
+                HeightDisplayType.Wrong      => Utf8.TryWrite(t, ic, $"({height * 100 / 2.539:F1} in)", out written),
+                HeightDisplayType.WrongFoot => Utf8.TryWrite(t, ic, $"({(int)(height * 3.2821)}'{(int)(height * 39.3856) % 12}'')",
+                    out written),
+                HeightDisplayType.Corgi       => Utf8.TryWrite(t, ic, $"({height * 100 / 40.0:F1} Corgis)", out written),
+                HeightDisplayType.OlympicPool => Utf8.TryWrite(t, ic, $"({height / 3.0:F3} Pools)",         out written),
+                _                             => Utf8.TryWrite(t, ic, $"({height})",                        out written),
+            })
+            Im.Text(t[..written]);
     }
 
     private void DrawPercentageSlider()
     {
         var tmp = (int)_currentByte.Value;
-        ImGui.SetNextItemWidth(_comboSelectorSize);
-        if (ImGui.SliderInt("##slider", ref tmp, 0, _currentCount - 1, "%i", ImGuiSliderFlags.AlwaysClamp)
+        Im.Item.SetNextWidth(_comboSelectorSize);
+        if (Im.Slider("##slider"u8, ref tmp, "%i"u8, 0, _currentCount - 1, SliderFlags.AlwaysClamp)
          || CaptureMouseWheel(ref tmp, 0, _currentCount))
             UpdateValue((CustomizeValue)tmp);
     }
@@ -66,15 +68,15 @@ public partial class CustomizationDrawer
     private void PercentageInputInt()
     {
         var tmp = (int)_currentByte.Value;
-        ImGui.SetNextItemWidth(_inputIntSize);
-        var cap = ImGui.GetIO().KeyCtrl ? byte.MaxValue : _currentCount - 1;
-        if (ImGui.InputInt("##text", ref tmp, 1, 1))
+        Im.Item.SetNextWidth(_inputIntSize);
+        var cap = Im.Io.KeyControl ? byte.MaxValue : _currentCount - 1;
+        if (Im.Input.Scalar("##text"u8, ref tmp, 1, 1))
         {
             var newValue = (CustomizeValue)Math.Clamp(tmp, 0, cap);
             UpdateValue(newValue);
         }
 
-        ImGuiUtil.HoverTooltip($"Input Range: [0, {_currentCount - 1}]\n"
+        Im.Tooltip.OnHover($"Input Range: [0, {_currentCount - 1}]\n"
           + "Hold Control to force updates with invalid/unknown options at your own risk.");
     }
 
@@ -86,15 +88,15 @@ public partial class CustomizationDrawer
         if (_currentIndex is CustomizeIndex.Face && _set.Race is Race.Hrothgar && value is > 4 and < 9)
             value -= 4;
 
-        using var group    = ImRaii.Group();
-        using var disabled = ImRaii.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw);
-        ImGui.SetNextItemWidth(_inputIntSizeNoButtons);
-        if (ImGui.InputInt("##text", ref value, 0, 0))
+        using var group    = Im.Group();
+        using var disabled = Im.Disabled(_locked || _currentIndex is CustomizeIndex.Face && _lockedRedraw);
+        Im.Item.SetNextWidth(_inputIntSizeNoButtons);
+        if (Im.Input.Scalar("##text"u8, ref value))
         {
             var index = _set.DataByValue(_currentIndex, (CustomizeValue)value, out var data, _customize.Face);
             if (index >= 0)
                 UpdateValue(data!.Value.Value);
-            else if (ImGui.GetIO().KeyCtrl)
+            else if (Im.Io.KeyControl)
                 UpdateValue((CustomizeValue)value);
         }
         else
@@ -103,17 +105,16 @@ public partial class CustomizationDrawer
         }
 
         if (!_withApply)
-            ImGuiUtil.HoverTooltip("Hold Control to force updates with invalid/unknown options at your own risk.");
+            Im.Tooltip.OnHover("Hold Control to force updates with invalid/unknown options at your own risk.");
 
-        ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("-", new Vector2(ImGui.GetFrameHeight()), "Select the previous available option in order.",
-                currentIndex <= 0))
+        var size = new Vector2(Im.Style.FrameHeight);
+        Im.Line.Same();
+        if (ImEx.Button("-"u8, size, "Select the previous available option in order."u8, currentIndex <= 0))
             UpdateValue(_set.Data(_currentIndex, currentIndex - 1, _customize.Face).Value);
         else
             CheckWheel();
-        ImGui.SameLine();
-        if (ImGuiUtil.DrawDisabledButton("+", new Vector2(ImGui.GetFrameHeight()), "Select the next available option in order.",
-                currentIndex >= _currentCount - 1 || npc))
+        Im.Line.Same();
+        if (ImEx.Button("+"u8, size, "Select the next available option in order."u8, currentIndex >= _currentCount - 1 || npc))
             UpdateValue(_set.Data(_currentIndex, currentIndex + 1, _customize.Face).Value);
         else
             CheckWheel();
@@ -132,46 +133,45 @@ public partial class CustomizationDrawer
     private void DrawListSelector(CustomizeIndex index, bool indexedBy1)
     {
         using var id       = SetId(index);
-        using var bigGroup = ImRaii.Group();
+        using var bigGroup = Im.Group();
 
-        using (_ = ImRaii.Disabled(_locked))
+        using (Im.Disabled(_locked))
         {
             if (indexedBy1)
             {
                 ListCombo1();
-                ImGui.SameLine();
+                Im.Line.Same();
                 ListInputInt1();
             }
             else
             {
                 ListCombo0();
-                ImGui.SameLine();
+                Im.Line.Same();
                 ListInputInt0();
             }
 
             if (_withApply)
             {
-                ImGui.SameLine();
+                Im.Line.Same();
                 ApplyCheckbox();
             }
         }
 
-        ImGui.SameLine();
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted(_currentOption);
+        Im.Line.Same();
+        ImEx.TextFrameAligned(_currentOption);
     }
 
     private void ListCombo0()
     {
-        ImGui.SetNextItemWidth(_comboSelectorSize * ImGui.GetIO().FontGlobalScale);
+        Im.Item.SetNextWidth(_comboSelectorSize * Im.Io.GlobalScale);
         var current = (int)_currentByte.Value;
-        using (var combo = ImRaii.Combo("##combo", $"{_currentOption} #{current + 1}"))
+        using (var combo = Im.Combo.Begin("##combo"u8, $"{_currentOption} #{current + 1}"))
         {
             if (combo)
 
                 for (var i = 0; i < _currentCount; ++i)
                 {
-                    if (ImGui.Selectable($"{_currentOption} #{i + 1}##combo", i == current))
+                    if (Im.Selectable($"{_currentOption} #{i + 1}##combo", i == current))
                         UpdateValue((CustomizeValue)i);
                 }
         }
@@ -183,28 +183,28 @@ public partial class CustomizationDrawer
     private void ListInputInt0()
     {
         var tmp = _currentByte.Value + 1;
-        ImGui.SetNextItemWidth(_inputIntSize);
-        var cap = ImGui.GetIO().KeyCtrl ? byte.MaxValue + 1 : _currentCount;
-        if (ImGui.InputInt("##text", ref tmp, 1, 1))
+        Im.Item.SetNextWidth(_inputIntSize);
+        var cap = Im.Io.KeyControl ? byte.MaxValue + 1 : _currentCount;
+        if (Im.Input.Scalar("##text"u8, ref tmp, 1, 1))
         {
             var newValue = Math.Clamp(tmp, 1, cap);
             UpdateValue((CustomizeValue)(newValue - 1));
         }
 
-        ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]\n"
+        Im.Tooltip.OnHover($"Input Range: [1, {_currentCount}]\n"
           + "Hold Control to force updates with invalid/unknown options at your own risk.");
     }
 
     private void ListCombo1()
     {
-        ImGui.SetNextItemWidth(_comboSelectorSize * ImGui.GetIO().FontGlobalScale);
+        Im.Item.SetNextWidth(_comboSelectorSize * Im.Io.GlobalScale);
         var current = (int)_currentByte.Value;
-        using (var combo = ImRaii.Combo("##combo", $"{_currentOption} #{current}"))
+        using (var combo = Im.Combo.Begin("##combo"u8, $"{_currentOption} #{current}"))
         {
             if (combo)
                 for (var i = 1; i <= _currentCount; ++i)
                 {
-                    if (ImGui.Selectable($"{_currentOption} #{i}##combo", i == current))
+                    if (Im.Selectable($"{_currentOption} #{i}##combo", i == current))
                         UpdateValue((CustomizeValue)i);
                 }
         }
@@ -216,27 +216,27 @@ public partial class CustomizationDrawer
     private void ListInputInt1()
     {
         var tmp = (int)_currentByte.Value;
-        ImGui.SetNextItemWidth(_inputIntSize);
-        var (offset, cap) = ImGui.GetIO().KeyCtrl ? (0, byte.MaxValue) : (1, _currentCount);
-        if (ImGui.InputInt("##text", ref tmp, 1, 1))
+        Im.Item.SetNextWidth(_inputIntSize);
+        var (offset, cap) = Im.Io.KeyControl ? (0, byte.MaxValue) : (1, _currentCount);
+        if (Im.Input.Scalar("##text"u8, ref tmp, 1, 1))
         {
             var newValue = (CustomizeValue)Math.Clamp(tmp, offset, cap);
             UpdateValue(newValue);
         }
 
-        ImGuiUtil.HoverTooltip($"Input Range: [1, {_currentCount}]\n"
+        Im.Tooltip.OnHover($"Input Range: [1, {_currentCount}]\n"
           + "Hold Control to force updates with invalid/unknown options at your own risk.");
     }
 
     private static bool CaptureMouseWheel(ref int value, int offset, int cap)
     {
-        if (!ImGui.IsItemHovered() || !ImGui.GetIO().KeyCtrl)
+        if (!Im.Item.Hovered() || !Im.Io.KeyControl)
             return false;
 
-        ImGuiInternal.ItemSetUsingMouseWheel();
+        Im.Item.SetUsingMouseWheel();
 
-        var mw = (int)ImGui.GetIO().MouseWheel;
-        if (mw == 0)
+        var mw = (int)Im.Io.MouseWheel;
+        if (mw is 0)
             return false;
 
         value -= offset;
@@ -255,15 +255,13 @@ public partial class CustomizationDrawer
         var       tmp = _currentByte != CustomizeValue.Zero;
         if (_withApply)
         {
-            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToDefaultName(), tmp, _currentApply, out var newValue, out var newApply, _locked))
+            switch (UiHelpers.DrawMetaToggle(_currentIndex.ToNameU8(), tmp, _currentApply, out var newValue, out var newApply, _locked))
             {
                 case (true, false):
                     _customize.Set(idx, newValue ? CustomizeValue.Max : CustomizeValue.Zero);
                     Changed |= _currentFlag;
                     break;
-                case (false, true):
-                    ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
-                    break;
+                case (false, true): ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag; break;
                 case (true, true):
                     ChangeApply = newApply ? ChangeApply | _currentFlag : ChangeApply & ~_currentFlag;
                     _customize.Set(idx, newValue ? CustomizeValue.Max : CustomizeValue.Zero);
@@ -273,30 +271,30 @@ public partial class CustomizationDrawer
         }
         else
         {
-            using (_ = ImRaii.Disabled(_locked))
+            using (Im.Disabled(_locked))
             {
-                if (ImGui.Checkbox("##toggle", ref tmp))
+                if (Im.Checkbox("##toggle"u8, ref tmp))
                 {
                     _customize.Set(idx, tmp ? CustomizeValue.Max : CustomizeValue.Zero);
                     Changed |= _currentFlag;
                 }
             }
 
-            ImGui.SameLine();
-            ImGui.TextUnformatted(_currentIndex.ToDefaultName());
+            Im.Line.Same();
+            Im.Text(_currentIndex.ToNameU8());
         }
     }
 
     private void ApplyCheckbox()
     {
-        if (UiHelpers.DrawCheckbox("##apply", $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
+        if (UiHelpers.DrawCheckbox("##apply"u8, $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
             ToggleApply();
     }
 
     private void ApplyCheckbox(CustomizeIndex index)
     {
         using var id = SetId(index);
-        if (UiHelpers.DrawCheckbox("##apply", $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
+        if (UiHelpers.DrawCheckbox("##apply"u8, $"Apply the {_currentOption} customization in this design.", _currentApply, out _, _locked))
             ToggleApply();
     }
 

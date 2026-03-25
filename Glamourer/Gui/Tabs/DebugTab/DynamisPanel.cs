@@ -1,12 +1,12 @@
-﻿using OtterGui.Services;
+﻿using Luna;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DynamisPanel(DynamisIpc dynamis) : IGameDataDrawer
+public sealed class DynamisPanel(DynamisIpc dynamis) : IGameDataDrawer
 {
-    public string Label
-        => "Dynamis Interop";
+    public ReadOnlySpan<byte> Label
+        => "Dynamis Interop"u8;
 
     public void Draw()
         => dynamis.DrawDebugInfo();

@@ -1,40 +1,31 @@
 using Dalamud.Plugin;
 using Glamourer.Designs;
+using Luna;
 
 namespace Glamourer.Services;
 
-public class FilenameService
+public sealed class FilenameService(IDalamudPluginInterface pi) : BaseFilePathProvider(pi)
 {
-    public readonly string ConfigDirectory;
-    public readonly string ConfigFile;
-    public readonly string DesignFileSystem;
-    public readonly string MigrationDesignFile;
-    public readonly string DesignDirectory;
-    public readonly string AutomationFile;
-    public readonly string UnlockFileCustomize;
-    public readonly string UnlockFileItems;
-    public readonly string FavoriteFile;
-    public readonly string DesignColorFile;
-    public readonly string EphemeralConfigFile;
-    public readonly string NpcAppearanceFile;
-    public readonly string CollectionOverrideFile;
-
-    public FilenameService(IDalamudPluginInterface pi)
-    {
-        ConfigDirectory        = pi.ConfigDirectory.FullName;
-        ConfigFile             = pi.ConfigFile.FullName;
-        AutomationFile         = Path.Combine(ConfigDirectory, "automation.json");
-        DesignFileSystem       = Path.Combine(ConfigDirectory, "sort_order.json");
-        MigrationDesignFile    = Path.Combine(ConfigDirectory, "Designs.json");
-        UnlockFileCustomize    = Path.Combine(ConfigDirectory, "unlocks_customize.json");
-        UnlockFileItems        = Path.Combine(ConfigDirectory, "unlocks_items.json");
-        DesignDirectory        = Path.Combine(ConfigDirectory, "designs");
-        FavoriteFile           = Path.Combine(ConfigDirectory, "favorites.json");
-        DesignColorFile        = Path.Combine(ConfigDirectory, "design_colors.json");
-        EphemeralConfigFile    = Path.Combine(ConfigDirectory, "ephemeral_config.json");
-        NpcAppearanceFile      = Path.Combine(ConfigDirectory, "npc_appearance_data.json");
-        CollectionOverrideFile = Path.Combine(ConfigDirectory, "collection_overrides.json");
-    }
+    public readonly string MigrationDesignFileSystem = Path.Combine(pi.ConfigDirectory.FullName, "sort_order.json");
+    public readonly string MigrationDesignFile       = Path.Combine(pi.ConfigDirectory.FullName, "Designs.json");
+    public readonly string DesignDirectory           = Path.Combine(pi.ConfigDirectory.FullName, "designs");
+    public readonly string AutomationFile            = Path.Combine(pi.ConfigDirectory.FullName, "automation.json");
+    public readonly string IgnoredModsFile           = Path.Combine(pi.ConfigDirectory.FullName, "ignored_mods.json");
+    public readonly string UnlockFileCustomize       = Path.Combine(pi.ConfigDirectory.FullName, "unlocks_customize.json");
+    public readonly string UnlockFileItems           = Path.Combine(pi.ConfigDirectory.FullName, "unlocks_items.json");
+    public readonly string FavoriteFile              = Path.Combine(pi.ConfigDirectory.FullName, "favorites.json");
+    public readonly string DesignColorFile           = Path.Combine(pi.ConfigDirectory.FullName, "design_colors.json");
+    public readonly string EphemeralConfigFile       = Path.Combine(pi.ConfigDirectory.FullName, "ephemeral_config.json");
+    public readonly string NpcAppearanceFile         = Path.Combine(pi.ConfigDirectory.FullName, "npc_appearance_data.json");
+    public readonly string CollectionOverrideFile    = Path.Combine(pi.ConfigDirectory.FullName, "collection_overrides.json");
+    public readonly string UiConfigurationFile       = Path.Combine(pi.ConfigDirectory.FullName, "ui_config.json");
+    public readonly string PredefinedTagFile         = Path.Combine(pi.ConfigDirectory.FullName, "predefined_tags.json");
+    public readonly string FilterFile                = Path.Combine(pi.ConfigDirectory.FullName, "filters.json");
+    public readonly string FileSystemFolder          = Path.Combine(pi.ConfigDirectory.FullName, "design_filesystem");
+    public readonly string FileSystemEmptyFolders    = Path.Combine(pi.ConfigDirectory.FullName, "design_filesystem", "empty_folders.json");
+    public readonly string FileSystemExpandedFolders = Path.Combine(pi.ConfigDirectory.FullName, "design_filesystem", "expanded_folders.json");
+    public readonly string FileSystemLockedNodes     = Path.Combine(pi.ConfigDirectory.FullName, "design_filesystem", "locked_nodes.json");
+    public readonly string FileSystemSelectedNodes   = Path.Combine(pi.ConfigDirectory.FullName, "design_filesystem", "selected_nodes.json");
 
     public IEnumerable<FileInfo> Designs()
     {
@@ -50,4 +41,24 @@ public class FilenameService
 
     public string DesignFile(Design design)
         => DesignFile(design.Identifier.ToString());
+
+    public override List<FileInfo> GetBackupFiles()
+    {
+        var list = new List<FileInfo>(16)
+        {
+            new(ConfigurationFile),
+            new(AutomationFile),
+            new(PredefinedTagFile),
+            new(IgnoredModsFile),
+            new(UnlockFileCustomize),
+            new(UnlockFileItems),
+            new(FavoriteFile),
+            new(DesignColorFile),
+            new(FileSystemEmptyFolders),
+            new(FileSystemLockedNodes),
+        };
+        // Do not back up expanded folders, selected nodes, ui configuration or ephemeral config.
+        list.AddRange(Designs());
+        return list;
+    }
 }

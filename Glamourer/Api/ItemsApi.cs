@@ -3,7 +3,7 @@ using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.Services;
 using Glamourer.State;
-using OtterGui.Services;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 

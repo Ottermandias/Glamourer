@@ -1,49 +1,39 @@
 ﻿using Glamourer.Automation;
-using Dalamud.Bindings.ImGui;
-using OtterGui;
-using OtterGui.Extensions;
-using OtterGui.Raii;
+using ImSharp;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class AutoDesignPanel(AutoDesignManager _autoDesignManager) : IGameDataDrawer
+public sealed class AutoDesignPanel(AutoDesignManager autoDesignManager) : IGameDataDrawer
 {
-    public string Label
-        => "Auto Designs";
+    public ReadOnlySpan<byte> Label
+        => "Auto Designs"u8;
 
     public bool Disabled
         => false;
 
     public void Draw()
     {
-        foreach (var (set, idx) in _autoDesignManager.WithIndex())
+        foreach (var (idx, set) in autoDesignManager.Index())
         {
-            using var id   = ImRaii.PushId(idx);
-            using var tree = ImRaii.TreeNode(set.Name);
+            using var id   = Im.Id.Push(idx);
+            using var tree = Im.Tree.Node(set.Name);
             if (!tree)
                 continue;
 
-            using var table = ImRaii.Table("##autoDesign", 2, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+            using var table = Im.Table.Begin("##autoDesign"u8, 2, TableFlags.SizingFixedFit | TableFlags.RowBackground);
             if (!table)
                 continue;
 
-            ImGuiUtil.DrawTableColumn("Name");
-            ImGuiUtil.DrawTableColumn(set.Name);
+            table.DrawDataPair("Name"u8,    set.Name);
+            table.DrawDataPair("Index"u8,   idx);
+            table.DrawDataPair("Enabled"u8, set.Enabled);
+            table.DrawDataPair("Actor"u8,   set.Identifiers[0]);
 
-            ImGuiUtil.DrawTableColumn("Index");
-            ImGuiUtil.DrawTableColumn(idx.ToString());
-
-            ImGuiUtil.DrawTableColumn("Enabled");
-            ImGuiUtil.DrawTableColumn(set.Enabled.ToString());
-
-            ImGuiUtil.DrawTableColumn("Actor");
-            ImGuiUtil.DrawTableColumn(set.Identifiers[0].ToString());
-
-            foreach (var (design, designIdx) in set.Designs.WithIndex())
+            foreach (var (designIdx, design) in set.Designs.Index())
             {
-                ImGuiUtil.DrawTableColumn($"{design.Design.ResolveName(false)} ({designIdx})");
-                ImGuiUtil.DrawTableColumn($"{design.Type} {design.Jobs.Name}");
+                table.DrawColumn($"{design.Design.ResolveName(false)} ({designIdx})");
+                table.DrawColumn($"{design.Type} {design.Jobs.Name}");
             }
         }
     }

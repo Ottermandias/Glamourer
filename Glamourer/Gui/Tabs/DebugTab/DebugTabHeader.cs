@@ -1,25 +1,25 @@
 ﻿using Glamourer.Gui.Tabs.DebugTab.IpcTester;
+using ImSharp;
 using Microsoft.Extensions.DependencyInjection;
-using OtterGui.Raii;
 using Penumbra.GameData.Gui.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
+public class DebugTabHeader(ReadOnlySpan<byte> label, params IGameDataDrawer[] subTrees)
 {
-    public string                         Label    { get; } = label;
+    public StringU8                       Label    { get; } = new(label);
     public IReadOnlyList<IGameDataDrawer> SubTrees { get; } = subTrees;
 
     public void Draw()
     {
-        using var h = ImRaii.CollapsingHeader(Label);
+        using var h = Im.Tree.HeaderId(Label);
         if (!h)
             return;
 
         foreach (var subTree in SubTrees)
         {
-            using var disabled = ImRaii.Disabled(subTree.Disabled);
-            using var tree     = ImRaii.TreeNode(subTree.Label);
+            var       disabled = Im.Disabled(subTree.Disabled);
+            using var tree     = Im.Tree.Node(subTree.Label);
             if (tree)
             {
                 disabled.Dispose();
@@ -31,7 +31,7 @@ public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
     public static DebugTabHeader CreateInterop(IServiceProvider provider)
         => new
         (
-            "Interop",
+            "Interop"u8,
             provider.GetRequiredService<ModelEvaluationPanel>(),
             provider.GetRequiredService<ObjectManagerPanel>(),
             provider.GetRequiredService<PenumbraPanel>(),
@@ -45,7 +45,7 @@ public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
     public static DebugTabHeader CreateGameData(IServiceProvider provider)
         => new
         (
-            "Game Data",
+            "Game Data"u8,
             provider.GetRequiredService<DataServiceDiagnosticsDrawer>(),
             provider.GetRequiredService<IdentificationDrawer>(),
             provider.GetRequiredService<RestrictedGearDrawer>(),
@@ -61,7 +61,7 @@ public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
     public static DebugTabHeader CreateDesigns(IServiceProvider provider)
         => new
         (
-            "Designs",
+            "Designs"u8,
             provider.GetRequiredService<DesignManagerPanel>(),
             provider.GetRequiredService<DesignConverterPanel>(),
             provider.GetRequiredService<DesignTesterPanel>(),
@@ -71,7 +71,7 @@ public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
     public static DebugTabHeader CreateState(IServiceProvider provider)
         => new
         (
-            "State",
+            "State"u8,
             provider.GetRequiredService<ActiveStatePanel>(),
             provider.GetRequiredService<RetainedStatePanel>(),
             provider.GetRequiredService<FunPanel>()
@@ -80,7 +80,7 @@ public class DebugTabHeader(string label, params IGameDataDrawer[] subTrees)
     public static DebugTabHeader CreateUnlocks(IServiceProvider provider)
         => new
         (
-            "Unlocks",
+            "Unlocks"u8,
             provider.GetRequiredService<CustomizationUnlockPanel>(),
             provider.GetRequiredService<ItemUnlockPanel>(),
             provider.GetRequiredService<UnlockableItemsPanel>(),

@@ -1,20 +1,13 @@
-using OtterGui.Classes;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Events;
 
-/// <summary>
-/// Triggered when a model flags an equipment slot for an update.
-/// <list type="number">
-///     <item>Parameter is the actor that has its weapons changed. </item>
-///     <item>Parameter is the equipment slot changed (Mainhand or Offhand). </item>
-///     <item>Parameter is the model values to change the weapon to. </item>
-/// </list>
-/// </summary>
-public sealed class WeaponLoading()
-    : EventWrapperRef3<Actor, EquipSlot, CharacterWeapon, WeaponLoading.Priority>(nameof(WeaponLoading))
+/// <summary> Triggered when a model flags an equipment slot for an update. </summary>
+public sealed class WeaponLoading(Logger log)
+    : EventBase<WeaponLoading.Arguments, WeaponLoading.Priority>(nameof(WeaponLoading), log)
 {
     public enum Priority
     {
@@ -23,5 +16,17 @@ public sealed class WeaponLoading()
 
         /// <seealso cref="Automation.AutoDesignApplier.OnWeaponLoading"/>
         AutoDesignApplier = -1,
+    }
+
+    public ref struct Arguments(Actor actor, EquipSlot slot, ref CharacterWeapon weapon)
+    {
+        /// <summary> The actor that has its weapons changed. </summary>
+        public readonly Actor Actor = actor;
+
+        /// <summary> The changed equipment slot (either Mainhand or Offhand). </summary>
+        public readonly EquipSlot Slot = slot;
+
+        /// <summary> The model data for the new weapon. </summary>
+        public ref CharacterWeapon Weapon = ref weapon;
     }
 }

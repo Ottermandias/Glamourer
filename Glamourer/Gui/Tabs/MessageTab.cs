@@ -1,21 +1,18 @@
-﻿using OtterGui.Classes;
-using OtterGui.Widgets;
+﻿using Luna;
 
 namespace Glamourer.Gui.Tabs;
 
-public class MessagesTab : ITab
+public sealed class MessagesTab(MessageService messages) : ITab<MainTabType>
 {
-    private readonly MessageService _messages;
-
-    public MessagesTab(MessageService messages)
-        => _messages = messages;
+    public bool IsVisible
+        => messages.Count > 0;
 
     public ReadOnlySpan<byte> Label
         => "Messages"u8;
 
-    public bool IsVisible
-        => _messages.Count > 0;
+    public MainTabType Identifier
+        => MainTabType.Messages;
 
     public void DrawContent()
-        => _messages.Draw();
+        => messages.DrawNotificationLog();
 }

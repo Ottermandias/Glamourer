@@ -1,22 +1,22 @@
 ﻿using Dalamud.Interface;
-using Dalamud.Interface.Windowing;
+using Glamourer.Config;
 using Glamourer.Gui.Tabs.UnlocksTab;
+using Luna;
+using WindowSystem = Dalamud.Interface.Windowing.WindowSystem;
 
 namespace Glamourer.Gui;
 
-public class GlamourerWindowSystem : IDisposable
+public sealed class GlamourerWindowSystem : IDisposable, IUiService
 {
-    private readonly WindowSystem               _windowSystem = new("Glamourer");
-    private readonly IUiBuilder                 _uiBuilder;
-    private readonly MainWindow                 _ui;
-    private readonly PenumbraChangedItemTooltip _penumbraTooltip;
+    private readonly WindowSystem _windowSystem = new("Glamourer");
+    private readonly IUiBuilder   _uiBuilder;
+    private readonly MainWindow   _ui;
 
-    public GlamourerWindowSystem(IUiBuilder uiBuilder, MainWindow ui, GenericPopupWindow popups, PenumbraChangedItemTooltip penumbraTooltip,
+    public GlamourerWindowSystem(IUiBuilder uiBuilder, MainWindow ui, GenericPopupWindow popups,
         Configuration config, UnlocksTab unlocksTab, GlamourerChangelog changelog, DesignQuickBar quick)
     {
-        _uiBuilder       = uiBuilder;
-        _ui              = ui;
-        _penumbraTooltip = penumbraTooltip;
+        _uiBuilder = uiBuilder;
+        _ui        = ui;
         _windowSystem.AddWindow(ui);
         _windowSystem.AddWindow(popups);
         _windowSystem.AddWindow(unlocksTab);

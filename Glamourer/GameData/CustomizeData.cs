@@ -1,4 +1,5 @@
-﻿using Penumbra.GameData.Enums;
+﻿using ImSharp;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.GameData;
@@ -28,7 +29,7 @@ public readonly struct CustomizeData : IEquatable<CustomizeData>
 
     /// <summary> An ID for an associated color. </summary>
     [FieldOffset(4)]
-    public readonly uint Color;
+    public readonly Rgba32 Color;
 
     /// <summary> Construct a CustomizeData from single data values. </summary>
     public CustomizeData(CustomizeIndex index, CustomizeValue value, uint data = 0, ushort customizeId = 0)

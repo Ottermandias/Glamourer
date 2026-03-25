@@ -1,25 +1,24 @@
 ﻿using Glamourer.Designs;
 using Glamourer.Gui;
-using OtterGui.Classes;
+using Luna;
 
 namespace Glamourer.Events;
 
-/// <summary>
-/// Triggered when an automated design is changed in any way.
-/// <list type="number">
-///     <item>Parameter is the tab to select. </item>
-///     <item>Parameter is the design to select if the tab is the designs tab. </item>
-/// </list>
-/// </summary>
-public sealed class TabSelected()
-    : EventWrapper<MainWindow.TabType, Design?, TabSelected.Priority>(nameof(TabSelected))
+/// <summary> Triggered to select a tab or design. </summary>
+public sealed class TabSelected(Logger log)
+    : EventBase<TabSelected.Arguments, TabSelected.Priority>(nameof(TabSelected), log)
 {
     public enum Priority
     {
-        /// <seealso cref="Gui.Tabs.DesignTab.DesignFileSystemSelector.OnTabSelected"/>
+        /// <seealso cref="DesignFileSystem.OnTabSelected"/>
         DesignSelector = 0,
 
-        /// <seealso cref="Gui.MainWindow.OnTabSelected"/>
+        /// <seealso cref="Gui.MainTabBar.OnEvent"/>
         MainWindow = 1,
     }
+
+    /// <summary> Arguments for the TabSelected event. </summary>
+    /// <param name="Type"> The tab to be selected. </param>
+    /// <param name="Design"> The design to be selected in the Designs tab. </param>
+    public readonly record struct Arguments(MainTabType Type, Design? Design = null);
 }
