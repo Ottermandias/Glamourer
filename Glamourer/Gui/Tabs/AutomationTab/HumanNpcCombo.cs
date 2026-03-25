@@ -81,9 +81,9 @@ public sealed class HumanNpcCombo(DictBNpcNames bNpcNames, DictModelChara modelC
                             }
                             else if (eNpcDict.Remove(s, out var values))
                             {
-                                actualName = $"{s} ({ObjectKind.BattleNpc.ToName()})";
-                                eNpcDict.TryAdd(actualName, values);
+                                eNpcDict.TryAdd($"{s} ({ObjectKind.EventNpc.ToName()})", values);
                                 bothSet.Add(s);
+                                actualName = $"{s} ({ObjectKind.BattleNpc.ToName()})";
                             }
                             else
                             {
@@ -101,9 +101,9 @@ public sealed class HumanNpcCombo(DictBNpcNames bNpcNames, DictModelChara modelC
                         }
                         else if (bNpcDict.Remove(name, out var values))
                         {
-                            actualName = $"{name} ({ObjectKind.EventNpc.ToName()})";
-                            bNpcDict.TryAdd(actualName, values);
+                            bNpcDict.TryAdd($"{name} ({ObjectKind.BattleNpc.ToName()})", values);
                             bothSet.Add(name);
+                            actualName = $"{name} ({ObjectKind.EventNpc.ToName()})";
                         }
                         else
                         {

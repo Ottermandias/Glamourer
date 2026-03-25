@@ -83,7 +83,7 @@ public sealed class GlamourerChangelog : IUiService
             .RegisterHighlight("There is now a toggle to remember item filters or not right in the equipment sections."u8)
             .RegisterEntry("This can be used to restrict mouse-wheel scrolling to matching items."u8, 1)
             .RegisterHighlight("Advanced Dyes now support some more parameters like roughness and sheen on Dawntrail materials (Thanks Ny!)."u8)
-            .RegisterEntry("The Quick Design Bar can now display a button to toggle the main window (Thanky Ny!)."u8)
+            .RegisterEntry("The Quick Design Bar can now display a button to toggle the main window (Thanks Ny!)."u8)
             .RegisterHighlight(
                 "You can now add 'Ignored Mods' which will not be counted for the 'Is Modded' state in the unlocks table (e.g. for generic upscale mods)."u8)
             .RegisterHighlight("Glamourer now also supports predefined tags for designs, including in multi-design editing."u8)

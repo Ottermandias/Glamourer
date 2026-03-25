@@ -248,7 +248,7 @@ public sealed unsafe class FunModule : IDisposable, IRequiredService
             _                                                                                    => (NpcId)0,
         };
 
-        if (id.Id == 0 || !_npcs.FindFirst(n => n.Id == id, out var npc))
+        if (id.Id is 0 || !_npcs.FindFirst(n => n.Id == id, out var npc))
             return false;
 
         customize = npc.Customize;
