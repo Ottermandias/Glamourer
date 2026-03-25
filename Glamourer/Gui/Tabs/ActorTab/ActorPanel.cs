@@ -142,7 +142,7 @@ public sealed class ActorPanel : IPanel
 
         var expand = _config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
         using var h = Im.Tree.HeaderId(_selection.State!.ModelData.ModelId is 0
-                ? "Customization"u8
+                ? "Customization###Customization"u8
                 : $"Customization (Model Id #{_selection.State.ModelData.ModelId})###Customization",
             expand ? TreeNodeFlags.DefaultOpen : TreeNodeFlags.None);
         if (!h)

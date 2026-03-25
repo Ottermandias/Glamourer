@@ -144,7 +144,7 @@ public class DesignPanel : IPanel
 
         var expand = _config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
         using var h = Im.Tree.HeaderId(Selection.DesignData.ModelId is 0
-                ? "Customization"u8
+                ? "Customization###Customization"u8
                 : $"Customization (Model Id #{Selection.DesignData.ModelId})###Customization",
             expand ? TreeNodeFlags.DefaultOpen : TreeNodeFlags.None);
         if (!h)

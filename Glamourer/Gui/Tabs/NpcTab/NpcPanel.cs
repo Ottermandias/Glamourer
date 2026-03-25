@@ -59,7 +59,7 @@ public sealed class NpcPanel(
 
         var expand = config.AutoExpandDesignPanel.HasFlag(DesignPanelFlag.Customization);
         using var h = Im.Tree.HeaderId(selection.Data.ModelId is 0
-                ? "Customization"u8
+                ? "Customization###Customization"u8
                 : $"Customization (Model Id #{selection.Data.ModelId})###Customization",
             expand ? TreeNodeFlags.DefaultOpen : TreeNodeFlags.None);
         if (!h)
