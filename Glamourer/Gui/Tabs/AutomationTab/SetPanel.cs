@@ -230,8 +230,11 @@ public sealed class SetPanel(
         designCombo.Draw(_selection.Set!, null, -1);
         table.DrawFrameColumn("Add New"u8);
 
+        var height = singleRow
+            ? Im.Style.FrameHeight + 2 * Im.Style.CellPadding.Y
+            : 2 * Im.Style.FrameHeight + Im.Style.ItemSpacing.Y + 2 * Im.Style.CellPadding.Y;
         var       cache = CacheManager.Instance.GetOrCreateCache(Im.Id.Current, () => new AutoDesignCache(this));
-        using var clip  = new Im.ListClipper(cache.Count, singleRow ? Im.Style.FrameHeightWithSpacing : 2 * Im.Style.FrameHeightWithSpacing);
+        using var clip  = new Im.ListClipper(cache.Count, height);
         foreach (var cacheItem in clip.Iterate(cache))
         {
             using var id = Im.Id.Push(cacheItem.Index);
