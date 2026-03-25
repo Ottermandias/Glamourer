@@ -19,7 +19,7 @@ jobs:
       - name: Build and Upload Artifact
         uses: xivdev/Penumbra/.github/actions/build-with-artifact@master
         with:
-          project: Penumbra
+          project: Glamourer
           version: ${{ github.ref_name }}
       - name: Create Release
         uses: xivdev/Penumbra/.github/actions/create-release@master
