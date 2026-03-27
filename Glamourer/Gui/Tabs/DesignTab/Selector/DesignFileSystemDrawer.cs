@@ -39,8 +39,8 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
         DataContext.RemoveButtons<RenameDesignInput>();
         switch (newValue)
         {
-            case RenameField.RenameSearchPath: DataContext.AddButton(new RenameDesignInput(this), -1000); break;
-            case RenameField.RenameData:       DataContext.AddButton(new MoveDesignInput(this),   -1000); break;
+            case RenameField.RenameSearchPath: DataContext.AddButton(new MoveDesignInput(this),   -1000); break;
+            case RenameField.RenameData:       DataContext.AddButton(new RenameDesignInput(this), -1000); break;
             case RenameField.BothSearchPathPrio:
                 DataContext.AddButton(new RenameDesignInput(this), -1000);
                 DataContext.AddButton(new MoveDesignInput(this),   -1001);

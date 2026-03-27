@@ -333,7 +333,7 @@ public sealed class PenumbraService : IDisposable, IService
         try
         {
             var collection = collectionInput ?? _currentCollection!.Invoke(ApiCollectionType.Current)!.Value.Id;
-            if (_config.UseTemporarySettings && _setTemporaryModSettings != null)
+            if (_config.UseTemporarySettings && _setTemporaryModSettings is not null)
                 SetModTemporary(sb, mod, settings, collection, respectManual, index, source);
             else
                 SetModPermanent(sb, mod, settings, collection);
