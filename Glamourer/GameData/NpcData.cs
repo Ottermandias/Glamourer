@@ -21,8 +21,11 @@ public struct NpcData
     /// <summary> The customizations of the NPC. </summary>
     public CustomizeArray Customize;
 
-    /// <summary> The data ID of the NPC, either event NPC or battle NPC name. </summary>
+    /// <summary> The data ID of the NPC, either event NPC or battle NPC base. </summary>
     public NpcId Id;
+
+    /// <summary> The Name ID of the NPC. For event NPC, the same as <see cref="Id"/>. </summary>
+    public BNpcNameId NameId;
 
     /// <summary> The Model ID of the NPC. </summary>
     public uint ModelId;

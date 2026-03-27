@@ -29,17 +29,17 @@ public sealed class NpcSelector(
         foreach (var item in clipper.Iterate(cache))
         {
             Im.Cursor.X += Im.Style.FramePadding.X;
-            using var id = Im.Id.Push(item.Npc.Id.Id);
+            using var id = Im.Id.Push((nint)(item.Npc.Id.Id | ((ulong)item.Npc.NameId.Id << 32)));
             color.Push(ImGuiColor.Text, item.Color);
-            if (Im.Selectable(item.Name.Utf8, item.Npc.Id == selection.Id))
+            if (Im.Selectable(item.Name.Utf8, item.Npc.Id == selection.Id && item.Npc.NameId == selection.NameId))
                 selection.Update(item);
             color.Pop();
-            var size = item.Id.CalculateSize();
+            var size = item.Id.Utf8.CalculateSize();
             Im.Line.Same();
             if (Im.ContentRegion.Available.X >= size.X)
             {
                 color.Push(ImGuiColor.Text, Im.Style[ImGuiColor.TextDisabled]);
-                ImEx.TextRightAligned(item.Id, 0, size.X);
+                ImEx.TextRightAligned(item.Id.Utf8, 0, size.X);
                 color.Pop();
             }
             else

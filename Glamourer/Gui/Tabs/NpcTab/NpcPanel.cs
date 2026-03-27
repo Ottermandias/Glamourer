@@ -140,8 +140,9 @@ public sealed class NpcPanel(
         table.SetupColumn("Type"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateButtonSize("Last Update Date"u8).X);
         table.SetupColumn("Data"u8, TableColumnFlags.WidthStretch);
 
-        CopyButton(table, "NPC Name"u8, selection.Name);
-        CopyButton(table, "NPC ID"u8,   $"{selection.Data.Id.Id}");
+        CopyButton(table, "NPC Name"u8,    selection.Name);
+        CopyButton(table, "NPC ID"u8,      $"{selection.Data.Id.Id}");
+        CopyButton(table, "NPC Name ID"u8, $"{selection.Data.NameId}");
         table.DrawFrameColumn("NPC Type"u8);
         table.NextColumn();
         var width = Im.ContentRegion.Available.X;
