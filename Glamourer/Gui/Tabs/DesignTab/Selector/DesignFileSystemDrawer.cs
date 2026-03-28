@@ -14,7 +14,8 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
     internal readonly DesignColors  DesignColors;
     internal readonly DesignManager Manager;
 
-    public DesignFileSystemDrawer(MessageService messager, DesignFileSystem fileSystem, DesignManager manager, DesignConverter converter, Configuration config,
+    public DesignFileSystemDrawer(MessageService messager, DesignFileSystem fileSystem, DesignManager manager, DesignConverter converter,
+        Configuration config,
         DesignApplier designApplier, DesignChanged designChanged, DesignColors designColors)
         : base(messager, fileSystem, new DesignFilter(config))
     {

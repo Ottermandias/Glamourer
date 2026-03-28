@@ -24,7 +24,7 @@ public sealed class LockedButton(ActorSelection selection) : BaseIconButton<Awes
 
     protected override void PreDraw()
     {
-        var color = ColorId.ActorAvailable.Value();
+        var color = ColorId.ActorUnavailable.Value();
         _color.Push(ImGuiColor.Border, color)
             .Push(ImGuiColor.Text, color);
     }

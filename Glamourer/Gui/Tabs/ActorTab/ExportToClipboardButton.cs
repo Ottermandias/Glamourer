@@ -13,10 +13,6 @@ public sealed class ExportToClipboardButton(ActorSelection selection, DesignConv
     public override bool IsVisible
         => selection.State?.ModelData.ModelId is 0;
 
-    public override bool Enabled
-        => !(selection.State?.IsLocked ?? true);
-
-
     public override bool HasTooltip
         => true;
 
