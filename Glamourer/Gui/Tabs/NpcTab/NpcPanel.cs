@@ -80,12 +80,12 @@ public sealed class NpcPanel(
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var data = new EquipDrawData(slot, designData) { Locked = true };
+            var data = new EquipDrawData(slot, in designData) { Locked = true };
             equipmentDrawer.DrawEquip(data);
         }
 
-        var mainhandData = new EquipDrawData(EquipSlot.MainHand, designData) { Locked = true };
-        var offhandData  = new EquipDrawData(EquipSlot.OffHand,  designData) { Locked = true };
+        var mainhandData = new EquipDrawData(EquipSlot.MainHand, in designData) { Locked = true };
+        var offhandData  = new EquipDrawData(EquipSlot.OffHand,  in designData) { Locked = true };
         equipmentDrawer.DrawWeapons(mainhandData, offhandData, false);
 
         Im.Dummy(new Vector2(Im.Style.TextHeight / 2));

@@ -466,8 +466,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         {
             if (Im.Keyboard.IsPressed(Key.C))
                 _itemCopy.Copy(newItem);
-            else if (Im.Keyboard.IsPressed(Key.V))
-                _itemCopy.Paste(data.Slot.ToEquipType(), data.SetItem);
+            else if (Im.Keyboard.IsPressed(Key.V) && _itemCopy.Paste(data.Slot.ToEquipType(), out var i))
+                data.SetItem(i);
         }
 
         if (change)
@@ -651,16 +651,16 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
 
     private void WeaponHelpMarker(bool hasAdvancedDyes, StringU8 label, in EquipDrawData data, StringU8? type = null)
     {
+        DrawEquipLabel(hasAdvancedDyes, label, data);
+        var pos = Im.Item.UpperLeftCorner;
         Im.Line.SameInner();
         LunaStyle.DrawAlignedHelpMarker(
             "Changing weapons to weapons of different types can cause crashes, freezes, soft- and hard locks and cheating, "u8
           + "thus it is only allowed to change weapons to other weapons of the same type."u8);
-        DrawEquipLabel(hasAdvancedDyes, label, data);
 
         if (type is null)
             return;
 
-        var pos = Im.Item.UpperLeftCorner;
         pos.Y += Im.Style.FrameHeightWithSpacing;
         Im.Window.DrawList.Text(pos, ImGuiColor.Text.Get(), $"({type})");
     }

@@ -23,31 +23,35 @@ public class ItemCopyService(ItemManager items, DictStain stainData) : Luna.IUiS
             setter(which, stain.RowIndex);
     }
 
-    public void Paste(FullEquipType type, Action<EquipItem> setter)
+    public bool Paste(FullEquipType type, out EquipItem ret)
     {
         if (Item is not { } item)
-            return;
+        {
+            ret = default;
+            return false;
+        }
 
         if (type != item.Type)
         {
             if (type.IsBonus())
-                item = items.Identify(type.ToBonus(), item.PrimaryId, item.Variant);
+                ret = items.Identify(type.ToBonus(), item.PrimaryId, item.Variant);
             else if (type.IsEquipment() || type.IsAccessory())
-                item = items.Identify(type.ToSlot(), item.PrimaryId, item.Variant);
+                ret = items.Identify(type.ToSlot(), item.PrimaryId, item.Variant);
             else
-                item = items.Identify(type.ToSlot(), item.PrimaryId, item.SecondaryId, item.Variant);
+                ret = items.Identify(type.ToSlot(), item.PrimaryId, item.SecondaryId, item.Variant);
         }
+        else
+            ret = item;
 
-        if (item.Valid && item.Type == type)
-            setter(item);
+        return item.Valid && item.Type == type;
     }
 
     public void HandleCopyPaste(in EquipDrawData data)
     {
         if (Im.Io.KeyControl)
         {
-            if (Im.Item.Hovered() && Im.Mouse.IsClicked(MouseButton.Middle))
-                Paste(data.CurrentItem.Type, data.SetItem);
+            if (Im.Item.Hovered() && Im.Mouse.IsClicked(MouseButton.Middle) && Paste(data.CurrentItem.Type, out var item))
+                data.SetItem(item);
         }
         else if (Im.Item.Hovered(HoveredFlags.AllowWhenDisabled) && Im.Mouse.IsClicked(MouseButton.Middle))
         {
@@ -59,8 +63,8 @@ public class ItemCopyService(ItemManager items, DictStain stainData) : Luna.IUiS
     {
         if (Im.Io.KeyControl)
         {
-            if (Im.Item.Hovered() && Im.Mouse.IsClicked(MouseButton.Middle))
-                Paste(which, data.SetStain);
+            if (Im.Item.Hovered() && Im.Mouse.IsClicked(MouseButton.Middle) && Paste(data.CurrentItem.Type, out var item))
+                data.SetItem(item);
         }
         else if (Im.Item.Hovered(HoveredFlags.AllowWhenDisabled)
               && Im.Mouse.IsClicked(MouseButton.Middle)
