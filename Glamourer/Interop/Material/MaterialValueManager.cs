@@ -462,7 +462,7 @@ public readonly struct MaterialValueManager<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private MaterialValueIndex CheckExistence(MaterialValueIndex index)
     {
-        if (_values.Count == 0)
+        if (_values.Count is 0)
             return MaterialValueIndex.Invalid;
 
         var key = index.Key;
@@ -482,7 +482,7 @@ public readonly struct MaterialValueManager<T>
 
     public bool RemoveValue(uint key)
     {
-        if (_values.Count == 0)
+        if (_values.Count is 0)
             return false;
 
         var idx = Search(key);
@@ -510,7 +510,7 @@ public readonly struct MaterialValueManager<T>
 
     public bool UpdateValue(uint key, in T value, out T oldValue)
     {
-        if (_values.Count == 0)
+        if (_values.Count is 0)
         {
             oldValue = default!;
             return false;
@@ -533,7 +533,7 @@ public readonly struct MaterialValueManager<T>
 
     public int RemoveValues(MaterialValueIndex min, MaterialValueIndex max)
     {
-        var (minIdx, maxIdx) = MaterialValueManager.GetMinMax<T>(CollectionsMarshal.AsSpan(_values), min.Key, max.Key);
+        var (minIdx, maxIdx) = MaterialValueManager.GetMinMax(CollectionsMarshal.AsSpan(_values), min.Key, max.Key);
         if (minIdx < 0)
             return 0;
 
@@ -543,7 +543,7 @@ public readonly struct MaterialValueManager<T>
     }
 
     public ReadOnlySpan<(uint Key, T Value)> GetValues(MaterialValueIndex min, MaterialValueIndex max)
-        => MaterialValueManager.Filter<T>(CollectionsMarshal.AsSpan(_values), min, max);
+        => MaterialValueManager.Filter(CollectionsMarshal.AsSpan(_values), min, max);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private int Search(uint key)

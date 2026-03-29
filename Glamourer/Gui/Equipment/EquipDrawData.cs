@@ -42,6 +42,14 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
         manager.ChangeApplyStains((Design)_object, Slot, value);
     }
 
+    public readonly DesignBase? GetDesign(DesignConverter converter)
+        => _object switch
+        {
+            DesignBase b => b,
+            ActorState s => converter.Convert(s, ApplicationRules.All),
+            _            => null,
+        };
+
     public EquipItem CurrentItem   = designData.Item(slot);
     public StainIds  CurrentStains = designData.Stain(slot);
     public EquipItem GameItem      = default;

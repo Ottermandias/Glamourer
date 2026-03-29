@@ -1,5 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
 using Glamourer.Config;
+using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Gui.Materials;
 using Glamourer.Services;
@@ -27,13 +28,16 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
     private readonly GPoseService                           _gPose;
     private readonly AdvancedDyePopup                       _advancedDyes;
     private readonly ItemCopyService                        _itemCopy;
+    private readonly DesignApplier                          _designApplier;
+    private readonly DesignConverter                        _converter;
 
     private Stain?             _draggedStain;
     private EquipItemSlotCache _draggedItem;
     private EquipSlot          _dragTarget;
 
     public EquipmentDrawer(FavoriteManager favorites, IDataManager gameData, ItemManager items, TextureService textures,
-        Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes, ItemCopyService itemCopy)
+        Configuration config, GPoseService gPose, AdvancedDyePopup advancedDyes, ItemCopyService itemCopy, DesignApplier designApplier,
+        DesignConverter converter)
     {
         _items          = items;
         _textures       = textures;
@@ -41,6 +45,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         _gPose          = gPose;
         _advancedDyes   = advancedDyes;
         _itemCopy       = itemCopy;
+        _designApplier  = designApplier;
+        _converter      = converter;
         _stainData      = items.Stains;
         _stainCombo     = new GlamourerColorCombo(_stainData, favorites, config);
         _equipCombo     = EquipSlotExtensions.EqdpSlots.Select(e => new EquipCombo(favorites, items, config, gameData, e)).ToArray();
@@ -192,7 +198,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         if (VerifyRestrictedGear(equipDrawData))
             label += " (Restricted)"u8;
 
-        DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
+        DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, equipDrawData);
     }
 
     private void DrawBonusItemSmall(in BonusDrawData bonusDrawData)
@@ -211,7 +217,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
 
-        DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
+        DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, bonusDrawData);
     }
 
     private void DrawWeaponsSmall(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
@@ -233,7 +239,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
 
         if (allWeapons)
             mainhandLabel = new StringU8($"{mainhandLabel} ({mainhand.CurrentItem.Type.ToName()})");
-        WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel);
+        WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel, mainhand);
 
         if (offhand.CurrentItem.Type is FullEquipType.Unknown)
             return;
@@ -253,7 +259,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
 
-        WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel);
+        WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel, offhand);
     }
 
     #endregion
@@ -274,7 +280,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             DrawApply(equipDrawData);
         }
 
-        DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
+        DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, equipDrawData);
 
         DrawStain(equipDrawData, false);
         if (equipDrawData.DisplayApplication)
@@ -311,7 +317,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
         }
 
-        DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label);
+        DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, bonusDrawData);
     }
 
     private void DrawWeaponsNormal(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
@@ -330,7 +336,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 DrawApply(mainhand);
             }
 
-            WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel,
+            WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel, mainhand,
                 allWeapons ? new StringU8(mainhand.CurrentItem.Type.ToName()) : null);
 
             DrawStain(mainhand, false);
@@ -361,7 +367,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 DrawApply(offhand);
             }
 
-            WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel);
+            WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel, offhand);
 
             DrawStain(offhand, false);
             if (offhand.DisplayApplication)
@@ -643,13 +649,13 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
 
     #endregion
 
-    private void WeaponHelpMarker(bool hasAdvancedDyes, StringU8 label, StringU8? type = null)
+    private void WeaponHelpMarker(bool hasAdvancedDyes, StringU8 label, in EquipDrawData data, StringU8? type = null)
     {
         Im.Line.SameInner();
         LunaStyle.DrawAlignedHelpMarker(
             "Changing weapons to weapons of different types can cause crashes, freezes, soft- and hard locks and cheating, "u8
           + "thus it is only allowed to change weapons to other weapons of the same type."u8);
-        DrawEquipLabel(hasAdvancedDyes, label);
+        DrawEquipLabel(hasAdvancedDyes, label, data);
 
         if (type is null)
             return;
@@ -660,16 +666,33 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
-    private void DrawEquipLabel(bool hasAdvancedDyes, StringU8 label)
+    private void DrawEquipLabel(bool hasAdvancedDyes, StringU8 label, in EquipDrawData data)
     {
         Im.Line.Same();
+        var enabled = _designApplier.CanApplyToPlayer() is DeniedApplicationReason.None;
         using (ImGuiColor.Text.Push(_advancedMaterialColor, hasAdvancedDyes))
         {
-            Im.Text(label);
+            using var id = Im.Id.Push("apply"u8);
+            if (ImEx.Button(label, disabled: !enabled) && data.GetDesign(_converter) is { } design)
+                _designApplier.ApplyToPlayer(design, data.Slot, Im.Io.KeyControl || !Im.Io.KeyShift, Im.Io.KeyShift || !Im.Io.KeyControl);
         }
 
-        if (hasAdvancedDyes)
-            Im.Tooltip.OnHover("This design has advanced dyes setup for this slot."u8);
+        DrawEquipLabelTooltip(enabled, hasAdvancedDyes);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    private void DrawEquipLabel(bool hasAdvancedDyes, StringU8 label, in BonusDrawData data)
+    {
+        Im.Line.Same();
+        var enabled = _designApplier.CanApplyToPlayer() is DeniedApplicationReason.None;
+        using (ImGuiColor.Text.Push(_advancedMaterialColor, hasAdvancedDyes))
+        {
+            using var id = Im.Id.Push("apply"u8);
+            if (ImEx.Button(label, disabled: !enabled) && data.GetDesign(_converter) is { } design)
+                _designApplier.ApplyToPlayer(design, data.Slot, Im.Io.KeyControl || !Im.Io.KeyShift, Im.Io.KeyShift || !Im.Io.KeyControl);
+        }
+
+        DrawEquipLabelTooltip(enabled, hasAdvancedDyes);
     }
 
     public static void DrawKeepItemFilter(Configuration config)
@@ -689,5 +712,32 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             combo.Dispose();
         foreach (var combo in _weaponCombo.Values)
             combo.Dispose();
+    }
+
+    private static void DrawEquipLabelTooltip(bool enabled, bool hasAdvancedDyes)
+    {
+        if (!Im.Item.Hovered(HoveredFlags.AllowWhenDisabled))
+            return;
+
+        using var tt = Im.Tooltip.Begin();
+        if (!enabled)
+        {
+            Im.Text("No current player character available to apply to."u8);
+        }
+        else
+        {
+            Im.Text(
+                "Click to apply only this slot and all related dyes and advanced dyes to your current character, according to the application rules."u8);
+            Im.Text("Control + Click to apply only the item itself and no dyes, regardless of application rules."u8);
+            Im.Text("Shift + Click to apply only the dyes and advanced dyes and not the item, regardless of application rules."u8);
+        }
+
+        if (!hasAdvancedDyes)
+            return;
+
+        Im.Cursor.Y += Im.Style.ItemInnerSpacing.Y;
+        Im.Separator();
+        Im.Cursor.Y += Im.Style.ItemInnerSpacing.Y;
+        Im.Text("This design has advanced dyes setup for this slot."u8);
     }
 }
