@@ -130,6 +130,9 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
                 if (mat != (nint)material)
                     continue;
 
+                if (characterBase->ColorTableTextures[idx - 1] is not null)
+                    continue;
+
                 _lastSlot = i;
                 return ((byte)i, (byte)j);
             }
@@ -142,6 +145,9 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             {
                 var mat = (nint)characterBase->Materials[idx++];
                 if (mat != (nint)material)
+                    continue;
+
+                if (characterBase->ColorTableTextures[idx - 1] is not null)
                     continue;
 
                 _lastSlot = i;
