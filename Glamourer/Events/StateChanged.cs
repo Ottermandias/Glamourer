@@ -7,7 +7,7 @@ using Luna;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when a state changes in any way. </summary>
-public sealed class StateChanged(Logger log)
+public sealed class StateChanged(LunaLogger log)
     : EventBase<StateChanged.Arguments, StateChanged.Priority>(nameof(StateChanged), log)
 {
     public enum Priority

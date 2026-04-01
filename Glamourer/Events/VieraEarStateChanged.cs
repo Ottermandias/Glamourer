@@ -4,7 +4,7 @@ using Penumbra.GameData.Interop;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when the state of viera ear visibility for any draw object is changed. </summary>
-public sealed class VieraEarStateChanged(Logger log)
+public sealed class VieraEarStateChanged(LunaLogger log)
     : EventBase<VieraEarStateChanged.Arguments, VieraEarStateChanged.Priority>(nameof(VieraEarStateChanged), log)
 {
     public enum Priority

@@ -5,7 +5,7 @@ namespace Glamourer.Events;
 /// <summary>
 /// Triggered when the auto-reload gear setting is changed in glamourer configuration.
 /// </summary>
-public sealed class AutoRedrawChanged(Logger log)
+public sealed class AutoRedrawChanged(LunaLogger log)
     : EventBase<bool, AutoRedrawChanged.Priority>(nameof(AutoRedrawChanged), log)
 {
     public enum Priority

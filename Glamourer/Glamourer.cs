@@ -24,7 +24,7 @@ public class Glamourer : IDalamudPlugin
         Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "Unknown";
 
 
-    public static readonly Logger         Log = new("Glamourer");
+    public static readonly MainLogger     Log = new("Glamourer");
     public static          MessageService Messager { get; private set; } = null!;
     public static          DynamisIpc     Dynamis  { get; private set; } = null!;
 
@@ -41,7 +41,7 @@ public class Glamourer : IDalamudPlugin
                 ;
             _ = _services.GetService<ImSharpDalamudContext>();
             _services.EnsureRequiredServices();
-            
+
             _services.GetService<VisorService>();
             _services.GetService<WeaponService>();
             _services.GetService<ScalingService>();

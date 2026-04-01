@@ -31,7 +31,7 @@ public sealed unsafe class CrestService : EventBase<CrestService.Arguments, Cres
         public ref      bool      Value = ref value;
     }
 
-    public CrestService(IGameInteropProvider interop, Logger log)
+    public CrestService(IGameInteropProvider interop, LunaLogger log)
         : base(nameof(CrestService), log)
     {
         interop.InitializeFromAttributes(this);

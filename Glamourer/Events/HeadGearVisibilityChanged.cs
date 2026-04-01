@@ -4,7 +4,7 @@ using Penumbra.GameData.Interop;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when the visibility of head gear is changed. </summary>
-public sealed class HeadGearVisibilityChanged(Logger log)
+public sealed class HeadGearVisibilityChanged(LunaLogger log)
     : EventBase<HeadGearVisibilityChanged.Arguments, HeadGearVisibilityChanged.Priority>(nameof(HeadGearVisibilityChanged), log)
 {
     public enum Priority

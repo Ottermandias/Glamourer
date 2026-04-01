@@ -4,7 +4,7 @@ using Penumbra.GameData.Interop;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when the visibility of weapons is changed. </summary>
-public sealed class WeaponVisibilityChanged(Logger log)
+public sealed class WeaponVisibilityChanged(LunaLogger log)
     : EventBase<WeaponVisibilityChanged.Arguments, WeaponVisibilityChanged.Priority>(nameof(WeaponVisibilityChanged), log)
 {
     public enum Priority

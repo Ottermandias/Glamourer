@@ -4,7 +4,7 @@ using Penumbra.String;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when the player equips a gear set. </summary>
-public sealed class EquippedGearset(Logger log)
+public sealed class EquippedGearset(LunaLogger log)
     : EventBase<EquippedGearset.Arguments, EquippedGearset.Priority>(nameof(EquippedGearset), log)
 {
     public enum Priority

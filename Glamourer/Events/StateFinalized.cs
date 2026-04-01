@@ -6,7 +6,7 @@ using Penumbra.GameData.Interop;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when a set of grouped changes finishes being applied to a Glamourer state. </summary>
-public sealed class StateFinalized(Logger log)
+public sealed class StateFinalized(LunaLogger log)
     : EventBase<StateFinalized.Arguments, StateFinalized.Priority>(nameof(StateFinalized), log)
 {
     public enum Priority
