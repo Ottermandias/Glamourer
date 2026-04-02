@@ -11,14 +11,13 @@ public sealed class GlamourerWindowSystem : IDisposable, IUiService
     private readonly IUiBuilder   _uiBuilder;
     private readonly MainWindow   _ui;
 
-    public GlamourerWindowSystem(IUiBuilder uiBuilder, MainWindow ui, GenericPopupWindow popups,
-        Configuration config, UnlocksTab unlocksTab, GlamourerChangelog changelog, DesignQuickBar quick)
+    public GlamourerWindowSystem(IUiBuilder uiBuilder, MainWindow ui, Configuration config, UnlocksTab unlocksTab, GlamourerChangelog changelog,
+        DesignQuickBar quick)
     {
         _uiBuilder    = uiBuilder;
         _ui           = ui;
         _windowSystem = WindowSystem.Create(uiBuilder, "Glamourer");
         _windowSystem.AddWindow(ui);
-        _windowSystem.AddWindow(popups);
         _windowSystem.AddWindow(unlocksTab);
         _windowSystem.AddWindow(changelog.Changelog);
         _windowSystem.AddWindow(quick);

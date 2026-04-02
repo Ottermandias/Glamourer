@@ -73,7 +73,7 @@ public class Glamourer : IDalamudPlugin
         sb.Append($"> **`Keep Manual Changes:  `** {config.RespectManualOnAutomationUpdate}\n");
         sb.Append($"> **`Auto-Reload Gear:     `** {config.AutoRedrawEquipOnChanges}\n");
         sb.Append($"> **`Revert on Zone Change:`** {config.RevertManualChangesOnZoneChange}\n");
-        sb.Append($"> **`Festival Easter-Eggs: `** {config.DisableFestivals}\n");
+        sb.Append($"> **`Festival Easter Eggs: `** {config.FestivalMode} ({config.LastFestivalPopup:d})\n");
         sb.Append($"> **`Apply Entire Weapon:  `** {config.ChangeEntireItem}\n");
         sb.Append($"> **`Apply Associated Mods:`** {config.AlwaysApplyAssociatedMods}\n");
         sb.Append($"> **`Attach to PCP:        `** {config.AttachToPcp}\n");

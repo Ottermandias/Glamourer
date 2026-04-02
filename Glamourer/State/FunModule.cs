@@ -32,13 +32,13 @@ public sealed unsafe class FunModule : IDisposable, IRequiredService
     private readonly Configuration           _config;
     private readonly CodeService             _codes;
     private readonly Random                  _rng;
-    private readonly GenericPopupWindow      _popupWindow;
     private readonly StateManager            _stateManager;
     private readonly DesignConverter         _designConverter;
     private readonly DesignManager           _designManager;
     private readonly ActorObjectManager      _objects;
     private readonly NpcCustomizeSet         _npcs;
     private readonly StainId[]               _stains;
+    private readonly FestivalNotification    _notification;
 
     public  FestivalType CurrentFestival { get; private set; } = FestivalType.None;
     private FunEquipSet? _festivalSet;
@@ -55,35 +55,44 @@ public sealed unsafe class FunModule : IDisposable, IRequiredService
             (01, 11) => FestivalType.Halloween,
             _        => FestivalType.None,
         };
-        _festivalSet                   = FunEquipSet.GetSet(CurrentFestival);
-        _popupWindow.OpenFestivalPopup = _pluginInterface.AllowSeasonalEvents && _festivalSet is not null && _config.DisableFestivals is 1;
+        _festivalSet = FunEquipSet.GetSet(CurrentFestival);
+        if (_festivalSet is not null && _config.FestivalMode is FestivalSetting.Undefined
+         || _config.FestivalMode is FestivalSetting.AskYes or FestivalSetting.AskNo
+         && _config.LastFestivalPopup < DateOnly.FromDateTime(DateTime.Now).AddMonths(-1))
+        {
+            _notification.Update();
+        }
     }
 
     internal void ForceFestival(FestivalType type)
     {
-        CurrentFestival                = type;
-        _festivalSet                   = FunEquipSet.GetSet(CurrentFestival);
-        _popupWindow.OpenFestivalPopup = _pluginInterface.AllowSeasonalEvents && _festivalSet is not null && _config.DisableFestivals is 1;
+        CurrentFestival = type;
+        _festivalSet    = FunEquipSet.GetSet(CurrentFestival);
+        if (_festivalSet is not null && _config.FestivalMode is FestivalSetting.Undefined
+         || _config.FestivalMode is FestivalSetting.AskYes or FestivalSetting.AskNo
+         && _config.LastFestivalPopup < DateOnly.FromDateTime(DateTime.Now).AddMonths(-1))
+            _notification.Update();
     }
 
     internal void ResetFestival()
         => OnDayChange(DateTime.Now.Day, DateTime.Now.Month, DateTime.Now.Year);
 
     public FunModule(IDalamudPluginInterface pi, CodeService codes, CustomizeService customizations, ItemManager items, Configuration config,
-        GenericPopupWindow popupWindow, StateManager stateManager, ActorObjectManager objects, DesignConverter designConverter,
-        DesignManager designManager, NpcCustomizeSet npcs, IDalamudPluginInterface pluginInterface)
+        StateManager stateManager, ActorObjectManager objects, DesignConverter designConverter,
+        DesignManager designManager, NpcCustomizeSet npcs, IDalamudPluginInterface pluginInterface, FestivalNotification festivalNotification,
+        FestivalNotification notification)
     {
         _codes           = codes;
         _customizations  = customizations;
         _items           = items;
         _config          = config;
-        _popupWindow     = popupWindow;
         _stateManager    = stateManager;
         _objects         = objects;
         _designConverter = designConverter;
         _designManager   = designManager;
         _npcs            = npcs;
         _pluginInterface = pluginInterface;
+        _notification    = notification;
         _rng             = new Random();
         _stains          = _items.Stains.Keys.Prepend((StainId)0).ToArray();
         ResetFestival();
@@ -94,7 +103,9 @@ public sealed unsafe class FunModule : IDisposable, IRequiredService
         => DayChangeTracker.DayChanged -= OnDayChange;
 
     private bool IsInFestival
-        => _pluginInterface.AllowSeasonalEvents && _config.DisableFestivals is 0 && _festivalSet is not null;
+        => _pluginInterface.AllowSeasonalEvents
+         && _config.FestivalMode is FestivalSetting.AskYes or FestivalSetting.NeverAskYes
+         && _festivalSet is not null;
 
     public void ApplyFunToSlot(Actor actor, ref CharacterArmor armor, EquipSlot slot)
     {

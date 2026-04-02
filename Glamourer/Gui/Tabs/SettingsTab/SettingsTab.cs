@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Glamourer.Automation;
 using Glamourer.Config;
@@ -16,6 +17,7 @@ using Luna;
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
 public sealed class SettingsTab(
+    IDalamudPluginInterface pi,
     Configuration config,
     DesignFileSystemDrawer drawer,
     ContextMenuService contextMenuService,
@@ -95,9 +97,40 @@ public sealed class SettingsTab(
         Checkbox("Respect Manual Changes When Editing Automation"u8,
             "Whether changing any currently active automation group will respect manual changes to the character before re-applying the changed automation or not."u8,
             config.RespectManualOnAutomationUpdate, v => config.RespectManualOnAutomationUpdate = v);
-        Checkbox("Enable Festival Easter-Eggs"u8,
+        Checkbox("Enable Festival Easter Eggs"u8,
             "Glamourer may do some fun things on specific dates. Disable this if you do not want your experience disrupted by this. The global Dalamud setting takes precedence before this."u8,
-            config.DisableFestivals is 0, v => config.DisableFestivals = v ? (byte)0 : (byte)2);
+            config.FestivalMode is FestivalSetting.AskYes or FestivalSetting.NeverAskYes, v => config.FestivalMode =
+                (v, config.FestivalMode) switch
+                {
+                    (true, FestivalSetting.NeverAskYes) or (true, FestivalSetting.NeverAskNo)   => FestivalSetting.NeverAskYes,
+                    (false, FestivalSetting.NeverAskYes) or (false, FestivalSetting.NeverAskNo) => FestivalSetting.NeverAskNo,
+                    (true, _)                                                                   => FestivalSetting.AskYes,
+                    _                                                                           => FestivalSetting.AskNo,
+                });
+        if (!pi.AllowSeasonalEvents)
+        {
+            Im.Line.SameInner();
+            ImEx.Icon.DrawAligned(LunaStyle.WarningIcon, Colors.SelectedRed);
+            Im.Tooltip.OnHover("You have seasonal events disabled globally in Dalamud.\n\nGlamourer will respect this setting, so choosing yes here will not work until you enable the global setting.");
+        }
+
+        if (config.FestivalMode is not FestivalSetting.Undefined)
+        {
+            Im.Cursor.X += Im.Style.FrameHeight + Im.Style.ItemInnerSpacing.X;
+            Checkbox("Ask for Each Festival Easter Egg"u8,
+                "If this is toggled on, Glamourer will ask once for every new festival via notification. Otherwise it will never ask again."u8,
+                config.FestivalMode is FestivalSetting.AskYes or FestivalSetting.AskNo, v => config.FestivalMode =
+                    (v, config.FestivalMode) switch
+                    {
+                        (true, FestivalSetting.NeverAskYes) or (true, FestivalSetting.AskYes)   => FestivalSetting.AskYes,
+                        (false, FestivalSetting.NeverAskYes) or (false, FestivalSetting.AskYes) => FestivalSetting.NeverAskYes,
+                        (true, _)                                                               => FestivalSetting.AskNo,
+                        _                                                                       => FestivalSetting.NeverAskNo,
+                    });
+        }
+        else
+            Im.FrameDummy();
+
         DrawPenumbraIntegrationSettings1();
         Checkbox("Revert Manual Changes on Zone Change"u8,
             "Restores the old behaviour of reverting your character to its game or automation base whenever you change the zone."u8,

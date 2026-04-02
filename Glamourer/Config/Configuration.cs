@@ -15,7 +15,7 @@ namespace Glamourer.Config;
 
 public sealed partial class Configuration : IPluginConfiguration, ISavable, IService
 {
-    public const int CurrentVersion = 11;
+    public const int CurrentVersion = 13;
 
     [JsonIgnore]
     public readonly EphemeralConfig Ephemeral;
@@ -26,35 +26,36 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     [JsonIgnore]
     public readonly FilterConfig Filters;
 
-    public bool AttachToPcp                      { get; set; } = true;
-    public bool UseRestrictedGearProtection      { get; set; } = false;
-    public bool OpenFoldersByDefault             { get; set; } = false;
-    public bool AutoRedrawEquipOnChanges         { get; set; } = false;
-    public bool EnableAutoDesigns                { get; set; } = true;
-    public bool HideApplyCheckmarks              { get; set; } = false;
-    public bool SmallEquip                       { get; set; } = false;
-    public bool UnlockedItemMode                 { get; set; } = false;
-    public byte DisableFestivals                 { get; set; } = 1;
-    public bool EnableGameContextMenu            { get; set; } = true;
-    public bool HideWindowInCutscene             { get; set; } = false;
-    public bool ShowAutomationSetEditing         { get; set; } = true;
-    public bool ShowAllAutomatedApplicationRules { get; set; } = true;
-    public bool ShowUnlockedItemWarnings         { get; set; } = true;
-    public bool RevertManualChangesOnZoneChange  { get; set; } = false;
-    public bool ShowQuickBarInTabs               { get; set; } = true;
-    public bool OpenWindowAtStart                { get; set; } = false;
-    public bool ShowWindowWhenUiHidden           { get; set; } = false;
-    public bool KeepAdvancedDyesAttached         { get; set; } = true;
-    public bool ShowPalettePlusImport            { get; set; } = true;
-    public bool UseFloatForColors                { get; set; } = true;
-    public bool UseRgbForColors                  { get; set; } = true;
-    public bool ShowColorConfig                  { get; set; } = true;
-    public bool ChangeEntireItem                 { get; set; } = false;
-    public bool AlwaysApplyAssociatedMods        { get; set; } = true;
-    public bool UseTemporarySettings             { get; set; } = true;
-    public bool AllowDoubleClickToApply          { get; set; } = false;
-    public bool RespectManualOnAutomationUpdate  { get; set; } = false;
-    public bool PreventRandomRepeats             { get; set; } = false;
+    public bool            AttachToPcp                      { get; set; } = true;
+    public bool            UseRestrictedGearProtection      { get; set; } = false;
+    public bool            OpenFoldersByDefault             { get; set; } = false;
+    public bool            AutoRedrawEquipOnChanges         { get; set; } = false;
+    public bool            EnableAutoDesigns                { get; set; } = true;
+    public bool            HideApplyCheckmarks              { get; set; } = false;
+    public bool            SmallEquip                       { get; set; } = false;
+    public bool            UnlockedItemMode                 { get; set; } = false;
+    public FestivalSetting FestivalMode                     { get; set; } = FestivalSetting.Undefined;
+    public DateOnly        LastFestivalPopup                { get; set; } = DateOnly.MinValue;
+    public bool            EnableGameContextMenu            { get; set; } = true;
+    public bool            HideWindowInCutscene             { get; set; } = false;
+    public bool            ShowAutomationSetEditing         { get; set; } = true;
+    public bool            ShowAllAutomatedApplicationRules { get; set; } = true;
+    public bool            ShowUnlockedItemWarnings         { get; set; } = true;
+    public bool            RevertManualChangesOnZoneChange  { get; set; } = false;
+    public bool            ShowQuickBarInTabs               { get; set; } = true;
+    public bool            OpenWindowAtStart                { get; set; } = false;
+    public bool            ShowWindowWhenUiHidden           { get; set; } = false;
+    public bool            KeepAdvancedDyesAttached         { get; set; } = true;
+    public bool            ShowPalettePlusImport            { get; set; } = true;
+    public bool            UseFloatForColors                { get; set; } = true;
+    public bool            UseRgbForColors                  { get; set; } = true;
+    public bool            ShowColorConfig                  { get; set; } = true;
+    public bool            ChangeEntireItem                 { get; set; } = false;
+    public bool            AlwaysApplyAssociatedMods        { get; set; } = true;
+    public bool            UseTemporarySettings             { get; set; } = true;
+    public bool            AllowDoubleClickToApply          { get; set; } = false;
+    public bool            RespectManualOnAutomationUpdate  { get; set; } = false;
+    public bool            PreventRandomRepeats             { get; set; } = false;
 
     [ConfigProperty]
     private bool _groupUnlocksByModel;
@@ -162,7 +163,7 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
 
     public void Save(Stream stream)
     {
-        using var writer = new StreamWriter(stream);
+        using var writer  = new StreamWriter(stream);
         using var jWriter = new JsonTextWriter(writer);
         jWriter.Formatting = Formatting.Indented;
         var serializer = new JsonSerializer { Formatting = Formatting.Indented };

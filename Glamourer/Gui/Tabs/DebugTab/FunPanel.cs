@@ -18,8 +18,8 @@ public sealed class FunPanel(FunModule funModule, Configuration config, IDalamud
     {
         Im.Text($"Current Festival: {funModule.CurrentFestival}");
         Im.Text($"Global Festivals Enabled: {pi.AllowSeasonalEvents}");
-        Im.Text($"Festivals Enabled: {config.DisableFestivals switch { 1 => "Undecided"u8, 0 => "Enabled"u8, _ => "Disabled"u8 }}");
-        Im.Text($"Popup Open: {Im.Popup.IsOpen("FestivalPopup"u8, PopupQueryFlags.AnyPopup)}");
+        Im.Text($"Festivals Enabled: {config.FestivalMode}");
+        Im.Text($"Last Festival Check: {config.LastFestivalPopup:d}");
         if (Im.Button("Force Christmas"u8))
             funModule.ForceFestival(FunModule.FestivalType.Christmas);
         if (Im.Button("Force Halloween"u8))
@@ -32,7 +32,7 @@ public sealed class FunPanel(FunModule funModule, Configuration config, IDalamud
             funModule.ResetFestival();
         if (Im.Button("Reset Popup"u8))
         {
-            config.DisableFestivals = 1;
+            config.FestivalMode = FestivalSetting.Undefined;
             config.Save();
         }
     }

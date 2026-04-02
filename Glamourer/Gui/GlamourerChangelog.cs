@@ -71,6 +71,7 @@ public sealed class GlamourerChangelog : IUiService
 
     private static void Add1_6_1_0(Changelog log)
         => log.NextVersion("Version 1.6.1.0"u8)
+            .RegisterEntry("Reworked the festival popup to use a notification instead. The query can be set to ask for every festival or never ask again, but will be set to ask again for the first time regardless of your current settings."u8)
             .RegisterEntry("Fixed display of NPCs in the automation selector and secondary identifier list."u8)
             .RegisterHighlight("Added per-slot application of items and dyes to the current player character in all tabs (1.6.0.2)."u8)
             .RegisterEntry("Fixed an issue when applying advanced dyes on equivalent left and right rings (1.6.0.2)."u8)
