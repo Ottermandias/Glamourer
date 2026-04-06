@@ -56,12 +56,11 @@ public sealed unsafe class FunModule : IDisposable, IRequiredService
             _        => FestivalType.None,
         };
         _festivalSet = FunEquipSet.GetSet(CurrentFestival);
-        if (_festivalSet is not null && _config.FestivalMode is FestivalSetting.Undefined
+        var askFestival = _config.FestivalMode is FestivalSetting.Undefined
          || _config.FestivalMode is FestivalSetting.AskYes or FestivalSetting.AskNo
-         && _config.LastFestivalPopup < DateOnly.FromDateTime(DateTime.Now).AddMonths(-1))
-        {
+         && _config.LastFestivalPopup < DateOnly.FromDateTime(DateTime.Now).AddMonths(-1);
+        if (_festivalSet is not null && askFestival)
             _notification.Update();
-        }
     }
 
     internal void ForceFestival(FestivalType type)
