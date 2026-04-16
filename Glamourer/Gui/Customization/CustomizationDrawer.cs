@@ -159,7 +159,7 @@ public sealed partial class CustomizationDrawer(
         catch (Exception ex)
         {
             _terminate = ex;
-            using var color = ImGuiColor.Text.Push(LunaStyle.ErrorBorderColor);
+            using var color = ImGuiColor.Text.Push(LunaStyle.ErrorForeground);
             Im.Line.New();
             Im.TextWrapped($"{_terminate}");
             return false;

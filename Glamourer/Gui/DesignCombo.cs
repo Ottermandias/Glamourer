@@ -346,7 +346,7 @@ public sealed class SpecialDesignCombo : DesignComboBase, IUiService
     private readonly CacheItem _revert;
     private readonly CacheItem _quick;
 
-    public SpecialDesignCombo(Config.EphemeralConfig config,
+    public SpecialDesignCombo(EphemeralConfig config,
         DesignManager designs,
         DesignChanged designChanged,
         DesignColors designColors,

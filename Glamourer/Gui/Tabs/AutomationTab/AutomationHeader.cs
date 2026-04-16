@@ -9,10 +9,11 @@ public sealed class AutomationHeader : SplitButtonHeader
     private readonly Configuration       _config;
     private readonly AutomationSelection _selection;
 
-    public AutomationHeader(Configuration config, AutomationSelection selection, IncognitoButton incognito)
+    public AutomationHeader(Configuration config, AutomationSelection selection, IncognitoButton incognito, AutomationTesterButton tester)
     {
         _config    = config;
         _selection = selection;
+        LeftButtons.AddButton(tester, 0);
         RightButtons.AddButton(incognito, 100);
     }
 
