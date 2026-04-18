@@ -58,6 +58,18 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
         Config.OnRenameChanged -= OnRenameChanged;
     }
 
+    public override Vector4 ExpandedFolderColor
+        => ColorId.FolderExpanded.Value().ToVector();
+
+    public override Vector4 CollapsedFolderColor
+        => ColorId.FolderCollapsed.Value().ToVector();
+
+    public override Vector4 FolderLineColor
+        => ColorId.FolderLine.Value().ToVector();
+
+    public override IEnumerable<ISortMode> ValidSortModes
+        => ISortMode.Valid.Values;
+
     public override ReadOnlySpan<byte> Id
         => "Designs"u8;
 
