@@ -5,7 +5,7 @@ namespace Glamourer.Events;
 /// <summary>
 /// Triggered when Penumbra is reloaded.
 /// </summary>
-public sealed class PenumbraReloaded(Logger log)
+public sealed class PenumbraReloaded(LunaLogger log)
     : EventBase<PenumbraReloaded.Priority>(nameof(PenumbraReloaded), log)
 {
     public enum Priority

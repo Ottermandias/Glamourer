@@ -33,7 +33,30 @@ public sealed class ConfigMigrationService(SaveService saveService, FixedDesignM
         MigrateV8To9();
         MigrateV9To11();
         MigrateV11To12();
+        MigrateV12To13();
         AddColors(config, true);
+    }
+
+    private void MigrateV12To13()
+    {
+        if (_config.Version > 12)
+            return;
+
+        if (_data["DisableFestivals"]?.ToObject<byte>() is { } oldValue)
+        {
+            _config.FestivalMode = oldValue switch
+            {
+                0 => FestivalSetting.AskYes,
+                1 => FestivalSetting.Undefined,
+                2 => FestivalSetting.AskNo,
+                _ => FestivalSetting.Undefined,
+            };
+            _config.LastFestivalPopup = DateOnly.FromDateTime(DateTime.Now.AddDays(-40));
+        }
+        _config.Version           = 13;
+        _config.Ephemeral.Version = 13;
+        _config.Save();
+        _config.Ephemeral.Save();
     }
 
     private void MigrateV11To12()

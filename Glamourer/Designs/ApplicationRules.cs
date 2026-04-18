@@ -31,9 +31,9 @@ public readonly struct ApplicationRules(ApplicationCollection application, bool 
     {
         var equip      = ctrl || !shift ? EquipFlagExtensions.All : 0;
         var customize  = !ctrl || shift ? CustomizeFlagExtensions.AllRelevant : 0;
-        var bonus      = equip == 0 ? 0 : BonusExtensions.All;
-        var crest      = equip == 0 ? 0 : CrestExtensions.AllRelevant;
-        var parameters = customize == 0 ? 0 : CustomizeParameterExtensions.All;
+        var bonus      = equip is 0 ? 0 : BonusExtensions.All;
+        var crest      = equip is 0 ? 0 : CrestExtensions.AllRelevant;
+        var parameters = customize is 0 ? 0 : CustomizeParameterExtensions.All;
         var meta       = state.ModelData.IsWet() ? MetaFlag.Wetness : 0;
         if (equip != 0)
             meta |= MetaFlag.HatState | MetaFlag.WeaponState | MetaFlag.VisorState;

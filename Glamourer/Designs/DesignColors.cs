@@ -4,7 +4,6 @@ using Glamourer.Gui;
 using Glamourer.Services;
 using ImSharp;
 using Luna;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Designs;
@@ -94,6 +93,7 @@ public sealed class DesignColors : ISavable, IReadOnlyDictionary<string, Rgba32>
                 j.WriteNumber(name, color.Color);
             j.WriteEndObject();
         }
+        j.WriteEndObject();
     }
 
     private void Load()

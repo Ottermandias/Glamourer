@@ -3,7 +3,7 @@ using Penumbra.GameData.Actors;
 
 namespace Glamourer.Automation;
 
-public class AutoDesignSet(string name, ActorIdentifier[] identifiers, List<AutoDesign> designs)
+public sealed class AutoDesignSet(string name, ActorIdentifier[] identifiers, List<AutoDesign> designs)
 {
     public readonly List<AutoDesign> Designs = designs;
 
@@ -37,7 +37,7 @@ public class AutoDesignSet(string name, ActorIdentifier[] identifiers, List<Auto
         if (SecondaryIdentifiers.Count > 0)
         {
             var array = new JArray();
-            foreach(var identifier in SecondaryIdentifiers)
+            foreach (var identifier in SecondaryIdentifiers)
                 array.Add(identifier[0].ToJson());
             ret["SecondaryIdentifiers"] = array;
         }

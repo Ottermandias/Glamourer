@@ -7,7 +7,7 @@ using Luna;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when a Design is edited in any way. </summary>
-public sealed class DesignChanged(Logger log)
+public sealed class DesignChanged(LunaLogger log)
     : EventBase<DesignChanged.Arguments, DesignChanged.Priority>(nameof(DesignChanged), log)
 {
     public enum Type

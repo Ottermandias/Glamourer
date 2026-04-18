@@ -30,7 +30,7 @@ public sealed unsafe class PrepareColorSet
         public ref      nint                    ReturnValue = ref returnValue;
     }
 
-    public PrepareColorSet(HookManager hooks, CreateNewModel createNewModel, Logger log)
+    public PrepareColorSet(HookManager hooks, CreateNewModel createNewModel, LunaLogger log)
         : base("Prepare Color Set", log)
     {
         _createNewModel = createNewModel;

@@ -1,4 +1,6 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface;
+using Glamourer.Config;
 using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Penumbra;
@@ -21,7 +23,8 @@ public sealed class UnlockOverview(
     CodeService codes,
     JobService jobs,
     FavoriteManager favorites,
-    PenumbraService penumbra) : IUiService
+    PenumbraService penumbra,
+    IgnoredMods ignoredMods) : IUiService
 {
     private static readonly Vector4 UnavailableTint = new(0.3f, 0.3f, 0.3f, 1.0f);
 
@@ -152,10 +155,11 @@ public sealed class UnlockOverview(
 
     private void DrawBonusItems()
     {
-        var       spacing        = IconSpacing;
-        var       iconSize       = ImEx.ScaledVector(64);
-        var       iconsPerRow    = IconsPerRow(iconSize.X, spacing.X);
-        Im.ListClipper.DrawGrouped(items.DictBonusItems.Values, DrawItem, items.DictBonusItems.Count, iconsPerRow, iconSize.Y + spacing.Y, spacing.X);
+        var spacing     = IconSpacing;
+        var iconSize    = ImEx.ScaledVector(64);
+        var iconsPerRow = IconsPerRow(iconSize.X, spacing.X);
+        Im.ListClipper.DrawGrouped(items.DictBonusItems.Values, DrawItem, items.DictBonusItems.Count, iconsPerRow, iconSize.Y + spacing.Y,
+            spacing.X);
         return;
 
         void DrawItem(EquipItem item)
@@ -200,9 +204,9 @@ public sealed class UnlockOverview(
         if (!items.ItemData.ByType.TryGetValue(_selected1, out var value))
             return;
 
-        var       spacing        = IconSpacing;
-        var       iconSize       = ImEx.ScaledVector(64);
-        var       iconsPerRow    = IconsPerRow(iconSize.X, spacing.X);
+        var spacing     = IconSpacing;
+        var iconSize    = ImEx.ScaledVector(64);
+        var iconsPerRow = IconsPerRow(iconSize.X, spacing.X);
         Im.ListClipper.DrawGrouped(value, DrawItem, iconsPerRow, iconSize.Y + spacing.Y, spacing.X);
         return;
 
@@ -286,8 +290,16 @@ public sealed class UnlockOverview(
             return mods;
 
         var center = Im.Item.UpperLeftCorner + new Vector2(iconSize.X * 0.85f, iconSize.Y * 0.15f);
-        Im.Window.DrawList.Shape.CircleFilled(center, iconSize.X * 0.1f, _moddedColor);
-        Im.Window.DrawList.Shape.Circle(center, iconSize.X * 0.1f, Rgba32.Black);
+        if (mods.All(m => ignoredMods.Contains(m.ModDirectory) || ignoredMods.Contains(m.ModName)))
+        {
+            Im.Window.DrawList.Shape.CircleFilled(center, iconSize.X * 0.1f, _moddedColor.WithAlpha(0.33f));
+        }
+        else
+        {
+            Im.Window.DrawList.Shape.CircleFilled(center, iconSize.X * 0.1f, _moddedColor);
+            Im.Window.DrawList.Shape.Circle(center, iconSize.X * 0.1f, Rgba32.Black);
+        }
+
         return mods;
     }
 

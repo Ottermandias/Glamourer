@@ -96,7 +96,7 @@ public sealed class NpcFilter : TokenizedFilter<NpcFilter.TokenType, NpcCacheIte
     {
         return token.Type switch
         {
-            TokenType.Name  => npcCacheItem.Name.Utf16.Contains(token.Needle, StringComparison.InvariantCultureIgnoreCase),
+            TokenType.Name  => npcCacheItem.Name.Utf16.Contains(token.Needle, StringComparison.InvariantCultureIgnoreCase) || npcCacheItem.Id.Utf16.Contains(token.Needle, StringComparison.Ordinal),
             TokenType.Id    => npcCacheItem.Npc.Id == token.ParsedNeedle,
             TokenType.Color => npcCacheItem.ColorText.Contains(token.Needle, StringComparison.InvariantCultureIgnoreCase),
             _               => false,

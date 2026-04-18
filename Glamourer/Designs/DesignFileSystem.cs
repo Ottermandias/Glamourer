@@ -12,7 +12,7 @@ public sealed class DesignFileSystem : BaseFileSystem, IDisposable, IRequiredSer
     private readonly DesignChanged         _designChanged;
     private readonly TabSelected           _tabSelected;
 
-    public DesignFileSystem(Logger log, SaveService saveService, DesignStorage designs, DesignChanged designChanged, TabSelected tabSelected)
+    public DesignFileSystem(LunaLogger log, SaveService saveService, DesignStorage designs, DesignChanged designChanged, TabSelected tabSelected)
         : base("DesignFileSystem", log, true)
     {
         _designChanged = designChanged;

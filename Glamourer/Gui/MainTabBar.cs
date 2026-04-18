@@ -17,7 +17,7 @@ public sealed class MainTabBar : TabBar<MainTabType>
     private readonly EphemeralConfig _config;
     public readonly  SettingsTab     Settings;
 
-    public MainTabBar(Logger log, EphemeralConfig config, SettingsTab settings, ActorTab actors, DesignTab designs,
+    public MainTabBar(LunaLogger log, EphemeralConfig config, SettingsTab settings, ActorTab actors, DesignTab designs,
         AutomationTab automation, UnlocksTab unlocks, NpcTab npcs, MessagesTab messages, DebugTab debug)
         : base("MainTabBar", log, settings, actors, designs, automation, unlocks, npcs, messages, debug)
     {

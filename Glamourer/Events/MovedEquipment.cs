@@ -10,7 +10,7 @@ namespace Glamourer.Events;
 ///     <item>Parameter is an array of slots updated and corresponding item ids and stains. </item>
 /// </list>
 /// </summary>
-public sealed class MovedEquipment(Logger log)
+public sealed class MovedEquipment(LunaLogger log)
     : EventBase<MovedEquipment.Arguments, MovedEquipment.Priority>(nameof(MovedEquipment), log)
 {
     public enum Priority

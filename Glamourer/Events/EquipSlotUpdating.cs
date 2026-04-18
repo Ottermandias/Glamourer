@@ -6,7 +6,7 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when a model flags an equipment slot for an update. </summary>
-public sealed class EquipSlotUpdating(Logger log)
+public sealed class EquipSlotUpdating(LunaLogger log)
     : EventBase<EquipSlotUpdating.Arguments, EquipSlotUpdating.Priority>(nameof(EquipSlotUpdating), log)
 {
     public enum Priority

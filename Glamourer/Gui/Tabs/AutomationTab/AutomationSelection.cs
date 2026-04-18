@@ -50,7 +50,6 @@ public sealed class AutomationSelection : IUiService, IDisposable
 
     public void Update(in AutomationCacheItem? item)
     {
-        SelectionChanged?.Invoke();
         Set = item?.Set;
         if (Set is null)
         {
@@ -66,6 +65,7 @@ public sealed class AutomationSelection : IUiService, IDisposable
             Name                            = item!.Value.Name.Utf8;
             Incognito                       = item!.Value.Incognito;
         }
+        SelectionChanged?.Invoke();
     }
 
     private void InitialSelect(AutoDesignManager autoDesigns)

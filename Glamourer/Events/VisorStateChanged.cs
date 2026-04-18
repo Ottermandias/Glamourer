@@ -4,7 +4,7 @@ using Penumbra.GameData.Interop;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when the state of a visor for any draw object is changed. </summary>
-public sealed class VisorStateChanged(Logger log)
+public sealed class VisorStateChanged(LunaLogger log)
     : EventBase<VisorStateChanged.Arguments, VisorStateChanged.Priority>(nameof(VisorStateChanged), log)
 {
     public enum Priority

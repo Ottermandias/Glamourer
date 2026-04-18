@@ -19,7 +19,7 @@ public sealed class GPoseService : EventBase<bool, GPoseService.Priority>
 
     public bool InGPose { get; private set; }
 
-    public GPoseService(IFramework framework, IClientState state, Logger log)
+    public GPoseService(IFramework framework, IClientState state, LunaLogger log)
         : base(nameof(GPoseService), log)
     {
         _framework        =  framework;

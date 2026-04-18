@@ -97,6 +97,8 @@ public sealed class PenumbraService : IDisposable, IService
     private Func<string, (string ModDirectory, string ModName)[]>?                                   _checkCurrentChangedItems;
     private Func<nint, nint>?                                                                        _getGameObject;
 
+    private Actor _currentActor = Actor.Null;
+
     private readonly IDisposable _initializedEvent;
     private readonly IDisposable _disposedEvent;
 
@@ -118,12 +120,13 @@ public sealed class PenumbraService : IDisposable, IService
         _disposedEvent         = global::Penumbra.Api.IpcSubscribers.Disposed.Subscriber(pi, Unattach);
         _tooltipSubscriber     = global::Penumbra.Api.IpcSubscribers.ChangedItemTooltip.Subscriber(pi);
         _clickSubscriber       = global::Penumbra.Api.IpcSubscribers.ChangedItemClicked.Subscriber(pi);
-        _createdCharacterBase  = global::Penumbra.Api.IpcSubscribers.CreatedCharacterBase.Subscriber(pi);
-        _creatingCharacterBase = global::Penumbra.Api.IpcSubscribers.CreatingCharacterBase.Subscriber(pi);
+        _createdCharacterBase  = global::Penumbra.Api.IpcSubscribers.CreatedCharacterBase.Subscriber(pi, ResetActor);
+        _creatingCharacterBase = global::Penumbra.Api.IpcSubscribers.CreatingCharacterBase.Subscriber(pi, StoreActor);
         _modSettingChanged     = global::Penumbra.Api.IpcSubscribers.ModSettingChanged.Subscriber(pi);
         _pcpCreated            = global::Penumbra.Api.IpcSubscribers.CreatingPcp.Subscriber(pi);
         _pcpParsed             = global::Penumbra.Api.IpcSubscribers.ParsingPcp.Subscriber(pi);
         _modUsageQueried       = global::Penumbra.Api.IpcSubscribers.ModUsageQueried.Subscriber(pi);
+
         Reattach();
     }
 
@@ -333,7 +336,7 @@ public sealed class PenumbraService : IDisposable, IService
         try
         {
             var collection = collectionInput ?? _currentCollection!.Invoke(ApiCollectionType.Current)!.Value.Id;
-            if (_config.UseTemporarySettings && _setTemporaryModSettings != null)
+            if (_config.UseTemporarySettings && _setTemporaryModSettings is not null)
                 SetModTemporary(sb, mod, settings, collection, respectManual, index, source);
             else
                 SetModPermanent(sb, mod, settings, collection);
@@ -495,7 +498,16 @@ public sealed class PenumbraService : IDisposable, IService
 
     /// <summary> Obtain the game object corresponding to a draw object. </summary>
     public Actor GameObjectFromDrawObject(Model drawObject)
-        => _getGameObject?.Invoke(drawObject.Address) ?? Actor.Null;
+    {
+        if (_getGameObject is null)
+            return Actor.Null;
+
+        var ret = _getGameObject.Invoke(drawObject.Address);
+        if (ret == nint.Zero)
+            return _currentActor;
+
+        return ret;
+    }
 
 
     /// <summary> Try to redraw the given actor. </summary>
@@ -593,7 +605,6 @@ public sealed class PenumbraService : IDisposable, IService
                 new global::Penumbra.Api.IpcSubscribers.CheckCurrentChangedItemFunc(_pluginInterface).Invoke();
             _registerSettingsSection   = new global::Penumbra.Api.IpcSubscribers.RegisterSettingsSection(_pluginInterface);
             _unregisterSettingsSection = new global::Penumbra.Api.IpcSubscribers.UnregisterSettingsSection(_pluginInterface);
-
             _registerSettingsSection.Invoke(InvokeDrawSettingsSection);
 
             Available = true;
@@ -606,6 +617,13 @@ public sealed class PenumbraService : IDisposable, IService
             Glamourer.Log.Debug($"Could not attach to Penumbra:\n{e}");
         }
     }
+
+    private void ResetActor(IntPtr arg1, Guid arg2, IntPtr arg3)
+        => _currentActor = Actor.Null;
+
+    private void StoreActor(nint actor, Guid _1, nint _2, nint _3, nint _4)
+        => _currentActor = actor;
+
 
     /// <summary> Unattach from the currently running Penumbra IPC provider. </summary>
     public void Unattach()

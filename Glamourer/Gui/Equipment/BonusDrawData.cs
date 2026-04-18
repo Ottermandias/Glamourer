@@ -36,6 +36,14 @@ public struct BonusDrawData(BonusItemFlag slot, in DesignData designData)
     public EquipItem GameItem    = default;
     public bool      CurrentApply;
 
+    public readonly DesignBase? GetDesign(DesignConverter converter)
+        => _object switch
+        {
+            DesignBase b => b,
+            ActorState s => converter.Convert(s, ApplicationRules.All),
+            _            => null,
+        };
+
     public static BonusDrawData FromDesign(DesignManager manager, Design design, BonusItemFlag slot)
         => new(slot, design.DesignData)
         {

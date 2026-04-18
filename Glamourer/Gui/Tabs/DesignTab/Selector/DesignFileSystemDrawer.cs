@@ -14,7 +14,8 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
     internal readonly DesignColors  DesignColors;
     internal readonly DesignManager Manager;
 
-    public DesignFileSystemDrawer(MessageService messager, DesignFileSystem fileSystem, DesignManager manager, DesignConverter converter, Configuration config,
+    public DesignFileSystemDrawer(MessageService messager, DesignFileSystem fileSystem, DesignManager manager, DesignConverter converter,
+        Configuration config,
         DesignApplier designApplier, DesignChanged designChanged, DesignColors designColors)
         : base(messager, fileSystem, new DesignFilter(config))
     {
@@ -39,8 +40,8 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
         DataContext.RemoveButtons<RenameDesignInput>();
         switch (newValue)
         {
-            case RenameField.RenameSearchPath: DataContext.AddButton(new RenameDesignInput(this), -1000); break;
-            case RenameField.RenameData:       DataContext.AddButton(new MoveDesignInput(this),   -1000); break;
+            case RenameField.RenameSearchPath: DataContext.AddButton(new MoveDesignInput(this),   -1000); break;
+            case RenameField.RenameData:       DataContext.AddButton(new RenameDesignInput(this), -1000); break;
             case RenameField.BothSearchPathPrio:
                 DataContext.AddButton(new RenameDesignInput(this), -1000);
                 DataContext.AddButton(new MoveDesignInput(this),   -1001);

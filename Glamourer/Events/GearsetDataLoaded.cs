@@ -7,7 +7,7 @@ namespace Glamourer.Events;
 ///   Triggers when the equipped gearset finished all LoadEquipment, LoadWeapon, and LoadCrest calls. (All Non-MetaData)
 ///   This defines an endpoint for when the gameState is updated.
 /// </summary>
-public sealed class GearsetDataLoaded(Logger log)
+public sealed class GearsetDataLoaded(LunaLogger log)
     : EventBase<GearsetDataLoaded.Arguments, GearsetDataLoaded.Priority>(nameof(GearsetDataLoaded), log)
 {
     public enum Priority

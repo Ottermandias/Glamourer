@@ -6,7 +6,7 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when a model flags a bonus slot for an update. </summary>
-public sealed class BonusSlotUpdating(Logger log)
+public sealed class BonusSlotUpdating(LunaLogger log)
     : EventBase<BonusSlotUpdating.Arguments, BonusSlotUpdating.Priority>(nameof(BonusSlotUpdating), log)
 {
     public enum Priority

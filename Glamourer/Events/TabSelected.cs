@@ -5,7 +5,7 @@ using Luna;
 namespace Glamourer.Events;
 
 /// <summary> Triggered to select a tab or design. </summary>
-public sealed class TabSelected(Logger log)
+public sealed class TabSelected(LunaLogger log)
     : EventBase<TabSelected.Arguments, TabSelected.Priority>(nameof(TabSelected), log)
 {
     public enum Priority

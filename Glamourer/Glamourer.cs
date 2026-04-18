@@ -24,7 +24,7 @@ public class Glamourer : IDalamudPlugin
         Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "Unknown";
 
 
-    public static readonly Logger         Log = new("Glamourer");
+    public static readonly MainLogger     Log = new("Glamourer");
     public static          MessageService Messager { get; private set; } = null!;
     public static          DynamisIpc     Dynamis  { get; private set; } = null!;
 
@@ -41,7 +41,7 @@ public class Glamourer : IDalamudPlugin
                 ;
             _ = _services.GetService<ImSharpDalamudContext>();
             _services.EnsureRequiredServices();
-            
+
             _services.GetService<VisorService>();
             _services.GetService<WeaponService>();
             _services.GetService<ScalingService>();
@@ -73,7 +73,7 @@ public class Glamourer : IDalamudPlugin
         sb.Append($"> **`Keep Manual Changes:  `** {config.RespectManualOnAutomationUpdate}\n");
         sb.Append($"> **`Auto-Reload Gear:     `** {config.AutoRedrawEquipOnChanges}\n");
         sb.Append($"> **`Revert on Zone Change:`** {config.RevertManualChangesOnZoneChange}\n");
-        sb.Append($"> **`Festival Easter-Eggs: `** {config.DisableFestivals}\n");
+        sb.Append($"> **`Festival Easter Eggs: `** {config.FestivalMode} ({config.LastFestivalPopup:d})\n");
         sb.Append($"> **`Apply Entire Weapon:  `** {config.ChangeEntireItem}\n");
         sb.Append($"> **`Apply Associated Mods:`** {config.AlwaysApplyAssociatedMods}\n");
         sb.Append($"> **`Attach to PCP:        `** {config.AttachToPcp}\n");

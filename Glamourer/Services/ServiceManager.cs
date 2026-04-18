@@ -12,7 +12,7 @@ namespace Glamourer.Services;
 
 public static class StaticServiceManager
 {
-    public static ServiceManager CreateProvider(IDalamudPluginInterface pi, Logger log, Glamourer glamourer)
+    public static ServiceManager CreateProvider(IDalamudPluginInterface pi, MainLogger log, Glamourer glamourer)
     {
         var services = new ServiceManager(log)
             .AddDalamudServices(pi)

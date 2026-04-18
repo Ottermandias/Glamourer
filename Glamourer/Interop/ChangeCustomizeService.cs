@@ -36,7 +36,7 @@ public sealed unsafe class ChangeCustomizeService : EventBase<ChangeCustomizeSer
         StateListener = 0,
     }
 
-    public ChangeCustomizeService(PenumbraReloaded penumbraReloaded, IGameInteropProvider interop, Logger log)
+    public ChangeCustomizeService(PenumbraReloaded penumbraReloaded, IGameInteropProvider interop, LunaLogger log)
         : base("ChangeCustomize", log)
     {
         _penumbraReloaded    = penumbraReloaded;
@@ -101,7 +101,7 @@ public sealed unsafe class ChangeCustomizeService : EventBase<ChangeCustomizeSer
     public void Unsubscribe(InAction<Model> action)
         => _postEvent.Unsubscribe(action);
 
-    public sealed class Post(Logger log) : EventBase<Model, Post.Priority>(nameof(ChangeCustomizeService) + '.' + nameof(Post), log)
+    public sealed class Post(LunaLogger log) : EventBase<Model, Post.Priority>(nameof(ChangeCustomizeService) + '.' + nameof(Post), log)
     {
         public enum Priority
         {

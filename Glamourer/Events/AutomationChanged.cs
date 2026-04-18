@@ -7,7 +7,7 @@ using Penumbra.GameData.Structs;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when an automated design is changed in any way. </summary>
-public sealed class AutomationChanged(Logger log)
+public sealed class AutomationChanged(LunaLogger log)
     : EventBase<AutomationChanged.Arguments, AutomationChanged.Priority>(nameof(AutomationChanged), log)
 {
     public enum Type

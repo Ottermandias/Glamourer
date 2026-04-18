@@ -3,7 +3,7 @@ using Luna;
 namespace Glamourer.Events;
 
 /// <summary> Triggered when a new item or customization is unlocked. </summary>
-public sealed class ObjectUnlocked(Logger log)
+public sealed class ObjectUnlocked(LunaLogger log)
     : EventBase<ObjectUnlocked.Arguments, ObjectUnlocked.Priority>(nameof(ObjectUnlocked), log), IRequiredService
 {
     public enum Type

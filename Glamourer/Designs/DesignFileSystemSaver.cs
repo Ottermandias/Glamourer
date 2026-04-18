@@ -3,7 +3,7 @@ using Luna;
 
 namespace Glamourer.Designs;
 
-public sealed class DesignFileSystemSaver(Logger log, BaseFileSystem fileSystem, SaveService saveService, DesignStorage designs)
+public sealed class DesignFileSystemSaver(LunaLogger log, BaseFileSystem fileSystem, SaveService saveService, DesignStorage designs)
     : FileSystemSaver<SaveService, FilenameService>(log, fileSystem, saveService)
 {
     protected override void SaveDataValue(IFileSystemValue value)

@@ -6,14 +6,15 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Equipment;
 
-public struct EquipDrawData(EquipSlot slot, in DesignData designData)
+public ref struct EquipDrawData(EquipSlot slot, ref readonly DesignData designData)
 {
-    private         IDesignEditor _editor = null!;
-    private         object        _object = null!;
-    public readonly EquipSlot     Slot    = slot;
-    public          bool          Locked;
-    public          bool          DisplayApplication;
-    public          bool          AllowRevert;
+    private readonly ref readonly DesignData    _designData = ref designData;
+    private                       IDesignEditor _editor     = null!;
+    private                       object        _object     = null!;
+    public readonly               EquipSlot     Slot        = slot;
+    public                        bool          Locked;
+    public                        bool          DisplayApplication;
+    public                        bool          AllowRevert;
 
     public readonly bool IsDesign
         => _object is Design;
@@ -42,6 +43,14 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
         manager.ChangeApplyStains((Design)_object, Slot, value);
     }
 
+    public readonly DesignBase GetDesign(DesignConverter converter)
+        => _object switch
+        {
+            DesignBase b => b,
+            ActorState s => converter.Convert(s,           ApplicationRules.All),
+            _            => converter.Convert(_designData, new StateMaterialManager(), ApplicationRules.All),
+        };
+
     public EquipItem CurrentItem   = designData.Item(slot);
     public StainIds  CurrentStains = designData.Stain(slot);
     public EquipItem GameItem      = default;
@@ -54,7 +63,7 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
     public readonly Race   CurrentRace   = designData.Customize.Race;
 
     public static EquipDrawData FromDesign(DesignManager manager, Design design, EquipSlot slot)
-        => new(slot, design.DesignData)
+        => new(slot, in design.DesignData)
         {
             _editor            = manager,
             _object            = design,
@@ -66,7 +75,7 @@ public struct EquipDrawData(EquipSlot slot, in DesignData designData)
         };
 
     public static EquipDrawData FromState(StateManager manager, ActorState state, EquipSlot slot)
-        => new(slot, state.ModelData)
+        => new(slot, in state.ModelData)
         {
             _editor            = manager,
             _object            = state,

@@ -55,6 +55,9 @@ public sealed class NpcSelection : IUiService, IDisposable
     public uint Id
         => Data.Id;
 
+    public uint NameId
+        => Data.NameId;
+
     public bool HasSelection
         => Id is not 0;
 
