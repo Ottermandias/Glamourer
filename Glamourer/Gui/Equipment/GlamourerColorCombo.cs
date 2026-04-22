@@ -65,8 +65,13 @@ public sealed class GlamourerColorCombo : FilterComboColors, IDisposable
         // Skip the named preview if it does not fit.
         var name = Im.Font.CalculateSize(current.Name).X <= width && !current.RgbaColor.IsTransparent ? current.Name : StringU8.Empty;
         var ret  = base.Draw(label, name, StringU8.Empty, width, out var newItem);
-        if (name.IsEmpty)
-            Im.Tooltip.OnHover(CurrentSelection.Name);
+        if (name.IsEmpty && Im.Item.Hovered(HoveredFlags.AllowWhenDisabled) && CurrentSelection.Name.Length > 0)
+        {
+            using var enabled = Im.Enabled();
+            using var tt      = Im.Tooltip.Begin();
+            Im.Text(CurrentSelection.Name);
+        }
+
         if (ret)
         {
             if (newItem.Id is 0)
