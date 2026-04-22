@@ -216,7 +216,7 @@ public class StateApplier(
     /// </summary>
     public void ChangeMainhand(ActorData data, EquipItem weapon, StainIds stains)
     {
-        var slot = weapon.Type.ValidOffhand() == FullEquipType.Unknown ? EquipSlot.BothHand : EquipSlot.MainHand;
+        var slot = weapon.Type.ValidOffhand() is FullEquipType.Unknown ? EquipSlot.BothHand : EquipSlot.MainHand;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
             weaponService.LoadWeapon(actor, slot, weapon.Weapon().With(stains));
     }
@@ -224,7 +224,7 @@ public class StateApplier(
     /// <summary> Apply a weapon to the offhand. </summary>
     public void ChangeOffhand(ActorData data, EquipItem weapon, StainIds stains)
     {
-        stains = weapon.PrimaryId.Id == 0 ? StainIds.None : stains;
+        stains = weapon.PrimaryId.Id is 0 ? StainIds.None : stains;
         foreach (var actor in data.Objects.Where(a => a.Model.IsHuman))
             weaponService.LoadWeapon(actor, EquipSlot.OffHand, weapon.Weapon().With(stains));
     }
@@ -415,9 +415,9 @@ public class StateApplier(
                 ChangeBonusItem(actors, slot, item.PrimaryId, item.Variant);
             }
 
-            var mainhandActors = state.ModelData.MainhandType != state.BaseData.MainhandType ? actors.OnlyGPose() : actors;
+            var mainhandActors = state.ModelData.MainhandType.IsCompatible(state.BaseData.MainhandType) ? actors : actors.OnlyGPose();
             ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
-            var offhandActors = state.ModelData.OffhandType != state.BaseData.OffhandType ? actors.OnlyGPose() : actors;
+            var offhandActors = state.ModelData.OffhandType.IsCompatible(state.BaseData.OffhandType) ? actors : actors.OnlyGPose();
             ChangeOffhand(offhandActors, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
 
             if (state.ModelData.IsHuman)

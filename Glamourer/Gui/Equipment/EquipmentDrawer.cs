@@ -241,12 +241,13 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             mainhandLabel = new StringU8($"{mainhandLabel} ({mainhand.CurrentItem.Type.ToName()})");
         WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel, mainhand);
 
-        if (offhand.CurrentItem.Type is FullEquipType.Unknown)
+        var validOffhand = mainhand.CurrentItem.Type.ValidOffhand();
+        if (validOffhand is FullEquipType.Unknown)
             return;
 
         DrawStain(offhand, true);
         Im.Line.Same();
-        DrawOffhand(mainhand, offhand, out var offhandLabel, true, false, false);
+        DrawOffhand(mainhand, validOffhand, offhand, out var offhandLabel, true, false, false);
         if (offhand.DisplayApplication)
         {
             Im.Line.Same();
@@ -351,7 +352,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
         }
 
-        if (offhand.CurrentItem.Type is FullEquipType.Unknown)
+        var validOffhand = mainhand.CurrentItem.Type.ValidOffhand();
+        if (validOffhand is FullEquipType.Unknown)
             return;
 
         offhand.CurrentItem.DrawIcon(_textures, _iconSize, EquipSlot.OffHand);
@@ -360,7 +362,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         Im.Line.Same();
         using (Im.Group())
         {
-            DrawOffhand(mainhand, offhand, out var offhandLabel, false, right, left);
+            DrawOffhand(mainhand, validOffhand, offhand, out var offhandLabel, false, right, left);
             if (offhand.DisplayApplication)
             {
                 Im.Line.Same();
@@ -580,10 +582,10 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                     default,                             out var c))
                 changedItem = c;
 
-            if (changedItem != null)
+            if (changedItem is not null)
             {
                 mainhand.SetItem(changedItem.Value);
-                if (changedItem.Value.Type.ValidOffhand() != mainhand.CurrentItem.Type.ValidOffhand())
+                if (!changedItem.Value.Type.ValidOffhand().IsCompatible(mainhand.CurrentItem.Type.ValidOffhand()))
                 {
                     offhand.CurrentItem = _items.GetDefaultOffhand(changedItem.Value);
                     offhand.SetItem(offhand.CurrentItem);
@@ -598,9 +600,9 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 "The weapon type could not be identified, thus changing it to other weapons of that type is not possible."u8);
     }
 
-    private void DrawOffhand(in EquipDrawData mainhand, in EquipDrawData offhand, out StringU8 label, bool small, bool clear, bool open)
+    private void DrawOffhand(in EquipDrawData mainhand, FullEquipType validOffhand, in EquipDrawData offhand, out StringU8 label, bool small, bool clear, bool open)
     {
-        if (!_weaponCombo.TryGetValue(offhand.CurrentItem.Type, out var combo))
+        if (!_weaponCombo.TryGetValue(validOffhand, out var combo))
         {
             label = StringU8.Empty;
             return;
@@ -608,7 +610,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
 
         label = combo.Label;
         var locked = offhand.Locked
-         || !_gPose.InGPose && (offhand.CurrentItem.Type.IsUnknown() || mainhand.CurrentItem.Type.IsUnknown());
+         || !_gPose.InGPose && validOffhand.IsUnknown();
         using var disabled = Im.Disabled(locked);
         if (!locked && open)
             UiHelpers.OpenCombo(combo.Label);

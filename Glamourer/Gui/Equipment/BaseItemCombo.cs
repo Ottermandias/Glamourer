@@ -42,14 +42,16 @@ public abstract class BaseItemCombo : FilterComboBase<BaseItemCombo.CacheItem>, 
         using var id = Im.Id.Push(Label);
         CurrentItem   = item;
         CustomVariant = 0;
-        if (Draw(StringU8.Empty, item.Name, StringU8.Empty, width, out var cache))
+        var ret = Draw(StringU8.Empty, item.Name, StringU8.Empty, width, out var cache);
+
+        if (CustomVariant.Id is not 0 && Identify(out newItem))
+            return true;
+
+        if (ret)
         {
             newItem = cache.Item;
             return true;
         }
-
-        if (CustomVariant.Id is not 0 && Identify(out newItem))
-            return true;
 
         newItem = item;
         return false;
@@ -68,7 +70,7 @@ public abstract class BaseItemCombo : FilterComboBase<BaseItemCombo.CacheItem>, 
     {
         public readonly EquipItem  Item  = item;
         public readonly StringPair Name  = new(item.Name);
-        public readonly StringPair Model = new($"({item.PrimaryId.Id}-{item.Variant.Id})");
+        public readonly StringPair Model = new($"({item.ModelString})");
     }
 
     protected sealed class ItemFilter : PartwiseFilterBase<CacheItem>

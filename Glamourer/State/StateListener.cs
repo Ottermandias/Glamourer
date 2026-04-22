@@ -375,12 +375,13 @@ public sealed class StateListener : IDisposable, IRequiredService
             case UpdateState.NoChange: apply = true; break;
         }
 
-        var baseType  = arguments.Slot is EquipSlot.OffHand ? state.BaseData.MainhandType.Offhand() : state.BaseData.MainhandType;
         var modelType = state.ModelData.Item(arguments.Slot).Type;
         if (apply)
         {
-            // Only allow overwriting identical weapons
-            var canApply = baseType == modelType
+            // Only allow overwriting compatible weapons
+            var canApply = (arguments.Slot is EquipSlot.MainHand
+                ? modelType.IsCompatible(state.BaseData.MainhandType)
+                : modelType.IsOffhandCompatible(state.BaseData.MainhandType, state.ModelData.MainhandType, state.BaseData.OffhandType))
              || _gPose.InGPose && arguments.Actor.IsGPoseOrCutscene;
             var newWeapon = state.ModelData.Weapon(arguments.Slot);
             if (canApply)
@@ -619,8 +620,10 @@ public sealed class StateListener : IDisposable, IRequiredService
             var item = _items.Identify(slot, weapon.Skeleton, weapon.Weapon, weapon.Variant,
                 slot is EquipSlot.OffHand ? state.BaseData.MainhandType : FullEquipType.Unknown);
             if (idsDiffer || item.Type != state.BaseData.OffhandType)
+            {
                 state.BaseData.SetItem(slot, item);
-            change = UpdateState.Change;
+                change = UpdateState.Change;
+            }
         }
 
         return change;

@@ -247,10 +247,10 @@ public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
 
         var main     = _objects.Player.GetMainhand();
         var mainItem = _items.Identify(EquipSlot.MainHand, main.Skeleton, main.Weapon, main.Variant);
-        if (slot == EquipSlot.MainHand)
-            return item.Type == mainItem.Type;
+        if (slot is EquipSlot.MainHand)
+            return item.Type.IsCompatible(mainItem.Type);
 
-        return item.Type == mainItem.Type.ValidOffhand();
+        return item.Type.IsCompatible(mainItem.Type.ValidOffhand());
     }
 
     private void OnPenumbraClick(MouseButton button, ChangedItemType type, uint id)
