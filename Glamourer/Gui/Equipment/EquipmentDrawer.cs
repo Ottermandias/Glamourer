@@ -62,12 +62,14 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
     }
 
     private Vector2 _iconSize;
+    private Vector2 _smallIconSize;
     private float   _comboLength;
     private Rgba32  _advancedMaterialColor;
 
     public void Prepare()
     {
         _iconSize              = new Vector2(2 * Im.Style.FrameHeight + Im.Style.ItemSpacing.Y);
+        _smallIconSize         = new Vector2(Im.Style.FrameHeight);
         _comboLength           = DefaultWidth * Im.Style.GlobalScale;
         _advancedMaterialColor = ColorId.AdvancedDyeActive.Value();
         _dragTarget            = EquipSlot.Unknown;
@@ -82,7 +84,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         return changed;
     }
 
-    public void DrawEquip(EquipDrawData equipDrawData)
+    public void DrawEquip(EquipDrawData equipDrawData, bool compact = false)
     {
         if (_config.HideApplyCheckmarks)
             equipDrawData.DisplayApplication = false;
@@ -91,12 +93,12 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         using var style = ImStyleDouble.ItemSpacing.PushX(Im.Style.ItemInnerSpacing.X);
 
         if (_config.SmallEquip)
-            DrawEquipSmall(equipDrawData);
+            DrawEquipSmall(equipDrawData, compact);
         else
-            DrawEquipNormal(equipDrawData);
+            DrawEquipNormal(equipDrawData, compact);
     }
 
-    public void DrawBonusItem(BonusDrawData bonusDrawData)
+    public void DrawBonusItem(BonusDrawData bonusDrawData, bool compact = false)
     {
         if (_config.HideApplyCheckmarks)
             bonusDrawData.DisplayApplication = false;
@@ -105,12 +107,12 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         using var style = ImStyleDouble.ItemSpacing.PushX(Im.Style.ItemInnerSpacing.X);
 
         if (_config.SmallEquip)
-            DrawBonusItemSmall(bonusDrawData);
+            DrawBonusItemSmall(bonusDrawData, compact);
         else
-            DrawBonusItemNormal(bonusDrawData);
+            DrawBonusItemNormal(bonusDrawData, compact);
     }
 
-    public void DrawWeapons(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
+    public void DrawWeapons(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons, bool compact = false)
     {
         if (mainhand.CurrentItem.PrimaryId.Id is 0 && !allWeapons)
             return;
@@ -125,9 +127,9 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         using var style = ImStyleDouble.ItemSpacing.PushX(Im.Style.ItemInnerSpacing.X);
 
         if (_config.SmallEquip)
-            DrawWeaponsSmall(mainhand, offhand, allWeapons);
+            DrawWeaponsSmall(mainhand, offhand, allWeapons, compact);
         else
-            DrawWeaponsNormal(mainhand, offhand, allWeapons);
+            DrawWeaponsNormal(mainhand, offhand, allWeapons, compact);
     }
 
     public static void DrawMetaToggle(in ToggleDrawData data)
@@ -178,11 +180,20 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
 
     #region Small
 
-    private void DrawEquipSmall(in EquipDrawData equipDrawData)
+    private void DrawEquipSmall(in EquipDrawData equipDrawData, bool compact)
     {
-        DrawStain(equipDrawData, true);
+        DrawStain(equipDrawData, true, compact);
         Im.Line.Same();
-        DrawItem(equipDrawData, out var label, true, false, false);
+        var right = false;
+        var left  = false;
+        if (compact)
+        {
+            equipDrawData.CurrentItem.DrawIcon(_textures, _smallIconSize, equipDrawData.Slot);
+            right = Im.Item.RightClicked();
+            left  = Im.InvisibleButton("###equip"u8, Im.Item.Bounds);
+        }
+
+        DrawItem(equipDrawData, out var label, true, compact, right, left);
         if (equipDrawData.DisplayApplication)
         {
             Im.Line.Same();
@@ -192,21 +203,32 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         }
         else if (equipDrawData.IsState)
         {
-            _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
+            _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default,
+                false);
         }
 
         if (VerifyRestrictedGear(equipDrawData))
             label += " (Restricted)"u8;
 
-        DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, equipDrawData);
+        if (!compact)
+            DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, equipDrawData);
     }
 
-    private void DrawBonusItemSmall(in BonusDrawData bonusDrawData)
+    private void DrawBonusItemSmall(in BonusDrawData bonusDrawData, bool compact)
     {
         Im.Dummy(new Vector2(StainId.NumStains * Im.Style.FrameHeight + (StainId.NumStains - 1) * Im.Style.ItemSpacing.X,
             Im.Style.FrameHeight));
         Im.Line.Same();
-        DrawBonusItem(bonusDrawData, out var label, true, false, false);
+        var right = false;
+        var left  = false;
+        if (compact)
+        {
+            bonusDrawData.CurrentItem.DrawIcon(_textures, _smallIconSize, bonusDrawData.Slot);
+            right = Im.Item.RightClicked();
+            left  = Im.InvisibleButton("###bonusItem"u8, Im.Item.Bounds);
+        }
+
+        DrawBonusItem(bonusDrawData, out var label, true, compact, right, left);
         if (bonusDrawData.DisplayApplication)
         {
             Im.Line.Same();
@@ -214,17 +236,26 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         }
         else if (bonusDrawData.IsState)
         {
-            _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
+            _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default,
+                false);
         }
 
-        DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, bonusDrawData);
+        if (!compact)
+            DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, bonusDrawData);
     }
 
-    private void DrawWeaponsSmall(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
+    private void DrawWeaponsSmall(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons, bool compact)
     {
-        DrawStain(mainhand, true);
+        DrawStain(mainhand, true, compact);
         Im.Line.Same();
-        DrawMainhand(ref mainhand, ref offhand, out var mainhandLabel, allWeapons, true, false);
+        var left = false;
+        if (compact)
+        {
+            mainhand.CurrentItem.DrawIcon(_textures, _smallIconSize, mainhand.Slot);
+            left = Im.InvisibleButton("###mainhand"u8, Im.Item.Bounds);
+        }
+
+        DrawMainhand(ref mainhand, ref offhand, out var mainhandLabel, allWeapons, true, compact, left);
         if (mainhand.DisplayApplication)
         {
             Im.Line.Same();
@@ -234,20 +265,32 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         }
         else if (mainhand.IsState)
         {
-            _advancedDyes.DrawButton(EquipSlot.MainHand, mainhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
+            _advancedDyes.DrawButton(EquipSlot.MainHand, mainhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default, false);
         }
 
-        if (allWeapons)
-            mainhandLabel = new StringU8($"{mainhandLabel} ({mainhand.CurrentItem.Type.ToName()})");
-        WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel, mainhand);
+        if (!compact)
+        {
+            if (allWeapons)
+                mainhandLabel = new StringU8($"{mainhandLabel} ({mainhand.CurrentItem.Type.ToName()})");
+            WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel, mainhand);
+        }
 
         var validOffhand = mainhand.CurrentItem.Type.ValidOffhand();
         if (validOffhand is FullEquipType.Unknown)
             return;
 
-        DrawStain(offhand, true);
+        DrawStain(offhand, true, compact);
         Im.Line.Same();
-        DrawOffhand(mainhand, validOffhand, offhand, out var offhandLabel, true, false, false);
+        var right = false;
+        left = false;
+        if (compact)
+        {
+            offhand.CurrentItem.DrawIcon(_textures, _smallIconSize, offhand.Slot);
+            right = Im.Item.RightClicked();
+            left  = Im.InvisibleButton("###offhand"u8, Im.Item.Bounds);
+        }
+
+        DrawOffhand(mainhand, validOffhand, offhand, out var offhandLabel, true, compact, right, left);
         if (offhand.DisplayApplication)
         {
             Im.Line.Same();
@@ -257,33 +300,35 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         }
         else if (offhand.IsState)
         {
-            _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
+            _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default, false);
         }
 
-        WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel, offhand);
+        if (!compact)
+            WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel, offhand);
     }
 
     #endregion
 
     #region Normal
 
-    private void DrawEquipNormal(in EquipDrawData equipDrawData)
+    private void DrawEquipNormal(in EquipDrawData equipDrawData, bool compact)
     {
         equipDrawData.CurrentItem.DrawIcon(_textures, _iconSize, equipDrawData.Slot);
         var right = Im.Item.RightClicked();
-        var left  = Im.Item.Clicked();
+        var left  = compact ? Im.InvisibleButton("###equip"u8, Im.Item.Bounds) : Im.Item.Clicked();
         Im.Line.Same();
         using var group = Im.Group();
-        DrawItem(equipDrawData, out var label, false, right, left);
+        DrawItem(equipDrawData, out var label, false, compact, right, left);
         if (equipDrawData.DisplayApplication)
         {
             Im.Line.Same();
             DrawApply(equipDrawData);
         }
 
-        DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, equipDrawData);
+        if (!compact)
+            DrawEquipLabel(equipDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, equipDrawData);
 
-        DrawStain(equipDrawData, false);
+        DrawStain(equipDrawData, false, compact);
         if (equipDrawData.DisplayApplication)
         {
             Im.Line.Same();
@@ -291,7 +336,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         }
         else if (equipDrawData.IsState)
         {
-            _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
+            _advancedDyes.DrawButton(equipDrawData.Slot, equipDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default,
+                compact);
         }
 
         if (VerifyRestrictedGear(equipDrawData))
@@ -301,13 +347,13 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         }
     }
 
-    private void DrawBonusItemNormal(in BonusDrawData bonusDrawData)
+    private void DrawBonusItemNormal(in BonusDrawData bonusDrawData, bool compact)
     {
         bonusDrawData.CurrentItem.DrawIcon(_textures, _iconSize, bonusDrawData.Slot);
         var right = Im.Item.RightClicked();
-        var left  = Im.Item.Clicked();
+        var left  = compact ? Im.InvisibleButton("###bonusItem"u8, Im.Item.Bounds) : Im.Item.Clicked();
         Im.Line.Same();
-        DrawBonusItem(bonusDrawData, out var label, false, right, left);
+        DrawBonusItem(bonusDrawData, out var label, false, compact, right, left);
         if (bonusDrawData.DisplayApplication)
         {
             Im.Line.Same();
@@ -315,32 +361,35 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         }
         else if (bonusDrawData.IsState)
         {
-            _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
+            _advancedDyes.DrawButton(bonusDrawData.Slot, bonusDrawData.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default,
+                compact);
         }
 
-        DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, bonusDrawData);
+        if (!compact)
+            DrawEquipLabel(bonusDrawData is { IsDesign: true, HasAdvancedDyes: true }, label, bonusDrawData);
     }
 
-    private void DrawWeaponsNormal(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
+    private void DrawWeaponsNormal(EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons, bool compact)
     {
         using var style = ImStyleDouble.ItemSpacing.PushX(Im.Style.ItemInnerSpacing.X);
 
         mainhand.CurrentItem.DrawIcon(_textures, _iconSize, EquipSlot.MainHand);
-        var left = Im.Item.Clicked();
+        var left = compact ? Im.InvisibleButton("###mainhand"u8, Im.Item.Bounds) : Im.Item.Clicked();
         Im.Line.Same();
         using (Im.Group())
         {
-            DrawMainhand(ref mainhand, ref offhand, out var mainhandLabel, allWeapons, false, left);
+            DrawMainhand(ref mainhand, ref offhand, out var mainhandLabel, allWeapons, false, compact, left);
             if (mainhand.DisplayApplication)
             {
                 Im.Line.Same();
                 DrawApply(mainhand);
             }
 
-            WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel, mainhand,
-                allWeapons ? new StringU8(mainhand.CurrentItem.Type.ToName()) : null);
+            if (!compact)
+                WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel, mainhand,
+                    allWeapons ? new StringU8(mainhand.CurrentItem.Type.ToName()) : null);
 
-            DrawStain(mainhand, false);
+            DrawStain(mainhand, false, compact);
             if (mainhand.DisplayApplication)
             {
                 Im.Line.Same();
@@ -348,7 +397,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (mainhand.IsState)
             {
-                _advancedDyes.DrawButton(EquipSlot.MainHand, mainhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
+                _advancedDyes.DrawButton(EquipSlot.MainHand, mainhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default,
+                    compact);
             }
         }
 
@@ -358,20 +408,21 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
 
         offhand.CurrentItem.DrawIcon(_textures, _iconSize, EquipSlot.OffHand);
         var right = Im.Item.RightClicked();
-        left = Im.Item.Clicked();
+        left = compact ? Im.InvisibleButton("###offhand"u8, Im.Item.Bounds) : Im.Item.Clicked();
         Im.Line.Same();
         using (Im.Group())
         {
-            DrawOffhand(mainhand, validOffhand, offhand, out var offhandLabel, false, right, left);
+            DrawOffhand(mainhand, validOffhand, offhand, out var offhandLabel, false, compact, right, left);
             if (offhand.DisplayApplication)
             {
                 Im.Line.Same();
                 DrawApply(offhand);
             }
 
-            WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel, offhand);
+            if (!compact)
+                WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel, offhand);
 
-            DrawStain(offhand, false);
+            DrawStain(offhand, false, compact);
             if (offhand.DisplayApplication)
             {
                 Im.Line.Same();
@@ -379,12 +430,12 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (offhand.IsState)
             {
-                _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default);
+                _advancedDyes.DrawButton(EquipSlot.OffHand, offhand.HasAdvancedDyes ? _advancedMaterialColor : ColorParameter.Default, compact);
             }
         }
     }
 
-    private void DrawStain(in EquipDrawData data, bool small)
+    private void DrawStain(in EquipDrawData data, bool small, bool compact)
     {
         using var id       = Im.Id.Push((uint)data.Slot);
         using var disabled = Im.Disabled(data.Locked);
@@ -393,7 +444,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         {
             id.Push(index);
             var found = _stainData.TryGetValue(stainId, out var stain);
-            var change = small
+            var change = small || compact
                 ? _stainCombo.Draw("##stain"u8, stain, out var newStain, Im.Style.FrameHeight)
                 : _stainCombo.Draw("##stain"u8, stain, out newStain,     width);
 
@@ -401,7 +452,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             if (!change)
                 DrawStainDragDrop(data, index, stain, found);
 
-            if (index < data.CurrentStains.Count - 1)
+            if (index < data.CurrentStains.Count - 1 && (small || !compact || index != (data.CurrentStains.Count - 1) >> 1))
                 Im.Line.SameInner();
 
             if (change)
@@ -434,7 +485,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         }
     }
 
-    private void DrawItem(in EquipDrawData data, out StringU8 label, bool small, bool clear, bool open)
+    private void DrawItem(in EquipDrawData data, out StringU8 label, bool small, bool compact, bool clear, bool open)
     {
         Debug.Assert(data.Slot.IsEquipment() || data.Slot.IsAccessory(), $"Called {nameof(DrawItem)} on {data.Slot}.");
 
@@ -444,7 +495,9 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             UiHelpers.OpenCombo(combo.Label);
 
         using var disabled = Im.Disabled(data.Locked);
-        var       change   = combo.Draw(data.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength);
+        var change = compact
+            ? combo.DrawBehavior(data.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength)
+            : combo.Draw(data.CurrentItem, out newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength);
         DrawGearDragDrop(data);
         if (change)
             data.SetItem(newItem);
@@ -455,7 +508,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             data.SetItem(item);
     }
 
-    private void DrawBonusItem(in BonusDrawData data, out StringU8 label, bool small, bool clear, bool open)
+    private void DrawBonusItem(in BonusDrawData data, out StringU8 label, bool small, bool compact, bool clear, bool open)
     {
         var combo = _bonusItemCombo[data.Slot.ToIndex()];
         label = combo.Label;
@@ -463,7 +516,9 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             UiHelpers.OpenCombo(combo.Label);
 
         using var disabled = Im.Disabled(data.Locked);
-        var       change   = combo.Draw(data.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength);
+        var change = compact
+            ? combo.DrawBehavior(data.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength)
+            : combo.Draw(data.CurrentItem, out newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength);
         if (Im.Item.Hovered() && Im.Io.KeyControl)
         {
             if (Im.Keyboard.IsPressed(Key.C))
@@ -556,7 +611,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         return clicked && valid;
     }
 
-    private void DrawMainhand(ref EquipDrawData mainhand, ref EquipDrawData offhand, out StringU8 label, bool drawAll, bool small,
+    private void DrawMainhand(ref EquipDrawData mainhand, ref EquipDrawData offhand, out StringU8 label, bool drawAll, bool small, bool compact,
         bool open)
     {
         if (!_weaponCombo.TryGetValue(drawAll ? FullEquipType.Unknown : mainhand.CurrentItem.Type, out var combo))
@@ -573,7 +628,10 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         {
             if (!mainhand.Locked && open)
                 UiHelpers.OpenCombo(label);
-            if (combo.Draw(mainhand.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength))
+            var change = compact
+                ? combo.DrawBehavior(mainhand.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength)
+                : combo.Draw(mainhand.CurrentItem, out newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength);
+            if (change)
                 changedItem = newItem;
             _itemCopy.HandleCopyPaste(mainhand);
             DrawGearDragDrop(mainhand);
@@ -600,7 +658,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 "The weapon type could not be identified, thus changing it to other weapons of that type is not possible."u8);
     }
 
-    private void DrawOffhand(in EquipDrawData mainhand, FullEquipType validOffhand, in EquipDrawData offhand, out StringU8 label, bool small, bool clear, bool open)
+    private void DrawOffhand(in EquipDrawData mainhand, FullEquipType validOffhand, in EquipDrawData offhand, out StringU8 label, bool small,
+        bool compact, bool clear, bool open)
     {
         if (!_weaponCombo.TryGetValue(validOffhand, out var combo))
         {
@@ -614,7 +673,10 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         using var disabled = Im.Disabled(locked);
         if (!locked && open)
             UiHelpers.OpenCombo(combo.Label);
-        if (combo.Draw(offhand.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength))
+        var change = compact
+            ? combo.DrawBehavior(offhand.CurrentItem, out var newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength)
+            : combo.Draw(offhand.CurrentItem, out newItem, small ? _comboLength - Im.Style.FrameHeight : _comboLength);
+        if (change)
             offhand.SetItem(newItem);
         _itemCopy.HandleCopyPaste(offhand);
         DrawGearDragDrop(offhand);

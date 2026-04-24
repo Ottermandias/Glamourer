@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.ImGuiNotification;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.ImGuiNotification;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Glamourer.Automation;
 using Glamourer.Config;
@@ -33,6 +34,8 @@ public sealed class ActorPanel : IPanel
     private readonly CustomizeParameterDrawer _parameterDrawer;
     private readonly AdvancedDyePopup         _advancedDyes;
     private readonly DesignApplier            _designApplier;
+
+    public event Action? OpenEquipmentBar;
 
     public ActorPanel(StateManager stateManager,
         CustomizationDrawer customizationDrawer,
@@ -124,7 +127,7 @@ public sealed class ActorPanel : IPanel
         else
             DrawMonsterPanel();
         if (_selection.Data.Objects.Count > 0)
-            _advancedDyes.Draw(_selection.Data.Objects.Last(), _selection.State);
+            _advancedDyes.Draw(_selection.Data.Objects.Last(), _selection.State, false);
     }
 
     private void DrawHumanPanel()
@@ -167,6 +170,9 @@ public sealed class ActorPanel : IPanel
         var usedAllStain = _equipmentDrawer.DrawAllStain(out var newAllStain, _selection.State!.IsLocked);
         Im.Line.Same();
         EquipmentDrawer.DrawKeepItemFilter(_config);
+        Im.Line.Same();
+        if (ImEx.Icon.LabeledButton(LunaStyle.PopOutIcon, "Equip. Bar"u8, "Switch to Equipment Bar."u8))
+            OpenEquipmentBar?.Invoke();
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var data = EquipDrawData.FromState(_stateManager, _selection.State!, slot);
