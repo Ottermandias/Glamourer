@@ -159,9 +159,28 @@ public sealed class ActorPanel : IPanel
         Im.Dummy(new Vector2(Im.Style.TextHeight / 2));
     }
 
+    private Im.HeaderDisposable EquipmentHeaderButton()
+    {
+        // Collapsible headers ignore SetNextItemWidth.
+        // Is there a better way to do that than this ugly hack?
+        var       itemSpacing = Im.Style.ItemSpacing.X;
+        var       availWidth  = Im.ContentRegion.Available.X;
+        using var style       = ImStyleDouble.ItemSpacing.PushX(0.0f);
+        using var columns     = Im.Columns(2, "###equipHeaderColumns"u8);
+        columns.SetWidth(0, availWidth - ImEx.Icon.CalculateLabeledButtonSize(LunaStyle.PopOutIcon, "Equipment Bar"u8).X - itemSpacing);
+        var header = DesignPanelFlag.Equipment.Header(_config);
+
+        columns.Next();
+        Im.Cursor.X += itemSpacing;
+        if (ImEx.Icon.LabeledButton(LunaStyle.PopOutIcon, "Equipment Bar"u8, "Switch to Equipment Bar."u8))
+            OpenEquipmentBar?.Invoke();
+
+        return header;
+    }
+
     private void DrawEquipmentHeader()
     {
-        using var h = DesignPanelFlag.Equipment.Header(_config);
+        using var h = EquipmentHeaderButton();
         if (!h)
             return;
 
@@ -170,9 +189,6 @@ public sealed class ActorPanel : IPanel
         var usedAllStain = _equipmentDrawer.DrawAllStain(out var newAllStain, _selection.State!.IsLocked);
         Im.Line.Same();
         EquipmentDrawer.DrawKeepItemFilter(_config);
-        Im.Line.Same();
-        if (ImEx.Icon.LabeledButton(LunaStyle.PopOutIcon, "Equip. Bar"u8, "Switch to Equipment Bar."u8))
-            OpenEquipmentBar?.Invoke();
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var data = EquipDrawData.FromState(_stateManager, _selection.State!, slot);
