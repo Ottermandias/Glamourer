@@ -161,21 +161,36 @@ public sealed class ActorPanel : IPanel
 
     private Im.HeaderDisposable EquipmentHeaderButton()
     {
-        // Collapsible headers ignore SetNextItemWidth.
-        // Is there a better way to do that than this ugly hack?
-        var       spacing    = Im.Style.ItemInnerSpacing.X;
-        var       availWidth = Im.ContentRegion.Available.X;
-        using var style      = ImStyleDouble.ItemSpacing.PushX(0.0f);
-        using var columns    = Im.Columns(2, "###equipHeaderColumns"u8);
-        columns.SetWidth(0, availWidth - Im.Style.FrameHeight - spacing);
-        var header = DesignPanelFlag.Equipment.Header(_config);
-
-        columns.Next();
-        Im.Cursor.X += spacing;
-        if (ImEx.Icon.Button(LunaStyle.PopOutIcon, "Switch to the Equipment Bar."u8))
+        var savedCursor = Im.Cursor.Position;
+        var headerWidth = Im.ContentRegion.Available.X - ImEx.Icon.CalculateLabeledButtonSize(LunaStyle.PopOutIcon, ""u8).X;
+        Im.Cursor.X += headerWidth;
+        using var color = ImGuiColor.Button.Push(ImGuiColor.Header)
+            .Push(ImGuiColor.ButtonHovered, ImGuiColor.HeaderHovered)
+            .Push(ImGuiColor.ButtonActive,  ImGuiColor.HeaderActive);
+        if (ImEx.Icon.LabeledButton(LunaStyle.PopOutIcon, "###switchToEquipBar"u8, "Switch to the Equipment Bar."u8, corners: Corners.Right))
             OpenEquipmentBar?.Invoke();
+        Im.Cursor.Position = savedCursor;
 
-        return header;
+        var upperLeft  = Im.Cursor.ScreenPosition;
+        var lowerRight = upperLeft + new Vector2(headerWidth, Im.Style.FrameHeight);
+
+        // We have to shave off an epsilon of width, otherwise there is a pixel that is considered as hovering both parts of the widget.
+        var headerColor =
+            (Im.Mouse.IsHoveringRectangle(upperLeft, lowerRight - new Vector2(0.001f, 0.0f)), Im.Mouse.IsDown(MouseButton.Left)) switch
+            {
+                (true, true)  => ImGuiColor.ButtonActive,
+                (true, false) => ImGuiColor.ButtonHovered,
+                (false, _)    => ImGuiColor.Button,
+            };
+
+        Im.DrawList.Window.Shape.RectangleFilled(upperLeft, lowerRight, headerColor, Im.Style.FrameRounding,
+            ImDrawFlagsRectangle.RoundCornersLeft);
+
+        color.Push(ImGuiColor.Header, Rgba32.Transparent)
+            .Push(ImGuiColor.HeaderHovered, Rgba32.Transparent)
+            .Push(ImGuiColor.HeaderActive,  Rgba32.Transparent);
+
+        return DesignPanelFlag.Equipment.Header(_config);
     }
 
     private void DrawEquipmentHeader()
