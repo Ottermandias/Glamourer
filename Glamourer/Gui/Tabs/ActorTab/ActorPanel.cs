@@ -163,16 +163,16 @@ public sealed class ActorPanel : IPanel
     {
         // Collapsible headers ignore SetNextItemWidth.
         // Is there a better way to do that than this ugly hack?
-        var       itemSpacing = Im.Style.ItemSpacing.X;
-        var       availWidth  = Im.ContentRegion.Available.X;
-        using var style       = ImStyleDouble.ItemSpacing.PushX(0.0f);
-        using var columns     = Im.Columns(2, "###equipHeaderColumns"u8);
-        columns.SetWidth(0, availWidth - ImEx.Icon.CalculateLabeledButtonSize(LunaStyle.PopOutIcon, "Equipment Bar"u8).X - itemSpacing);
+        var       spacing    = Im.Style.ItemInnerSpacing.X;
+        var       availWidth = Im.ContentRegion.Available.X;
+        using var style      = ImStyleDouble.ItemSpacing.PushX(0.0f);
+        using var columns    = Im.Columns(2, "###equipHeaderColumns"u8);
+        columns.SetWidth(0, availWidth - Im.Style.FrameHeight - spacing);
         var header = DesignPanelFlag.Equipment.Header(_config);
 
         columns.Next();
-        Im.Cursor.X += itemSpacing;
-        if (ImEx.Icon.LabeledButton(LunaStyle.PopOutIcon, "Equipment Bar"u8, "Switch to the Equipment Bar."u8))
+        Im.Cursor.X += spacing;
+        if (ImEx.Icon.Button(LunaStyle.PopOutIcon, "Switch to the Equipment Bar."u8))
             OpenEquipmentBar?.Invoke();
 
         return header;
