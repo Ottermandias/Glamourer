@@ -172,7 +172,7 @@ public sealed class ActorPanel : IPanel
 
         columns.Next();
         Im.Cursor.X += itemSpacing;
-        if (ImEx.Icon.LabeledButton(LunaStyle.PopOutIcon, "Equipment Bar"u8, "Switch to Equipment Bar."u8))
+        if (ImEx.Icon.LabeledButton(LunaStyle.PopOutIcon, "Equipment Bar"u8, "Switch to the Equipment Bar."u8))
             OpenEquipmentBar?.Invoke();
 
         return header;
