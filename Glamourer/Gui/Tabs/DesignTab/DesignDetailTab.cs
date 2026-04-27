@@ -120,10 +120,12 @@ public sealed class DesignDetailTab : IUiService
 
         var resetAdvancedDyes = Selected.ResetAdvancedDyes;
         table.DrawFrameColumn("Reset Advanced Dyes"u8);
+        Im.Line.SameInner();
+        LunaStyle.DrawAlignedHelpMarker(
+            "Set this design to reset any previously applied advanced dyes when it is applied through any means.\n\nIn case this design is part of a Design Link or Automation set, setting this behaves differently than setting Revert All Advanced Dyes in the Advanced Dyes section:\n- Setting this resets all advanced dyes that were previously applied before this set, but lets designs lower in this tree/set apply advanced dyes.\n- Setting Revert All Advanced Dyes in the Advanced Dyes section resets all advanced dyes that were previously applied before this set, and also prevents designs that are lower in the set from applying advanced dyes."u8);
         table.NextColumn();
-        if (Im.Checkbox("##ResetAdvancedDyes"u8, ref resetAdvancedDyes))
+        if (UiHelpers.DrawItemSlots("##ResetAdvancedDyes"u8, ref resetAdvancedDyes))
             _manager.ChangeResetAdvancedDyes(Selected, resetAdvancedDyes);
-        Im.Tooltip.OnHover("Set this design to reset any previously applied advanced dyes when it is applied through any means."u8);
 
         var resetTemporarySettings = Selected.ResetTemporarySettings;
         table.DrawFrameColumn("Reset Temporary Settings"u8);

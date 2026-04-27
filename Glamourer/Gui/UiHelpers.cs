@@ -169,4 +169,98 @@ public static class UiHelpers
             favorites.TryAdd(stain);
         return true;
     }
+
+    public static bool DrawItemSlots(Utf8StringHandler<LabelStringHandlerBuffer> id, ref CombinedItemSlotFlag slots,
+        CombinedItemSlotFlag allowedSlots = EquipFlagExtensions.AllCombined)
+    {
+        var first   = true;
+        var changed = false;
+        var control = Im.Io.KeyControl;
+
+        allowedSlots &= ~slots;
+
+        using var _     = Im.Id.Push(ref id);
+        using var group = Im.Group();
+
+        var remainingSlots = slots;
+        while (remainingSlots is not 0)
+        {
+            // Extract the least significant bit.
+            var slot = unchecked(remainingSlots & (~remainingSlots + 1));
+            TrySameLine(Im.Font.CalculateButtonSize(slot.ToLabelU8()).X, ref first);
+            Im.Button(slot.ToLabelU8());
+            var delete = control && Im.Item.RightClicked();
+            Im.Tooltip.OnHover("Hold control and right-click to delete."u8);
+            if (delete)
+            {
+                slots   &= ~slot;
+                changed =  true;
+            }
+
+            remainingSlots &= ~slot;
+        }
+
+        if (slots is not 0)
+        {
+            TrySameLine(Im.Style.FrameHeight, ref first);
+            if (ImEx.Icon.Button(LunaStyle.DeleteIcon, "Hold control and click to delete all slots."u8, !control))
+            {
+                slots   = 0;
+                changed = true;
+            }
+        }
+
+        if (allowedSlots is 0)
+            return changed;
+
+        if (slots is not 0)
+            TrySameLine(Im.Style.FrameHeight, ref first);
+        if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, "Add Slots"u8))
+            Im.Popup.Open("Add Slots"u8);
+
+        using var popup = Im.Popup.Begin("Add Slots"u8);
+        if (!popup)
+            return changed;
+
+        using (Im.Disabled(!control))
+        {
+            if (Im.Selectable("All"u8))
+            {
+                slots   |= allowedSlots;
+                changed =  true;
+            }
+        }
+
+        Im.Tooltip.OnHover("Hold control and click to add all slots."u8);
+        Im.Separator();
+
+        remainingSlots = allowedSlots;
+        while (remainingSlots is not 0)
+        {
+            // Extract the least significant bit.
+            var slot = unchecked(remainingSlots & (~remainingSlots + 1));
+            if (Im.Selectable(slot.ToLabelU8(), flags: control && slot != allowedSlots ? SelectableFlags.NoAutoClosePopups : 0))
+            {
+                slots   |= slot;
+                changed =  true;
+            }
+
+            remainingSlots &= ~slot;
+        }
+
+        return changed;
+    }
+
+    private static void TrySameLine(float minWidth, ref bool first)
+    {
+        if (first)
+        {
+            first = false;
+            return;
+        }
+
+        Im.Line.Same();
+        if (Im.ContentRegion.Available.X < minWidth + Im.Style.ItemSpacing.X)
+            Im.Line.New();
+    }
 }

@@ -34,6 +34,10 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
         Im.Dummy(0);
         Im.Separator();
         Im.Dummy(0);
+        DrawRevertSlots(design);
+        Im.Dummy(0);
+        Im.Separator();
+        Im.Dummy(0);
         if (available > 2.6f * colorWidth)
             DrawSingleRow(design);
         else
@@ -72,6 +76,19 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
 
         if (disabled && any)
             Im.Tooltip.OnHover($"Hold {config.DeleteDesignModifier} while clicking to delete.");
+    }
+
+    private void DrawRevertSlots(Design design)
+    {
+        Im.Cursor.FrameAlign();
+        Im.Text("Revert All Advanced Dyes"u8);
+        Im.Line.SameInner();
+        LunaStyle.DrawAlignedHelpMarker(
+            "Set this design to revert any previously applied advanced dyes on the following slots when it is applied.\n\nIn case this design is part of a Design Link or Automation set, setting this behaves differently than setting Reset Advanced Dyes in the Design Details section:\n- Setting this resets all advanced dyes that were previously applied before this set, and also prevents designs that are lower in the set from applying advanced dyes. It behaves the same way as filling out every row of every material of those slots that you don't set explicitly below with \"Revert\".\n- Setting Reset Advanced Dyes in the Design Details section resets all advanced dyes that were previously applied before this set, but lets designs lower in this tree/set apply advanced dyes."u8);
+        Im.Line.Same();
+        var slots = design.RevertAdvancedDyes;
+        if (UiHelpers.DrawItemSlots("revertAdvancedDyes"u8, ref slots))
+            designManager.ChangeRevertAdvancedDyes(design, slots);
     }
 
     private void DrawName(MaterialValueIndex index)
