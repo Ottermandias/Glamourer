@@ -57,6 +57,26 @@ public abstract class BaseItemCombo : FilterComboBase<BaseItemCombo.CacheItem>, 
         return false;
     }
 
+    public bool DrawBehavior(in EquipItem item, out EquipItem newItem, float width)
+    {
+        using var id = Im.Id.Push(Label);
+        CurrentItem   = item;
+        CustomVariant = 0;
+        var ret = DrawBehavior(StringU8.Empty, width, out var cache);
+
+        if (CustomVariant.Id is not 0 && Identify(out newItem))
+            return true;
+
+        if (ret)
+        {
+            newItem = cache.Item;
+            return true;
+        }
+
+        newItem = item;
+        return false;
+    }
+
     protected override void PreDrawList()
     {
         _style.PushY(ImStyleDouble.ItemSpacing, 0)

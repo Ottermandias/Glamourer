@@ -267,6 +267,9 @@ public sealed class SettingsTab(
             v => config.Ephemeral.LockMainWindow = v);
         Checkbox("Open Main Window at Game Start"u8, "Whether the main Glamourer window should be open or closed after launching the game."u8,
             config.OpenWindowAtStart,                v => config.OpenWindowAtStart = v);
+        EphemeralCheckbox("Lock Equipment Bar"u8, "Prevent the equipment bar from being moved and lock it in place."u8,
+            config.Ephemeral.LockEquipmentBar,
+            v => config.Ephemeral.LockEquipmentBar = v);
         Im.Dummy(Vector2.Zero);
         Im.Separator();
         Im.Dummy(Vector2.Zero);

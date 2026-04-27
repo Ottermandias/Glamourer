@@ -17,9 +17,11 @@ public sealed class MainWindow : Window, IDisposable
     private readonly TabSelected     _tabSelected;
     private          bool            _ignorePenumbra;
 
+    public event Action? Open;
+
     public MainWindow(IDalamudPluginInterface pi, Configuration config, PenumbraService penumbra,
         MainTabBar mainTabBar, DesignQuickBar quickBar, TabSelected tabSelected)
-        : base("GlamourerMainWindow")
+        : base("###GlamourerMainWindow")
     {
         pi.UiBuilder.DisableGposeUiHide = true;
         SizeConstraints = new WindowSizeConstraints
@@ -50,6 +52,11 @@ public sealed class MainWindow : Window, IDisposable
     {
         IsOpen              = true;
         _mainTabBar.NextTab = arguments.Type;
+    }
+
+    public override void OnOpen()
+    {
+        Open?.Invoke();
     }
 
     public override void PreDraw()
