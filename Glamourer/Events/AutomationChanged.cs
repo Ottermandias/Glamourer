@@ -170,11 +170,11 @@ public sealed class AutomationChanged(LunaLogger log)
     public sealed record ChangedDesignArguments(AutoDesignSet Set, int DesignIndex, IDesignStandIn OldDesign, IDesignStandIn NewDesign)
         : Arguments(Type.ChangedDesign, Set);
 
-    /// <param name="Set"> The set that changed a job group condition. </param>
+    /// <param name="Set"> The set that changed a condition. </param>
     /// <param name="DesignIndex"> The index of the changed design. </param>
-    /// <param name="OldGroup"> The prior job condition for the design. </param>
-    /// <param name="NewGroup"> The new job condition for the design. </param>
-    public sealed record ChangedConditionsArguments(AutoDesignSet Set, int DesignIndex, JobGroup OldGroup, JobGroup NewGroup)
+    /// <param name="Old"> The prior conditions for the design. </param>
+    /// <param name="New"> The new conditions for the design. </param>
+    public sealed record ChangedConditionsArguments(AutoDesignSet Set, int DesignIndex, DesignConditions Old, DesignConditions New)
         : Arguments(Type.ChangedConditions, Set);
 
     /// <param name="Set"> The set that changed its application type. </param>

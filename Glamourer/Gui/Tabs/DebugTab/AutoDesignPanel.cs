@@ -33,7 +33,7 @@ public sealed class AutoDesignPanel(AutoDesignManager autoDesignManager) : IGame
             foreach (var (designIdx, design) in set.Designs.Index())
             {
                 table.DrawColumn($"{design.Design.ResolveName(false)} ({designIdx})");
-                table.DrawColumn($"{design.Type} {design.Jobs.Name}");
+                table.DrawColumn($"{design.Type} {design.Conditions}");
             }
         }
     }

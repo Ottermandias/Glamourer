@@ -3,7 +3,7 @@ using Notification = Luna.Notification;
 
 namespace Glamourer.Designs.Links;
 
-public sealed class DesignLinkLoader(DesignStorage designStorage, MessageService messager)
+public sealed class DesignLinkLoader(DesignStorage designStorage, MessageService messager, DesignConditionsHydrator conditionsHydrator)
     : DelayedReferenceLoader<Design, Design, LinkData>(messager), IService
 {
     protected override bool TryGetObject(in LinkData data, [NotNullWhen(true)] out Design? obj)
@@ -13,7 +13,10 @@ public sealed class DesignLinkLoader(DesignStorage designStorage, MessageService
     }
 
     protected override bool SetObject(Design parent, Design child, in LinkData data, out string error)
-        => LinkContainer.AddLink(parent, child, data.Type, data.Order, out error);
+    {
+        conditionsHydrator.TryHydrate(data.Conditions, out var conditions);
+        return LinkContainer.AddLink(parent, child, data.Type, conditions, data.Order, out error);
+    }
 
     protected override void HandleChildNotFound(Design parent, in LinkData data)
     {

@@ -13,6 +13,7 @@ public class DesignLinkDrawer(
     DesignFileSystem fileSystem,
     LinkDesignCombo combo,
     DesignColors colorManager,
+    DesignConditionsDrawer conditionsDrawer,
     Configuration config) : IUiService
 {
     private int       _dragDropIndex       = -1;
@@ -74,19 +75,38 @@ public class DesignLinkDrawer(
 
     private void DrawList()
     {
+        const float singleRowMinNameWidth       = 220.0f;
+        const float singleRowMinConditionsWidth = 150.0f;
+        const float singleRowMaxConditionsWidth = 300.0f;
+
+        const float singleRowMinSpareWidth = singleRowMinNameWidth + singleRowMinConditionsWidth;
+        
         using var table = Im.Table.Begin("table"u8, 3, TableFlags.RowBackground | TableFlags.BordersOuter);
         if (!table)
             return;
 
+        var applicationBoxesWidth = 6 * Im.Style.FrameHeight + 5 * Im.Style.ItemInnerSpacing.X;
+        var spareWidth = (Im.ContentRegion.Available.X
+              - Im.Style.CellPadding.X * 6
+              - Im.Style.FrameHeight
+              - applicationBoxesWidth
+              - Im.Style.ItemSpacing.X)
+          / Im.Style.GlobalScale;
+        var singleRow = spareWidth >= singleRowMinSpareWidth;
+
         table.SetupColumn("Del"u8,  TableColumnFlags.WidthFixed, Im.Style.FrameHeight);
         table.SetupColumn("Name"u8, TableColumnFlags.WidthStretch);
-        table.SetupColumn("Detail"u8, TableColumnFlags.WidthFixed,
-            6 * Im.Style.FrameHeight + 5 * Im.Style.ItemInnerSpacing.X);
+        table.SetupColumn("Detail"u8, TableColumnFlags.WidthFixed, singleRow
+            ? applicationBoxesWidth
+          + Im.Style.ItemSpacing.X
+          + MathF.Min(singleRowMinConditionsWidth + (spareWidth - singleRowMinSpareWidth) * 0.5f, singleRowMaxConditionsWidth)
+          * Im.Style.GlobalScale
+            : 3 * Im.Style.FrameHeight + 2 * Im.Style.ItemInnerSpacing.X);
 
         using var style = ImStyleDouble.ItemSpacing.Push(Im.Style.ItemInnerSpacing);
-        DrawSubList(table, Selected.Links.Before, LinkOrder.Before);
+        DrawSubList(table, Selected.Links.Before, LinkOrder.Before, singleRow);
         DrawSelf(table);
-        DrawSubList(table, Selected.Links.After, LinkOrder.After);
+        DrawSubList(table, Selected.Links.After, LinkOrder.After, singleRow);
         DrawNew(table);
         MoveLink();
     }
@@ -121,7 +141,7 @@ public class DesignLinkDrawer(
         }
     }
 
-    private void DrawSubList(in Im.TableDisposable table, IReadOnlyList<DesignLink> list, LinkOrder order)
+    private void DrawSubList(in Im.TableDisposable table, IReadOnlyList<DesignLink> list, LinkOrder order, bool singleRow)
     {
         using var id = Im.Id.Push((int)order);
 
@@ -131,7 +151,7 @@ public class DesignLinkDrawer(
 
             table.NextColumn();
             var delete = ImEx.Icon.Button(LunaStyle.DeleteIcon, "Delete this link."u8);
-            var (design, flags) = list[i];
+            var (design, flags, conditions) = list[i];
             table.NextColumn();
 
             using (ImGuiColor.Text.Push(colorManager.GetColor(design)))
@@ -141,10 +161,17 @@ public class DesignLinkDrawer(
             }
 
             DrawDragDrop(design, order, i);
+            if (!singleRow)
+                DrawConditions(i, order, in conditions);
 
             table.NextColumn();
             Im.Cursor.FrameAlign();
-            DrawApplicationBoxes(i, order, flags);
+            DrawApplicationBoxes(i, order, flags, singleRow);
+            if (singleRow)
+            {
+                Im.Line.Same();
+                DrawConditions(i, order, in conditions);
+            }
 
             if (delete)
                 linkManager.RemoveDesignLink(Selected, i--, order);
@@ -209,7 +236,7 @@ public class DesignLinkDrawer(
         _dragDropTargetOrder = order;
     }
 
-    private void DrawApplicationBoxes(int idx, LinkOrder order, ApplicationType current)
+    private void DrawApplicationBoxes(int idx, LinkOrder order, ApplicationType current, bool singleRow)
     {
         var newType = current;
         using (ImStyleBorder.Frame.Push(ColorId.FolderLine.Value()))
@@ -223,7 +250,8 @@ public class DesignLinkDrawer(
         Box(0);
         Im.Line.Same();
         Box(1);
-        Im.Line.Same();
+        if (singleRow)
+            Im.Line.Same();
 
         Box(2);
         Im.Line.Same();
@@ -243,5 +271,11 @@ public class DesignLinkDrawer(
                 newType = value ? newType | applicationType : newType & ~applicationType;
             Im.Tooltip.OnHover(applicationType.Tooltip());
         }
+    }
+
+    private void DrawConditions(int idx, LinkOrder order, in DesignConditions current)
+    {
+        if (conditionsDrawer.Draw(in current, out var newConditions))
+            linkManager.ChangeConditions(Selected, idx, order, newConditions);
     }
 }

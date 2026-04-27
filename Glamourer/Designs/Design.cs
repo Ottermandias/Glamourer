@@ -62,8 +62,9 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
     public string Incognito
         => Identifier.ToString()[..8];
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication)
-        => LinkContainer.GetAllLinks(this).Select(t => ((IDesignStandIn)t.Link.Link, t.Link.Type, JobFlag.All));
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication,
+        Predicate<DesignConditions>? condition)
+        => LinkContainer.GetAllLinks(this, condition).Select(t => ((IDesignStandIn)t.Link.Link, t.Link.Type, JobFlag.All));
 
     #endregion
 
@@ -329,7 +330,8 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
             {
                 var identifier = jObj["Design"]?.ToObject<Guid>() ?? throw new ArgumentNullException(nameof(design));
                 var type       = (ApplicationType)(jObj["Type"]?.ToObject<uint>() ?? 0);
-                linkLoader.AddObject(design, new LinkData(identifier, type, order));
+                var conditions = DesignConditionData.Deserialize(jObj["Conditions"]);
+                linkLoader.AddObject(design, new LinkData(identifier, type, conditions, order));
             }
         }
     }

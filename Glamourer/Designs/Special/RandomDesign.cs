@@ -48,7 +48,8 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public StateSource AssociatedSource()
         => StateSource.Manual;
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication)
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication,
+        Predicate<DesignConditions>? condition)
     {
         if (newApplication || ResetOnRedraw)
             _currentDesign = rng.Design(Predicates);
@@ -57,7 +58,7 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
         if (_currentDesign == null)
             yield break;
 
-        foreach (var (link, type, jobs) in _currentDesign.AllLinks(newApplication))
+        foreach (var (link, type, jobs) in _currentDesign.AllLinks(newApplication, condition))
             yield return (link, type, jobs);
     }
 

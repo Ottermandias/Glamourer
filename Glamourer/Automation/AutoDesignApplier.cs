@@ -284,8 +284,9 @@ public sealed class AutoDesignApplier : IDisposable, IRequiredService
             return;
 
         var mergedDesign = _designMerger.Merge(
-            set.Designs.Where(d => d.IsActive(actor))
-                .SelectMany(d => d.Design.AllLinks(newApplication).Select(l => (l.Design, l.Flags & d.Type, d.Jobs.Flags))),
+            set.Designs.Where(d => d.Conditions.Match(actor))
+                .SelectMany(d => d.Design.AllLinks(newApplication, cond => cond.Match(actor))
+                    .Select(l => (l.Design, l.Flags & d.Type, d.Conditions.JobFlags))),
             state.ModelData.Customize, state.BaseData, true, _config.AlwaysApplyAssociatedMods);
 
         if (_objects.IsInGPose && actor.IsGPoseOrCutscene)

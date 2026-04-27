@@ -20,13 +20,14 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
 
     private readonly SaveService _saveService;
 
-    private readonly JobService            _jobs;
-    private readonly DesignManager         _designs;
-    private readonly ActorManager          _actors;
-    private readonly AutomationChanged     _event;
-    private readonly DesignChanged         _designEvent;
-    private readonly RandomDesignGenerator _randomDesigns;
-    private readonly QuickSelectedDesign   _quickSelectedDesign;
+    private readonly JobService                   _jobs;
+    private readonly DesignManager                _designs;
+    private readonly ActorManager                 _actors;
+    private readonly AutomationChanged            _event;
+    private readonly DesignChanged                _designEvent;
+    private readonly RandomDesignGenerator        _randomDesigns;
+    private readonly QuickSelectedDesign          _quickSelectedDesign;
+    private readonly DesignConditionsHydrator _conditionsHydrator;
 
     private readonly List<AutoDesignSet>                        _data    = [];
     private          Dictionary<ActorIdentifier, AutoDesignSet> _enabled = [];
@@ -36,16 +37,17 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
 
     public AutoDesignManager(JobService jobs, ActorManager actors, SaveService saveService, DesignManager designs, AutomationChanged @event,
         FixedDesignMigrator migrator, DesignFileSystem fileSystem, DesignChanged designEvent, RandomDesignGenerator randomDesigns,
-        QuickSelectedDesign quickSelectedDesign)
+        QuickSelectedDesign quickSelectedDesign, DesignConditionsHydrator conditionsHydrator)
     {
-        _jobs                = jobs;
-        _actors              = actors;
-        _saveService         = saveService;
-        _designs             = designs;
-        _event               = @event;
-        _designEvent         = designEvent;
-        _randomDesigns       = randomDesigns;
-        _quickSelectedDesign = quickSelectedDesign;
+        _jobs                   = jobs;
+        _actors                 = actors;
+        _saveService            = saveService;
+        _designs                = designs;
+        _event                  = @event;
+        _designEvent            = designEvent;
+        _randomDesigns          = randomDesigns;
+        _quickSelectedDesign    = quickSelectedDesign;
+        _conditionsHydrator = conditionsHydrator;
         _designEvent.Subscribe(OnDesignChange, DesignChanged.Priority.AutoDesignManager);
         Load();
         migrator.ConsumeMigratedData(_actors, fileSystem, this);
@@ -285,9 +287,9 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
     {
         var newDesign = new AutoDesign
         {
-            Design = design,
-            Type   = ApplicationType.All,
-            Jobs   = _jobs.JobGroups[1],
+            Design     = design,
+            Type       = ApplicationType.All,
+            Conditions = _conditionsHydrator.AlwaysTrue,
         };
         set.Designs.Add(newDesign);
         Save();
@@ -349,37 +351,21 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
         _event.Invoke(new AutomationChanged.ChangedDesignArguments(set, which, old, newDesign));
     }
 
-    public void ChangeJobCondition(AutoDesignSet set, int which, JobGroup jobs)
+    public void ChangeConditions(AutoDesignSet set, int which, DesignConditions conditions)
     {
         if (which >= set.Designs.Count || which < 0)
             return;
 
         var design = set.Designs[which];
 
-        if (design.Jobs.Id == jobs.Id)
+        if (design.Conditions == conditions)
             return;
 
-        var old = design.Jobs;
-        design.Jobs = jobs;
+        var old = design.Conditions;
+        design.Conditions = conditions;
         Save();
-        Glamourer.Log.Debug($"Changed job condition from {old.Id} to {jobs.Id} for associated design {which + 1} in design set.");
-        _event.Invoke(new AutomationChanged.ChangedConditionsArguments(set, which, old, jobs));
-    }
-
-    public void ChangeGearsetCondition(AutoDesignSet set, int which, short index)
-    {
-        if (which >= set.Designs.Count || which < 0)
-            return;
-
-        var design = set.Designs[which];
-        if (design.GearsetIndex == index)
-            return;
-
-        var old = design.GearsetIndex;
-        design.GearsetIndex = index;
-        Save();
-        Glamourer.Log.Debug($"Changed gearset condition from {old} to {index} for associated design {which + 1} in design set.");
-        _event.Invoke(new AutomationChanged.ChangedConditionsArguments(set, which, default, default));
+        Glamourer.Log.Debug($"Changed conditions from {old} to {conditions} for associated design {which + 1} in design set.");
+        _event.Invoke(new AutomationChanged.ChangedConditionsArguments(set, which, old, conditions));
     }
 
     public void ChangeApplicationType(AutoDesignSet set, int which, ApplicationType applicationType)
@@ -654,28 +640,7 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
     }
 
     private bool ParseConditions(string setName, JObject jObj, AutoDesign ret)
-    {
-        var conditions = jObj["Conditions"];
-        if (conditions is null)
-            return true;
-
-        var jobs = conditions["JobGroup"]?.ToObject<int>() ?? -1;
-        if (jobs >= 0)
-        {
-            if (!_jobs.JobGroups.TryGetValue((JobGroupId)jobs, out var jobGroup))
-            {
-                Glamourer.Messager.NotificationMessage(
-                    $"Error parsing automatically applied design for set {setName}: The job condition {jobs} does not exist.",
-                    NotificationType.Warning);
-                return false;
-            }
-
-            ret.Jobs = jobGroup;
-        }
-
-        ret.GearsetIndex = conditions["Gearset"]?.ToObject<short>() ?? -1;
-        return true;
-    }
+        => _conditionsHydrator.TryHydrate(jObj["Conditions"], out ret.Conditions, "automatically applied design for set", setName);
 
     private void Save()
         => _saveService.DelaySave(this);

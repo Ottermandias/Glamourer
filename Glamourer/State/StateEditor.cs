@@ -8,6 +8,7 @@ using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
@@ -457,8 +458,8 @@ public class StateEditor(
         if (!settings.MergeLinks || design is not Design d)
             merged = new MergedDesign(design);
         else
-            merged = merger.Merge(d.AllLinks(true), state.ModelData.IsHuman ? state.ModelData.Customize : CustomizeArray.Default,
-                state.BaseData,
+            merged = merger.Merge(d.AllLinks(true, ActorConditions(state)),
+                state.ModelData.IsHuman ? state.ModelData.Customize : CustomizeArray.Default, state.BaseData,
                 false, Config.AlwaysApplyAssociatedMods);
 
         ApplyDesign(data, merged, settings with
@@ -468,6 +469,11 @@ public class StateEditor(
             UseSingleSource = true,
         });
     }
+
+    private Predicate<DesignConditions>? ActorConditions(ActorState state)
+        => Applier.GetData(state).Objects.FindFirst(static actor => actor.IsCharacter, out var actor)
+            ? cond => cond.Match(actor)
+            : null;
 
 
     /// <summary> Apply offhand item and potentially gauntlets if configured. </summary>

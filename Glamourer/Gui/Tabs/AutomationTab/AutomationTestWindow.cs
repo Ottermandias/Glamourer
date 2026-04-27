@@ -13,7 +13,7 @@ namespace Glamourer.Gui.Tabs.AutomationTab;
 public sealed class AutomationTestWindow : Window, IDisposable
 {
     private readonly JobCombo            _jobCombo;
-    private          int                 _gearSet = -1;
+    private          short               _gearSet = -1;
     private          Job?                _job;
     private readonly AutomationChanged   _changed;
     private readonly AutomationSelection _selection;
