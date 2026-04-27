@@ -199,7 +199,7 @@ public sealed class ActorPanel : IPanel
         if (!h)
             return;
 
-        _equipmentDrawer.Prepare();
+        _equipmentDrawer.Prepare(false);
 
         var usedAllStain = _equipmentDrawer.DrawAllStain(out var newAllStain, _selection.State!.IsLocked);
         Im.Line.Same();

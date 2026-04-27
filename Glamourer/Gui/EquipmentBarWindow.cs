@@ -40,7 +40,7 @@ public class EquipmentBarWindow : Window, IDisposable
         _actorPanel      = actorPanel;
         _advancedDyes    = advancedDyes;
 
-        mainWindow.Open                       += OnMainWindowOpen;
+        mainWindow.Open             += OnMainWindowOpen;
         actorPanel.OpenEquipmentBar += OnActorPanelOpenEqpBar;
 
         Size               = Vector2.Zero;
@@ -49,7 +49,7 @@ public class EquipmentBarWindow : Window, IDisposable
 
     public void Dispose()
     {
-        _mainWindow.Open                       -= OnMainWindowOpen;
+        _mainWindow.Open             -= OnMainWindowOpen;
         _actorPanel.OpenEquipmentBar -= OnActorPanelOpenEqpBar;
     }
 
@@ -83,26 +83,29 @@ public class EquipmentBarWindow : Window, IDisposable
 
     public override void Draw()
     {
-        if (ImEx.Icon.LabeledButton(FontAwesomeIcon.TheaterMasks.Icon(), "Bk. to Main"u8, "Go back to Glamourer's Main Window."u8,
-                new Vector2(Im.Style.FrameHeight * 4.0f + Im.Style.ItemInnerSpacing.X * 3.0f, Im.Style.FrameHeight)))
+        var buttonWidth = new Vector2(Im.Style.FrameHeight * 4.0f + Im.Style.ItemInnerSpacing.X * 3.0f, Im.Style.FrameHeight);
+        ImEx.TextFramed(_selection.ShortName, buttonWidth,
+            textColor: _selection.Data.Valid ? ColorId.ActorAvailable.Value() : ColorId.ActorUnavailable.Value(),
+            frameColor: ImGuiColor.Button.Get());
+        if (ImEx.Icon.LabeledButton(FontAwesomeIcon.TheaterMasks.Icon(), "Expand"u8, "Go back to Glamourer's Main Window."u8, buttonWidth))
             _mainWindow.IsOpen = true;
 
-        _equipmentDrawer.Prepare();
+        _equipmentDrawer.Prepare(true);
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
             var data = EquipDrawData.FromState(_stateManager, _selection.State!, slot);
-            _equipmentDrawer.DrawEquip(data, true);
+            _equipmentDrawer.DrawEquip(data);
         }
 
         var mainhand = EquipDrawData.FromState(_stateManager, _selection.State!, EquipSlot.MainHand);
         var offhand  = EquipDrawData.FromState(_stateManager, _selection.State!, EquipSlot.OffHand);
-        _equipmentDrawer.DrawWeapons(mainhand, offhand, GameMain.IsInGPose(), true);
+        _equipmentDrawer.DrawWeapons(mainhand, offhand, GameMain.IsInGPose());
 
         foreach (var slot in BonusExtensions.AllFlags)
         {
             var data = BonusDrawData.FromState(_stateManager, _selection.State!, slot);
-            _equipmentDrawer.DrawBonusItem(data, true);
+            _equipmentDrawer.DrawBonusItem(data);
         }
 
         _equipmentDrawer.DrawDragDropTooltip();

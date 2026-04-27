@@ -47,30 +47,25 @@ public sealed unsafe class AdvancedDyePopup(
         return true;
     }
 
-    public void DrawButton(EquipSlot slot, ColorParameter color, bool normalCompact)
-        => DrawButton(MaterialValueIndex.FromSlot(slot), color, normalCompact, false);
+    public void DrawButton(EquipSlot slot, ColorParameter color, bool sameLine)
+        => DrawButton(MaterialValueIndex.FromSlot(slot), color, sameLine);
 
-    public void DrawButton(BonusItemFlag slot, ColorParameter color, bool normalCompact)
-        => DrawButton(MaterialValueIndex.FromSlot(slot), color, normalCompact, true);
+    public void DrawButton(BonusItemFlag slot, ColorParameter color, bool sameLine)
+        => DrawButton(MaterialValueIndex.FromSlot(slot), color, sameLine);
 
-    private void DrawButton(MaterialValueIndex index, ColorParameter color, bool normalCompact, bool bonus)
+    private void DrawButton(MaterialValueIndex index, ColorParameter color, bool sameLine)
     {
         if (config.HideDesignPanel.HasFlag(DesignPanelFlag.AdvancedDyes))
             return;
 
-        Im.Line.Same();
+        if(sameLine)
+            Im.Line.Same();
         using var id     = Im.Id.Push(index.SlotIndex | ((int)index.DrawObject << 8));
         var       isOpen = index == _drawIndex;
 
         var (textColor, buttonColor) = isOpen
             ? (ColorId.HeaderButtons.Value(), ImGuiColor.ButtonActive.Get())
             : (color, ColorParameter.Default);
-
-        if (normalCompact)
-        {
-            Im.Cursor.Position += new Vector2(bonus ? Im.Style.FrameHeight + Im.Style.ItemSpacing.X : 0.0f,
-                (bonus ? 0.5f : -0.5f) * (Im.Style.FrameHeight + Im.Style.ItemSpacing.Y));
-        }
 
         using (ImStyleBorder.Frame.Push(textColor, 2 * Im.Style.GlobalScale, isOpen))
         {

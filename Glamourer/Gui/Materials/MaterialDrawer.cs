@@ -210,35 +210,35 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
             };
     }
 
-    public sealed class MaterialSlotCombo;
-
     private void DrawSlotCombo()
     {
         var width = Im.Font.CalculateSize(EquipSlot.OffHand.ToNameU8()).X + Im.Style.FrameHeightWithSpacing;
         Im.Item.SetNextWidth(width);
-        using var combo = Im.Combo.Begin("##slot"u8, _newKey.SlotName());
-        if (combo)
+        using (var combo = Im.Combo.Begin("##slot"u8, _newKey.SlotName()))
         {
-            var currentSlot = _newKey.ToEquipSlot();
-            foreach (var tmpSlot in EquipSlotExtensions.FullSlots)
+            if (combo)
             {
-                if (Im.Selectable(tmpSlot.ToNameU8(), tmpSlot == currentSlot) && currentSlot != tmpSlot)
-                    _newKey = MaterialValueIndex.FromSlot(tmpSlot) with
-                    {
-                        MaterialIndex = (byte)_newMaterialIdx,
-                        RowIndex = (byte)_newRowIdx,
-                    };
-            }
+                var currentSlot = _newKey.ToEquipSlot();
+                foreach (var tmpSlot in EquipSlotExtensions.FullSlots)
+                {
+                    if (Im.Selectable(tmpSlot.ToNameU8(), tmpSlot == currentSlot) && currentSlot != tmpSlot)
+                        _newKey = MaterialValueIndex.FromSlot(tmpSlot) with
+                        {
+                            MaterialIndex = (byte)_newMaterialIdx,
+                            RowIndex = (byte)_newRowIdx,
+                        };
+                }
 
-            var currentBonus = _newKey.ToBonusSlot();
-            foreach (var bonusSlot in BonusExtensions.AllFlags)
-            {
-                if (Im.Selectable(bonusSlot.ToNameU8(), bonusSlot == currentBonus) && bonusSlot != currentBonus)
-                    _newKey = MaterialValueIndex.FromSlot(bonusSlot) with
-                    {
-                        MaterialIndex = (byte)_newMaterialIdx,
-                        RowIndex = (byte)_newRowIdx,
-                    };
+                var currentBonus = _newKey.ToBonusSlot();
+                foreach (var bonusSlot in BonusExtensions.AllFlags)
+                {
+                    if (Im.Selectable(bonusSlot.ToNameU8(), bonusSlot == currentBonus) && bonusSlot != currentBonus)
+                        _newKey = MaterialValueIndex.FromSlot(bonusSlot) with
+                        {
+                            MaterialIndex = (byte)_newMaterialIdx,
+                            RowIndex = (byte)_newRowIdx,
+                        };
+                }
             }
         }
 
