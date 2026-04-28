@@ -5,6 +5,7 @@ using Glamourer.State;
 using Luna;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Actors;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
 
 namespace Glamourer.Services;
@@ -84,7 +85,7 @@ public class PcpService : IRequiredService
         _designManager.SetWriteProtection(design, true);
         _designManager.AddMod(design, new Mod(modDirectory, modDirectory), new ModSettings([], 0, true, false, false));
         _designManager.ChangeDescription(design, $"PCP design created for {actorIdentifier} on {time}.");
-        _designManager.ChangeResetAdvancedDyes(design, true);
+        _designManager.ChangeResetAdvancedDyes(design, EquipFlagExtensions.AllCombined);
         _designManager.SetQuickDesign(design, false);
         _designManager.ChangeColor(design, _config.PcpColor);
 

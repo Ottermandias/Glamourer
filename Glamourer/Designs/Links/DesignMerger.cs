@@ -30,8 +30,9 @@ public class DesignMerger(
     {
         var ret = new MergedDesign(designManager);
         ret.Design.SetCustomize(customizeService, currentCustomize);
-        var           startBodyType = currentCustomize.BodyType;
-        CustomizeFlag fixFlags      = 0;
+        var           startBodyType        = currentCustomize.BodyType;
+        CustomizeFlag fixFlags             = 0;
+        var           mutableMaterialSlots = EquipFlagExtensions.AllCombined;
         respectOwnership &= config.UnlockedItemMode;
         foreach (var (design, type, jobs) in designs)
         {
@@ -55,13 +56,13 @@ public class DesignMerger(
             ReduceParameters(data, collection.Parameters, ret, source);
             ReduceMods(design as Design, ret, modAssociations);
             if (type.HasFlag(ApplicationType.GearCustomization))
-                ReduceMaterials(design, ret);
+                ReduceMaterials(design, mutableMaterialSlots, ret);
             if (design.ForcedRedraw)
                 ret.ForcedRedraw = true;
-            if (design.ResetAdvancedDyes)
-                ret.ResetAdvancedDyes = true;
+            ret.ResetAdvancedDyes |= design.ResetAdvancedDyes | design.RevertAdvancedDyes;
             if (design.ResetTemporarySettings)
                 ret.ResetTemporarySettings = true;
+            mutableMaterialSlots &= ~design.RevertAdvancedDyes;
         }
 
         ApplyFixFlags(ret, fixFlags);
@@ -69,14 +70,18 @@ public class DesignMerger(
     }
 
 
-    private static void ReduceMaterials(IDesignStandIn designStandIn, MergedDesign ret)
+    private static void ReduceMaterials(IDesignStandIn designStandIn, CombinedItemSlotFlag mutableMaterialSlots, MergedDesign ret)
     {
         if (designStandIn is not DesignBase design)
             return;
 
         var materials = ret.Design.GetMaterialDataRef();
         foreach (var (key, value) in design.Materials.Where(p => p.Item2.Enabled))
-            materials.TryAddValue(MaterialValueIndex.FromKey(key), value);
+        {
+            var index = MaterialValueIndex.FromKey(key);
+            if (mutableMaterialSlots.HasFlag(index.ToCombinedItemSlot()))
+                materials.TryAddValue(index, value);
+        }
     }
 
     private static void ReduceMods(Design? design, MergedDesign ret, bool modAssociations)
