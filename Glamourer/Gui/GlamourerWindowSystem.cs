@@ -13,7 +13,7 @@ public sealed class GlamourerWindowSystem : IDisposable, IUiService
     private readonly MainWindow   _ui;
 
     public GlamourerWindowSystem(IUiBuilder uiBuilder, MainWindow ui, Configuration config, UnlocksTab unlocksTab, GlamourerChangelog changelog,
-        DesignQuickBar quick, AutomationTestWindow automationTest)
+        DesignQuickBar quick, EquipmentBarWindow equipment, AutomationTestWindow automationTest)
     {
         _uiBuilder    = uiBuilder;
         _ui           = ui;
@@ -22,6 +22,7 @@ public sealed class GlamourerWindowSystem : IDisposable, IUiService
         _windowSystem.AddWindow(unlocksTab);
         _windowSystem.AddWindow(changelog.Changelog);
         _windowSystem.AddWindow(quick);
+        _windowSystem.AddWindow(equipment);
         _windowSystem.AddWindow(automationTest);
         _uiBuilder.OpenMainUi            += _ui.Toggle;
         _uiBuilder.OpenConfigUi          += _ui.OpenSettings;

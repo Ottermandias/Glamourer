@@ -47,18 +47,19 @@ public sealed unsafe class AdvancedDyePopup(
         return true;
     }
 
-    public void DrawButton(EquipSlot slot, ColorParameter color)
-        => DrawButton(MaterialValueIndex.FromSlot(slot), color);
+    public void DrawButton(EquipSlot slot, ColorParameter color, bool sameLine)
+        => DrawButton(MaterialValueIndex.FromSlot(slot), color, sameLine);
 
-    public void DrawButton(BonusItemFlag slot, ColorParameter color)
-        => DrawButton(MaterialValueIndex.FromSlot(slot), color);
+    public void DrawButton(BonusItemFlag slot, ColorParameter color, bool sameLine)
+        => DrawButton(MaterialValueIndex.FromSlot(slot), color, sameLine);
 
-    private void DrawButton(MaterialValueIndex index, ColorParameter color)
+    private void DrawButton(MaterialValueIndex index, ColorParameter color, bool sameLine)
     {
         if (config.HideDesignPanel.HasFlag(DesignPanelFlag.AdvancedDyes))
             return;
 
-        Im.Line.Same();
+        if(sameLine)
+            Im.Line.Same();
         using var id     = Im.Id.Push(index.SlotIndex | ((int)index.DrawObject << 8));
         var       isOpen = index == _drawIndex;
 
@@ -209,23 +210,13 @@ public sealed unsafe class AdvancedDyePopup(
     }
 
     private void DrawWindow(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures,
-        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials)
+        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials, bool centered)
     {
         var flags = WindowFlags.NoFocusOnAppearing
           | WindowFlags.NoCollapse
           | WindowFlags.NoDecoration
           | WindowFlags.NoResize
           | WindowFlags.NoDocking;
-
-        // Set position to the right of the main window when attached
-        // The downwards offset is implicit through child position.
-        if (config.KeepAdvancedDyesAttached)
-        {
-            var position = Im.Window.Position;
-            position.X += Im.Window.Size.X + Im.Style.WindowPadding.X;
-            Im.Window.SetNextPosition(position);
-            flags |= WindowFlags.NoMove;
-        }
 
         var width = 7 * Im.Style.FrameHeight // Buttons
           + 3 * Im.Style.ItemSpacing.X       // around text
@@ -234,6 +225,19 @@ public sealed unsafe class AdvancedDyePopup(
           + 7 * Im.Font.Mono.GetCharacterAdvance(' ') * Im.Style.GlobalScale // Row
           + 2 * Im.Style.WindowPadding.X;
         var height = 19 * Im.Style.FrameHeightWithSpacing + Im.Style.WindowPadding.Y + 3 * Im.Style.ItemSpacing.Y;
+
+        // Set position to the right of the main window when attached
+        // The downwards offset is implicit through child position.
+        if (config.KeepAdvancedDyesAttached)
+        {
+            var position = Im.Window.Position;
+            position.X += Im.Window.Size.X + Im.Style.WindowPadding.X;
+            if (centered)
+                position.Y += (Im.Window.Size.Y - height) * 0.5f;
+            Im.Window.SetNextPosition(position);
+            flags |= WindowFlags.NoMove;
+        }
+
         Im.Window.SetNextSize(new Vector2(width, height));
 
         using var window = Im.Window.Begin("###Glamourer Advanced Dyes"u8, flags);
@@ -247,7 +251,7 @@ public sealed unsafe class AdvancedDyePopup(
             DrawContent(textures, materials);
     }
 
-    public void Draw(Actor actor, ActorState state)
+    public void Draw(Actor actor, ActorState state, bool centered)
     {
         _actor = actor;
         _state = state;
@@ -255,7 +259,7 @@ public sealed unsafe class AdvancedDyePopup(
             return;
 
         if (_drawIndex!.Value.TryGetTextures(actor, out var textures, out var materials))
-            DrawWindow(textures, materials);
+            DrawWindow(textures, materials, centered);
     }
 
     private void DrawTable(MaterialValueIndex materialIndex, ColorTable.Table table)

@@ -3,6 +3,7 @@ using Glamourer.Designs.Links;
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
@@ -28,6 +29,7 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
 
     public bool ForcedRedraw { get; }
 
-    public bool ResetAdvancedDyes      { get; }
-    public bool ResetTemporarySettings { get; }
+    public CombinedItemSlotFlag ResetAdvancedDyes      { get; }
+    public CombinedItemSlotFlag RevertAdvancedDyes     { get; }
+    public bool                 ResetTemporarySettings { get; }
 }

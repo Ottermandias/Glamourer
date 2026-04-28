@@ -4,6 +4,7 @@ using Glamourer.Interop.Material;
 using Glamourer.State;
 using Luna;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs.Special;
@@ -55,9 +56,12 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
     public bool ForcedRedraw
         => combo.QuickDesign?.ForcedRedraw ?? false;
 
-    public bool ResetAdvancedDyes
-        => combo.QuickDesign?.ResetAdvancedDyes ?? false;
+    public CombinedItemSlotFlag ResetAdvancedDyes
+        => combo.QuickDesign?.ResetAdvancedDyes ?? 0;
 
     public bool ResetTemporarySettings
         => combo.QuickDesign?.ResetTemporarySettings ?? false;
+
+    public CombinedItemSlotFlag RevertAdvancedDyes
+        => combo.QuickDesign?.RevertAdvancedDyes ?? 0;
 }

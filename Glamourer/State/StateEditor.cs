@@ -397,8 +397,23 @@ public class StateEditor(
                     Editor.ChangeMetaState(state, meta, mergedDesign.Design.DesignData.GetMeta(meta), Source(meta), out _, settings.Key);
             }
 
-            if (settings.ResetMaterials || !settings.RespectManual && mergedDesign.ResetAdvancedDyes)
-                state.Materials.Clear();
+            if (settings.ResetMaterials || !settings.RespectManual && mergedDesign.ResetAdvancedDyes is not 0)
+            {
+                if (mergedDesign.ResetAdvancedDyes.HasFlag(EquipFlagExtensions.AllCombined))
+                    state.Materials.Clear();
+                else
+                {
+                    var slotsToReset = mergedDesign.ResetAdvancedDyes;
+                    while (slotsToReset is not 0)
+                    {
+                        // Extract the least significant bit.
+                        // Do not attempt to work on a range of bits, as contiguous bits can yield very different material value indices.
+                        var slot = unchecked(slotsToReset & (~slotsToReset + 1));
+                        state.Materials.RemoveValues(MaterialValueIndex.Min(slot), MaterialValueIndex.Max(slot));
+                        slotsToReset &= ~slot;
+                    }
+                }
+            }
 
             foreach (var (key, value) in mergedDesign.Design.Materials)
             {

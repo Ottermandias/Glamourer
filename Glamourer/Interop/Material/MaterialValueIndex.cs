@@ -78,6 +78,16 @@ public readonly record struct MaterialValueIndex(
             _                                        => BonusItemFlag.Unknown,
         };
 
+    public CombinedItemSlotFlag ToCombinedItemSlot()
+        => DrawObject switch
+        {
+            DrawObjectType.Human when SlotIndex < 10    => ((uint)SlotIndex).ToEquipSlot().ToFlag().ToCombinedItemSlotFlag(),
+            DrawObjectType.Mainhand when SlotIndex == 0 => CombinedItemSlotFlag.Mainhand,
+            DrawObjectType.Offhand when SlotIndex == 0  => CombinedItemSlotFlag.Offhand,
+            DrawObjectType.Human when SlotIndex > 15    => ((uint)SlotIndex - 16).ToBonusSlot().ToCombinedItemSlotFlag(),
+            _                                           => 0,
+        };
+
     public unsafe bool TryGetModel(Actor actor, out Model model)
     {
         if (!actor.Valid)
@@ -195,9 +205,31 @@ public readonly record struct MaterialValueIndex(
     public static MaterialValueIndex Min(DrawObjectType drawObject = 0, byte slotIndex = 0, byte materialIndex = 0, byte rowIndex = 0)
         => new(drawObject, slotIndex, materialIndex, rowIndex);
 
+    public static MaterialValueIndex Min(CombinedItemSlotFlag combinedItemSlot, byte materialIndex = 0, byte rowIndex = 0)
+    {
+        // The slot mask must have one and exactly one bit set.
+        if (combinedItemSlot is 0 || unchecked((uint)combinedItemSlot & ((uint)combinedItemSlot - 1)) is not 0)
+            return new MaterialValueIndex(DrawObjectType.Invalid, 0, materialIndex, rowIndex);
+
+        return combinedItemSlot switch
+        {
+            < CombinedItemSlotFlag.Mainhand => new MaterialValueIndex(DrawObjectType.Human,
+                (byte)BitOperations.TrailingZeroCount(unchecked((int)combinedItemSlot)), materialIndex, rowIndex),
+            CombinedItemSlotFlag.Mainhand  => new MaterialValueIndex(DrawObjectType.Mainhand, 0,  materialIndex, rowIndex),
+            CombinedItemSlotFlag.Offhand   => new MaterialValueIndex(DrawObjectType.Offhand,  0,  materialIndex, rowIndex),
+            CombinedItemSlotFlag.Glasses   => new MaterialValueIndex(DrawObjectType.Human,    16, materialIndex, rowIndex),
+            CombinedItemSlotFlag.UnkBonus2 => new MaterialValueIndex(DrawObjectType.Human,    17, materialIndex, rowIndex),
+            _                              => new MaterialValueIndex(DrawObjectType.Invalid,  0,  materialIndex, rowIndex),
+        };
+    }
+
     public static MaterialValueIndex Max(DrawObjectType drawObject = (DrawObjectType)byte.MaxValue, byte slotIndex = byte.MaxValue,
         byte materialIndex = byte.MaxValue, byte rowIndex = byte.MaxValue)
         => new(drawObject, slotIndex, materialIndex, rowIndex);
+
+    public static MaterialValueIndex Max(CombinedItemSlotFlag combinedItemSlot, byte materialIndex = byte.MaxValue,
+        byte rowIndex = byte.MaxValue)
+        => Min(combinedItemSlot, materialIndex, rowIndex);
 
     public enum DrawObjectType : byte
     {

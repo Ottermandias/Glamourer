@@ -2,6 +2,7 @@
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs.Special;
@@ -95,9 +96,12 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public bool ForcedRedraw
         => _currentDesign?.ForcedRedraw ?? false;
 
-    public bool ResetAdvancedDyes
-        => _currentDesign?.ResetAdvancedDyes ?? false;
+    public CombinedItemSlotFlag ResetAdvancedDyes
+        => _currentDesign?.ResetAdvancedDyes ?? 0;
 
     public bool ResetTemporarySettings
         => _currentDesign?.ResetTemporarySettings ?? false;
+
+    public CombinedItemSlotFlag RevertAdvancedDyes
+        => _currentDesign?.RevertAdvancedDyes ?? 0;
 }

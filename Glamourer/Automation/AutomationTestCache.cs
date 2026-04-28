@@ -43,7 +43,7 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
     private readonly HashSet<StateIndex>         _state     = [];
     private readonly HashSet<MaterialValueIndex> _materials = [];
     private          bool                        _resetsAssociations;
-    private          bool                        _resetsAdvanced;
+    private          CombinedItemSlotFlag        _resetsAdvanced;
     private          bool                        _forcesRedraw;
 
     public readonly struct Change(ulong type)
@@ -93,10 +93,10 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
                 Source = designName,
             };
 
-        public static Change CreateAdvancedReset(StringU8 designName, Design? design)
+        public static Change CreateAdvancedReset(StringU8 designName, Design? design, CombinedItemSlotFlag slots)
             => new(2u, design)
             {
-                Slot   = AllAdvancedDyes,
+                Slot   = slots.HasFlag(EquipFlagExtensions.AllCombined) ? AllAdvancedDyes : new StringU8($"Advanced Dyes: {slots}"),
                 Target = ResetToGame,
                 Source = designName,
             };
@@ -166,11 +166,13 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
         if (!CustomDirty)
             return;
 
+        var mutableMaterialSlots = EquipFlagExtensions.AllCombined;
+
         Dirty &= ~IManagedCache.DirtyFlags.Custom;
         _changes.Clear();
         _state.Clear();
         _materials.Clear();
-        _resetsAdvanced     = false;
+        _resetsAdvanced     = 0;
         _resetsAssociations = false;
         _forcesRedraw       = false;
         if (_selection.Set is not { } set)
@@ -209,10 +211,11 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
                     _forcesRedraw = true;
                 }
 
-                if (!_resetsAdvanced && link.ResetAdvancedDyes)
+                var reset = link.ResetAdvancedDyes | link.RevertAdvancedDyes;
+                if (!_resetsAdvanced.HasFlag(reset))
                 {
-                    _changes.Add(Change.CreateAdvancedReset(designName, link as Design));
-                    _resetsAdvanced = true;
+                    _changes.Add(Change.CreateAdvancedReset(designName, link as Design, reset & ~_resetsAdvanced));
+                    _resetsAdvanced |= reset;
                 }
 
                 var data = link.GetDesignData(default);
@@ -317,7 +320,7 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
                 foreach (var (key, advancedDye) in link.GetMaterialData().Where(p => p.Item2.Enabled))
                 {
                     var index = MaterialValueIndex.FromKey(key);
-                    if (_materials.Add(index))
+                    if (mutableMaterialSlots.HasFlag(index.ToCombinedItemSlot()) && _materials.Add(index))
                         _changes.Add(new Change(index, link as Design)
                         {
                             Slot   = new StringU8($"{index}"),
@@ -337,6 +340,8 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
                             Target = settings.Remove ? Removed : settings.ForceInherit ? Inherited : settings.Enabled ? Enabled : Disabled,
                         });
                     }
+
+                mutableMaterialSlots &= ~link.RevertAdvancedDyes;
             }
         }
 

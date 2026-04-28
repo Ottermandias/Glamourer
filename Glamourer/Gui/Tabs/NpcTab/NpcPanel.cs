@@ -75,7 +75,7 @@ public sealed class NpcPanel(
         if (!h)
             return;
 
-        equipmentDrawer.Prepare();
+        equipmentDrawer.Prepare(false);
         var designData = selection.ToDesignData();
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
