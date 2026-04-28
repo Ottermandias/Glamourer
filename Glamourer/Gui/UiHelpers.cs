@@ -174,5 +174,5 @@ public static class UiHelpers
 
     public static bool DrawItemSlots(Utf8StringHandler<LabelStringHandlerBuffer> id, ref CombinedItemSlotFlag slots,
         CombinedItemSlotFlag allowedSlots = EquipFlagExtensions.AllCombined, bool readOnly = false)
-        => SetButtons.DrawCombo<CombinedItemSlotFlag, uint>(id, ref slots, allowedSlots, static slot => slot.ToLabelU8(), Slots, readOnly);
+        => SetButtons.DrawComboEnum(id, ref slots, allowedSlots, static slot => slot.ToLabelU8(), Slots, readOnly);
 }
