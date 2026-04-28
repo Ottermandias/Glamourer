@@ -7,17 +7,17 @@ namespace Glamourer.Designs.Links;
 
 public sealed class DesignLinkManager : IService, IDisposable
 {
-    private readonly DesignStorage            _storage;
-    private readonly DesignChanged            _event;
-    private readonly SaveService              _saveService;
-    private readonly DesignConditionsHydrator _conditionsHydrator;
+    private readonly DesignStorage          _storage;
+    private readonly DesignChanged          _event;
+    private readonly SaveService            _saveService;
+    private readonly DesignConditionsLoader _conditionsLoader;
 
-    public DesignLinkManager(DesignStorage storage, DesignChanged @event, SaveService saveService, DesignConditionsHydrator conditionsHydrator)
+    public DesignLinkManager(DesignStorage storage, DesignChanged @event, SaveService saveService, DesignConditionsLoader conditionsLoader)
     {
-        _storage            = storage;
-        _event              = @event;
-        _saveService        = saveService;
-        _conditionsHydrator = conditionsHydrator;
+        _storage          = storage;
+        _event            = @event;
+        _saveService      = saveService;
+        _conditionsLoader = conditionsLoader;
 
         _event.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignLinkManager);
     }
@@ -38,7 +38,7 @@ public sealed class DesignLinkManager : IService, IDisposable
 
     public void AddDesignLink(Design parent, Design child, LinkOrder order)
     {
-        if (!LinkContainer.AddLink(parent, child, ApplicationType.All, _conditionsHydrator.AlwaysTrue, order, out _))
+        if (!LinkContainer.AddLink(parent, child, ApplicationType.All, _conditionsLoader.AlwaysTrue, order, out _))
             return;
 
         parent.LastEdit = DateTimeOffset.UtcNow;

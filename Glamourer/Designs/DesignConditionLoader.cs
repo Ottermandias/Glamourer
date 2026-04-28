@@ -6,7 +6,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
 
-public class DesignConditionsHydrator(JobService jobs) : IService
+public class DesignConditionsLoader(JobService jobs) : IService
 {
     public DesignConditions AlwaysTrue
         => new(jobs.JobGroups[1]);
@@ -14,10 +14,10 @@ public class DesignConditionsHydrator(JobService jobs) : IService
     public DesignConditions Canonicalize(DesignConditions conditions)
         => conditions.Constant is true ? AlwaysTrue : conditions;
 
-    public bool TryHydrate(JToken? token, out DesignConditions conditions, string? descriptionPrefix, string description)
+    public bool TryParse(JToken? token, out DesignConditions conditions, string? descriptionPrefix, string description)
     {
         var data    = DesignConditionData.Deserialize(token);
-        var success = TryHydrate(data, out conditions);
+        var success = TryConvert(data, out conditions);
         if (!success && descriptionPrefix is not null)
             Glamourer.Messager.NotificationMessage(
                 $"Error parsing {descriptionPrefix} {description}: The job condition {data.JobGroupId} does not exist.",
@@ -26,7 +26,7 @@ public class DesignConditionsHydrator(JobService jobs) : IService
         return success;
     }
 
-    public bool TryHydrate(DesignConditionData data, out DesignConditions conditions)
+    public bool TryConvert(DesignConditionData data, out DesignConditions conditions)
     {
         if (data.JobGroupId < 0)
         {

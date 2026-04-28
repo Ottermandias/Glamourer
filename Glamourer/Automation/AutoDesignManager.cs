@@ -3,7 +3,6 @@ using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
-using Glamourer.Interop;
 using Glamourer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -20,14 +19,13 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
 
     private readonly SaveService _saveService;
 
-    private readonly JobService                   _jobs;
-    private readonly DesignManager                _designs;
-    private readonly ActorManager                 _actors;
-    private readonly AutomationChanged            _event;
-    private readonly DesignChanged                _designEvent;
-    private readonly RandomDesignGenerator        _randomDesigns;
-    private readonly QuickSelectedDesign          _quickSelectedDesign;
-    private readonly DesignConditionsHydrator _conditionsHydrator;
+    private readonly DesignManager          _designs;
+    private readonly ActorManager           _actors;
+    private readonly AutomationChanged      _event;
+    private readonly DesignChanged          _designEvent;
+    private readonly RandomDesignGenerator  _randomDesigns;
+    private readonly QuickSelectedDesign    _quickSelectedDesign;
+    private readonly DesignConditionsLoader _conditionsLoader;
 
     private readonly List<AutoDesignSet>                        _data    = [];
     private          Dictionary<ActorIdentifier, AutoDesignSet> _enabled = [];
@@ -35,19 +33,18 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
     public IReadOnlyDictionary<ActorIdentifier, AutoDesignSet> EnabledSets
         => _enabled;
 
-    public AutoDesignManager(JobService jobs, ActorManager actors, SaveService saveService, DesignManager designs, AutomationChanged @event,
+    public AutoDesignManager(ActorManager actors, SaveService saveService, DesignManager designs, AutomationChanged @event,
         FixedDesignMigrator migrator, DesignFileSystem fileSystem, DesignChanged designEvent, RandomDesignGenerator randomDesigns,
-        QuickSelectedDesign quickSelectedDesign, DesignConditionsHydrator conditionsHydrator)
+        QuickSelectedDesign quickSelectedDesign, DesignConditionsLoader conditionsLoader)
     {
-        _jobs                   = jobs;
-        _actors                 = actors;
-        _saveService            = saveService;
-        _designs                = designs;
-        _event                  = @event;
-        _designEvent            = designEvent;
-        _randomDesigns          = randomDesigns;
-        _quickSelectedDesign    = quickSelectedDesign;
-        _conditionsHydrator = conditionsHydrator;
+        _actors              = actors;
+        _saveService         = saveService;
+        _designs             = designs;
+        _event               = @event;
+        _designEvent         = designEvent;
+        _randomDesigns       = randomDesigns;
+        _quickSelectedDesign = quickSelectedDesign;
+        _conditionsLoader    = conditionsLoader;
         _designEvent.Subscribe(OnDesignChange, DesignChanged.Priority.AutoDesignManager);
         Load();
         migrator.ConsumeMigratedData(_actors, fileSystem, this);
@@ -289,7 +286,7 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
         {
             Design     = design,
             Type       = ApplicationType.All,
-            Conditions = _conditionsHydrator.AlwaysTrue,
+            Conditions = _conditionsLoader.AlwaysTrue,
         };
         set.Designs.Add(newDesign);
         Save();
@@ -640,7 +637,7 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
     }
 
     private bool ParseConditions(string setName, JObject jObj, AutoDesign ret)
-        => _conditionsHydrator.TryHydrate(jObj["Conditions"], out ret.Conditions, "automatically applied design for set", setName);
+        => _conditionsLoader.TryParse(jObj["Conditions"], out ret.Conditions, "automatically applied design for set", setName);
 
     private void Save()
         => _saveService.DelaySave(this);
@@ -661,6 +658,7 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
             group = [];
             return false;
         }
+
         group = GetGroup(identifier.WithoutIndex());
         return group.Length > 0;
     }
