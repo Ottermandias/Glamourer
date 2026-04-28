@@ -444,7 +444,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             data.SetApplyStain(enabled);
     }
 
-    private void WeaponHelpMarker(bool hasAdvancedDyes, StringU8 label, in EquipDrawData data, StringU8? type = null)
+    private void WeaponHelpMarker(bool hasAdvancedDyes, bool isState, StringU8 label, in EquipDrawData data, StringU8? type = null)
     {
         DrawEquipLabel(hasAdvancedDyes, label, data);
         var pos = Im.Item.UpperLeftCorner;
@@ -456,7 +456,9 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         if (type is null)
             return;
 
-        pos.Y += Im.Style.FrameHeightWithSpacing;
+        pos.Y += Im.Style.FrameHeightWithSpacing + Im.Style.FramePadding.Y;
+        if (isState)
+            pos.X += Im.Style.FrameHeightWithSpacing;
         Im.Window.DrawList.Text(pos, ImGuiColor.Text.Get(), $"({type})");
     }
 
@@ -588,18 +590,21 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             var right = Im.Item.RightClicked();
             var left  = Im.Item.Clicked();
             Im.Line.Same();
+            using var group = Im.Group();
             parent.DrawBonusItem(data, out var label, right, left);
             if (data.DisplayApplication)
             {
                 Im.Line.Same();
                 DrawApply(data);
+                parent.DrawEquipLabel(data is { IsDesign: true, HasAdvancedDyes: true }, label, data);
             }
             else if (data.IsState)
             {
+                parent.DrawEquipLabel(data is { IsDesign: true, HasAdvancedDyes: true }, label, data);
+                ImEx.TextFramed(StringU8.Empty, new Vector2(parent._comboLength, Im.Style.FrameHeight));
+                Im.Tooltip.OnHover("Blame Square Enix for this doing nothing. Glasses do not support dyes whatsoever."u8);
                 parent._advancedDyes.DrawButton(data.Slot, data.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
             }
-
-            parent.DrawEquipLabel(data is { IsDesign: true, HasAdvancedDyes: true }, label, data);
         }
 
         public static void Weapons(EquipmentDrawer parent, EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
@@ -618,7 +623,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                     DrawApply(mainhand);
                 }
 
-                parent.WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel, mainhand,
+                parent.WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhand.IsState, mainhandLabel, mainhand,
                     allWeapons ? new StringU8(mainhand.CurrentItem.Type.ToName()) : null);
 
                 parent.DrawStain(mainhand);
@@ -651,7 +656,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                     DrawApply(offhand);
                 }
 
-                parent.WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel, offhand);
+                parent.WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhand.IsState, offhandLabel, offhand);
 
                 parent.DrawStain(offhand);
                 if (offhand.DisplayApplication)
@@ -737,7 +742,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
 
             if (allWeapons)
                 mainhandLabel = new StringU8($"{mainhandLabel} ({mainhand.CurrentItem.Type.ToName()})");
-            parent.WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhandLabel, mainhand);
+            parent.WeaponHelpMarker(mainhand is { IsDesign: true, HasAdvancedDyes: true }, mainhand.IsState, mainhandLabel, mainhand);
 
             var validOffhand = mainhand.CurrentItem.Type.ValidOffhand();
             if (validOffhand is FullEquipType.Unknown)
@@ -760,7 +765,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                     offhand.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
             }
 
-            parent.WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhandLabel, offhand);
+            parent.WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhand.IsState, offhandLabel, offhand);
         }
 
         public static bool ItemCombo(EquipmentDrawer parent, BaseItemCombo combo, in EquipItem item, out EquipItem newItem)

@@ -200,7 +200,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
         public ModdedColumn(Configuration config)
         {
             Flags |= TableColumnFlags.NoResize;
-            Label =  new StringU8("M");
+            Label =  new StringU8("M"u8);
             if (config.RememberUnlocksFilters)
                 Filter.LoadValue(config.Filters.UnlocksModdedFilter);
             Filter.FilterChanged += () => config.Filters.UnlocksModdedFilter = Filter.FilterValue;
