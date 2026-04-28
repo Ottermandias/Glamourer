@@ -173,6 +173,6 @@ public static class UiHelpers
     private static readonly StringU8 Slots = new("slots"u8);
 
     public static bool DrawItemSlots(Utf8StringHandler<LabelStringHandlerBuffer> id, ref CombinedItemSlotFlag slots,
-        CombinedItemSlotFlag allowedSlots = EquipFlagExtensions.AllCombined)
-        => SetButtons.DrawCombo<CombinedItemSlotFlag, uint>(id, ref slots, allowedSlots, static slot => slot.ToLabelU8(), Slots);
+        CombinedItemSlotFlag allowedSlots = EquipFlagExtensions.AllCombined, bool readOnly = false)
+        => SetButtons.DrawCombo<CombinedItemSlotFlag, uint>(id, ref slots, allowedSlots, static slot => slot.ToLabelU8(), Slots, readOnly);
 }

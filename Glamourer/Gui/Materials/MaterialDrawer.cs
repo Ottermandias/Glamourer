@@ -47,6 +47,8 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
 
     private void DrawMultiButtons(Design design)
     {
+        using var _ = Im.Disabled(design.WriteProtected());
+
         var any      = design.Materials.Count > 0;
         var disabled = !config.DeleteDesignModifier.IsActive();
         var size     = new Vector2(200 * Im.Style.GlobalScale, 0);
@@ -87,7 +89,7 @@ public class MaterialDrawer(DesignManager designManager, Configuration config) :
             "Set this design to revert any previously applied advanced dyes on the following slots when it is applied.\n\nIn case this design is part of a Design Link or Automation set, setting this behaves differently than setting Reset Advanced Dyes in the Design Details section:\n- Setting this resets all advanced dyes that were previously applied before this set, and also prevents designs that are lower in the set from applying advanced dyes. It behaves the same way as filling out every row of every material of those slots that you don't set explicitly below with \"Revert\".\n- Setting Reset Advanced Dyes in the Design Details section resets all advanced dyes that were previously applied before this set, but lets designs lower in this tree/set apply advanced dyes."u8);
         Im.Line.Same();
         var slots = design.RevertAdvancedDyes;
-        if (UiHelpers.DrawItemSlots("revertAdvancedDyes"u8, ref slots))
+        if (UiHelpers.DrawItemSlots("revertAdvancedDyes"u8, ref slots, readOnly: design.WriteProtected()))
             designManager.ChangeRevertAdvancedDyes(design, slots);
     }
 
