@@ -7,15 +7,17 @@ namespace Glamourer.Designs.Links;
 
 public sealed class DesignLinkManager : IService, IDisposable
 {
-    private readonly DesignStorage _storage;
-    private readonly DesignChanged _event;
-    private readonly SaveService   _saveService;
+    private readonly DesignStorage          _storage;
+    private readonly DesignChanged          _event;
+    private readonly SaveService            _saveService;
+    private readonly DesignConditionsLoader _conditionsLoader;
 
-    public DesignLinkManager(DesignStorage storage, DesignChanged @event, SaveService saveService)
+    public DesignLinkManager(DesignStorage storage, DesignChanged @event, SaveService saveService, DesignConditionsLoader conditionsLoader)
     {
-        _storage     = storage;
-        _event       = @event;
-        _saveService = saveService;
+        _storage          = storage;
+        _event            = @event;
+        _saveService      = saveService;
+        _conditionsLoader = conditionsLoader;
 
         _event.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignLinkManager);
     }
@@ -36,7 +38,7 @@ public sealed class DesignLinkManager : IService, IDisposable
 
     public void AddDesignLink(Design parent, Design child, LinkOrder order)
     {
-        if (!LinkContainer.AddLink(parent, child, ApplicationType.All, order, out _))
+        if (!LinkContainer.AddLink(parent, child, ApplicationType.All, _conditionsLoader.AlwaysTrue, order, out _))
             return;
 
         parent.LastEdit = DateTimeOffset.UtcNow;
@@ -65,6 +67,17 @@ public sealed class DesignLinkManager : IService, IDisposable
         _saveService.QueueSave(parent);
         Glamourer.Log.Debug(
             $"Changed link application type from {old} to {applicationType} for design link {order} {idx + 1} in design {parent.Identifier}.");
+        _event.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedLink, parent));
+    }
+
+    public void ChangeConditions(Design parent, int idx, LinkOrder order, DesignConditions conditions)
+    {
+        if (!parent.Links.ChangeConditions(idx, order, conditions, out var old))
+            return;
+
+        _saveService.QueueSave(parent);
+        Glamourer.Log.Debug(
+            $"Changed link conditions from {old} to {conditions} for design link {order} {idx + 1} in design {parent.Identifier}.");
         _event.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ChangedLink, parent));
     }
 

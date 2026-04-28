@@ -2,9 +2,9 @@
 
 namespace Glamourer.Designs.Links;
 
-public record struct DesignLink(Design Link, ApplicationType Type);
+public record struct DesignLink(Design Link, ApplicationType Type, DesignConditions Conditions);
 
-public readonly record struct LinkData(Guid Identity, ApplicationType Type, LinkOrder Order)
+public readonly record struct LinkData(Guid Identity, ApplicationType Type, DesignConditionData Conditions, LinkOrder Order)
 {
     public override string ToString()
         => Identity.ToString();

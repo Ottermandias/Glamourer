@@ -1,4 +1,5 @@
 ﻿using Glamourer.Automation;
+using Glamourer.Designs.Links;
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
@@ -17,7 +18,8 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
     public string      SerializeName();
     public StateSource AssociatedSource();
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication);
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication,
+        Predicate<DesignConditions>? condition);
 
     public void AddData(JObject jObj);
 

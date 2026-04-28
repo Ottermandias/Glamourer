@@ -115,7 +115,7 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
         }
     }
 
-    public int GearSet
+    public short GearSet
     {
         get;
         set
@@ -129,7 +129,7 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
     }
 
     public AutomationTestCache(AutomationChanged automationChanged, AutomationSelection selection, Configuration config, ItemManager items,
-        int gearSet, JobId job)
+        short gearSet, JobId job)
     {
         _automationChanged          =  automationChanged;
         _selection                  =  selection;
@@ -192,18 +192,11 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
 
         foreach (var design in set.Designs)
         {
-            if (design.GearsetIndex >= 0)
-            {
-                if (GearSet != design.GearsetIndex)
-                    continue;
-            }
-            else if (!design.Jobs.Fits(Job))
-            {
+            if (!design.Conditions.Match(Job, GearSet))
                 continue;
-            }
 
             var designName = new StringU8(design.Design.ResolveName(_config.Ephemeral.IncognitoMode));
-            foreach (var (link, flags, _) in design.Design.AllLinks(true))
+            foreach (var (link, flags, _) in design.Design.AllLinks(true, cond => cond.Match(Job, GearSet)))
             {
                 var application = (design.Type & flags).ApplyWhat(link);
                 if (!_resetsAssociations && link.ResetTemporarySettings)

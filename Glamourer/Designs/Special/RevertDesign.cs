@@ -30,7 +30,7 @@ public class RevertDesign : IDesignStandIn
     public StateSource AssociatedSource()
         => StateSource.Game;
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool _)
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool _, Predicate<DesignConditions>? _2)
     {
         yield return (this, ApplicationType.All, JobFlag.All);
     }
