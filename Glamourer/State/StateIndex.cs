@@ -2,7 +2,6 @@
 using Glamourer.Designs;
 using Glamourer.GameData;
 using ImSharp;
-using Luna;
 using Penumbra.GameData.Enums;
 using System.Collections.Frozen;
 
@@ -108,10 +107,8 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
         {
             CustomizeParameterFlag.SkinDiffuse           => new StateIndex(ParamSkinDiffuse),
             CustomizeParameterFlag.MuscleTone            => new StateIndex(ParamMuscleTone),
-            CustomizeParameterFlag.SkinSpecular          => new StateIndex(ParamSkinSpecular),
             CustomizeParameterFlag.LipDiffuse            => new StateIndex(ParamLipDiffuse),
             CustomizeParameterFlag.HairDiffuse           => new StateIndex(ParamHairDiffuse),
-            CustomizeParameterFlag.HairSpecular          => new StateIndex(ParamHairSpecular),
             CustomizeParameterFlag.HairHighlight         => new StateIndex(ParamHairHighlight),
             CustomizeParameterFlag.LeftEye               => new StateIndex(ParamLeftEye),
             CustomizeParameterFlag.LeftLimbalIntensity   => new StateIndex(ParamLeftLimbalIntensity),
@@ -313,10 +310,8 @@ public readonly record struct StateIndex(int Value) : IEqualityOperators<StateIn
 
             ParamSkinDiffuse           => CustomizeParameterFlag.SkinDiffuse,
             ParamMuscleTone            => CustomizeParameterFlag.MuscleTone,
-            ParamSkinSpecular          => CustomizeParameterFlag.SkinSpecular,
             ParamLipDiffuse            => CustomizeParameterFlag.LipDiffuse,
             ParamHairDiffuse           => CustomizeParameterFlag.HairDiffuse,
-            ParamHairSpecular          => CustomizeParameterFlag.HairSpecular,
             ParamHairHighlight         => CustomizeParameterFlag.HairHighlight,
             ParamLeftEye               => CustomizeParameterFlag.LeftEye,
             ParamLeftLimbalIntensity   => CustomizeParameterFlag.LeftLimbalIntensity,

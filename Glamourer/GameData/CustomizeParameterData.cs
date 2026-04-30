@@ -7,9 +7,7 @@ public struct CustomizeParameterData
     public Vector4 DecalColor;
     public Vector4 LipDiffuse;
     public Vector3 SkinDiffuse;
-    public Vector3 SkinSpecular;
     public Vector3 HairDiffuse;
-    public Vector3 HairSpecular;
     public Vector3 HairHighlight;
     public Vector3 LeftEye;
     public float   LeftLimbalIntensity;
@@ -29,10 +27,8 @@ public struct CustomizeParameterData
             {
                 CustomizeParameterFlag.SkinDiffuse           => new CustomizeParameterValue(SkinDiffuse),
                 CustomizeParameterFlag.MuscleTone            => new CustomizeParameterValue(MuscleTone),
-                CustomizeParameterFlag.SkinSpecular          => new CustomizeParameterValue(SkinSpecular),
                 CustomizeParameterFlag.LipDiffuse            => new CustomizeParameterValue(LipDiffuse),
                 CustomizeParameterFlag.HairDiffuse           => new CustomizeParameterValue(HairDiffuse),
-                CustomizeParameterFlag.HairSpecular          => new CustomizeParameterValue(HairSpecular),
                 CustomizeParameterFlag.HairHighlight         => new CustomizeParameterValue(HairHighlight),
                 CustomizeParameterFlag.LeftEye               => new CustomizeParameterValue(LeftEye),
                 CustomizeParameterFlag.LeftLimbalIntensity   => new CustomizeParameterValue(LeftLimbalIntensity),
@@ -55,10 +51,8 @@ public struct CustomizeParameterData
         {
             CustomizeParameterFlag.SkinDiffuse           => SetIfDifferent(ref SkinDiffuse,           value.InternalTriple),
             CustomizeParameterFlag.MuscleTone            => SetIfDifferent(ref MuscleTone,            value.Single),
-            CustomizeParameterFlag.SkinSpecular          => SetIfDifferent(ref SkinSpecular,          value.InternalTriple),
             CustomizeParameterFlag.LipDiffuse            => SetIfDifferent(ref LipDiffuse,            value.InternalQuadruple),
             CustomizeParameterFlag.HairDiffuse           => SetIfDifferent(ref HairDiffuse,           value.InternalTriple),
-            CustomizeParameterFlag.HairSpecular          => SetIfDifferent(ref HairSpecular,          value.InternalTriple),
             CustomizeParameterFlag.HairHighlight         => SetIfDifferent(ref HairHighlight,         value.InternalTriple),
             CustomizeParameterFlag.LeftEye               => SetIfDifferent(ref LeftEye,               value.InternalTriple),
             CustomizeParameterFlag.LeftLimbalIntensity   => SetIfDifferent(ref LeftLimbalIntensity,   value.Single),
@@ -99,8 +93,6 @@ public struct CustomizeParameterData
             _                                           => new CustomizeParameterValue(RightEye, RightLimbalIntensity).XivQuadruple,
         };
 
-        if (flags.HasFlag(CustomizeParameterFlag.SkinSpecular))
-            parameters.SkinFresnelValue0 = new CustomizeParameterValue(SkinSpecular).XivQuadruple;
         if (flags.HasFlag(CustomizeParameterFlag.HairDiffuse))
         {
             // Vector3 is 0x10 byte for some reason.
@@ -110,8 +102,6 @@ public struct CustomizeParameterData
             parameters.MainColor.Z = triple.Z;
         }
 
-        if (flags.HasFlag(CustomizeParameterFlag.HairSpecular))
-            parameters.HairFresnelValue0 = new CustomizeParameterValue(HairSpecular).XivTriple;
         if (flags.HasFlag(CustomizeParameterFlag.HairHighlight))
         {
             // Vector3 is 0x10 byte for some reason.
@@ -149,9 +139,6 @@ public struct CustomizeParameterData
             case CustomizeParameterFlag.MuscleTone:
                 parameters.SkinColor.W = MuscleTone;
                 break;
-            case CustomizeParameterFlag.SkinSpecular:
-                parameters.SkinFresnelValue0 = new CustomizeParameterValue(SkinSpecular).XivQuadruple;
-                break;
             case CustomizeParameterFlag.LipDiffuse:
                 parameters.LipColor = new CustomizeParameterValue(LipDiffuse).XivQuadruple;
                 break;
@@ -161,9 +148,6 @@ public struct CustomizeParameterData
                 parameters.MainColor.X = triple1.X;
                 parameters.MainColor.Y = triple1.Y;
                 parameters.MainColor.Z = triple1.Z;
-                break;
-            case CustomizeParameterFlag.HairSpecular:
-                parameters.HairFresnelValue0 = new CustomizeParameterValue(HairSpecular).XivTriple;
                 break;
             case CustomizeParameterFlag.HairHighlight:
                 // Vector3 is 0x10 byte for some reason.
@@ -203,10 +187,8 @@ public struct CustomizeParameterData
             FacePaintUvMultiplier = GetUvMultiplier(parameter),
             MuscleTone            = parameter.SkinColor.W,
             SkinDiffuse           = new CustomizeParameterValue(parameter.SkinColor).InternalTriple,
-            SkinSpecular          = new CustomizeParameterValue(parameter.SkinFresnelValue0).InternalTriple,
             LipDiffuse            = new CustomizeParameterValue(parameter.LipColor).InternalQuadruple,
             HairDiffuse           = new CustomizeParameterValue(parameter.MainColor).InternalTriple,
-            HairSpecular          = new CustomizeParameterValue(parameter.HairFresnelValue0).InternalTriple,
             HairHighlight         = new CustomizeParameterValue(parameter.MeshColor).InternalTriple,
             LeftEye               = new CustomizeParameterValue(parameter.LeftColor).InternalTriple,
             LeftLimbalIntensity   = new CustomizeParameterValue(parameter.LeftColor.W).Single,
@@ -221,10 +203,8 @@ public struct CustomizeParameterData
         {
             CustomizeParameterFlag.SkinDiffuse           => new CustomizeParameterValue(parameter.SkinColor),
             CustomizeParameterFlag.MuscleTone            => new CustomizeParameterValue(parameter.SkinColor.W),
-            CustomizeParameterFlag.SkinSpecular          => new CustomizeParameterValue(parameter.SkinFresnelValue0),
             CustomizeParameterFlag.LipDiffuse            => new CustomizeParameterValue(parameter.LipColor),
             CustomizeParameterFlag.HairDiffuse           => new CustomizeParameterValue(parameter.MainColor),
-            CustomizeParameterFlag.HairSpecular          => new CustomizeParameterValue(parameter.HairFresnelValue0),
             CustomizeParameterFlag.HairHighlight         => new CustomizeParameterValue(parameter.MeshColor),
             CustomizeParameterFlag.LeftEye               => new CustomizeParameterValue(parameter.LeftColor),
             CustomizeParameterFlag.RightEye              => new CustomizeParameterValue(parameter.RightColor),
