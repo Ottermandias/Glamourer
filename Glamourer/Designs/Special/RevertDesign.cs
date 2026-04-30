@@ -2,6 +2,7 @@
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs.Special;
@@ -29,7 +30,7 @@ public class RevertDesign : IDesignStandIn
     public StateSource AssociatedSource()
         => StateSource.Game;
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool _)
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool _, Predicate<DesignConditions>? _2)
     {
         yield return (this, ApplicationType.All, JobFlag.All);
     }
@@ -46,9 +47,12 @@ public class RevertDesign : IDesignStandIn
     public bool ForcedRedraw
         => false;
 
-    public bool ResetAdvancedDyes
-        => true;
+    public CombinedItemSlotFlag ResetAdvancedDyes
+        => EquipFlagExtensions.AllCombined;
 
     public bool ResetTemporarySettings
         => true;
+
+    public CombinedItemSlotFlag RevertAdvancedDyes
+        => 0; // Not sure whether AllCombined makes more sense here. 0 is backwards-compatible.
 }

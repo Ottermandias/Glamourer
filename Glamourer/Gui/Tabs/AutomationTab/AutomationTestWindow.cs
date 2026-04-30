@@ -1,4 +1,5 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
+﻿using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Glamourer.Automation;
 using Glamourer.Config;
 using Glamourer.Events;
@@ -7,13 +8,14 @@ using Glamourer.Services;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Structs;
+using Window = Luna.Window;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 
 public sealed class AutomationTestWindow : Window, IDisposable
 {
     private readonly JobCombo            _jobCombo;
-    private          int                 _gearSet = -1;
+    private          short               _gearSet = -1;
     private          Job?                _job;
     private readonly AutomationChanged   _changed;
     private readonly AutomationSelection _selection;

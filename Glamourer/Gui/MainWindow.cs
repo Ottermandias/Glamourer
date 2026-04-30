@@ -1,10 +1,12 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using ImSharp;
 using Luna;
+using Window = Luna.Window;
 
 namespace Glamourer.Gui;
 
@@ -17,9 +19,11 @@ public sealed class MainWindow : Window, IDisposable
     private readonly TabSelected     _tabSelected;
     private          bool            _ignorePenumbra;
 
+    public event Action? Open;
+
     public MainWindow(IDalamudPluginInterface pi, Configuration config, PenumbraService penumbra,
         MainTabBar mainTabBar, DesignQuickBar quickBar, TabSelected tabSelected)
-        : base("GlamourerMainWindow")
+        : base("###GlamourerMainWindow")
     {
         pi.UiBuilder.DisableGposeUiHide = true;
         SizeConstraints = new WindowSizeConstraints
@@ -50,6 +54,11 @@ public sealed class MainWindow : Window, IDisposable
     {
         IsOpen              = true;
         _mainTabBar.NextTab = arguments.Type;
+    }
+
+    public override void OnOpen()
+    {
+        Open?.Invoke();
     }
 
     public override void PreDraw()

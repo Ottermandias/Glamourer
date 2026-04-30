@@ -10,10 +10,9 @@ public readonly struct AutoDesignCacheItem(AutoDesignSet set, AutoDesign design,
     public readonly StringU8      Name            = new(design.Design.ResolveName(false));
     public readonly StringU8      Incognito       = new(design.Design.ResolveName(true));
     public readonly StringU8      IndexU8         = new($"#{index + 1:D2}");
-    public readonly StringU8      JobRestrictions = design.GearsetIndex is -1 ? design.Jobs.Name : StringU8.Empty;
+    public readonly StringU8      JobRestrictions = design.Conditions.ToJobsRestrictionString();
 
-    public readonly StringU8 GearSetRestriction =
-        set.Designs[index].GearsetIndex is -1 ? StringU8.Empty : new StringU8($"{design.GearsetIndex}");
+    public readonly StringU8 GearSetRestriction = design.Conditions.ToGearSetRestrictionString();
 
     public readonly int  Index    = index;
     public readonly bool Disabled = design.Type is 0;

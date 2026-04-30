@@ -37,6 +37,7 @@ public static class UiHelpers
         else
         {
             Im.Image.DrawScaled(ptr, size, textureSize);
+            AddItemNameToTooltip(item, textureSize);
         }
     }
 
@@ -59,7 +60,19 @@ public static class UiHelpers
         else
         {
             Im.Image.DrawScaled(ptr, size, textureSize);
+            AddItemNameToTooltip(item, textureSize);
         }
+    }
+
+    private static void AddItemNameToTooltip(EquipItem item, Vector2 textureSize)
+    {
+        if (!Im.Item.Hovered(HoveredFlags.AllowWhenDisabled))
+            return;
+
+        using var tt = Im.Tooltip.Begin();
+        Im.Line.Same();
+        Im.Cursor.Y += Math.Max(0.0f, (textureSize.Y - Im.Style.TextHeight) * 0.5f);
+        Im.Text(item.Name);
     }
 
     public static bool DrawCheckbox(ReadOnlySpan<byte> label, Utf8StringHandler<TextStringHandlerBuffer> tooltip, bool value, out bool on, bool locked)
@@ -156,4 +169,10 @@ public static class UiHelpers
             favorites.TryAdd(stain);
         return true;
     }
+
+    private static readonly StringU8 Slots = new("slots"u8);
+
+    public static bool DrawItemSlots(Utf8StringHandler<LabelStringHandlerBuffer> id, ref CombinedItemSlotFlag slots,
+        CombinedItemSlotFlag allowedSlots = EquipFlagExtensions.AllCombined, bool readOnly = false)
+        => SetButtons.DrawComboEnum(id, ref slots, allowedSlots, static slot => slot.ToLabelU8(), Slots, readOnly);
 }

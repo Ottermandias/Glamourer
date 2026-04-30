@@ -138,8 +138,9 @@ public class InternalStateEditor(
             return false;
 
         // Can not change weapon type from expected type in state.
-        if (slot is EquipSlot.MainHand && item.Type != state.BaseData.MainhandType
-         || slot is EquipSlot.OffHand && item.Type != state.BaseData.OffhandType)
+        if (slot is EquipSlot.MainHand && !item.Type.IsCompatible(state.BaseData.MainhandType)
+         || slot is EquipSlot.OffHand
+         && !item.Type.IsOffhandCompatible(state.BaseData.MainhandType, state.ModelData.MainhandType, state.BaseData.OffhandType))
         {
             if (!gPose.InGPose)
                 return false;
@@ -179,8 +180,8 @@ public class InternalStateEditor(
             return false;
 
         // Can not change weapon type from expected type in state.
-        if (slot is EquipSlot.MainHand && item.Type != state.BaseData.MainhandType
-         || slot is EquipSlot.OffHand && item.Type != state.BaseData.OffhandType)
+        if (slot is EquipSlot.MainHand && !item.Type.IsCompatible(state.BaseData.MainhandType)
+         || slot is EquipSlot.OffHand && !item.Type.IsOffhandCompatible(state.BaseData.MainhandType, state.ModelData.MainhandType, state.BaseData.OffhandType))
         {
             if (!gPose.InGPose)
                 return false;

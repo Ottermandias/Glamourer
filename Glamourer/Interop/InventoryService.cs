@@ -36,11 +36,11 @@ public sealed unsafe class InventoryService : IDisposable, IRequiredService
         _equipGearsetHook.Dispose();
     }
 
-    private delegate nint EquipGearsetInternalDelegate(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId);
+    private delegate int EquipGearsetInternalDelegate(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId);
 
     private readonly Hook<EquipGearsetInternalDelegate> _equipGearsetHook;
 
-    private nint EquipGearSetDetour(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId)
+    private int EquipGearSetDetour(RaptureGearsetModule* module, uint gearsetId, byte glamourPlateId)
     {
         var prior = module->CurrentGearsetIndex;
         var ret   = _equipGearsetHook.Original(module, gearsetId, glamourPlateId);

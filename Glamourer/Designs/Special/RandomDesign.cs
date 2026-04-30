@@ -2,6 +2,7 @@
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs.Special;
@@ -48,7 +49,8 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public StateSource AssociatedSource()
         => StateSource.Manual;
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication)
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication,
+        Predicate<DesignConditions>? condition)
     {
         if (newApplication || ResetOnRedraw)
             _currentDesign = rng.Design(Predicates);
@@ -57,7 +59,7 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
         if (_currentDesign == null)
             yield break;
 
-        foreach (var (link, type, jobs) in _currentDesign.AllLinks(newApplication))
+        foreach (var (link, type, jobs) in _currentDesign.AllLinks(newApplication, condition))
             yield return (link, type, jobs);
     }
 
@@ -94,9 +96,12 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public bool ForcedRedraw
         => _currentDesign?.ForcedRedraw ?? false;
 
-    public bool ResetAdvancedDyes
-        => _currentDesign?.ResetAdvancedDyes ?? false;
+    public CombinedItemSlotFlag ResetAdvancedDyes
+        => _currentDesign?.ResetAdvancedDyes ?? 0;
 
     public bool ResetTemporarySettings
         => _currentDesign?.ResetTemporarySettings ?? false;
+
+    public CombinedItemSlotFlag RevertAdvancedDyes
+        => _currentDesign?.RevertAdvancedDyes ?? 0;
 }

@@ -66,20 +66,34 @@ public sealed class LinkContainer : List<DesignLink>
         list.RemoveAt(idx);
         return true;
     }
-
-    public bool ChangeApplicationRules(int idx, LinkOrder order, ApplicationType type, out ApplicationType old)
-    {
-        var list = order switch
+    
+    private List<DesignLink> GetList(LinkOrder order)
+        => order switch
         {
             LinkOrder.Before => Before,
             LinkOrder.After  => After,
             _                => throw new ArgumentException("Invalid link order."),
         };
+
+    public bool ChangeApplicationRules(int idx, LinkOrder order, ApplicationType type, out ApplicationType old)
+    {
+        var list = GetList(order);
         old = list[idx].Type;
         if (idx < 0 || idx >= list.Count || old == type)
             return false;
 
         list[idx] = list[idx] with { Type = type };
+        return true;
+    }
+
+    public bool ChangeConditions(int idx, LinkOrder order, DesignConditions conditions, out DesignConditions old)
+    {
+        var list = GetList(order);
+        old = list[idx].Conditions;
+        if (idx < 0 || idx >= list.Count || old == conditions)
+            return false;
+
+        list[idx] = list[idx] with { Conditions = conditions };
         return true;
     }
 
@@ -97,14 +111,14 @@ public sealed class LinkContainer : List<DesignLink>
             return false;
         }
 
-        if (GetAllLinks(parent).Any(l => l.Link.Link == child && l.Order != order))
+        if (GetAllLinks(parent, null).Any(l => l.Link.Link == child && l.Order != order))
         {
             error =
                 $"Adding {child.Incognito} to {parent.Incognito}s links would create a circle, the parent already links to the child in the opposite direction.";
             return false;
         }
 
-        if (GetAllLinks(child).Any(l => l.Link.Link == parent && l.Order == order))
+        if (GetAllLinks(child, null).Any(l => l.Link.Link == parent && l.Order == order))
         {
             error =
                 $"Adding {child.Incognito} to {parent.Incognito}s links would create a circle, the child already links to the parent in the opposite direction.";
@@ -115,7 +129,8 @@ public sealed class LinkContainer : List<DesignLink>
         return true;
     }
 
-    public static bool AddLink(Design parent, Design child, ApplicationType type, LinkOrder order, out string error)
+    public static bool AddLink(Design parent, Design child, ApplicationType type, DesignConditions conditions, LinkOrder order,
+        out string error)
     {
         if (!CanAddLink(parent, child, order, out error))
             return false;
@@ -134,7 +149,7 @@ public sealed class LinkContainer : List<DesignLink>
         }
 
         type &= ApplicationType.All;
-        list.Add(new DesignLink(child, type));
+        list.Add(new DesignLink(child, type, conditions));
         error = string.Empty;
         return true;
     }
@@ -145,13 +160,18 @@ public sealed class LinkContainer : List<DesignLink>
     public bool Remove(Design child)
         => Before.RemoveAll(l => l.Link == child) + After.RemoveAll(l => l.Link == child) > 0;
 
-    public static IEnumerable<(DesignLink Link, LinkOrder Order)> GetAllLinks(Design design)
+    public static IEnumerable<(DesignLink Link, LinkOrder Order)> GetAllLinks(Design design, Predicate<DesignConditions>? condition)
     {
+        var self = new DesignLink(design, ApplicationType.All, DesignConditions.AlwaysTrue);
+        if (condition is not null && !condition(self.Conditions))
+            return [];
+
         var set = new HashSet<Design>(design.Links.Count * 4);
-        return GetAllLinks(new DesignLink(design, ApplicationType.All), LinkOrder.Self, set);
+        return GetAllLinks(self, condition, LinkOrder.Self, set);
     }
 
-    private static IEnumerable<(DesignLink Link, LinkOrder Order)> GetAllLinks(DesignLink design, LinkOrder currentOrder, ISet<Design> visited)
+    private static IEnumerable<(DesignLink Link, LinkOrder Order)> GetAllLinks(DesignLink design, Predicate<DesignConditions>? condition,
+        LinkOrder currentOrder, ISet<Design> visited)
     {
         if (design.Link.Links.Count == 0)
         {
@@ -162,15 +182,17 @@ public sealed class LinkContainer : List<DesignLink>
         }
 
         foreach (var link in design.Link.Links.Before
-                     .Where(l => !visited.Contains(l.Link))
-                     .SelectMany(l => GetAllLinks(l, currentOrder == LinkOrder.After ? LinkOrder.After : LinkOrder.Before, visited)))
+                     .Where(l => (condition is null || condition(l.Conditions)) && !visited.Contains(l.Link))
+                     .SelectMany(l => GetAllLinks(l, condition, currentOrder == LinkOrder.After ? LinkOrder.After : LinkOrder.Before, visited)))
             yield return link;
 
         if (visited.Add(design.Link))
             yield return (design, currentOrder);
 
-        foreach (var link in design.Link.Links.After.Where(l => !visited.Contains(l.Link))
-                     .SelectMany(l => GetAllLinks(l, currentOrder == LinkOrder.Before ? LinkOrder.Before : LinkOrder.After, visited)))
+        foreach (var link in design.Link.Links.After
+                     .Where(l => (condition is null || condition(l.Conditions)) && !visited.Contains(l.Link))
+                     .SelectMany(l => GetAllLinks(l, condition, currentOrder == LinkOrder.Before ? LinkOrder.Before : LinkOrder.After,
+                         visited)))
             yield return link;
     }
 
@@ -181,8 +203,9 @@ public sealed class LinkContainer : List<DesignLink>
         {
             before.Add(new JObject
             {
-                ["Design"] = link.Link.Identifier,
-                ["Type"]   = (uint)link.Type,
+                ["Design"]     = link.Link.Identifier,
+                ["Type"]       = (uint)link.Type,
+                ["Conditions"] = link.Conditions.Data.Serialize(),
             });
         }
 
@@ -191,8 +214,9 @@ public sealed class LinkContainer : List<DesignLink>
         {
             after.Add(new JObject
             {
-                ["Design"] = link.Link.Identifier,
-                ["Type"]   = (uint)link.Type,
+                ["Design"]     = link.Link.Identifier,
+                ["Type"]       = (uint)link.Type,
+                ["Conditions"] = link.Conditions.Data.Serialize(),
             });
         }
 

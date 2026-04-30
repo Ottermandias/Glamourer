@@ -55,7 +55,7 @@ public sealed class FixedDesignMigrator(JobService jobs) : IRequiredService
                 }
 
                 autoManager.AddDesign(set, leaf.Value);
-                autoManager.ChangeJobCondition(set, set.Designs.Count - 1, design.Item2);
+                autoManager.ChangeConditions(set, set.Designs.Count - 1, new DesignConditions(design.Item2));
                 autoManager.ChangeApplicationType(set, set.Designs.Count - 1, design.Item3 ? ApplicationType.All : 0);
             }
         }

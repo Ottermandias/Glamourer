@@ -7,6 +7,7 @@ using Glamourer.Services;
 using Glamourer.Unlocks;
 using Glamourer.Config;
 using Glamourer.Events;
+using Glamourer.Gui.Tabs.DesignTab;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Actors;
@@ -20,7 +21,7 @@ namespace Glamourer.Gui.Tabs.AutomationTab;
 
 public sealed class SetPanel(
     AutoDesignManager manager,
-    JobService jobs,
+    DesignConditionsDrawer conditionsDrawer,
     ItemUnlockManager itemUnlocks,
     SpecialDesignCombo designCombo,
     CustomizeUnlockManager customizeUnlocks,
@@ -35,7 +36,6 @@ public sealed class SetPanel(
 {
     private readonly AutomationSelection _selection         = selection;
     private readonly AutomationChanged   _automationChanged = automationChanged;
-    private readonly JobGroupCombo       _jobGroupCombo     = new(manager, jobs);
 
     private readonly AutoDesignNameFilter    _nameFilter    = new(config);
     private readonly AutoDesignJobFilter     _jobFilter     = new(config);
@@ -284,7 +284,7 @@ public sealed class SetPanel(
         var sb        = new StringBuilder();
         if (cacheItem.Design.Design is Design d)
         {
-            var count = d.AllLinks(true).Count();
+            var count = d.AllLinks(true, null).Count();
             if (count > 1)
             {
                 sb.AppendLine($"This design contains {count - 1} links to other designs.");
@@ -318,26 +318,8 @@ public sealed class SetPanel(
 
     private void DrawConditions(in AutoDesignCacheItem item)
     {
-        var usingGearset = item.Design.GearsetIndex >= 0;
-        if (Im.Button(usingGearset ? "Gearset:##usingGearset"u8 : "Jobs:##usingGearset"u8))
-        {
-            usingGearset = !usingGearset;
-            manager.ChangeGearsetCondition(item.Set, item.Index, (short)(usingGearset ? 0 : -1));
-        }
-
-        Im.Tooltip.OnHover("Click to switch between Job and Gearset restrictions."u8);
-
-        Im.Line.SameInner();
-        if (usingGearset)
-        {
-            Im.Item.SetNextWidthFull();
-            if (ImEx.InputOnDeactivation.Scalar("##whichGearset"u8, item.Design.GearsetIndex + 1, out var newIndex))
-                manager.ChangeGearsetCondition(item.Set, item.Index, (short)(Math.Clamp(newIndex, 1, 100) - 1));
-        }
-        else
-        {
-            _jobGroupCombo.Draw(item.Set, item.Design, item.Index);
-        }
+        if (conditionsDrawer.Draw(in item.Design.Conditions, out var newConditions))
+            manager.ChangeConditions(item.Set, item.Index, newConditions);
     }
 
     private void DrawRandomEditing(AutoDesignSet set, AutoDesign design, int designIdx)
@@ -602,29 +584,6 @@ public sealed class SetPanel(
         }
 
         return contained;
-    }
-
-    private sealed class JobGroupCombo(AutoDesignManager manager, JobService jobs)
-        : SimpleFilterCombo<JobGroup>(SimpleFilterType.Partwise)
-    {
-        public void Draw(AutoDesignSet set, AutoDesign design, int autoDesignIndex)
-        {
-            if (Draw("##jobGroups"u8, design.Jobs,
-                    "Select for which job groups this design should be applied.\nControl + Right-Click to set to all classes."u8,
-                    Im.ContentRegion.Available.X, out var newGroup))
-                manager.ChangeJobCondition(set, autoDesignIndex, newGroup);
-            else if (Im.Io.KeyControl && Im.Item.RightClicked())
-                manager.ChangeJobCondition(set, autoDesignIndex, jobs.JobGroups[1]);
-        }
-
-        public override StringU8 DisplayString(in JobGroup value)
-            => value.Name;
-
-        public override string FilterString(in JobGroup value)
-            => value.Name.ToString();
-
-        public override IEnumerable<JobGroup> GetBaseItems()
-            => jobs.JobGroups.Values;
     }
 
 

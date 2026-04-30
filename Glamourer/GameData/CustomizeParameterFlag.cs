@@ -13,17 +13,11 @@ public enum CustomizeParameterFlag : ushort
     [Name("Muscle Tone")]
     MuscleTone = 0x0002,
 
-    [Name("Skin Shine")]
-    SkinSpecular = 0x0004,
-
     [Name("Lip Color")]
     LipDiffuse = 0x0008,
 
     [Name("Hair Color")]
     HairDiffuse = 0x0010,
-
-    [Name("Hair Shine")]
-    HairSpecular = 0x0020,
 
     [Name("Hair Highlights")]
     HairHighlight = 0x0040,

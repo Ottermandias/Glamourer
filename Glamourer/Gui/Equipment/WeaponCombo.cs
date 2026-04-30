@@ -16,7 +16,7 @@ public sealed class WeaponCombo(FavoriteManager favorites, ItemManager items, Co
 
     protected override bool Identify(out EquipItem item)
     {
-        if (Slot is not FullEquipType.Unknown && ItemData.ConvertWeaponId(CustomSetId) != CurrentItem.Type)
+        if (Slot is not FullEquipType.Unknown && !ItemData.ConvertWeaponId(CustomSetId).IsCompatible(CurrentItem.Type))
         {
             item = default;
             return false;
@@ -42,7 +42,12 @@ public sealed class WeaponCombo(FavoriteManager favorites, ItemManager items, Co
         if (!Items.ItemData.ByType.TryGetValue(Slot, out var list))
             return [];
 
-        IEnumerable<EquipItem> ret = list.OrderByDescending(Favorites.Contains).ThenBy(e => e.Name);
+        var enumerator = list.AsEnumerable();
+        foreach(var compatible in Slot.CompatibleTypes())
+            if (Items.ItemData.ByType.TryGetValue(compatible, out var l2))
+                enumerator = enumerator.Concat(l2);
+
+        IEnumerable<EquipItem> ret = enumerator.OrderByDescending(Favorites.Contains).ThenBy(e => e.Name);
         if (Slot.AllowsNothing())
             ret = ret.Prepend(ItemManager.NothingItem(Slot));
         return ret.Select(e => new CacheItem(e));

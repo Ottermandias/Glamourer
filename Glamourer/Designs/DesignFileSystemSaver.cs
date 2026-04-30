@@ -18,14 +18,20 @@ public sealed class DesignFileSystemSaver(LunaLogger log, BaseFileSystem fileSys
     protected override string ExpandedFile(FilenameService provider)
         => provider.FileSystemExpandedFolders;
 
-    protected override string EmptyFoldersFile(FilenameService provider)
-        => provider.FileSystemEmptyFolders;
+    protected override string OrganizationFile(FilenameService provider)
+        => provider.FileSystemOrganization;
+
+    protected override string EmptyFoldersMigrationFile(FilenameService provider)
+        => provider.MigrationFileSystemEmptyFolders;
 
     protected override string SelectionFile(FilenameService provider)
         => provider.FileSystemSelectedNodes;
 
     protected override string MigrationFile(FilenameService provider)
         => provider.MigrationDesignFileSystem;
+
+    protected override ISortMode? ParseSortMode(string name)
+        => ISortMode.Valid.GetValueOrDefault(name);
 
     protected override bool GetValueFromIdentifier(ReadOnlySpan<char> identifier, [NotNullWhen(true)] out IFileSystemValue? value)
     {

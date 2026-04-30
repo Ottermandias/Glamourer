@@ -84,14 +84,10 @@ public class PaletteImport(IDalamudPluginInterface pluginInterface, DesignManage
                 var                    discard = 0f;
                 Parse("SkinTone",           CustomizeParameterFlag.SkinDiffuse,
                     ref data.SkinDiffuse.X, ref data.SkinDiffuse.Y, ref data.SkinDiffuse.Z, ref discard);
-                Parse("SkinGloss",           CustomizeParameterFlag.SkinSpecular,
-                    ref data.SkinSpecular.X, ref data.SkinSpecular.Y, ref data.SkinSpecular.Z, ref discard);
                 Parse("LipColor",          CustomizeParameterFlag.LipDiffuse,
                     ref data.LipDiffuse.X, ref data.LipDiffuse.Y, ref data.LipDiffuse.Z, ref data.LipDiffuse.W);
                 Parse("HairColor",          CustomizeParameterFlag.HairDiffuse,
                     ref data.HairDiffuse.X, ref data.HairDiffuse.Y, ref data.HairDiffuse.Z, ref discard);
-                Parse("HairShine",           CustomizeParameterFlag.HairSpecular,
-                    ref data.HairSpecular.X, ref data.HairSpecular.Y, ref data.HairSpecular.Z, ref discard);
                 Parse("LeftEyeColor",   CustomizeParameterFlag.LeftEye,
                     ref data.LeftEye.X, ref data.LeftEye.Y, ref data.LeftEye.Z, ref discard);
                 Parse("RaceFeatureColor",    CustomizeParameterFlag.FeatureColor,

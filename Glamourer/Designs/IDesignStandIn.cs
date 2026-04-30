@@ -1,7 +1,9 @@
 ﻿using Glamourer.Automation;
+using Glamourer.Designs.Links;
 using Glamourer.Interop.Material;
 using Glamourer.State;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
 namespace Glamourer.Designs;
@@ -16,7 +18,8 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
     public string      SerializeName();
     public StateSource AssociatedSource();
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication);
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication,
+        Predicate<DesignConditions>? condition);
 
     public void AddData(JObject jObj);
 
@@ -26,6 +29,7 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
 
     public bool ForcedRedraw { get; }
 
-    public bool ResetAdvancedDyes      { get; }
-    public bool ResetTemporarySettings { get; }
+    public CombinedItemSlotFlag ResetAdvancedDyes      { get; }
+    public CombinedItemSlotFlag RevertAdvancedDyes     { get; }
+    public bool                 ResetTemporarySettings { get; }
 }

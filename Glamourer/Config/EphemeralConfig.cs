@@ -19,6 +19,7 @@ public partial class EphemeralConfig : ISavable, IService
     public bool        ShowDesignQuickBar  { get; set; }
     public bool        LockDesignQuickBar  { get; set; }
     public bool        LockMainWindow      { get; set; }
+    public bool        LockEquipmentBar    { get; set; }
     public MainTabType SelectedMainTab     { get; set; } = MainTabType.Settings;
     public Guid        SelectedQuickDesign { get; set; } = Guid.Empty;
     public int         LastSeenVersion     { get; set; } = GlamourerChangelog.LastChangelogVersion;

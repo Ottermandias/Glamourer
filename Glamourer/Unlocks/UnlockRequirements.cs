@@ -42,7 +42,7 @@ public readonly record struct UnlockRequirements(uint Quest1, uint Quest2, uint 
             ItemUnlockManager.UnlockType.Quest1 | ItemUnlockManager.UnlockType.Quest2 | ItemUnlockManager.UnlockType.Achievement => CheckQuest(Quest1)
              && CheckQuest(Quest2)
              && CheckAchievement(Achievement),
-            ItemUnlockManager.UnlockType.Cabinet => uiState->Cabinet.IsCabinetLoaded() && uiState->Cabinet.IsItemInCabinet((int)Quest1),
+            ItemUnlockManager.UnlockType.Cabinet => uiState->Cabinet.IsCabinetLoaded() && uiState->Cabinet.IsItemInCabinet(Quest1),
             _                                    => false,
         };
     }

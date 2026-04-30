@@ -129,10 +129,10 @@ internal class CustomizeSetFactory(
             throw new ArgumentOutOfRangeException(nameof(race), race, null);
 
         var gv  = gender == Gender.Male ? 0 : 1;
-        var idx = ((int)race * 2 + gv) * 5 + 3;
+        var idx = (((int)race - 1) * 2 + gv) * 5 + 3;
 
-        return (CreateColors(_colorParameters, CustomizeIndex.SkinColor, idx << 8,       192),
-            CreateColors(_colorParameters,     CustomizeIndex.HairColor, (idx + 1) << 8, 192));
+        return (CreateColors(_colorParameters, CustomizeIndex.SkinColor, 0x1200 + (idx << 8),       192),
+            CreateColors(_colorParameters,     CustomizeIndex.HairColor, 0x1200 + ((idx + 1) << 8), 192));
     }
 
     /// <summary> Obtain the gender-specific clan name. </summary>

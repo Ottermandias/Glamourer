@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Structs;
 using Luna;
+using Penumbra.GameData.Enums;
 using Notification = Luna.Notification;
 
 namespace Glamourer.Designs;
@@ -34,6 +35,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         ForcedRedraw           = other.ForcedRedraw;
         ResetAdvancedDyes      = other.ResetAdvancedDyes;
         ResetTemporarySettings = other.ResetTemporarySettings;
+        RevertAdvancedDyes     = other.RevertAdvancedDyes;
         Color                  = other.Color;
         AssociatedMods         = new SortedList<Mod, ModSettings>(other.AssociatedMods);
         Links                  = Links.Clone();
@@ -51,7 +53,8 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
     public string[]                     Tags                   { get; internal set; } = [];
     public int                          Index                  { get; internal set; }
     public bool                         ForcedRedraw           { get; internal set; }
-    public bool                         ResetAdvancedDyes      { get; internal set; }
+    public CombinedItemSlotFlag         ResetAdvancedDyes      { get; internal set; }
+    public CombinedItemSlotFlag         RevertAdvancedDyes     { get; internal set; }
     public bool                         ResetTemporarySettings { get; internal set; }
     public bool                         QuickDesign            { get; internal set; } = true;
     public string                       Color                  { get; internal set; } = string.Empty;
@@ -62,8 +65,9 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
     public string Incognito
         => Identifier.ToString()[..8];
 
-    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication)
-        => LinkContainer.GetAllLinks(this).Select(t => ((IDesignStandIn)t.Link.Link, t.Link.Type, JobFlag.All));
+    public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication,
+        Predicate<DesignConditions>? condition)
+        => LinkContainer.GetAllLinks(this, condition).Select(t => ((IDesignStandIn)t.Link.Link, t.Link.Type, JobFlag.All));
 
     #endregion
 
@@ -111,8 +115,9 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
             ["Name"]                   = Name,
             ["Description"]            = Description,
             ["ForcedRedraw"]           = ForcedRedraw,
-            ["ResetAdvancedDyes"]      = ResetAdvancedDyes,
+            ["ResetAdvancedDyes"]      = (uint)ResetAdvancedDyes,
             ["ResetTemporarySettings"] = ResetTemporarySettings,
+            ["RevertAdvancedDyes"]     = (uint)RevertAdvancedDyes,
             ["Color"]                  = Color,
             ["QuickDesign"]            = QuickDesign,
             ["Tags"]                   = JArray.FromObject(Tags),
@@ -271,14 +276,26 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         LoadLinks(linkLoader, json["Links"], design);
         design.Color                  = json["Color"]?.ToObject<string>() ?? string.Empty;
         design.ForcedRedraw           = json["ForcedRedraw"]?.ToObject<bool>() ?? false;
-        design.ResetAdvancedDyes      = json["ResetAdvancedDyes"]?.ToObject<bool>() ?? false;
+        design.ResetAdvancedDyes      = ParseCombinedItemSlotFlag(json["ResetAdvancedDyes"]);
         design.ResetTemporarySettings = json["ResetTemporarySettings"]?.ToObject<bool>() ?? false;
+        design.RevertAdvancedDyes     = ParseCombinedItemSlotFlag(json["RevertAdvancedDyes"]);
         return design;
 
         static string[] ParseTags(JObject json)
         {
             var tags = json["Tags"]?.ToObject<string[]>() ?? [];
             return tags.OrderBy(t => t).Distinct().ToArray();
+        }
+
+        static CombinedItemSlotFlag ParseCombinedItemSlotFlag(JToken? json)
+        {
+            if (json is null)
+                return 0;
+
+            if (json.Type is JTokenType.Boolean)
+                return (bool)json ? EquipFlagExtensions.AllCombined : 0;
+
+            return (CombinedItemSlotFlag)(uint)json;
         }
     }
 
@@ -329,7 +346,8 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
             {
                 var identifier = jObj["Design"]?.ToObject<Guid>() ?? throw new ArgumentNullException(nameof(design));
                 var type       = (ApplicationType)(jObj["Type"]?.ToObject<uint>() ?? 0);
-                linkLoader.AddObject(design, new LinkData(identifier, type, order));
+                var conditions = DesignConditionData.Deserialize(jObj["Conditions"]);
+                linkLoader.AddObject(design, new LinkData(identifier, type, conditions, order));
             }
         }
     }

@@ -195,3 +195,29 @@ public record ApplicationTransaction(object Index, bool Old, bool New)
         }
     }
 }
+
+/// <remarks> Only Designs. </remarks>
+public record ResetAdvancedDyesTransaction(CombinedItemSlotFlag Old, CombinedItemSlotFlag New)
+    : ITransaction
+{
+    public ITransaction? Merge(ITransaction other)
+        => other is ResetAdvancedDyesTransaction previous
+            ? new ResetAdvancedDyesTransaction(previous.Old, New)
+            : null;
+
+    public void Revert(IDesignEditor editor, object data)
+        => ((DesignManager)editor).ChangeResetAdvancedDyes((Design)data, Old);
+}
+
+/// <remarks> Only Designs. </remarks>
+public record SlotMaterialRevertTransaction(CombinedItemSlotFlag Old, CombinedItemSlotFlag New)
+    : ITransaction
+{
+    public ITransaction? Merge(ITransaction other)
+        => other is SlotMaterialRevertTransaction previous
+            ? new SlotMaterialRevertTransaction(previous.Old, New)
+            : null;
+
+    public void Revert(IDesignEditor editor, object data)
+        => ((DesignManager)editor).ChangeRevertAdvancedDyes((Design)data, Old);
+}
