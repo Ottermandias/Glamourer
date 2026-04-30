@@ -12,7 +12,7 @@ public sealed class UnlocksTab : Window, ITab<MainTabType>
     private readonly UnlockTable            _table;
 
     public UnlocksTab(Config.EphemeralConfig config, UnlockOverview overview, UnlockTable table)
-        : base("Unlocked Equipment")
+        : base("Equipment & Customization Log")
     {
         _config   = config;
         _overview = overview;
@@ -38,7 +38,7 @@ public sealed class UnlocksTab : Window, ITab<MainTabType>
     }
 
     public ReadOnlySpan<byte> Label
-        => "Unlocks"u8;
+        => "Item Log"u8;
 
     public MainTabType Identifier
         => MainTabType.Unlocks;
