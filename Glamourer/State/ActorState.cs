@@ -28,7 +28,7 @@ public class ActorState
     public uint Combination;
 
     /// <summary> The territory the draw object was created last. </summary>
-    public ushort LastTerritory;
+    public uint LastTerritory;
 
     /// <summary> State for specific material values. </summary>
     public readonly StateMaterialManager Materials = new();
@@ -79,7 +79,7 @@ public class ActorState
         => CustomizeParameterExtensions.AllFlags.Where(f => Sources[f] is not StateSource.Game)
             .Aggregate((CustomizeParameterFlag)0, (a, b) => a | b);
 
-    public bool UpdateTerritory(ushort territory)
+    public bool UpdateTerritory(uint territory)
     {
         if (territory == LastTerritory)
             return false;

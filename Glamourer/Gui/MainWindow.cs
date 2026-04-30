@@ -1,10 +1,12 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using ImSharp;
 using Luna;
+using Window = Luna.Window;
 
 namespace Glamourer.Gui;
 

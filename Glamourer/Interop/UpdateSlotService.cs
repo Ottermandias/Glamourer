@@ -29,7 +29,7 @@ public sealed unsafe class UpdateSlotService : IDisposable, IRequiredService
         _bonusItems            = bonusItems;
 
         interop.InitializeFromAttributes(this);
-        _loadGearsetDataHook = interop.HookFromAddress<LoadGearsetDataDelegate>((nint)DrawDataContainer.MemberFunctionPointers.LoadGearsetData, LoadGearsetDataDetour);
+        _loadGearsetDataHook = interop.HookFromAddress<LoadGearsetDataDelegate>((nint)DrawDataContainer.MemberFunctionPointers.HandleGearsetDrawDataPacket, LoadGearsetDataDetour);
         _flagSlotForUpdateHook.Enable();
         _flagBonusSlotForUpdateHook.Enable();
         _loadGearsetDataHook.Enable();
@@ -91,7 +91,7 @@ public sealed unsafe class UpdateSlotService : IDisposable, IRequiredService
     /// <summary> Detours the func that makes all FlagSlotForUpdate calls on a gearset change or initial render of a given actor (Only Cases this is Called).
     /// <para> Logic done after returning the original hook executes <b>After</b> all equipment/weapon/crest data is loaded into the Actors BaseData. </para>
     /// </summary>
-    private delegate ulong LoadGearsetDataDelegate(DrawDataContainer* drawDataContainer, PacketPlayerGearsetData* gearsetData);
+    private delegate void LoadGearsetDataDelegate(DrawDataContainer* drawDataContainer, GearsetDrawDataPacket* gearsetData);
     private readonly Hook<LoadGearsetDataDelegate> _loadGearsetDataHook;
 
     private ulong FlagSlotForUpdateDetour(nint drawObject, uint slotIdx, CharacterArmor* data)
@@ -117,17 +117,16 @@ public sealed unsafe class UpdateSlotService : IDisposable, IRequiredService
         Glamourer.Log.Excessive($"[FlagBonusSlotForUpdate] Glamourer-Invoked on 0x{drawObject.Address:X} on {slot} with item data {armor}.");
         return _flagSlotForUpdateHook.Original(drawObject.Address, slot.ToIndex(), &armor);
     }
-    private ulong LoadGearsetDataDetour(DrawDataContainer* drawDataContainer, PacketPlayerGearsetData* gearsetData)
+    private void LoadGearsetDataDetour(DrawDataContainer* drawDataContainer, GearsetDrawDataPacket* gearsetData)
     {
-        var ret = _loadGearsetDataHook.Original(drawDataContainer, gearsetData);
+        _loadGearsetDataHook.Original(drawDataContainer, gearsetData);
         var drawObject = drawDataContainer->OwnerObject->DrawObject;
         GearsetDataLoadedEvent.Invoke(new GearsetDataLoaded.Arguments(drawDataContainer->OwnerObject, drawObject));
         Glamourer.Log.Excessive($"[LoadAllEquipmentDetour] GearsetItemData: {FormatGearsetItemDataStruct(*gearsetData)}");
-        return ret;
     }
 
 
-    private static string FormatGearsetItemDataStruct(PacketPlayerGearsetData gearsetData)
+    private static string FormatGearsetItemDataStruct(GearsetDrawDataPacket gearsetData)
     {
         var ret =
             $"\nMainhandWeaponData: Id: {gearsetData.MainhandWeaponData.Id}, Type: {gearsetData.MainhandWeaponData.Type}, " +

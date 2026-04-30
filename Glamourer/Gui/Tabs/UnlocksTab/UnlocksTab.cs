@@ -1,5 +1,7 @@
-﻿using ImSharp;
+﻿using Dalamud.Interface.Windowing;
+using ImSharp;
 using Luna;
+using Window = Luna.Window;
 
 namespace Glamourer.Gui.Tabs.UnlocksTab;
 

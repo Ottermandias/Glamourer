@@ -1,4 +1,5 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
+﻿using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Glamourer.Automation;
 using Glamourer.Config;
 using Glamourer.Events;
@@ -7,6 +8,7 @@ using Glamourer.Services;
 using ImSharp;
 using Luna;
 using Penumbra.GameData.Structs;
+using Window = Luna.Window;
 
 namespace Glamourer.Gui.Tabs.AutomationTab;
 

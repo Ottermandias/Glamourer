@@ -53,11 +53,11 @@ public sealed class VisorService : IDisposable, IRequiredService
         return true;
     }
 
-    private delegate void UpdateVisorDelegateInternal(nint humanPtr, ushort modelId, byte on);
+    private delegate byte UpdateVisorDelegateInternal(nint humanPtr, ushort modelId, byte on);
 
     private Hook<UpdateVisorDelegateInternal> _setupVisorHook;
 
-    private void SetupVisorDetour(nint human, ushort modelId, byte value)
+    private byte SetupVisorDetour(nint human, ushort modelId, byte value)
     {
         var originalOn = value is not 0;
         var on         = originalOn;
@@ -68,7 +68,7 @@ public sealed class VisorService : IDisposable, IRequiredService
         Glamourer.Log.Verbose(
             $"[SetVisorState] Invoked from game on 0x{human:X} switching to {on} (original {originalOn} from {value} with {modelId}).");
 
-        SetupVisorDetour(human, modelId, on);
+        return SetupVisorDetour(human, modelId, on);
     }
 
     /// <summary>
@@ -77,10 +77,10 @@ public sealed class VisorService : IDisposable, IRequiredService
     /// So we wrap a manual change of that flag with the function call.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private unsafe void SetupVisorDetour(Model human, ushort modelId, bool on)
+    private unsafe byte SetupVisorDetour(Model human, ushort modelId, bool on)
     {
         human.AsCharacterBase->VisorToggled = on;
-        _setupVisorHook.Original(human.Address, modelId, on ? (byte)1 : (byte)0);
+        return _setupVisorHook.Original(human.Address, modelId, on ? (byte)1 : (byte)0);
     }
 
     private unsafe Hook<UpdateVisorDelegateInternal> Create()
