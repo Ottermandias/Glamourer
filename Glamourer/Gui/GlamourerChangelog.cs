@@ -87,7 +87,7 @@ public sealed class GlamourerChangelog : IUiService
                 "The context menu for folders in the design filesystem has been slightly edited. Using the 'Edit Folder' sub menu you can now specify individual colors and sort-modes for specific folders only."u8,
                 1)
             .RegisterHighlight(
-                "Added a new framework for compatible weapons. Currently, this supports replacing blackmage and whitemage staves and one-handed weapons (+ shield) interchangably, but it might be expanded."u8)
+                "Added a new framework for compatible weapons. Currently, this supports replacing black mage and white mage staves and one-handed weapons (+ shield) interchangably, but it might be expanded."u8)
             .RegisterEntry(
                 "Be aware that this may still cause animation failures or other issues, but until I get reports of any critical issues, I deem this safe enough."u8,
                 1)
@@ -96,9 +96,11 @@ public sealed class GlamourerChangelog : IUiService
             .RegisterHighlight("Added job and gearset conditions to design links, just like in automation sets (Thanks Ny!)."u8)
             .RegisterHighlight("Added the option to reset and revert advanced dyes per gear slot in a design."u8)
             .RegisterEntry(
-                "Reset behaves as before, resetting any previously existing advanced dyes on its respective slot, but still keeping those dyes free for application for other designs."u8)
+                "Reset behaves as before, resetting any previously existing advanced dyes on its respective slot, but still keeping those dyes free for application for other designs."u8,
+                1)
             .RegisterEntry(
-                "Revert is a new option in the Advanced Dyes section of a design and removes all advanced dyes for its respective slot while also marking them as applied, so that later designs can not apply to them."u8)
+                "Revert is a new option in the Advanced Dyes section of a design and removes all advanced dyes for its respective slot while also marking them as applied, so that later designs can not apply to them."u8,
+                1)
             .RegisterEntry("Fixed an issue with syncing and replacement gear protection."u8)
             .RegisterEntry("Fixed some display issues with disabled states."u8)
             .RegisterEntry(
