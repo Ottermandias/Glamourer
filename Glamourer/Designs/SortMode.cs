@@ -14,7 +14,12 @@ public readonly struct CreationDate : ISortMode
         => "In each folder, sort all subfolders lexicographically, then sort all leaves using their creation date."u8;
 
     public IEnumerable<IFileSystemNode> GetChildren(IFileSystemFolder f)
-        => f.GetSubFolders().Cast<IFileSystemNode>().Concat(f.GetLeaves().OfType<IFileSystemData<Design>>().OrderBy(l => l.Value.CreationDate));
+        => ISortMode.GetFolderLike(f).Concat(ISortMode.GetLeaveLike(f).OrderBy(l => l switch
+        {
+            IFileSystemData<Design> d => d.Value.CreationDate.ToUnixTimeMilliseconds(),
+            IFileSystemSeparator s => s.CreationDate,
+            _ => 0L,
+        }));
 }
 
 public readonly struct UpdateDate : ISortMode
@@ -28,7 +33,12 @@ public readonly struct UpdateDate : ISortMode
         => "In each folder, sort all subfolders lexicographically, then sort all leaves using their last update date."u8;
 
     public IEnumerable<IFileSystemNode> GetChildren(IFileSystemFolder f)
-        => f.GetSubFolders().Cast<IFileSystemNode>().Concat(f.GetLeaves().OfType<IFileSystemData<Design>>().OrderBy(l => l.Value.LastEdit));
+        => ISortMode.GetFolderLike(f).Concat(ISortMode.GetLeaveLike(f).OrderBy(l => l switch
+        {
+            IFileSystemData<Design> d => d.Value.LastEdit.ToUnixTimeMilliseconds(),
+            IFileSystemSeparator s    => s.CreationDate,
+            _                         => 0L,
+        }));
 }
 
 public readonly struct InverseCreationDate : ISortMode
@@ -42,8 +52,12 @@ public readonly struct InverseCreationDate : ISortMode
         => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse creation date."u8;
 
     public IEnumerable<IFileSystemNode> GetChildren(IFileSystemFolder f)
-        => f.GetSubFolders().Cast<IFileSystemNode>()
-            .Concat(f.GetLeaves().OfType<IFileSystemData<Design>>().OrderByDescending(l => l.Value.CreationDate));
+        => ISortMode.GetFolderLike(f).Concat(ISortMode.GetLeaveLike(f).OrderByDescending(l => l switch
+        {
+            IFileSystemData<Design> d => d.Value.CreationDate.ToUnixTimeMilliseconds(),
+            IFileSystemSeparator s    => s.CreationDate,
+            _                         => 0L,
+        }));
 }
 
 public readonly struct InverseUpdateDate : ISortMode
@@ -57,8 +71,12 @@ public readonly struct InverseUpdateDate : ISortMode
         => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse last update date."u8;
 
     public IEnumerable<IFileSystemNode> GetChildren(IFileSystemFolder f)
-        => f.GetSubFolders().Cast<IFileSystemNode>()
-            .Concat(f.GetLeaves().OfType<IFileSystemData<Design>>().OrderByDescending(l => l.Value.LastEdit));
+        => ISortMode.GetFolderLike(f).Concat(ISortMode.GetLeaveLike(f).OrderBy(l => l switch
+        {
+            IFileSystemData<Design> d => d.Value.LastEdit.ToUnixTimeMilliseconds(),
+            IFileSystemSeparator s    => s.CreationDate,
+            _                         => 0L,
+        }));
 }
 
 public static class SortModeExtensions
