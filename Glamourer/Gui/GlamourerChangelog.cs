@@ -74,7 +74,7 @@ public sealed class GlamourerChangelog : IUiService
         => log.NextVersion("Version 1.6.1.0"u8)
             .RegisterHighlight("Glamourer has been updated for game version 7.50 and Dalamud API 15."u8)
             .RegisterEntry(
-                "Sadly, the game removed the specular advanced customization options for skin- and hair color, so Glamourer had to remove them too. This is probably in preparation for the changes in 8.0."u8)
+                "The game entirely removed the specular advanced customization options for skin- and hair color, which were already removed from visible editing in Glamourer. This is probably in preparation for the changes in 8.0. This means it is very unlikely for them to come back."u8, 1)
             .RegisterHighlight(
                 "Added an Automation Test Window that can check your automation sets against a job or gearset to see which design applies which changes."u8)
             .RegisterEntry("The Unlocks tab has been renamed to the Item Log tab."u8)
