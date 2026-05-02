@@ -71,7 +71,7 @@ public readonly struct InverseUpdateDate : ISortMode
         => "In each folder, sort all subfolders lexicographically, then sort all leaves using their inverse last update date."u8;
 
     public IEnumerable<IFileSystemNode> GetChildren(IFileSystemFolder f)
-        => ISortMode.GetFolderLike(f).Concat(ISortMode.GetLeaveLike(f).OrderBy(l => l switch
+        => ISortMode.GetFolderLike(f).Concat(ISortMode.GetLeaveLike(f).OrderByDescending(l => l switch
         {
             IFileSystemData<Design> d => d.Value.LastEdit.ToUnixTimeMilliseconds(),
             IFileSystemSeparator s    => s.CreationDate,
