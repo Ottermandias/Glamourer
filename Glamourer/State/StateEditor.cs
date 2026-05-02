@@ -376,12 +376,16 @@ public class StateEditor(
                     }
 
                     var currentType = state.BaseData.Item(weaponSlot).Type;
-                    if (mergedDesign.Weapons.TryGet(currentType, state.LastJob, true, out var weapon))
+                    foreach (var type in currentType.CompatibleTypes().Prepend(currentType))
                     {
+                        if (!mergedDesign.Weapons.TryGet(type, state.LastJob, true, out var weapon))
+                            continue;
+
                         var source = settings.UseSingleSource ? settings.Source :
                             weapon.Item2 is StateSource.Game  ? StateSource.Game : settings.Source;
                         Editor.ChangeItem(state, weaponSlot, weapon.Item1, source, out _,
                             settings.Key);
+                        break;
                     }
                 }
             }

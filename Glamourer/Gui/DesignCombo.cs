@@ -9,7 +9,7 @@ using Luna;
 namespace Glamourer.Gui;
 
 public abstract class DesignComboBase(
-    Config.EphemeralConfig config,
+    EphemeralConfig config,
     DesignManager designs,
     DesignChanged designChanged,
     DesignColors designColors,
@@ -17,19 +17,20 @@ public abstract class DesignComboBase(
     DesignFileSystem designFileSystem)
     : FilterComboBase<DesignComboBase.CacheItem>(new DesignFilter(), ConfigData.Default with { ComputeWidth = true })
 {
-    protected readonly Config.EphemeralConfig Config           = config;
-    protected readonly DesignChanged          DesignChanged    = designChanged;
-    protected readonly DesignColors           DesignColors     = designColors;
-    protected readonly DesignFileSystem       DesignFileSystem = designFileSystem;
-    protected readonly TabSelected            TabSelected      = tabSelected;
-    protected readonly DesignManager          Designs          = designs;
-    protected          IDesignStandIn?        CurrentDesign;
+    protected readonly EphemeralConfig  Config           = config;
+    protected readonly DesignChanged    DesignChanged    = designChanged;
+    protected readonly DesignColors     DesignColors     = designColors;
+    protected readonly DesignFileSystem DesignFileSystem = designFileSystem;
+    protected readonly TabSelected      TabSelected      = tabSelected;
+    protected readonly DesignManager    Designs          = designs;
+    protected          IDesignStandIn?  CurrentDesign;
 
     protected CacheItem CreateItem(IDesignStandIn design)
     {
-        var color = design is Design d1 ? DesignColors.GetColor(d1).ToVector() : ColorId.NormalDesign.Value().ToVector();
-        var path  = design is Design d2 ? d2.Node!.FullPath : string.Empty;
-        var name  = design.ResolveName(false);
+        var (color, path) = design is Design d
+            ? (DesignColors.GetColor(d).ToVector(), d.Node?.FullPath ?? d.Name)
+            : (ColorId.NormalDesign.Value().ToVector(), string.Empty);
+        var name = design.ResolveName(false);
         if (path == name)
             path = string.Empty;
         return new CacheItem(design, color, path, name);
@@ -117,11 +118,13 @@ public abstract class DesignComboBase(
         }
 
         protected override void ComputeWidth()
-            => ComboWidth = UnfilteredItems.Count > 0 ? UnfilteredItems.Max(d
-                => d.Name.Utf8.CalculateSize(false).X
-              + d.FullPath.Utf8.CalculateSize(false).X
-              + 2 * Im.Style.ItemSpacing.X
-              + Im.Style.ScrollbarSize) : 100 * Im.Style.GlobalScale;
+            => ComboWidth = UnfilteredItems.Count > 0
+                ? UnfilteredItems.Max(d
+                    => d.Name.Utf8.CalculateSize(false).X
+                  + d.FullPath.Utf8.CalculateSize(false).X
+                  + 2 * Im.Style.ItemSpacing.X
+                  + Im.Style.ScrollbarSize)
+                : 100 * Im.Style.GlobalScale;
 
         protected override void Dispose(bool disposing)
         {
@@ -267,7 +270,7 @@ public sealed class LinkDesignCombo : DesignComboBase, IUiService, IDisposable
 {
     public Design? NewSelection { get; private set; }
 
-    public LinkDesignCombo(Config.EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
+    public LinkDesignCombo(EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
         DesignFileSystem designFileSystem, DesignManager designs)
         : base(config, designs, designChanged, designColors, tabSelected, designFileSystem)
     {
@@ -299,7 +302,7 @@ public sealed class LinkDesignCombo : DesignComboBase, IUiService, IDisposable
 }
 
 public sealed class RandomDesignCombo(
-    Config.EphemeralConfig config,
+    EphemeralConfig config,
     DesignManager designs,
     DesignChanged designChanged,
     DesignColors designColors,
