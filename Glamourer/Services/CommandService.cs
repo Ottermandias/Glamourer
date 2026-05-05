@@ -7,6 +7,7 @@ using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.GameData;
 using Glamourer.Gui;
+using Glamourer.Gui.Tabs.ActorTab;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
@@ -29,6 +30,7 @@ public class CommandService : IDisposable, IApiService
     private readonly IChatGui           _chat;
     private readonly ActorManager       _actors;
     private readonly ActorObjectManager _objects;
+    private readonly ActorSelection     _stateSelection;
     private readonly StateManager       _stateManager;
     private readonly AutoDesignApplier  _autoDesignApplier;
     private readonly AutoDesignManager  _autoDesignManager;
@@ -40,12 +42,14 @@ public class CommandService : IDisposable, IApiService
     private readonly DesignConverter    _converter;
     private readonly DesignResolver     _resolver;
     private readonly PenumbraService    _penumbra;
+    private readonly EquipmentBarWindow _equipmentBar;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ActorObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier,
         ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService, DesignFileSystemDrawer designDrawer,
-        QuickDesignCombo quickDesignCombo, DesignResolver resolver, PenumbraService penumbra)
+        QuickDesignCombo quickDesignCombo, DesignResolver resolver, PenumbraService penumbra, EquipmentBarWindow equipmentBar,
+        ActorSelection stateSelection)
     {
         _commands          = commands;
         _mainWindow        = mainWindow;
@@ -63,6 +67,8 @@ public class CommandService : IDisposable, IApiService
         _customizeService  = customizeService;
         _resolver          = resolver;
         _penumbra          = penumbra;
+        _equipmentBar      = equipmentBar;
+        _stateSelection    = stateSelection;
 
         _commands.AddHandler(MainCommandString, new CommandInfo(OnGlamourer) { HelpMessage = "Open or close the Glamourer window." });
         _commands.AddHandler(ApplyCommandString,
@@ -78,6 +84,36 @@ public class CommandService : IDisposable, IApiService
     private void OnGlamourer(string command, string arguments)
     {
         if (arguments.Length > 0)
+        {
+            if (arguments.StartsWith("equip ") || arguments.StartsWith("e "))
+            {
+                _equipmentBar.IsOpen ^= true;
+                var args = arguments.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (args.Length is 2)
+                {
+                    if (IdentifierHandling(args[1], out var identifiers, false, true) && identifiers.Length > 0 && identifiers[0].IsValid)
+                    {
+                        _stateSelection.Select(identifiers[0], _objects.TryGetValue(identifiers[0], out var data) ? data : ActorData.Invalid);
+                        if (_stateSelection.State is null)
+                            _chat.Print(new SeStringBuilder().AddRed($"No valid state for {identifiers[0]} could be created.").BuiltString);
+                    }
+                    else
+                    {
+                        _chat.Print("The compact equipment bar will only display when a valid state can be selected.");
+                        _chat.Print(new SeStringBuilder().AddText("Use ").AddRed("/glamourer ").AddBlue("equip")
+                            .AddText(
+                                " without arguments to open the compact equipment bar with the current selection or your player character, if available.")
+                            .BuiltString);
+                        _chat.Print(new SeStringBuilder().AddText("Use ").AddRed("/glamourer ").AddBlue("equip ").AddGreen("<Identifier>")
+                            .AddText(
+                                " to open the compact equipment bar for the given character, if possible.").BuiltString);
+                        PlayerIdentifierHelp(false, true);
+                    }
+                }
+
+                return;
+            }
+
             switch (arguments)
             {
                 case "qdb":
@@ -94,6 +130,19 @@ public class CommandService : IDisposable, IApiService
                     _config.Ephemeral.LockMainWindow = !_config.Ephemeral.LockMainWindow;
                     _config.Ephemeral.Save();
                     return;
+                case "equip":
+                case "e":
+                    if (_stateSelection.State is null)
+                    {
+                        var (ident, data) = _objects.PlayerData;
+                        _stateSelection.Select(ident, data);
+                        if (_stateSelection.State is null)
+                            _chat.Print(new SeStringBuilder().AddRed("No valid state was selected, or could be created for the current player.")
+                                .BuiltString);
+                    }
+
+                    _equipmentBar.IsOpen ^= true;
+                    return;
                 case "automation":
                     var newValue = !_config.EnableAutoDesigns;
                     _config.EnableAutoDesigns = newValue;
@@ -107,10 +156,14 @@ public class CommandService : IDisposable, IApiService
                         .AddText(" for application commands.").BuiltString);
                     _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "qdb", "Toggles the quick design bar on or off.")
                         .BuiltString);
+                    _chat.Print(SeStringBuilderExtensions.AddCommand(new SeStringBuilder(), "equip",
+                            "Toggles the compact equipment bar on or off. Note that showing the bar closes the main window if it is open.")
+                        .BuiltString);
                     _chat.Print(SeStringBuilderExtensions
                         .AddCommand(new SeStringBuilder(), "lock", "Toggles the lock of the main window on or off.").BuiltString);
                     return;
             }
+        }
 
         _mainWindow.Toggle();
     }

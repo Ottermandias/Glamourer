@@ -32,7 +32,10 @@ public sealed class ActorSelection(StateManager manager, ActorObjectManager obje
         {
             ActorName     = new StringU8(data.Label);
             IncognitoName = new StringU8(Identifier.Incognito(data.Label));
-            State         = data.Valid && manager.GetOrCreate(Identifier, data.Objects[0], out var s) ? s : null;
+            // Try to get an existing state, or try to create one if possible.
+            State = manager.TryGetValue(Identifier, out var s) || data.Valid && manager.GetOrCreate(Identifier, data.Objects[0], out s)
+                ? s
+                : null;
             ShortName = Identifier.Type switch
             {
                 IdentifierType.Player   => IncognitoName,

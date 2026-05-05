@@ -63,7 +63,10 @@ public class EquipmentBarWindow : Window, IDisposable
         => _mainWindow.IsOpen = false;
 
     public override bool DrawConditions()
-        => _selection.State is not null;
+    {
+        _selection.Update();
+        return _selection.State is not null;
+    }
 
     public override void PreDraw()
     {
