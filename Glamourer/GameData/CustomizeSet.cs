@@ -74,15 +74,13 @@ public class CustomizeSet
         Array.Empty<(CustomizeIndex Type, CustomizeValue Value)>();
 
     // Always Color Selector
-    public IReadOnlyList<CustomizeData> SkinColors           { get; internal init; } = null!;
-    public IReadOnlyList<CustomizeData> HairColors           { get; internal init; } = null!;
-    public IReadOnlyList<CustomizeData> HighlightColors      { get; internal init; } = null!;
-    public IReadOnlyList<CustomizeData> EyeColors            { get; internal init; } = null!;
-    public IReadOnlyList<CustomizeData> TattooColors         { get; internal init; } = null!;
-    public IReadOnlyList<CustomizeData> FacePaintColorsLight { get; internal init; } = null!;
-    public IReadOnlyList<CustomizeData> FacePaintColorsDark  { get; internal init; } = null!;
-    public IReadOnlyList<CustomizeData> LipColorsLight       { get; internal init; } = null!;
-    public IReadOnlyList<CustomizeData> LipColorsDark        { get; internal init; } = null!;
+    public IReadOnlyList<CustomizeData> SkinColors      { get; internal init; } = null!;
+    public IReadOnlyList<CustomizeData> HairColors      { get; internal init; } = null!;
+    public IReadOnlyList<CustomizeData> HighlightColors { get; internal init; } = null!;
+    public IReadOnlyList<CustomizeData> EyeColors       { get; internal init; } = null!;
+    public IReadOnlyList<CustomizeData> TattooColors    { get; internal init; } = null!;
+    public IReadOnlyList<CustomizeData> FacePaintColors { get; internal init; } = null!;
+    public IReadOnlyList<CustomizeData> LipColors       { get; internal init; } = null!;
 
     public bool Validate(CustomizeIndex index, CustomizeValue value, out CustomizeData? custom, CustomizeValue face)
     {
@@ -111,25 +109,25 @@ public class CustomizeSet
                     value, out custom),
                 CustomizeIndex.TailShape => Get(TailEarShapes, value, out custom),
                 CustomizeIndex.FacePaint => Get(FacePaints,    value, out custom),
-                CustomizeIndex.LipColor  => Get(LipColorsDark, value, out custom),
+                CustomizeIndex.LipColor  => Get(LipColors,     value, out custom),
                 _                        => Invalid(out custom),
             },
             MenuType.ColorPicker => index switch
             {
-                CustomizeIndex.SkinColor       => Get(SkinColors,                                       value, out custom),
-                CustomizeIndex.EyeColorLeft    => Get(EyeColors,                                        value, out custom),
-                CustomizeIndex.EyeColorRight   => Get(EyeColors,                                        value, out custom),
-                CustomizeIndex.HairColor       => Get(HairColors,                                       value, out custom),
-                CustomizeIndex.HighlightsColor => Get(HighlightColors,                                  value, out custom),
-                CustomizeIndex.TattooColor     => Get(TattooColors,                                     value, out custom),
-                CustomizeIndex.LipColor        => Get(LipColorsDark.Concat(LipColorsLight),             value, out custom),
-                CustomizeIndex.FacePaintColor  => Get(FacePaintColorsDark.Concat(FacePaintColorsLight), value, out custom),
+                CustomizeIndex.SkinColor       => Get(SkinColors,      value, out custom),
+                CustomizeIndex.EyeColorLeft    => Get(EyeColors,       value, out custom),
+                CustomizeIndex.EyeColorRight   => Get(EyeColors,       value, out custom),
+                CustomizeIndex.HairColor       => Get(HairColors,      value, out custom),
+                CustomizeIndex.HighlightsColor => Get(HighlightColors, value, out custom),
+                CustomizeIndex.TattooColor     => Get(TattooColors,    value, out custom),
+                CustomizeIndex.LipColor        => Get(LipColors,       value, out custom),
+                CustomizeIndex.FacePaintColor  => Get(FacePaintColors, value, out custom),
                 _                              => Invalid(out custom),
             },
             MenuType.DoubleColorPicker => index switch
             {
-                CustomizeIndex.LipColor       => Get(LipColorsDark.Concat(LipColorsLight),             value, out custom),
-                CustomizeIndex.FacePaintColor => Get(FacePaintColorsDark.Concat(FacePaintColorsLight), value, out custom),
+                CustomizeIndex.LipColor       => Get(LipColors,       value, out custom),
+                CustomizeIndex.FacePaintColor => Get(FacePaintColors, value, out custom),
                 _                             => Invalid(out custom),
             },
             MenuType.IconCheckmark => GetBool(index, value, out custom),
@@ -225,22 +223,22 @@ public class CustomizeSet
             CustomizeIndex.Hairstyle       => face < HairByFace.Count ? HairByFace[face.Value][idx] : HairStyles[idx],
             CustomizeIndex.TailShape       => TailEarShapes[idx],
             CustomizeIndex.FacePaint       => FacePaints[idx],
-            CustomizeIndex.FacialFeature1  => idx == 0 ? FacialFeature1[face.Value].Item1 : FacialFeature1[face.Value].Item2,
-            CustomizeIndex.FacialFeature2  => idx == 0 ? FacialFeature2[face.Value].Item1 : FacialFeature2[face.Value].Item2,
-            CustomizeIndex.FacialFeature3  => idx == 0 ? FacialFeature3[face.Value].Item1 : FacialFeature3[face.Value].Item2,
-            CustomizeIndex.FacialFeature4  => idx == 0 ? FacialFeature4[face.Value].Item1 : FacialFeature4[face.Value].Item2,
-            CustomizeIndex.FacialFeature5  => idx == 0 ? FacialFeature5[face.Value].Item1 : FacialFeature5[face.Value].Item2,
-            CustomizeIndex.FacialFeature6  => idx == 0 ? FacialFeature6[face.Value].Item1 : FacialFeature6[face.Value].Item2,
-            CustomizeIndex.FacialFeature7  => idx == 0 ? FacialFeature7[face.Value].Item1 : FacialFeature7[face.Value].Item2,
-            CustomizeIndex.LegacyTattoo    => idx == 0 ? LegacyTattoo.Item1 : LegacyTattoo.Item2,
+            CustomizeIndex.FacialFeature1  => idx is 0 ? FacialFeature1[face.Value].Item1 : FacialFeature1[face.Value].Item2,
+            CustomizeIndex.FacialFeature2  => idx is 0 ? FacialFeature2[face.Value].Item1 : FacialFeature2[face.Value].Item2,
+            CustomizeIndex.FacialFeature3  => idx is 0 ? FacialFeature3[face.Value].Item1 : FacialFeature3[face.Value].Item2,
+            CustomizeIndex.FacialFeature4  => idx is 0 ? FacialFeature4[face.Value].Item1 : FacialFeature4[face.Value].Item2,
+            CustomizeIndex.FacialFeature5  => idx is 0 ? FacialFeature5[face.Value].Item1 : FacialFeature5[face.Value].Item2,
+            CustomizeIndex.FacialFeature6  => idx is 0 ? FacialFeature6[face.Value].Item1 : FacialFeature6[face.Value].Item2,
+            CustomizeIndex.FacialFeature7  => idx is 0 ? FacialFeature7[face.Value].Item1 : FacialFeature7[face.Value].Item2,
+            CustomizeIndex.LegacyTattoo    => idx is 0 ? LegacyTattoo.Item1 : LegacyTattoo.Item2,
             CustomizeIndex.SkinColor       => SkinColors[idx],
             CustomizeIndex.EyeColorLeft    => EyeColors[idx],
             CustomizeIndex.EyeColorRight   => EyeColors[idx],
             CustomizeIndex.HairColor       => HairColors[idx],
             CustomizeIndex.HighlightsColor => HighlightColors[idx],
             CustomizeIndex.TattooColor     => TattooColors[idx],
-            CustomizeIndex.LipColor        => idx < 96 ? LipColorsDark[idx] : LipColorsLight[idx - 96],
-            CustomizeIndex.FacePaintColor  => idx < 96 ? FacePaintColorsDark[idx] : FacePaintColorsLight[idx - 96],
+            CustomizeIndex.LipColor        => LipColors[idx],
+            CustomizeIndex.FacePaintColor  => FacePaintColors[idx],
             _                              => new CustomizeData(0, CustomizeValue.Zero),
         };
     }
@@ -281,10 +279,10 @@ public class CustomizeSet
                 CustomizeIndex.Nose            => NumNoseShapes,
                 CustomizeIndex.Jaw             => NumJawShapes,
                 CustomizeIndex.Mouth           => NumMouthShapes,
-                CustomizeIndex.LipColor        => LipColorsLight.Count + LipColorsDark.Count,
+                CustomizeIndex.LipColor        => LipColors.Count,
                 CustomizeIndex.TailShape       => TailEarShapes.Count,
                 CustomizeIndex.FacePaint       => FacePaints.Count,
-                CustomizeIndex.FacePaintColor  => FacePaintColorsLight.Count + FacePaintColorsDark.Count,
+                CustomizeIndex.FacePaintColor  => FacePaintColors.Count,
                 _                              => throw new ArgumentOutOfRangeException(nameof(index), index, null),
             },
         };

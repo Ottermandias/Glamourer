@@ -28,7 +28,7 @@ public enum QdbButtons
     ToggleMainWindow            = 0x200,
 }
 
-public sealed class DesignQuickBar : Window, IDisposable
+public sealed class DesignQuickBar : OverlayWindow, IDisposable
 {
     private WindowFlags GetFlags
         => _config.Ephemeral.LockDesignQuickBar
@@ -51,7 +51,7 @@ public sealed class DesignQuickBar : Window, IDisposable
 
     public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
         ActorObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra)
-        : base("Glamourer Quick Bar", WindowFlags.NoDecoration | WindowFlags.NoDocking)
+        : base("Glamourer Quick Bar", WindowFlags.NoDecoration | WindowFlags.NoDocking | WindowFlags.NoFocusOnAppearing)
     {
         _config             = config;
         _designCombo        = designCombo;

@@ -11,7 +11,7 @@ using Penumbra.GameData.Enums;
 
 namespace Glamourer.Gui;
 
-public class EquipmentBarWindow : Window, IDisposable
+public class EquipmentBarWindow : OverlayWindow, IDisposable
 {
     private WindowFlags GetFlags
         => _config.Ephemeral.LockEquipmentBar
@@ -30,7 +30,7 @@ public class EquipmentBarWindow : Window, IDisposable
 
     public EquipmentBarWindow(Configuration config, ActorSelection selection, StateManager stateManager, EquipmentDrawer equipmentDrawer,
         MainWindow mainWindow, ActorPanel actorPanel, AdvancedDyePopup advancedDyes)
-        : base("Glamourer Equipment Bar", WindowFlags.NoDecoration | WindowFlags.NoDocking)
+        : base("Glamourer Equipment Bar", WindowFlags.NoDecoration | WindowFlags.NoDocking | WindowFlags.NoFocusOnAppearing)
     {
         _config          = config;
         _selection       = selection;
