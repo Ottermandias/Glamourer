@@ -8,6 +8,9 @@ public sealed class AutomationTesterButton(AutomationTestWindow window) : BaseIc
     public override AwesomeIcon Icon
         => LunaStyle.TestIcon;
 
+    public override bool HasTooltip
+        => true;
+
     public override void DrawTooltip()
         => Im.Text("Open a window to test your currently selected automation set against different jobs."u8);
 
