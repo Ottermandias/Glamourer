@@ -78,16 +78,6 @@ public class ColorParameters
                 ret[i] = new CustomizeData(index, (CustomizeValue)i, data[i].Color, (ushort)(offset + i));
             return ret;
         }
-
-        // Return single gender race parameters.
-        static ushort G(string name, SubRace race, Gender gender)
-        {
-            var dataOffset = Marshal.OffsetOf<CmpData>(nameof(CmpData.Races));
-            var index      = CmpData.Index(race, gender);
-            var raceOffset = index * sizeof(CmpData.GenderClanColorParameters);
-            var typeOffset = Marshal.OffsetOf<CmpData.GenderClanColorParameters>(name);
-            return (ushort)((dataOffset + raceOffset + typeOffset) / 4);
-        }
     }
 
     public unsafe ColorParameters(IDataManager gameData, IPluginLog log)
