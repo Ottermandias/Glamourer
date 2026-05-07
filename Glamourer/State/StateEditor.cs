@@ -374,18 +374,22 @@ public class StateEditor(
                                 Editor.ChangeItem(state, weaponSlot, old, oldSource, out _, settings.Key);
                         });
                     }
-
-                    var currentType = state.BaseData.Item(weaponSlot).Type;
-                    foreach (var type in currentType.CompatibleTypes().Prepend(currentType))
+                    else
                     {
-                        if (!mergedDesign.Weapons.TryGet(type, state.LastJob, true, out var weapon))
-                            continue;
+                        var currentType = weaponSlot is EquipSlot.MainHand
+                            ? state.BaseData.MainhandType
+                            : state.ModelData.MainhandType.Offhand();
+                        foreach (var type in currentType.CompatibleTypes().Prepend(currentType))
+                        {
+                            if (!mergedDesign.Weapons.TryGet(type, state.LastJob, true, out var weapon))
+                                continue;
 
-                        var source = settings.UseSingleSource ? settings.Source :
-                            weapon.Item2 is StateSource.Game  ? StateSource.Game : settings.Source;
-                        Editor.ChangeItem(state, weaponSlot, weapon.Item1, source, out _,
-                            settings.Key);
-                        break;
+                            var source = settings.UseSingleSource ? settings.Source :
+                                weapon.Item2 is StateSource.Game  ? StateSource.Game : settings.Source;
+                            Editor.ChangeItem(state, weaponSlot, weapon.Item1, source, out _,
+                                settings.Key);
+                            break;
+                        }
                     }
                 }
             }
