@@ -1,4 +1,5 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+﻿using System.Collections.Immutable;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using ImSharp;
 using Newtonsoft.Json;
@@ -16,6 +17,32 @@ public readonly record struct MaterialValueIndex(
     byte RowIndex)
 {
     public static readonly MaterialValueIndex Invalid = new(DrawObjectType.Invalid, 0, 0, 0);
+
+    // HACK Abusing the 6 most significant bits of the field (and therefore those that are the least likely to ever clash) to represent customization slots instead of item slots.
+    public const CombinedItemSlotFlag CustomizationSlotsFlag = (CombinedItemSlotFlag)0x1C000000u;
+    public const CombinedItemSlotFlag AllSlotsFlag           = EquipFlagExtensions.AllCombined | CustomizationSlotsFlag;
+
+    public static readonly MaterialValueIndex Hair       = Min(DrawObjectType.Human, 10);
+    public static readonly MaterialValueIndex Face       = Min(DrawObjectType.Human, 11);
+    public static readonly MaterialValueIndex TailEar    = Min(DrawObjectType.Human, 12);
+    public static readonly MaterialValueIndex Connectors = Min(DrawObjectType.Human, 13);
+
+    public static readonly ImmutableArray<MaterialValueIndex> AllSlots =
+    [
+        // Show equipment/weapon/bonus slots in an order consistent with the EquipmentDrawer.
+        ..EquipSlotExtensions.FullSlots.Select(FromSlot).OrderBy(static index => index.Key), ..BonusExtensions.AllFlags.Select(FromSlot),
+        Hair, Face, TailEar,
+    ];
+
+    #region Prepared StringU8 slot names - see SlotName().
+
+    private static readonly StringU8 SlotNameInvalid    = new("Invalid"u8);
+    private static readonly StringU8 SlotNameHair       = BodySlot.Hair.StringU8;
+    private static readonly StringU8 SlotNameFace       = BodySlot.Face.StringU8;
+    private static readonly StringU8 SlotNameTailEar    = new($"{BodySlot.Tail} / {BodySlot.Ear}");
+    private static readonly StringU8 SlotNameConnectors = new("Connectors"u8);
+
+    #endregion
 
     public uint Key
         => ToKey(DrawObject, SlotIndex, MaterialIndex, RowIndex);
@@ -49,17 +76,26 @@ public readonly record struct MaterialValueIndex(
         return idx > 2 ? Invalid : new MaterialValueIndex(DrawObjectType.Human, (byte)(idx + 16), 0, 0);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool SlotEquals(MaterialValueIndex other)
+        => DrawObject == other.DrawObject && SlotIndex == other.SlotIndex;
+
+    // Should be kept in sync with its UTF-16 equivalent, SlotString().
     public StringU8 SlotName()
-    {
-        var slot = ToEquipSlot();
-        if (slot is not EquipSlot.Unknown)
-            return slot.ToNameU8();
-
-        if (DrawObject is DrawObjectType.Human && SlotIndex is 16)
-            return BonusItemFlag.Glasses.ToNameU8();
-
-        return EquipSlot.Unknown.ToNameU8();
-    }
+        => DrawObject switch
+        {
+            DrawObjectType.Invalid                      => SlotNameInvalid,
+            DrawObjectType.Human when SlotIndex < 10    => ((uint)SlotIndex).ToEquipSlot().ToNameU8(),
+            DrawObjectType.Human when SlotIndex == 10   => SlotNameHair,
+            DrawObjectType.Human when SlotIndex == 11   => SlotNameFace,
+            DrawObjectType.Human when SlotIndex == 12   => SlotNameTailEar,
+            DrawObjectType.Human when SlotIndex == 13   => SlotNameConnectors,
+            DrawObjectType.Human when SlotIndex == 16   => BonusItemFlag.Glasses.ToNameU8(),
+            DrawObjectType.Human when SlotIndex == 17   => BonusItemFlag.UnkSlot.ToNameU8(),
+            DrawObjectType.Mainhand when SlotIndex == 0 => EquipSlot.MainHand.ToNameU8(),
+            DrawObjectType.Offhand when SlotIndex == 0  => EquipSlot.OffHand.ToNameU8(),
+            _                                           => new StringU8($"{DrawObject} Slot {SlotIndex}"),
+        };
 
     public EquipSlot ToEquipSlot()
         => DrawObject switch
@@ -84,6 +120,7 @@ public readonly record struct MaterialValueIndex(
             DrawObjectType.Mainhand when SlotIndex == 0 => CombinedItemSlotFlag.Mainhand,
             DrawObjectType.Offhand when SlotIndex == 0  => CombinedItemSlotFlag.Offhand,
             DrawObjectType.Human when SlotIndex > 15    => ((uint)SlotIndex - 16).ToBonusSlot().ToCombinedItemSlotFlag(),
+            DrawObjectType.Human                        => (CombinedItemSlotFlag)(1u << (16 + SlotIndex)),
             _                                           => 0,
         };
 
@@ -218,7 +255,9 @@ public readonly record struct MaterialValueIndex(
             CombinedItemSlotFlag.Offhand   => new MaterialValueIndex(DrawObjectType.Offhand,  0,  materialIndex, rowIndex),
             CombinedItemSlotFlag.Glasses   => new MaterialValueIndex(DrawObjectType.Human,    16, materialIndex, rowIndex),
             CombinedItemSlotFlag.UnkBonus2 => new MaterialValueIndex(DrawObjectType.Human,    17, materialIndex, rowIndex),
-            _                              => new MaterialValueIndex(DrawObjectType.Invalid,  0,  materialIndex, rowIndex),
+            >= (CombinedItemSlotFlag)0x04000000u => new MaterialValueIndex(DrawObjectType.Human,
+                (byte)(BitOperations.TrailingZeroCount(unchecked((int)combinedItemSlot)) - 16), materialIndex, rowIndex),
+            _ => new MaterialValueIndex(DrawObjectType.Invalid, 0, materialIndex, rowIndex),
         };
     }
 
@@ -270,19 +309,24 @@ public readonly record struct MaterialValueIndex(
     { }
 
     public override string ToString()
+        => $"{SlotString()} {MaterialString()} {RowString()}";
+
+    // Should be kept in sync with its UTF-8 equivalent, SlotName().
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private string SlotString()
         => DrawObject switch
         {
             DrawObjectType.Invalid                      => "Invalid",
-            DrawObjectType.Human when SlotIndex < 10    => $"{((uint)SlotIndex).ToEquipSlot().ToName()} {MaterialString()} {RowString()}",
-            DrawObjectType.Human when SlotIndex == 10   => $"{BodySlot.Hair} {MaterialString()} {RowString()}",
-            DrawObjectType.Human when SlotIndex == 11   => $"{BodySlot.Face} {MaterialString()} {RowString()}",
-            DrawObjectType.Human when SlotIndex == 12   => $"{BodySlot.Tail} / {BodySlot.Ear} {MaterialString()} {RowString()}",
-            DrawObjectType.Human when SlotIndex == 13   => $"Connectors {MaterialString()} {RowString()}",
-            DrawObjectType.Human when SlotIndex == 16   => $"{BonusItemFlag.Glasses.ToName()} {MaterialString()} {RowString()}",
-            DrawObjectType.Human when SlotIndex == 17   => $"{BonusItemFlag.UnkSlot.ToName()} {MaterialString()} {RowString()}",
-            DrawObjectType.Mainhand when SlotIndex == 0 => $"{EquipSlot.MainHand.ToName()} {MaterialString()} {RowString()}",
-            DrawObjectType.Offhand when SlotIndex == 0  => $"{EquipSlot.OffHand.ToName()} {MaterialString()} {RowString()}",
-            _                                           => $"{DrawObject} Slot {SlotIndex} {MaterialString()} {RowString()}",
+            DrawObjectType.Human when SlotIndex < 10    => $"{((uint)SlotIndex).ToEquipSlot().ToName()}",
+            DrawObjectType.Human when SlotIndex == 10   => $"{BodySlot.Hair}",
+            DrawObjectType.Human when SlotIndex == 11   => $"{BodySlot.Face}",
+            DrawObjectType.Human when SlotIndex == 12   => $"{BodySlot.Tail} / {BodySlot.Ear}",
+            DrawObjectType.Human when SlotIndex == 13   => $"Connectors",
+            DrawObjectType.Human when SlotIndex == 16   => $"{BonusItemFlag.Glasses.ToName()}",
+            DrawObjectType.Human when SlotIndex == 17   => $"{BonusItemFlag.UnkSlot.ToName()}",
+            DrawObjectType.Mainhand when SlotIndex == 0 => $"{EquipSlot.MainHand.ToName()}",
+            DrawObjectType.Offhand when SlotIndex == 0  => $"{EquipSlot.OffHand.ToName()}",
+            _                                           => $"{DrawObject} Slot {SlotIndex}",
         };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

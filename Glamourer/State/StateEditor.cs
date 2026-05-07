@@ -407,7 +407,7 @@ public class StateEditor(
 
             if (settings.ResetMaterials || !settings.RespectManual && mergedDesign.ResetAdvancedDyes is not 0)
             {
-                if (settings.ResetMaterials || mergedDesign.ResetAdvancedDyes.HasFlag(EquipFlagExtensions.AllCombined))
+                if (settings.ResetMaterials || mergedDesign.ResetAdvancedDyes.HasFlag(MaterialValueIndex.AllSlotsFlag))
                     state.Materials.Clear();
                 else
                 {

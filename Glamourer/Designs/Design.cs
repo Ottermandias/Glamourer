@@ -293,7 +293,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
                 return 0;
 
             if (json.Type is JTokenType.Boolean)
-                return (bool)json ? EquipFlagExtensions.AllCombined : 0;
+                return (bool)json ? MaterialValueIndex.AllSlotsFlag : 0;
 
             return (CombinedItemSlotFlag)(uint)json;
         }

@@ -96,7 +96,7 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
         public static Change CreateAdvancedReset(StringU8 designName, Design? design, CombinedItemSlotFlag slots)
             => new(2u, design)
             {
-                Slot   = slots.HasFlag(EquipFlagExtensions.AllCombined) ? AllAdvancedDyes : new StringU8($"Advanced Dyes: {slots}"),
+                Slot   = slots.HasFlag(MaterialValueIndex.AllSlotsFlag) ? AllAdvancedDyes : new StringU8($"Advanced Dyes: {slots}"),
                 Target = ResetToGame,
                 Source = designName,
             };
@@ -166,7 +166,7 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
         if (!CustomDirty)
             return;
 
-        var mutableMaterialSlots = EquipFlagExtensions.AllCombined;
+        var mutableMaterialSlots = MaterialValueIndex.AllSlotsFlag;
 
         Dirty &= ~IManagedCache.DirtyFlags.Custom;
         _changes.Clear();

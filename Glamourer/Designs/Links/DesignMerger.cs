@@ -32,7 +32,7 @@ public class DesignMerger(
         ret.Design.SetCustomize(customizeService, currentCustomize);
         var           startBodyType        = currentCustomize.BodyType;
         CustomizeFlag fixFlags             = 0;
-        var           mutableMaterialSlots = EquipFlagExtensions.AllCombined;
+        var           mutableMaterialSlots = MaterialValueIndex.AllSlotsFlag;
         respectOwnership &= config.UnlockedItemMode;
         foreach (var (design, type, jobs) in designs)
         {
