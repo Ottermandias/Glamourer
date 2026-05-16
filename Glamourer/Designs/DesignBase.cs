@@ -581,11 +581,11 @@ public class DesignBase
         }
 
         {
-            var (id, stains, crest, apply, applyStain, applyCrest) = ParseItem(EquipSlot.MainHand, equip[EquipSlot.MainHand.ToString()]);
+            var (id, stains, crest, apply, applyStain, applyCrest) = ParseItem(EquipSlot.MainHand, equip[nameof(EquipSlot.MainHand)]);
             if (id == ItemManager.NothingId(EquipSlot.MainHand))
                 id = items.DefaultSword.ItemId;
             var (idOff, stainsOff, crestOff, applyOff, applyStainOff, applyCrestOff) =
-                ParseItem(EquipSlot.OffHand, equip[EquipSlot.OffHand.ToString()]);
+                ParseItem(EquipSlot.OffHand, equip[nameof(EquipSlot.OffHand)]);
             if (id == ItemManager.NothingId(EquipSlot.OffHand))
                 id = ItemManager.NothingId(FullEquipType.Shield);
 
