@@ -269,10 +269,13 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
 
     private static void LookupTooltip(IEnumerable<Design> designs)
     {
-        using var _          = Im.Tooltip.Begin();
-        using var enumerator = designs.GetEnumerator();
-        while (enumerator.MoveNext())
+        const int displayLimit = 30;
+        using var _            = Im.Tooltip.Begin();
+        using var enumerator   = designs.GetEnumerator();
+        var       counter      = 0;
+        if (enumerator.MoveNext())
         {
+            ++counter;
             Im.Text("Matches the following designs:"u8);
             var name = enumerator.Current.Path.CurrentPath;
             Im.Separator();
@@ -280,8 +283,13 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
             while (enumerator.MoveNext())
             {
                 name = enumerator.Current.Path.CurrentPath;
-                Im.BulletText(name);
+                if (counter <= displayLimit)
+                    Im.BulletText(name);
+                ++counter;
             }
+
+            if (counter > displayLimit)
+                Im.Text($"And {counter - displayLimit} other designs...");
 
             return;
         }
