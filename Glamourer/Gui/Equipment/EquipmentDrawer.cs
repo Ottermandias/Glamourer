@@ -605,6 +605,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 Im.Tooltip.OnHover("Blame Square Enix for this doing nothing. Glasses do not support dyes whatsoever."u8);
                 parent._advancedDyes.DrawButton(data.Slot, parent._advancedMaterialColor, true, data.HasAdvancedDyes);
             }
+            else
+                parent.DrawEquipLabel(data is { IsDesign: true, HasAdvancedDyes: true }, label, data);
         }
 
         public static void Weapons(EquipmentDrawer parent, EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
