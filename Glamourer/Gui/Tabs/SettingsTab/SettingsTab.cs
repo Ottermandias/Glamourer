@@ -2,6 +2,7 @@
 using Dalamud.Interface;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Glamourer.Api.Enums;
 using Glamourer.Automation;
 using Glamourer.Config;
 using Glamourer.Designs;

@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using Glamourer.Api.Enums;
 using Glamourer.Automation;
 using Glamourer.Config;
 using Glamourer.Events;
@@ -22,23 +23,23 @@ public sealed class AutomationTestWindow : Window, IDisposable
     private readonly Configuration       _config;
     private readonly ItemManager         _items;
     private readonly JobService          _jobs;
-    private readonly TabSelected         _designSelection;
+    private readonly NavigationService   _navigator;
 
     public AutomationTestWindow(AutomationChanged changed,
         AutomationSelection selection,
         Configuration config,
         ItemManager items,
         JobService jobs,
-        TabSelected designSelection)
+        NavigationService navigator)
         : base("Glamourer Automation Set Tester###Glamourer Automation Set Tester")
     {
-        _changed         = changed;
-        _selection       = selection;
-        _config          = config;
-        _items           = items;
-        _jobs            = jobs;
-        _designSelection = designSelection;
-        _jobCombo        = new JobCombo(jobs);
+        _changed   = changed;
+        _selection = selection;
+        _config    = config;
+        _items     = items;
+        _jobs      = jobs;
+        _navigator = navigator;
+        _jobCombo  = new JobCombo(jobs);
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(600,  400),
@@ -110,7 +111,7 @@ public sealed class AutomationTestWindow : Window, IDisposable
             table.NextColumn();
             var targetAvailable = change.Design.TryGetTarget(out var design);
             if (Im.Selectable(change.Source) && targetAvailable)
-                _designSelection.Invoke(new TabSelected.Arguments(MainTabType.Designs, design));
+                _navigator.OpenTo(design!);
             if (targetAvailable)
                 Im.Tooltip.OnHover("Click to move to design."u8);
             table.DrawColumn(change.Target);

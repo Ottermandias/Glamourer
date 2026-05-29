@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs.History;
 using Glamourer.Events;
+using Glamourer.Gui;
 using Glamourer.Services;
 using Luna;
 
@@ -10,23 +11,24 @@ public sealed class DesignFileSystem : BaseFileSystem, IDisposable, IRequiredSer
 {
     private readonly DesignFileSystemSaver _saver;
     private readonly DesignChanged         _designChanged;
-    private readonly TabSelected           _tabSelected;
+    private readonly NavigationService     _navigation;
 
-    public DesignFileSystem(LunaLogger log, SaveService saveService, DesignStorage designs, DesignChanged designChanged, TabSelected tabSelected)
+    public DesignFileSystem(LunaLogger log, SaveService saveService, DesignStorage designs, DesignChanged designChanged,
+        NavigationService navigation)
         : base("DesignFileSystem", log, true)
     {
         _designChanged = designChanged;
-        _tabSelected   = tabSelected;
+        _navigation    = navigation;
         _saver         = new DesignFileSystemSaver(log, this, saveService, designs);
 
         _saver.Load();
         _designChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignFileSystem);
-        _tabSelected.Subscribe(OnTabSelected, TabSelected.Priority.DesignSelector);
+        _navigation.Design += OnTabSelected;
     }
 
-    private void OnTabSelected(in TabSelected.Arguments arguments)
+    private void OnTabSelected(Design? design)
     {
-        if (arguments.Design?.Node is { } node)
+        if (design?.Node is { } node)
             Selection.Select(node, true);
     }
 
@@ -71,7 +73,7 @@ public sealed class DesignFileSystem : BaseFileSystem, IDisposable, IRequiredSer
 
     public void Dispose()
     {
-        _tabSelected.Unsubscribe(OnTabSelected);
+        _navigation.Design -= OnTabSelected;
         _designChanged.Unsubscribe(OnDesignChanged);
     }
 }

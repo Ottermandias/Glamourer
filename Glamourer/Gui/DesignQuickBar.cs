@@ -42,32 +42,36 @@ public sealed class DesignQuickBar : OverlayWindow, IDisposable
     private readonly ActorObjectManager      _objects;
     private readonly PenumbraService         _penumbra;
     private readonly IKeyState               _keyState;
+    private readonly NavigationService       _navigation;
     private readonly Im.ColorStyleDisposable _style          = new();
     private          DateTime                _keyboardToggle = DateTime.UnixEpoch;
     private          int                     _numButtons;
     private readonly StringBuilder           _tooltipBuilder = new(512);
 
-    public event Action? ToggleMainWindow;
-
     public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
-        ActorObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra)
+        ActorObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra, NavigationService navigation)
         : base("Glamourer Quick Bar", WindowFlags.NoDecoration | WindowFlags.NoDocking | WindowFlags.NoFocusOnAppearing)
     {
-        _config             = config;
-        _designCombo        = designCombo;
-        _stateManager       = stateManager;
-        _keyState           = keyState;
-        _objects            = objects;
-        _autoDesignApplier  = autoDesignApplier;
-        _penumbra           = penumbra;
-        IsOpen              = _config.Ephemeral.ShowDesignQuickBar;
-        DisableWindowSounds = true;
-        Size                = Vector2.Zero;
-        RespectCloseHotkey  = false;
+        _config                          =  config;
+        _designCombo                     =  designCombo;
+        _stateManager                    =  stateManager;
+        _keyState                        =  keyState;
+        _objects                         =  objects;
+        _autoDesignApplier               =  autoDesignApplier;
+        _penumbra                        =  penumbra;
+        _navigation                      =  navigation;
+        IsOpen                           =  _config.Ephemeral.ShowDesignQuickBar;
+        DisableWindowSounds              =  true;
+        Size                             =  Vector2.Zero;
+        RespectCloseHotkey               =  false;
+        _navigation.ToggleQuickDesignBar += SetState;
     }
 
     public void Dispose()
-        => _style.Dispose();
+    {
+        _navigation.ToggleQuickDesignBar -= SetState;
+        _style.Dispose();
+    }
 
     public override void PreOpenCheck()
     {
@@ -497,8 +501,8 @@ public sealed class DesignQuickBar : OverlayWindow, IDisposable
         if (mainWindow || !_config.QdbButtons.HasFlag(QdbButtons.ToggleMainWindow))
             return;
 
-        if (ImEx.Icon.Button(FontAwesomeIcon.TheaterMasks.Icon(), "Toggle Glamourer's main window."u8, ToggleMainWindow is null, buttonSize))
-            ToggleMainWindow?.Invoke();
+        if (ImEx.Icon.Button(FontAwesomeIcon.TheaterMasks.Icon(), "Toggle Glamourer's main window."u8, false, buttonSize))
+            _navigation.SetMainWindow(null);
         Im.Line.Same();
     }
 
@@ -579,5 +583,11 @@ public sealed class DesignQuickBar : OverlayWindow, IDisposable
         _numButtons = CalculateButtonCount(false);
         var width = CalculateWidth(_numButtons, false);
         Size = new Vector2(width, Im.Style.FrameHeight);
+    }
+
+    private void SetState(bool? open)
+    {
+        _config.Ephemeral.ShowDesignQuickBar = open ?? !_config.Ephemeral.ShowDesignQuickBar;
+        _config.Ephemeral.Save();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.Windowing;
+using Glamourer.Api.Enums;
 using ImSharp;
 using Luna;
 using Window = Luna.Window;

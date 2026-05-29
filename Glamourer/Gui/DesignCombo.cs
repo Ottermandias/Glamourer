@@ -13,17 +13,17 @@ public abstract class DesignComboBase(
     DesignManager designs,
     DesignChanged designChanged,
     DesignColors designColors,
-    TabSelected tabSelected,
+    NavigationService navigator,
     DesignFileSystem designFileSystem)
     : FilterComboBase<DesignComboBase.CacheItem>(new DesignFilter(), ConfigData.Default with { ComputeWidth = true })
 {
-    protected readonly EphemeralConfig  Config           = config;
-    protected readonly DesignChanged    DesignChanged    = designChanged;
-    protected readonly DesignColors     DesignColors     = designColors;
-    protected readonly DesignFileSystem DesignFileSystem = designFileSystem;
-    protected readonly TabSelected      TabSelected      = tabSelected;
-    protected readonly DesignManager    Designs          = designs;
-    protected          IDesignStandIn?  CurrentDesign;
+    protected readonly EphemeralConfig   Config           = config;
+    protected readonly DesignChanged     DesignChanged    = designChanged;
+    protected readonly DesignColors      DesignColors     = designColors;
+    protected readonly DesignFileSystem  DesignFileSystem = designFileSystem;
+    protected readonly NavigationService Navigator        = navigator;
+    protected readonly DesignManager     Designs          = designs;
+    protected          IDesignStandIn?   CurrentDesign;
 
     protected CacheItem CreateItem(IDesignStandIn design)
     {
@@ -55,7 +55,7 @@ public abstract class DesignComboBase(
         if (CurrentDesign is Design design)
         {
             if (Im.Item.RightClicked() && Im.Io.KeyControl)
-                TabSelected.Invoke(new TabSelected.Arguments(MainTabType.Designs, design));
+                Navigator.OpenTo(design);
             Im.Tooltip.OnHover("Control + Right-Click to move to design."u8);
         }
         else
@@ -209,13 +209,23 @@ public sealed class QuickDesignCombo : DesignComboBase, IDisposable, IUiService
     }
 
 
-    public QuickDesignCombo(EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
+    public QuickDesignCombo(EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, NavigationService navigator,
         DesignFileSystem designFileSystem, DesignManager designs)
-        : base(config, designs, designChanged, designColors, tabSelected, designFileSystem)
+        : base(config, designs, designChanged, designColors, navigator, designFileSystem)
     {
         if (Designs.Designs.TryGetValue(config.SelectedQuickDesign, out var design) && design.QuickDesign)
             QuickDesign = design;
         DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
+        navigator.QuickDesign += Select;
+    }
+
+    private void Select(Design? design)
+    {
+        // Only allow selecting designs that are enabled for the QDB.
+        if (design is not null && !design.QuickDesign)
+            return;
+
+        QuickDesign = design;
     }
 
     private void OnDesignChanged(in DesignChanged.Arguments arguments)
@@ -263,16 +273,19 @@ public sealed class QuickDesignCombo : DesignComboBase, IDisposable, IUiService
             .OrderBy(CacheItem.Ordering);
 
     public void Dispose()
-        => DesignChanged.Unsubscribe(OnDesignChanged);
+    {
+        DesignChanged.Unsubscribe(OnDesignChanged);
+        Navigator.QuickDesign -= Select;
+    }
 }
 
 public sealed class LinkDesignCombo : DesignComboBase, IUiService, IDisposable
 {
     public Design? NewSelection { get; private set; }
 
-    public LinkDesignCombo(EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, TabSelected tabSelected,
+    public LinkDesignCombo(EphemeralConfig config, DesignChanged designChanged, DesignColors designColors, NavigationService navigator,
         DesignFileSystem designFileSystem, DesignManager designs)
-        : base(config, designs, designChanged, designColors, tabSelected, designFileSystem)
+        : base(config, designs, designChanged, designColors, navigator, designFileSystem)
     {
         DesignChanged.Subscribe(OnDesignChanged, DesignChanged.Priority.DesignCombo);
     }
@@ -306,8 +319,8 @@ public sealed class RandomDesignCombo(
     DesignManager designs,
     DesignChanged designChanged,
     DesignColors designColors,
-    TabSelected tabSelected,
-    DesignFileSystem designFileSystem) : DesignComboBase(config, designs, designChanged, designColors, tabSelected, designFileSystem),
+    NavigationService navigator,
+    DesignFileSystem designFileSystem) : DesignComboBase(config, designs, designChanged, designColors, navigator, designFileSystem),
     IUiService
 {
     private Design? GetDesign(RandomPredicate.Exact exact)
@@ -353,11 +366,11 @@ public sealed class SpecialDesignCombo : DesignComboBase, IUiService
         DesignManager designs,
         DesignChanged designChanged,
         DesignColors designColors,
-        TabSelected tabSelected,
+        NavigationService navigator,
         DesignFileSystem designFileSystem,
         AutoDesignManager autoDesigns,
         RandomDesignGenerator rng, QuickSelectedDesign quickSelectedDesign)
-        : base(config, designs, designChanged, designColors, tabSelected, designFileSystem)
+        : base(config, designs, designChanged, designColors, navigator, designFileSystem)
     {
         _autoDesigns = autoDesigns;
         _random      = CreateItem(new RandomDesign(rng));

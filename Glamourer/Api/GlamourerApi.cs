@@ -4,10 +4,10 @@ using Luna;
 
 namespace Glamourer.Api;
 
-public class GlamourerApi(Configuration config, DesignsApi designs, StateApi state, ItemsApi items) : IGlamourerApi, IApiService
+public class GlamourerApi(Configuration config, DesignsApi designs, StateApi state, ItemsApi items, PluginApi plugin) : IGlamourerApi, IApiService
 {
     public const int CurrentApiVersionMajor = 1;
-    public const int CurrentApiVersionMinor = 7;
+    public const int CurrentApiVersionMinor = 8;
 
     public (int Major, int Minor) ApiVersion
         => (CurrentApiVersionMajor, CurrentApiVersionMinor);
@@ -23,4 +23,7 @@ public class GlamourerApi(Configuration config, DesignsApi designs, StateApi sta
 
     public IGlamourerApiState State
         => state;
+
+    public IGlamourerApiPlugin Plugin
+        => plugin;
 }
