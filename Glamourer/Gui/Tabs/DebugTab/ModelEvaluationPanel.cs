@@ -1,4 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using Glamourer.GameData;
 using Glamourer.Interop;
 using Glamourer.Interop.Structs;
@@ -63,6 +64,13 @@ public sealed unsafe class ModelEvaluationPanel(
             table.DrawDataPair("Animation"u8, ((ushort*)&actor.AsCharacter->Timeline)[0x78]);
             table.NextColumn();
             table.NextColumn();
+
+            if (_gameObjectIndex is 0)
+            {
+                table.DrawDataPair("Checksum"u8, $"0x{UIGlobals.GenerateEquippedItemsChecksum():X8}");
+                table.NextColumn();
+                table.NextColumn();
+            }
         }
 
 

@@ -1,11 +1,9 @@
-﻿using Glamourer.Api.Enums;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using Glamourer.Api.Enums;
 using Glamourer.Config;
 using Glamourer.Services;
 using ImSharp;
-using InteropGenerator.Runtime;
 using Luna;
-using Penumbra.GameData.Files.ShaderStructs;
-using Vortice.Direct3D11.Debug;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
