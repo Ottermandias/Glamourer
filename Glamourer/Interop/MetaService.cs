@@ -49,7 +49,6 @@ public sealed unsafe class MetaService : IDisposable, IRequiredService
         if (!actor.IsCharacter)
             return;
 
-
         var old       = actor.AsCharacter->DrawData.Equipment(DrawDataContainer.EquipmentSlot.Head).Id;
         var oldHidden = actor.AsCharacter->DrawData.IsHatHidden;
         if (actor.AsCharacter->ModelContainer.ModelCharaId is 0)
