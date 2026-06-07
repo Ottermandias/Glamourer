@@ -34,8 +34,7 @@ public sealed class ActorPanel : IPanel
     private readonly CustomizeParameterDrawer _parameterDrawer;
     private readonly AdvancedDyePopup         _advancedDyes;
     private readonly DesignApplier            _designApplier;
-
-    public event Action? OpenEquipmentBar;
+    private readonly NavigationService        _navigator;
 
     public ActorPanel(StateManager stateManager,
         CustomizationDrawer customizationDrawer,
@@ -50,7 +49,8 @@ public sealed class ActorPanel : IPanel
         AdvancedDyePopup advancedDyes,
         EditorHistory editorHistory,
         ActorSelection selection,
-        DesignApplier designApplier)
+        DesignApplier designApplier,
+        NavigationService navigator)
     {
         _stateManager        = stateManager;
         _customizationDrawer = customizationDrawer;
@@ -64,6 +64,7 @@ public sealed class ActorPanel : IPanel
         _advancedDyes        = advancedDyes;
         _selection           = selection;
         _designApplier       = designApplier;
+        _navigator           = navigator;
     }
 
     private CustomizeFlag CustomizeApplicationFlags
@@ -168,7 +169,7 @@ public sealed class ActorPanel : IPanel
             .Push(ImGuiColor.ButtonHovered, ImGuiColor.HeaderHovered)
             .Push(ImGuiColor.ButtonActive,  ImGuiColor.HeaderActive);
         if (ImEx.Icon.LabeledButton(LunaStyle.PopOutIcon, "###switchToEquipBar"u8, "Switch to the Equipment Bar."u8, corners: Corners.Right))
-            OpenEquipmentBar?.Invoke();
+            _navigator.SetEquipmentBar(true);
         Im.Cursor.Position = savedCursor;
 
         var upperLeft  = Im.Cursor.ScreenPosition;

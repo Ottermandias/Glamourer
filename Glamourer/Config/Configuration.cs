@@ -57,6 +57,9 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     public bool            RespectManualOnAutomationUpdate  { get; set; } = false;
     public bool            PreventRandomRepeats             { get; set; } = false;
 
+    [ConfigProperty(EventName = "ActorSortModeChanged")]
+    private ActorSortMode _actorSortMode = ActorSortMode.Default;
+
     [ConfigProperty]
     private bool _groupUnlocksByModel;
 

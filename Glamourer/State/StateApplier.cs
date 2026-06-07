@@ -417,7 +417,11 @@ public class StateApplier(
 
             var mainhandActors = state.ModelData.MainhandType.IsCompatible(state.BaseData.MainhandType) ? actors : actors.OnlyGPose();
             ChangeMainhand(mainhandActors, state.ModelData.Item(EquipSlot.MainHand), state.ModelData.Stain(EquipSlot.MainHand));
-            var offhandActors = state.ModelData.OffhandType.IsCompatible(state.BaseData.OffhandType) ? actors : actors.OnlyGPose();
+            var offhandActors =
+                state.ModelData.OffhandType.IsOffhandCompatible(state.BaseData.MainhandType, state.ModelData.MainhandType,
+                    state.BaseData.OffhandType)
+                    ? actors
+                    : actors.OnlyGPose();
             ChangeOffhand(offhandActors, state.ModelData.Item(EquipSlot.OffHand), state.ModelData.Stain(EquipSlot.OffHand));
 
             if (state.ModelData.IsHuman)

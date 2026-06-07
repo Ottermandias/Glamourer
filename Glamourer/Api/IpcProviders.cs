@@ -34,6 +34,14 @@ public sealed class IpcProviders : IDisposable, IApiService
             IpcSubscribers.GetDesignBase64.Provider(pi, api.Designs),
             IpcSubscribers.GetDesignJObject.Provider(pi, api.Designs),
 
+            IpcSubscribers.OpenMainWindow.Provider(pi, api.Plugin),
+            IpcSubscribers.OpenDesign.Provider(pi, api.Plugin),
+            IpcSubscribers.OpenActorIndex.Provider(pi, api.Plugin),
+            IpcSubscribers.OpenActorName.Provider(pi, api.Plugin),
+            IpcSubscribers.OpenQuickDesignBar.Provider(pi, api.Plugin),
+            IpcSubscribers.OpenEquipmentBarIndex.Provider(pi, api.Plugin),
+            IpcSubscribers.OpenEquipmentBarName.Provider(pi, api.Plugin),
+
             IpcSubscribers.SetItem.Provider(pi, api.Items),
             IpcSubscribers.SetItemName.Provider(pi, api.Items),
             // backward compatibility

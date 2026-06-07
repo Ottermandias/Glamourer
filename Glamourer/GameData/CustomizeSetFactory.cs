@@ -4,7 +4,6 @@ using Dalamud.Plugin.Services;
 using ImSharp;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
-using Luna;
 using Penumbra.GameData;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -15,45 +14,41 @@ namespace Glamourer.GameData;
 internal class CustomizeSetFactory(
     IDataManager gameData,
     ITextureProvider textures,
-    IPluginLog log,
     NpcCustomizeSet npcCustomizeSet,
     ColorParameters colors)
 {
     public CustomizeSetFactory(IDataManager gameData, ITextureProvider textures, IPluginLog log, NpcCustomizeSet npcCustomizeSet)
-        : this(gameData, textures, log, npcCustomizeSet, new ColorParameters(gameData, log))
+        : this(gameData, textures, npcCustomizeSet, new ColorParameters(gameData, log))
     { }
 
     /// <summary> Create the set of all available customization options for a given clan and gender. </summary>
     public CustomizeSet CreateSet(SubRace race, Gender gender)
     {
-        var (skin, hair) = GetSkinHairColors(race, gender);
         var row      = _charaMakeSheet.GetRow(((uint)race - 1) * 2 - 1 + (uint)gender);
         var hrothgar = race.ToRace() == Race.Hrothgar;
         // Create the initial set with all the easily accessible parameters available for anyone.
         var set = new CustomizeSet(npcCustomizeSet, race, gender)
         {
-            Name                 = GetName(race, gender),
-            Voices               = row.VoiceStruct,
-            HairStyles           = GetHairStyles(race, gender),
-            HairColors           = hair,
-            SkinColors           = skin,
-            EyeColors            = _eyeColorPicker,
-            HighlightColors      = _highlightPicker,
-            TattooColors         = _tattooColorPicker,
-            LipColorsDark        = hrothgar ? HrothgarFurPattern(row) : _lipColorPickerDark,
-            LipColorsLight       = hrothgar ? [] : _lipColorPickerLight,
-            FacePaintColorsDark  = _facePaintColorPickerDark,
-            FacePaintColorsLight = _facePaintColorPickerLight,
-            Faces                = GetFaces(row),
-            NumEyebrows          = GetListSize(row, CustomizeIndex.Eyebrows),
-            NumEyeShapes         = GetListSize(row, CustomizeIndex.EyeShape),
-            NumNoseShapes        = GetListSize(row, CustomizeIndex.Nose),
-            NumJawShapes         = GetListSize(row, CustomizeIndex.Jaw),
-            NumMouthShapes       = GetListSize(row, CustomizeIndex.Mouth),
-            FacePaints           = GetFacePaints(race, gender),
-            TailEarShapes        = GetTailEarShapes(row),
-            OptionName           = GetOptionNames(row),
-            Types                = GetMenuTypes(row),
+            Name            = GetName(race, gender),
+            Voices          = row.VoiceStruct,
+            HairStyles      = GetHairStyles(race, gender),
+            HairColors      = colors.GetColors(CustomizeIndex.HairColor, race, gender),
+            SkinColors      = colors.GetColors(CustomizeIndex.SkinColor, race, gender),
+            EyeColors       = _eyeColorPicker,
+            HighlightColors = _highlightPicker,
+            TattooColors    = _tattooColorPicker,
+            LipColors       = hrothgar ? HrothgarFurPattern(row) : _lipColorPicker,
+            FacePaintColors = _facePaintColorPicker,
+            Faces           = GetFaces(row),
+            NumEyebrows     = GetListSize(row, CustomizeIndex.Eyebrows),
+            NumEyeShapes    = GetListSize(row, CustomizeIndex.EyeShape),
+            NumNoseShapes   = GetListSize(row, CustomizeIndex.Nose),
+            NumJawShapes    = GetListSize(row, CustomizeIndex.Jaw),
+            NumMouthShapes  = GetListSize(row, CustomizeIndex.Mouth),
+            FacePaints      = GetFacePaints(race, gender),
+            TailEarShapes   = GetTailEarShapes(row),
+            OptionName      = GetOptionNames(row),
+            Types           = GetMenuTypes(row),
         };
         SetPostProcessing(set, row);
         return set;
@@ -105,35 +100,19 @@ internal class CustomizeSetFactory(
         set.NpcOptions = npcCustomizations.OrderBy(p => p.Item1).ThenBy(p => p.Item2.Value).ToArray();
     }
 
-    private readonly ColorParameters                _colorParameters = new(gameData, log);
-    private readonly ExcelSheet<CharaMakeCustomize> _customizeSheet  = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English);
-    private readonly ExcelSheet<Lobby>              _lobbySheet      = gameData.GetExcelSheet<Lobby>(ClientLanguage.English);
-    private readonly ExcelSheet<RawRow>             _hairSheet       = gameData.GetExcelSheet<RawRow>(ClientLanguage.English, "HairMakeType");
-    private readonly ExcelSheet<Tribe>              _tribeSheet      = gameData.GetExcelSheet<Tribe>(ClientLanguage.English);
+    private readonly ExcelSheet<CharaMakeCustomize> _customizeSheet = gameData.GetExcelSheet<CharaMakeCustomize>(ClientLanguage.English);
+    private readonly ExcelSheet<Lobby>              _lobbySheet     = gameData.GetExcelSheet<Lobby>(ClientLanguage.English);
+    private readonly ExcelSheet<RawRow>             _hairSheet      = gameData.GetExcelSheet<RawRow>(ClientLanguage.English, "HairMakeType");
+    private readonly ExcelSheet<Tribe>              _tribeSheet     = gameData.GetExcelSheet<Tribe>(ClientLanguage.English);
 
     // Those color pickers are shared between all races.
-    private readonly CustomizeData[] _highlightPicker           = CreateColors(colors, CustomizeIndex.HighlightsColor, 256,  192);
-    private readonly CustomizeData[] _lipColorPickerDark        = CreateColors(colors, CustomizeIndex.LipColor,        512,  96);
-    private readonly CustomizeData[] _lipColorPickerLight       = CreateColors(colors, CustomizeIndex.LipColor,        1024, 96, true);
-    private readonly CustomizeData[] _eyeColorPicker            = CreateColors(colors, CustomizeIndex.EyeColorLeft,    0,    192);
-    private readonly CustomizeData[] _facePaintColorPickerDark  = CreateColors(colors, CustomizeIndex.FacePaintColor,  640,  96);
-    private readonly CustomizeData[] _facePaintColorPickerLight = CreateColors(colors, CustomizeIndex.FacePaintColor,  1152, 96, true);
-    private readonly CustomizeData[] _tattooColorPicker         = CreateColors(colors, CustomizeIndex.TattooColor,     0,    192);
+    private readonly CustomizeData[] _highlightPicker      = colors.GetColors(CustomizeIndex.HighlightsColor);
+    private readonly CustomizeData[] _lipColorPicker       = colors.GetColors(CustomizeIndex.LipColor);
+    private readonly CustomizeData[] _eyeColorPicker       = colors.GetColors(CustomizeIndex.EyeColorLeft);
+    private readonly CustomizeData[] _facePaintColorPicker = colors.GetColors(CustomizeIndex.FacePaintColor);
+    private readonly CustomizeData[] _tattooColorPicker    = colors.GetColors(CustomizeIndex.TattooColor);
 
     private readonly ExcelSheet<CharaMakeType> _charaMakeSheet = gameData.Excel.GetSheet<CharaMakeType>();
-
-    /// <summary> Obtain available skin and hair colors for the given clan and gender. </summary>
-    private (CustomizeData[] Skin, CustomizeData[] Hair) GetSkinHairColors(SubRace race, Gender gender)
-    {
-        if (race is > SubRace.Veena or SubRace.Unknown)
-            throw new ArgumentOutOfRangeException(nameof(race), race, null);
-
-        var gv  = gender == Gender.Male ? 0 : 1;
-        var idx = (((int)race - 1) * 2 + gv) * 5 + 3;
-
-        return (CreateColors(_colorParameters, CustomizeIndex.SkinColor, 0x1200 + (idx << 8),       192),
-            CreateColors(_colorParameters,     CustomizeIndex.HairColor, 0x1200 + ((idx + 1) << 8), 192));
-    }
 
     /// <summary> Obtain the gender-specific clan name. </summary>
     private StringU8 GetName(SubRace race, Gender gender)
@@ -228,21 +207,6 @@ internal class CustomizeSetFactory(
         => _customizeSheet.TryGetRow(value, out var row)
             ? new CustomizeData(id, (CustomizeValue)row.FeatureID, row.Icon, (ushort)row.RowId)
             : new CustomizeData(id, (CustomizeValue)(index + 1),   value);
-
-    /// <summary> Create generic color sets from the parameters. </summary>
-    private static CustomizeData[] CreateColors(ColorParameters colorParameters, CustomizeIndex index, int offset, int num,
-        bool light = false)
-    {
-        var ret = new CustomizeData[num];
-        var idx = 0;
-        foreach (var value in colorParameters.GetSlice(offset, num))
-        {
-            ret[idx] = new CustomizeData(index, (CustomizeValue)(light ? 128 + idx : idx), value, (ushort)(offset + idx));
-            ++idx;
-        }
-
-        return ret;
-    }
 
     /// <summary> Set the specific option names for the given set of parameters. </summary>
     private StringU8[] GetOptionNames(CharaMakeType row)
@@ -345,12 +309,12 @@ internal class CustomizeSetFactory(
         Set(set.NumNoseShapes > 0,                           CustomizeIndex.Nose);
         Set(set.NumJawShapes > 0,                            CustomizeIndex.Jaw);
         Set(set.NumMouthShapes > 0,                          CustomizeIndex.Mouth);
-        Set(set.LipColorsDark.Count > 0,                     CustomizeIndex.LipColor);
+        Set(set.LipColors.Count > 0,                         CustomizeIndex.LipColor);
         Set(GetListSize(row, CustomizeIndex.MuscleMass) > 0, CustomizeIndex.MuscleMass);
         Set(set.TailEarShapes.Count > 0,                     CustomizeIndex.TailShape);
         Set(GetListSize(row, CustomizeIndex.BustSize) > 0,   CustomizeIndex.BustSize);
         Set(set.FacePaints.Count > 0,                        CustomizeIndex.FacePaint);
-        Set(set.FacePaints.Count > 0,                        CustomizeIndex.FacePaintColor);
+        Set(set.FacePaintColors.Count > 0,                   CustomizeIndex.FacePaintColor);
         Set(true,                                            CustomizeIndex.FacialFeature1);
         Set(true,                                            CustomizeIndex.FacialFeature2);
         Set(true,                                            CustomizeIndex.FacialFeature3);
@@ -360,7 +324,7 @@ internal class CustomizeSetFactory(
         Set(true,                                            CustomizeIndex.FacialFeature7);
         Set(true,                                            CustomizeIndex.LegacyTattoo);
         Set(true,                                            CustomizeIndex.SmallIris);
-        Set(set.Race != Race.Hrothgar,                       CustomizeIndex.Lipstick);
+        Set(set.Race is not Race.Hrothgar,                   CustomizeIndex.Lipstick);
         Set(set.FacePaints.Count > 0,                        CustomizeIndex.FacePaintReversed);
         return;
 

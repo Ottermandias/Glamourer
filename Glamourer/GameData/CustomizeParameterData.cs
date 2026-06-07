@@ -250,7 +250,7 @@ public struct CustomizeParameterData
         // TODO CS Update
         fixed (CustomizeParameter* ptr = &parameter)
         {
-            return ((float*)ptr)[23];
+            return ((float*)ptr)[15];
         }
     }
 
@@ -259,7 +259,7 @@ public struct CustomizeParameterData
         // TODO CS Update
         fixed (CustomizeParameter* ptr = &parameter)
         {
-            return ref ((float*)ptr)[23];
+            return ref ((float*)ptr)[15];
         }
     }
 
@@ -268,7 +268,7 @@ public struct CustomizeParameterData
         // TODO CS Update
         fixed (CustomizeParameter* ptr = &parameter)
         {
-            return ((float*)ptr)[15];
+            return ((float*)ptr)[11];
         }
     }
 
@@ -277,7 +277,7 @@ public struct CustomizeParameterData
         // TODO CS Update
         fixed (CustomizeParameter* ptr = &parameter)
         {
-            return ref ((float*)ptr)[15];
+            return ref ((float*)ptr)[11];
         }
     }
 }

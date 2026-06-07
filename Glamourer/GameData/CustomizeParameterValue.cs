@@ -66,7 +66,13 @@ public static class VectorExtensions
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     public static bool NearEqual(this float lhs, float rhs, float eps = 1e-5f)
     {
-        var diff = lhs - rhs;
-        return diff < 0 ? diff > -eps : diff < eps;
+        switch (lhs)
+        {
+            case float.PositiveInfinity: return rhs is float.PositiveInfinity;
+            case float.NegativeInfinity:  return rhs is float.NegativeInfinity;
+            default:
+                var diff = lhs - rhs;
+                return diff < 0 ? diff > -eps : diff < eps;
+        }
     }
 }

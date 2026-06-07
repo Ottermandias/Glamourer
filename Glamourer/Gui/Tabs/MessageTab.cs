@@ -1,4 +1,5 @@
-﻿using Luna;
+﻿using Glamourer.Api.Enums;
+using Luna;
 
 namespace Glamourer.Gui.Tabs;
 

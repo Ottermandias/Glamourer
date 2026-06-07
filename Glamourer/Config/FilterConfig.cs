@@ -13,7 +13,8 @@ namespace Glamourer.Config;
 
 public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
 {
-    private readonly DictJob _jobs;
+    private const    ActorTypeFilter AllFiltered = (ActorTypeFilter)0x3FF;
+    private readonly DictJob         _jobs;
 
     public FilterConfig(SaveService saveService, MessageService messager, DictJob jobs)
         : base(saveService, messager, TimeSpan.FromMinutes(5))
@@ -28,7 +29,7 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
 
     protected override void AddData(Utf8JsonWriter j)
     {
-        WriteFilter(j, ActorFilter,  "Actors"u8);
+        WriteActor(j);
         WriteFilter(j, DesignFilter, "Designs"u8);
         WriteFilter(j, NpcFilter,    "Npcs"u8);
         WriteAutomation(j);
@@ -38,6 +39,7 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
     protected override void LoadData(JObject j)
     {
         _actorFilter           = j["Actors"]?["Filter"]?.Value<string>() ?? string.Empty;
+        _actorTypeFilter       = (ActorTypeFilter)(j["Actors"]?["Type"]?.Value<uint>() ?? 0) & AllFiltered;
         _designFilter          = j["Designs"]?["Filter"]?.Value<string>() ?? string.Empty;
         _npcFilter             = j["Npcs"]?["Filter"]?.Value<string>() ?? string.Empty;
         _automationFilter      = j["Automation"]?["Filter"]?.Value<string>() ?? string.Empty;
@@ -50,6 +52,9 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
 
     [ConfigProperty]
     private string _actorFilter = string.Empty;
+
+    [ConfigProperty]
+    private ActorTypeFilter _actorTypeFilter = ActorTypeFilter.None;
 
     [ConfigProperty]
     private string _automationFilter = string.Empty;
@@ -140,6 +145,14 @@ public sealed partial class FilterConfig : ConfigurationFile<FilenameService>
 
     public override string ToFilePath(FilenameService fileNames)
         => fileNames.FilterFile;
+
+    private void WriteActor(Utf8JsonWriter j)
+    {
+        using var tmp = j.TemporaryObject("Actors"u8);
+        j.WriteNonEmptyString("Filter"u8, ActorFilter);
+        if (ActorTypeFilter is not ActorTypeFilter.None)
+            j.WriteNumber("Type"u8, (uint)ActorTypeFilter);
+    }
 
     private void WriteAutomation(Utf8JsonWriter j)
     {

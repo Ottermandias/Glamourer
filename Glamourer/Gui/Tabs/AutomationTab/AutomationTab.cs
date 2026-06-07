@@ -1,4 +1,5 @@
-﻿using Glamourer.Config;
+﻿using Glamourer.Api.Enums;
+using Glamourer.Config;
 using ImSharp;
 using Luna;
 

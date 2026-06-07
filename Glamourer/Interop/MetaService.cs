@@ -49,12 +49,24 @@ public sealed unsafe class MetaService : IDisposable, IRequiredService
         if (!actor.IsCharacter)
             return;
 
-        // The function seems to not do anything if the head is 0, but also breaks for carbuncles turned human, sometimes?
-        var old = actor.AsCharacter->DrawData.Equipment(DrawDataContainer.EquipmentSlot.Head).Id;
-        if (old == 0 && actor.AsCharacter->ModelContainer.ModelCharaId == 0)
-            actor.AsCharacter->DrawData.Equipment(DrawDataContainer.EquipmentSlot.Head).Id = 1;
+        var old       = actor.AsCharacter->DrawData.Equipment(DrawDataContainer.EquipmentSlot.Head).Id;
+        var oldHidden = actor.AsCharacter->DrawData.IsHatHidden;
+        if (actor.AsCharacter->ModelContainer.ModelCharaId is 0)
+        {
+            // The function seems to not do anything if the head is 0, but also breaks for carbuncles turned human, sometimes?
+            if (old is 0)
+                actor.AsCharacter->DrawData.Equipment(DrawDataContainer.EquipmentSlot.Head).Id = 1;
+
+            // It also seems to not do anything if the value is the same as before.
+            if (oldHidden != value)
+                actor.AsCharacter->DrawData.IsHatHidden = value;
+        }
+
         _hideHatGearHook.Original(&actor.AsCharacter->DrawData, 0, (byte)(value ? 0 : 1));
+
+        // Restore game object data.
         actor.AsCharacter->DrawData.Equipment(DrawDataContainer.EquipmentSlot.Head).Id = old;
+        actor.AsCharacter->DrawData.IsHatHidden                                        = oldHidden;
     }
 
     public void SetWeaponState(Actor actor, bool value)

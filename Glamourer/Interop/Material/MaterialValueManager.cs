@@ -537,7 +537,7 @@ public readonly struct MaterialValueManager<T>
         if (minIdx < 0)
             return 0;
 
-        var count = maxIdx - minIdx;
+        var count = maxIdx + 1 - minIdx;
         _values.RemoveRange(minIdx, count);
         return count;
     }

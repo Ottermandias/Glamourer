@@ -7,5 +7,11 @@ namespace Glamourer.Services;
 /// </summary>
 public interface ISavable : ISavable<FilenameService>;
 
-public sealed class SaveService(LunaLogger log, FrameworkManager framework, FilenameService fileNames)
-    : BaseSaveService<FilenameService>(log, framework, fileNames), IService;
+public sealed class SaveService : BaseSaveService<FilenameService>, IService
+{
+    public SaveService(LunaLogger log, FrameworkManager framework, FilenameService fileNames)
+        : base(log, framework, fileNames)
+    {
+        BackupMode = BackupMode.SingleBackup;
+    }
+}

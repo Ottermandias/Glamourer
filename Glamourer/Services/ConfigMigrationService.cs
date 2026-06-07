@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Keys;
+using Glamourer.Api.Enums;
 using Glamourer.Automation;
 using Glamourer.Config;
 using Glamourer.Gui;

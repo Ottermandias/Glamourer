@@ -2,7 +2,6 @@
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Glamourer.Config;
-using Glamourer.Events;
 using Glamourer.Interop.Penumbra;
 using ImSharp;
 using Luna;
@@ -12,17 +11,15 @@ namespace Glamourer.Gui;
 
 public sealed class MainWindow : Window, IDisposable
 {
-    private readonly Configuration   _config;
-    private readonly PenumbraService _penumbra;
-    private readonly DesignQuickBar  _quickBar;
-    private readonly MainTabBar      _mainTabBar;
-    private readonly TabSelected     _tabSelected;
-    private          bool            _ignorePenumbra;
-
-    public event Action? Open;
+    private readonly Configuration     _config;
+    private readonly PenumbraService   _penumbra;
+    private readonly DesignQuickBar    _quickBar;
+    private readonly MainTabBar        _mainTabBar;
+    private readonly NavigationService _navigation;
+    private          bool              _ignorePenumbra;
 
     public MainWindow(IDalamudPluginInterface pi, Configuration config, PenumbraService penumbra,
-        MainTabBar mainTabBar, DesignQuickBar quickBar, TabSelected tabSelected)
+        MainTabBar mainTabBar, DesignQuickBar quickBar, NavigationService navigation)
         : base("###GlamourerMainWindow")
     {
         pi.UiBuilder.DisableGposeUiHide = true;
@@ -31,35 +28,20 @@ public sealed class MainWindow : Window, IDisposable
             MinimumSize = new Vector2(700,  675),
             MaximumSize = new Vector2(3840, 2160),
         };
-        _mainTabBar  = mainTabBar;
-        _quickBar    = quickBar;
-        _tabSelected = tabSelected;
-        _config      = config;
-        _penumbra    = penumbra;
-        _mainTabBar  = mainTabBar;
-        IsOpen       = _config.OpenWindowAtStart;
+        _mainTabBar = mainTabBar;
+        _quickBar   = quickBar;
+        _navigation = navigation;
+        _config     = config;
+        _penumbra   = penumbra;
+        _mainTabBar = mainTabBar;
+        IsOpen      = _config.OpenWindowAtStart;
 
         _penumbra.DrawSettingsSection += _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
-        _quickBar.ToggleMainWindow    += Toggle;
-        _tabSelected.Subscribe(OnTabSelected, TabSelected.Priority.MainWindow);
-    }
-
-    public void OpenSettings()
-    {
-        IsOpen              = true;
-        _mainTabBar.NextTab = MainTabType.Settings;
-    }
-
-    private void OnTabSelected(in TabSelected.Arguments arguments)
-    {
-        IsOpen              = true;
-        _mainTabBar.NextTab = arguments.Type;
+        _navigation.ToggleMainWindow  += SetOpen;
     }
 
     public override void OnOpen()
-    {
-        Open?.Invoke();
-    }
+        => _navigation.InvokeMainWindowOpened();
 
     public override void PreDraw()
     {
@@ -69,11 +51,13 @@ public sealed class MainWindow : Window, IDisposable
         WindowName = GetLabel();
     }
 
+    private void SetOpen(bool? value)
+        => IsOpen = value ?? !IsOpen;
+
     public void Dispose()
     {
         _penumbra.DrawSettingsSection -= _mainTabBar.Settings.DrawPenumbraIntegrationSettings;
-        _quickBar.ToggleMainWindow    -= Toggle;
-        _tabSelected.Unsubscribe(OnTabSelected);
+        _navigation.ToggleMainWindow  -= SetOpen;
     }
 
     public override void Draw()
@@ -177,17 +161,4 @@ public sealed class MainWindow : Window, IDisposable
         Im.Line.New();
         Im.Line.New();
     }
-}
-
-public enum MainTabType
-{
-    None       = -1,
-    Settings   = 0,
-    Debug      = 1,
-    Actors     = 2,
-    Designs    = 3,
-    Automation = 4,
-    Unlocks    = 5,
-    Messages   = 6,
-    Npcs       = 7,
 }

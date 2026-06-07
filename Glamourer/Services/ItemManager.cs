@@ -70,7 +70,7 @@ public sealed class ItemManager : IService
         if (itemId == SmallclothesId(slot))
             return SmallClothesItem(slot);
 
-        if (!itemId.IsItem)
+        if (itemId is { IsItem: false, IsBonusItem: false })
         {
             var item = EquipItem.FromId(itemId);
             item = slot is EquipSlot.MainHand or EquipSlot.OffHand
@@ -78,17 +78,18 @@ public sealed class ItemManager : IService
                 : Identify(slot, item.PrimaryId, item.Variant);
             return item;
         }
-        else if (!ItemData.TryGetValue(itemId.Item, slot, out var item))
-        {
-            return EquipItem.FromId(itemId);
-        }
-        else
+        else if (itemId.IsBonusItem && ItemData.TryGetBonus(itemId.BonusItem, out var item)
+              || ItemData.TryGetValue(itemId.Item, slot, out item))
         {
             if (item.Type.ToSlot() != slot)
                 return new EquipItem(string.Intern($"Invalid #{itemId}"), itemId, item.IconId, item.PrimaryId, item.SecondaryId, item.Variant,
                     0, 0, 0, 0);
 
             return item;
+        }
+        else
+        {
+            return EquipItem.FromId(itemId);
         }
     }
 

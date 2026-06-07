@@ -220,7 +220,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
         }
 
-        using var dragTarget = Im.DragDrop.Target();
+        using var dragTarget = Im.DragDrop.TargetUnclipped();
         if (dragTarget.IsDropping("stainDragDrop"u8) && _draggedStain.HasValue)
         {
             data.SetStains(data.CurrentStains.With(index, _draggedStain.Value.RowIndex));
@@ -287,7 +287,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
         }
 
-        using var dragTarget = Im.DragDrop.Target();
+        using var dragTarget = Im.DragDrop.TargetUnclipped();
         if (!dragTarget)
             return;
 
@@ -553,8 +553,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         public static void Equip(EquipmentDrawer parent, in EquipDrawData data)
         {
             data.CurrentItem.DrawIcon(parent._textures, parent._iconSize, data.Slot);
+            var left  = Im.Item.InvisibleButton("button"u8);
             var right = Im.Item.RightClicked();
-            var left  = Im.Item.Clicked();
             Im.Line.Same();
             using var group = Im.Group();
             parent.DrawItem(data, out var label, right, left);
@@ -574,7 +574,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (data.IsState)
             {
-                parent._advancedDyes.DrawButton(data.Slot, data.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
+                parent._advancedDyes.DrawButton(data.Slot, parent._advancedMaterialColor, true, data.HasAdvancedDyes);
             }
 
             if (parent.VerifyRestrictedGear(data))
@@ -587,8 +587,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         public static void Bonus(EquipmentDrawer parent, in BonusDrawData data)
         {
             data.CurrentItem.DrawIcon(parent._textures, parent._iconSize, data.Slot);
+            var left  = Im.Item.InvisibleButton("button"u8);
             var right = Im.Item.RightClicked();
-            var left  = Im.Item.Clicked();
             Im.Line.Same();
             using var group = Im.Group();
             parent.DrawBonusItem(data, out var label, right, left);
@@ -603,8 +603,10 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 parent.DrawEquipLabel(data is { IsDesign: true, HasAdvancedDyes: true }, label, data);
                 ImEx.TextFramed(StringU8.Empty, new Vector2(parent._comboLength, Im.Style.FrameHeight));
                 Im.Tooltip.OnHover("Blame Square Enix for this doing nothing. Glasses do not support dyes whatsoever."u8);
-                parent._advancedDyes.DrawButton(data.Slot, data.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
+                parent._advancedDyes.DrawButton(data.Slot, parent._advancedMaterialColor, true, data.HasAdvancedDyes);
             }
+            else
+                parent.DrawEquipLabel(data is { IsDesign: true, HasAdvancedDyes: true }, label, data);
         }
 
         public static void Weapons(EquipmentDrawer parent, EquipDrawData mainhand, EquipDrawData offhand, bool allWeapons)
@@ -612,7 +614,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             using var style = ImStyleDouble.ItemSpacing.PushX(Im.Style.ItemInnerSpacing.X);
 
             mainhand.CurrentItem.DrawIcon(parent._textures, parent._iconSize, EquipSlot.MainHand);
-            var left = Im.Item.Clicked();
+            var left = Im.Item.InvisibleButton("button"u8);
             Im.Line.Same();
             using (Im.Group())
             {
@@ -634,8 +636,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 }
                 else if (mainhand.IsState)
                 {
-                    parent._advancedDyes.DrawButton(EquipSlot.MainHand,
-                        mainhand.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
+                    parent._advancedDyes.DrawButton(EquipSlot.MainHand, parent._advancedMaterialColor, true, mainhand.HasAdvancedDyes);
                 }
             }
 
@@ -644,8 +645,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 return;
 
             offhand.CurrentItem.DrawIcon(parent._textures, parent._iconSize, EquipSlot.OffHand);
+            left = Im.Item.InvisibleButton("button"u8);
             var right = Im.Item.RightClicked();
-            left = Im.Item.Clicked();
             Im.Line.Same();
             using (Im.Group())
             {
@@ -666,8 +667,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 }
                 else if (offhand.IsState)
                 {
-                    parent._advancedDyes.DrawButton(EquipSlot.OffHand,
-                        offhand.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
+                    parent._advancedDyes.DrawButton(EquipSlot.OffHand, parent._advancedMaterialColor, true, offhand.HasAdvancedDyes);
                 }
             }
         }
@@ -692,8 +692,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (data.IsState)
             {
-                parent._advancedDyes.DrawButton(data.Slot, data.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default,
-                    true);
+                parent._advancedDyes.DrawButton(data.Slot, parent._advancedMaterialColor, true, data.HasAdvancedDyes);
             }
 
             if (parent.VerifyRestrictedGear(data))
@@ -715,8 +714,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (data.IsState)
             {
-                parent._advancedDyes.DrawButton(data.Slot, data.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default,
-                    true);
+                parent._advancedDyes.DrawButton(data.Slot, parent._advancedMaterialColor, true, data.HasAdvancedDyes);
             }
 
             parent.DrawEquipLabel(data is { IsDesign: true, HasAdvancedDyes: true }, label, data);
@@ -736,8 +734,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (mainhand.IsState)
             {
-                parent._advancedDyes.DrawButton(EquipSlot.MainHand,
-                    mainhand.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
+                parent._advancedDyes.DrawButton(EquipSlot.MainHand, parent._advancedMaterialColor, true, mainhand.HasAdvancedDyes);
             }
 
             if (allWeapons)
@@ -761,8 +758,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (offhand.IsState)
             {
-                parent._advancedDyes.DrawButton(EquipSlot.OffHand,
-                    offhand.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
+                parent._advancedDyes.DrawButton(EquipSlot.OffHand, parent._advancedMaterialColor, true, offhand.HasAdvancedDyes);
             }
 
             parent.WeaponHelpMarker(offhand is { IsDesign: true, HasAdvancedDyes: true }, offhand.IsState, offhandLabel, offhand);
@@ -777,8 +773,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         public static void Equip(EquipmentDrawer parent, in EquipDrawData data)
         {
             data.CurrentItem.DrawIcon(parent._textures, parent._iconSize, data.Slot);
+            var left  = Im.Item.InvisibleButton("button"u8);
             var right = Im.Item.RightClicked();
-            var left  = Im.Item.Clicked();
             Im.Line.Same();
             using var group = Im.Group();
             parent.DrawItem(data, out _, right, left);
@@ -796,7 +792,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (data.IsState)
             {
-                parent._advancedDyes.DrawButton(data.Slot, data.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, false);
+                parent._advancedDyes.DrawButton(data.Slot, parent._advancedMaterialColor, false, data.HasAdvancedDyes);
             }
 
             if (!parent._compact && parent.VerifyRestrictedGear(data))
@@ -809,8 +805,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         public static void Bonus(EquipmentDrawer parent, in BonusDrawData data)
         {
             data.CurrentItem.DrawIcon(parent._textures, parent._iconSize, data.Slot);
+            var left  = Im.Item.InvisibleButton("button"u8);
             var right = Im.Item.RightClicked();
-            var left  = Im.Item.Clicked();
             Im.Line.Same();
             parent.DrawBonusItem(data, out _, right, left);
             if (data.DisplayApplication)
@@ -823,7 +819,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 using var group = Im.Group();
                 if (parent._compact)
                     Im.FrameDummy();
-                parent._advancedDyes.DrawButton(data.Slot, data.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, false);
+                parent._advancedDyes.DrawButton(data.Slot, parent._advancedMaterialColor, false, data.HasAdvancedDyes);
             }
         }
 
@@ -832,7 +828,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             using var style = ImStyleDouble.ItemSpacing.PushX(Im.Style.ItemInnerSpacing.X);
 
             mainhand.CurrentItem.DrawIcon(parent._textures, parent._iconSize, EquipSlot.MainHand);
-            var left = Im.Item.Clicked();
+            var left = Im.Item.InvisibleButton("button"u8);
             Im.Line.Same();
             using (Im.Group())
             {
@@ -851,8 +847,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 }
                 else if (mainhand.IsState)
                 {
-                    parent._advancedDyes.DrawButton(EquipSlot.MainHand,
-                        mainhand.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, false);
+                    parent._advancedDyes.DrawButton(EquipSlot.MainHand, parent._advancedMaterialColor, false, mainhand.HasAdvancedDyes);
                 }
             }
 
@@ -861,8 +856,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 return;
 
             offhand.CurrentItem.DrawIcon(parent._textures, parent._iconSize, EquipSlot.OffHand);
+            left = Im.Item.InvisibleButton("button"u8);
             var right = Im.Item.RightClicked();
-            left = Im.Item.Clicked();
             Im.Line.Same();
             using (Im.Group())
             {
@@ -881,8 +876,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 }
                 else if (offhand.IsState)
                 {
-                    parent._advancedDyes.DrawButton(EquipSlot.OffHand,
-                        offhand.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, false);
+                    parent._advancedDyes.DrawButton(EquipSlot.OffHand, parent._advancedMaterialColor, false, offhand.HasAdvancedDyes);
                 }
             }
         }
@@ -898,8 +892,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             parent.DrawStain(data);
             Im.Line.Same();
             data.CurrentItem.DrawIcon(parent._textures, parent._smallIconSize, data.Slot);
+            var left  = Im.Item.InvisibleButton("button"u8);
             var right = Im.Item.RightClicked();
-            var left  = Im.Item.Clicked();
 
             parent.DrawItem(data, out _, right, left);
             if (data.DisplayApplication)
@@ -911,7 +905,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (data.IsState)
             {
-                parent._advancedDyes.DrawButton(data.Slot, data.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
+                parent._advancedDyes.DrawButton(data.Slot, parent._advancedMaterialColor, true, data.HasAdvancedDyes);
             }
         }
 
@@ -921,8 +915,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 Im.Style.FrameHeight));
             Im.Line.Same();
             data.CurrentItem.DrawIcon(parent._textures, parent._smallIconSize, data.Slot);
+            var left  = Im.Item.InvisibleButton("button"u8);
             var right = Im.Item.RightClicked();
-            var left  = Im.Item.Clicked();
 
             parent.DrawBonusItem(data, out _, right, left);
             if (data.DisplayApplication)
@@ -932,7 +926,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (data.IsState)
             {
-                parent._advancedDyes.DrawButton(data.Slot, data.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
+                parent._advancedDyes.DrawButton(data.Slot, parent._advancedMaterialColor, true, data.HasAdvancedDyes);
             }
         }
 
@@ -941,7 +935,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             parent.DrawStain(mainhand);
             Im.Line.Same();
             mainhand.CurrentItem.DrawIcon(parent._textures, parent._smallIconSize, mainhand.Slot);
-            var left = Im.Item.Clicked();
+            var left = Im.Item.InvisibleButton("button"u8);
 
             parent.DrawMainhand(ref mainhand, ref offhand, out _, allWeapons, left);
             if (mainhand.DisplayApplication)
@@ -953,8 +947,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (mainhand.IsState)
             {
-                parent._advancedDyes.DrawButton(EquipSlot.MainHand,
-                    mainhand.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
+                parent._advancedDyes.DrawButton(EquipSlot.MainHand, parent._advancedMaterialColor, true, mainhand.HasAdvancedDyes);
             }
 
             var validOffhand = mainhand.CurrentItem.Type.ValidOffhand();
@@ -964,8 +957,8 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             parent.DrawStain(offhand);
             Im.Line.Same();
             offhand.CurrentItem.DrawIcon(parent._textures, parent._smallIconSize, offhand.Slot);
+            left  = Im.Item.InvisibleButton("button"u8);
             var right = Im.Item.RightClicked();
-            left = Im.Item.Clicked();
 
             parent.DrawOffhand(mainhand, validOffhand, offhand, out _, right, left);
             if (offhand.DisplayApplication)
@@ -977,8 +970,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
             }
             else if (offhand.IsState)
             {
-                parent._advancedDyes.DrawButton(EquipSlot.OffHand,
-                    offhand.HasAdvancedDyes ? parent._advancedMaterialColor : ColorParameter.Default, true);
+                parent._advancedDyes.DrawButton(EquipSlot.OffHand, parent._advancedMaterialColor, true, offhand.HasAdvancedDyes);
             }
         }
 

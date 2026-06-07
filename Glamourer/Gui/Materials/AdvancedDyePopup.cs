@@ -1,6 +1,5 @@
 ﻿using Dalamud.Interface;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using Glamourer.Config;
 using Glamourer.Designs;
@@ -47,25 +46,25 @@ public sealed unsafe class AdvancedDyePopup(
         return true;
     }
 
-    public void DrawButton(EquipSlot slot, ColorParameter color, bool sameLine)
-        => DrawButton(MaterialValueIndex.FromSlot(slot), color, sameLine);
+    public void DrawButton(EquipSlot slot, Rgba32 color, bool sameLine, bool hasDyes)
+        => DrawButton(MaterialValueIndex.FromSlot(slot), color, sameLine, hasDyes);
 
-    public void DrawButton(BonusItemFlag slot, ColorParameter color, bool sameLine)
-        => DrawButton(MaterialValueIndex.FromSlot(slot), color, sameLine);
+    public void DrawButton(BonusItemFlag slot, Rgba32 color, bool sameLine, bool hasDyes)
+        => DrawButton(MaterialValueIndex.FromSlot(slot), color, sameLine, hasDyes);
 
-    private void DrawButton(MaterialValueIndex index, ColorParameter color, bool sameLine)
+    private void DrawButton(MaterialValueIndex index, Rgba32 color, bool sameLine, bool hasDyes)
     {
         if (config.HideDesignPanel.HasFlag(DesignPanelFlag.AdvancedDyes))
             return;
 
-        if(sameLine)
+        if (sameLine)
             Im.Line.Same();
         using var id     = Im.Id.Push(index.SlotIndex | ((int)index.DrawObject << 8));
         var       isOpen = index == _drawIndex;
 
         var (textColor, buttonColor) = isOpen
             ? (ColorId.HeaderButtons.Value(), ImGuiColor.ButtonActive.Get())
-            : (color, ColorParameter.Default);
+            : (hasDyes ? color : ColorParameter.Default, ColorParameter.Default);
 
         using (ImStyleBorder.Frame.Push(textColor, 2 * Im.Style.GlobalScale, isOpen))
         {
@@ -77,14 +76,36 @@ public sealed unsafe class AdvancedDyePopup(
             }
         }
 
-        Im.Tooltip.OnHover("Open advanced dyes for this slot."u8);
+        if (hasDyes)
+        {
+            if (Im.Item.Hovered())
+            {
+                using var tt = Im.Tooltip.Begin();
+                Im.Text("Open advanced dyes for this slot."u8);
+                Im.Text($"\nHold {LunaStyle.Modifier.Misclick} and right-click to remove all advanced dyes on this slot.");
+            }
+
+            if (Im.Item.Clicked(MouseButton.Right) && LunaStyle.Modifier.Misclick)
+            {
+                var valueSpan = _state.Materials.GetValues(MaterialValueIndex.Min(index.DrawObject, index.SlotIndex),
+                    MaterialValueIndex.Max(index.DrawObject, index.SlotIndex)).ToArray();
+                var values = new MaterialValueIndex[valueSpan.Length];
+                for (var i = 0; i < values.Length; ++i)
+                    values[i] = MaterialValueIndex.FromKey(valueSpan[i].Key);
+                foreach (var key in values)
+                    stateManager.ResetMaterialValue(_state, key, ApplySettings.Game);
+            }
+        }
+        else
+        {
+            Im.Tooltip.OnHover("Open advanced dyes for this slot."u8);
+        }
     }
 
     private (string Path, string GamePath) ResourceName(MaterialValueIndex index)
     {
-        var materialHandle =
-            (MaterialResourceHandle*)_actor.Model.AsCharacterBase->MaterialsSpan[
-                index.MaterialIndex + index.SlotIndex * MaterialService.MaterialsPerModel].Value;
+        var materialHandle = _actor.Model.AsCharacterBase->MaterialsSpan[
+            index.MaterialIndex + index.SlotIndex * MaterialService.MaterialsPerModel].Value;
         var model       = _actor.Model.AsCharacterBase->ModelsSpan[index.SlotIndex].Value;
         var modelHandle = model == null ? null : model->ModelResourceHandle;
         var path = materialHandle == null
@@ -97,7 +118,7 @@ public sealed unsafe class AdvancedDyePopup(
     }
 
     private void DrawTabBar(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures,
-        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials, ref bool firstAvailable)
+        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<MaterialResourceHandle>> materials, ref bool firstAvailable)
     {
         using var bar = Im.TabBar.Begin("tabs"u8);
         if (!bar)
@@ -200,7 +221,7 @@ public sealed unsafe class AdvancedDyePopup(
     }
 
     private void DrawContent(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures,
-        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials)
+        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<MaterialResourceHandle>> materials)
     {
         var firstAvailable = true;
         DrawTabBar(textures, materials, ref firstAvailable);
@@ -210,7 +231,7 @@ public sealed unsafe class AdvancedDyePopup(
     }
 
     private void DrawWindow(ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Texture>> textures,
-        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<Material>> materials, bool centered)
+        ReadOnlySpan<FFXIVClientStructs.Interop.Pointer<MaterialResourceHandle>> materials, bool centered)
     {
         var flags = WindowFlags.NoFocusOnAppearing
           | WindowFlags.NoCollapse
@@ -368,7 +389,7 @@ public sealed unsafe class AdvancedDyePopup(
                 var weapon = slot is EquipSlot.MainHand or EquipSlot.OffHand
                     ? _state.ModelData.Weapon(slot)
                     : _state.ModelData.Armor(slot).ToWeapon(0);
-                var value = new MaterialValueState(internalRow, internalRow, weapon, StateSource.Manual);
+                var value = new MaterialValueState(ColorRow.From(table[idx], _mode), internalRow, weapon, StateSource.Manual);
                 stateManager.ChangeMaterialValue(_state, materialIndex with { RowIndex = (byte)idx }, value, ApplySettings.Manual);
             }
 
@@ -428,7 +449,7 @@ public sealed unsafe class AdvancedDyePopup(
         Im.Line.Same(0, spacing.X);
         applied |= ImEx.ColorPickerButton("##emissive"u8, "Change the emissive color for this row."u8, value.Model.Emissive,
             out value.Model.Emissive, 'E');
-        
+
         Im.Line.Same(0, spacing.X);
 
         if (_mode is ColorRow.Mode.Dawntrail && _editSheen)
@@ -510,7 +531,8 @@ public sealed unsafe class AdvancedDyePopup(
     {
         var tmp      = float.IsNaN(value) ? ColorRow.DefaultGlossStrength : value;
         var minValue = Im.Io.KeyControl ? 0f : (float)Half.Epsilon;
-        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? "\u2014 G"u8 : "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value), SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? "\u2014 G"u8 : "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value),
+                SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, minValue, (float)Half.MaxValue);
@@ -539,7 +561,8 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragSpecularStrength(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultSpecularStrength : value) * 100f;
-        if (!Im.Drag("##SpecularStrength"u8, ref tmp, float.IsNaN(value) ? "\u2014 SS"u8 : "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f, 0.05f, SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##SpecularStrength"u8, ref tmp, float.IsNaN(value) ? "\u2014 SS"u8 : "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f,
+                0.05f, SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, 0f, (float)Half.MaxValue * 100f) / 100f;
@@ -568,7 +591,8 @@ public sealed unsafe class AdvancedDyePopup(
     {
         var gloss = ColorTableRow.ShininessFromRoughness(float.IsNaN(value) ? ColorRow.DefaultRoughness : value);
         var tmp   = gloss;
-        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? "\u2014 G"u8 : "%.1f G"u8, 0.001f, (float)Half.Epsilon, Math.Max(0.01f, 0.005f * gloss), SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? "\u2014 G"u8 : "%.1f G"u8, 0.001f, (float)Half.Epsilon,
+                Math.Max(0.01f, 0.005f * gloss), SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, (float)Half.Epsilon, (float)Half.MaxValue);
@@ -596,7 +620,8 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragSheen(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultSheen : value) * 100f;
-        if (!Im.Drag("##Sheen"u8, ref tmp, float.IsNaN(value) ? "\u2014 Sh"u8 : "%.0f%% Sh"u8, 0f, 100f * (float)Half.MaxValue, 0.25f, SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##Sheen"u8, ref tmp, float.IsNaN(value) ? "\u2014 Sh"u8 : "%.0f%% Sh"u8, 0f, 100f * (float)Half.MaxValue, 0.25f,
+                SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, 0f, 100f * (float)Half.MaxValue) / 100f;
@@ -610,7 +635,8 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragSheenTint(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultSheenTint : value) * 100f;
-        if (!Im.Drag("##SheenTint"u8, ref tmp, float.IsNaN(value) ? "\u2014 ST"u8 : "%.0f%% ST"u8, -100f * (float)Half.MaxValue, 100f * (float)Half.MaxValue, 0.25f,
+        if (!Im.Drag("##SheenTint"u8, ref tmp, float.IsNaN(value) ? "\u2014 ST"u8 : "%.0f%% ST"u8, -100f * (float)Half.MaxValue,
+                100f * (float)Half.MaxValue, 0.25f,
                 SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
@@ -625,7 +651,8 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragSheenRoughness(ref float value, bool canUnset)
     {
         var tmp = 100f / (float.IsNaN(value) ? ColorRow.DefaultSheenAperture : value);
-        if (!Im.Drag("##SheenAperture"u8, ref tmp, float.IsNaN(value) ? "\u2014 SR"u8 : "%.0f%% SR"u8, 100f / (float)Half.MaxValue, 100f / (float)Half.Epsilon, 0.25f,
+        if (!Im.Drag("##SheenAperture"u8, ref tmp, float.IsNaN(value) ? "\u2014 SR"u8 : "%.0f%% SR"u8, 100f / (float)Half.MaxValue,
+                100f / (float)Half.Epsilon, 0.25f,
                 SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 

@@ -126,25 +126,28 @@ public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
 
     public void ApplyItem(ActorState state, EquipItem item, bool ignoreCtrl)
     {
-        var bonusSlot = item.Type.ToBonus();
-        if (bonusSlot is not BonusItemFlag.Unknown)
+        if (item.Type.IsBonus())
         {
-            // + 2 due to weapons.
-            var glasses = _lastItems[bonusSlot.ToSlot() + 2];
-            if (!ignoreCtrl && Im.Io.KeyControl && glasses.Valid)
+            var bonusSlot = item.Type.ToBonus();
+            if (bonusSlot is not BonusItemFlag.Unknown)
             {
-                Glamourer.Log.Debug($"Re-Applying {glasses.Name} to {bonusSlot.ToName()}.");
-                SetLastItem(bonusSlot, default, state);
-                _stateManager.ChangeBonusItem(state, bonusSlot, glasses, ApplySettings.Manual);
-            }
-            else
-            {
-                Glamourer.Log.Debug($"Applying {item.Name} to {bonusSlot.ToName()}.");
-                SetLastItem(bonusSlot, item, state);
-                _stateManager.ChangeBonusItem(state, bonusSlot, item, ApplySettings.Manual);
-            }
+                // + 2 due to weapons.
+                var glasses = _lastItems[bonusSlot.ToSlot() + 2];
+                if (!ignoreCtrl && Im.Io.KeyControl && glasses.Valid)
+                {
+                    Glamourer.Log.Debug($"Re-Applying {glasses.Name} to {bonusSlot.ToName()}.");
+                    SetLastItem(bonusSlot, default, state);
+                    _stateManager.ChangeBonusItem(state, bonusSlot, glasses, ApplySettings.Manual);
+                }
+                else
+                {
+                    Glamourer.Log.Debug($"Applying {item.Name} to {bonusSlot.ToName()}.");
+                    SetLastItem(bonusSlot, item, state);
+                    _stateManager.ChangeBonusItem(state, bonusSlot, item, ApplySettings.Manual);
+                }
 
-            return;
+                return;
+            }
         }
 
         var slot = item.Type.ToSlot();

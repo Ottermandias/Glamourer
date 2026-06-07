@@ -374,14 +374,22 @@ public class StateEditor(
                                 Editor.ChangeItem(state, weaponSlot, old, oldSource, out _, settings.Key);
                         });
                     }
-
-                    var currentType = state.BaseData.Item(weaponSlot).Type;
-                    if (mergedDesign.Weapons.TryGet(currentType, state.LastJob, true, out var weapon))
+                    else
                     {
-                        var source = settings.UseSingleSource ? settings.Source :
-                            weapon.Item2 is StateSource.Game  ? StateSource.Game : settings.Source;
-                        Editor.ChangeItem(state, weaponSlot, weapon.Item1, source, out _,
-                            settings.Key);
+                        var currentType = weaponSlot is EquipSlot.MainHand
+                            ? state.BaseData.MainhandType
+                            : state.ModelData.MainhandType.Offhand();
+                        foreach (var type in currentType.CompatibleTypes().Prepend(currentType))
+                        {
+                            if (!mergedDesign.Weapons.TryGet(type, state.LastJob, true, out var weapon))
+                                continue;
+
+                            var source = settings.UseSingleSource ? settings.Source :
+                                weapon.Item2 is StateSource.Game  ? StateSource.Game : settings.Source;
+                            Editor.ChangeItem(state, weaponSlot, weapon.Item1, source, out _,
+                                settings.Key);
+                            break;
+                        }
                     }
                 }
             }
@@ -399,7 +407,7 @@ public class StateEditor(
 
             if (settings.ResetMaterials || !settings.RespectManual && mergedDesign.ResetAdvancedDyes is not 0)
             {
-                if (mergedDesign.ResetAdvancedDyes.HasFlag(EquipFlagExtensions.AllCombined))
+                if (settings.ResetMaterials || mergedDesign.ResetAdvancedDyes.HasFlag(EquipFlagExtensions.AllCombined))
                     state.Materials.Clear();
                 else
                 {

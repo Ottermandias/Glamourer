@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
+using Glamourer.Api.Enums;
 using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Interop;

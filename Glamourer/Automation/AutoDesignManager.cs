@@ -284,7 +284,7 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
     {
         var newDesign = new AutoDesign
         {
-            Design     = design,
+            Design     = design is RandomDesign ? new RandomDesign(_randomDesigns) : design,
             Type       = ApplicationType.All,
             Conditions = _conditionsLoader.AlwaysTrue,
         };
