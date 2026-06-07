@@ -389,7 +389,7 @@ public sealed unsafe class AdvancedDyePopup(
                 var weapon = slot is EquipSlot.MainHand or EquipSlot.OffHand
                     ? _state.ModelData.Weapon(slot)
                     : _state.ModelData.Armor(slot).ToWeapon(0);
-                var value = new MaterialValueState(internalRow, internalRow, weapon, StateSource.Manual);
+                var value = new MaterialValueState(ColorRow.From(table[idx], _mode), internalRow, weapon, StateSource.Manual);
                 stateManager.ChangeMaterialValue(_state, materialIndex with { RowIndex = (byte)idx }, value, ApplySettings.Manual);
             }
 
