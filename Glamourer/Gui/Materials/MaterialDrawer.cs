@@ -82,11 +82,6 @@ public unsafe class MaterialDrawer(DesignManager designManager, Configuration co
             LunaStyle.Modifier.Destructive.TooltipLineBreak("delete"u8);
     }
 
-    private async Task Bloop()
-    {
-        await Task.Delay(500);
-    }
-
     private void DrawRevertSlots(Design design)
     {
         Im.Cursor.FrameAlign();
