@@ -113,12 +113,12 @@ public class EquipmentBarWindow : OverlayWindow, IDisposable
 
         if (_selection.Data.Objects.Count > 0)
         {
-            using var popupStyle = new Im.ColorStyleDisposable();
-            popupStyle.PushDefault(ImStyleDouble.WindowPadding);
-            popupStyle.PushDefault(ImStyleSingle.WindowBorderThickness);
-            popupStyle.PushDefault(ImGuiColor.WindowBackground);
-            popupStyle.PushDefault(ImGuiColor.Button);
-            popupStyle.PushDefault(ImGuiColor.FrameBackground);
+            using var popupStyle = Im.ColorStyle()
+                .PushDefault(ImStyleDouble.WindowPadding)
+                .PushDefault(ImStyleSingle.WindowBorderThickness)
+                .PushDefault(ImGuiColor.WindowBackground)
+                .PushDefault(ImGuiColor.Button)
+                .PushDefault(ImGuiColor.FrameBackground);
 
             _advancedDyes.Draw(_selection.Data.Objects.Last(), _selection.State!, true);
         }

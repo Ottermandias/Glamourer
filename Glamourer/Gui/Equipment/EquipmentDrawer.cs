@@ -645,7 +645,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 return;
 
             offhand.CurrentItem.DrawIcon(parent._textures, parent._iconSize, EquipSlot.OffHand);
-            left = Im.Item.InvisibleButton("button"u8);
+            left = Im.Item.InvisibleButton("button2"u8);
             var right = Im.Item.RightClicked();
             Im.Line.Same();
             using (Im.Group())
@@ -856,7 +856,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
                 return;
 
             offhand.CurrentItem.DrawIcon(parent._textures, parent._iconSize, EquipSlot.OffHand);
-            left = Im.Item.InvisibleButton("button"u8);
+            left = Im.Item.InvisibleButton("button2"u8);
             var right = Im.Item.RightClicked();
             Im.Line.Same();
             using (Im.Group())
