@@ -1,4 +1,5 @@
 ﻿using Glamourer.GameData;
+using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -424,6 +425,30 @@ public unsafe struct DesignData
         _nameGlasses = string.Empty;
         return true;
     }
+
+    public CharacterWeapon GetIds(MaterialValueIndex.DrawObjectType type, HumanSlot slot)
+        => type switch
+        {
+            MaterialValueIndex.DrawObjectType.Human => slot switch
+            {
+                HumanSlot.Head    => Armor(EquipSlot.Head).ToWeapon(0),
+                HumanSlot.Body    => Armor(EquipSlot.Body).ToWeapon(0),
+                HumanSlot.Hands   => Armor(EquipSlot.Hands).ToWeapon(0),
+                HumanSlot.Legs    => Armor(EquipSlot.Legs).ToWeapon(0),
+                HumanSlot.Feet    => Armor(EquipSlot.Feet).ToWeapon(0),
+                HumanSlot.Ears    => Armor(EquipSlot.Ears).ToWeapon(0),
+                HumanSlot.Neck    => Armor(EquipSlot.Neck).ToWeapon(0),
+                HumanSlot.Wrists  => Armor(EquipSlot.Wrists).ToWeapon(0),
+                HumanSlot.RFinger => Armor(EquipSlot.RFinger).ToWeapon(0),
+                HumanSlot.LFinger => Armor(EquipSlot.LFinger).ToWeapon(0),
+                HumanSlot.Glasses => new CharacterWeapon(_bonusModelIds[0], 0, _bonusVariants[0], StainIds.None),
+                _                 => CharacterWeapon.Empty,
+            },
+            MaterialValueIndex.DrawObjectType.Mainhand => Weapon(EquipSlot.MainHand),
+            MaterialValueIndex.DrawObjectType.Offhand  => Weapon(EquipSlot.OffHand),
+            _                                          => CharacterWeapon.Empty,
+        };
+
 
     public readonly byte[] GetCustomizeBytes()
     {

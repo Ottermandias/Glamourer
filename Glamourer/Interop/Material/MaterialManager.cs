@@ -52,7 +52,7 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
         var min    = MaterialValueIndex.Min(type, slotId, materialId);
         var max    = MaterialValueIndex.Max(type, slotId, materialId);
         var values = state.Materials.GetValues(min, max);
-        if (values.Length == 0)
+        if (values.Length is 0)
             return;
 
         if (!PrepareColorSet.TryGetColorTable(arguments.Handle, arguments.Ids, out var baseColorSet))
@@ -63,6 +63,11 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             MaterialValueIndex.DrawObjectType.Human => GetTempSlot(arguments.Model.AsHuman, (HumanSlot)slotId),
             _                                       => GetTempSlot(arguments.Model.AsWeapon),
         };
+        var gameData = state.BaseData.GetIds(type, (HumanSlot)slotId);
+        // We are transformed, e.g. reaper transformation.
+        if (gameData != drawData)
+            return; 
+
         var mode = PrepareColorSet.GetMode(arguments.Handle);
         UpdateMaterialValues(state, values, drawData, ref baseColorSet, mode);
 
