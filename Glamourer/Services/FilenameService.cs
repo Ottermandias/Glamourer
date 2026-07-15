@@ -31,14 +31,8 @@ public sealed class FilenameService(IDalamudPluginInterface pi) : BaseFilePathPr
     public readonly string MigrationDesignFileSystem = Path.Combine(pi.ConfigDirectory.FullName, "sort_order.json");
     public readonly string MigrationDesignFile       = Path.Combine(pi.ConfigDirectory.FullName, "Designs.json");
 
-    public IEnumerable<FileInfo> Designs()
-    {
-        if (!Directory.Exists(DesignDirectory))
-            yield break;
-
-        foreach (var file in Directory.EnumerateFiles(DesignDirectory, "*.json", SearchOption.TopDirectoryOnly))
-            yield return new FileInfo(file);
-    }
+    public IEnumerable<string> Designs()
+        => !Directory.Exists(DesignDirectory) ? [] : Directory.EnumerateFiles(DesignDirectory, "*.json", SearchOption.TopDirectoryOnly);
 
     public string DesignFile(string identifier)
         => Path.Combine(DesignDirectory, $"{identifier}.json");
@@ -46,23 +40,23 @@ public sealed class FilenameService(IDalamudPluginInterface pi) : BaseFilePathPr
     public string DesignFile(Design design)
         => DesignFile(design.Identifier.ToString());
 
-    public override List<FileInfo> GetBackupFiles()
+    public override List<IBackupFile> GetBackupFiles()
     {
-        var list = new List<FileInfo>(16)
+        var list = new List<IBackupFile>(16)
         {
-            new(ConfigurationFile),
-            new(AutomationFile),
-            new(PredefinedTagFile),
-            new(IgnoredModsFile),
-            new(UnlockFileCustomize),
-            new(UnlockFileItems),
-            new(FavoriteFile),
-            new(DesignColorFile),
-            new(MigrationFileSystemEmptyFolders),
-            new(FileSystemLockedNodes),
+            new DefaultBackupFile(ConfigurationFile),
+            new DefaultBackupFile(AutomationFile),
+            new DefaultBackupFile(PredefinedTagFile),
+            new DefaultBackupFile(IgnoredModsFile),
+            new DefaultBackupFile(UnlockFileCustomize),
+            new DefaultBackupFile(UnlockFileItems),
+            new DefaultBackupFile(FavoriteFile),
+            new DefaultBackupFile(DesignColorFile),
+            new DefaultBackupFile(MigrationFileSystemEmptyFolders),
+            new DefaultBackupFile(FileSystemLockedNodes),
         };
         // Do not back up expanded folders, selected nodes, ui configuration or ephemeral config.
-        list.AddRange(Designs());
+        list.AddRange(Designs().Select(f => new DefaultBackupFile(f)));
         return list;
     }
 }

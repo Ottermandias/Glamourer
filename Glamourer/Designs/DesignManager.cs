@@ -54,10 +54,10 @@ public sealed class DesignManager : DesignEditor, IService
         {
             try
             {
-                var text   = File.ReadAllText(f.FullName);
+                var text   = File.ReadAllText(f);
                 var data   = JObject.Parse(text);
                 var design = Design.LoadDesign(SaveService, Customizations, Items, linkLoader, data);
-                designs.Value!.Add((design, f.FullName));
+                designs.Value!.Add((design, f));
             }
             catch (Exception ex)
             {
