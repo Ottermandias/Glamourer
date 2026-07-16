@@ -166,7 +166,7 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
 
     public void Save(Stream stream)
     {
-        using var writer  = new StreamWriter(stream);
+        using var writer  = new StreamWriter(stream, leaveOpen: true);
         using var jWriter = new JsonTextWriter(writer);
         jWriter.Formatting = Formatting.Indented;
         var serializer = new JsonSerializer { Formatting = Formatting.Indented };

@@ -361,7 +361,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
 
     public void Save(Stream stream)
     {
-        using var writer = new StreamWriter(stream);
+        using var writer = new StreamWriter(stream, leaveOpen: true);
         using var j      = new JsonTextWriter(writer);
         j.Formatting = Formatting.Indented;
         var obj = JsonSerialize();

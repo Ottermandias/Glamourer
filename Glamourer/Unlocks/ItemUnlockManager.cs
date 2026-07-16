@@ -264,7 +264,7 @@ public sealed class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictiona
 
     public void Save(Stream stream)
     {
-        using var writer = new StreamWriter(stream);
+        using var writer = new StreamWriter(stream, leaveOpen: true);
         UnlockDictionaryHelpers.Save(writer, _unlocked);
     }
 

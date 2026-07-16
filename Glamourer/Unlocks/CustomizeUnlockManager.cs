@@ -168,7 +168,7 @@ public sealed class CustomizeUnlockManager : IDisposable, ISavable, IRequiredSer
 
     public void Save(Stream stream)
     {
-        using var writer = new StreamWriter(stream);
+        using var writer = new StreamWriter(stream, leaveOpen: true);
         UnlockDictionaryHelpers.Save(writer, Unlocked);
     }
 

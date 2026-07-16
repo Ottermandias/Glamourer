@@ -194,7 +194,7 @@ public sealed class CollectionOverrideService : IService, ISavable
             ["Version"]   = Version,
             ["Overrides"] = SerializeOverrides(),
         };
-        using var writer = new StreamWriter(stream);
+        using var writer = new StreamWriter(stream, leaveOpen: true);
         using var j = new JsonTextWriter(writer);
         j.Formatting = Formatting.Indented;
         jObj.WriteTo(j);

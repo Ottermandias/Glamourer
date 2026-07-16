@@ -99,7 +99,7 @@ public sealed class LocalNpcAppearanceData : ISavable, IUiService
 
     public void Save(Stream stream)
     {
-        using var writer = new StreamWriter(stream);
+        using var writer = new StreamWriter(stream, leaveOpen: true);
         var jObj = new JObject()
         {
             ["Version"] = 1,

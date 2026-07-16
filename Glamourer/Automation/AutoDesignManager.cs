@@ -457,7 +457,7 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
 
     public void Save(Stream stream)
     {
-        using var writer = new StreamWriter(stream);
+        using var writer = new StreamWriter(stream, leaveOpen: true);
         using var j      = new JsonTextWriter(writer);
         j.Formatting = Formatting.Indented;
         Serialize().WriteTo(j);
