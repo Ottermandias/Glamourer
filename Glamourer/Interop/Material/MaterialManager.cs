@@ -63,10 +63,11 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             MaterialValueIndex.DrawObjectType.Human => GetTempSlot(arguments.Model.AsHuman, (HumanSlot)slotId),
             _                                       => GetTempSlot(arguments.Model.AsWeapon),
         };
-        var gameData = state.BaseData.GetIds(type, (HumanSlot)slotId);
-        // We are transformed, e.g. reaper transformation.
-        if (gameData != drawData)
-            return; 
+        var gameData  = state.BaseData.GetIds(type, (HumanSlot)slotId);
+        var stateData = state.ModelData.GetIds(type, (HumanSlot)slotId);
+        // We are transformed, e.g. reaper transformation, since the new slot matches neither the game data nor our own state.
+        if (gameData != drawData && stateData != drawData)
+            return;
 
         var mode = PrepareColorSet.GetMode(arguments.Handle);
         UpdateMaterialValues(state, values, drawData, ref baseColorSet, mode);
