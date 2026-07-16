@@ -50,6 +50,7 @@ public sealed class GlamourerChangelog : IUiService
         AddDummy(Changelog);
         Add1_6_0_0(Changelog);
         Add1_6_1_0(Changelog);
+        Add1_7_0_0(Changelog);
     }
 
     private (int, ChangeLogDisplayType) ConfigData()
@@ -69,6 +70,27 @@ public sealed class GlamourerChangelog : IUiService
             _config.Save();
         }
     }
+
+    private static void Add1_7_0_0(Changelog log)
+        => log.NextVersion("Version 1.7.0.0"u8)
+            .RegisterHighlight("Improved filtering and sorting of the actor tab."u8)
+            .RegisterHighlight("Added a text command to update an existing design with an actor's state."u8)
+            .RegisterEntry("Fixed Glamourers hat state affecting the checksum used for portraits."u8)
+            .RegisterEntry("Fixed the application of the second dye in the context menu try-on (thanks Ny!)."u8)
+            .RegisterEntry("Fixed issues with transformations like reaper form and advanced dyes."u8)
+            .RegisterEntry("Fixed several issues with advanced dye states."u8)
+            .RegisterEntry("Added API and IPC to manage navigation of Glamourer (1.6.1.7)."u8)
+            .RegisterEntry("Added the option to right-click the advanced dyes button to remove all advanced dyes on that slot (1.6.1.7)."u8)
+            .RegisterEntry("Fixed issues with advanced dyes not clearing from IPC application (thanks UniversalConquistador!) (1.6.1.7)."u8)
+            .RegisterEntry("Fixed issues with infinity values in advanced dyes (1.6.1.7)."u8)
+            .RegisterEntry("Fixed missing labels if no application rules are shown (1.6.1.7)."u8)
+            .RegisterEntry("Fixed issues with bonus items on head slots and vice versa (1.6.1.7)."u8)
+            .RegisterEntry("Added a chat command to toggle the equipment bar (1.6.1.5)."u8)
+            .RegisterEntry("Fixed issues with offhand application when applying designs (1.6.1.5)."u8)
+            .RegisterEntry("Fixed issue with drag & drop on the equipment bar (1.6.1.5)."u8)
+            .RegisterEntry("Fixed several issues with resetting advanced dyes (1.6.1.5)."u8)
+            .RegisterEntry("Fixed an issue when sorting for inverse update dates (1.6.1.3)."u8)
+            .RegisterEntry("Fixed Several issues with application of compatible weapon types in automation (1.6.1.3)."u8);
 
     private static void Add1_6_1_0(Changelog log)
         => log.NextVersion("Version 1.6.1.0"u8)
