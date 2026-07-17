@@ -154,7 +154,7 @@ public sealed class ActorPanel : IPanel
             return;
 
         if (_customizationDrawer.Draw(_selection.State!.ModelData.Customize, _selection.State.IsLocked, _selection.LockedRedraw, true,
-                _selection.State.Materials.CheckExistenceSlots(MaterialValueIndex.CustomizationSlotsFlag)))
+                _selection.State.Materials.CheckExistenceSlots(ModelCombinedSlotsExtensions.AllCustomization)))
             _stateManager.ChangeEntireCustomize(_selection.State, _customizationDrawer.Customize, _customizationDrawer.Changed,
                 ApplySettings.Manual);
 

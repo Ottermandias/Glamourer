@@ -79,7 +79,7 @@ public sealed class MultiDesignPanel(
             ++_numDesignsForcedRedraw;
         if (l.Value.ResetAdvancedDyes is not 0)
             ++_numDesignsResetSomeDyes;
-        if (l.Value.ResetAdvancedDyes.HasFlag(MaterialValueIndex.AllSlotsFlag))
+        if (l.Value.ResetAdvancedDyes.HasFlag(ModelCombinedSlotsExtensions.All))
             ++_numDesignsResetAllDyes;
         if (l.Value.Materials.Count > 0)
         {
@@ -265,7 +265,7 @@ public sealed class MultiDesignPanel(
                 ? $"All {fileSystem.Selection.DataNodes.Count} selected designs already reset advanced dyes."
                 : $"Make all {fileSystem.Selection.DataNodes.Count} selected designs reset advanced dyes. Changes {diff} designs.", diff is 0))
             foreach (var design in fileSystem.Selection.DataNodes)
-                editor.ChangeResetAdvancedDyes(design.GetValue<Design>()!, MaterialValueIndex.AllSlotsFlag);
+                editor.ChangeResetAdvancedDyes(design.GetValue<Design>()!, ModelCombinedSlotsExtensions.All);
 
         Im.Line.SameInner();
         if (ImEx.Button("Remove Reset Dyes"u8, width, _numDesignsLocked is 0

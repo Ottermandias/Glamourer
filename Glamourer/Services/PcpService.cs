@@ -86,7 +86,7 @@ public class PcpService : IRequiredService
         _designManager.SetWriteProtection(design, true);
         _designManager.AddMod(design, new Mod(modDirectory, modDirectory), new ModSettings([], 0, true, false, false));
         _designManager.ChangeDescription(design, $"PCP design created for {actorIdentifier} on {time}.");
-        _designManager.ChangeResetAdvancedDyes(design, MaterialValueIndex.AllSlotsFlag);
+        _designManager.ChangeResetAdvancedDyes(design, ModelCombinedSlotsExtensions.All);
         _designManager.SetQuickDesign(design, false);
         _designManager.ChangeColor(design, _config.PcpColor);
 

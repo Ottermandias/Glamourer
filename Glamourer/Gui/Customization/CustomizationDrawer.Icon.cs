@@ -65,7 +65,7 @@ public partial class CustomizationDrawer
 
             if (GetMaterialValueIndex(_currentIndex) is { } materialValueIndex)
             {
-                var hasDyes = _existentAdvancedDyes.HasFlag(materialValueIndex.ToCombinedItemSlot());
+                var hasDyes = _existentAdvancedDyes.HasFlag(materialValueIndex.ToCombinedSlot());
                 if (_withAdvancedDyes)
                 {
                     advancedDyes.DrawButton(materialValueIndex, _advancedMaterialColor, false, hasDyes);
@@ -251,7 +251,7 @@ public partial class CustomizationDrawer
         {
             CustomizeIndex.Face      => MaterialValueIndex.Face,
             CustomizeIndex.Hairstyle => MaterialValueIndex.Hair,
-            CustomizeIndex.TailShape => MaterialValueIndex.TailEar,
+            CustomizeIndex.TailShape => MaterialValueIndex.RacialFeature,
             _                        => null,
         };
 }

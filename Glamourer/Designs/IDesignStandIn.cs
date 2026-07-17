@@ -29,7 +29,7 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
 
     public bool ForcedRedraw { get; }
 
-    public CombinedItemSlotFlag ResetAdvancedDyes      { get; }
-    public CombinedItemSlotFlag RevertAdvancedDyes     { get; }
-    public bool                 ResetTemporarySettings { get; }
+    public ModelCombinedSlots ResetAdvancedDyes      { get; }
+    public ModelCombinedSlots RevertAdvancedDyes     { get; }
+    public bool               ResetTemporarySettings { get; }
 }

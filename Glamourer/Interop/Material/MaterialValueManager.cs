@@ -448,13 +448,13 @@ public readonly struct MaterialValueManager<T>
         return true;
     }
 
-    public CombinedItemSlotFlag CheckExistenceSlots(CombinedItemSlotFlag flag)
+    public ModelCombinedSlots CheckExistenceSlots(ModelCombinedSlots flag)
     {
-        var existent  = (CombinedItemSlotFlag)0;
+        var existent  = (ModelCombinedSlots)0;
         var remaining = flag;
         while (remaining is not 0)
         {
-            var slot = unchecked(remaining & (~remaining + 1));
+            var slot = remaining.First;
             if (CheckExistenceSlot(MaterialValueIndex.Min(slot)))
                 existent |= slot;
             remaining &= ~slot;

@@ -18,20 +18,18 @@ public readonly record struct MaterialValueIndex(
 {
     public static readonly MaterialValueIndex Invalid = new(DrawObjectType.Invalid, 0, 0, 0);
 
-    // HACK Abusing the 6 most significant bits of the field (and therefore those that are the least likely to ever clash) to represent customization slots instead of item slots.
-    public const CombinedItemSlotFlag CustomizationSlotsFlag = (CombinedItemSlotFlag)0x1C000000u;
-    public const CombinedItemSlotFlag AllSlotsFlag           = EquipFlagExtensions.AllCombined | CustomizationSlotsFlag;
-
-    public static readonly MaterialValueIndex Hair       = Min(DrawObjectType.Human, 10);
-    public static readonly MaterialValueIndex Face       = Min(DrawObjectType.Human, 11);
-    public static readonly MaterialValueIndex TailEar    = Min(DrawObjectType.Human, 12);
-    public static readonly MaterialValueIndex Connectors = Min(DrawObjectType.Human, 13);
+    public static readonly MaterialValueIndex Hair          = Min(DrawObjectType.Human, 10);
+    public static readonly MaterialValueIndex Face          = Min(DrawObjectType.Human, 11);
+    public static readonly MaterialValueIndex RacialFeature = Min(DrawObjectType.Human, 12);
+    public static readonly MaterialValueIndex Connector1    = Min(DrawObjectType.Human, 13);
+    public static readonly MaterialValueIndex Connector2    = Min(DrawObjectType.Human, 14);
+    public static readonly MaterialValueIndex Body3         = Min(DrawObjectType.Human, 15);
 
     public static readonly ImmutableArray<MaterialValueIndex> AllSlots =
     [
         // Show equipment/weapon/bonus slots in an order consistent with the EquipmentDrawer.
         ..EquipSlotExtensions.FullSlots.Select(FromSlot).OrderBy(static index => index.Key), ..BonusExtensions.AllFlags.Select(FromSlot),
-        Hair, Face, TailEar,
+        Hair, Face, RacialFeature, Connector1, Connector2, Body3,
     ];
 
     #region Prepared StringU8 slot names - see SlotName().
@@ -40,7 +38,9 @@ public readonly record struct MaterialValueIndex(
     private static readonly StringU8 SlotNameHair       = BodySlot.Hair.StringU8;
     private static readonly StringU8 SlotNameFace       = BodySlot.Face.StringU8;
     private static readonly StringU8 SlotNameTailEar    = new($"{BodySlot.Tail} / {BodySlot.Ear}");
-    private static readonly StringU8 SlotNameConnectors = new("Connectors"u8);
+    private static readonly StringU8 SlotNameConnector1 = new("Connector 1"u8);
+    private static readonly StringU8 SlotNameConnector2 = new("Connector 2"u8);
+    private static readonly StringU8 SlotNameBody3      = new("Body 3"u8);
 
     #endregion
 
@@ -89,7 +89,9 @@ public readonly record struct MaterialValueIndex(
             DrawObjectType.Human when SlotIndex == 10   => SlotNameHair,
             DrawObjectType.Human when SlotIndex == 11   => SlotNameFace,
             DrawObjectType.Human when SlotIndex == 12   => SlotNameTailEar,
-            DrawObjectType.Human when SlotIndex == 13   => SlotNameConnectors,
+            DrawObjectType.Human when SlotIndex == 13   => SlotNameConnector1,
+            DrawObjectType.Human when SlotIndex == 13   => SlotNameConnector2,
+            DrawObjectType.Human when SlotIndex == 13   => SlotNameBody3,
             DrawObjectType.Human when SlotIndex == 16   => BonusItemFlag.Glasses.ToNameU8(),
             DrawObjectType.Human when SlotIndex == 17   => BonusItemFlag.UnkSlot.ToNameU8(),
             DrawObjectType.Mainhand when SlotIndex == 0 => EquipSlot.MainHand.ToNameU8(),
@@ -113,14 +115,12 @@ public readonly record struct MaterialValueIndex(
             _                                        => BonusItemFlag.Unknown,
         };
 
-    public CombinedItemSlotFlag ToCombinedItemSlot()
+    public ModelCombinedSlots ToCombinedSlot()
         => DrawObject switch
         {
-            DrawObjectType.Human when SlotIndex < 10    => ((uint)SlotIndex).ToEquipSlot().ToFlag().ToCombinedItemSlotFlag(),
-            DrawObjectType.Mainhand when SlotIndex == 0 => CombinedItemSlotFlag.Mainhand,
-            DrawObjectType.Offhand when SlotIndex == 0  => CombinedItemSlotFlag.Offhand,
-            DrawObjectType.Human when SlotIndex > 15    => ((uint)SlotIndex - 16).ToBonusSlot().ToCombinedItemSlotFlag(),
-            DrawObjectType.Human                        => (CombinedItemSlotFlag)(1u << (16 + SlotIndex)),
+            DrawObjectType.Human when SlotIndex < 18    => (ModelCombinedSlots)((ulong)ModelCombinedSlots.Head << SlotIndex),
+            DrawObjectType.Mainhand when SlotIndex == 0 => ModelCombinedSlots.Mainhand,
+            DrawObjectType.Offhand when SlotIndex == 0  => ModelCombinedSlots.Offhand,
             _                                           => 0,
         };
 
@@ -241,23 +241,19 @@ public readonly record struct MaterialValueIndex(
     public static MaterialValueIndex Min(DrawObjectType drawObject = 0, byte slotIndex = 0, byte materialIndex = 0, byte rowIndex = 0)
         => new(drawObject, slotIndex, materialIndex, rowIndex);
 
-    public static MaterialValueIndex Min(CombinedItemSlotFlag combinedItemSlot, byte materialIndex = 0, byte rowIndex = 0)
+    public static MaterialValueIndex Min(ModelCombinedSlots slot, byte materialIndex = 0, byte rowIndex = 0)
     {
         // The slot mask must have one and exactly one bit set.
-        if (combinedItemSlot is 0 || unchecked((uint)combinedItemSlot & ((uint)combinedItemSlot - 1)) is not 0)
+        if (slot is 0 || slot.ExceptFirst is not 0)
             return new MaterialValueIndex(DrawObjectType.Invalid, 0, materialIndex, rowIndex);
 
-        return combinedItemSlot switch
+        var index = unchecked((byte)BitOperations.TrailingZeroCount((ulong)slot));
+        return index switch
         {
-            < CombinedItemSlotFlag.Mainhand => new MaterialValueIndex(DrawObjectType.Human,
-                (byte)BitOperations.TrailingZeroCount(unchecked((int)combinedItemSlot)), materialIndex, rowIndex),
-            CombinedItemSlotFlag.Mainhand  => new MaterialValueIndex(DrawObjectType.Mainhand, 0,  materialIndex, rowIndex),
-            CombinedItemSlotFlag.Offhand   => new MaterialValueIndex(DrawObjectType.Offhand,  0,  materialIndex, rowIndex),
-            CombinedItemSlotFlag.Glasses   => new MaterialValueIndex(DrawObjectType.Human,    16, materialIndex, rowIndex),
-            CombinedItemSlotFlag.UnkBonus2 => new MaterialValueIndex(DrawObjectType.Human,    17, materialIndex, rowIndex),
-            >= (CombinedItemSlotFlag)0x04000000u => new MaterialValueIndex(DrawObjectType.Human,
-                (byte)(BitOperations.TrailingZeroCount(unchecked((int)combinedItemSlot)) - 16), materialIndex, rowIndex),
-            _ => new MaterialValueIndex(DrawObjectType.Invalid, 0, materialIndex, rowIndex),
+            < 18 => new MaterialValueIndex(DrawObjectType.Human,    index, materialIndex, rowIndex),
+            32   => new MaterialValueIndex(DrawObjectType.Mainhand, 0,     materialIndex, rowIndex),
+            40   => new MaterialValueIndex(DrawObjectType.Offhand,  0,     materialIndex, rowIndex),
+            _    => new MaterialValueIndex(DrawObjectType.Invalid,  0,     materialIndex, rowIndex),
         };
     }
 
@@ -265,7 +261,7 @@ public readonly record struct MaterialValueIndex(
         byte materialIndex = byte.MaxValue, byte rowIndex = byte.MaxValue)
         => new(drawObject, slotIndex, materialIndex, rowIndex);
 
-    public static MaterialValueIndex Max(CombinedItemSlotFlag combinedItemSlot, byte materialIndex = byte.MaxValue,
+    public static MaterialValueIndex Max(ModelCombinedSlots combinedItemSlot, byte materialIndex = byte.MaxValue,
         byte rowIndex = byte.MaxValue)
         => Min(combinedItemSlot, materialIndex, rowIndex);
 
@@ -321,7 +317,9 @@ public readonly record struct MaterialValueIndex(
             DrawObjectType.Human when SlotIndex == 10   => $"{BodySlot.Hair}",
             DrawObjectType.Human when SlotIndex == 11   => $"{BodySlot.Face}",
             DrawObjectType.Human when SlotIndex == 12   => $"{BodySlot.Tail} / {BodySlot.Ear}",
-            DrawObjectType.Human when SlotIndex == 13   => $"Connectors",
+            DrawObjectType.Human when SlotIndex == 13   => "Connector 1",
+            DrawObjectType.Human when SlotIndex == 14   => "Connector 2",
+            DrawObjectType.Human when SlotIndex == 15   => "Body 3",
             DrawObjectType.Human when SlotIndex == 16   => $"{BonusItemFlag.Glasses.ToName()}",
             DrawObjectType.Human when SlotIndex == 17   => $"{BonusItemFlag.UnkSlot.ToName()}",
             DrawObjectType.Mainhand when SlotIndex == 0 => $"{EquipSlot.MainHand.ToName()}",

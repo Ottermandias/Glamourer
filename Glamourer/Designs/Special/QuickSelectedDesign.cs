@@ -56,12 +56,12 @@ public class QuickSelectedDesign(QuickDesignCombo combo) : IDesignStandIn, IServ
     public bool ForcedRedraw
         => combo.QuickDesign?.ForcedRedraw ?? false;
 
-    public CombinedItemSlotFlag ResetAdvancedDyes
+    public ModelCombinedSlots ResetAdvancedDyes
         => combo.QuickDesign?.ResetAdvancedDyes ?? 0;
 
     public bool ResetTemporarySettings
         => combo.QuickDesign?.ResetTemporarySettings ?? false;
 
-    public CombinedItemSlotFlag RevertAdvancedDyes
+    public ModelCombinedSlots RevertAdvancedDyes
         => combo.QuickDesign?.RevertAdvancedDyes ?? 0;
 }

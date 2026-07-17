@@ -36,26 +36,26 @@ public sealed partial class CustomizationDrawer(
     public CustomizeFlag Changed     { get; private set; }
     public CustomizeFlag ChangeApply { get; private set; }
 
-    private CustomizeFlag        _initialApply;
-    private bool                 _locked;
-    private bool                 _lockedRedraw;
-    private bool                 _withAdvancedDyes;
-    private Rgba32               _advancedMaterialColor;
-    private CombinedItemSlotFlag _existentAdvancedDyes;
-    private Vector2              _spacing;
-    private Vector2              _iconSize;
-    private Vector2              _framedIconSize;
-    private float                _inputIntSize;
-    private float                _inputIntSizeNoButtons;
-    private float                _comboSelectorSize;
-    private float                _raceSelectorWidth;
-    private bool                 _withApply;
-    private bool                 _isDesign;
+    private CustomizeFlag      _initialApply;
+    private bool               _locked;
+    private bool               _lockedRedraw;
+    private bool               _withAdvancedDyes;
+    private Rgba32             _advancedMaterialColor;
+    private ModelCombinedSlots _existentAdvancedDyes;
+    private Vector2            _spacing;
+    private Vector2            _iconSize;
+    private Vector2            _framedIconSize;
+    private float              _inputIntSize;
+    private float              _inputIntSizeNoButtons;
+    private float              _comboSelectorSize;
+    private float              _raceSelectorWidth;
+    private bool               _withApply;
+    private bool               _isDesign;
 
     public void Dispose()
         => _legacyTattoo?.Dispose();
 
-    public bool Draw(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, CombinedItemSlotFlag existentAdvancedDyes)
+    public bool Draw(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existentAdvancedDyes)
     {
         _withApply = false;
         _isDesign  = false;
@@ -64,7 +64,7 @@ public sealed partial class CustomizationDrawer(
         return DrawInternal();
     }
 
-    public bool Draw(CustomizeArray current, CustomizeFlag apply, bool locked, bool lockedRedraw, bool withAdvancedDyes, CombinedItemSlotFlag existentAdvancedDyes)
+    public bool Draw(CustomizeArray current, CustomizeFlag apply, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existentAdvancedDyes)
     {
         ChangeApply   = apply;
         _initialApply = apply;
@@ -74,7 +74,7 @@ public sealed partial class CustomizationDrawer(
         return DrawInternal();
     }
 
-    private void Init(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, CombinedItemSlotFlag existentAdvancedDyes)
+    private void Init(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existentAdvancedDyes)
     {
         UpdateSizes();
         _advancedMaterialColor = ColorId.AdvancedDyeActive.Value();

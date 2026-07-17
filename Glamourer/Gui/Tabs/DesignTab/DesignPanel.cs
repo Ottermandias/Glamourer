@@ -154,7 +154,7 @@ public class DesignPanel : IPanel
 
         if (_customizationDrawer.Draw(Selection.DesignData.Customize, Selection.Application.Customize,
                 Selection.WriteProtected(), false, false,
-                Selection.GetMaterialDataRef().CheckExistenceSlots(MaterialValueIndex.CustomizationSlotsFlag)))
+                Selection.GetMaterialDataRef().CheckExistenceSlots(ModelCombinedSlotsExtensions.AllCustomization)))
             foreach (var idx in CustomizeIndex.Values)
             {
                 var flag     = idx.ToFlag();
