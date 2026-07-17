@@ -391,7 +391,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
             if ((value & ~(ulong)ModelCombinedSlotsExtensions.AllEquipmentPieces) is 0)
                 return (ModelCombinedSlots)value;
 
-            // Treat the legacy "All" value as the current "All" (that will be).
+            // Treat the legacy "All" value as the current "All" (that will be serialized as `true`).
             if ((value & 0x1FFF) is 0x1FFF)
                 return ModelCombinedSlotsExtensions.All;
                 
