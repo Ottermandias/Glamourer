@@ -450,17 +450,17 @@ public readonly struct MaterialValueManager<T>
 
     public ModelCombinedSlots CheckExistenceSlots(ModelCombinedSlots flag)
     {
-        var existent  = (ModelCombinedSlots)0;
+        var existing  = (ModelCombinedSlots)0;
         var remaining = flag;
         while (remaining is not 0)
         {
             var slot = remaining.First;
             if (CheckExistenceSlot(MaterialValueIndex.Min(slot)))
-                existent |= slot;
+                existing |= slot;
             remaining &= ~slot;
         }
 
-        return existent;
+        return existing;
     }
 
     public bool CheckExistenceSlot(MaterialValueIndex index)

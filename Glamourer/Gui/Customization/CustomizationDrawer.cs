@@ -55,26 +55,27 @@ public sealed partial class CustomizationDrawer(
     public void Dispose()
         => _legacyTattoo?.Dispose();
 
-    public bool Draw(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existentAdvancedDyes)
+    public bool Draw(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existingAdvancedDyes)
     {
         _withApply = false;
         _isDesign  = false;
-        Init(current, locked, lockedRedraw, withAdvancedDyes, existentAdvancedDyes);
+        Init(current, locked, lockedRedraw, withAdvancedDyes, existingAdvancedDyes);
 
         return DrawInternal();
     }
 
-    public bool Draw(CustomizeArray current, CustomizeFlag apply, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existentAdvancedDyes)
+    public bool Draw(CustomizeArray current, CustomizeFlag apply, bool locked, bool lockedRedraw, bool withAdvancedDyes,
+        ModelCombinedSlots existingAdvancedDyes)
     {
         ChangeApply   = apply;
         _initialApply = apply;
         _withApply    = !config.HideApplyCheckmarks;
         _isDesign     = true;
-        Init(current, locked, lockedRedraw, withAdvancedDyes, existentAdvancedDyes);
+        Init(current, locked, lockedRedraw, withAdvancedDyes, existingAdvancedDyes);
         return DrawInternal();
     }
 
-    private void Init(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existentAdvancedDyes)
+    private void Init(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existingAdvancedDyes)
     {
         UpdateSizes();
         _advancedMaterialColor = ColorId.AdvancedDyeActive.Value();
@@ -84,7 +85,7 @@ public sealed partial class CustomizationDrawer(
         _locked                = locked;
         _lockedRedraw          = lockedRedraw;
         _withAdvancedDyes      = withAdvancedDyes;
-        _existentAdvancedDyes  = existentAdvancedDyes;
+        _existentAdvancedDyes  = existingAdvancedDyes;
     }
 
     // Set state for drawing of current customization.

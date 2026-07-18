@@ -240,7 +240,6 @@ public unsafe class MaterialDrawer(DesignManager designManager, Configuration co
         using (var combo = Im.Combo.Begin("##slot"u8, _newKey.SlotName()))
         {
             if (combo)
-            {
                 foreach (var slot in MaterialValueIndex.AllSlots)
                 {
                     if (Im.Selectable(slot.SlotName(), slot.SlotEquals(_newKey)) && !slot.SlotEquals(_newKey))
@@ -250,7 +249,6 @@ public unsafe class MaterialDrawer(DesignManager designManager, Configuration co
                             RowIndex = (byte)_newRowIdx,
                         };
                 }
-            }
         }
 
         Im.Tooltip.OnHover("Choose a slot for an advanced dye row."u8);

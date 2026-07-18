@@ -81,7 +81,9 @@ public partial class CustomizationDrawer
                     Im.Tooltip.OnHover("This design has advanced dyes setup for this slot."u8);
             }
             else
+            {
                 Im.Text(label);
+            }
         }
 
         DrawIconPickerPopup(current);
