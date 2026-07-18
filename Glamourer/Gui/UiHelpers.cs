@@ -1,3 +1,4 @@
+using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImSharp;
@@ -172,7 +173,7 @@ public static class UiHelpers
 
     private static readonly StringU8 Slots = new("slots"u8);
 
-    public static bool DrawItemSlots(Utf8StringHandler<LabelStringHandlerBuffer> id, ref CombinedItemSlotFlag slots,
-        CombinedItemSlotFlag allowedSlots = EquipFlagExtensions.AllCombined, bool readOnly = false)
-        => SetButtons.DrawComboEnum(id, ref slots, allowedSlots, static slot => slot.ToLabelU8(), Slots, readOnly);
+    public static bool DrawItemSlots(Utf8StringHandler<LabelStringHandlerBuffer> id, ref ModelCombinedSlots slots,
+        ModelCombinedSlots allowedSlots = ModelCombinedSlotsExtensions.All, bool readOnly = false)
+        => SetButtons.DrawComboEnum(id, ref slots, allowedSlots, static slot => MaterialValueIndex.Min(slot).SlotName(), Slots, readOnly);
 }

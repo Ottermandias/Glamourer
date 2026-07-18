@@ -100,6 +100,6 @@ public sealed class MergedDesign
     public readonly SortedList<Mod, ModSettings> AssociatedMods = [];
     public          StateSources                 Sources        = new();
     public          bool                         ForcedRedraw;
-    public          CombinedItemSlotFlag         ResetAdvancedDyes;
+    public          ModelCombinedSlots           ResetAdvancedDyes;
     public          bool                         ResetTemporarySettings;
 }

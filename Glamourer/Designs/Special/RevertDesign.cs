@@ -47,12 +47,12 @@ public class RevertDesign : IDesignStandIn
     public bool ForcedRedraw
         => false;
 
-    public CombinedItemSlotFlag ResetAdvancedDyes
-        => EquipFlagExtensions.AllCombined;
+    public ModelCombinedSlots ResetAdvancedDyes
+        => ModelCombinedSlotsExtensions.All;
 
     public bool ResetTemporarySettings
         => true;
 
-    public CombinedItemSlotFlag RevertAdvancedDyes
-        => 0; // Not sure whether AllCombined makes more sense here. 0 is backwards-compatible.
+    public ModelCombinedSlots RevertAdvancedDyes
+        => 0; // Not sure whether All makes more sense here. 0 is backwards-compatible.
 }

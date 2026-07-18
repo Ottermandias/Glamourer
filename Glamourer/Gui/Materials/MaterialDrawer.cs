@@ -240,29 +240,15 @@ public unsafe class MaterialDrawer(DesignManager designManager, Configuration co
         using (var combo = Im.Combo.Begin("##slot"u8, _newKey.SlotName()))
         {
             if (combo)
-            {
-                var currentSlot = _newKey.ToEquipSlot();
-                foreach (var tmpSlot in EquipSlotExtensions.FullSlots)
+                foreach (var slot in MaterialValueIndex.AllSlots)
                 {
-                    if (Im.Selectable(tmpSlot.ToNameU8(), tmpSlot == currentSlot) && currentSlot != tmpSlot)
-                        _newKey = MaterialValueIndex.FromSlot(tmpSlot) with
+                    if (Im.Selectable(slot.SlotName(), slot.SlotEquals(_newKey)) && !slot.SlotEquals(_newKey))
+                        _newKey = slot with
                         {
                             MaterialIndex = (byte)_newMaterialIdx,
                             RowIndex = (byte)_newRowIdx,
                         };
                 }
-
-                var currentBonus = _newKey.ToBonusSlot();
-                foreach (var bonusSlot in BonusExtensions.AllFlags)
-                {
-                    if (Im.Selectable(bonusSlot.ToNameU8(), bonusSlot == currentBonus) && bonusSlot != currentBonus)
-                        _newKey = MaterialValueIndex.FromSlot(bonusSlot) with
-                        {
-                            MaterialIndex = (byte)_newMaterialIdx,
-                            RowIndex = (byte)_newRowIdx,
-                        };
-                }
-            }
         }
 
         Im.Tooltip.OnHover("Choose a slot for an advanced dye row."u8);

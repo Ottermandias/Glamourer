@@ -96,12 +96,12 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public bool ForcedRedraw
         => _currentDesign?.ForcedRedraw ?? false;
 
-    public CombinedItemSlotFlag ResetAdvancedDyes
+    public ModelCombinedSlots ResetAdvancedDyes
         => _currentDesign?.ResetAdvancedDyes ?? 0;
 
     public bool ResetTemporarySettings
         => _currentDesign?.ResetTemporarySettings ?? false;
 
-    public CombinedItemSlotFlag RevertAdvancedDyes
+    public ModelCombinedSlots RevertAdvancedDyes
         => _currentDesign?.RevertAdvancedDyes ?? 0;
 }

@@ -1,5 +1,6 @@
 ﻿using Glamourer.Config;
 using Glamourer.Designs;
+using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using Luna;
@@ -85,7 +86,7 @@ public class PcpService : IRequiredService
         _designManager.SetWriteProtection(design, true);
         _designManager.AddMod(design, new Mod(modDirectory, modDirectory), new ModSettings([], 0, true, false, false));
         _designManager.ChangeDescription(design, $"PCP design created for {actorIdentifier} on {time}.");
-        _designManager.ChangeResetAdvancedDyes(design, EquipFlagExtensions.AllCombined);
+        _designManager.ChangeResetAdvancedDyes(design, ModelCombinedSlotsExtensions.All);
         _designManager.SetQuickDesign(design, false);
         _designManager.ChangeColor(design, _config.PcpColor);
 

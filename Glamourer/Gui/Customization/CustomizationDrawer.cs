@@ -3,6 +3,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
 using Glamourer.Config;
 using Glamourer.GameData;
+using Glamourer.Gui.Materials;
 using Glamourer.Services;
 using Glamourer.Unlocks;
 using ImSharp;
@@ -17,7 +18,8 @@ public sealed partial class CustomizationDrawer(
     CustomizeService service,
     Configuration config,
     FavoriteManager favorites,
-    HeightService heightService)
+    HeightService heightService,
+    AdvancedDyePopup advancedDyes)
     : IDisposable, IUiService
 {
     private readonly Vector4              _redTint      = new(0.6f, 0.3f, 0.3f, 1f);
@@ -34,46 +36,56 @@ public sealed partial class CustomizationDrawer(
     public CustomizeFlag Changed     { get; private set; }
     public CustomizeFlag ChangeApply { get; private set; }
 
-    private CustomizeFlag _initialApply;
-    private bool          _locked;
-    private bool          _lockedRedraw;
-    private Vector2       _spacing;
-    private Vector2       _iconSize;
-    private Vector2       _framedIconSize;
-    private float         _inputIntSize;
-    private float         _inputIntSizeNoButtons;
-    private float         _comboSelectorSize;
-    private float         _raceSelectorWidth;
-    private bool          _withApply;
+    private CustomizeFlag      _initialApply;
+    private bool               _locked;
+    private bool               _lockedRedraw;
+    private bool               _withAdvancedDyes;
+    private Rgba32             _advancedMaterialColor;
+    private ModelCombinedSlots _existentAdvancedDyes;
+    private Vector2            _spacing;
+    private Vector2            _iconSize;
+    private Vector2            _framedIconSize;
+    private float              _inputIntSize;
+    private float              _inputIntSizeNoButtons;
+    private float              _comboSelectorSize;
+    private float              _raceSelectorWidth;
+    private bool               _withApply;
+    private bool               _isDesign;
 
     public void Dispose()
         => _legacyTattoo?.Dispose();
 
-    public bool Draw(CustomizeArray current, bool locked, bool lockedRedraw)
+    public bool Draw(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existingAdvancedDyes)
     {
         _withApply = false;
-        Init(current, locked, lockedRedraw);
+        _isDesign  = false;
+        Init(current, locked, lockedRedraw, withAdvancedDyes, existingAdvancedDyes);
 
         return DrawInternal();
     }
 
-    public bool Draw(CustomizeArray current, CustomizeFlag apply, bool locked, bool lockedRedraw)
+    public bool Draw(CustomizeArray current, CustomizeFlag apply, bool locked, bool lockedRedraw, bool withAdvancedDyes,
+        ModelCombinedSlots existingAdvancedDyes)
     {
         ChangeApply   = apply;
         _initialApply = apply;
         _withApply    = !config.HideApplyCheckmarks;
-        Init(current, locked, lockedRedraw);
+        _isDesign     = true;
+        Init(current, locked, lockedRedraw, withAdvancedDyes, existingAdvancedDyes);
         return DrawInternal();
     }
 
-    private void Init(CustomizeArray current, bool locked, bool lockedRedraw)
+    private void Init(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existingAdvancedDyes)
     {
         UpdateSizes();
-        _terminate    = null;
-        Changed       = 0;
-        _customize    = current;
-        _locked       = locked;
-        _lockedRedraw = lockedRedraw;
+        _advancedMaterialColor = ColorId.AdvancedDyeActive.Value();
+        _terminate             = null;
+        Changed                = 0;
+        _customize             = current;
+        _locked                = locked;
+        _lockedRedraw          = lockedRedraw;
+        _withAdvancedDyes      = withAdvancedDyes;
+        _existentAdvancedDyes  = existingAdvancedDyes;
     }
 
     // Set state for drawing of current customization.

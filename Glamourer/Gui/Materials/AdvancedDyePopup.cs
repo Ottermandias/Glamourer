@@ -52,7 +52,7 @@ public sealed unsafe class AdvancedDyePopup(
     public void DrawButton(BonusItemFlag slot, Rgba32 color, bool sameLine, bool hasDyes)
         => DrawButton(MaterialValueIndex.FromSlot(slot), color, sameLine, hasDyes);
 
-    private void DrawButton(MaterialValueIndex index, Rgba32 color, bool sameLine, bool hasDyes)
+    public void DrawButton(MaterialValueIndex index, Rgba32 color, bool sameLine, bool hasDyes)
     {
         if (config.HideDesignPanel.HasFlag(DesignPanelFlag.AdvancedDyes))
             return;
@@ -60,7 +60,7 @@ public sealed unsafe class AdvancedDyePopup(
         if (sameLine)
             Im.Line.Same();
         using var id     = Im.Id.Push(index.SlotIndex | ((int)index.DrawObject << 8));
-        var       isOpen = index == _drawIndex;
+        var       isOpen = _drawIndex is { } drawIndex && index.SlotEquals(drawIndex);
 
         var (textColor, buttonColor) = isOpen
             ? (ColorId.HeaderButtons.Value(), ImGuiColor.ButtonActive.Get())

@@ -108,7 +108,7 @@ public sealed class DesignManager : DesignEditor, IService
             Name                   = actualName,
             Index                  = Designs.Count,
             ForcedRedraw           = Config.DefaultDesignSettings.AlwaysForceRedrawing,
-            ResetAdvancedDyes      = Config.DefaultDesignSettings.ResetAdvancedDyes ? EquipFlagExtensions.AllCombined : 0,
+            ResetAdvancedDyes      = Config.DefaultDesignSettings.ResetAdvancedDyes ? ModelCombinedSlotsExtensions.All : 0,
             QuickDesign            = Config.DefaultDesignSettings.ShowQuickDesignBar,
             ResetTemporarySettings = Config.DefaultDesignSettings.ResetTemporarySettings,
         };
@@ -132,7 +132,7 @@ public sealed class DesignManager : DesignEditor, IService
             Name                   = actualName,
             Index                  = Designs.Count,
             ForcedRedraw           = Config.DefaultDesignSettings.AlwaysForceRedrawing,
-            ResetAdvancedDyes      = Config.DefaultDesignSettings.ResetAdvancedDyes ? EquipFlagExtensions.AllCombined : 0,
+            ResetAdvancedDyes      = Config.DefaultDesignSettings.ResetAdvancedDyes ? ModelCombinedSlotsExtensions.All : 0,
             QuickDesign            = Config.DefaultDesignSettings.ShowQuickDesignBar,
             ResetTemporarySettings = Config.DefaultDesignSettings.ResetTemporarySettings,
         };
@@ -348,7 +348,7 @@ public sealed class DesignManager : DesignEditor, IService
         DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ForceRedraw, design));
     }
 
-    public void ChangeResetAdvancedDyes(Design design, CombinedItemSlotFlag resetAdvancedDyes)
+    public void ChangeResetAdvancedDyes(Design design, ModelCombinedSlots resetAdvancedDyes)
     {
         if (design.ResetAdvancedDyes == resetAdvancedDyes)
             return;
@@ -372,7 +372,7 @@ public sealed class DesignManager : DesignEditor, IService
         DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ResetTemporarySettings, design));
     }
 
-    public void ChangeRevertAdvancedDyes(Design design, CombinedItemSlotFlag revertAdvancedDyes)
+    public void ChangeRevertAdvancedDyes(Design design, ModelCombinedSlots revertAdvancedDyes)
     {
         if (design.RevertAdvancedDyes == revertAdvancedDyes)
             return;

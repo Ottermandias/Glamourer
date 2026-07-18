@@ -32,7 +32,7 @@ public class DesignMerger(
         ret.Design.SetCustomize(customizeService, currentCustomize);
         var           startBodyType        = currentCustomize.BodyType;
         CustomizeFlag fixFlags             = 0;
-        var           mutableMaterialSlots = EquipFlagExtensions.AllCombined;
+        var           mutableMaterialSlots = ModelCombinedSlotsExtensions.All;
         respectOwnership &= config.UnlockedItemMode;
         foreach (var (design, type, jobs) in designs)
         {
@@ -70,7 +70,7 @@ public class DesignMerger(
     }
 
 
-    private static void ReduceMaterials(IDesignStandIn designStandIn, CombinedItemSlotFlag mutableMaterialSlots, MergedDesign ret)
+    private static void ReduceMaterials(IDesignStandIn designStandIn, ModelCombinedSlots mutableMaterialSlots, MergedDesign ret)
     {
         if (designStandIn is not DesignBase design)
             return;
@@ -79,7 +79,7 @@ public class DesignMerger(
         foreach (var (key, value) in design.Materials.Where(p => p.Item2.Enabled))
         {
             var index = MaterialValueIndex.FromKey(key);
-            if (mutableMaterialSlots.HasFlag(index.ToCombinedItemSlot()))
+            if (mutableMaterialSlots.HasFlag(index.ToCombinedSlot()))
                 materials.TryAddValue(index, value);
         }
     }

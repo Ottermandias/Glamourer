@@ -9,6 +9,7 @@ using Glamourer.Gui.Customization;
 using Glamourer.Gui.Equipment;
 using Glamourer.Gui.Materials;
 using Glamourer.Interop;
+using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
 using ImSharp;
@@ -152,7 +153,8 @@ public sealed class ActorPanel : IPanel
         if (!h)
             return;
 
-        if (_customizationDrawer.Draw(_selection.State!.ModelData.Customize, _selection.State.IsLocked, _selection.LockedRedraw))
+        if (_customizationDrawer.Draw(_selection.State!.ModelData.Customize, _selection.State.IsLocked, _selection.LockedRedraw, true,
+                _selection.State.Materials.CheckExistenceSlots(ModelCombinedSlotsExtensions.AllCustomization)))
             _stateManager.ChangeEntireCustomize(_selection.State, _customizationDrawer.Customize, _customizationDrawer.Changed,
                 ApplySettings.Manual);
 

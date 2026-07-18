@@ -4,6 +4,7 @@ using Glamourer.GameData;
 using Glamourer.State;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
 
@@ -447,16 +448,31 @@ public readonly struct MaterialValueManager<T>
         return true;
     }
 
+    public ModelCombinedSlots CheckExistenceSlots(ModelCombinedSlots flag)
+    {
+        var existing  = (ModelCombinedSlots)0;
+        var remaining = flag;
+        while (remaining is not 0)
+        {
+            var slot = remaining.First;
+            if (CheckExistenceSlot(MaterialValueIndex.Min(slot)))
+                existing |= slot;
+            remaining &= ~slot;
+        }
+
+        return existing;
+    }
+
     public bool CheckExistenceSlot(MaterialValueIndex index)
     {
         var key = CheckExistence(index);
-        return key.Valid && key.DrawObject == index.DrawObject && key.SlotIndex == index.SlotIndex;
+        return key.Valid && key.SlotEquals(index);
     }
 
     public bool CheckExistenceMaterial(MaterialValueIndex index)
     {
         var key = CheckExistence(index);
-        return key.Valid && key.DrawObject == index.DrawObject && key.SlotIndex == index.SlotIndex && key.MaterialIndex == index.MaterialIndex;
+        return key.Valid && key.SlotEquals(index) && key.MaterialIndex == index.MaterialIndex;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

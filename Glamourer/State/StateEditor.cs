@@ -407,16 +407,15 @@ public class StateEditor(
 
             if (settings.ResetMaterials || !settings.RespectManual && mergedDesign.ResetAdvancedDyes is not 0)
             {
-                if (settings.ResetMaterials || mergedDesign.ResetAdvancedDyes.HasFlag(EquipFlagExtensions.AllCombined))
+                if (settings.ResetMaterials || mergedDesign.ResetAdvancedDyes.HasFlag(ModelCombinedSlotsExtensions.All))
                     state.Materials.Clear();
                 else
                 {
                     var slotsToReset = mergedDesign.ResetAdvancedDyes;
                     while (slotsToReset is not 0)
                     {
-                        // Extract the least significant bit.
-                        // Do not attempt to work on a range of bits, as contiguous bits can yield very different material value indices.
-                        var slot = unchecked(slotsToReset & (~slotsToReset + 1));
+                        // TODO Consider working on bit ranges to improve performance?
+                        var slot = slotsToReset.First;
                         state.Materials.RemoveValues(MaterialValueIndex.Min(slot), MaterialValueIndex.Max(slot));
                         slotsToReset &= ~slot;
                     }
