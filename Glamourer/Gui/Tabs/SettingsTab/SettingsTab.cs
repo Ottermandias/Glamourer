@@ -335,6 +335,10 @@ public sealed class SettingsTab(
             "Keeps the advanced dye window expansion attached to the main window, or makes it freely movable."u8,
             config.KeepAdvancedDyesAttached, v => config.KeepAdvancedDyesAttached = v);
 
+        Checkbox("Keep Mod Settings Window Attached"u8,
+            "Keeps the associated-mod settings editor attached to the main window, or makes it freely movable."u8,
+            config.KeepModSettingsAttached, v => config.KeepModSettingsAttached = v);
+
         Checkbox("Debug Mode"u8, "Show the debug tab. Only useful for debugging or advanced use. Not recommended in general."u8,
             config.DebugMode,
             v => config.DebugMode = v);
