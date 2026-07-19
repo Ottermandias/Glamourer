@@ -418,7 +418,7 @@ public readonly struct MaterialValueManager<T>
 
     public bool TryGetValue(uint key, out T value)
     {
-        if (_values.Count == 0)
+        if (_values.Count is 0)
         {
             value = default!;
             return false;
