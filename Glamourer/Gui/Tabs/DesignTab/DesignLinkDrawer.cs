@@ -239,7 +239,7 @@ public class DesignLinkDrawer(
     private void DrawApplicationBoxes(int idx, LinkOrder order, ApplicationType current, bool singleRow)
     {
         var newType = current;
-        using (ImStyleBorder.Frame.Push(ColorId.FolderLine.Value()))
+        using (ImStyleBorder.Frame.Push(ColorId.FolderLine.Vector))
         {
             Im.Checkbox("##all"u8, ref newType, ApplicationType.All);
         }

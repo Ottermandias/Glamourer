@@ -94,8 +94,8 @@ public sealed class UnlockOverview(
         if (!child)
             return;
 
-        _moddedColor   = ColorId.ModdedItemMarker.Value();
-        _favoriteColor = ColorId.FavoriteStarOn.Value();
+        _moddedColor   = ColorId.ModdedItemMarker.Value;
+        _favoriteColor = ColorId.FavoriteStarOn.Value;
 
         if (_selected1 is not FullEquipType.Unknown)
             DrawItems();
@@ -221,7 +221,7 @@ public sealed class UnlockOverview(
             Im.Image.Draw(icon, iconSize, Vector2.Zero, Vector2.One,
                 unlocked || codes.Enabled(CodeService.CodeFlag.Shirts) ? Vector4.One : UnavailableTint);
             if (favorites.Contains(item))
-                Im.Window.DrawList.Shape.Rectangle(Im.Item.UpperLeftCorner, Im.Item.LowerRightCorner, ColorId.FavoriteStarOn.Value(),
+                Im.Window.DrawList.Shape.Rectangle(Im.Item.UpperLeftCorner, Im.Item.LowerRightCorner, ColorId.FavoriteStarOn.Value,
                     2 * Im.Style.GlobalScale, ImDrawFlagsRectangle.RoundCornersAll, 4 * Im.Style.GlobalScale);
 
             var mods = DrawModdedMarker(item, iconSize);

@@ -63,7 +63,7 @@ public sealed unsafe class AdvancedDyePopup(
         var       isOpen = _drawIndex is { } drawIndex && index.SlotEquals(drawIndex);
 
         var (textColor, buttonColor) = isOpen
-            ? (ColorId.HeaderButtons.Value(), ImGuiColor.ButtonActive.Get())
+            ? (ColorId.HeaderButtons.Value, ImGuiColor.ButtonActive.Value)
             : (hasDyes ? color : ColorParameter.Default, ColorParameter.Default);
 
         using (ImStyleBorder.Frame.Push(textColor, 2 * Im.Style.GlobalScale, isOpen))
@@ -125,7 +125,7 @@ public sealed unsafe class AdvancedDyePopup(
             return;
 
         var table          = new ColorTable.Table();
-        var highLightColor = ColorId.AdvancedDyeActive.Value();
+        var highLightColor = ColorId.AdvancedDyeActive.Vector;
         for (byte i = 0; i < MaterialService.MaterialsPerModel; ++i)
         {
             var index = _drawIndex!.Value with { MaterialIndex = i };

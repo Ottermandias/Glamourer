@@ -31,7 +31,7 @@ public sealed class DesignColors : ISavable, IReadOnlyDictionary<string, Rgba32>
     public Rgba32 GetColor(Design? design)
     {
         if (design is null)
-            return ColorId.NormalDesign.Value();
+            return ColorId.NormalDesign.Value;
 
         if (design.Color.Length is 0)
             return AutoColor(design);
@@ -159,10 +159,10 @@ public sealed class DesignColors : ISavable, IReadOnlyDictionary<string, Rgba32>
         var equip     = design.Application.Equip is 0;
         return (customize, equip) switch
         {
-            (true, true)   => ColorId.StateDesign.Value(),
-            (true, false)  => ColorId.EquipmentDesign.Value(),
-            (false, true)  => ColorId.CustomizationDesign.Value(),
-            (false, false) => ColorId.NormalDesign.Value(),
+            (true, true)   => ColorId.StateDesign.Value,
+            (true, false)  => ColorId.EquipmentDesign.Value,
+            (false, true)  => ColorId.CustomizationDesign.Value,
+            (false, false) => ColorId.NormalDesign.Value,
         };
     }
 

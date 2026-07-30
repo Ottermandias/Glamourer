@@ -28,9 +28,9 @@ public sealed class NpcFilter : TokenizedFilter<NpcFilter.TokenType, NpcCacheIte
         using var style = Im.Style.PushDefault();
         using var tt    = Im.Tooltip.Begin();
         Im.Text("Filter NPC appearances for those where their names contain the given substring."u8);
-        ImEx.TextMultiColored("Enter "u8).Then("i:[number]"u8, ColorId.TriStateCheck.Value()).Then(" to filter for NPCs of certain IDs."u8)
+        ImEx.TextMultiColored("Enter "u8).Then("i:[number]"u8, ColorId.TriStateCheck.Value).Then(" to filter for NPCs of certain IDs."u8)
             .End();
-        ImEx.TextMultiColored("Enter "u8).Then("c:[string]"u8, ColorId.TriStateCheck.Value())
+        ImEx.TextMultiColored("Enter "u8).Then("c:[string]"u8, ColorId.TriStateCheck.Value)
             .Then(" to filter for NPC appearances set to specific colors."u8).End();
     }
 

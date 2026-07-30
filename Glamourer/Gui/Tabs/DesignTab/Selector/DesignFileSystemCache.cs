@@ -53,14 +53,14 @@ public sealed class DesignFileSystemCache : FileSystemCache<DesignFileSystemCach
 
     public override void Update()
     {
-        if (ColorsDirty)
-        {
-            CollapsedFolderColor =  ColorId.FolderCollapsed.Value().ToVector();
-            ExpandedFolderColor  =  ColorId.FolderExpanded.Value().ToVector();
-            LineColor            =  ColorId.FolderLine.Value().ToVector();
-            Dirty                &= ~IManagedCache.DirtyFlags.Colors;
-            OnColorChanged();
-        }
+        if (!ColorsDirty)
+            return;
+
+        CollapsedFolderColor =  ColorId.FolderCollapsed.Vector;
+        ExpandedFolderColor  =  ColorId.FolderExpanded.Vector;
+        LineColor            =  ColorId.FolderLine.Vector;
+        Dirty                &= ~IManagedCache.DirtyFlags.Colors;
+        OnColorChanged();
     }
 
     protected override DesignData ConvertNode(in IFileSystemNode node)

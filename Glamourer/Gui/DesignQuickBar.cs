@@ -88,9 +88,9 @@ public sealed class DesignQuickBar : OverlayWindow, IDisposable
 
         _style.Push(ImStyleDouble.WindowPadding, new Vector2(Im.Style.GlobalScale * 4))
             .Push(ImStyleSingle.WindowBorderThickness, 0);
-        _style.Push(ImGuiColor.WindowBackground, ColorId.QuickDesignBg.Value())
-            .Push(ImGuiColor.Button,          ColorId.QuickDesignButton.Value())
-            .Push(ImGuiColor.FrameBackground, ColorId.QuickDesignFrame.Value());
+        _style.Push(ImGuiColor.WindowBackground, ColorId.QuickDesignBg.Vector)
+            .Push(ImGuiColor.Button,          ColorId.QuickDesignButton.Vector)
+            .Push(ImGuiColor.FrameBackground, ColorId.QuickDesignFrame.Vector);
 
         UpdateWidth();
     }

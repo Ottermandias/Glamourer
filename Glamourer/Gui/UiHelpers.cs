@@ -103,7 +103,7 @@ public static class UiHelpers
         using (Im.Disabled(locked))
         {
             using var id = Im.Id.Push(label);
-            if (ImEx.TriStateCheckbox(StringU8.Empty, ref apply, ColorId.TriStateNeutral.Value(), ColorId.TriStateCheck.Value(), ColorId.TriStateCross.Value()))
+            if (ImEx.TriStateCheckbox(StringU8.Empty, ref apply, ColorId.TriStateNeutral.Value, ColorId.TriStateCheck.Value, ColorId.TriStateCross.Value))
             {
                 (newValue, newApply) = apply switch
                 {
@@ -143,7 +143,7 @@ public static class UiHelpers
         var hovering = Im.Mouse.IsHoveringRectangle(Rectangle.FromSize(Im.Cursor.ScreenPosition, new Vector2(Im.Style.TextHeight)));
 
         ImEx.Icon.DrawAligned(LunaStyle.FavoriteIcon,
-            hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
+            hovering ? ColorId.FavoriteStarHovered.Value : favorite ? ColorId.FavoriteStarOn.Value : ColorId.FavoriteStarOff.Value);
         if (!Im.Item.Clicked())
             return false;
 
@@ -160,7 +160,7 @@ public static class UiHelpers
         var hovering = Im.Mouse.IsHoveringRectangle(Rectangle.FromSize(Im.Cursor.ScreenPosition, new Vector2(Im.Style.TextHeight)));
 
         ImEx.Icon.DrawAligned(LunaStyle.FavoriteIcon,
-            hovering ? ColorId.FavoriteStarHovered.Value() : favorite ? ColorId.FavoriteStarOn.Value() : ColorId.FavoriteStarOff.Value());
+            hovering ? ColorId.FavoriteStarHovered.Value : favorite ? ColorId.FavoriteStarOn.Value : ColorId.FavoriteStarOff.Value);
         if (!Im.Item.Clicked())
             return false;
 

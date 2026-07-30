@@ -25,7 +25,6 @@ public sealed class SettingsTab(
     IUiBuilder uiBuilder,
     GlamourerChangelog changelog,
     IKeyState keys,
-    DesignColorUi designColorUi,
     PaletteImport paletteImport,
     CollectionOverrideDrawer overrides,
     CodeDrawer codeDrawer,
@@ -467,29 +466,14 @@ public sealed class SettingsTab(
     /// <summary> Draw the entire Color subsection. </summary>
     private void DrawColorSettings()
     {
-        if (!Im.Tree.Header("Colors"u8))
+        using var header = Im.Tree.HeaderId("Colors"u8);
+        if (!header)
             return;
 
-        using (var tree = Im.Tree.Node("Custom Design Colors"u8))
+        if (ColorSettingsDrawer.Draw(Glamourer.Messager, config.Ui.Colors, config.Ui.ColorCache))
         {
-            if (tree)
-                designColorUi.Draw();
-        }
-
-        using (var tree = Im.Tree.Node("Color Settings"u8))
-        {
-            if (tree)
-                foreach (var color in ColorId.Values)
-                {
-                    var (defaultColor, name, description) = color.Data();
-                    var currentColor = config.Colors.GetValueOrDefault(color, defaultColor);
-                    if (!ImEx.ColorPicker(name, description, currentColor, out var newColor, defaultColor))
-                        continue;
-
-                    config.Colors[color] = newColor.Color;
-                    CacheManager.Instance.SetColorsDirty();
-                    config.Save();
-                }
+            CacheManager.Instance.SetColorsDirty();
+            config.Ui.Save();
         }
 
         Im.Line.New();

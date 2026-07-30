@@ -19,10 +19,7 @@ public sealed class ConfigMigrationService(SaveService saveService, FixedDesignM
     {
         _config = config;
         if (config.Version >= Configuration.CurrentVersion || !File.Exists(saveService.FileNames.ConfigurationFile))
-        {
-            AddColors(config, false);
             return;
-        }
 
         _data = JObject.Parse(File.ReadAllText(saveService.FileNames.ConfigurationFile));
         MigrateV1To2();
@@ -35,7 +32,35 @@ public sealed class ConfigMigrationService(SaveService saveService, FixedDesignM
         MigrateV9To11();
         MigrateV11To12();
         MigrateV12To13();
-        AddColors(config, true);
+        MigrateV13To14();
+    }
+
+    private void MigrateV13To14()
+    {
+        if (_config.Version > 13)
+            return;
+
+        _config.Version           = 14;
+        _config.Ephemeral.Version = 14;
+        if (_data["Colors"]?.ToObject<Dictionary<string, uint>>() is { } colorsString)
+        {
+            var colors = new Dictionary<ColorId, uint>(colorsString.Count);
+            foreach (var (name, color) in colorsString)
+            {
+                if (ColorId.Parse(name, out var id))
+                    colors.Add(id, color);
+            }
+
+            if (colors.Count > 0)
+            {
+                var migrate = new ColorDictionary<ColorId, ColorIdData>(colors, (id, value) => ColorIdData.OldDefault(id) == value);
+                _config.Ui.Colors.Apply(migrate, false);
+                _config.Ui.Save();
+            }
+        }
+
+        _config.Save();
+        _config.Ephemeral.Save();
     }
 
     private void MigrateV12To13()
@@ -54,6 +79,7 @@ public sealed class ConfigMigrationService(SaveService saveService, FixedDesignM
             };
             _config.LastFestivalPopup = DateOnly.FromDateTime(DateTime.Now.AddDays(-40));
         }
+
         _config.Version           = 13;
         _config.Ephemeral.Version = 13;
         _config.Save();
@@ -187,12 +213,18 @@ public sealed class ConfigMigrationService(SaveService saveService, FixedDesignM
         backupService.CreateMigrationBackup("pre_v1_to_v2_migration", saveService.FileNames.MigrationDesignFile);
         fixedDesignMigrator.Migrate(_data["FixedDesigns"]);
         _config.Version = 2;
-        var customizationColor = _data["CustomizationColor"]?.ToObject<uint>() ?? ColorId.CustomizationDesign.Data().DefaultColor;
-        _config.Colors[ColorId.CustomizationDesign] = customizationColor;
-        var stateColor = _data["StateColor"]?.ToObject<uint>() ?? ColorId.StateDesign.Data().DefaultColor;
-        _config.Colors[ColorId.StateDesign] = stateColor;
-        var equipmentColor = _data["EquipmentColor"]?.ToObject<uint>() ?? ColorId.EquipmentDesign.Data().DefaultColor;
-        _config.Colors[ColorId.EquipmentDesign] = equipmentColor;
+        if (_data["CustomizationColor"]?.ToObject<uint>() is { } c1)
+            _config.Ui.Colors[ColorId.CustomizationDesign] = new ColorDataUnion((Rgba32)c1);
+        else
+            _config.Ui.Colors.Remove(ColorId.CustomizationDesign);
+        if (_data["StateColor"]?.ToObject<uint>() is { } c2)
+            _config.Ui.Colors[ColorId.StateDesign] = new ColorDataUnion((Rgba32)c2);
+        else
+            _config.Ui.Colors.Remove(ColorId.StateDesign);
+        if (_data["EquipmentColor"]?.ToObject<uint>() is { } c3)
+            _config.Ui.Colors[ColorId.EquipmentDesign] = new ColorDataUnion((Rgba32)c3);
+        else
+            _config.Ui.Colors.Remove(ColorId.EquipmentDesign);
     }
 
     private void MigrateV2To4()
@@ -202,16 +234,5 @@ public sealed class ConfigMigrationService(SaveService saveService, FixedDesignM
 
         _config.Version = 4;
         _config.Codes   = _config.Codes.DistinctBy(c => c.Code).ToList();
-    }
-
-    private static void AddColors(Configuration config, bool forceSave)
-    {
-        var save = false;
-        foreach (var color in ColorId.Values)
-            save |= config.Colors.TryAdd(color, color.Data().DefaultColor);
-
-        if (save || forceSave)
-            config.Save();
-        Colors.SetColors(config);
     }
 }

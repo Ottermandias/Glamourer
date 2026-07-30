@@ -106,7 +106,7 @@ public partial class CustomizationDrawer
                 var isFavorite = favorites.Contains(_set.Gender, _set.Clan, _currentIndex, custom.Value);
                 using var frameColor = current == i
                     ? ImGuiColor.Button.Push(Colors.SelectedRed)
-                    : ImGuiColor.Button.Push(ColorId.FavoriteStarOn.Value(), isFavorite);
+                    : ImGuiColor.Button.Push(ColorId.FavoriteStarOn.Vector, isFavorite);
                 var hasIcon = icon.TryGetWrap(out var wrap, out _);
 
                 if (Im.Image.Button(wrap?.Id ?? icon.GetWrapOrEmpty().Id, _iconSize))

@@ -78,7 +78,7 @@ public sealed partial class CustomizationDrawer(
     private void Init(CustomizeArray current, bool locked, bool lockedRedraw, bool withAdvancedDyes, ModelCombinedSlots existingAdvancedDyes)
     {
         UpdateSizes();
-        _advancedMaterialColor = ColorId.AdvancedDyeActive.Value();
+        _advancedMaterialColor = ColorId.AdvancedDyeActive.Value;
         _terminate             = null;
         Changed                = 0;
         _customize             = current;

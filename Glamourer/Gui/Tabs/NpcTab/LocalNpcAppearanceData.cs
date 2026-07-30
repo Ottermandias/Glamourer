@@ -40,11 +40,11 @@ public sealed class LocalNpcAppearanceData : ISavable, IUiService
         if (color.Length is 0)
         {
             if (favorite)
-                return ColorId.FavoriteStarOn.Value();
+                return ColorId.FavoriteStarOn.Value;
 
             return kind is ObjectKind.BattleNpc
-                ? ColorId.BattleNpc.Value()
-                : ColorId.EventNpc.Value();
+                ? ColorId.BattleNpc.Value
+                : ColorId.EventNpc.Value;
         }
 
         if (_colors.TryGetValue(color, out var value))

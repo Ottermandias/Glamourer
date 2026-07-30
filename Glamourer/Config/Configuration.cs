@@ -15,7 +15,7 @@ namespace Glamourer.Config;
 
 public sealed partial class Configuration : IPluginConfiguration, ISavable, IService
 {
-    public const int CurrentVersion = 13;
+    public const int CurrentVersion = 14;
 
     [JsonIgnore]
     public readonly EphemeralConfig Ephemeral;
@@ -110,9 +110,6 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
 #endif
 
     public int Version { get; set; } = CurrentVersion;
-
-    public Dictionary<ColorId, uint> Colors { get; private set; }
-        = ColorId.Values.ToDictionary(c => c, c => c.Data().DefaultColor);
 
     [JsonIgnore]
     private readonly SaveService _saveService;

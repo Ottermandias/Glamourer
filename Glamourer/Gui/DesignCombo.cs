@@ -29,7 +29,7 @@ public abstract class DesignComboBase(
     {
         var (color, path) = design is Design d
             ? (DesignColors.GetColor(d).ToVector(), d.Node?.FullPath ?? d.Name)
-            : (ColorId.NormalDesign.Value().ToVector(), string.Empty);
+            : (ColorId.NormalDesign.Vector, string.Empty);
         var name = design.ResolveName(false);
         if (path == name)
             path = string.Empty;

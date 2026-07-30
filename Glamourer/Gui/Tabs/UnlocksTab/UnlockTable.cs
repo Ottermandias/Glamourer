@@ -217,8 +217,8 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             using (AwesomeIcon.Font.Push())
             {
                 var (color, text) = item.RelevantMods > 0
-                    ? (ColorId.ModdedItemMarker.Value(), Dot)
-                    : (ColorId.ModdedItemMarker.Value().HalfTransparent(), Hollow);
+                    ? (ColorId.ModdedItemMarker.Value, Dot)
+                    : (ColorId.ModdedItemMarker.Value.HalfTransparent(), Hollow);
                 using var c = ImGuiColor.Text.Push(color);
                 Im.Text(text.Span);
             }

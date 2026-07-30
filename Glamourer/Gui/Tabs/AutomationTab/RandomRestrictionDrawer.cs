@@ -45,9 +45,9 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
     public void DrawButton(AutoDesignSet set, int designIndex)
     {
         var isOpen = set == _set && designIndex == _designIndex;
-        using (ImGuiColor.Button.Push(Im.Style[ImGuiColor.ButtonActive], isOpen)
-                   .Push(ImGuiColor.Text,   ColorId.HeaderButtons.Value(), isOpen)
-                   .Push(ImGuiColor.Border, ColorId.HeaderButtons.Value(), isOpen))
+        using (ImGuiColor.Button.Push(ImGuiColor.ButtonActive.Vector, isOpen)
+                   .Push(ImGuiColor.Text,   ColorId.HeaderButtons.Vector, isOpen)
+                   .Push(ImGuiColor.Border, ColorId.HeaderButtons.Vector, isOpen))
         {
             using var frame = ImStyleSingle.FrameBorderThickness.Push(2 * Im.Style.GlobalScale, isOpen);
             if (ImEx.Icon.Button(LunaStyle.EditIcon))

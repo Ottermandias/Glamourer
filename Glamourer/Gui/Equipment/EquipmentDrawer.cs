@@ -82,7 +82,7 @@ public sealed class EquipmentDrawer : IUiService, IDisposable
         _iconSize              = new Vector2(2 * Im.Style.FrameHeight + Im.Style.ItemSpacing.Y);
         _smallIconSize         = new Vector2(Im.Style.FrameHeight);
         _comboLength           = DefaultWidth * Im.Style.GlobalScale;
-        _advancedMaterialColor = ColorId.AdvancedDyeActive.Value();
+        _advancedMaterialColor = ColorId.AdvancedDyeActive.Value;
         _dragTarget            = EquipSlot.Unknown;
         _compact               = compact;
         (_stainWidth, _drawEquip, _drawBonus, _drawWeapons, _drawCombo) = (_config.SmallEquip, _compact) switch

@@ -15,11 +15,11 @@ public sealed class ModCombo(PenumbraService penumbra, DesignFileSystem fileSyst
 
         public readonly Vector4 Color = settings.Enabled
             ? count > 0
-                ? ColorId.ContainsItemsEnabled.Value().ToVector()
-                : Im.Style[ImGuiColor.Text]
+                ? ColorId.ContainsItemsEnabled.Vector
+                : ImGuiColor.Text.Vector
             : count > 0
-                ? ColorId.ContainsItemsDisabled.Value().ToVector()
-                : Im.Style[ImGuiColor.TextDisabled];
+                ? ColorId.ContainsItemsDisabled.Vector
+                : ImGuiColor.TextDisabled.Vector;
 
         public readonly bool DifferingNames = string.Equals(mod.Name, mod.DirectoryName, StringComparison.CurrentCultureIgnoreCase);
     }

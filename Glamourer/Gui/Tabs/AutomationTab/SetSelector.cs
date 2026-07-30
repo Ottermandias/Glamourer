@@ -146,10 +146,10 @@ public sealed class SetSelector(
         public override void Update()
         {
             SelectableSize        = new Vector2(0, 2 * Im.Style.TextHeight + Im.Style.ItemSpacing.Y);
-            EnabledSet            = ColorId.EnabledAutoSet.Value().ToVector();
-            DisabledSet           = ColorId.DisabledAutoSet.Value().ToVector();
-            AutomationAvailable   = ColorId.AutomationActorAvailable.Value().ToVector();
-            AutomationUnavailable = ColorId.AutomationActorUnavailable.Value().ToVector();
+            EnabledSet            = ColorId.EnabledAutoSet.Vector;
+            DisabledSet           = ColorId.DisabledAutoSet.Vector;
+            AutomationAvailable   = ColorId.AutomationActorAvailable.Vector;
+            AutomationUnavailable = ColorId.AutomationActorUnavailable.Vector;
             LineColor             = ImGuiColor.Border.Get();
             base.Update();
         }
