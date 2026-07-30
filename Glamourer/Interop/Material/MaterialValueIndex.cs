@@ -133,8 +133,8 @@ public readonly record struct MaterialValueIndex(
         model = DrawObject switch
         {
             DrawObjectType.Human    => actor.Model,
-            DrawObjectType.Mainhand => actor.IsCharacter ? actor.AsCharacter->DrawData.WeaponData[0].DrawObject : Model.Null,
-            DrawObjectType.Offhand  => actor.IsCharacter ? actor.AsCharacter->DrawData.WeaponData[1].DrawObject : Model.Null,
+            DrawObjectType.Mainhand => actor.IsCharacter ? actor.AsCharacter->DrawData.WeaponData[0].DrawData.DrawObject : Model.Null,
+            DrawObjectType.Offhand  => actor.IsCharacter ? actor.AsCharacter->DrawData.WeaponData[1].DrawData.DrawObject : Model.Null,
             _                       => Model.Null,
         };
         return model.IsCharacterBase;

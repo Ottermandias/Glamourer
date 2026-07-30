@@ -130,10 +130,10 @@ public sealed unsafe class PrepareColorSet
                 case MaterialValueIndex.DrawObjectType.Human:
                     return index.SlotIndex < 10 ? actor.Model.GetArmor(((uint)index.SlotIndex).ToEquipSlot()).Stains : StainIds.None;
                 case MaterialValueIndex.DrawObjectType.Mainhand:
-                    var mainhand = (Model)actor.AsCharacter->DrawData.WeaponData[0].DrawObject;
+                    var mainhand = (Model)actor.AsCharacter->DrawData.WeaponData[0].DrawData.DrawObject;
                     return mainhand.IsWeapon ? StainIds.FromWeapon(*mainhand.AsWeapon) : StainIds.None;
                 case MaterialValueIndex.DrawObjectType.Offhand:
-                    var offhand = (Model)actor.AsCharacter->DrawData.WeaponData[1].DrawObject;
+                    var offhand = (Model)actor.AsCharacter->DrawData.WeaponData[1].DrawData.DrawObject;
                     return offhand.IsWeapon ? StainIds.FromWeapon(*offhand.AsWeapon) : StainIds.None;
                 default: return StainIds.None;
             }

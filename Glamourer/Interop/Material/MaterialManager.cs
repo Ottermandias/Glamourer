@@ -185,13 +185,13 @@ public sealed unsafe class MaterialManager : IRequiredService, IDisposable
             return false;
         }
 
-        if (actor.AsCharacter->DrawData.WeaponData[0].DrawObject == characterBase)
+        if (actor.AsCharacter->DrawData.WeaponData[0].DrawData.DrawObject == characterBase)
         {
             type = MaterialValueIndex.DrawObjectType.Mainhand;
             return true;
         }
 
-        if (actor.AsCharacter->DrawData.WeaponData[1].DrawObject == characterBase)
+        if (actor.AsCharacter->DrawData.WeaponData[1].DrawData.DrawObject == characterBase)
         {
             type = MaterialValueIndex.DrawObjectType.Offhand;
             return true;

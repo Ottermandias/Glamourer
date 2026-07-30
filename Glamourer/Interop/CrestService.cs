@@ -130,7 +130,7 @@ public sealed unsafe class CrestService : EventBase<CrestService.Arguments, Cres
             }
             case CrestType.Offhand:
             {
-                var model = (Model)gameObject.AsCharacter->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand).DrawObject;
+                var model = (Model)gameObject.AsCharacter->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand).DrawData.DrawObject;
                 if (!model.IsWeapon)
                     return false;
 

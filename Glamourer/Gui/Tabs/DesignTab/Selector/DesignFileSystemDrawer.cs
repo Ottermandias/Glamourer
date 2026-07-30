@@ -24,6 +24,9 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
         DesignApplier = designApplier;
         DesignChanged = designChanged;
         DesignColors  = designColors;
+
+        MainContext.AddButton(new GlobalSortModeSelector(this, m => { config.SortMode = m; config.Save(); }), -100);
+
         Footer.Buttons.AddButton(new NewDesignButton(manager),                           1000);
         Footer.Buttons.AddButton(new ImportDesignButton(converter, manager),             900);
         Footer.Buttons.AddButton(new DuplicateDesignButton(fileSystem, manager),         800);
