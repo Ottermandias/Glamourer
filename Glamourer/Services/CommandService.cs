@@ -746,7 +746,7 @@ public class CommandService : IDisposable, IApiService
                 .BuiltString);
             PrintDesignNameInfo(true, true, true, true);
             _chat.Print(new SeStringBuilder()
-                .AddText("    》 ").AddBlue("<Enable Mods>").AddText(" is optional and can be omitted (together with the ;), ").AddBlue("true")
+                .AddText("    》 ").AddBlue("<Apply Mods>").AddText(" is optional and can be omitted (together with the ;), ").AddBlue("true")
                 .AddText(" or ").AddBlue("false").AddText(".").BuiltString);
             _chat.Print(new SeStringBuilder().AddText("If ").AddBlue("true")
                 .AddText(", it will try to apply mod associations to the collection assigned to the identified character.").BuiltString);
@@ -830,12 +830,20 @@ public class CommandService : IDisposable, IApiService
     {
         if (argument.Length is 0)
         {
-            _chat.Print(new SeStringBuilder().AddText("Use with /glamour copy ").AddGreen("[Character Identifier]")
+            _chat.Print(new SeStringBuilder().AddText("Use with /glamour copy ").AddGreen("[Character Identifier]").AddText(" | ")
+                .AddBlue("<Application Type>")
                 .BuiltString);
             PlayerIdentifierHelp(false, true);
+            ApplicationTypeHelp();
         }
 
+        var split = argument.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        argument = split[0];
+
         if (!IdentifierHandling(argument, out var identifiers, false, true))
+            return false;
+
+        if (!GetApplicationType(split, out var onlyEquip, out var onlyCustomize))
             return false;
 
         foreach (var identifier in identifiers)
@@ -848,7 +856,7 @@ public class CommandService : IDisposable, IApiService
 
             try
             {
-                var text = _converter.ShareBase64(state, ApplicationRules.AllButParameters(state));
+                var text = _converter.ShareBase64(state, ApplicationRules.FromModifiers(state, onlyEquip, onlyCustomize));
                 Im.Clipboard.Set(text);
                 return true;
             }
@@ -867,20 +875,24 @@ public class CommandService : IDisposable, IApiService
 
     private bool UpdateState(string arguments)
     {
-        var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (split.Length is not 2)
+        var split = arguments.Split('|', 3, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (split.Length < 2)
         {
             _chat.Print(new SeStringBuilder().AddText("Use with /glamour update ").AddYellow("[Design Name, Path, or Identifier]")
-                .AddText(" | ")
-                .AddGreen("[Character Identifier]").BuiltString);
+                .AddText(" | ").AddGreen("[Character Identifier]").AddText(" | ")
+                .AddBlue("<Application Type>").BuiltString);
             PrintDesignNameInfo(false, false, false, false);
             PlayerIdentifierHelp(false, true);
+            ApplicationTypeHelp();
         }
 
         if (!_resolver.GetDesign(split[0], out var existingDesign, false))
             return false;
 
         if (!IdentifierHandling(split[1], out var identifiers, false, true))
+            return false;
+
+        if (!GetApplicationType(split.AsSpan(1), out var onlyEquip, out var onlyCustomize))
             return false;
 
         foreach (var identifier in identifiers)
@@ -891,7 +903,7 @@ public class CommandService : IDisposable, IApiService
                  && _stateManager.GetOrCreate(identifier, data.Objects[0], out state)))
                 continue;
 
-            var design = _converter.Convert(state, ApplicationRules.FromModifiers(state));
+            var design = _converter.Convert(state, ApplicationRules.FromModifiers(state, onlyEquip, onlyCustomize));
             _designManager.ApplyDesign(existingDesign, design, ApplySettings.Manual);
             return true;
         }
@@ -903,15 +915,20 @@ public class CommandService : IDisposable, IApiService
 
     private bool SaveState(string arguments)
     {
-        var split = arguments.Split('|', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (split.Length is not 2)
+        var split = arguments.Split('|', 3, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (split.Length < 2)
         {
             _chat.Print(new SeStringBuilder().AddText("Use with /glamour save ").AddYellow("[New Design Name]").AddText(" | ")
-                .AddGreen("[Character Identifier]").BuiltString);
+                .AddGreen("[Character Identifier]").AddText(" | ")
+                .AddBlue("<Application Type>").BuiltString);
             PlayerIdentifierHelp(false, true);
+            ApplicationTypeHelp();
         }
 
         if (!IdentifierHandling(split[1], out var identifiers, false, true))
+            return false;
+
+        if (!GetApplicationType(split.AsSpan(1), out var onlyEquip, out var onlyCustomize))
             return false;
 
         foreach (var identifier in identifiers)
@@ -922,7 +939,7 @@ public class CommandService : IDisposable, IApiService
                  && _stateManager.GetOrCreate(identifier, data.Objects[0], out state)))
                 continue;
 
-            var design = _converter.Convert(state, ApplicationRules.FromModifiers(state));
+            var design = _converter.Convert(state, ApplicationRules.FromModifiers(state, onlyEquip, onlyCustomize));
             _designManager.CreateClone(design, split[0], true);
             return true;
         }
@@ -977,6 +994,28 @@ public class CommandService : IDisposable, IApiService
             identifiers = [];
             return false;
         }
+    }
+
+    private bool GetApplicationType(ReadOnlySpan<string> split, out bool onlyEquip, out bool onlyCustomize)
+    {
+        onlyEquip     = false;
+        onlyCustomize = false;
+        if (split.Length < 2)
+            return true;
+
+        switch (split[1])
+        {
+            case "e" or "E" or "equip" or "Equip" or "equipment" or "Equipment": onlyEquip = true; break;
+            case "c" or "C" or "customize" or "Customize" or "customization" or "Customization" or "customizations"
+                or "Customizations":
+                onlyCustomize = true;
+                break;
+            default:
+                ApplicationTypeHelp();
+                return false;
+        }
+
+        return true;
     }
 
     private void PlayerIdentifierHelp(bool allowAnyWorld, bool allowIndex)
@@ -1042,4 +1081,10 @@ public class CommandService : IDisposable, IApiService
                 .BuiltString);
     }
 
+    private void ApplicationTypeHelp()
+    {
+        _chat.Print(new SeStringBuilder().AddText("    》 ").AddBlue("<Application Type>")
+            .AddText(" is optional and can be omitted (together with the |), ").AddBlue("e").AddText(" or ").AddBlue("c")
+            .AddText(" to only apply equipment or customizations, respectively.").BuiltString);
+    }
 }
