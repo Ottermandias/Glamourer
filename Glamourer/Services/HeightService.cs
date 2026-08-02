@@ -1,5 +1,3 @@
-using Dalamud.Plugin.Services;
-using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Luna;
 using Penumbra.GameData;
@@ -8,13 +6,10 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Services;
 
-public unsafe class HeightService : IService
+public unsafe class HeightService(HookManager hooks) : IService
 {
-    [Signature(Sigs.CalculateHeight)]
-    private readonly delegate* unmanaged[Stdcall]<CharacterUtility*, byte, byte, byte, byte, float> _calculateHeight = null!;
-
-    public HeightService(IGameInteropProvider interop)
-        => interop.InitializeFromAttributes(this);
+    private readonly delegate* unmanaged[Stdcall]<CharacterUtility*, byte, byte, byte, byte, float> _calculateHeight =
+        (delegate* unmanaged[Stdcall] <CharacterUtility*, byte, byte, byte, byte, float>)hooks.SigScanner.ScanText(Sigs.CalculateHeight);
 
     public float Height(CustomizeValue height, SubRace clan, Gender gender, CustomizeValue bodyType)
         => _calculateHeight(CharacterUtility.Instance(), height.Value, (byte)clan, (byte)((byte)gender - 1), bodyType.Value);

@@ -15,10 +15,11 @@ namespace Glamourer.Interop;
 /// </summary>
 public sealed unsafe class ChangeCustomizeService : EventBase<ChangeCustomizeService.Arguments, ChangeCustomizeService.Priority>
 {
-    private readonly PenumbraReloaded                                         _penumbraReloaded;
-    private readonly IGameInteropProvider                                     _interop;
+    private readonly PenumbraReloaded _penumbraReloaded;
+    private readonly HookManager      _interop;
+    private readonly Post             _postEvent;
+
     private readonly delegate* unmanaged<Human*, Human.DrawData*, bool, bool> _original;
-    private readonly Post                                                     _postEvent;
 
     public ref struct Arguments(Model model, ref CustomizeArray customize)
     {
@@ -36,36 +37,32 @@ public sealed unsafe class ChangeCustomizeService : EventBase<ChangeCustomizeSer
         StateListener = 0,
     }
 
-    public ChangeCustomizeService(PenumbraReloaded penumbraReloaded, IGameInteropProvider interop, LunaLogger log)
+    public ChangeCustomizeService(PenumbraReloaded penumbraReloaded, HookManager interop, LunaLogger log)
         : base("ChangeCustomize", log)
     {
         _penumbraReloaded    = penumbraReloaded;
         _interop             = interop;
         _changeCustomizeHook = Create();
         _original            = Human.MemberFunctionPointers.UpdateDrawData;
-        interop.InitializeFromAttributes(this);
         _penumbraReloaded.Subscribe(Restore, PenumbraReloaded.Priority.ChangeCustomizeService);
         _postEvent = new Post(log);
     }
 
     protected override void Dispose(bool _)
     {
-        _changeCustomizeHook.Dispose();
+        _interop.DisposeHook("ChangeCustomize");
         _penumbraReloaded.Unsubscribe(Restore);
     }
 
     private void Restore()
     {
-        _changeCustomizeHook.Dispose();
+        _interop.DisposeHook("ChangeCustomize");
         _changeCustomizeHook = Create();
     }
 
     private Hook<ChangeCustomizeDelegate> Create()
-    {
-        var ret = _interop.HookFromAddress<ChangeCustomizeDelegate>((nint)Human.MemberFunctionPointers.UpdateDrawData, ChangeCustomizeDetour);
-        ret.Enable();
-        return ret;
-    }
+        => _interop.CreateHook<ChangeCustomizeDelegate>("ChangeCustomize", (nint)Human.MemberFunctionPointers.UpdateDrawData,
+            ChangeCustomizeDetour, true).Result!;
 
     private delegate bool ChangeCustomizeDelegate(Human* human, byte* data, byte skipEquipment);
 

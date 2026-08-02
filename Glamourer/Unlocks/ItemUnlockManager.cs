@@ -44,7 +44,6 @@ public sealed class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictiona
     public ItemUnlockManager(SaveService saveService, ItemManager items, IClientState clientState, IDataManager gameData, IFramework framework,
         ObjectUnlocked @event, ObjectIdentification identifier, IGameInteropProvider interop)
     {
-        interop.InitializeFromAttributes(this);
         _saveService = saveService;
         _items       = items;
         _clientState = clientState;
