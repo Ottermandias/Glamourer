@@ -19,12 +19,13 @@ public class DesignEditor(
     Configuration config)
     : IDesignEditor
 {
-    protected readonly DesignChanged                DesignChanged  = designChanged;
-    protected readonly SaveService                  SaveService    = saveService;
-    protected readonly ItemManager                  Items          = items;
-    protected readonly CustomizeService             Customizations = customizations;
-    protected readonly Configuration                Config         = config;
-    protected readonly Dictionary<Guid, DesignData> UndoStore      = [];
+    protected readonly DesignChanged    DesignChanged  = designChanged;
+    protected readonly SaveService      SaveService    = saveService;
+    protected readonly ItemManager      Items          = items;
+    protected readonly CustomizeService Customizations = customizations;
+    protected readonly Configuration    Config         = config;
+
+    protected readonly Dictionary<Guid, (DesignData, IReadOnlyList<(uint, MaterialValueDesign)>)> UndoStore = [];
 
     private bool _forceFullItemOff;
 
@@ -91,7 +92,8 @@ public class DesignEditor(
         design.LastEdit = DateTimeOffset.UtcNow;
         Glamourer.Log.Debug($"Changed entire customize with resulting flags {applied} and {changed}.");
         SaveService.QueueSave(design);
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.EntireCustomize, design, new EntireCustomizeTransaction(changed, oldCustomize, newCustomize)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.EntireCustomize, design,
+            new EntireCustomizeTransaction(changed, oldCustomize, newCustomize)));
     }
 
     /// <inheritdoc/>
@@ -253,7 +255,8 @@ public class DesignEditor(
         Glamourer.Log.Debug($"Changed advanced dye value for {index} to {(revert ? "Revert." : "no longer Revert.")}");
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.MaterialRevert, design, new MaterialRevertTransaction(index, !revert, revert)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.MaterialRevert, design,
+            new MaterialRevertTransaction(index, !revert, revert)));
     }
 
     public void ChangeMaterialMode(Design design, MaterialValueIndex index, ColorRow.Mode mode)
@@ -267,7 +270,8 @@ public class DesignEditor(
         Glamourer.Log.Debug($"Changed advanced dye value for {index} from {oldMode} to {mode} mode.");
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.MaterialMode, design, new MaterialModeTransaction(index, oldMode, mode)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.MaterialMode, design,
+            new MaterialModeTransaction(index, oldMode, mode)));
     }
 
     public void ChangeMaterialValue(Design design, MaterialValueIndex index, ColorRow? row, ColorRow.Mode? mode = null)
@@ -282,7 +286,8 @@ public class DesignEditor(
             }
             else if (!row.Value.NearEqual(oldValue.Value))
             {
-                materials.UpdateValue(index, new MaterialValueDesign(row.Value, oldValue.Enabled, oldValue.Revert, mode ?? oldValue.Mode), out _);
+                materials.UpdateValue(index, new MaterialValueDesign(row.Value, oldValue.Enabled, oldValue.Revert, mode ?? oldValue.Mode),
+                    out _);
                 Glamourer.Log.Debug($"Updated advanced dye value for {index} to new value.");
             }
             else if (mode.HasValue && mode.Value != oldValue.Mode)
@@ -307,7 +312,8 @@ public class DesignEditor(
 
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.DelaySave(design);
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.Material, design, new MaterialTransaction(index, oldValue.Value, row, mode.HasValue ? oldValue.Mode : null, mode)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.Material, design,
+            new MaterialTransaction(index, oldValue.Value, row, mode.HasValue ? oldValue.Mode : null, mode)));
     }
 
     public void ChangeApplyMaterialValue(Design design, MaterialValueIndex index, bool value)
@@ -320,7 +326,8 @@ public class DesignEditor(
         Glamourer.Log.Debug($"Changed application of advanced dye for {index} to {value}.");
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyMaterial, design, new ApplicationTransaction(index, !value, value)));
+        DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.ApplyMaterial, design,
+            new ApplicationTransaction(index, !value, value)));
     }
 
 
@@ -332,7 +339,7 @@ public class DesignEditor(
     public void ApplyDesign(object data, DesignBase other, ApplySettings _ = default)
     {
         var design = (Design)data;
-        UndoStore[design.Identifier] = design.DesignData;
+        UndoStore[design.Identifier] = (design.DesignData, design.GetMaterialData().ToArray());
         foreach (var index in MetaExtensions.AllRelevant.Where(other.DoApplyMeta))
             design.GetDesignDataRef().SetMeta(index, other.DesignData.GetMeta(index));
 
