@@ -35,7 +35,6 @@ public class CommandService : IDisposable, IApiService
     private readonly AutoDesignApplier  _autoDesignApplier;
     private readonly AutoDesignManager  _autoDesignManager;
     private readonly Configuration      _config;
-    private readonly ModSettingApplier  _modApplier;
     private readonly ItemManager        _items;
     private readonly CustomizeService   _customizeService;
     private readonly DesignManager      _designManager;
@@ -46,7 +45,7 @@ public class CommandService : IDisposable, IApiService
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ActorObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
-        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config, ModSettingApplier modApplier,
+        DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config,
         ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService, DesignFileSystemDrawer designDrawer,
         QuickDesignCombo quickDesignCombo, DesignResolver resolver, PenumbraService penumbra, EquipmentBarWindow equipmentBar,
         ActorSelection stateSelection)
@@ -62,7 +61,6 @@ public class CommandService : IDisposable, IApiService
         _converter         = converter;
         _autoDesignManager = autoDesignManager;
         _config            = config;
-        _modApplier        = modApplier;
         _items             = items;
         _customizeService  = customizeService;
         _resolver          = resolver;
@@ -756,16 +754,22 @@ public class CommandService : IDisposable, IApiService
 
         var split2 = split[1].Split(';', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        var applyMods = split2.Length is 2
-         && split2[1].ToLowerInvariant() switch
+        bool? applyMods = split2.Length is 2
+            ? split2[1].ToLowerInvariant() switch
             {
-                "true" => true,
-                "1"    => true,
-                "t"    => true,
-                "yes"  => true,
-                "y"    => true,
-                _      => false,
-            };
+                "true"  => true,
+                "1"     => true,
+                "t"     => true,
+                "yes"   => true,
+                "y"     => true,
+                "false" => false,
+                "0"     => false,
+                "no"    => false,
+                "n"     => false,
+                "f"     => false,
+                _       => null,
+            }
+            : null;
         if (!_resolver.GetDesign(split[0], out var design, true) || !IdentifierHandling(split2[0], out var identifiers, false, true))
             return false;
 
@@ -783,29 +787,16 @@ public class CommandService : IDisposable, IApiService
                     if (!_stateManager.GetOrCreate(actor.GetIdentifier(_actors), actor, out var state))
                         continue;
 
-                    ApplyModSettings(design, actor, applyMods);
-                    _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with { IsFinal = true });
+                    _stateManager.ApplyDesign(state, design, ApplySettings.ManualWithLinks with
+                    {
+                        IsFinal = true,
+                        ForceModAssociations = applyMods,
+                    });
                 }
             }
         }
 
         return true;
-    }
-
-    private void ApplyModSettings(DesignBase design, Actor actor, bool applyMods)
-    {
-        if (!applyMods || design is not Design d)
-            return;
-
-        var (messages, appliedMods, _, name, overridden) =
-            _modApplier.ApplyModSettings(d.AssociatedMods, actor, StateSource.Manual, d.ResetTemporarySettings);
-
-        foreach (var message in messages)
-            Glamourer.Messager.Chat.Print($"Error applying mod settings: {message}");
-
-        if (appliedMods > 0)
-            Glamourer.Messager.Chat.Print(
-                $"Applied {appliedMods} mod settings to {name}{(overridden ? " (overridden by settings)" : string.Empty)}.");
     }
 
     private bool Delete(string argument)

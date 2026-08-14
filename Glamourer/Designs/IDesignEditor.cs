@@ -14,7 +14,8 @@ public readonly record struct ApplySettings(
     bool UseSingleSource = false,
     bool MergeLinks = false,
     bool ResetMaterials = false,
-    bool IsFinal = false)
+    bool IsFinal = false,
+    bool? ForceModAssociations = null)
 {
     public static readonly ApplySettings Manual = new()
     {

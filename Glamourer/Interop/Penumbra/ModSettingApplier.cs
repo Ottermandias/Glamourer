@@ -18,9 +18,10 @@ public class ModSettingApplier(
 {
     private readonly HashSet<Guid> _collectionTracker = [];
 
-    public void HandleStateApplication(ActorState state, MergedDesign design, StateSource source, bool skipAutoRedraw, bool respectManual)
+    public void HandleStateApplication(ActorState state, MergedDesign design, StateSource source, bool skipAutoRedraw, bool respectManual, bool? forcedSetting)
     {
-        if (!config.AlwaysApplyAssociatedMods || design.AssociatedMods.Count == 0 && !design.ResetTemporarySettings)
+        var apply = forcedSetting ?? config.AlwaysApplyAssociatedMods;
+        if (!apply || design.AssociatedMods.Count is 0 && !design.ResetTemporarySettings)
             return;
 
         if (!objects.TryGetValue(state.Identifier, out var data))
