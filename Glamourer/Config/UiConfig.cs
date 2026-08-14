@@ -2,8 +2,6 @@
 using Glamourer.Services;
 using Luna;
 using Luna.Generators;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Structs;
 using System.Text.Json;
@@ -12,7 +10,6 @@ namespace Glamourer.Config;
 
 public sealed partial class UiConfig : ConfigurationFile<FilenameService>, IDisposable
 {
-    [JsonIgnore]
     public readonly ColorCache<ColorId, ColorIdData> ColorCache;
 
     private readonly ActorManager _actors;
@@ -64,39 +61,31 @@ public sealed partial class UiConfig : ConfigurationFile<FilenameService>, IDisp
         j.WriteSignedIfNot("SelectedAutomationIndex"u8, _selectedAutomationIndex, -1);
         if (_selectedActor.IsValid)
         {
-            // TODO
             j.WritePropertyName("SelectedActor"u8);
-            j.WriteRawValue(_selectedActor.ToJson().ToString(Formatting.Indented));
+            j.WriteJson("SelectedActor"u8, _selectedActor);
         }
     }
 
-    protected override void LoadData(JObject j)
+    protected override void LoadData(in JsonElement j)
     {
-        // TODO: Optimize this entire type to not use newtonsoft...
-        _actorsTabScale          = TwoPanelWidth.ReadJson(j, "ActorsTab",     new TwoPanelWidth(250,  ScalingMode.Absolute));
-        _designsTabScale         = TwoPanelWidth.ReadJson(j, "DesignsTab",    new TwoPanelWidth(0.3f, ScalingMode.Percentage));
-        _automationTabScale      = TwoPanelWidth.ReadJson(j, "AutomationTab", new TwoPanelWidth(0.3f, ScalingMode.Percentage));
-        _npcTabScale             = TwoPanelWidth.ReadJson(j, "NpcTab",        new TwoPanelWidth(250,  ScalingMode.Absolute));
-        _selectedNpc             = j["SelectedNpc"]?.Value<uint>() ?? 0;
-        _selectedAutomationIndex = j["SelectedAutomationIndex"]?.Value<int>() ?? -1;
-        _selectedActor           = _actors.FromJson(j["SelectedActor"] as JObject);
-        if (j["Colors"] is { } token)
+        _selectedNpc             = j.PropertyOrDefault("SelectedNpc"u8,             (uint)_selectedNpc);
+        _selectedAutomationIndex = j.PropertyOrDefault("SelectedAutomationIndex"u8, _selectedAutomationIndex);
+        _actorsTabScale          = TwoPanelWidth.ReadJson(j, "ActorsTab"u8,     _actorsTabScale);
+        _designsTabScale         = TwoPanelWidth.ReadJson(j, "DesignsTab"u8,    _designsTabScale);
+        _automationTabScale      = TwoPanelWidth.ReadJson(j, "AutomationTab"u8, _automationTabScale);
+        _npcTabScale             = TwoPanelWidth.ReadJson(j, "NpcTab"u8,        _npcTabScale);
+        if (j.TryReadObject("Colors"u8, out var colors))
         {
-            var backToText = Encoding.UTF8.GetBytes(token.ToString(Formatting.None));
-            if (backToText.Length > 0)
-            {
-                var reader = new Utf8JsonReader(backToText, JsonFunctions.ReaderOptions);
-                if (reader.Read())
-                {
-                    var colors = ColorDictionary<ColorId, ColorIdData>.Deserialize(Messager, ref reader, true, true, true);
-                    Colors.Apply(colors, true);
-                }
-            }
+#pragma warning disable CA1869
+            var options = new JsonSerializerOptions(JsonFunctions.SerializerOptions);
+#pragma warning restore CA1869
+            options.Converters.Add(new ColorDictionaryConverter<ColorId, ColorIdData>(Messager, true, true, true));
+            if (colors.Deserialize<ColorDictionary<ColorId, ColorIdData>>(options) is { } dict)
+                Colors.Apply(dict, true);
         }
-        else
-        {
-            Colors.ResetToDefault();
-        }
+
+        if (j.TryGetProperty("SelectedActor"u8, out var selectedActor))
+            _selectedActor = _actors.FromJson(selectedActor);
     }
 
     public override string ToFilePath(FilenameService fileNames)

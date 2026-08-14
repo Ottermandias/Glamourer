@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using Glamourer.Services;
 using Luna;
-using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Config;
 
@@ -27,14 +26,21 @@ public sealed class IgnoredMods : ConfigurationFile<FilenameService>, IReadOnlyS
         j.WriteEndArray();
     }
 
-    protected override void LoadData(JObject j)
+    protected override void LoadData(in JsonElement j)
     {
         _ignoredMods.Clear();
-        if (j["IgnoredMods"] is not JArray arr)
+        if (!j.TryReadArray("IgnoredMods"u8, out var ignoredMods))
             return;
 
-        foreach (var value in arr.Values<string>().OfType<string>())
-            _ignoredMods.Add(value);
+        foreach (var value in ignoredMods.EnumerateArray())
+        {
+            if (value.ValueKind is not JsonValueKind.String)
+                continue;
+
+            var mod = value.GetString();
+            if (!string.IsNullOrEmpty(mod))
+                _ignoredMods.Add(mod);
+        }
     }
 
     public override string ToFilePath(FilenameService fileNames)
