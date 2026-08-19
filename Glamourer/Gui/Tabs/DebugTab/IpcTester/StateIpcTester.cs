@@ -1,6 +1,5 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Api.Enums;
-using Glamourer.Api.Helpers;
 using Glamourer.Api.IpcSubscribers;
 using Glamourer.Designs;
 using ImSharp;

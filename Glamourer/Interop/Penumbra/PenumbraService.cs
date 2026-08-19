@@ -7,7 +7,6 @@ using Glamourer.State;
 using Luna;
 using Newtonsoft.Json.Linq;
 using Penumbra.Api.Enums;
-using Penumbra.Api.Helpers;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 

@@ -13,11 +13,19 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
     public const string  ResolvedName   = "Random";
     private      Design? _currentDesign;
 
+    public string                          CustomName    { get; private set; } = string.Empty;
     public IReadOnlyList<IDesignPredicate> Predicates    { get; private set; } = [];
-    public bool                            ResetOnRedraw { get; set; }         = false;
+    public bool                            ResetOnRedraw { get; set; }
 
-    public string ResolveName(bool _)
-        => ResolvedName;
+    public string ResolveName(bool incognito)
+    {
+        if (CustomName.Length is 0)
+            return ResolvedName;
+        if (!incognito || CustomName.Length <= 2)
+            return $"{ResolvedName} ({CustomName})";
+
+        return $"{ResolvedName} ({CustomName.AsSpan(0, 2)}...)";
+    }
 
     public ref readonly DesignData GetDesignData(in DesignData baseRef)
     {
@@ -56,7 +64,7 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
             _currentDesign = rng.Design(Predicates);
         else
             _currentDesign ??= rng.Design(Predicates);
-        if (_currentDesign == null)
+        if (_currentDesign is null)
             yield break;
 
         foreach (var (link, type, jobs) in _currentDesign.AllLinks(newApplication, condition))
@@ -65,7 +73,9 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
 
     public void AddData(JObject jObj)
     {
-        jObj["Restrictions"]  = RandomPredicate.GeneratePredicateString(Predicates);
+        jObj["Restrictions"] = RandomPredicate.GeneratePredicateString(Predicates);
+        if (CustomName.Length > 0)
+            jObj["CustomName"] = CustomName;
         jObj["ResetOnRedraw"] = ResetOnRedraw;
     }
 
@@ -74,6 +84,7 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
         var restrictions = jObj["Restrictions"]?.ToObject<string>() ?? string.Empty;
         Predicates    = RandomPredicate.GeneratePredicates(restrictions);
         ResetOnRedraw = jObj["ResetOnRedraw"]?.ToObject<bool>() ?? false;
+        CustomName    = jObj["CustomName"]?.ToObject<string>() ?? string.Empty;
     }
 
     public bool ChangeData(object data)
@@ -87,6 +98,12 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
         if (data is bool resetOnRedraw)
         {
             ResetOnRedraw = resetOnRedraw;
+            return true;
+        }
+
+        if (data is string customName)
+        {
+            CustomName = customName;
             return true;
         }
 

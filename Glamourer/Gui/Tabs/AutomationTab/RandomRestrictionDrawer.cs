@@ -395,6 +395,10 @@ public sealed class RandomRestrictionDrawer : IService, IDisposable
         Im.Cursor.Y += Im.Style.GlobalScale - Im.Style.WindowPadding.Y;
         Im.Separator();
         Im.Dummy(Vector2.Zero);
+        Im.Item.SetNextWidthFull();
+        if (ImEx.InputOnDeactivation.Text("##Name"u8, random.CustomName, out string newName, "Custom Name..."u8))
+            _autoDesignManager.ChangeData(_set!, _designIndex, newName);
+
         var reset = random.ResetOnRedraw;
         if (Im.Checkbox("Reset Chosen Design On Every Redraw"u8, ref reset))
             _autoDesignManager.ChangeData(_set!, _designIndex, reset);
