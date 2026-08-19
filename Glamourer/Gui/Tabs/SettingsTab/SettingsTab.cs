@@ -33,7 +33,8 @@ public sealed class SettingsTab(
     AutoRedrawChanged autoRedraw,
     PredefinedTagManager predefinedTags,
     PcpService pcpService,
-    IgnoredMods ignoredMods)
+    IgnoredMods ignoredMods,
+    DesignColorUi designColors)
     : ITab<MainTabType>
 {
     private readonly VirtualKey[] _validKeys = keys.GetValidVirtualKeys().Prepend(VirtualKey.NO_KEY).ToArray();
@@ -466,6 +467,12 @@ public sealed class SettingsTab(
     /// <summary> Draw the entire Color subsection. </summary>
     private void DrawColorSettings()
     {
+        using (var tree = Im.Tree.HeaderId("Custom Design Colors"u8))
+        {
+            if (tree)
+                designColors.Draw();
+        }
+
         using var header = Im.Tree.HeaderId("Colors"u8);
         if (!header)
             return;
