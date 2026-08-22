@@ -40,7 +40,7 @@ public sealed class DesignQuickBar : OverlayWindow, IDisposable
     private readonly StateManager            _stateManager;
     private readonly AutoDesignApplier       _autoDesignApplier;
     private readonly ActorObjectManager      _objects;
-    private readonly PenumbraService         _penumbra;
+    private readonly PenumbraSubscriber      _penumbra;
     private readonly IKeyState               _keyState;
     private readonly NavigationService       _navigation;
     private readonly Im.ColorStyleDisposable _style          = new();
@@ -49,7 +49,7 @@ public sealed class DesignQuickBar : OverlayWindow, IDisposable
     private readonly StringBuilder           _tooltipBuilder = new(512);
 
     public DesignQuickBar(Configuration config, QuickDesignCombo designCombo, StateManager stateManager, IKeyState keyState,
-        ActorObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraService penumbra, NavigationService navigation)
+        ActorObjectManager objects, AutoDesignApplier autoDesignApplier, PenumbraSubscriber penumbra, NavigationService navigation)
         : base("Glamourer Quick Bar", WindowFlags.NoDecoration | WindowFlags.NoDocking | WindowFlags.NoFocusOnAppearing)
     {
         _config                          =  config;

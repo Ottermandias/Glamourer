@@ -16,7 +16,7 @@ namespace Glamourer.Gui;
 
 public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
 {
-    private readonly PenumbraService    _penumbra;
+    private readonly PenumbraUiService  _penumbra;
     private readonly StateManager       _stateManager;
     private readonly ItemManager        _items;
     private readonly ActorObjectManager _objects;
@@ -35,10 +35,10 @@ public sealed class PenumbraChangedItemTooltip : IDisposable, IRequiredService
     public DateTime        LastTooltip { get; private set; } = DateTime.MinValue;
     public DateTime        LastClick   { get; private set; } = DateTime.MinValue;
 
-    public PenumbraChangedItemTooltip(PenumbraService penumbra, StateManager stateManager, ItemManager items, ActorObjectManager objects,
+    public PenumbraChangedItemTooltip(PenumbraSubscriber penumbra, StateManager stateManager, ItemManager items, ActorObjectManager objects,
         CustomizeService customize, GPoseService gpose)
     {
-        _penumbra         =  penumbra;
+        _penumbra         =  penumbra.Ui;
         _stateManager     =  stateManager;
         _items            =  items;
         _objects          =  objects;

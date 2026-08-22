@@ -10,7 +10,7 @@ using Glamourer.Unlocks;
 using ImSharp;
 using ImSharp.Table;
 using Luna;
-using Penumbra.Api.Enums;
+using Penumbra.Api.Wrappers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -22,7 +22,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
     private readonly ItemManager                _items;
     private readonly ItemUnlockManager          _unlocks;
     private readonly FavoriteManager            _favorites;
-    private readonly PenumbraService            _penumbra;
+    private readonly PenumbraSubscriber         _penumbra;
     private readonly ObjectUnlocked             _unlockEvent;
     private readonly IgnoredMods                _ignoredMods;
     private readonly PenumbraChangedItemTooltip _tooltip;
@@ -31,7 +31,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
     private UnlockCacheItem _currentItem;
 
     public UnlockTable(JobService jobs, ItemManager items, ItemUnlockManager unlocks, PenumbraChangedItemTooltip tooltip,
-        ObjectUnlocked unlockEvent, FavoriteManager favorites, PenumbraService penumbra, TextureService textures, IgnoredMods ignoredMods,
+        ObjectUnlocked unlockEvent, FavoriteManager favorites, PenumbraSubscriber penumbra, TextureService textures, IgnoredMods ignoredMods,
         Configuration config)
         : base(new StringU8("Unlock Table"u8),
             new FavoriteColumn(config, favorites),
@@ -151,7 +151,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
         }
 
         var favorite = _favorites.Contains(item);
-        var mods     = _penumbra.CheckCurrentChangedItem(item.Name);
+        var mods     = _penumbra.Collections.CheckCurrentChangedItems(item.Name).ToArray();
         var jobs = item.JobRestrictions.Id > 0 && item.JobRestrictions.Id < _jobs.AllJobGroups.Count
             ? _jobs.AllJobGroups[item.JobRestrictions]
             : _jobs.AllJobGroups[1];
@@ -160,7 +160,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             UnlockTimestamp = unlocked,
             Mods            = mods,
             Favorite        = favorite,
-            RelevantMods    = mods.Count(m => !_ignoredMods.Contains(m.ModName) && !_ignoredMods.Contains(m.ModDirectory)),
+            RelevantMods    = mods.Count(m => !_ignoredMods.Contains(m.Name) && !_ignoredMods.Contains(m.Identifier)),
         };
     }
 
@@ -640,16 +640,16 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             : base(parent)
         {
             parent._unlockEvent.Subscribe(OnItemUnlock, ObjectUnlocked.Priority.UnlockTable);
-            parent._penumbra.ModSettingChanged += OnModSettingChanged;
-            Parent._favorites.FavoriteChanged  += OnFavoriteChanged;
+            parent._penumbra.Collections.ModSettingsChanged += OnModSettingChanged;
+            Parent._favorites.FavoriteChanged               += OnFavoriteChanged;
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
             Parent._unlockEvent.Unsubscribe(OnItemUnlock);
-            Parent._penumbra.ModSettingChanged -= OnModSettingChanged;
-            Parent._favorites.FavoriteChanged  -= OnFavoriteChanged;
+            Parent._penumbra.Collections.ModSettingsChanged -= OnModSettingChanged;
+            Parent._favorites.FavoriteChanged               -= OnFavoriteChanged;
         }
 
         private void OnFavoriteChanged(FavoriteManager.FavoriteType type, uint id, bool favorite)
@@ -666,9 +666,9 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
                 UpdateSingleItem(idx, UnfilteredItems[idx] with { Favorite = favorite }, false);
         }
 
-        private void OnModSettingChanged(ModSettingChange type, Guid collection, string _2, bool inherited)
+        private void OnModSettingChanged(in ModSettingsChangedArguments args)
         {
-            if (collection != _lastCollection)
+            if (args.Collection != _lastCollection)
                 return;
 
             FilterDirty = true;
@@ -676,7 +676,8 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             for (var i = 0; i < UnfilteredItems.Count; ++i)
             {
                 var item = UnfilteredItems[i];
-                UpdateSingleItem(i, item with { Mods = Parent._penumbra.CheckCurrentChangedItem(item.Name.Utf16) }, false);
+                UpdateSingleItem(i, item with { Mods = Parent._penumbra.Collections.CheckCurrentChangedItems(item.Name.Utf16).ToArray() },
+                    false);
             }
         }
 
@@ -732,7 +733,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
 
         private void UpdateCollection()
         {
-            var collection = Parent._penumbra.CurrentCollection.Id;
+            var collection = Parent._penumbra.CurrentCollection.Identifier;
             if (collection == _lastCollection)
                 return;
 
@@ -742,7 +743,8 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             for (var i = 0; i < UnfilteredItems.Count; ++i)
             {
                 var item = UnfilteredItems[i];
-                UpdateSingleItem(i, item with { Mods = Parent._penumbra.CheckCurrentChangedItem(item.Name.Utf16) }, false);
+                UpdateSingleItem(i, item with { Mods = Parent._penumbra.Collections.CheckCurrentChangedItems(item.Name.Utf16).ToArray() },
+                    false);
             }
         }
     }

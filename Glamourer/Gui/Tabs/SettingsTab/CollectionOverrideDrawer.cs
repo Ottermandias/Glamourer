@@ -4,6 +4,7 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using ImSharp;
 using Luna;
+using Penumbra.Api.Enums;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
 
@@ -14,7 +15,7 @@ public class CollectionOverrideDrawer(
     Configuration config,
     ActorObjectManager objects,
     ActorManager actors,
-    PenumbraService penumbra,
+    PenumbraSubscriber penumbra,
     CollectionCombo combo) : IService
 {
     private string            _newIdentifier = string.Empty;
@@ -127,7 +128,7 @@ public class CollectionOverrideDrawer(
 
     private void DrawNewOverride(in Im.TableDisposable table)
     {
-        var (currentId, currentName) = penumbra.CurrentCollection;
+        var (currentId, currentName, _) = penumbra.Collections.TypeCollectionId(ApiCollectionType.Current)!.Value;
         table.NextColumn();
         if (ImEx.Icon.Button(FontAwesomeIcon.PersonCirclePlus.Icon(), "Add override for current player."u8,
                 !objects.Player.Valid && currentId != Guid.Empty))

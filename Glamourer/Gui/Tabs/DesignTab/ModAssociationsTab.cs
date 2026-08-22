@@ -8,10 +8,11 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSystem fileSystem, DesignManager manager, Configuration config) : IUiService
+public sealed class ModAssociationsTab(PenumbraSubscriber penumbra, DesignFileSystem fileSystem, DesignManager manager, Configuration config)
+    : IUiService
 {
-    private readonly ModCombo              _modCombo = new(penumbra, fileSystem);
-    private          (Mod, ModSettings)[]? _copy;
+    private readonly ModCombo                              _modCombo = new(penumbra, fileSystem);
+    private          (ModIdentifier, SettingPresetData)[]? _copy;
 
     private Design Selection
         => (Design)fileSystem.Selection.Selection!.Value;
@@ -66,7 +67,7 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
 
     private void DrawApplyAllButton()
     {
-        var (id, name) = penumbra.CurrentCollection;
+        var (id, name, _) = penumbra.CurrentCollection;
         if (config.Ephemeral.IncognitoMode)
             name = id.ShortGuid();
         if (ImEx.Button($"Try Applying All Associated Mods to {name}##applyAll",
@@ -76,7 +77,7 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
 
     public void DrawApplyButton()
     {
-        var (id, name) = penumbra.CurrentCollection;
+        var (id, name, _) = penumbra.CurrentCollection;
         if (ImEx.Button("Apply Mod Associations"u8, Vector2.Zero,
                 $"Try to apply all associated mod settings to Penumbras current collection {name}",
                 Selection.AssociatedMods.Count is 0 || id == Guid.Empty))
@@ -105,8 +106,8 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
         table.SetupColumn("##Options"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Applym"u8).X);
         table.HeaderRow();
 
-        Mod?                             removedMod = null;
-        (Mod mod, ModSettings settings)? updatedMod = null;
+        ModIdentifier?                                   removedMod = null;
+        (ModIdentifier mod, SettingPresetData settings)? updatedMod = null;
         foreach (var (idx, (mod, settings)) in Selection.AssociatedMods.Index())
         {
             using var id = Im.Id.Push(idx);
@@ -126,8 +127,8 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
             manager.UpdateMod(Selection, updatedMod.Value.mod, updatedMod.Value.settings);
     }
 
-    private void DrawAssociatedModRow(in Im.TableDisposable table, Mod mod, ModSettings settings, out Mod? removedMod,
-        out (Mod, ModSettings)? updatedMod)
+    private void DrawAssociatedModRow(in Im.TableDisposable table, ModIdentifier mod, SettingPresetData settings, out ModIdentifier? removedMod,
+        out (ModIdentifier, SettingPresetData)? updatedMod)
     {
         removedMod = null;
         updatedMod = null;
@@ -155,7 +156,7 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
             if (source.Length > 0)
                 Im.Text($"Using temporary settings made by {source}.");
             Im.Separator();
-            var namesDifferent = mod.Name != mod.DirectoryName;
+            var namesDifferent = mod.Name != mod.Identifier;
             Im.Dummy(300 * Im.Style.GlobalScale);
             using (Im.Group())
             {
@@ -171,7 +172,7 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
             using (Im.Group())
             {
                 if (namesDifferent)
-                    Im.Text(mod.DirectoryName);
+                    Im.Text(mod.Identifier);
 
                 Im.Text($"{newSettings.ForceInherit}");
                 Im.Text($"{newSettings.Enabled}");
@@ -183,8 +184,8 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
         table.NextColumn();
 
         if (Im.Selectable($"{mod.Name}##name"))
-            penumbra.OpenModPage(mod);
-        Im.Tooltip.OnHover($"Mod Directory:    {mod.DirectoryName}\n\nClick to open mod page in Penumbra.");
+            penumbra.Ui.OpenMod(mod);
+        Im.Tooltip.OnHover($"Mod Directory:    {mod.Identifier}\n\nClick to open mod page in Penumbra.");
         if (config.UseTemporarySettings)
         {
             table.NextColumn();
@@ -221,7 +222,7 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
         DrawAssociatedModTooltip(settings);
     }
 
-    private static void DrawAssociatedModTooltip(ModSettings settings)
+    private static void DrawAssociatedModTooltip(in SettingPresetData settings)
     {
         if (settings is not { Enabled: true, Settings.Count: > 0 } || !Im.Item.Hovered())
             return;
@@ -248,12 +249,12 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
         table.NextColumn();
         var tt = currentDir.Length is 0
             ? "Please select a mod first."u8
-            : Selection.AssociatedMods.ContainsKey(new Mod(_modCombo.SelectionName, currentDir))
+            : Selection.AssociatedMods.ContainsKey(new ModIdentifier(currentDir, _modCombo.SelectionName))
                 ? "The design already contains an association with the selected mod."u8
                 : StringU8.Empty;
 
         if (ImEx.Icon.Button(LunaStyle.AddObjectIcon, tt, tt.Length > 0))
-            manager.AddMod(Selection, new Mod(_modCombo.SelectionName, _modCombo.Selection), _modCombo.Settings);
+            manager.AddMod(Selection, new ModIdentifier(_modCombo.Selection, _modCombo.SelectionName), _modCombo.Settings);
         table.NextColumn();
         _modCombo.Draw("##new"u8, Im.ContentRegion.Available.X);
     }

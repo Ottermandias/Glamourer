@@ -1,5 +1,4 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface;
 using Glamourer.Config;
 using Glamourer.GameData;
 using Glamourer.Interop;
@@ -23,7 +22,7 @@ public sealed class UnlockOverview(
     CodeService codes,
     JobService jobs,
     FavoriteManager favorites,
-    PenumbraService penumbra,
+    PenumbraSubscriber penumbra,
     IgnoredMods ignoredMods) : IUiService
 {
     private static readonly Vector4 UnavailableTint = new(0.3f, 0.3f, 0.3f, 1.0f);
@@ -285,12 +284,12 @@ public sealed class UnlockOverview(
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private (string ModDirectory, string ModName)[] DrawModdedMarker(in EquipItem item, Vector2 iconSize)
     {
-        var mods = penumbra.CheckCurrentChangedItem(item.Name);
+        var mods = penumbra.Collections.CheckCurrentChangedItems(item.Name).ToArray();
         if (mods.Length is 0)
             return mods;
 
         var center = Im.Item.UpperLeftCorner + new Vector2(iconSize.X * 0.85f, iconSize.Y * 0.15f);
-        if (mods.All(m => ignoredMods.Contains(m.ModDirectory) || ignoredMods.Contains(m.ModName)))
+        if (mods.All(m => ignoredMods.Contains(m.Identifier) || ignoredMods.Contains(m.Name)))
         {
             Im.Window.DrawList.Shape.CircleFilled(center, iconSize.X * 0.1f, _moddedColor.WithAlpha(0.33f));
         }

@@ -110,9 +110,10 @@ public sealed class MultiDesignPanel(
             table.SetupColumn("mod"u8,  TableColumnFlags.WidthFixed, sizeMods);
             table.SetupColumn("path"u8, TableColumnFlags.WidthFixed, sizeFolders);
 
-            foreach (var (index, node) in fileSystem.Selection.OrderedNodes.Index())
+            using var id = Im.Id.Empty();
+            foreach (var node in fileSystem.Selection.OrderedNodes.OrderBy(p => p.FullPath, StringComparer.OrdinalIgnoreCase))
             {
-                using var id = Im.Id.Push(index);
+                id.PushNext();
                 var (icon, text) = node is IFileSystemData<Design> l
                     ? (LunaStyle.RemoveFileIcon, l.Value.Name)
                     : (LunaStyle.RemoveFolderIcon, string.Empty);
@@ -124,6 +125,7 @@ public sealed class MultiDesignPanel(
                 table.DrawFrameColumn(node.FullPath);
 
                 CountLeaves(node);
+                id.Pop();
             }
         }
 

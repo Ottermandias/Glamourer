@@ -8,7 +8,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Gui.Tabs.DebugTab;
 
-public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemTooltip penumbraTooltip) : IGameDataDrawer
+public sealed class PenumbraPanel(PenumbraSubscriber penumbra, PenumbraChangedItemTooltip penumbraTooltip) : IGameDataDrawer
 {
     public ReadOnlySpan<byte> Label
         => "Penumbra Interop"u8;
@@ -19,7 +19,7 @@ public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemT
     private int   _gameObjectIndex;
     private Model _drawObject = Model.Null;
 
-    public void Draw()
+    public unsafe void Draw()
     {
         using var table = Im.Table.Begin("##PenumbraTable"u8, 3, TableFlags.SizingFixedFit | TableFlags.RowBackground);
         if (!table)
@@ -28,12 +28,12 @@ public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemT
         table.DrawDataPair("Available"u8, penumbra.Available);
         table.NextColumn();
         if (Im.SmallButton("Unattach"u8))
-            penumbra.Unattach();
+            penumbra.Detach();
         Im.Line.SameInner();
         if (Im.SmallButton("Reattach"u8))
             penumbra.Reattach();
 
-        table.DrawDataPair("Version"u8, $"{penumbra.CurrentMajor}.{penumbra.CurrentMinor}");
+        table.DrawDataPair("Version"u8, $"{penumbra.CurrentMajorVersion}.{penumbra.CurrentMinorVersion}");
         table.NextColumn();
 
         table.DrawDataPair("Attached When"u8, penumbra.AttachTime.ToLocalTime().ToLongTimeString());
@@ -47,7 +47,7 @@ public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemT
             _drawObject = address;
         table.NextColumn();
         if (penumbra.Available)
-            Glamourer.Dynamis.DrawPointer(penumbra.GameObjectFromDrawObject(_drawObject).Address);
+            Glamourer.Dynamis.DrawPointer(penumbra.GameState!.GameObjectFromDrawObject(_drawObject.AsDrawObject));
         else
             Im.Text("Penumbra Unavailable"u8);
 
@@ -55,7 +55,8 @@ public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemT
         table.NextColumn();
         Im.Item.SetNextWidthScaled(200);
         Im.Input.Scalar("##CutsceneIndex"u8, ref _gameObjectIndex);
-        table.DrawColumn(penumbra.Available ? $"{penumbra.ResolveService.CutsceneParent((ushort)_gameObjectIndex)}" : "Penumbra Unavailable"u8);
+        table.DrawColumn(
+            penumbra.Available ? $"{penumbra.GameState!.ResolveCutsceneActor((ushort)_gameObjectIndex)}" : "Penumbra Unavailable"u8);
 
         table.DrawFrameColumn("Redraw Object"u8);
         table.NextColumn();
@@ -65,7 +66,7 @@ public sealed class PenumbraPanel(PenumbraService penumbra, PenumbraChangedItemT
         using (Im.Disabled(!penumbra.Available))
         {
             if (Im.Button("Redraw"u8))
-                penumbra.RedrawObject((ObjectIndex)_gameObjectIndex, RedrawType.Redraw);
+                penumbra.GameState!.Redraw((ObjectIndex)_gameObjectIndex, RedrawType.Redraw);
         }
 
         table.DrawColumn("Last Tooltip Date"u8);

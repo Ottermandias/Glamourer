@@ -1,15 +1,14 @@
 ﻿using Dalamud.Interface.ImGuiNotification;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using Glamourer.Automation;
 using Glamourer.Designs.Links;
 using Glamourer.Interop.Material;
-using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Glamourer.State;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Structs;
 using Luna;
+using Penumbra.Api.Preset;
 using Penumbra.GameData.Enums;
 using Notification = Luna.Notification;
 
@@ -38,30 +37,31 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         ResetTemporarySettings = other.ResetTemporarySettings;
         RevertAdvancedDyes     = other.RevertAdvancedDyes;
         Color                  = other.Color;
-        AssociatedMods         = new SortedList<Mod, ModSettings>(other.AssociatedMods);
+        AssociatedMods         = new SortedList<ModIdentifier, SettingPresetData>(other.AssociatedMods, ModIdentifierComparer.Instance);
         Links                  = Links.Clone();
     }
 
     // Metadata
     public new const int FileVersion = 2;
 
-    public Guid                         Identifier             { get; internal init; }
-    public IFileSystemData<Design>?     Node                   { get; set; }
-    public DateTimeOffset               CreationDate           { get; internal init; }
-    public DateTimeOffset               LastEdit               { get; internal set; }
-    public string                       Name                   { get; internal set; } = string.Empty;
-    public string                       Description            { get; internal set; } = string.Empty;
-    public string[]                     Tags                   { get; internal set; } = [];
-    public int                          Index                  { get; internal set; }
-    public bool                         ForcedRedraw           { get; internal set; }
-    public ModelCombinedSlots           ResetAdvancedDyes      { get; internal set; }
-    public ModelCombinedSlots           RevertAdvancedDyes     { get; internal set; }
-    public bool                         ResetTemporarySettings { get; internal set; }
-    public bool                         QuickDesign            { get; internal set; } = true;
-    public string                       Color                  { get; internal set; } = string.Empty;
-    public SortedList<Mod, ModSettings> AssociatedMods         { get; private set; }  = [];
-    public LinkContainer                Links                  { get; private set; }  = [];
-    public DataPath                     Path                   { get; }               = new();
+    public Guid                     Identifier             { get; internal init; }
+    public IFileSystemData<Design>? Node                   { get; set; }
+    public DateTimeOffset           CreationDate           { get; internal init; }
+    public DateTimeOffset           LastEdit               { get; internal set; }
+    public string                   Name                   { get; internal set; } = string.Empty;
+    public string                   Description            { get; internal set; } = string.Empty;
+    public string[]                 Tags                   { get; internal set; } = [];
+    public int                      Index                  { get; internal set; }
+    public bool                     ForcedRedraw           { get; internal set; }
+    public ModelCombinedSlots       ResetAdvancedDyes      { get; internal set; }
+    public ModelCombinedSlots       RevertAdvancedDyes     { get; internal set; }
+    public bool                     ResetTemporarySettings { get; internal set; }
+    public bool                     QuickDesign            { get; internal set; } = true;
+    public string                   Color                  { get; internal set; } = string.Empty;
+    public LinkContainer            Links                  { get; private set; }  = [];
+    public DataPath                 Path                   { get; }               = new();
+
+    public SortedList<ModIdentifier, SettingPresetData> AssociatedMods { get; private set; } = new(ModIdentifierComparer.Instance);
 
     public string Incognito
         => Identifier.ToString()[..8];
@@ -142,23 +142,24 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
 
     private JArray SerializeMods()
     {
+        // TODO
         var ret = new JArray();
         foreach (var (mod, settings) in AssociatedMods)
         {
             var obj = new JObject
             {
                 ["Name"]      = mod.Name,
-                ["Directory"] = mod.DirectoryName,
+                ["Directory"] = mod.Identifier,
             };
-            if (settings.Remove)
+            if (settings.State is ModState.RemoveTemporary)
                 obj["Remove"] = true;
-            else if (settings.ForceInherit)
+            else if (settings.State is ModState.Inherited)
                 obj["Inherit"] = true;
             else
-                obj["Enabled"] = settings.Enabled;
-            if (settings.Enabled)
+                obj["Enabled"] = settings.State is ModState.Enabled;
+            if (settings.State is ModState.Enabled)
             {
-                obj["Priority"] = settings.Priority;
+                obj["Priority"] = settings.Priority ?? 0;
                 obj["Settings"] = JObject.FromObject(settings.Settings);
             }
 
@@ -341,8 +342,9 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
             foreach (var (key, value) in settingsDict)
                 settings.Add(key, value);
             var priority = tok["Priority"]?.ToObject<int>() ?? 0;
-            if (!design.AssociatedMods.TryAdd(new Mod(name, directory),
-                    new ModSettings(settings, priority, enabled, forceInherit, removeSetting)))
+            // TODO
+            if (!design.AssociatedMods.TryAdd(new ModIdentifier(directory, name),
+                    new SettingPresetData(settings, priority, enabled, forceInherit, removeSetting)))
                 Glamourer.Messager.NotificationMessage("The loaded design contains a mod more than once, skipped.", NotificationType.Warning);
         }
     }
@@ -394,7 +396,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
             // Treat the legacy "All" value as the current "All" (that will be serialized as `true`).
             if ((value & 0x1FFF) is 0x1FFF)
                 return ModelCombinedSlotsExtensions.All;
-                
+
             var equipment = (ModelCombinedSlots)value & ModelCombinedSlotsExtensions.AllEquipmentPieces;
             var bonus     = (ModelCombinedSlots)(value << 4) & ModelCombinedSlotsExtensions.BonusItemFlagMask;
             var mainhand  = (ModelCombinedSlots)(value << 22) & ModelCombinedSlots.Mainhand;

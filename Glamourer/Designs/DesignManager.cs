@@ -5,7 +5,6 @@ using Glamourer.Designs.Links;
 using Glamourer.Events;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
-using Glamourer.Interop.Penumbra;
 using Glamourer.Services;
 using Luna;
 using Newtonsoft.Json;
@@ -269,31 +268,31 @@ public sealed class DesignManager : DesignEditor, IService
     }
 
     /// <summary> Add an associated mod to a design. </summary>
-    public void AddMod(Design design, Mod mod, ModSettings settings)
+    public void AddMod(Design design, in ModIdentifier mod, in SettingPresetData settings)
     {
         if (!design.AssociatedMods.TryAdd(mod, settings))
             return;
 
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Added associated mod {mod.DirectoryName} to design {design.Identifier}.");
+        Glamourer.Log.Debug($"Added associated mod {mod.Identifier} to design {design.Identifier}.");
         DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.AddedMod, design, new ModAddedTransaction(mod, settings)));
     }
 
     /// <summary> Remove an associated mod from a design. </summary>
-    public void RemoveMod(Design design, Mod mod)
+    public void RemoveMod(Design design, in ModIdentifier mod)
     {
         if (!design.AssociatedMods.Remove(mod, out var settings))
             return;
 
         design.LastEdit = DateTimeOffset.UtcNow;
         SaveService.QueueSave(design);
-        Glamourer.Log.Debug($"Removed associated mod {mod.DirectoryName} from design {design.Identifier}.");
+        Glamourer.Log.Debug($"Removed associated mod {mod.Identifier} from design {design.Identifier}.");
         DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.RemovedMod, design, new ModRemovedTransaction(mod, settings)));
     }
 
     /// <summary> Add or update an associated mod to a design. </summary>
-    public void UpdateMod(Design design, Mod mod, ModSettings settings)
+    public void UpdateMod(Design design, in ModIdentifier mod, in SettingPresetData settings)
     {
         var hasOldSettings = design.AssociatedMods.TryGetValue(mod, out var oldSettings);
         design.AssociatedMods[mod] = settings;
@@ -301,13 +300,13 @@ public sealed class DesignManager : DesignEditor, IService
         SaveService.QueueSave(design);
         if (hasOldSettings)
         {
-            Glamourer.Log.Debug($"Updated associated mod {mod.DirectoryName} from design {design.Identifier}.");
+            Glamourer.Log.Debug($"Updated associated mod {mod.Identifier} from design {design.Identifier}.");
             DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.UpdatedMod, design,
                 new ModUpdatedTransaction(mod, oldSettings, settings)));
         }
         else
         {
-            Glamourer.Log.Debug($"Added associated mod {mod.DirectoryName} from design {design.Identifier}.");
+            Glamourer.Log.Debug($"Added associated mod {mod.Identifier} from design {design.Identifier}.");
             DesignChanged.Invoke(new DesignChanged.Arguments(DesignChanged.Type.AddedMod, design, new ModAddedTransaction(mod, settings)));
         }
     }

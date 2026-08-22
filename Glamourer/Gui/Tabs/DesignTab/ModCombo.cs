@@ -1,17 +1,18 @@
 ﻿using Glamourer.Designs;
 using Glamourer.Interop.Penumbra;
 using ImSharp;
+using Penumbra.Api.Preset;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public sealed class ModCombo(PenumbraService penumbra, DesignFileSystem fileSystem) : FilterComboBase<ModCombo.CacheItem>(new ModFilter())
+public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileSystem) : FilterComboBase<ModCombo.CacheItem>(new ModFilter())
 {
-    public readonly struct CacheItem(in Mod mod, in ModSettings settings, int count)
+    public readonly struct CacheItem(in ModIdentifier mod, in SettingPresetData settings, int count)
     {
-        public readonly StringPair  Name      = new(mod.Name);
-        public readonly StringPair  Directory = new(mod.DirectoryName);
-        public readonly ModSettings Settings  = settings;
-        public readonly int         Count     = count;
+        public readonly StringPair        Name      = new(mod.Name);
+        public readonly StringPair        Directory = new(mod.Identifier);
+        public readonly SettingPresetData Settings  = settings;
+        public readonly int               Count     = count;
 
         public readonly Vector4 Color = settings.Enabled
             ? count > 0
@@ -21,12 +22,12 @@ public sealed class ModCombo(PenumbraService penumbra, DesignFileSystem fileSyst
                 ? ColorId.ContainsItemsDisabled.Vector
                 : ImGuiColor.TextDisabled.Vector;
 
-        public readonly bool DifferingNames = string.Equals(mod.Name, mod.DirectoryName, StringComparison.CurrentCultureIgnoreCase);
+        public readonly bool DifferingNames = string.Equals(mod.Name, mod.Identifier, StringComparison.CurrentCultureIgnoreCase);
     }
 
-    public StringPair  SelectionName { get; private set; } = new("Select new Mod...", new StringU8("Select new Mod..."u8));
-    public string      Selection     { get; private set; } = string.Empty;
-    public ModSettings Settings      { get; private set; } = ModSettings.Empty;
+    public StringPair        SelectionName { get; private set; } = new("Select new Mod...", new StringU8("Select new Mod..."u8));
+    public string            Selection     { get; private set; } = string.Empty;
+    public SettingPresetData Settings      { get; private set; } = SettingPresetData.Empty;
 
     public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, float previewWidth)
     {
@@ -43,7 +44,7 @@ public sealed class ModCombo(PenumbraService penumbra, DesignFileSystem fileSyst
         => Im.Style.TextHeightWithSpacing;
 
     protected override IEnumerable<CacheItem> GetItems()
-        => penumbra.GetMods(fileSystem.Selection.Selection?.GetValue<Design>()?.FilteredItemNames.ToArray() ?? []).Select(t => new CacheItem(t.Mod, t.Settings, t.Count));
+        => penumbra.Mods.GetMods(fileSystem.Selection.Selection?.GetValue<Design>()?.FilteredItemNames.ToArray() ?? []).Select(t => new CacheItem(t.Mod, t.Settings, t.Count));
 
     protected override bool DrawItem(in CacheItem item, int globalIndex, bool selected)
     {
@@ -87,7 +88,7 @@ public sealed class ModCombo(PenumbraService penumbra, DesignFileSystem fileSyst
         }
     }
 
-    public static void DrawSettingsLeft(in ModSettings settings)
+    public static void DrawSettingsLeft(in SettingPresetData settings)
     {
         foreach (var setting in settings.Settings)
         {
@@ -97,7 +98,7 @@ public sealed class ModCombo(PenumbraService penumbra, DesignFileSystem fileSyst
         }
     }
 
-    public static void DrawSettingsRight(in ModSettings settings)
+    public static void DrawSettingsRight(in SettingPresetData settings)
     {
         foreach (var setting in settings.Settings)
         {

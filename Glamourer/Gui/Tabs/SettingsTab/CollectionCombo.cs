@@ -5,7 +5,7 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.SettingsTab;
 
-public sealed class CollectionCombo(Configuration config, PenumbraService penumbra)
+public sealed class CollectionCombo(Configuration config, PenumbraSubscriber penumbra)
     : FilterComboBase<CollectionCombo.CacheItem>(new CollectionFilter()), IUiService
 {
     private Guid _selected = Guid.Empty;
@@ -22,7 +22,7 @@ public sealed class CollectionCombo(Configuration config, PenumbraService penumb
         => Im.Style.TextHeightWithSpacing;
 
     protected override IEnumerable<CacheItem> GetItems()
-        => penumbra.GetCollections().Select(kvp => new CacheItem(kvp.Key, kvp.Value));
+        => penumbra.Collections.EnumerateNames().Select(t => new CacheItem(t.Identifier, t.Name));
 
     public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, Utf8StringHandler<HintStringHandlerBuffer> preview, out string newName,
         ref Guid id, float width)

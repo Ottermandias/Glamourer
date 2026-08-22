@@ -1,5 +1,5 @@
-﻿using Glamourer.Interop.Penumbra;
-using Glamourer.State;
+﻿using Glamourer.State;
+using Penumbra.Api.Preset;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -95,11 +95,11 @@ public sealed class MergedDesign
             AssociatedMods[mod] = settings;
     }
 
-    public readonly DesignBase                   Design;
-    public readonly WeaponList                   Weapons        = new();
-    public readonly SortedList<Mod, ModSettings> AssociatedMods = [];
-    public          StateSources                 Sources        = new();
-    public          bool                         ForcedRedraw;
-    public          ModelCombinedSlots           ResetAdvancedDyes;
-    public          bool                         ResetTemporarySettings;
+    public readonly DesignBase                                   Design;
+    public readonly WeaponList                                   Weapons        = new();
+    public readonly SortedList<ModIdentifier, SettingPresetData> AssociatedMods = new(ModIdentifierComparer.Instance);
+    public          StateSources                                 Sources        = new();
+    public          bool                                         ForcedRedraw;
+    public          ModelCombinedSlots                           ResetAdvancedDyes;
+    public          bool                                         ResetTemporarySettings;
 }
