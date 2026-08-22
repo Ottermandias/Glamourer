@@ -84,7 +84,7 @@ public class PcpService : IRequiredService
             $"{_config.PcpFolder}/{actorIdentifier} - {jObj["Note"]?.ToObject<string>() ?? string.Empty}", true);
         _designManager.AddTag(design, "PCP");
         _designManager.SetWriteProtection(design, true);
-        _designManager.AddMod(design, new ModIdentifier(modDirectory, modDirectory), SettingPresetData.Empty.Clone());
+        _designManager.AddMod(design, new ModIdentifier(modDirectory, modDirectory), SettingPresetData.Empty);
         _designManager.ChangeDescription(design, $"PCP design created for {actorIdentifier} on {time}.");
         _designManager.ChangeResetAdvancedDyes(design, ModelCombinedSlotsExtensions.All);
         _designManager.SetQuickDesign(design, false);

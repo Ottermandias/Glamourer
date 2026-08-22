@@ -1,6 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Glamourer.Api.Enums;
-using Glamourer.Config;
+﻿using Glamourer.Config;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
@@ -10,6 +8,7 @@ using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
 using ImSharp;
+using Penumbra.Api.Preset;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -29,6 +28,8 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
     private static readonly StringU8 Inherited           = new("Inherited"u8);
     private static readonly StringU8 Enabled             = new("Enabled"u8);
     private static readonly StringU8 Disabled            = new("Disabled"u8);
+    private static readonly StringU8 Toggled             = new("Toggled"u8);
+    private static readonly StringU8 Ignored             = new("Ignored"u8);
     private static readonly StringU8 Random              = new("Randomly Selected"u8);
     private static readonly StringU8 SetConfiguration    = new("Set Configuration"u8);
     private static readonly StringU8 Legacy              = new("Legacy Value"u8);
@@ -337,7 +338,15 @@ public sealed class AutomationTestCache : BasicCache, IReadOnlyList<AutomationTe
                         {
                             Slot   = new StringU8(mod.Name),
                             Source = designName,
-                            Target = settings.Remove ? Removed : settings.ForceInherit ? Inherited : settings.Enabled ? Enabled : Disabled,
+                            Target = settings.State switch
+                            {
+                                ModState.RemoveTemporary => Removed,
+                                ModState.Inherited       => Inherited,
+                                ModState.Enabled         => Enabled,
+                                ModState.Disabled        => Disabled,
+                                ModState.Toggle          => Toggled,
+                                _                        => Ignored,
+                            },
                         });
                     }
 

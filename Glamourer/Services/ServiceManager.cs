@@ -1,10 +1,8 @@
 ﻿using Dalamud.Plugin;
 using Glamourer.Api;
 using Glamourer.Api.Api;
-using Glamourer.Interop.Penumbra;
 using Luna;
 using Microsoft.Extensions.DependencyInjection;
-using Penumbra.GameData.Actors;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
@@ -19,7 +17,6 @@ public static class StaticServiceManager
             .AddExistingService(log)
             .AddSingleton<MessageService>()
             .AddSingleton<ActorObjectManager>()
-            .AddSingleton(p => new CutsceneResolver(p.GetRequiredService<CutsceneResolveService>().CutsceneParent))
             .AddExistingService(glamourer);
         services.AddIServices(typeof(EquipItem).Assembly);
         services.AddIServices(typeof(Glamourer).Assembly);

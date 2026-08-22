@@ -10,13 +10,13 @@ public sealed class PenumbraPcpService(IDalamudPluginInterface pluginInterface) 
     private readonly EventSubscriber<JObject, string, Guid>   _pcpParsed  = ParsingPcp.Subscriber(pluginInterface);
     private readonly EventSubscriber<JObject, ushort, string> _pcpCreated = CreatingPcp.Subscriber(pluginInterface);
 
-    public event Action<JObject, ushort, string> PcpCreated
+    public event Action<JObject, ushort, string> Created
     {
         add => _pcpCreated.Event += value;
         remove => _pcpCreated.Event -= value;
     }
 
-    public event Action<JObject, string, Guid> PcpParsed
+    public event Action<JObject, string, Guid> Parsed
     {
         add => _pcpParsed.Event += value;
         remove => _pcpParsed.Event -= value;

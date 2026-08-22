@@ -17,7 +17,6 @@ using Penumbra.GameData.Interop;
 using Glamourer.Api.Enums;
 using Glamourer.Config;
 using Luna;
-using Penumbra.Api.IpcSubscribers;
 using Penumbra.Api.Wrappers;
 
 namespace Glamourer.State;

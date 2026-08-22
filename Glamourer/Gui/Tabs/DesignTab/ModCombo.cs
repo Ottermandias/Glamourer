@@ -14,7 +14,7 @@ public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileS
         public readonly SettingPresetData Settings  = settings;
         public readonly int               Count     = count;
 
-        public readonly Vector4 Color = settings.Enabled
+        public readonly Vector4 Color = settings.State is ModState.Enabled
             ? count > 0
                 ? ColorId.ContainsItemsEnabled.Vector
                 : ImGuiColor.Text.Vector
@@ -44,7 +44,7 @@ public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileS
         => Im.Style.TextHeightWithSpacing;
 
     protected override IEnumerable<CacheItem> GetItems()
-        => penumbra.Mods.GetMods(fileSystem.Selection.Selection?.GetValue<Design>()?.FilteredItemNames.ToArray() ?? []).Select(t => new CacheItem(t.Mod, t.Settings, t.Count));
+        => penumbra.GetMods(fileSystem.Selection.Selection?.GetValue<Design>()?.FilteredItemNames.ToArray() ?? []).Select(t => new CacheItem(t.Mod, t.Settings, t.Count));
 
     protected override bool DrawItem(in CacheItem item, int globalIndex, bool selected)
     {
@@ -81,7 +81,7 @@ public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileS
         {
             if (item.DifferingNames)
                 Im.Text(item.Directory.Utf8);
-            Im.Text($"{item.Settings.Enabled}");
+            Im.Text($"{item.Settings.State is ModState.Enabled}");
             Im.Text($"{item.Settings.Priority}");
             Im.Text($"{item.Count}");
             DrawSettingsRight(item.Settings);
@@ -90,11 +90,10 @@ public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileS
 
     public static void DrawSettingsLeft(in SettingPresetData settings)
     {
-        foreach (var setting in settings.Settings)
+        foreach (var (group, data) in settings.Settings)
         {
-            Im.Text(setting.Key);
-            for (var i = 1; i < setting.Value.Count; ++i)
-                Im.Line.New();
+            Im.Text(group.Name ?? group.Identifier.ToString());
+            // TODO
         }
     }
 
@@ -102,11 +101,12 @@ public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileS
     {
         foreach (var setting in settings.Settings)
         {
-            if (setting.Value.Count is 0)
-                Im.Text("<None Enabled>"u8);
-            else
-                foreach (var option in setting.Value)
-                    Im.Text(option);
+            // TODO
+            //if (setting.Value.Count is 0)
+            //    Im.Text("<None Enabled>"u8);
+            //else
+            //    foreach (var option in setting.Value)
+            //        Im.Text(option);
         }
     }
 

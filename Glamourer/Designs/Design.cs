@@ -328,23 +328,43 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         {
             var name      = tok["Name"]?.ToObject<string>();
             var directory = tok["Directory"]?.ToObject<string>();
-            var enabled   = tok["Enabled"]?.ToObject<bool>() ?? false;
             if (name == null || directory == null)
             {
                 Glamourer.Messager.NotificationMessage("The loaded design contains an invalid mod, skipped.", NotificationType.Warning);
                 continue;
             }
 
-            var forceInherit  = tok["Inherit"]?.ToObject<bool>() ?? false;
-            var removeSetting = tok["Remove"]?.ToObject<bool>() ?? false;
-            var settingsDict  = tok["Settings"]?.ToObject<Dictionary<string, List<string>>>() ?? [];
-            var settings      = new Dictionary<string, List<string>>(settingsDict.Count);
-            foreach (var (key, value) in settingsDict)
-                settings.Add(key, value);
-            var priority = tok["Priority"]?.ToObject<int>() ?? 0;
+            var preset = SettingPresetData.Create();
+            if (tok["Priority"]?.ToObject<int>() is { } priority)
+            {
+                preset._hasPriority = true;
+                preset._priority    = priority;
+            }
+
+            if (tok["Remove"]?.ToObject<bool>() is true)
+                preset._state = (byte)ModState.RemoveTemporary;
+            else if (tok["Inherit"]?.ToObject<bool>() is true)
+                preset._state = (byte)ModState.Inherited;
+            else
+                preset._state = tok["Enabled"]?.ToObject<bool>() switch
+                {
+                    null  => (byte)ModState.Ignored,
+                    true  => (byte)ModState.Enabled,
+                    false => (byte)ModState.Disabled,
+                };
+
+            var settingsDict = tok["Settings"]?.ToObject<Dictionary<string, List<string>>>() ?? [];
+            foreach (var (key, values) in settingsDict)
+            {
+                var data = GroupSettingDataExtensions.Create();
+                data.DisableAllUnknown = true;
+                foreach (var value in values)
+                    data.Options.Add((Guid.Empty, value), (byte)OptionState.Enabled);
+                preset.Settings.Add((Guid.Empty, key), data);
+            }
+
             // TODO
-            if (!design.AssociatedMods.TryAdd(new ModIdentifier(directory, name),
-                    new SettingPresetData(settings, priority, enabled, forceInherit, removeSetting)))
+            if (!design.AssociatedMods.TryAdd(new ModIdentifier(directory, name), preset))
                 Glamourer.Messager.NotificationMessage("The loaded design contains a mod more than once, skipped.", NotificationType.Warning);
         }
     }
