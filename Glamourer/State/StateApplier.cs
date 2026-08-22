@@ -23,7 +23,7 @@ public class StateApplier(
     WeaponService weaponService,
     ChangeCustomizeService changeCustomize,
     ItemManager items,
-    PenumbraService penumbra,
+    PenumbraSubscriber penumbra,
     MetaService metaService,
     ActorObjectManager objects,
     CrestService crests,
@@ -33,7 +33,7 @@ public class StateApplier(
     public void ForceRedraw(ActorData data)
     {
         foreach (var actor in data.Objects)
-            penumbra.RedrawObject(actor, RedrawType.Redraw);
+            penumbra.GameState.Redraw(actor.Index);
     }
 
     /// <inheritdoc cref="ForceRedraw(ActorData)"/>
@@ -67,11 +67,11 @@ public class StateApplier(
             {
                 var mdlCustomize = (CustomizeArray*)&mdl.AsHuman->Customize;
                 *mdlCustomize = customize;
-                penumbra.RedrawObject(actor, RedrawType.AfterGPose);
+                penumbra.GameState.Redraw(actor.Index, RedrawType.AfterGPose);
             }
             else
             {
-                penumbra.RedrawObject(actor, RedrawType.Redraw);
+                penumbra.GameState.Redraw(actor.Index, RedrawType.Redraw);
             }
         }
     }

@@ -10,12 +10,12 @@ namespace Glamourer.Services;
 
 public sealed class CollectionOverrideService : IService, ISavable
 {
-    public const     int             Version = 2;
-    private readonly SaveService     _saveService;
-    private readonly ActorManager    _actors;
-    private readonly PenumbraService _penumbra;
+    public const     int                Version = 2;
+    private readonly SaveService        _saveService;
+    private readonly ActorManager       _actors;
+    private readonly PenumbraSubscriber _penumbra;
 
-    public CollectionOverrideService(SaveService saveService, ActorManager actors, PenumbraService penumbra)
+    public CollectionOverrideService(SaveService saveService, ActorManager actors, PenumbraSubscriber penumbra)
     {
         _saveService = saveService;
         _actors      = actors;
@@ -28,9 +28,11 @@ public sealed class CollectionOverrideService : IService, ISavable
         if (!identifier.IsValid)
             identifier = _actors.FromObject(actor.AsObject, out _, true, true, true);
 
-        return _overrides.FindFirst(p => p.Actor.Matches(identifier), out var ret)
-            ? (ret.CollectionId, ret.DisplayName, true)
-            : (_penumbra.GetActorCollection(actor, out var name), name, false);
+        if (_overrides.FindFirst(p => p.Actor.Matches(identifier), out var ret))
+            return (ret.CollectionId, ret.DisplayName, true);
+
+        var (id, name, _) = _penumbra.Collections.ObjectCollectionId(actor.Index.Index);
+        return (id, name, false);
     }
 
     private readonly List<(ActorIdentifier Actor, Guid CollectionId, string DisplayName)> _overrides = [];
@@ -57,7 +59,7 @@ public sealed class CollectionOverrideService : IService, ISavable
     public (bool Exists, ActorIdentifier Identifier, Guid CollectionId, string DisplayName) Fetch(int idx)
     {
         var (identifier, id, name) = _overrides[idx];
-        var collection = _penumbra.CollectionByIdentifier(id.ToString());
+        var collection = _penumbra.Collections.IdentityById(id);
         if (collection is null)
             return (false, identifier, id, name);
 
@@ -158,16 +160,16 @@ public sealed class CollectionOverrideService : IService, ISavable
                                 continue;
                             }
 
-                            var collection = _penumbra.CollectionByIdentifier(collectionIdentifier);
-                            if (collection == null)
+                            var collection = _penumbra.Collections.IdentityByIdentifier(collectionIdentifier);
+                            if (collection is null)
                             {
                                 Glamourer.Messager.AddMessage(new Notification(
                                     $"The overridden collection for identifier {identifier.Incognito(null)} with name {collectionIdentifier} could not be found by Penumbra for migration."));
                                 continue;
                             }
 
-                            Glamourer.Log.Information($"Migrated collection {collectionIdentifier} to {collection.Value.Id}.");
-                            collectionId = collection.Value.Id;
+                            Glamourer.Log.Information($"Migrated collection {collectionIdentifier} to {collection.Value.Identifier}.");
+                            collectionId = collection.Value.Identifier;
                             displayName  = collection.Value.Name;
                         }
 
@@ -195,7 +197,7 @@ public sealed class CollectionOverrideService : IService, ISavable
             ["Overrides"] = SerializeOverrides(),
         };
         using var writer = new StreamWriter(stream, leaveOpen: true);
-        using var j = new JsonTextWriter(writer);
+        using var j      = new JsonTextWriter(writer);
         j.Formatting = Formatting.Indented;
         jObj.WriteTo(j);
         return;

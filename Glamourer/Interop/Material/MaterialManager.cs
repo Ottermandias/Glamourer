@@ -15,16 +15,16 @@ namespace Glamourer.Interop.Material;
 
 public sealed unsafe class MaterialManager : IRequiredService, IDisposable
 {
-    private readonly PrepareColorSet _event;
-    private readonly StateManager    _stateManager;
-    private readonly PenumbraService _penumbra;
-    private readonly ActorManager    _actors;
+    private readonly PrepareColorSet    _event;
+    private readonly StateManager       _stateManager;
+    private readonly PenumbraSubscriber _penumbra;
+    private readonly ActorManager       _actors;
 
     private int _lastSlot;
 
     private readonly ThreadLocal<List<MaterialValueIndex>> _deleteList = new(() => []);
 
-    public MaterialManager(PrepareColorSet prepareColorSet, StateManager stateManager, ActorManager actors, PenumbraService penumbra,
+    public MaterialManager(PrepareColorSet prepareColorSet, StateManager stateManager, ActorManager actors, PenumbraSubscriber penumbra,
         Configuration config)
     {
         _stateManager = stateManager;

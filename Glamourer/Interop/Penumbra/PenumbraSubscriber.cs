@@ -8,7 +8,9 @@ using Glamourer.State;
 using Luna;
 using Penumbra.Api;
 using Penumbra.Api.Enums;
+using Penumbra.Api.IpcSubscribers;
 using Penumbra.Api.Wrappers;
+using Penumbra.GameData.Interop;
 
 namespace Glamourer.Interop.Penumbra;
 
@@ -38,6 +40,29 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
     public void RemoveAllTemporarySettings(Guid collection, StateSource state)
         => Collections.RemoveAllTemporarySettings(collection, state.IsFixed() ? KeyFixed : KeyManual);
 
+    public void RemoveAllTemporarySettings(bool fix, bool manual)
+    {
+        if (!Available)
+            return;
+
+        foreach (var collection in Collections.EnumerateNames())
+        {
+            if (fix)
+                RemoveAllTemporarySettings(collection.Identifier, StateSource.Fixed);
+            if (manual)
+                RemoveAllTemporarySettings(collection.Identifier, StateSource.Manual);
+        }
+    }
+
+    public unsafe Actor GameObjectFromDrawObject(Model drawObject)
+    {
+        Actor gameObject = GameState.GameObjectFromDrawObject(drawObject.AsDrawObject);
+        if (gameObject.Valid)
+            return gameObject;
+
+        return GameState.LastGameObject;
+    }
+
     protected override void PluginInitialized()
     {
         GameState.Reconnect(PluginInterface, 1);
@@ -55,6 +80,7 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
 
     protected override void InternalDispose()
     {
+        RemoveAllTemporarySettings(true, true);
         GameState.Dispose();
         Collections.Dispose();
         Mods.Dispose();

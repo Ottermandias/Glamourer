@@ -40,14 +40,14 @@ public class CommandService : IDisposable, IApiService
     private readonly DesignManager      _designManager;
     private readonly DesignConverter    _converter;
     private readonly DesignResolver     _resolver;
-    private readonly PenumbraService    _penumbra;
+    private readonly PenumbraSubscriber _penumbra;
     private readonly EquipmentBarWindow _equipmentBar;
 
     public CommandService(ICommandManager commands, MainWindow mainWindow, IChatGui chat, ActorManager actors, ActorObjectManager objects,
         AutoDesignApplier autoDesignApplier, StateManager stateManager, DesignManager designManager, DesignConverter converter,
         DesignFileSystem designFileSystem, AutoDesignManager autoDesignManager, Configuration config,
         ItemManager items, RandomDesignGenerator randomDesign, CustomizeService customizeService, DesignFileSystemDrawer designDrawer,
-        QuickDesignCombo quickDesignCombo, DesignResolver resolver, PenumbraService penumbra, EquipmentBarWindow equipmentBar,
+        QuickDesignCombo quickDesignCombo, DesignResolver resolver, PenumbraSubscriber penumbra, EquipmentBarWindow equipmentBar,
         ActorSelection stateSelection)
     {
         _commands          = commands;
@@ -268,7 +268,7 @@ public class CommandService : IDisposable, IApiService
 
         if (argumentList[0].ToLowerInvariant() is "all")
         {
-            _penumbra.ClearAllTemporarySettings(clearAutomatic, clearManual);
+            _penumbra.RemoveAllTemporarySettings(clearAutomatic, clearManual);
             return true;
         }
 
@@ -283,7 +283,7 @@ public class CommandService : IDisposable, IApiService
 
             foreach (var obj in data.Objects)
             {
-                var guid = _penumbra.GetActorCollection(obj, out _);
+                var guid = _penumbra.Collections.ObjectCollectionId(obj.Index).Identifier;
                 if (!set.Add(guid))
                     continue;
 

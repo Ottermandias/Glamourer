@@ -1,10 +1,10 @@
 ﻿using Glamourer.Config;
 using Glamourer.Designs;
-using Glamourer.Interop.Material;
 using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using Luna;
 using Newtonsoft.Json.Linq;
+using Penumbra.Api.Preset;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Interop;
@@ -14,13 +14,13 @@ namespace Glamourer.Services;
 public class PcpService : IRequiredService
 {
     private readonly Configuration      _config;
-    private readonly PenumbraService    _penumbra;
+    private readonly PenumbraSubscriber _penumbra;
     private readonly ActorObjectManager _objects;
     private readonly StateManager       _state;
     private readonly DesignConverter    _designConverter;
     private readonly DesignManager      _designManager;
 
-    public PcpService(Configuration config, PenumbraService penumbra, ActorObjectManager objects, StateManager state,
+    public PcpService(Configuration config, PenumbraSubscriber penumbra, ActorObjectManager objects, StateManager state,
         DesignConverter designConverter, DesignManager designManager)
     {
         _config          = config;
@@ -52,18 +52,18 @@ public class PcpService : IRequiredService
         if (value)
         {
             Glamourer.Log.Information("[PCPService] Attached to PCP handling.");
-            _penumbra.PcpCreated += OnPcpCreation;
-            _penumbra.PcpParsed  += OnPcpParse;
+            _penumbra.Pcp.Created += OnCreation;
+            _penumbra.Pcp.Parsed  += OnParse;
         }
         else
         {
             Glamourer.Log.Information("[PCPService] Detached from PCP handling.");
-            _penumbra.PcpCreated -= OnPcpCreation;
-            _penumbra.PcpParsed  -= OnPcpParse;
+            _penumbra.Pcp.Created -= OnCreation;
+            _penumbra.Pcp.Parsed  -= OnParse;
         }
     }
 
-    private void OnPcpParse(JObject jObj, string modDirectory, Guid collection)
+    private void OnParse(JObject jObj, string modDirectory, Guid collection)
     {
         Glamourer.Log.Debug("[PCPService] Parsing PCP file.");
         if (jObj["Glamourer"] is not JObject glamourer)
@@ -84,7 +84,7 @@ public class PcpService : IRequiredService
             $"{_config.PcpFolder}/{actorIdentifier} - {jObj["Note"]?.ToObject<string>() ?? string.Empty}", true);
         _designManager.AddTag(design, "PCP");
         _designManager.SetWriteProtection(design, true);
-        _designManager.AddMod(design, new Mod(modDirectory, modDirectory), new ModSettings([], 0, true, false, false));
+        _designManager.AddMod(design, new ModIdentifier(modDirectory, modDirectory), SettingPresetData.Empty.Clone());
         _designManager.ChangeDescription(design, $"PCP design created for {actorIdentifier} on {time}.");
         _designManager.ChangeResetAdvancedDyes(design, ModelCombinedSlotsExtensions.All);
         _designManager.SetQuickDesign(design, false);
@@ -99,7 +99,7 @@ public class PcpService : IRequiredService
         }
     }
 
-    private void OnPcpCreation(JObject jObj, ushort index, string path)
+    private void OnCreation(JObject jObj, ushort index, string path)
     {
         Glamourer.Log.Debug("[PCPService] Adding Glamourer data to PCP file.");
         var actorIdentifier = _objects.Actors.FromJson(jObj["Actor"] as JObject);
