@@ -72,6 +72,7 @@ public sealed class PenumbraService : IDisposable, IService
     private global::Penumbra.Api.IpcSubscribers.RedrawObject?                                        _redraw;
     private global::Penumbra.Api.IpcSubscribers.GetCollectionForObject?                              _objectCollection;
     private global::Penumbra.Api.IpcSubscribers.GetModList?                                          _getMods;
+    private global::Penumbra.Api.IpcSubscribers.GetAvailableModSettings?                             _getAvailableSettings;
     private global::Penumbra.Api.IpcSubscribers.GetCollection?                                       _currentCollection;
     private global::Penumbra.Api.IpcSubscribers.GetCurrentModSettingsWithTemp?                       _getCurrentSettingsWithTemp;
     private global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings?                               _getCurrentSettings;
@@ -202,6 +203,26 @@ public sealed class PenumbraService : IDisposable, IService
         {
             Glamourer.Log.Error($"Error fetching mod settings for {mod.DirectoryName} from Penumbra:\n{ex}");
             return ModSettings.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Obtain all configurable option groups of a mod, mapping each group name to its available options and its group type.
+    /// Returns null if Penumbra is unavailable or the mod could not be found.
+    /// </summary>
+    public IReadOnlyDictionary<string, (string[] Options, GroupType Type)>? GetAvailableSettings(in Mod mod)
+    {
+        if (!Available || _getAvailableSettings is null)
+            return null;
+
+        try
+        {
+            return _getAvailableSettings.Invoke(mod.DirectoryName, mod.Name);
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Log.Error($"Error fetching available mod settings for {mod.DirectoryName} from Penumbra:\n{ex}");
+            return null;
         }
     }
 
@@ -579,6 +600,7 @@ public sealed class PenumbraService : IDisposable, IService
             _getGameObject = new global::Penumbra.Api.IpcSubscribers.GetGameObjectFromDrawObjectFunc(_pluginInterface).Invoke();
             _objectCollection = new global::Penumbra.Api.IpcSubscribers.GetCollectionForObject(_pluginInterface);
             _getMods = new global::Penumbra.Api.IpcSubscribers.GetModList(_pluginInterface);
+            _getAvailableSettings = new global::Penumbra.Api.IpcSubscribers.GetAvailableModSettings(_pluginInterface);
             _currentCollection = new global::Penumbra.Api.IpcSubscribers.GetCollection(_pluginInterface);
             _getCurrentSettings = new global::Penumbra.Api.IpcSubscribers.GetCurrentModSettings(_pluginInterface);
             _inheritMod = new global::Penumbra.Api.IpcSubscribers.TryInheritMod(_pluginInterface);
@@ -653,6 +675,7 @@ public sealed class PenumbraService : IDisposable, IService
             ResolveService.CheckCutsceneParent   = null;
             _objectCollection                    = null;
             _getMods                             = null;
+            _getAvailableSettings                = null;
             _currentCollection                   = null;
             _getCurrentSettings                  = null;
             _getCurrentSettingsWithTemp          = null;

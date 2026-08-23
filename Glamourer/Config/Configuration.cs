@@ -46,6 +46,7 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     public bool            OpenWindowAtStart                { get; set; } = false;
     public bool            ShowWindowWhenUiHidden           { get; set; } = false;
     public bool            KeepAdvancedDyesAttached         { get; set; } = true;
+    public bool            KeepModSettingsAttached          { get; set; } = true;
     public bool            ShowPalettePlusImport            { get; set; } = true;
     public bool            UseFloatForColors                { get; set; } = true;
     public bool            UseRgbForColors                  { get; set; } = true;

@@ -8,7 +8,12 @@ using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
-public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSystem fileSystem, DesignManager manager, Configuration config) : IUiService
+public sealed class ModAssociationsTab(
+    PenumbraService penumbra,
+    DesignFileSystem fileSystem,
+    DesignManager manager,
+    Configuration config,
+    ModAssociationSettingsPopup settingsPopup) : IUiService
 {
     private readonly ModCombo              _modCombo = new(penumbra, fileSystem);
     private          (Mod, ModSettings)[]? _copy;
@@ -33,6 +38,7 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
         DrawApplyAllButton();
         DrawTable();
         DrawCopyButtons();
+        settingsPopup.Draw(Selection);
     }
 
     private void DrawCopyButtons()
@@ -95,7 +101,7 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
         if (!table)
             return;
 
-        table.SetupColumn("##Buttons"u8, TableColumnFlags.WidthFixed, Im.Style.FrameHeight * 3 + Im.Style.ItemInnerSpacing.X * 2);
+        table.SetupColumn("##Buttons"u8, TableColumnFlags.WidthFixed, Im.Style.FrameHeight * 4 + Im.Style.ItemInnerSpacing.X * 3);
         table.SetupColumn("Mod Name"u8,  TableColumnFlags.WidthStretch);
         if (config.UseTemporarySettings)
             table.SetupColumn("Remove"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Remove"u8).X);
@@ -179,6 +185,9 @@ public sealed class ModAssociationsTab(PenumbraService penumbra, DesignFileSyste
                 ModCombo.DrawSettingsRight(newSettings);
             }
         }
+
+        Im.Line.SameInner();
+        settingsPopup.DrawButton(Selection, mod, settings);
 
         table.NextColumn();
 
