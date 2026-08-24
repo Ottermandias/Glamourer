@@ -406,15 +406,12 @@ public class WorldSets
     }
 
 
-    private static unsafe (byte, byte, Race, Gender) GetData(Actor actor)
-    {
-        var customize = actor.Customize;
-        return (actor.AsCharacter->CharacterData.Level, actor.Job, customize->Race, customize->Gender);
-    }
+    private static unsafe (byte, byte, Race, Gender) GetData(Actor actor, in CustomizeArray customize)
+        => (actor.AsCharacter->CharacterData.Level, actor.Job, customize.Race, customize.Gender);
 
-    public void Apply(Actor actor, Random rng, Span<CharacterArmor> armor)
+    public void Apply(Actor actor, in CustomizeArray customize, Random rng, Span<CharacterArmor> armor)
     {
-        var (level, job, race, gender) = GetData(actor);
+        var (level, job, race, gender) = GetData(actor, customize);
         Apply(level, job, race, gender, rng, armor);
     }
 
@@ -431,9 +428,9 @@ public class WorldSets
         armor[4] = opt.Value.Item1.Feet;
     }
 
-    public void Apply(Actor actor, Random rng, ref CharacterArmor armor, EquipSlot slot)
+    public void Apply(Actor actor, in CustomizeArray customize, Random rng, ref CharacterArmor armor, EquipSlot slot)
     {
-        var (level, job, race, gender) = GetData(actor);
+        var (level, job, race, gender) = GetData(actor, customize);
         Apply(level, job, race, gender, rng, ref armor, slot);
     }
 
@@ -454,9 +451,9 @@ public class WorldSets
         };
     }
 
-    public void Apply(Actor actor, Random rng, ref CharacterWeapon weapon, EquipSlot slot)
+    public void Apply(Actor actor, in CustomizeArray customize, Random rng, ref CharacterWeapon weapon, EquipSlot slot)
     {
-        var (level, job, race, gender) = GetData(actor);
+        var (level, job, race, gender) = GetData(actor, customize);
         Apply(level, job, race, gender, rng, ref weapon, slot);
     }
 

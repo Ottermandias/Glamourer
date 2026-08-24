@@ -39,6 +39,18 @@ public sealed class PenumbraPanel(PenumbraSubscriber penumbra, PenumbraChangedIt
         table.DrawDataPair("Attached When"u8, penumbra.AttachTime.ToLocalTime().ToLongTimeString());
         table.NextColumn();
 
+        table.DrawColumn("Mod Manager Adapter"u8);
+        table.DrawColumn(penumbra.Mods.HasAdapter ? $"{penumbra.Mods.Version}" : "Not Connected"u8);
+        table.NextColumn();
+
+        table.DrawColumn("Collection Manager Adapter"u8);
+        table.DrawColumn(penumbra.Collections.HasAdapter ? $"{penumbra.Collections.Version}" : "Not Connected"u8);
+        table.NextColumn();
+
+        table.DrawColumn("Game State Adapter"u8);
+        table.DrawColumn(penumbra.GameState.HasAdapter ? $"{penumbra.GameState.Version}" : "Not Connected"u8);
+        table.NextColumn();
+
         table.DrawFrameColumn("Draw Object"u8);
         table.NextColumn();
         var address = _drawObject.Address;

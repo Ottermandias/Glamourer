@@ -2,6 +2,7 @@
 using Glamourer.Designs;
 using Glamourer.Events;
 using Glamourer.Services;
+using ImSharp;
 using Luna;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
@@ -25,7 +26,11 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
         DesignChanged = designChanged;
         DesignColors  = designColors;
 
-        MainContext.AddButton(new GlobalSortModeSelector(this, m => { config.SortMode = m; config.Save(); }), -100);
+        MainContext.AddButton(new GlobalSortModeSelector(this, m =>
+        {
+            config.SortMode = m;
+            config.Save();
+        }), -100);
 
         Footer.Buttons.AddButton(new NewDesignButton(manager),                           1000);
         Footer.Buttons.AddButton(new ImportDesignButton(converter, manager),             900);
@@ -67,8 +72,11 @@ public sealed class DesignFileSystemDrawer : FileSystemDrawer<DesignFileSystemCa
     public override Vector4 CollapsedFolderColor
         => ColorId.FolderCollapsed.Vector;
 
-    public override Vector4 FolderLineColor
+    public override Rgba32 FolderLineColor
         => ColorId.FolderLine.Vector;
+
+    public override Rgba32 AlternatingFolderLineColor
+        => ColorId.AlternatingFolderLine.Vector;
 
     public override IEnumerable<ISortMode> ValidSortModes
         => ISortMode.Valid.Values;

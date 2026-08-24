@@ -317,7 +317,7 @@ public sealed unsafe class FunModule : IDisposable, IRequiredService
                 SetDolphin(EquipSlot.Body, ref armor[1]);
                 SetDolphin(EquipSlot.Head, ref armor[0]);
                 break;
-            case CodeService.CodeFlag.World when actor.Index != 0: _worldSets.Apply(actor, _rng, armor); break;
+            case CodeService.CodeFlag.World when actor.Index != 0: _worldSets.Apply(actor, customize, _rng, armor); break;
         }
 
         switch (_codes.Masked(CodeService.DyeCodes))
@@ -335,7 +335,7 @@ public sealed unsafe class FunModule : IDisposable, IRequiredService
             return;
 
         if (_codes.Enabled(CodeService.CodeFlag.World) && actor.Index != 0)
-            _worldSets.Apply(actor, _rng, ref weapon, slot);
+            _worldSets.Apply(actor, *actor.Customize, _rng, ref weapon, slot);
     }
 
     private static bool ValidFunTarget(Actor actor)

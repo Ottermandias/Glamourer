@@ -128,7 +128,7 @@ public sealed class StateListener : IDisposable, IRequiredService
             return;
 
         _creatingIdentifier = actor.GetIdentifier(_actors);
-        ref var modelId   = ref *(uint*)args.EquipData;
+        ref var modelId   = ref *(uint*)args.ModelId;
         ref var customize = ref *(CustomizeArray*)args.Customize;
         if (_autoDesignApplier.Reduce(actor, _creatingIdentifier, out _creatingState))
         {

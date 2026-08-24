@@ -5,14 +5,16 @@ using Glamourer.Interop.Penumbra;
 using Glamourer.State;
 using ImSharp;
 using Luna;
+using Penumbra.Api.Preset;
+using Penumbra.GameData.Gui;
 
 namespace Glamourer.Gui.Tabs.DesignTab;
 
 public sealed class ModAssociationsTab(PenumbraSubscriber penumbra, DesignFileSystem fileSystem, DesignManager manager, Configuration config)
     : IUiService
 {
-    private readonly ModCombo                              _modCombo = new(penumbra, fileSystem);
-    private          (ModIdentifier, SettingPresetData)[]? _copy;
+    private readonly        ModCombo                              _modCombo     = new(penumbra, fileSystem);
+    private                 (ModIdentifier, SettingPresetData)[]? _copy;
 
     private Design Selection
         => (Design)fileSystem.Selection.Selection!.Value;
@@ -92,17 +94,14 @@ public sealed class ModAssociationsTab(PenumbraSubscriber penumbra, DesignFileSy
 
     private void DrawTable()
     {
-        using var table = Im.Table.Begin("Mods"u8, config.UseTemporarySettings ? 7 : 6, TableFlags.RowBackground);
+        using var table = Im.Table.Begin("Mods"u8, 5, TableFlags.RowBackground);
         if (!table)
             return;
 
         table.SetupColumn("##Buttons"u8, TableColumnFlags.WidthFixed, Im.Style.FrameHeight * 3 + Im.Style.ItemInnerSpacing.X * 2);
         table.SetupColumn("Mod Name"u8,  TableColumnFlags.WidthStretch);
-        if (config.UseTemporarySettings)
-            table.SetupColumn("Remove"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Remove"u8).X);
-        table.SetupColumn("Inherit"u8,   TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Inherit"u8).X);
-        table.SetupColumn("State"u8,     TableColumnFlags.WidthFixed, Im.Font.CalculateSize("State"u8).X);
-        table.SetupColumn("Priority"u8,  TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Priority"u8).X);
+        table.SetupColumn("State"u8,     TableColumnFlags.WidthFixed, 85 * Im.Style.GlobalScale);
+        table.SetupColumn("Priority"u8,  TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Priority"u8).X + Im.Style.FrameHeightWithSpacing);
         table.SetupColumn("##Options"u8, TableColumnFlags.WidthFixed, Im.Font.CalculateSize("Applym"u8).X);
         table.HeaderRow();
 
@@ -162,8 +161,7 @@ public sealed class ModAssociationsTab(PenumbraSubscriber penumbra, DesignFileSy
             {
                 if (namesDifferent)
                     Im.Text("Directory Name"u8);
-                Im.Text("Force Inherit"u8);
-                Im.Text("Enabled"u8);
+                Im.Text("State"u8);
                 Im.Text("Priority"u8);
                 ModCombo.DrawSettingsLeft(newSettings);
             }
@@ -173,10 +171,8 @@ public sealed class ModAssociationsTab(PenumbraSubscriber penumbra, DesignFileSy
             {
                 if (namesDifferent)
                     Im.Text(mod.Identifier);
-
-                Im.Text($"{newSettings.ForceInherit}");
-                Im.Text($"{newSettings.Enabled}");
-                Im.Text($"{newSettings.Priority}");
+                Im.Text(newSettings.State.StringU8);
+                Im.Text($"{newSettings.Priority!.Value}");
                 ModCombo.DrawSettingsRight(newSettings);
             }
         }
@@ -186,61 +182,47 @@ public sealed class ModAssociationsTab(PenumbraSubscriber penumbra, DesignFileSy
         if (Im.Selectable($"{mod.Name}##name"))
             penumbra.Ui.OpenMod(mod);
         Im.Tooltip.OnHover($"Mod Directory:    {mod.Identifier}\n\nClick to open mod page in Penumbra.");
-        if (config.UseTemporarySettings)
-        {
-            table.NextColumn();
-            var remove = settings.Remove;
-            if (ImEx.TwoStateCheckbox("##Remove"u8, ref remove))
-                updatedMod = (mod, settings with { Remove = remove });
-            Im.Tooltip.OnHover(
-                "Remove any temporary settings applied by Glamourer instead of applying the configured settings. Only works when using temporary settings, ignored otherwise."u8);
-        }
 
         table.NextColumn();
-        var inherit = settings.ForceInherit;
-        if (ImEx.TwoStateCheckbox("##ForceInherit"u8, ref inherit))
-            updatedMod = (mod, settings with { ForceInherit = inherit });
-        Im.Tooltip.OnHover("Force the mod to inherit its settings from inherited collections."u8);
+        if (settings.DrawState(Im.ContentRegion.Available with { Y = 0}, out var newState))
+            updatedMod = (mod, settings with { _state = (byte)newState });
         table.NextColumn();
-        var enabled = settings.Enabled;
-        if (ImEx.TwoStateCheckbox("##Enabled"u8, ref enabled))
-            updatedMod = (mod, settings with { Enabled = enabled });
-
+        if (settings.DrawPriority(Im.ContentRegion.Available with { Y = 0 }, out var newPriority))
+            updatedMod = (mod, settings with
+            {
+                _hasPriority = newPriority.HasValue,
+                _priority = newPriority ?? 0,
+            });
         table.NextColumn();
-        var priority = settings.Priority;
-        Im.Item.SetNextWidthFull();
-        if (ImEx.InputOnDeactivation.Scalar("##Priority"u8, ref priority))
-            updatedMod = (mod, settings with { Priority = priority });
-        table.NextColumn();
-        if (ImEx.Button("Apply"u8, Im.ContentRegion.Available with { Y = 0 }, StringU8.Empty, !penumbra.Available))
+        var modIndex = !penumbra.Available ? -1 : penumbra.Mods.IndexByName(mod);
+        if (ImEx.Button("Apply"u8, Im.ContentRegion.Available with { Y = 0 }, StringU8.Empty, modIndex < 0))
         {
             var text = penumbra.SetMod(mod, settings, StateSource.Manual, false);
             if (text.Length > 0)
                 Glamourer.Messager.NotificationMessage(text, NotificationType.Warning, false);
         }
 
-        DrawAssociatedModTooltip(settings);
+        DrawApplicationTooltip(modIndex, settings);
     }
 
-    private static void DrawAssociatedModTooltip(in SettingPresetData settings)
+    private void DrawApplicationTooltip(int modIndex, in SettingPresetData settings)
     {
-        if (settings is not { Enabled: true, Settings.Count: > 0 } || !Im.Item.Hovered())
+        if (!Im.Item.Hovered(HoveredFlags.AllowWhenDisabled))
             return;
 
         using var t = Im.Tooltip.Begin();
-        Im.Text("This will also try to apply the following settings to the current collection:"u8);
-
-        Im.Line.New();
-        using (Im.Group())
+        if (modIndex < 0)
         {
-            ModCombo.DrawSettingsLeft(settings);
+            Im.Text("No mod matching the stored mod name is currently installed."u8, LunaStyle.ErrorForeground);
+            return;
         }
 
-        Im.Line.Same(Im.ContentRegion.Available.X / 2);
-        using (Im.Group())
-        {
-            ModCombo.DrawSettingsRight(settings);
-        }
+        using var collection = penumbra.Collections.Current!;
+        if (collection.CanUnlock(modIndex, PenumbraSubscriber.KeyManual))
+            collection.DrawPresetTooltip(modIndex, settings);
+        else
+            Im.Text($"The matching mod already has locking temporary settings made by {collection.GetTemporarySource(modIndex)}.",
+                LunaStyle.ErrorForeground);
     }
 
     private void DrawNewModRow(in Im.TableDisposable table)

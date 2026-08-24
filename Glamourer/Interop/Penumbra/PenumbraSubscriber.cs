@@ -19,10 +19,10 @@ namespace Glamourer.Interop.Penumbra;
 public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface pluginInterface, PenumbraReloaded reloaded, Configuration config)
     : BasePenumbraSubscriber(log, pluginInterface, 5, 17), IApiService
 {
-    private const int    KeyFixed   = -1610;
-    private const string NameFixed  = "Glamourer (Automation)";
-    private const int    KeyManual  = -6160;
-    private const string NameManual = "Glamourer (Manually)";
+    public const int    KeyFixed   = -1610;
+    public const string NameFixed  = "Glamourer (Automation)";
+    public const int    KeyManual  = -6160;
+    public const string NameManual = "Glamourer (Manually)";
 
     public readonly GameStateWrapper         GameState   = new();
     public readonly ModManagerWrapper        Mods        = new();
@@ -151,9 +151,7 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
                          .ThenBy(p => p.Item1.Identifier)
                          .ThenByDescending(p => p.Item2.Priority!.Value)
                          .Index())
-            {
                 ret[index] = tuple;
-            }
 
             return ret;
         }

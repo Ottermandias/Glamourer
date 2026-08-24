@@ -45,6 +45,8 @@ public readonly struct ColorIdData : IColorData<ColorId>
             new ColorData<ColorId>(FolderLine, "Collapsed Design Folder"u8, "A design folder that is currently collapsed."u8, designs);
         ret[(int)FolderLine] = new ColorData<ColorId>(0xFFFFF0C0, "Expanded Design Folder Line"u8,
             "The line signifying which descendants belong to an expanded design folder."u8, designs);
+        ret[(int)AlternatingFolderLine] = new ColorData<ColorId>(FolderLine, "Expanded Mod Folder Line (Alternating)"u8,
+            "The line signifying which descendants belong to an expanded mod folder for even folder lines."u8, designs);
         ret[(int)EnabledAutoSet] = new ColorData<ColorId>(0xFFA0F0A0, "Enabled Automation Set"u8,
             "An automation set that is currently enabled. Only one set can be enabled for each identifier at once."u8, automation);
         ret[(int)DisabledAutoSet] =
