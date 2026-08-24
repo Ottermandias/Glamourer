@@ -19,12 +19,17 @@ namespace Glamourer.Interop.Penumbra;
 public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface pluginInterface, PenumbraReloaded reloaded, Configuration config)
     : BasePenumbraSubscriber(log, pluginInterface, 5, 17), IApiService
 {
+    private static readonly GameStateWrapper InternalGameState = new();
+
+    public static short ResolveCutscene(ushort index)
+        => InternalGameState.HasAdapter ? InternalGameState.ResolveCutsceneActor(index) : (short)index;
+
     public const int    KeyFixed   = -1610;
     public const string NameFixed  = "Glamourer (Automation)";
     public const int    KeyManual  = -6160;
     public const string NameManual = "Glamourer (Manually)";
 
-    public readonly GameStateWrapper         GameState   = new();
+    public readonly GameStateWrapper         GameState   = InternalGameState;
     public readonly ModManagerWrapper        Mods        = new();
     public readonly CollectionManagerWrapper Collections = new();
     public          PenumbraPcpService       Pcp { get; private set; } = null!;

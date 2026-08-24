@@ -13,8 +13,8 @@ namespace Glamourer.Gui.Tabs.DesignTab;
 public sealed class ModAssociationsTab(PenumbraSubscriber penumbra, DesignFileSystem fileSystem, DesignManager manager, Configuration config)
     : IUiService
 {
-    private readonly        ModCombo                              _modCombo     = new(penumbra, fileSystem);
-    private                 (ModIdentifier, SettingPresetData)[]? _copy;
+    private readonly ModCombo                              _modCombo = new(penumbra, fileSystem);
+    private          (ModIdentifier, SettingPresetData)[]? _copy;
 
     private Design Selection
         => (Design)fileSystem.Selection.Selection!.Value;
@@ -184,7 +184,7 @@ public sealed class ModAssociationsTab(PenumbraSubscriber penumbra, DesignFileSy
         Im.Tooltip.OnHover($"Mod Directory:    {mod.Identifier}\n\nClick to open mod page in Penumbra.");
 
         table.NextColumn();
-        if (settings.DrawState(Im.ContentRegion.Available with { Y = 0}, out var newState))
+        if (settings.DrawState(Im.ContentRegion.Available with { Y = 0 }, out var newState))
             updatedMod = (mod, settings with { _state = (byte)newState });
         table.NextColumn();
         if (settings.DrawPriority(Im.ContentRegion.Available with { Y = 0 }, out var newPriority))
