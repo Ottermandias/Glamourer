@@ -149,7 +149,7 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
                          .ThenByDescending(p => p.Item3)
                          .ThenBy(p => p.Item1.Name)
                          .ThenBy(p => p.Item1.Identifier)
-                         .ThenByDescending(p => p.Item2.Priority!.Value)
+                         .ThenByDescending(p => p.Item2.Priority)
                          .Index())
                 ret[index] = tuple;
 

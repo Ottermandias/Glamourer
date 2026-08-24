@@ -172,7 +172,7 @@ public sealed class ModAssociationsTab(PenumbraSubscriber penumbra, DesignFileSy
                 if (namesDifferent)
                     Im.Text(mod.Identifier);
                 Im.Text(newSettings.State.StringU8);
-                Im.Text($"{newSettings.Priority!.Value}");
+                Im.Text(newSettings._hasPriority ? $"{newSettings._priority}" : "Ignored"u8);
                 ModCombo.DrawSettingsRight(newSettings);
             }
         }
