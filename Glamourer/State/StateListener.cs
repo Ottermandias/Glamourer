@@ -137,7 +137,7 @@ public sealed class StateListener : IDisposable, IRequiredService
              && actor.AsCharacter->GetObjectKind() is ObjectKind.EventNpc;
             switch (UpdateBaseData(actor, _creatingState, modelId, args.Customize, args.EquipData))
             {
-                // TODO handle right
+                // TODO 20260824 handle right
                 case UpdateState.Change:      break;
                 case UpdateState.Transformed: break;
                 case UpdateState.NoChange:
@@ -674,7 +674,7 @@ public sealed class StateListener : IDisposable, IRequiredService
 
         // Customize array did not change to stored state.
         if (state.BaseData.Customize.Equals(customize))
-            return UpdateState.NoChange; // TODO: handle wrong base data.
+            return UpdateState.NoChange; // TODO 20260824 handle wrong base data.
 
         // Update customize base state.
         state.BaseData.Customize = customize;

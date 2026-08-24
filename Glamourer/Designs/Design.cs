@@ -142,7 +142,7 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
 
     private JArray SerializeMods()
     {
-        // TODO
+        // TODO presets
         var ret = new JArray();
         foreach (var (mod, settings) in AssociatedMods)
         {
@@ -363,7 +363,6 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
                 preset.Settings.Add((Guid.Empty, key), data);
             }
 
-            // TODO
             if (!design.AssociatedMods.TryAdd(new ModIdentifier(directory, name), preset))
                 Glamourer.Messager.NotificationMessage("The loaded design contains a mod more than once, skipped.", NotificationType.Warning);
         }

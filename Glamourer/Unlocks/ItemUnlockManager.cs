@@ -227,7 +227,7 @@ public sealed class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictiona
         if (Unlockable.TryGetValue(itemId, out var req))
             return req.IsUnlocked(this);
 
-        // TODO inventory
+        // TODO 20260824 inventory
         return false;
     }
 
@@ -250,7 +250,7 @@ public sealed class ItemUnlockManager : ISavable, IDisposable, IReadOnlyDictiona
             }
         }
 
-        // TODO inventories
+        // TODO 20260824 inventories
         if (changes)
             Save();
     }

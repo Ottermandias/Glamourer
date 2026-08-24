@@ -106,7 +106,6 @@ public sealed class DesignFileSystem : BaseFileSystem, IDisposable, IRequiredSer
             case DesignChanged.Type.Renamed when arguments.Design.Path.SortName is null:
                 RenameWithDuplicates(arguments.Design.Node!, arguments.Design.Path.GetIntendedName(arguments.Design.Name));
                 break;
-            // TODO: Maybe add path changes?
         }
     }
 

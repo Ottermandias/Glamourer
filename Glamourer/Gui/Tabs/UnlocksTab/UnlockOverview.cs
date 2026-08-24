@@ -163,7 +163,7 @@ public sealed class UnlockOverview(
 
         void DrawItem(EquipItem item)
         {
-            // TODO check unlocks
+            // TODO 20260824 check unlocks
             var unlocked = true;
             if (!textures.TryLoadIcon(item.IconId.Id, out var iconHandle))
                 return;
@@ -178,7 +178,7 @@ public sealed class UnlockOverview(
 
             var mods = DrawModdedMarker(item, iconSize);
 
-            // TODO handle clicking
+            // TODO 20260824 handle clicking
             if (Im.Item.Hovered())
             {
                 using var style = Im.Style.PushDefault();
@@ -189,9 +189,9 @@ public sealed class UnlockOverview(
                 Im.Text(item.Type.ToNameU8());
                 Im.Text($"{item.Id.Id}");
                 Im.Text($"{item.PrimaryId.Id}-{item.Variant.Id}");
-                // TODO
+                // TODO 20260824 
                 Im.Text("Always Unlocked"u8); // : $"Unlocked on {time:g}" : "Not Unlocked.");
-                // TODO
+                // TODO 20260824
                 //tooltip.CreateTooltip(item, string.Empty, false);
                 DrawModTooltip(mods);
             }

@@ -26,8 +26,7 @@ public class InternalStateEditor(
     {
         oldModelId = state.ModelData.ModelId;
 
-        // TODO think about this.
-        if (modelId != 0)
+        if (modelId is not 0)
             return false;
 
         if (!state.CanUnlock(key))

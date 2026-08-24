@@ -93,7 +93,7 @@ public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileS
         foreach (var (group, data) in settings.Settings)
         {
             Im.Text(group.Name ?? group.Identifier.ToString());
-            // TODO
+            // TODO presets
         }
     }
 
@@ -101,7 +101,7 @@ public sealed class ModCombo(PenumbraSubscriber penumbra, DesignFileSystem fileS
     {
         foreach (var setting in settings.Settings)
         {
-            // TODO
+            // TODO presets
             //if (setting.Value.Count is 0)
             //    Im.Text("<None Enabled>"u8);
             //else

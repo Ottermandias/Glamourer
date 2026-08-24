@@ -414,7 +414,7 @@ public class StateEditor(
                     var slotsToReset = mergedDesign.ResetAdvancedDyes;
                     while (slotsToReset is not 0)
                     {
-                        // TODO Consider working on bit ranges to improve performance?
+                        // TODO 20260824 Consider working on bit ranges to improve performance?
                         var slot = slotsToReset.First;
                         state.Materials.RemoveValues(MaterialValueIndex.Min(slot), MaterialValueIndex.Max(slot));
                         slotsToReset &= ~slot;
