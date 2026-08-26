@@ -127,11 +127,8 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
     public GlamourerApiEc ReapplyState(int objectIndex, uint key, ApplyFlag flags)
     {
         var args = ApiHelpers.Args("Index", objectIndex, "Key", key, "Flags", flags);
-        if (_helpers.FindExistingState(objectIndex, out var state) is not GlamourerApiEc.Success)
+        if (_helpers.FindState(objectIndex) is not { } state)
             return ApiHelpers.Return(GlamourerApiEc.ActorNotFound, args);
-
-        if (state is null)
-            return ApiHelpers.Return(GlamourerApiEc.NothingDone, args);
 
         if (!state.CanUnlock(key))
             return ApiHelpers.Return(GlamourerApiEc.InvalidKey, args);
