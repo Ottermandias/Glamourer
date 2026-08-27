@@ -198,47 +198,53 @@ public struct ColorRow(
 
 internal static class ColorTableRowExtensions
 {
-    internal static Half LegacySpecularStrength(this in ColorTableRow row)
-        => row[7];
+    extension(in ColorTableRow row)
+    {
+        internal Half LegacySpecularStrength()
+            => row[7];
 
-    internal static Half LegacyGloss(this in ColorTableRow row)
-        => row[3];
+        internal Half LegacyGloss()
+            => row[3];
 
-    internal static Half DawntrailSheen(this in ColorTableRow row)
-        => row[12];
+        internal Half DawntrailSheen()
+            => row[12];
 
-    internal static Half DawntrailSheenTint(this in ColorTableRow row)
-        => row[13];
+        internal Half DawntrailSheenTint()
+            => row[13];
 
-    internal static Half DawntrailSheenAperture(this in ColorTableRow row)
-        => row[14];
+        internal Half DawntrailSheenAperture()
+            => row[14];
 
-    internal static Half DawntrailRoughness(this in ColorTableRow row)
-        => row[16];
+        internal Half DawntrailRoughness()
+            => row[16];
 
-    internal static Half DawntrailMetalness(this in ColorTableRow row)
-        => row[18];
+        internal Half DawntrailMetalness()
+            => row[18];
+    }
 
-    internal static ref Half LegacySpecularStrengthWrite(this ref ColorTableRow row)
-        => ref row[7];
+    extension(ref ColorTableRow row)
+    {
+        internal ref Half LegacySpecularStrengthWrite()
+            => ref row[7];
 
-    internal static ref Half LegacyGlossWrite(this ref ColorTableRow row)
-        => ref row[3];
+        internal ref Half LegacyGlossWrite()
+            => ref row[3];
 
-    internal static ref Half DawntrailSheenWrite(this ref ColorTableRow row)
-        => ref row[12];
+        internal ref Half DawntrailSheenWrite()
+            => ref row[12];
 
-    internal static ref Half DawntrailSheenTintWrite(this ref ColorTableRow row)
-        => ref row[13];
+        internal ref Half DawntrailSheenTintWrite()
+            => ref row[13];
 
-    internal static ref Half DawntrailSheenApertureWrite(this ref ColorTableRow row)
-        => ref row[14];
+        internal ref Half DawntrailSheenApertureWrite()
+            => ref row[14];
 
-    internal static ref Half DawntrailRoughnessWrite(this ref ColorTableRow row)
-        => ref row[16];
+        internal ref Half DawntrailRoughnessWrite()
+            => ref row[16];
 
-    internal static ref Half DawntrailMetalnessWrite(this ref ColorTableRow row)
-        => ref row[18];
+        internal ref Half DawntrailMetalnessWrite()
+            => ref row[18];
+    }
 }
 
 [JsonConverter(typeof(Converter))]
@@ -298,7 +304,13 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, Col
 
     public static bool TryReadJson(ref Utf8JsonReader j, out MaterialValueDesign value)
     {
-        value = new MaterialValueDesign();
+        value = new MaterialValueDesign
+        {
+            Enabled = false,
+            Mode    = ColorRow.Mode.Dawntrail,
+            Revert  = false,
+            Value   = ColorRow.Empty,
+        };
         if (j.TokenType is not JsonTokenType.StartObject)
             return false;
 
