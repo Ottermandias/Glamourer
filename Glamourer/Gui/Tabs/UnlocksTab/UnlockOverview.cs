@@ -284,7 +284,7 @@ public sealed class UnlockOverview(
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private (string ModDirectory, string ModName)[] DrawModdedMarker(in EquipItem item, Vector2 iconSize)
     {
-        var mods = penumbra.Collections.CheckCurrentChangedItems(item.Name).ToArray();
+        var mods = penumbra.CheckCurrentChangedItems(item.Name).ToArray();
         if (mods.Length is 0)
             return mods;
 

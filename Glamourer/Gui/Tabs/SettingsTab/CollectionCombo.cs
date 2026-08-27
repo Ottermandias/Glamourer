@@ -22,7 +22,7 @@ public sealed class CollectionCombo(Configuration config, PenumbraSubscriber pen
         => Im.Style.TextHeightWithSpacing;
 
     protected override IEnumerable<CacheItem> GetItems()
-        => penumbra.Collections.EnumerateNames().Select(t => new CacheItem(t.Identifier, t.Name));
+        => penumbra.EnumerateNames().Select(t => new CacheItem(t.Identifier, t.Name));
 
     public bool Draw(Utf8StringHandler<LabelStringHandlerBuffer> label, Utf8StringHandler<HintStringHandlerBuffer> preview, out string newName,
         ref Guid id, float width)

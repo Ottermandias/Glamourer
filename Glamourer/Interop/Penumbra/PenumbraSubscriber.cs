@@ -35,14 +35,23 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
     public          PenumbraPcpService       Pcp { get; private set; } = null!;
     public          PenumbraUiService        Ui  { get; private set; } = null!;
 
+    public CollectionWrapper? Current
+        => Available ? Collections.Current : null;
+
     public (Guid Identifier, string Name, int Index) CurrentCollection
-        => Collections.TypeCollectionId(ApiCollectionType.Current)!.Value;
+        => Available ? Collections.TypeCollectionId(ApiCollectionType.Current)!.Value : (Guid.Empty, "", -1);
 
     public void RemoveAllTemporarySettings(int index, StateSource state)
-        => Collections.RemoveAllTemporarySettingsObject(index, state.IsFixed() ? KeyFixed : KeyManual);
+    {
+        if (Available)
+            Collections.RemoveAllTemporarySettingsObject(index, state.IsFixed() ? KeyFixed : KeyManual);
+    }
 
     public void RemoveAllTemporarySettings(Guid collection, StateSource state)
-        => Collections.RemoveAllTemporarySettings(collection, state.IsFixed() ? KeyFixed : KeyManual);
+    {
+        if (Available)
+            Collections.RemoveAllTemporarySettings(collection, state.IsFixed() ? KeyFixed : KeyManual);
+    }
 
     public void RemoveAllTemporarySettings(bool fix, bool manual)
     {
@@ -58,13 +67,28 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
         }
     }
 
+    public IEnumerable<(Guid Identifier, string Name, int Index)> EnumerateNames()
+        => Available ? Collections.EnumerateNames() : [];
+
+    public IEnumerable<ModIdentifier> CheckCurrentChangedItems(string itemName)
+        => Available ? Collections.CheckCurrentChangedItems(itemName) : [];
+
     public unsafe Actor GameObjectFromDrawObject(Model drawObject)
     {
+        if (!Available)
+            return Actor.Null;
+
         Actor gameObject = GameState.GameObjectFromDrawObject(drawObject.AsDrawObject);
         if (gameObject.Valid)
             return gameObject;
 
         return GameState.LastGameObject;
+    }
+
+    public void Redraw(int objectIndex, RedrawType type = RedrawType.Redraw)
+    {
+        if(Available)
+            GameState.Redraw(objectIndex, type);
     }
 
     public string SetMod(in ModIdentifier modIdentifier, in SettingPresetData settings, StateSource source, bool respectManual,
@@ -166,7 +190,6 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
             return [];
         }
     }
-
 
     private static bool HandleRespectManual(int modIndex, string modName, CollectionWrapper collection, bool respectManual, StateSource source,
         out int key,

@@ -217,8 +217,10 @@ public sealed class ModAssociationsTab(PenumbraSubscriber penumbra, DesignFileSy
             return;
         }
 
-        using var collection = penumbra.Collections.Current!;
-        if (collection.CanUnlock(modIndex, PenumbraSubscriber.KeyManual))
+        using var collection = penumbra.Current;
+        if (collection is null)
+            Im.Text("Not connected to Penumbra."u8);
+        else if (collection.CanUnlock(modIndex, PenumbraSubscriber.KeyManual))
             collection.DrawPresetTooltip(modIndex, settings);
         else
             Im.Text($"The matching mod already has locking temporary settings made by {collection.GetTemporarySource(modIndex)}.",

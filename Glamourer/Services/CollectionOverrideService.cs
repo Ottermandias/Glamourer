@@ -31,8 +31,13 @@ public sealed class CollectionOverrideService : IService, ISavable
         if (_overrides.FindFirst(p => p.Actor.Matches(identifier), out var ret))
             return (ret.CollectionId, ret.DisplayName, true);
 
-        var (id, name, _) = _penumbra.Collections.ObjectCollectionId(actor.Index.Index);
-        return (id, name, false);
+        if (_penumbra.Available)
+        {
+            var (id, name, _) = _penumbra.Collections.ObjectCollectionId(actor.Index.Index);
+            return (id, name, false);
+        }
+
+        return (Guid.Empty, "No Collection", false);
     }
 
     private readonly List<(ActorIdentifier Actor, Guid CollectionId, string DisplayName)> _overrides = [];
@@ -59,6 +64,9 @@ public sealed class CollectionOverrideService : IService, ISavable
     public (bool Exists, ActorIdentifier Identifier, Guid CollectionId, string DisplayName) Fetch(int idx)
     {
         var (identifier, id, name) = _overrides[idx];
+        if (!_penumbra.Available)
+            return (false, identifier, id, name);
+
         var collection = _penumbra.Collections.IdentityById(id);
         if (collection is null)
             return (false, identifier, id, name);
@@ -160,7 +168,7 @@ public sealed class CollectionOverrideService : IService, ISavable
                                 continue;
                             }
 
-                            var collection = _penumbra.Collections.IdentityByIdentifier(collectionIdentifier);
+                            var collection = _penumbra.Available ? _penumbra.Collections.IdentityByIdentifier(collectionIdentifier) : null;
                             if (collection is null)
                             {
                                 Glamourer.Messager.AddMessage(new Notification(

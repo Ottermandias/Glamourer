@@ -88,6 +88,7 @@ public sealed class PenumbraAutoRedraw : IDisposable, IRequiredService
 
     private void OnModSettingsChange(in ModSettingsChangedArguments arguments)
     {
+        // Can only be triggered when subscribed to Penumbra.
         var type         = arguments.Type;
         var collectionId = arguments.Collection;
         if (type is ModSettingChange.TemporaryMod)

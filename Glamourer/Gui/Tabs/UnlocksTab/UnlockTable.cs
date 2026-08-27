@@ -151,7 +151,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
         }
 
         var favorite = _favorites.Contains(item);
-        var mods     = _penumbra.Collections.CheckCurrentChangedItems(item.Name).ToArray();
+        var mods     = _penumbra.CheckCurrentChangedItems(item.Name).ToArray();
         var jobs = item.JobRestrictions.Id > 0 && item.JobRestrictions.Id < _jobs.AllJobGroups.Count
             ? _jobs.AllJobGroups[item.JobRestrictions]
             : _jobs.AllJobGroups[1];
@@ -676,7 +676,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             for (var i = 0; i < UnfilteredItems.Count; ++i)
             {
                 var item = UnfilteredItems[i];
-                UpdateSingleItem(i, item with { Mods = Parent._penumbra.Collections.CheckCurrentChangedItems(item.Name.Utf16).ToArray() },
+                UpdateSingleItem(i, item with { Mods = Parent._penumbra.CheckCurrentChangedItems(item.Name.Utf16).ToArray() },
                     false);
             }
         }
@@ -743,7 +743,7 @@ public sealed class UnlockTable : TableBase<UnlockCacheItem, UnlockTable.Cache>,
             for (var i = 0; i < UnfilteredItems.Count; ++i)
             {
                 var item = UnfilteredItems[i];
-                UpdateSingleItem(i, item with { Mods = Parent._penumbra.Collections.CheckCurrentChangedItems(item.Name.Utf16).ToArray() },
+                UpdateSingleItem(i, item with { Mods = Parent._penumbra.CheckCurrentChangedItems(item.Name.Utf16).ToArray() },
                     false);
             }
         }

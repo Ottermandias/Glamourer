@@ -263,7 +263,7 @@ public class CommandService : IDisposable, IApiService
         if (argumentList.Length > 2 && bool.TryParse(argumentList[2], out var a))
             clearAutomatic = a;
 
-        if (!clearManual && !clearAutomatic)
+        if (!clearManual && !clearAutomatic || !_penumbra.Available)
             return true;
 
         if (argumentList[0].ToLowerInvariant() is "all")

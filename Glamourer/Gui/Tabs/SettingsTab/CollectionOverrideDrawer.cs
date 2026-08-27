@@ -128,6 +128,12 @@ public class CollectionOverrideDrawer(
 
     private void DrawNewOverride(in Im.TableDisposable table)
     {
+        if (!penumbra.Available)
+        {
+            Im.Text("Not attached to Penumbra."u8);
+            return;
+        }
+
         var (currentId, currentName, _) = penumbra.Collections.TypeCollectionId(ApiCollectionType.Current)!.Value;
         table.NextColumn();
         if (ImEx.Icon.Button(FontAwesomeIcon.PersonCirclePlus.Icon(), "Add override for current player."u8,
