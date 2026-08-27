@@ -50,7 +50,7 @@ public sealed class DesignConverterPanel(DesignConverter designConverter) : IGam
                     _clipboardData    = FormattingFunctions.BytewiseHexSpaced(clipboardData);
                     _version          = CompressionFunctions.Decompress(clipboardData, CompressionVersionMode.Uncompressed, out Memory<byte> dataUncompressed);
                     _dataUncompressed = FormattingFunctions.BytewiseHexSpaced(dataUncompressed.Span);
-                    _textUncompressed = new StringU8(dataUncompressed);
+                    _textUncompressed = new StringU8(dataUncompressed, false);
                     var textUncompressed = _textUncompressed.ToString();
                     _json      = JObject.Parse(textUncompressed);
                     _tmpDesign = designConverter.FromBase64(textU16, true, true, out _);
