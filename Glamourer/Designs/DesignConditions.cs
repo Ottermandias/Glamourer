@@ -1,6 +1,7 @@
+using System.Text.Json;
 using Glamourer.Automation;
 using ImSharp;
-using Newtonsoft.Json.Linq;
+using Luna;
 using Penumbra.GameData.Interop;
 using Penumbra.GameData.Structs;
 
@@ -59,20 +60,55 @@ public readonly record struct DesignConditions(JobGroup Jobs, short GearsetIndex
 
 public readonly record struct DesignConditionData(int JobGroupId, short GearsetIndex = -1)
 {
-    public JObject Serialize()
-        => new JObject
-        {
-            ["Gearset"]  = GearsetIndex,
-            ["JobGroup"] = JobGroupId,
-        };
+    public void Serialize(Utf8JsonWriter j, ReadOnlySpan<byte> propertyName)
+    {
+        if (GearsetIndex < 0 && JobGroupId <= 0)
+            return;
 
-    public static DesignConditionData Deserialize(JToken? token)
+        j.WritePropertyName(propertyName);
+        Serialize(j);
+    }
+
+    public void Serialize(Utf8JsonWriter j)
+    {
+        j.WriteStartObject();
+        if (GearsetIndex >= 0)
+            j.WriteNumber("Gearset"u8, GearsetIndex);
+        if (JobGroupId > 0)
+            j.WriteNumber("JobGroup"u8, JobGroupId);
+        j.WriteEndObject();
+    }
+
+    public static bool TryDeserialize(ref Utf8JsonReader j, out DesignConditionData data)
+    {
+        data = new DesignConditionData(0);
+        if (j.TokenType is not JsonTokenType.StartObject and not JsonTokenType.Null)
+            return false;
+
+        var limit = j.CreateObjectLimit();
+        while (limit.Read(ref j))
+        {
+            if (j.TokenType is not JsonTokenType.PropertyName)
+                continue;
+
+            if (j.NumberProperty("Gearset"u8, out short gear))
+                data = data with { GearsetIndex = gear };
+            else if (j.NumberProperty("JobGroup"u8, out int job))
+                data = data with { JobGroupId = job };
+            else
+                j.Skip();
+        }
+
+        return true;
+    }
+
+    public static DesignConditionData Deserialize(in JsonElement? token)
     {
         if (token is null)
             return new DesignConditionData(-1);
 
         return new DesignConditionData(
-            token["JobGroup"]?.ToObject<int>() ?? -1,
-            token["Gearset"]?.ToObject<short>() ?? -1);
+            token.Value.PropertyOrDefault("JobGroup"u8, -1),
+            token.Value.PropertyOrDefault("Gearset"u8,  (short)-1));
     }
 }

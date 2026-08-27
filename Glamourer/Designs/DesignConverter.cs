@@ -2,14 +2,12 @@
 using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Glamourer.State;
-using Glamourer.Utility;
 using Luna;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
+using System.Text.Json;
 
 namespace Glamourer.Designs;
 
@@ -23,31 +21,31 @@ public sealed class DesignConverter(
 {
     public const byte Version = 6;
 
-    public JObject ShareJObject(DesignBase design)
-        => design.JsonSerialize();
+    public JsonElement ShareJObject(DesignBase design)
+        => design.ToElement();
 
-    public JObject ShareJObject(Design design)
-        => design.JsonSerialize();
+    public JsonElement ShareJObject(Design design)
+        => design.ToElement();
 
-    public JObject ShareJObject(ActorState state, in ApplicationRules rules)
+    public JsonElement ShareJObject(ActorState state, in ApplicationRules rules)
     {
         var design = Convert(state, rules);
         return ShareJObject(design);
     }
 
-    public string ShareBase64(Design design)
-        => ToBase64(ShareJObject(design));
+    public byte[] ShareBase64(Design design)
+        => ToBase64(design.ToJson());
 
-    public string ShareBase64(DesignBase design)
-        => ToBase64(ShareJObject(design));
+    public byte[] ShareBase64(DesignBase design)
+        => ToBase64(design.ToJson());
 
-    public string ShareBase64(ActorState state, in ApplicationRules rules)
+    public byte[] ShareBase64(ActorState state, in ApplicationRules rules)
         => ShareBase64(state.ModelData, state.Materials, rules);
 
-    public string ShareBase64(in DesignData data, in StateMaterialManager materials, in ApplicationRules rules)
+    public byte[] ShareBase64(in DesignData data, in StateMaterialManager materials, in ApplicationRules rules)
     {
         var design = Convert(data, materials, rules);
-        return ToBase64(ShareJObject(design));
+        return ToBase64(design.ToJson());
     }
 
     public DesignBase Convert(ActorState state, in ApplicationRules rules)
@@ -63,16 +61,16 @@ public sealed class DesignConverter(
         return design;
     }
 
-    public DesignBase? FromJObject(JObject? jObject, bool customize, bool equip)
+    public DesignBase? FromJsonElement(in JsonElement? jObject, bool customize, bool equip)
     {
-        if (jObject == null)
+        if (jObject is not { } j)
             return null;
 
         try
         {
-            var ret = jObject["Identifier"] != null
-                ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObject)
-                : DesignBase.LoadDesignBase(customizeService, items, jObject);
+            var ret = j.TryReadProperty("Identifier"u8, out Guid? _)
+                ? Design.LoadDesign(saveService, customizeService, items, linkLoader, j)
+                : DesignBase.LoadDesignBase(customizeService, items, j);
 
             if (!customize)
                 ret.Application.RemoveCustomize();
@@ -89,67 +87,92 @@ public sealed class DesignConverter(
         }
     }
 
-    public DesignBase? FromBase64(string base64, bool customize, bool equip, out byte version)
+    public DesignBase? FromBase64(ReadOnlySpan<byte> base64, bool customize, bool equip, out byte version)
     {
-        DesignBase ret;
-        version = 0;
+
         try
         {
-            var bytes = System.Convert.FromBase64String(base64);
-            version = bytes[0];
-            switch (version)
-            {
-                case (byte)'{':
-                    var jObj1 = JObject.Parse(Encoding.UTF8.GetString(bytes));
-                    ret = jObj1["Identifier"] != null
-                        ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj1)
-                        : DesignBase.LoadDesignBase(customizeService, items, jObj1);
-                    break;
-                case 1:
-                case 2:
-                case 4:
-                    ret = designs.CreateTemporary();
-                    ret.MigrateBase64(customizeService, items, humans, base64);
-                    break;
-                case 3:
-                {
-                    version = bytes.DecompressToString(out var decompressed);
-                    var jObj2 = JObject.Parse(decompressed);
-                    Debug.Assert(version == 3);
-                    ret = jObj2["Identifier"] != null
-                        ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj2)
-                        : DesignBase.LoadDesignBase(customizeService, items, jObj2);
-                    break;
-                }
-                case 5:
-                {
-                    bytes   = bytes[DesignBase64Migration.Base64SizeV4..];
-                    version = bytes.DecompressToString(out var decompressed);
-                    var jObj2 = JObject.Parse(decompressed);
-                    Debug.Assert(version == 5);
-                    ret = jObj2["Identifier"] != null
-                        ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj2)
-                        : DesignBase.LoadDesignBase(customizeService, items, jObj2);
-                    break;
-                }
-                case 6:
-                {
-                    version = bytes.DecompressToString(out var decompressed);
-                    var jObj2 = JObject.Parse(decompressed);
-                    Debug.Assert(version == 6);
-                    ret = jObj2["Identifier"] != null
-                        ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj2)
-                        : DesignBase.LoadDesignBase(customizeService, items, jObj2);
-                    break;
-                }
+            if(!CompressionFunctions.Decode(base64, out var compressed))
+                throw new Exception("Unknown Error decoding Base64.");
 
-                default: throw new Exception($"Unknown Version {bytes[0]}.");
-            }
+            return FromData(compressed, customize, equip, out version);
         }
         catch (Exception ex)
         {
+            version = 0;
             Glamourer.Log.Error($"[DesignConverter] Could not parse base64 string [{base64}]:\n{ex}");
             return null;
+        }
+    }
+
+    public DesignBase? FromBase64(string base64, bool customize, bool equip, out byte version)
+    {
+        try
+        {
+            if (!CompressionFunctions.Decode(base64, out var compressed))
+                throw new Exception("Unknown Error decoding Base64.");
+            return FromData(compressed, customize, equip, out version);
+        }
+        catch (Exception ex)
+        {
+            version = 0;
+            Glamourer.Log.Error($"[DesignConverter] Could not parse base64 string [{base64}]:\n{ex}");
+            return null;
+        }
+    }
+
+    private DesignBase FromData(Memory<byte> data, bool customize, bool equip, out byte version)
+    {
+        DesignBase ret;
+        version = 0;
+        version = data.Span[0];
+        switch (version)
+        {
+            case (byte)'{':
+                var jObj1 = JsonElement.Parse(data.Span);
+                ret = jObj1.TryReadProperty("Identifier"u8, out Guid? _)
+                    ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj1)
+                    : DesignBase.LoadDesignBase(customizeService, items, jObj1);
+                break;
+            case 1:
+            case 2:
+            case 4:
+                ret = designs.CreateTemporary();
+                ret.MigrateBase64Data(customizeService, items, humans, data.Span);
+                break;
+            case 3:
+            {
+                version = CompressionFunctions.Decompress(data, CompressionVersionMode.Uncompressed, out Memory<byte> decompressed);
+                var jObj2 = JsonElement.Parse(decompressed.Span);
+                Debug.Assert(version is 3);
+                ret = jObj2.TryReadProperty("Identifier"u8, out Guid? _)
+                    ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj2)
+                    : DesignBase.LoadDesignBase(customizeService, items, jObj2);
+                break;
+            }
+            case 5:
+            {
+                data    = data[DesignBase64Migration.Base64SizeV4..];
+                version = CompressionFunctions.Decompress(data, CompressionVersionMode.Uncompressed, out Memory<byte> decompressed);
+                var jObj2 = JsonElement.Parse(decompressed.Span);
+                Debug.Assert(version is 5);
+                ret = jObj2.TryReadProperty("Identifier"u8, out Guid? _)
+                    ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj2)
+                    : DesignBase.LoadDesignBase(customizeService, items, jObj2);
+                break;
+            }
+            case 6:
+            {
+                version = CompressionFunctions.Decompress(data, CompressionVersionMode.Uncompressed, out Memory<byte> decompressed);
+                var jObj2 = JsonElement.Parse(decompressed.Span);
+                Debug.Assert(version is 6);
+                ret = jObj2.TryReadProperty("Identifier"u8, out Guid? _)
+                    ? Design.LoadDesign(saveService, customizeService, items, linkLoader, jObj2)
+                    : DesignBase.LoadDesignBase(customizeService, items, jObj2);
+                break;
+            }
+
+            default: throw new Exception($"Unknown Version {data.Span[0]}.");
         }
 
         if (!customize)
@@ -161,17 +184,13 @@ public sealed class DesignConverter(
         return ret;
     }
 
-    public static string ToBase64(JToken jObject)
-    {
-        var json       = jObject.ToString(Formatting.None);
-        var compressed = json.Compress(Version);
-        return System.Convert.ToBase64String(compressed);
-    }
+    public static byte[] ToBase64(ReadOnlySpan<byte> utf8Json)
+        => CompressionFunctions.ToCompressedBase64(utf8Json, Version, CompressionVersionMode.Uncompressed);
 
     public IEnumerable<(EquipSlot Slot, EquipItem Item, StainIds Stains)> FromDrawData(IReadOnlyList<CharacterArmor> armors,
         CharacterWeapon mainhand, CharacterWeapon offhand, bool skipWarnings)
     {
-        if (armors.Count != 10)
+        if (armors.Count is not 10)
             throw new ArgumentException("Invalid length of armor array.");
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)

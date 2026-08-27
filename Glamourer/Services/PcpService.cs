@@ -72,7 +72,8 @@ public class PcpService : IRequiredService
         if (glamourer["Version"]!.ToObject<int>() is not 1)
             return;
 
-        if (_designConverter.FromJObject(glamourer["Design"] as JObject, true, true) is not { } designBase)
+        var element = (glamourer["Design"] as JObject)?.ToElement();
+        if (_designConverter.FromJsonElement(element, true, true) is not { } designBase)
             return;
 
         var actorIdentifier = _objects.Actors.FromJson(jObj["Actor"] as JObject);
@@ -94,7 +95,7 @@ public class PcpService : IRequiredService
         if (_state.GetOrCreate(actorIdentifier, _objects.TryGetValue(actorIdentifier, out var data) ? data.Objects[0] : Actor.Null,
                 out var state))
         {
-            _state.ApplyDesign(state!, design, ApplySettings.Manual);
+            _state.ApplyDesign(state, design, ApplySettings.Manual);
             Glamourer.Log.Debug($"[PCPService] Applied PCP design to {actorIdentifier.Incognito(null)}");
         }
     }
@@ -116,7 +117,7 @@ public class PcpService : IRequiredService
         jObj["Glamourer"] = new JObject
         {
             ["Version"] = 1,
-            ["Design"]  = design.JsonSerialize(),
+            ["Design"]  = design.ToObject() as JObject,
         };
     }
 }

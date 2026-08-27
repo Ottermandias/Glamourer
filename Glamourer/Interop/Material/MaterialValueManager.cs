@@ -1,18 +1,32 @@
 ﻿global using StateMaterialManager = Glamourer.Interop.Material.MaterialValueManager<Glamourer.Interop.Material.MaterialValueState>;
 global using DesignMaterialManager = Glamourer.Interop.Material.MaterialValueManager<Glamourer.Interop.Material.MaterialValueDesign>;
+using System.Text.Json;
 using Glamourer.GameData;
 using Glamourer.State;
+using ImSharp;
+using Luna;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
 using Penumbra.GameData.Structs;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 
 namespace Glamourer.Interop.Material;
 
 /// <summary> Values are not squared. </summary>
-public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, float specularStrength, float glossStrength, float roughness, float metalness, float sheen, float sheenTint, float sheenAperture)
+public struct ColorRow(
+    Vector3 diffuse,
+    Vector3 specular,
+    Vector3 emissive,
+    float specularStrength,
+    float glossStrength,
+    float roughness,
+    float metalness,
+    float sheen,
+    float sheenTint,
+    float sheenAperture)
 {
     public enum Mode
     {
@@ -45,9 +59,9 @@ public struct ColorRow(Vector3 diffuse, Vector3 specular, Vector3 emissive, floa
     public static ColorRow From(in ColorTableRow row, Mode mode)
         => mode switch
         {
-            Mode.Legacy => new(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
+            Mode.Legacy => new ColorRow(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
                 (float)row.LegacySpecularStrength(), (float)row.LegacyGloss(), float.NaN, float.NaN, float.NaN, float.NaN, float.NaN),
-            Mode.Dawntrail => new(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
+            Mode.Dawntrail => new ColorRow(Root((Vector3)row.DiffuseColor), Root((Vector3)row.SpecularColor), Root((Vector3)row.EmissiveColor),
                 float.NaN, float.NaN, (float)row.DawntrailRoughness(), (float)row.DawntrailMetalness(), (float)row.DawntrailSheen(),
                 (float)row.DawntrailSheenTint(), (float)row.DawntrailSheenAperture()),
             _ => throw new NotImplementedException(),
@@ -228,6 +242,7 @@ internal static class ColorTableRowExtensions
 }
 
 [JsonConverter(typeof(Converter))]
+[System.Text.Json.Serialization.JsonConverter(typeof(StjConverter))]
 public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, ColorRow.Mode mode)
 {
     public ColorRow      Value   = value;
@@ -254,6 +269,97 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, Col
 
         state.Model = Value;
         return true;
+    }
+
+    public readonly void WriteJson(Utf8JsonWriter j)
+    {
+        j.WriteStartObject();
+        j.WriteIfNot("Enabled"u8, Enabled, false);
+        j.WriteIfNot("Revert"u8,  Revert,  false);
+        j.WriteString("Mode"u8, Mode.StringU8);
+        j.WriteNumber("DiffuseR"u8,  Value.Diffuse.X);
+        j.WriteNumber("DiffuseG"u8,  Value.Diffuse.Y);
+        j.WriteNumber("DiffuseB"u8,  Value.Diffuse.Z);
+        j.WriteNumber("SpecularR"u8, Value.Specular.X);
+        j.WriteNumber("SpecularG"u8, Value.Specular.Y);
+        j.WriteNumber("SpecularB"u8, Value.Specular.Z);
+        j.WriteIfNotNaN("SpecularA"u8, Value.SpecularStrength);
+        j.WriteNumber("EmissiveR"u8, Value.Emissive.X);
+        j.WriteNumber("EmissiveG"u8, Value.Emissive.Y);
+        j.WriteNumber("EmissiveB"u8, Value.Emissive.Z);
+        j.WriteIfNotNaN("Gloss"u8,         Value.GlossStrength);
+        j.WriteIfNotNaN("Roughness"u8,     Value.Roughness);
+        j.WriteIfNotNaN("Metalness"u8,     Value.Metalness);
+        j.WriteIfNotNaN("Sheen"u8,         Value.Sheen);
+        j.WriteIfNotNaN("SheenTint"u8,     Value.SheenTint);
+        j.WriteIfNotNaN("SheenAperture"u8, Value.SheenAperture);
+        j.WriteEndObject();
+    }
+
+    public static bool TryReadJson(ref Utf8JsonReader j, out MaterialValueDesign value)
+    {
+        value = new MaterialValueDesign();
+        if (j.TokenType is not JsonTokenType.StartObject)
+            return false;
+
+        var limit = j.CreateObjectLimit();
+        while (limit.Read(ref j))
+        {
+            if (j.TokenType is not JsonTokenType.PropertyName)
+                continue;
+
+            if (j.BoolProperty("Revert"u8, out var r))
+                value.Revert = r;
+            else if (j.BoolProperty("Enabled"u8, out var e))
+                value.Enabled = e;
+            else if (j.EnumProperty("Mode"u8, out ColorRow.Mode m))
+                value.Mode = m;
+            else if (j.NumberProperty("DiffuseR"u8, out float dr))
+                value.Value.Diffuse.X = dr;
+            else if (j.NumberProperty("DiffuseG"u8, out float dg))
+                value.Value.Diffuse.Y = dg;
+            else if (j.NumberProperty("DiffuseB"u8, out float db))
+                value.Value.Diffuse.Z = db;
+            else if (j.NumberProperty("SpecularR"u8, out float sr))
+                value.Value.Specular.X = sr;
+            else if (j.NumberProperty("SpecularG"u8, out float sg))
+                value.Value.Specular.Y = sg;
+            else if (j.NumberProperty("SpecularB"u8, out float sb))
+                value.Value.Specular.Z = sb;
+            else if (j.NumberProperty("SpecularA"u8, out float ss))
+                value.Value.SpecularStrength = ss;
+            else if (j.NumberProperty("EmissiveR"u8, out float er))
+                value.Value.Emissive.X = er;
+            else if (j.NumberProperty("EmissiveG"u8, out float eg))
+                value.Value.Emissive.Y = eg;
+            else if (j.NumberProperty("EmissiveB"u8, out float eb))
+                value.Value.Emissive.Z = eb;
+            else if (j.NumberProperty("Gloss"u8, out float g))
+                value.Value.GlossStrength = g;
+            else if (j.NumberProperty("Roughness"u8, out float rg))
+                value.Value.Roughness = rg;
+            else if (j.NumberProperty("Metalness"u8, out float me))
+                value.Value.Metalness = me;
+            else if (j.NumberProperty("Sheen"u8, out float s))
+                value.Value.Sheen = s;
+            else if (j.NumberProperty("SheenTint"u8, out float st))
+                value.Value.SheenTint = st;
+            else if (j.NumberProperty("SheenAperture"u8, out float sa))
+                value.Value.SheenAperture = sa;
+            else
+                j.Skip();
+        }
+
+        return true;
+    }
+
+    private class StjConverter : System.Text.Json.Serialization.JsonConverter<MaterialValueDesign>
+    {
+        public override MaterialValueDesign Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => TryReadJson(ref reader, out var r) ? r : default;
+
+        public override void Write(Utf8JsonWriter writer, MaterialValueDesign value, JsonSerializerOptions options)
+            => value.WriteJson(writer);
     }
 
     private class Converter : JsonConverter<MaterialValueDesign>

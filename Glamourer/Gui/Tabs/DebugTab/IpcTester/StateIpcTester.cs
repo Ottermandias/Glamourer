@@ -196,7 +196,7 @@ public class StateIpcTester : IUiService, IDisposable
         {
             Im.Line.Same();
             if (Im.Button("Copy as Base64"u8) && _state is not null)
-                Im.Clipboard.Set(DesignConverter.ToBase64(_state));
+                Im.Clipboard.Set(DesignConverter.ToBase64(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(_state.ToElement())));
         }
 
         using var font = Im.Font.PushMono();

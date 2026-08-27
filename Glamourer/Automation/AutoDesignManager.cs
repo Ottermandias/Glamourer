@@ -1,11 +1,10 @@
-﻿using Dalamud.Game.ClientState.Objects.Enums;
+﻿using System.Text.Json;
+using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Interface.ImGuiNotification;
 using Glamourer.Designs;
 using Glamourer.Designs.Special;
 using Glamourer.Events;
 using Glamourer.Services;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Actors;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
@@ -457,23 +456,22 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
 
     public void Save(Stream stream)
     {
-        using var writer = new StreamWriter(stream, leaveOpen: true);
-        using var j      = new JsonTextWriter(writer);
-        j.Formatting = Formatting.Indented;
-        Serialize().WriteTo(j);
+        using var writer = new Utf8JsonWriter(stream, JsonFunctions.WriterOptions);
+        Serialize(writer);
     }
 
-    private JObject Serialize()
+    private void Serialize(Utf8JsonWriter j)
     {
-        var array = new JArray();
-        foreach (var set in _data)
-            array.Add(set.Serialize());
+        j.WriteStartObject();
+        j.WriteNumber("Version"u8, CurrentVersion);
+        if (_data.Count is 0)
+            return;
 
-        return new JObject
-        {
-            ["Version"] = CurrentVersion,
-            ["Data"]    = array,
-        };
+        j.WriteStartArray("Data"u8);
+        foreach (var set in _data)
+            set.Serialize(j);
+        j.WriteEndArray();
+        j.WriteEndObject();
     }
 
     private void Load()
@@ -485,9 +483,9 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
 
         try
         {
-            var text    = File.ReadAllText(file);
-            var obj     = JObject.Parse(text);
-            var version = obj["Version"]?.ToObject<int>() ?? 0;
+            var text    = JsonFunctions.ReadUtf8Bytes(file, out _);
+            var obj     = JsonDocument.Parse(text, JsonFunctions.DocumentOptions);
+            var version = obj.RootElement.PropertyOrDefault("Version"u8, 0);
 
             switch (version)
             {
@@ -496,7 +494,7 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
                     Glamourer.Messager.NotificationMessage("Failure to load automated designs: No valid version available.",
                         NotificationType.Error);
                     break;
-                case 1: LoadV1(obj["Data"]); break;
+                case 1: LoadV1(obj.RootElement.TryReadArray("Data"u8, out var o) ? o : null); break;
             }
 
             UpdateEnabled();
@@ -508,21 +506,24 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
         }
     }
 
-    private void LoadV1(JToken? data)
+    private void LoadV1(in JsonElement? data)
     {
-        if (data is not JArray array)
+        if (data is not { ValueKind: JsonValueKind.Array } array)
             return;
 
-        foreach (var obj in array)
+        foreach (var obj in array.EnumerateArray())
         {
-            var name = obj["Name"]?.ToObject<string>() ?? string.Empty;
+            if (obj.ValueKind is not JsonValueKind.Object)
+                continue;
+
+            var name = obj.PropertyOrDefault("Name"u8, string.Empty);
             if (name.Length is 0)
             {
                 Glamourer.Messager.NotificationMessage("Skipped loading Automation Set: No name provided.", NotificationType.Warning);
                 continue;
             }
 
-            var id = _actors.FromJson(obj["Identifier"] as JObject).WithoutIndex();
+            var id = _actors.FromJson(obj.TryReadObject("Identifier"u8, out var i) ? i : null).WithoutIndex();
             if (!IdentifierValid(id, out var group))
             {
                 Glamourer.Messager.NotificationMessage("Skipped loading Automation Set: Invalid Identifier.", NotificationType.Warning);
@@ -531,102 +532,102 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
 
             var set = new AutoDesignSet(name, group)
             {
-                Enabled                = obj["Enabled"]?.ToObject<bool>() ?? false,
-                ResetTemporarySettings = obj["ResetTemporarySettings"]?.ToObject<bool>() ?? false,
-                BaseState              = obj["BaseState"]?.ToObject<AutoDesignSet.Base>() ?? AutoDesignSet.Base.Current,
-                Priority               = obj["Priority"]?.ToObject<int>() ?? 0,
+                Enabled                = obj.PropertyOrDefault("Enabled"u8,                false),
+                ResetTemporarySettings = obj.PropertyOrDefault("ResetTemporarySettings"u8, false),
+                BaseState              = obj.EnumOrDefault("BaseState"u8, AutoDesignSet.Base.Current),
+                Priority               = obj.PropertyOrDefault("Priority"u8, 0),
             };
 
             _data.Add(set);
 
-            if (obj["Designs"] is JArray designArray)
-                foreach (var designObj in designArray)
+            if (obj.TryReadArray("Designs"u8, out var designs))
+                foreach (var designObj in designs.EnumerateArray())
                 {
-                    if (designObj is not JObject j)
+                    if (designObj.ValueKind is not JsonValueKind.Object)
                     {
                         Glamourer.Messager.NotificationMessage(
                             $"Skipped loading design in Automation Set {name}: Unknown design.", NotificationType.Warning);
                         continue;
                     }
 
-                    if (ToDesignObject(set.Name, j) is { } design)
+                    if (ToDesignObject(set.Name, designObj) is { } design)
                         set.Designs.Add(design);
                 }
 
-            if (obj["SecondaryIdentifiers"] is JArray identifierArray)
-                foreach (var idJObj in identifierArray)
+            if (!obj.TryReadArray("SecondaryIdentifiers"u8, out var identifierArray))
+                continue;
+
+            foreach (var idJObj in identifierArray.EnumerateArray())
+            {
+                var identifier = _actors.FromJson(idJObj).WithoutIndex();
+                if (!IdentifierValid(identifier, out var g))
                 {
-                    var identifier = _actors.FromJson(idJObj as JObject).WithoutIndex();
-                    if (!IdentifierValid(identifier, out var g))
-                    {
-                        Glamourer.Messager.NotificationMessage($"Invalid Secondary Identifier in Automation Set {name}, skipped.",
-                            NotificationType.Warning);
-                        continue;
-                    }
-
-                    if (g.Any(i => set.SecondaryIdentifiers.Any(g2 => g2.Contains(i))))
-                    {
-                        Glamourer.Messager.NotificationMessage(
-                            $"Secondary Identifier is listed multiple times in Automation Set {name}, skipped.",
-                            NotificationType.Warning);
-                        continue;
-                    }
-
-                    set.SecondaryIdentifiers.Add(g);
+                    Glamourer.Messager.NotificationMessage($"Invalid Secondary Identifier in Automation Set {name}, skipped.",
+                        NotificationType.Warning);
+                    continue;
                 }
+
+                if (g.Any(si => set.SecondaryIdentifiers.Any(g2 => g2.Contains(si))))
+                {
+                    Glamourer.Messager.NotificationMessage(
+                        $"Secondary Identifier is listed multiple times in Automation Set {name}, skipped.",
+                        NotificationType.Warning);
+                    continue;
+                }
+
+                set.SecondaryIdentifiers.Add(g);
+            }
         }
     }
 
-    private AutoDesign? ToDesignObject(string setName, JObject jObj)
+    private AutoDesign? ToDesignObject(string setName, in JsonElement jObj)
     {
-        var             designIdentifier = jObj["Design"]?.ToObject<string?>();
+        var             designIdentifier = jObj.TryReadProperty("Design"u8, out string? de, true) ? de : null;
         IDesignStandIn? design;
-        // designIdentifier == null means Revert-Design for backwards compatibility
-        if (designIdentifier is null or RevertDesign.SerializedName)
+        switch (designIdentifier)
         {
-            design = new RevertDesign();
-        }
-        else if (designIdentifier is RandomDesign.SerializedName)
-        {
-            design = new RandomDesign(_randomDesigns);
-        }
-        else if (designIdentifier is QuickSelectedDesign.SerializedName)
-        {
-            design = _quickSelectedDesign;
-        }
-        else
-        {
-            if (designIdentifier.Length is 0)
+            // designIdentifier == null means Revert-Design for backwards compatibility
+            case null or RevertDesign.SerializedName: design = new RevertDesign(); break;
+            case RandomDesign.SerializedName:         design = new RandomDesign(_randomDesigns); break;
+            case QuickSelectedDesign.SerializedName:  design = _quickSelectedDesign; break;
+            default:
             {
-                Glamourer.Messager.NotificationMessage($"Error parsing automatically applied design for set {setName}: No design specified.",
-                    NotificationType.Warning);
-                return null;
+                if (designIdentifier.Length is 0)
+                {
+                    Glamourer.Messager.NotificationMessage(
+                        $"Error parsing automatically applied design for set {setName}: No design specified.",
+                        NotificationType.Warning);
+                    return null;
+                }
+
+                if (!Guid.TryParse(designIdentifier, out var guid))
+                {
+                    Glamourer.Messager.NotificationMessage(
+                        $"Error parsing automatically applied design for set {setName}: {designIdentifier} is not a valid GUID.",
+                        NotificationType.Warning);
+
+                    return null;
+                }
+
+                if (!_designs.Designs.TryGetValue(guid, out var d))
+                {
+                    Glamourer.Messager.NotificationMessage(
+                        $"Error parsing automatically applied design for set {setName}: The specified design {guid} does not exist.",
+                        NotificationType.Warning);
+                    return null;
+                }
+
+                design = d;
+                break;
             }
-
-            if (!Guid.TryParse(designIdentifier, out var guid))
-            {
-                Glamourer.Messager.NotificationMessage(
-                    $"Error parsing automatically applied design for set {setName}: {designIdentifier} is not a valid GUID.",
-                    NotificationType.Warning);
-
-                return null;
-            }
-
-            if (!_designs.Designs.TryGetValue(guid, out var d))
-            {
-                Glamourer.Messager.NotificationMessage(
-                    $"Error parsing automatically applied design for set {setName}: The specified design {guid} does not exist.",
-                    NotificationType.Warning);
-                return null;
-            }
-
-            design = d;
         }
 
         design.ParseData(jObj);
 
         // ApplicationType is a migration from an older property name.
-        var applicationType = (ApplicationType)(jObj["Type"]?.ToObject<uint>() ?? jObj["ApplicationType"]?.ToObject<uint>() ?? 0);
+        var applicationType = jObj.TryReadEnum("Type"u8, out ApplicationType? v) || jObj.TryReadEnum("ApplicationType"u8, out v)
+            ? v!.Value
+            : default;
 
         var ret = new AutoDesign
         {
@@ -636,8 +637,9 @@ public sealed class AutoDesignManager : ISavable, IReadOnlyList<AutoDesignSet>, 
         return ParseConditions(setName, jObj, ret) ? ret : null;
     }
 
-    private bool ParseConditions(string setName, JObject jObj, AutoDesign ret)
-        => _conditionsLoader.TryParse(jObj["Conditions"], out ret.Conditions, "automatically applied design for set", setName);
+    private bool ParseConditions(string setName, in JsonElement jObj, AutoDesign ret)
+        => _conditionsLoader.TryParse(jObj.TryReadObject("Conditions"u8, out var c) ? c : null, out ret.Conditions,
+            "automatically applied design for set", setName);
 
     private void Save()
         => _saveService.DelaySave(this);

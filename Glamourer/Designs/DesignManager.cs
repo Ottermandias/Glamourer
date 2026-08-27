@@ -1,4 +1,5 @@
-﻿using Dalamud.Utility;
+﻿using System.Text.Json;
+using Dalamud.Utility;
 using Glamourer.Config;
 using Glamourer.Designs.History;
 using Glamourer.Designs.Links;
@@ -7,8 +8,6 @@ using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
 using Luna;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.DataContainers;
 using Penumbra.GameData.Enums;
 
@@ -49,18 +48,18 @@ public sealed class DesignManager : DesignEditor, IService
         Designs.Clear();
         var                                 skipped = 0;
         ThreadLocal<List<(Design, string)>> designs = new(() => [], true);
-        Parallel.ForEach(SaveService.FileNames.Designs(), (f, _) =>
+        Parallel.ForEach(SaveService.FileNames.Designs(), (f, s) =>
         {
             try
             {
-                var text   = File.ReadAllText(f);
-                var data   = JObject.Parse(text);
-                var design = Design.LoadDesign(SaveService, Customizations, Items, linkLoader, data);
+                var text   = JsonFunctions.ReadUtf8Bytes(f, out _);
+                var data   = JsonDocument.Parse(text, JsonFunctions.DocumentOptions);
+                var design = Design.LoadDesign(SaveService, Customizations, Items, linkLoader, data.RootElement);
                 designs.Value!.Add((design, f));
             }
             catch (Exception ex)
             {
-                Glamourer.Log.Error($"Could not load design, skipped:\n{ex}");
+                Glamourer.Log.Error($"Could not load design {Path.GetFileNameWithoutExtension(f)}, skipped:\n{ex}");
                 Interlocked.Increment(ref skipped);
             }
         });
@@ -542,8 +541,8 @@ public sealed class DesignManager : DesignEditor, IService
         var oldDesigns = Designs.ToList();
         try
         {
-            var text = File.ReadAllText(SaveService.FileNames.MigrationDesignFile);
-            var dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(text) ?? new Dictionary<string, string>();
+            var text = JsonFunctions.ReadUtf8Bytes(SaveService.FileNames.MigrationDesignFile, out _);
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(text.Span) ?? [];
             foreach (var (name, base64) in dict)
             {
                 try
@@ -556,7 +555,7 @@ public sealed class DesignManager : DesignEditor, IService
                         Identifier   = CreateNewGuid(),
                         Name         = actualName,
                     };
-                    design.MigrateBase64(Customizations, Items, _humans, base64);
+                    design.MigrateBase64Data(Customizations, Items, _humans, Convert.FromBase64String(base64));
                     if (!oldDesigns.Any(d => d.Name == design.Name && d.CreationDate == design.CreationDate))
                     {
                         Add(design, $"Migrated old design to {design.Identifier}.");

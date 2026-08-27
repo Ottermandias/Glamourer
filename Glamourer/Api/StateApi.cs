@@ -1,4 +1,5 @@
-﻿using Glamourer.Api.Api;
+﻿using System.Text.Json;
+using Glamourer.Api.Api;
 using Glamourer.Api.Enums;
 using Glamourer.Automation;
 using Glamourer.Designs;
@@ -397,19 +398,24 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
 
     private (GlamourerApiEc, JObject?) Convert(ActorState? state, uint key)
     {
-        if (state == null)
+        if (state is null)
             return (GlamourerApiEc.ActorNotFound, null);
 
         if (!state.CanUnlock(key))
             return (GlamourerApiEc.InvalidKey, null);
 
-        return (GlamourerApiEc.Success, _converter.ShareJObject(state, ApplicationRules.All));
+        return (GlamourerApiEc.Success, _converter.ShareJObject(state, ApplicationRules.All).ToToken() as JObject);
     }
 
     private (GlamourerApiEc, string?) ConvertBase64(ActorState? state, uint key)
     {
-        var (ec, jObj) = Convert(state, key);
-        return (ec, jObj != null ? DesignConverter.ToBase64(jObj) : null);
+        if (state is null)
+            return (GlamourerApiEc.ActorNotFound, null);
+
+        if (!state.CanUnlock(key))
+            return (GlamourerApiEc.InvalidKey, null);
+
+        return (GlamourerApiEc.Success, Encoding.UTF8.GetString(_converter.ShareBase64(state, ApplicationRules.All)));
     }
 
     private DesignBase? Convert(object? state, ApplyFlag flags, out byte version)
@@ -417,9 +423,12 @@ public sealed class StateApi : IGlamourerApiState, IApiService, IDisposable
         version = DesignConverter.Version;
         return state switch
         {
-            string s  => _converter.FromBase64(s, (flags & ApplyFlag.Customization) != 0, (flags & ApplyFlag.Equipment) != 0, out version),
-            JObject j => _converter.FromJObject(j, (flags & ApplyFlag.Customization) != 0, (flags & ApplyFlag.Equipment) != 0),
-            _         => null,
+            string s => _converter.FromBase64(s, (flags & ApplyFlag.Customization) is not 0, (flags & ApplyFlag.Equipment) is not 0,
+                out version),
+            JObject j => _converter.FromJsonElement(j.ToElement(), (flags & ApplyFlag.Customization) is not 0,
+                (flags & ApplyFlag.Equipment) is not 0),
+            JsonElement e => _converter.FromJsonElement(e, (flags & ApplyFlag.Customization) is not 0, (flags & ApplyFlag.Equipment) is not 0),
+            _             => null,
         };
     }
 

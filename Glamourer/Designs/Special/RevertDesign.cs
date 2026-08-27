@@ -1,7 +1,7 @@
-﻿using Glamourer.Automation;
+﻿using System.Text.Json;
+using Glamourer.Automation;
 using Glamourer.Interop.Material;
 using Glamourer.State;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -35,10 +35,10 @@ public class RevertDesign : IDesignStandIn
         yield return (this, ApplicationType.All, JobFlag.All);
     }
 
-    public void AddData(JObject jObj)
+    public void AddData(Utf8JsonWriter _)
     { }
 
-    public void ParseData(JObject jObj)
+    public void ParseData(in JsonElement _)
     { }
 
     public bool ChangeData(object data)

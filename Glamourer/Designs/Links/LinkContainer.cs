@@ -1,6 +1,6 @@
-﻿using Glamourer.Automation;
+﻿using System.Text.Json;
+using Glamourer.Automation;
 using Luna;
-using Newtonsoft.Json.Linq;
 
 namespace Glamourer.Designs.Links;
 
@@ -66,7 +66,7 @@ public sealed class LinkContainer : List<DesignLink>
         list.RemoveAt(idx);
         return true;
     }
-    
+
     private List<DesignLink> GetList(LinkOrder order)
         => order switch
         {
@@ -196,34 +196,33 @@ public sealed class LinkContainer : List<DesignLink>
             yield return link;
     }
 
-    public JObject Serialize()
+    public void Serialize(Utf8JsonWriter j, ReadOnlySpan<byte> propertyName)
     {
-        var before = new JArray();
-        foreach (var link in Before)
-        {
-            before.Add(new JObject
-            {
-                ["Design"]     = link.Link.Identifier,
-                ["Type"]       = (uint)link.Type,
-                ["Conditions"] = link.Conditions.Data.Serialize(),
-            });
-        }
+        if (Before.Count is 0 && After.Count is 0)
+            return;
 
-        var after = new JArray();
-        foreach (var link in After)
-        {
-            after.Add(new JObject
-            {
-                ["Design"]     = link.Link.Identifier,
-                ["Type"]       = (uint)link.Type,
-                ["Conditions"] = link.Conditions.Data.Serialize(),
-            });
-        }
+        j.WriteStartObject(propertyName);
+        WriteLinks(j, "Before"u8, Before);
+        WriteLinks(j, "After"u8,  After);
+        j.WriteEndObject();
+        return;
 
-        return new JObject
+        static void WriteLinks(Utf8JsonWriter j, ReadOnlySpan<byte> name, IReadOnlyCollection<DesignLink> links)
         {
-            [nameof(Before)] = before,
-            [nameof(After)]  = after,
-        };
+            if (links.Count is 0)
+                return;
+
+            j.WriteStartArray(name);
+            foreach (var link in links)
+            {
+                j.WriteStartObject();
+                j.WriteString("Design"u8, link.Link.Identifier);
+                j.WriteNumber("Type"u8, (uint)link.Type);
+                link.Conditions.Data.Serialize(j, "Conditions"u8);
+                j.WriteEndObject();
+            }
+
+            j.WriteEndArray();
+        }
     }
 }

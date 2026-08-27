@@ -1,7 +1,8 @@
-﻿using Glamourer.Automation;
+﻿using System.Text.Json;
+using Glamourer.Automation;
 using Glamourer.Interop.Material;
 using Glamourer.State;
-using Newtonsoft.Json.Linq;
+using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -71,20 +72,19 @@ public class RandomDesign(RandomDesignGenerator rng) : IDesignStandIn
             yield return (link, type, jobs);
     }
 
-    public void AddData(JObject jObj)
+    public void AddData(Utf8JsonWriter jObj)
     {
-        jObj["Restrictions"] = RandomPredicate.GeneratePredicateString(Predicates);
-        if (CustomName.Length > 0)
-            jObj["CustomName"] = CustomName;
-        jObj["ResetOnRedraw"] = ResetOnRedraw;
+        jObj.WriteNonEmptyString("Restrictions"u8, RandomPredicate.GeneratePredicateString(Predicates));
+        jObj.WriteNonEmptyString("CustomName"u8,   CustomName);
+        jObj.WriteIfNot("ResetOnRedraw"u8, ResetOnRedraw, false);
     }
 
-    public void ParseData(JObject jObj)
+    public void ParseData(in JsonElement jObj)
     {
-        var restrictions = jObj["Restrictions"]?.ToObject<string>() ?? string.Empty;
+        var restrictions = jObj.PropertyOrDefault("Restrictions"u8, string.Empty);
         Predicates    = RandomPredicate.GeneratePredicates(restrictions);
-        ResetOnRedraw = jObj["ResetOnRedraw"]?.ToObject<bool>() ?? false;
-        CustomName    = jObj["CustomName"]?.ToObject<string>() ?? string.Empty;
+        ResetOnRedraw = jObj.PropertyOrDefault("ResetOnRedraw"u8, false);
+        CustomName    = jObj.PropertyOrDefault("CustomName"u8,    string.Empty);
     }
 
     public bool ChangeData(object data)

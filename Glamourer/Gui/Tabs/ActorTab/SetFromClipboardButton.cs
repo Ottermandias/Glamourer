@@ -29,7 +29,7 @@ public sealed class SetFromClipboardButton(ActorSelection selection, DesignConve
         try
         {
             var (applyGear, applyCustomize) = UiHelpers.ConvertKeysToBool();
-            var text = Im.Clipboard.GetUtf16();
+            var text = Im.Clipboard.Get();
             var design = converter.FromBase64(text, applyCustomize, applyGear, out _)
              ?? throw new Exception("The clipboard did not contain valid data.");
             stateManager.ApplyDesign(selection.State!, design, ApplySettings.ManualWithLinks with { IsFinal = true });

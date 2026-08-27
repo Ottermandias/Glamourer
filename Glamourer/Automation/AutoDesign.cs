@@ -1,7 +1,6 @@
-﻿using Glamourer.Designs;
+﻿using System.Text.Json;
+using Glamourer.Designs;
 using Glamourer.Designs.Special;
-using Newtonsoft.Json.Linq;
-using Penumbra.GameData.Interop;
 
 namespace Glamourer.Automation;
 
@@ -19,16 +18,14 @@ public class AutoDesign
             Conditions = Conditions,
         };
 
-    public JObject Serialize()
+    public void Serialize(Utf8JsonWriter j)
     {
-        var ret = new JObject
-        {
-            ["Design"]     = Design.SerializeName(),
-            ["Type"]       = (uint)Type,
-            ["Conditions"] = Conditions.Data.Serialize(),
-        };
-        Design.AddData(ret);
-        return ret;
+        j.WriteStartObject();
+        j.WriteString("Design"u8, Design.SerializeName());
+        j.WriteNumber("Type"u8, (uint)Type);
+        Conditions.Data.Serialize(j, "Conditions"u8);
+        Design.AddData(j);
+        j.WriteEndObject();
     }
 
     public ApplicationCollection ApplyWhat()

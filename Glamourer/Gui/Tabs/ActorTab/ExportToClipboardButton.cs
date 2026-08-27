@@ -18,7 +18,7 @@ public sealed class ExportToClipboardButton(ActorSelection selection, DesignConv
 
     public override void DrawTooltip()
         => Im.Text(
-            "Copy the current design to your clipboard.\nHold Control to disable applying of customizations for the copied design.\nHold Shift to disable applying of gear for the copied design."u8);
+            "Copy the current state to your clipboard.\nHold Control to disable applying of customizations for the copied design.\nHold Shift to disable applying of gear for the copied design."u8);
 
     public override void OnClick()
     {

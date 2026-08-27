@@ -1,4 +1,5 @@
-﻿using Glamourer.Api.Api;
+﻿using System.Text.Json;
+using Glamourer.Api.Api;
 using Glamourer.Api.Enums;
 using Glamourer.Designs;
 using Glamourer.State;
@@ -89,8 +90,8 @@ public class DesignsApi(
         if (converter.FromBase64(designInput, true, true, out _) is not { } designBase)
             try
             {
-                var jObj = JObject.Parse(designInput);
-                designBase = converter.FromJObject(jObj, true, true);
+                var jObj = JsonElement.Parse(designInput);
+                designBase = converter.FromJsonElement(jObj, true, true);
                 if (designBase is null)
                     return (ApiHelpers.Return(GlamourerApiEc.CouldNotParse, args), Guid.Empty);
             }
@@ -126,11 +127,11 @@ public class DesignsApi(
 
     public string? GetDesignBase64(Guid designId)
         => designs.Designs.ByIdentifier(designId) is { } design
-            ? converter.ShareBase64(design)
+            ? Encoding.UTF8.GetString(converter.ShareBase64(design))
             : null;
 
     public JObject? GetDesignJObject(Guid designId)
         => designs.Designs.ByIdentifier(designId) is { } design
-            ? converter.ShareJObject(design)
+            ? converter.ShareJObject(design).ToToken() as JObject
             : null;
 }

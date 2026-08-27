@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System.Text.Json;
+using Luna;
+using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Actors;
 
 namespace Glamourer.Automation;
@@ -16,33 +18,37 @@ public sealed class AutoDesignSet(string name, ActorIdentifier[] identifiers, Li
     public readonly List<ActorIdentifier[]> SecondaryIdentifiers = [];
     public          int                     Priority;
 
-    public JObject Serialize()
+    public void Serialize(Utf8JsonWriter j)
     {
-        var list = new JArray();
-        foreach (var design in Designs)
-            list.Add(design.Serialize());
-
-
-        var ret = new JObject
+        j.WriteStartObject();
+        j.WriteNonEmptyString("Name"u8, Name);
+        j.WriteJson("Identifier"u8, Identifiers[0]);
+        j.WriteIfNot("Enabled"u8,  Enabled,  false);
+        j.WriteIfNot("Priority"u8, Priority, 0);
+        j.WriteEnumIfNot("BaseState"u8, BaseState, Base.Current);
+        j.WriteIfNot("ResetTemporarySettings"u8, ResetTemporarySettings, false);
+        if (Designs.Count > 0)
         {
-            ["Name"]                   = Name,
-            ["Identifier"]             = Identifiers[0].ToJson(),
-            ["Enabled"]                = Enabled,
-            ["Priority"]               = Priority,
-            ["BaseState"]              = BaseState.ToString(),
-            ["ResetTemporarySettings"] = ResetTemporarySettings.ToString(),
-            ["Designs"]                = list,
-        };
+            j.WriteStartArray("Designs"u8);
+            foreach (var design in Designs)
+                design.Serialize(j);
+            j.WriteEndArray();
+        }
 
         if (SecondaryIdentifiers.Count > 0)
         {
-            var array = new JArray();
+            j.WriteStartArray("SecondaryIdentifiers"u8);
             foreach (var identifier in SecondaryIdentifiers)
-                array.Add(identifier[0].ToJson());
-            ret["SecondaryIdentifiers"] = array;
+            {
+                j.WriteStartObject();
+                j.WriteJsonProperties(identifier[0]);
+                j.WriteEndObject();
+            }
+
+            j.WriteEndArray();
         }
 
-        return ret;
+        j.WriteEndObject();
     }
 
     public AutoDesignSet(string name, params ActorIdentifier[] identifiers)

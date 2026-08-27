@@ -1,8 +1,7 @@
-﻿using Glamourer.Automation;
-using Glamourer.Designs.Links;
+﻿using System.Text.Json;
+using Glamourer.Automation;
 using Glamourer.Interop.Material;
 using Glamourer.State;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 
@@ -21,9 +20,9 @@ public interface IDesignStandIn : IEquatable<IDesignStandIn>
     public IEnumerable<(IDesignStandIn Design, ApplicationType Flags, JobFlag Jobs)> AllLinks(bool newApplication,
         Predicate<DesignConditions>? condition);
 
-    public void AddData(JObject jObj);
+    public void AddData(Utf8JsonWriter jObj);
 
-    public void ParseData(JObject jObj);
+    public void ParseData(in JsonElement jObj);
 
     public bool ChangeData(object data);
 

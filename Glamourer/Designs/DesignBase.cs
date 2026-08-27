@@ -1,9 +1,9 @@
-﻿using Dalamud.Interface.ImGuiNotification;
+﻿using System.Text.Json;
+using Dalamud.Interface.ImGuiNotification;
 using Glamourer.GameData;
 using Glamourer.Interop.Material;
 using Glamourer.Services;
 using ImSharp;
-using Newtonsoft.Json.Linq;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Structs;
 using Penumbra.GameData.DataContainers;
@@ -11,7 +11,7 @@ using Luna;
 
 namespace Glamourer.Designs;
 
-public class DesignBase
+public class DesignBase : JsonObjectConversion.IJsonWritable<DesignBase>
 {
     public const int FileVersion = 1;
 
@@ -235,23 +235,21 @@ public class DesignBase
 
     #region Serialization
 
-    public JObject JsonSerialize()
+    public void Serialize(Utf8JsonWriter j)
     {
-        var ret = new JObject
-        {
-            ["FileVersion"] = FileVersion,
-            ["Equipment"]   = SerializeEquipment(),
-            ["Bonus"]       = SerializeBonusItems(),
-            ["Customize"]   = SerializeCustomize(),
-            ["Parameters"]  = SerializeParameters(),
-            ["Materials"]   = SerializeMaterials(),
-        };
-        return ret;
+        j.WriteStartObject();
+        j.WriteNumber("FileVersion"u8, FileVersion);
+        SerializeEquipment(j);
+        SerializeBonusItems(j);
+        SerializeCustomize(j);
+        SerializeParameters(j);
+        SerializeMaterials(j);
+        j.WriteEndObject();
     }
 
-    protected JObject SerializeEquipment()
+    protected void SerializeEquipment(Utf8JsonWriter j)
     {
-        var ret = new JObject();
+        j.WriteStartObject("Equipment"u8);
         if (_designData.IsHuman)
         {
             foreach (var slot in EquipSlotExtensions.EqdpSlots.Prepend(EquipSlot.OffHand).Prepend(EquipSlot.MainHand))
@@ -260,174 +258,131 @@ public class DesignBase
                 var stains    = _designData.Stain(slot);
                 var crestSlot = slot.ToCrestFlag();
                 var crest     = _designData.Crest(crestSlot);
-                ret[slot.ToString()] = Serialize(item.Id, stains, crest, DoApplyEquip(slot), DoApplyStain(slot), DoApplyCrest(crestSlot));
+                j.WriteStartObject(slot.StringU8);
+                j.WriteNumber("ItemId"u8, item.Id.Id);
+                j.WriteIfNot("Crest"u8,      crest,                   false);
+                j.WriteIfNot("Apply"u8,      DoApplyEquip(slot),      false);
+                j.WriteIfNot("ApplyStain"u8, DoApplyStain(slot),      false);
+                j.WriteIfNot("ApplyCrest"u8, DoApplyCrest(crestSlot), false);
+                stains.AddToObject(j);
+                j.WriteEndObject();
             }
 
-            ret["Hat"]       = new QuadBool(_designData.IsHatVisible(),    DoApplyMeta(MetaIndex.HatState)).ToJObject("Show", "Apply");
-            ret["VieraEars"] = new QuadBool(_designData.AreEarsVisible(),  DoApplyMeta(MetaIndex.EarState)).ToJObject("Show", "Apply");
-            ret["Visor"]     = new QuadBool(_designData.IsVisorToggled(),  DoApplyMeta(MetaIndex.VisorState)).ToJObject("IsToggled", "Apply");
-            ret["Weapon"]    = new QuadBool(_designData.IsWeaponVisible(), DoApplyMeta(MetaIndex.WeaponState)).ToJObject("Show", "Apply");
+            new QuadBool(_designData.IsHatVisible(),    DoApplyMeta(MetaIndex.HatState)).WriteJson(j, "Hat"u8, "Show"u8, "Apply"u8);
+            new QuadBool(_designData.AreEarsVisible(),  DoApplyMeta(MetaIndex.EarState)).WriteJson(j, "VieraEars"u8, "Show"u8, "Apply"u8);
+            new QuadBool(_designData.IsVisorToggled(),  DoApplyMeta(MetaIndex.VisorState)).WriteJson(j, "Visor"u8, "IsToggled"u8, "Apply"u8);
+            new QuadBool(_designData.IsWeaponVisible(), DoApplyMeta(MetaIndex.WeaponState)).WriteJson(j, "Weapon"u8, "Show"u8, "Apply"u8);
         }
         else
         {
-            ret["Array"] = _designData.WriteEquipmentBytesBase64();
+            j.WriteString("Array"u8, _designData.WriteEquipmentBytesBase64());
         }
 
-        return ret;
-
-        static JObject Serialize(CustomItemId id, StainIds stains, bool crest, bool apply, bool applyStain, bool applyCrest)
-            => new()
-            {
-                ["ItemId"]     = id.Id,
-                ["Crest"]      = crest,
-                ["Apply"]      = apply,
-                ["ApplyStain"] = applyStain,
-                ["ApplyCrest"] = applyCrest, 
-                // TODO 20262408 use AddToJson from StainIds when switching to Utf8JsonWriter.
-                ["Stain"]      = stains.Stain1.Id,
-                ["Stain2"]     = stains.Stain2.Id,
-            };
+        j.WriteEndObject();
     }
 
-    protected JObject SerializeBonusItems()
+    protected void SerializeBonusItems(Utf8JsonWriter j)
     {
-        var ret = new JObject();
+        j.WriteStartObject("Bonus"u8);
         foreach (var slot in BonusExtensions.AllFlags)
         {
             var item = _designData.BonusItem(slot);
-            ret[slot.ToString()] = new JObject
-            {
-                ["BonusId"] = item.Id.Id,
-                ["Apply"]   = DoApplyBonusItem(slot),
-            };
+            j.WriteStartObject(slot.StringU8);
+            j.WriteNumber("BonusId"u8, item.Id.Id);
+            j.WriteIfNot("Apply"u8, DoApplyBonusItem(slot), false);
+            j.WriteEndObject();
         }
 
-        return ret;
+        j.WriteEndObject();
     }
 
-    protected JObject SerializeCustomize()
+    protected void SerializeCustomize(Utf8JsonWriter j)
     {
-        var ret = new JObject
-        {
-            ["ModelId"] = _designData.ModelId,
-        };
+        j.WriteStartObject("Customize"u8);
+        j.WriteIfNot("ModelId"u8, _designData.ModelId, 0u);
 
         var customize = _designData.Customize;
         if (_designData.IsHuman)
             foreach (var idx in CustomizeIndex.Values)
             {
-                ret[idx.ToString()] = new JObject
-                {
-                    ["Value"] = customize[idx].Value,
-                    ["Apply"] = Application.Customize.HasFlag(idx.ToFlag()),
-                };
+                j.WriteStartObject(idx.StringU8);
+                j.WriteNumber("Value"u8, customize[idx].Value);
+                j.WriteIfNot("Apply"u8, Application.Customize.HasFlag(idx.ToFlag()), false);
+                j.WriteEndObject();
             }
         else
-            ret["Array"] = customize.WriteBase64();
+            j.WriteString("Array"u8, customize.WriteBase64());
 
-        ret["Wetness"] = new JObject
-        {
-            ["Value"] = _designData.IsWet(),
-            ["Apply"] = DoApplyMeta(MetaIndex.Wetness),
-        };
-
-        return ret;
+        new QuadBool(_designData.IsWet(), DoApplyMeta(MetaIndex.Wetness)).WriteJson(j, "Wetness"u8, "Value"u8, "Apply"u8);
+        j.WriteEndObject();
     }
 
-    protected JObject SerializeParameters()
+    protected void SerializeParameters(Utf8JsonWriter j)
     {
-        var ret = new JObject();
+        j.WriteStartObject("Parameters"u8);
 
         foreach (var flag in CustomizeParameterExtensions.ValueFlags)
         {
-            ret[flag.ToString()] = new JObject
-            {
-                ["Value"] = DesignData.Parameters[flag][0],
-                ["Apply"] = DoApplyParameter(flag),
-            };
+            j.WriteStartObject(flag.StringU8);
+            j.WriteNumber("Value"u8, DesignData.Parameters[flag][0]);
+            j.WriteIfNot("Apply"u8, DoApplyParameter(flag), false);
+            j.WriteEndObject();
         }
 
         foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
         {
-            ret[flag.ToString()] = new JObject
-            {
-                ["Percentage"] = DesignData.Parameters[flag][0],
-                ["Apply"]      = DoApplyParameter(flag),
-            };
+            j.WriteStartObject(flag.StringU8);
+            j.WriteNumber("Percentage"u8, DesignData.Parameters[flag][0]);
+            j.WriteIfNot("Apply"u8, DoApplyParameter(flag), false);
+            j.WriteEndObject();
         }
 
         foreach (var flag in CustomizeParameterExtensions.RgbFlags)
         {
-            ret[flag.ToString()] = new JObject
-            {
-                ["Red"]   = DesignData.Parameters[flag][0],
-                ["Green"] = DesignData.Parameters[flag][1],
-                ["Blue"]  = DesignData.Parameters[flag][2],
-                ["Apply"] = DoApplyParameter(flag),
-            };
+            j.WriteStartObject(flag.StringU8);
+            j.WriteNumber("Red"u8,   DesignData.Parameters[flag][0]);
+            j.WriteNumber("Green"u8, DesignData.Parameters[flag][1]);
+            j.WriteNumber("Blue"u8,  DesignData.Parameters[flag][2]);
+            j.WriteIfNot("Apply"u8, DoApplyParameter(flag), false);
+            j.WriteEndObject();
         }
 
         foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
         {
-            ret[flag.ToString()] = new JObject
-            {
-                ["Red"]   = DesignData.Parameters[flag][0],
-                ["Green"] = DesignData.Parameters[flag][1],
-                ["Blue"]  = DesignData.Parameters[flag][2],
-                ["Alpha"] = DesignData.Parameters[flag][3],
-                ["Apply"] = DoApplyParameter(flag),
-            };
+            j.WriteStartObject(flag.StringU8);
+            j.WriteNumber("Red"u8,   DesignData.Parameters[flag][0]);
+            j.WriteNumber("Green"u8, DesignData.Parameters[flag][1]);
+            j.WriteNumber("Blue"u8,  DesignData.Parameters[flag][2]);
+            j.WriteNumber("Alpha"u8, DesignData.Parameters[flag][3]);
+            j.WriteIfNot("Apply"u8, DoApplyParameter(flag), false);
+            j.WriteEndObject();
         }
 
-        return ret;
+        j.WriteEndObject();
     }
 
-    protected JObject SerializeMaterials()
+    protected void SerializeMaterials(Utf8JsonWriter j)
     {
-        var ret = new JObject();
-        foreach (var (key, value) in Materials)
-            ret[key.ToString("X16")] = JToken.FromObject(value);
-        return ret;
-    }
-
-    protected static void LoadMaterials(JToken? materials, DesignBase design, string name)
-    {
-        if (materials is not JObject obj)
+        if (Materials.Count is 0)
             return;
 
-        design.GetMaterialDataRef().Clear();
-        foreach (var (key, value) in obj.Properties().Zip(obj.PropertyValues()))
+        j.WriteStartObject("Materials"u8);
+        foreach (var (key, value) in Materials)
         {
-            try
-            {
-                var k = uint.Parse(key.Name, NumberStyles.HexNumber);
-                var v = value.ToObject<MaterialValueDesign>();
-                if (!MaterialValueIndex.FromKey(k, out _))
-                {
-                    Glamourer.Messager.NotificationMessage($"Invalid material value key {k} for design {name}, skipped.",
-                        NotificationType.Warning);
-                    continue;
-                }
-
-                if (!design.GetMaterialDataRef().TryAddValue(MaterialValueIndex.FromKey(k), v))
-                    Glamourer.Messager.NotificationMessage($"Duplicate material value key {k} for design {name}, skipped.",
-                        NotificationType.Warning);
-            }
-            catch (Exception ex)
-            {
-                Glamourer.Messager.NotificationMessage(ex, $"Error parsing material value for design {name}, skipped",
-                    NotificationType.Warning);
-            }
+            j.WritePropertyName($"{key:X8}");
+            value.WriteJson(j);
         }
+
+        j.WriteEndObject();
     }
 
     #endregion
 
     #region Deserialization
 
-    public static DesignBase LoadDesignBase(CustomizeService customizations, ItemManager items, JObject json)
+    public static DesignBase LoadDesignBase(CustomizeService customizations, ItemManager items, in JsonElement json)
     {
-        var version = json["FileVersion"]?.ToObject<int>() ?? 0;
+        var version = json.PropertyOrDefault("FileVersion"u8, 0);
         return version switch
         {
             FileVersion => LoadDesignV1Base(customizations, items, json),
@@ -435,20 +390,20 @@ public class DesignBase
         };
     }
 
-    private static DesignBase LoadDesignV1Base(CustomizeService customizations, ItemManager items, JObject json)
+    private static DesignBase LoadDesignV1Base(CustomizeService customizations, ItemManager items, in JsonElement json)
     {
         var ret = new DesignBase(customizations, items);
-        LoadCustomize(customizations, json["Customize"], ret, "Temporary Design", false, true);
-        LoadEquip(items, json["Equipment"], ret, "Temporary Design", true);
-        LoadParameters(json["Parameters"], ret, "Temporary Design");
-        LoadMaterials(json["Materials"], ret, "Temporary Design");
-        LoadBonus(items, ret, json["Bonus"]);
+        LoadCustomize(customizations, json.TryReadObject("Customize"u8, out var c) ? c : null, ret, "Temporary Design", false, true);
+        LoadEquip(items, json.TryReadObject("Equipment"u8,              out var e) ? e : null, ret, "Temporary Design", true);
+        LoadParameters(json.TryReadObject("Parameters"u8,               out var p) ? p : null, ret, "Temporary Design");
+        LoadMaterials(json.TryReadObject("Materials"u8,                 out var m) ? m : null, ret, "Temporary Design");
+        LoadBonus(items, ret, json.TryReadObject("Bonus"u8,             out var b) ? b : null);
         return ret;
     }
 
-    protected static void LoadBonus(ItemManager items, DesignBase design, JToken? json)
+    protected static void LoadBonus(ItemManager items, DesignBase design, in JsonElement? json)
     {
-        if (json is not JObject)
+        if (json is not { } j)
         {
             design.Application.BonusItem = 0;
             return;
@@ -456,23 +411,23 @@ public class DesignBase
 
         foreach (var slot in BonusExtensions.AllFlags)
         {
-            if (json[slot.ToString()] is not JObject itemJson)
+            if (!j.TryReadObject(slot.StringU8, out var itemJson))
             {
                 design.Application.BonusItem &= ~slot;
                 design.GetDesignDataRef().SetBonusItem(slot, EquipItem.BonusItemNothing(slot));
                 continue;
             }
 
-            design.SetApplyBonusItem(slot, itemJson["Apply"]?.ToObject<bool>() ?? false);
-            var id   = itemJson["BonusId"]?.ToObject<ulong>() ?? 0;
+            design.SetApplyBonusItem(slot, itemJson.PropertyOrDefault("Apply"u8, false));
+            var id   = itemJson.PropertyOrDefault("BonusId"u8,                   0UL);
             var item = items.Resolve(slot, id);
             design.GetDesignDataRef().SetBonusItem(slot, item);
         }
     }
 
-    protected static void LoadParameters(JToken? parameters, DesignBase design, string name)
+    protected static void LoadParameters(in JsonElement? json, DesignBase design, string name)
     {
-        if (parameters == null)
+        if (json is not { } j)
         {
             design.Application.Parameters        = 0;
             design.GetDesignDataRef().Parameters = default;
@@ -481,42 +436,42 @@ public class DesignBase
 
         foreach (var flag in CustomizeParameterExtensions.ValueFlags)
         {
-            if (!TryGetToken(flag, out var token))
+            if (!TryGetElement(flag, out var element))
                 continue;
 
-            var value = token["Value"]?.ToObject<float>() ?? 0f;
+            var value = element.PropertyOrDefault("Value"u8, 0f);
             design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(value);
         }
 
         foreach (var flag in CustomizeParameterExtensions.PercentageFlags)
         {
-            if (!TryGetToken(flag, out var token))
+            if (!TryGetElement(flag, out var element))
                 continue;
 
-            var value = token["Percentage"]?.ToObject<float>() ?? 0f;
+            var value = element.PropertyOrDefault("Percentage"u8, 0f);
             design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(value);
         }
 
         foreach (var flag in CustomizeParameterExtensions.RgbFlags)
         {
-            if (!TryGetToken(flag, out var token))
+            if (!TryGetElement(flag, out var element))
                 continue;
 
-            var r = token["Red"]?.ToObject<float>() ?? 0f;
-            var g = token["Green"]?.ToObject<float>() ?? 0f;
-            var b = token["Blue"]?.ToObject<float>() ?? 0f;
+            var r = element.PropertyOrDefault("Red"u8,   0f);
+            var g = element.PropertyOrDefault("Green"u8, 0f);
+            var b = element.PropertyOrDefault("Blue"u8,  0f);
             design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(r, g, b);
         }
 
         foreach (var flag in CustomizeParameterExtensions.RgbaFlags)
         {
-            if (!TryGetToken(flag, out var token))
+            if (!TryGetElement(flag, out var element))
                 continue;
 
-            var r = token["Red"]?.ToObject<float>() ?? 0f;
-            var g = token["Green"]?.ToObject<float>() ?? 0f;
-            var b = token["Blue"]?.ToObject<float>() ?? 0f;
-            var a = token["Alpha"]?.ToObject<float>() ?? 0f;
+            var r = element.PropertyOrDefault("Red"u8,   0f);
+            var g = element.PropertyOrDefault("Green"u8, 0f);
+            var b = element.PropertyOrDefault("Blue"u8,  0f);
+            var a = element.PropertyOrDefault("Alpha"u8, 0f);
             design.GetDesignDataRef().Parameters[flag] = new CustomizeParameterValue(r, g, b, a);
         }
 
@@ -524,33 +479,44 @@ public class DesignBase
         return;
 
         // Load the token and set application.
-        bool TryGetToken(CustomizeParameterFlag flag, [NotNullWhen(true)] out JToken? token)
+        bool TryGetElement(CustomizeParameterFlag flag, out JsonElement sub)
         {
-            token = parameters[flag.ToString()];
-            if (token != null)
+            if (!j.TryReadObject(flag.StringU8, out sub))
             {
-                var apply = token["Apply"]?.ToObject<bool>() ?? false;
-                design.SetApplyParameter(flag, apply);
-                return true;
+                design.Application.Parameters              &= ~flag;
+                design.GetDesignDataRef().Parameters[flag] =  CustomizeParameterValue.Zero;
+                return false;
             }
 
-            design.Application.Parameters              &= ~flag;
-            design.GetDesignDataRef().Parameters[flag] =  CustomizeParameterValue.Zero;
-            return false;
+            var apply = sub.PropertyOrDefault("Apply"u8, false);
+            design.SetApplyParameter(flag, apply);
+            return true;
         }
 
         void MigrateLipOpacity()
         {
-            var token       = parameters["LipOpacity"]?["Percentage"]?.ToObject<float>();
-            var actualToken = parameters[CustomizeParameterFlag.LipDiffuse.ToString()]?["Alpha"];
-            if (token != null && actualToken == null)
+            float? token =
+                j.TryReadObject("LipOpacity"u8, out var lip)
+             && lip.TryGetProperty("Percentage"u8, out var lipPercentage)
+             && lipPercentage.ValueKind is JsonValueKind.Number
+             && lipPercentage.TryGetSingle(out var t)
+                    ? t
+                    : null;
+            float? actualToken =
+                j.TryReadObject(CustomizeParameterFlag.LipDiffuse.StringU8, out var diff)
+             && diff.TryGetProperty("Alpha"u8, out var lipDiff)
+             && lipDiff.ValueKind is JsonValueKind.Number
+             && lipDiff.TryGetSingle(out var d)
+                    ? d
+                    : null;
+            if (token is not null && actualToken is null)
                 design.GetDesignDataRef().Parameters.LipDiffuse.W = token.Value;
         }
     }
 
-    protected static void LoadEquip(ItemManager items, JToken? equip, DesignBase design, string name, bool allowUnknown)
+    protected static void LoadEquip(ItemManager items, in JsonElement? equip, DesignBase design, string name, bool allowUnknown)
     {
-        if (equip == null)
+        if (equip is not { } j)
         {
             design._designData.SetDefaultEquipment(items);
             Glamourer.Messager.NotificationMessage("The loaded design does not contain any equipment data, reset to default.",
@@ -560,14 +526,14 @@ public class DesignBase
 
         if (!design._designData.IsHuman)
         {
-            var textArray = equip["Array"]?.ToObject<string>() ?? string.Empty;
+            var textArray = j.PropertyOrDefault("Array"u8, string.Empty);
             design._designData.SetEquipmentBytesFromBase64(textArray);
             return;
         }
 
         foreach (var slot in EquipSlotExtensions.EqdpSlots)
         {
-            var (id, stains, crest, apply, applyStain, applyCrest) = ParseItem(slot, equip[slot.ToString()]);
+            var (id, stains, crest, apply, applyStain, applyCrest) = ParseItem(slot, j.TryReadObject(slot.StringU8, out var o) ? o : null);
 
             PrintWarning(items.ValidateItem(slot, id, out var item, allowUnknown));
             PrintWarning(items.ValidateStain(stains, out stains, allowUnknown));
@@ -581,11 +547,12 @@ public class DesignBase
         }
 
         {
-            var (id, stains, crest, apply, applyStain, applyCrest) = ParseItem(EquipSlot.MainHand, equip[nameof(EquipSlot.MainHand)]);
+            var (id, stains, crest, apply, applyStain, applyCrest) =
+                ParseItem(EquipSlot.MainHand, j.TryReadObject(EquipSlot.MainHand.StringU8, out var m) ? m : null);
             if (id == ItemManager.NothingId(EquipSlot.MainHand))
                 id = items.DefaultSword.ItemId;
             var (idOff, stainsOff, crestOff, applyOff, applyStainOff, applyCrestOff) =
-                ParseItem(EquipSlot.OffHand, equip[nameof(EquipSlot.OffHand)]);
+                ParseItem(EquipSlot.OffHand, j.TryReadObject(EquipSlot.OffHand.StringU8, out var o) ? o : null);
             if (id == ItemManager.NothingId(EquipSlot.OffHand))
                 id = ItemManager.NothingId(FullEquipType.Shield);
 
@@ -605,19 +572,19 @@ public class DesignBase
             design.SetApplyCrest(CrestFlag.MainHand, applyCrest);
             design.SetApplyCrest(CrestFlag.OffHand,  applyCrestOff);
         }
-        var metaValue = QuadBool.FromJObject(equip["Hat"], "Show", "Apply", QuadBool.NullFalse);
+        var metaValue = QuadBool.FromJsonElement(j.TryReadObject("Hat"u8, out var h) ? h : null, "Show"u8, "Apply"u8, QuadBool.NullFalse);
         design.SetApplyMeta(MetaIndex.HatState, metaValue.Set);
         design._designData.SetHatVisible(metaValue.ForcedValue);
 
-        metaValue = QuadBool.FromJObject(equip["Weapon"], "Show", "Apply", QuadBool.NullFalse);
+        metaValue = QuadBool.FromJsonElement(j.TryReadObject("Weapon"u8, out var w) ? w : null, "Show"u8, "Apply"u8, QuadBool.NullFalse);
         design.SetApplyMeta(MetaIndex.WeaponState, metaValue.Set);
         design._designData.SetWeaponVisible(metaValue.ForcedValue);
 
-        metaValue = QuadBool.FromJObject(equip["Visor"], "IsToggled", "Apply", QuadBool.NullFalse);
+        metaValue = QuadBool.FromJsonElement(j.TryReadObject("Visor"u8, out var v) ? v : null, "IsToggled"u8, "Apply"u8, QuadBool.NullFalse);
         design.SetApplyMeta(MetaIndex.VisorState, metaValue.Set);
         design._designData.SetVisor(metaValue.ForcedValue);
 
-        metaValue = QuadBool.FromJObject(equip["VieraEars"], "Show", "Apply", QuadBool.NullTrue);
+        metaValue = QuadBool.FromJsonElement(j.TryReadObject("VieraEars"u8, out var e) ? e : null, "Show"u8, "Apply"u8, QuadBool.NullTrue);
         design.SetApplyMeta(MetaIndex.EarState, metaValue.Set);
         design._designData.SetEarsVisible(metaValue.ForcedValue);
         return;
@@ -628,22 +595,26 @@ public class DesignBase
                 Glamourer.Messager.NotificationMessage($"{msg} ({name})", NotificationType.Warning);
         }
 
-        static (CustomItemId, StainIds, bool, bool, bool, bool) ParseItem(EquipSlot slot, JToken? item)
+        static (CustomItemId, StainIds, bool, bool, bool, bool) ParseItem(EquipSlot slot, in JsonElement? item)
         {
-            var id         = item?["ItemId"]?.ToObject<ulong>() ?? ItemManager.NothingId(slot).Id;
-            var stains     = StainIds.ParseFromObject(item as JObject);
-            var crest      = item?["Crest"]?.ToObject<bool>() ?? false;
-            var apply      = item?["Apply"]?.ToObject<bool>() ?? false;
-            var applyStain = item?["ApplyStain"]?.ToObject<bool>() ?? false;
-            var applyCrest = item?["ApplyCrest"]?.ToObject<bool>() ?? false;
-            return (id, stains, crest, apply, applyStain, applyCrest);
+            var ret = ((CustomItemId)ItemManager.NothingId(slot).Id, StainIds.None, false, false, false, false);
+            if (item is not { } j)
+                return ret;
+
+            ret.Item1 = j.PropertyOrDefault("ItemId"u8, ret.Item1.Id);
+            ret.Item2 = StainIds.ParseFromElement(j);
+            ret.Item3 = j.PropertyOrDefault("Crest"u8,      false);
+            ret.Item4 = j.PropertyOrDefault("Apply"u8,      false);
+            ret.Item5 = j.PropertyOrDefault("ApplyStain"u8, false);
+            ret.Item6 = j.PropertyOrDefault("ApplyCrest"u8, false);
+            return ret;
         }
     }
 
-    protected static void LoadCustomize(CustomizeService customizations, JToken? json, DesignBase design, string name, bool forbidNonHuman,
-        bool allowUnknown)
+    protected static void LoadCustomize(CustomizeService customizations, in JsonElement? json, DesignBase design, string name,
+        bool forbidNonHuman, bool allowUnknown)
     {
-        if (json == null)
+        if (json is not { } j)
         {
             design._designData.ModelId = 0;
             design._designData.IsHuman = true;
@@ -653,19 +624,11 @@ public class DesignBase
             return;
         }
 
-        void PrintWarning(string msg)
-        {
-            if (msg.Length > 0)
-                Glamourer.Messager.NotificationMessage(
-                    $"{msg} ({name})\nThis change is not saved automatically. If you want this replacement to stick and the warning to stop appearing, please save the design manually once by changing something in it.",
-                    NotificationType.Warning);
-        }
-
-        var wetness = QuadBool.FromJObject(json["Wetness"], "Value", "Apply", QuadBool.NullFalse);
+        var wetness = QuadBool.FromJsonElement(j.TryReadObject("Wetness"u8, out var w) ? w : null, "Value"u8, "Apply"u8, QuadBool.NullFalse);
         design._designData.SetIsWet(wetness.ForcedValue);
         design.SetApplyMeta(MetaIndex.Wetness, wetness.Set);
 
-        design._designData.ModelId = json["ModelId"]?.ToObject<uint>() ?? 0;
+        design._designData.ModelId = j.PropertyOrDefault("ModelId"u8, 0u);
         PrintWarning(customizations.ValidateModelId(design._designData.ModelId, out design._designData.ModelId,
             out design._designData.IsHuman));
         if (design._designData.ModelId != 0 && forbidNonHuman)
@@ -676,47 +639,99 @@ public class DesignBase
         }
         else if (!design._designData.IsHuman)
         {
-            var arrayText = json["Array"]?.ToObject<string>() ?? string.Empty;
+            var arrayText = j.PropertyOrDefault("Array"u8, string.Empty);
             design._designData.Customize.LoadBase64(arrayText);
             design.CustomizeSet = design.SetCustomizationSet(customizations);
             return;
         }
 
-        var race = (Race)(json[CustomizeIndex.Race.ToString()]?["Value"]?.ToObject<byte>() ?? 0);
-        var clan = (SubRace)(json[CustomizeIndex.Clan.ToString()]?["Value"]?.ToObject<byte>() ?? 0);
+        var race = (Race)(j.TryReadObject(CustomizeIndex.Race.StringU8,    out var r) ? r.PropertyOrDefault("Value"u8, (byte)0) : (byte)0);
+        var clan = (SubRace)(j.TryReadObject(CustomizeIndex.Clan.StringU8, out var c) ? c.PropertyOrDefault("Value"u8, (byte)0) : (byte)0);
         PrintWarning(customizations.ValidateClan(clan, race, out race, out clan));
-        var gender = (Gender)((json[CustomizeIndex.Gender.ToString()]?["Value"]?.ToObject<byte>() ?? 0) + 1);
+        var gender = (Gender)((j.TryReadObject(CustomizeIndex.Gender.StringU8, out var g) ? g.PropertyOrDefault("Value"u8, (byte)0) : 0) + 1);
         PrintWarning(customizations.ValidateGender(race, gender, out gender));
-        var bodyType = (CustomizeValue)(json[CustomizeIndex.BodyType.ToString()]?["Value"]?.ToObject<byte>() ?? 1);
+        var bodyType = (CustomizeValue)(j.TryReadObject(CustomizeIndex.BodyType.StringU8, out var b)
+            ? b.PropertyOrDefault("Value"u8, (byte)1)
+            : (byte)1);
         design._designData.Customize.Race     = race;
         design._designData.Customize.Clan     = clan;
         design._designData.Customize.Gender   = gender;
         design._designData.Customize.BodyType = bodyType;
         design.CustomizeSet                   = design.SetCustomizationSet(customizations);
-        design.SetApplyCustomize(CustomizeIndex.Race,     json[CustomizeIndex.Race.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
-        design.SetApplyCustomize(CustomizeIndex.Clan,     json[CustomizeIndex.Clan.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
-        design.SetApplyCustomize(CustomizeIndex.Gender,   json[CustomizeIndex.Gender.ToString()]?["Apply"]?.ToObject<bool>() ?? false);
-        design.SetApplyCustomize(CustomizeIndex.BodyType, bodyType != 0);
+        design.SetApplyCustomize(CustomizeIndex.Race,
+            j.TryReadObject(CustomizeIndex.Race.StringU8, out var r2) && r2.PropertyOrDefault("Apply"u8, false));
+        design.SetApplyCustomize(CustomizeIndex.Clan,
+            j.TryReadObject(CustomizeIndex.Clan.StringU8, out var c2) && c2.PropertyOrDefault("Apply"u8, false));
+        design.SetApplyCustomize(CustomizeIndex.Gender,
+            j.TryReadObject(CustomizeIndex.Gender.StringU8, out var g2) && g2.PropertyOrDefault("Apply"u8, false));
+        design.SetApplyCustomize(CustomizeIndex.BodyType, bodyType.Value is not 0);
         var set = design.CustomizeSet;
 
         foreach (var idx in CustomizationExtensions.AllBasic)
         {
-            var tok  = json[idx.ToString()];
-            var data = (CustomizeValue)(tok?["Value"]?.ToObject<byte>() ?? 0);
+            var data  = CustomizeValue.Zero;
+            var apply = false;
+
+            if (j.TryReadObject(idx.StringU8, out var token))
+            {
+                data  = (CustomizeValue)token.PropertyOrDefault("Value"u8, (byte)0);
+                apply = token.PropertyOrDefault("Apply"u8, false);
+            }
+
             if (set.IsAvailable(idx) && design._designData.Customize.BodyType == 1)
                 PrintWarning(CustomizeService.ValidateCustomizeValue(set, design._designData.Customize.Face, idx, data, out data,
                     allowUnknown));
-            var apply = tok?["Apply"]?.ToObject<bool>() ?? false;
             design._designData.Customize[idx] = data;
             design.SetApplyCustomize(idx, apply);
         }
+
+        return;
+
+        void PrintWarning(string msg)
+        {
+            if (msg.Length > 0)
+                Glamourer.Messager.NotificationMessage(
+                    $"{msg} ({name})\nThis change is not saved automatically. If you want this replacement to stick and the warning to stop appearing, please save the design manually once by changing something in it.",
+                    NotificationType.Warning);
+        }
     }
 
-    public void MigrateBase64(CustomizeService customize, ItemManager items, HumanModelList humans, string base64)
+    protected static void LoadMaterials(in JsonElement? materials, DesignBase design, string name)
+    {
+        if (materials is not { } j)
+            return;
+
+        design.GetMaterialDataRef().Clear();
+        foreach (var property in j.EnumerateObject())
+        {
+            try
+            {
+                var k = uint.Parse(property.Name, NumberStyles.HexNumber);
+                var v = property.Value.Deserialize<MaterialValueDesign>();
+                if (!MaterialValueIndex.FromKey(k, out _))
+                {
+                    Glamourer.Messager.NotificationMessage($"Invalid material value key {k} for design {name}, skipped.",
+                        NotificationType.Warning);
+                    continue;
+                }
+
+                if (!design.GetMaterialDataRef().TryAddValue(MaterialValueIndex.FromKey(k), v))
+                    Glamourer.Messager.NotificationMessage($"Duplicate material value key {k} for design {name}, skipped.",
+                        NotificationType.Warning);
+            }
+            catch (Exception ex)
+            {
+                Glamourer.Messager.NotificationMessage(ex, $"Error parsing material value for design {name}, skipped",
+                    NotificationType.Warning);
+            }
+        }
+    }
+
+    public void MigrateBase64Data(CustomizeService customize, ItemManager items, HumanModelList humans, ReadOnlySpan<byte> bytes)
     {
         try
         {
-            _designData = DesignBase64Migration.MigrateBase64(items, humans, base64, out var equipFlags, out var customizeFlags,
+            _designData = DesignBase64Migration.MigrateBase64(items, humans, bytes, out var equipFlags, out var customizeFlags,
                 out var writeProtected, out var applyMeta);
             Application.Equip      = equipFlags;
             ApplyCustomize         = customizeFlags;
@@ -734,4 +749,7 @@ public class DesignBase
     }
 
     #endregion
+
+    public static void Write(Utf8JsonWriter writer, in DesignBase value, JsonSerializerOptions options)
+        => value.Serialize(writer);
 }
