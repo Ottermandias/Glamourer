@@ -3,6 +3,7 @@ global using SettingPresetData = (System.Collections.Generic.Dictionary<(System.
         (System.Collections.Generic.Dictionary<(System.Guid Identifier, string? Name), byte> Options, bool DisableAllUnknown)> Settings, int
     _priority, short Version, bool _hasPriority, byte _state);
 using Dalamud.Plugin;
+using Dalamud.Plugin.Ipc;
 using Glamourer.Config;
 using Glamourer.Events;
 using Glamourer.State;
@@ -43,14 +44,40 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
 
     public void RemoveAllTemporarySettings(int index, StateSource state)
     {
-        if (Available)
+        if (!Available)
+            return;
+
+        try
+        {
             Collections.RemoveAllTemporarySettingsObject(index, state.IsFixed() ? KeyFixed : KeyManual);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Ignored.
+        }
+        catch (AdapterMethodMissingException)
+        {
+            // Ignored.
+        }
     }
 
     public void RemoveAllTemporarySettings(Guid collection, StateSource state)
     {
-        if (Available)
+        if (!Available)
+            return;
+
+        try
+        {
             Collections.RemoveAllTemporarySettings(collection, state.IsFixed() ? KeyFixed : KeyManual);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Ignored.
+        }
+        catch (AdapterMethodMissingException)
+        {
+            // Ignored.
+        }
     }
 
     public void RemoveAllTemporarySettings(bool fix, bool manual)
@@ -58,37 +85,110 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
         if (!Available)
             return;
 
-        foreach (var collection in Collections.EnumerateNames())
+        try
         {
-            if (fix)
-                RemoveAllTemporarySettings(collection.Identifier, StateSource.Fixed);
-            if (manual)
-                RemoveAllTemporarySettings(collection.Identifier, StateSource.Manual);
+            foreach (var collection in Collections.EnumerateNames())
+            {
+                if (fix)
+                    RemoveAllTemporarySettings(collection.Identifier, StateSource.Fixed);
+                if (manual)
+                    RemoveAllTemporarySettings(collection.Identifier, StateSource.Manual);
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // Ignored.
+        }
+        catch (AdapterMethodMissingException)
+        {
+            // Ignored.
         }
     }
 
     public IEnumerable<(Guid Identifier, string Name, int Index)> EnumerateNames()
-        => Available ? Collections.EnumerateNames() : [];
+    {
+        if (!Available)
+            return [];
+
+        try
+        {
+            return Collections.EnumerateNames();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Ignored.
+        }
+        catch (AdapterMethodMissingException)
+        {
+            // Ignored.
+        }
+
+        return [];
+    }
 
     public IEnumerable<ModIdentifier> CheckCurrentChangedItems(string itemName)
-        => Available ? Collections.CheckCurrentChangedItems(itemName) : [];
+    {
+        if (!Available)
+            return [];
+
+        try
+        {
+            return Collections.CheckCurrentChangedItems(itemName);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Ignored.
+        }
+        catch (AdapterMethodMissingException)
+        {
+            // Ignored.
+        }
+
+        return [];
+    }
 
     public unsafe Actor GameObjectFromDrawObject(Model drawObject)
     {
         if (!Available)
             return Actor.Null;
 
-        Actor gameObject = GameState.GameObjectFromDrawObject(drawObject.AsDrawObject);
-        if (gameObject.Valid)
-            return gameObject;
+        try
+        {
+            Actor gameObject = GameState.GameObjectFromDrawObject(drawObject.AsDrawObject);
+            if (gameObject.Valid)
+                return gameObject;
 
-        return GameState.LastGameObject;
+            return GameState.LastGameObject;
+        }
+        catch (ObjectDisposedException)
+        {
+            // Ignored.
+        }
+        catch (AdapterMethodMissingException)
+        {
+            // Ignored.
+        }
+
+        return Actor.Null;
     }
 
     public void Redraw(int objectIndex, RedrawType type = RedrawType.Redraw)
     {
-        if(Available)
+        if (!Available)
+            return;
+
+        try
+        {
             GameState.Redraw(objectIndex, type);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Ignored.
+        }
+        catch (AdapterMethodMissingException)
+        {
+            // Ignored.
+        }
     }
 
     public string SetMod(in ModIdentifier modIdentifier, in SettingPresetData settings, StateSource source, bool respectManual,
