@@ -15,7 +15,7 @@ public sealed partial class UiConfig : ConfigurationFile<FilenameService>, IDisp
     private readonly ActorManager _actors;
 
     public UiConfig(SaveService saveService, MessageService messageService, ActorManager actors)
-        : base(saveService, messageService, TimeSpan.FromMinutes(5))
+        : base(saveService, messageService, TimeSpan.FromSeconds(5))
     {
         _actors    = actors;
         ColorCache = new ColorCache<ColorId, ColorIdData>(Colors);
@@ -60,10 +60,7 @@ public sealed partial class UiConfig : ConfigurationFile<FilenameService>, IDisp
         j.WriteUnsignedIfNot("SelectedNpc"u8, _selectedNpc, NpcId.Zero);
         j.WriteSignedIfNot("SelectedAutomationIndex"u8, _selectedAutomationIndex, -1);
         if (_selectedActor.IsValid)
-        {
-            j.WritePropertyName("SelectedActor"u8);
             j.WriteJson("SelectedActor"u8, _selectedActor);
-        }
     }
 
     protected override void LoadData(in JsonElement j)
