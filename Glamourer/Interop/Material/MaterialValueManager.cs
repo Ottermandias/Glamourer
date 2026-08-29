@@ -307,7 +307,7 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, Col
         value = new MaterialValueDesign
         {
             Enabled = false,
-            Mode    = ColorRow.Mode.Dawntrail,
+            Mode    = ColorRow.Mode.Legacy,
             Revert  = false,
             Value   = ColorRow.Empty,
         };

@@ -5,7 +5,6 @@ using Glamourer.Designs;
 using Glamourer.Gui;
 using Glamourer.Gui.Tabs.DesignTab;
 using Glamourer.Services;
-using ImSharp;
 using Luna;
 using Luna.Generators;
 using Newtonsoft.Json;

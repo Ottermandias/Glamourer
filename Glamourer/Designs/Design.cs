@@ -148,9 +148,11 @@ public sealed class Design : DesignBase, ISavable, IDesignStandIn, IFileSystemVa
         j.WriteStartArray("Mods"u8);
         foreach (var (mod, settings) in AssociatedMods)
         {
+            j.WriteStartObject();
             j.WriteNonEmptyString("Name"u8,      mod.Name);
             j.WriteNonEmptyString("Directory"u8, mod.Identifier);
             settings.WriteJsonProperties(j);
+            j.WriteEndObject();
         }
 
         j.WriteEndArray();
