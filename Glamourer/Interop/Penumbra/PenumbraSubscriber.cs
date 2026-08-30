@@ -37,10 +37,52 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
     public          PenumbraUiService        Ui  { get; private set; } = null!;
 
     public CollectionWrapper? Current
-        => Available ? Collections.Current : null;
+    {
+        get
+        {
+            if (!Available)
+                return null;
+
+            try
+            {
+                return Collections.Current;
+            }
+            catch (ObjectDisposedException)
+            {
+                // Ignored.
+            }
+            catch (AdapterMethodMissingException)
+            {
+                // Ignored.
+            }
+
+            return null;
+        }
+    }
 
     public (Guid Identifier, string Name, int Index) CurrentCollection
-        => Available ? Collections.TypeCollectionId(ApiCollectionType.Current)!.Value : (Guid.Empty, "", -1);
+    {
+        get
+        {
+            if (!Available)
+                return (Guid.Empty, "", -1);
+
+            try
+            {
+                return Collections.TypeCollectionId(ApiCollectionType.Current)!.Value;
+            }
+            catch (ObjectDisposedException)
+            {
+                // Ignored.
+            }
+            catch (AdapterMethodMissingException)
+            {
+                // Ignored.
+            }
+
+            return (Guid.Empty, "", -1);
+        }
+    }
 
     public void RemoveAllTemporarySettings(int index, StateSource state)
     {
@@ -292,8 +334,7 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
     }
 
     private static bool HandleRespectManual(int modIndex, string modName, CollectionWrapper collection, bool respectManual, StateSource source,
-        out int key,
-        out string name)
+        out int key, out string name)
     {
         (key, name) = source.IsFixed() ? (KeyFixed, NameFixed) : (KeyManual, NameManual);
         if (!respectManual || key is not KeyFixed)
@@ -309,9 +350,12 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
 
     protected override void PluginInitialized()
     {
-        GameState.Reconnect(PluginInterface, 1);
-        Mods.Reconnect(PluginInterface, 1);
-        Collections.Reconnect(PluginInterface, 1);
+        if (!GameState.Reconnect(PluginInterface, 1))
+            throw new Exception("Unable to connect to GameState adapter.");
+        if (!Mods.Reconnect(PluginInterface, 1))
+            throw new Exception("Unable to connect to ModManager adapter.");
+        if (!Collections.Reconnect(PluginInterface, 1))
+            throw new Exception("Unable to connect to CollectionManager adapter.");
         Ui.Attach();
         reloaded.Invoke();
     }

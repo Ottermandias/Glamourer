@@ -158,7 +158,7 @@ public sealed class SettingsTab(
             });
         Checkbox("Attach to PCP Handling"u8,
             "Add the actor's glamourer state when a PCP is created by Penumbra, and create a design and apply it if possible when a PCP is installed by Penumbra."u8,
-            config.AttachToPcp, pcpService.Set);
+            config.AttachToPcp, v => config.AttachToPcp = v);
         var active = config.DeleteDesignModifier.IsActive();
         Im.Line.Same();
         if (ImEx.Button("Delete all PCP Designs"u8, default, "Deletes all designs tagged with 'PCP' from the design list."u8, !active))

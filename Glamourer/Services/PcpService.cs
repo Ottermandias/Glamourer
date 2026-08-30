@@ -11,7 +11,7 @@ using Penumbra.GameData.Interop;
 
 namespace Glamourer.Services;
 
-public class PcpService : IRequiredService
+public class PcpService : IRequiredService, IDisposable
 {
     private readonly Configuration      _config;
     private readonly PenumbraSubscriber _penumbra;
@@ -19,6 +19,7 @@ public class PcpService : IRequiredService
     private readonly StateManager       _state;
     private readonly DesignConverter    _designConverter;
     private readonly DesignManager      _designManager;
+    private          bool               _attached;
 
     public PcpService(Configuration config, PenumbraSubscriber penumbra, ActorObjectManager objects, StateManager state,
         DesignConverter designConverter, DesignManager designManager)
@@ -30,8 +31,8 @@ public class PcpService : IRequiredService
         _designConverter = designConverter;
         _designManager   = designManager;
 
-        _config.AttachToPcp = !_config.AttachToPcp;
-        Set(!_config.AttachToPcp);
+        _config.PcpChanged += Set;
+        Set(_config.AttachToPcp, false);
     }
 
     public void CleanPcpDesigns()
@@ -42,24 +43,27 @@ public class PcpService : IRequiredService
             _designManager.Delete(design);
     }
 
-    public void Set(bool value)
+    public void Set(bool newValue, bool _)
     {
-        if (value == _config.AttachToPcp)
-            return;
-
-        _config.AttachToPcp = value;
-        _config.Save();
-        if (value)
+        if (newValue)
         {
+            if (_attached)
+                return;
+
             Glamourer.Log.Information("[PCPService] Attached to PCP handling.");
             _penumbra.Pcp.Created += OnCreation;
             _penumbra.Pcp.Parsed  += OnParse;
+            _attached             =  true;
         }
         else
         {
+            if (!_attached)
+                return;
+
             Glamourer.Log.Information("[PCPService] Detached from PCP handling.");
             _penumbra.Pcp.Created -= OnCreation;
             _penumbra.Pcp.Parsed  -= OnParse;
+            _attached             =  false;
         }
     }
 
@@ -119,5 +123,11 @@ public class PcpService : IRequiredService
             ["Version"] = 1,
             ["Design"]  = design.ToObject() as JObject,
         };
+    }
+
+    public void Dispose()
+    {
+        _config.PcpChanged -= Set;
+        Set(false, false);
     }
 }

@@ -203,8 +203,12 @@ public sealed class QuickDesignCombo : DesignComboBase, IDisposable, IUiService
                 return;
 
             field                      = value;
-            Config.SelectedQuickDesign = field?.Identifier ?? Guid.Empty;
-            Config.Save();
+            var identifier = field?.Identifier ?? Guid.Empty;
+            if (Config.SelectedQuickDesign != identifier)
+            {
+                Config.SelectedQuickDesign = identifier;
+                Config.Save();
+            }
         }
     }
 

@@ -25,7 +25,9 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     [JsonIgnore]
     public readonly FilterConfig Filters;
 
-    public bool            AttachToPcp                      { get; set; } = true;
+    [ConfigProperty(EventName = "PcpChanged")]
+    private bool _attachToPcp = true;
+
     public bool            UseRestrictedGearProtection      { get; set; } = false;
     public bool            OpenFoldersByDefault             { get; set; } = false;
     public bool            AutoRedrawEquipOnChanges         { get; set; } = false;
@@ -123,28 +125,38 @@ public sealed partial class Configuration : IPluginConfiguration, ISavable, ISer
     }
 
     public void Save()
-        => _saveService.DelaySave(this);
+    {
+        if (!_preventSaving)
+            _saveService.DelaySave(this);
+    }
+
+    private bool _preventSaving;
 
     private void Load(ConfigMigrationService migrator)
     {
         if (!File.Exists(_saveService.FileNames.ConfigurationFile))
             return;
 
-        if (File.Exists(_saveService.FileNames.ConfigurationFile))
-            try
+
+        try
+        {
+            var text = File.ReadAllText(_saveService.FileNames.ConfigurationFile);
+            _preventSaving = true;
+            JsonConvert.PopulateObject(text, this, new JsonSerializerSettings
             {
-                var text = File.ReadAllText(_saveService.FileNames.ConfigurationFile);
-                JsonConvert.PopulateObject(text, this, new JsonSerializerSettings
-                {
-                    Error = HandleDeserializationError,
-                });
-            }
-            catch (Exception ex)
-            {
-                Glamourer.Messager.NotificationMessage(ex,
-                    "Error reading Configuration, reverting to default.\nYou may be able to restore your configuration using the rolling backups in the XIVLauncher/backups/Glamourer directory.",
-                    "Error reading Configuration", NotificationType.Error);
-            }
+                Error = HandleDeserializationError,
+            });
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Messager.NotificationMessage(ex,
+                "Error reading Configuration, reverting to default.\nYou may be able to restore your configuration using the rolling backups in the XIVLauncher/backups/Glamourer directory.",
+                "Error reading Configuration", NotificationType.Error);
+        }
+        finally
+        {
+            _preventSaving = false;
+        }
 
         migrator.Migrate(this);
         return;

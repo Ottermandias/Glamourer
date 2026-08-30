@@ -54,6 +54,7 @@ public sealed class FilenameService(IDalamudPluginInterface pi) : BaseFilePathPr
             new DefaultBackupFile(DesignColorFile),
             new DefaultBackupFile(MigrationFileSystemEmptyFolders),
             new DefaultBackupFile(FileSystemLockedNodes),
+            new DefaultBackupFile(UiConfigurationFile),
         };
         // Do not back up expanded folders, selected nodes, ui configuration or ephemeral config.
         list.AddRange(Designs().Select(f => new DefaultBackupFile(f)));
