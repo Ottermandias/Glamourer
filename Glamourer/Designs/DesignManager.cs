@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Utility;
 using Glamourer.Config;
 using Glamourer.Designs.History;
@@ -52,9 +53,7 @@ public sealed class DesignManager : DesignEditor, IService
         {
             try
             {
-                var text   = JsonFunctions.ReadUtf8Bytes(f, out _);
-                var data   = JsonDocument.Parse(text, JsonFunctions.DocumentOptions);
-                var design = Design.LoadDesign(SaveService, Customizations, Items, linkLoader, data.RootElement);
+                var design = LoadDesign(linkLoader, f);
                 designs.Value!.Add((design, f));
             }
             catch (Exception ex)
@@ -511,6 +510,87 @@ public sealed class DesignManager : DesignEditor, IService
     }
 
     #endregion
+
+    public void Reload(DesignLinkLoader linkLoader, Design design)
+    {
+        var file = SaveService.FileNames.DesignFile(design);
+        if (!File.Exists(file))
+        {
+            Glamourer.Messager.NotificationMessage($"Reloading the design {design.DisplayName} failed: The design file does not exist anymore.", NotificationType.Warning, false);
+            return;
+        }
+
+        try
+        {
+            var copy = LoadDesign(linkLoader, file);
+            Rename(design, copy.Name);
+            ChangeDescription(design, copy.Description);
+            ChangeColor(design, copy.Color);
+            if (!design.Tags.SequenceEqual(copy.Tags))
+            {
+                design.Tags = [];
+                foreach(var tag in copy.Tags)
+                    AddTag(design, tag);
+            }
+
+            design.AssociatedMods.Clear();
+            foreach(var (mod, settings) in copy.AssociatedMods)
+                AddMod(design, mod, settings);
+
+            SetWriteProtection(design, copy.WriteProtected());
+            SetQuickDesign(design, copy.QuickDesign);
+            ChangeForcedRedraw(design, copy.ForcedRedraw);
+            ChangeResetAdvancedDyes(design, copy.ResetAdvancedDyes);
+            ChangeResetTemporarySettings(design, copy.ResetTemporarySettings);
+            ChangeRevertAdvancedDyes(design, copy.RevertAdvancedDyes);
+            foreach (var customize in CustomizationExtensions.All)
+            {
+                ChangeApplyCustomize(design, customize, copy.DoApplyCustomize(customize));
+            }
+            foreach (var item in EquipSlotExtensions.EquipmentSlots)
+            {
+                ChangeApplyItem(design, item, copy.DoApplyEquip(item));
+                ChangeApplyStains(design, item, copy.DoApplyStain(item));
+            }
+
+            foreach (var item in BonusExtensions.AllFlags)
+            {
+                ChangeApplyBonusItem(design, item, copy.DoApplyBonusItem(item));
+            }
+
+            foreach (var item in EquipSlotExtensions.WeaponSlots)
+            {
+                ChangeApplyItem(design, item, copy.DoApplyEquip(item));
+                ChangeApplyStains(design, item, copy.DoApplyStain(item));
+            }
+
+            foreach (var crest in CrestExtensions.AllRelevantSet)
+            {
+                ChangeApplyCrest(design, crest, copy.DoApplyCrest(crest));
+            }
+
+            foreach(var meta in MetaExtensions.AllRelevant)
+                ChangeApplyMeta(design, meta, copy.DoApplyMeta(meta));
+
+            foreach(var parameter in CustomizeParameterExtensions.AllFlags)
+                ChangeApplyParameter(design, parameter, copy.DoApplyParameter(parameter));
+
+
+
+        }
+        catch (Exception ex)
+        {
+            Glamourer.Messager.NotificationMessage(ex, $"Reloading the design {design.DisplayName} failed: The design file could not be parsed", NotificationType.Warning, false);
+        }
+
+    }
+
+    private Design LoadDesign(DesignLinkLoader linkLoader, string filename)
+    {
+        var text = JsonFunctions.ReadUtf8Bytes(filename, out _);
+        var data = JsonDocument.Parse(text, JsonFunctions.DocumentOptions);
+        return Design.LoadDesign(SaveService, Customizations, Items, linkLoader, data.RootElement);
+    }
 
     public void UndoDesignChange(Design design)
     {
