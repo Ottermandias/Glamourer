@@ -5,14 +5,17 @@ using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
+using Penumbra.GameData.Gui;
 
 namespace Glamourer.Gui.Materials;
 
-public unsafe class MaterialDrawer(DesignManager designManager, Configuration config) : IService
+public unsafe class MaterialDrawer(DesignManager designManager, Configuration config, TextureArraySlicePickers textureArraySlicePickers)
+    : IService
 {
     public const float SliderWidth      = 90;
     public const float ModeWidth        = 45;
-    public const float SheenSliderWidth = (2 * SliderWidth + ModeWidth) / 3;
+    public const float RowBaseWidth     = 2 * SliderWidth + ModeWidth;
+    public const float SheenSliderWidth = RowBaseWidth / 3;
 
     private int                _newMaterialIdx;
     private int                _newRowIdx;
@@ -38,7 +41,7 @@ public unsafe class MaterialDrawer(DesignManager designManager, Configuration co
         Im.Dummy(0);
         Im.Separator();
         Im.Dummy(0);
-        if (available > 2.6f * colorWidth)
+        if (available > 3.25f * colorWidth)
             DrawSingleRow(design);
         else
             DrawMultipleRow(design);
@@ -364,6 +367,38 @@ public unsafe class MaterialDrawer(DesignManager designManager, Configuration co
         Im.Item.SetNextWidthScaled(SheenSliderWidth);
         applied |= AdvancedDyePopup.DragSheenRoughness(ref tmp.SheenAperture, true);
         Im.Tooltip.OnHover("Change the sheen roughness for this row.\nControl and Right-Click to unset."u8);
+
+        if (!compact)
+            Im.Dummy(_buttonSize with { X = _buttonSize.X * 3 + _spacing * 2 });
+
+        var allItemsWidth = RowBaseWidth - Im.Style.ItemInnerSpacing.X;
+        var itemWidth     = MathF.Floor(allItemsWidth / 4);
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidth(itemWidth);
+        applied |= AdvancedDyePopup.DragExposure(ref tmp.Exposure, true);
+        Im.Tooltip.OnHover("Change the exposure value for this row.\nControl and Right-Click to unset."u8);
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidth(itemWidth);
+        using (Im.Style.Push(ImStyleSingle.Alpha, 0.5f * Im.Style.Alpha, (index.RowIndex & 1) is not 0))
+        {
+            applied |= AdvancedDyePopup.DragAnisotropy(ref tmp.Anisotropy, true);
+        }
+
+        Im.Tooltip.OnHover((index.RowIndex & 1) is 0
+            ? "Change the anisotropy degree for this row.\nControl and Right-Click to unset."u8
+            : "Change the anisotropy degree for this row.\nThis has no effect on B rows, unless using a shader mod.\nControl and Right-Click to unset."u8);
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidth(itemWidth);
+        applied |= AdvancedDyePopup.InputSphereMapIndex(textureArraySlicePickers,
+            "Change the sphere map for this row.\nControl and Right-Click to unset."u8, ref tmp.SphereMapIndex, true);
+
+        Im.Line.SameInner();
+        Im.Item.SetNextWidth(allItemsWidth - itemWidth * 3);
+        applied |= AdvancedDyePopup.DragSphereMapMask(ref tmp.SphereMapMask, true);
+        Im.Tooltip.OnHover("Change the sphere map intensity for this row.\nControl and Right-Click to unset."u8);
 
         if (applied)
             designManager.ChangeMaterialValue(design, index, tmp);
