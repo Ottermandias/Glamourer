@@ -17,8 +17,7 @@ using Penumbra.GameData.Structs;
 
 namespace Glamourer.Interop.Penumbra;
 
-public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface pluginInterface, PenumbraReloaded reloaded, Configuration config)
-    : BasePenumbraSubscriber(log, pluginInterface, 5, 17), IApiService
+public sealed class PenumbraSubscriber : BasePenumbraSubscriber, IApiService
 {
     private static readonly GameStateWrapper InternalGameState = new();
 
@@ -30,11 +29,24 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
     public const int    KeyManual  = -6160;
     public const string NameManual = "Glamourer (Manually)";
 
-    public readonly GameStateWrapper         GameState   = InternalGameState;
-    public readonly ModManagerWrapper        Mods        = new();
-    public readonly CollectionManagerWrapper Collections = new();
-    public          PenumbraPcpService       Pcp { get; private set; } = null!;
-    public          PenumbraUiService        Ui  { get; private set; } = null!;
+    public readonly  GameStateWrapper         GameState   = InternalGameState;
+    public readonly  ModManagerWrapper        Mods        = new();
+    public readonly  CollectionManagerWrapper Collections = new();
+    private readonly PenumbraReloaded         _reloaded;
+    private readonly Configuration            _config;
+
+    public PenumbraSubscriber(MainLogger log, IDalamudPluginInterface pluginInterface, PenumbraReloaded reloaded, Configuration config)
+        : base(log, pluginInterface, 5, 18)
+    {
+        _reloaded            =  reloaded;
+        _config              =  config;
+        GameState.Disposed   += OnPluginDispose;
+        Mods.Disposed        += OnPluginDispose;
+        Collections.Disposed += OnPluginDispose;
+    }
+
+    public PenumbraPcpService Pcp { get; private set; } = null!;
+    public PenumbraUiService  Ui  { get; private set; } = null!;
 
     public CollectionWrapper? Current
     {
@@ -258,7 +270,7 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
                 return sb.ToString();
             }
 
-            if (config.UseTemporarySettings)
+            if (_config.UseTemporarySettings)
             {
                 if (HandleRespectManual(modIndex, modIdentifier.Name, collection, respectManual, source, out var temporaryKey,
                         out var temporaryName))
@@ -356,8 +368,9 @@ public sealed class PenumbraSubscriber(MainLogger log, IDalamudPluginInterface p
             throw new Exception("Unable to connect to ModManager adapter.");
         if (!Collections.Reconnect(PluginInterface, 1))
             throw new Exception("Unable to connect to CollectionManager adapter.");
+
         Ui.Attach();
-        reloaded.Invoke();
+        _reloaded?.Invoke();
     }
 
     protected override void Initialize()

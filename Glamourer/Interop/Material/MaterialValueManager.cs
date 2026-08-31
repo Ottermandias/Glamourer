@@ -357,7 +357,7 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, Col
             else if (j.NumberProperty("SheenTint"u8, out float st))
                 value.Value.SheenTint = st;
             else if (j.NumberProperty("SheenAperture"u8, out float sa))
-                value.Value.SheenAperture = sa;
+                value.Value.SheenAperture = Math.Clamp(sa, (float)Half.Epsilon, (float)Half.MaxValue);
             else
                 j.Skip();
         }

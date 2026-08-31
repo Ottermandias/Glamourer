@@ -531,7 +531,7 @@ public sealed unsafe class AdvancedDyePopup(
     {
         var tmp      = float.IsNaN(value) ? ColorRow.DefaultGlossStrength : value;
         var minValue = Im.Io.KeyControl ? 0f : (float)Half.Epsilon;
-        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? "\u2014 G"u8 : "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value),
+        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} G" : "%.1f G"u8, 0.001f, minValue, Math.Max(0.01f, 0.005f * value),
                 SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
@@ -547,7 +547,7 @@ public sealed unsafe class AdvancedDyePopup(
     {
         var roughness = ColorTableRow.RoughnessFromShininess(float.IsNaN(value) ? ColorRow.DefaultGlossStrength : value);
         var tmp       = roughness * 100f;
-        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? "\u2014 Rg"u8 : "%.0f%% Rg"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##Gloss"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} Rg" : "%.0f%% Rg"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
@@ -561,7 +561,7 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragSpecularStrength(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultSpecularStrength : value) * 100f;
-        if (!Im.Drag("##SpecularStrength"u8, ref tmp, float.IsNaN(value) ? "\u2014 SS"u8 : "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f,
+        if (!Im.Drag("##SpecularStrength"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} SS" : "%.0f%% SS"u8, 0f, (float)Half.MaxValue * 100f,
                 0.05f, SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
@@ -576,7 +576,7 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragRoughness(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultRoughness : value) * 100f;
-        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? "\u2014 Rg"u8 : "%.0f%% Rg"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} Rg" : "%.0f%% Rg"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
@@ -591,7 +591,7 @@ public sealed unsafe class AdvancedDyePopup(
     {
         var gloss = ColorTableRow.ShininessFromRoughness(float.IsNaN(value) ? ColorRow.DefaultRoughness : value);
         var tmp   = gloss;
-        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? "\u2014 G"u8 : "%.1f G"u8, 0.001f, (float)Half.Epsilon,
+        if (!Im.Drag("##Roughness"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} G" : "%.1f G"u8, 0.001f, (float)Half.Epsilon,
                 Math.Max(0.01f, 0.005f * gloss), SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
@@ -606,7 +606,7 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragMetalness(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultMetalness : value) * 100f;
-        if (!Im.Drag("##Metalness"u8, ref tmp, float.IsNaN(value) ? "\u2014 Mt"u8 : "%.0f%% Mt"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##Metalness"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} Mt" : "%.0f%% Mt"u8, 0f, 100f, 0.25f, SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, 0f, 100f) / 100f;
@@ -620,7 +620,7 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragSheen(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultSheen : value) * 100f;
-        if (!Im.Drag("##Sheen"u8, ref tmp, float.IsNaN(value) ? "\u2014 Sh"u8 : "%.0f%% Sh"u8, 0f, 100f * (float)Half.MaxValue, 0.25f,
+        if (!Im.Drag("##Sheen"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} Sh" : "%.0f%% Sh"u8, 0f, 100f * (float)Half.MaxValue, 0.25f,
                 SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
@@ -635,9 +635,8 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragSheenTint(ref float value, bool canUnset)
     {
         var tmp = (float.IsNaN(value) ? ColorRow.DefaultSheenTint : value) * 100f;
-        if (!Im.Drag("##SheenTint"u8, ref tmp, float.IsNaN(value) ? "\u2014 ST"u8 : "%.0f%% ST"u8, -100f * (float)Half.MaxValue,
-                100f * (float)Half.MaxValue, 0.25f,
-                SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##SheenTint"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} ST" : "%.0f%% ST"u8, -100f * (float)Half.MaxValue,
+                100f * (float)Half.MaxValue, 0.25f, SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(tmp, -100f * (float)Half.MaxValue, 100f * (float)Half.MaxValue) / 100f;
@@ -651,9 +650,8 @@ public sealed unsafe class AdvancedDyePopup(
     public static bool DragSheenRoughness(ref float value, bool canUnset)
     {
         var tmp = 100f / (float.IsNaN(value) ? ColorRow.DefaultSheenAperture : value);
-        if (!Im.Drag("##SheenAperture"u8, ref tmp, float.IsNaN(value) ? "\u2014 SR"u8 : "%.0f%% SR"u8, 100f / (float)Half.MaxValue,
-                100f / (float)Half.Epsilon, 0.25f,
-                SliderFlags.AlwaysClamp))
+        if (!Im.Drag("##SheenAperture"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} SR" : "%.0f%% SR"u8, 100f / (float)Half.MaxValue,
+                100f / (float)Half.Epsilon, 0.25f, SliderFlags.AlwaysClamp))
             return UnsetBehavior(ref value, canUnset);
 
         var tmp2 = Math.Clamp(100f / tmp, (float)Half.Epsilon, (float)Half.MaxValue);
