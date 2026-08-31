@@ -9,6 +9,7 @@ using ImSharp;
 using Luna;
 using Penumbra.GameData.Enums;
 using Penumbra.GameData.Files.MaterialStructs;
+using Penumbra.GameData.Gui;
 using Penumbra.GameData.Interop;
 using Penumbra.String;
 using Notification = Luna.Notification;
@@ -19,7 +20,8 @@ public sealed unsafe class AdvancedDyePopup(
     Configuration config,
     StateManager stateManager,
     LiveColorTablePreviewer preview,
-    DirectXService directX) : IService
+    DirectXService directX,
+    TextureArraySlicePickers textureArraySlicePickers) : IService
 {
     public static readonly AwesomeIcon Palette = FontAwesomeIcon.Palette;
 
@@ -34,6 +36,7 @@ public sealed unsafe class AdvancedDyePopup(
     private const int  RowsPerPage = 16;
     private       int  _rowOffset;
     private       bool _editSheen;
+    private       bool _editExtra;
 
     private bool ShouldBeDrawn()
     {
@@ -183,7 +186,7 @@ public sealed unsafe class AdvancedDyePopup(
     {
         var layerButtonWidth = _mode is ColorRow.Mode.Dawntrail ? Im.Font.Mono.GetCharacterAdvance(' ') * 5 + Im.Style.FramePadding.X * 2 : 0;
         var buttonWidth =
-            (Im.ContentRegion.Available.X - (_mode is ColorRow.Mode.Dawntrail ? layerButtonWidth * 2 + Im.Style.ItemSpacing.X : 0)) / 2;
+            (Im.ContentRegion.Available.X - (_mode is ColorRow.Mode.Dawntrail ? layerButtonWidth * 3 + Im.Style.ItemSpacing.X : 0)) / 2;
         var       buttonSize = new Vector2(buttonWidth, 0);
         using var font       = Im.Font.PushMono();
         using var hoverColor = ImGuiColor.ButtonHovered.Push(Im.Style[ImGuiColor.TabHovered]);
@@ -206,16 +209,35 @@ public sealed unsafe class AdvancedDyePopup(
 
             buttonSize = new Vector2(layerButtonWidth, 0);
 
-            hoverColor.Push(ImGuiColor.Button, Im.Style[!_editSheen ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
+            hoverColor.Push(ImGuiColor.Button, Im.Style[_editSheen || _editExtra ? ImGuiColor.Tab : ImGuiColor.TabSelected]);
             if (ImEx.ButtonCorners("Base"u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Left))
+            {
                 _editSheen = false;
+                _editExtra = false;
+            }
+
             hoverColor.Pop();
 
             Im.Line.NoSpacing();
 
             hoverColor.Push(ImGuiColor.Button, Im.Style[_editSheen ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
-            if (ImEx.ButtonCorners("Sheen"u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Right))
+            if (ImEx.ButtonCorners("Sheen"u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.None))
+            {
                 _editSheen = true;
+                _editExtra = false;
+            }
+
+            hoverColor.Pop();
+
+            Im.Line.NoSpacing();
+
+            hoverColor.Push(ImGuiColor.Button, Im.Style[_editExtra ? ImGuiColor.TabSelected : ImGuiColor.Tab]);
+            if (ImEx.ButtonCorners("Extra"u8, buttonSize, ButtonFlags.MouseButtonLeft, Corners.Right))
+            {
+                _editSheen = false;
+                _editExtra = true;
+            }
+
             hoverColor.Pop();
         }
     }
@@ -475,6 +497,40 @@ public sealed unsafe class AdvancedDyePopup(
             applied |= DragSheenRoughness(ref value.Model.SheenAperture, false);
             Im.Tooltip.OnHover("Change the sheen roughness for this row."u8);
         }
+        else if (_mode is ColorRow.Mode.Dawntrail && _editExtra)
+        {
+            // This layout has 4 items and three spacings: 4*w + 3*sp = 200*sc + 1*sp.
+            var allItemsWidth = 200 * Im.Style.GlobalScale - 2 * spacing.X;
+            var itemWidth     = MathF.Floor(allItemsWidth / 4);
+
+            Im.Item.SetNextWidth(itemWidth);
+            applied |= DragExposure(ref value.Model.Exposure, false);
+            Im.Tooltip.OnHover("Change the exposure value for this row."u8);
+
+            Im.Line.Same(0, spacing.X);
+
+            Im.Item.SetNextWidth(itemWidth);
+            using (Im.Style.Push(ImStyleSingle.Alpha, 0.5f * Im.Style.Alpha, (index.RowIndex & 1) is not 0))
+            {
+                applied |= DragAnisotropy(ref value.Model.Anisotropy, false);
+            }
+
+            Im.Tooltip.OnHover((index.RowIndex & 1) is 0
+                ? "Change the anisotropy degree for this row."u8
+                : "Change the anisotropy degree for this row.\nThis has no effect on B rows, unless using a shader mod."u8);
+
+            Im.Line.Same(0, spacing.X);
+
+            Im.Item.SetNextWidth(itemWidth);
+            applied |= InputSphereMapIndex(textureArraySlicePickers, "Change the sphere map for this row."u8, ref value.Model.SphereMapIndex,
+                false);
+
+            Im.Line.Same(0, spacing.X);
+
+            Im.Item.SetNextWidth(allItemsWidth - itemWidth * 3);
+            applied |= DragSphereMapMask(ref value.Model.SphereMapMask, false);
+            Im.Tooltip.OnHover("Change the sphere map intensity for this row."u8);
+        }
         else
         {
             Im.Item.SetNextWidthScaled(100);
@@ -659,6 +715,69 @@ public sealed unsafe class AdvancedDyePopup(
             return false;
 
         value = tmp2;
+        return true;
+    }
+
+    private static readonly float ExposureMax          = MathF.Log2((float)Half.MaxValue) * 0.5f;
+    private static readonly float ExposureMinThreshold = -MathF.Ceiling(ExposureMax * 10.0f) * 0.1f;
+    private static readonly float ExposureMinInfDummy  = ExposureMinThreshold - 0.025f;
+
+    public static bool DragExposure(ref float value, bool canUnset)
+    {
+        var tmp = value is 0.0f ? ExposureMinInfDummy : MathF.Log2(float.IsNaN(value) ? ColorRow.DefaultExposure : value) * 0.5f;
+        if (!Im.Drag("##Exposure"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} X" : value is 0.0f ? "-∞ X"u8 : "%.1f X"u8,
+                ExposureMinInfDummy, ExposureMax, 0.025f, SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = tmp < ExposureMinThreshold ? 0.0f : MathF.Pow(2.0f, Math.Clamp(tmp, -ExposureMax, ExposureMax) * 2.0f);
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragAnisotropy(ref float value, bool canUnset)
+    {
+        var tmp = float.IsNaN(value) ? ColorRow.DefaultAnisotropy : value;
+        if (!Im.Drag("##Anisotropy"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} A" : "%.1f A"u8, 0f, (float)Half.MaxValue, 0.025f,
+                SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, 0f, (float)Half.MaxValue);
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool DragSphereMapMask(ref float value, bool canUnset)
+    {
+        var tmp = (float.IsNaN(value) ? ColorRow.DefaultSphereMapMask : value) * 100f;
+        if (!Im.Drag("##SphereMapMask"u8, ref tmp, float.IsNaN(value) ? $"{char.EmDash} S" : "%.0f%% S"u8, 0f, 100f * (float)Half.MaxValue, 0.25f,
+                SliderFlags.AlwaysClamp))
+            return UnsetBehavior(ref value, canUnset);
+
+        var tmp2 = Math.Clamp(tmp, 0f, 100f * (float)Half.MaxValue) / 100f;
+        if (tmp2 == value)
+            return false;
+
+        value = tmp2;
+        return true;
+    }
+
+    public static bool InputSphereMapIndex(TextureArraySlicePickers textureArraySlicePickers, ReadOnlySpan<byte> description, ref ushort value,
+        bool canUnset)
+        => textureArraySlicePickers.DrawSphereMapIndexPicker("##SphereMapIndex"u8, description, ref value, true)
+         || UnsetBehavior(ref value, canUnset);
+
+    private static bool UnsetBehavior(ref ushort value, bool canUnset)
+    {
+        if (!(canUnset && Im.Item.RightClicked() && Im.Io.KeyControl))
+            return false;
+
+        value = ushort.MaxValue;
         return true;
     }
 
