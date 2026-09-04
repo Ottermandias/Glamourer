@@ -36,7 +36,7 @@ public sealed class PenumbraSubscriber : BasePenumbraSubscriber, IApiService
     private readonly Configuration            _config;
 
     public PenumbraSubscriber(MainLogger log, IDalamudPluginInterface pluginInterface, PenumbraReloaded reloaded, Configuration config)
-        : base(log, pluginInterface, 5, 18)
+        : base(log, pluginInterface, 5, 19)
     {
         _reloaded            =  reloaded;
         _config              =  config;
