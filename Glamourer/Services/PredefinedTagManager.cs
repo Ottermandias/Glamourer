@@ -1,4 +1,5 @@
 using Glamourer.Designs;
+using Glamourer.Gui;
 using Luna;
 
 namespace Glamourer.Services;
@@ -25,6 +26,12 @@ public sealed class PredefinedTagManager : PredefinedTagManager<FilenameService,
 
     protected override IReadOnlyCollection<string> GetLocalTags(Design obj)
         => obj.Tags;
+
+    public override Vector4 AddButtonColor
+        => ColorId.PredefinedTagAdd.Vector;
+
+    public override Vector4 RemoveButtonColor
+        => ColorId.PredefinedTagRemove.Vector;
 
     protected override void ChangeLocalTag(Design obj, int tagIndex, string tag)
     {

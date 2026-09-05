@@ -36,6 +36,8 @@ public enum ColorId
     ContainsItemsEnabled,
     ContainsItemsDisabled,
     AdvancedDyeActive,
+    PredefinedTagAdd,
+    PredefinedTagRemove,
 }
 
 public static class Colors
