@@ -45,6 +45,7 @@ public sealed class StateListener : IDisposable, IRequiredService
     private readonly VieraEarStateChanged      _vieraEarState;
     private readonly WeaponVisibilityChanged   _weaponVisibility;
     private readonly StateFinalized            _stateFinalized;
+    private readonly EnableDrawEvent           _enableDraw;
     private readonly AutoDesignApplier         _autoDesignApplier;
     private readonly FunModule                 _funModule;
     private readonly HumanModelList            _humans;
@@ -66,7 +67,8 @@ public sealed class StateListener : IDisposable, IRequiredService
         WeaponVisibilityChanged weaponVisibility, HeadGearVisibilityChanged headGearVisibility, AutoDesignApplier autoDesignApplier,
         FunModule funModule, HumanModelList humans, StateApplier applier, MovedEquipment movedEquipment, ActorObjectManager objects,
         GPoseService gPose, ChangeCustomizeService changeCustomizeService, CustomizeService customizations, ICondition condition,
-        CrestService crestService, BonusSlotUpdating bonusSlotUpdating, StateFinalized stateFinalized, VieraEarStateChanged vieraEarState)
+        CrestService crestService, BonusSlotUpdating bonusSlotUpdating, StateFinalized stateFinalized, VieraEarStateChanged vieraEarState,
+        EnableDrawEvent enableDraw)
     {
         _manager                = manager;
         _items                  = items;
@@ -93,6 +95,7 @@ public sealed class StateListener : IDisposable, IRequiredService
         _bonusSlotUpdating      = bonusSlotUpdating;
         _stateFinalized         = stateFinalized;
         _vieraEarState          = vieraEarState;
+        _enableDraw             = enableDraw;
         Subscribe();
     }
 
@@ -864,6 +867,7 @@ public sealed class StateListener : IDisposable, IRequiredService
         _crestService.Subscribe(OnCrestChange, CrestService.Priority.StateListener);
         _crestService.ModelCrestSetup += OnModelCrestSetup;
         _changeCustomizeService.Subscribe(OnCustomizeChanged, ChangeCustomizeService.Post.Priority.StateListener);
+        _enableDraw.Subscribe(AfterEnableDraw, EnableDrawEvent.Priority.StateListener);
     }
 
     private void Unsubscribe()
@@ -883,14 +887,15 @@ public sealed class StateListener : IDisposable, IRequiredService
         _crestService.Unsubscribe(OnCrestChange);
         _crestService.ModelCrestSetup -= OnModelCrestSetup;
         _changeCustomizeService.Unsubscribe(OnCustomizeChanged);
+        _enableDraw.Unsubscribe(AfterEnableDraw);
     }
 
     private void OnCreatedCharacterBase(in CreatedCharacterBaseArguments args)
     {
-        if (_condition[ConditionFlag.CreatingCharacter])
+        if (_creatingState is null)
             return;
 
-        if (_creatingState is null)
+        if (_condition[ConditionFlag.CreatingCharacter])
             return;
 
         var data = new ActorData(args.GameObject, _creatingIdentifier.ToName());
@@ -898,9 +903,21 @@ public sealed class StateListener : IDisposable, IRequiredService
         _applier.ChangeMetaState(data, MetaIndex.Wetness,     _creatingState.ModelData.IsWet());
         _applier.ChangeMetaState(data, MetaIndex.WeaponState, _creatingState.ModelData.IsWeaponVisible());
         _applier.ChangeVisorState(args.DrawObject, _creatingState.ModelData.IsVisorToggled());
-        _applier.ChangeEarState(args.DrawObject, _creatingState.ModelData.AreEarsVisible());
 
         ApplyParameters(_creatingState, args.DrawObject);
+    }
+
+
+    private void AfterEnableDraw(in Actor character)
+    {
+        if (_creatingState is null)
+            return;
+
+        if (_condition[ConditionFlag.CreatingCharacter])
+            return;
+
+        _applier.ChangeEarState(character.Model, _creatingState.ModelData.AreEarsVisible());
+        _creatingState = null;
     }
 
     private void OnCustomizeChanged(in Model model)
