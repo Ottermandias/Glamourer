@@ -394,8 +394,7 @@ public struct MaterialValueDesign(ColorRow value, bool enabled, bool revert, Col
         j.WriteIfNotNaN("Exposure"u8,      Value.Exposure);
         j.WriteIfNotNaN("Anisotropy"u8,    Value.Anisotropy);
         j.WriteIfNotNaN("SphereMapMask"u8, Value.SphereMapMask);
-        if (Value.SphereMapIndex is not ushort.MaxValue)
-            j.WriteNumber("SphereMapIndex"u8, Value.SphereMapIndex);
+        j.WriteIfNot("SphereMapIndex"u8, Value.SphereMapIndex, ushort.MaxValue);
         j.WriteEndObject();
     }
 
