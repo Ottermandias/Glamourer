@@ -321,6 +321,11 @@ public sealed unsafe class AdvancedDyePopup(
         }
 
         Im.Separator();
+
+        var remainingValues = _rowOffset > 0
+            ? _state.Materials.GetValues(materialIndex with { RowIndex = 0 },           materialIndex with { RowIndex = RowsPerPage - 1 })
+            : _state.Materials.GetValues(materialIndex with { RowIndex = RowsPerPage }, materialIndex with { RowIndex = 2 * RowsPerPage - 1 });
+        _anyChanged |= remainingValues.Length > 0;
         DrawAllRow(materialIndex, table);
     }
 
