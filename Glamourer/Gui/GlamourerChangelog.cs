@@ -88,6 +88,7 @@ public sealed class GlamourerChangelog : IUiService
                 "Connector and Body slots can only be added and edited directly in designs for the moment, but there is nothing to edit for them in general, unmodded situations."u8,
                 1)
             .RegisterHighlight("Added Exposure, Anisotropy, the Sphere Map index, and the Sphere Map Intensity to advanced dyes in the Extra category (Thanks Ny!)."u8)
+            .RegisterEntry("Glamourer can now use Penumbra-style presets to store for its mod associations, which will allow it more flexibility in what options it applies later when UI work for that is done."u8)
             .RegisterEntry("Added the option to change the global sort mode for the design selector to its main context menu."u8)
             .RegisterEntry("Updated color handling with dependent colors, better defaults and categorized colors."u8)
             .RegisterEntry("Added application rules to some chat commands."u8)
