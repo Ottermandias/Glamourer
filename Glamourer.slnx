@@ -1,0 +1,33 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".github/workflows/release.yml" />
+    <File Path=".github/workflows/test_release.yml" />
+    <File Path="Glamourer/Glamourer.json" />
+  </Folder>
+  <Project Path="Glamourer.Api/Glamourer.Api.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="Glamourer/Glamourer.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="Luna/Luna.Generators/Luna.Generators.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="Luna/Luna/Luna.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="Penumbra.Api/Penumbra.Api.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="Penumbra.GameData/Penumbra.GameData.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="Penumbra.String/Penumbra.String.csproj">
+    <Platform Project="x64" />
+  </Project>
+</Solution>
