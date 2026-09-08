@@ -94,6 +94,7 @@ public sealed class GlamourerChangelog : IUiService
             .RegisterEntry("Added application rules to some chat commands."u8)
             .RegisterEntry("Added the option to give random designs in automation sets display names to distinguish multiple of them."u8)
             .RegisterEntry("Added the option to have color-alternating folder lines, and choose their colors in their corresponding folder settings."u8)
+            .RegisterEntry("Added the option to have display names for folders independent of their path."u8)
             .RegisterEntry("Fixed an issue where configuration files were saved unnecessarily on launch."u8)
             .RegisterEntry("Added configurable colors for the Add- and Remove buttons for predefined tags."u8)
             .RegisterEntry("Fixed an issue with Viera Ear state application."u8)
