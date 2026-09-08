@@ -35,7 +35,7 @@ public struct EquipItemSlotCache
             {
                 Clear();
                 this[EquipSlot.MainHand] = item;
-                if (item.Type is FullEquipType.Sword)
+                if (item.Type is FullEquipType.Sword or FullEquipType.Handaxe)
                     this[EquipSlot.OffHand] = items.FindClosestShield(item.ItemId, out var shield) ? shield : default;
                 else
                     this[EquipSlot.OffHand] = items.ItemData.Secondary.GetValueOrDefault(item.ItemId);

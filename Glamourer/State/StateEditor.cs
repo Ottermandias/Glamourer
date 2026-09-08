@@ -506,7 +506,7 @@ public class StateEditor(
 
         var mh = newMainhand ?? state.ModelData.Item(EquipSlot.MainHand);
         // Do not change Shields to nothing.
-        if (mh.Type is FullEquipType.Sword)
+        if (mh.Type is FullEquipType.Sword or FullEquipType.Handaxe)
             return;
 
         var offhand = newMainhand != null ? Items.GetDefaultOffhand(mh) : state.ModelData.Item(EquipSlot.OffHand);
